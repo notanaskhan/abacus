@@ -1,0 +1,143 @@
+# Permission matrix — PROTECTED PATH (ADR-027). Changes require human approval.
+# Tests are generated from this file. Every API route declares exactly one action below.
+#
+# Values:
+#   allow                     permitted, subject to global conditions
+#   deny                      never permitted
+#   assigned_only             only items assigned to this client user
+#   client_visible_only       only client-visible fields and items
+#   firm_setting(<name>)      permitted if the firm enables <name>
+#   in_scope                  practice leader / quality partner: engagements in their scope
+#   task_scope                agent: only if the task declares this action
+#
+# Global conditions (apply to every action unless overridden):
+#   walled: deny              ADR-026 — overrides every role
+#   tenant_mismatch: deny     ADR-014 / ADR-023
+#   archived_write: deny      archived engagements are read-only
+#   access_expired: deny      expired client grants and connections
+#
+# Roles without an engagement relationship (firm_admin, practice_leader, quality_partner)
+# are evaluated per ADR-024. Agents: ADR-005, ADR-025. Draft v0.1 — finalise in SPEC.
+
+roles: [firm_admin, practice_leader, quality_partner,
+        engagement_partner, manager, senior, staff, reviewer,
+        client_admin, client_contributor, agent, system]
+
+actions:
+
+  # --- Firm administration ---
+  firm.manage_users:        {firm_admin: allow, mfa_recent: required}
+  firm.manage_settings:     {firm_admin: allow, mfa_recent: required}
+  autonomy_policy.update:   {firm_admin: allow, mfa_recent: required}
+  wall.create:              {firm_admin: allow, mfa_recent: required}
+  wall.remove:              {firm_admin: allow, mfa_recent: required}
+  legal_hold.place:         {firm_admin: allow, mfa_recent: required}
+  legal_hold.lift:          {firm_admin: allow, mfa_recent: required}
+
+  # --- Engagements ---
+  engagement.create:        {firm_admin: allow, practice_leader: allow}
+  engagement.read_metadata:
+    firm_admin: allow
+    practice_leader: in_scope
+    quality_partner: allow
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    staff: allow
+    reviewer: allow
+  engagement.read:          # content, not just metadata — ADR-024
+    practice_leader: in_scope
+    quality_partner: in_scope
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    staff: allow
+    reviewer: allow
+    client_admin: client_visible_only
+    client_contributor: client_visible_only
+  engagement.self_join:     {firm_admin: allow, notify: engagement_team}
+  engagement.update:        {engagement_partner: allow, manager: allow}
+  engagement.member_add:    {engagement_partner: allow, manager: allow}
+  engagement.member_remove: {engagement_partner: allow, manager: allow}
+  engagement.archive:       {engagement_partner: allow}
+
+  # --- Request items ---
+  request_item.read:
+    practice_leader: in_scope
+    quality_partner: in_scope
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    staff: allow
+    reviewer: allow
+    client_admin: client_visible_only
+    client_contributor: assigned_only
+    agent: task_scope
+  request_item.create:      {engagement_partner: allow, manager: allow, senior: allow}
+  request_item.update:      {engagement_partner: allow, manager: allow, senior: allow}
+  request_item.assign:      {engagement_partner: allow, manager: allow, senior: allow, client_admin: allow}
+  request_item.waive:       {engagement_partner: allow, manager: allow, requires: reason}
+  request_item.mark_ready:  {engagement_partner: allow, manager: allow, senior: allow, staff: allow}
+
+  # --- Evidence ---
+  evidence.read:
+    practice_leader: in_scope
+    quality_partner: in_scope
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    staff: allow
+    reviewer: allow
+    client_admin: client_visible_only
+    client_contributor: assigned_only
+    agent: task_scope
+  evidence.upload:
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    staff: allow
+    client_admin: allow
+    client_contributor: assigned_only
+    system: allow             # retrieval via connections
+  evidence.accept:
+    engagement_partner: allow
+    manager: allow
+    senior: firm_setting(seniors_can_accept)
+    agent: deny               # ADR-005
+  evidence.reject:
+    engagement_partner: allow
+    manager: allow
+    senior: firm_setting(seniors_can_accept)
+    agent: deny               # ADR-005
+  evidence.void:            {engagement_partner: allow, manager: allow, requires: reason}
+
+  # --- Fulfilments ---
+  fulfilment.propose:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: task_scope, system: allow}
+  fulfilment.confirm:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny}
+
+  # --- Screening and suggestions ---
+  screening.run:            {system: allow, agent: task_scope}
+  suggestion.create:        {agent: task_scope}
+  suggestion.resolve:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny}
+
+  # --- Connections ---
+  connection.create:        {client_admin: allow}                       # only the client grants access
+  connection.revoke:        {client_admin: allow, engagement_partner: allow, manager: allow}
+  connection.pull:          {system: allow}
+  connection.read_log:      {client_admin: allow, engagement_partner: allow, manager: allow}
+
+  # --- Follow-ups ---
+  follow_up.draft:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: task_scope}
+  follow_up.send:
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    agent: firm_setting(autonomy_policy)   # routine reminders only, per autonomy policy
+
+  # --- Sampling ---
+  sample_set.create:        {engagement_partner: allow, manager: allow, senior: allow}
+  support_match.run:        {system: allow, agent: task_scope}
+
+  # --- Audit trail and export ---
+  audit_event.read:         {engagement_partner: allow, manager: allow, quality_partner: in_scope, firm_admin: allow}
+  export.create:            {engagement_partner: allow, manager: allow, mfa_recent: required}

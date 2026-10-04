@@ -1,0 +1,33 @@
+# Secrets
+.env
+.env.*
+**/secrets/
+
+# Founder approvals are local session controls; the approval is recorded in the task file instead.
+work/approvals/*.yaml
+
+# Claude Code personal settings
+.claude/settings.local.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+mutants/
+
+# Node
+node_modules/
+dist/
+.vite/
+playwright-report/
+test-results/
+
+# OS and editors
+.DS_Store
+.idea/
+.vscode/

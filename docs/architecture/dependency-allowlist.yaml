@@ -1,0 +1,63 @@
+# Dependency allowlist — PROTECTED. Adding a package requires founder approval.
+# status: approved | pending (approved in principle, awaiting a decision noted in reason)
+
+python:
+  runtime:
+    fastapi: approved
+    uvicorn: approved
+    pydantic: approved
+    pydantic-settings: approved
+    sqlalchemy: approved
+    asyncpg: approved
+    alembic: approved
+    temporalio: approved
+    boto3: approved
+    httpx: approved
+    pandas: approved
+    openpyxl: approved          # deterministic spreadsheet rendering (ADR-042)
+    pgvector: approved
+    cryptography: approved      # envelope encryption (ADR-035)
+    opentelemetry-api: approved
+    opentelemetry-sdk: approved
+    opentelemetry-instrumentation-fastapi: approved
+    opentelemetry-exporter-otlp: approved
+    sentry-sdk: approved
+    structlog: approved         # structured logging helper (ADR-022)
+    anthropic: approved         # ai_gateway only (ADR-019)
+    workos: pending             # identity vendor pending commercial check (ADR-029)
+    pdfplumber: pending         # document parsing — decide when scanned evidence arrives
+  dev:
+    pytest: approved
+    pytest-asyncio: approved
+    hypothesis: approved
+    testcontainers: approved
+    ruff: approved
+    pyright: approved
+    import-linter: approved
+    mutmut: approved
+    pip-audit: approved
+    bandit: approved
+
+typescript:
+  runtime:
+    react: approved
+    react-dom: approved
+    "@tanstack/react-router": approved
+    "@tanstack/react-query": approved
+    tailwindcss: approved
+    "@radix-ui/*": approved      # shadcn/ui primitives
+    class-variance-authority: approved
+    clsx: approved
+    tailwind-merge: approved
+    lucide-react: approved
+    "@workos-inc/authkit-react": pending
+  dev:
+    typescript: approved
+    vite: approved
+    vitest: approved
+    "@testing-library/react": approved
+    "@playwright/test": approved
+    "@axe-core/playwright": approved
+    eslint: approved
+    prettier: approved
+    "@hey-api/openapi-ts": approved   # generated API client (ADR-013)
