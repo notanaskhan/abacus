@@ -1,27 +1,27 @@
 # Server-side enforcement: these paths require the founder's review on every pull request.
 # Local hooks are a convenience; this file plus branch protection is authoritative.
-# Replace @founder with your GitHub handle.
 
-/AGENTS.md                                   @founder
-/CLAUDE.md                                   @founder
-/Makefile                                    @founder
-/.claude/                                    @founder
-/.github/                                    @founder
-/infra/                                      @founder
-/docs/adr/                                   @founder
-/docs/architecture/permission-matrix.yaml    @founder
-/docs/architecture/protected-paths.md        @founder
-/docs/architecture/dependency-allowlist.yaml @founder
-/docs/product/glossary.md                    @founder
-/backend/pyproject.toml                      @founder
-/backend/uv.lock                             @founder
-/backend/quality/                            @founder
-/backend/migrations/                         @founder
-/apps/web/package.json                       @founder
-/pnpm-lock.yaml                              @founder
-/backend/src/modules/identity/authz/         @founder
-/backend/src/platform/db/                    @founder
-/backend/src/platform/uow/                   @founder
-/backend/src/platform/crypto/                @founder
-/backend/src/modules/audit_trail/            @founder
-/backend/src/ai_gateway/                     @founder
+/AGENTS.md                                   @notanaskhan @ayushkbhatia
+/CLAUDE.md                                   @notanaskhan @ayushkbhatia
+/Makefile                                    @notanaskhan @ayushkbhatia
+/.claude/                                    @notanaskhan @ayushkbhatia
+/.github/                                    @notanaskhan @ayushkbhatia
+/infra/                                      @notanaskhan @ayushkbhatia
+/docs/adr/                                   @notanaskhan @ayushkbhatia
+/docs/architecture/permission-matrix.yaml    @notanaskhan @ayushkbhatia
+/docs/architecture/protected-paths.md        @notanaskhan @ayushkbhatia
+/docs/architecture/dependency-allowlist.yaml @notanaskhan @ayushkbhatia
+/docs/product/glossary.md                    @notanaskhan @ayushkbhatia
+/backend/pyproject.toml                      @notanaskhan @ayushkbhatia
+/backend/uv.lock                             @notanaskhan @ayushkbhatia
+/backend/quality/                            @notanaskhan @ayushkbhatia
+/backend/migrations/                         @notanaskhan @ayushkbhatia
+/package.json                                @notanaskhan @ayushkbhatia
+/apps/web/package.json                       @notanaskhan @ayushkbhatia
+/pnpm-lock.yaml                              @notanaskhan @ayushkbhatia
+/backend/src/modules/identity/authz/         @notanaskhan @ayushkbhatia
+/backend/src/platform/db/                    @notanaskhan @ayushkbhatia
+/backend/src/platform/uow/                   @notanaskhan @ayushkbhatia
+/backend/src/platform/crypto/                @notanaskhan @ayushkbhatia
+/backend/src/modules/audit_trail/            @notanaskhan @ayushkbhatia
+/backend/src/ai_gateway/                     @notanaskhan @ayushkbhatia
