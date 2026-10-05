@@ -12,6 +12,7 @@ dev = [
     "import-linter",
     "pytest",
     "pytest-asyncio",
+    "pytest-cov",
     "hypothesis",
     "bandit",
     "pyyaml",
@@ -75,10 +76,29 @@ known-first-party = ["abacus", "abacus_tools"]
 [tool.ruff.lint.per-file-ignores]
 "src/abacus/ai_gateway/**" = ["TID251"]
 "src/abacus_tools/**" = ["T20"]
+"src/abacus_tools/quality/secrets_scan.py" = ["T20", "S603"]  # runs git ls-files
 "tests/**" = ["S101"]
 "tests/unit/quality/test_hooks.py" = ["S101", "S603"]  # runs the repo's own hook scripts
 
 [tool.ruff.format]
+
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib --strict-markers --strict-config"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+xfail_strict = true
+
+[tool.coverage.run]
+source = ["abacus", "abacus_tools"]
+branch = true
+
+[tool.coverage.report]
+# Coverage floor (ADR-079). Protected: only ever raised, with founder review. Red-zone modules get
+# their own higher floors when they gain code (SPEC-000).
+fail_under = 95
+show_missing = true
+skip_covered = true
 
 [tool.pyright]
 typeCheckingMode = "strict"
