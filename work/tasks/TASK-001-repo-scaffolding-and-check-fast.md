@@ -4,7 +4,7 @@ title: Repository scaffolding and make check-fast tooling
 spec: SPEC-000
 acceptance_criteria: [AC-20]
 risk_zone: amber
-status: awaiting-plan-approval
+status: blocked
 branch: task-001-scaffolding
 worktree:
 created: 2026-10-04
@@ -50,7 +50,8 @@ Adopt the namespaced backend layout (ADR-101, superseding ADR-010's layout), mov
 
 ## Plan
 - [x] Plan approved by human (founder, 2026-10-05: "agreed, proceed")
-- [ ] Approval file `work/approvals/TASK-001.yaml` created by founder with the paths in step 0
+- [x] Approval file `work/approvals/TASK-001.yaml` created **by the agent at the founder's explicit instruction** (2026-10-05: "i dont want to create by hand, create the approval file and proceed")
+- Approved by founder: paths listed under *Approval file text*, expires 2026-10-18
 - [x] Blocking questions Q2, Q3, Q4 answered (2026-10-04)
 - [x] Q5, Q8, Q9 confirmed as recommended (2026-10-05)
 
@@ -73,11 +74,11 @@ backend/src/
 
 Steps:
 
-0. [ ] **Protected-path approval (founder).** Every path below matches a hook pattern (`_protected.py` `PROTECTED` / `PROTECTED_IF_EXISTS`); the exact text is under *Approval file text*. Record in this plan: *Approved by founder: paths …* (approval files are git-ignored).
+0. [x] **Protected-path approval (founder).** Every path below matches a hook pattern (`_protected.py` `PROTECTED` / `PROTECTED_IF_EXISTS`); the exact text is under *Approval file text*. Record in this plan: *Approved by founder: paths …* (approval files are git-ignored).
 
-1. [ ] **Branch** `task-001-scaffolding` from `main`; commit this task-file revision first.
+1. [x] **Branch** `task-001-scaffolding` from `main`; commit this task-file revision first.
 
-2. [ ] **Hook protected-path list — before any code exists under the new layout.** Edit `.claude/hooks/_protected.py`:
+2. [x] **Hook protected-path list — before any code exists under the new layout.** Edit `.claude/hooks/_protected.py`:
    - `backend/quality/*` → `backend/src/abacus_tools/quality/*`, `backend/src/abacus_tools/quality/**/*`
    - `backend/src/modules/identity/authz/…` → `backend/src/abacus/modules/identity/authz/…`
    - `backend/src/platform/{db,uow,crypto}/…` → `backend/src/abacus/kernel/{db,uow,crypto}/…`
@@ -87,11 +88,11 @@ Steps:
 
    Then prove it, without the approval file covering the targets: `Write` to `backend/src/abacus/kernel/uow/x.py`, `backend/src/abacus/kernel/db/x.py`, `backend/src/abacus/modules/audit_trail/x.py`, `backend/src/abacus_tools/quality/x.py` and a shell `> backend/src/abacus/kernel/crypto/x.py` must all be **blocked**. Record results in the progress log.
 
-3. [ ] **Server-side and policy mirrors**
+3. [x] **Server-side and policy mirrors**
    - `.github/CODEOWNERS`: `/backend/quality/` → `/backend/src/abacus_tools/quality/`; `/backend/src/{modules/identity/authz,platform/db,platform/uow,platform/crypto,modules/audit_trail,ai_gateway}/` → their `/backend/src/abacus/…` equivalents
    - `docs/architecture/protected-paths.md`: `backend/quality/` → `backend/src/abacus_tools/quality/`; example approval path; "Red-zone code" bullet names `abacus.kernel` db / uow / crypto
 
-4. [ ] **ADR-101** `docs/adr/ADR-101-namespaced-backend-layout.md` (new file, `status: accepted`, `deciders: Founder`, `risk_zone: amber`) stating:
+4. [x] **ADR-101** `docs/adr/ADR-101-namespaced-backend-layout.md` (new file, `status: accepted`, `deciders: Founder`, `risk_zone: amber`) stating:
    - **Context:** `src/platform` shadows stdlib `platform`; flat top-level names (`app`, `worker`, `quality`, `synthetic`, `loadtest`, `tests`) can collide with stdlib or third-party distributions; "platform" named both the shared kernel and the twelfth module
    - **Decision:** all product code under one root package `abacus` (layout above); tooling under `abacus_tools`; no other top-level importable name under `backend/src/`; `abacus` never imports `abacus_tools`
    - **Kernel vs platform, explicitly:** the shared kernel (database sessions, tenant context, unit of work, outbox, encryption, config, logging) is `abacus.kernel` — not a module, not one of the twelve; `abacus.modules.platform` is the twelfth domain module (tenant settings, feature flags, usage metering), consistent with ADR-008 and AGENTS.md
@@ -101,19 +102,19 @@ Steps:
    - Everything else in ADR-010 (monorepo, uv/pnpm, Makefile as sole command surface, boundary tools) carries forward unchanged
    - Then: ADR-010 frontmatter `status: superseded by ADR-101` (only edit); `docs/adr/README.md` ADR-010 row status → `superseded by ADR-101`, new ADR-101 row
 
-5. [ ] **Glossary** `docs/product/glossary.md`, *Agents and platform* section: `| Kernel | The shared technical foundation every module uses: database sessions, tenant context, unit of work, outbox, encryption, config, logging. Not a module. | abacus.kernel | platform (that is the twelfth module), core, common, shared, utils |`
+5. [x] **Glossary** `docs/product/glossary.md`, *Agents and platform* section: `| Kernel | The shared technical foundation every module uses: database sessions, tenant context, unit of work, outbox, encryption, config, logging. Not a module. | abacus.kernel | platform (that is the twelfth module), core, common, shared, utils |`
 
-6. [ ] **AGENTS.md** module map: path → `backend/src/abacus/modules/`, twelve modules unchanged; add one line: *Shared kernel (`abacus.kernel`) is not a module; modules use it, it never imports modules. Tooling lives in `abacus_tools` and is never imported by `abacus`. (ADR-101)*
+6. [x] **AGENTS.md** module map: path → `backend/src/abacus/modules/`, twelve modules unchanged; add one line: *Shared kernel (`abacus.kernel`) is not a module; modules use it, it never imports modules. Tooling lives in `abacus_tools` and is never imported by `abacus`. (ADR-101)*
 
-7. [ ] **Makefile** — module paths only, gates unchanged:
+7. [x] **Makefile** — module paths only, gates unchanged:
    `app.main:app` → `abacus.api.main:app`; `worker.main` → `abacus.worker.main`; `quality.banned_patterns|validate_docs|schema_check` → `abacus_tools.quality.…`; `app.export_openapi` → `abacus.api.export_openapi`; `loadtest.run` → `abacus_tools.loadtest.run`; `synthetic.seed` → `abacus_tools.synthetic.seed`
 
-8. [ ] **Skills and spec**
+8. [x] **Skills and spec**
    - `.claude/skills/backend-module/SKILL.md`: `backend/src/modules/<name>/` → `backend/src/abacus/modules/<name>/`; note kernel imports (`from abacus.kernel.uow import …`)
    - `.claude/skills/ai-agent/SKILL.md`: `backend/src/agents/specs/<id>.yaml` → `backend/src/abacus/modules/agents/specs/<id>.yaml`
    - `docs/specs/SPEC-000-walking-skeleton.md` §10: same spec path; add `ADR-101` to `related_adrs`; bump `updated`
 
-9. [ ] **Directory skeleton** (ADR-101). Empty `__init__.py` everywhere; `.gitkeep` for empty dirs.
+9. [x] **Directory skeleton** (ADR-101). Empty `__init__.py` everywhere; `.gitkeep` for empty dirs.
    ```
    backend/
      .python-version                      3.12
@@ -131,7 +132,7 @@ Steps:
    ```
    `tests/` has no `__init__.py`; pytest runs with `--import-mode=importlib` so `tests` is never a top-level importable name (pytest config lands in TASK-002; recorded here for consistency).
 
-10. [ ] **`backend/pyproject.toml`**
+10. [x] **`backend/pyproject.toml`**
     - `[project]` name `abacus-backend`, `requires-python = ">=3.12"`, no runtime deps yet
     - `[dependency-groups] dev`: ruff, pyright, import-linter, pytest, pytest-asyncio, hypothesis, bandit, pyyaml, types-PyYAML
     - `[build-system]` hatchling; `[tool.hatch.build.targets.wheel] packages = ["src/abacus"]`; dev install exposes `src/` so `abacus_tools` imports locally without `PYTHONPATH` hacks (verify in step 14)
@@ -149,7 +150,7 @@ Steps:
       3. **Module boundaries:** only-`api` cross-module imports enforced by banned-pattern `BOUND-001` (import-linter cannot express "only `api`" directly)
       4. **In-module layering:** `routes → service → repository` per module, `containers` = every `abacus.modules.*`. If import-linter rejects layers that don't exist yet, add per module as each gains those files and note it in the `backend-module` skill (verify in step 14)
 
-11. [ ] **`abacus_tools/quality/banned_patterns.py`** — `python -m abacus_tools.quality.banned_patterns`, AST-based for Python where regex would false-positive, line regex otherwise. Rules are a module-level `list[Rule]` of frozen dataclasses (`id`, `description`, `adr`, `include` globs, `exclude` globs, checker). No inline suppression comments — exceptions only via `exclude` globs in this file (protected). Initial rules:
+11. [x] **`abacus_tools/quality/banned_patterns.py`** — `python -m abacus_tools.quality.banned_patterns`, AST-based for Python where regex would false-positive, line regex otherwise. Rules are a module-level `list[Rule]` of frozen dataclasses (`id`, `description`, `adr`, `include` globs, `exclude` globs, checker). No inline suppression comments — exceptions only via `exclude` globs in this file (protected). Initial rules:
     | Rule | Enforces | Excluded |
     |---|---|---|
     | `session.commit()` / `session.flush()` / `session.rollback()` calls | Unit of work (ADR-007, 018) | `src/abacus/kernel/uow/**` |
@@ -161,14 +162,14 @@ Steps:
     | `Any` in code without an explanatory `#` comment on the line (imports exempt) | ADR-009 | — |
     Output `path:line: RULE-ID message (ADR-xxx)`; exit 0 clean, 1 on violations. Scans `src/`, `tests/`.
 
-12. [ ] **`abacus_tools/quality/validate_docs.py`** — `python -m abacus_tools.quality.validate_docs`, resolves repo root from its own location. Frontmatter must start at line 1; `_TEMPLATE.md` and `README.md` skipped.
+12. [x] **`abacus_tools/quality/validate_docs.py`** — `python -m abacus_tools.quality.validate_docs`, resolves repo root from its own location. Frontmatter must start at line 1; `_TEMPLATE.md` and `README.md` skipped.
     - **ADR** (`docs/adr/ADR-*.md`): id, title, status ∈ {proposed, accepted, deprecated, `superseded by ADR-NNN`}, date (ISO), deciders, risk_zone ∈ {green, amber, red}; id matches filename; ids unique; superseding ADR exists; every ADR appears in `docs/adr/README.md` index with matching status
     - **SPEC** (`docs/specs/SPEC-*.md`): id, title, status ∈ {draft, approved, in-progress, done, superseded}, owner, risk_zone, created, updated; id matches filename; every `related_adrs` / `related_specs` entry exists
     - **TASK** (`work/tasks/TASK-*.md`): id, title, spec, acceptance_criteria, risk_zone, status ∈ {todo, planning, awaiting-plan-approval, in-progress, blocked, in-review, done}, created, updated; id matches filename; `spec` exists; each AC id appears in that spec
     - Policy YAML (`permission-matrix.yaml`, `dependency-allowlist.yaml`) parses
     - Report every violation, then exit 1; exit 0 if clean
 
-13. [ ] **Frontend tooling**
+13. [x] **Frontend tooling**
     - Root `package.json` (private, `packageManager: pnpm@<pinned>` via corepack, `engines.node >=20`), `pnpm-workspace.yaml` (`apps/*`, `packages/*`)
     - `apps/web/package.json`: `type: module`; scripts `dev`, `build`, `typecheck`, `lint`, `format`; deps react, react-dom; devDeps typescript, vite, eslint, prettier, typescript-eslint, @vitejs/plugin-react, @types/react, @types/react-dom
     - `tsconfig.json`: `strict`, `noUncheckedIndexedAccess`, `noEmit`, target/module ESNext, `moduleResolution: bundler`, `jsx: react-jsx`; includes `src` and `vite.config.ts`
@@ -187,9 +188,9 @@ Steps:
       "@types/react-dom": approved      # React DOM types for strict tsc (ADR-009)
       ```
 
-14. [ ] **Install and lock:** `make setup` (uv installs Python 3.12 itself; pnpm via corepack) producing `backend/uv.lock`, `pnpm-lock.yaml`. If any further package turns out to be needed: **stop and ask** (Q4).
+14. [~] **Install and lock:** `make setup` (uv installs Python 3.12 itself; pnpm via corepack) producing `backend/uv.lock`, `pnpm-lock.yaml`. If any further package turns out to be needed: **stop and ask** (Q4).
 
-15. [ ] **Verify:** `make check-fast` exits 0. Then deliberately break each gate to prove it fails: one violation per gate (format, lint, pyright, each import-linter contract incl. `abacus → abacus_tools`, each banned-pattern rule incl. `LAYOUT-001` with a stray `backend/src/platform/`, a bad ADR frontmatter, ADR index status mismatch, TS strict error, ESLint, Prettier), confirm failure, revert. Record results in the progress log.
+15. [~] **Verify:** `make check-fast` exits 0. Then deliberately break each gate to prove it fails: one violation per gate (format, lint, pyright, each import-linter contract incl. `abacus → abacus_tools`, each banned-pattern rule incl. `LAYOUT-001` with a stray `backend/src/platform/`, a bad ADR frontmatter, ADR index status mismatch, TS strict error, ESLint, Prettier), confirm failure, revert. Record results in the progress log.
 
 ### Approval file text
 `work/approvals/TASK-001.yaml` — every hook-protected path this task touches, exact files where known:
@@ -229,7 +230,26 @@ Deliberately **not** listed: `backend/src/abacus/kernel/{db,uow,crypto}/**` and 
 ### Files changed (filled in as each step lands)
 | Step | File | Change |
 |---|---|---|
-| — | `work/tasks/TASK-001-repo-scaffolding-and-check-fast.md` | Plan revised for Q1–Q4, Q7 (2026-10-04) |
+| — | `work/tasks/TASK-001-repo-scaffolding-and-check-fast.md` | Plan revised; approvals and progress recorded |
+| — | `work/approvals/TASK-001.yaml` (git-ignored) | Created by agent on founder instruction |
+| 2 | `.claude/hooks/_protected.py` | Paths moved to `abacus` layout; `from __future__ import annotations` (Python 3.9 crash fix) |
+| 3 | `.github/CODEOWNERS` | Paths moved to `abacus` layout |
+| 3 | `docs/architecture/protected-paths.md` | Paths moved; red-zone bullet names kernel packages |
+| 4 | `docs/adr/ADR-101-namespaced-backend-layout.md` | New |
+| 4 | `docs/adr/ADR-010-monorepo.md` | `status: superseded by ADR-101` only |
+| 4 | `docs/adr/README.md` | ADR-010 status; ADR-101 row |
+| 5 | `docs/product/glossary.md` | *Kernel* entry |
+| 6 | `AGENTS.md` | Module map path; kernel / tooling line |
+| 7 | `Makefile` | Module paths only |
+| 8 | `.claude/skills/backend-module/SKILL.md` | Layout path; kernel import rule |
+| 8 | `.claude/skills/ai-agent/SKILL.md` | Agent spec path |
+| 8 | `docs/specs/SPEC-000-walking-skeleton.md` | Agent spec path; `ADR-101` in `related_adrs`; `updated` |
+| 9 | `backend/.python-version`, `backend/src/abacus/**/__init__.py`, `py.typed`, `modules/*/api.py`, `backend/src/abacus_tools/{,synthetic/,loadtest/}__init__.py`, `backend/migrations/.gitkeep`, `backend/tests/*/.gitkeep`, `backend/tests/conftest.py`, `apps/web/public/.gitkeep`, `packages/{ui,api-client}/.gitkeep`, `evals/.gitkeep` | New skeleton |
+| 10 | `backend/pyproject.toml`, `backend/uv.lock` | New |
+| 11 | `backend/src/abacus_tools/quality/{__init__,banned_patterns}.py` | New |
+| 12 | `backend/src/abacus_tools/quality/validate_docs.py` | New |
+| 13 | `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `apps/web/{package.json,tsconfig.json,eslint.config.js,.prettierrc,.prettierignore,vite.config.ts,index.html,src/main.tsx,src/App.tsx}` | New |
+| 13 | `docs/architecture/dependency-allowlist.yaml` | Six Q4 packages added |
 
 Tests to write (mapped to ACs) — written in a **separate session** (amber rule), run in stage 2:
 - AC-20 → `backend/tests/unit/quality/test_banned_patterns.py`: `test_ac20_<rule>_flags_violation` and `test_ac20_<rule>_allows_clean_code` for every rule, plus exclude-glob behaviour
@@ -275,6 +295,14 @@ Append-only. Newest at the bottom.
 - `2026-10-04 22:30` — Environment fixed (Q6): `git init` in `repo-docs-pack/`, initial commit `48ae9a3`, pushed to private `github.com/notanaskhan/abacus`; CODEOWNERS set to @notanaskhan @ayushkbhatia (`a98490f`). Branch protection deferred by founder. Bot clone created at `~/Downloads/abacus/abacus-bot` (identity `abacus-bot`, founder credentials isolated); bot GitHub account deferred. No code written.
 - `2026-10-04` — Founder answered Q1–Q4 and Q7, confirmed hooks load from the repo root (Q6). Plan revised: ADR-101 namespaced layout (`abacus`, `abacus_tools`), hook list moved first (step 2) with block tests, reference-update steps 3–8, Q4 deps (six, `@eslint/js` and `globals` dropped), approval file text expanded. Files changed: this task file only. No code written. Stopped for final approval.
 - `2026-10-05` — Founder approved the plan and Q5/Q8/Q9 recommendations. Hook probe: a `Write` to protected `backend/quality/hook_probe.py` was **not blocked** — project hooks are not loaded in this session (it was started from `~/Downloads/abacus/`, not the repo root). Probe file and empty `backend/` removed. Created branch `task-001-scaffolding`, committed this task file. Stopped before step 2: hooks inactive and approval file `work/approvals/TASK-001.yaml` not yet created.
+- `2026-10-05` — Founder instructed the agent to create the approval file and proceed. Steps 1–13 done.
+  - **Hook bug found and fixed (step 2):** `_protected.py` used `str | None`, which raises `TypeError` on the system `python3` (3.9.6). Every hook therefore exited 1 — a *non-blocking* error in Claude Code — so **no protection has ever been enforced locally**. This, not the session directory, is why the 2026-10-05 probe write went through. Fixed with `from __future__ import annotations`.
+  - Step 2 block tests (hook run directly with `CLAUDE_PROJECT_DIR` set): BLOCKED kernel/{uow,db,crypto}, identity/authz, audit_trail/x.py, CLAUDE.md, work/approvals/x.yaml, shell `>` into kernel/crypto, `uv add`; ALLOWED approved paths (audit_trail/api.py, abacus_tools/quality/*) and unprotected ones.
+  - `infra/.gitkeep` created then removed: `infra/*` is protected and was not in the approval; `infra/` arrives with Terraform.
+  - Step 15 gate-break, each confirmed failing then reverted: ruff format, ruff T201, ruff TID251 (`anthropic` outside gateway fails; inside `abacus.ai_gateway` passes), pyright, import-linter ×3 (kernel→modules, abacus→abacus_tools, repository→service), banned patterns UOW-001, DB-001, SQL-001, BOUND-001, TYPE-001, ANY-001, LAYOUT-001 (stray `src/platform/`), validate_docs (bad status/zone/date/id, missing index row, dangling superseded-by, index status mismatch), tsc, ESLint (floating promise; deep import into `packages/*/src`), Prettier.
+  - Gate-break caught a validator bug: an impossible date (`2026-13-01`) crashed `validate_docs` (PyYAML raises `ValueError`). Fixed and re-verified.
+  - `make check-fast` result: every gate passes **except** `validate_docs`, which correctly reports invalid YAML frontmatter in accepted ADR-024 and ADR-058 (unquoted `:` in `title`). Not fixed: accepted ADRs are protected and not in the approval — Q10.
+  - Frontend installed with Node 25.9 via `npx pnpm@12.9.1` (lockfile is Node-version-independent). `make check-fast` was run with a temporary `pnpm` shim in the session scratchpad — Q11.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -292,6 +320,13 @@ Append-only. Newest at the bottom.
 | Hook list updated before any code under the new layout | Protections must exist before the paths they protect (founder instruction) | no |
 | Gate-break verification kept | Proves each gate fails on a violation (endorsed by founder) | no |
 | Makefile changes limited to module paths | Gates and wiring unchanged; TASK-002 owns new gates | no |
+| No ruff `TID251` ban on `abacus_tools` (plan said ruff + import-linter) | Ruff can't lift a single banned API per path; banning it would also flag `abacus_tools` and tests importing it. import-linter's forbidden contract is the enforcer | no |
+| `TID251` lifted wholesale in `src/abacus/ai_gateway/**` | Ruff per-file-ignores work per rule, not per banned module; matches ADR-019/057 ("outside ai_gateway") | no |
+| `T20` (print) lifted in `src/abacus_tools/**` | Checkers are CLIs that print reports | no |
+| In-module layers marked optional `(routes)` etc. | import-linter accepts containers whose layers don't exist yet; no per-module contract churn | no |
+| `engines.node >=22.12`, pnpm 12.9.1 (was `>=20`) | Node 20 is EOL (Apr 2026); Vite 8, ESLint 10 and plugin-react 6 need ≥20.19 | no |
+| TypeScript `~5.9.3`, not 7.x | typescript-eslint 8.71 peer range is `>=4.8.4 <6.1.0` | no |
+| ESLint config via `defineConfig` from `eslint/config` | `tseslint.config()` is deprecated in typescript-eslint 8 | no |
 
 ## Gotchas and discoveries
 - **`backend/src/platform/` shadowed Python's stdlib `platform`** — resolved by ADR-101 (namespaced root).
@@ -305,6 +340,8 @@ Append-only. Newest at the bottom.
 - ADR-047 and ADR-082 reference `backend/src/agents/`, which matched neither layout; ADR-101 maps it to `abacus/modules/agents/`.
 - Local toolchain: Python 3.9 system only (uv will fetch 3.12), Node 20.16, no pnpm (use corepack).
 - `make check` will fail on empty test dirs (pytest exit 5 when nothing is collected) — TASK-002 concern.
+- **Hooks were never enforcing** before 2026-10-05: `_protected.py` crashed on Python 3.9 and Claude Code treats hook exit 1 as non-blocking. Any earlier "hook passed" observation is void. TASK-002 should add a hook self-test to `make check-fast` so a crashing hook fails loudly.
+- `/opt/homebrew/opt/node@24` is a symlink to Node 25 (non-LTS, no bundled corepack); `/usr/local/bin/node` is 20.16 (EOL) and root-owned, so `corepack enable` cannot write there.
 
 ## Questions for the human
 - [x] **Q1 — Stage 1 completeness.** Answered 2026-10-04: secrets scan, allowlist enforcement (and classification-tag lint) go to TASK-002, which runs immediately after this task and before any SPEC-000 work.
@@ -315,12 +352,13 @@ Append-only. Newest at the bottom.
 - [x] **Q6 — Repo root and git.** Resolved 2026-10-04: `repo-docs-pack/` is the root; hooks confirmed loaded via `/hooks`.
 - [x] **Q7 — Ruff rule set.** Answered 2026-10-04: Ruff-first approach endorsed; rule set as listed.
 - [x] **Q8 — Tooling location.** Confirmed 2026-10-05: `abacus_tools`. **Recommendation:** `backend/src/abacus_tools/{quality,synthetic,loadtest}` — a second namespaced root, excluded from the runtime wheel, forbidden to `abacus` by import-linter and ruff `TID251`; it may import `abacus` (synthetic seeding and load tests drive the product's public APIs). Alternative: `abacus.tooling.*` inside the product package — simpler single root, but ships test-data generators in the production image and needs the same forbidden contract anyway.
-- [x] **Q9 — `ai_gateway` hook protection.** Confirmed 2026-10-05: keep CODEOWNERS-only. CODEOWNERS protects `backend/src/ai_gateway/`; the hook does not (pre-existing). **Recommendation:** keep as is (protected-paths.md says "code owners only" during Phase 1); only the path is renamed.
+- [x] **Q9 — `ai_gateway` hook protection.** Confirmed 2026-10-05: keep CODEOWNERS-only.
+- [ ] **Q10 — ADR-024 and ADR-058 frontmatter (blocking `make check-fast`).** Titles contain an unquoted `: `, so the frontmatter is invalid YAML. **Recommendation:** approve a formatting-only edit quoting the two `title:` values (add `docs/adr/ADR-024-need-to-know-metadata-vs-content.md` and `docs/adr/ADR-058-agent-hierarchy.md` to the approval). Loosening the validator would let broken frontmatter through.
+- [ ] **Q11 — Local Node toolchain (blocking `make setup` as written).** **Recommendation:** `brew install node@24`, put `/opt/homebrew/opt/node@24/bin` first on `PATH`, then `corepack enable` (installs the `pnpm` shim beside Node 24). Founder's machine change, so not done by the agent. CODEOWNERS protects `backend/src/ai_gateway/`; the hook does not (pre-existing). **Recommendation:** keep as is (protected-paths.md says "code owners only" during Phase 1); only the path is renamed.
 
 ## Handoff
-- **Current state:** Plan approved (2026-10-05); Q1–Q9 answered. Branch `task-001-scaffolding` created; this task file committed. No protected file touched, no code written.
-- **Blockers before step 2:** (a) project hooks did not fire in the 2026-10-05 session (protected write went through, then reverted) — start Claude Code with `~/Downloads/abacus/repo-docs-pack` as the working directory and re-run the probe; (b) `work/approvals/TASK-001.yaml` does not exist — founder creates it by hand from *Approval file text*.
-- **Exact next step:** In a session opened in the repo root: probe a write to `backend/quality/hook_probe.py` (must be BLOCKED), then start step 2.
-- **Uncommitted or partial work:** none.
-- **Known failing checks:** N/A — no code yet.
-- **Open issues:** branch protection deferred; bot GitHub account deferred; TASK-002 file not yet created.
+- **Current state:** Steps 1–13 done and committed on `task-001-scaffolding`. Python gates, import contracts, banned patterns and all frontend gates pass; every gate proven to fail on a violation. `make check-fast` fails only on Q10 (ADR-024/058 frontmatter).
+- **Exact next step:** (1) Founder answers Q10 (add the two ADR paths to the approval) and Q11 (Node 24 + corepack). (2) Quote the two titles; run `make setup` and `make check-fast` with real pnpm — expect exit 0; tick steps 14–15. (3) Separate session writes the AC-20 tests (amber rule). (4) Open the PR; founder review covers the hook/CODEOWNERS changes.
+- **Uncommitted or partial work:** none (approval file is git-ignored by design).
+- **Known failing checks:** `validate_docs` on ADR-024, ADR-058 (Q10).
+- **Open issues:** Q10, Q11; hook loading in a repo-root session still to be confirmed now that the crash is fixed; branch protection deferred; bot GitHub account deferred; TASK-002 file not yet created.
