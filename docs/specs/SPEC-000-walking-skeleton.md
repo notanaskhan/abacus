@@ -4,10 +4,10 @@ title: Walking skeleton
 status: approved
 owner: Founder
 risk_zone: red
-related_adrs: [ADR-002, ADR-004, ADR-005, ADR-007, ADR-011, ADR-013, ADR-014, ADR-016, ADR-017, ADR-018, ADR-019, ADR-021, ADR-022, ADR-023, ADR-024, ADR-027, ADR-029, ADR-031, ADR-035, ADR-037, ADR-038, ADR-042, ADR-047, ADR-051, ADR-054, ADR-065, ADR-066, ADR-070, ADR-083, ADR-090]
+related_adrs: [ADR-002, ADR-004, ADR-005, ADR-007, ADR-011, ADR-013, ADR-014, ADR-016, ADR-017, ADR-018, ADR-019, ADR-021, ADR-022, ADR-023, ADR-024, ADR-027, ADR-029, ADR-031, ADR-035, ADR-037, ADR-038, ADR-042, ADR-047, ADR-051, ADR-054, ADR-065, ADR-066, ADR-070, ADR-083, ADR-090, ADR-101]
 related_specs: []
 created: 2026-10-04
-updated: 2026-10-04
+updated: 2026-10-05
 ---
 
 > **Instructions for coding agents**
@@ -125,7 +125,7 @@ Schemas defined in Pydantic; client generated (ADR-013).
 | Field | Value |
 |---|---|
 | Purpose | Screen a retrieved trial balance |
-| Spec | `backend/src/agents/specs/evidence.screener.yaml` |
+| Spec | `backend/src/abacus/modules/agents/specs/evidence.screener.yaml` |
 | Prompt | `evidence.screen@v0` |
 | Inputs | Request item description; computed summary of the trial balance (totals, period, entity) — never raw rows (ADR-050) |
 | Untrusted inputs | Account names from the connector |

@@ -9,7 +9,7 @@ description: How to add or extend a backend module — layering, public API, ten
 
 ## Layout
 ```
-backend/src/modules/<name>/
+backend/src/abacus/modules/<name>/
   api.py          public interface — the only thing other modules import
   routes.py       thin FastAPI routes: validate, authorise, call service
   service.py      business rules; uses the unit of work
@@ -26,6 +26,7 @@ backend/src/modules/<name>/
 - State changes: `with uow(ctx) as tx:` → change → `tx.record(...)` → `tx.emit(...)` (ADR-018).
 - New tables: `tenant_id NOT NULL`, row-level security policy, classification on every column (ADR-014, 031).
 - Use glossary names for tables, classes and routes.
+- Shared infrastructure comes from the kernel (`from abacus.kernel.uow import …`); other modules only via `from abacus.modules.<m>.api import …` (ADR-101).
 
 ## Checklist before done
 - [ ] Cross-tenant test for every repository method

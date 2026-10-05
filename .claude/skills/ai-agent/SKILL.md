@@ -8,7 +8,7 @@ description: How to add or change an AI agent or model step — spec, prompt, co
 **Reference:** `docs/architecture/reference/ai-agent.md` (from the walking skeleton's screening step).
 
 ## Order of work
-1. **Spec** in `backend/src/agents/specs/<id>.yaml` — shape, prompt@version, tier, escalation tier, schemas, tools, limits, autonomy, work class, confidence routing, untrusted inputs, evaluation suite (ADR-047, 069).
+1. **Spec** in `backend/src/abacus/modules/agents/specs/<id>.yaml` — shape, prompt@version, tier, escalation tier, schemas, tools, limits, autonomy, work class, confidence routing, untrusted inputs, evaluation suite (ADR-047, 069).
 2. **Prompt** in the registry, versioned (ADR-019).
 3. **Context builder** — five layers in order: instructions, firm, engagement, examples, task input; per-layer budgets (ADR-051).
 4. **Output schema** extending `Handoff`: action, confidence, rationale, structured citations, unverified items (ADR-054, 066).

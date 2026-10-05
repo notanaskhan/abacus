@@ -1,4 +1,6 @@
 """Shared protected-path rules for hooks. Mirrors docs/architecture/protected-paths.md."""
+from __future__ import annotations  # system python3 may be 3.9; a crash here makes every hook a silent no-op
+
 import datetime, fnmatch, glob, os
 
 ROOT = os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())
@@ -16,12 +18,12 @@ PROTECTED = [
     "docs/product/glossary.md",
     "backend/pyproject.toml", "backend/uv.lock",
     "apps/web/package.json", "pnpm-lock.yaml", "package.json",
-    "backend/quality/*",
-    "backend/src/modules/identity/authz/*", "backend/src/modules/identity/authz/**/*",
-    "backend/src/platform/db/*", "backend/src/platform/db/**/*",
-    "backend/src/platform/uow/*", "backend/src/platform/uow/**/*",
-    "backend/src/platform/crypto/*", "backend/src/platform/crypto/**/*",
-    "backend/src/modules/audit_trail/*", "backend/src/modules/audit_trail/**/*",
+    "backend/src/abacus_tools/quality/*", "backend/src/abacus_tools/quality/**/*",
+    "backend/src/abacus/modules/identity/authz/*", "backend/src/abacus/modules/identity/authz/**/*",
+    "backend/src/abacus/kernel/db/*", "backend/src/abacus/kernel/db/**/*",
+    "backend/src/abacus/kernel/uow/*", "backend/src/abacus/kernel/uow/**/*",
+    "backend/src/abacus/kernel/crypto/*", "backend/src/abacus/kernel/crypto/**/*",
+    "backend/src/abacus/modules/audit_trail/*", "backend/src/abacus/modules/audit_trail/**/*",
 ]
 # Protected only once they exist: new files allowed, edits to existing files need approval.
 PROTECTED_IF_EXISTS = ["docs/adr/ADR-*.md", "backend/migrations/versions/*"]
@@ -44,7 +46,7 @@ def approved(r: str) -> bool:
        approved_by: founder
        expires: 2026-12-31
        paths:
-         - backend/src/platform/uow/**/*
+         - backend/src/abacus/kernel/uow/**/*
     """
     today = datetime.date.today().isoformat()
     for f in glob.glob(os.path.join(ROOT, "work/approvals/*.yaml")):

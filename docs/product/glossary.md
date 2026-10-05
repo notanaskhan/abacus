@@ -75,6 +75,7 @@
 | Domain event | A message announcing a state change to other modules. | `domain_event` | message, signal |
 | Outbox | The table where domain events wait to be published. | `outbox` | queue |
 | Unit of work | The helper that commits a state change with its audit and domain events atomically. | `uow` | transaction (alone) |
+| Kernel | The shared technical foundation every module uses: database sessions, tenant context, unit of work, outbox, encryption, config, logging. Not a module. (ADR-101) | `abacus.kernel` | platform (the twelfth module), core, common, shared, utils |
 | Message | A communication sent to or from a contact. | `message` | email, chat |
 | Notification | An alert to a user inside the platform. | `notification` | alert, ping |
 

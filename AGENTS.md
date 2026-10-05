@@ -33,8 +33,9 @@ make migrate      apply migrations locally
 
 ## Module map
 
-`backend/src/modules/`: identity · organisations · engagements · requests · evidence · connections · ledger · sampling · agents · audit_trail · communications · platform.
+`backend/src/abacus/modules/`: identity · organisations · engagements · requests · evidence · connections · ledger · sampling · agents · audit_trail · communications · platform.
 Each module exposes only `api.py`. Never import another module's internals or query its tables. Layering inside a module: `routes → service → repository`.
+The shared kernel (`abacus.kernel`: db sessions, tenant context, unit of work, outbox, encryption, config, logging) is not a module; modules use it, it never imports a module. Tooling lives in `abacus_tools` and is never imported by `abacus`. (ADR-101)
 
 ## Non-negotiables
 
