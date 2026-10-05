@@ -250,6 +250,7 @@ Deliberately **not** listed: `backend/src/abacus/kernel/{db,uow,crypto}/**` and 
 | 12 | `backend/src/abacus_tools/quality/validate_docs.py` | New |
 | 13 | `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `apps/web/{package.json,tsconfig.json,eslint.config.js,.prettierrc,.prettierignore,vite.config.ts,index.html,src/main.tsx,src/App.tsx}` | New |
 | 13 | `docs/architecture/dependency-allowlist.yaml` | Six Q4 packages added |
+| Tests | `backend/tests/unit/quality/test_banned_patterns.py`, `test_validate_docs.py` | New (AC-20); `backend/tests/unit/.gitkeep` removed |
 | Q10 | `docs/adr/ADR-024-need-to-know-metadata-vs-content.md`, `docs/adr/ADR-058-agent-hierarchy.md` | `title:` quoted; no other change |
 
 Tests to write (mapped to ACs) — written in a **separate session** (amber rule), run in stage 2:
@@ -258,18 +259,18 @@ Tests to write (mapped to ACs) — written in a **separate session** (amber rule
 - AC-20 → `make check-fast` exits 0 on the repo (step 15)
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them
-- [ ] Type check passes
-- [ ] Lint and format pass
-- [ ] Architecture and dependency rules pass
-- [ ] Full test suite passes; no tests skipped, weakened or deleted
+- [x] All listed ACs have passing tests that reference them (69 `test_ac20_*`)
+- [x] Type check passes
+- [x] Lint and format pass
+- [x] Architecture and dependency rules pass
+- [x] Full test suite passes (`make test`); no tests skipped, weakened or deleted. `make check` stage 2 belongs to TASK-002
 - [ ] Security scan passes; no secrets committed — scan itself arrives in TASK-002 (Q1)
-- [ ] No new dependencies, or each one approved and listed below
+- [x] No new dependencies, or each one approved and listed below
 - [ ] Every query is tenant-scoped; every endpoint checks authorisation — n/a, no queries or endpoints
 - [ ] AI calls (if any) go through the gateway with limits, logging and passing evals — n/a
 - [ ] Module README and relevant docs updated
-- [ ] Decisions below reviewed; ADR raised where needed (ADR-101)
-- [ ] No reference to `backend/src/{app,worker,platform,modules,ai_gateway}` or `backend/quality` remains outside ADR-010 and this task file (`grep` in step 15)
+- [x] Decisions below reviewed; ADR raised where needed (ADR-101)
+- [x] No reference to `backend/src/{app,worker,platform,modules,ai_gateway}` or `backend/quality` remains outside ADR-010 and this task file (`grep` in step 15)
 
 Commands:
 ```
@@ -306,6 +307,8 @@ Append-only. Newest at the bottom.
   - Frontend installed with Node 25.9 via `npx pnpm@12.9.1` (lockfile is Node-version-independent). `make check-fast` was run with a temporary `pnpm` shim in the session scratchpad — Q11.
 
 - `2026-10-05` — Q10 and Q11 approved. Appended ADR-024 and ADR-058 to the approval file and quoted their titles. Installed Node 24.21.0 (Homebrew `node@24`), `corepack enable` → pnpm 12.9.1. With Node 24 first on `PATH`: `make setup` exit 0 (frozen lockfile, no lock changes), **`make check-fast` exit 0**. Remaining: AC-20 tests from a separate session, then PR.
+- `2026-10-05` — **Founder waived the separate-session rule for the AC-20 tests** ("continue here, I waive the separate-session rule"). Tests written in the same session that wrote the checkers; the reviewer pass before the PR is the independent check.
+- `2026-10-05` — AC-20 tests written: `backend/tests/unit/quality/test_banned_patterns.py` (37 incl. parametrised) and `test_validate_docs.py` (32) — **69 passed**. Mutation check: 10 deliberate weakenings of the checkers (dropped `flush`, dropped `%`, BOUND only-repository, widened UOW exclude, LAYOUT off, ANY weakened, index-status off, AC check off, date-crash regression, superseded-by off) each failed ≥1 test; all reverted. `make check-fast` exit 0, `make test` exit 0. `make check` not run: stage 2 needs TASK-002 (empty `tests/property` → pytest exit 5; no `schema_check`, api-client or vitest yet).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -360,8 +363,9 @@ Append-only. Newest at the bottom.
 - [x] **Q11 — Local Node toolchain (blocking `make setup` as written).** **Recommendation:** `brew install node@24`, put `/opt/homebrew/opt/node@24/bin` first on `PATH`, then `corepack enable` (installs the `pnpm` shim beside Node 24). Founder's machine change. Approved 2026-10-05: agent ran `brew install node@24` (24.21.0) and `corepack enable`; founder still needs `/opt/homebrew/opt/node@24/bin` first on `PATH` in their shell profile. CODEOWNERS protects `backend/src/ai_gateway/`; the hook does not (pre-existing). **Recommendation:** keep as is (protected-paths.md says "code owners only" during Phase 1); only the path is renamed.
 
 ## Handoff
-- **Current state:** Steps 0–15 done on `task-001-scaffolding`; `make setup` and `make check-fast` exit 0 with Node 24 + pnpm 12.9.1; every gate proven to fail on a violation.
-- **Exact next step:** A **separate session** (amber rule) writes the AC-20 tests listed under *Tests to write* — `backend/tests/unit/quality/test_banned_patterns.py` and `test_validate_docs.py` — without editing `abacus_tools/quality/`. Then run the reviewer agents, push the branch, open the PR for founder review (it changes the hook and CODEOWNERS).
+- **Current state:** All steps done; AC-20 tests written (separate-session rule waived by founder) and passing; `make check-fast` and `make test` exit 0. Committed on `task-001-scaffolding`, not pushed.
+- **Exact next step:** Reviewer pass (architecture, security, tests) by a different model; address findings; push branch and open the PR (founder approval required before pushing).
 - **Uncommitted or partial work:** none (approval file is git-ignored by design).
-- **Known failing checks:** none in stage 1. `make check` (stage 2) is TASK-002's.
-- **Open issues:** founder's shell `PATH` still resolves `node` to 20.16 until updated; hook loading in a repo-root session to be confirmed now that the crash is fixed; branch protection deferred; bot GitHub account deferred; TASK-002 file not yet created (must add a hook self-test).
+- **Known failing checks:** none in stage 1. Stage 2 (`make check`) is TASK-002.
+- **Open DoD items:** security scan (TASK-002); module README/docs — n/a for empty packages.
+- **Open issues:** founder's shell `PATH` still resolves `node` to 20.16; hook loading in a repo-root session to be confirmed; branch protection deferred; bot GitHub account deferred; TASK-002 file not yet created (must add a hook self-test).
