@@ -4,7 +4,7 @@ title: Complete stage 1, make check pass, and run both stages in CI
 spec: SPEC-000
 acceptance_criteria: [AC-20]
 risk_zone: amber
-status: awaiting-plan-approval
+status: in-progress
 branch: task-002-stage-gates
 worktree:
 created: 2026-10-05
@@ -47,9 +47,10 @@ Finish the stage 1 gates ADR-083 lists but `make check-fast` does not yet run (s
 - Reference pattern: `banned_patterns.py` / `validate_docs.py` (CLI shape, output format, exit codes, tests)
 
 ## Plan
-- [ ] Plan approved by human (required for amber)
-- [ ] Approval file `work/approvals/TASK-002.yaml` created by founder with the paths below
-- [ ] Questions Q1–Q4 answered
+- [x] Plan approved by human (founder, 2026-10-05: "approved, write the approval file and proceed")
+- [x] Approval file `work/approvals/TASK-002.yaml` written **by the agent at the founder's explicit instruction** (2026-10-05)
+- Approved by founder: paths listed under *Approval file text*, expires 2026-10-19
+- [x] Questions Q1–Q4 answered: all recommendations approved (2026-10-05)
 
 Steps:
 
@@ -99,6 +100,35 @@ Tests to write (mapped to ACs) — amber: separate session unless the founder wa
 - AC-20 → `test_banned_patterns.py`: SKIP-001 cases
 - AC-20 → `test_schema_check.py`: no migrations → 0; a migration present → 1
 - AC-20 → `make check` exits 0 locally and in CI (step 9)
+
+### Interface contract (tests are written against this, independently of the code — ADR-078)
+
+All three checkers live in `abacus_tools.quality`, follow `banned_patterns`' shape, and have `main() -> int` (0 clean, 1 violations; one line per violation on stdout).
+
+**`secrets_scan`**
+- `scan(repo: Path, files: Iterable[str] | None = None) -> list[Violation]` — `files` are repo-relative POSIX paths; `None` means `git ls-files` in `repo`. Returns violations sorted by (path, line, rule_id). `Violation` is `banned_patterns.Violation` (same `str()` format: `path:line: RULE-ID message (ADR-…)`).
+- **Messages never contain the matched value** (they reach CI logs).
+- Skipped: files listed in `EXCLUDE` globs (fnmatch, repo-relative), `uv.lock`, `pnpm-lock.yaml`, files containing a NUL byte, files over 1 MB, missing files.
+- `SECRET-001` (ADR-083): a line containing `-----BEGIN` … `PRIVATE KEY-----`.
+- `SECRET-002` (ADR-083): tokens `AKIA`/`ASIA` + 16 `[A-Z0-9]`; `ghp_|gho_|ghu_|ghs_|ghr_` + 36 alnum; `github_pat_` + 22+ `[A-Za-z0-9_]`; `sk-ant-` + 20+ `[A-Za-z0-9_-]`; `sk-proj-` + 20+; `sk-` + 48 alnum; `xox[abprs]-` + 10+ `[A-Za-z0-9-]`; `sk_live_` + 16+ alnum; `AIza` + 35 `[A-Za-z0-9_-]`.
+- `SECRET-003` (ADR-083): `NAME = "value"` / `NAME: "value"` / `NAME="value"` (quotes optional for `.env*` and YAML) where NAME contains `KEY`, `SECRET`, `TOKEN`, `PASSWORD` or `PASSWD` (case-insensitive) and value is ≥ 8 chars with no whitespace and is not a placeholder. Placeholders: empty; starts with `<`, `${`, `{{`, `$`; contains (case-insensitive) `changeme`, `example`, `placeholder`, `dummy`, `fake`, `test`, `xxx`, `redacted`; a single repeated character.
+- `PII-001` (ADR-085): SSN `\b\d{3}-\d{2}-\d{4}\b` unless area is `000`, `666` or `9xx`, group `00`, or serial `0000`. All scanned files.
+- `PII-002` (ADR-085): EIN `\b\d{2}-\d{7}\b` with an IRS-assigned prefix (01–06, 10–16, 20–27, 30–48, 50–68, 71–77, 80–88, 90–95, 98, 99), only in data-like files: `.csv`, `.json`, `.yaml`, `.yml`, `.txt`, `.tsv`.
+- `PII-003` (ADR-085): 13–19 consecutive digits (spaces/hyphens between groups allowed) passing Luhn, unless a published test card (`4111111111111111`, `4242424242424242`, `5555555555554444`, `5105105105105100`, `378282246310005`, `371449635398431`, `6011111111111117`, `3530111333300000`); or 9 digits passing the ABA checksum on a line that also contains `routing` or `aba` (case-insensitive).
+
+**`check_dependencies`**
+- `check(repo: Path) -> list[str]` — sorted messages; empty when clean. Reads `docs/architecture/dependency-allowlist.yaml`, `backend/pyproject.toml`, and every `package.json` under `repo` except inside `node_modules`, `dist` or dot-directories.
+- Python names: PEP 503-normalised (`lower`, runs of `-_.` → `-`), version/extras/markers stripped. `[project].dependencies` must be approved in `python.runtime`; `[dependency-groups].*` approved in `python.dev` or `python.runtime`.
+- npm: `dependencies`, `peerDependencies`, `optionalDependencies` → `typescript.runtime`; `devDependencies` → `typescript.dev` or `typescript.runtime`. Allowlist keys may be globs (`@radix-ui/*`). Entries whose version starts with `workspace:` are skipped.
+- Messages (`<rel>` = repo-relative manifest path):
+  - `<rel>: <name> is not in the dependency allowlist`
+  - `<rel>: <name> is pending in the dependency allowlist, not approved`
+  - `<rel>: <name> is approved only as a dev dependency`
+
+**`schema_check`**
+- `check(migrations: Path) -> list[str]` — `[]` if the directory is missing or holds no `*.py` other than `__init__.py`; otherwise exactly one message: `schema_check is not implemented: SPEC-000 must add the tenant and row-level security schema check with its first migration`. `main()` uses `backend/migrations/versions`.
+
+**`banned_patterns` `SKIP-001`** (ADR-079): `pytest.mark.skip`, `pytest.mark.skipif`, `pytest.mark.xfail` (as decorator, called or bare) and calls `pytest.skip(...)`, `pytest.xfail(...)`, `pytest.importorskip(...)` are violations unless a `reason` (keyword, or first positional string for `skip`/`xfail`) contains `#<digits>` or `github.com/<owner>/<repo>/issues/<digits>`. One finding per offending node.
 
 ### Approval file text
 `work/approvals/TASK-002.yaml` (exact paths; extended only for Q2 packages):
@@ -153,14 +183,15 @@ make check
 ## New dependencies
 | Package | Version | Why | Approved by |
 |---|---|---|---|
-| pytest-cov (py dev) | latest | Coverage floors (ADR-079) | **Pending — Q2** |
-| jsdom (ts dev) | latest | DOM for the vitest smoke test | **Pending — Q2** |
-| GitHub Actions: `actions/checkout`, `actions/setup-node`, `astral-sh/setup-uv` | pinned SHAs | CI | **Pending — Q4** |
+| pytest-cov (py dev) | pinned in `uv.lock` | Coverage floors (ADR-079) | Founder, 2026-10-05 (Q2) |
+| jsdom (ts dev) | pinned in `pnpm-lock.yaml` | DOM for the vitest smoke test | Founder, 2026-10-05 (Q2) |
+| GitHub Actions: `actions/checkout`, `actions/setup-node`, `astral-sh/setup-uv` | pinned SHAs | CI | Founder, 2026-10-05 (Q4) |
 
 ## Progress log
 Append-only. Newest at the bottom.
 
 - `2026-10-05` — Task created with plan after TASK-001 merged (PR #1). Awaiting founder approval. No code written.
+- `2026-10-05` — Founder approved plan and Q1–Q4; agent wrote the approval file at founder's instruction. Implementation started.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -177,10 +208,10 @@ Append-only. Newest at the bottom.
 - Branch protection is off: CI jobs from this task only gate merges once they are required checks.
 
 ## Questions for the human
-- [ ] **Q1 — Classification-tag check.** ADR-083 puts it in stage 1, but there are no models and the tag mechanism (`Annotated[..., Restricted]` vs `Field(json_schema_extra=…)`) is a kernel decision. **Recommendation:** build it in SPEC-000 with the first model and the kernel's classification type; not in this task.
-- [ ] **Q2 — New dependencies.** `pytest-cov` (coverage floors, ADR-079) and `jsdom` (DOM for vitest). **Recommendation:** approve both; alternatives are hand-rolled coverage (no) and `happy-dom` (faster, less complete — fine too if you prefer).
-- [ ] **Q3 — Stage 2 before SPEC-000.** Recommendation as in step 5: `schema_check` passes only while there are no migrations, API-client drift runs only once `abacus/api/main.py` exists, vitest gets one real smoke test. Each turns itself on (or fails) when SPEC-000 adds the code. Alternative: keep `make check` red until SPEC-000.
-- [ ] **Q4 — CI.** GitHub Actions with three third-party actions pinned by SHA, no secrets, read-only token. **Recommendation:** approve, then turn on branch protection with both jobs as required checks.
+- [x] **Q1 — Classification-tag check.** Approved as recommended 2026-10-05. ADR-083 puts it in stage 1, but there are no models and the tag mechanism (`Annotated[..., Restricted]` vs `Field(json_schema_extra=…)`) is a kernel decision. **Recommendation:** build it in SPEC-000 with the first model and the kernel's classification type; not in this task.
+- [x] **Q2 — New dependencies.** Approved as recommended 2026-10-05. `pytest-cov` (coverage floors, ADR-079) and `jsdom` (DOM for vitest). **Recommendation:** approve both; alternatives are hand-rolled coverage (no) and `happy-dom` (faster, less complete — fine too if you prefer).
+- [x] **Q3 — Stage 2 before SPEC-000.** Approved as recommended 2026-10-05. Recommendation as in step 5: `schema_check` passes only while there are no migrations, API-client drift runs only once `abacus/api/main.py` exists, vitest gets one real smoke test. Each turns itself on (or fails) when SPEC-000 adds the code. Alternative: keep `make check` red until SPEC-000.
+- [x] **Q4 — CI.** Approved as recommended 2026-10-05. GitHub Actions with three third-party actions pinned by SHA, no secrets, read-only token. **Recommendation:** approve, then turn on branch protection with both jobs as required checks.
 
 ## Handoff
 - **Current state:** Plan written; not approved. No code. Branch `task-002-stage-gates` created; TASK-001 marked done.
