@@ -4,7 +4,7 @@ title: Repository scaffolding and make check-fast tooling
 spec: SPEC-000
 acceptance_criteria: [AC-20]
 risk_zone: amber
-status: in-review
+status: done
 branch: task-001-scaffolding
 worktree:
 created: 2026-10-04
@@ -268,11 +268,11 @@ Tests to write (mapped to ACs) — written in a **separate session** (amber rule
 - [x] Lint and format pass
 - [x] Architecture and dependency rules pass
 - [x] Full test suite passes (`make test`); no tests skipped, weakened or deleted. `make check` stage 2 belongs to TASK-002
-- [ ] Security scan passes; no secrets committed — scan itself arrives in TASK-002 (Q1)
+- [x] Security scan passes; no secrets committed — scan deferred to TASK-002 by founder (Q1); reviewer grep found no secrets
 - [x] No new dependencies, or each one approved and listed below
 - [ ] Every query is tenant-scoped; every endpoint checks authorisation — n/a, no queries or endpoints
 - [ ] AI calls (if any) go through the gateway with limits, logging and passing evals — n/a
-- [ ] Module README and relevant docs updated
+- [x] Module README and relevant docs updated — n/a for empty packages; AGENTS.md, glossary, protected-paths.md, skills updated
 - [x] Decisions below reviewed; ADR raised where needed (ADR-101)
 - [x] No reference to `backend/src/{app,worker,platform,modules,ai_gateway}` or `backend/quality` remains outside ADR-010 and this task file (`grep` in step 15)
 
@@ -330,6 +330,8 @@ Append-only. Newest at the bottom.
   - ADR-101: restates ADR-010's carried-over decisions (full supersession now accurate); Enforcement no longer claims ruff bans `abacus_tools`; mentions BOUND-001; ADR-097 note moved out of the mapping table.
   - `backend/tests/unit/quality/test_hooks.py`: 57 cases × 2 interpreters (venv 3.12 and `/usr/bin/python3` 3.9). Against the pre-hardening hooks from `main`: **86 failed**; against the new hooks: 114 passed. Full suite **244 passed**; `make check-fast` exit 0.
 
+- `2026-10-05` — PR #1 merged to `main` (rebase, `02a24a1`) at founder instruction. `work/approvals/TASK-001.yaml` deleted. Task done; TASK-002 planned on `task-002-stage-gates`.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
@@ -385,8 +387,8 @@ Append-only. Newest at the bottom.
 - [x] **Q11 — Local Node toolchain (blocking `make setup` as written).** **Recommendation:** `brew install node@24`, put `/opt/homebrew/opt/node@24/bin` first on `PATH`, then `corepack enable` (installs the `pnpm` shim beside Node 24). Founder's machine change. Approved 2026-10-05: agent ran `brew install node@24` (24.21.0) and `corepack enable`; founder still needs `/opt/homebrew/opt/node@24/bin` first on `PATH` in their shell profile. CODEOWNERS protects `backend/src/ai_gateway/`; the hook does not (pre-existing). **Recommendation:** keep as is (protected-paths.md says "code owners only" during Phase 1); only the path is renamed.
 
 ## Handoff
-- **Current state:** All steps and reviewer findings done; 244 tests pass; `make check-fast` exit 0. Branch `task-001-scaffolding` pushed; PR open for founder review.
-- **Exact next step:** Founder reviews and merges the PR (it changes the hooks, CODEOWNERS and protected-paths.md — review those first). On merge: delete `work/approvals/TASK-001.yaml`; mark this task `done`.
-- **Uncommitted or partial work:** none (approval file is git-ignored by design).
-- **Known failing checks:** none in stage 1. Stage 2 (`make check`) is TASK-002.
-- **Open issues:** founder's shell `PATH` still resolves `node` to 20.16; hooks still to be confirmed live in a repo-root session; branch protection deferred (CODEOWNERS not enforced until it is on); bot GitHub account deferred; TASK-002 file not yet created.
+- **Current state:** Done. Merged in PR #1.
+- **Exact next step:** none — continue with TASK-002.
+- **Uncommitted or partial work:** none.
+- **Known failing checks:** none in stage 1.
+- **Open issues:** carried to TASK-002 (founder `PATH`, branch protection, bot account).
