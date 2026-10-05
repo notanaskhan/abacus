@@ -37,6 +37,8 @@ python:
     mutmut: approved
     pip-audit: approved
     bandit: approved
+    pyyaml: approved            # parse doc frontmatter and policy YAML in abacus_tools.quality.validate_docs (TASK-001)
+    types-PyYAML: approved      # pyyaml stubs; required for strict Pyright (ADR-009)
 
 typescript:
   runtime:
@@ -61,3 +63,7 @@ typescript:
     eslint: approved
     prettier: approved
     "@hey-api/openapi-ts": approved   # generated API client (ADR-013)
+    typescript-eslint: approved       # ESLint parser and rules for TypeScript (ADR-009, ADR-010)
+    "@vitejs/plugin-react": approved  # Vite React/JSX transform (ADR-011)
+    "@types/react": approved          # React types for strict tsc (ADR-009)
+    "@types/react-dom": approved      # React DOM types for strict tsc (ADR-009)

@@ -1,0 +1,106 @@
+# PROTECTED. Layout per ADR-101; tooling per ADR-009, ADR-083.
+[project]
+name = "abacus-backend"
+version = "0.0.0"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "pyright",
+    "import-linter",
+    "pytest",
+    "pytest-asyncio",
+    "hypothesis",
+    "bandit",
+    "pyyaml",
+    "types-PyYAML",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# Runtime wheel ships product code only; abacus_tools is importable in dev via src/ (ADR-101).
+packages = ["src/abacus"]
+
+[tool.hatch.build]
+dev-mode-dirs = ["src"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 99
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF", "ANN", "PGH", "T20", "TID", "S"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["abacus", "abacus_tools"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"anthropic".msg = "Model providers only through abacus.ai_gateway (ADR-019)."
+"openai".msg = "Model providers only through abacus.ai_gateway (ADR-019)."
+"langchain".msg = "No agent frameworks (ADR-057)."
+"langchain_core".msg = "No agent frameworks (ADR-057)."
+"langchain_community".msg = "No agent frameworks (ADR-057)."
+"langchain_openai".msg = "No agent frameworks (ADR-057)."
+"langchain_anthropic".msg = "No agent frameworks (ADR-057)."
+"llama_index".msg = "No agent frameworks (ADR-057)."
+"crewai".msg = "No agent frameworks (ADR-057)."
+"autogen".msg = "No agent frameworks (ADR-057)."
+
+[tool.ruff.lint.per-file-ignores]
+"src/abacus/ai_gateway/**" = ["TID251"]
+"src/abacus_tools/**" = ["T20"]
+"tests/**" = ["S101"]
+
+[tool.ruff.format]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+pythonVersion = "3.12"
+include = ["src", "tests"]
+venvPath = "."
+venv = ".venv"
+reportUnnecessaryTypeIgnoreComment = "error"
+
+[tool.importlinter]
+root_packages = ["abacus", "abacus_tools"]
+
+[[tool.importlinter.contracts]]
+name = "Top-level layers (ADR-101)"
+type = "layers"
+layers = [
+    "abacus.api | abacus.worker",
+    "abacus.modules",
+    "abacus.ai_gateway",
+    "abacus.kernel",
+]
+
+[[tool.importlinter.contracts]]
+name = "Product never imports tooling (ADR-101)"
+type = "forbidden"
+source_modules = ["abacus"]
+forbidden_modules = ["abacus_tools"]
+
+[[tool.importlinter.contracts]]
+name = "In-module layering: routes -> service -> repository (ADR-012)"
+type = "layers"
+layers = ["(routes)", "(service)", "(repository)"]
+containers = [
+    "abacus.modules.identity",
+    "abacus.modules.organisations",
+    "abacus.modules.engagements",
+    "abacus.modules.requests",
+    "abacus.modules.evidence",
+    "abacus.modules.connections",
+    "abacus.modules.ledger",
+    "abacus.modules.sampling",
+    "abacus.modules.agents",
+    "abacus.modules.audit_trail",
+    "abacus.modules.communications",
+    "abacus.modules.platform",
+]
