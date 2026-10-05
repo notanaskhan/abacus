@@ -1,6 +1,6 @@
 ---
 id: ADR-024
-title: Need to know: admins see engagement metadata, not content
+title: "Need to know: admins see engagement metadata, not content"
 status: accepted
 date: 2026-10-04
 deciders: Founder
