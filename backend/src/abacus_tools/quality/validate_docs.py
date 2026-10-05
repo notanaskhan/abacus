@@ -215,6 +215,7 @@ def check_specs(report: Report) -> dict[str, Doc]:
 
 
 def check_tasks(specs: dict[str, Doc], report: Report) -> None:
+    specs_on_disk = _ids_on_disk(SPEC_DIR, "SPEC")
     docs = [d for p in _documents(TASK_DIR, "TASK") if (d := _load(p, report)) is not None]
     docs = [d for d in docs if _require(d, TASK_FIELDS, report)]
     _check_unique(docs, report)
@@ -223,12 +224,14 @@ def check_tasks(specs: dict[str, Doc], report: Report) -> None:
         if doc.meta["status"] not in TASK_STATUSES:
             report.add(doc.path, f"status '{doc.meta['status']}' is not valid")
         spec = specs.get(str(doc.meta["spec"]))
+        if spec is None and str(doc.meta["spec"]) in specs_on_disk:
+            continue  # the spec itself failed validation and is already reported
         if spec is None:
             report.add(doc.path, f"spec '{doc.meta['spec']}' does not exist")
             continue
         criteria = _str_list(doc.meta["acceptance_criteria"])
-        if criteria is None:
-            report.add(doc.path, "'acceptance_criteria' must be a list")
+        if not criteria:
+            report.add(doc.path, "'acceptance_criteria' must be a non-empty list")
             continue
         defined = set(AC_ID.findall(spec.body))
         for ac in criteria:

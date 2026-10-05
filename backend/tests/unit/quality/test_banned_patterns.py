@@ -9,6 +9,8 @@ import pytest
 from abacus_tools.quality import banned_patterns as bp
 
 SERVICE = "src/abacus/modules/ledger/service.py"
+LEDGER_INIT = "src/abacus/modules/ledger/__init__.py"
+NESTED = "src/abacus/modules/ledger/adapters/sql.py"
 
 
 def _write(root: Path, rel: str, text: str) -> None:
@@ -21,20 +23,25 @@ def _rule_ids(root: Path) -> list[str]:
     return [v.rule_id for v in bp.scan(root)]
 
 
-# (rule id, file, violating source, clean source)
+# (rule id, file, violating source, clean source). Each violating source yields exactly one
+# finding; each clean source yields none.
 CASES: list[tuple[str, str, str, str]] = [
+    # UOW-001
     (
         "UOW-001",
         SERVICE,
         "def f(session):\n    session.commit()\n",
-        "def f(tx):\n    tx.commit()\n",
+        "def f(uow, ctx, event):\n    with uow(ctx) as tx:\n        tx.record(event)\n",
     ),
     (
         "UOW-001",
         SERVICE,
         "def f(self):\n    self.db_session.flush()\n",
-        "def f(self):\n    self.cache.flush()\n",
+        "def f(self):\n    self.log_handler.flush()\n",
     ),
+    ("UOW-001", SERVICE, "def f(db):\n    db.rollback()\n", "def f(db):\n    db.close()\n"),
+    ("UOW-001", SERVICE, "def f(conn):\n    conn.commit()\n", "def f(conn):\n    conn.cursor()\n"),
+    # DB-001
     (
         "DB-001",
         SERVICE,
@@ -44,9 +51,13 @@ CASES: list[tuple[str, str, str, str]] = [
     (
         "DB-001",
         SERVICE,
-        'import asyncpg\nasyncpg.connect("postgresql://")\n',
-        "import asyncpg\n",
+        'from sqlalchemy.ext.asyncio import create_async_engine\ncreate_async_engine("x")\n',
+        "from sqlalchemy.ext.asyncio import AsyncSession\n",
     ),
+    ("DB-001", SERVICE, 'import asyncpg\nasyncpg.connect("x")\n', "import asyncpg\n"),
+    ("DB-001", SERVICE, 'import asyncpg\nasyncpg.create_pool("x")\n', "import asyncpg\n"),
+    ("DB-001", SERVICE, 'import psycopg\npsycopg.connect("x")\n', "import psycopg\n"),
+    # SQL-001
     (
         "SQL-001",
         SERVICE,
@@ -72,6 +83,13 @@ CASES: list[tuple[str, str, str, str]] = [
         'def f(text):\n    text("select 2")\n',
     ),
     (
+        "SQL-001",
+        SERVICE,
+        'def f(c, q):\n    c.exec_driver_sql(f"select {q}")\n',
+        'def f(c):\n    c.exec_driver_sql("select 1")\n',
+    ),
+    # BOUND-001
+    (
         "BOUND-001",
         SERVICE,
         "from abacus.modules.evidence.repository import EvidenceRepository\n",
@@ -89,18 +107,30 @@ CASES: list[tuple[str, str, str, str]] = [
         "import abacus.modules.evidence.models\n",
         "import abacus.modules.evidence.api\n",
     ),
-    (
-        "BOUND-001",
-        SERVICE,
-        "from ..evidence import service\n",
-        "from . import repository\n",
-    ),
+    ("BOUND-001", SERVICE, "from ..evidence import service\n", "from . import repository\n"),
     (
         "BOUND-001",
         SERVICE,
         "from abacus.modules.evidence import EvidenceItem\n",
         "from abacus.modules.ledger.repository import LedgerRepository\n",
     ),
+    (
+        "BOUND-001",
+        SERVICE,
+        "from abacus.modules import evidence\n",
+        "from abacus.modules import ledger\n",
+    ),
+    ("BOUND-001", SERVICE, "from .. import evidence\n", "from .. import ledger\n"),
+    ("BOUND-001", SERVICE, "from abacus import modules\n", "from abacus import kernel\n"),
+    ("BOUND-001", SERVICE, "import abacus.modules\n", "import abacus.kernel\n"),
+    ("BOUND-001", LEDGER_INIT, "from ..evidence import service\n", "from . import service\n"),
+    (
+        "BOUND-001",
+        NESTED,
+        "from ...evidence.repository import Repo\n",
+        "from ..repository import LedgerRepository\n",
+    ),
+    # TYPE-001
     (
         "TYPE-001",
         SERVICE,
@@ -113,6 +143,8 @@ CASES: list[tuple[str, str, str, str]] = [
         "x = 1  # pyright: ignore[reportUnknownVariableType]\n",
         "x = 1  # pyright: ignore[reportUnknownVariableType] -- untyped vendor SDK\n",
     ),
+    ("TYPE-001", SERVICE, "x = 1  # type: ignore\n", "x = 1  # type: ignore  # stub gap\n"),
+    # ANY-001
     (
         "ANY-001",
         SERVICE,
@@ -125,6 +157,34 @@ CASES: list[tuple[str, str, str, str]] = [
         "import typing\ndef f(a: typing.Any) -> None: ...\n",
         "import typing\ndef f(a: typing.Any) -> None: ...  # plugin hook receives anything\n",
     ),
+    (
+        "ANY-001",
+        SERVICE,
+        "from typing import (\n    Any,\n)\nx: Any = 1  # pyright: ignore[reportX] -- r\n",
+        "from typing import (\n    Any,\n)\nx: Any = 1  # payload validated downstream\n",
+    ),
+    # SUPPRESS-001
+    (
+        "SUPPRESS-001",
+        SERVICE,
+        "import os  # noqa: TID251\n",
+        "import os  # noqa: F401\n",
+    ),
+    ("SUPPRESS-001", SERVICE, "x = eval('1')  # noqa: S307\n", "x = int('1')  # noqa: E501\n"),
+    ("SUPPRESS-001", SERVICE, "x = 1  # nosec\n", "x = 1  # nosecure is not a marker\n"),
+    # PROVIDER-001
+    (
+        "PROVIDER-001",
+        SERVICE,
+        'URL = "https://api.anthropic.com/v1/messages"\n',
+        'URL = "https://example.com/v1/messages"\n',
+    ),
+    (
+        "PROVIDER-001",
+        SERVICE,
+        'def f(boto3):\n    boto3.client("bedrock-runtime")\n',
+        'def f(boto3):\n    boto3.client("s3")\n',
+    ),
 ]
 CASE_IDS = [f"{rule}-{n}" for n, (rule, *_rest) in enumerate(CASES)]
 
@@ -134,7 +194,7 @@ def test_ac20_rule_flags_violation(
     tmp_path: Path, rule_id: str, rel: str, bad: str, _clean: str
 ) -> None:
     _write(tmp_path, rel, bad)
-    assert rule_id in _rule_ids(tmp_path)
+    assert _rule_ids(tmp_path) == [rule_id]
 
 
 @pytest.mark.parametrize(("rule_id", "rel", "_bad", "clean"), CASES, ids=CASE_IDS)
@@ -143,6 +203,20 @@ def test_ac20_rule_allows_clean_code(
 ) -> None:
     _write(tmp_path, rel, clean)
     assert _rule_ids(tmp_path) == []
+
+
+def test_ac20_violation_reports_the_offending_line(tmp_path: Path) -> None:
+    _write(tmp_path, SERVICE, '"""Doc."""\n\nimport abacus.modules.evidence.models\n')
+    assert [(v.rule_id, v.line) for v in bp.scan(tmp_path)] == [("BOUND-001", 3)]
+
+
+def test_ac20_tests_directory_is_scanned(tmp_path: Path) -> None:
+    _write(
+        tmp_path, "tests/unit/ledger/test_service.py", "def f(session):\n    session.commit()\n"
+    )
+    assert [(v.rule_id, v.path) for v in bp.scan(tmp_path)] == [
+        ("UOW-001", "tests/unit/ledger/test_service.py")
+    ]
 
 
 def test_ac20_layout_flags_unknown_top_level_entry(tmp_path: Path) -> None:
@@ -166,6 +240,7 @@ def test_ac20_layout_allows_namespaced_roots(tmp_path: Path) -> None:
             'from sqlalchemy import create_engine\ncreate_engine("x")\n',
         ),
         ("tests/unit/ledger/test_repo.py", "from abacus.modules.ledger.repository import Repo\n"),
+        ("src/abacus/ai_gateway/providers.py", 'URL = "https://api.anthropic.com/v1"\n'),
     ],
 )
 def test_ac20_exclude_globs_exempt_only_their_paths(tmp_path: Path, rel: str, source: str) -> None:
@@ -173,11 +248,31 @@ def test_ac20_exclude_globs_exempt_only_their_paths(tmp_path: Path, rel: str, so
     assert _rule_ids(tmp_path) == []
 
 
-def test_ac20_exclude_glob_does_not_leak_to_sibling_package(tmp_path: Path) -> None:
-    _write(
-        tmp_path, "src/abacus/kernel/outbox/relay.py", "def f(session):\n    session.commit()\n"
-    )
-    assert _rule_ids(tmp_path) == ["UOW-001"]
+@pytest.mark.parametrize(
+    ("rel", "source", "rule_id"),
+    [
+        (
+            "src/abacus/kernel/outbox/relay.py",
+            "def f(session):\n    session.commit()\n",
+            "UOW-001",
+        ),
+        (
+            "src/abacus/kernel/dbx/engine.py",
+            'from x import create_engine\ncreate_engine("x")\n',
+            "DB-001",
+        ),
+        (
+            "src/abacus/modules/agents/gateway.py",
+            'URL = "https://api.openai.com/v1"\n',
+            "PROVIDER-001",
+        ),
+    ],
+)
+def test_ac20_exclude_glob_does_not_leak_to_sibling_package(
+    tmp_path: Path, rel: str, source: str, rule_id: str
+) -> None:
+    _write(tmp_path, rel, source)
+    assert _rule_ids(tmp_path) == [rule_id]
 
 
 def test_ac20_unparseable_file_is_reported(tmp_path: Path) -> None:
@@ -193,11 +288,25 @@ def test_ac20_violation_output_names_path_line_rule_and_adr(tmp_path: Path) -> N
     )
 
 
-def test_ac20_main_exits_1_on_violation(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_ac20_main_prints_violations_and_exits_1(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     found = [bp.Violation(SERVICE, 1, "UOW-001", "message", "ADR-007")]
     monkeypatch.setattr(bp, "scan", lambda: found)
     assert bp.main() == 1
+    assert capsys.readouterr().out == f"{SERVICE}:1: UOW-001 message (ADR-007)\n"
+
+
+def test_ac20_main_exits_0_when_clean(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    empty: list[bp.Violation] = []
+    monkeypatch.setattr(bp, "scan", lambda: empty)
+    assert bp.main() == 0
+    assert capsys.readouterr().out == ""
 
 
 def test_ac20_repository_backend_is_clean() -> None:
+    # Deliberately depends on live repo state: this is the AC-20 claim itself, and duplicates
+    # the banned-pattern step of `make check-fast`.
     assert bp.scan() == []
