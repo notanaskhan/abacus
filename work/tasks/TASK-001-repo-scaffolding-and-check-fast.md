@@ -4,7 +4,7 @@ title: Repository scaffolding and make check-fast tooling
 spec: SPEC-000
 acceptance_criteria: [AC-20]
 risk_zone: amber
-status: blocked
+status: in-progress
 branch: task-001-scaffolding
 worktree:
 created: 2026-10-04
@@ -188,9 +188,9 @@ Steps:
       "@types/react-dom": approved      # React DOM types for strict tsc (ADR-009)
       ```
 
-14. [~] **Install and lock:** `make setup` (uv installs Python 3.12 itself; pnpm via corepack) producing `backend/uv.lock`, `pnpm-lock.yaml`. If any further package turns out to be needed: **stop and ask** (Q4).
+14. [x] **Install and lock:** `make setup` (uv installs Python 3.12 itself; pnpm via corepack) producing `backend/uv.lock`, `pnpm-lock.yaml`. If any further package turns out to be needed: **stop and ask** (Q4).
 
-15. [~] **Verify:** `make check-fast` exits 0. Then deliberately break each gate to prove it fails: one violation per gate (format, lint, pyright, each import-linter contract incl. `abacus → abacus_tools`, each banned-pattern rule incl. `LAYOUT-001` with a stray `backend/src/platform/`, a bad ADR frontmatter, ADR index status mismatch, TS strict error, ESLint, Prettier), confirm failure, revert. Record results in the progress log.
+15. [x] **Verify:** `make check-fast` exits 0. Then deliberately break each gate to prove it fails: one violation per gate (format, lint, pyright, each import-linter contract incl. `abacus → abacus_tools`, each banned-pattern rule incl. `LAYOUT-001` with a stray `backend/src/platform/`, a bad ADR frontmatter, ADR index status mismatch, TS strict error, ESLint, Prettier), confirm failure, revert. Record results in the progress log.
 
 ### Approval file text
 `work/approvals/TASK-001.yaml` — every hook-protected path this task touches, exact files where known:
@@ -250,6 +250,7 @@ Deliberately **not** listed: `backend/src/abacus/kernel/{db,uow,crypto}/**` and 
 | 12 | `backend/src/abacus_tools/quality/validate_docs.py` | New |
 | 13 | `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `apps/web/{package.json,tsconfig.json,eslint.config.js,.prettierrc,.prettierignore,vite.config.ts,index.html,src/main.tsx,src/App.tsx}` | New |
 | 13 | `docs/architecture/dependency-allowlist.yaml` | Six Q4 packages added |
+| Q10 | `docs/adr/ADR-024-need-to-know-metadata-vs-content.md`, `docs/adr/ADR-058-agent-hierarchy.md` | `title:` quoted; no other change |
 
 Tests to write (mapped to ACs) — written in a **separate session** (amber rule), run in stage 2:
 - AC-20 → `backend/tests/unit/quality/test_banned_patterns.py`: `test_ac20_<rule>_flags_violation` and `test_ac20_<rule>_allows_clean_code` for every rule, plus exclude-glob behaviour
@@ -304,6 +305,8 @@ Append-only. Newest at the bottom.
   - `make check-fast` result: every gate passes **except** `validate_docs`, which correctly reports invalid YAML frontmatter in accepted ADR-024 and ADR-058 (unquoted `:` in `title`). Not fixed: accepted ADRs are protected and not in the approval — Q10.
   - Frontend installed with Node 25.9 via `npx pnpm@12.9.1` (lockfile is Node-version-independent). `make check-fast` was run with a temporary `pnpm` shim in the session scratchpad — Q11.
 
+- `2026-10-05` — Q10 and Q11 approved. Appended ADR-024 and ADR-058 to the approval file and quoted their titles. Installed Node 24.21.0 (Homebrew `node@24`), `corepack enable` → pnpm 12.9.1. With Node 24 first on `PATH`: `make setup` exit 0 (frozen lockfile, no lock changes), **`make check-fast` exit 0**. Remaining: AC-20 tests from a separate session, then PR.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
@@ -353,12 +356,12 @@ Append-only. Newest at the bottom.
 - [x] **Q7 — Ruff rule set.** Answered 2026-10-04: Ruff-first approach endorsed; rule set as listed.
 - [x] **Q8 — Tooling location.** Confirmed 2026-10-05: `abacus_tools`. **Recommendation:** `backend/src/abacus_tools/{quality,synthetic,loadtest}` — a second namespaced root, excluded from the runtime wheel, forbidden to `abacus` by import-linter and ruff `TID251`; it may import `abacus` (synthetic seeding and load tests drive the product's public APIs). Alternative: `abacus.tooling.*` inside the product package — simpler single root, but ships test-data generators in the production image and needs the same forbidden contract anyway.
 - [x] **Q9 — `ai_gateway` hook protection.** Confirmed 2026-10-05: keep CODEOWNERS-only.
-- [ ] **Q10 — ADR-024 and ADR-058 frontmatter (blocking `make check-fast`).** Titles contain an unquoted `: `, so the frontmatter is invalid YAML. **Recommendation:** approve a formatting-only edit quoting the two `title:` values (add `docs/adr/ADR-024-need-to-know-metadata-vs-content.md` and `docs/adr/ADR-058-agent-hierarchy.md` to the approval). Loosening the validator would let broken frontmatter through.
-- [ ] **Q11 — Local Node toolchain (blocking `make setup` as written).** **Recommendation:** `brew install node@24`, put `/opt/homebrew/opt/node@24/bin` first on `PATH`, then `corepack enable` (installs the `pnpm` shim beside Node 24). Founder's machine change, so not done by the agent. CODEOWNERS protects `backend/src/ai_gateway/`; the hook does not (pre-existing). **Recommendation:** keep as is (protected-paths.md says "code owners only" during Phase 1); only the path is renamed.
+- [x] **Q10 — ADR-024 and ADR-058 frontmatter (blocking `make check-fast`).** Titles contain an unquoted `: `, so the frontmatter is invalid YAML. **Recommendation:** approve a formatting-only edit quoting the two `title:` values (add `docs/adr/ADR-024-need-to-know-metadata-vs-content.md` and `docs/adr/ADR-058-agent-hierarchy.md` to the approval). Loosening the validator would let broken frontmatter through. Approved 2026-10-05 ("lets proceed"); both paths appended to the approval file; titles quoted.
+- [x] **Q11 — Local Node toolchain (blocking `make setup` as written).** **Recommendation:** `brew install node@24`, put `/opt/homebrew/opt/node@24/bin` first on `PATH`, then `corepack enable` (installs the `pnpm` shim beside Node 24). Founder's machine change. Approved 2026-10-05: agent ran `brew install node@24` (24.21.0) and `corepack enable`; founder still needs `/opt/homebrew/opt/node@24/bin` first on `PATH` in their shell profile. CODEOWNERS protects `backend/src/ai_gateway/`; the hook does not (pre-existing). **Recommendation:** keep as is (protected-paths.md says "code owners only" during Phase 1); only the path is renamed.
 
 ## Handoff
-- **Current state:** Steps 1–13 done and committed on `task-001-scaffolding`. Python gates, import contracts, banned patterns and all frontend gates pass; every gate proven to fail on a violation. `make check-fast` fails only on Q10 (ADR-024/058 frontmatter).
-- **Exact next step:** (1) Founder answers Q10 (add the two ADR paths to the approval) and Q11 (Node 24 + corepack). (2) Quote the two titles; run `make setup` and `make check-fast` with real pnpm — expect exit 0; tick steps 14–15. (3) Separate session writes the AC-20 tests (amber rule). (4) Open the PR; founder review covers the hook/CODEOWNERS changes.
+- **Current state:** Steps 0–15 done on `task-001-scaffolding`; `make setup` and `make check-fast` exit 0 with Node 24 + pnpm 12.9.1; every gate proven to fail on a violation.
+- **Exact next step:** A **separate session** (amber rule) writes the AC-20 tests listed under *Tests to write* — `backend/tests/unit/quality/test_banned_patterns.py` and `test_validate_docs.py` — without editing `abacus_tools/quality/`. Then run the reviewer agents, push the branch, open the PR for founder review (it changes the hook and CODEOWNERS).
 - **Uncommitted or partial work:** none (approval file is git-ignored by design).
-- **Known failing checks:** `validate_docs` on ADR-024, ADR-058 (Q10).
-- **Open issues:** Q10, Q11; hook loading in a repo-root session still to be confirmed now that the crash is fixed; branch protection deferred; bot GitHub account deferred; TASK-002 file not yet created.
+- **Known failing checks:** none in stage 1. `make check` (stage 2) is TASK-002's.
+- **Open issues:** founder's shell `PATH` still resolves `node` to 20.16 until updated; hook loading in a repo-root session to be confirmed now that the crash is fixed; branch protection deferred; bot GitHub account deferred; TASK-002 file not yet created (must add a hook self-test).

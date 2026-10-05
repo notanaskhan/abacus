@@ -1,6 +1,6 @@
 ---
 id: ADR-058
-title: Agent hierarchy: engagement agents and specialists
+title: "Agent hierarchy: engagement agents and specialists"
 status: accepted
 date: 2026-10-04
 deciders: Founder
