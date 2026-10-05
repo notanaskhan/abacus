@@ -3,7 +3,8 @@
 
 /AGENTS.md                                   @notanaskhan @ayushkbhatia
 /CLAUDE.md                                   @notanaskhan @ayushkbhatia
-/Makefile                                    @notanaskhan @ayushkbhatia
+Makefile                                     @notanaskhan @ayushkbhatia
+.gitignore                                   @notanaskhan @ayushkbhatia
 /.claude/                                    @notanaskhan @ayushkbhatia
 /.github/                                    @notanaskhan @ayushkbhatia
 /infra/                                      @notanaskhan @ayushkbhatia
@@ -12,12 +13,14 @@
 /docs/architecture/protected-paths.md        @notanaskhan @ayushkbhatia
 /docs/architecture/dependency-allowlist.yaml @notanaskhan @ayushkbhatia
 /docs/product/glossary.md                    @notanaskhan @ayushkbhatia
-/backend/pyproject.toml                      @notanaskhan @ayushkbhatia
 /backend/uv.lock                             @notanaskhan @ayushkbhatia
 /backend/src/abacus_tools/quality/           @notanaskhan @ayushkbhatia
+/backend/tests/unit/quality/                 @notanaskhan @ayushkbhatia
 /backend/migrations/                         @notanaskhan @ayushkbhatia
-/package.json                                @notanaskhan @ayushkbhatia
-/apps/web/package.json                       @notanaskhan @ayushkbhatia
+package.json                                 @notanaskhan @ayushkbhatia
+pyproject.toml                               @notanaskhan @ayushkbhatia
+.npmrc                                       @notanaskhan @ayushkbhatia
+/pnpm-workspace.yaml                         @notanaskhan @ayushkbhatia
 /pnpm-lock.yaml                              @notanaskhan @ayushkbhatia
 /backend/src/abacus/modules/identity/authz/  @notanaskhan @ayushkbhatia
 /backend/src/abacus/kernel/db/               @notanaskhan @ayushkbhatia

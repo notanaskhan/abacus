@@ -4,7 +4,7 @@ title: Repository scaffolding and make check-fast tooling
 spec: SPEC-000
 acceptance_criteria: [AC-20]
 risk_zone: amber
-status: in-progress
+status: in-review
 branch: task-001-scaffolding
 worktree:
 created: 2026-10-04
@@ -251,6 +251,10 @@ Deliberately **not** listed: `backend/src/abacus/kernel/{db,uow,crypto}/**` and 
 | 13 | `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `apps/web/{package.json,tsconfig.json,eslint.config.js,.prettierrc,.prettierignore,vite.config.ts,index.html,src/main.tsx,src/App.tsx}` | New |
 | 13 | `docs/architecture/dependency-allowlist.yaml` | Six Q4 packages added |
 | Tests | `backend/tests/unit/quality/test_banned_patterns.py`, `test_validate_docs.py` | New (AC-20); `backend/tests/unit/.gitkeep` removed |
+| Q13 | `.claude/hooks/_protected.py`, `protect_paths.py`, `guard_bash.py` | Hardened (see log) |
+| Q13 | `.github/CODEOWNERS`, `docs/architecture/protected-paths.md` | New protected paths; approval-file rules |
+| Q13 | `backend/tests/unit/quality/test_hooks.py`, `backend/pyproject.toml` | Hook tests; `S603` allowed for that file only |
+| Q12 | `docs/adr/ADR-101-namespaced-backend-layout.md` | Wording fixes |
 | Q10 | `docs/adr/ADR-024-need-to-know-metadata-vs-content.md`, `docs/adr/ADR-058-agent-hierarchy.md` | `title:` quoted; no other change |
 
 Tests to write (mapped to ACs) — written in a **separate session** (amber rule), run in stage 2:
@@ -319,6 +323,13 @@ Append-only. Newest at the bottom.
   - **Approval file defect (mine):** the two ADR lines carried trailing `# comments`, which the hook parser keeps as part of the pattern, so ADR-024/058 were never matched by the approval; the edits went through only because hooks were inactive in this session. Comments removed; `abacus_tools/quality/*` narrowed to the two files still being edited.
   - Tests: exact-match assertions; added `__init__`/level-3 relative imports, `tests/` scan root, line numbers, unclosed / non-mapping frontmatter, missing index / policy, link mismatch, non-list refs, null refs, valid supersede + deprecated, ISO dates on spec/task, duplicate ADR/TASK ids, empty field, `main()` exit 0 + output, sibling-leak for DB-001 and PROVIDER-001. **130 passed**; `make check-fast` exit 0.
 
+- `2026-10-05` — Q12/Q13 fixed. Agent's attempt to extend the approval file was **denied by the Claude Code permission classifier (self-modification)**; founder added ADR-101, `protect_paths.py`, `guard_bash.py`, `test_hooks.py` to it by hand.
+  - `_protected.py`: realpath (symlinks), case-insensitive segment-aware glob (`*` no longer crosses `/`), strict approval parser (only `paths:` items, comments stripped, `approved_by: founder`, ISO `expires`, bare-wildcard patterns rejected), `..foo` no longer treated as outside. New protected: `.git/**`, every `.gitignore`/`Makefile`/`package.json`/`pyproject.toml`/`.npmrc`, `pnpm-workspace.yaml`, `backend/tests/unit/quality/**`.
+  - `protect_paths.py` and `guard_bash.py` fail closed (exit 2 on any error). `guard_bash.py` writer list adds interpreters (`python`, `perl`, `ruby`, `node`…), `ln`, `install`, `dd`, `rsync`, `patch`, `tar`, `git apply/checkout/restore/stash/reset`; boundary-aware, case-insensitive path matching; ignores `->`/`=>` arrows. Residual risk accepted: a shell can always find another way; CODEOWNERS + branch protection are authoritative.
+  - CODEOWNERS and protected-paths.md mirror the new paths; protected-paths.md documents the approval-file rules.
+  - ADR-101: restates ADR-010's carried-over decisions (full supersession now accurate); Enforcement no longer claims ruff bans `abacus_tools`; mentions BOUND-001; ADR-097 note moved out of the mapping table.
+  - `backend/tests/unit/quality/test_hooks.py`: 57 cases × 2 interpreters (venv 3.12 and `/usr/bin/python3` 3.9). Against the pre-hardening hooks from `main`: **86 failed**; against the new hooks: 114 passed. Full suite **244 passed**; `make check-fast` exit 0.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
@@ -369,13 +380,13 @@ Append-only. Newest at the bottom.
 - [x] **Q8 — Tooling location.** Confirmed 2026-10-05: `abacus_tools`. **Recommendation:** `backend/src/abacus_tools/{quality,synthetic,loadtest}` — a second namespaced root, excluded from the runtime wheel, forbidden to `abacus` by import-linter and ruff `TID251`; it may import `abacus` (synthetic seeding and load tests drive the product's public APIs). Alternative: `abacus.tooling.*` inside the product package — simpler single root, but ships test-data generators in the production image and needs the same forbidden contract anyway.
 - [x] **Q9 — `ai_gateway` hook protection.** Confirmed 2026-10-05: keep CODEOWNERS-only.
 - [x] **Q10 — ADR-024 and ADR-058 frontmatter (blocking `make check-fast`).** Titles contain an unquoted `: `, so the frontmatter is invalid YAML. **Recommendation:** approve a formatting-only edit quoting the two `title:` values (add `docs/adr/ADR-024-need-to-know-metadata-vs-content.md` and `docs/adr/ADR-058-agent-hierarchy.md` to the approval). Loosening the validator would let broken frontmatter through. Approved 2026-10-05 ("lets proceed"); both paths appended to the approval file; titles quoted.
-- [ ] **Q12 — ADR-101 wording (architecture review).** (a) ADR-101 *Enforcement* claims ruff `TID251` bans `abacus_tools`; it doesn't (decision above) — import-linter enforces it. (b) ADR-101 says it supersedes ADR-010's layout only, but ADR-010 is now marked fully superseded, so ADR-010's other decisions read as dead. **Recommendation:** add `docs/adr/ADR-101-namespaced-backend-layout.md` to the approval; fix (a), and for (b) restate in ADR-101 the ADR-010 decisions that carry over (monorepo, uv/pnpm, Makefile, boundary tools) so ADR-101 is self-contained and full supersession is correct.
-- [ ] **Q13 — Hook hardening (security review).** Real bypasses in the local hooks: case-insensitive paths on APFS (`agents.md`), symlinks (`abspath` not `realpath`), fail-open on hook crash (exit 1), approval parser (any `- ` line, trailing comments, `expires` string compare, bare `*`/`**/*` approves all), fnmatch `*` crossing `/`, shell-write guard misses `python -c`, `perl -pi`, `ln`, `git apply/checkout`; unprotected `.git/hooks`, `.gitignore`, `pnpm-workspace.yaml`, `.npmrc`, `backend/tests/unit/quality/`. **Recommendation:** move all of it to TASK-002 (it already owns the hook self-test; needs `.claude/hooks/*` approval), and treat CODEOWNERS + branch protection as the real control until then.
+- [x] **Q12 — ADR-101 wording (architecture review).** (a) ADR-101 *Enforcement* claims ruff `TID251` bans `abacus_tools`; it doesn't (decision above) — import-linter enforces it. (b) ADR-101 says it supersedes ADR-010's layout only, but ADR-010 is now marked fully superseded, so ADR-010's other decisions read as dead. **Recommendation:** add `docs/adr/ADR-101-namespaced-backend-layout.md` to the approval; fix (a), and for (b) restate in ADR-101 the ADR-010 decisions that carry over (monorepo, uv/pnpm, Makefile, boundary tools) so ADR-101 is self-contained and full supersession is correct. Resolved 2026-10-05: founder chose to fix in this task.
+- [x] **Q13 — Hook hardening (security review).** Real bypasses in the local hooks: case-insensitive paths on APFS (`agents.md`), symlinks (`abspath` not `realpath`), fail-open on hook crash (exit 1), approval parser (any `- ` line, trailing comments, `expires` string compare, bare `*`/`**/*` approves all), fnmatch `*` crossing `/`, shell-write guard misses `python -c`, `perl -pi`, `ln`, `git apply/checkout`; unprotected `.git/hooks`, `.gitignore`, `pnpm-workspace.yaml`, `.npmrc`, `backend/tests/unit/quality/`. **Recommendation:** move all of it to TASK-002 (it already owns the hook self-test; needs `.claude/hooks/*` approval), and treat CODEOWNERS + branch protection as the real control until then. Resolved 2026-10-05: founder chose to fix in this task (option 1) and added the paths to the approval file by hand after the agent's own attempt was denied by the permission classifier.
 - [x] **Q11 — Local Node toolchain (blocking `make setup` as written).** **Recommendation:** `brew install node@24`, put `/opt/homebrew/opt/node@24/bin` first on `PATH`, then `corepack enable` (installs the `pnpm` shim beside Node 24). Founder's machine change. Approved 2026-10-05: agent ran `brew install node@24` (24.21.0) and `corepack enable`; founder still needs `/opt/homebrew/opt/node@24/bin` first on `PATH` in their shell profile. CODEOWNERS protects `backend/src/ai_gateway/`; the hook does not (pre-existing). **Recommendation:** keep as is (protected-paths.md says "code owners only" during Phase 1); only the path is renamed.
 
 ## Handoff
-- **Current state:** All steps done; reviewer findings in scope fixed; 130 AC-20 tests pass; `make check-fast` and `make test` exit 0. Committed on `task-001-scaffolding`, not pushed.
-- **Exact next step:** Founder answers Q12 (ADR-101 wording) and Q13 (hook hardening → TASK-002). Then push and open the PR (founder approval required before pushing).
+- **Current state:** All steps and reviewer findings done; 244 tests pass; `make check-fast` exit 0. Branch `task-001-scaffolding` pushed; PR open for founder review.
+- **Exact next step:** Founder reviews and merges the PR (it changes the hooks, CODEOWNERS and protected-paths.md — review those first). On merge: delete `work/approvals/TASK-001.yaml`; mark this task `done`.
 - **Uncommitted or partial work:** none (approval file is git-ignored by design).
 - **Known failing checks:** none in stage 1. Stage 2 (`make check`) is TASK-002.
-- **Open issues:** Q12, Q13; founder's shell `PATH` still resolves `node` to 20.16; branch protection deferred (now the main mitigation for Q13); bot GitHub account deferred; TASK-002 file not yet created.
+- **Open issues:** founder's shell `PATH` still resolves `node` to 20.16; hooks still to be confirmed live in a repo-root session; branch protection deferred (CODEOWNERS not enforced until it is on); bot GitHub account deferred; TASK-002 file not yet created.

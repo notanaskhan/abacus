@@ -42,7 +42,27 @@ backend/src/
 
 **Tooling** may import `abacus` public APIs (synthetic seeding and load tests drive the product). `abacus` never imports `abacus_tools`, and `abacus_tools` is excluded from the runtime wheel.
 
-Everything else in ADR-010 stands: one monorepo, `uv` and `pnpm`, the root `Makefile` as the only command surface, import-linter and ESLint boundary tooling. This ADR supersedes ADR-010's directory layout only.
+This ADR replaces ADR-010 in full. ADR-010's other decisions carry over unchanged and are restated here so this ADR stands alone:
+
+- **One repository** for the backend, the React SPA (`apps/web/`), the design system (`packages/ui/`), the generated API client (`packages/api-client/`), Terraform (`infra/`), evaluation suites (`evals/`), docs and work items.
+- **Toolchains:** Python uses `uv`; the frontend uses `pnpm` workspaces.
+- **One command surface:** the root `Makefile` is the only way humans, agents and CI run anything (`make setup`, `make check`, `make test`, `make dev`, `make generate`, …).
+- **Boundary tooling:** import-linter for the backend, ESLint import restrictions for the frontend.
+
+```
+apps/web/                 React SPA
+backend/
+  src/abacus/             product code (layout above)
+  src/abacus_tools/       tooling
+  migrations/             Alembic
+  tests/
+packages/ui/              design system
+packages/api-client/      generated from OpenAPI
+infra/                    Terraform
+evals/
+docs/  work/
+Makefile
+```
 
 ### Path mapping for accepted ADRs
 Accepted ADRs are immutable, so their paths and examples are read through this table:
@@ -58,7 +78,8 @@ Accepted ADRs are immutable, so their paths and examples are read through this t
 | ADR-047, ADR-082 | `backend/src/agents/` | `backend/src/abacus/modules/agents/` |
 | ADR-082 | `backend/src/ai_gateway/` | `backend/src/abacus/ai_gateway/` |
 | ADR-044, ADR-085 | `synthetic.company(...)` | `abacus_tools.synthetic.company(...)` |
-| ADR-097 | `platform.set_read_only(...)` | the kill switch's home is decided when it is built; not the kernel by default |
+
+ADR-097's example `platform.set_read_only(...)` predates this split; where the kill switch lives is decided when it is built, and it is not the kernel by default.
 
 ## Options considered
 ### Option A: single namespaced root `abacus`, tooling in `abacus_tools` — chosen
@@ -93,8 +114,8 @@ Accepted ADRs are immutable, so their paths and examples are read through this t
 - None beyond TASK-001, which moves every reference
 
 ## Enforcement
-- [x] Lint rule: ruff `TID251` bans importing `abacus_tools` from product code; banned pattern `LAYOUT-001` fails on any entry under `backend/src/` other than `abacus/` and `abacus_tools/`
-- [x] Architecture / dependency rule in CI: import-linter layers contract (above) and forbidden contract `abacus` → `abacus_tools`
+- [x] Lint rule: banned pattern `LAYOUT-001` fails on any entry under `backend/src/` other than `abacus/` and `abacus_tools/`; `BOUND-001` allows cross-module imports only through `abacus.modules.<m>.api`
+- [x] Architecture / dependency rule in CI: import-linter layers contract (above) and forbidden contract `abacus` → `abacus_tools` (the only enforcement of that direction; ruff's banned-api cannot exempt `abacus_tools` itself and the tests that import it)
 - [x] Hook or protected path: `.claude/hooks/_protected.py`, `.github/CODEOWNERS` and `docs/architecture/protected-paths.md` name the `abacus` paths
 - [x] Packaging: the hatch wheel target includes only `src/abacus`
 
@@ -118,6 +139,6 @@ from abacus_tools.synthetic import company     # inside abacus/ — product neve
 The backend is split into more than one deployable.
 
 ## Related
-- ADRs: ADR-008, ADR-009, ADR-010 (layout superseded), ADR-047, ADR-082, ADR-085
+- ADRs: ADR-008, ADR-009, ADR-010 (superseded; decisions restated above), ADR-047, ADR-082, ADR-085, ADR-097
 - Specs: SPEC-000
 - Docs: `docs/architecture/protected-paths.md`, `docs/product/glossary.md` (Kernel)

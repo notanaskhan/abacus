@@ -12,11 +12,12 @@ Changes to these paths require the founder's explicit approval. Enforcement is l
 ## Always protected
 
 - The constitution and agent configuration: `AGENTS.md`, `CLAUDE.md`, `.claude/`
-- Gates and pipeline: `Makefile`, `.github/`, `backend/src/abacus_tools/quality/`
+- Gates and pipeline: every `Makefile`, `.github/`, `backend/src/abacus_tools/quality/` and its tests `backend/tests/unit/quality/`
+- Repository plumbing: `.git/` (local hooks), every `.gitignore`
 - Infrastructure: `infra/`
 - Approvals: `work/approvals/` — the founder writes these by hand
 - Policy files: permission matrix, this file, dependency allowlist, glossary
-- Dependency manifests and lockfiles
+- Dependency manifests and lockfiles: every `package.json` and `pyproject.toml`, `pnpm-workspace.yaml`, `.npmrc`, `backend/uv.lock`, `pnpm-lock.yaml`
 - Red-zone code: authorisation (`abacus.modules.identity.authz`), database session and tenancy, unit of work, encryption (`abacus.kernel.db`, `.uow`, `.crypto`), audit trail (`abacus.modules.audit_trail`)
 - The AI gateway (code owners only; agents build it under approval during Phase 1)
 
@@ -34,10 +35,12 @@ task: TASK-012
 approved_by: founder
 expires: 2026-12-31
 paths:
-  - backend/src/abacus/kernel/uow/**/*
+  - backend/src/abacus/kernel/uow/**
   - backend/migrations/versions/*
 reason: Walking skeleton — unit of work implementation
 ```
+
+Rules the hook enforces on approval files: `approved_by` must be `founder`; `expires` must be an ISO date not in the past; only items under `paths:` count; a trailing `# comment` is ignored; a pattern must start with a concrete directory or file (`*` or `**` alone approves nothing). In patterns, `*` matches within one directory and `**` spans any number; matching is case-insensitive.
 
 Keep approvals narrow, short-lived, and delete them when the task merges.
 
