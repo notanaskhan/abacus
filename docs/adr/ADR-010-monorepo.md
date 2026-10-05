@@ -1,7 +1,7 @@
 ---
 id: ADR-010
 title: Monorepo with enforced boundaries and one command surface
-status: accepted
+status: superseded by ADR-101
 date: 2026-10-04
 deciders: Founder
 risk_zone: amber

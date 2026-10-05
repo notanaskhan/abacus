@@ -12,12 +12,12 @@ Changes to these paths require the founder's explicit approval. Enforcement is l
 ## Always protected
 
 - The constitution and agent configuration: `AGENTS.md`, `CLAUDE.md`, `.claude/`
-- Gates and pipeline: `Makefile`, `.github/`, `backend/quality/`
+- Gates and pipeline: `Makefile`, `.github/`, `backend/src/abacus_tools/quality/`
 - Infrastructure: `infra/`
 - Approvals: `work/approvals/` — the founder writes these by hand
 - Policy files: permission matrix, this file, dependency allowlist, glossary
 - Dependency manifests and lockfiles
-- Red-zone code: authorisation, database session and tenancy, unit of work, encryption, audit trail
+- Red-zone code: authorisation (`abacus.modules.identity.authz`), database session and tenancy, unit of work, encryption (`abacus.kernel.db`, `.uow`, `.crypto`), audit trail (`abacus.modules.audit_trail`)
 - The AI gateway (code owners only; agents build it under approval during Phase 1)
 
 ## Protected once they exist
@@ -34,7 +34,7 @@ task: TASK-012
 approved_by: founder
 expires: 2026-12-31
 paths:
-  - backend/src/platform/uow/**/*
+  - backend/src/abacus/kernel/uow/**/*
   - backend/migrations/versions/*
 reason: Walking skeleton — unit of work implementation
 ```

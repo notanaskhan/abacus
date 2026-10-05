@@ -13,7 +13,7 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-007](ADR-007-append-only-audit-trail.md) | Append-only audit trail in a separate event log | red | accepted |
 | [ADR-008](ADR-008-modular-monolith.md) | Modular monolith | amber | accepted |
 | [ADR-009](ADR-009-languages.md) | Python for the backend, TypeScript for the frontend, strict typing in both | amber | accepted |
-| [ADR-010](ADR-010-monorepo.md) | Monorepo with enforced boundaries and one command surface | amber | accepted |
+| [ADR-010](ADR-010-monorepo.md) | Monorepo with enforced boundaries and one command surface | amber | superseded by ADR-101 |
 | [ADR-011](ADR-011-react-spa.md) | React single-page app built with Vite | amber | accepted |
 | [ADR-012](ADR-012-fastapi.md) | FastAPI backend with enforced layering | amber | accepted |
 | [ADR-013](ADR-013-rest-openapi-pydantic.md) | REST and OpenAPI, with Pydantic as the schema source of truth | amber | accepted |
@@ -104,3 +104,4 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-098](ADR-098-runbooks.md) | Rehearsed runbooks for foreseeable scenarios | amber | accepted |
 | [ADR-099](ADR-099-security-operations.md) | Security operations baseline | red | accepted |
 | [ADR-100](ADR-100-founder-spof.md) | Mitigating founder single point of failure | amber | accepted |
+| [ADR-101](ADR-101-namespaced-backend-layout.md) | Namespaced backend package layout | amber | accepted |
