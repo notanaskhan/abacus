@@ -126,10 +126,14 @@ def _resolve_from(src: SourceFile, node: ast.ImportFrom) -> str | None:
 def _check_session_transaction(src: SourceFile) -> Iterator[Finding]:
     for call in _calls(src.tree):
         func = call.func
-        if isinstance(func, ast.Attribute) and func.attr in {"commit", "flush", "rollback"}:
-            receiver = _terminal_name(func.value)
-            if receiver is not None and "session" in receiver.lower():
-                yield Finding(call.lineno, f"{receiver}.{func.attr}() outside the unit of work")
+        if not isinstance(func, ast.Attribute):
+            continue
+        receiver = _terminal_name(func.value) or "<expr>"
+        # commit/rollback on any receiver; flush only on sessions (files and loggers flush too).
+        if func.attr in {"commit", "rollback"} or (
+            func.attr == "flush" and "session" in receiver.lower()
+        ):
+            yield Finding(call.lineno, f"{receiver}.{func.attr}() outside the unit of work")
 
 
 def _check_raw_connection(src: SourceFile) -> Iterator[Finding]:
@@ -138,12 +142,15 @@ def _check_raw_connection(src: SourceFile) -> Iterator[Finding]:
         name = _terminal_name(func)
         if name in {"create_engine", "create_async_engine"}:
             yield Finding(call.lineno, f"{name}() outside abacus.kernel.db")
-        elif (
-            isinstance(func, ast.Attribute)
-            and func.attr == "connect"
-            and _terminal_name(func.value) == "asyncpg"
-        ):
-            yield Finding(call.lineno, "asyncpg.connect() outside abacus.kernel.db")
+        elif isinstance(func, ast.Attribute) and (func.attr, _terminal_name(func.value)) in {
+            ("connect", "asyncpg"),
+            ("create_pool", "asyncpg"),
+            ("connect", "psycopg"),
+            ("connect", "psycopg2"),
+        }:
+            yield Finding(
+                call.lineno, f"{_terminal_name(func.value)}.{func.attr}() outside abacus.kernel.db"
+            )
 
 
 def _is_built_string(node: ast.expr) -> bool:
@@ -178,6 +185,11 @@ def _check_module_boundary(src: SourceFile) -> Iterator[Finding]:
 
     def check(target: str, line: int) -> Iterator[Finding]:
         parts = target.split(".")
+        if target == "abacus.modules":
+            yield Finding(
+                line, "import of the abacus.modules package; import <module>.api instead"
+            )
+            return
         if len(parts) < 3 or parts[:2] != ["abacus", "modules"] or parts[2] == own:
             return
         if len(parts) == 3 or parts[3] != "api":
@@ -191,7 +203,9 @@ def _check_module_boundary(src: SourceFile) -> Iterator[Finding]:
             base = _resolve_from(src, node)
             if base is None:
                 continue
-            if base.count(".") == 2 and base.startswith("abacus.modules."):
+            if base in {"abacus", "abacus.modules"} or (
+                base.count(".") == 2 and base.startswith("abacus.modules.")
+            ):
                 for alias in node.names:
                     yield from check(f"{base}.{alias.name}", node.lineno)
             else:
@@ -222,6 +236,45 @@ def _check_unexplained_any(src: SourceFile) -> Iterator[Finding]:
         comment = src.comments.get(line, "")
         if not comment or _IGNORE_COMMENT.search(comment):
             yield Finding(line, "Any without an explanatory comment on the same line")
+
+
+_NOQA = re.compile(r"#\s*noqa\s*:\s*(?P<codes>[A-Z0-9, ]+)", re.IGNORECASE)
+_GATE_CODES = re.compile(r"^(?:TID|S)\d", re.IGNORECASE)
+
+
+def _check_gate_suppression(src: SourceFile) -> Iterator[Finding]:
+    for line, comment in src.comments.items():
+        if re.search(r"\bnosec\b", comment):
+            yield Finding(line, "# nosec silences a security gate")
+        match = _NOQA.search(comment)
+        if match:
+            codes = [c.strip() for c in match.group("codes").split(",")]
+            silenced = [c for c in codes if _GATE_CODES.match(c)]
+            if silenced:
+                yield Finding(line, f"# noqa silences a gate rule ({', '.join(silenced)})")
+
+
+PROVIDER_HOSTS = (
+    "api.anthropic.com",
+    "api.openai.com",
+    "generativelanguage.googleapis.com",
+    "aiplatform.googleapis.com",
+    "api.mistral.ai",
+    "api.cohere.com",
+    "api.cohere.ai",
+    "api.groq.com",
+    "api.together.xyz",
+    "bedrock-runtime",
+    "bedrock-agent-runtime",
+)
+
+
+def _check_provider_host(src: SourceFile) -> Iterator[Finding]:
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            hit = next((h for h in PROVIDER_HOSTS if h in node.value), None)
+            if hit is not None:
+                yield Finding(node.lineno, f"model provider endpoint '{hit}' outside ai_gateway")
 
 
 # --- tree rules -------------------------------------------------------------------------------
@@ -279,6 +332,23 @@ RULES: list[Rule | TreeRule] = [
         description="Type-checker ignores carry a reason",
         adr="ADR-009",
         check=_check_unexplained_ignore,
+    ),
+    Rule(
+        id="SUPPRESS-001",
+        description="No noqa for TID/S rules and no nosec; gate exceptions live in config",
+        adr="ADR-009, ADR-019, ADR-083",
+        check=_check_gate_suppression,
+    ),
+    Rule(
+        id="PROVIDER-001",
+        description="Model provider endpoints are referenced only in ai_gateway",
+        adr="ADR-019",
+        check=_check_provider_host,
+        exclude=(
+            "src/abacus/ai_gateway/*",
+            "src/abacus_tools/quality/banned_patterns.py",
+            "tests/unit/quality/*",
+        ),
     ),
     Rule(
         id="ANY-001",
