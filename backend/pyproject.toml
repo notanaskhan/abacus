@@ -79,6 +79,7 @@ known-first-party = ["abacus", "abacus_tools"]
 "src/abacus_tools/quality/secrets_scan.py" = ["T20", "S603"]  # runs git ls-files
 "tests/**" = ["S101"]
 "tests/unit/quality/test_hooks.py" = ["S101", "S603"]  # runs the repo's own hook scripts
+"tests/unit/quality/test_secrets_scan.py" = ["S101", "S603"]  # git init in a tmp repo
 
 [tool.ruff.format]
 

@@ -42,14 +42,18 @@ def _repo(
     *,
     runtime: list[str] | None = None,
     dev: list[str] | None = None,
-    packages: dict[str, dict[str, dict[str, str]]] | None = None,
+    packages: dict[str, dict[str, object]] | None = None,
+    extra_toml: str = "",
+    files: dict[str, str] | None = None,
 ) -> Path:
     """A minimal repo; JSON is valid YAML and its string arrays are valid TOML."""
     _write(root, "docs/architecture/dependency-allowlist.yaml", json.dumps(allow, indent=2))
     toml = '[project]\nname = "x"\nversion = "0"\n'
     toml += "dependencies = " + json.dumps(runtime or []) + "\n"
     toml += "\n[dependency-groups]\ndev = " + json.dumps(dev or []) + "\n"
-    _write(root, PYPROJECT, toml)
+    _write(root, PYPROJECT, toml + extra_toml)
+    for rel, text in (files or {}).items():
+        _write(root, rel, text)
     for rel, sections in (packages or {}).items():
         _write(root, rel, json.dumps({"name": "pkg", **sections}))
     return root
@@ -269,7 +273,14 @@ def test_ac20_exact_scoped_name_is_matched(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize("version", ["workspace:*", "workspace:^", "workspace:../api-client"])
 def test_ac20_workspace_dependencies_are_skipped(tmp_path: Path, version: str) -> None:
-    _repo(tmp_path, _allowlist(), packages={WEB: {"dependencies": {"@abacus/client": version}}})
+    _repo(
+        tmp_path,
+        _allowlist(),
+        packages={
+            WEB: {"dependencies": {"@abacus/client": version}},
+            "packages/client/package.json": {"name": "@abacus/client"},
+        },
+    )
     assert cd.check(tmp_path) == []
 
 
@@ -355,3 +366,267 @@ def test_ac20_repository_dependencies_are_allowlisted() -> None:
     # Deliberately depends on live repo state: this is the AC-20 claim itself, and duplicates
     # the dependency step of `make check-fast`.
     assert cd.check(REPO) == []
+
+
+# --- Contract revision 1 ----------------------------------------------------------------------
+
+NOT_FROM_REGISTRY = (
+    "must be installed from the package registry, not a URL, path, git repository or alias"
+)
+CHANGES_INSTALL = "it changes where or which dependencies are installed"
+
+
+# optional dependencies, build requirements, other manifests
+
+
+def test_ac20_unlisted_optional_dependency_is_reported(tmp_path: Path) -> None:
+    extra = '\n[project.optional-dependencies]\nextra = ["left-pad>=1"]\n'
+    _repo(tmp_path, _allowlist(), extra_toml=extra)
+    assert cd.check(tmp_path) == [f"{PYPROJECT}: left-pad is not in the dependency allowlist"]
+
+
+def test_ac20_optional_dependency_is_a_runtime_dependency(tmp_path: Path) -> None:
+    extra = '\n[project.optional-dependencies]\nextra = ["pytest>=8"]\n'
+    _repo(tmp_path, _allowlist(py_dev={"pytest": "approved"}), extra_toml=extra)
+    assert cd.check(tmp_path) == [f"{PYPROJECT}: pytest is approved only as a dev dependency"]
+
+
+def test_ac20_approved_optional_dependency_passes(tmp_path: Path) -> None:
+    extra = '\n[project.optional-dependencies]\nextra = ["httpx>=0.27"]\n'
+    _repo(tmp_path, _allowlist(py_runtime={"httpx": "approved"}), extra_toml=extra)
+    assert cd.check(tmp_path) == []
+
+
+def test_ac20_unlisted_build_requirement_is_reported(tmp_path: Path) -> None:
+    extra = '\n[build-system]\nrequires = ["hatchling>=1"]\nbuild-backend = "hatchling.build"\n'
+    _repo(tmp_path, _allowlist(), extra_toml=extra)
+    assert cd.check(tmp_path) == [f"{PYPROJECT}: hatchling is not in the dependency allowlist"]
+
+
+@pytest.mark.parametrize("section", ["py_dev", "py_runtime"])
+def test_ac20_build_requirement_may_be_dev_or_runtime(tmp_path: Path, section: str) -> None:
+    extra = '\n[build-system]\nrequires = ["hatchling>=1"]\nbuild-backend = "hatchling.build"\n'
+    allow = _allowlist(**{section: {"hatchling": "approved"}})
+    _repo(tmp_path, allow, extra_toml=extra)
+    assert cd.check(tmp_path) == []
+
+
+def test_ac20_other_pyproject_is_read_as_runtime(tmp_path: Path) -> None:
+    other = 'dependencies = ["left-pad"]\n'
+    toml = '[project]\nname = "y"\nversion = "0"\n' + other
+    _repo(tmp_path, _allowlist(), files={"tools/y/pyproject.toml": toml})
+    assert cd.check(tmp_path) == [
+        "tools/y/pyproject.toml: left-pad is not in the dependency allowlist"
+    ]
+
+
+def test_ac20_other_pyproject_dev_only_listing_is_reported(tmp_path: Path) -> None:
+    toml = '[project]\nname = "y"\nversion = "0"\ndependencies = ["pytest"]\n'
+    _repo(
+        tmp_path,
+        _allowlist(py_dev={"pytest": "approved"}),
+        files={"tools/y/pyproject.toml": toml},
+    )
+    assert cd.check(tmp_path) == [
+        "tools/y/pyproject.toml: pytest is approved only as a dev dependency"
+    ]
+
+
+@pytest.mark.parametrize(
+    "rel", ["requirements.txt", "requirements-dev.txt", "tools/requirements-docs.txt"]
+)
+def test_ac20_requirements_files_are_runtime(tmp_path: Path, rel: str) -> None:
+    text = "# pinned\n\nleft-pad>=1\npytest==8.0\n"
+    _repo(tmp_path, _allowlist(py_dev={"pytest": "approved"}), files={rel: text})
+    assert cd.check(tmp_path) == [
+        f"{rel}: left-pad is not in the dependency allowlist",
+        f"{rel}: pytest is approved only as a dev dependency",
+    ]
+
+
+def test_ac20_approved_requirements_file_passes(tmp_path: Path) -> None:
+    _repo(
+        tmp_path,
+        _allowlist(py_runtime={"httpx": "approved"}),
+        files={"requirements.txt": "httpx>=0.27\n"},
+    )
+    assert cd.check(tmp_path) == []
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "node_modules/x/requirements.txt",
+        "node_modules/x/pyproject.toml",
+        "apps/web/dist/requirements.txt",
+        "dist/pyproject.toml",
+        ".venv/requirements.txt",
+        "tools/.cache/pyproject.toml",
+    ],
+)
+def test_ac20_ignored_directories_hide_python_manifests(tmp_path: Path, rel: str) -> None:
+    text = 'dependencies = ["left-pad"]\n' if rel.endswith(".toml") else "left-pad\n"
+    toml_or_txt = (
+        '[project]\nname = "y"\nversion = "0"\n' + text if rel.endswith(".toml") else text
+    )
+    _repo(tmp_path, _allowlist(), files={rel: toml_or_txt})
+    assert cd.check(tmp_path) == []
+
+
+# exact keys beat globs
+
+
+def test_ac20_exact_pending_key_beats_approved_glob(tmp_path: Path) -> None:
+    _repo(
+        tmp_path,
+        _allowlist(ts_runtime={"@scope/*": "approved", "@scope/bad": "pending"}),
+        packages={WEB: {"dependencies": {"@scope/bad": "^1", "@scope/good": "^1"}}},
+    )
+    assert cd.check(tmp_path) == [
+        f"{WEB}: @scope/bad is pending in the dependency allowlist, not approved"
+    ]
+
+
+def test_ac20_exact_approved_key_beats_pending_glob(tmp_path: Path) -> None:
+    _repo(
+        tmp_path,
+        _allowlist(ts_runtime={"@scope/*": "pending", "@scope/good": "approved"}),
+        packages={WEB: {"dependencies": {"@scope/good": "^1"}}},
+    )
+    assert cd.check(tmp_path) == []
+
+
+# registry-only sources
+
+
+@pytest.mark.parametrize(
+    "requirement",
+    [
+        "left-pad @ https://example.org/left_pad-1.0.whl",
+        "left-pad@https://example.org/left_pad-1.0.whl",
+        "left-pad @ git+https://example.org/left-pad.git",
+        "left-pad[extra] @ file:///opt/left-pad",
+        "left-pad @ ./vendor/left-pad",
+    ],
+)
+def test_ac20_python_url_requirement_is_reported(tmp_path: Path, requirement: str) -> None:
+    _repo(tmp_path, _allowlist(py_runtime={"left-pad": "approved"}), runtime=[requirement])
+    assert cd.check(tmp_path) == [f"{PYPROJECT}: left-pad {NOT_FROM_REGISTRY}"]
+
+
+@pytest.mark.parametrize(
+    "version",
+    [
+        "npm:other@1",
+        "git+ssh://example.org/a.git",
+        "git://example.org/a.git",
+        "github:org/repo",
+        "http://example.org/a.tgz",
+        "https://example.org/a.tgz",
+        "file:../a",
+        "link:../a",
+        "org/repo",
+        "org/repo#main",
+    ],
+)
+def test_ac20_npm_non_registry_version_is_reported(tmp_path: Path, version: str) -> None:
+    _repo(
+        tmp_path,
+        _allowlist(ts_runtime={"left-pad": "approved"}),
+        packages={WEB: {"dependencies": {"left-pad": version}}},
+    )
+    assert cd.check(tmp_path) == [f"{WEB}: left-pad {NOT_FROM_REGISTRY}"]
+
+
+@pytest.mark.parametrize("version", ["^1.2.3", "~1", "latest", "1.x", "*", ">=1 <2", "1.0.0"])
+def test_ac20_npm_registry_version_passes(tmp_path: Path, version: str) -> None:
+    _repo(
+        tmp_path,
+        _allowlist(ts_runtime={"left-pad": "approved"}),
+        packages={WEB: {"dependencies": {"left-pad": version}}},
+    )
+    assert cd.check(tmp_path) == []
+
+
+# workspace packages
+
+
+def test_ac20_workspace_dependency_on_unknown_package_is_reported(tmp_path: Path) -> None:
+    _repo(
+        tmp_path,
+        _allowlist(),
+        packages={WEB: {"dependencies": {"@abacus/missing": "workspace:*"}}},
+    )
+    assert cd.check(tmp_path) == [f"{WEB}: @abacus/missing is not a workspace package"]
+
+
+def test_ac20_workspace_dependency_on_known_package_passes(tmp_path: Path) -> None:
+    _repo(
+        tmp_path,
+        _allowlist(),
+        packages={
+            WEB: {"devDependencies": {"@abacus/api-client": "workspace:*"}},
+            "packages/api-client/package.json": {"name": "@abacus/api-client"},
+        },
+    )
+    assert cd.check(tmp_path) == []
+
+
+# install-redirecting settings
+
+
+@pytest.mark.parametrize(
+    ("toml", "key"),
+    [
+        ('[tool.uv.sources]\nleft-pad = { path = "../left-pad" }\n', "tool.uv.sources"),
+        ('[[tool.uv.index]]\nname = "x"\nurl = "https://example.org/simple"\n', "tool.uv.index"),
+        ('[tool.uv]\noverride-dependencies = ["left-pad>=1"]\n', "tool.uv.override-dependencies"),
+        (
+            '[tool.uv]\nconstraint-dependencies = ["left-pad>=1"]\n',
+            "tool.uv.constraint-dependencies",
+        ),
+        ('[tool.uv]\ndev-dependencies = ["left-pad>=1"]\n', "tool.uv.dev-dependencies"),
+    ],
+)
+def test_ac20_pyproject_install_redirect_is_reported(tmp_path: Path, toml: str, key: str) -> None:
+    _repo(tmp_path, _allowlist(), extra_toml="\n" + toml)
+    assert f"{PYPROJECT}: {key} is not allowed: {CHANGES_INSTALL}" in cd.check(tmp_path)
+
+
+def test_ac20_pyproject_plain_tool_tables_pass(tmp_path: Path) -> None:
+    _repo(tmp_path, _allowlist(), extra_toml="\n[tool.uv]\npackage = false\n")
+    assert cd.check(tmp_path) == []
+
+
+@pytest.mark.parametrize(
+    ("sections", "key"),
+    [
+        ({"pnpm": {"overrides": {"left-pad": "1.0.0"}}}, "pnpm.overrides"),
+        (
+            {"pnpm": {"patchedDependencies": {"left-pad@1.0.0": "p.patch"}}},
+            "pnpm.patchedDependencies",
+        ),
+        ({"overrides": {"left-pad": "1.0.0"}}, "overrides"),
+        ({"resolutions": {"left-pad": "1.0.0"}}, "resolutions"),
+        ({"bundleDependencies": ["left-pad"]}, "bundleDependencies"),
+        ({"bundledDependencies": ["left-pad"]}, "bundledDependencies"),
+    ],
+)
+def test_ac20_package_json_install_redirect_is_reported(
+    tmp_path: Path, sections: dict[str, object], key: str
+) -> None:
+    _repo(tmp_path, _allowlist(), packages={WEB: sections})
+    assert cd.check(tmp_path) == [f"{WEB}: {key} is not allowed: {CHANGES_INSTALL}"]
+
+
+@pytest.mark.parametrize("key", ["overrides", "patchedDependencies", "catalog", "catalogs"])
+def test_ac20_pnpm_workspace_install_redirect_is_reported(tmp_path: Path, key: str) -> None:
+    text = json.dumps({"packages": ["apps/*"], key: {"left-pad": "1.0.0"}})
+    _repo(tmp_path, _allowlist(), files={"pnpm-workspace.yaml": text})
+    assert cd.check(tmp_path) == [f"pnpm-workspace.yaml: {key} is not allowed: {CHANGES_INSTALL}"]
+
+
+def test_ac20_plain_pnpm_workspace_passes(tmp_path: Path) -> None:
+    text = json.dumps({"packages": ["apps/*", "packages/*"]})
+    _repo(tmp_path, _allowlist(), files={"pnpm-workspace.yaml": text})
+    assert cd.check(tmp_path) == []

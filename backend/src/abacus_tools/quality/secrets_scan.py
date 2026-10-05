@@ -9,6 +9,7 @@ reserved ranges (SSN area 9xx, published test card numbers) so it never trips th
 
 from __future__ import annotations
 
+import codecs
 import re
 import shutil
 import subprocess
@@ -27,7 +28,9 @@ EXCLUDE: tuple[str, ...] = ()
 DATA_SUFFIXES = frozenset({".csv", ".json", ".yaml", ".yml", ".txt", ".tsv"})
 CONFIG_SUFFIXES = frozenset(
     {".py", ".ts", ".tsx", ".js", ".mjs", ".cjs", ".json", ".yaml", ".yml", ".toml"}
+    | {".sh", ".ini", ".cfg"}
 )
+BARE_SUFFIXES = frozenset({".yaml", ".yml", ".sh", ".ini", ".cfg"})
 
 
 @dataclass(frozen=True)
@@ -41,7 +44,8 @@ class TextFile:
 
     @property
     def is_env(self) -> bool:
-        return PurePosixPath(self.rel).name.lower().startswith(".env")
+        name = PurePosixPath(self.rel).name.lower()
+        return name.startswith(".env") or name.endswith(".env") or name == "dockerfile"
 
 
 @dataclass(frozen=True)
@@ -54,7 +58,7 @@ class Rule:
 
 # --- SECRET-001 private keys ------------------------------------------------------------------
 
-_PRIVATE_KEY = re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----")
+_PRIVATE_KEY = re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY(?: BLOCK)?-----")
 
 
 def _check_private_key(f: TextFile) -> Iterator[Finding]:
@@ -75,6 +79,10 @@ _TOKENS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("Slack token", re.compile(r"\bxox[abprs]-[A-Za-z0-9-]{10,}")),
     ("Stripe live key", re.compile(r"\bsk_live_[A-Za-z0-9]{16,}")),
     ("Google API key", re.compile(r"\bAIza[A-Za-z0-9_-]{35}")),
+    ("npm token", re.compile(r"\bnpm_[A-Za-z0-9]{36}\b")),
+    ("GitLab token", re.compile(r"\bglpat-[A-Za-z0-9_-]{20,}")),
+    ("SendGrid key", re.compile(r"\bSG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}")),
+    ("Hugging Face token", re.compile(r"\bhf_[A-Za-z0-9]{34}\b")),
 )
 
 
@@ -93,7 +101,10 @@ _QUOTED = re.compile(
     r"(?:\s*:\s*[A-Za-z_][\w\[\]., |]*)?\s*[:=]\s*([\"'])(?P<value>[^\"']*)\1"
 )
 _BARE = re.compile(
-    rf"(?i)^\s*(?:export\s+)?{_CRED_NAME}\s*[:=]\s*(?P<value>[^\s\"'#]+)\s*(?:#.*)?$"
+    rf"(?i)^\s*(?:export\s+|ENV\s+|-\s+)?{_CRED_NAME}\s*[:=]\s*(?P<value>[^\s\"'#]+)\s*(?:#.*)?$"
+)
+_ENV_DEFAULT = re.compile(
+    rf"(?i)(?:getenv|environ\.get)\(\s*([\"']){_CRED_NAME}\1\s*,\s*([\"'])(?P<value>[^\"']*)\2"
 )
 _PLACEHOLDER_WORDS = (
     "changeme",
@@ -108,29 +119,49 @@ _PLACEHOLDER_WORDS = (
 
 
 def _is_placeholder(value: str) -> bool:
-    lowered = value.lower()
+    tokens = [t for t in re.split(r"[^a-z0-9]+", value.lower()) if t]
     return (
         not value
         or value.startswith(("<", "${", "{{", "$"))
-        or any(word in lowered for word in _PLACEHOLDER_WORDS)
         or len(set(value)) == 1
+        or any(t.startswith(word) for t in tokens for word in _PLACEHOLDER_WORDS)
     )
 
 
 def _is_credential(value: str) -> bool:
-    return len(value) >= 8 and not any(c.isspace() for c in value) and not _is_placeholder(value)
+    return (
+        len(value) >= 8
+        and not any(c.isspace() for c in value)
+        and "/" not in value
+        and ":" not in value
+        and any(c.isalpha() for c in value)
+        and any(c.isdigit() for c in value)
+        and not _is_placeholder(value)
+    )
 
 
 def _check_credential_assignment(f: TextFile) -> Iterator[Finding]:
     if not f.is_env and f.suffix not in CONFIG_SUFFIXES:
         return
-    bare_allowed = f.is_env or f.suffix in {".yaml", ".yml"}
+    bare_allowed = f.is_env or f.suffix in BARE_SUFFIXES
     for n, line in enumerate(f.lines, start=1):
         quoted = [m.group("value") for m in _QUOTED.finditer(line)]
+        quoted += [m.group("value") for m in _ENV_DEFAULT.finditer(line)]
         bare = _BARE.match(line) if bare_allowed else None
         values = quoted + ([bare.group("value")] if bare else [])
         if any(_is_credential(v) for v in values):
             yield Finding(n, "credential assigned to a key/secret/token/password name")
+
+
+# --- SECRET-004 credentials in URLs ----------------------------------------------------------
+
+_URL_CREDENTIALS = re.compile(r"\b[a-z][a-z0-9+.-]*://[^\s:/@]+:(?P<password>[^\s@/]+)@")
+
+
+def _check_url_credentials(f: TextFile) -> Iterator[Finding]:
+    for n, line in enumerate(f.lines, start=1):
+        if any(_is_credential(m.group("password")) for m in _URL_CREDENTIALS.finditer(line)):
+            yield Finding(n, "credentials embedded in a URL")
 
 
 # --- PII rules --------------------------------------------------------------------------------
@@ -213,6 +244,7 @@ RULES: list[Rule] = [
     Rule("SECRET-001", "Private keys", "ADR-083", _check_private_key),
     Rule("SECRET-002", "Provider tokens", "ADR-083", _check_provider_token),
     Rule("SECRET-003", "Credentials assigned to names", "ADR-083", _check_credential_assignment),
+    Rule("SECRET-004", "Credentials embedded in URLs", "ADR-083", _check_url_credentials),
     Rule("PII-001", "Real-looking SSNs", "ADR-085", _check_ssn),
     Rule("PII-002", "Real-looking EINs in data files", "ADR-085", _check_ein),
     Rule("PII-003", "Card and routing numbers", "ADR-085", _check_financial_number),
@@ -236,9 +268,11 @@ def _load(repo: Path, rel: str) -> TextFile | None:
     if PurePosixPath(rel).name in LOCKFILES or any(fnmatch(rel, g) for g in EXCLUDE):
         return None
     path = repo / rel
-    if not path.is_file() or path.stat().st_size > MAX_BYTES:
+    if path.is_symlink() or not path.is_file() or path.stat().st_size > MAX_BYTES:
         return None
     data = path.read_bytes()
+    if data.startswith((codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE)):
+        return TextFile(rel, data.decode("utf-16", errors="replace").splitlines())
     if b"\0" in data:
         return None
     return TextFile(rel, data.decode("utf-8", errors="replace").splitlines())
