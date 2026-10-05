@@ -310,3 +310,106 @@ def test_ac20_repository_backend_is_clean() -> None:
     # Deliberately depends on live repo state: this is the AC-20 claim itself, and duplicates
     # the banned-pattern step of `make check-fast`.
     assert bp.scan() == []
+
+
+# --- SKIP-001 (ADR-079) -----------------------------------------------------------------------
+
+TEST_FILE = "tests/unit/x/test_y.py"
+
+
+def _test_source(body: str) -> str:
+    return "import pytest\n\n" + body
+
+
+# Each source yields exactly one SKIP-001 finding.
+SKIP_VIOLATIONS: list[str] = [
+    "@pytest.mark.skip\ndef test_a() -> None:\n    pass\n",
+    "@pytest.mark.skip()\ndef test_a() -> None:\n    pass\n",
+    '@pytest.mark.skip(reason="flaky")\ndef test_a() -> None:\n    pass\n',
+    '@pytest.mark.skip("flaky")\ndef test_a() -> None:\n    pass\n',
+    '@pytest.mark.skip(reason="issue 123")\ndef test_a() -> None:\n    pass\n',
+    '@pytest.mark.skip(reason="#abc")\ndef test_a() -> None:\n    pass\n',
+    '@pytest.mark.skip(reason="#")\ndef test_a() -> None:\n    pass\n',
+    '@pytest.mark.skip(reason="github.com/acme/abacus/pull/12")\n'
+    "def test_a() -> None:\n    pass\n",
+    '@pytest.mark.skipif(True, reason="no db")\ndef test_a() -> None:\n    pass\n',
+    "@pytest.mark.skipif(True)\ndef test_a() -> None:\n    pass\n",
+    "@pytest.mark.skipif\ndef test_a() -> None:\n    pass\n",
+    "@pytest.mark.xfail\ndef test_a() -> None:\n    pass\n",
+    "@pytest.mark.xfail()\ndef test_a() -> None:\n    pass\n",
+    '@pytest.mark.xfail(reason="later")\ndef test_a() -> None:\n    pass\n',
+    '@pytest.mark.xfail(strict=True, reason="later")\ndef test_a() -> None:\n    pass\n',
+    'def test_a() -> None:\n    pytest.skip("not ready")\n',
+    "def test_a() -> None:\n    pytest.skip()\n",
+    'def test_a() -> None:\n    pytest.skip(reason="not ready")\n',
+    'def test_a() -> None:\n    pytest.xfail("later")\n',
+    "def test_a() -> None:\n    pytest.xfail()\n",
+    'def test_a() -> None:\n    pytest.importorskip("numpy")\n',
+    'def test_a() -> None:\n    pytest.importorskip("numpy", reason="optional")\n',
+    'class TestA:\n    @pytest.mark.skip(reason="flaky")\n    def test_a(self) -> None:\n'
+    "        pass\n",
+]
+
+# Each source is accepted: a reason carrying an issue reference.
+SKIP_ALLOWED: list[str] = [
+    '@pytest.mark.skip(reason="see #123")\ndef test_a() -> None:\n    pass\n',
+    '@pytest.mark.skip(reason="#123")\ndef test_a() -> None:\n    pass\n',
+    '@pytest.mark.skip("flaky, tracked in #45")\ndef test_a() -> None:\n    pass\n',
+    '@pytest.mark.skip(reason="https://github.com/acme/abacus/issues/45")\n'
+    "def test_a() -> None:\n    pass\n",
+    '@pytest.mark.skipif(True, reason="needs db, #7")\ndef test_a() -> None:\n    pass\n',
+    '@pytest.mark.xfail(reason="#9")\ndef test_a() -> None:\n    pass\n',
+    '@pytest.mark.xfail(strict=True, reason="bug #9")\ndef test_a() -> None:\n    pass\n',
+    '@pytest.mark.xfail(reason="https://github.com/acme/abacus/issues/9")\n'
+    "def test_a() -> None:\n    pass\n",
+    'def test_a() -> None:\n    pytest.skip("#12 flaky")\n',
+    'def test_a() -> None:\n    pytest.skip(reason="https://github.com/acme/abacus/issues/12")\n',
+    'def test_a() -> None:\n    pytest.xfail("#3")\n',
+    'def test_a() -> None:\n    pytest.importorskip("numpy", reason="#5")\n',
+    # unrelated decorators and calls
+    "@pytest.mark.slow\ndef test_a() -> None:\n    pass\n",
+    '@pytest.mark.parametrize("x", [1, 2])\ndef test_a(x: int) -> None:\n    pass\n',
+    "@pytest.mark.skipped\ndef test_a() -> None:\n    pass\n",
+    'def test_a(other) -> None:\n    other.skip("x")\n',
+    "def test_a() -> None:\n    assert True\n",
+]
+
+
+@pytest.mark.parametrize("body", SKIP_VIOLATIONS)
+def test_ac20_skip_001_flags_violation(tmp_path: Path, body: str) -> None:
+    _write(tmp_path, TEST_FILE, _test_source(body))
+    assert _rule_ids(tmp_path) == ["SKIP-001"]
+
+
+@pytest.mark.parametrize("body", SKIP_ALLOWED)
+def test_ac20_skip_001_allows_issue_reference_and_unrelated_code(
+    tmp_path: Path, body: str
+) -> None:
+    _write(tmp_path, TEST_FILE, _test_source(body))
+    assert _rule_ids(tmp_path) == []
+
+
+def test_ac20_skip_001_reports_one_finding_per_offending_node(tmp_path: Path) -> None:
+    body = (
+        '@pytest.mark.skip(reason="flaky")\n'
+        '@pytest.mark.xfail(reason="later")\n'
+        "def test_a() -> None:\n"
+        '    pytest.skip("x")\n'
+        '    pytest.importorskip("numpy")\n'
+        '    pytest.skip("#1")\n'
+    )
+    _write(tmp_path, TEST_FILE, _test_source(body))
+    assert _rule_ids(tmp_path) == ["SKIP-001"] * 4
+
+
+def test_ac20_skip_001_reports_the_offending_line(tmp_path: Path) -> None:
+    body = 'def test_a() -> None:\n    assert True\n    pytest.skip("later")\n'
+    _write(tmp_path, TEST_FILE, _test_source(body))
+    assert [(v.rule_id, v.line) for v in bp.scan(tmp_path)] == [("SKIP-001", 5)]
+
+
+def test_ac20_skip_001_output_names_path_rule_and_adr(tmp_path: Path) -> None:
+    _write(tmp_path, TEST_FILE, _test_source('def test_a() -> None:\n    pytest.skip("later")\n'))
+    [violation] = bp.scan(tmp_path)
+    assert str(violation).startswith(f"{TEST_FILE}:4: SKIP-001 ")
+    assert str(violation).endswith("(ADR-079)")

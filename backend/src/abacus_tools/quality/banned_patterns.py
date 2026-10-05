@@ -277,6 +277,57 @@ def _check_provider_host(src: SourceFile) -> Iterator[Finding]:
                 yield Finding(node.lineno, f"model provider endpoint '{hit}' outside ai_gateway")
 
 
+_ISSUE_REF = re.compile(r"#\d+|github\.com/[^/\s]+/[^/\s]+/issues/\d+")
+_SKIP_MARKS = frozenset({"skip", "skipif", "xfail"})
+_SKIP_CALLS = frozenset({"skip", "xfail", "importorskip"})
+
+
+def _skip_kind(node: ast.expr) -> str | None:
+    """`mark.skip`-style name for pytest.mark.<x>, `call.<x>` for pytest.<x>(), else None."""
+    if not isinstance(node, ast.Attribute):
+        return None
+    value = node.value
+    if (
+        node.attr in _SKIP_MARKS
+        and isinstance(value, ast.Attribute)
+        and value.attr == "mark"
+        and isinstance(value.value, ast.Name)
+        and value.value.id == "pytest"
+    ):
+        return f"mark.{node.attr}"
+    if node.attr in _SKIP_CALLS and isinstance(value, ast.Name) and value.id == "pytest":
+        return f"call.{node.attr}"
+    return None
+
+
+def _skip_reason(call: ast.Call, kind: str) -> str:
+    for kw in call.keywords:
+        if kw.arg in {"reason", "msg"} and isinstance(kw.value, ast.Constant):
+            return str(kw.value.value)
+    positional_reason = kind in {"mark.skip", "mark.xfail", "call.skip", "call.xfail"}
+    first = call.args[0] if call.args else None
+    if positional_reason and isinstance(first, ast.Constant) and isinstance(first.value, str):
+        return first.value
+    return ""
+
+
+def _check_unlinked_skip(src: SourceFile) -> Iterator[Finding]:
+    called: set[int] = set()
+    for call in _calls(src.tree):
+        kind = _skip_kind(call.func)
+        if kind is None:
+            continue
+        called.add(id(call.func))
+        if not _ISSUE_REF.search(_skip_reason(call, kind)):
+            yield Finding(call.lineno, f"pytest {kind.split('.')[1]} without an issue reference")
+    for node in ast.walk(src.tree):
+        if not isinstance(node, ast.Attribute) or id(node) in called:
+            continue
+        kind = _skip_kind(node)
+        if kind is not None and kind.startswith("mark."):
+            yield Finding(node.lineno, f"pytest {kind[5:]} without an issue reference")
+
+
 # --- tree rules -------------------------------------------------------------------------------
 
 
@@ -349,6 +400,12 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus_tools/quality/banned_patterns.py",
             "tests/unit/quality/*",
         ),
+    ),
+    Rule(
+        id="SKIP-001",
+        description="skip and xfail carry an issue reference",
+        adr="ADR-079",
+        check=_check_unlinked_skip,
     ),
     Rule(
         id="ANY-001",

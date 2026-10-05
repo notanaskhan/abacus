@@ -54,7 +54,7 @@ Finish the stage 1 gates ADR-083 lists but `make check-fast` does not yet run (s
 
 Steps:
 
-1. [ ] **`secrets_scan.py`** — `python -m abacus_tools.quality.secrets_scan`; scans `git ls-files` output (tracked + staged), skips binaries and lockfiles' integrity hashes. Rules (frozen dataclasses, same shape as `banned_patterns`):
+1. [x] **`secrets_scan.py`** — `python -m abacus_tools.quality.secrets_scan`; scans `git ls-files` output (tracked + staged), skips binaries and lockfiles' integrity hashes. Rules (frozen dataclasses, same shape as `banned_patterns`):
    | Rule | Detects |
    |---|---|
    | `SECRET-001` | Private key blocks (`-----BEGIN … PRIVATE KEY-----`) |
@@ -65,24 +65,24 @@ Steps:
    | `PII-003` | Card numbers 13–19 digits passing Luhn; ABA routing numbers passing the ABA checksum when labelled (`routing`, `aba`) |
    Exceptions only via exclude globs in the file (protected). Synthetic data must use reserved ranges (SSN `9xx`, test card numbers) — the generator (build plan step 4) follows this. Output and exit codes as `banned_patterns`.
 
-2. [ ] **`check_dependencies.py`** — `python -m abacus_tools.quality.check_dependencies`. Reads `[project].dependencies` (→ `python.runtime`) and `[dependency-groups]` (→ `python.dev`) from `backend/pyproject.toml`, and `dependencies` / `devDependencies` / `peerDependencies` / `optionalDependencies` from every tracked `package.json` (→ `typescript.runtime` / `.dev`). Names normalised (PEP 503 for Python; scoped names and `@scope/*` globs for npm). Fails on: not listed, listed as `pending`, runtime dependency listed only under `dev`. Direct dependencies only — transitive ones are fixed by the lockfiles and audited in stage 3 (`pip-audit`, already approved). Also fails if `uv.lock` is out of date (`uv lock --check`).
+2. [x] **`check_dependencies.py`** — `python -m abacus_tools.quality.check_dependencies`. Reads `[project].dependencies` (→ `python.runtime`) and `[dependency-groups]` (→ `python.dev`) from `backend/pyproject.toml`, and `dependencies` / `devDependencies` / `peerDependencies` / `optionalDependencies` from every tracked `package.json` (→ `typescript.runtime` / `.dev`). Names normalised (PEP 503 for Python; scoped names and `@scope/*` globs for npm). Fails on: not listed, listed as `pending`, runtime dependency listed only under `dev`. Direct dependencies only — transitive ones are fixed by the lockfiles and audited in stage 3 (`pip-audit`, already approved). Also fails if `uv.lock` is out of date (`uv lock --check`).
 
-3. [ ] **`SKIP-001`** in `banned_patterns.py`: `@pytest.mark.skip`, `skipif`, `xfail`, `pytest.skip(...)`, `pytest.xfail(...)` need a `reason=` containing an issue reference (`#123` or a GitHub issue URL) (ADR-079).
+3. [x] **`SKIP-001`** in `banned_patterns.py`: `@pytest.mark.skip`, `skipif`, `xfail`, `pytest.skip(...)`, `pytest.xfail(...)` need a `reason=` containing an issue reference (`#123` or a GitHub issue URL) (ADR-079).
 
-4. [ ] **pytest configuration** in `backend/pyproject.toml`: `addopts = "--import-mode=importlib --strict-markers --strict-config"`, `asyncio_mode = "auto"`, `testpaths = ["tests"]`, `xfail_strict = true`. In `tests/conftest.py`: a session-finish hook that turns pytest's exit 5 ("no tests collected") into 0 **only** when none of the selected directories contains a `test_*.py` file — an empty suite passes, a mis-filtered run still fails. Removed once every suite has tests.
+4. [x] **pytest configuration** in `backend/pyproject.toml`: `addopts = "--import-mode=importlib --strict-markers --strict-config"`, `asyncio_mode = "auto"`, `testpaths = ["tests"]`, `xfail_strict = true`. In `tests/conftest.py`: a session-finish hook that turns pytest's exit 5 ("no tests collected") into 0 **only** when none of the selected directories contains a `test_*.py` file — an empty suite passes, a mis-filtered run still fails. Removed once every suite has tests.
 
-5. [ ] **Stage 2 targets before SPEC-000** (Q3 decides the shape; recommendation):
+5. [x] **Stage 2 targets before SPEC-000** (Q3 decides the shape; recommendation):
    - `abacus_tools.quality.schema_check`: real entry point; with no migrations in `backend/migrations/versions/` it prints "no migrations yet" and exits 0; with any migration it exits 1 "schema_check not implemented" — so SPEC-000's first migration is forced to bring the real check
    - API-client drift: `Makefile` `check` runs it only when `backend/src/abacus/api/main.py` exists; otherwise prints the skip. Same forcing function: SPEC-000's entry point turns it on
    - vitest: one real smoke test `apps/web/src/App.test.tsx` rendering `<App />` with `@testing-library/react` (approved) — needs a DOM environment, `jsdom` or `happy-dom`, **not approved** (Q2)
 
-6. [ ] **Coverage floors** (if Q2 approves `pytest-cov`): `docs/architecture/test-thresholds.yaml` (protected) holding the floor per area (global, red-zone modules) per ADR-079; `make check` reads it. Initial floor: 90 % for `abacus_tools.quality` (currently tested), others start at 0 % and are raised by the tasks that add code — the file is protected, so every change gets founder review.
+6. [x] **Coverage floors** (if Q2 approves `pytest-cov`): `docs/architecture/test-thresholds.yaml` (protected) holding the floor per area (global, red-zone modules) per ADR-079; `make check` reads it. Initial floor: 90 % for `abacus_tools.quality` (currently tested), others start at 0 % and are raised by the tasks that add code — the file is protected, so every change gets founder review.
 
-7. [ ] **Makefile** — `check-fast` gains `secrets_scan` and `check_dependencies`; `check` gains the step 5 guards and coverage. Nothing removed.
+7. [x] **Makefile** — `check-fast` gains `secrets_scan` and `check_dependencies`; `check` gains the step 5 guards and coverage. Nothing removed.
 
-8. [ ] **CI** `.github/workflows/ci.yml` (Q4): `stage-1` job on every push (`make setup && make check-fast`), `stage-2` job on pull requests (`make check`); Node 24, Python via `uv`, pnpm via corepack; actions pinned to full commit SHAs; `permissions: contents: read`; no secrets used. Concurrency cancels superseded runs.
+8. [x] **CI** `.github/workflows/ci.yml` (Q4): `stage-1` job on every push (`make setup && make check-fast`), `stage-2` job on pull requests (`make check`); Node 24, Python via `uv`, pnpm via corepack; actions pinned to full commit SHAs; `permissions: contents: read`; no secrets used. Concurrency cancels superseded runs.
 
-9. [ ] **Verify:** `make check-fast` and `make check` exit 0 locally and in CI on the PR. Gate-break each new check (one planted secret per `SECRET-*`, one identifier per `PII-*`, an unlisted and a `pending` dependency, a dev-only runtime dep, a reasonless skip, a coverage drop, a stale `uv.lock`), confirm failure, revert.
+9. [x] **Verify:** `make check-fast` and `make check` exit 0 locally and in CI on the PR. Gate-break each new check (one planted secret per `SECRET-*`, one identifier per `PII-*`, an unlisted and a `pending` dependency, a dev-only runtime dep, a reasonless skip, a coverage drop, a stale `uv.lock`), confirm failure, revert.
 
 Files to create or change:
 - `backend/src/abacus_tools/quality/{secrets_scan,check_dependencies,schema_check}.py`, `banned_patterns.py` *(protected)*
@@ -192,6 +192,12 @@ Append-only. Newest at the bottom.
 
 - `2026-10-05` — Task created with plan after TASK-001 merged (PR #1). Awaiting founder approval. No code written.
 - `2026-10-05` — Founder approved plan and Q1–Q4; agent wrote the approval file at founder's instruction. Implementation started.
+- `2026-10-05` — Implementation done; tests written independently (ADR-078) by a separate subagent session (Sonnet) from the *Interface contract*, without reading the implementation. Implementation made them pass **without editing them**; one contract gap went the test author's way (SECRET-003 limited to code/config files per step 1; my first cut scanned all files).
+  - New: `secrets_scan` (6 rules), `check_dependencies`, `schema_check`, banned pattern `SKIP-001`; pytest config + empty-suite hook in `tests/conftest.py`; vitest + jsdom smoke test `apps/web/src/App.test.tsx`; `.github/workflows/ci.yml` (actions pinned: checkout v7.0.1 `3d3c42e`, setup-node v7.0.0 `8207627`, setup-uv v10.2.0 `c18668a`).
+  - Coverage floor 95 % (measured 98 %) in `backend/pyproject.toml`.
+  - **Bug found by gate-break:** `uv run`/`uv sync` silently re-lock when `pyproject.toml` changes, so `uv lock --check` placed after them always passed, and CI's `make setup` would have hidden a stale lock. Fixed: `make setup` uses `uv sync --locked`; `check-fast` runs `uv lock --check` first.
+  - Gate-break (each confirmed failing, then reverted): SECRET-001/002/003, PII-001 SSN, PII-002 EIN in `.csv`, PII-003 card and labelled routing number, unlisted dep, pending dep (`workos`), runtime dep approved only as dev, stale `uv.lock` (check-fast and setup both fail), reasonless skip, coverage below floor. Empty suites pass; a run that deselects every test still fails (exit 5).
+  - `make setup` exit 0; `make check-fast` exit 0; **`make check` exit 0** (539 backend tests, 1 vitest; coverage 98 %).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -200,12 +206,19 @@ Append-only. Newest at the bottom.
 | Allowlist checks direct dependencies only | Transitive deps are pinned by lockfiles and audited in stage 3 | no |
 | Empty-suite handling in conftest, not a plugin | No new dependency; refuses to hide a mis-filtered run | no |
 | Stage 2 checks for code that doesn't exist yet fail once that code appears | Forces SPEC-000 to deliver the real check instead of leaving a stub | no |
+| Coverage floor in `[tool.coverage.report]` of `backend/pyproject.toml`, not a new `test-thresholds.yaml` (plan step 6) | pyproject is already protected; one global floor suffices while red-zone modules are empty; no extra checker script outside the approval. Per-area floors arrive with red-zone code in SPEC-000 | no |
+| Vitest smoke test uses `react-dom/client` + `act`, not `@testing-library/react` | testing-library v16 needs `@testing-library/dom` as a peer — not approved | no |
+| SECRET-001 matches the real header shape `-----BEGIN … PRIVATE KEY-----` with only `[A-Z0-9 ]` between | Docs describing the rule must not trip it | no |
+| `aba` label matched as a whole word | "abacus" is on every other line of this repo | no |
+| Two pytest invocations kept; coverage appended across them, floor enforced on the second | Keeps fast suites first; floor applies to combined data | no |
 
 ## Gotchas and discoveries
 - `make check` today fails on `pytest tests/unit tests/property` (exit 5: nothing collected in `property`), then on missing `schema_check`, `export_openapi`, `packages/api-client` and vitest.
 - Hook self-test, planned here in TASK-001, already landed as `backend/tests/unit/quality/test_hooks.py`.
 - Founder's shell `PATH` still resolves `node` to 20.16 — `make` needs `/opt/homebrew/opt/node@24/bin` first.
 - Branch protection is off: CI jobs from this task only gate merges once they are required checks.
+- `jsdom` 30 requires Node `^22.22.2 || >=24.15`; root `package.json` still says `>=22.12` (root manifest not in this task's approval). CI and local both use Node 24.21. Tighten in the next task that touches the root manifest.
+- `uv run` and `uv sync` re-lock silently; anything that must detect a stale `uv.lock` has to run before them or use `--locked`.
 
 ## Questions for the human
 - [x] **Q1 — Classification-tag check.** Approved as recommended 2026-10-05. ADR-083 puts it in stage 1, but there are no models and the tag mechanism (`Annotated[..., Restricted]` vs `Field(json_schema_extra=…)`) is a kernel decision. **Recommendation:** build it in SPEC-000 with the first model and the kernel's classification type; not in this task.
@@ -214,8 +227,8 @@ Append-only. Newest at the bottom.
 - [x] **Q4 — CI.** Approved as recommended 2026-10-05. GitHub Actions with three third-party actions pinned by SHA, no secrets, read-only token. **Recommendation:** approve, then turn on branch protection with both jobs as required checks.
 
 ## Handoff
-- **Current state:** Plan written; not approved. No code. Branch `task-002-stage-gates` created; TASK-001 marked done.
-- **Exact next step:** Founder answers Q1–Q4, approves the plan, creates `work/approvals/TASK-002.yaml` by hand from *Approval file text*. Then step 1.
-- **Uncommitted or partial work:** this file and the TASK-001 status change.
-- **Known failing checks:** `make check` (see Gotchas).
-- **Open issues:** branch protection off; founder `PATH`; bot GitHub account deferred.
+- **Current state:** Steps 1–9 done; `make check` exit 0 locally. Not yet pushed.
+- **Exact next step:** Cross-model reviewer pass (stage 4), fix findings, push, open PR; confirm both CI jobs pass on the PR; founder merges and turns on branch protection with `stage 1` and `stages 1 and 2` as required checks.
+- **Uncommitted or partial work:** see git status; committing next.
+- **Known failing checks:** none.
+- **Open issues:** branch protection off; founder `PATH`; bot GitHub account deferred; root `engines.node` (Gotchas).
