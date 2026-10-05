@@ -40,6 +40,7 @@ python:
     pyyaml: approved            # parse doc frontmatter and policy YAML in abacus_tools.quality.validate_docs (TASK-001)
     types-PyYAML: approved      # pyyaml stubs; required for strict Pyright (ADR-009)
     pytest-cov: approved        # coverage floors in make check (ADR-079, TASK-002)
+    hatchling: approved         # build backend in backend/pyproject.toml (TASK-001 approved plan, step 10)
 
 typescript:
   runtime:

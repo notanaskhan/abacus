@@ -413,3 +413,49 @@ def test_ac20_skip_001_output_names_path_rule_and_adr(tmp_path: Path) -> None:
     [violation] = bp.scan(tmp_path)
     assert str(violation).startswith(f"{TEST_FILE}:4: SKIP-001 ")
     assert str(violation).endswith("(ADR-079)")
+
+
+# --- SKIP-001: aliasing ---------------------------------------------------------------------
+
+ALIAS_MESSAGE = "pytest aliased; use pytest.mark/pytest.skip directly so skips stay checkable"
+
+SKIP_ALIASED: list[str] = [
+    "from pytest import mark\n",
+    "from pytest import skip\n",
+    "from pytest import xfail\n",
+    "from pytest import importorskip\n",
+    "from pytest import mark as m\n",
+    "from pytest import skip as s\n",
+    "import pytest as pt\n",
+    "import pytest as _pytest\n",
+    "m = pytest.mark\n",
+    "def f() -> None:\n    m = pytest.mark\n",
+]
+
+SKIP_NOT_ALIASED: list[str] = [
+    "from pytest import fixture\n",
+    "from pytest import raises\n",
+    "import pytest as pytest\n",
+    "mark = other.mark\n",
+    "m = pytest.fixture\n",
+]
+
+
+@pytest.mark.parametrize("body", SKIP_ALIASED)
+@pytest.mark.parametrize("rel", [TEST_FILE, "src/abacus/modules/ledger/helpers.py"])
+def test_ac20_skip_001_flags_pytest_aliasing(tmp_path: Path, body: str, rel: str) -> None:
+    _write(tmp_path, rel, _test_source(body))
+    assert _rule_ids(tmp_path) == ["SKIP-001"]
+
+
+def test_ac20_skip_001_alias_message_is_exact(tmp_path: Path) -> None:
+    _write(tmp_path, TEST_FILE, "from pytest import mark\n")
+    [violation] = bp.scan(tmp_path)
+    assert violation.message == ALIAS_MESSAGE
+    assert violation.line == 1
+
+
+@pytest.mark.parametrize("body", SKIP_NOT_ALIASED)
+def test_ac20_skip_001_allows_non_aliasing_imports(tmp_path: Path, body: str) -> None:
+    _write(tmp_path, TEST_FILE, _test_source(body))
+    assert _rule_ids(tmp_path) == []

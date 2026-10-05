@@ -311,7 +311,32 @@ def _skip_reason(call: ast.Call, kind: str) -> str:
     return ""
 
 
+_ALIASED = "pytest aliased; use pytest.mark/pytest.skip directly so skips stay checkable"
+
+
+def _is_pytest_mark(node: ast.expr | None) -> bool:
+    return (
+        isinstance(node, ast.Attribute)
+        and node.attr == "mark"
+        and isinstance(node.value, ast.Name)
+        and node.value.id == "pytest"
+    )
+
+
+def _pytest_aliases(src: SourceFile) -> Iterator[Finding]:
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.ImportFrom) and node.module == "pytest":
+            if any(a.name in {"mark", *_SKIP_CALLS} for a in node.names):
+                yield Finding(node.lineno, _ALIASED)
+        elif isinstance(node, ast.Import):
+            if any(a.name == "pytest" and a.asname not in {None, "pytest"} for a in node.names):
+                yield Finding(node.lineno, _ALIASED)
+        elif isinstance(node, ast.Assign | ast.AnnAssign) and _is_pytest_mark(node.value):
+            yield Finding(node.lineno, _ALIASED)
+
+
 def _check_unlinked_skip(src: SourceFile) -> Iterator[Finding]:
+    yield from _pytest_aliases(src)
     called: set[int] = set()
     for call in _calls(src.tree):
         kind = _skip_kind(call.func)

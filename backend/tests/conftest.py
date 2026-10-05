@@ -18,6 +18,6 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     """
     if exitstatus != NO_TESTS_COLLECTED:
         return
-    selected = [Path(str(arg)).resolve() for arg in session.config.args]
+    selected = [Path(str(arg).split("::", 1)[0]).resolve() for arg in session.config.args]
     if not any(any(p.rglob("test_*.py")) if p.is_dir() else p.exists() for p in selected):
         session.exitstatus = pytest.ExitCode.OK

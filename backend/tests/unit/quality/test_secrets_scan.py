@@ -7,6 +7,9 @@ identifiers and check digits are assembled at runtime.
 from __future__ import annotations
 
 import re
+import shutil
+import subprocess
+from collections.abc import Callable, Iterable
 from pathlib import Path
 
 import pytest
@@ -73,6 +76,14 @@ def _ein(prefix: str) -> str:
     return prefix + "-" + "3456789"
 
 
+def _getenv(func: str, name: str, default: str) -> str:
+    return func + '("' + name + '", "' + default + '")\n'
+
+
+def _url(scheme: str, user: str, password: str, host: str) -> str:
+    return scheme + "://" + user + ":" + password + "@" + host + "/db"
+
+
 def _assign(name: str, value: str, *, quote: str = '"', sep: str = " = ") -> str:
     return name + sep + quote + value + quote + "\n"
 
@@ -102,6 +113,10 @@ def _token_bodies() -> list[tuple[str, str]]:
         ("slack-p", "xox" + "p-" + "1-2-3-4-5-6"),
         ("stripe", "sk_" + "live_" + "z9" * 8),
         ("google", "AIza" + ("Ab_" * 12)[:35]),
+        ("npm", "npm" + "_" + "aB1" * 12),
+        ("gitlab", "glpat" + "-" + "a-" * 10),
+        ("sendgrid", "SG" + "." + "k-" * 11 + "." + "m_" * 21 + "m"),
+        ("huggingface", "hf" + "_" + "aB" * 17),
     ]
 
 
@@ -117,6 +132,11 @@ def _short_tokens() -> list[tuple[str, str]]:
         ("slack-short", "xox" + "b-" + "1" * 9),
         ("stripe-short", "sk_" + "live_" + "z" * 15),
         ("google-short", "AIza" + "A" * 34),
+        ("npm-short", "npm" + "_" + "a" * 35),
+        ("gitlab-short", "glpat" + "-" + "a" * 19),
+        ("sendgrid-short-first", "SG" + "." + "k" * 21 + "." + "m" * 43),
+        ("sendgrid-short-second", "SG" + "." + "k" * 22 + "." + "m" * 42),
+        ("huggingface-short", "hf" + "_" + "a" * 33),
     ]
 
 
@@ -131,15 +151,23 @@ def test_ac20_secret_001_flags_violation(tmp_path: Path, label: str) -> None:
     ]
 
 
+def test_ac20_secret_001_flags_pgp_private_key_block(tmp_path: Path) -> None:
+    text = "x\n" + _pem_header("PGP PRIVATE KEY BLOCK") + "\n"
+    assert [(v.rule_id, v.line) for v in _scan(tmp_path, "keys/pgp.txt", text)] == [
+        ("SECRET-001", 2)
+    ]
+
+
 @pytest.mark.parametrize(
     "header",
     [
+        _pem_header("PGP PUBLIC KEY BLOCK"),
         _pem_header("CERTIFICATE"),
         _pem_header("PUBLIC KEY"),
         "-----" + "END " + "RSA PRIVATE KEY" + "-----",
         "BEGIN " + "PRIVATE KEY" + " without dashes",
     ],
-    ids=["certificate", "public-key", "end-marker", "no-dashes"],
+    ids=["pgp-public", "certificate", "public-key", "end-marker", "no-dashes"],
 )
 def test_ac20_secret_001_allows_clean(tmp_path: Path, header: str) -> None:
     assert _rule_ids(tmp_path, "keys/cert.txt", header + "\nbody\n") == []
@@ -179,6 +207,21 @@ SECRET_003_VIOLATIONS: list[tuple[str, str]] = [
     (".env", _assign("SESSION_SECRET", REAL_LOOKING, quote="", sep="=")),
     ("config/.env.production", _assign("AUTH_TOKEN", REAL_LOOKING, quote="", sep="=")),
     ("config/settings.json", '  "' + _assign("API_KEY", REAL_LOOKING, sep='": ').rstrip() + "\n"),
+    # changed placeholder test: placeholder words only count as whole or leading tokens
+    ("src/cfg.py", _assign("API_KEY", "Contest2024!win")),
+    ("src/cfg.py", _assign("API_KEY", "Attestation#99")),
+    # getenv / environ.get defaults
+    ("src/cfg.py", _getenv("os.getenv", "API_KEY", REAL_LOOKING)),
+    ("src/cfg.py", _getenv("os.environ.get", "AUTH_TOKEN", REAL_LOOKING)),
+    # bare assignments in shell-like and ini-like files
+    ("scripts/run.sh", "API_KEY=" + REAL_LOOKING + "\n"),
+    ("scripts/run.sh", "export API_KEY=" + REAL_LOOKING + "\n"),
+    ("setup.ini", "api_key = " + REAL_LOOKING + "\n"),
+    ("setup.cfg", "api_key = " + REAL_LOOKING + "\n"),
+    ("config/prod.env", "API_KEY=" + REAL_LOOKING + "\n"),
+    ("Dockerfile", "ENV API_KEY=" + REAL_LOOKING + "\n"),
+    ("docker/Dockerfile", "ENV API_KEY=" + REAL_LOOKING + "\n"),
+    ("docker-compose.yaml", "    environment:\n      - API_KEY=" + REAL_LOOKING + "\n"),
 ]
 
 SECRET_003_CLEAN: list[tuple[str, str]] = [
@@ -208,6 +251,28 @@ SECRET_003_CLEAN: list[tuple[str, str]] = [
     (".env", _assign("SESSION_SECRET", "changeme", quote="", sep="=")),
     (".env.example", _assign("AUTH_TOKEN", "${AUTH_TOKEN}", quote="", sep="=")),
     ("README.md", _assign("API_KEY", REAL_LOOKING)),
+    ("README.md", "export API_KEY=" + REAL_LOOKING + "\n"),
+    # changed placeholder test: tokens equal to or starting with a placeholder word
+    ("src/cfg.py", _assign("API_KEY", "my-test-key1")),
+    ("src/cfg.py", _assign("API_KEY", "testing123")),
+    ("src/cfg.py", _assign("API_KEY", "Example-9-value")),
+    # a credential needs a letter and a digit and no slash or colon
+    ("src/cfg.py", _assign("API_KEY", "abcdefghij")),
+    ("src/cfg.py", _assign("API_KEY", "1234567890")),
+    ("src/cfg.py", _assign("API_KEY", "read/write9scope")),
+    ("src/cfg.py", _assign("API_KEY", "/api/v1/tokens")),
+    ("src/cfg.py", _assign("API_KEY", "host9:abcdefgh")),
+    ("src/cfg.py", _assign("TOKEN_TTL", "3600:seconds")),
+    # getenv defaults
+    ("src/cfg.py", _getenv("os.getenv", "API_KEY", "changeme")),
+    ("src/cfg.py", _getenv("os.environ.get", "API_KEY", "<set-me>")),
+    ("src/cfg.py", _getenv("os.getenv", "PAGE_SIZE", REAL_LOOKING)),
+    ("src/cfg.py", 'os.getenv("' + "API_KEY" + '")\n'),
+    # bare assignments in the new file types, with placeholders
+    ("scripts/run.sh", "API_KEY=changeme\n"),
+    ("scripts/run.sh", "export API_KEY=${API_KEY}\n"),
+    ("Dockerfile", "ENV API_KEY=<set-me>\n"),
+    ("setup.cfg", "page_size = " + REAL_LOOKING + "\n"),
 ]
 
 
@@ -219,6 +284,96 @@ def test_ac20_secret_003_flags_violation(tmp_path: Path, rel: str, text: str) ->
 @pytest.mark.parametrize(("rel", "text"), SECRET_003_CLEAN)
 def test_ac20_secret_003_allows_clean(tmp_path: Path, rel: str, text: str) -> None:
     assert _rule_ids(tmp_path, rel, text) == []
+
+
+# --- SECRET-004 -------------------------------------------------------------------------------
+
+URL_CRED = "Hunter2hunter2"
+
+
+@pytest.mark.parametrize("scheme", ["postgresql", "https", "amqp", "redis"])
+def test_ac20_secret_004_flags_violation(tmp_path: Path, scheme: str) -> None:
+    text = "first\nURL = " + _url(scheme, "app", URL_CRED, "db.internal") + "\n"
+    [violation] = _scan(tmp_path, "src/a.py", text)
+    assert (violation.rule_id, violation.line) == ("SECRET-004", 2)
+    assert violation.message == "credentials embedded in a URL"
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        _url("postgresql", "postgres", "postgres", "localhost"),
+        _url("postgresql", "app", "changeme", "db"),
+        _url("postgresql", "app", "<password>", "db"),
+        _url("postgresql", "app", "${DB_PASSWORD}", "db"),
+        _url("postgresql", "app", "$DB_PASSWORD", "db"),
+        _url("postgresql", "app", "short1", "db"),
+        _url("postgresql", "app", "nodigitshere", "db"),
+        _url("postgresql", "app", "12345678", "db"),
+        _url("postgresql", "app", "my-test-pass1", "db"),
+        "https://" + "user" + "@" + "example.org/path",
+        "https://" + "example.org:8080/path",
+    ],
+    ids=[
+        "postgres-postgres",
+        "changeme",
+        "angle",
+        "braces",
+        "dollar",
+        "too-short",
+        "no-digit",
+        "no-letter",
+        "placeholder-token",
+        "no-password",
+        "port-only",
+    ],
+)
+def test_ac20_secret_004_allows_clean(tmp_path: Path, url: str) -> None:
+    assert _rule_ids(tmp_path, "src/a.py", "URL = " + url + "\n") == []
+
+
+# --- encodings, symlinks, git -----------------------------------------------------------------
+
+
+def test_ac20_utf16_le_bom_file_is_decoded_and_scanned(tmp_path: Path) -> None:
+    data = b"\xff\xfe" + ("x\n" + _TOKEN + "\n").encode("utf-16-le")
+    (tmp_path / "u16.txt").write_bytes(data)
+    assert [(v.rule_id, v.line) for v in ss.scan(tmp_path, files=["u16.txt"])] == [
+        ("SECRET-002", 2)
+    ]
+
+
+def test_ac20_utf16_be_bom_file_is_decoded_and_scanned(tmp_path: Path) -> None:
+    data = b"\xfe\xff" + ("x\n" + _TOKEN + "\n").encode("utf-16-be")
+    (tmp_path / "u16.txt").write_bytes(data)
+    assert [v.rule_id for v in ss.scan(tmp_path, files=["u16.txt"])] == ["SECRET-002"]
+
+
+def test_ac20_utf16_bom_file_without_findings_is_clean(tmp_path: Path) -> None:
+    (tmp_path / "u16.txt").write_bytes(b"\xff\xfe" + "clean\n".encode("utf-16-le"))
+    assert ss.scan(tmp_path, files=["u16.txt"]) == []
+
+
+def test_ac20_nul_file_without_bom_is_still_skipped(tmp_path: Path) -> None:
+    (tmp_path / "bin.txt").write_bytes(_TOKEN.encode() + b"\x00\n")
+    assert ss.scan(tmp_path, files=["bin.txt"]) == []
+
+
+def test_ac20_symlinks_are_skipped(tmp_path: Path) -> None:
+    _write(tmp_path, "real.txt", _TOKEN + "\n")
+    (tmp_path / "link.txt").symlink_to(tmp_path / "real.txt")
+    assert ss.scan(tmp_path, files=["link.txt"]) == []
+    assert [v.path for v in ss.scan(tmp_path, files=["real.txt"])] == ["real.txt"]
+
+
+def test_ac20_default_scan_covers_tracked_files_only(tmp_path: Path) -> None:
+    git = shutil.which("git")
+    assert git is not None
+    subprocess.run([git, "init", "-q"], cwd=tmp_path, check=True)
+    _write(tmp_path, "tracked.txt", _TOKEN + "\n")
+    _write(tmp_path, "untracked.txt", _TOKEN + "\n")
+    subprocess.run([git, "add", "tracked.txt"], cwd=tmp_path, check=True)
+    assert [(v.path, v.rule_id) for v in ss.scan(tmp_path)] == [("tracked.txt", "SECRET-002")]
 
 
 # --- PII-001 ----------------------------------------------------------------------------------
@@ -374,6 +529,7 @@ def _leak_cases() -> list[tuple[str, str, str, str]]:
         ("PII-002", "ein", "data/a.csv", _ein("12")),
         ("PII-003", "card", "src/a.py", _card(16)),
         ("PII-003", "aba", "data/a.txt", _aba()),
+        ("SECRET-004", "url", "src/a.py", "Hunter2hunter2"),
     ]
 
 
@@ -383,7 +539,9 @@ def _leak_cases() -> list[tuple[str, str, str, str]]:
 def test_ac20_messages_never_contain_the_matched_value(
     tmp_path: Path, rule_id: str, _name: str, rel: str, value: str
 ) -> None:
-    if rule_id == "SECRET-003":
+    if rule_id == "SECRET-004":
+        text = "URL = " + _url("postgresql", "app", value, "db.internal") + "\n"
+    elif rule_id == "SECRET-003":
         text = _assign("API_KEY", value)
     elif _name == "aba":
         text = "routing " + value + "\n"
@@ -509,3 +667,7 @@ def test_ac20_repository_has_no_secrets() -> None:
     # Deliberately depends on live repo state: this is the AC-20 claim itself, and duplicates
     # the secrets step of `make check-fast`.
     assert ss.scan(REPO) == []
+    tracked_files: Callable[[Path], Iterable[str]] = vars(ss)["_tracked_files"]
+    tracked = list(tracked_files(REPO))
+    assert tracked
+    assert "AGENTS.md" in tracked

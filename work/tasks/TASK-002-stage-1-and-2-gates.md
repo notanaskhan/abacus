@@ -130,6 +130,33 @@ All three checkers live in `abacus_tools.quality`, follow `banned_patterns`' sha
 
 **`banned_patterns` `SKIP-001`** (ADR-079): `pytest.mark.skip`, `pytest.mark.skipif`, `pytest.mark.xfail` (as decorator, called or bare) and calls `pytest.skip(...)`, `pytest.xfail(...)`, `pytest.importorskip(...)` are violations unless a `reason` (keyword, or first positional string for `skip`/`xfail`) contains `#<digits>` or `github.com/<owner>/<repo>/issues/<digits>`. One finding per offending node.
 
+#### Contract revision 1 (2026-10-06, from the stage 4 reviews)
+Additive unless marked **changed**.
+
+**`secrets_scan`**
+- **changed** placeholder test: a value is a placeholder if empty, starts with `<`, `${`, `{{` or `$`, is one repeated character, or any of its tokens (split on non-alphanumerics, lowercased) **equals or starts with** a placeholder word. (`Contest2024!win`, `Attestation#99` are no longer placeholders; `my-test-key`, `testing123` still are.)
+- **changed** a SECRET-003 credential also needs ≥ 1 letter and ≥ 1 digit and must contain neither `/` nor `:` (scopes, routes, paths, numeric settings are not credentials).
+- SECRET-003 also covers `getenv("NAME", "value")` / `environ.get("NAME", "value")` defaults, and file types `.sh`, `.ini`, `.cfg`, names ending `.env`, and `Dockerfile`, where bare `NAME=value`, `export NAME=value`, `ENV NAME=value` and `- NAME=value` count. `.md` stays out.
+- New `SECRET-004`: a URL with embedded credentials (scheme, `://`, user, `:`, password, `@`, host) whose password passes the same credential test as SECRET-003 (≥ 8 chars, a letter and a digit, no whitespace, not a placeholder) — so local-container URLs such as user `postgres` / password `postgres` pass; message `credentials embedded in a URL`.
+- SECRET-001 also matches the PGP private-key block header (`BEGIN PGP PRIVATE KEY BLOCK` between the five-dash fences).
+- SECRET-002 also matches `npm_` + 36 alnum, `glpat-` + 20 `[A-Za-z0-9_-]`, `SG.` + 22 `[A-Za-z0-9_-]` + `.` + 43 `[A-Za-z0-9_-]`, `hf_` + 34 alnum.
+- Files starting with a UTF-16 byte-order mark are decoded as UTF-16 and scanned; other files with a NUL byte are still skipped. Symlinks are skipped.
+
+**`check_dependencies`**
+- Also reads `[project.optional-dependencies]` (runtime) and `[build-system].requires` (dev), and every `pyproject.toml` / `requirements*.txt` (runtime) outside `node_modules`, `dist`, dot-directories.
+- Exact allowlist keys take precedence over glob keys.
+- New messages:
+  - `<rel>: <name> must be installed from the package registry, not a URL, path, git repository or alias` — Python `name @ …` specs; npm versions starting `npm:`, `git`, `github:`, `http:`, `https:`, `file:`, `link:`, or containing `/` before any `#`.
+  - `<rel>: <name> is not a workspace package` — a `workspace:` version whose name is not the `name` of a `package.json` in the repo.
+  - `<rel>: <key> is not allowed: it changes where or which dependencies are installed` — `<key>` is one of `tool.uv.sources`, `tool.uv.index`, `tool.uv.override-dependencies`, `tool.uv.constraint-dependencies`, `tool.uv.dev-dependencies` (pyproject); `pnpm.overrides`, `pnpm.patchedDependencies`, `overrides`, `resolutions`, `bundleDependencies`, `bundledDependencies` (package.json); `overrides`, `patchedDependencies`, `catalog`, `catalogs` (pnpm-workspace.yaml).
+
+**`schema_check`**
+- **changed** `check(migrations)` looks for `*.py` (other than `__init__.py`) **recursively**.
+- New `check_orm(backend: Path) -> list[str]`: `[NOT_IMPLEMENTED]` (same message) if `backend/alembic.ini` exists or any `src/abacus/**/models.py` or `src/abacus/**/models/` directory exists; else `[]`.
+- `MIGRATIONS == <repo>/backend/migrations/versions`; `main()` reports the union of `check(MIGRATIONS)` and `check_orm(<repo>/backend)` once.
+
+**`banned_patterns` `SKIP-001`** also flags, in any scanned file: `from pytest import mark|skip|xfail|importorskip`; `import pytest as <alias>` (alias ≠ `pytest`); and assigning `pytest.mark` to a name — message `pytest aliased; use pytest.mark/pytest.skip directly so skips stay checkable`.
+
 ### Approval file text
 `work/approvals/TASK-002.yaml` (exact paths; extended only for Q2 packages):
 ```yaml
@@ -160,17 +187,17 @@ reason: TASK-002 — stage 1 completion, make check, CI
 ```
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them
-- [ ] Type check passes
-- [ ] Lint and format pass
-- [ ] Architecture and dependency rules pass — now including `check_dependencies`
-- [ ] Full test suite passes; no tests skipped, weakened or deleted
-- [ ] Security scan passes; no secrets committed — now including `secrets_scan`
-- [ ] No new dependencies, or each one approved and listed below
+- [x] All listed ACs have passing tests that reference them
+- [x] Type check passes
+- [x] Lint and format pass
+- [x] Architecture and dependency rules pass — now including `check_dependencies`
+- [x] Full test suite passes; no tests skipped, weakened or deleted
+- [x] Security scan passes; no secrets committed — now including `secrets_scan`
+- [x] No new dependencies, or each one approved and listed below
 - [ ] Every query is tenant-scoped; every endpoint checks authorisation — n/a, no queries or endpoints
 - [ ] AI calls (if any) go through the gateway with limits, logging and passing evals — n/a
-- [ ] Module README and relevant docs updated
-- [ ] Decisions below reviewed; ADR raised where needed
+- [x] Module README and relevant docs updated — protected-paths.md (coverage floor, CI); n/a module READMEs
+- [x] Decisions below reviewed; ADR raised where needed
 - [ ] `make check` exits 0 locally and both CI jobs pass on the PR
 
 Commands:
@@ -199,6 +226,16 @@ Append-only. Newest at the bottom.
   - Gate-break (each confirmed failing, then reverted): SECRET-001/002/003, PII-001 SSN, PII-002 EIN in `.csv`, PII-003 card and labelled routing number, unlisted dep, pending dep (`workos`), runtime dep approved only as dev, stale `uv.lock` (check-fast and setup both fail), reasonless skip, coverage below floor. Empty suites pass; a run that deselects every test still fails (exit 5).
   - `make setup` exit 0; `make check-fast` exit 0; **`make check` exit 0** (539 backend tests, 1 vitest; coverage 98 %).
 
+- `2026-10-06` — Stage 4 review (Sonnet: security; architecture + tests). No blockers. Fixed via *Contract revision 1* (tests extended by the independent test author from the revised contract; implementation not shown to them):
+  - **api-client drift guard was vacuous:** `git diff` ignores untracked files, so SPEC-000's first generated client would never be compared; and the guard keyed on `api/main.py` only. Now: switches on when `abacus/api` has any module, and also fails on untracked/changed files under `packages/api-client`. Verified: no modules → skipped; a module without `export_openapi` → fails; untracked generated file → fails.
+  - `schema_check` recursive, plus `check_orm` (fails on `alembic.ini` or any `models.py` / `models/` under `abacus`).
+  - conftest empty-suite hook no longer masks `file::test -k nomatch` runs.
+  - `secrets_scan`: token-wise placeholder matching (`Contest2024!win` is no longer a "placeholder"); credentials need a letter and a digit and no `/` or `:` (cuts false positives on scopes, routes, numeric settings); env-var defaults; `.sh`/`.ini`/`.cfg`/`*.env`/`Dockerfile`; SECRET-004 URL credentials (local-container `postgres:postgres` passes); PGP key blocks; npm/GitLab/SendGrid/Hugging Face tokens; UTF-16 files scanned; symlinks skipped.
+  - `check_dependencies`: optional deps, build-system requires, every pyproject/requirements file; non-registry specs (URL, git, path, `npm:` alias) refused; `workspace:` only for real workspace packages; uv sources/index/overrides/constraints, npm/pnpm overrides/resolutions/patches/bundled, pnpm-workspace overrides/patches/catalogs refused; exact allowlist keys beat globs. **Found `hatchling` (build backend from TASK-001's approved plan) missing from the allowlist — added as approved with that reason.**
+  - SKIP-001 catches pytest aliasing (`from pytest import mark`, `import pytest as pt`, `m = pytest.mark`).
+  - Vitest smoke test unmounts in `afterEach`.
+  - Result: 702 backend tests pass (independent author: 539 → 702), coverage 98 %, `make setup` and `make check` exit 0.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
@@ -210,7 +247,12 @@ Append-only. Newest at the bottom.
 | Vitest smoke test uses `react-dom/client` + `act`, not `@testing-library/react` | testing-library v16 needs `@testing-library/dom` as a peer — not approved | no |
 | SECRET-001 matches the real header shape `-----BEGIN … PRIVATE KEY-----` with only `[A-Z0-9 ]` between | Docs describing the rule must not trip it | no |
 | `aba` label matched as a whole word | "abacus" is on every other line of this repo | no |
-| Two pytest invocations kept; coverage appended across them, floor enforced on the second | Keeps fast suites first; floor applies to combined data | no |
+| Two pytest invocations kept; coverage appended across them, floor enforced on the second | Keeps fast suites first; floor applies to combined data (reviewer verified) | no |
+| `uv lock --check` runs first in `check-fast` (not inside `check_dependencies` as plan step 2 said); `make setup` uses `uv sync --locked` | `uv run`/`uv sync` re-lock silently; the check must precede them | no |
+| Accepted residual risk in `secrets_scan`: SSNs without hyphens or with other separators, EINs outside data files, unlabelled routing numbers, tab-separated card numbers, Luhn false positives on long numeric ids | Each variant would flag ordinary numbers repo-wide and push people to EXCLUDE globs; revisit when the synthetic generator (build plan step 4) defines fixture formats | no |
+| Accepted residual risk in `check_dependencies`: `package.json` under dot-directories or `dist/` is not read | pnpm only installs workspace globs (`apps/*`, `packages/*`), and `pnpm-workspace.yaml` is protected | no |
+| Not done: `merge_group` CI trigger, `packageManager` hash pin | No merge queue yet; root `package.json` not in this task's approval — next task touching it | no |
+| TASK-001's status set to `done` on this branch | Bookkeeping after PR #1 merged; no other TASK-001 change | no |
 
 ## Gotchas and discoveries
 - `make check` today fails on `pytest tests/unit tests/property` (exit 5: nothing collected in `property`), then on missing `schema_check`, `export_openapi`, `packages/api-client` and vitest.
@@ -219,6 +261,7 @@ Append-only. Newest at the bottom.
 - Branch protection is off: CI jobs from this task only gate merges once they are required checks.
 - `jsdom` 30 requires Node `^22.22.2 || >=24.15`; root `package.json` still says `>=22.12` (root manifest not in this task's approval). CI and local both use Node 24.21. Tighten in the next task that touches the root manifest.
 - `uv run` and `uv sync` re-lock silently; anything that must detect a stale `uv.lock` has to run before them or use `--locked`.
+- The *Files to create or change* list and *Approval file text* still name `test-thresholds.yaml`, `_protected.py` and CODEOWNERS; none were changed (coverage floor moved to `pyproject.toml`). Left as written: the approval file is the record of what was approved.
 
 ## Questions for the human
 - [x] **Q1 — Classification-tag check.** Approved as recommended 2026-10-05. ADR-083 puts it in stage 1, but there are no models and the tag mechanism (`Annotated[..., Restricted]` vs `Field(json_schema_extra=…)`) is a kernel decision. **Recommendation:** build it in SPEC-000 with the first model and the kernel's classification type; not in this task.
@@ -227,8 +270,8 @@ Append-only. Newest at the bottom.
 - [x] **Q4 — CI.** Approved as recommended 2026-10-05. GitHub Actions with three third-party actions pinned by SHA, no secrets, read-only token. **Recommendation:** approve, then turn on branch protection with both jobs as required checks.
 
 ## Handoff
-- **Current state:** Steps 1–9 done; `make check` exit 0 locally. Not yet pushed.
-- **Exact next step:** Cross-model reviewer pass (stage 4), fix findings, push, open PR; confirm both CI jobs pass on the PR; founder merges and turns on branch protection with `stage 1` and `stages 1 and 2` as required checks.
-- **Uncommitted or partial work:** see git status; committing next.
-- **Known failing checks:** none.
-- **Open issues:** branch protection off; founder `PATH`; bot GitHub account deferred; root `engines.node` (Gotchas).
+- **Current state:** All steps and review findings done; `make check` exit 0 locally. Pushed; PR open.
+- **Exact next step:** Confirm both CI jobs pass on the PR (last DoD item); founder reviews and merges; then turn on branch protection on `main` with `stage 1 (make check-fast)` and `stages 1 and 2 (make check)` as required checks; delete `work/approvals/TASK-002.yaml`; mark done.
+- **Uncommitted or partial work:** none.
+- **Known failing checks:** none locally.
+- **Open issues:** branch protection off; founder `PATH`; bot GitHub account deferred; root `engines.node` and `packageManager` hash (next task touching root `package.json`).
