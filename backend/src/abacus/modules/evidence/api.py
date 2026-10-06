@@ -2,16 +2,23 @@
 
 from abacus.modules.evidence.events import EvidenceVersionCreated
 from abacus.modules.evidence.render import (
-    MEDIA_TYPE as XLSX_MEDIA_TYPE,
-)
-from abacus.modules.evidence.render import (
+    CODE_COLUMN,
+    CREDIT_COLUMN,
+    DEBIT_COLUMN,
+    FIRST_LINE_ROW,
+    NAME_COLUMN,
+    TOTAL_LABEL,
     TrialBalance,
     TrialBalanceLine,
     render_trial_balance,
 )
+from abacus.modules.evidence.render import (
+    MEDIA_TYPE as XLSX_MEDIA_TYPE,
+)
 from abacus.modules.evidence.service import (
     EngagementArchived,
     EvidenceVersionRef,
+    EvidenceVersionView,
     NewItem,
     Provenance,
     StoredObject,
@@ -19,15 +26,23 @@ from abacus.modules.evidence.service import (
     read_content,
     read_version,
     stage_content,
+    version_view,
 )
 from abacus.modules.evidence.storage import ContentTooLarge, IntegrityError, check_ready
 
 __all__ = [
+    "CODE_COLUMN",
+    "CREDIT_COLUMN",
+    "DEBIT_COLUMN",
+    "FIRST_LINE_ROW",
+    "NAME_COLUMN",
+    "TOTAL_LABEL",
     "XLSX_MEDIA_TYPE",
     "ContentTooLarge",
     "EngagementArchived",
     "EvidenceVersionCreated",
     "EvidenceVersionRef",
+    "EvidenceVersionView",
     "IntegrityError",
     "NewItem",
     "Provenance",
@@ -40,4 +55,5 @@ __all__ = [
     "read_version",
     "render_trial_balance",
     "stage_content",
+    "version_view",
 ]

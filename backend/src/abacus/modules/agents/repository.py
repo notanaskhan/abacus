@@ -1,0 +1,100 @@
+"""Agents data access: agent runs and screening results only (ADR-008, ADR-103)."""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime
+from uuid import UUID, uuid4
+
+from sqlalchemy import insert, select, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from abacus.modules.agents.models import AgentRun, ScreeningResult
+
+
+async def insert_run(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    agent_id: str,
+    spec_version: int,
+    engagement_id: UUID,
+    evidence_version_id: UUID | None,
+    initiator_user_id: UUID,
+    source_event_id: UUID | None,
+    task_scope: list[str],
+) -> UUID | None:
+    """The new run's ID, or None if this agent already ran for this event."""
+    return (
+        await session.execute(
+            pg_insert(AgentRun)
+            .values(
+                id=uuid4(),
+                tenant_id=tenant_id,
+                agent_id=agent_id,
+                spec_version=spec_version,
+                engagement_id=engagement_id,
+                evidence_version_id=evidence_version_id,
+                initiator_user_id=initiator_user_id,
+                source_event_id=source_event_id,
+                task_scope=task_scope,
+            )
+            .on_conflict_do_nothing(constraint="agent_runs_once_per_event")
+            .returning(AgentRun.id)
+        )
+    ).scalar_one_or_none()
+
+
+async def run_for_event(
+    session: AsyncSession, agent_id: str, source_event_id: UUID
+) -> AgentRun | None:
+    return (
+        await session.execute(
+            select(AgentRun).where(
+                AgentRun.agent_id == agent_id, AgentRun.source_event_id == source_event_id
+            )
+        )
+    ).scalar_one_or_none()
+
+
+async def get_run(session: AsyncSession, run_id: UUID) -> AgentRun | None:
+    return (
+        await session.execute(select(AgentRun).where(AgentRun.id == run_id))
+    ).scalar_one_or_none()
+
+
+async def lock_run(session: AsyncSession, run_id: UUID) -> AgentRun | None:
+    return (
+        await session.execute(select(AgentRun).where(AgentRun.id == run_id).with_for_update())
+    ).scalar_one_or_none()
+
+
+async def finish_run(
+    session: AsyncSession,
+    run_id: UUID,
+    *,
+    status: str,
+    context_hash: str | None = None,
+    output: dict[str, object] | None = None,
+    failure_code: str | None = None,
+) -> bool:
+    """True if this call ended the run (it was running)."""
+    result = await session.execute(
+        update(AgentRun)
+        .where(AgentRun.id == run_id, AgentRun.status == "running")
+        .values(
+            status=status,
+            context_hash=context_hash,
+            output=output,
+            failure_code=failure_code,
+            finished_at=datetime.now(UTC),
+        )
+        .returning(AgentRun.id)
+    )
+    return result.scalar_one_or_none() is not None
+
+
+async def insert_screening_result(session: AsyncSession, *, values: dict[str, object]) -> UUID:
+    result_id = uuid4()
+    await session.execute(insert(ScreeningResult).values(id=result_id, **values))
+    return result_id

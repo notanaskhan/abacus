@@ -15,3 +15,6 @@ class EvidenceVersionCreated(DomainEvent):
     evidence_version_id: Annotated[UUID, classified("internal")]
     evidence_item_id: Annotated[UUID, classified("internal")]
     engagement_id: Annotated[UUID, classified("internal")]
+    # The person this version was added for: the uploader, or whoever a system run acts for.
+    # Agents acting on the version act on their behalf (ADR-025; TASK-011 Q1).
+    requested_by: Annotated[UUID | None, classified("internal")] = None

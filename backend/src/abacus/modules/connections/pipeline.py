@@ -338,6 +338,7 @@ async def render(sys: SystemContext) -> UUID:
                         snapshot_id=view.id,
                     ),
                     idempotency_key=f"snapshot:{view.id}:item:{run.request_item_id}",
+                    requested_by=sys.on_behalf_of,
                 )
                 await fulfil_by_rule(
                     tx, sys, request_item_id=run.request_item_id, evidence_version_id=version.id

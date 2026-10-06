@@ -84,25 +84,33 @@ def _utc(moment: datetime) -> datetime:
     return moment.astimezone(UTC)
 
 
+# The trial-balance sheet layout, shared with readers of rendered evidence (screening): line rows
+# start at FIRST_LINE_ROW; every line has an account code; one Total row (no code, TOTAL_LABEL in
+# the name column) follows the last line; only footer text follows it.
+CODE_COLUMN, NAME_COLUMN, DEBIT_COLUMN, CREDIT_COLUMN = 1, 2, 3, 4
+FIRST_LINE_ROW = 2
+TOTAL_LABEL = "Total"
+
+
 def _workbook(tb: TrialBalance) -> Workbook:
     pulled_at = _utc(tb.pulled_at)
     workbook = Workbook()
     sheet = cast(Worksheet, workbook.active)
     sheet.title = "Trial balance"
-    for column, header in enumerate(("Account", "Name", "Debit", "Credit"), start=1):
+    for column, header in enumerate(("Account", "Name", "Debit", "Credit"), start=CODE_COLUMN):
         _text(sheet, 1, column, header)
         cast(Cell, sheet.cell(row=1, column=column)).font = _BOLD
     lines = sorted(tb.lines, key=lambda line: (line.account_code, line.account_name))
-    row = 2
+    row = FIRST_LINE_ROW
     for line in lines:
-        _text(sheet, row, 1, line.account_code)
-        _text(sheet, row, 2, line.account_name)
-        _amount(sheet, row, 3, line.debit)
-        _amount(sheet, row, 4, line.credit)
+        _text(sheet, row, CODE_COLUMN, line.account_code)
+        _text(sheet, row, NAME_COLUMN, line.account_name)
+        _amount(sheet, row, DEBIT_COLUMN, line.debit)
+        _amount(sheet, row, CREDIT_COLUMN, line.credit)
         row += 1
-    _text(sheet, row, 2, "Total")
-    _amount(sheet, row, 3, sum((line.debit for line in lines), Decimal(0)))
-    _amount(sheet, row, 4, sum((line.credit for line in lines), Decimal(0)))
+    _text(sheet, row, NAME_COLUMN, TOTAL_LABEL)
+    _amount(sheet, row, DEBIT_COLUMN, sum((line.debit for line in lines), Decimal(0)))
+    _amount(sheet, row, CREDIT_COLUMN, sum((line.credit for line in lines), Decimal(0)))
     row += 2
     footer = (
         ("Source", tb.source),

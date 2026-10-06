@@ -48,7 +48,7 @@ NON_TENANT_TABLES = frozenset({"alembic_version"})
 # Tables the app may insert into and read, never update or delete (ADR-004); TASK-009/010 add.
 INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     {"audit_events", "outbox", "evidence_versions", "ledger_snapshots", "trial_balance_lines"}
-    | {"fulfilments"}
+    | {"fulfilments", "screening_results", "usage_records"}
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -98,6 +98,19 @@ APP_INSERT_COLUMNS.update(
             | {"created_by_id", "engagement_id"}
         ),
         "connections": frozenset(),
+        "agent_runs": frozenset(
+            {"id", "tenant_id", "agent_id", "spec_version", "engagement_id", "task_scope"}
+            | {"evidence_version_id", "initiator_user_id", "source_event_id"}
+        ),
+        "screening_results": frozenset(
+            {"id", "tenant_id", "engagement_id", "evidence_version_id", "agent_run_id"}
+            | {"action", "confidence", "rationale", "citations", "unverified"}
+        ),
+        "usage_records": frozenset(
+            {"id", "tenant_id", "engagement_id", "agent_id", "agent_run_id", "prompt_id"}
+            | {"prompt_version", "model", "tier", "input_tokens", "output_tokens", "cost_usd"}
+            | {"outcome", "inputs_hash"}
+        ),
     }
 )
 # Tables whose rows no role may change or remove: a BEFORE UPDATE OR DELETE trigger and a BEFORE
@@ -113,6 +126,7 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "engagements": frozenset({"status"}),
     "request_items": frozenset({"status"}),
     "connections": frozenset({"status"}),
+    "agent_runs": frozenset({"status", "context_hash", "output", "failure_code", "finished_at"}),
     "sync_runs": frozenset(
         {"status", "raw_storage_key", "raw_version_id", "raw_fingerprint", "snapshot_id"}
         | {"raw_size_bytes", "raw_pulled_at", "failure_code", "finished_at", "source"}
@@ -141,6 +155,9 @@ TABLE_OWNERS: dict[str, str] = {
     "ledger_snapshots": "ledger",
     "trial_balance_lines": "ledger",
     "fulfilments": "requests",
+    "agent_runs": "agents",
+    "screening_results": "agents",
+    "usage_records": "ai_gateway",
 }
 # Tables shared by every tenant, readable only through abacus_identity (ADR-002, TASK-007): the app
 # role has no privileges on them at all. Each entry is founder-reviewed (protected file).
