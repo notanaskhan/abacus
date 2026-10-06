@@ -908,6 +908,8 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_engagements.py",
             "tests/integration/test_engagements_schema.py",
             "tests/integration/test_evidence.py",
+            "tests/integration/test_retrieval.py",
+            "tests/integration/test_ledger_schema.py",
         ),
     ),
     Rule(
