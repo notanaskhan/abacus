@@ -4,7 +4,7 @@ title: AI gateway, fake model and evidence screening
 spec: SPEC-000
 acceptance_criteria: [AC-14, AC-15, AC-16, AC-17]
 risk_zone: red
-status: in-review
+status: done
 branch: task-011-gateway
 worktree:
 created: 2026-10-06
@@ -477,11 +477,5 @@ reason: TASK-011 — AI gateway, agent specs and context, citations, usage recor
 -
 
 ## Handoff
-- **Current state:** TASK-011b PR open from `task-011b-screening`, at the founder's request before the independent tests finished ("we will feed the response from the background agent later"). Both reviews are done and their fixes pushed; screening replay histories are recorded.
-- **Exact next step:**
-  - Confirm CI.
-  - The founder reviews line by line (red).
-  - Merge (rebase), delete the local `work/approvals/TASK-011.yaml`, and mark TASK-011 done.
-- **Uncommitted or partial work:** none.
-- **Known failing checks:** none known; CI pending.
-- **Open issues:** branch protection off; follow-ups in Gotchas (per-firm run cap, run sweeper, evals in `make check`, a real provider).
+- **Current state:** Done. PR #12 (TASK-011a) and PR #13 (TASK-011b) merged (rebase) 2026-10-07; PR #13 merged at the founder's instruction while its full CI run was still in progress. The approval file is deleted.
+- **Exact next step:** none (TASK-012). The follow-ups are in Gotchas: run limits per plan, a run sweeper, evals in `make check`, a real model provider.
