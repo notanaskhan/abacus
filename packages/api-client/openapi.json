@@ -485,10 +485,29 @@
             "cls": "internal",
             "title": "Failure Code"
           },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Finished At"
+          },
           "request_item_id": {
             "cls": "internal",
             "format": "uuid",
             "title": "Request Item Id",
+            "type": "string"
+          },
+          "started_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Started At",
             "type": "string"
           },
           "status": {
@@ -514,7 +533,9 @@
           "request_item_id",
           "status",
           "failure_code",
-          "evidence_version_id"
+          "evidence_version_id",
+          "started_at",
+          "finished_at"
         ],
         "title": "RetrievalOut",
         "type": "object"
@@ -1218,6 +1239,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -1227,6 +1258,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service unavailable"
           }
         },
         "summary": "Start Retrieval Route",

@@ -23,7 +23,6 @@ from abacus.modules.connections.repository import (
     insert_run,
 )
 from abacus.modules.engagements.api import get_ref, lock_ref
-from abacus.modules.evidence.api import EngagementArchived
 from abacus.modules.identity.api import (
     AuthContext,
     SystemContext,
@@ -90,9 +89,8 @@ async def start_retrieval(
     running or has succeeded, triggering again returns that run (`created=False`, §12)."""
     async with uow(ctx.tenant) as tx:
         engagement = await lock_ref(tx, engagement_id)
+        # An archived engagement is read-only: authorise denies the upload (403, archived_write).
         await authorise(ctx, "evidence.upload", engagement.resource())
-        if engagement.archived:
-            raise EngagementArchived("engagement is archived")
         item = await item_ref(tx, request_item_id)
         if item.engagement_id != engagement_id:
             raise NotFound("request_item")

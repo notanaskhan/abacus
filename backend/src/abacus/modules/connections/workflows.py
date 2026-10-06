@@ -17,7 +17,7 @@ from datetime import timedelta
 
 from temporalio import workflow
 from temporalio.common import RetryPolicy
-from temporalio.exceptions import ActivityError, ApplicationError
+from temporalio.exceptions import ActivityError, ApplicationError, is_cancelled_exception
 
 with workflow.unsafe.imports_passed_through():
     from abacus.modules.connections.workflow_types import (
@@ -78,6 +78,11 @@ class RetrievalWorkflow:
                 retry_policy=_RETRY,
             )
         except ActivityError as err:
+            if is_cancelled_exception(err):
+                # The workflow was cancelled while an activity ran: end the run, then end the
+                # workflow as cancelled too.
+                await _fail(input, "failed", CANCELLED)
+                raise asyncio.CancelledError from err
             status, code = _failure(err)
             return await _fail(input, status, code)
         except asyncio.CancelledError:

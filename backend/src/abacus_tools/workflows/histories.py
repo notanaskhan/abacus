@@ -18,6 +18,7 @@ from typing import cast
 from google.protobuf.descriptor import FieldDescriptor
 from google.protobuf.message import Message
 from temporalio.api.common.v1 import Payload
+from temporalio.api.taskqueue.v1 import TaskQueue
 from temporalio.client import WorkflowHistory
 
 from abacus.kernel.crypto.payload_codec import ENCODING, PayloadEncryptionCodec
@@ -33,13 +34,12 @@ async def _decode_payload(payload: Payload, codec: PayloadEncryptionCodec) -> No
         payload.CopyFrom(plain)
 
 
-_TASK_QUEUE = "temporal.api.taskqueue.v1.TaskQueue"
 SCRUBBED_STICKY_QUEUE = "sticky@recorder"
 
 
 async def _walk(message: Message, codec: PayloadEncryptionCodec) -> None:
-    if message.DESCRIPTOR.full_name == _TASK_QUEUE and "@" in getattr(message, "name", ""):
-        message.name = SCRUBBED_STICKY_QUEUE  # sticky queues name the worker host
+    if isinstance(message, TaskQueue) and "@" in message.name:
+        message.name = SCRUBBED_STICKY_QUEUE  # sticky queues are named after the worker host
     for field, value in message.ListFields():
         if field.type == FieldDescriptor.TYPE_STRING and field.name in _IDENTITY_FIELDS:
             setattr(message, field.name, SCRUBBED_IDENTITY)

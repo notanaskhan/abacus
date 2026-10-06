@@ -265,9 +265,17 @@ export type RetrievalOut = {
      */
     failure_code: string | null;
     /**
+     * Finished At
+     */
+    finished_at: string | null;
+    /**
      * Request Item Id
      */
     request_item_id: string;
+    /**
+     * Started At
+     */
+    started_at: string;
     /**
      * Status
      */
@@ -598,9 +606,17 @@ export type StartRetrievalErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
 };
 
 export type StartRetrievalError = StartRetrievalErrors[keyof StartRetrievalErrors];
