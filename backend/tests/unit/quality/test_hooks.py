@@ -87,6 +87,7 @@ def _approve(root: Path, *paths: str) -> None:
         "backend/src/abacus/kernel/uow/core.py",
         "backend/src/abacus/modules/identity/authz/policy.py",
         "work/approvals/TASK-X.yaml",
+        "docs/product/failure-taxonomy.md",
         "../outside.txt",
     ],
 )
