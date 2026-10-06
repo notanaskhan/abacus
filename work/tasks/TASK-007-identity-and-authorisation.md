@@ -4,7 +4,7 @@ title: Sign-in, memberships, tenant context, authorise and visible
 spec: SPEC-000
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-6, AC-8]
 risk_zone: red
-status: in-progress
+status: in-review
 branch: task-007-identity
 worktree:
 created: 2026-10-06
@@ -277,16 +277,35 @@ reason: TASK-007 — identity, request context, authorise and visible
 ## New dependencies
 | Package | Version | Why | Approved by |
 |---|---|---|---|
+| fastapi | 0.142.2 | HTTP API (ADR-012) | already allowlisted |
+| httpx | 0.28.1 | ASGI test client | already allowlisted |
+| pyjwt[crypto] | 2.15.1 | Bearer-token verification against JWKS | founder, 2026-10-06 (Q1) |
 
 ## Progress log
 - `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder. Not started.
 - `2026-10-06` — Design drafted (§1–9, Q1–Q5) for founder review.
 - `2026-10-06` — Approved with all recommendations; approval file written at the founder's instruction. Authorisation goes in `modules/identity/authz/` (the path already protected), not `authorisation.py`.
 - `2026-10-06` — Implemented steps 1–7 (protect, allowlist + deps, bootstrap role, migration 0004 + schema_check, identity module, `abacus.api`, fake provider, matrix codegen, static rules). Smoke-tested end to end (401/403/500/revocation). Seed command dropped: tests seed as superuser; a local seed comes with TASK-012 sign-in. Static rule for the identity engine is a separate UOW-003 rather than extending UOW-002 (clearer message). Interface contract written for the independent test author.
+- `2026-10-06` — Security review (Sonnet): changes requested; S1/S2 blockers and S4–S18 fixed (contract revision 1). S3 (walls) and S19 (`audit_event.read`) decided by the founder.
+- `2026-10-06` — Independent tests (Sonnet) round 1: found the JWKS crash on non-RS256 keys (fixed); DB-001 exclusion for `test_identity.py`.
+- `2026-10-06` — Architecture and test review (Sonnet): changes requested.
+  - B1: the api-client drift check is keyed on `export_openapi.py` (founder decision; `Makefile` added to the approval).
+  - A1: ADR-102 proposed.
+  - A2–A7, A9 fixed (contract revision 2).
+  - A8, A10 and A11 are notes; A10 is in the TASK-008 gotchas, and A11 is now a test.
+  - Test findings T1–T9 were addressed by the test author in round 2. T10: test commits are now separate from implementation commits.
+- `2026-10-06` — `make check` exit 0: 3,863 unit + 414 integration, coverage 97 %, schema_check clean, api-client drift skipped until TASK-008.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| `visible(ctx, action, engagement_id_column)` | Decisions are per action (ADR-024 metadata vs content); columns differ by table | ADR-102 (proposed) |
+| Routing (`AbacusRouter`) lives in identity, not `abacus.api` | Modules can't import `abacus.api` (ADR-101 layers) | No |
+| Matrix compiled to `authz/_matrix.py`, drift-tested | Runtime image has no YAML parser and ships product code only | No |
+| Unmodelled matrix conditions and `notify` obligations deny | Deny by default (ADR-023) until their tasks build them | No |
+| Not wall-safe; walls gate the first real firm | ADR-026 not in SPEC-000 (founder, 2026-10-06) | No |
+| api-client drift check keyed on `export_openapi.py` | The exporter and client are TASK-008 scope (founder, 2026-10-06) | No |
+| Seed command deferred to TASK-012 | Tests seed as the superuser; local sign-in comes with the frontend | No |
 
 ## Gotchas and discoveries
 -
@@ -298,8 +317,8 @@ reason: TASK-007 — identity, request context, authorise and visible
 - **`audit_event.read` for firm_admin (S19).** The matrix lets firm_admin read audit events without an engagement relationship. That is safe while audit events carry only identifiers and references, which TASK-006 enforces: `Target`/`Ref` are identifier-only. Recommend: keep it, and keep audit events content-free.
 
 ## Handoff
-- **Current state:** Implementation of steps 1–7 committed on `task-007-identity` (WIP). Interface contract written. Independent test author (Sonnet) writing tests.
-- **Exact next step:** Collect the test author's tests; run `make check`; fix implementation bugs (send contract/test bugs back to the author); then two Sonnet reviews (security, architecture/test); PR.
-- **Uncommitted or partial work:** tests in progress.
-- **Known failing checks:** `test_config.py::test_ac20_non_local_environment_with_everything_explicit_loads` until the author adds the four identity settings (contract change).
-- **Open issues:** branch protection off.
+- **Current state:** Done pending review. PR open on `task-007-identity`; `make check` exit 0.
+- **Exact next step:** Confirm CI. The founder reviews line by line, and accepts or rejects ADR-102. Then merge, delete `work/approvals/TASK-007.yaml`, mark done, and draft the TASK-008 design (see its gotchas).
+- **Uncommitted or partial work:** none.
+- **Known failing checks:** none.
+- **Open issues:** branch protection off; walls gate the first real firm.
