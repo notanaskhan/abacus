@@ -172,13 +172,25 @@ async def relay_engine(migrated_db: Migrated) -> AsyncIterator[AsyncEngine]:
 
 
 @pytest.fixture(autouse=True)
-async def drained_outbox(engines_for_this_loop: None) -> None:
+async def drained_outbox(engines_for_this_loop: None, migrated_db: Migrated) -> None:
+    """Start every test from an empty outbox. Publishing drains what is due; anything left
+    (failed events waiting out a backoff, parked events, a pass that only met failures) is then
+    marked published by the relay role, so no other test's leftovers can be claimed here."""
     for _ in range(100):
         publisher = RecordingPublisher()
-        await relay_once(publisher)
-        if not publisher.events:
-            return
-    pytest.fail("could not drain the outbox")
+        result = await relay_once(publisher)
+        if not publisher.events and result.failed == 0 and result.deferred == 0:
+            break
+    else:
+        pytest.fail("could not drain the outbox")
+    engine = create_async_engine(migrated_db.relay_url, poolclass=NullPool)
+    try:
+        async with engine.begin() as conn:
+            await conn.execute(
+                text("UPDATE outbox SET published_at = now() WHERE published_at IS NULL")
+            )
+    finally:
+        await engine.dispose()
 
 
 async def _rows(engine: AsyncEngine, ids: list[uuid.UUID]) -> dict[uuid.UUID, dict[str, object]]:
