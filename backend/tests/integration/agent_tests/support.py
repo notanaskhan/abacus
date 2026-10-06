@@ -16,8 +16,9 @@ from pathlib import Path
 from typing import Literal, Protocol, cast
 
 import asyncpg
+from sqlalchemy import text
 
-from abacus.kernel.db import TenantContext
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.connections.api import (
     Period,
     RunResult,
@@ -303,12 +304,22 @@ async def make_world(seed: Seeder, directory: Path) -> World:
 
 async def retrieve(world: World) -> RunResult:
     """Run a real retrieval for the world's requester; the result holds the evidence version."""
-    run_id = await start_retrieval(
+    await start_retrieval(  # a UUID before TASK-010b, a `StartedRun` after: read the row instead
         world.requester.context(),
         engagement_id=world.engagement_id,
         request_item_id=world.item_id,
         period=PERIOD,
     )
+    async with tenant_session(TenantContext(world.tenant_id, "system", "test-seed")) as session:
+        run_id = (
+            await session.execute(
+                text(
+                    "SELECT id FROM sync_runs WHERE request_item_id = :item "
+                    "ORDER BY started_at DESC LIMIT 1"
+                ),
+                {"item": world.item_id},
+            )
+        ).scalar_one()
     return await run_pipeline(await load_system_context(world.tenant_id, run_id))
 
 
