@@ -7,15 +7,19 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from abacus.kernel.db import tenant_session
-from abacus.kernel.uow import Ref, Target, uow
+from abacus.kernel.db import tenant_session, transaction_context
+from abacus.kernel.errors import NotFound
+from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import get_ref, lock_ref
-from abacus.modules.identity.api import AuthContext, authorise
+from abacus.modules.identity.api import Actor, AuthContext, authorise
 from abacus.modules.requests.events import RequestItemCreated
 from abacus.modules.requests.models import RequestItem
 from abacus.modules.requests.repository import (
+    get_request_item,
+    insert_fulfilment,
     insert_request_item,
     list_request_items,
+    mark_received,
     request_list_for,
 )
 
@@ -86,3 +90,45 @@ async def request_items_for(ctx: AuthContext, engagement_id: UUID) -> Sequence[R
     await authorise(ctx, "request_item.read", ref.resource())
     async with tenant_session(ctx.tenant) as session:
         return [_view(item) for item in await list_request_items(session, ctx, engagement_id)]
+
+
+@dataclass(frozen=True)
+class FulfilmentRef:
+    id: UUID | None  # None when this version already fulfilled this item
+    received: bool  # the item moved open → received in this call
+
+
+async def fulfil_by_rule(
+    tx: UnitOfWork, ctx: Actor, *, request_item_id: UUID, evidence_version_id: UUID
+) -> FulfilmentRef:
+    """Link a version to the item it satisfies, by rule (AC-10: `created_by_kind = rule`), and
+    move the item `open → received`. Authorises `fulfilment.propose` for `ctx` on the item's
+    engagement, inside the caller's unit of work (the engagement is share-locked there)."""
+    tenant = await transaction_context(tx.session)
+    item = await get_request_item(tx.session, request_item_id)
+    if item is None:
+        raise NotFound("request_item")
+    ref = await lock_ref(tx, item.engagement_id)
+    await authorise(ctx, "fulfilment.propose", ref.resource())
+    fulfilment_id = await insert_fulfilment(
+        tx.session,
+        tenant_id=tenant.tenant_id,
+        request_item_id=request_item_id,
+        evidence_version_id=evidence_version_id,
+        created_by_kind="rule",
+        created_by_id=tenant.actor_id,
+    )
+    if fulfilment_id is not None:
+        tx.record(
+            "fulfilment.created",
+            target=Target("fulfilment", fulfilment_id),
+            after=Ref(request_item_id=request_item_id, evidence_version_id=evidence_version_id),
+        )
+    received = await mark_received(tx.session, request_item_id)
+    if received:
+        tx.record(
+            "request_item.received",
+            target=Target("request_item", request_item_id),
+            after=Ref(evidence_version_id=evidence_version_id),
+        )
+    return FulfilmentRef(fulfilment_id, received)

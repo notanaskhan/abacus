@@ -5,12 +5,12 @@ from __future__ import annotations
 from collections.abc import Sequence
 from uuid import UUID, uuid4
 
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.modules.identity.api import AuthContext, visible
-from abacus.modules.requests.models import RequestItem, RequestList
+from abacus.modules.requests.models import Fulfilment, RequestItem, RequestList
 
 
 async def request_list_for(
@@ -88,3 +88,47 @@ async def list_request_items(
         .scalars()
         .all()
     )
+
+
+async def get_request_item(session: AsyncSession, item_id: UUID) -> RequestItem | None:
+    return (
+        await session.execute(select(RequestItem).where(RequestItem.id == item_id))
+    ).scalar_one_or_none()
+
+
+async def insert_fulfilment(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    request_item_id: UUID,
+    evidence_version_id: UUID,
+    created_by_kind: str,
+    created_by_id: str,
+) -> UUID | None:
+    """The new fulfilment's ID, or None if this version already fulfils this item."""
+    return (
+        await session.execute(
+            pg_insert(Fulfilment)
+            .values(
+                id=uuid4(),
+                tenant_id=tenant_id,
+                request_item_id=request_item_id,
+                evidence_version_id=evidence_version_id,
+                created_by_kind=created_by_kind,
+                created_by_id=created_by_id,
+            )
+            .on_conflict_do_nothing(constraint="fulfilments_once")
+            .returning(Fulfilment.id)
+        )
+    ).scalar_one_or_none()
+
+
+async def mark_received(session: AsyncSession, item_id: UUID) -> bool:
+    """`open → received`; False if the item was not open (already received or further on)."""
+    result = await session.execute(
+        update(RequestItem)
+        .where(RequestItem.id == item_id, RequestItem.status == "open")
+        .values(status="received")
+        .returning(RequestItem.id)
+    )
+    return result.scalar_one_or_none() is not None

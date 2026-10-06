@@ -31,3 +31,15 @@ class RequestItem(Base):
     status: Mapped[str]
     created_by: Mapped[UUID]
     created_at: Mapped[datetime]
+
+
+class Fulfilment(Base):
+    __tablename__ = "fulfilments"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    tenant_id: Mapped[UUID]
+    request_item_id: Mapped[UUID]
+    evidence_version_id: Mapped[UUID]
+    created_by_kind: Mapped[str]
+    created_by_id: Mapped[str]
+    created_at: Mapped[datetime]

@@ -66,6 +66,8 @@ def upgrade() -> None:
             raw_storage_key text NULL,
             raw_version_id text NULL,
             raw_fingerprint text NULL CHECK (raw_fingerprint ~ '^[0-9a-f]{64}$'),
+            raw_size_bytes bigint NULL CHECK (raw_size_bytes >= 0),
+            raw_pulled_at timestamptz NULL,
             snapshot_id uuid NULL,
             failure_code text NULL CHECK (failure_code ~ '^[a-z][a-z_]{0,49}$'),
             started_by text NOT NULL CHECK (length(started_by) BETWEEN 1 AND 200),
@@ -177,8 +179,8 @@ def upgrade() -> None:
         ),
     )
     op.execute(
-        "GRANT UPDATE (status, raw_storage_key, raw_version_id, raw_fingerprint, snapshot_id, "
-        "failure_code, finished_at) ON sync_runs TO abacus_app"
+        "GRANT UPDATE (status, raw_storage_key, raw_version_id, raw_fingerprint, raw_size_bytes, "
+        "raw_pulled_at, snapshot_id, failure_code, finished_at) ON sync_runs TO abacus_app"
     )
     # Ledger and fulfilments: insert-only.
     for table in ("ledger_snapshots", "trial_balance_lines", "fulfilments"):
