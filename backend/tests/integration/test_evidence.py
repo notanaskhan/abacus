@@ -972,9 +972,9 @@ async def test_ac20_a_repeated_idempotency_key_returns_the_existing_version(
     seed: Seeder, world: World
 ) -> None:
     content = _content()
-    first = await _add(world, content=content, idempotency_key="pull-2026-03-14")
+    first = await _add(world, content=content, idempotency_key="test-pull-2026-03-14")
     again = await _add(
-        world, item=first.evidence_item_id, content=content, idempotency_key="pull-2026-03-14"
+        world, item=first.evidence_item_id, content=content, idempotency_key="test-pull-2026-03-14"
     )
     assert first.created is True
     assert again.created is False
@@ -987,7 +987,7 @@ async def test_ac20_a_repeated_key_records_no_audit_or_outbox_event(
     seed: Seeder, world: World
 ) -> None:
     content = _content()
-    first = await _add(world, content=content, idempotency_key="k-1")
+    first = await _add(world, content=content, idempotency_key="test-k-1")
     audit_before = await seed.count("audit_events", world.tenant_id)
     outbox_before = await seed.count("outbox", world.tenant_id)
     stored = await stage_content(world.tenant_id, content)
@@ -999,7 +999,7 @@ async def test_ac20_a_repeated_key_records_no_audit_or_outbox_event(
             stored=stored,
             media_type="text/plain",
             provenance=_uploaded(),
-            idempotency_key="k-1",
+            idempotency_key="test-k-1",
         )
         tx.record("evidence_version.noted", target=_target(again.id))
     assert again.created is False
@@ -1011,17 +1011,19 @@ async def test_ac20_a_repeated_key_does_not_create_a_second_item(
     seed: Seeder, world: World
 ) -> None:
     content = _content()
-    await _add(world, content=content, idempotency_key="k-2")
-    await _add(world, content=content, idempotency_key="k-2")
+    await _add(world, content=content, idempotency_key="test-k-2")
+    await _add(world, content=content, idempotency_key="test-k-2")
     assert await seed.count("evidence_items", world.tenant_id) == 1
 
 
 async def test_ac20_a_repeated_key_with_different_content_is_refused(
     seed: Seeder, world: World
 ) -> None:
-    first = await _add(world, content=_content(), idempotency_key="k-3")
+    first = await _add(world, content=_content(), idempotency_key="test-k-3")
     with pytest.raises(ValueError, match="idempotency key reused"):
-        await _add(world, item=first.evidence_item_id, content=_content(), idempotency_key="k-3")
+        await _add(
+            world, item=first.evidence_item_id, content=_content(), idempotency_key="test-k-3"
+        )
     assert await seed.count("evidence_versions", world.tenant_id) == 1
 
 
@@ -1029,14 +1031,14 @@ async def test_ac20_a_repeated_key_with_a_different_engagement_is_refused(
     seed: Seeder, world: World
 ) -> None:
     content = _content()
-    await _add(world, content=content, idempotency_key="k-4")
+    await _add(world, content=content, idempotency_key="test-k-4")
     other_engagement = await seed.engagement(world.tenant_id)
     with pytest.raises(ValueError, match="idempotency key reused"):
         await _add(
             world,
             item=NewItem("Elsewhere"),
             content=content,
-            idempotency_key="k-4",
+            idempotency_key="test-k-4",
             engagement_id=other_engagement,
         )
     assert await seed.count("evidence_versions", world.tenant_id) == 1
@@ -1047,14 +1049,14 @@ async def test_ac20_a_repeat_with_the_same_content_ignores_item_media_type_and_p
     seed: Seeder, world: World
 ) -> None:
     content = _content()
-    first = await _add(world, content=content, idempotency_key="k-5")
+    first = await _add(world, content=content, idempotency_key="test-k-5")
     again = await _add(
         world,
         item=NewItem("Ignored"),
         content=content,
         media_type="text/plain",
         provenance=Provenance(source="other", method="uploaded"),
-        idempotency_key="k-5",
+        idempotency_key="test-k-5",
     )
     assert (again.created, again.id, again.evidence_item_id) == (
         False,
@@ -1068,8 +1070,8 @@ async def test_ac20_a_repeat_with_the_same_content_ignores_item_media_type_and_p
 async def test_ac20_different_keys_and_no_key_each_create_a_version(
     seed: Seeder, world: World
 ) -> None:
-    first = await _add(world, idempotency_key="a")
-    second = await _add(world, item=first.evidence_item_id, idempotency_key="b")
+    first = await _add(world, idempotency_key="test-a")
+    second = await _add(world, item=first.evidence_item_id, idempotency_key="test-b")
     third = await _add(world, item=first.evidence_item_id)
     fourth = await _add(world, item=first.evidence_item_id)
     assert [r.version_no for r in (first, second, third, fourth)] == [1, 2, 3, 4]
@@ -1079,8 +1081,8 @@ async def test_ac20_different_keys_and_no_key_each_create_a_version(
 async def test_ac20_idempotency_keys_are_scoped_to_the_tenant(seed: Seeder, world: World) -> None:
     other_tenant = await seed.firm()
     other = World(other_tenant, await seed.engagement(other_tenant), world.entity_id)
-    first = await _add(world, idempotency_key="shared")
-    second = await _add(other, idempotency_key="shared")
+    first = await _add(world, idempotency_key="test-shared")
+    second = await _add(other, idempotency_key="test-shared")
     assert first.created is True
     assert second.created is True
     assert first.id != second.id
@@ -1099,10 +1101,14 @@ async def test_ac20_the_idempotency_key_is_unique_per_tenant_where_set(
     seed: Seeder, world: World
 ) -> None:
     item_id = await seed.item(world.tenant_id, world.engagement_id)
-    await seed.version(world.tenant_id, world.engagement_id, item_id, idempotency_key="once")
+    await seed.version(world.tenant_id, world.engagement_id, item_id, idempotency_key="test-once")
     with pytest.raises(asyncpg.UniqueViolationError):
         await seed.version(
-            world.tenant_id, world.engagement_id, item_id, version_no=2, idempotency_key="once"
+            world.tenant_id,
+            world.engagement_id,
+            item_id,
+            version_no=2,
+            idempotency_key="test-once",
         )
     await seed.version(world.tenant_id, world.engagement_id, item_id, version_no=2)
     await seed.version(world.tenant_id, world.engagement_id, item_id, version_no=3)
@@ -1117,7 +1123,7 @@ async def test_ac20_the_app_may_insert_the_idempotency_key_column(
         await session.execute(
             text(
                 INSERT_VERSION.replace("method)", "method, idempotency_key)").replace(
-                    "'uploaded')", "'uploaded', 'app-key')"
+                    "'uploaded')", "'uploaded', 'test-app-key')"
                 )
             ),
             {
