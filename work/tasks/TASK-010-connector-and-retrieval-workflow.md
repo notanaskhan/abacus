@@ -298,6 +298,63 @@ The result has a `currency` field.
   - a function whose name, case-insensitive and without leading underscores, starts with a write verb;
   - a public method on a `Connector` subclass that isn't one of the contract's eight.
 
+### Interface contract — TASK-010b (tests written independently — ADR-078)
+**Imports**
+- `from abacus.kernel.crypto.payload_codec import PayloadEncryptionCodec, PayloadDecryptionError, ENCODING`
+- `from abacus.kernel.temporal import payload_codec, data_converter, temporal_client, configure_temporal_client`
+- `from abacus.modules.connections.api import RetrievalWorkflow, ACTIVITIES, RetrievalInput, FailInput, RetrievalOutcome, trigger_retrieval, retrieval_status, RetrievalView, WorkflowUnavailable, workflow_id`
+- `from abacus.worker.__main__ import build_worker`
+
+**Payload codec (ADR-017)**
+- `PayloadEncryptionCodec(secret: bytes, key_id="platform-v1")`; a secret under 32 bytes → `ValueError`.
+- `encode` gives one payload per input, with `metadata["encoding"] == b"binary/abacus-encrypted"` and `metadata["encryption-key-id"] == key_id`. The data doesn't contain the plaintext bytes and differs on every call.
+- `decode(encode(x)) == x`.
+- `decode` raises `PayloadDecryptionError` for:
+  - a payload with another encoding (plain JSON is not passed through);
+  - another key ID;
+  - flipped bytes;
+  - a codec with another secret.
+- Settings:
+  - `temporal_payload_key` is required outside local/test;
+  - a value starting with `example-` outside local/test → validation error;
+  - local default exists;
+  - `temporal_namespace` is `default` and `temporal_task_queue` is `retrieval`.
+- `data_converter()` carries the codec, and `temporal_client()` connects with it. `configure_temporal_client(client)` overrides; `None` resets.
+
+**Workflow and activities** (integration: `temporal_target` fixture, a `Worker` from `build_worker()` or `Worker(client, task_queue=…, workflows=[RetrievalWorkflow], activities=list(ACTIVITIES))`, and a client with `data_converter()`; seed as the TASK-010a tests do)
+- **Happy path (AC-9, AC-10 via Temporal):** `RetrievalOutcome(status="succeeded", code=None, evidence_version_id=<id>)`. The database is as in 010a's `run_pipeline`.
+- **AC-11:** an unbalanced fixture → `RetrievalOutcome("failed_validation", "unbalanced", None)`, and the run is `failed_validation`.
+- **A malformed payload** → `("failed", "malformed_payload")`.
+- **A provider outage that persists** → after the retries (up to 6 attempts) → `("failed", "provider_unavailable")`. A test may shorten this by using a fault fixture that it replaces with good data before the retries run out, which proves retries recover → `succeeded`.
+- **Every payload is encrypted at rest.** Fetch the workflow history and check that every `input` and `result` payload has encoding `binary/abacus-encrypted`. A client *without* the codec can't read the result.
+- **Activities:**
+  - each loads the system context from the run row;
+  - a retried activity after the run succeeded returns without error and changes nothing;
+  - `fail_run_activity` on a finished run returns that run's own status and changes nothing.
+- **Duplicate start:** starting the same workflow ID while it runs attaches to it (one run row, one snapshot, one evidence version).
+- **AC-19:**
+  - `Replayer(workflows=[RetrievalWorkflow], data_converter=data_converter())` replays `tests/workflows/histories/retrieval-v1.json` (recorded from this implementation) without error;
+  - a test that changes the workflow's activity sequence, for example a subclass or a modified copy registered under the same name, fails replay against it (non-determinism is detected);
+  - the replay tests live in `tests/workflows/` (collected by `make check`) and need no server.
+
+**API**
+- `POST /v1/engagements/{id}/retrievals` (action `evidence.upload`), body `{request_item_id, period_start, period_end}` (`extra="forbid"`; end ≥ start) → **202** `{sync_run_id, request_item_id, status:"running", failure_code:null, evidence_version_id:null}`.
+  - Starts workflow ID `workflow_id(item, period)` = `retrieval:<item>:<start>_<end>`.
+  - A second POST for the same item and period → the same `sync_run_id`. After success it returns the succeeded run, with no new workflow.
+  - Reviewer → 403. Another firm's engagement or item → 404.
+  - No active connection → **409** `{"detail":"no_connection"}`. An item not open or received → **409** `{"detail":"item_not_open"}`.
+  - Temporal unreachable (`configure_temporal_client` with a client whose `start_workflow` raises `RPCError`/`OSError`) → **503** `{"detail":"service unavailable"}`, and the run is `failed` with `workflow_unavailable`.
+- `GET /v1/engagements/{id}/retrievals/{sync_run_id}` (action `request_item.read`) → 200 with the same shape.
+  - A member reviewer is allowed. A firm_admin who isn't a member → 403.
+  - A run from another engagement or firm → 404.
+- The OpenAPI document and the generated client include both operations (`start_retrieval`, `get_retrieval`) with `x-abacus-action`. The drift check stays clean.
+
+**Worker.** `build_worker()` raises if the key service, payload codec or evidence bucket (`check_ready`: Object Lock enabled) isn't usable. `evidence.api.check_ready()` raises `RuntimeError` for a bucket without Object Lock.
+
+**Static rules**
+- **WF-001** (`src/abacus/modules/*/workflows.py`): any import other than `__future__`, `datetime`, `dataclasses`, `typing`, `temporalio*` or the module's own `workflow_types` is flagged.
+- **import-linter:** "Workflows orchestrate only" forbids `abacus.modules.connections.workflows` from importing `kernel.db`, `kernel.storage`, `kernel.uow`, connections' `repository`, `pipeline` and `activities`.
+
 ### Approval file text
 ```yaml
 task: TASK-010
@@ -365,6 +422,14 @@ reason: TASK-010 — connector, ledger snapshots, fulfilments, retrieval pipelin
 
   Migration 0009 (my own, unmerged, never applied) was edited in place to add `sync_runs.raw_size_bytes` and `raw_pulled_at`; no new migration. 010a contract written.
 - `2026-10-06` — 010a independent tests (Sonnet): one implementation bug, fixed. The 0009 downgrade guard was blind under forced RLS; it now lifts FORCE within the transaction and also covers evidence, since 0008's guard had the same flaw. Test-side fixes, all by the test author: DB-001 exclusions, a card-shaped test value, and TASK-009 evidence tests adapted to the 0009 snapshot FK and `TRUNCATE … CASCADE` (assertions unchanged). With founder approval, the hook test's unprotected-path sample moved off the now-protected ledger module.
+- `2026-10-06` — 010b implemented. Smoke-tested against real Temporal, Postgres and Versity:
+  - API 202, duplicate trigger reuses the run;
+  - workflow succeeds; status endpoint;
+  - all history payloads `binary/abacus-encrypted`;
+  - recorded history replays;
+  - AC-11 → `failed_validation`.
+
+  History v1 committed as the AC-19 fixture; it contains no ledger data. 010b contract written.
 - `2026-10-06` — CI: first run failed one TASK-006 relay test (outbox not fully drained between tests: failed/deferred events with backoff); test author made the drain complete; CI green. PR #10 merged (rebase). Starting TASK-010b.
 - `2026-10-06` — `make check` exit 0: 5,664 unit + 1,089 integration, coverage 97 %, schema_check clean.
 
@@ -390,8 +455,8 @@ reason: TASK-010 — connector, ledger snapshots, fulfilments, retrieval pipelin
 -
 
 ## Handoff
-- **Current state:** TASK-010a merged (PR #10). TASK-010b in progress on `task-010b-workflow`.
-- **Exact next step:** Implement step 6: codec, workflow and activities, worker, trigger route, replay fixture. Then contract, tests, reviews, PR.
+- **Current state:** TASK-010b implemented and committed on `task-010b-workflow` (WIP). Contract written. The independent test author and two reviews are next.
+- **Exact next step:** Collect tests and reviews; fix; `make check`; PR (red: founder line-by-line); after merge delete `work/approvals/TASK-010.yaml` and mark TASK-010 done.
 - **Uncommitted or partial work:** none.
-- **Known failing checks:** none.
+- **Known failing checks:** none known before tests.
 - **Open issues:** branch protection off; the approval file expires 2026-10-27.
