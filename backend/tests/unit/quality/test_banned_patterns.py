@@ -92,42 +92,42 @@ CASES: list[tuple[str, str, str, str]] = [
     (
         "BOUND-001",
         SERVICE,
-        "from abacus.modules.evidence.repository import EvidenceRepository\n",
-        "from abacus.modules.evidence.api import add_version\n",
+        "from abacus.modules.identity.repository import IdentityRepository\n",
+        "from abacus.modules.identity.api import verify\n",
     ),
     (
         "BOUND-001",
         SERVICE,
-        "from abacus.modules.evidence import service\n",
-        "from abacus.modules.evidence import api\n",
+        "from abacus.modules.identity import service\n",
+        "from abacus.modules.identity import api\n",
     ),
     (
         "BOUND-001",
         SERVICE,
-        "import abacus.modules.evidence.models\n",
-        "import abacus.modules.evidence.api\n",
+        "import abacus.modules.identity.models\n",
+        "import abacus.modules.identity.api\n",
     ),
-    ("BOUND-001", SERVICE, "from ..evidence import service\n", "from . import repository\n"),
+    ("BOUND-001", SERVICE, "from ..identity import service\n", "from . import repository\n"),
     (
         "BOUND-001",
         SERVICE,
-        "from abacus.modules.evidence import EvidenceItem\n",
+        "from abacus.modules.identity import IdentityItem\n",
         "from abacus.modules.ledger.repository import LedgerRepository\n",
     ),
     (
         "BOUND-001",
         SERVICE,
-        "from abacus.modules import evidence\n",
+        "from abacus.modules import identity\n",
         "from abacus.modules import ledger\n",
     ),
-    ("BOUND-001", SERVICE, "from .. import evidence\n", "from .. import ledger\n"),
+    ("BOUND-001", SERVICE, "from .. import identity\n", "from .. import ledger\n"),
     ("BOUND-001", SERVICE, "from abacus import modules\n", "from abacus import kernel\n"),
     ("BOUND-001", SERVICE, "import abacus.modules\n", "import abacus.kernel\n"),
-    ("BOUND-001", LEDGER_INIT, "from ..evidence import service\n", "from . import service\n"),
+    ("BOUND-001", LEDGER_INIT, "from ..identity import service\n", "from . import service\n"),
     (
         "BOUND-001",
         NESTED,
-        "from ...evidence.repository import Repo\n",
+        "from ...identity.repository import Repo\n",
         "from ..repository import LedgerRepository\n",
     ),
     # TYPE-001
@@ -206,7 +206,7 @@ def test_ac20_rule_allows_clean_code(
 
 
 def test_ac20_violation_reports_the_offending_line(tmp_path: Path) -> None:
-    _write(tmp_path, SERVICE, '"""Doc."""\n\nimport abacus.modules.evidence.models\n')
+    _write(tmp_path, SERVICE, '"""Doc."""\n\nimport abacus.modules.identity.models\n')
     assert [(v.rule_id, v.line) for v in bp.scan(tmp_path)] == [("BOUND-001", 3)]
 
 
@@ -1363,3 +1363,227 @@ def test_ac20_identity_rules_output_names_path_line_rule_and_an_adr(
     assert str(found[0]).startswith(f"{SERVICE}:1: {rule_id} ")
     assert str(found[0]).endswith(")")
     assert "ADR-" in str(found[0])
+
+
+# --- LIST-001 (TASK-008 contract: stricter), BOUND-002, OWN-001 --------------------------------
+
+REPO_ENG = "src/abacus/modules/engagements/repository.py"
+REPO_PKG = "src/abacus/modules/engagements/repository/rows.py"
+REPO_OTHER = "src/abacus/modules/engagements/service.py"
+
+LIST_GOOD = (
+    "async def {name}(session, ctx):\n"
+    "    return (await session.execute(\n"
+    '        select(E).where(visible(ctx, "engagement.read_metadata", E.id))\n'
+    "    )).scalars().{end}()\n"
+)
+LIST_VIOLATING = [
+    # no visible() at all
+    "async def list_engagements(session):\n    return (await session.execute(select(E))).all()\n",
+    "def list_things(session):\n    return []\n",
+    "async def all_things(session):\n    return []\n",
+    "async def search_things(session, q):\n    return []\n",
+    # returns many rows through .all() under any name
+    "async def fetch(session):\n    return (await session.execute(select(E))).scalars().all()\n",
+    # visible() outside .where()
+    "async def list_x(session, ctx):\n"
+    '    clause = visible(ctx, "engagement.read_metadata", E.id)\n'
+    "    return (await session.execute(select(E).filter(clause))).all()\n",
+    # the action must be a literal
+    "async def list_x(session, ctx, action):\n"
+    "    return (await session.execute(select(E).where(visible(ctx, action, E.id)))).all()\n",
+    # the literal must be a read action in the matrix
+    "async def list_x(session, ctx):\n"
+    '    return (await session.execute(select(E).where(visible(ctx, "engagement.update", E.id))))'
+    ".all()\n",
+    "async def list_x(session, ctx):\n"
+    '    return (await session.execute(select(E).where(visible(ctx, "no.such_action", E.id))))'
+    ".all()\n",
+    "async def list_x(session, ctx):\n"
+    "    return (await session.execute(select(E).where(visible(ctx)))).all()\n",
+]
+LIST_CLEAN = [
+    LIST_GOOD.format(name="list_engagements", end="all"),
+    LIST_GOOD.format(name="all_engagements", end="all"),
+    LIST_GOOD.format(name="search_engagements", end="all"),
+    LIST_GOOD.format(name="fetch", end="all"),
+    # a single-row lookup needs no visible()
+    "async def get_engagement(session, i):\n"
+    "    return (await session.execute(select(E).where(E.id == i))).scalar_one_or_none()\n",
+    "async def insert_engagement(session, **values):\n"
+    "    await session.execute(insert(E).values(**values))\n",
+    # nested in an and_()
+    "async def list_x(session, ctx, g):\n"
+    "    return (await session.execute(select(E).where(\n"
+    '        and_(E.g == g, visible(ctx, "request_item.read", E.id))))).all()\n',
+]
+
+
+@pytest.mark.parametrize("source", LIST_VIOLATING)
+@pytest.mark.parametrize("rel", [REPO_ENG, REPO_PKG])
+def test_ac20_list_001_flags_repository_listings_that_do_not_apply_visible(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert _flags(tmp_path, "LIST-001", rel, source)
+
+
+@pytest.mark.parametrize("source", LIST_CLEAN)
+@pytest.mark.parametrize("rel", [REPO_ENG, REPO_PKG])
+def test_ac20_list_001_ignores_correct_code(tmp_path: Path, rel: str, source: str) -> None:
+    assert not _flags(tmp_path, "LIST-001", rel, source)
+
+
+@pytest.mark.parametrize("source", LIST_VIOLATING)
+@pytest.mark.parametrize(
+    "rel", [REPO_OTHER, "src/abacus/modules/engagements/routes.py", *OUTSIDE_SRC]
+)
+def test_ac20_list_001_applies_only_to_module_repositories(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "LIST-001", rel, source)
+
+
+def test_ac20_list_001_flags_every_module_repository(tmp_path: Path) -> None:
+    source = "def list_x(session):\n    return []\n"
+    for module in ("requests", "organisations", "ledger"):
+        assert _flags(tmp_path, "LIST-001", f"src/abacus/modules/{module}/repository.py", source)
+
+
+def test_ac20_list_001_names_the_function_and_the_line(tmp_path: Path) -> None:
+    _write(tmp_path, REPO_ENG, "import x\n\n\ndef list_things(session):\n    return []\n")
+    [found] = [v for v in bp.scan(tmp_path) if v.rule_id == "LIST-001"]
+    assert found.line == 4
+    assert "list_things" in found.message
+    assert "ADR-027" in found.adr
+
+
+def test_ac20_list_001_flags_each_offending_function_once(tmp_path: Path) -> None:
+    source = (
+        "def list_a(s):\n    return []\n\n\ndef list_b(s):\n    return []\n\n\n"
+        "def get_c(s):\n    return None\n"
+    )
+    _write(tmp_path, REPO_ENG, source)
+    assert [v.line for v in bp.scan(tmp_path) if v.rule_id == "LIST-001"] == [1, 5]
+
+
+def test_ac20_list_001_exempts_only_the_reviewed_lookups(tmp_path: Path) -> None:
+    for rel, name in sorted(bp.LIST_EXEMPT):
+        assert not _flags(tmp_path, "LIST-001", rel, f"def {name}(s):\n    return s.all()\n")
+    # the same function name in another file is not exempt
+    assert _flags(tmp_path, "LIST-001", REPO_ENG, "def names_of(s):\n    return s.all()\n")
+
+
+BOUND2_VIOLATING = [
+    ("identity", "from abacus.modules.engagements.api import router\n"),
+    ("identity", "from abacus.modules.organisations.api import create_client\n"),
+    ("organisations", "from abacus.modules.identity.api import AuthContext\n"),
+    ("organisations", "from abacus.modules.engagements.api import get_ref\n"),
+    ("engagements", "from abacus.modules.requests.api import router\n"),
+    ("engagements", "from abacus.modules.ledger.api import x\n"),
+    ("requests", "from abacus.modules.organisations.api import ClientNames\n"),
+    ("requests", "import abacus.modules.ledger.api\n"),
+    ("ledger", "from abacus.modules.engagements.api import get_ref\n"),
+    ("evidence", "from abacus.modules.requests.api import router\n"),
+    ("sampling", "from abacus.modules.ledger.api import x\n"),
+]
+BOUND2_CLEAN = [
+    ("engagements", "from abacus.modules.identity.api import AuthContext\n"),
+    ("engagements", "from abacus.modules.organisations.api import create_client\n"),
+    ("requests", "from abacus.modules.identity.api import AuthContext\n"),
+    ("requests", "from abacus.modules.engagements.api import get_ref\n"),
+    ("ledger", "from abacus.modules.identity.api import AuthContext\n"),
+    ("evidence", "import abacus.modules.identity.api\n"),
+    ("engagements", "from abacus.modules.engagements.api import router\n"),
+    ("identity", "from abacus.kernel.db import tenant_session\n"),
+    ("requests", "from abacus.kernel.uow import uow\n"),
+]
+
+
+@pytest.mark.parametrize(("module", "source"), BOUND2_VIOLATING)
+def test_ac20_bound_002_flags_dependencies_the_map_does_not_allow(
+    tmp_path: Path, module: str, source: str
+) -> None:
+    assert _flags(tmp_path, "BOUND-002", f"src/abacus/modules/{module}/service.py", source)
+
+
+@pytest.mark.parametrize(("module", "source"), BOUND2_CLEAN)
+def test_ac20_bound_002_allows_the_declared_dependencies(
+    tmp_path: Path, module: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "BOUND-002", f"src/abacus/modules/{module}/service.py", source)
+
+
+@pytest.mark.parametrize("rel", ["src/abacus/api/app.py", *OUTSIDE_SRC])
+def test_ac20_bound_002_applies_only_inside_modules(tmp_path: Path, rel: str) -> None:
+    source = "from abacus.modules.engagements.api import router\n"
+    assert not _flags(tmp_path, "BOUND-002", rel, source)
+
+
+@pytest.mark.parametrize(
+    ("module", "allowed"),
+    [
+        ("identity", set[str]()),
+        ("organisations", set[str]()),
+        ("engagements", {"identity", "organisations"}),
+        ("requests", {"identity", "engagements"}),
+    ],
+)
+def test_ac20_bound_002_dependency_map_matches_the_contract(
+    module: str, allowed: set[str]
+) -> None:
+    assert set(bp.MODULE_DEPENDENCIES[module]) == allowed
+
+
+OWN1_VIOLATING = [
+    ("engagements", '__tablename__ = "clients"\n'),
+    ("engagements", '__tablename__: str = "request_items"\n'),
+    ("requests", 'T = Table("engagements", metadata)\n'),
+    ("organisations", 'T = sa.Table("engagements", m)\n'),
+    ("engagements", 'Q = "SELECT id FROM clients WHERE id = :i"\n'),
+    ("engagements", 'Q = "SELECT a FROM engagements e JOIN clients c ON c.id = e.client_id"\n'),
+    ("requests", 'Q = "INSERT INTO engagements (id) VALUES (:i)"\n'),
+    ("requests", 'Q = "UPDATE engagements SET status = :s"\n'),
+    ("requests", 'Q = "DELETE FROM engagements"\n'),
+    ("requests", 'Q = "WITH x AS (SELECT 1) SELECT * FROM engagements"\n'),
+    ("identity", 'Q = "SELECT * FROM engagements"\n'),
+    ("engagements", '__tablename__ = "not_a_listed_table"\n'),
+    ("ledger", 'Q = "SELECT * FROM audit_events"\n'),
+]
+OWN1_CLEAN = [
+    ("engagements", '__tablename__ = "engagements"\n'),
+    ("organisations", '__tablename__ = "clients"\n'),
+    ("organisations", '__tablename__ = "client_entities"\n'),
+    ("requests", '__tablename__ = "request_lists"\n'),
+    ("requests", '__tablename__ = "request_items"\n'),
+    ("identity", '__tablename__ = "memberships"\n'),
+    ("engagements", 'T = Table("engagements", metadata)\n'),
+    ("requests", 'Q = "SELECT id FROM request_items WHERE id = :i"\n'),
+    ("requests", 'Q = "INSERT INTO request_lists (id) VALUES (:i)"\n'),
+    ("identity", 'Q = "SELECT user_id FROM engagement_members"\n'),
+    # lower-case prose and non-SQL strings are not SQL statements
+    ("engagements", 'x = "select a thing from clients"\n'),
+    ("engagements", 'x = "the clients table"\n'),
+    ("engagements", "x = clients\n"),
+]
+
+
+@pytest.mark.parametrize(("module", "source"), OWN1_VIOLATING)
+def test_ac20_own_001_flags_tables_the_module_does_not_own(
+    tmp_path: Path, module: str, source: str
+) -> None:
+    assert _flags(tmp_path, "OWN-001", f"src/abacus/modules/{module}/models.py", source)
+
+
+@pytest.mark.parametrize(("module", "source"), OWN1_CLEAN)
+def test_ac20_own_001_allows_a_modules_own_tables(
+    tmp_path: Path, module: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "OWN-001", f"src/abacus/modules/{module}/models.py", source)
+
+
+@pytest.mark.parametrize(
+    "rel", ["src/abacus/kernel/db/models.py", "src/abacus/api/app.py", *OUTSIDE_SRC]
+)
+def test_ac20_own_001_applies_only_inside_modules(tmp_path: Path, rel: str) -> None:
+    assert not _flags(tmp_path, "OWN-001", rel, '__tablename__ = "engagements"\n')
+    assert not _flags(tmp_path, "OWN-001", rel, 'Q = "SELECT * FROM clients"\n')

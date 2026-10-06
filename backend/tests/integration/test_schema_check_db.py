@@ -125,7 +125,13 @@ def _problems(db: Cluster, owner_statements: list[str], *admin_statements: str) 
     _sql(db.owner_url, *owner_statements)
     if admin_statements:
         _sql(db.admin, *admin_statements)
-    return sc.check(db.owner_url, db.app_url)
+    return [m for m in sc.check(db.owner_url, db.app_url) if not _is_ownership_report(m)]
+
+
+def _is_ownership_report(message: str) -> bool:
+    """The probe databases below hold a few tables, not the migrated schema; their tests are about
+    other checks, so the TABLE_OWNERS reports (tested at the end of this file) are set aside."""
+    return message.endswith((": no owner in TABLE_OWNERS", ": in TABLE_OWNERS but missing"))
 
 
 def _assert_reports(problems: list[str], subject: str, *keywords: str) -> None:
@@ -921,3 +927,161 @@ def test_ac20_a_role_without_bypassrls_is_not_reported_as_unreviewed(
 def test_ac20_the_reviewed_bypass_roles_are_not_reported_as_unreviewed(db: Cluster) -> None:
     problems = _problems(db, _good("probe"))
     assert not [m for m in problems if "not reviewed" in m], problems
+
+
+# --- TABLE_OWNERS (ADR-103) ----------------------------------------------------------------------
+
+
+def _public_tables(dsn: str) -> set[str]:
+    async def fetch() -> set[str]:
+        conn = await asyncpg.connect(dsn)
+        try:
+            rows = await conn.fetch(
+                "SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p')"
+            )
+        finally:
+            await conn.close()
+        return {str(row["relname"]) for row in rows}
+
+    return asyncio.run(fetch())
+
+
+def test_ac20_table_owners_lists_exactly_the_tables_of_the_migrated_schema(
+    migrated_db: Migrated,
+) -> None:
+    tables = _public_tables(_plain(migrated_db.owner_url))
+    assert set(sc.TABLE_OWNERS) == tables
+    assert {
+        "clients",
+        "client_entities",
+        "engagements",
+        "request_lists",
+        "request_items",
+    } <= tables
+
+
+@pytest.mark.parametrize(
+    ("table", "owner"),
+    [
+        ("clients", "organisations"),
+        ("client_entities", "organisations"),
+        ("engagements", "engagements"),
+        ("request_lists", "requests"),
+        ("request_items", "requests"),
+        ("engagement_members", "identity"),
+        ("memberships", "identity"),
+    ],
+)
+def test_ac20_table_owners_assigns_the_new_tables_to_their_modules(table: str, owner: str) -> None:
+    assert sc.TABLE_OWNERS[table] == owner
+
+
+@pytest.mark.parametrize("table", ["request_items", "clients", "engagements"])
+def test_ac20_a_table_missing_from_table_owners_is_reported(
+    migrated_db: Migrated, monkeypatch: pytest.MonkeyPatch, table: str
+) -> None:
+    monkeypatch.setattr(
+        sc, "TABLE_OWNERS", {k: v for k, v in sc.TABLE_OWNERS.items() if k != table}
+    )
+    assert sc.check(migrated_db.owner_url, migrated_db.app_url) == [
+        f"{table}: no owner in TABLE_OWNERS"
+    ]
+
+
+def test_ac20_a_table_listed_in_table_owners_but_absent_is_reported(
+    migrated_db: Migrated, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(sc, "TABLE_OWNERS", {**sc.TABLE_OWNERS, "zz_ghost": "engagements"})
+    assert sc.check(migrated_db.owner_url, migrated_db.app_url) == [
+        "zz_ghost: in TABLE_OWNERS but missing"
+    ]
+
+
+def test_ac20_both_table_owners_reports_are_sorted_together_with_other_problems(
+    migrated_db: Migrated, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    owners = {k: v for k, v in sc.TABLE_OWNERS.items() if k != "outbox"}
+    monkeypatch.setattr(sc, "TABLE_OWNERS", {**owners, "aa_ghost": "requests"})
+    problems = sc.check(migrated_db.owner_url, migrated_db.app_url)
+    assert problems == sorted(problems)
+    assert set(problems) == {
+        "aa_ghost: in TABLE_OWNERS but missing",
+        "outbox: no owner in TABLE_OWNERS",
+    }
+
+
+def test_ac20_a_table_nobody_owns_in_a_database_without_the_migrations_is_reported(
+    db: Cluster,
+) -> None:
+    sql_problems = sc.check(*_urls(db, _good("probe")))
+    assert "probe: no owner in TABLE_OWNERS" in sql_problems
+    assert "engagements: in TABLE_OWNERS but missing" in sql_problems
+
+
+def _urls(db: Cluster, owner_statements: list[str]) -> tuple[str, str]:
+    _sql(db.owner_url, *owner_statements)
+    return db.owner_url, db.app_url
+
+
+# --- column grants on tenant tables (contract revision 1) ----------------------------------------
+
+
+def test_ac20_declared_insert_columns_apply_to_tables_that_are_not_insert_only(
+    db: Cluster, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(sc, "APP_INSERT_COLUMNS", {"probe": frozenset({"id", "tenant_id"})})
+    problems = _problems(db, _good("probe"))  # the app holds INSERT on every column by default
+    assert "probe: abacus_app may INSERT probe.body" in problems
+
+
+def test_ac20_declared_insert_columns_that_match_the_grant_pass(
+    db: Cluster, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        sc, "APP_INSERT_COLUMNS", {"probe": frozenset({"id", "tenant_id", "body"})}
+    )
+    assert _problems(db, _good("probe")) == []
+
+
+def test_ac20_an_extra_update_column_is_reported(
+    db: Cluster, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(sc, "APP_UPDATE_COLUMNS", {"probe": frozenset({"body"})})
+    problems = _problems(db, _good("probe"))
+    assert "probe: abacus_app may UPDATE probe.id" in problems
+    assert "probe: abacus_app may UPDATE probe.tenant_id" in problems
+    assert not any(m == "probe: abacus_app may UPDATE probe.body" for m in problems)
+    assert problems == sorted(problems)
+
+
+def test_ac20_update_limited_to_the_declared_column_passes(
+    db: Cluster, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(sc, "APP_UPDATE_COLUMNS", {"probe": frozenset({"body"})})
+    problems = _problems(
+        db,
+        _good("probe"),
+        "REVOKE UPDATE ON probe FROM abacus_app",
+        "GRANT UPDATE (body) ON probe TO abacus_app",
+    )
+    assert not [m for m in problems if "may UPDATE" in m]
+
+
+def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
+    assert {
+        "engagements": frozenset({"status"}),
+        "request_items": frozenset({"status"}),
+    } == sc.APP_UPDATE_COLUMNS
+    assert sc.APP_INSERT_COLUMNS["engagements"] == frozenset(
+        {"id", "tenant_id", "client_id", "client_entity_id", "name"}
+        | {"fiscal_period_start", "fiscal_period_end", "created_by"}
+    )
+    assert sc.APP_INSERT_COLUMNS["clients"] == frozenset({"id", "tenant_id", "name"})
+    assert sc.APP_INSERT_COLUMNS["request_items"] == frozenset(
+        {"id", "tenant_id", "engagement_id", "request_list_id", "description", "audit_area"}
+        | {"created_by"}
+    )
+    assert sc.APP_INSERT_COLUMNS["engagement_members"] == frozenset(
+        {"tenant_id", "engagement_id", "user_id", "role"}
+    )
