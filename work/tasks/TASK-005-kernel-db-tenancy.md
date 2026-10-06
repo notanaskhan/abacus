@@ -4,7 +4,7 @@ title: "Kernel: config, logging, tenant sessions with row-level security, migrat
 spec: SPEC-000
 acceptance_criteria: [AC-5, AC-13, AC-20]
 risk_zone: red
-status: in-review
+status: done
 branch: task-005-kernel-db
 worktree:
 created: 2026-10-06
@@ -202,6 +202,8 @@ New migration files (`backend/migrations/versions/*`) need no approval while new
   - **Open:** tests for TENANT-001 need `backend/tests/unit/quality/test_banned_patterns.py`, which is protected and not in this task's approval — asked the founder.
 
 - `2026-10-06` — Tests for the review fixes written independently (round 3). They found two more issues: (1) `schema_check` crashed on views — asyncpg returns Postgres `"char"` (`relkind`) as bytes — fixed; (2) an apparent per-migration-transaction failure, traced (SQL log) to the test author's revision generator putting the second statement at module level via `textwrap.dedent` — their bug, fixed by them; my env.py fix stands (hand-written revisions prove it). Also found and removed stale `.pyc` files from my own probe migrations in `migrations/versions/__pycache__`, which Alembic had loaded as revisions. Founder approved `test_banned_patterns.py` for TENANT-001 tests (21 cases). Two more exclusions of the approved kind: DB-001 for `test_migrations_env.py`, UOW-001 for `test_tenancy.py` (proves `session.commit()` is inert). `make check` exit 0: 1,432 unit + 95 integration, coverage 97 %.
+
+- `2026-10-06` — PR #5 merged to `main` (rebase) after green CI, at founder instruction; approval file deleted. Done.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
