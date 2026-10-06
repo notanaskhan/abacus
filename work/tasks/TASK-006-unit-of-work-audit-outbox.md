@@ -4,7 +4,7 @@ title: Unit of work, audit events and outbox
 spec: SPEC-000
 acceptance_criteria: [AC-4, AC-20]
 risk_zone: red
-status: awaiting-plan-approval
+status: in-progress
 branch: task-006-uow
 worktree:
 created: 2026-10-06
@@ -44,9 +44,10 @@ updated: 2026-10-06
 - TASK-005 progress log (why `tenant_session`'s commit is inert)
 
 ## Plan
-- [ ] Plan approved by human — **red: founder edits or approves this design before any code, then reviews the diff line by line**
-- [ ] Approval file `work/approvals/TASK-006.yaml`
-- [ ] Q1–Q4 answered
+- [x] Plan approved by human (founder, 2026-10-06: "approved") — **red: founder reviews the diff line by line before merge**
+- [x] Approval file `work/approvals/TASK-006.yaml` written by the agent at the founder's instruction (2026-10-06)
+- Approved by founder: paths under *Approval file text*, expires 2026-10-27
+- [x] Q1–Q4 answered: all recommendations approved (2026-10-06)
 
 ### Design (for founder review)
 
@@ -163,10 +164,10 @@ reason: TASK-006 — unit of work, audit events, outbox and relay
 - From TASK-005 review: `tenant_session`'s `session.commit()` is inert by design (rollback-only join). The unit of work must own its transaction (open its own tenant transaction in `kernel.db`, write, audit, outbox, commit) — never build on `tenant_session`'s commit. `app.actor_kind` / `app.actor_id` are set per transaction for the audit trail.
 
 ## Questions for the human
-- [ ] **Q1 — Relay role.** `abacus_relay` with `BYPASSRLS`, privileges only on `outbox` (`SELECT`, `UPDATE` of three status columns). Alternatives: iterate tenants under RLS (needs a firm list the relay can read — another cross-tenant read), or a `SECURITY DEFINER` function (FORCE RLS binds the owner too, so it would need a bypass role anyway). **Recommendation:** the relay role.
-- [ ] **Q2 — No audit event, no commit.** Strict rule: a `uow` with zero `record` calls never commits, even if it changed nothing. **Recommendation:** yes — read-only work uses `tenant_session`.
-- [ ] **Q3 — Database-checked actor.** Audit rows must match the transaction's `app.actor_*` settings (CHECK constraint). **Recommendation:** yes — a bug can't attribute an action to someone else.
-- [ ] **Q4 — Domain events carry no Restricted fields.** **Recommendation:** yes.
+- [x] **Q1 — Relay role.** Approved 2026-10-06. `abacus_relay` with `BYPASSRLS`, privileges only on `outbox` (`SELECT`, `UPDATE` of three status columns). Alternatives: iterate tenants under RLS (needs a firm list the relay can read — another cross-tenant read), or a `SECURITY DEFINER` function (FORCE RLS binds the owner too, so it would need a bypass role anyway). **Recommendation:** the relay role.
+- [x] **Q2 — No audit event, no commit.** Approved 2026-10-06. Strict rule: a `uow` with zero `record` calls never commits, even if it changed nothing. **Recommendation:** yes — read-only work uses `tenant_session`.
+- [x] **Q3 — Database-checked actor.** Approved 2026-10-06. Audit rows must match the transaction's `app.actor_*` settings (CHECK constraint). **Recommendation:** yes — a bug can't attribute an action to someone else.
+- [x] **Q4 — Domain events carry no Restricted fields.** Approved 2026-10-06. **Recommendation:** yes.
 
 ## Handoff
 - **Current state:** Design written for founder review. No code. Branch `task-006-uow`.
