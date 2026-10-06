@@ -4,7 +4,7 @@ title: Engagements and request items through the API
 spec: SPEC-000
 acceptance_criteria: [AC-4, AC-5, AC-6, AC-7, AC-8]
 risk_zone: amber
-status: in-progress
+status: in-review
 branch: task-008-engagements
 worktree:
 created: 2026-10-06
@@ -249,16 +249,29 @@ reason: TASK-008 — engagements, request items, OpenAPI export and generated cl
 ## New dependencies
 | Package | Version | Why | Approved by |
 |---|---|---|---|
+| @hey-api/openapi-ts (dev, packages/api-client) | 0.99.0 | Generated API client (ADR-013) | already allowlisted |
 
 ## Progress log
 - `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder. Not started.
 - `2026-10-06` — Design drafted (§1–7, Q1–Q5) for founder review.
 - `2026-10-06` — Approved with all recommendations; approval file written at the founder's instruction.
 - `2026-10-06` — Implemented steps 1–5. Smoke-tested end to end: AC-4 to AC-8, Firm B 404s, 422 without input echo. Interface contract written. ADR-103 accepted (Q1).
+- `2026-10-06` — Security review (Sonnet): changes requested. Fixed 1–8 (walls production gate; creator-only member add with audited user; NUL and control-character rejection plus a 500 handler; lock-then-authorise; column grants in 0006). Notes 9–17 recorded.
+- `2026-10-06` — Architecture review (Sonnet): changes requested. Fixed S1–S4, S7, S8 and S10 (RETURNING, DTOs, OpenAPI errors and security, stricter LIST-001). Also S5 as BOUND-002 and S9 as OWN-001 (in `banned_patterns`, since `pyproject.toml` isn't in the approval). Notes recorded as follow-ups (Gotchas).
+- `2026-10-06` — ADR-102 accepted by the founder.
+- `2026-10-06` — Independent tests (Sonnet): no implementation bugs. `make check` found unclassified error-model fields (fixed), and TASK-007 tests seeding members without engagements (seeding fixed by the test author; assertions unchanged).
+- `2026-10-06` — `make check` exit 0: 4,023 unit + 682 integration, coverage 97 %, schema_check clean, api-client drift check on and clean.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| Plain glossary table names; ownership in `TABLE_OWNERS` + OWN-001 | Glossary is binding vocabulary | ADR-103 (accepted) |
+| Creator becomes `engagement_partner` via `add_creator_as_partner` only | AC-4; nobody else can be added until `engagement.member_add` has a route | No |
+| Engagement detail = metadata only | One action per route; ADR-024 | No |
+| Core `insert(...).returning()` executed immediately, not ORM add/flush | Ordered writes across composite FKs; UOW-001 bans flush | No |
+| Writes lock the engagement row and authorise inside the unit of work | Close check-then-act (security S5, architecture S3) | No |
+| Module dependency direction in BOUND-002 (banned_patterns), not import-linter | `pyproject.toml` not in this approval; same effect | No |
+| Production refuses to start until walls exist (`WALL_SAFE`) | Founder decision: walls gate the first real firm | No |
 
 ## Gotchas and discoveries
 - From the stage 4 reviews: these follow-ups are recorded, not fixed here.
@@ -283,8 +296,8 @@ reason: TASK-008 — engagements, request items, OpenAPI export and generated cl
 -
 
 ## Handoff
-- **Current state:** Steps 1–5 committed on `task-008-engagements` (WIP). Contract written. The independent test author and two reviews are next.
-- **Exact next step:** Collect the tests and reviews; fix findings; `make check`; PR (amber).
+- **Current state:** Done pending review. PR open on `task-008-engagements`; `make check` exit 0.
+- **Exact next step:** Confirm CI. Founder review (amber; diff review optional). Merge, delete `work/approvals/TASK-008.yaml`, mark done; then TASK-009 design (needs `requests.api.get_item_ref`, see Gotchas).
 - **Uncommitted or partial work:** none.
-- **Known failing checks:** none known before tests.
-- **Open issues:** branch protection off; ADR-102 awaiting the founder's accept or reject.
+- **Known failing checks:** none.
+- **Open issues:** branch protection off; follow-ups listed in Gotchas.
