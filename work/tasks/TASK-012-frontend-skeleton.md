@@ -5,7 +5,7 @@ spec: SPEC-000
 acceptance_criteria: [AC-18]
 risk_zone: amber
 status: in-progress
-branch: task-012-frontend
+branch: task-012-screens
 worktree:
 created: 2026-10-06
 updated: 2026-10-07
