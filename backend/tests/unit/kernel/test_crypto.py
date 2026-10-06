@@ -39,6 +39,9 @@ CONNECTIONS = {
     "ABACUS_S3_SECRET_KEY": "secret",
     "ABACUS_EVIDENCE_BUCKET": "evidence-bucket",
     "ABACUS_TEMPORAL_TARGET": "temporal.example.test:7233",
+    "ABACUS_TEMPORAL_PAYLOAD_KEY": "test-payload-key-Zq8Xv2Lm9Wd4Rt7Bn3Hs",
+    "ABACUS_TEMPORAL_TLS": "true",
+    "ABACUS_TEMPORAL_API_KEY": "test-temporal-api-key",
 }
 
 

@@ -21,6 +21,8 @@ OPERATIONS = {
     "get_engagement",
     "create_request_item",
     "list_request_items",
+    "start_retrieval",
+    "get_retrieval",
 }
 ROUTES = {
     ("post", "/v1/engagements"): ("create_engagement", "engagement.create"),
@@ -34,7 +36,16 @@ ROUTES = {
         "list_request_items",
         "request_item.read",
     ),
+    ("post", "/v1/engagements/{engagement_id}/retrievals"): (
+        "start_retrieval",
+        "evidence.upload",
+    ),
+    ("get", "/v1/engagements/{engagement_id}/retrievals/{sync_run_id}"): (
+        "get_retrieval",
+        "request_item.read",
+    ),
 }
+RETRIEVALS = "/v1/engagements/{engagement_id}/retrievals"
 
 
 def _operations() -> list[tuple[str, str, Json]]:
@@ -82,7 +93,7 @@ def test_ac20_each_route_has_its_operation_id_and_action(
 
 def test_ac20_every_operation_carries_an_action() -> None:
     operations = _operations()
-    assert len(operations) >= 6
+    assert len(operations) >= 8
     for method, path, op in operations:
         action = op.get("x-abacus-action")
         assert isinstance(action, str) and action, (method, path)
@@ -141,3 +152,54 @@ def test_ac20_the_committed_client_input_has_the_same_security_and_error_schemas
     assert committed["security"] == [{"bearer": []}]
     schemas = cast(dict[str, Json], cast(Json, committed["components"])["schemas"])
     assert {"ErrorOut", "ValidationErrorOut", "FieldErrorOut"} <= set(schemas)
+
+
+# --- retrievals (TASK-010b revision 1) -----------------------------------------------------------
+
+
+def _operation(path: str, method: str) -> Json:
+    paths = cast(dict[str, Json], json.loads(document())["paths"])
+    return cast(Json, paths[path][method])
+
+
+def test_ac20_start_retrieval_answers_202_and_declares_409_and_503() -> None:
+    responses = cast(dict[str, Json], _operation(RETRIEVALS, "post")["responses"])
+    assert "202" in responses
+    assert "200" not in responses
+    for status in ("409", "503"):
+        assert status in responses
+        assert "ErrorOut" in json.dumps(responses[status])
+        assert "ValidationErrorOut" not in json.dumps(responses[status])
+
+
+def test_ac20_get_retrieval_answers_200() -> None:
+    responses = cast(
+        dict[str, Json],
+        _operation(RETRIEVALS + "/{sync_run_id}", "get")["responses"],
+    )
+    assert "200" in responses
+
+
+def test_ac20_the_retrieval_response_schema_has_the_contract_fields() -> None:
+    schemas = cast(dict[str, Json], cast(Json, json.loads(document())["components"])["schemas"])
+    properties = cast(dict[str, Json], schemas["RetrievalOut"]["properties"])
+    assert set(properties) == {
+        "sync_run_id",
+        "request_item_id",
+        "status",
+        "failure_code",
+        "evidence_version_id",
+        "started_at",
+        "finished_at",
+    }
+
+
+def test_ac20_the_retrieval_request_schema_forbids_extra_fields() -> None:
+    schemas = cast(dict[str, Json], cast(Json, json.loads(document())["components"])["schemas"])
+    body = schemas["RetrievalIn"]
+    assert body["additionalProperties"] is False
+    assert set(cast(dict[str, Json], body["properties"])) == {
+        "request_item_id",
+        "period_start",
+        "period_end",
+    }
