@@ -4,7 +4,7 @@ title: Complete stage 1, make check pass, and run both stages in CI
 spec: SPEC-000
 acceptance_criteria: [AC-20]
 risk_zone: amber
-status: in-progress
+status: done
 branch: task-002-stage-gates
 worktree:
 created: 2026-10-05
@@ -238,6 +238,8 @@ Append-only. Newest at the bottom.
 
 - `2026-10-06` — PR #2 opened. Push-triggered stage 1 passed at once; the pull_request run's jobs were never assigned a runner (empty `runner_name`) and were cancelled after 15 min, twice. After the founder changed a repository Actions setting, attempt 3 got runners: **stage 1 pass (25 s), stages 1 and 2 pass (40 s; 702 passed, coverage 98 %)**. Cause of the earlier queueing not established.
 
+- `2026-10-06` — PR #2 merged to `main` (rebase, `1a6e4c4`) at founder instruction. `work/approvals/TASK-002.yaml` deleted. Done.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
@@ -272,8 +274,8 @@ Append-only. Newest at the bottom.
 - [x] **Q4 — CI.** Approved as recommended 2026-10-05. GitHub Actions with three third-party actions pinned by SHA, no secrets, read-only token. **Recommendation:** approve, then turn on branch protection with both jobs as required checks.
 
 ## Handoff
-- **Current state:** All steps, review findings and DoD items done; both CI jobs green on PR #2.
-- **Exact next step:** Founder reviews and merges PR #2; then turns on branch protection on `main` with `stage 1 (make check-fast)` and `stages 1 and 2 (make check)` as required checks; delete `work/approvals/TASK-002.yaml`; mark done.
+- **Current state:** Done. Merged in PR #2.
+- **Exact next step:** none — next is the synthetic generator (SPEC-001, draft).
 - **Uncommitted or partial work:** none.
 - **Known failing checks:** none.
-- **Open issues:** branch protection off; "Allow GitHub Actions to create and approve pull requests" is on (founder changed it while debugging; recommend turning it off); founder `PATH`; bot GitHub account deferred; root `engines.node` and `packageManager` hash.
+- **Open issues:** branch protection off (founder to enable with both CI jobs required); "Allow GitHub Actions to create and approve pull requests" on — recommend off; root `engines.node` / `packageManager` hash.
