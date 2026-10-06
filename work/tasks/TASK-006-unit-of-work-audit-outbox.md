@@ -60,7 +60,7 @@ Steps: to be written when the task starts.
 |---|---|---|
 
 ## Gotchas and discoveries
--
+- From TASK-005 review: `tenant_session`'s `session.commit()` is inert by design (rollback-only join). The unit of work must own its transaction (open its own tenant transaction in `kernel.db`, write, audit, outbox, commit) — never build on `tenant_session`'s commit. `app.actor_kind` / `app.actor_id` are set per transaction for the audit trail.
 
 ## Questions for the human
 -

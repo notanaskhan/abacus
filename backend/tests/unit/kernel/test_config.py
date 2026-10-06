@@ -124,3 +124,26 @@ def test_ac20_env_prefix_is_abacus(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("ABACUS_TEMPORAL_TARGET")
     monkeypatch.setenv("TEMPORAL_TARGET", "unprefixed.example.test:7233")
     assert Settings().temporal_target != "unprefixed.example.test:7233"
+
+
+def test_ac20_validation_errors_do_not_echo_input_values(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    leaked = f"not-a-number-{secrets.token_hex(8)}"
+    monkeypatch.setenv("ABACUS_DATABASE_STATEMENT_TIMEOUT_MS", leaked)
+    with pytest.raises(ValueError) as raised:
+        Settings()
+    assert "database_statement_timeout_ms" in str(raised.value)
+    assert leaked not in str(raised.value)
+    assert leaked not in repr(raised.value)
+
+
+@pytest.mark.parametrize("environment", ["staging", "production"])
+@pytest.mark.parametrize("missing", ["s3_access_key", "s3_secret_key"])
+def test_ac20_non_local_environment_requires_the_s3_keys(
+    monkeypatch: pytest.MonkeyPatch, environment: str, missing: str
+) -> None:
+    monkeypatch.setenv("ABACUS_ENVIRONMENT", environment)
+    _explicit_connection_env(monkeypatch, omit=missing)
+    with pytest.raises(ValueError):
+        Settings()

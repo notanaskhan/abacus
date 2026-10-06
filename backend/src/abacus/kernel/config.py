@@ -17,7 +17,14 @@ from abacus.kernel.classification import classified
 Environment = Literal["local", "test", "staging", "production"]
 _LOCAL_DB = "postgresql+asyncpg://abacus_app:abacusapp@127.0.0.1:55432/abacus"
 _LOCAL_MIGRATIONS_DB = "postgresql+asyncpg://abacus_owner:abacusowner@127.0.0.1:55432/abacus"
-_CONNECTIONS = ("database_url", "migrations_database_url", "s3_endpoint_url", "temporal_target")
+_CONNECTIONS = (
+    "database_url",
+    "migrations_database_url",
+    "s3_endpoint_url",
+    "s3_access_key",
+    "s3_secret_key",
+    "temporal_target",
+)
 _LOCAL_DEFAULTS: dict[str, object] = {
     "database_url": _LOCAL_DB,
     "migrations_database_url": _LOCAL_MIGRATIONS_DB,
@@ -29,7 +36,10 @@ _LOCAL_DEFAULTS: dict[str, object] = {
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="ABACUS_", extra="forbid", frozen=True)
+    # hide_input_in_errors: a validation error must never echo environment values (secrets).
+    model_config = SettingsConfigDict(
+        env_prefix="ABACUS_", extra="forbid", frozen=True, hide_input_in_errors=True
+    )
 
     environment: Annotated[Environment, classified("internal")] = "local"
     database_url: Annotated[SecretStr | None, classified("restricted")] = None

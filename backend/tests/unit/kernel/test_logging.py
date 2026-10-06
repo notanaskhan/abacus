@@ -118,3 +118,29 @@ def test_ac20_arbitrary_objects_are_refused(
     with pytest.raises(ValueError):
         get_logger("test").info("evt", thing=value)
     assert "OPAQUE-REPR" not in capsys.readouterr().out
+
+
+class Untagged(BaseModel):
+    id: uuid.UUID
+    note: Annotated[str, classified("public")] = ""
+
+
+class HoldsUntagged(BaseModel):
+    inner: Annotated[Untagged, classified("confidential")]
+
+
+def test_ac20_model_with_an_unclassified_field_is_refused(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(ValueError):
+        get_logger("test").info("evt", thing=Untagged(id=uuid.uuid4()))
+    assert _events(capsys) == []
+
+
+def test_ac20_nested_model_with_an_unclassified_field_is_refused(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    holder = HoldsUntagged(inner=Untagged(id=uuid.uuid4()))
+    with pytest.raises(ValueError):
+        get_logger("test").info("evt", holder=holder)
+    assert _events(capsys) == []

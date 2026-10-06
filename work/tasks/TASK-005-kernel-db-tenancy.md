@@ -4,7 +4,7 @@ title: "Kernel: config, logging, tenant sessions with row-level security, migrat
 spec: SPEC-000
 acceptance_criteria: [AC-5, AC-13, AC-20]
 risk_zone: red
-status: in-progress
+status: in-review
 branch: task-005-kernel-db
 worktree:
 created: 2026-10-06
@@ -131,6 +131,15 @@ It replaces TASK-002's "no migrations yet" guard and the `check_orm` stop-gap.
 - Logging: emits one JSON object per event with keys `event`, `level`, `timestamp` and the kwargs; raises `ValueError` for a model with a restricted field or for an arbitrary object value.
 - `schema_check.check(dsn_owner: str, dsn_app: str) -> list[str]` against a migrated database; messages `"<table>: <problem>"`, sorted; `main()` provisions its own container and exits 0/1.
 
+#### Contract revision 1 (2026-10-06, from the stage 4 security review)
+- **Pool leak:** `tenant_session` runs `RESET app.tenant_id` before `set_config(..., true)`, so a session-level `SET app.tenant_id` / `set_config(..., false)` left on a pooled connection by earlier code can never carry into the next session. New banned pattern **TENANT-001**: a string literal containing `app.tenant_id` outside `src/abacus/kernel/db/*`, `src/abacus_tools/quality/schema_check.py` and the two tenancy/schema integration test files.
+- **Policies, exact:** `schema_check` requires, per tenant table, **exactly one** policy: named `tenant_isolation`, `PERMISSIVE`, command `ALL`, roles `{public}`, with `qual` and `with_check` **identical** to those Postgres stores for the canonical `tenant_table` SQL (computed by applying `tenant_table` to a scratch table in a rolled-back transaction). Messages: `<t>: policy <name> is not the canonical tenant_isolation policy`, `<t>: has <n> policies; exactly one (tenant_isolation) is allowed`.
+- **Views:** materialized views and foreign tables readable by `abacus_app` fail (`<name>: <materialized view|foreign table> is readable by abacus_app; row-level security does not apply`); plain views must be `security_invoker` (`<name>: view is not security_invoker`). Allowlist: none.
+- **Large objects:** `bootstrap.sql` revokes `EXECUTE` on every `pg_catalog` large-object function (`lo_*`, `loread`, `lowrite`) from `PUBLIC`; `schema_check` reports `abacus_app: can execute <function>` for any it can still execute.
+- **Functions:** default privileges revoke `EXECUTE` on the owner's future functions from `PUBLIC`; `CONNECT`/`TEMPORARY` on `postgres` and `template1` revoked from `PUBLIC`.
+- **Logging:** models with **unclassified** fields (at any depth) are refused like Restricted ones (`ValueError`).
+- **Settings:** validation errors never include input values (`hide_input_in_errors`).
+
 ### Approval file text
 ```yaml
 task: TASK-005
@@ -184,6 +193,16 @@ New migration files (`backend/migrations/versions/*`) need no approval while new
   - Local DB volume recreated so `bootstrap.sql` runs (compose init only runs on an empty volume).
   - Independent author's test bugs (fixed by them): keyword-less assertion that could never pass; `alembic_version` fixture without the 0001 revoke.
 
+- `2026-10-06` — Stage 4 reviews (Sonnet), both CHANGES REQUESTED. Fixed via *Contract revision 1*:
+  - **Security:** session-level `SET app.tenant_id` survived pool rollback and leaked to the next checkout (reproduced by reviewer) — `tenant_session` now `RESET`s tenant and actor settings first, and banned pattern TENANT-001 confines the setting to `kernel.db`; `schema_check` policy check was a substring test (`OR true`, extra permissive policy, wrong role all passed) — now exactly one canonical policy, derived by applying `tenant_table` to a temporary table; materialized views/foreign tables (no RLS) and non-`security_invoker` views now fail; large-object functions (not tenant-scoped) revoked from PUBLIC in `bootstrap.sql` and checked; TRUNCATE/TRIGGER on tenant tables checked; default `EXECUTE` on owner functions revoked; `CONNECT`/`TEMPORARY` on `postgres`/`template1` revoked; logger refuses unclassified fields at any depth; settings errors hide input (secrets); S3 keys required outside local.
+  - **Architecture blockers:** `session.commit()` was silently inert (conservative savepoint join) — now explicit `join_transaction_mode="rollback_only"`, documented; TASK-006 must own its transaction (noted for its plan). Migrations ran in one transaction because the `SET` timeouts opened one first — timeouts now arrive as connection parameters; verified a failing third migration leaves the second applied, and timeouts are visible inside migrations.
+  - Also: actor kind/id set per transaction (`app.actor_kind`, `app.actor_id`) for the audit trail; `bootstrap.sql` grants the admin membership in `abacus_owner` when not a superuser (managed Postgres) and was verified idempotent; `bootstrap*.sql` and `script.py.mako` protected; `path_separator` in `alembic.ini`; stray `*.py-E` sed backups removed.
+  - Logged deviation: design §4 listed `pgcrypto`; not created — `gen_random_uuid()` is built into Postgres 13+, nothing needs it.
+  - `INSERT_ONLY_TABLES` in `schema_check` is declared separately from `insert_only()` calls; TASK-009 must add each table to both (noted for its plan).
+  - **Open:** tests for TENANT-001 need `backend/tests/unit/quality/test_banned_patterns.py`, which is protected and not in this task's approval — asked the founder.
+
+- `2026-10-06` — Tests for the review fixes written independently (round 3). They found two more issues: (1) `schema_check` crashed on views — asyncpg returns Postgres `"char"` (`relkind`) as bytes — fixed; (2) an apparent per-migration-transaction failure, traced (SQL log) to the test author's revision generator putting the second statement at module level via `textwrap.dedent` — their bug, fixed by them; my env.py fix stands (hand-written revisions prove it). Also found and removed stale `.pyc` files from my own probe migrations in `migrations/versions/__pycache__`, which Alembic had loaded as revisions. Founder approved `test_banned_patterns.py` for TENANT-001 tests (21 cases). Two more exclusions of the approved kind: DB-001 for `test_migrations_env.py`, UOW-001 for `test_tenancy.py` (proves `session.commit()` is inert). `make check` exit 0: 1,432 unit + 95 integration, coverage 97 %.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
@@ -203,8 +222,8 @@ New migration files (`backend/migrations/versions/*`) need no approval while new
 - [x] **Q4 — Protect `alembic.ini`, `migrations/env.py`, `migrations/bootstrap.sql`.** Approved 2026-10-06. They decide which role migrations run as, the timeouts, and the role privileges. **Recommendation:** yes.
 
 ## Handoff
-- **Current state:** Design written for founder review. No code. Branch `task-005-kernel-db`.
-- **Exact next step:** Founder edits or approves the design and answers Q1–Q4; approval file created; then step 1, with an independent session writing tests from the contract.
-- **Uncommitted or partial work:** this file; TASK-003/004 marked done.
+- **Current state:** Implemented, both stage 4 reviews addressed, `make check` exit 0. PR open; awaiting the founder's line-by-line review (red).
+- **Exact next step:** Confirm CI; founder reviews and merges; delete `work/approvals/TASK-005.yaml`; mark done; then TASK-006 plan (unit of work must own its transaction — see TASK-006 Gotchas).
+- **Uncommitted or partial work:** none.
 - **Known failing checks:** none.
 - **Open issues:** branch protection off.

@@ -20,21 +20,26 @@ from uuid import UUID
 import structlog
 from pydantic import BaseModel
 
-from abacus.kernel.classification import restricted_fields
+from abacus.kernel.classification import restricted_fields, unclassified_fields
 
 _SCALARS = (str, int, float, bool, UUID, date)
 _configured = False
 
 
 def _restricted_paths(value: object, path: str = "") -> list[str]:
-    """Dotted paths of Restricted fields anywhere inside `value`, including nested models."""
+    """Dotted paths of Restricted or unclassified fields anywhere in `value`, nested included."""
     found: list[str] = []
     if isinstance(value, BaseModel):
         restricted = set(restricted_fields(type(value)))
+        unclassified = set(unclassified_fields(type(value)))
         for field in type(value).model_fields:
             here = f"{path}.{field}" if path else field
             if field in restricted:
                 found.append(here)
+            elif (
+                field in unclassified
+            ):  # untagged means unknown, which must be treated as Restricted
+                found.append(f"{here} (unclassified)")
             else:
                 found += _restricted_paths(getattr(value, field), here)
     elif isinstance(value, Mapping):

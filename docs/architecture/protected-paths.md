@@ -20,7 +20,7 @@ Changes to these paths require the founder's explicit approval. Enforcement is l
 - CI: `.github/workflows/` (stages 1 and 2 run the same `make` targets as local development)
 - Dependency manifests and lockfiles: every `package.json` and `pyproject.toml`, `pnpm-workspace.yaml`, `.npmrc`, `backend/uv.lock`, `pnpm-lock.yaml`
 - Red-zone code: authorisation (`abacus.modules.identity.authz`), database session and tenancy, unit of work, encryption (`abacus.kernel.db`, `.uow`, `.crypto`), audit trail (`abacus.modules.audit_trail`)
-- Migration control: `backend/alembic.ini`, `backend/migrations/env.py` (which role, which timeouts) and `backend/migrations/bootstrap.sql` (the database roles and their privileges)
+- Migration control: `backend/alembic.ini`, `backend/migrations/env.py` (which role, which timeouts) and `backend/migrations/bootstrap*.sql` (the database roles, their privileges and local passwords) and `backend/migrations/script.py.mako` (the shape of every new migration)
 - The AI gateway (code owners only; agents build it under approval during Phase 1)
 
 ## Protected once they exist

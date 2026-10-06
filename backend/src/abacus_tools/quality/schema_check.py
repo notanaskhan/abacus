@@ -32,6 +32,8 @@ from alembic import command
 from alembic.config import Config
 from testcontainers.community.postgres import PostgresContainer
 
+from abacus.kernel.db.migration import tenant_table
+
 BACKEND = Path(__file__).resolve().parents[3]
 REPO = BACKEND.parent
 OWNER = "abacus_owner"
@@ -112,10 +114,82 @@ FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid
 JOIN pg_namespace n ON n.oid = c.relnamespace
 WHERE n.nspname = 'public' AND c.relname = $1 AND a.attname = 'tenant_id' AND NOT a.attisdropped
 """
-_POLICY = """
-SELECT qual, with_check FROM pg_policies
-WHERE schemaname = 'public' AND tablename = $1 AND policyname = 'tenant_isolation'
+_POLICIES = """
+SELECT policyname, permissive, roles::text[] AS roles, cmd, qual, with_check FROM pg_policies
+WHERE schemaname = 'public' AND tablename = $1 ORDER BY policyname
 """
+# Relations row-level security can't protect: views run as their owner unless security_invoker;
+# materialized views and foreign tables never apply it.
+_OTHER_RELATIONS = """
+SELECT c.relname, c.relkind, pg_get_userbyid(c.relowner) AS owner, c.reloptions
+FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public' AND c.relkind IN ('v', 'm', 'f') ORDER BY c.relname
+"""
+_KINDS = {"v": "view", "m": "materialized view", "f": "foreign table"}
+_LARGE_OBJECT_FUNCTIONS = r"""
+SELECT p.oid::regprocedure::text AS name FROM pg_proc p
+WHERE p.pronamespace = 'pg_catalog'::regnamespace
+  AND (p.proname LIKE 'lo\_%' OR p.proname IN ('loread', 'lowrite'))
+  AND has_function_privilege($1, p.oid, 'EXECUTE')
+ORDER BY 1
+"""
+_PROBE = "abacus_policy_probe"
+
+
+class _Recorder:
+    def __init__(self) -> None:
+        self.statements: list[str] = []
+
+    def execute(self, sqltext: str) -> object:
+        self.statements.append(sqltext)
+        return None
+
+
+async def _canonical_policy(conn: asyncpg.Connection) -> tuple[str, str]:
+    """`qual` and `with_check` as Postgres stores them for the canonical tenant_table policy."""
+    recorder = _Recorder()
+    tenant_table(recorder, _PROBE)
+    # A temporary table: private to this connection and dropped afterwards, never in `public`.
+    await conn.execute("CREATE TEMPORARY TABLE abacus_policy_probe (tenant_id uuid NOT NULL)")
+    try:
+        for statement in recorder.statements:
+            await conn.execute(statement)
+        row = await conn.fetchrow(
+            "SELECT qual, with_check FROM pg_policies WHERE tablename = $1", _PROBE
+        )
+    finally:
+        await conn.execute("DROP TABLE IF EXISTS pg_temp.abacus_policy_probe")
+    if row is None:
+        raise RuntimeError("could not derive the canonical tenant_isolation policy")
+    return str(row["qual"]), str(row["with_check"])
+
+
+def _policy_problems(
+    name: str, policies: list[asyncpg.Record], canonical: tuple[str, str]
+) -> list[str]:
+    if not policies:
+        return [f"{name}: missing tenant_isolation policy on app.tenant_id"]
+    problems: list[str] = []
+    if len(policies) > 1:
+        problems.append(
+            f"{name}: has {len(policies)} policies; exactly one (tenant_isolation) is allowed"
+        )
+    for policy in policies:
+        exact = (
+            policy["policyname"] == "tenant_isolation"
+            and policy["permissive"] == "PERMISSIVE"
+            and policy["cmd"] == "ALL"
+            and list(policy["roles"]) == ["public"]
+            and (str(policy["qual"]), str(policy["with_check"])) == canonical
+        )
+        if not exact:
+            problems.append(
+                f"{name}: policy {policy['policyname']} "
+                "is not the canonical tenant_isolation policy"
+            )
+    return problems
+
+
 _ROLE = (
     "SELECT rolsuper, rolbypassrls, rolcreaterole, rolcreatedb FROM pg_roles WHERE rolname = $1"
 )
@@ -149,6 +223,7 @@ async def _inspect(owner_dsn: str) -> list[str]:
     conn = await asyncpg.connect(owner_dsn)
     problems: list[str] = []
     try:
+        canonical = await _canonical_policy(conn)
         for table in await conn.fetch(_TABLES):
             name = str(table["relname"])
             if str(table["owner"]) != OWNER:
@@ -167,18 +242,37 @@ async def _inspect(owner_dsn: str) -> list[str]:
                 problems.append(f"{name}: row-level security not enabled")
             if not table["relforcerowsecurity"]:
                 problems.append(f"{name}: row-level security not forced")
-            policy = await conn.fetchrow(_POLICY, name)
-            if policy is None or any(
-                "app.tenant_id" not in str(policy[clause] or "")
-                for clause in ("qual", "with_check")
-            ):
-                problems.append(f"{name}: missing tenant_isolation policy on app.tenant_id")
+            problems += _policy_problems(name, list(await conn.fetch(_POLICIES, name)), canonical)
+            for privilege in ("TRUNCATE", "TRIGGER"):  # row-level security doesn't cover TRUNCATE
+                if await conn.fetchval(
+                    "SELECT has_table_privilege($1, $2, $3)", APP, f"public.{name}", privilege
+                ):
+                    problems.append(f"{name}: {APP} has {privilege}")
             if name in INSERT_ONLY_TABLES:
                 for privilege in ("UPDATE", "DELETE"):
                     if await conn.fetchval(
                         "SELECT has_table_privilege($1, $2, $3)", APP, f"public.{name}", privilege
                     ):
                         problems.append(f"{name}: {APP} may {privilege} an insert-only table")
+        for relation in await conn.fetch(_OTHER_RELATIONS):
+            relkind = relation["relkind"]  # Postgres "char": asyncpg returns it as bytes
+            code = relkind.decode() if isinstance(relkind, bytes) else str(relkind)
+            name, kind = str(relation["relname"]), _KINDS[code]
+            if str(relation["owner"]) != OWNER:
+                problems.append(f"{name}: owned by {relation['owner']}, not {OWNER}")
+            if kind == "view":
+                raw = cast(list[object] | None, relation["reloptions"]) or []
+                options = [str(o).lower() for o in raw]
+                if not any(o in options for o in ("security_invoker=true", "security_invoker=on")):
+                    problems.append(f"{name}: view is not security_invoker")
+            elif await conn.fetchval(
+                "SELECT has_table_privilege($1, $2, 'SELECT')", APP, f"public.{name}"
+            ):
+                problems.append(
+                    f"{name}: {kind} is readable by {APP}; row-level security does not apply"
+                )
+        for function in await conn.fetch(_LARGE_OBJECT_FUNCTIONS, APP):
+            problems.append(f"{APP}: can execute {function['name']}")
         role = await conn.fetchrow(_ROLE, APP)
         if role is None:
             problems.append(f"{APP}: role missing")

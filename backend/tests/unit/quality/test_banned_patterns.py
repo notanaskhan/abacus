@@ -575,3 +575,56 @@ def test_ac20_sidestep_001_flags_spawn_names(
 def test_ac20_sidestep_001_allows_popen_class_and_run(tmp_path: Path, rel: str, body: str) -> None:
     _write(tmp_path, rel, body)
     assert _rule_ids(tmp_path) == []
+
+
+# --- TENANT-001: the tenant setting is written only by abacus.kernel.db ------------------------
+
+TENANT_MESSAGE = "the tenant setting is written only by abacus.kernel.db"
+TENANT_LITERALS = [
+    "SET app.tenant_id = 'x'",
+    "select set_config('app.tenant_id', :t, false)",
+]
+TENANT_EXCLUDED = [
+    "src/abacus/kernel/db/session.py",
+    "src/abacus/kernel/db/migration.py",
+    "src/abacus_tools/quality/schema_check.py",
+    "src/abacus_tools/quality/banned_patterns.py",
+    "tests/integration/test_tenancy.py",
+    "tests/integration/test_schema_check_db.py",
+    "tests/unit/kernel/test_migration_helpers.py",
+    "tests/unit/quality/test_banned_patterns.py",
+]
+
+
+def _tenant_source(literal: str, wrapped: bool) -> str:
+    return f"text({literal!r})\n" if wrapped else f"X = {literal!r}\n"
+
+
+@pytest.mark.parametrize("literal", TENANT_LITERALS)
+@pytest.mark.parametrize("rel", [SERVICE, "tests/unit/test_something.py"])
+def test_ac20_tenant_001_flags_the_setting_outside_the_kernel(
+    tmp_path: Path, rel: str, literal: str
+) -> None:
+    _write(tmp_path, rel, _tenant_source(literal, wrapped="set_config" in literal))
+    tenant = [v for v in bp.scan(tmp_path) if v.rule_id == "TENANT-001"]
+    assert [(v.path, v.line, v.message) for v in tenant] == [(rel, 1, TENANT_MESSAGE)]
+
+
+def test_ac20_tenant_001_reports_one_finding_per_literal(tmp_path: Path) -> None:
+    _write(tmp_path, SERVICE, 'A = "SET app.tenant_id = 1"\nB = "RESET app.tenant_id"\n')
+    tenant = [v for v in bp.scan(tmp_path) if v.rule_id == "TENANT-001"]
+    assert [v.line for v in tenant] == [1, 2]
+
+
+@pytest.mark.parametrize("literal", TENANT_LITERALS)
+@pytest.mark.parametrize("rel", TENANT_EXCLUDED)
+def test_ac20_tenant_001_allows_the_setting_in_excluded_paths(
+    tmp_path: Path, rel: str, literal: str
+) -> None:
+    _write(tmp_path, rel, _tenant_source(literal, wrapped="set_config" in literal))
+    assert "TENANT-001" not in _rule_ids(tmp_path)
+
+
+def test_ac20_tenant_001_ignores_unrelated_strings(tmp_path: Path) -> None:
+    _write(tmp_path, SERVICE, 'A = "app.other"\nB = "tenant_id"\n')
+    assert "TENANT-001" not in _rule_ids(tmp_path)
