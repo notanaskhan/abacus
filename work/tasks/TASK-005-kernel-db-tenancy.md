@@ -4,7 +4,7 @@ title: "Kernel: config, logging, tenant sessions with row-level security, migrat
 spec: SPEC-000
 acceptance_criteria: [AC-5, AC-13, AC-20]
 risk_zone: red
-status: awaiting-plan-approval
+status: in-progress
 branch: task-005-kernel-db
 worktree:
 created: 2026-10-06
@@ -43,9 +43,10 @@ Build the kernel foundations every module depends on — settings, data classifi
 - `docker-compose.yml`, `backend/tests/integration/conftest.py`, `Makefile` (`migrate`, `check`)
 
 ## Plan
-- [ ] Plan approved by human — **red: founder edits or approves this design before any code, then reviews the diff line by line**
-- [ ] Approval file `work/approvals/TASK-005.yaml`
-- [ ] Q1–Q4 answered
+- [x] Plan approved by human (founder, 2026-10-06: "approved") — **red: founder reviews the diff line by line before merge**
+- [x] Approval file `work/approvals/TASK-005.yaml` written by the agent at the founder's instruction (2026-10-06)
+- Approved by founder: paths under *Approval file text*, expires 2026-10-27
+- [x] Q1–Q4 answered: all recommendations approved (2026-10-06)
 
 ### Design (for founder review)
 
@@ -114,6 +115,8 @@ It replaces TASK-002's "no migrations yet" guard and the `check_orm` stop-gap.
 
 ### Interface contract (tests written independently — ADR-078)
 - `TenantContext(tenant_id: UUID, actor_kind: "human"|"agent"|"system", actor_id: str)`, frozen.
+- Test fixture contract (implementer provides in `backend/tests/integration/conftest.py`): session-scoped `migrated_db` yielding `MigratedDatabase(owner_url: str, app_url: str)` — SQLAlchemy async URLs (`postgresql+asyncpg://…`) for `abacus_owner` and `abacus_app` on a fresh Postgres (compose image) with `bootstrap.sql` applied and migrated to head — and with `abacus.kernel.db.configure_engine(app_url)` already called, so `tenant_session` uses it.
+- `abacus.kernel.db.configure_engine(url: str) -> None` replaces the process engine (startup and tests); `dispose_engine()` closes it.
 - `tenant_session(ctx) -> AsyncContextManager[AsyncSession]` (from `abacus.kernel.db`), connected as `abacus_app`, with `current_setting('app.tenant_id')` = `str(ctx.tenant_id)` inside, and the setting absent on the same pooled connection after exit. Changes made inside are rolled back on exit.
 - `abacus.kernel.db.migration.tenant_table(op, table: str)` and `insert_only(op, table: str)` emit exactly the SQL in Design §2 (tests may call them with a recording `op` stub and also apply them to a real table).
 - Behaviour to prove against a real Postgres (testcontainers, bootstrap applied, migrated to head), using a probe tenant table created through `tenant_table` in the test:
@@ -185,10 +188,10 @@ New migration files (`backend/migrations/versions/*`) need no approval while new
 - `schema_check` now needs Docker (it starts Postgres); CI runners have it.
 
 ## Questions for the human
-- [ ] **Q1 — Roles via bootstrap script.** Create `abacus_owner`/`abacus_app` in `backend/migrations/bootstrap.sql` (run once per environment), not in a migration. **Recommendation:** yes.
-- [ ] **Q2 — Classification mechanism.** ADR-031's `Field(json_schema_extra={"cls": ...})` behind a `classified()` helper, enforced by a unit test over every `abacus` model. **Recommendation:** yes.
-- [ ] **Q3 — Migration linter (ADR-015).** Defer until the first destructive migration; track as a follow-up task. **Recommendation:** defer.
-- [ ] **Q4 — Protect `alembic.ini`, `migrations/env.py`, `migrations/bootstrap.sql`.** They decide which role migrations run as, the timeouts, and the role privileges. **Recommendation:** yes.
+- [x] **Q1 — Roles via bootstrap script.** Approved 2026-10-06. Create `abacus_owner`/`abacus_app` in `backend/migrations/bootstrap.sql` (run once per environment), not in a migration. **Recommendation:** yes.
+- [x] **Q2 — Classification mechanism.** Approved 2026-10-06. ADR-031's `Field(json_schema_extra={"cls": ...})` behind a `classified()` helper, enforced by a unit test over every `abacus` model. **Recommendation:** yes.
+- [x] **Q3 — Migration linter (ADR-015).** Approved 2026-10-06. Defer until the first destructive migration; track as a follow-up task. **Recommendation:** defer.
+- [x] **Q4 — Protect `alembic.ini`, `migrations/env.py`, `migrations/bootstrap.sql`.** Approved 2026-10-06. They decide which role migrations run as, the timeouts, and the role privileges. **Recommendation:** yes.
 
 ## Handoff
 - **Current state:** Design written for founder review. No code. Branch `task-005-kernel-db`.
