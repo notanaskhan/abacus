@@ -12,6 +12,7 @@ up again (every migration must be reversible), then inspects the catalog. It fai
   - abacus_app with SUPERUSER, BYPASSRLS, CREATEROLE or CREATEDB, or owning any relation
   - a global table (GLOBAL_TABLES) with any app privilege
   - a table missing from TABLE_OWNERS, or listed there but absent (ADR-103)
+  - an IMMUTABLE_TABLES table without enabled BEFORE UPDATE/DELETE/TRUNCATE triggers (ADR-004)
   - abacus_relay or abacus_identity (they bypass RLS) holding any privilege not in
     BYPASS_ROLE_GRANTS, or any other non-superuser role with BYPASSRLS
 
@@ -45,7 +46,7 @@ APP = "abacus_app"
 # Tables without tenant_id: only infrastructure. Each entry is founder-reviewed (protected file).
 NON_TENANT_TABLES = frozenset({"alembic_version"})
 # Tables the app may insert into and read, never update or delete (ADR-004); TASK-009/010 add.
-INSERT_ONLY_TABLES: frozenset[str] = frozenset({"audit_events", "outbox"})
+INSERT_ONLY_TABLES: frozenset[str] = frozenset({"audit_events", "outbox", "evidence_versions"})
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "audit_events": frozenset(
@@ -65,7 +66,18 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"created_by"}
     ),
     "engagement_members": frozenset({"tenant_id", "engagement_id", "user_id", "role"}),
+    "evidence_items": frozenset(
+        {"id", "tenant_id", "engagement_id", "title", "created_by_kind", "created_by_id"}
+    ),
+    "evidence_versions": frozenset(
+        {"id", "tenant_id", "engagement_id", "evidence_item_id", "version_no", "fingerprint"}
+        | {"storage_key", "storage_version_id", "size_bytes", "media_type", "source", "method"}
+        | {"pulled_at", "period_start", "period_end", "client_entity_id", "snapshot_id"}
+    ),
 }
+# Tables whose rows no role may change or remove: a BEFORE UPDATE OR DELETE trigger and a BEFORE
+# TRUNCATE trigger must call this function (ADR-004 second layer, TASK-009).
+IMMUTABLE_TABLES: dict[str, str] = {"evidence_versions": "evidence_versions_immutable"}
 # Columns the app may update; any other UPDATE on these tables is reported (TASK-008). Tables not
 # listed here keep whatever their migration grants (insert-only tables grant none).
 APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
@@ -87,6 +99,8 @@ TABLE_OWNERS: dict[str, str] = {
     "engagements": "engagements",
     "request_lists": "requests",
     "request_items": "requests",
+    "evidence_items": "evidence",
+    "evidence_versions": "evidence",
 }
 # Tables shared by every tenant, readable only through abacus_identity (ADR-002, TASK-007): the app
 # role has no privileges on them at all. Each entry is founder-reviewed (protected file).
@@ -412,6 +426,34 @@ async def _insert_column_problems(conn: asyncpg.Connection, table: str) -> list[
     return await _column_problems(conn, table, "INSERT", APP_INSERT_COLUMNS.get(table))
 
 
+_TRIGGERS = """
+SELECT t.tgname, p.proname, t.tgtype, t.tgenabled FROM pg_trigger t
+JOIN pg_class c ON c.oid = t.tgrelid JOIN pg_namespace n ON n.oid = c.relnamespace
+JOIN pg_proc p ON p.oid = t.tgfoid
+WHERE n.nspname = 'public' AND c.relname = $1 AND NOT t.tgisinternal
+"""
+# pg_trigger.tgtype bits: 1 row-level, 2 before, 4 insert, 8 delete, 16 update, 32 truncate.
+_ROW, _BEFORE, _DELETE, _UPDATE, _TRUNCATE = 1, 2, 8, 16, 32
+
+
+async def _immutability_problems(conn: asyncpg.Connection, table: str, function: str) -> list[str]:
+    covered = 0
+    for trigger in await conn.fetch(_TRIGGERS, table):
+        enabled = trigger["tgenabled"]
+        state = enabled.decode() if isinstance(enabled, bytes) else str(enabled)
+        if str(trigger["proname"]) != function or state == "D":
+            continue
+        kind = int(trigger["tgtype"])
+        if kind & _BEFORE:
+            covered |= kind & (_DELETE | _UPDATE | _TRUNCATE)
+    missing = [
+        name
+        for name, bit in (("UPDATE", _UPDATE), ("DELETE", _DELETE), ("TRUNCATE", _TRUNCATE))
+        if not covered & bit
+    ]
+    return [f"{table}: no enabled BEFORE {op} trigger calling {function}" for op in missing]
+
+
 async def _inspect(owner_dsn: str) -> list[str]:
     conn = await asyncpg.connect(owner_dsn)
     problems: list[str] = []
@@ -463,6 +505,8 @@ async def _inspect(owner_dsn: str) -> list[str]:
                     problems.append(f"{name}: {APP} has {privilege}")
             problems += await _insert_column_problems(conn, name)
             problems += await _column_problems(conn, name, "UPDATE", APP_UPDATE_COLUMNS.get(name))
+            if name in IMMUTABLE_TABLES:
+                problems += await _immutability_problems(conn, name, IMMUTABLE_TABLES[name])
             if name in INSERT_ONLY_TABLES:
                 for privilege in ("UPDATE", "DELETE"):
                     if await conn.fetchval(
