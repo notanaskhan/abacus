@@ -4,7 +4,7 @@ title: Write-once evidence storage, per-tenant keys, deterministic rendering
 spec: SPEC-000
 acceptance_criteria: [AC-12, AC-13]
 risk_zone: red
-status: in-progress
+status: in-review
 branch: task-009-evidence
 worktree:
 created: 2026-10-06
@@ -291,6 +291,8 @@ reason: TASK-009 — write-once encrypted evidence storage, insert-only versions
 ## New dependencies
 | Package | Version | Why | Approved by |
 |---|---|---|---|
+| openpyxl | 3.1.5 | Deterministic spreadsheet rendering (ADR-042) | already allowlisted |
+| cryptography (direct) | 50.0.2 | Envelope encryption (ADR-104) | already allowlisted |
 
 ## Progress log
 - `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder. Not started.
@@ -316,10 +318,20 @@ reason: TASK-009 — write-once encrypted evidence storage, insert-only versions
 
   The rest are recorded in Gotchas; arch 2 is a Question. Contract revision 1 written.
 - `2026-10-06` — Implemented steps 2–4. Smoke-tested end to end: two versions share one object, audit events correct, member read verified, superuser UPDATE/DELETE/TRUNCATE rejected by the trigger. The renderer pins openpyxl's save-time `modified` stamp. `kernel.db.Base` maps `datetime` to timestamptz. Contract written.
+- `2026-10-06` — Independent tests (Sonnet). They found two implementation bugs, both fixed: a retention-extension race under concurrent reuse, and `ensure_bucket` on Versity's `ObjectLockConfigurationNotFoundError`. A reused idempotency key with different content or engagement is now an error. Test-side setup fixes: placeholder idempotency keys (secrets scan), and older settings tests set `ABACUS_EVIDENCE_BUCKET`. The local master key default is an obvious placeholder. Founder answered the actor-context question.
+- `2026-10-06` — `make check` exit 0: 4,370 unit + 825 integration, coverage 97 %, schema_check clean, api-client drift clean.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| Client-side envelope encryption everywhere | One code path; Versity has no KMS (Q1) | ADR-104 (accepted) |
+| Two-step `stage_content` → `add_version` | No transaction held across network I/O | No |
+| Verified reuse of existing objects; retention extended on reuse | Poisoned or expired versions must never be recorded | No |
+| Tenant derived from the transaction (`transaction_context`) | A separate tenant argument could disagree with RLS | No |
+| Idempotency key on versions (0008); mismatch is an error | Temporal retries must not duplicate (ADR-018) | No |
+| Local key only with loopback storage | The local master key is public | No |
+| Provenance as columns on `evidence_versions` | 1:1 and immutable (Q3) | No |
+| `kernel.db.Base` maps `datetime` → timestamptz | Aware datetimes with asyncpg | No |
 
 ## Gotchas and discoveries
 - Follow-ups from the TASK-009 reviews:
@@ -338,8 +350,8 @@ reason: TASK-009 — write-once encrypted evidence storage, insert-only versions
 - **Actor-neutral authorisation (architecture review, item 2).** For TASK-010/011: `authorise` takes only a human `AuthContext`, but the matrix grants `evidence.upload` to `system` and `evidence.read` to `agent: task_scope`. Recommend: the TASK-010 design adds a `SystemContext` (and TASK-011 an `AgentContext` with the delegation chain and task scope, ADR-025) that `authorise` accepts. Until then, `read_content` is the documented path for callers authorised under their own context.
 
 ## Handoff
-- **Current state:** Steps 1–4 committed on `task-009-evidence` (WIP). Contract written. The independent test author and two reviews are next.
-- **Exact next step:** Collect tests and reviews; fix findings; `make check`; PR (red: founder line-by-line).
+- **Current state:** Done pending review. PR open on `task-009-evidence`; `make check` exit 0.
+- **Exact next step:** Confirm CI. Founder line-by-line review. Merge, delete `work/approvals/TASK-009.yaml`, mark done; then TASK-010 design (see its Gotchas: SystemContext, staging, idempotency, snapshot FK, worker startup checks).
 - **Uncommitted or partial work:** none.
-- **Known failing checks:** none known before tests.
-- **Open issues:** branch protection off.
+- **Known failing checks:** none.
+- **Open issues:** branch protection off; follow-ups listed in Gotchas.
