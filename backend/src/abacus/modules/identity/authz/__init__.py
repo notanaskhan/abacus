@@ -9,13 +9,18 @@ PROTECTED. TASK-007 design §5.
   2. relationships  the roles the actor holds here: firm role, plus engagement role on the
                     resource's engagement (no relationship at all: deny)
   3. roles          the matrix decision for those roles; an explicit `deny` beats any `allow`
-  4. attributes     archived engagements are read-only; `mfa_recent`; `requires: reason`
+  4. attributes     archived engagements are read-only; `mfa_recent`; `requires: reason`;
+                    actions carrying an obligation not built yet (`notify`) deny
 Matrix conditions not modelled yet (`in_scope`, `firm_setting(...)`, `assigned_only`,
 `client_visible_only`, `task_scope`) are not grants: they deny until their task models them.
-Ethical walls (ADR-026) and client access arrive with their own specs.
 
-Every call is recorded for the request being served, so a route that returns without checking its
-declared action fails closed (`routing.AbacusRoute`).
+NOT WALL-SAFE YET: ethical walls (ADR-026) are not modelled, so `walled: deny` is never applied.
+No route serving engagement data may ship to a firm before walls exist (TASK-007 decision log).
+Client access (`access_expired`) arrives with client users.
+
+A successful `authorise` (and every `visible` filter built) is recorded for the request being
+served, so a route that returns a success without one fails closed (`routing.AbacusRoute`). The
+guard hides the response; it can't undo a write, so authorise before doing anything.
 """
 
 from __future__ import annotations
@@ -60,11 +65,20 @@ class UnknownAction(ValueError):
 
 @dataclass(frozen=True)
 class Resource:
-    """What an action is done to. Firm-level actions pass `Resource(ctx.tenant_id)`."""
+    """What an action is done to. Build it with `firm` or `engagement`: an engagement resource
+    must state whether the engagement is archived (TASK-008 loads that from the database)."""
 
     tenant_id: UUID
-    engagement_id: UUID | None = None
-    archived: bool = False
+    engagement_id: UUID | None
+    archived: bool
+
+    @classmethod
+    def firm(cls, tenant_id: UUID) -> Resource:
+        return cls(tenant_id, None, False)
+
+    @classmethod
+    def engagement(cls, tenant_id: UUID, engagement_id: UUID, *, archived: bool) -> Resource:
+        return cls(tenant_id, engagement_id, archived)
 
 
 @contextmanager
@@ -103,7 +117,6 @@ async def authorise(
 ) -> None:
     """Return if allowed; raise `Forbidden` otherwise."""
     rule = _rule(action)
-    _record(action)
     # 1. Tenancy.
     if resource.tenant_id != ctx.tenant_id:
         raise _deny(ctx, action, "tenancy")
@@ -128,6 +141,9 @@ async def authorise(
         raise _deny(ctx, action, "attribute")
     if rule.requires_reason and not (reason and reason.strip()):
         raise _deny(ctx, action, "attribute")
+    if rule.notify:
+        raise _deny(ctx, action, "attribute")
+    _record(action)
     _log.info("authz.allowed", action=action, tenant_id=ctx.tenant_id, user_id=ctx.user_id)
 
 
@@ -135,10 +151,12 @@ def visible(
     ctx: AuthContext, action: str, engagement_id: ColumnElement[UUID]
 ) -> ColumnElement[bool]:
     """A filter for list queries: rows whose engagement the actor may `action` (a read action).
-    Row-level security already confines the query to the active tenant."""
+    Agrees with `authorise` for every role. Apply it: building it counts as the route's check."""
     rule = _rule(action)
     if not rule.reads:
         raise ValueError(f"visible() filters reads; {action!r} is not a read action")
+    if rule.mfa_recent or rule.requires_reason or rule.notify:
+        raise ValueError(f"visible() can't apply {action!r}'s conditions; use authorise()")
     _record(action)
     firm = rule.decisions.get(ctx.firm_role) if ctx.firm_role is not None else None
     if firm == "allow":
@@ -153,6 +171,7 @@ def visible(
     if not roles:
         return false()
     member_of = select(engagement_members.c.engagement_id).where(
+        engagement_members.c.tenant_id == ctx.tenant_id,
         engagement_members.c.user_id == ctx.user_id,
         engagement_members.c.role.in_(roles),
     )

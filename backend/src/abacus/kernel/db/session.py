@@ -44,7 +44,7 @@ class TenantContext:
 _engine: AsyncEngine | None = None
 
 
-def _create_engine(url: str) -> AsyncEngine:
+def _create_engine(url: str, **server_settings: str) -> AsyncEngine:
     return create_async_engine(
         url,
         pool_pre_ping=True,
@@ -53,6 +53,7 @@ def _create_engine(url: str) -> AsyncEngine:
             "server_settings": {
                 "application_name": "abacus",
                 "statement_timeout": str(settings().database_statement_timeout_ms),
+                **server_settings,
             }
         },
     )
@@ -95,10 +96,15 @@ def relay_engine() -> AsyncEngine:
 _identity_engine: AsyncEngine | None = None
 
 
+def _create_identity_engine(url: str) -> AsyncEngine:
+    # Read-only sessions are a second line; the SELECT-only grants are the control (schema_check).
+    return _create_engine(url, default_transaction_read_only="on", statement_timeout="5000")
+
+
 def configure_identity_engine(url: str) -> None:
     """Point sign-in at a database (abacus_identity role). Startup and tests."""
     global _identity_engine
-    _identity_engine = _create_engine(url)
+    _identity_engine = _create_identity_engine(url)
 
 
 def identity_engine() -> AsyncEngine:
@@ -110,7 +116,7 @@ def identity_engine() -> AsyncEngine:
         url = settings().identity_database_url
         if url is None:  # settings validation makes this unreachable outside local and test
             raise RuntimeError("identity_database_url is not configured")
-        _identity_engine = _create_engine(url.get_secret_value())
+        _identity_engine = _create_identity_engine(url.get_secret_value())
     return _identity_engine
 
 

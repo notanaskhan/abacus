@@ -170,6 +170,47 @@ Firm roles come from the database, never from token claims (ADR-029).
 - New settings `identity_database_url` (SecretStr, restricted), `identity_issuer`, `identity_audience` and `identity_jwks`. All four are required outside local/test.
 - Local defaults: issuer `https://identity.abacus.local`, audience `abacus-api`, JWKS `{"keys": []}` (verifies nothing).
 
+#### Contract revision 1 (2026-10-06, from the security review)
+**authorise / visible**
+- The request guard records an action only when `authorise` **returns** (allowed), or when `visible` builds a filter. So a route that catches `Forbidden` and carries on still gets 500, and so does one whose `authorise` raised and was swallowed.
+- `notify: engagement_team` is an obligation the platform can't meet yet. Any action that carries it denies at layer `attribute` (today that is `engagement.self_join`: firm_admin is denied).
+- `Resource` has no defaults any more. Build it with `Resource.firm(tenant_id)` or `Resource.engagement(tenant_id, engagement_id, *, archived: bool)`, which requires `archived`. The positional `Resource(tenant_id, engagement_id, archived)` still works.
+- `visible`:
+  - raises `ValueError` for a read action carrying `mfa_recent`, `requires` or `notify`;
+  - its subquery also filters `engagement_members.tenant_id == ctx.tenant_id`.
+- The module docstring states it is **not wall-safe** (ADR-026 not modelled).
+
+**Tokens**
+- Refused with `InvalidToken`:
+  - `exp - iat > 3600` (`MAX_LIFETIME_SECONDS`);
+  - a token over 8192 **bytes** (UTF-8), not characters.
+- JWKS keys are ignored (so tokens signed by them fail) unless they are RSA, at least 2048 bits (`MIN_RSA_BITS`), and declare `alg` RS256 or no `alg`.
+- `mfa_at` is `None` when `auth_time` is in the future beyond leeway, is ≤ 0, or would overflow.
+- `configure_verifier` raises `RuntimeError` unless `settings().environment` is `local` or `test`.
+
+**Routing**
+- `AbacusRouter.websocket`, `.add_api_websocket_route` and `.add_route` raise `TypeError`.
+- `TENANT_HEADER` is no longer exported from `identity.api`: use the literal `"X-Abacus-Tenant"` in tests.
+
+**Database**
+- The identity engine connects with `default_transaction_read_only=on` and `statement_timeout=5000`.
+- `schema_check` reports:
+  - `abacus_identity: default_transaction_read_only is not on` when the role setting is missing;
+  - `<bypass role>: can execute <lo function>` for large-object functions, on both bypass roles.
+
+**Static rules** (all `include=("src/abacus/*",)` unless noted)
+- **UOW-003** now also catches:
+  - bare names and parameters `identity_engine`/`configure_identity_engine`/`identity_database_url`;
+  - `from abacus.kernel.db import *`.
+  Exclusions: `kernel/db/*`, `kernel/config.py`, `identity/repository.py`, `tests/integration/conftest.py`, `tests/unit/kernel/test_config.py`. It applies to all scanned files.
+- **AUTH-001** applies to all scanned files. It catches the modules `jwt`, `jose`, `josepy`, `jwcrypto`, `authlib`, `python_jose`, including via `importlib.import_module("…")`/`__import__("…")`.
+- **AUTH-002** (new): the string `"authorization"` (any case, trimmed) or the identifier `authorization`, outside `identity/routing.py` and `identity/service.py`.
+- **AUTHZ-002** (new): any `.firm_role` attribute outside `src/abacus/modules/identity/`.
+- **TENANT-002**: now only in `src/abacus/`; also catches the identifiers `x_abacus_tenant` and `TENANT_HEADER`. Exclusions: `identity/service.py`, `identity/routing.py`.
+- **ROUTE-001** (new): the identifiers `APIRouter`, `APIRoute`, `FastAPI`, `Starlette`, `Mount`, `WebSocketRoute`, `APIWebSocketRoute`, `add_api_route`, `add_route`, `add_websocket_route`, `websocket`, `mount`, `include_router` and `dependency_overrides`, outside `identity/routing.py` and `api/app.py`.
+- **ROUTE-002** (new): the identifier `SELF` outside `identity/routing.py`, `identity/routes.py` and `identity/api.py`.
+- **CTX-001** (new): a call to `AuthContext(...)` or `TenantContext(...)` outside `identity/service.py` and `kernel/db/*`.
+
 ### Approval file text
 ```yaml
 task: TASK-007
@@ -234,7 +275,8 @@ reason: TASK-007 — identity, request context, authorise and visible
 -
 
 ## Questions for the human
--
+- **Walls before engagement data (security review S3).** `authorise` is not wall-safe: ADR-026 isn't modelled, and SPEC-000 doesn't list it. Recommend: no engagement route ships to a real firm before walls exist. SPEC-000 is synthetic-data-only, so TASK-008 may proceed; the wall spec is a gate before the first real firm, not before TASK-008.
+- **`audit_event.read` for firm_admin (S19).** The matrix lets firm_admin read audit events without an engagement relationship. That is safe while audit events carry only identifiers and references, which TASK-006 enforces: `Target`/`Ref` are identifier-only. Recommend: keep it, and keep audit events content-free.
 
 ## Handoff
 - **Current state:** Implementation of steps 1–7 committed on `task-007-identity` (WIP). Interface contract written. Independent test author (Sonnet) writing tests.

@@ -38,6 +38,9 @@ class Rule:
     decisions: dict[str, Decision]
     mfa_recent: bool
     requires_reason: bool
+    # An obligation the platform can't discharge yet (engagement-team notification, ADR-024):
+    # such actions deny until it can.
+    notify: bool
 
     @property
     def reads(self) -> bool:
@@ -66,7 +69,13 @@ def _rule(action: str, entries: dict[str, str]) -> Rule:
             decisions[key] = _decision(action, key, value)
         else:
             raise ValueError(f"permission matrix: {action}: unknown role {key!r}")
-    return Rule(action, decisions, "mfa_recent" in modifiers, "requires" in modifiers)
+    return Rule(
+        action,
+        decisions,
+        mfa_recent="mfa_recent" in modifiers,
+        requires_reason="requires" in modifiers,
+        notify="notify" in modifiers,
+    )
 
 
 RULES: dict[str, Rule] = {action: _rule(action, entries) for action, entries in ACTIONS.items()}

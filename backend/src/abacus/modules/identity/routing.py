@@ -8,8 +8,9 @@ TASK-007 design §6.
         await authorise(ctx, "engagement.create", Resource(ctx.tenant_id))
 
 The router attaches authentication to every route, so no route can forget it. A route that
-returns a success without having called `authorise` or `visible` for its declared action is
-turned into a 500 and logged: the response it built never reaches the caller.
+returns a success without a successful `authorise` (or a `visible` filter) for its declared action
+is turned into a 500 and logged: the response it built never reaches the caller. The guard runs
+after the handler, so it can't undo a write: authorise first, before touching anything.
 `SELF` is for routes about the signed-in user themself (`/v1/me`), which need no tenant.
 """
 
@@ -118,6 +119,21 @@ class AbacusRouter(APIRouter):
             dependencies=[Depends(auth)],
             openapi_extra={ACTION_KEY: action},
         )
+
+    def add_api_websocket_route(
+        self, *args: object, **kwargs: object
+    ) -> None:
+        raise TypeError("websocket routes are not supported: they would bypass the action check")
+
+    def websocket(  # pyright: ignore[reportIncompatibleMethodOverride] -- refuses
+        self, *args: object, **kwargs: object
+    ) -> None:
+        raise TypeError("websocket routes are not supported: they would bypass the action check")
+
+    def add_route(
+        self, *args: object, **kwargs: object
+    ) -> None:
+        raise TypeError("plain Starlette routes are not supported: declare an action")
 
     def _verb(
         self, method: str, path: str, action: str, response_model: object, status_code: int | None
