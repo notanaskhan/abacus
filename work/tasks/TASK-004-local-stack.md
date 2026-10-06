@@ -4,7 +4,7 @@ title: Local development stack with Postgres, write-once storage and Temporal
 spec: SPEC-000
 acceptance_criteria: [AC-20]
 risk_zone: amber
-status: in-progress
+status: done
 branch: spec-000-planning
 worktree:
 created: 2026-10-06
@@ -141,6 +141,8 @@ make check
   - Should-fixes: integration-test lint exemptions and the DB-001 exclude narrowed from `tests/integration/*` to the two local-stack files; Object Lock tests now pin overwrite and unversioned-delete semantics; the version check compares integers (test author's bug, fixed by them); stale `minio` wording fixed; AC-10 moved from TASK-009 to TASK-010 (snapshots arrive there); TASK-006/007/009 notes for the outbox relay, permission-matrix wiring, fake identity provider choice, typed S3 client factory.
   - Nits: fixture polling keeps the last error and dumps container logs on timeout; Versity root key's break-glass role noted in Gotchas.
   - Independent tests updated from the revised contract (4 existing tests that contradicted it replaced; all listed in their report). `make check` exit 0: 813 unit + 18 integration.
+
+- `2026-10-06` — PR #4 squash-merged to `main` (after merging main in; one `pyproject.toml` conflict resolved by keeping both exemption sets) at founder instruction; approval file deleted. Done.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
