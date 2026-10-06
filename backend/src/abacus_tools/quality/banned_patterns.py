@@ -1044,9 +1044,11 @@ RULES: list[Rule | TreeRule] = [
     ),
     Rule(
         id="STORE-001",
-        description="Only kernel.storage constructs S3 clients (boto3)",
+        description="Only kernel.storage uses the AWS SDK and other S3 clients",
         adr="ADR-016, ADR-104",
-        check=_check_confined(("boto3",), "abacus.kernel.storage"),
+        check=_check_confined(
+            ("boto3", "botocore", "aioboto3", "aiobotocore", "s3fs"), "abacus.kernel.storage"
+        ),
         include=("src/abacus/*",),
         exclude=("src/abacus/kernel/storage.py",),
     ),
@@ -1054,7 +1056,9 @@ RULES: list[Rule | TreeRule] = [
         id="CRYPTO-001",
         description="Only kernel.crypto uses the cryptography library",
         adr="ADR-035, ADR-104",
-        check=_check_confined(("cryptography",), "abacus.kernel.crypto"),
+        check=_check_confined(
+            ("cryptography", "Crypto", "Cryptodome", "nacl"), "abacus.kernel.crypto"
+        ),
         include=("src/abacus/*",),
         exclude=("src/abacus/kernel/crypto/*", "src/abacus/modules/identity/tokens.py"),
     ),

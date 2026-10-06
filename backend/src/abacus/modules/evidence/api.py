@@ -10,24 +10,33 @@ from abacus.modules.evidence.render import (
     render_trial_balance,
 )
 from abacus.modules.evidence.service import (
+    EngagementArchived,
     EvidenceVersionRef,
     NewItem,
     Provenance,
+    StoredObject,
     add_version,
+    read_content,
     read_version,
+    stage_content,
 )
-from abacus.modules.evidence.storage import IntegrityError
+from abacus.modules.evidence.storage import ContentTooLarge, IntegrityError
 
 __all__ = [
     "XLSX_MEDIA_TYPE",
+    "ContentTooLarge",
+    "EngagementArchived",
     "EvidenceVersionCreated",
     "EvidenceVersionRef",
     "IntegrityError",
     "NewItem",
     "Provenance",
+    "StoredObject",
     "TrialBalance",
     "TrialBalanceLine",
     "add_version",
+    "read_content",
     "read_version",
     "render_trial_balance",
+    "stage_content",
 ]

@@ -55,19 +55,37 @@ class TrialBalance:
     lines: tuple[TrialBalanceLine, ...]
 
 
+_MAX_CELL = 32_767  # Excel's limit; longer values would corrupt the file
+_FORMULA_LEADS = ("=", "+", "-", "@")
+
+
 def _text(sheet: Worksheet, row: int, column: int, value: str) -> None:
+    if len(value) > _MAX_CELL:
+        raise ValueError("text longer than a spreadsheet cell can hold")
     cell = cast(Cell, sheet.cell(row=row, column=column))
     cell.value = value
     cell.data_type = "s"  # always a string: a leading "=" never becomes a formula
+    if value.startswith(_FORMULA_LEADS):
+        cell.quotePrefix = True  # and stays text if copied or exported elsewhere
 
 
 def _amount(sheet: Worksheet, row: int, column: int, value: Decimal) -> None:
+    if not value.is_finite():
+        raise ValueError("amounts must be finite")
     cell = cast(Cell, sheet.cell(row=row, column=column))
     cell.value = value
     cell.number_format = _AMOUNT
 
 
+def _utc(moment: datetime) -> datetime:
+    """Naive datetimes would be read in the host's zone, so output would vary by machine."""
+    if moment.tzinfo is None or moment.utcoffset() is None:
+        raise ValueError("pulled_at must be timezone-aware")
+    return moment.astimezone(UTC)
+
+
 def _workbook(tb: TrialBalance) -> Workbook:
+    pulled_at = _utc(tb.pulled_at)
     workbook = Workbook()
     sheet = cast(Worksheet, workbook.active)
     sheet.title = "Trial balance"
@@ -89,7 +107,7 @@ def _workbook(tb: TrialBalance) -> Workbook:
     footer = (
         ("Source", tb.source),
         ("Method", "retrieved"),
-        ("Pulled at", tb.pulled_at.isoformat()),
+        ("Pulled at", pulled_at.isoformat()),
         ("Period", f"{tb.period_start.isoformat()} to {tb.period_end.isoformat()}"),
         ("Entity", tb.entity_name),
         ("Entity ID", str(tb.client_entity_id)),
@@ -105,8 +123,8 @@ def _workbook(tb: TrialBalance) -> Workbook:
     properties = workbook.properties
     properties.creator = "platform"
     properties.lastModifiedBy = "platform"
-    properties.created = tb.pulled_at.replace(tzinfo=None)
-    properties.modified = tb.pulled_at.replace(tzinfo=None)
+    properties.created = pulled_at.replace(tzinfo=None)
+    properties.modified = pulled_at.replace(tzinfo=None)
     return workbook
 
 
@@ -116,7 +134,7 @@ _MODIFIED = re.compile(rb"(<dcterms:modified[^>]*>)[^<]*(</dcterms:modified>)")
 def _normalised(raw: bytes, pulled_at: datetime) -> bytes:
     """Rebuild the ZIP with fixed entry timestamps, attributes and compression. openpyxl stamps
     the save time into `dcterms:modified`; it is set back to the pull time here."""
-    stamp = pulled_at.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ").encode()
+    stamp = _utc(pulled_at).strftime("%Y-%m-%dT%H:%M:%SZ").encode()
     out = io.BytesIO()
     with (
         zipfile.ZipFile(io.BytesIO(raw)) as source,
@@ -126,9 +144,12 @@ def _normalised(raw: bytes, pulled_at: datetime) -> bytes:
             entry = zipfile.ZipInfo(info.filename, date_time=_ZIP_TIME)
             entry.compress_type = zipfile.ZIP_DEFLATED
             entry.external_attr = 0o644 << 16
+            entry.create_system = 3  # the same on every platform
             data = source.read(info.filename)
             if info.filename == "docProps/core.xml":
-                data = _MODIFIED.sub(lambda m: m.group(1) + stamp + m.group(2), data)
+                data, count = _MODIFIED.subn(lambda m: m.group(1) + stamp + m.group(2), data)
+                if count != 1:
+                    raise RuntimeError("docProps/core.xml has no modified stamp to pin")
             target.writestr(entry, data)
     return out.getvalue()
 
