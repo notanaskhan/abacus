@@ -106,6 +106,7 @@ PRODUCTION_SETTINGS = {
     "S3_ACCESS_KEY": "k",
     "S3_SECRET_KEY": "s",
     "TEMPORAL_TARGET": "t:7233",
+    "EVIDENCE_BUCKET": "test-evidence-bucket",
 }
 
 
