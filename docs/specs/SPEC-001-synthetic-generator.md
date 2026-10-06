@@ -1,7 +1,7 @@
 ---
 id: SPEC-001
 title: Synthetic client generator, phase 1
-status: draft
+status: approved
 owner: Founder
 risk_zone: amber
 related_adrs: [ADR-031, ADR-042, ADR-044, ADR-050, ADR-052, ADR-064, ADR-075, ADR-081, ADR-085, ADR-087, ADR-101]
@@ -59,7 +59,7 @@ ADR-085 forbids real client data in the repository and makes the generator the o
 - **AC-7** Given AR and AP agings at period end, then their totals equal the AR and AP control accounts.
 
 ### Story 3: Flaws are injected and labelled
-- **AC-8** Given `flaws=[...]` naming categories from the failure taxonomy (§7, Q1), when generated, then exactly the requested flaws are injected into the named artefacts, and `client.manifest` lists each one with category, artefact, location and expected detection.
+- **AC-8** Given `flaws=[...]` naming categories from the failure taxonomy (`docs/product/failure-taxonomy.md`), when generated, then exactly the requested flaws are injected into the named artefacts, and `client.manifest` lists each one with category, artefact, location and expected detection.
 - **AC-9** Given `flaws=["unbalanced"]` on the trial balance, then debits ≠ credits on that trial balance only, and the GL stays balanced (this is SPEC-000 AC-11's input).
 - **AC-10** Given no flaws requested, then the manifest has no flaws and every invariant in AC-4 to AC-7 holds.
 
@@ -69,7 +69,7 @@ ADR-085 forbids real client data in the repository and makes the generator the o
 
 ### Story 5: Identifiers are unmistakably synthetic
 - **AC-13** Given any generated client, when `secrets_scan` runs over its exports, then there are no findings: SSNs use area 9xx, EINs use an unassigned prefix, routing numbers fail the ABA checksum, card numbers are published test numbers, emails use `example.com`/`example.org` and phone numbers use 555-01xx.
-- **AC-14** Given any generated name or address, then it comes from built-in word lists and carries no real-world identifier; client names end in a marker (Q3).
+- **AC-14** Given any generated name or address, then it comes from built-in word lists and carries no real-world identifier; every client name and client entity name ends in " (Synthetic)" (Q3).
 
 ### Story 6: Exports and requests
 - **AC-15** Given a client, then `to_csv(dir)`, `to_json(dir)` and `to_xlsx(path)` write the chart of accounts, GL, trial balances, bank statements, agings, request list and manifest, with `Decimal` amounts rendered without float rounding.
@@ -85,22 +85,22 @@ ADR-085 forbids real client data in the repository and makes the generator the o
 ## 7. Domain and data changes
 No database tables. In-memory frozen dataclasses in `abacus_tools.synthetic`: `SyntheticClient`, `ClientEntity`, `Account`, `JournalEntry`, `JournalLine`, `TrialBalance`, `TrialBalanceLine`, `BankStatement`, `BankLine`, `Aging`, `AgingLine`, `RequestList`, `RequestItem`, `Manifest`, `Flaw`, `AdversarialPayload`. Amounts are `Decimal` with two places. Names follow the glossary (`client_entity`, `request_item`, `retrievability_tier`, `audit_area`).
 
-**Proposed failure taxonomy (Q1 — not yet defined anywhere in the docs):**
-| Category | Meaning | Phase 1 artefacts |
-|---|---|---|
-| `wrong_period` | Covers a different period than requested | TB, bank statement, aging |
-| `wrong_entity` | Belongs to another client entity | TB, bank statement |
-| `incomplete` | Rows or months missing | GL, bank statement |
-| `unbalanced` | Debits ≠ credits | TB |
-| `does_not_tie` | Doesn't agree to another artefact (aging ≠ control account, bank ≠ cash) | aging, bank statement |
-| `duplicate` | Same entries or lines twice | GL, bank statement |
-| `stale` | As-of date before the period end | TB, aging |
-| `wrong_currency` | Amounts in another currency without saying so | bank statement |
-| `altered` | Internally inconsistent figures (lines don't sum to stated totals) | bank statement, aging |
-| `irrelevant` | Wrong artefact type for the request item | any |
-| `unreadable` | Empty, truncated or corrupt file | any export (phase 1: CSV/XLSX) |
+**Failure taxonomy** — defined in `docs/product/failure-taxonomy.md` (Q1). Phase 1 artefacts each category can target:
+| Category | Phase 1 artefacts |
+|---|---|
+| `wrong_period` | trial balance, bank statement, aging |
+| `wrong_entity` | trial balance, bank statement |
+| `incomplete` | general ledger, bank statement |
+| `unbalanced` | trial balance |
+| `does_not_tie` | aging, bank statement |
+| `duplicate` | general ledger, bank statement |
+| `stale` | trial balance, aging |
+| `wrong_currency` | bank statement |
+| `altered` | bank statement, aging |
+| `irrelevant` | any (artefact served for a request item of another kind) |
+| `unreadable` | any export (CSV, XLSX) |
 
-**Adversarial categories (Q2):** prompt-injection text in memos and names; instruction-like content addressed to "the auditor" or "the AI"; spreadsheet formula injection (`=`, `+`, `-`, `@` prefixes); Unicode homoglyphs and bidirectional-override characters; oversized fields (≥ 64 KB); look-alike entity names.
+**Adversarial categories** — same document (Q2): `prompt_injection`, `addressed_instruction`, `formula_injection`, `unicode_deception`, `oversized_field`, `lookalike_name`.
 
 ## 8. Interfaces
 Python only: `abacus_tools.synthetic.generate`, the dataclasses above, `GENERATOR_VERSION`, writers `to_csv`, `to_json`, `to_xlsx`. No HTTP or CLI interface in phase 1 (the `make seed-staging` entry point `abacus_tools.synthetic.seed` stays unimplemented). `abacus` never imports `abacus_tools` (ADR-101); SPEC-000's fake connector consumes generator **exports** loaded as test fixtures, so production code stays independent.
@@ -152,12 +152,12 @@ N/A.
 Merged as tooling; no runtime change. SPEC-000 tasks switch to generator fixtures.
 
 ## 20. Open questions
-- [ ] **Q1 — Failure taxonomy.** ADR-081 and ADR-085 refer to a failure taxonomy that no document defines. Approve the eleven categories in §7 (or edit), and should the taxonomy live in its own doc (`docs/product/failure-taxonomy.md`, protected) since screening, evaluations and the generator all depend on it? **Recommendation:** yes, its own protected doc, created with this spec.
-- [ ] **Q2 — Adversarial categories.** Approve the six in §7. **Recommendation:** approve; extend with ADR-064's list when the screening agent is specified.
-- [ ] **Q3 — Naming.** ADR-085's example is `synthetic.company(...)`, but the glossary forbids "company" for clients and client entities. **Recommendation:** `abacus_tools.synthetic.generate(...)` returning a `SyntheticClient` with `client_entities`; ADR-101's mapping already reads ADR-085's example loosely. Also: should generated client names carry a visible marker (e.g. suffix "(Synthetic)") so they can never be mistaken for real clients in staging? **Recommendation:** yes.
-- [ ] **Q4 — Documents (phase 2).** Invoices, contracts and bank statements as PDFs need a PDF writer (none approved; `pdfplumber` is pending and reads only). **Recommendation:** defer to phase 2 and decide the library then.
-- [ ] **Q5 — Multiple entities.** With `entities > 1`, generate intercompany transactions that eliminate on consolidation? **Recommendation:** independent entities in phase 1; intercompany in phase 2.
-- [ ] **Q6 — Risk zone.** Tooling, but it defines the expected answers every evaluation and screening test relies on. **Recommendation:** amber.
+- [x] **Q1 — Failure taxonomy.** ADR-081 and ADR-085 refer to a failure taxonomy that no document defines. Approve the eleven categories in §7 (or edit), and should the taxonomy live in its own doc (`docs/product/failure-taxonomy.md`, protected) since screening, evaluations and the generator all depend on it? **Recommendation:** yes, its own protected doc, created with this spec. **Approved 2026-10-06: eleven categories; own protected doc `docs/product/failure-taxonomy.md`.**
+- [x] **Q2 — Adversarial categories.** Approve the six in §7. **Recommendation:** approve; extend with ADR-064's list when the screening agent is specified. **Approved 2026-10-06: six categories, in the same doc.**
+- [x] **Q3 — Naming.** ADR-085's example is `synthetic.company(...)`, but the glossary forbids "company" for clients and client entities. **Recommendation:** `abacus_tools.synthetic.generate(...)` returning a `SyntheticClient` with `client_entities`; ADR-101's mapping already reads ADR-085's example loosely. Also: should generated client names carry a visible marker (e.g. suffix "(Synthetic)") so they can never be mistaken for real clients in staging? **Recommendation:** yes. **Approved 2026-10-06: `abacus_tools.synthetic.generate(...)` → `SyntheticClient`; names end in " (Synthetic)".**
+- [x] **Q4 — Documents (phase 2).** Invoices, contracts and bank statements as PDFs need a PDF writer (none approved; `pdfplumber` is pending and reads only). **Recommendation:** defer to phase 2 and decide the library then. **Approved 2026-10-06: deferred to phase 2.**
+- [x] **Q5 — Multiple entities.** With `entities > 1`, generate intercompany transactions that eliminate on consolidation? **Recommendation:** independent entities in phase 1; intercompany in phase 2. **Approved 2026-10-06: independent entities in phase 1.**
+- [x] **Q6 — Risk zone.** Tooling, but it defines the expected answers every evaluation and screening test relies on. **Recommendation:** amber. **Approved 2026-10-06: amber.**
 
 ## 21. Future / explicitly deferred
 - Phase 2: PDFs and other documents, emails and messages, `make seed-staging` through the API, `size="large"` load profiles, intercompany, multi-currency, connector-specific payload shapes (QuickBooks, Xero …) for recorded responses (ADR-044)
