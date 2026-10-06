@@ -8,10 +8,8 @@ from __future__ import annotations
 
 import sys
 
-from botocore.exceptions import ClientError
-
 from abacus.kernel.config import settings
-from abacus.kernel.storage import s3_client
+from abacus.kernel.storage import StorageError, error_code, s3_client
 
 
 def ensure_bucket() -> str:
@@ -21,12 +19,13 @@ def ensure_bucket() -> str:
     client = s3_client()
     try:
         client.create_bucket(Bucket=s.evidence_bucket, ObjectLockEnabledForBucket=True)
-    except ClientError as exc:
-        if exc.response.get("Error", {}).get("Code") not in (
-            "BucketAlreadyOwnedByYou",
-            "BucketAlreadyExists",
-        ):
+    except StorageError as exc:
+        if error_code(exc) != "BucketAlreadyOwnedByYou":
             raise
+    # An existing bucket must really be write-once: refuse one without Object Lock.
+    lock = client.get_object_lock_configuration(Bucket=s.evidence_bucket)
+    if lock.get("ObjectLockConfiguration", {}).get("ObjectLockEnabled") != "Enabled":
+        raise RuntimeError(f"bucket {s.evidence_bucket} exists without Object Lock")
     return s.evidence_bucket
 
 

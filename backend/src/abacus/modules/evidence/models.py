@@ -42,4 +42,5 @@ class EvidenceVersion(Base):
     period_end: Mapped[date | None]
     client_entity_id: Mapped[UUID | None]
     snapshot_id: Mapped[UUID | None]
+    idempotency_key: Mapped[str | None]
     created_at: Mapped[datetime]

@@ -130,6 +130,24 @@ def _current_engine() -> AsyncEngine:
     return _engine
 
 
+async def transaction_context(session: AsyncSession) -> TenantContext:
+    """The tenant and actor this transaction was opened for (by `tenant_session`, or the unit of
+    work through `tenant_connection`), read back from the transaction itself. Callers that receive
+    a transaction can't be handed a different tenant than the one row-level security enforces."""
+    row = (
+        await session.execute(
+            text(
+                "SELECT current_setting('app.tenant_id', true) AS tenant, "
+                "current_setting('app.actor_kind', true) AS kind, "
+                "current_setting('app.actor_id', true) AS actor"
+            )
+        )
+    ).one()
+    if not row.tenant or row.kind not in ("human", "agent", "system") or not row.actor:
+        raise RuntimeError("not inside a tenant transaction")
+    return TenantContext(UUID(str(row.tenant)), row.kind, str(row.actor))
+
+
 async def _begin_tenant(conn: AsyncConnection, ctx: TenantContext) -> None:
     """Clear stale settings, then set tenant and actor for this transaction only."""
     # Clear anything a previous user of this pooled connection set at session level.

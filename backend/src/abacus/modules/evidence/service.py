@@ -1,8 +1,14 @@
-"""Evidence rules (ADR-004, ADR-016, ADR-104). PROTECTED. TASK-009 design §5.
+"""Evidence rules (ADR-004, ADR-016, ADR-104). PROTECTED. TASK-009 design §5, revision 1.
 
-Versions are only ever added. The object is stored before the rows are written: it is
-content-addressed, so an object left behind by a rolled-back transaction is harmless and is reused
-by the next attempt.
+Two steps, so no transaction is held across network I/O:
+
+    stored = await stage_content(tenant_id, content)        # before the unit of work
+    async with uow(ctx) as tx:
+        ref = await add_version(tx, engagement_id=…, item=NewItem("Trial balance"), stored=stored,
+                                media_type=…, provenance=…, idempotency_key=…)
+
+Versions are only ever added. Staged content that no version ends up referencing is harmless: it
+is content-addressed and reused by the next attempt.
 """
 
 from __future__ import annotations
@@ -12,21 +18,29 @@ from datetime import date, datetime
 from typing import Literal
 from uuid import UUID, uuid4
 
-from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.db import TenantContext, tenant_session, transaction_context
 from abacus.kernel.errors import NotFound
-from abacus.kernel.uow import Ref, Target, UnitOfWork
-from abacus.modules.engagements.api import get_ref
+from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
+from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.events import EvidenceVersionCreated
+from abacus.modules.evidence.models import EvidenceVersion
 from abacus.modules.evidence.repository import (
+    get_item,
     get_version,
     insert_item,
     insert_version,
     next_version_no,
+    version_for_key,
 )
 from abacus.modules.identity.api import AuthContext, authorise
 
 Method = Literal["retrieved", "uploaded"]
+StoredObject = storage.StoredObject
+
+
+class EngagementArchived(Exception):
+    """Archived engagements are read-only (`archived_write: deny`)."""
 
 
 @dataclass(frozen=True)
@@ -56,21 +70,62 @@ class EvidenceVersionRef:
     fingerprint: str
     size_bytes: int
     media_type: str
+    created: bool  # False when an idempotency key matched an existing version
+
+
+def _ref(version: EvidenceVersion, *, created: bool) -> EvidenceVersionRef:
+    return EvidenceVersionRef(
+        version.id,
+        version.evidence_item_id,
+        version.engagement_id,
+        version.version_no,
+        version.fingerprint,
+        version.size_bytes,
+        version.media_type,
+        created,
+    )
+
+
+async def stage_content(tenant_id: UUID, content: bytes) -> StoredObject:
+    """Store content write-once and encrypted under the tenant's key, outside any transaction.
+    Also the store for raw connector payloads (AC-9), which aren't evidence versions."""
+    return await storage.put(tenant_id, content)
+
+
+async def read_content(tenant: TenantContext, stored: StoredObject) -> bytes:
+    """Verified plaintext for callers that authorised under their own context (the system actor
+    in workflows). Request handlers use `read_version`, which authorises and audits."""
+    return await storage.get(tenant.tenant_id, stored)
 
 
 async def add_version(
     tx: UnitOfWork,
-    tenant: TenantContext,
     *,
     engagement_id: UUID,
     item: UUID | NewItem,
-    content: bytes,
+    stored: StoredObject,
     media_type: str,
     provenance: Provenance,
+    idempotency_key: str | None = None,
 ) -> EvidenceVersionRef:
-    """Inside the caller's unit of work (opened with `tenant`); the caller has authorised
-    `evidence.upload` for its actor (TASK-010: the system actor retrieving)."""
-    stored = await storage.put(tenant.tenant_id, content)
+    """Add the next version inside the caller's unit of work. The tenant and actor are the
+    transaction's own. The caller has authorised `evidence.upload` for its actor.
+
+    With an `idempotency_key` already used in this tenant, returns that version
+    (`created=False`) and records nothing: the caller's unit of work must then record its own
+    event, or skip the unit of work after checking `created`."""
+    tenant = await transaction_context(tx.session)
+    if stored.key != storage.object_key(tenant.tenant_id, stored.fingerprint):
+        raise storage.IntegrityError("staged content belongs to another tenant")
+    if idempotency_key is not None:
+        existing = await version_for_key(tx.session, idempotency_key)
+        if existing is not None:
+            return _ref(existing, created=False)
+    engagement = await lock_ref(tx, engagement_id)  # 404 outside the tenant; locked until commit
+    if engagement.archived:
+        raise EngagementArchived("engagement is archived")
+    if not 1 <= len(media_type) <= 100:
+        raise ValueError("media_type must be 1-100 characters")
     if isinstance(item, NewItem):
         item_id = uuid4()
         await insert_item(
@@ -88,6 +143,9 @@ async def add_version(
             after=Ref(engagement_id=engagement_id),
         )
     else:
+        existing_item = await get_item(tx.session, item)
+        if existing_item is None or existing_item.engagement_id != engagement_id:
+            raise NotFound("evidence_item")
         item_id = item
     version = await insert_version(
         tx.session,
@@ -108,6 +166,7 @@ async def add_version(
         period_end=provenance.period_end,
         client_entity_id=provenance.client_entity_id,
         snapshot_id=provenance.snapshot_id,
+        idempotency_key=idempotency_key,
     )
     tx.record(
         "evidence_version.created",
@@ -119,28 +178,23 @@ async def add_version(
             evidence_version_id=version.id, evidence_item_id=item_id, engagement_id=engagement_id
         )
     )
-    return EvidenceVersionRef(
-        version.id,
-        item_id,
-        engagement_id,
-        version.version_no,
-        version.fingerprint,
-        version.size_bytes,
-        version.media_type,
-    )
+    return _ref(version, created=True)
 
 
 async def read_version(ctx: AuthContext, version_id: UUID) -> bytes:
-    """The version's content, decrypted and verified, for an actor allowed `evidence.read`."""
+    """The version's content for an actor allowed `evidence.read`: authorised, audited
+    (`evidence_version.read`, ADR-104) and fingerprint-verified."""
     async with tenant_session(ctx.tenant) as session:
         version = await get_version(session, version_id)
     if version is None:
         raise NotFound("evidence_version")
     engagement = await get_ref(ctx, version.engagement_id)
     await authorise(ctx, "evidence.read", engagement.resource())
+    async with uow(ctx.tenant) as tx:
+        tx.record("evidence_version.read", target=Target("evidence_version", version.id))
     return await storage.get(
         ctx.tenant_id,
-        storage.StoredObject(
+        StoredObject(
             version.storage_key,
             version.storage_version_id,
             version.fingerprint,

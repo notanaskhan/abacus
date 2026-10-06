@@ -11,8 +11,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from abacus.modules.evidence.models import EvidenceItem, EvidenceVersion
 
 # Serialises version numbering per item for the rest of the transaction. Row locks would need
-# UPDATE privilege on the item, which the app deliberately doesn't have.
-_LOCK_ITEM = text("SELECT pg_advisory_xact_lock(hashtextextended(:item, 0))")
+# UPDATE privilege on the item, which the app deliberately doesn't have. Two-key form: the first
+# key namespaces evidence-version locks from any other advisory lock.
+_EVIDENCE_LOCK_SPACE = 9_004
+_LOCK_ITEM = text("SELECT pg_advisory_xact_lock(:space, hashtext(:item))")
 
 
 async def insert_item(
@@ -38,7 +40,9 @@ async def insert_item(
 
 
 async def next_version_no(session: AsyncSession, evidence_item_id: UUID) -> int:
-    await session.execute(_LOCK_ITEM, {"item": str(evidence_item_id)})
+    await session.execute(
+        _LOCK_ITEM, {"space": _EVIDENCE_LOCK_SPACE, "item": str(evidence_item_id)}
+    )
     current = (
         await session.execute(
             select(func.max(EvidenceVersion.version_no)).where(
@@ -69,6 +73,7 @@ async def insert_version(
     period_end: date | None,
     client_entity_id: UUID | None,
     snapshot_id: UUID | None,
+    idempotency_key: str | None,
 ) -> EvidenceVersion:
     return (
         await session.execute(
@@ -91,6 +96,7 @@ async def insert_version(
                 period_end=period_end,
                 client_entity_id=client_entity_id,
                 snapshot_id=snapshot_id,
+                idempotency_key=idempotency_key,
             )
             .returning(EvidenceVersion)
         )
@@ -100,4 +106,18 @@ async def insert_version(
 async def get_version(session: AsyncSession, version_id: UUID) -> EvidenceVersion | None:
     return (
         await session.execute(select(EvidenceVersion).where(EvidenceVersion.id == version_id))
+    ).scalar_one_or_none()
+
+
+async def get_item(session: AsyncSession, item_id: UUID) -> EvidenceItem | None:
+    return (
+        await session.execute(select(EvidenceItem).where(EvidenceItem.id == item_id))
+    ).scalar_one_or_none()
+
+
+async def version_for_key(session: AsyncSession, idempotency_key: str) -> EvidenceVersion | None:
+    return (
+        await session.execute(
+            select(EvidenceVersion).where(EvidenceVersion.idempotency_key == idempotency_key)
+        )
     ).scalar_one_or_none()

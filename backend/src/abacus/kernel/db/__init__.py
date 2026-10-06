@@ -12,6 +12,7 @@ from abacus.kernel.db.session import (
     relay_engine,
     tenant_connection,
     tenant_session,
+    transaction_context,
 )
 
 __all__ = [
@@ -26,4 +27,5 @@ __all__ = [
     "relay_engine",
     "tenant_connection",
     "tenant_session",
+    "transaction_context",
 ]

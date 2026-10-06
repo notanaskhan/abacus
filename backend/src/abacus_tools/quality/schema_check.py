@@ -73,6 +73,7 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"id", "tenant_id", "engagement_id", "evidence_item_id", "version_no", "fingerprint"}
         | {"storage_key", "storage_version_id", "size_bytes", "media_type", "source", "method"}
         | {"pulled_at", "period_start", "period_end", "client_entity_id", "snapshot_id"}
+        | {"idempotency_key"}
     ),
 }
 # Tables whose rows no role may change or remove: a BEFORE UPDATE OR DELETE trigger and a BEFORE
@@ -427,7 +428,7 @@ async def _insert_column_problems(conn: asyncpg.Connection, table: str) -> list[
 
 
 _TRIGGERS = """
-SELECT t.tgname, p.proname, t.tgtype, t.tgenabled FROM pg_trigger t
+SELECT t.tgname, p.proname, p.prosrc, t.tgtype, t.tgenabled FROM pg_trigger t
 JOIN pg_class c ON c.oid = t.tgrelid JOIN pg_namespace n ON n.oid = c.relnamespace
 JOIN pg_proc p ON p.oid = t.tgfoid
 WHERE n.nspname = 'public' AND c.relname = $1 AND NOT t.tgisinternal
@@ -441,8 +442,12 @@ async def _immutability_problems(conn: asyncpg.Connection, table: str, function:
     for trigger in await conn.fetch(_TRIGGERS, table):
         enabled = trigger["tgenabled"]
         state = enabled.decode() if isinstance(enabled, bytes) else str(enabled)
-        if str(trigger["proname"]) != function or state == "D":
+        # Only O (origin) and A (always) fire in normal sessions; D is disabled, R replica-only.
+        if str(trigger["proname"]) != function or state not in ("O", "A"):
             continue
+        body = str(trigger["prosrc"]).upper()
+        if "RAISE EXCEPTION" not in body or "RETURN" in body:
+            continue  # a function that no longer refuses doesn't count
         kind = int(trigger["tgtype"])
         if kind & _BEFORE:
             covered |= kind & (_DELETE | _UPDATE | _TRUNCATE)
@@ -451,7 +456,9 @@ async def _immutability_problems(conn: asyncpg.Connection, table: str, function:
         for name, bit in (("UPDATE", _UPDATE), ("DELETE", _DELETE), ("TRUNCATE", _TRUNCATE))
         if not covered & bit
     ]
-    return [f"{table}: no enabled BEFORE {op} trigger calling {function}" for op in missing]
+    return [
+        f"{table}: no enabled BEFORE {op} trigger calling {function} that raises" for op in missing
+    ]
 
 
 async def _inspect(owner_dsn: str) -> list[str]:

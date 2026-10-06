@@ -19,6 +19,7 @@ _LOCAL_DB = "postgresql+asyncpg://abacus_app:abacusapp@127.0.0.1:55432/abacus"
 _LOCAL_MIGRATIONS_DB = "postgresql+asyncpg://abacus_owner:abacusowner@127.0.0.1:55432/abacus"
 _LOCAL_RELAY_DB = "postgresql+asyncpg://abacus_relay:abacusrelay@127.0.0.1:55432/abacus"
 _LOCAL_IDENTITY_DB = "postgresql+asyncpg://abacus_identity:abacusidentity@127.0.0.1:55432/abacus"
+MIN_EVIDENCE_RETENTION_DAYS = 365
 _CONNECTIONS = (
     "database_url",
     "migrations_database_url",
@@ -91,6 +92,15 @@ class Settings(BaseSettings):
             for name, value in _LOCAL_DEFAULTS.items():
                 values.setdefault(name, value)
         return values
+
+    @model_validator(mode="after")
+    def _retention_floor(self) -> Self:
+        # Write-once storage is only as good as its retention (ADR-016).
+        if self.evidence_retention_days < MIN_EVIDENCE_RETENTION_DAYS:
+            raise ValueError(
+                f"evidence_retention_days must be at least {MIN_EVIDENCE_RETENTION_DAYS}"
+            )
+        return self
 
     @model_validator(mode="after")
     def _explicit_outside_local(self) -> Self:

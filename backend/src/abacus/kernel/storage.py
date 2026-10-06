@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 import boto3
 from botocore.config import Config
+from botocore.exceptions import ClientError
 
 from abacus.kernel.config import settings
 
@@ -36,5 +37,23 @@ def s3_client(
         aws_access_key_id=key,
         aws_secret_access_key=secret,
         region_name=region or s.s3_region,
-        config=Config(s3={"addressing_style": "path"}, retries={"mode": "standard"}),
+        config=Config(
+            s3={"addressing_style": "path"},
+            retries={"mode": "standard", "max_attempts": 3},
+            connect_timeout=5,
+            read_timeout=30,
+            max_pool_connections=20,
+        ),
     )
+
+
+def error_code(exc: BaseException) -> str | None:
+    """The S3 error code of a storage exception, or None if it isn't one. Callers outside this
+    module classify storage errors through this, never through botocore (STORE-001)."""
+    if isinstance(exc, ClientError):
+        code = exc.response.get("Error", {}).get("Code")
+        return str(code) if code is not None else None
+    return None
+
+
+StorageError = ClientError

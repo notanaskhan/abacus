@@ -19,6 +19,7 @@ import struct
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Protocol
+from urllib.parse import urlsplit
 from uuid import UUID
 
 from cryptography.exceptions import InvalidTag
@@ -30,7 +31,9 @@ from abacus.kernel.config import settings
 
 MAGIC = b"ABE1"
 _NONCE = 12
+_TAG = 16
 _MAX_HEADER_FIELD = 4096
+_MIN_WRAPPED = _NONCE + 16 + _TAG  # no key service wraps a 256-bit key into less
 
 
 class DecryptionError(Exception):
@@ -38,7 +41,11 @@ class DecryptionError(Exception):
 
 
 class KeyService(Protocol):
-    """Wraps data keys under a tenant's key. AWS: KMS, one key per firm (TASK-014)."""
+    """Wraps data keys under a tenant's key. AWS: KMS, one key per firm (TASK-014).
+
+    Implementations must bind the tenant into the wrap (local: AAD; KMS: EncryptionContext) and
+    must only unwrap with a key ID that belongs to the tenant; `open_sealed` also checks the
+    envelope's key ID against `key_id(tenant)` before calling `unwrap`."""
 
     def key_id(self, tenant_id: UUID) -> str: ...
 
@@ -80,7 +87,7 @@ class LocalKeyService:
             return self._tenant_key(tenant_id).decrypt(
                 wrapped[:_NONCE], wrapped[_NONCE:], tenant_id.bytes
             )
-        except InvalidTag:
+        except (InvalidTag, ValueError):
             raise DecryptionError("data key can't be unwrapped") from None
 
 
@@ -92,21 +99,42 @@ def configure_key_service(service: KeyService) -> None:
     _service = service
 
 
+def _is_loopback(endpoint: str | None) -> bool:
+    host = urlsplit(endpoint).hostname if endpoint else None
+    return host in ("127.0.0.1", "localhost", "::1")
+
+
 @lru_cache(maxsize=1)
 def _from_settings() -> KeyService:
     s = settings()
-    if s.environment in ("local", "test") and s.local_master_key is not None:
+    # The local master key is public (it's in the repository). Even in "local" (the default
+    # environment), it may only protect objects stored on this machine: a deployment that forgot
+    # ABACUS_ENVIRONMENT and points at real storage fails here instead of "encrypting" with it.
+    if (
+        s.environment in ("local", "test")
+        and s.local_master_key is not None
+        and _is_loopback(s.s3_endpoint_url)
+    ):
         return LocalKeyService(s.local_master_key.get_secret_value().encode())
     # AWS environments need the KMS key service (TASK-014): refuse rather than fall back.
     raise RuntimeError("no key service configured for this environment (ADR-104)")
+
+
+def reset_key_service() -> None:
+    """Back to the key service built from settings (test teardown; settings changes)."""
+    global _service
+    _service = None
+    _from_settings.cache_clear()
 
 
 def key_service() -> KeyService:
     return _service if _service is not None else _from_settings()
 
 
-def _aad(tenant_id: UUID, fingerprint: str) -> bytes:
-    return b"abacus-evidence-v1|" + tenant_id.bytes + b"|" + fingerprint.encode()
+def _aad(tenant_id: UUID, fingerprint: str, key_id: str) -> bytes:
+    return b"|".join(
+        [b"abacus-evidence-v1", tenant_id.bytes, fingerprint.encode(), key_id.encode()]
+    )
 
 
 @dataclass(frozen=True)
@@ -154,26 +182,36 @@ def _unpack(sealed: bytes) -> _Envelope:
         ciphertext = sealed[offset:]
     except (struct.error, UnicodeDecodeError):
         raise DecryptionError("malformed envelope") from None
-    if len(wrapped) != wrapped_len or len(nonce) != _NONCE or len(ciphertext) < 16:
+    if (
+        len(wrapped) != wrapped_len
+        or wrapped_len < _MIN_WRAPPED
+        or len(nonce) != _NONCE
+        or len(ciphertext) < _TAG
+    ):
         raise DecryptionError("malformed envelope")
     return _Envelope(key_id, wrapped, nonce, ciphertext)
 
 
 async def seal(tenant_id: UUID, plaintext: bytes, fingerprint: str) -> bytes:
     service = key_service()
+    key_id = service.key_id(tenant_id)
     data_key = AESGCM.generate_key(bit_length=256)
     nonce = os.urandom(_NONCE)
-    ciphertext = AESGCM(data_key).encrypt(nonce, plaintext, _aad(tenant_id, fingerprint))
+    ciphertext = AESGCM(data_key).encrypt(nonce, plaintext, _aad(tenant_id, fingerprint, key_id))
     wrapped = await service.wrap(tenant_id, data_key)
-    return _pack(_Envelope(service.key_id(tenant_id), wrapped, nonce, ciphertext))
+    return _pack(_Envelope(key_id, wrapped, nonce, ciphertext))
 
 
 async def open_sealed(tenant_id: UUID, sealed: bytes, fingerprint: str) -> bytes:
     envelope = _unpack(sealed)
-    data_key = await key_service().unwrap(tenant_id, envelope.key_id, envelope.wrapped)
+    service = key_service()
+    # The header is untrusted: only this tenant's key may be asked to unwrap (ADR-104).
+    if envelope.key_id != service.key_id(tenant_id):
+        raise DecryptionError("key does not belong to this tenant")
     try:
+        data_key = await service.unwrap(tenant_id, envelope.key_id, envelope.wrapped)
         return AESGCM(data_key).decrypt(
-            envelope.nonce, envelope.ciphertext, _aad(tenant_id, fingerprint)
+            envelope.nonce, envelope.ciphertext, _aad(tenant_id, fingerprint, envelope.key_id)
         )
     except (InvalidTag, ValueError):
         raise DecryptionError("object can't be opened") from None
@@ -186,5 +224,6 @@ __all__ = [
     "configure_key_service",
     "key_service",
     "open_sealed",
+    "reset_key_service",
     "seal",
 ]
