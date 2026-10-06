@@ -780,6 +780,7 @@ UOW3_ALLOWED = [
     f"{IDENT}/repository.py",
     "tests/integration/conftest.py",
     "tests/unit/kernel/test_config.py",
+    "tests/integration/test_identity.py",
 ]
 UOW3_FLAGGED = [
     SERVICE,
@@ -787,7 +788,7 @@ UOW3_FLAGGED = [
     f"{IDENT}/context.py",
     "src/abacus/kernel/uow/core.py",
     "tests/unit/x/test_y.py",
-    "tests/integration/test_identity.py",
+    "tests/integration/test_tenancy.py",
     "src/abacus_tools/quality/x.py",
 ]
 
