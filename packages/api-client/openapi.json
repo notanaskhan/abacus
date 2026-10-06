@@ -214,6 +214,7 @@
       "ErrorOut": {
         "properties": {
           "detail": {
+            "cls": "public",
             "title": "Detail",
             "type": "string"
           }
@@ -227,6 +228,7 @@
       "FieldErrorOut": {
         "properties": {
           "loc": {
+            "cls": "public",
             "items": {
               "anyOf": [
                 {
@@ -241,10 +243,12 @@
             "type": "array"
           },
           "msg": {
+            "cls": "public",
             "title": "Msg",
             "type": "string"
           },
           "type": {
+            "cls": "public",
             "title": "Type",
             "type": "string"
           }
@@ -462,6 +466,7 @@
         "description": "What a 422 says: where and what, never the submitted value (abacus.api.app).",
         "properties": {
           "detail": {
+            "cls": "public",
             "items": {
               "$ref": "#/components/schemas/FieldErrorOut"
             },
