@@ -247,6 +247,22 @@ class Seeder:
             ),
         )
 
+    async def snapshot(self, tenant_id: uuid.UUID, entity_id: uuid.UUID) -> uuid.UUID:
+        """A ledger snapshot for the entity (evidence versions reference it since 0009)."""
+        return cast(
+            uuid.UUID,
+            await self.value(
+                "INSERT INTO ledger_snapshots (tenant_id, client_entity_id, period_start, "
+                "period_end, pulled_at, source, raw_fingerprint, line_count, total_debit, "
+                "total_credit) VALUES ($1, $2, '2025-01-01', '2025-12-31', $3, 'quickbooks', "
+                "$4, 0, 0, 0) RETURNING id",
+                tenant_id,
+                entity_id,
+                PULLED_AT,
+                hashlib.sha256(uuid.uuid4().bytes).hexdigest(),
+            ),
+        )
+
     async def count(self, table: str, tenant_id: uuid.UUID) -> int:
         queries = {
             "evidence_items": "SELECT count(*) FROM evidence_items WHERE tenant_id = $1",
@@ -716,7 +732,7 @@ async def test_ac13_the_trigger_rejects_truncate_even_for_the_superuser(
     item_id = await seed.item(world.tenant_id, world.engagement_id)
     await seed.version(world.tenant_id, world.engagement_id, item_id)
     with pytest.raises(asyncpg.InsufficientPrivilegeError):
-        await seed.run("TRUNCATE evidence_versions")
+        await seed.run("TRUNCATE evidence_versions CASCADE")
     assert await seed.count("evidence_versions", world.tenant_id) == 1
 
 
@@ -727,7 +743,7 @@ async def test_ac13_the_trigger_rejects_truncate_by_the_table_owner(
     await seed.version(world.tenant_id, world.engagement_id, item_id)
     owner = Seeder(migrated_db.owner_url.replace("postgresql+asyncpg://", "postgresql://"))
     with pytest.raises(asyncpg.InsufficientPrivilegeError):
-        await owner.run("TRUNCATE evidence_versions")
+        await owner.run("TRUNCATE evidence_versions CASCADE")
     assert await seed.count("evidence_versions", world.tenant_id) == 1
 
 
@@ -784,7 +800,7 @@ async def test_ac13_numbering_is_per_item(world: World) -> None:
 async def test_ac13_rows_carry_the_provenance_fields_and_the_actor(
     seed: Seeder, world: World
 ) -> None:
-    snapshot_id = uuid.uuid4()
+    snapshot_id = await seed.snapshot(world.tenant_id, world.entity_id)
     provenance = Provenance(
         source="quickbooks",
         method="retrieved",
@@ -1324,7 +1340,7 @@ async def test_ac12_rendering_the_same_snapshot_twice_stores_one_object_and_two_
         period_start=date(2025, 1, 1),
         period_end=date(2025, 12, 31),
         pulled_at=PULLED_AT,
-        snapshot_id=uuid.uuid4(),
+        snapshot_id=await seed.snapshot(world.tenant_id, world.entity_id),
         source="quickbooks",
         source_fingerprint="e" * 64,
         lines=(
