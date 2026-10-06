@@ -49,7 +49,7 @@ _LOCAL_DEFAULTS: dict[str, object] = {
     "s3_secret_key": "abacuslocal",
     "evidence_bucket": "abacus-evidence",
     # Local and test only: tenant keys are derived from this (ADR-104). Never used elsewhere.
-    "local_master_key": "abacus-local-master-key-not-a-secret-0000",
+    "local_master_key": "example-local-master-key-public-not-secret",
     "temporal_target": "127.0.0.1:7233",
 }
 
