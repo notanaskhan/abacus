@@ -294,3 +294,20 @@ async def test_ac20_run_relay_survives_a_failing_pass_and_logs_only_the_class(
     failed = [r for r in records if r.get("event") == "outbox.relay_pass_failed"]
     assert len(failed) == 2
     assert all("ConnectionError" in json.dumps(r) for r in failed)
+
+
+async def test_ac20_a_pass_claims_at_most_per_tenant_events_of_one_tenant(seed: Seeder) -> None:
+    recorder = Recorder()
+    publisher = RoutingPublisher({KNOWN: [recorder.handler("seen")]})
+    flood, quiet = uuid.uuid4(), uuid.uuid4()
+    flooded = [await _emit(Known(n=n), flood) for n in range(5)]
+    other = await _emit(Known(n=99), quiet)
+    await relay_once(publisher, batch=500, per_tenant=2)
+    assert [recorder.names_for(i) for i in flooded] == [["seen"], ["seen"], [], [], []]
+    assert recorder.names_for(other) == ["seen"]  # not held back by the flood
+    await relay_once(publisher, batch=500, per_tenant=2)
+    assert [recorder.names_for(i) for i in flooded] == [["seen"]] * 4 + [[]]
+    await relay_once(publisher, batch=500, per_tenant=2)
+    assert all(recorder.names_for(i) == ["seen"] for i in flooded)
+    assert recorder.names_for(other) == ["seen"]
+    assert all([await _published(seed, i) for i in flooded])

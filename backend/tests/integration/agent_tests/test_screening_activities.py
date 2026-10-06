@@ -494,3 +494,60 @@ async def test_ac14_fail_run_for_an_unknown_run_is_a_non_retryable_not_found(
         fail_run_activity, FailInput(str(world.tenant_id), str(uuid.uuid4()), "cancelled")
     )
     assert (error.message, error.type, error.non_retryable) == ("NotFound", "NotFound", True)
+
+
+async def test_ac14_a_concurrent_attempt_is_a_retryable_agent_run_busy(
+    seed: Seeder, world: World, model: Model, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def busy(session: object, run_id: uuid.UUID) -> bool:
+        return False
+
+    monkeypatch.setattr(service, "try_lock_run", busy)
+    _, run = await _created_run(world)
+    error = await _expect_error(screen_activity, run)
+    assert (error.message, error.type, error.non_retryable) == (
+        "AgentRunBusy",
+        "AgentRunBusy",
+        False,
+    )
+    assert await _row(seed, run.run_id) == ("running", None)
+    assert model.requests == []
+
+
+async def test_ac14_database_errors_in_fail_run_cross_as_class_name_only_and_retryable(
+    world: World, model: Model, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _, run = await _created_run(world)
+
+    async def broken(tenant_id: uuid.UUID, run_id: uuid.UUID) -> object:
+        raise ConnectionError(LEAKED)
+
+    monkeypatch.setattr(activities, "run_outcome", broken)
+    error = await _expect_error(
+        fail_run_activity, FailInput(run.tenant_id, run.run_id, "cancelled")
+    )
+    assert (error.message, error.type, error.non_retryable) == (
+        "ConnectionError",
+        "ConnectionError",
+        False,
+    )
+    assert LEAKED not in str(error)
+
+
+async def test_ac14_database_errors_inside_screen_cross_as_class_name_only_and_retryable(
+    world: World, model: Model, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _, run = await _created_run(world)
+
+    async def broken(tenant_id: uuid.UUID, run_id: uuid.UUID) -> object:
+        raise ConnectionError(LEAKED)
+
+    monkeypatch.setattr(activities, "run_outcome", broken)
+    await _run(screen_activity, run)  # completes
+    error = await _expect_error(screen_activity, run)  # already ended: reads run_outcome
+    assert (error.message, error.type, error.non_retryable) == (
+        "ConnectionError",
+        "ConnectionError",
+        False,
+    )
+    assert LEAKED not in str(error)

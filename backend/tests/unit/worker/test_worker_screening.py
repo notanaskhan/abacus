@@ -12,6 +12,7 @@ from typing import Self
 
 import pytest
 
+from abacus.kernel.config import settings
 from abacus.kernel.uow.relay import Handler, OutboxEvent, Publisher, RoutingPublisher
 from abacus.modules.agents.screenings import EVIDENCE_VERSION_CREATED
 from abacus.worker import __main__ as worker_main
@@ -40,7 +41,9 @@ def _event(event_type: str) -> OutboxEvent:
 
 def test_ac14_the_worker_hosts_connections_and_agents() -> None:
     assert (worker_main.connections, worker_main.agents) == worker_main.MODULES
-    assert worker_main.SUBSCRIBERS == (worker_main.agents.SUBSCRIPTIONS,)
+    assert tuple(m.SUBSCRIPTIONS for m in worker_main.MODULES) == worker_main.SUBSCRIBERS
+    assert worker_main.connections.SUBSCRIPTIONS == {}
+    assert worker_main.agents.SUBSCRIPTIONS in worker_main.SUBSCRIBERS
 
 
 def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening() -> None:
@@ -124,3 +127,54 @@ async def test_ac20_run_hosts_the_relay_inside_the_worker_until_the_signal(
     stop = seen["stop"]
     assert isinstance(stop, asyncio.Event)
     assert stop.is_set()
+
+
+async def test_ac20_a_relay_that_dies_stops_the_worker_and_its_error_is_raised(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    log: list[str] = []
+
+    async def build() -> _Worker:
+        return _Worker(log)
+
+    async def dying(publisher: Publisher, stop: asyncio.Event) -> None:
+        raise RuntimeError("relay crashed")
+
+    monkeypatch.setattr(worker_main, "build_worker", build)
+    monkeypatch.setattr(worker_main, "run_relay", dying)
+    with pytest.raises(RuntimeError, match="relay crashed"):
+        await asyncio.wait_for(worker_main.run(), timeout=10)  # no signal is sent
+    assert log == ["worker entered", "worker exited"]
+
+
+@pytest.mark.parametrize(("environment", "configured"), [("local", True), ("test", False)])
+async def test_ac14_the_fake_provider_is_configured_only_in_local(
+    monkeypatch: pytest.MonkeyPatch, environment: str, configured: bool
+) -> None:
+    provided: list[object] = []
+
+    async def nothing() -> None:
+        return None
+
+    async def client() -> str:
+        return "temporal-client"
+
+    def fake_worker(client: object, **kwargs: object) -> str:
+        return "the-worker"
+
+    monkeypatch.setenv("ABACUS_ENVIRONMENT", environment)
+    settings.cache_clear()
+    try:
+        monkeypatch.setattr(worker_main, "ping", nothing)
+        monkeypatch.setattr(worker_main, "ping_relay", nothing)
+        monkeypatch.setattr(worker_main, "key_service", lambda: None)
+        monkeypatch.setattr(worker_main, "payload_codec", lambda: None)
+        monkeypatch.setattr(worker_main, "check_ready", nothing)
+        monkeypatch.setattr(worker_main, "temporal_client", client)
+        monkeypatch.setattr(worker_main, "Worker", fake_worker)
+        monkeypatch.setattr(worker_main, "configure_provider", provided.append)
+        await worker_main.build_worker()
+    finally:
+        monkeypatch.undo()
+        settings.cache_clear()
+    assert bool(provided) is configured

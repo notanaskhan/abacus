@@ -24,6 +24,9 @@ from abacus.ai_gateway import (
     ProviderError,
     call,
     configure_provider,
+    cost,
+    estimate_tokens,
+    prompt,
 )
 from abacus.kernel.db import TenantContext
 
@@ -94,10 +97,16 @@ async def test_ac16_a_provider_call_past_its_timeout_raises_provider_error_and_i
     assert provider.started == 1
     assert provider.finished == 0
     [usage] = await seed.rows(
-        "SELECT outcome, agent_id, engagement_id FROM usage_records WHERE tenant_id = $1",
+        "SELECT outcome, cost_usd, agent_id, engagement_id "
+        "FROM usage_records WHERE tenant_id = $1",
         world.tenant_id,
     )
     assert usage["outcome"] == "provider_error"
+    # A failed call is billed for its input estimate, not recorded as free.
+    c = _call(world)
+    expected = cost(c.tier, estimate_tokens(prompt(REF).text + c.context.render()), 0)
+    assert usage["cost_usd"] == expected
+    assert expected > 0
     assert (usage["agent_id"], usage["engagement_id"]) == (AGENT_ID, world.engagement_id)
     assert "model.called" in await seed.actions(world.tenant_id)
 
