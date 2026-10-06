@@ -11,6 +11,7 @@ up again (every migration must be reversible), then inspects the catalog. It fai
   - UPDATE or DELETE granted to abacus_app on an insert-only table (INSERT_ONLY_TABLES)
   - abacus_app with SUPERUSER, BYPASSRLS, CREATEROLE or CREATEDB, or owning any relation
   - a global table (GLOBAL_TABLES) with any app privilege
+  - a table missing from TABLE_OWNERS, or listed there but absent (ADR-103)
   - abacus_relay or abacus_identity (they bypass RLS) holding any privilege not in
     BYPASS_ROLE_GRANTS, or any other non-superuser role with BYPASSRLS
 
@@ -52,6 +53,22 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"before_ref", "after_ref", "trace_id"}
     ),
     "outbox": frozenset({"id", "tenant_id", "event_type", "payload"}),
+}
+# Who owns each table (ADR-103): a module or kernel package. Every table must be listed, and every
+# listed table must exist. Modules touch only their own tables (ADR-008).
+TABLE_OWNERS: dict[str, str] = {
+    "alembic_version": "migrations",
+    "audit_events": "kernel.uow",
+    "outbox": "kernel.uow",
+    "firms": "identity",
+    "users": "identity",
+    "memberships": "identity",
+    "engagement_members": "identity",
+    "clients": "organisations",
+    "client_entities": "organisations",
+    "engagements": "engagements",
+    "request_lists": "requests",
+    "request_items": "requests",
 }
 # Tables shared by every tenant, readable only through abacus_identity (ADR-002, TASK-007): the app
 # role has no privileges on them at all. Each entry is founder-reviewed (protected file).
@@ -378,7 +395,16 @@ async def _inspect(owner_dsn: str) -> list[str]:
     problems: list[str] = []
     try:
         canonical = await _canonical_policy(conn)
-        for table in await conn.fetch(_TABLES):
+        tables = list(await conn.fetch(_TABLES))
+        present = {str(table["relname"]) for table in tables}
+        problems += [
+            f"{name}: no owner in TABLE_OWNERS" for name in sorted(present - TABLE_OWNERS.keys())
+        ]
+        problems += [
+            f"{name}: in TABLE_OWNERS but missing"
+            for name in sorted(TABLE_OWNERS.keys() - present)
+        ]
+        for table in tables:
             name = str(table["relname"])
             if str(table["owner"]) != OWNER:
                 problems.append(f"{name}: owned by {table['owner']}, not {OWNER}")
