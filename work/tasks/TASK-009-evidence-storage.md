@@ -38,7 +38,9 @@ Out: fulfilments, retrieval and real snapshots (TASK-010); evidence routes, the 
 - ADRs: ADR-004, ADR-016, ADR-035, ADR-042
 
 ## Plan
-- [ ] Plan approved by human (required for amber and red)
+- [x] Plan approved by human (founder, 2026-10-06: "approved, proceed with your recommendations") — **red: founder reviews the diff line by line before merge**
+- [x] Approval file `work/approvals/TASK-009.yaml` written by the agent at the founder's instruction (2026-10-06); approved by founder: paths under *Approval file text*, expires 2026-10-27
+- [x] Q1–Q5: all recommendations approved (2026-10-06)
 - Red task: the agent drafts the design here; the founder edits or approves it before any code, then reviews the diff line by line (founder decision 2026-10-06).
 
 ### Design (for founder review)
@@ -113,6 +115,27 @@ Out: fulfilments, retrieval and real snapshots (TASK-010); evidence routes, the 
 - **Q4 — Default retention:** GOVERNANCE mode, 2555 days, configurable. Per-engagement retention policies and legal holds come later. Recommend yes.
 - **Q5 — No evidence routes** in this task (board and downloads in TASK-011/012). Recommend yes.
 
+### Approval file text
+```yaml
+task: TASK-009
+approved_by: founder
+expires: 2026-10-27
+paths:
+  - .claude/hooks/_protected.py
+  - .github/CODEOWNERS
+  - docs/architecture/protected-paths.md
+  - backend/src/abacus/kernel/crypto/**
+  - backend/src/abacus/kernel/storage.py
+  - backend/src/abacus/kernel/db/**
+  - backend/src/abacus/modules/evidence/**
+  - backend/src/abacus_tools/quality/schema_check.py
+  - backend/src/abacus_tools/quality/banned_patterns.py
+  - backend/tests/unit/quality/test_banned_patterns.py
+  - backend/pyproject.toml
+  - backend/uv.lock
+reason: TASK-009 — write-once encrypted evidence storage, insert-only versions, deterministic rendering
+```
+
 ### Steps
 1. Approval file; ADR-104 (if Q1); protect `modules/evidence/**` (hook, CODEOWNERS, protected-paths).
 2. `kernel/storage.py`, `kernel/crypto/`, settings (`evidence_bucket`, `evidence_retention_days`, `local_master_key`); local bucket bootstrap; verify Versity `If-None-Match`.
@@ -140,6 +163,8 @@ Out: fulfilments, retrieval and real snapshots (TASK-010); evidence routes, the 
 ## Progress log
 - `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder. Not started.
 - `2026-10-06` — Design drafted (§1–7, Q1–Q5) for founder review.
+- `2026-10-06` — Approved with all recommendations; approval file written at the founder's instruction.
+- `2026-10-06` — Versity verified: `If-None-Match: *` → `PreconditionFailed`; Object Lock refuses version deletion. ADR-104 written (Q1). Protected `modules/evidence/**` and `kernel/storage.py`. I added `kernel/storage.py` to the approval file: design §3 creates it, but the original path list omitted it (my error).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
