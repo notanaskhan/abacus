@@ -40,7 +40,14 @@ Out: a real provider (Anthropic) and real model calls (a SPEC-000 non-goal); the
 - ADRs: ADR-005, ADR-019, ADR-047, ADR-050, ADR-051, ADR-052, ADR-054, ADR-065, ADR-066, ADR-070
 
 ## Plan
-- [ ] Plan approved by human (required for amber and red)
+- [x] Plan approved by human (founder, 2026-10-06: "approved, proceed with your recommendations") — **red: founder reviews each PR line by line**
+- [x] Approval file `work/approvals/TASK-011.yaml` written by the agent at the founder's instruction (2026-10-06); approved by founder: paths under *Approval file text*, expires 2026-10-27
+- [x] Q1–Q5 recommendations approved:
+  - the initiator is the human behind the triggering event;
+  - the agent does not change request-item status (the screening result proposes it);
+  - fake model only;
+  - the relay runs in the worker;
+  - split into 011a (gateway and agents) and 011b (screening workflow).
 - Red task: the agent drafts the design here; the founder edits or approves it before any code, then reviews the diff line by line (founder decision 2026-10-06).
 
 ### Design (for founder review)
@@ -126,6 +133,31 @@ Out: a real provider (Anthropic) and real model calls (a SPEC-000 non-goal); the
 
   Recommend yes.
 
+### Approval file text
+```yaml
+task: TASK-011
+approved_by: founder
+expires: 2026-10-27
+paths:
+  - .claude/hooks/_protected.py
+  - .github/CODEOWNERS
+  - docs/architecture/protected-paths.md
+  - backend/pyproject.toml
+  - backend/uv.lock
+  - backend/src/abacus/kernel/**
+  - backend/src/abacus/ai_gateway/**
+  - backend/src/abacus/modules/agents/**
+  - backend/src/abacus/modules/identity/**
+  - backend/src/abacus/modules/evidence/**
+  - backend/src/abacus/modules/connections/**
+  - backend/src/abacus/worker/**
+  - backend/src/abacus_tools/quality/schema_check.py
+  - backend/src/abacus_tools/quality/banned_patterns.py
+  - backend/tests/unit/quality/test_banned_patterns.py
+  - evals/**
+reason: TASK-011 — AI gateway, agent specs and context, citations, usage records, screening workflow
+```
+
 ### Steps
 1. Approval file. Protect `ai_gateway/**` and `modules/agents/**`.
 2. Migration `0010` and `schema_check`. `AgentContext` in identity/authz.
@@ -154,6 +186,7 @@ Out: a real provider (Anthropic) and real model calls (a SPEC-000 non-goal); the
 ## Progress log
 - `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder. Not started.
 - `2026-10-06` — Design drafted (§1–8, Q1–Q5) for founder review, while TASK-010b (PR #11) awaits review.
+- `2026-10-06` — Approved with all recommendations; approval file written at the founder's instruction. 011a started on `task-011a-gateway` from main (it doesn't depend on 010b).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
