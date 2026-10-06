@@ -477,40 +477,47 @@ def _check_authorization_header(src: SourceFile) -> Iterator[Finding]:
     for line, value in _string_constants(src):
         if value.strip().lower() == "authorization":
             yield Finding(line, message)
-    for line, name in _names_used(src):
-        if name == "authorization":
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.arg) and node.arg == "authorization":  # a FastAPI header param
+            yield Finding(node.lineno, message)
+    for line, module in _imported_modules(src):
+        if module == "fastapi.security" or module.startswith("fastapi.security."):
             yield Finding(line, message)
 
 
-# Every role in the permission matrix; comparing against one is a permission check.
+# Firm and engagement roles from the permission matrix. Actor kinds (`agent`, `system`) and client
+# roles are left out: their names are ordinary words compared for other reasons.
 _ROLE_NAMES = frozenset(
     {"firm_admin", "practice_leader", "quality_partner", "engagement_partner", "manager"}
-    | {"senior", "staff", "reviewer", "client_admin", "client_contributor", "agent", "system"}
+    | {"senior", "staff", "reviewer"}
 )
 _ROLE_ATTRIBUTES = frozenset({"role", "firm_role", "roles"})
 
 
-def _is_role_operand(node: ast.expr) -> bool:
-    if isinstance(node, ast.Attribute) and node.attr in _ROLE_ATTRIBUTES:
-        return True
-    if isinstance(node, ast.Name) and node.id in _ROLE_ATTRIBUTES:
-        return True
+def _is_role_shaped(node: ast.expr) -> bool:
+    return (isinstance(node, ast.Attribute) and node.attr in _ROLE_ATTRIBUTES) or (
+        isinstance(node, ast.Name) and node.id in _ROLE_ATTRIBUTES
+    )
+
+
+def _is_role_value(node: ast.expr) -> bool:
     if isinstance(node, ast.Tuple | ast.List | ast.Set):
-        return any(_is_role_operand(element) for element in node.elts)
+        return any(_is_role_value(element) for element in node.elts)
     return isinstance(node, ast.Constant) and node.value in _ROLE_NAMES
 
 
 def _check_role_comparison(src: SourceFile) -> Iterator[Finding]:
+    """A role-shaped operand compared with a role name: `x.role == "manager"`,
+    `role in ("senior", "staff")`. `role is None` or `message.role == "assistant"` are fine."""
     message = "role checks belong in identity.authz; call authorise()"
     for node in ast.walk(src.tree):
         if isinstance(node, ast.Compare):
-            if any(_is_role_operand(operand) for operand in (node.left, *node.comparators)):
+            operands = (node.left, *node.comparators)
+            if any(_is_role_shaped(o) for o in operands) and any(
+                _is_role_value(o) for o in operands
+            ):
                 yield Finding(node.lineno, message)
-        elif (
-            isinstance(node, ast.MatchValue)
-            and isinstance(node.value, ast.Constant)
-            and node.value.value in _ROLE_NAMES
-        ):
+        elif isinstance(node, ast.Match) and _is_role_shaped(node.subject):
             yield Finding(node.lineno, message)
 
 
@@ -534,17 +541,43 @@ def _check_tenant_header(src: SourceFile) -> Iterator[Finding]:
 
 
 # Ways to serve HTTP without AbacusRouter's authentication and action check.
-_ROUTE_BYPASSES = frozenset(
-    {"APIRouter", "APIRoute", "FastAPI", "Starlette", "Mount", "WebSocketRoute"}
-    | {"APIWebSocketRoute", "add_api_route", "add_route", "add_websocket_route", "websocket"}
-    | {"mount", "include_router", "dependency_overrides"}
+_WEB_CLASSES = frozenset(
+    {"APIRouter", "APIRoute", "APIWebSocketRoute", "FastAPI", "Starlette", "Mount", "Route"}
+    | {"Router", "WebSocketRoute", "BaseHTTPMiddleware", "StaticFiles"}
+)
+_WEB_METHODS = frozenset(
+    {"add_api_route", "add_route", "add_websocket_route", "add_api_websocket_route", "websocket"}
+    | {"mount", "include_router", "add_middleware"}
 )
 
 
 def _check_route_bypass(src: SourceFile) -> Iterator[Finding]:
-    for line, name in _names_used(src):
-        if name in _ROUTE_BYPASSES:
-            yield Finding(line, f"{name}: serve routes only through identity's AbacusRouter")
+    def finding(line: int, name: str) -> Finding:
+        return Finding(line, f"{name}: serve routes only through identity's AbacusRouter")
+
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.ImportFrom) and (node.module or "").split(".")[0] in {
+            "fastapi",
+            "starlette",
+        }:
+            for alias in node.names:
+                if alias.name in _WEB_CLASSES:
+                    yield finding(node.lineno, alias.name)
+        elif isinstance(node, ast.Attribute) and (
+            node.attr == "dependency_overrides"
+            or (
+                node.attr in _WEB_CLASSES
+                and _terminal_name(node.value)
+                in {"fastapi", "starlette", "routing", "applications"}
+            )
+        ):
+            yield finding(node.lineno, node.attr)
+        elif (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr in _WEB_METHODS
+        ):
+            yield finding(node.lineno, node.func.attr)
 
 
 def _check_self_action(src: SourceFile) -> Iterator[Finding]:
@@ -553,14 +586,36 @@ def _check_self_action(src: SourceFile) -> Iterator[Finding]:
             yield Finding(line, "the SELF action is for /v1/me only")
 
 
-# Request contexts come from a validated membership (ADR-002), never built by hand.
-_CONTEXTS = frozenset({"AuthContext", "TenantContext"})
-
-
 def _check_context_construction(src: SourceFile) -> Iterator[Finding]:
+    """Human request contexts come from a validated membership (ADR-002), never built or copied by
+    hand. (Agent and system `TenantContext`s are built by their own tasks' context builders.)"""
     for node in ast.walk(src.tree):
-        if isinstance(node, ast.Call) and _terminal_name(node.func) in _CONTEXTS:
+        if not isinstance(node, ast.Call):
+            continue
+        name = _terminal_name(node.func)
+        if name == "AuthContext":
             yield Finding(node.lineno, "contexts are built only from a validated membership")
+        elif name in {"replace", "copy", "deepcopy", "__replace__"} and any(
+            "ctx" in (_terminal_name(arg) or "").lower()
+            or "context" in (_terminal_name(arg) or "")
+            for arg in node.args
+        ):
+            yield Finding(node.lineno, "contexts are never copied with changes")
+
+
+def _check_resource_archived(src: SourceFile) -> Iterator[Finding]:
+    """`archived` comes from the engagement row, never a literal (TASK-008 loads it)."""
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.Call) and _terminal_name(node.func) in {"engagement", "Resource"}:
+            for keyword in node.keywords:
+                if keyword.arg == "archived" and isinstance(keyword.value, ast.Constant):
+                    yield Finding(node.lineno, "archived must come from the engagement row")
+            if (
+                _terminal_name(node.func) == "Resource"
+                and len(node.args) >= 3
+                and isinstance(node.args[2], ast.Constant)
+            ):
+                yield Finding(node.lineno, "archived must come from the engagement row")
 
 
 # --- tree rules -------------------------------------------------------------------------------
@@ -781,7 +836,15 @@ RULES: list[Rule | TreeRule] = [
         adr="ADR-002, ADR-014",
         check=_check_context_construction,
         include=("src/abacus/*",),
-        exclude=("src/abacus/modules/identity/service.py", "src/abacus/kernel/db/*"),
+        exclude=("src/abacus/modules/identity/service.py",),
+    ),
+    Rule(
+        id="AUTHZ-003",
+        description="An engagement's archived state is never a literal",
+        adr="ADR-023",
+        check=_check_resource_archived,
+        include=("src/abacus/*",),
+        exclude=("src/abacus/modules/identity/authz/*",),
     ),
     Rule(
         id="ANY-001",

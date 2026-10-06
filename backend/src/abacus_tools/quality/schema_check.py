@@ -12,7 +12,7 @@ up again (every migration must be reversible), then inspects the catalog. It fai
   - abacus_app with SUPERUSER, BYPASSRLS, CREATEROLE or CREATEDB, or owning any relation
   - a global table (GLOBAL_TABLES) with any app privilege
   - abacus_relay or abacus_identity (they bypass RLS) holding any privilege not in
-    BYPASS_ROLE_GRANTS
+    BYPASS_ROLE_GRANTS, or any other non-superuser role with BYPASSRLS
 
 `provisioned_database()` is shared with the integration test fixtures, so tests and this gate build
 the database the same way.
@@ -258,6 +258,8 @@ class Grant:
 # Bypass roles that never write: read-only by default (a second line behind the grants).
 READ_ONLY_ROLES = frozenset({IDENTITY})
 _ROLE_CONFIG = "SELECT rolconfig FROM pg_roles WHERE rolname = $1"
+# Superusers bypass everything anyway; they're the operator's, not the application's.
+_BYPASS_ROLES = "SELECT rolname FROM pg_roles WHERE rolbypassrls AND NOT rolsuper ORDER BY rolname"
 # Roles that bypass row-level security, and everything each may touch (TASK-006, TASK-007).
 BYPASS_ROLE_GRANTS: dict[str, dict[str, Grant]] = {
     RELAY: {RELAY_TABLE: Grant(select=ALL_COLUMNS, update=RELAY_UPDATABLE)},
@@ -437,6 +439,9 @@ async def _inspect(owner_dsn: str) -> list[str]:
                 )
         for function in await conn.fetch(_LARGE_OBJECT_FUNCTIONS, APP):
             problems.append(f"{APP}: can execute {function['name']}")
+        for role in await conn.fetch(_BYPASS_ROLES):
+            if str(role["rolname"]) not in BYPASS_ROLE_GRANTS:
+                problems.append(f"{role['rolname']}: bypasses row-level security, not reviewed")
         for role_name, grants in BYPASS_ROLE_GRANTS.items():
             problems += await _bypass_role_problems(conn, role_name, grants)
         role = await conn.fetchrow(_ROLE, APP)

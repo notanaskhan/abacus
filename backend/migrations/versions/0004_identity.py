@@ -1,4 +1,6 @@
-"""Firms, users, memberships and engagement members (ADR-002, ADR-023, ADR-027; TASK-007 design §2-3).
+"""Firms, users, memberships and engagement members (ADR-002, ADR-023, ADR-027).
+
+TASK-007 design §2-3.
 
 - `users` is global (one login across firms): the app role has no privileges on it; only
   `abacus_identity` reads it, to resolve a token's subject before a tenant is chosen.
@@ -64,7 +66,8 @@ def upgrade() -> None:
             revoked_at timestamptz NULL,
             PRIMARY KEY (tenant_id, id),
             CONSTRAINT memberships_one_per_user UNIQUE (tenant_id, user_id),
-            CONSTRAINT memberships_revoked_at CHECK ((status = 'revoked') = (revoked_at IS NOT NULL))
+            CONSTRAINT memberships_revoked_at
+                CHECK ((status = 'revoked') = (revoked_at IS NOT NULL))
         )
         """
     )
@@ -94,7 +97,8 @@ def upgrade() -> None:
     # Sign-in (abacus_identity, BYPASSRLS): read users, and only what it needs of the rest.
     op.execute("GRANT SELECT ON users TO abacus_identity")
     op.execute(
-        "GRANT SELECT (tenant_id, id, user_id, firm_role, status) ON memberships TO abacus_identity"
+        "GRANT SELECT (tenant_id, id, user_id, firm_role, status) "
+        "ON memberships TO abacus_identity"
     )
     op.execute("GRANT SELECT (tenant_id, name) ON firms TO abacus_identity")
 

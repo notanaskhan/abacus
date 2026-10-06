@@ -105,3 +105,4 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-099](ADR-099-security-operations.md) | Security operations baseline | red | accepted |
 | [ADR-100](ADR-100-founder-spof.md) | Mitigating founder single point of failure | amber | accepted |
 | [ADR-101](ADR-101-namespaced-backend-layout.md) | Namespaced backend package layout | amber | accepted |
+| [ADR-102](ADR-102-visible-takes-action-and-engagement-column.md) | visible() takes the read action and the engagement column | red | proposed |

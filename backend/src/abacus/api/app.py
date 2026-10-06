@@ -21,6 +21,7 @@ async def _forbidden(_request: Request, _exc: Exception) -> JSONResponse:
 
 
 def create_app() -> FastAPI:
+    identity.token_verifier()  # a misconfigured identity provider fails here, not per request
     app = FastAPI(title="Abacus", docs_url=None, redoc_url=None, openapi_url=None)
     for router in ROUTERS:
         app.include_router(router)

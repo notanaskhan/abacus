@@ -63,6 +63,10 @@ class JwtVerifier:
             if key is not None and key.key_id and _acceptable_key(key):
                 self._keys[key.key_id] = key
 
+    @property
+    def key_count(self) -> int:
+        return len(self._keys)
+
     def verify(self, token: str) -> VerifiedIdentity:
         if not token or len(token.encode()) > MAX_TOKEN_BYTES:
             raise InvalidToken("token missing or too large")
@@ -147,9 +151,20 @@ def _from_settings() -> TokenVerifier:
     if s.identity_issuer is None or s.identity_audience is None or s.identity_jwks is None:
         # Settings validation makes this unreachable outside local and test.
         raise RuntimeError("identity provider is not configured")
-    return JwtVerifier(
+    verifier = JwtVerifier(
         issuer=s.identity_issuer, audience=s.identity_audience, jwks=s.identity_jwks
     )
+    if verifier.key_count == 0 and s.environment not in ("local", "test"):
+        # Every token would be refused with a silent 401: fail at startup instead.
+        raise RuntimeError("identity_jwks has no usable RS256 key of at least 2048 bits")
+    return verifier
+
+
+def reset_verifier() -> None:
+    """Back to the verifier built from settings (test teardown; settings changes)."""
+    global _verifier
+    _verifier = None
+    _from_settings.cache_clear()
 
 
 def token_verifier() -> TokenVerifier:
