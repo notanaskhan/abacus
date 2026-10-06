@@ -526,7 +526,7 @@ def test_ac9_ordinary_international_text_is_accepted(name: str) -> None:
         "1,5",
         "1000000000000000",  # 16 digits
         "-0",
-        "00000000000000000",
+        "0" * 17,
     ],
 )
 @pytest.mark.parametrize("field", ["debit", "credit"])
