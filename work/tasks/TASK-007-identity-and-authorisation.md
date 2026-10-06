@@ -4,7 +4,7 @@ title: Sign-in, memberships, tenant context, authorise and visible
 spec: SPEC-000
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-6, AC-8]
 risk_zone: red
-status: in-review
+status: done
 branch: task-007-identity
 worktree:
 created: 2026-10-06
@@ -317,8 +317,5 @@ reason: TASK-007 — identity, request context, authorise and visible
 - **`audit_event.read` for firm_admin (S19).** The matrix lets firm_admin read audit events without an engagement relationship. That is safe while audit events carry only identifiers and references, which TASK-006 enforces: `Target`/`Ref` are identifier-only. Recommend: keep it, and keep audit events content-free.
 
 ## Handoff
-- **Current state:** Done pending review. PR open on `task-007-identity`; `make check` exit 0.
-- **Exact next step:** Confirm CI. The founder reviews line by line, and accepts or rejects ADR-102. Then merge, delete `work/approvals/TASK-007.yaml`, mark done, and draft the TASK-008 design (see its gotchas).
-- **Uncommitted or partial work:** none.
-- **Known failing checks:** none.
-- **Open issues:** branch protection off; walls gate the first real firm.
+- **Current state:** Done. PR #7 merged (rebase) 2026-10-06 after founder review and green CI; approval file deleted. ADR-102 is still `proposed`, awaiting the founder's accept or reject.
+- **Exact next step:** none (TASK-008).
