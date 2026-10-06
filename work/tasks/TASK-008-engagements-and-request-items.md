@@ -37,7 +37,9 @@ Out: retrievals, evidence and screening on the item list (TASK-009–011); engag
 - ADRs: ADR-008, ADR-012, ADR-013
 
 ## Plan
-- [ ] Plan approved by human (required for amber and red)
+- [x] Plan approved by human (founder, 2026-10-06: "approved, proceed")
+- [x] Approval file `work/approvals/TASK-008.yaml` written by the agent at the founder's instruction (2026-10-06); approved by founder: paths under *Approval file text*, expires 2026-10-27
+- [x] Q1–Q5: all recommendations approved (2026-10-06)
 
 
 ### Design (for founder review)
@@ -102,6 +104,23 @@ Out: retrievals, evidence and screening on the item list (TASK-009–011); engag
 - **Q4. Clients.** The matrix has no client action, so clients and entities are created inside `engagement.create`. Client management comes later. Recommend yes.
 - **Q5. Request list.** Created on the first item (requests depend on engagements, not the reverse). Recommend yes.
 
+### Approval file text
+```yaml
+task: TASK-008
+approved_by: founder
+expires: 2026-10-27
+paths:
+  - backend/src/abacus/kernel/db/**
+  - backend/src/abacus/modules/identity/**
+  - backend/src/abacus/api/**
+  - backend/src/abacus_tools/quality/schema_check.py
+  - backend/src/abacus_tools/quality/banned_patterns.py
+  - backend/tests/unit/quality/test_banned_patterns.py
+  - packages/api-client/package.json
+  - pnpm-lock.yaml
+reason: TASK-008 — engagements, request items, OpenAPI export and generated client
+```
+
 ### Steps
 1. Approval file. ADR-103 (if Q1 is approved). `kernel.db.Base`.
 2. Migration `0005`; `schema_check` (`TABLE_OWNERS`; insert and update grant checks).
@@ -130,6 +149,7 @@ Out: retrievals, evidence and screening on the item list (TASK-009–011); engag
 ## Progress log
 - `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder. Not started.
 - `2026-10-06` — Design drafted (§1–7, Q1–Q5) for founder review.
+- `2026-10-06` — Approved with all recommendations; approval file written at the founder's instruction.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

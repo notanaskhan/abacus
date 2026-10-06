@@ -1,5 +1,6 @@
 """Tenant-scoped database access (ADR-014). PROTECTED. The only package that opens connections."""
 
+from abacus.kernel.db.models import Base
 from abacus.kernel.db.session import (
     ActorKind,
     TenantContext,
@@ -15,6 +16,7 @@ from abacus.kernel.db.session import (
 
 __all__ = [
     "ActorKind",
+    "Base",
     "TenantContext",
     "configure_engine",
     "configure_identity_engine",
