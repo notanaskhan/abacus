@@ -976,6 +976,9 @@ def test_ac20_table_owners_lists_exactly_the_tables_of_the_migrated_schema(
         ("ledger_snapshots", "ledger"),
         ("trial_balance_lines", "ledger"),
         ("fulfilments", "requests"),
+        ("agent_runs", "agents"),
+        ("screening_results", "agents"),
+        ("usage_records", "ai_gateway"),
     ],
 )
 def test_ac20_table_owners_assigns_the_new_tables_to_their_modules(table: str, owner: str) -> None:
@@ -1083,6 +1086,9 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"raw_pulled_at", "source", "snapshot_id", "evidence_version_id"}
             | {"failure_code", "finished_at"}
         ),
+        "agent_runs": frozenset(
+            {"status", "context_hash", "output", "failure_code", "finished_at"}
+        ),
     } == sc.APP_UPDATE_COLUMNS
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset()
     assert sc.APP_INSERT_COLUMNS["sync_runs"] == frozenset(
@@ -1101,7 +1107,22 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         {"id", "tenant_id", "engagement_id", "request_item_id", "evidence_version_id"}
         | {"created_by_kind", "created_by_id"}
     )
+    assert sc.APP_INSERT_COLUMNS["agent_runs"] == frozenset(
+        {"id", "tenant_id", "agent_id", "spec_version", "engagement_id", "evidence_version_id"}
+        | {"initiator_user_id", "source_event_id", "task_scope"}
+    )
+    assert sc.APP_INSERT_COLUMNS["screening_results"] == frozenset(
+        {"id", "tenant_id", "engagement_id", "evidence_version_id", "agent_run_id", "action"}
+        | {"confidence", "rationale", "citations", "unverified"}
+    )
+    assert sc.APP_INSERT_COLUMNS["usage_records"] == frozenset(
+        {"id", "tenant_id", "engagement_id", "agent_id", "agent_run_id", "prompt_id"}
+        | {"prompt_version", "model", "tier", "input_tokens", "output_tokens", "cost_usd"}
+        | {"outcome", "inputs_hash"}
+    )
     assert {"ledger_snapshots", "trial_balance_lines", "fulfilments"} <= sc.INSERT_ONLY_TABLES
+    assert {"screening_results", "usage_records"} <= sc.INSERT_ONLY_TABLES
+    assert "agent_runs" not in sc.INSERT_ONLY_TABLES
     assert sc.APP_INSERT_COLUMNS["engagements"] == frozenset(
         {"id", "tenant_id", "client_id", "client_entity_id", "name"}
         | {"fiscal_period_start", "fiscal_period_end", "created_by"}
