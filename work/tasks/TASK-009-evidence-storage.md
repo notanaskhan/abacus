@@ -96,7 +96,7 @@ Out: fulfilments, retrieval and real snapshots (TASK-010); evidence routes, the 
   - the ZIP rebuilt with sorted entries and a fixed timestamp.
 - A provenance footer: source, method, pull time, period, entity, snapshot ID and the source-data fingerprint.
 - AC-12: rendering the same fixture twice gives identical SHA-256.
-- Untrusted text (account names) is written as plain strings. Anything starting with `=`, `+`, `-`, `@`, tab or CR is prefixed with `'`, so no formula injection (AGENTS.md #8).
+- Untrusted text (account names) is written as explicit string cells, unchanged. Formula-like text also gets `quotePrefix`, so no formula injection (AGENTS.md #8). (Revised from a `'` prefix, which would alter the data.)
 
 **7. Static rules.**
 - **STORE-001**: `boto3` only in `kernel/storage.py`.
@@ -195,6 +195,58 @@ Out: fulfilments, retrieval and real snapshots (TASK-010); evidence routes, the 
 - `ensure_bucket()` creates the configured bucket with Object Lock and is idempotent.
 - It raises `RuntimeError` outside local/test.
 
+#### Contract revision 1 (2026-10-06, from both stage 4 reviews)
+**Service (breaking)**
+- `stage_content(tenant_id, content) -> StoredObject` runs **before** the unit of work. It is the store for raw payloads too.
+- `read_content(tenant: TenantContext, stored) -> bytes` is for callers that authorised under their own context.
+- `add_version(tx, *, engagement_id, item, stored, media_type, provenance, idempotency_key=None) -> EvidenceVersionRef`. There is no `tenant` or `content` argument any more.
+  - The tenant and actor come from the transaction (`kernel.db.transaction_context(session)`).
+  - A `stored` whose key belongs to another tenant → `IntegrityError` before any write.
+  - It share-locks the engagement (`engagements.api.lock_ref`): missing or other firm → `NotFound`; archived → `EngagementArchived`.
+  - An existing item from another engagement → `NotFound`.
+  - `media_type` must be 1–100 characters (`ValueError`).
+- `EvidenceVersionRef` gains `created: bool`. A repeated `idempotency_key` in the tenant returns the existing version with `created=False`, and records no audit or outbox event.
+- `read_version(ctx, version_id)` also records audit event `evidence_version.read` (target `evidence_version`).
+- `api` also exports `stage_content`, `read_content`, `StoredObject`, `EngagementArchived`, `ContentTooLarge`.
+
+**Storage**
+- `put` over 50 MiB (`MAX_CONTENT_BYTES`) → `ContentTooLarge`.
+- **Verified reuse.** When versions already exist under the key, `put` returns the newest one that opens for this tenant and matches the fingerprint, and extends its retention to now + `evidence_retention_days`. If none verifies (garbage written by someone with bucket access), it writes a fresh valid version beside them and returns that. It never records an unverified version.
+- A put response with no `VersionId`, or `"null"`, → `IntegrityError`.
+- `get` of a missing version → `IntegrityError`.
+- `reset_storage()` clears the override.
+
+**Crypto**
+- The envelope key ID is now bound into the content AAD.
+- `open_sealed` refuses an envelope whose key ID isn't `key_service().key_id(tenant)`. That is a `DecryptionError`, and `unwrap` is never called.
+- A wrapped key shorter than 44 bytes → `DecryptionError`. No raw `ValueError` ever escapes `open_sealed`.
+- The local key service is used only when the environment is local or test **and** `s3_endpoint_url` is loopback (`127.0.0.1`, `localhost`, `::1`). Otherwise `key_service()` raises `RuntimeError`.
+- `reset_key_service()` clears the override and cache.
+- `kernel.db.transaction_context(session) -> TenantContext` raises `RuntimeError` outside a tenant transaction.
+
+**Config**
+- `evidence_retention_days` below 365 (`MIN_EVIDENCE_RETENTION_DAYS`) → settings validation error.
+- `kernel.storage` exports `error_code(exc)` and `StorageError`.
+
+**Database (migration 0008)**
+- `evidence_versions.idempotency_key text NULL` (1–200), unique per tenant where set, and in the app's insert columns.
+- Downgrading 0008 raises while any evidence version exists.
+- `schema_check` counts an immutability trigger only if it is enabled `O` or `A` (not `D` or `R`) and its function body contains `RAISE EXCEPTION` and no `RETURN`. The report text ends with "that raises".
+
+**Renderer**
+- A naive `pulled_at` → `ValueError`.
+- An aware non-UTC `pulled_at` is converted to UTC once. The footer `Pulled at` and both `created` and `modified` are that UTC instant.
+- Non-finite amounts → `ValueError`. Text over 32,767 characters → `ValueError`.
+- Text starting with `=`, `+`, `-` or `@` also gets `quotePrefix = True`.
+- ZIP entries have `create_system == 3`.
+
+**Static rules**
+- **STORE-001** also confines `botocore`, `aioboto3`, `aiobotocore` and `s3fs`.
+- **CRYPTO-001** also confines `Crypto`, `Cryptodome` and `nacl`.
+- Both also catch `importlib.import_module("…")` and `__import__("…")`.
+
+**Tooling.** `ensure_bucket()` accepts only `BucketAlreadyOwnedByYou` as already-existing, and raises `RuntimeError` if the bucket has no Object Lock enabled.
+
 ### Approval file text
 ```yaml
 task: TASK-009
@@ -245,6 +297,24 @@ reason: TASK-009 — write-once encrypted evidence storage, insert-only versions
 - `2026-10-06` — Design drafted (§1–7, Q1–Q5) for founder review.
 - `2026-10-06` — Approved with all recommendations; approval file written at the founder's instruction.
 - `2026-10-06` — Versity verified: `If-None-Match: *` → `PreconditionFailed`; Object Lock refuses version deletion. ADR-104 written (Q1). Protected `modules/evidence/**` and `kernel/storage.py`. I added `kernel/storage.py` to the approval file: design §3 creates it, but the original path list omitted it (my error).
+- `2026-10-06` — Security review: changes requested (B1–B3 blockers, S1–S8). Architecture review: changes requested (1–20). Fixed:
+  - B1: verified reuse;
+  - B2: local key only with loopback storage;
+  - B3 and arch 3: tenant derived from the transaction;
+  - arch 1: idempotency key (migration 0008);
+  - arch 4 and S1: two-step `stage_content`, size cap, botocore timeouts;
+  - arch 5: raw-payload store exported;
+  - S2 and arch 11: retention floor and extension on reuse;
+  - S3 and arch 6: trigger state and body check, downgrade guard;
+  - S4 and arch 7: audited reads;
+  - S5 and arch 10: aware UTC;
+  - S6 and S7: crypto hardening;
+  - S8 and arch 12: wider confinement;
+  - arch 13 and N6: Object Lock check in the bucket helper;
+  - arch 14: lock and archived check;
+  - N1, N4 and N5.
+
+  The rest are recorded in Gotchas; arch 2 is a Question. Contract revision 1 written.
 - `2026-10-06` — Implemented steps 2–4. Smoke-tested end to end: two versions share one object, audit events correct, member read verified, superuser UPDATE/DELETE/TRUNCATE rejected by the trigger. The renderer pins openpyxl's save-time `modified` stamp. `kernel.db.Base` maps `datetime` to timestamptz. Contract written.
 
 ## Decisions made during this task
@@ -252,11 +322,19 @@ reason: TASK-009 — write-once encrypted evidence storage, insert-only versions
 |---|---|---|
 
 ## Gotchas and discoveries
+- Follow-ups from the TASK-009 reviews:
+  - Wire `python -m abacus_tools.local.evidence_bucket` into `make dev` (Makefile; TASK-012).
+  - Call `key_service()` and the storage target at API and worker startup, so AWS fails at boot, not first use (TASK-010 worker, TASK-014).
+  - `KeyService.wrap` should return the key ID it used (KMS rotation; TASK-014). `KmsKeyService` must bind the tenant in `EncryptionContext` and verify key ownership.
+  - IAM in TASK-014 must deny the app `s3:BypassGovernanceRetention`, deletes, and puts without `If-None-Match`, and alarm the break-glass role.
+  - `evidence_versions.snapshot_id` gets its composite FK with ledger snapshots (TASK-010). Ledger depends on evidence (`TrialBalance`), never the reverse; add `ledger: {…, evidence}` to `MODULE_DEPENDENCIES`.
+  - `evidence_items` has no trigger, so the owner role can still update it. App access is insert/select only.
+  - Residuals, accepted: the table owner and superuser can disable triggers or drop tables (the migration role is never used at runtime; monitoring in TASK-013). Object keys carry the plaintext SHA-256, so anyone who can list the bucket can confirm a guessed file, and fingerprints survive crypto-shredding. A local single master key can't shred one tenant.
 - From TASK-005 review: every table passed to `insert_only()` must also be added to `INSERT_ONLY_TABLES` in `schema_check.py`, or the check won't verify it.
 - From TASK-006: also declare the app's insertable columns in `APP_INSERT_COLUMNS` and grant them with `insert_columns()`; without a declared list the column check is skipped for that table.
 
 ## Questions for the human
--
+- **Actor-neutral authorisation (architecture review, item 2).** For TASK-010/011: `authorise` takes only a human `AuthContext`, but the matrix grants `evidence.upload` to `system` and `evidence.read` to `agent: task_scope`. Recommend: the TASK-010 design adds a `SystemContext` (and TASK-011 an `AgentContext` with the delegation chain and task scope, ADR-025) that `authorise` accepts. Until then, `read_content` is the documented path for callers authorised under their own context.
 
 ## Handoff
 - **Current state:** Steps 1–4 committed on `task-009-evidence` (WIP). Contract written. The independent test author and two reviews are next.
