@@ -77,9 +77,11 @@ known-first-party = ["abacus", "abacus_tools"]
 "src/abacus/ai_gateway/**" = ["TID251"]
 "src/abacus_tools/**" = ["T20"]
 "src/abacus_tools/quality/secrets_scan.py" = ["T20", "S603"]  # runs git ls-files
+"src/abacus_tools/synthetic/**" = ["S311"]  # seeded, non-cryptographic by design (ADR-085)
 "tests/**" = ["S101"]
 "tests/unit/quality/test_hooks.py" = ["S101", "S603"]  # runs the repo's own hook scripts
 "tests/unit/quality/test_secrets_scan.py" = ["S101", "S603"]  # git init in a tmp repo
+"tests/unit/synthetic/**" = ["S101", "S314", "S603"]  # runs this interpreter; parses our own XLSX
 
 [tool.ruff.format]
 

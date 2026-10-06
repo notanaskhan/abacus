@@ -226,11 +226,7 @@ def csv_cells(directory: Path, artefact: str) -> list[str]:
 
 
 def parse_xml(data: bytes) -> ET.Element:
-    parser: ET.XMLPullParser[ET.Element] = ET.XMLPullParser(events=("end",))
-    parser.feed(data)
-    parser.close()
-    events = cast("list[tuple[str, ET.Element]]", list(parser.read_events()))
-    return events[-1][1]
+    return ET.fromstring(data)
 
 
 def xlsx_texts(path: Path) -> list[str]:
