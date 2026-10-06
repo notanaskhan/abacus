@@ -30,6 +30,7 @@ _CONNECTIONS = (
     "s3_endpoint_url",
     "s3_access_key",
     "s3_secret_key",
+    "evidence_bucket",
     "temporal_target",
 )
 _LOCAL_DEFAULTS: dict[str, object] = {
@@ -45,6 +46,9 @@ _LOCAL_DEFAULTS: dict[str, object] = {
     "s3_endpoint_url": "http://127.0.0.1:7070",
     "s3_access_key": "abacus",
     "s3_secret_key": "abacuslocal",
+    "evidence_bucket": "abacus-evidence",
+    # Local and test only: tenant keys are derived from this (ADR-104). Never used elsewhere.
+    "local_master_key": "abacus-local-master-key-not-a-secret-0000",
     "temporal_target": "127.0.0.1:7233",
 }
 
@@ -70,6 +74,10 @@ class Settings(BaseSettings):
     s3_access_key: Annotated[SecretStr | None, classified("restricted")] = None
     s3_secret_key: Annotated[SecretStr | None, classified("restricted")] = None
     s3_region: Annotated[str, classified("internal")] = "us-east-1"
+    # Write-once evidence storage (ADR-016, ADR-104).
+    evidence_bucket: Annotated[str | None, classified("internal")] = None
+    evidence_retention_days: Annotated[int, classified("internal")] = 2555
+    local_master_key: Annotated[SecretStr | None, classified("restricted")] = None
     temporal_target: Annotated[str | None, classified("internal")] = None
 
     @model_validator(mode="before")
