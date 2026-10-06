@@ -40,6 +40,7 @@ Out: retrievals, evidence and screening on the item list (TASK-009–011); engag
 - [x] Plan approved by human (founder, 2026-10-06: "approved, proceed")
 - [x] Approval file `work/approvals/TASK-008.yaml` written by the agent at the founder's instruction (2026-10-06); approved by founder: paths under *Approval file text*, expires 2026-10-27
 - [x] Q1–Q5: all recommendations approved (2026-10-06)
+- [x] ADR-102 accepted by the founder (2026-10-06, "accept ADR-102"); its path added to the approval file at the founder's instruction
 
 
 ### Design (for founder review)
@@ -212,6 +213,7 @@ task: TASK-008
 approved_by: founder
 expires: 2026-10-27
 paths:
+  - docs/adr/ADR-102-visible-takes-action-and-engagement-column.md
   - backend/src/abacus/kernel/db/**
   - backend/src/abacus/modules/identity/**
   - backend/src/abacus/api/**

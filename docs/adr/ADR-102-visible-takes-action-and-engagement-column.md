@@ -1,7 +1,7 @@
 ---
 id: ADR-102
 title: "visible() takes the read action and the engagement column"
-status: proposed
+status: accepted
 date: 2026-10-06
 deciders: Founder
 risk_zone: red
