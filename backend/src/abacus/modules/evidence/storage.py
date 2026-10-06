@@ -236,3 +236,13 @@ async def get(tenant_id: UUID, stored: StoredObject) -> bytes:
     if fingerprint(content) != stored.fingerprint or len(content) != stored.size:
         raise IntegrityError("stored content does not match its fingerprint")
     return content
+
+
+async def check_ready() -> None:
+    """Startup check (workers, TASK-010b): the bucket is reachable and write-once."""
+    target = _storage()
+    lock = await asyncio.to_thread(
+        target.client.get_object_lock_configuration, Bucket=target.bucket
+    )
+    if lock.get("ObjectLockConfiguration", {}).get("ObjectLockEnabled") != "Enabled":
+        raise RuntimeError("the evidence bucket must have Object Lock enabled")

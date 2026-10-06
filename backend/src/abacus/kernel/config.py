@@ -33,6 +33,7 @@ _CONNECTIONS = (
     "s3_secret_key",
     "evidence_bucket",
     "temporal_target",
+    "temporal_payload_key",
 )
 _LOCAL_DEFAULTS: dict[str, object] = {
     "database_url": _LOCAL_DB,
@@ -51,6 +52,8 @@ _LOCAL_DEFAULTS: dict[str, object] = {
     # Local and test only: tenant keys are derived from this (ADR-104). Never used elsewhere.
     "local_master_key": "example-local-master-key-public-not-secret",
     "temporal_target": "127.0.0.1:7233",
+    # Local and test only: workflow payloads are encrypted with a key derived from this (public).
+    "temporal_payload_key": "example-temporal-payload-key-public-not-secret",
 }
 
 
@@ -82,6 +85,10 @@ class Settings(BaseSettings):
     # The fake connector serves provider-shaped JSON from here (TASK-010; local and test only).
     fake_connector_dir: Annotated[str | None, classified("internal")] = None
     temporal_target: Annotated[str | None, classified("internal")] = None
+    temporal_namespace: Annotated[str, classified("internal")] = "default"
+    temporal_task_queue: Annotated[str, classified("internal")] = "retrieval"
+    # Encrypts every workflow payload before it leaves the process (ADR-017). KMS in TASK-014.
+    temporal_payload_key: Annotated[SecretStr | None, classified("restricted")] = None
 
     @model_validator(mode="before")
     @classmethod
@@ -99,6 +106,17 @@ class Settings(BaseSettings):
     def _fake_connector_local_only(self) -> Self:
         if self.fake_connector_dir is not None and self.environment not in ("local", "test"):
             raise ValueError("fake_connector_dir is for local runs and tests only")
+        return self
+
+    @model_validator(mode="after")
+    def _no_public_keys_outside_local(self) -> Self:
+        key = self.temporal_payload_key
+        if (
+            self.environment not in ("local", "test")
+            and key is not None
+            and key.get_secret_value().startswith("example-")
+        ):
+            raise ValueError("temporal_payload_key must be a real secret outside local and test")
         return self
 
     @model_validator(mode="after")
