@@ -10,6 +10,7 @@ import socket
 import time
 import urllib.request
 from collections.abc import Callable, Iterator
+from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
 
@@ -17,6 +18,9 @@ import pytest
 import yaml
 from testcontainers.community.postgres import PostgresContainer
 from testcontainers.core.container import DockerContainer
+
+from abacus.kernel.db import configure_engine
+from abacus_tools.quality.schema_check import provisioned_database
 
 REPO = Path(__file__).resolve().parents[3]
 S3_ACCESS = "abacus"
@@ -102,3 +106,21 @@ def temporal_target() -> Iterator[str]:
 
         _wait(healthy, "Temporal", container)
         yield f"{host}:{port}"
+
+
+@dataclass(frozen=True)
+class MigratedDatabase:
+    owner_url: str
+    app_url: str
+
+
+@pytest.fixture(scope="session")
+def migrated_db() -> Iterator[MigratedDatabase]:
+    """Fresh Postgres, bootstrapped and migrated to head (the same path as `schema_check`).
+
+    `configure_engine(app_url)` is called here so `tenant_session` targets it; tests running on
+    their own event loops may call it again to get a fresh pool.
+    """
+    with provisioned_database() as database:
+        configure_engine(database.app_url)
+        yield MigratedDatabase(database.owner_url, database.app_url)

@@ -16,6 +16,9 @@ services:
       - "127.0.0.1:55432:5432"  # host 55432: 5432 is often taken by a local Postgres
     volumes:
       - db-data:/var/lib/postgresql/data
+      # Roles and privileges, then local-only passwords; run on first start of an empty volume.
+      - ./backend/migrations/bootstrap.sql:/docker-entrypoint-initdb.d/10-bootstrap.sql:ro
+      - ./backend/migrations/bootstrap-local.sql:/docker-entrypoint-initdb.d/20-bootstrap-local.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d abacus"]
       interval: 2s

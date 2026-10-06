@@ -1,0 +1,91 @@
+"""AC-20: ADR-031 classification tags and the gate that every model field carries one."""
+
+from __future__ import annotations
+
+import importlib
+import pkgutil
+from typing import get_args
+
+import pytest
+from pydantic import BaseModel, Field
+
+import abacus
+from abacus.kernel.classification import Classification, classified
+
+LEVELS = ("restricted", "confidential", "internal", "public")
+
+
+def unclassified_fields(model: type[BaseModel]) -> list[str]:
+    """The gate: names of fields of `model` without a valid `cls` tag."""
+    missing: list[str] = []
+    for name, info in model.model_fields.items():
+        extra = info.json_schema_extra
+        if not (isinstance(extra, dict) and extra.get("cls") in LEVELS):
+            missing.append(name)
+    return missing
+
+
+def _all_abacus_models() -> list[type[BaseModel]]:
+    found: dict[str, type[BaseModel]] = {}
+    for info in pkgutil.walk_packages(abacus.__path__, "abacus."):
+        module = importlib.import_module(info.name)
+        for value in vars(module).values():
+            if (
+                isinstance(value, type)
+                and issubclass(value, BaseModel)
+                and value is not BaseModel
+                and value.__module__ == module.__name__
+            ):
+                found[f"{value.__module__}.{value.__qualname__}"] = value
+    return list(found.values())
+
+
+def test_ac20_classification_has_the_four_adr_031_levels() -> None:
+    assert set(get_args(Classification.__value__ if hasattr(Classification, "__value__") else Classification)) == set(LEVELS)
+
+
+@pytest.mark.parametrize("level", LEVELS)
+def test_ac20_classified_sets_cls_in_json_schema_extra(level: str) -> None:
+    field = classified(level)  # pyright: ignore[reportArgumentType] -- parametrised literal
+    assert field.json_schema_extra == {"cls": level}
+
+
+def test_ac20_classified_forwards_field_kwargs() -> None:
+    field = classified("internal", default=3, description="count")
+    assert field.default == 3
+    assert field.description == "count"
+    assert field.json_schema_extra == {"cls": "internal"}
+
+
+def test_ac20_classified_works_inside_a_model() -> None:
+    class Probe(BaseModel):
+        id: int = classified("confidential")
+        note: str = classified("restricted", default="")
+
+    assert unclassified_fields(Probe) == []
+    assert Probe.model_json_schema()["properties"]["note"]["cls"] == "restricted"
+
+
+def test_ac20_gate_flags_an_unclassified_field() -> None:
+    class Bad(BaseModel):
+        id: int
+        tagged: int = classified("public")
+        other: str = Field(default="", json_schema_extra={"unrelated": 1})
+
+    assert unclassified_fields(Bad) == ["id", "other"]
+
+
+def test_ac20_gate_flags_an_unknown_level() -> None:
+    class Bad(BaseModel):
+        x: int = Field(json_schema_extra={"cls": "secret"})
+
+    assert unclassified_fields(Bad) == ["x"]
+
+
+def test_ac20_every_abacus_model_field_is_classified() -> None:
+    offenders = {
+        f"{model.__module__}.{model.__qualname__}": missing
+        for model in _all_abacus_models()
+        if (missing := unclassified_fields(model))
+    }
+    assert offenders == {}

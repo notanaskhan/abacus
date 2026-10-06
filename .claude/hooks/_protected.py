@@ -35,6 +35,7 @@ PROTECTED = [
     "backend/tests/unit/quality/**",
     "backend/src/abacus/modules/identity/authz/**",
     "backend/src/abacus/kernel/db/**",
+    "backend/alembic.ini", "backend/migrations/env.py", "backend/migrations/bootstrap.sql",
     "backend/src/abacus/kernel/uow/**",
     "backend/src/abacus/kernel/crypto/**",
     "backend/src/abacus/modules/audit_trail/**",

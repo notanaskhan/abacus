@@ -4,8 +4,13 @@ name = "abacus-backend"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
+    "alembic",
     "asyncpg",
     "boto3",
+    "pydantic",
+    "pydantic-settings",
+    "sqlalchemy[asyncio]",
+    "structlog",
     "temporalio",
 ]
 
@@ -84,6 +89,7 @@ known-first-party = ["abacus", "abacus_tools"]
 "src/abacus/ai_gateway/**" = ["TID251"]
 "src/abacus_tools/**" = ["T20"]
 "src/abacus_tools/quality/secrets_scan.py" = ["T20", "S603"]  # runs git ls-files
+"src/abacus_tools/quality/schema_check.py" = ["S106", "T20"]  # local container credentials
 "src/abacus_tools/synthetic/**" = ["S311"]  # seeded, non-cryptographic by design (ADR-085)
 "tests/**" = ["S101"]
 "tests/unit/quality/test_hooks.py" = ["S101", "S603"]  # runs the repo's own hook scripts
