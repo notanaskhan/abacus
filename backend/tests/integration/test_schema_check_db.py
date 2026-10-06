@@ -665,3 +665,232 @@ def test_ac20_a_declared_column_list_is_enforced_for_a_patched_insert_only_table
         ],
     )
     assert problems == ["probe: abacus_app may INSERT probe.body"], problems
+
+
+# --- identity role and the global users table (TASK-007) -----------------------------------------
+
+USERS_DDL = (
+    "CREATE TABLE users (id uuid PRIMARY KEY, idp_issuer text, idp_subject text, email text, "
+    "display_name text, created_at timestamptz)"
+)
+MEMBERSHIPS_DDL = (
+    "CREATE TABLE memberships (tenant_id uuid NOT NULL, id uuid, user_id uuid, firm_role text, "
+    "status text, created_at timestamptz, revoked_at timestamptz)"
+)
+FIRMS_DDL = "CREATE TABLE firms (tenant_id uuid NOT NULL, name text, created_at timestamptz)"
+MEMBERS_DDL = (
+    "CREATE TABLE engagement_members (tenant_id uuid NOT NULL, engagement_id uuid, "
+    "user_id uuid, role text)"
+)
+IDENTITY_OK = [
+    USERS_DDL,
+    "REVOKE ALL ON users FROM abacus_app",
+    "GRANT SELECT ON users TO abacus_identity",
+    MEMBERSHIPS_DDL,
+    *[stmt.format(t="memberships") for stmt in (ENABLE, FORCE, POLICY)],
+    "GRANT SELECT (tenant_id, id, user_id, firm_role, status) ON memberships TO abacus_identity",
+    FIRMS_DDL,
+    *[stmt.format(t="firms") for stmt in (ENABLE, FORCE, POLICY)],
+    "GRANT SELECT (tenant_id, name) ON firms TO abacus_identity",
+]
+
+
+@pytest.fixture
+def identity_db(db: Cluster) -> Iterator[Cluster]:
+    yield db
+    _sql(
+        db.admin,
+        "DROP TABLE IF EXISTS users, memberships, firms, engagement_members CASCADE",
+        "DROP SEQUENCE IF EXISTS probe_seq",
+        "ALTER ROLE abacus_identity NOSUPERUSER NOCREATEROLE NOCREATEDB",
+        "ALTER ROLE abacus_identity SET default_transaction_read_only = on",
+        "REVOKE EXECUTE ON FUNCTION pg_catalog.lo_get(oid) FROM abacus_identity, abacus_relay",
+        "DO $$ BEGIN IF pg_has_role('abacus_identity', 'pg_monitor', 'MEMBER') THEN "
+        "REVOKE pg_monitor FROM abacus_identity; END IF; END $$",
+    )
+
+
+def test_ac20_correct_identity_grants_and_a_global_users_table_pass(identity_db: Cluster) -> None:
+    assert _problems(identity_db, IDENTITY_OK) == []
+
+
+@pytest.mark.parametrize(
+    "privilege", ["INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER"]
+)
+def test_ac20_identity_with_a_write_privilege_on_users_is_reported(
+    identity_db: Cluster, privilege: str
+) -> None:
+    problems = _problems(
+        identity_db, IDENTITY_OK, f"GRANT {privilege} ON users TO abacus_identity"
+    )
+    assert f"abacus_identity: has {privilege} on users" in problems, problems
+
+
+@pytest.mark.parametrize("privilege", ["SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE"])
+def test_ac20_identity_with_a_privilege_on_another_table_is_reported(
+    identity_db: Cluster, privilege: str
+) -> None:
+    problems = _problems(
+        identity_db, _good("probe"), f"GRANT {privilege} ON probe TO abacus_identity"
+    )
+    assert f"abacus_identity: has {privilege} on probe" in problems, problems
+
+
+def test_ac20_identity_with_a_privilege_on_engagement_members_is_reported(
+    identity_db: Cluster,
+) -> None:
+    statements = [
+        MEMBERS_DDL,
+        *[stmt.format(t="engagement_members") for stmt in (ENABLE, FORCE, POLICY)],
+    ]
+    problems = _problems(
+        identity_db, statements, "GRANT SELECT ON engagement_members TO abacus_identity"
+    )
+    assert "abacus_identity: has SELECT on engagement_members" in problems, problems
+
+
+@pytest.mark.parametrize("column", ["created_at", "revoked_at"])
+def test_ac20_identity_select_on_an_extra_memberships_column_is_reported(
+    identity_db: Cluster, column: str
+) -> None:
+    problems = _problems(
+        identity_db, IDENTITY_OK, f"GRANT SELECT ({column}) ON memberships TO abacus_identity"
+    )
+    assert f"abacus_identity: may SELECT memberships.{column}" in problems, problems
+
+
+def test_ac20_identity_table_wide_select_on_memberships_is_reported(identity_db: Cluster) -> None:
+    problems = _problems(
+        identity_db, IDENTITY_OK, "GRANT SELECT ON memberships TO abacus_identity"
+    )
+    assert "abacus_identity: has SELECT on memberships" in problems, problems
+    assert "abacus_identity: may SELECT memberships.created_at" in problems, problems
+
+
+def test_ac20_identity_select_on_firms_created_at_is_reported(identity_db: Cluster) -> None:
+    problems = _problems(
+        identity_db, IDENTITY_OK, "GRANT SELECT (created_at) ON firms TO abacus_identity"
+    )
+    assert "abacus_identity: may SELECT firms.created_at" in problems, problems
+
+
+@pytest.mark.parametrize("table", ["memberships", "firms", "users"])
+def test_ac20_identity_update_on_a_column_is_reported(identity_db: Cluster, table: str) -> None:
+    column = {"memberships": "status", "firms": "name", "users": "email"}[table]
+    problems = _problems(
+        identity_db, IDENTITY_OK, f"GRANT UPDATE ({column}) ON {table} TO abacus_identity"
+    )
+    assert f"abacus_identity: may UPDATE {table}.{column}" in problems, problems
+
+
+def test_ac20_identity_insert_on_a_column_is_reported(identity_db: Cluster) -> None:
+    problems = _problems(
+        identity_db, IDENTITY_OK, "GRANT INSERT (email) ON users TO abacus_identity"
+    )
+    assert "abacus_identity: may INSERT users.email" in problems, problems
+
+
+@pytest.mark.parametrize("attribute", ["SUPERUSER", "CREATEROLE", "CREATEDB"])
+def test_ac20_identity_role_with_a_dangerous_attribute_is_reported(
+    identity_db: Cluster, attribute: str
+) -> None:
+    problems = _problems(identity_db, IDENTITY_OK, f"ALTER ROLE abacus_identity {attribute}")
+    _assert_reports(problems, "abacus_identity", attribute.lower())
+
+
+def test_ac20_identity_role_owning_a_table_is_reported(identity_db: Cluster) -> None:
+    problems = _problems(identity_db, _good("probe"), "ALTER TABLE probe OWNER TO abacus_identity")
+    assert any(m.startswith("abacus_identity: ") and "owns" in m for m in problems), problems
+
+
+@pytest.mark.parametrize("privilege", ["USAGE", "SELECT", "UPDATE"])
+def test_ac20_identity_with_a_privilege_on_a_sequence_is_reported(
+    identity_db: Cluster, privilege: str
+) -> None:
+    problems = _problems(
+        identity_db,
+        ["CREATE SEQUENCE probe_seq"],
+        f"GRANT {privilege} ON SEQUENCE probe_seq TO abacus_identity",
+    )
+    assert f"abacus_identity: has {privilege} on sequence probe_seq" in problems, problems
+
+
+def test_ac20_identity_membership_in_another_role_is_reported(identity_db: Cluster) -> None:
+    problems = _problems(identity_db, IDENTITY_OK, "GRANT pg_monitor TO abacus_identity")
+    assert "abacus_identity: is a member of pg_monitor" in problems, problems
+
+
+def test_ac20_identity_role_that_is_not_read_only_by_default_is_reported(
+    identity_db: Cluster,
+) -> None:
+    problems = _problems(
+        identity_db, IDENTITY_OK, "ALTER ROLE abacus_identity RESET default_transaction_read_only"
+    )
+    assert "abacus_identity: default_transaction_read_only is not on" in problems, problems
+
+
+def test_ac20_identity_role_set_to_read_write_by_default_is_reported(identity_db: Cluster) -> None:
+    problems = _problems(
+        identity_db,
+        IDENTITY_OK,
+        "ALTER ROLE abacus_identity SET default_transaction_read_only = off",
+    )
+    assert "abacus_identity: default_transaction_read_only is not on" in problems, problems
+
+
+@pytest.mark.parametrize("role", ["abacus_identity", "abacus_relay"])
+def test_ac20_bypass_role_able_to_execute_a_large_object_function_is_reported(
+    identity_db: Cluster, role: str
+) -> None:
+    problems = _problems(
+        identity_db, IDENTITY_OK, f"GRANT EXECUTE ON FUNCTION pg_catalog.lo_get(oid) TO {role}"
+    )
+    assert any(m.startswith(f"{role}: can execute ") and "lo_get" in m for m in problems), problems
+
+
+# --- the global users table: abacus_app has nothing on it ---------------------------------------
+
+
+@pytest.mark.parametrize("privilege", ["SELECT", "INSERT", "UPDATE", "DELETE"])
+def test_ac20_app_privilege_on_users_is_reported(identity_db: Cluster, privilege: str) -> None:
+    problems = _problems(identity_db, [*IDENTITY_OK], f"GRANT {privilege} ON users TO abacus_app")
+    assert f"users: abacus_app has {privilege} on a non-tenant table" in problems, problems
+
+
+@pytest.mark.parametrize("privilege", ["SELECT", "INSERT", "UPDATE"])
+def test_ac20_app_column_privilege_on_users_is_reported(
+    identity_db: Cluster, privilege: str
+) -> None:
+    problems = _problems(
+        identity_db, IDENTITY_OK, f"GRANT {privilege} (email) ON users TO abacus_app"
+    )
+    assert f"users: abacus_app may {privilege} users.email" in problems, problems
+
+
+def test_ac20_a_users_table_left_with_the_default_app_grants_is_reported(
+    identity_db: Cluster,
+) -> None:
+    problems = _problems(identity_db, [USERS_DDL, "GRANT SELECT ON users TO abacus_identity"])
+    assert "users: abacus_app has SELECT on a non-tenant table" in problems, problems
+    assert "users: abacus_app may SELECT users.id" in problems, problems
+    assert problems == sorted(problems)
+
+
+def test_ac20_users_needs_no_tenant_id_or_row_level_security(identity_db: Cluster) -> None:
+    problems = _problems(identity_db, IDENTITY_OK)
+    assert not [m for m in problems if m.startswith("users: ")]
+
+
+def test_ac20_a_table_named_like_a_tenant_table_still_needs_tenant_id(
+    identity_db: Cluster,
+) -> None:
+    problems = _problems(
+        identity_db,
+        [
+            "CREATE TABLE probe (id uuid PRIMARY KEY, body text)",
+            ENABLE.format(t="probe"),
+            FORCE.format(t="probe"),
+            "CREATE POLICY tenant_isolation ON probe USING (true)",
+        ],
+    )
+    _assert_reports(problems, "probe", "tenant_id")

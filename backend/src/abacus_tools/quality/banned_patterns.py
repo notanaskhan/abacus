@@ -495,6 +495,8 @@ def _is_role_operand(node: ast.expr) -> bool:
         return True
     if isinstance(node, ast.Name) and node.id in _ROLE_ATTRIBUTES:
         return True
+    if isinstance(node, ast.Tuple | ast.List | ast.Set):
+        return any(_is_role_operand(element) for element in node.elts)
     return isinstance(node, ast.Constant) and node.value in _ROLE_NAMES
 
 
@@ -607,6 +609,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_migrations_env.py",
             "tests/integration/test_unit_of_work.py",
             "tests/integration/test_outbox_relay.py",
+            "tests/integration/test_identity.py",
         ),
     ),
     Rule(

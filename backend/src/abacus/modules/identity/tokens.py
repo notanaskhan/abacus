@@ -55,11 +55,13 @@ class JwtVerifier:
         listed = document.get("keys")
         if not isinstance(listed, list):
             raise ValueError("JWKS must be an object with a 'keys' list")
-        # An empty key set is valid and verifies nothing (fail closed).
-        keys = jwt.PyJWKSet.from_dict(document).keys if listed else []
-        self._keys: dict[str, jwt.PyJWK] = {
-            key.key_id: key for key in keys if key.key_id and _acceptable_key(key)
-        }
+        # An empty key set is valid and verifies nothing (fail closed). A key that can't be used
+        # (unsupported type or algorithm, weak, malformed) is skipped, never fatal.
+        self._keys: dict[str, jwt.PyJWK] = {}
+        for entry in cast(list[object], listed):
+            key = _parse_key(entry)
+            if key is not None and key.key_id and _acceptable_key(key):
+                self._keys[key.key_id] = key
 
     def verify(self, token: str) -> VerifiedIdentity:
         if not token or len(token.encode()) > MAX_TOKEN_BYTES:
@@ -95,6 +97,15 @@ class JwtVerifier:
         if not isinstance(subject, str) or not 1 <= len(subject) <= 255:
             raise InvalidToken("subject must be a non-empty string")
         return VerifiedIdentity(self._issuer, subject, _mfa_at(claims))
+
+
+def _parse_key(entry: object) -> jwt.PyJWK | None:
+    if not isinstance(entry, dict):
+        return None
+    try:
+        return jwt.PyJWK(cast(dict[str, object], entry))
+    except (jwt.PyJWTError, NotImplementedError, ValueError, TypeError):
+        return None
 
 
 def _acceptable_key(key: jwt.PyJWK) -> bool:

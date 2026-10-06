@@ -733,3 +733,506 @@ def test_ac20_tenant_001_ignores_other_app_settings_and_similar_strings(tmp_path
     _write(tmp_path, SERVICE, 'A = "app.other"\nB = "actor_kind"\nC = "app.actors"\n')
     tenant = [v for v in bp.scan(tmp_path) if v.rule_id == "TENANT-001"]
     assert tenant == []
+
+
+# --- TASK-007 identity rules: UOW-003, AUTH-001, AUTH-002, AUTHZ-001, AUTHZ-002, TENANT-002, ---
+# --- ROUTE-001, ROUTE-002, CTX-001 ---------------------------------------------------------------
+
+IDENT = "src/abacus/modules/identity"
+OUTSIDE_SRC = ["tests/unit/x/test_y.py", "src/abacus_tools/synthetic/x.py"]
+INSIDE_SRC = [SERVICE, "src/abacus/modules/ledger/routes.py", "src/abacus/kernel/logging.py"]
+
+
+def _found(root: Path, rule_id: str) -> list[str]:
+    return [v.path for v in bp.scan(root) if v.rule_id == rule_id]
+
+
+def _flags(tmp_path: Path, rule_id: str, rel: str, source: str) -> bool:
+    _write(tmp_path, rel, source)
+    return rel in _found(tmp_path, rule_id)
+
+
+UOW3_VIOLATING = [
+    "from abacus.kernel.db import identity_engine\n",
+    "from abacus.kernel.db import configure_identity_engine\n",
+    "from abacus.kernel.db.session import identity_engine as engine\n",
+    "import abacus.kernel.db\nabacus.kernel.db.identity_engine()\n",
+    "from abacus.kernel import db\ndb.configure_identity_engine(url)\n",
+    "def f():\n    return identity_engine()\n",
+    "x = identity_engine\n",
+    "def f(identity_engine):\n    pass\n",
+    "def f(identity_database_url):\n    pass\n",
+    "x = settings.identity_database_url\n",
+    "from abacus.kernel.db import *\n",
+    "from abacus.kernel.db.session import *\n",
+]
+UOW3_CLEAN = [
+    "from abacus.kernel.db import tenant_session\n",
+    "from abacus.kernel.uow import *\n",
+    "from os.path import *\n",
+    "x = identity_url\n",
+    "# identity_engine is for the repository\n",
+    'x = "identity_engine"\n',
+]
+UOW3_ALLOWED = [
+    "src/abacus/kernel/db/session.py",
+    "src/abacus/kernel/config.py",
+    f"{IDENT}/repository.py",
+    "tests/integration/conftest.py",
+    "tests/unit/kernel/test_config.py",
+]
+UOW3_FLAGGED = [
+    SERVICE,
+    f"{IDENT}/service.py",
+    f"{IDENT}/context.py",
+    "src/abacus/kernel/uow/core.py",
+    "tests/unit/x/test_y.py",
+    "tests/integration/test_identity.py",
+    "src/abacus_tools/quality/x.py",
+]
+
+
+@pytest.mark.parametrize("source", UOW3_VIOLATING)
+@pytest.mark.parametrize("rel", UOW3_FLAGGED)
+def test_ac20_uow_003_flags_the_identity_engine_outside_its_owners(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert _flags(tmp_path, "UOW-003", rel, source)
+
+
+@pytest.mark.parametrize("source", UOW3_VIOLATING)
+@pytest.mark.parametrize("rel", UOW3_ALLOWED)
+def test_ac20_uow_003_allows_the_identity_engine_in_its_owners(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "UOW-003", rel, source)
+
+
+@pytest.mark.parametrize("source", UOW3_CLEAN)
+def test_ac20_uow_003_ignores_clean_code(tmp_path: Path, source: str) -> None:
+    assert not _flags(tmp_path, "UOW-003", SERVICE, source)
+
+
+def test_ac20_uow_003_reports_the_offending_line(tmp_path: Path) -> None:
+    _write(tmp_path, SERVICE, "import os\nfrom abacus.kernel.db import identity_engine\n")
+    assert [(v.line, v.rule_id) for v in bp.scan(tmp_path) if v.rule_id == "UOW-003"] == [
+        (2, "UOW-003")
+    ]
+
+
+AUTH1_VIOLATING = [
+    "import jwt\n",
+    "import jwt.algorithms\n",
+    "from jwt import decode\n",
+    "from jwt.algorithms import RSAAlgorithm\n",
+    "import jose\n",
+    "from jose import jwt\n",
+    "import josepy\n",
+    "import jwcrypto.jwk\n",
+    "from authlib.jose import jwt\n",
+    "import python_jose\n",
+    "import importlib\nimportlib.import_module('jwt')\n",
+    "import importlib\nimportlib.import_module('jose.jwt')\n",
+    "__import__('jwt')\n",
+    "import importlib\nimportlib.import_module('authlib.jose')\n",
+]
+AUTH1_CLEAN = [
+    "import json\n",
+    "import jwtx\n",
+    "from pyjwt_helpers import decode\n",
+    "import importlib\nimportlib.import_module('json')\n",
+    "from abacus.modules.identity.api import JwtVerifier\n",
+    "x = 'jwt'\n",
+    "# import jwt\n",
+]
+AUTH1_ALLOWED = [f"{IDENT}/tokens.py", "src/abacus_tools/fakes/identity.py"]
+AUTH1_FLAGGED = [
+    SERVICE,
+    f"{IDENT}/service.py",
+    f"{IDENT}/routing.py",
+    "src/abacus_tools/synthetic/x.py",
+    "tests/unit/x/test_y.py",
+    "tests/integration/test_identity.py",
+]
+
+
+@pytest.mark.parametrize("source", AUTH1_VIOLATING)
+@pytest.mark.parametrize("rel", AUTH1_FLAGGED)
+def test_ac20_auth_001_flags_token_libraries_outside_their_two_files(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert _flags(tmp_path, "AUTH-001", rel, source)
+
+
+@pytest.mark.parametrize("source", AUTH1_VIOLATING)
+@pytest.mark.parametrize("rel", AUTH1_ALLOWED)
+def test_ac20_auth_001_allows_token_libraries_in_their_two_files(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "AUTH-001", rel, source)
+
+
+@pytest.mark.parametrize("source", AUTH1_CLEAN)
+def test_ac20_auth_001_ignores_clean_code(tmp_path: Path, source: str) -> None:
+    assert not _flags(tmp_path, "AUTH-001", SERVICE, source)
+
+
+AUTH2_VIOLATING = [
+    'h = request.headers["Authorization"]\n',
+    'h = request.headers.get("authorization")\n',
+    'x = " authorization "\n',
+    'x = "AUTHORIZATION"\n',
+    "def f(authorization):\n    pass\n",
+    "authorization = 1\n",
+    "x = obj.authorization\n",
+    "from m import authorization\n",
+]
+AUTH2_CLEAN = [
+    'x = "authorization_code"\n',
+    'x = "Authorization: Bearer"\n',
+    "x = authorize\n",
+    "x = Authorization\n",
+]
+AUTH2_ALLOWED = [f"{IDENT}/routing.py", f"{IDENT}/service.py"]
+
+
+@pytest.mark.parametrize("source", AUTH2_VIOLATING)
+@pytest.mark.parametrize("rel", [*INSIDE_SRC, f"{IDENT}/tokens.py", f"{IDENT}/routes.py"])
+def test_ac20_auth_002_flags_the_authorization_header_outside_the_request_context(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert _flags(tmp_path, "AUTH-002", rel, source)
+
+
+@pytest.mark.parametrize("source", AUTH2_VIOLATING)
+@pytest.mark.parametrize("rel", AUTH2_ALLOWED)
+def test_ac20_auth_002_allows_the_request_context_files(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "AUTH-002", rel, source)
+
+
+@pytest.mark.parametrize("source", AUTH2_VIOLATING)
+@pytest.mark.parametrize("rel", OUTSIDE_SRC)
+def test_ac20_auth_002_applies_only_under_src_abacus(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "AUTH-002", rel, source)
+
+
+@pytest.mark.parametrize("source", AUTH2_CLEAN)
+def test_ac20_auth_002_ignores_clean_code(tmp_path: Path, source: str) -> None:
+    assert not _flags(tmp_path, "AUTH-002", SERVICE, source)
+
+
+AUTHZ1_VIOLATING = [
+    'def f(m):\n    return m.firm_role == "firm_admin"\n',
+    'x = role == "manager"\n',
+    'x = firm_role != "reviewer"\n',
+    'x = "manager" == y\n',
+    "x = user.role != y\n",
+    "x = a in roles\n",
+    "x = y.roles == z\n",
+    'x = a == "firm_admin"\n',
+    'match r:\n    case "firm_admin":\n        pass\n',
+    'match r:\n    case "agent" | "system":\n        pass\n',
+]
+AUTHZ1_CLEAN = [
+    "x = a == b\n",
+    'x = a == "something"\n',
+    "x = role\n",
+    'x = "manager"\n',
+    'x = status == "active"\n',
+    "x = a in roles_list\n",
+    'match r:\n    case "active":\n        pass\n',
+]
+
+
+@pytest.mark.parametrize("source", AUTHZ1_VIOLATING)
+@pytest.mark.parametrize("rel", [*INSIDE_SRC, f"{IDENT}/service.py", f"{IDENT}/routes.py"])
+def test_ac20_authz_001_flags_role_comparisons_outside_authz(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert _flags(tmp_path, "AUTHZ-001", rel, source)
+
+
+@pytest.mark.parametrize("source", AUTHZ1_VIOLATING)
+@pytest.mark.parametrize("rel", [f"{IDENT}/authz/__init__.py", f"{IDENT}/authz/matrix.py"])
+def test_ac20_authz_001_allows_role_comparisons_inside_authz(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "AUTHZ-001", rel, source)
+
+
+@pytest.mark.parametrize("source", AUTHZ1_VIOLATING)
+@pytest.mark.parametrize("rel", OUTSIDE_SRC)
+def test_ac20_authz_001_applies_only_under_src_abacus(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "AUTHZ-001", rel, source)
+
+
+@pytest.mark.parametrize("source", AUTHZ1_CLEAN)
+def test_ac20_authz_001_ignores_clean_code(tmp_path: Path, source: str) -> None:
+    assert not _flags(tmp_path, "AUTHZ-001", SERVICE, source)
+
+
+AUTHZ2_VIOLATING = [
+    "x = ctx.firm_role\n",
+    "def f(c):\n    return c.firm_role\n",
+    "c.firm_role = None\n",
+    "x = a.b.firm_role.value\n",
+]
+AUTHZ2_CLEAN = ["x = ctx.role_name\n", "firm_role = 1\n", "x = ctx.firm\n", 'x = "firm_role"\n']
+
+
+@pytest.mark.parametrize("source", AUTHZ2_VIOLATING)
+@pytest.mark.parametrize("rel", INSIDE_SRC)
+def test_ac20_authz_002_flags_firm_role_reads_outside_identity(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert _flags(tmp_path, "AUTHZ-002", rel, source)
+
+
+@pytest.mark.parametrize("source", AUTHZ2_VIOLATING)
+@pytest.mark.parametrize(
+    "rel", [f"{IDENT}/service.py", f"{IDENT}/authz/__init__.py", f"{IDENT}/routes.py"]
+)
+def test_ac20_authz_002_allows_firm_role_reads_inside_identity(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "AUTHZ-002", rel, source)
+
+
+@pytest.mark.parametrize("source", AUTHZ2_VIOLATING)
+@pytest.mark.parametrize("rel", OUTSIDE_SRC)
+def test_ac20_authz_002_applies_only_under_src_abacus(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "AUTHZ-002", rel, source)
+
+
+@pytest.mark.parametrize("source", AUTHZ2_CLEAN)
+def test_ac20_authz_002_ignores_clean_code(tmp_path: Path, source: str) -> None:
+    assert not _flags(tmp_path, "AUTHZ-002", SERVICE, source)
+
+
+TENANT2_VIOLATING = [
+    'H = "X-Abacus-Tenant"\n',
+    'H = "x-abacus-tenant"\n',
+    'h = req.headers.get("X-ABACUS-TENANT")\n',
+    'x = "prefix x-abacus-tenant suffix"\n',
+    "def f(x_abacus_tenant):\n    pass\n",
+    "x = x_abacus_tenant\n",
+    "from abacus.modules.identity.service import TENANT_HEADER\n",
+    "x = mod.TENANT_HEADER\n",
+    "x = TENANT_HEADER\n",
+]
+TENANT2_CLEAN = ['x = "abacus-tenant"\n', 'x = "tenant"\n', "x = tenant_header\n"]
+TENANT2_ALLOWED = [f"{IDENT}/service.py", f"{IDENT}/routing.py"]
+
+
+@pytest.mark.parametrize("source", TENANT2_VIOLATING)
+@pytest.mark.parametrize("rel", [*INSIDE_SRC, f"{IDENT}/routes.py", f"{IDENT}/authz/__init__.py"])
+def test_ac20_tenant_002_flags_the_tenant_header_outside_the_request_context(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert _flags(tmp_path, "TENANT-002", rel, source)
+
+
+@pytest.mark.parametrize("source", TENANT2_VIOLATING)
+@pytest.mark.parametrize("rel", TENANT2_ALLOWED)
+def test_ac20_tenant_002_allows_the_request_context_files(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "TENANT-002", rel, source)
+
+
+@pytest.mark.parametrize("source", TENANT2_VIOLATING)
+@pytest.mark.parametrize("rel", OUTSIDE_SRC)
+def test_ac20_tenant_002_applies_only_under_src_abacus(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "TENANT-002", rel, source)
+
+
+@pytest.mark.parametrize("source", TENANT2_CLEAN)
+def test_ac20_tenant_002_ignores_clean_code(tmp_path: Path, source: str) -> None:
+    assert not _flags(tmp_path, "TENANT-002", SERVICE, source)
+
+
+ROUTE_NAMES = [
+    "APIRouter",
+    "APIRoute",
+    "FastAPI",
+    "Starlette",
+    "Mount",
+    "WebSocketRoute",
+    "APIWebSocketRoute",
+    "add_api_route",
+    "add_route",
+    "add_websocket_route",
+    "websocket",
+    "mount",
+    "include_router",
+    "dependency_overrides",
+]
+ROUTE1_ALLOWED = [f"{IDENT}/routing.py", "src/abacus/api/app.py"]
+ROUTE1_CLEAN = [
+    "from fastapi import Request\n",
+    "from fastapi import Depends\n",
+    "x = mount_point\n",
+    "x = websockets\n",
+    "x = APIRouterish\n",
+    'x = "FastAPI"\n',
+]
+
+
+@pytest.mark.parametrize("name", ROUTE_NAMES)
+@pytest.mark.parametrize("form", ["import", "attribute", "name", "parameter"])
+def test_ac20_route_001_flags_route_bypass_identifiers(
+    tmp_path: Path, name: str, form: str
+) -> None:
+    sources = {
+        "import": f"from somewhere import {name}\n",
+        "attribute": f"x = obj.{name}\n",
+        "name": f"x = {name}\n",
+        "parameter": f"def f({name}):\n    pass\n",
+    }
+    assert _flags(tmp_path, "ROUTE-001", SERVICE, sources[form])
+
+
+@pytest.mark.parametrize("name", ROUTE_NAMES)
+@pytest.mark.parametrize("rel", ROUTE1_ALLOWED)
+def test_ac20_route_001_allows_the_router_and_app_files(
+    tmp_path: Path, name: str, rel: str
+) -> None:
+    assert not _flags(
+        tmp_path, "ROUTE-001", rel, f"from somewhere import {name}\nx = obj.{name}\n"
+    )
+
+
+@pytest.mark.parametrize("name", ROUTE_NAMES)
+@pytest.mark.parametrize("rel", [f"{IDENT}/routes.py", f"{IDENT}/service.py"])
+def test_ac20_route_001_flags_other_identity_files_too(
+    tmp_path: Path, name: str, rel: str
+) -> None:
+    assert _flags(tmp_path, "ROUTE-001", rel, f"x = obj.{name}\n")
+
+
+@pytest.mark.parametrize("name", ROUTE_NAMES)
+@pytest.mark.parametrize("rel", OUTSIDE_SRC)
+def test_ac20_route_001_applies_only_under_src_abacus(tmp_path: Path, name: str, rel: str) -> None:
+    assert not _flags(tmp_path, "ROUTE-001", rel, f"x = obj.{name}\n")
+
+
+@pytest.mark.parametrize("source", ROUTE1_CLEAN)
+def test_ac20_route_001_ignores_clean_code(tmp_path: Path, source: str) -> None:
+    assert not _flags(tmp_path, "ROUTE-001", SERVICE, source)
+
+
+ROUTE2_VIOLATING = [
+    "from m import SELF\n",
+    "x = SELF\n",
+    "x = api.SELF\n",
+    "def f(SELF):\n    pass\n",
+]
+ROUTE2_CLEAN = ["x = SELFISH\n", "x = self\n", 'x = "SELF"\n', "def f(self):\n    pass\n"]
+ROUTE2_ALLOWED = [f"{IDENT}/routing.py", f"{IDENT}/routes.py", f"{IDENT}/api.py"]
+
+
+@pytest.mark.parametrize("source", ROUTE2_VIOLATING)
+@pytest.mark.parametrize("rel", [*INSIDE_SRC, f"{IDENT}/service.py", "src/abacus/api/app.py"])
+def test_ac20_route_002_flags_self_outside_the_identity_routes(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert _flags(tmp_path, "ROUTE-002", rel, source)
+
+
+@pytest.mark.parametrize("source", ROUTE2_VIOLATING)
+@pytest.mark.parametrize("rel", ROUTE2_ALLOWED)
+def test_ac20_route_002_allows_self_in_the_identity_route_files(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "ROUTE-002", rel, source)
+
+
+@pytest.mark.parametrize("source", ROUTE2_VIOLATING)
+@pytest.mark.parametrize("rel", OUTSIDE_SRC)
+def test_ac20_route_002_applies_only_under_src_abacus(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "ROUTE-002", rel, source)
+
+
+@pytest.mark.parametrize("source", ROUTE2_CLEAN)
+def test_ac20_route_002_ignores_clean_code(tmp_path: Path, source: str) -> None:
+    assert not _flags(tmp_path, "ROUTE-002", SERVICE, source)
+
+
+CTX_VIOLATING = [
+    "x = AuthContext(a, b)\n",
+    "x = TenantContext(a)\n",
+    "x = mod.AuthContext(a)\n",
+    "x = db.TenantContext(1, 'human', 'x')\n",
+    "x = AuthContext(**kwargs)\n",
+]
+CTX_CLEAN = [
+    "from abacus.modules.identity.api import AuthContext\n",
+    "from abacus.kernel.db import TenantContext\n",
+    "def f(ctx: AuthContext) -> TenantContext:\n    return ctx.tenant\n",
+    "x = AuthContextual()\n",
+    "x = isinstance(a, AuthContext)\n",
+]
+CTX_ALLOWED = [f"{IDENT}/service.py", "src/abacus/kernel/db/session.py"]
+
+
+@pytest.mark.parametrize("source", CTX_VIOLATING)
+@pytest.mark.parametrize(
+    "rel",
+    [*INSIDE_SRC, f"{IDENT}/context.py", f"{IDENT}/routing.py", f"{IDENT}/authz/__init__.py"],
+)
+def test_ac20_ctx_001_flags_hand_built_contexts(tmp_path: Path, rel: str, source: str) -> None:
+    assert _flags(tmp_path, "CTX-001", rel, source)
+
+
+@pytest.mark.parametrize("source", CTX_VIOLATING)
+@pytest.mark.parametrize("rel", CTX_ALLOWED)
+def test_ac20_ctx_001_allows_the_context_builders(tmp_path: Path, rel: str, source: str) -> None:
+    assert not _flags(tmp_path, "CTX-001", rel, source)
+
+
+@pytest.mark.parametrize("source", CTX_VIOLATING)
+@pytest.mark.parametrize("rel", OUTSIDE_SRC)
+def test_ac20_ctx_001_applies_only_under_src_abacus(tmp_path: Path, rel: str, source: str) -> None:
+    assert not _flags(tmp_path, "CTX-001", rel, source)
+
+
+@pytest.mark.parametrize("source", CTX_CLEAN)
+def test_ac20_ctx_001_ignores_clean_code(tmp_path: Path, source: str) -> None:
+    assert not _flags(tmp_path, "CTX-001", SERVICE, source)
+
+
+@pytest.mark.parametrize(
+    ("source", "rule_id"),
+    [
+        ("from abacus.kernel.db import identity_engine\n", "UOW-003"),
+        ("import jwt\n", "AUTH-001"),
+        ('x = "Authorization"\n', "AUTH-002"),
+        ('x = role == "manager"\n', "AUTHZ-001"),
+        ("x = ctx.firm_role\n", "AUTHZ-002"),
+        ('x = "X-Abacus-Tenant"\n', "TENANT-002"),
+        ("x = FastAPI()\n", "ROUTE-001"),
+        ("x = SELF\n", "ROUTE-002"),
+        ("x = AuthContext(a)\n", "CTX-001"),
+    ],
+)
+def test_ac20_identity_rules_output_names_path_line_rule_and_an_adr(
+    tmp_path: Path, source: str, rule_id: str
+) -> None:
+    _write(tmp_path, SERVICE, source)
+    found = [v for v in bp.scan(tmp_path) if v.rule_id == rule_id]
+    assert found
+    assert str(found[0]).startswith(f"{SERVICE}:1: {rule_id} ")
+    assert str(found[0]).endswith(")")
+    assert "ADR-" in str(found[0])

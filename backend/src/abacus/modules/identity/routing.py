@@ -120,9 +120,7 @@ class AbacusRouter(APIRouter):
             openapi_extra={ACTION_KEY: action},
         )
 
-    def add_api_websocket_route(
-        self, *args: object, **kwargs: object
-    ) -> None:
+    def add_api_websocket_route(self, *args: object, **kwargs: object) -> None:
         raise TypeError("websocket routes are not supported: they would bypass the action check")
 
     def websocket(  # pyright: ignore[reportIncompatibleMethodOverride] -- refuses
@@ -130,9 +128,7 @@ class AbacusRouter(APIRouter):
     ) -> None:
         raise TypeError("websocket routes are not supported: they would bypass the action check")
 
-    def add_route(
-        self, *args: object, **kwargs: object
-    ) -> None:
+    def add_route(self, *args: object, **kwargs: object) -> None:
         raise TypeError("plain Starlette routes are not supported: declare an action")
 
     def _verb(
