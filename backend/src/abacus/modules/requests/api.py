@@ -6,7 +6,9 @@ from abacus.modules.requests.service import (
     FulfilmentRef,
     ItemNotFulfillable,
     RequestItemRef,
+    RequestItemSummary,
     fulfil_by_rule,
+    fulfilled_items,
     item_ref,
 )
 
@@ -15,7 +17,9 @@ __all__ = [
     "ItemNotFulfillable",
     "RequestItemCreated",
     "RequestItemRef",
+    "RequestItemSummary",
     "fulfil_by_rule",
+    "fulfilled_items",
     "item_ref",
     "router",
 ]

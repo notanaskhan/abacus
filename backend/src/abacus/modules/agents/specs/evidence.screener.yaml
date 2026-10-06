@@ -1,0 +1,24 @@
+# The evidence screener (ADR-047; SPEC-000 §10). Source of truth: compiled into _specs.py by
+# `python -m abacus_tools.codegen.agent_specs`; a test fails if they drift.
+id: evidence.screener
+version: 1
+purpose: Screen a retrieved trial balance and propose whether it is ready for review.
+shape: single_call
+prompt: evidence.screen@v0
+tier: small
+escalation_tier: medium
+input_schema: ScreeningInput
+output_schema: ScreeningOutput
+task_scope: [evidence.read, screening.run]
+tools: []
+limits:
+  max_output_tokens: 800
+  max_cost_usd: "0.03"
+  max_steps: 1
+  max_seconds: 60
+autonomy: propose
+confidence_routing:
+  below: "0.5"
+  route: needs_revision
+untrusted_inputs: [account_names]
+evaluation_suite: evals/screening

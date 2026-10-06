@@ -586,8 +586,8 @@ def _check_self_action(src: SourceFile) -> Iterator[Finding]:
             yield Finding(line, "the SELF action is for /v1/me only")
 
 
-_CONTEXT_CLASSES = frozenset({"AuthContext", "SystemContext"})
-_CONTEXT_NAMES = ("ctx", "context", "sys", "system")
+_CONTEXT_CLASSES = frozenset({"AuthContext", "SystemContext", "AgentContext"})
+_CONTEXT_NAMES = ("ctx", "context", "sys", "system", "agent")
 
 
 def _context_aliases(src: SourceFile) -> set[str]:
@@ -626,7 +626,11 @@ def _check_context_construction(src: SourceFile) -> Iterator[Finding]:
 
 def _check_system_issue(src: SourceFile) -> Iterator[Finding]:
     for line, name in _names_used(src):
-        if name in ("system_context_for_run", "_ISSUER"):
+        if name in (
+            "system_context_for_run",
+            "agent_context_for_run",
+            "_ISSUER",
+        ):
             yield Finding(line, "system contexts are issued from a proven run only")
 
 
@@ -655,6 +659,7 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/identity/repository.py", "display_names"),
         ("src/abacus/modules/organisations/repository.py", "names_of"),
         ("src/abacus/modules/ledger/repository.py", "lines_of"),
+        ("src/abacus/modules/requests/repository.py", "items_fulfilled_by"),
     }
 )
 
@@ -724,6 +729,7 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "connections": frozenset(
         {"identity", "engagements", "organisations", "ledger", "evidence", "requests"}
     ),
+    "agents": frozenset({"identity", "engagements", "organisations", "evidence", "requests"}),
 }
 
 
@@ -885,6 +891,90 @@ def _check_workflow_imports(src: SourceFile) -> Iterator[Finding]:
 # --- tree rules -------------------------------------------------------------------------------
 
 
+_PROMPT_REF = re.compile(r"[a-z][a-z0-9_.]*@v[0-9]+")
+
+
+def _aliases_of(src: SourceFile, name: str) -> set[str]:
+    """`name` plus every local name it is imported as."""
+    names = {name}
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.ImportFrom):
+            names |= {a.asname for a in node.names if a.name == name and a.asname}
+    return names
+
+
+def _argument(call: ast.Call, position: int, keyword: str) -> ast.expr | None:
+    if len(call.args) > position and not any(
+        isinstance(a, ast.Starred) for a in call.args[: position + 1]
+    ):
+        return call.args[position]
+    return next((k.value for k in call.keywords if k.arg == keyword), None)
+
+
+def _check_inline_prompt(src: SourceFile) -> Iterator[Finding]:
+    """ADR-019, ADR-057: prompts live in the registry. Outside the gateway, nothing builds a model
+    request, writes the instructions layer (the gateway refuses it too), or names a prompt by a
+    literal that isn't a registry reference. Import aliases and keyword forms count."""
+    requests = _aliases_of(src, "ModelRequest")
+    calls = _aliases_of(src, "GatewayCall")
+    for call in _calls(src.tree):
+        name = _terminal_name(call.func)
+        if name in requests:
+            yield Finding(call.lineno, "model requests are built only inside ai_gateway")
+        elif isinstance(call.func, ast.Attribute) and call.func.attr == "text":
+            layer = _argument(call, 0, "layer")
+            if isinstance(layer, ast.Constant) and layer.value == "instructions":
+                yield Finding(call.lineno, "instructions come from the prompt registry")
+        elif name in calls:
+            value = _argument(call, 1, "prompt")
+            if isinstance(value, (ast.JoinedStr, ast.BinOp)) or (
+                isinstance(value, ast.Constant)
+                and not (isinstance(value.value, str) and _PROMPT_REF.fullmatch(value.value))
+            ):
+                yield Finding(call.lineno, "prompt must be a registry reference (id@vN)")
+
+
+def _agent_denied_actions() -> frozenset[str]:
+    """Actions an agent can never be given: anything the matrix doesn't grant agents."""
+    from abacus.modules.identity.authz.matrix import RULES  # tooling may import product
+
+    return frozenset(
+        a for a, rule in RULES.items() if rule.decisions.get("agent") in (None, "deny")
+    )
+
+
+_NON_AGENT_CONTEXTS = frozenset({"AuthContext", "SystemContext"})
+
+
+def _check_human_decision(src: SourceFile) -> Iterator[Finding]:
+    """ADR-005: a function that authorises an action agents may never take (no `agent` grant in
+    the matrix) types its actor `AuthContext` or `SystemContext`, so no agent context reaches it.
+    Import aliases and keyword arguments count."""
+    denied = _agent_denied_actions()
+    names = _aliases_of(src, "authorise")
+    for function in ast.walk(src.tree):
+        if not isinstance(function, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        params = {
+            a.arg: a.annotation
+            for a in (*function.args.posonlyargs, *function.args.args, *function.args.kwonlyargs)
+        }
+        for call in ast.walk(function):
+            if not (isinstance(call, ast.Call) and _terminal_name(call.func) in names):
+                continue
+            action = _argument(call, 1, "action")
+            if not (isinstance(action, ast.Constant) and action.value in denied):
+                continue
+            actor = _argument(call, 0, "ctx")
+            annotation = params.get(actor.id) if isinstance(actor, ast.Name) else None
+            if annotation is None or _terminal_name(annotation) not in _NON_AGENT_CONTEXTS:
+                yield Finding(
+                    call.lineno,
+                    f"'{action.value}' is never an agent's: its actor must be a parameter typed "
+                    "AuthContext or SystemContext",
+                )
+
+
 def _check_layout(backend: Path) -> Iterator[tuple[str, Finding]]:
     src = backend / "src"
     if not src.is_dir():
@@ -936,6 +1026,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_ledger_schema.py",
             "tests/integration/test_retrieval_workflow.py",
             "tests/integration/test_retrieval_api.py",
+            "tests/integration/agent_tests/support.py",
             # Records replay fixtures against throwaway containers (seeds as the superuser).
             "src/abacus_tools/workflows/record_retrieval.py",
         ),
@@ -1130,6 +1221,7 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/identity/context.py",
             "src/abacus/modules/identity/api.py",
             "src/abacus/modules/connections/service.py",
+            "src/abacus/modules/agents/service.py",
         ),
     ),
     Rule(
@@ -1194,6 +1286,21 @@ RULES: list[Rule | TreeRule] = [
         adr="ADR-017, ADR-090",
         check=_check_workflow_imports,
         include=("src/abacus/modules/*/workflows.py", "src/abacus/modules/*/workflows/*"),
+    ),
+    Rule(
+        id="PROMPT-001",
+        description="No inline prompts: model requests and instructions come from the registry",
+        adr="ADR-019, ADR-057",
+        check=_check_inline_prompt,
+        include=("src/abacus/*",),
+        exclude=("src/abacus/ai_gateway/*",),
+    ),
+    Rule(
+        id="AGENT-001",
+        description="Actions agents may never take are authorised for typed non-agent actors only",
+        adr="ADR-005, ADR-025",
+        check=_check_human_decision,
+        include=("src/abacus/modules/*",),
     ),
     Rule(
         id="ANY-001",

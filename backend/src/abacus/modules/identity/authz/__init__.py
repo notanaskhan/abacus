@@ -11,6 +11,8 @@ PROTECTED. TASK-007 design §5.
   3. roles          the matrix decision for those roles; an explicit `deny` beats any `allow`
   4. attributes     archived engagements are read-only; `mfa_recent`; `requires: reason`;
                     actions carrying an obligation not built yet (`notify`) deny
+An agent is also bounded by its initiator, checked live (ADR-025): the initiator must be allowed
+the same action, or `AGENT_ONLY_REACH` for actions no human role holds.
 Matrix conditions not modelled yet (`in_scope`, `firm_setting(...)`, `assigned_only`,
 `client_visible_only`, `task_scope`) are not grants: they deny until their task models them.
 
@@ -33,12 +35,12 @@ from datetime import UTC, datetime, timedelta
 from typing import Literal
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, false, select, true
+from sqlalchemy import ColumnElement, and_, false, select, true
 from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.logging import get_logger
 from abacus.modules.identity.authz.matrix import RULES, Rule
-from abacus.modules.identity.context import Actor, AuthContext, SystemContext
+from abacus.modules.identity.context import Actor, AgentContext, AuthContext, SystemContext
 from abacus.modules.identity.repository import (
     ENGAGEMENT_ROLES,
     engagement_members,
@@ -49,7 +51,12 @@ MFA_RECENT = timedelta(minutes=15)
 # Ethical walls (ADR-026) are not modelled yet. The API refuses to start in production until they
 # are (founder decision 2026-10-06: walls gate the first real firm). Set True only with walls.
 WALL_SAFE = False
-Layer = Literal["tenancy", "relationship", "role", "attribute"]
+Layer = Literal["tenancy", "relationship", "role", "attribute", "delegation"]
+# An action no human role holds (agent and system only, e.g. `screening.run`) can't be intersected
+# with the initiator's own right to it; the agent then stays within the initiator's reach: they
+# must be allowed this action on the same engagement (founder decision 2026-10-06, ADR-025).
+AGENT_ONLY_REACH = "evidence.read"
+_NON_HUMAN_ROLES = frozenset({"agent", "system"})
 _log = get_logger(__name__)
 _checked: ContextVar[set[str] | None] = ContextVar("abacus_authz_checked", default=None)
 
@@ -109,9 +116,27 @@ def _rule(action: str) -> Rule:
     return rule
 
 
+def agent_may_hold(action: str) -> bool:
+    """Whether an agent's task scope may declare this action (matrix `agent: task_scope`)."""
+    return _rule(action).decisions.get("agent") == "task_scope"
+
+
+def _human_held(rule: Rule) -> bool:
+    return any(
+        role not in _NON_HUMAN_ROLES and decision != "deny"
+        for role, decision in rule.decisions.items()
+    )
+
+
 def _who(ctx: Actor) -> dict[str, object]:
     if isinstance(ctx, AuthContext):
         return {"user_id": ctx.user_id}
+    if isinstance(ctx, AgentContext):
+        return {
+            "agent_id": ctx.agent_id,
+            "agent_run_id": ctx.agent_run_id,
+            "on_behalf_of": ctx.initiator.user_id,
+        }
     return {"system_run_id": ctx.run_id, "on_behalf_of": ctx.on_behalf_of}
 
 
@@ -121,6 +146,8 @@ def _deny(ctx: Actor, action: str, layer: Layer) -> Forbidden:
 
 
 async def _roles(ctx: Actor, resource: Resource) -> set[str]:
+    if isinstance(ctx, AgentContext):
+        return {"agent"} if resource.engagement_id == ctx.engagement_id else set()
     if isinstance(ctx, SystemContext):
         # The platform acts on its run's engagement only: anything else (another engagement, a
         # firm-level action) has no relationship.
@@ -147,10 +174,19 @@ async def authorise(
     roles = await _roles(ctx, resource)
     if not roles:
         raise _deny(ctx, action, "relationship")
-    # 3. Roles.
+    # 3. Roles. For an agent, `task_scope` grants only what its run declared (ADR-025).
     decisions = {rule.decisions.get(role) for role in roles}
+    if isinstance(ctx, AgentContext) and "task_scope" in decisions and action in ctx.task_scope:
+        decisions = (decisions - {"task_scope"}) | {"allow"}
     if "deny" in decisions or "allow" not in decisions:
         raise _deny(ctx, action, "role")
+    # An agent never exceeds the person it acts for (ADR-025 intersection), checked live.
+    if isinstance(ctx, AgentContext):
+        delegated = action if _human_held(rule) else AGENT_ONLY_REACH
+        try:
+            await authorise(ctx.initiator, delegated, resource, reason=reason)
+        except Forbidden:
+            raise _deny(ctx, action, "delegation") from None
     # 4. Attributes.
     if resource.archived and not rule.reads:
         raise _deny(ctx, action, "attribute")
@@ -176,6 +212,13 @@ def visible(
     if rule.mfa_recent or rule.requires_reason or rule.notify:
         raise ValueError(f"visible() can't apply {action!r}'s conditions; use authorise()")
     _record(action)
+    if isinstance(ctx, AgentContext):
+        agent = rule.decisions.get("agent")
+        if not (agent == "allow" or (agent == "task_scope" and action in ctx.task_scope)):
+            return false()
+        return and_(
+            engagement_id == ctx.engagement_id, visible(ctx.initiator, action, engagement_id)
+        )
     if isinstance(ctx, SystemContext):
         if rule.decisions.get("system") != "allow":
             return false()

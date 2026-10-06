@@ -45,6 +45,8 @@ PROTECTED = [
     "backend/src/abacus/modules/connections/**",
     "backend/src/abacus/modules/ledger/**",
     "backend/src/abacus/worker/**",
+    "backend/src/abacus/ai_gateway/**",
+    "backend/src/abacus/modules/agents/**",
     "backend/src/abacus/kernel/storage.py",
 ]
 # Protected only once they exist: new files allowed, edits to existing files need approval.
