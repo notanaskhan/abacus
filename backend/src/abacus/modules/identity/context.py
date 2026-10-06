@@ -55,7 +55,38 @@ class SystemContext:
         return self.tenant.tenant_id
 
 
-Actor = AuthContext | SystemContext
+@dataclass(frozen=True)
+class AgentContext:
+    """An agent acting on one run, on one engagement, for one person (ADR-005, ADR-025; TASK-011
+    design §1). `authorise` grants it an action only if the matrix's `agent` value allows it
+    within `task_scope` AND `initiator` (the human whose action led here) is allowed it too.
+    Built only by `identity.context.agent_context_for_run`, which the agents module calls after
+    proving the run from the database (SYS-001)."""
+
+    tenant: TenantContext
+    agent_id: str
+    agent_run_id: UUID
+    engagement_id: UUID
+    task_scope: frozenset[str]
+    initiator: AuthContext
+    issued_by: object = field(repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        if self.issued_by is not _ISSUER:
+            raise TypeError("AgentContext is issued only by identity")
+        if self.tenant.actor_kind != "agent" or self.tenant.actor_id != (
+            f"agent:{self.agent_id}:{self.agent_run_id}"
+        ):
+            raise ValueError("an agent context acts as its run")
+        if self.initiator.tenant_id != self.tenant.tenant_id:
+            raise ValueError("an agent acts for someone in its own firm")
+
+    @property
+    def tenant_id(self) -> UUID:
+        return self.tenant.tenant_id
+
+
+Actor = AuthContext | SystemContext | AgentContext
 
 
 def system_context_for_run(
@@ -69,5 +100,27 @@ def system_context_for_run(
         on_behalf_of,
         run_id,
         engagement_id,
+        _ISSUER,
+    )
+
+
+def agent_context_for_run(
+    *,
+    tenant_id: UUID,
+    run_id: UUID,
+    agent_id: str,
+    engagement_id: UUID,
+    task_scope: frozenset[str],
+    initiator: AuthContext,
+) -> AgentContext:
+    """The agent acting on one run. The caller (the agents module's run loader only, SYS-001) has
+    read the run under row-level security and resolved its initiator's live membership."""
+    return AgentContext(
+        TenantContext(tenant_id, "agent", f"agent:{agent_id}:{run_id}"),
+        agent_id,
+        run_id,
+        engagement_id,
+        task_scope,
+        initiator,
         _ISSUER,
     )

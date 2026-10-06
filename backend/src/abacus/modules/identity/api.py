@@ -11,8 +11,10 @@ from abacus.modules.identity.authz import (
 )
 from abacus.modules.identity.context import (
     Actor,
+    AgentContext,
     AuthContext,
     SystemContext,
+    agent_context_for_run,
     system_context_for_run,
 )
 from abacus.modules.identity.repository import EngagementRole
@@ -30,6 +32,7 @@ from abacus.modules.identity.service import (
     TeamMember,
     add_creator_as_partner,
     engagement_team,
+    initiator_context,
 )
 from abacus.modules.identity.tokens import (
     InvalidToken,
@@ -49,6 +52,7 @@ __all__ = [
     "AbacusRoute",
     "AbacusRouter",
     "Actor",
+    "AgentContext",
     "AuthContext",
     "EngagementRole",
     "Forbidden",
@@ -61,12 +65,14 @@ __all__ = [
     "UnknownAction",
     "VerifiedIdentity",
     "add_creator_as_partner",
+    "agent_context_for_run",
     "authorise",
     "configure_verifier",
     "current_context",
     "current_signed_in",
     "declared_action",
     "engagement_team",
+    "initiator_context",
     "reset_verifier",
     "router",
     "system_context_for_run",

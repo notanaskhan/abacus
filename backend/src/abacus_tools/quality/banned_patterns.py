@@ -586,7 +586,7 @@ def _check_self_action(src: SourceFile) -> Iterator[Finding]:
             yield Finding(line, "the SELF action is for /v1/me only")
 
 
-_CONTEXT_CLASSES = frozenset({"AuthContext", "SystemContext"})
+_CONTEXT_CLASSES = frozenset({"AuthContext", "SystemContext", "AgentContext"})
 _CONTEXT_NAMES = ("ctx", "context", "sys", "system")
 
 
@@ -626,7 +626,7 @@ def _check_context_construction(src: SourceFile) -> Iterator[Finding]:
 
 def _check_system_issue(src: SourceFile) -> Iterator[Finding]:
     for line, name in _names_used(src):
-        if name in ("system_context_for_run", "_ISSUER"):
+        if name in ("system_context_for_run", "agent_context_for_run", "_ISSUER"):
             yield Finding(line, "system contexts are issued from a proven run only")
 
 
@@ -1097,6 +1097,7 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/identity/context.py",
             "src/abacus/modules/identity/api.py",
             "src/abacus/modules/connections/service.py",
+            "src/abacus/modules/agents/service.py",
         ),
     ),
     Rule(

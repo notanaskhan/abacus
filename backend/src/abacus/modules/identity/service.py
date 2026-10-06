@@ -117,3 +117,20 @@ async def engagement_team(ctx: AuthContext, engagement_id: UUID) -> list[TeamMem
     members = await engagement_members_of(ctx.tenant, engagement_id)
     names = await display_names([user_id for user_id, _ in members])
     return [TeamMember(user_id, names.get(user_id, ""), role) for user_id, role in members]
+
+
+async def initiator_context(tenant_id: UUID, user_id: UUID) -> AuthContext:
+    """The live context of the person an agent acts for (ADR-025): their active membership in
+    this firm, read now. A revoked membership ends the agent's rights with it
+    (`NoActiveTenant`)."""
+    memberships = [m for m in await active_memberships(user_id) if m.tenant_id == tenant_id]
+    if len(memberships) != 1:
+        raise NoActiveTenant("initiator has no active membership in this firm")
+    membership = memberships[0]
+    return AuthContext(
+        tenant=TenantContext(tenant_id, "human", str(user_id)),
+        user_id=user_id,
+        membership_id=membership.membership_id,
+        firm_role=membership.firm_role,
+        mfa_at=None,
+    )
