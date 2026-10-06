@@ -1,7 +1,10 @@
 """Starting screening from relayed events (TASK-011 design §7). PROTECTED.
 
 The relay (at least once) hands each `evidence_version.created` to `start_screening`, which
-starts `screening:<evidence_version_id>`. A redelivery attaches to the running workflow or finds
+starts `screening:<tenant_id>:<evidence_version_id>` (tenant-qualified: Temporal's namespace is
+shared by every firm). There is no execution timeout: each activity has its own, and the run is
+always ended by `screening.fail_run`, so a run never stays `running` because the workflow was
+killed. A redelivery attaches to the running workflow or finds
 it finished: either way the event counts as delivered. `requested_by` comes only from the event,
 which the evidence module writes in the same transaction as the version.
 """
@@ -9,7 +12,6 @@ which the evidence module writes in the same transaction as the version.
 from __future__ import annotations
 
 from contextlib import suppress
-from datetime import timedelta
 from uuid import UUID
 
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
@@ -17,15 +19,15 @@ from temporalio.exceptions import WorkflowAlreadyStartedError
 
 from abacus.kernel.config import settings
 from abacus.kernel.temporal import temporal_client
-from abacus.kernel.uow.relay import OutboxEvent
+from abacus.kernel.uow import OutboxEvent
 from abacus.modules.agents.workflow_types import ScreeningInput
+from abacus.modules.evidence.api import EvidenceVersionCreated
 
-EVIDENCE_VERSION_CREATED = "evidence_version.created"
-EXECUTION_TIMEOUT = timedelta(hours=1)
+EVIDENCE_VERSION_CREATED = EvidenceVersionCreated.event_type
 
 
-def workflow_id(evidence_version_id: UUID) -> str:
-    return f"screening:{evidence_version_id}"
+def workflow_id(tenant_id: UUID, evidence_version_id: UUID) -> str:
+    return f"screening:{tenant_id}:{evidence_version_id}"
 
 
 def screening_input(event: OutboxEvent) -> ScreeningInput:
@@ -49,12 +51,11 @@ async def start_screening(event: OutboxEvent) -> None:
         await client.start_workflow(
             "screening",
             input,
-            id=workflow_id(UUID(input.evidence_version_id)),
+            id=workflow_id(event.tenant_id, UUID(input.evidence_version_id)),
             task_queue=settings().temporal_task_queue,
             # A failed workflow may be started again by a redelivery; a finished one may not.
             id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
             id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
-            execution_timeout=EXECUTION_TIMEOUT,
         )
 
 

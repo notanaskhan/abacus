@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import insert, select, update
+from sqlalchemy import func, insert, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -92,6 +92,12 @@ async def finish_run(
         .returning(AgentRun.id)
     )
     return result.scalar_one_or_none() is not None
+
+
+async def try_lock_run(session: AsyncSession, run_id: UUID) -> bool:
+    """Take the run's advisory lock until this transaction ends; False if another holds it."""
+    key = func.hashtextextended(f"agent_run:{run_id}", 0)
+    return bool((await session.execute(select(func.pg_try_advisory_xact_lock(key)))).scalar_one())
 
 
 async def result_for_run(session: AsyncSession, run_id: UUID) -> UUID | None:

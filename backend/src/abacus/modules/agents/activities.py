@@ -2,14 +2,18 @@
 
 `screening.screen` proves the agent's context from its run row first (`load_agent_context`),
 then screens as one activity: a retry after a failed final write calls the model again, and the
-spend counts against the run's budget. Errors cross to Temporal as `ApplicationError`s carrying
-only the exception's class name, never its message. Terminal errors are non-retryable (`screen`
-has already failed the run); provider outages and infrastructure errors are retried. A retry
-that finds the run already ended reports what it recorded. Activity names are fixed (ADR-090).
+spend counts against the run's budget. It heartbeats, so a timed-out attempt is cancelled. Every
+error, database errors included, crosses to Temporal as an `ApplicationError` carrying only the
+exception's class name, never its message. Terminal errors are non-retryable (`screen` has
+already failed the run); provider outages and infrastructure errors are retried. A retry that
+finds the run already ended reports what it recorded. Activity names are fixed (ADR-090).
 """
 
 from __future__ import annotations
 
+import asyncio
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager, suppress
 from uuid import UUID
 
 from temporalio import activity
@@ -53,6 +57,28 @@ async def _recorded(tenant_id: UUID, run_id: UUID) -> ScreeningOutcome:
     )
 
 
+HEARTBEAT_EVERY = 10.0
+
+
+@asynccontextmanager
+async def _heartbeating() -> AsyncGenerator[None]:
+    """Heartbeat while the body runs, so Temporal can cancel a timed-out attempt (the
+    cancellation arrives as `CancelledError` at the next await)."""
+
+    async def beat() -> None:
+        while True:
+            activity.heartbeat()
+            await asyncio.sleep(HEARTBEAT_EVERY)
+
+    task = asyncio.create_task(beat())
+    try:
+        yield
+    finally:
+        task.cancel()
+        with suppress(asyncio.CancelledError):
+            await task
+
+
 @activity.defn(name="screening.create_run")
 async def create_run_activity(input: ScreeningInput) -> str | None:
     try:
@@ -69,9 +95,7 @@ async def create_run_activity(input: ScreeningInput) -> str | None:
     return str(run_id) if run_id is not None else None
 
 
-@activity.defn(name="screening.screen")
-async def screen_activity(input: RunInput) -> ScreeningOutcome:
-    tenant_id, run_id = UUID(input.tenant_id), UUID(input.run_id)
+async def _screen(tenant_id: UUID, run_id: UUID) -> ScreeningOutcome:
     try:
         agent = await load_agent_context(tenant_id, run_id)
     except AgentRunNotRunning:
@@ -80,24 +104,27 @@ async def screen_activity(input: RunInput) -> ScreeningOutcome:
         # The person the agent acts for is gone: the run ends, nobody is acted for.
         await fail_run(tenant_id, run_id, INITIATOR_INACTIVE)
         return await _recorded(tenant_id, run_id)
-    except NotFound as exc:
-        raise _as_application_error(exc, retryable=False) from None
-    except Exception as exc:
-        raise _as_application_error(exc, retryable=True) from None
     try:
         outcome = await screen(agent)
     except AgentRunNotRunning:
         return await _recorded(tenant_id, run_id)
-    except tuple(TERMINAL) as exc:
-        raise _as_application_error(exc, retryable=False) from None
-    except Exception as exc:
-        raise _as_application_error(exc, retryable=True) from None
     return ScreeningOutcome(
         outcome.status,
         str(run_id),
         None,
         str(outcome.screening_result_id) if outcome.screening_result_id else None,
     )
+
+
+@activity.defn(name="screening.screen")
+async def screen_activity(input: RunInput) -> ScreeningOutcome:
+    try:
+        async with _heartbeating():
+            return await _screen(UUID(input.tenant_id), UUID(input.run_id))
+    except (NotFound, *TERMINAL) as exc:
+        raise _as_application_error(exc, retryable=False) from None
+    except Exception as exc:  # anything else, database errors included: class name only
+        raise _as_application_error(exc, retryable=True) from None
 
 
 @activity.defn(name="screening.fail_run")
@@ -110,6 +137,8 @@ async def fail_run_activity(input: FailInput) -> ScreeningOutcome:
         return await _recorded(tenant_id, run_id)
     except NotFound as exc:
         raise _as_application_error(exc, retryable=False) from None
+    except Exception as exc:
+        raise _as_application_error(exc, retryable=True) from None
 
 
 ACTIVITIES = (create_run_activity, screen_activity, fail_run_activity)

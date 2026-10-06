@@ -11,7 +11,12 @@ the fake connector's fixture directory must be shared with the API (`fake_connec
 
 It also runs the outbox relay (TASK-011 Q4): events go to the handlers modules subscribe in
 their `SUBSCRIPTIONS` (e.g. `evidence_version.created` starts screening). The relay stops with
-the worker; an event mid-publish is simply republished later (at least once).
+the worker; an event mid-publish is simply republished later (at least once). If the relay task
+ever dies, the worker stops and exits non-zero, so it is restarted rather than running without
+one. Accepted risk (Q4): the worker holds the relay role, which reads every firm's outbox.
+
+Locally (`environment == "local"`) the model provider is the fake screener (TASK-011 Q3); there
+is no real provider yet, so elsewhere screening ends as `internal_error` until one is set up.
 """
 
 from __future__ import annotations
@@ -23,18 +28,20 @@ from datetime import timedelta
 
 from temporalio.worker import Worker
 
+from abacus.ai_gateway import FakeModel, configure_provider
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import key_service
 from abacus.kernel.db import ping, ping_relay
 from abacus.kernel.temporal import payload_codec, temporal_client
-from abacus.kernel.uow.relay import Handler, RoutingPublisher, run_relay
+from abacus.kernel.uow import Handler
+from abacus.kernel.uow.relay import RoutingPublisher, run_relay
 from abacus.modules.agents import api as agents
 from abacus.modules.connections import api as connections
 from abacus.modules.evidence.api import check_ready
 
 GRACEFUL_SHUTDOWN = timedelta(seconds=60)
 MODULES = (connections, agents)
-SUBSCRIBERS = (agents.SUBSCRIPTIONS,)
+SUBSCRIBERS = tuple(module.SUBSCRIPTIONS for module in MODULES)
 
 
 def publisher() -> RoutingPublisher:
@@ -51,6 +58,8 @@ async def build_worker() -> Worker:
     key_service()
     payload_codec()
     await check_ready()
+    if settings().environment == "local":
+        configure_provider(agents.install_fake_responses(FakeModel()))
     client = await temporal_client()
     return Worker(
         client,
@@ -69,8 +78,12 @@ async def run() -> None:
         loop.add_signal_handler(sig, stop.set)
     async with worker:
         relay = asyncio.create_task(run_relay(publisher(), stop))
-        await stop.wait()
-        await relay
+        relay.add_done_callback(lambda _: stop.set())  # a dead relay stops the worker
+        try:
+            await stop.wait()
+        finally:
+            stop.set()
+            await relay
 
 
 def main() -> int:

@@ -28,6 +28,11 @@ with workflow.unsafe.imports_passed_through():
     )
 
 _TIMEOUT = timedelta(minutes=2)
+# Screening may call the model twice (call and repair), each bounded by the spec's `max_seconds`
+# (60): 5 minutes leaves room for the database work. The activity heartbeats, so a timed-out
+# attempt is cancelled before its retry starts (no two attempts spend the run's budget at once).
+_SCREEN_TIMEOUT = timedelta(minutes=5)
+_SCREEN_HEARTBEAT = timedelta(seconds=30)
 _RETRY = RetryPolicy(
     initial_interval=timedelta(seconds=2),
     backoff_coefficient=2.0,
@@ -62,7 +67,8 @@ class ScreeningWorkflow:
                 "screening.screen",
                 run,
                 result_type=ScreeningOutcome,
-                start_to_close_timeout=_TIMEOUT,
+                start_to_close_timeout=_SCREEN_TIMEOUT,
+                heartbeat_timeout=_SCREEN_HEARTBEAT,
                 retry_policy=_RETRY,
             )
         except ActivityError as err:

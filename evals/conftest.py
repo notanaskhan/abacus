@@ -8,7 +8,14 @@ runs. Today the provider is `FakeModel`; with a real provider the same cases mea
 import sys
 from pathlib import Path
 
-# The suites reuse the backend's integration fixtures (`tests.integration`).
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
+from abacus.kernel.config import settings
+
+# Synthetic data only: suites never run against a deployed environment's data.
+if settings().environment not in ("local", "test"):
+    raise RuntimeError("evaluation suites run only in local or test environments")
+
+# The suites reuse the backend's integration fixtures (`tests.integration`); appended, so nothing
+# under backend/ can shadow an installed package.
+sys.path.append(str(Path(__file__).resolve().parents[1] / "backend"))
 
 pytest_plugins = ["tests.integration.conftest"]
