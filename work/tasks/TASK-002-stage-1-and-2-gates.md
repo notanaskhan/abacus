@@ -198,7 +198,7 @@ reason: TASK-002 — stage 1 completion, make check, CI
 - [ ] AI calls (if any) go through the gateway with limits, logging and passing evals — n/a
 - [x] Module README and relevant docs updated — protected-paths.md (coverage floor, CI); n/a module READMEs
 - [x] Decisions below reviewed; ADR raised where needed
-- [ ] `make check` exits 0 locally and both CI jobs pass on the PR
+- [x] `make check` exits 0 locally and both CI jobs pass on the PR (PR #2, run 37368755091 attempt 3)
 
 Commands:
 ```
@@ -236,6 +236,8 @@ Append-only. Newest at the bottom.
   - Vitest smoke test unmounts in `afterEach`.
   - Result: 702 backend tests pass (independent author: 539 → 702), coverage 98 %, `make setup` and `make check` exit 0.
 
+- `2026-10-06` — PR #2 opened. Push-triggered stage 1 passed at once; the pull_request run's jobs were never assigned a runner (empty `runner_name`) and were cancelled after 15 min, twice. After the founder changed a repository Actions setting, attempt 3 got runners: **stage 1 pass (25 s), stages 1 and 2 pass (40 s; 702 passed, coverage 98 %)**. Cause of the earlier queueing not established.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
@@ -270,8 +272,8 @@ Append-only. Newest at the bottom.
 - [x] **Q4 — CI.** Approved as recommended 2026-10-05. GitHub Actions with three third-party actions pinned by SHA, no secrets, read-only token. **Recommendation:** approve, then turn on branch protection with both jobs as required checks.
 
 ## Handoff
-- **Current state:** All steps and review findings done; `make check` exit 0 locally. Pushed; PR open.
-- **Exact next step:** Confirm both CI jobs pass on the PR (last DoD item); founder reviews and merges; then turn on branch protection on `main` with `stage 1 (make check-fast)` and `stages 1 and 2 (make check)` as required checks; delete `work/approvals/TASK-002.yaml`; mark done.
+- **Current state:** All steps, review findings and DoD items done; both CI jobs green on PR #2.
+- **Exact next step:** Founder reviews and merges PR #2; then turns on branch protection on `main` with `stage 1 (make check-fast)` and `stages 1 and 2 (make check)` as required checks; delete `work/approvals/TASK-002.yaml`; mark done.
 - **Uncommitted or partial work:** none.
-- **Known failing checks:** none locally.
-- **Open issues:** branch protection off; founder `PATH`; bot GitHub account deferred; root `engines.node` and `packageManager` hash (next task touching root `package.json`).
+- **Known failing checks:** none.
+- **Open issues:** branch protection off; "Allow GitHub Actions to create and approve pull requests" is on (founder changed it while debugging; recommend turning it off); founder `PATH`; bot GitHub account deferred; root `engines.node` and `packageManager` hash.
