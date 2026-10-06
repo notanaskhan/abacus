@@ -108,6 +108,40 @@ ESLint bans `dangerouslySetInnerHTML` everywhere and bans `fetch`, `XMLHttpReque
   - `abacus_tools/fakes/**`, `abacus_tools/local/**`, `abacus_tools/quality/banned_patterns.py` (LIST-001 exemptions if needed), `backend/pyproject.toml` (if the OIDC server needs nothing new, unchanged).
 - **Q5. Journey in CI:** nightly only (ADR-083 stage 5, recommended), or also on every PR (adds about 3–5 minutes plus the stack)?
 
+### Interface contract — board reads (tests written independently — ADR-078)
+All three reads:
+- authenticate through `AbacusRouter`;
+- check engagement membership (`get_ref` + `authorise`) before reading;
+- are tenant-scoped (RLS) and filtered with `visible()`;
+- return 404 for an engagement of another firm or an unknown one;
+- return 403 for a firm member with no relationship to the engagement (and for anyone the matrix denies).
+
+**`GET /v1/engagements/{engagement_id}/request-items`** (`request_item.read`; existing). `RequestItemOut` gains `evidence_version_id: UUID | null`:
+- it is the version of the item's most recent fulfilment (by `created_at`, then `id`);
+- it is null when the item has none;
+- after a successful retrieval it equals the retrieval's `evidence_version_id`;
+- other fields are unchanged.
+
+**`GET /v1/engagements/{engagement_id}/evidence-versions`** (`evidence.read`; new; evidence module):
+- returns `list[EvidenceVersionOut]`, oldest first: `{id, evidence_item_id, version_no, method ("retrieved"|"uploaded"), source, pulled_at, period_start, period_end, created_at}`;
+- never content, storage keys or fingerprints;
+- empty list when there are none;
+- only this engagement's versions.
+
+**`GET /v1/engagements/{engagement_id}/screening-results`** (`evidence.read`; new; agents module):
+- returns `list[ScreeningResultOut]`, one per evidence version (the latest by `created_at`, then `id`);
+- fields: `{id, evidence_version_id, action ("ready_for_review"|"needs_revision"), confidence (decimal string, 3 places), rationale, citations: [{cell, quote, value, verified, reason}], unverified: [str], created_at}`;
+- only this engagement's results; empty when there are none;
+- read-only: there is no route that acts on a result.
+
+**Permissions.**
+- `evidence.read` and `request_item.read` follow the matrix (engagement partner, manager, senior, staff, reviewer: allow).
+- A `reviewer` may read all three.
+- An archived engagement remains readable.
+- Python names: `evidence.api.evidence_versions_for(ctx, engagement_id)`, `EvidenceVersionSummary`; `agents.api.screening_results_for(ctx, engagement_id)`, `ScreeningResultView`; repository list functions `evidence.repository.list_versions` and `agents.repository.latest_results` (LIST-001: `visible` in `.where`).
+
+**OpenAPI and client.** The operations are `list_evidence_versions` and `list_screening_results`. `packages/api-client` is regenerated: `make check`'s drift check passes, and `test_openapi` matches.
+
 ### Steps
 1. Approval file. Backend reads (red): contract, independent tests, reviews.
 2. Fake OIDC server, `seed_dev`, the `make dev`/`seed`/`e2e` targets.
