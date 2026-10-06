@@ -44,6 +44,9 @@ Agent specs, agent runs and screening (ADR-005, ADR-025, ADR-047, ADR-050, ADR-0
   - a run that has already ended reports what it recorded;
   - an initiator who has lost their membership ends the run as `initiator_inactive`.
 - **Spec limits:** `max_seconds` bounds each model call (a timeout is a `ProviderError`); a `single_call` agent has `max_steps: 1`; `output_schema` must be `ScreeningOutput`, the model the gateway validates against.
+- **Replay (AC-19, ADR-090):** `tests/workflows/histories/screening-v<N>-{completed,skipped,provider-unavailable}.json` are recorded with `python -m abacus_tools.workflows.record_screening`, decoded and scrubbed.
+  - Never overwrite one: a changed workflow uses `workflow.patched(...)` and adds `v<N+1>`.
+  - Every version must keep replaying.
 - **Evals:** `make evals` runs `evals/screening/` through the real pipeline and gateway (`FakeModel` today) and writes the cost per case to `backend/.evals/screening.json`.
 
 ## Rules

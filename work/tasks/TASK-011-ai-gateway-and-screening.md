@@ -362,6 +362,12 @@ Out: a real provider (Anthropic) and real model calls (a SPEC-000 non-goal); the
   - If the relay task ends, `stop` is set, so the worker stops, and `run()` re-raises the relay's exception. Shutdown is in a `finally`.
   - With `environment == "local"`, `build_worker` configures `FakeModel` with the screener's fake responses. Elsewhere it configures no provider.
 - **`EVIDENCE_VERSION_CREATED`** is `evidence.api.EvidenceVersionCreated.event_type`. `OutboxEvent` and `Handler` are re-exported from `abacus.kernel.uow`.
+- **Replay histories (AC-19).** `tests/workflows/histories/screening-v1-{completed,skipped,provider-unavailable}.json` are recorded by `abacus_tools.workflows.record_screening`, decoded and scrubbed. Their activity sequences:
+  - completed: `create_run`, `screen`;
+  - skipped: `create_run`;
+  - provider-unavailable: `create_run`, `screen`, `fail_run`.
+
+  Each must replay against `ScreeningWorkflow`. A changed activity sequence must fail replay, using the same mutation approach as `test_retrieval_replay.py`. No account names or amounts appear in them.
 - **Evals.**
   - `evals/conftest.py` refuses environments other than local and test, and appends (not prepends) `backend/` to `sys.path`.
   - A fourth case, `low_confidence` (the fake answers 0.3), expects `needs_revision`.
