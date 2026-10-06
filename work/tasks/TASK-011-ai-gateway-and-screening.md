@@ -4,7 +4,7 @@ title: AI gateway, fake model and evidence screening
 spec: SPEC-000
 acceptance_criteria: [AC-14, AC-15, AC-16, AC-17]
 risk_zone: red
-status: in-progress
+status: in-review
 branch: task-011-gateway
 worktree:
 created: 2026-10-06
@@ -350,14 +350,8 @@ reason: TASK-011 — AI gateway, agent specs and context, citations, usage recor
 -
 
 ## Handoff
-- **Current state:** Design drafted; awaiting founder approval (red). No code. Starts after TASK-010b merges.
-- **Exact next step:** On approval, write `work/approvals/TASK-011.yaml` with these paths:
-  - `.claude/hooks/_protected.py`, `.github/CODEOWNERS`, `docs/architecture/protected-paths.md`
-  - `backend/pyproject.toml`, `backend/uv.lock`
-  - `backend/src/abacus/kernel/**`, `backend/src/abacus/ai_gateway/**`
-  - `backend/src/abacus/modules/agents/**`, `backend/src/abacus/modules/identity/**`, `backend/src/abacus/modules/evidence/**`, `backend/src/abacus/modules/connections/**`
-  - `backend/src/abacus/worker/**`
-  - `backend/src/abacus_tools/quality/schema_check.py`, `backend/src/abacus_tools/quality/banned_patterns.py`
-  - `backend/tests/unit/quality/test_banned_patterns.py`
-  - `evals/**`
-  - plus `docs/architecture/permission-matrix.yaml` if Q2 takes the alternative.
+- **Current state:** TASK-011a PR open from `task-011a-ai-gateway` (rebuilt on main after PR #11; `task-011a-gateway` is stale and can be deleted). The independent tests found 3 bugs, all fixed. Unit tests pass locally. Local integration runs were blocked by a Docker VM clock skew (S3 `RequestTimeTooSkewed`), so CI is the gate.
+- **Exact next step:** Confirm CI, then the founder's line-by-line review (red). Merge (rebase), then TASK-011b: the relay publisher in the worker, the `screening:<evidence_version_id>` workflow running `screen` as one activity (`fail_run` on terminal errors), `requested_by` from the relayed event only, and the evals scaffold. See Gotchas.
+- **Uncommitted or partial work:** none.
+- **Known failing checks:** none known.
+- **Open issues:** branch protection off; the Gotchas list the 011b items.
