@@ -9,7 +9,12 @@ from abacus.modules.identity.authz import (
     authorise,
     visible,
 )
-from abacus.modules.identity.context import Actor, AuthContext, SystemContext
+from abacus.modules.identity.context import (
+    Actor,
+    AuthContext,
+    SystemContext,
+    system_context_for_run,
+)
 from abacus.modules.identity.repository import EngagementRole
 from abacus.modules.identity.routes import router
 from abacus.modules.identity.routing import (
@@ -25,7 +30,6 @@ from abacus.modules.identity.service import (
     TeamMember,
     add_creator_as_partner,
     engagement_team,
-    system_context,
 )
 from abacus.modules.identity.tokens import (
     InvalidToken,
@@ -65,7 +69,7 @@ __all__ = [
     "engagement_team",
     "reset_verifier",
     "router",
-    "system_context",
+    "system_context_for_run",
     "token_verifier",
     "visible",
 ]

@@ -11,7 +11,7 @@ from abacus.kernel.db import tenant_session, transaction_context
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import get_ref, lock_ref
-from abacus.modules.identity.api import Actor, AuthContext, authorise
+from abacus.modules.identity.api import Actor, AuthContext, SystemContext, authorise
 from abacus.modules.requests.events import RequestItemCreated
 from abacus.modules.requests.models import RequestItem
 from abacus.modules.requests.repository import (
@@ -92,6 +92,25 @@ async def request_items_for(ctx: AuthContext, engagement_id: UUID) -> Sequence[R
         return [_view(item) for item in await list_request_items(session, ctx, engagement_id)]
 
 
+class ItemNotFulfillable(Exception):
+    """Only open or received items take new evidence by rule."""
+
+
+@dataclass(frozen=True)
+class RequestItemRef:
+    id: UUID
+    engagement_id: UUID
+    status: str
+
+
+async def item_ref(tx: UnitOfWork, request_item_id: UUID) -> RequestItemRef:
+    """The item as this transaction sees it (`NotFound` outside the tenant)."""
+    item = await get_request_item(tx.session, request_item_id)
+    if item is None:
+        raise NotFound("request_item")
+    return RequestItemRef(item.id, item.engagement_id, item.status)
+
+
 @dataclass(frozen=True)
 class FulfilmentRef:
     id: UUID | None  # None when this version already fulfilled this item
@@ -101,21 +120,25 @@ class FulfilmentRef:
 async def fulfil_by_rule(
     tx: UnitOfWork, ctx: Actor, *, request_item_id: UUID, evidence_version_id: UUID
 ) -> FulfilmentRef:
-    """Link a version to the item it satisfies, by rule (AC-10: `created_by_kind = rule`), and
-    move the item `open → received`. Authorises `fulfilment.propose` for `ctx` on the item's
-    engagement, inside the caller's unit of work (the engagement is share-locked there)."""
+    """Link a version to the item it satisfies and move the item `open → received`.
+
+    Authorises `fulfilment.propose` for `ctx` on the item's engagement, inside the caller's unit
+    of work (the engagement is share-locked there). The kind follows the actor: the platform's
+    links are `rule` (AC-10), a person's are `human`. The evidence must belong to the item's
+    engagement (composite key). Only open or received items take new evidence."""
     tenant = await transaction_context(tx.session)
-    item = await get_request_item(tx.session, request_item_id)
-    if item is None:
-        raise NotFound("request_item")
+    item = await item_ref(tx, request_item_id)
     ref = await lock_ref(tx, item.engagement_id)
     await authorise(ctx, "fulfilment.propose", ref.resource())
+    if item.status not in ("open", "received"):
+        raise ItemNotFulfillable(item.status)
     fulfilment_id = await insert_fulfilment(
         tx.session,
         tenant_id=tenant.tenant_id,
+        engagement_id=item.engagement_id,
         request_item_id=request_item_id,
         evidence_version_id=evidence_version_id,
-        created_by_kind="rule",
+        created_by_kind="rule" if isinstance(ctx, SystemContext) else "human",
         created_by_id=tenant.actor_id,
     )
     if fulfilment_id is not None:

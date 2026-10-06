@@ -100,6 +100,7 @@ async def insert_fulfilment(
     session: AsyncSession,
     *,
     tenant_id: UUID,
+    engagement_id: UUID,
     request_item_id: UUID,
     evidence_version_id: UUID,
     created_by_kind: str,
@@ -112,6 +113,7 @@ async def insert_fulfilment(
             .values(
                 id=uuid4(),
                 tenant_id=tenant_id,
+                engagement_id=engagement_id,
                 request_item_id=request_item_id,
                 evidence_version_id=evidence_version_id,
                 created_by_kind=created_by_kind,

@@ -83,7 +83,7 @@ APP_INSERT_COLUMNS.update(
     {
         "sync_runs": frozenset(
             {"id", "tenant_id", "connection_id", "engagement_id", "request_item_id", "dataset"}
-            | {"period_start", "period_end", "started_by"}
+            | {"period_start", "period_end", "started_by", "client_entity_id"}
         ),
         "ledger_snapshots": frozenset(
             {"id", "tenant_id", "client_entity_id", "period_start", "period_end", "pulled_at"}
@@ -95,7 +95,7 @@ APP_INSERT_COLUMNS.update(
         ),
         "fulfilments": frozenset(
             {"id", "tenant_id", "request_item_id", "evidence_version_id", "created_by_kind"}
-            | {"created_by_id"}
+            | {"created_by_id", "engagement_id"}
         ),
         "connections": frozenset(),
     }
@@ -115,7 +115,8 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "connections": frozenset({"status"}),
     "sync_runs": frozenset(
         {"status", "raw_storage_key", "raw_version_id", "raw_fingerprint", "snapshot_id"}
-        | {"raw_size_bytes", "raw_pulled_at", "failure_code", "finished_at"}
+        | {"raw_size_bytes", "raw_pulled_at", "failure_code", "finished_at", "source"}
+        | {"evidence_version_id"}
     ),
 }
 # Who owns each table (ADR-103): a module or kernel package. Every table must be listed, and every

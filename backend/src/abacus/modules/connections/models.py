@@ -30,6 +30,7 @@ class SyncRun(Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
     tenant_id: Mapped[UUID]
+    client_entity_id: Mapped[UUID]
     connection_id: Mapped[UUID]
     engagement_id: Mapped[UUID]
     request_item_id: Mapped[UUID]
@@ -42,7 +43,9 @@ class SyncRun(Base):
     raw_fingerprint: Mapped[str | None]
     raw_size_bytes: Mapped[int | None]
     raw_pulled_at: Mapped[datetime | None]
+    source: Mapped[str | None]
     snapshot_id: Mapped[UUID | None]
+    evidence_version_id: Mapped[UUID | None]
     failure_code: Mapped[str | None]
     started_by: Mapped[str]
     started_at: Mapped[datetime]

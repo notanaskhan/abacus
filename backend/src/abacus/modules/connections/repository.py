@@ -5,7 +5,8 @@ from __future__ import annotations
 from datetime import UTC, date, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import insert, select, update
+from sqlalchemy import select, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.modules.connections.models import Connection, SyncRun
@@ -40,19 +41,22 @@ async def insert_run(
     session: AsyncSession,
     *,
     tenant_id: UUID,
+    client_entity_id: UUID,
     connection_id: UUID,
     engagement_id: UUID,
     request_item_id: UUID,
     period_start: date,
     period_end: date,
     started_by: str,
-) -> SyncRun:
+) -> SyncRun | None:
+    """The new run, or None if a running or successful run exists for this item and period."""
     return (
         await session.execute(
-            insert(SyncRun)
+            pg_insert(SyncRun)
             .values(
                 id=uuid4(),
                 tenant_id=tenant_id,
+                client_entity_id=client_entity_id,
                 connection_id=connection_id,
                 engagement_id=engagement_id,
                 request_item_id=request_item_id,
@@ -61,9 +65,28 @@ async def insert_run(
                 period_end=period_end,
                 started_by=started_by,
             )
+            .on_conflict_do_nothing(
+                index_elements=["tenant_id", "request_item_id", "period_start", "period_end"],
+                index_where=SyncRun.status.in_(("running", "succeeded")),
+            )
             .returning(SyncRun)
         )
-    ).scalar_one()
+    ).scalar_one_or_none()
+
+
+async def active_run(
+    session: AsyncSession, request_item_id: UUID, period_start: date, period_end: date
+) -> SyncRun | None:
+    return (
+        await session.execute(
+            select(SyncRun).where(
+                SyncRun.request_item_id == request_item_id,
+                SyncRun.period_start == period_start,
+                SyncRun.period_end == period_end,
+                SyncRun.status.in_(("running", "succeeded")),
+            )
+        )
+    ).scalar_one_or_none()
 
 
 async def get_run(session: AsyncSession, run_id: UUID) -> SyncRun | None:
@@ -88,6 +111,7 @@ async def set_raw(
     fingerprint: str,
     size: int,
     pulled_at: datetime,
+    source: str,
 ) -> None:
     await session.execute(
         update(SyncRun)
@@ -98,6 +122,7 @@ async def set_raw(
             raw_fingerprint=fingerprint,
             raw_size_bytes=size,
             raw_pulled_at=pulled_at,
+            source=source,
         )
     )
 
@@ -108,11 +133,20 @@ async def set_snapshot(session: AsyncSession, run_id: UUID, snapshot_id: UUID) -
     )
 
 
+async def set_evidence(session: AsyncSession, run_id: UUID, evidence_version_id: UUID) -> None:
+    await session.execute(
+        update(SyncRun).where(SyncRun.id == run_id).values(evidence_version_id=evidence_version_id)
+    )
+
+
 async def finish(
     session: AsyncSession, run_id: UUID, *, status: str, failure_code: str | None = None
-) -> None:
-    await session.execute(
+) -> bool:
+    """True if this call ended the run (it was running)."""
+    result = await session.execute(
         update(SyncRun)
         .where(SyncRun.id == run_id, SyncRun.status == "running")
         .values(status=status, failure_code=failure_code, finished_at=datetime.now(UTC))
+        .returning(SyncRun.id)
     )
+    return result.scalar_one_or_none() is not None

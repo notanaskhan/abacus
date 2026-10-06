@@ -70,7 +70,8 @@ class FakeConnector(Connector):
             raise ConnectorError("no_data") from None
         if _is_fault(content):
             raise Unavailable("provider_unavailable")
-        return RawPayload(content, MEDIA_TYPE, SOURCE, datetime.now(UTC))
+        request = f"trial_balance {period.start.isoformat()}..{period.end.isoformat()}"
+        return RawPayload(content, MEDIA_TYPE, SOURCE, datetime.now(UTC), request)
 
     async def changes_since(self, since: datetime) -> Sequence[str]:
         raise NotSupported("incremental")

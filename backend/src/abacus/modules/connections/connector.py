@@ -8,6 +8,7 @@ pipeline stores them unaltered before anything interprets them (ADR-038).
 
 from __future__ import annotations
 
+import re
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -17,16 +18,25 @@ from typing import ClassVar, Literal
 Dataset = Literal["trial_balance"]
 
 
+_CODE = re.compile(r"[a-z][a-z_]{0,49}")
+
+
 class ConnectorError(Exception):
-    """A pull failed; `code` is a short machine-readable reason (recorded on the sync run)."""
+    """A pull failed; `code` is a short machine-readable reason, recorded on the sync run. Never
+    provider text: anything that isn't a safe code becomes `provider_error`."""
+
+    retryable: ClassVar[bool] = False
 
     def __init__(self, code: str) -> None:
-        super().__init__(code)
-        self.code = code
+        safe = code if _CODE.fullmatch(code) else "provider_error"
+        super().__init__(safe)
+        self.code = safe
 
 
 class Unavailable(ConnectorError):
     """Temporary: the provider timed out or is down. Retrying may succeed."""
+
+    retryable: ClassVar[bool] = True
 
 
 class NotSupported(ConnectorError):
@@ -41,7 +51,7 @@ class Period:
 
 @dataclass(frozen=True)
 class Capabilities:
-    datasets: frozenset[str]
+    datasets: frozenset[Dataset]
     oauth: bool
     incremental: bool
     attachments: bool
@@ -49,10 +59,15 @@ class Capabilities:
 
 @dataclass(frozen=True)
 class RawPayload:
+    """The provider's response, unaltered. `request` says what was read (for the access log);
+    `next_cursor` continues a paginated or incremental pull (None: complete)."""
+
     content: bytes
     media_type: str
     source: str
     pulled_at: datetime
+    request: str
+    next_cursor: str | None = None
 
 
 class Connector(ABC):

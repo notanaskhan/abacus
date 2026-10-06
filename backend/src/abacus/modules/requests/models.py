@@ -38,6 +38,7 @@ class Fulfilment(Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
     tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
     request_item_id: Mapped[UUID]
     evidence_version_id: Mapped[UUID]
     created_by_kind: Mapped[str]
