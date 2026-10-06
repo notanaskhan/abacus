@@ -4,7 +4,7 @@ title: Local development stack with Postgres, write-once storage and Temporal
 spec: SPEC-000
 acceptance_criteria: [AC-20]
 risk_zone: amber
-status: awaiting-plan-approval
+status: in-progress
 branch: spec-000-planning
 worktree:
 created: 2026-10-06
@@ -43,9 +43,10 @@ Give every later SPEC-000 task the services it needs — PostgreSQL with pgvecto
 - `Makefile` (`dev`), `docs/architecture/dependency-allowlist.yaml`, `backend/src/abacus_tools/quality/check_dependencies.py`
 
 ## Plan
-- [ ] Plan approved by human (required for amber)
-- [ ] Approval file `work/approvals/TASK-004.yaml` for the protected paths below
-- [ ] Q1–Q3 answered
+- [x] Plan approved by human (founder, 2026-10-06: "proceed with your recommendations")
+- [x] Approval file `work/approvals/TASK-004.yaml` written by the agent at the founder's instruction (2026-10-06)
+- Approved by founder: paths under *Approval file text*, expires 2026-10-20
+- [x] Q1–Q3 answered: all recommendations approved (2026-10-06)
 
 Steps:
 1. [ ] **Images (Q1).** Resolve current digests for `pgvector/pgvector:pg17`, `minio/minio` (latest release tag), `temporalio/temporal` (CLI image; runs `server start-dev`), and add them to the allowlist's new `containers:` section with reasons.
@@ -111,7 +112,7 @@ make check
 |---|---|---|---|
 | testcontainers (py dev) | pinned in `uv.lock` | Integration tests start the same images (ADR-077) | Allowlist (approved) |
 | asyncpg, boto3 (py runtime) | pinned in `uv.lock` | Smoke tests now; product code later | Allowlist (approved) |
-| `pgvector/pgvector`, `minio/minio`, `temporalio/temporal` (container images) | pinned by digest | Local and test services | **Pending — Q1** |
+| `pgvector/pgvector`, `minio/minio`, `temporalio/temporal` (container images) | pinned by digest | Local and test services | Founder, 2026-10-06 (Q1) |
 
 ## Progress log
 - `2026-10-06` — Founder approved the SPEC-000 breakdown and recommendations (fake OIDC provider for the skeleton; staging last; agent-drafted designs for red tasks, line-by-line review). Docker Desktop started (28.4.0). Plan written; awaiting approval. No code.
@@ -127,9 +128,9 @@ make check
 - `make dev` also starts `abacus.api.main` and `abacus.worker.main`, which don't exist until TASK-008/010; until then use `docker compose up -d db minio temporal`.
 
 ## Questions for the human
-- [ ] **Q1 — Container images.** Approve `pgvector/pgvector` (Postgres 17 with pgvector, ADR-014), `minio/minio` (S3-compatible with Object Lock, local only; ADR-016, ADR-087) and `temporalio/temporal` (Temporal CLI dev server, local only; ADR-017). **Recommendation:** approve all three, pinned by digest.
-- [ ] **Q2 — Images in the allowlist.** Add a `containers:` section and have `check_dependencies` refuse unpinned or unlisted images. **Recommendation:** yes — images are dependencies with the same supply-chain risk.
-- [ ] **Q3 — Protect `docker-compose.yml`.** **Recommendation:** yes — it decides which images run with local data and which ports open.
+- [x] **Q1 — Container images.** Approved 2026-10-06. Approve `pgvector/pgvector` (Postgres 17 with pgvector, ADR-014), `minio/minio` (S3-compatible with Object Lock, local only; ADR-016, ADR-087) and `temporalio/temporal` (Temporal CLI dev server, local only; ADR-017). **Recommendation:** approve all three, pinned by digest.
+- [x] **Q2 — Images in the allowlist.** Approved 2026-10-06. Add a `containers:` section and have `check_dependencies` refuse unpinned or unlisted images. **Recommendation:** yes — images are dependencies with the same supply-chain risk.
+- [x] **Q3 — Protect `docker-compose.yml`.** Approved 2026-10-06. **Recommendation:** yes — it decides which images run with local data and which ports open.
 
 ## Handoff
 - **Current state:** Plan written; not approved. No code.
