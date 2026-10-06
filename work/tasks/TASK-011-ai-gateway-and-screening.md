@@ -277,6 +277,7 @@ Out: a real provider (Anthropic) and real model calls (a SPEC-000 non-goal); the
 **Imports**
 - `from abacus.modules.agents.api import WORKFLOWS, ACTIVITIES, SUBSCRIPTIONS, ScreeningWorkflow, ScreeningInput, start_screening, workflow_id, run_outcome, RunOutcome, SCREEN_PROMPT, screening_responder` (plus everything from 011a)
 - `from abacus.modules.agents.workflow_types import ScreeningInput, RunInput, FailInput, ScreeningOutcome, FAIL_CODES, PROVIDER_UNAVAILABLE, INTERNAL_ERROR, CANCELLED`
+  - Two classes are named `ScreeningOutcome`. The workflow's result (`status, run_id, code, screening_result_id`) is imported from `workflow_types`. The `agents.api` one is the 011a service result (`run_id, status, screening_result_id, citations`).
 - `from abacus.modules.agents.activities import create_run_activity, screen_activity, fail_run_activity, INITIATOR_INACTIVE`
 - `from abacus.modules.agents.screenings import screening_input, EVIDENCE_VERSION_CREATED`
 - `from abacus.kernel.uow.relay import RoutingPublisher, Handler, run_relay, relay_once, OutboxEvent`
@@ -442,6 +443,12 @@ reason: TASK-011 — AI gateway, agent specs and context, citations, usage recor
 
   Smoke-tested end to end (retrieval → relay → screening workflow → result; redelivery is idempotent). The 011b contract is written.
 
+- `2026-10-07` — Reviews done and fixes pushed (Contract revision 1); screening replay histories recorded; PR #13 opened at the founder's request. The independent tests are in:
+  - unit, integration, workflow and replay tests;
+  - the two pinned tests updated;
+  - no product bugs found.
+
+  The duplicate `ScreeningOutcome` name is documented (renaming it would only churn the tests). Not covered: the relay's failure backoff and `PASS_TIMEOUT` firing, which need long waits.
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
@@ -471,10 +478,9 @@ reason: TASK-011 — AI gateway, agent specs and context, citations, usage recor
 ## Handoff
 - **Current state:** TASK-011b PR open from `task-011b-screening`, at the founder's request before the independent tests finished ("we will feed the response from the background agent later"). Both reviews are done and their fixes pushed; screening replay histories are recorded.
 - **Exact next step:**
-  - Take in the test author's report: its tests, including the screening replay tests, and any bugs it finds.
   - Confirm CI.
   - The founder reviews line by line (red).
   - Merge (rebase), delete the local `work/approvals/TASK-011.yaml`, and mark TASK-011 done.
-- **Uncommitted or partial work:** the test author's remaining tests.
-- **Known failing checks:** until the test author's updates land, two pinned unit tests fail by design (worker boot checks; the "owed suites" list).
+- **Uncommitted or partial work:** none.
+- **Known failing checks:** none known; CI pending.
 - **Open issues:** branch protection off; follow-ups in Gotchas (per-firm run cap, run sweeper, evals in `make check`, a real provider).
