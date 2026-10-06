@@ -334,6 +334,7 @@ reason: TASK-009 — write-once encrypted evidence storage, insert-only versions
 - From TASK-006: also declare the app's insertable columns in `APP_INSERT_COLUMNS` and grant them with `insert_columns()`; without a declared list the column check is skipped for that table.
 
 ## Questions for the human
+- [x] Answered 2026-10-06 (founder: "approved, proceed with your recommendations"): TASK-010 adds a `SystemContext` and TASK-011 an `AgentContext` (delegation chain, task scope; ADR-025), both accepted by `authorise`.
 - **Actor-neutral authorisation (architecture review, item 2).** For TASK-010/011: `authorise` takes only a human `AuthContext`, but the matrix grants `evidence.upload` to `system` and `evidence.read` to `agent: task_scope`. Recommend: the TASK-010 design adds a `SystemContext` (and TASK-011 an `AgentContext` with the delegation chain and task scope, ADR-025) that `authorise` accepts. Until then, `read_content` is the documented path for callers authorised under their own context.
 
 ## Handoff

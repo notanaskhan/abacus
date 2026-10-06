@@ -36,6 +36,7 @@ if TYPE_CHECKING:
 MAX_CONTENT_BYTES = 50 * 1024 * 1024  # a trial balance is kilobytes; uploads arrive later
 _MISSING = ("404", "NoSuchKey", "NotFound", "NoSuchVersion")
 _RACE = ("PreconditionFailed", "ConditionalRequestConflict")
+_RETENTION_SLACK = timedelta(minutes=5)  # concurrent reusers' "now" differ by seconds
 
 
 class IntegrityError(Exception):
@@ -129,15 +130,22 @@ async def _verified(target: _Target, tenant_id: UUID, key: str, digest: str) -> 
     return None
 
 
-async def _extend_retention(target: _Target, key: str, version_id: str) -> None:
-    """A reused version is locked for the full period from now (governance mode only ever
-    extends; it never shortens)."""
-    required = _retain_until()
+async def _retained_until(target: _Target, key: str, version_id: str) -> datetime | None:
     current = await asyncio.to_thread(
         target.client.get_object_retention, Bucket=target.bucket, Key=key, VersionId=version_id
     )
-    until = current.get("Retention", {}).get("RetainUntilDate")
-    if until is None or until < required:
+    return current.get("Retention", {}).get("RetainUntilDate")
+
+
+async def _extend_retention(target: _Target, key: str, version_id: str) -> None:
+    """A reused version is locked for the full period from now. Governance mode only extends.
+    Concurrent reusers each ask for "now + period", so a slower one may ask for slightly less than
+    a faster one already set; the store refuses that as a shortening, which is fine."""
+    required = _retain_until()
+    until = await _retained_until(target, key, version_id)
+    if until is not None and until >= required:
+        return
+    try:
         await asyncio.to_thread(
             target.client.put_object_retention,
             Bucket=target.bucket,
@@ -145,6 +153,12 @@ async def _extend_retention(target: _Target, key: str, version_id: str) -> None:
             VersionId=version_id,
             Retention={"Mode": "GOVERNANCE", "RetainUntilDate": required},
         )
+    except StorageError as exc:
+        if error_code(exc) != "AccessDenied":
+            raise
+        until = await _retained_until(target, key, version_id)
+        if until is None or until < required - _RETENTION_SLACK:
+            raise
 
 
 async def _write(target: _Target, key: str, sealed: bytes, *, conditional: bool) -> str | None:

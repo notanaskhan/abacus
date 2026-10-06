@@ -23,7 +23,12 @@ def ensure_bucket() -> str:
         if error_code(exc) != "BucketAlreadyOwnedByYou":
             raise
     # An existing bucket must really be write-once: refuse one without Object Lock.
-    lock = client.get_object_lock_configuration(Bucket=s.evidence_bucket)
+    try:
+        lock = client.get_object_lock_configuration(Bucket=s.evidence_bucket)
+    except StorageError as exc:
+        if error_code(exc) == "ObjectLockConfigurationNotFoundError":
+            raise RuntimeError(f"bucket {s.evidence_bucket} exists without Object Lock") from None
+        raise
     if lock.get("ObjectLockConfiguration", {}).get("ObjectLockEnabled") != "Enabled":
         raise RuntimeError(f"bucket {s.evidence_bucket} exists without Object Lock")
     return s.evidence_bucket

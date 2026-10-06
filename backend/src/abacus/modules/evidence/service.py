@@ -120,6 +120,11 @@ async def add_version(
     if idempotency_key is not None:
         existing = await version_for_key(tx.session, idempotency_key)
         if existing is not None:
+            if (
+                existing.fingerprint != stored.fingerprint
+                or existing.engagement_id != engagement_id
+            ):
+                raise ValueError("idempotency key reused for different content or engagement")
             return _ref(existing, created=False)
     engagement = await lock_ref(tx, engagement_id)  # 404 outside the tenant; locked until commit
     if engagement.archived:
