@@ -165,6 +165,47 @@ Out: retrievals, evidence and screening on the item list (TASK-009–011); engag
 
 **Route introspection** now covers the five new routes, with the actions in §3.
 
+#### Contract revision 1 (2026-10-06, from both stage 4 reviews)
+**Database (migration 0006, column grants)**
+- `abacus_app` may INSERT only these columns:
+  - `clients (id, tenant_id, name)`;
+  - `client_entities (id, tenant_id, client_id, name)`;
+  - `engagements (id, tenant_id, client_id, client_entity_id, name, fiscal_period_start, fiscal_period_end, created_by)`;
+  - `request_lists (id, tenant_id, engagement_id)`;
+  - `request_items (id, tenant_id, engagement_id, request_list_id, description, audit_area, created_by)`;
+  - `engagement_members (tenant_id, engagement_id, user_id, role)`.
+- It may UPDATE only `status` on `engagements` and `request_items`.
+- `schema_check`:
+  - the declared insert columns now apply to every table in `APP_INSERT_COLUMNS`, not only insert-only tables;
+  - the new `APP_UPDATE_COLUMNS` check reports `<t>: abacus_app may UPDATE <t>.<column>` (and `may INSERT`) for extra columns.
+
+**Behaviour**
+- `POST .../request-items` resolves and share-locks the engagement inside its unit of work (`engagements.api.lock_ref`) and authorises there. Missing or other-firm engagement → 404; denied → 403, with nothing written.
+- The first item for an engagement also records audit event `request_list.created` (target `request_list`, `after.engagement_id`). `request_item.created` audit events carry `after.engagement_id`.
+- The creator's `engagement_member.added` audit event carries `after.user_id` = the creator. `identity.api` exports `add_creator_as_partner(tx, ctx, engagement_id)` (no user or role arguments); `add_engagement_member` is gone.
+- Names (`name`, `client_name`, `client_entity_name`, `audit_area`) reject any control character (U+0000–U+001F, U+007F) with a 422. `description` allows `\n` and `\t` only. NUL never reaches the database.
+- Any unhandled exception → **500** `{"detail": "internal error"}`, logged as `api.unexpected_error` with the exception class name only.
+- `create_app()` raises `RuntimeError` when `environment == "production"` and `identity.api.WALL_SAFE` is False (walls gate the first real firm).
+- `engagements.api` exports `EngagementCreated`, `EngagementRef`, `get_ref`, `lock_ref`, `router`. `requests.api` exports `RequestItemCreated`, `router`.
+
+**OpenAPI**
+- Top-level `security: [{"bearer": []}]` and `components.securitySchemes.bearer` (http, bearer, JWT).
+- Every operation documents `401`, `403`, `404` (`ErrorOut {detail}`) and `422` (`ValidationErrorOut {detail: [FieldErrorOut {loc, msg, type}]}`).
+- No schema anywhere declares `input` or `ctx`.
+
+**Static rules**
+- **LIST-001** (`src/abacus/modules/*/repository.py` and `*/repository/*.py`):
+  - Applies to a function named `list_*`/`all_*`/`search_*`, or one that calls `.all()`, unless it's in `LIST_EXEMPT`.
+  - Such a function must pass a `visible(...)` call inside a `.where(...)` argument.
+  - That `visible` call's second argument must be a string literal naming a read action in the matrix.
+- **BOUND-002** (`src/abacus/modules/*`): imports of another module must be allowed by `MODULE_DEPENDENCIES`:
+  - `identity` → none;
+  - `organisations` → none;
+  - `engagements` → identity, organisations;
+  - `requests` → identity, engagements;
+  - any other module → identity.
+- **OWN-001** (`src/abacus/modules/*`): `__tablename__ = "<t>"`, `Table("<t>", …)`, and upper-case SQL statements (`SELECT`/`INSERT`/`UPDATE`/`DELETE`/`WITH` … `FROM|JOIN|INTO|UPDATE <t>`) must name tables whose `TABLE_OWNERS` owner is the file's module.
+
 ### Approval file text
 ```yaml
 task: TASK-008
@@ -218,6 +259,15 @@ reason: TASK-008 — engagements, request items, OpenAPI export and generated cl
 |---|---|---|
 
 ## Gotchas and discoveries
+- From the stage 4 reviews: these follow-ups are recorded, not fixed here.
+  - Pagination envelope `{items, next_cursor}` before the frontend relies on bare arrays (ADR-013 breaking change otherwise). Decide in TASK-012.
+  - Client dedupe when client management lands (every engagement creates a client today).
+  - A `requests.api.get_item_ref` for evidence (TASK-009).
+  - Reference docs `backend-module.md` and `unit-of-work.md` (TASK-015).
+  - A security alert on `engagement_member.added` by a firm_admin creator (residual ADR-024 risk; needs alerting, TASK-013).
+  - Type-check `packages/api-client` in `make check`.
+  - CI `pnpm install --frozen-lockfile --ignore-scripts`.
+  - Same-firm 403 vs 404 reveals existence within a firm (by design, §3).
 - From TASK-007: build engagement resources with `Resource.engagement(tenant_id, id, archived=<loaded from the engagements row>)`. Never hard-code `archived=False`; consider having `authorise` load it itself once `engagements` exists.
 - Add the FK `engagement_members.engagement_id → engagements` and the app grants this task needs (`INSERT` on `engagement_members` for "creator becomes a member", AC-4).
 - `authorise` is not wall-safe (ADR-026). Founder decision 2026-10-06: walls gate the first real firm, not this task.

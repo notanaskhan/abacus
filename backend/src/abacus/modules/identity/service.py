@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext
-from abacus.kernel.uow import Target, UnitOfWork
+from abacus.kernel.uow import Ref, Target, UnitOfWork
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.repository import (
     EngagementRole,
@@ -28,6 +28,7 @@ from abacus.modules.identity.repository import (
 from abacus.modules.identity.tokens import InvalidToken, VerifiedIdentity, token_verifier
 
 TENANT_HEADER = "X-Abacus-Tenant"
+CREATOR_ROLE: EngagementRole = "engagement_partner"
 
 
 class Unauthenticated(Exception):
@@ -97,13 +98,19 @@ class TeamMember:
     role: EngagementRole
 
 
-async def add_engagement_member(
-    tx: UnitOfWork, ctx: AuthContext, engagement_id: UUID, user_id: UUID, role: EngagementRole
-) -> None:
-    """Adds a member inside the caller's unit of work and audits it. The caller has authorised
-    the action that implies it (e.g. `engagement.create` makes the creator a member, AC-4)."""
-    await insert_engagement_member(tx.session, ctx.tenant_id, engagement_id, user_id, role)
-    tx.record("engagement_member.added", target=Target("engagement", engagement_id))
+async def add_creator_as_partner(tx: UnitOfWork, ctx: AuthContext, engagement_id: UUID) -> None:
+    """The creator of an engagement becomes its engagement partner (AC-4; TASK-008 Q2), inside the
+    creating unit of work, after `engagement.create` was authorised. The only way to add a member
+    until `engagement.member_add` has its own route; who and which role are not the caller's to
+    choose."""
+    await insert_engagement_member(
+        tx.session, ctx.tenant_id, engagement_id, ctx.user_id, CREATOR_ROLE
+    )
+    tx.record(
+        "engagement_member.added",
+        target=Target("engagement", engagement_id),
+        after=Ref(user_id=ctx.user_id),
+    )
 
 
 async def engagement_team(ctx: AuthContext, engagement_id: UUID) -> list[TeamMember]:

@@ -2,6 +2,7 @@
 
 from abacus.modules.identity.authz import (
     MFA_RECENT,
+    WALL_SAFE,
     Forbidden,
     Resource,
     UnknownAction,
@@ -20,7 +21,7 @@ from abacus.modules.identity.routing import (
     current_signed_in,
     declared_action,
 )
-from abacus.modules.identity.service import TeamMember, add_engagement_member, engagement_team
+from abacus.modules.identity.service import TeamMember, add_creator_as_partner, engagement_team
 from abacus.modules.identity.tokens import (
     InvalidToken,
     JwtVerifier,
@@ -35,6 +36,7 @@ __all__ = [
     "ACTION_KEY",
     "MFA_RECENT",
     "SELF",
+    "WALL_SAFE",
     "AbacusRoute",
     "AbacusRouter",
     "AuthContext",
@@ -47,7 +49,7 @@ __all__ = [
     "TokenVerifier",
     "UnknownAction",
     "VerifiedIdentity",
-    "add_engagement_member",
+    "add_creator_as_partner",
     "authorise",
     "configure_verifier",
     "current_context",
