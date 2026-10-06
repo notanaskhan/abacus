@@ -46,7 +46,10 @@ APP = "abacus_app"
 # Tables without tenant_id: only infrastructure. Each entry is founder-reviewed (protected file).
 NON_TENANT_TABLES = frozenset({"alembic_version"})
 # Tables the app may insert into and read, never update or delete (ADR-004); TASK-009/010 add.
-INSERT_ONLY_TABLES: frozenset[str] = frozenset({"audit_events", "outbox", "evidence_versions"})
+INSERT_ONLY_TABLES: frozenset[str] = frozenset(
+    {"audit_events", "outbox", "evidence_versions", "ledger_snapshots", "trial_balance_lines"}
+    | {"fulfilments"}
+)
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "audit_events": frozenset(
@@ -76,14 +79,44 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"idempotency_key"}
     ),
 }
+APP_INSERT_COLUMNS.update(
+    {
+        "sync_runs": frozenset(
+            {"id", "tenant_id", "connection_id", "engagement_id", "request_item_id", "dataset"}
+            | {"period_start", "period_end", "started_by"}
+        ),
+        "ledger_snapshots": frozenset(
+            {"id", "tenant_id", "client_entity_id", "period_start", "period_end", "pulled_at"}
+            | {"source", "raw_fingerprint", "line_count", "total_debit", "total_credit"}
+        ),
+        "trial_balance_lines": frozenset(
+            {"id", "tenant_id", "snapshot_id", "account_code", "account_name", "debit"}
+            | {"credit", "source_ref"}
+        ),
+        "fulfilments": frozenset(
+            {"id", "tenant_id", "request_item_id", "evidence_version_id", "created_by_kind"}
+            | {"created_by_id"}
+        ),
+        "connections": frozenset(),
+    }
+)
 # Tables whose rows no role may change or remove: a BEFORE UPDATE OR DELETE trigger and a BEFORE
 # TRUNCATE trigger must call this function (ADR-004 second layer, TASK-009).
-IMMUTABLE_TABLES: dict[str, str] = {"evidence_versions": "evidence_versions_immutable"}
+IMMUTABLE_TABLES: dict[str, str] = {
+    "evidence_versions": "evidence_versions_immutable",
+    "ledger_snapshots": "ledger_immutable",
+    "trial_balance_lines": "ledger_immutable",
+}
 # Columns the app may update; any other UPDATE on these tables is reported (TASK-008). Tables not
 # listed here keep whatever their migration grants (insert-only tables grant none).
 APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "engagements": frozenset({"status"}),
     "request_items": frozenset({"status"}),
+    "connections": frozenset({"status"}),
+    "sync_runs": frozenset(
+        {"status", "raw_storage_key", "raw_version_id", "raw_fingerprint", "snapshot_id"}
+        | {"failure_code", "finished_at"}
+    ),
 }
 # Who owns each table (ADR-103): a module or kernel package. Every table must be listed, and every
 # listed table must exist. Modules touch only their own tables (ADR-008).
@@ -102,6 +135,11 @@ TABLE_OWNERS: dict[str, str] = {
     "request_items": "requests",
     "evidence_items": "evidence",
     "evidence_versions": "evidence",
+    "connections": "connections",
+    "sync_runs": "connections",
+    "ledger_snapshots": "ledger",
+    "trial_balance_lines": "ledger",
+    "fulfilments": "requests",
 }
 # Tables shared by every tenant, readable only through abacus_identity (ADR-002, TASK-007): the app
 # role has no privileges on them at all. Each entry is founder-reviewed (protected file).

@@ -38,7 +38,7 @@ from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.logging import get_logger
 from abacus.modules.identity.authz.matrix import RULES, Rule
-from abacus.modules.identity.context import AuthContext
+from abacus.modules.identity.context import Actor, AuthContext, SystemContext
 from abacus.modules.identity.repository import (
     ENGAGEMENT_ROLES,
     engagement_members,
@@ -109,22 +109,20 @@ def _rule(action: str) -> Rule:
     return rule
 
 
-def _deny(ctx: AuthContext, action: str, layer: Layer) -> Forbidden:
-    _log.info(
-        "authz.denied", action=action, layer=layer, tenant_id=ctx.tenant_id, user_id=ctx.user_id
-    )
+def _who(ctx: Actor) -> dict[str, object]:
+    if isinstance(ctx, AuthContext):
+        return {"user_id": ctx.user_id}
+    return {"system_run_id": ctx.run_id, "on_behalf_of": ctx.on_behalf_of}
+
+
+def _deny(ctx: Actor, action: str, layer: Layer) -> Forbidden:
+    _log.info("authz.denied", action=action, layer=layer, tenant_id=ctx.tenant_id, **_who(ctx))
     return Forbidden(action, layer)
 
 
-async def authorise(
-    ctx: AuthContext, action: str, resource: Resource, *, reason: str | None = None
-) -> None:
-    """Return if allowed; raise `Forbidden` otherwise."""
-    rule = _rule(action)
-    # 1. Tenancy.
-    if resource.tenant_id != ctx.tenant_id:
-        raise _deny(ctx, action, "tenancy")
-    # 2. Relationships.
+async def _roles(ctx: Actor, resource: Resource) -> set[str]:
+    if isinstance(ctx, SystemContext):
+        return {"system"}  # the platform has no firm or engagement role
     roles: set[str] = set()
     if ctx.firm_role is not None:
         roles.add(ctx.firm_role)
@@ -132,6 +130,19 @@ async def authorise(
         role = await engagement_role(ctx.tenant, ctx.user_id, resource.engagement_id)
         if role is not None:
             roles.add(role)
+    return roles
+
+
+async def authorise(
+    ctx: Actor, action: str, resource: Resource, *, reason: str | None = None
+) -> None:
+    """Return if allowed; raise `Forbidden` otherwise."""
+    rule = _rule(action)
+    # 1. Tenancy.
+    if resource.tenant_id != ctx.tenant_id:
+        raise _deny(ctx, action, "tenancy")
+    # 2. Relationships.
+    roles = await _roles(ctx, resource)
     if not roles:
         raise _deny(ctx, action, "relationship")
     # 3. Roles.
@@ -141,18 +152,19 @@ async def authorise(
     # 4. Attributes.
     if resource.archived and not rule.reads:
         raise _deny(ctx, action, "attribute")
-    if rule.mfa_recent and (ctx.mfa_at is None or datetime.now(UTC) - ctx.mfa_at > MFA_RECENT):
+    mfa_at = ctx.mfa_at if isinstance(ctx, AuthContext) else None
+    if rule.mfa_recent and (mfa_at is None or datetime.now(UTC) - mfa_at > MFA_RECENT):
         raise _deny(ctx, action, "attribute")
     if rule.requires_reason and not (reason and reason.strip()):
         raise _deny(ctx, action, "attribute")
     if rule.notify:
         raise _deny(ctx, action, "attribute")
     _record(action)
-    _log.info("authz.allowed", action=action, tenant_id=ctx.tenant_id, user_id=ctx.user_id)
+    _log.info("authz.allowed", action=action, tenant_id=ctx.tenant_id, **_who(ctx))
 
 
 def visible(
-    ctx: AuthContext, action: str, engagement_id: ColumnElement[UUID] | QueryableAttribute[UUID]
+    ctx: Actor, action: str, engagement_id: ColumnElement[UUID] | QueryableAttribute[UUID]
 ) -> ColumnElement[bool]:
     """A filter for list queries: rows whose engagement the actor may `action` (a read action).
     Agrees with `authorise` for every role. Apply it: building it counts as the route's check."""
@@ -162,6 +174,8 @@ def visible(
     if rule.mfa_recent or rule.requires_reason or rule.notify:
         raise ValueError(f"visible() can't apply {action!r}'s conditions; use authorise()")
     _record(action)
+    if isinstance(ctx, SystemContext):
+        return true() if rule.decisions.get("system") == "allow" else false()
     firm = rule.decisions.get(ctx.firm_role) if ctx.firm_role is not None else None
     if firm == "allow":
         return true()
