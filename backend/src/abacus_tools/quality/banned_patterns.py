@@ -624,12 +624,18 @@ def _check_context_construction(src: SourceFile) -> Iterator[Finding]:
             yield Finding(node.lineno, "contexts are never built through type()")
 
 
+# Which issuing function each issuer may call (SYS-001). Anywhere else, none.
+_ISSUERS: dict[str, frozenset[str]] = {
+    "src/abacus/modules/connections/service.py": frozenset({"system_context_for_run", "_ISSUER"}),
+    "src/abacus/modules/agents/service.py": frozenset({"agent_context_for_run"}),
+}
+
+
 def _check_system_issue(src: SourceFile) -> Iterator[Finding]:
+    allowed = _ISSUERS.get(src.rel, frozenset())
     for line, name in _names_used(src):
-        if name in (
-            "system_context_for_run",
-            "agent_context_for_run",
-            "_ISSUER",
+        if name in ("system_context_for_run", "agent_context_for_run", "_ISSUER") and (
+            name not in allowed
         ):
             yield Finding(line, "system contexts are issued from a proven run only")
 
@@ -967,6 +973,8 @@ def _check_human_decision(src: SourceFile) -> Iterator[Finding]:
                 continue
             actor = _argument(call, 0, "ctx")
             annotation = params.get(actor.id) if isinstance(actor, ast.Name) else None
+            if isinstance(annotation, ast.Constant) and isinstance(annotation.value, str):
+                annotation = ast.parse(annotation.value, mode="eval").body  # "AuthContext"
             if annotation is None or _terminal_name(annotation) not in _NON_AGENT_CONTEXTS:
                 yield Finding(
                     call.lineno,
@@ -1213,15 +1221,13 @@ RULES: list[Rule | TreeRule] = [
     ),
     Rule(
         id="SYS-001",
-        description="Only connections' run loader issues system contexts",
+        description="Run contexts are issued only by their run loaders (connections, agents)",
         adr="ADR-023",
         check=_check_system_issue,
         include=("src/abacus/*",),
         exclude=(
             "src/abacus/modules/identity/context.py",
             "src/abacus/modules/identity/api.py",
-            "src/abacus/modules/connections/service.py",
-            "src/abacus/modules/agents/service.py",
         ),
     ),
     Rule(

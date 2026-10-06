@@ -129,9 +129,8 @@ async def fail_run(tenant_id: UUID, run_id: UUID, code: str) -> bool:
     try:
         async with uow(_reader(tenant_id, f"agent-run:{run_id}")) as tx:
             if await finish_run(tx.session, run_id, status="failed", failure_code=code):
-                tx.record(
-                    "agent_run.failed", target=Target("agent_run", run_id), after=Ref(code=code)
-                )
+                # The code is on the run row (`failure_code`); audit references are identifiers.
+                tx.record("agent_run.failed", target=Target("agent_run", run_id))
     except MissingAuditEvent:
         return False  # it had already ended: nothing written
     return True
