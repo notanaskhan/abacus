@@ -183,6 +183,7 @@ async def screen(agent: AgentContext) -> ScreeningOutcome:
                 "account_names": [line.account_name for line in snapshot.lines[:200]],
             },
             untrusted=screener.untrusted_inputs,
+            trim="account_names",
         )
         .build()
     )

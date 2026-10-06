@@ -24,6 +24,7 @@ from abacus.ai_gateway.context import (
     MAX_ROWS,
     AssembledContext,
     ContextBuilder,
+    ContextTooLarge,
     DatasetTooLarge,
     estimate_tokens,
 )
@@ -266,6 +267,7 @@ __all__ = [
     "Attribution",
     "BudgetExceeded",
     "ContextBuilder",
+    "ContextTooLarge",
     "DatasetTooLarge",
     "FakeModel",
     "GatewayCall",
