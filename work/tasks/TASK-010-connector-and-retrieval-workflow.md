@@ -124,6 +124,95 @@ The `evidence_versions.snapshot_id → ledger_snapshots` composite FK is added h
 - **Q4. Who can see retrieval status?** `connection.read_log` (client_admin, partner, manager) is the closest action, but staff and seniors trigger retrievals. Recommend: the trigger response and the request-item list show status, and `GET …/retrievals/{id}` uses `request_item.read`. The client-visible access log stays `connection.read_log` (later spec).
 - **Q5. Payload codec key:** a platform key (not per tenant) for workflow payloads, since payloads carry only IDs. Placeholder locally, KMS in TASK-014. Recommend yes.
 
+### Interface contract — TASK-010a (tests written independently — ADR-078)
+**Imports**
+- `from abacus.modules.identity.api import SystemContext, Actor, system_context, authorise, visible, Resource, Forbidden`
+- `from abacus.modules.connections.api import Connector, Capabilities, ConnectorError, Unavailable, NotSupported, Period, RawPayload, FakeConnector, fixture_path, start_retrieval, StartedRun, NoConnection, connector_for, extract, store_raw, normalise_raw, validate_run, snapshot, render, run_pipeline, RunFailed, RunResult`
+- `from abacus.modules.ledger.api import normalise, validate, NormaliseError, NormalisedTrialBalance, LedgerLine, record_snapshot, SnapshotRef, Unvalidated, trial_balance_for`
+- `from abacus.modules.requests.api import fulfil_by_rule, FulfilmentRef`
+- `from abacus_tools.synthetic.connector_fixtures import write_trial_balance, write_fault, write_raw, trial_balance_document`
+
+**SystemContext**
+- `system_context(auth_ctx, run_id)` → `SystemContext(tenant=TenantContext(t, "system", "run:<run_id>"), on_behalf_of=user_id, run_id)`.
+- In `authorise`, the system holds only the role `system`. Today it is allowed `connection.pull`, `evidence.upload`, `fulfilment.propose`, `screening.run`, `support_match.run` and `connection.pull`, and everything else is `Forbidden` at layer `role`. Tenancy still applies.
+- `visible(system_ctx, read_action, col)` → `true()` if the matrix gives `system: allow`, else `false()`.
+- Denial and allow logs carry `system_run_id` and `on_behalf_of` for the system, and `user_id` for humans.
+- CTX-001 flags `SystemContext(...)` outside `identity/service.py`.
+
+**Connector contract and fake connector**
+- `Connector` is abstract and every method in the contract is abstract. The conformance checks that any connector must pass:
+  - `capabilities()` returns `Capabilities`;
+  - `pull` of a declared dataset returns `RawPayload` with bytes identical to the provider's response, and is deterministic for the same period and cursor;
+  - an undeclared dataset → `NotSupported`;
+  - OAuth methods raise `NotSupported` when `capabilities().oauth` is False;
+  - no method is write-shaped (CONN-001).
+
+  Write the conformance checks as a reusable suite, `tests/connectors/conformance.py`, parametrised over connector factories, and run it on `FakeConnector`.
+- `FakeConnector(connection_id, directory)`:
+  - reads `fixture_path(dir, connection_id, "trial_balance", period)`;
+  - a missing file → `ConnectorError("no_data")`;
+  - `{"fault": "unavailable"}` → `Unavailable("provider_unavailable")`;
+  - malformed bytes are returned as they are;
+  - `health()` is True iff the directory exists.
+- Settings: `fake_connector_dir` set outside local/test → validation error.
+
+**Ledger**
+- `normalise(bytes)` → `NormalisedTrialBalance(period_start, period_end, lines, declared_debit, declared_credit)`, with amounts as `Decimal` quantised to cents.
+- It raises `NormaliseError("malformed_payload")` for: invalid JSON or UTF-8; a non-object; `dataset` ≠ `trial_balance`; missing fields; non-string amounts (JSON numbers); text that is empty, over 200 characters or contains control characters; more than 50,000 lines.
+- It raises `NormaliseError("invalid_amount")` for: unparseable, non-finite or negative amounts; more than 2 decimal places; ≥ 1e15.
+- `validate(tb, *, period_start, period_end)` checks in this order: `empty`, `period_mismatch`, `duplicate_account`, `control_totals_mismatch` (computed ≠ declared), `unbalanced`. It returns `None` when all pass.
+- `record_snapshot(tx, …)`:
+  - re-validates (`Unvalidated`);
+  - inserts the snapshot and lines and records `ledger_snapshot.created`;
+  - the same `(entity, period, raw_fingerprint)` → `SnapshotRef(existing, created=False)` with no new rows and no audit event.
+- `trial_balance_for(tenant, snapshot_id, entity_name=…)` → `evidence.api.TrialBalance` with lines sorted by code and `source_fingerprint` = raw fingerprint.
+
+**Requests.** `fulfil_by_rule(tx, ctx, request_item_id=…, evidence_version_id=…)`:
+- authorises `fulfilment.propose` for `ctx` on the item's engagement (a human staff member → `Forbidden`; the system → allowed);
+- inserts `fulfilments(created_by_kind='rule', created_by_id=<tx actor id>)` once per (item, version), with audit event `fulfilment.created`;
+- moves the item `open → received` (audit event `request_item.received`), and only from `open`;
+- a repeat → `FulfilmentRef(id=None, received=False)`.
+
+**Pipeline** (seed as superuser: firm, user, membership, client, entity, engagement, member, request list and items, `connections(provider='fake')`; fixtures via `write_trial_balance`; storage as in TASK-009 tests)
+- `start_retrieval(ctx, engagement_id=…, request_item_id=…, period=…)`:
+  - needs `evidence.upload` (reviewer → `Forbidden`, nothing written);
+  - no active, unexpired connection for the entity → `NoConnection`;
+  - inserts `sync_runs(status='running', started_by=<user id>)` with audit event `sync_run.started` (`after.user_id`, `after.request_item_id`);
+  - a request item from another engagement → database error, nothing written.
+- **AC-9 and AC-10** via `run_pipeline(system, run_id)`:
+  - the raw payload is stored in the evidence store under its fingerprint, encrypted;
+  - the sync run records `raw_*`, then `snapshot_id`, then `status='succeeded'` with `finished_at`;
+  - one snapshot with the right line count and totals;
+  - one evidence version: method `retrieved`, `pulled_at`, period, entity, `snapshot_id`, fingerprint, `.xlsx` media type;
+  - one fulfilment `rule`; the item is `received`;
+  - audit events in order: `sync_run.started`, `sync_run.raw_stored`, `ledger_snapshot.created`, `sync_run.snapshot_linked`, `evidence_item.created`, `evidence_version.created`, `fulfilment.created`, `request_item.received`, `sync_run.succeeded`;
+  - outbox: `evidence_version.created`.
+- **AC-11:** an unbalanced fixture (or a declared-totals mismatch) → `RunFailed("failed_validation", "unbalanced"|"control_totals_mismatch")`. The run is `failed_validation` with `failure_code`. There's no snapshot, no evidence version and no fulfilment; the item stays `open`; and there's a `sync_run.failed` audit event.
+- **Failures:**
+  - a malformed payload → `RunFailed("failed", "malformed_payload")`;
+  - a missing fixture → `RunFailed("failed", "no_data")`;
+  - a fault → `RunFailed("failed", "provider_unavailable")` from `run_pipeline` (`extract` alone raises `Unavailable`);
+  - a revoked connection → `RunFailed("failed", "connection_inactive")`.
+- **Idempotency (§12):**
+  - running any stage again after success returns the same result (`render` → the same version ID; `snapshot` → the same snapshot ID; `store_raw` → the same object);
+  - a second `start_retrieval` plus `run_pipeline` for the same item and period → the same snapshot and version, and still one fulfilment;
+  - stages on a failed run raise `RunFailed`;
+  - a stage given another run's ID than its system context's → `NotFound`.
+- **Database (migration 0009):**
+  - the new tables have forced RLS and the owners in `TABLE_OWNERS`;
+  - `ledger_snapshots` and `trial_balance_lines` are insert-only, and as superuser UPDATE, DELETE and TRUNCATE are rejected by the trigger;
+  - CHECKs: snapshot `total_debit = total_credit`; amounts ≥ 0; `sync_runs` finished ⇔ not running; `failure_code` ⇔ failed;
+  - composite FKs: a sync run's item must be in its engagement; snapshot and fulfilment links stay within the tenant; `evidence_versions.snapshot_id` → `ledger_snapshots`;
+  - grants: the app can't INSERT `connections` and may UPDATE only its `status`; it may UPDATE only the result columns of `sync_runs`;
+  - downgrading 0009 raises while snapshots exist.
+
+**Static rules**
+- **CONN-001** (in `connections/connector.py`, `fake.py` and `connectors/*`): importing `httpx`, `requests`, `aiohttp`, `urllib3`, `urllib.request` or `http.client`, or defining a function whose name (without leading underscores) starts with `create`, `update`, `delete`, `write`, `post`, `put`, `patch`, `upload` or `send`.
+- **BOUND-002** now allows:
+  - `ledger` → identity, evidence;
+  - `connections` → identity, engagements, organisations, ledger, evidence, requests.
+- **LIST-001** exempts `ledger/repository.py:lines_of`.
+
 ### Approval file text
 ```yaml
 task: TASK-010
@@ -179,6 +268,12 @@ reason: TASK-010 — connector, ledger snapshots, fulfilments, retrieval pipelin
 - `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder. Not started.
 - `2026-10-06` — Design drafted (§1–7, Q1–Q5) for founder review.
 - `2026-10-06` — Approved with all recommendations (split into 010a/010b); approval file written at the founder's instruction. Starting TASK-010a.
+- `2026-10-06` — 010a implemented. Smoke-tested end to end:
+  - AC-9/10 happy path;
+  - idempotent re-render and re-retrieval (one snapshot, one version, one fulfilment);
+  - AC-11 unbalanced → `failed_validation`, item stays open.
+
+  Migration 0009 (my own, unmerged, never applied) was edited in place to add `sync_runs.raw_size_bytes` and `raw_pulled_at`; no new migration. 010a contract written.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -195,16 +290,8 @@ reason: TASK-010 — connector, ledger snapshots, fulfilments, retrieval pipelin
 -
 
 ## Handoff
-- **Current state:** Design drafted; awaiting founder approval (red). No code.
-- **Exact next step:** On approval, write `work/approvals/TASK-010.yaml` with these paths:
-  - `.claude/hooks/_protected.py`, `.github/CODEOWNERS`, `docs/architecture/protected-paths.md`
-  - `backend/pyproject.toml`, `backend/uv.lock`
-  - `backend/src/abacus/kernel/**`
-  - `backend/src/abacus/modules/identity/**`, `backend/src/abacus/modules/connections/**`, `backend/src/abacus/modules/ledger/**`
-  - `backend/src/abacus/modules/evidence/**`, `backend/src/abacus/modules/requests/**`
-  - `backend/src/abacus/api/**`, `backend/src/abacus/worker/**`
-  - `backend/src/abacus_tools/quality/schema_check.py`, `backend/src/abacus_tools/quality/banned_patterns.py`
-  - `backend/tests/unit/quality/test_banned_patterns.py`
-  - `packages/api-client/**`
-
-  Then follow the Steps.
+- **Current state:** TASK-010a implemented and committed on `task-010-retrieval` (WIP). Contract written. The independent test author and two reviews are next.
+- **Exact next step:** Collect tests and reviews; fix; `make check`; PR for TASK-010a (red: founder line-by-line). Then TASK-010b (step 6).
+- **Uncommitted or partial work:** none.
+- **Known failing checks:** older tests that seed `request_items` may need nothing new; `engagements` tests may check `EngagementRef` fields.
+- **Open issues:** branch protection off.
