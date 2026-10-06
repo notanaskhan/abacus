@@ -1085,3 +1085,142 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     assert sc.APP_INSERT_COLUMNS["engagement_members"] == frozenset(
         {"tenant_id", "engagement_id", "user_id", "role"}
     )
+
+
+# --- evidence immutability trigger (TASK-009 contract and revision 1) ----------------------------
+
+IMMUTABLE_FUNCTION = "evidence_versions_immutable"
+RESTORE_EVIDENCE = [
+    "DROP TRIGGER IF EXISTS evidence_versions_no_update_or_delete ON evidence_versions",
+    "DROP TRIGGER IF EXISTS evidence_versions_no_truncate ON evidence_versions",
+    "DROP TRIGGER IF EXISTS zz_evidence_after ON evidence_versions",
+    "DROP TRIGGER IF EXISTS zz_evidence_other ON evidence_versions",
+    "DROP FUNCTION IF EXISTS zz_evidence_other_fn()",
+    "CREATE OR REPLACE FUNCTION evidence_versions_immutable() RETURNS trigger "
+    "LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'evidence versions are immutable (ADR-004)' "
+    "USING ERRCODE = 'insufficient_privilege'; END $$",
+    "CREATE TRIGGER evidence_versions_no_update_or_delete BEFORE UPDATE OR DELETE ON "
+    "evidence_versions FOR EACH ROW EXECUTE FUNCTION evidence_versions_immutable()",
+    "CREATE TRIGGER evidence_versions_no_truncate BEFORE TRUNCATE ON evidence_versions "
+    "FOR EACH STATEMENT EXECUTE FUNCTION evidence_versions_immutable()",
+]
+ROW_TRIGGER = "evidence_versions_no_update_or_delete"
+TRUNCATE_TRIGGER = "evidence_versions_no_truncate"
+
+
+@pytest.fixture(scope="module")
+def evidence_db() -> Iterator[sc.Database]:
+    with provisioned_database(roundtrip=False) as database:
+        yield database
+
+
+@pytest.fixture
+def evidence(evidence_db: sc.Database) -> Iterator[sc.Database]:
+    yield evidence_db
+    _sql(evidence_db.superuser_dsn, *RESTORE_EVIDENCE)
+
+
+def _evidence_problems(database: sc.Database) -> list[str]:
+    return [m for m in sc.check(database.owner_url, database.app_url) if "evidence" in m]
+
+
+def _missing(op: str) -> str:
+    return (
+        f"evidence_versions: no enabled BEFORE {op} trigger calling {IMMUTABLE_FUNCTION} "
+        "that raises"
+    )
+
+
+def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Database) -> None:
+    assert sc.IMMUTABLE_TABLES == {"evidence_versions": IMMUTABLE_FUNCTION}
+    assert _evidence_problems(evidence) == []
+
+
+def test_ac20_a_dropped_truncate_trigger_is_reported(evidence: sc.Database) -> None:
+    _sql(evidence.superuser_dsn, f"DROP TRIGGER {TRUNCATE_TRIGGER} ON evidence_versions")
+    assert _evidence_problems(evidence) == [_missing("TRUNCATE")]
+
+
+def test_ac20_a_dropped_update_delete_trigger_reports_both_operations(
+    evidence: sc.Database,
+) -> None:
+    _sql(evidence.superuser_dsn, f"DROP TRIGGER {ROW_TRIGGER} ON evidence_versions")
+    assert sorted(_evidence_problems(evidence)) == sorted([_missing("UPDATE"), _missing("DELETE")])
+
+
+def test_ac20_both_triggers_dropped_reports_all_three_operations(evidence: sc.Database) -> None:
+    _sql(
+        evidence.superuser_dsn,
+        f"DROP TRIGGER {ROW_TRIGGER} ON evidence_versions",
+        f"DROP TRIGGER {TRUNCATE_TRIGGER} ON evidence_versions",
+    )
+    assert sorted(_evidence_problems(evidence)) == sorted(
+        [_missing("UPDATE"), _missing("DELETE"), _missing("TRUNCATE")]
+    )
+
+
+def test_ac20_a_disabled_trigger_is_reported(evidence: sc.Database) -> None:
+    _sql(
+        evidence.superuser_dsn, f"ALTER TABLE evidence_versions DISABLE TRIGGER {TRUNCATE_TRIGGER}"
+    )
+    assert _evidence_problems(evidence) == [_missing("TRUNCATE")]
+
+
+def test_ac20_a_replica_only_trigger_is_reported(evidence: sc.Database) -> None:
+    _sql(
+        evidence.superuser_dsn,
+        f"ALTER TABLE evidence_versions ENABLE REPLICA TRIGGER {TRUNCATE_TRIGGER}",
+    )
+    assert _evidence_problems(evidence) == [_missing("TRUNCATE")]
+
+
+def test_ac20_an_always_enabled_trigger_passes(evidence: sc.Database) -> None:
+    _sql(
+        evidence.superuser_dsn,
+        f"ALTER TABLE evidence_versions ENABLE ALWAYS TRIGGER {TRUNCATE_TRIGGER}",
+        f"ALTER TABLE evidence_versions ENABLE ALWAYS TRIGGER {ROW_TRIGGER}",
+    )
+    assert _evidence_problems(evidence) == []
+
+
+def test_ac20_a_trigger_function_that_no_longer_raises_is_reported(evidence: sc.Database) -> None:
+    _sql(
+        evidence.superuser_dsn,
+        "CREATE OR REPLACE FUNCTION evidence_versions_immutable() RETURNS trigger "
+        "LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END $$",
+    )
+    assert sorted(_evidence_problems(evidence)) == sorted(
+        [_missing("UPDATE"), _missing("DELETE"), _missing("TRUNCATE")]
+    )
+
+
+def test_ac20_a_trigger_that_returns_after_raising_is_reported(evidence: sc.Database) -> None:
+    _sql(
+        evidence.superuser_dsn,
+        "CREATE OR REPLACE FUNCTION evidence_versions_immutable() RETURNS trigger "
+        "LANGUAGE plpgsql AS $$ BEGIN IF false THEN RAISE EXCEPTION 'never'; END IF; "
+        "RETURN NEW; END $$",
+    )
+    assert len(_evidence_problems(evidence)) == 3
+
+
+def test_ac20_an_after_trigger_does_not_count(evidence: sc.Database) -> None:
+    _sql(
+        evidence.superuser_dsn,
+        f"DROP TRIGGER {ROW_TRIGGER} ON evidence_versions",
+        "CREATE TRIGGER zz_evidence_after AFTER UPDATE OR DELETE ON evidence_versions "
+        f"FOR EACH ROW EXECUTE FUNCTION {IMMUTABLE_FUNCTION}()",
+    )
+    assert sorted(_evidence_problems(evidence)) == sorted([_missing("UPDATE"), _missing("DELETE")])
+
+
+def test_ac20_a_trigger_calling_another_function_does_not_count(evidence: sc.Database) -> None:
+    _sql(
+        evidence.superuser_dsn,
+        f"DROP TRIGGER {TRUNCATE_TRIGGER} ON evidence_versions",
+        "CREATE FUNCTION zz_evidence_other_fn() RETURNS trigger LANGUAGE plpgsql AS "
+        "$$ BEGIN RAISE EXCEPTION 'other'; END $$",
+        "CREATE TRIGGER zz_evidence_other BEFORE TRUNCATE ON evidence_versions "
+        "FOR EACH STATEMENT EXECUTE FUNCTION zz_evidence_other_fn()",
+    )
+    assert _evidence_problems(evidence) == [_missing("TRUNCATE")]
