@@ -4,7 +4,7 @@ title: Write-once evidence storage, per-tenant keys, deterministic rendering
 spec: SPEC-000
 acceptance_criteria: [AC-12, AC-13]
 risk_zone: red
-status: in-review
+status: done
 branch: task-009-evidence
 worktree:
 created: 2026-10-06
@@ -350,8 +350,5 @@ reason: TASK-009 — write-once encrypted evidence storage, insert-only versions
 - **Actor-neutral authorisation (architecture review, item 2).** For TASK-010/011: `authorise` takes only a human `AuthContext`, but the matrix grants `evidence.upload` to `system` and `evidence.read` to `agent: task_scope`. Recommend: the TASK-010 design adds a `SystemContext` (and TASK-011 an `AgentContext` with the delegation chain and task scope, ADR-025) that `authorise` accepts. Until then, `read_content` is the documented path for callers authorised under their own context.
 
 ## Handoff
-- **Current state:** Done pending review. PR open on `task-009-evidence`; `make check` exit 0.
-- **Exact next step:** Confirm CI. Founder line-by-line review. Merge, delete `work/approvals/TASK-009.yaml`, mark done; then TASK-010 design (see its Gotchas: SystemContext, staging, idempotency, snapshot FK, worker startup checks).
-- **Uncommitted or partial work:** none.
-- **Known failing checks:** none.
-- **Open issues:** branch protection off; follow-ups listed in Gotchas.
+- **Current state:** Done. PR #9 merged (rebase) 2026-10-06 after green CI; approval file deleted.
+- **Exact next step:** none (TASK-010).
