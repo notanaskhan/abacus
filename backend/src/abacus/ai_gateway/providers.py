@@ -1,0 +1,82 @@
+"""Model providers (ADR-019). PROTECTED. TASK-011 design §2, Q3.
+
+`ModelProvider` is the seam for real providers (an Anthropic provider arrives with the spec that
+enables real calls; its SDK may be imported only here). SPEC-000 runs on `FakeModel`: scripted,
+deterministic, local and test only.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Literal, Protocol
+
+from abacus.kernel.config import settings
+
+Tier = Literal["small", "medium", "large"]
+
+
+class ProviderError(Exception):
+    """The provider failed (network, outage, refusal). Retryable by the caller's workflow."""
+
+
+@dataclass(frozen=True)
+class ModelRequest:
+    model: str
+    system: str
+    user: str
+    max_output_tokens: int
+    prompt_ref: str
+
+
+@dataclass(frozen=True)
+class ModelResponse:
+    text: str
+    input_tokens: int
+    output_tokens: int
+    model: str
+
+
+class ModelProvider(Protocol):
+    async def complete(self, request: ModelRequest) -> ModelResponse: ...
+
+
+Responder = Callable[[ModelRequest], str]
+
+
+class FakeModel:
+    """Answers each prompt with its registered responder. A prompt with none is an error."""
+
+    def __init__(self, responders: dict[str, Responder] | None = None) -> None:
+        if settings().environment not in ("local", "test"):
+            raise RuntimeError("FakeModel is for local runs and tests only")
+        self._responders: dict[str, Responder] = dict(responders or {})
+
+    def respond(self, prompt_ref: str, responder: Responder) -> None:
+        self._responders[prompt_ref] = responder
+
+    async def complete(self, request: ModelRequest) -> ModelResponse:
+        responder = self._responders.get(request.prompt_ref)
+        if responder is None:
+            raise ProviderError(f"no fake response for {request.prompt_ref}")
+        text = responder(request)
+        return ModelResponse(
+            text=text,
+            input_tokens=(len(request.system) + len(request.user)) // 4,
+            output_tokens=len(text) // 4,
+            model=request.model,
+        )
+
+
+_provider: ModelProvider | None = None
+
+
+def configure_provider(provider: ModelProvider | None) -> None:
+    global _provider
+    _provider = provider
+
+
+def provider() -> ModelProvider:
+    if _provider is None:
+        raise RuntimeError("no model provider configured")
+    return _provider
