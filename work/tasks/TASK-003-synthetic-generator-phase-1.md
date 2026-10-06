@@ -110,6 +110,15 @@ Import everything from `abacus_tools.synthetic`.
 
 **Identifiers** (AC-13): EINs use prefix `00`; routing numbers are 9 digits failing the ABA checksum; emails end `@example.com` or `@example.org`; phone numbers `555-01NN`; no SSNs or card numbers are generated. Every client and client entity name ends with `" (Synthetic)"`. `secrets_scan.scan(dir, files=[…all exported files…]) == []` for any seed, with or without flaws, with or without adversarial content.
 
+#### Contract revision 1 (2026-10-06, from the stage 4 architecture review)
+- No journal entry is dated before `period_start` (a mid-month or weekend `start` begins activity on `start`); after each fiscal-year-end close every revenue and expense account balance is zero at that date.
+- `TrialBalance.client_entity: str` — the name of the entity whose books it is (a `wrong_entity` TB carries the other entity's name). TB CSVs gain a `client_entity` column after `as_of`.
+- `wrong_currency` (bank statement): opening and line amounts converted, running balances and closing recomputed — the statement is internally consistent (opening + Σ = closing, running balances correct); only the tie to the USD cash account fails.
+- `"stale:trial_balance"` (or plain `"stale"`) with `months=1` raises `ValueError` (no earlier month end).
+- Adversarial content never skips a category: if the usual carrier is empty, another statement (bank) or the AR aging (`unicode_deception`) carries it, and the manifest names the actual artefact.
+- XLSX: one sheet per CSV file **plus a `manifest` sheet** (AC-15); amounts are numeric cells only in amount columns; characters XML 1.0 cannot carry are written as OOXML `_xHHHH_`, and a literal `_xHHHH_` as `_x005F_xHHHH_`. Values are never truncated: the `oversized_field` payload exceeds Excel's 32,767-character display limit on purpose.
+- Output changed: `GENERATOR_VERSION` = `1.1.0`.
+
 ### Approval file text
 ```yaml
 task: TASK-003
@@ -161,6 +170,13 @@ Append-only. Newest at the bottom.
   - **Blocked:** ruff S311 flags `random.Random` in `synthetic/rng.py`. See Q1.
 
 - `2026-10-06` — Q1 applied: S311 exempt for `abacus_tools/synthetic/**`; S101/S314/S603 for `tests/unit/synthetic/**`. Test author reverted to `subprocess.run` and `ET.fromstring`. New banned pattern **SIDESTEP-001** (ADR-083: lints grow when an agent repeats a mistake) flags `create_subprocess_exec`/`_shell` and `XMLPullParser`, which ruff's S rules miss; 43 tests written independently from a one-paragraph contract. `make check` exit 0; suite 68 s (was ~160 s with the asyncio workaround).
+
+- `2026-10-06` — Stage 4 architecture/test review (Sonnet): determinism, ADR-101 and invariants clean across many parameter sets; fixed via *Contract revision 1*:
+  - **Blocker:** mid-month `start` posted activity before the opening entry and the year-end close missed it (P&L not zero at FYE for `start=2025-01-15`, `2025-02-15`, `2024-02-29`, `2025-12-31`). Activity now begins on `start`; all counterexamples verified closed.
+  - **Blocker:** XLSX could carry XML-illegal characters — now OOXML `_xHHHH_` escaping. Oversized cells (> 32,767 chars) kept exact on purpose (AC-12); documented in `to_xlsx`.
+  - Manifest sheet in XLSX (AC-15); `TrialBalance.client_entity` (wrong_entity detectable mechanically); `wrong_currency` internally consistent; `stale` TB at months=1 rejected; adversarial never skips a category; per-flaw RNG streams; numeric XLSX cells only in amount columns (`fullmatch`); `post()` raises on degenerate entries; decimal context pinned.
+  - Not changed (nit): `irrelevant:<artefact>` counts against that artefact's one-flaw limit — harmless.
+  - Tests extended independently (Hypothesis now reaches year-end closes, mid-month/weekend/Feb-29/July-fiscal starts; flaw tests also at months=1). `GENERATOR_VERSION` 1.1.0, golden re-pinned. `make check` exit 0: 1,187 tests, 87 s, coverage 98 %.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

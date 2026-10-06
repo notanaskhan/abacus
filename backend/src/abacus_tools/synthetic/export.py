@@ -25,7 +25,25 @@ from abacus_tools.synthetic.flaws import last_statement_index
 from abacus_tools.synthetic.model import ClientEntity, SyntheticClient
 
 Rows = list[list[str]]
-_AMOUNT = re.compile(r"^-?\d+\.\d{2}$")
+_AMOUNT = re.compile(r"-?\d+\.\d{2}")
+AMOUNT_COLUMNS = frozenset(
+    {
+        "debit",
+        "credit",
+        "amount",
+        "balance",
+        "current",
+        "days_1_30",
+        "days_31_60",
+        "days_61_90",
+        "over_90",
+        "total",
+    }
+)
+# XML 1.0 cannot carry these; OOXML writes them as _xHHHH_ (a literal _xHHHH_ as
+# _x005F_xHHHH_).
+_XML_ILLEGAL = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\ufffe\uffff]")
+_OOXML_ESCAPE = re.compile(r"_(x[0-9A-Fa-f]{4}_)")
 _ZIP_TIME = (1980, 1, 1, 0, 0, 0)
 
 
@@ -91,10 +109,13 @@ def _entity_tables(entity: ClientEntity, folder: str) -> Iterator[tuple[str, str
     slots = _month_slots(entity)
     last = len(entity.trial_balances) - 1
     for n, tb in enumerate(entity.trial_balances):
-        rows: Rows = [["as_of", "account_code", "account_name", "debit", "credit"]]
+        rows: Rows = [
+            ["as_of", "client_entity", "account_code", "account_name", "debit", "credit"]
+        ]
         rows += [
             [
                 tb.as_of.isoformat(),
+                tb.client_entity,
                 ln.account_code,
                 ln.account_name,
                 _amount(ln.debit),
@@ -258,8 +279,15 @@ def _column(n: int) -> str:
     return letters
 
 
+def _xml_text(value: str) -> str:
+    value = _OOXML_ESCAPE.sub(r"_x005F_\1", value)
+    value = _XML_ILLEGAL.sub(lambda m: f"_x{ord(m.group()):04X}_", value)
+    return escape(value)
+
+
 def _sheet_xml(rows: Rows) -> bytes:
     columns = [_column(c) for c in range(1, max((len(r) for r in rows), default=0) + 1)]
+    numeric = {c for c, name in enumerate(rows[0] if rows else []) if name in AMOUNT_COLUMNS}
     out = [
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
         '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'
@@ -268,12 +296,12 @@ def _sheet_xml(rows: Rows) -> bytes:
         out.append(f'<row r="{r}">')
         for c, value in enumerate(row):
             ref = f"{columns[c]}{r}"
-            if r > 1 and _AMOUNT.match(value):
+            if r > 1 and c in numeric and _AMOUNT.fullmatch(value):
                 out.append(f'<c r="{ref}"><v>{value}</v></c>')
             else:
                 out.append(
                     f'<c r="{ref}" t="inlineStr"><is><t xml:space="preserve">'
-                    f"{escape(value)}</t></is></c>"
+                    f"{_xml_text(value)}</t></is></c>"
                 )
         out.append("</row>")
     out.append("</sheetData></worksheet>")
@@ -300,8 +328,38 @@ def _sheet_names(paths: list[str]) -> list[str]:
     return names
 
 
+def _manifest_rows(client: SyntheticClient) -> Rows:
+    rows: Rows = [
+        [
+            "kind",
+            "category",
+            "artefact",
+            "client_entity",
+            "field",
+            "location",
+            "detection",
+            "payload",
+        ]
+    ]
+    rows += [
+        ["flaw", f.category, f.artefact, f.client_entity, "", f.location, f.detection, ""]
+        for f in client.manifest.flaws
+    ]
+    rows += [
+        ["adversarial", a.category, a.artefact, "", a.field, a.location, "", a.payload]
+        for a in client.manifest.adversarial
+    ]
+    return rows
+
+
 def to_xlsx(client: SyntheticClient, path: Path) -> Path:
+    """One sheet per CSV file plus a `manifest` sheet.
+
+    Cells keep every value exactly (AC-12). The `oversized_field` payload exceeds Excel's
+    32,767-character cell limit on purpose; Excel repairs such a file on open, other readers don't.
+    """
     tables = [(rel, rows) for rel, rows in _readable_tables(client) if rows is not None]
+    tables.append(("manifest.csv", _manifest_rows(client)))
     names = _sheet_names([rel for rel, _ in tables])
     sheets = "".join(
         f'<sheet name="{escape(name, {chr(34): "&quot;"})}" sheetId="{n}" r:id="rId{n}"/>'

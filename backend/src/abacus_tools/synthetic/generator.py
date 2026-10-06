@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import date
+from decimal import ROUND_HALF_EVEN, Context, localcontext
+from random import Random
 from typing import Literal
 
 from abacus_tools.synthetic import adversarial as _adversarial
@@ -22,7 +24,7 @@ from abacus_tools.synthetic.requests import request_list
 from abacus_tools.synthetic.rng import stream
 
 # Bump whenever output changes for any input; the golden test fails until its hash is updated.
-GENERATOR_VERSION = "1.0.1"
+GENERATOR_VERSION = "1.1.0"
 
 
 def _entity(
@@ -37,7 +39,7 @@ def _entity(
         period_end=books.period_end,
         accounts=ACCOUNTS,
         journal_entries=books.entries,
-        trial_balances=trial_balances(books.entries, books.month_ends),
+        trial_balances=trial_balances(books.entries, books.month_ends, name),
         bank_accounts=books.bank_accounts,
         bank_statements=bank_statements(books),
         ar_aging=aging("ar", books.receivables, books.period_end),
@@ -56,6 +58,20 @@ def generate(
     flaws: Sequence[str] = (),
     adversarial: bool = False,
 ) -> SyntheticClient:
+    # Pin decimal arithmetic so a caller's context (precision, rounding) can't change the output.
+    with localcontext(Context(prec=28, rounding=ROUND_HALF_EVEN)):
+        return _generate(seed, entities, months, start, size, flaws, adversarial)
+
+
+def _generate(
+    seed: int,
+    entities: int,
+    months: int,
+    start: date,
+    size: str,
+    flaws: Sequence[str],
+    adversarial: bool,
+) -> SyntheticClient:
     if not 1 <= entities <= 5:
         raise ValueError(f"entities must be between 1 and 5, got {entities}")
     if not 1 <= months <= 36:
@@ -63,6 +79,12 @@ def generate(
     if size != "small":
         raise ValueError(f"unknown size {size!r}; valid: small")
     requested = _flaws.parse(flaws)
+    if months == 1 and any(
+        f.category == "stale" and f.artefact == "trial_balance" for f in requested
+    ):
+        raise ValueError(
+            "flaw 'stale' on 'trial_balance' needs months >= 2 (no earlier month end)"
+        )
     base = names.client_base(stream(seed, "client"))
     built = [
         _entity(seed, f"entity{i}", names.entity_name(base, i), start, months, size)
@@ -79,7 +101,10 @@ def generate(
                 other = f"{other} West"
             return _entity(seed, "decoy", names.entity_name(other, 0), start, months, size)[0]
 
-        context = _flaws.Context(first, books, requests, stream(seed, "flaws"), decoy)
+        def rng_for(name: str) -> Random:
+            return stream(seed, f"flaws:{name}")
+
+        context = _flaws.Context(first, books, requests, rng_for, decoy)
         first, requests, flaw_records = _flaws.apply(context, requested)
     payloads: tuple[AdversarialPayload, ...] = ()
     if adversarial:

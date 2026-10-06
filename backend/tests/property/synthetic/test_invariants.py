@@ -7,7 +7,7 @@ from datetime import date
 from decimal import Decimal
 from itertools import pairwise
 
-from hypothesis import given, settings
+from hypothesis import example, given, settings
 from hypothesis import strategies as st
 
 from abacus_tools.synthetic import (
@@ -123,7 +123,7 @@ def failures(entity: ClientEntity) -> set[str]:
             out.add("bank_internal")
         earlier = previous.get(statement.account_number)
         if earlier is not None and earlier.closing_balance != statement.opening_balance:
-            out.add("bank_internal")
+            out.add("bank_continuity")
         previous[statement.account_number] = statement
         if not bank_ties_ok(entity, ledger, statement):
             out.add("bank_ties")
@@ -137,14 +137,40 @@ def failures(entity: ClientEntity) -> set[str]:
 SEEDS = st.integers(min_value=0, max_value=2**32)
 ENTITIES = st.integers(min_value=1, max_value=2)
 MONTHS = st.integers(min_value=1, max_value=3)
-STARTS = st.sampled_from([date(2025, 1, 1), date(2024, 2, 1), date(2023, 7, 1)])
+LONG_MONTHS = st.integers(min_value=1, max_value=14)
+# Edge starts: month start, mid-month, a weekend (Sat/Sun), Feb 29, a month end, July fiscal year.
+EDGE_STARTS = [
+    date(2025, 1, 1),
+    date(2025, 1, 15),
+    date(2025, 3, 1),
+    date(2025, 3, 2),
+    date(2024, 2, 29),
+    date(2025, 1, 31),
+    date(2024, 7, 1),
+    date(2023, 7, 1),
+]
+STARTS = st.sampled_from(EDGE_STARTS)
 PROPERTY = settings(max_examples=25, deadline=None)
+LONG_PROPERTY = settings(max_examples=12, deadline=None)
 
 
 def month_end(start: date, offset: int) -> date:
     index = start.year * 12 + start.month - 1 + offset
     year, month = divmod(index, 12)
     return date(year, month + 1, calendar.monthrange(year, month + 1)[1])
+
+
+def check_close(entity: ClientEntity, start: date, months: int) -> int:
+    """After each fiscal-year-end close, revenue and expense balances are zero. Returns closes."""
+    ledger = Ledger(entity)
+    types = {a.code: a.type for a in entity.accounts}
+    closes = 0
+    for year in range(1, months // 12 + 1):
+        year_end = month_end(start, 12 * year - 1)
+        for code, balance in ledger.net(year_end).items():
+            assert types[code] not in ("revenue", "expense"), (year_end, code, balance)
+        closes += 1
+    return closes
 
 
 @PROPERTY
@@ -158,15 +184,45 @@ def test_ac4_entries_balance_and_trial_balances_equal_the_ledger(
         assert len(entity.journal_entries) > 0
         ledger = Ledger(entity)
         accounts = {a.code: a for a in entity.accounts}
+        assert entity.period_start == start
         assert [tb.as_of for tb in entity.trial_balances] == [
             month_end(start, i) for i in range(months)
         ]
+        assert all(tb.client_entity == entity.name for tb in entity.trial_balances)
         for entry in entity.journal_entries:
             assert entry_ok(entry, set(accounts)), entry.id
-            assert entity.period_start <= entry.date <= entity.period_end
+            assert start <= entry.date <= entity.period_end
         for tb in entity.trial_balances:
             assert tb.total_debits == tb.total_credits
             assert tb_ties(tb, ledger, accounts), tb.as_of
+
+
+@LONG_PROPERTY
+@example(seed=1, entities=1, months=12, start=date(2025, 1, 1))
+@example(seed=2, entities=1, months=13, start=date(2024, 2, 29))
+@example(seed=3, entities=1, months=12, start=date(2025, 1, 15))
+@example(seed=4, entities=1, months=14, start=date(2024, 7, 1))
+@example(seed=5, entities=1, months=12, start=date(2025, 3, 1))
+@example(seed=6, entities=1, months=12, start=date(2025, 3, 2))
+@example(seed=7, entities=1, months=12, start=date(2025, 1, 31))
+@given(seed=SEEDS, entities=st.just(1), months=LONG_MONTHS, start=STARTS)
+def test_ac4_to_ac7_close_and_start_invariants_across_a_fiscal_year(
+    seed: int, entities: int, months: int, start: date
+) -> None:
+    client = generate(seed, entities=entities, months=months, start=start)
+    for entity in client.client_entities:
+        assert failures(entity) == set()
+        assert min(e.date for e in entity.journal_entries) >= start
+        assert entity.period_start == start
+        assert [tb.as_of for tb in entity.trial_balances] == [
+            month_end(start, i) for i in range(months)
+        ]
+        assert check_close(entity, start, months) == months // 12
+        if months >= 12:
+            year_end = month_end(start, 11)
+            assert any(
+                "close" in e.memo.lower() and e.date == year_end for e in entity.journal_entries
+            )
 
 
 @PROPERTY
@@ -206,7 +262,8 @@ def test_ac6_bank_statements_reconcile_to_cash_after_reconciling_items(
             ]
             assert [s.period_end for s in mine] == [month_end(start, i) for i in range(months)]
             for i, statement in enumerate(mine):
-                assert statement.period_start == month_end(start, i).replace(day=1)
+                month_start = month_end(start, i).replace(day=1)
+                assert statement.period_start in (month_start, max(month_start, start))
                 assert statement.currency == "USD"
                 assert bank_internal_ok(statement)
                 assert bank_ties_ok(entity, ledger, statement)

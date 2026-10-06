@@ -200,8 +200,9 @@ class _Simulation:
         if debits != credits:  # a construction bug, never a data condition
             raise AssertionError(f"unbalanced entry {memo!r}: {debits} != {credits}")
         kept = tuple(ln for ln in lines if ln.debit or ln.credit)
-        if len(kept) >= 2:
-            self.drafts.append((on, len(self.drafts), memo, kept))
+        if len(kept) < 2:  # a zero entry would desynchronise the bank events posted with it
+            raise AssertionError(f"degenerate entry {memo!r} on {on}")
+        self.drafts.append((on, len(self.drafts), memo, kept))
 
     def pay_out(
         self, code: str, on: date, amount: Decimal, payee: str, rng: Random, *, cheque: bool
@@ -227,7 +228,8 @@ class _Simulation:
     def run(self) -> Books:
         self.opening()
         for i, end in enumerate(self.books.month_ends):
-            days = business_days(date(end.year, end.month, 1), end)
+            first = max(date(end.year, end.month, 1), self.books.period_start)
+            days = business_days(first, end) or [first]  # never post before the opening entry
             self.sales(i, days)
             self.bills(i, days)
             self.payroll(i, days)

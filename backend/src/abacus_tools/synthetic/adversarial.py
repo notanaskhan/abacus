@@ -81,40 +81,48 @@ def apply(
     counterparty = entries[target].lines[0].counterparty or ""
     set_line(target, _lookalike(counterparty), "lookalike_name", "counterparty")
 
+    # Never skip a category (AC-11): fall back to another statement or aging if the usual one is
+    # empty, and fail loudly if nothing can carry the payload.
     statements = list(entity.bank_statements)
-    i = last_statement_index(entity)
+    preferred = last_statement_index(entity)
+    candidates = [preferred, *(n for n in range(len(statements) - 1, -1, -1) if n != preferred)]
+    i = next((n for n in candidates if statements[n].lines), None)
+    if i is None:
+        raise AssertionError("no bank statement has lines to carry addressed_instruction")
     statement = statements[i]
-    if statement.lines:
-        line = replace(statement.lines[0], description=ADDRESSED_INSTRUCTION)
-        statements[i] = replace(statement, lines=(line, *statement.lines[1:]))
-        where = (
-            f"bank_statement {statement.account_number} for {statement.period_end:%Y-%m} line 1"
+    line = replace(statement.lines[0], description=ADDRESSED_INSTRUCTION)
+    statements[i] = replace(statement, lines=(line, *statement.lines[1:]))
+    where = f"bank_statement {statement.account_number} for {statement.period_end:%Y-%m} line 1"
+    payloads.append(
+        AdversarialPayload(
+            "addressed_instruction", "bank_statement", "description", where, ADDRESSED_INSTRUCTION
         )
-        payloads.append(
-            AdversarialPayload(
-                "addressed_instruction",
-                "bank_statement",
-                "description",
-                where,
-                ADDRESSED_INSTRUCTION,
-            )
-        )
+    )
 
-    ap = entity.ap_aging
-    if ap.lines:
-        deceptive = _unicode(ap.lines[0].counterparty)
-        ap = replace(ap, lines=(replace(ap.lines[0], counterparty=deceptive), *ap.lines[1:]))
-        payloads.append(
-            AdversarialPayload(
-                "unicode_deception",
-                "ap_aging",
-                "counterparty",
-                f"ap_aging {ap.as_of.isoformat()} line 1",
-                deceptive,
-            )
+    agings = {"ap_aging": entity.ap_aging, "ar_aging": entity.ar_aging}
+    artefact = next((name for name, a in agings.items() if a.lines), None)
+    if artefact is None:
+        raise AssertionError("no aging has lines to carry unicode_deception")
+    target = agings[artefact]
+    deceptive = _unicode(target.lines[0].counterparty)
+    agings[artefact] = replace(
+        target, lines=(replace(target.lines[0], counterparty=deceptive), *target.lines[1:])
+    )
+    payloads.append(
+        AdversarialPayload(
+            "unicode_deception",
+            artefact,
+            "counterparty",
+            f"{artefact} {target.as_of.isoformat()} line 1",
+            deceptive,
         )
+    )
 
     entity = replace(
-        entity, journal_entries=tuple(entries), bank_statements=tuple(statements), ap_aging=ap
+        entity,
+        journal_entries=tuple(entries),
+        bank_statements=tuple(statements),
+        ap_aging=agings["ap_aging"],
+        ar_aging=agings["ar_aging"],
     )
     return entity, tuple(payloads)
