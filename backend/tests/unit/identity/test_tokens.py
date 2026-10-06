@@ -552,6 +552,7 @@ def _explicit_environment(mp: pytest.MonkeyPatch, environment: str) -> None:
         "S3_ACCESS_KEY": "a",
         "S3_SECRET_KEY": "b",
         "TEMPORAL_TARGET": "temporal.example.test:7233",
+        "EVIDENCE_BUCKET": "test-evidence-bucket",
     }
     for name, value in values.items():
         mp.setenv(f"ABACUS_{name}", value)

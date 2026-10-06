@@ -47,6 +47,7 @@ def _explicit_connection_env(monkeypatch: pytest.MonkeyPatch, omit: str | None =
         "identity_audience": "abacus-api",
         "identity_jwks": '{"keys": []}',
         "temporal_target": "temporal.example.test:7233",
+        "evidence_bucket": "test-evidence-bucket",
     }
     for name in Settings.model_fields:
         if name.startswith("s3_"):
@@ -196,6 +197,41 @@ def test_ac20_non_local_environment_requires_the_s3_keys(
     _explicit_connection_env(monkeypatch, omit=missing)
     with pytest.raises(ValueError):
         Settings()
+
+
+@pytest.mark.parametrize("environment", ["staging", "production"])
+def test_ac20_non_local_environment_requires_the_evidence_bucket(
+    monkeypatch: pytest.MonkeyPatch, environment: str
+) -> None:
+    monkeypatch.setenv("ABACUS_ENVIRONMENT", environment)
+    _explicit_connection_env(monkeypatch, omit="evidence_bucket")
+    with pytest.raises(ValueError, match="evidence_bucket"):
+        Settings()
+
+
+@pytest.mark.parametrize("environment", ["local", "test"])
+def test_ac20_evidence_bucket_has_a_local_default(
+    monkeypatch: pytest.MonkeyPatch, environment: str
+) -> None:
+    monkeypatch.setenv("ABACUS_ENVIRONMENT", environment)
+    assert Settings().evidence_bucket
+
+
+@pytest.mark.parametrize("days", [0, 1, 364])
+def test_ac20_evidence_retention_below_365_days_fails_validation(
+    monkeypatch: pytest.MonkeyPatch, days: int
+) -> None:
+    monkeypatch.setenv("ABACUS_EVIDENCE_RETENTION_DAYS", str(days))
+    with pytest.raises(ValueError, match="365"):
+        Settings()
+
+
+@pytest.mark.parametrize("days", [365, 2555])
+def test_ac20_evidence_retention_of_365_days_or_more_is_accepted(
+    monkeypatch: pytest.MonkeyPatch, days: int
+) -> None:
+    monkeypatch.setenv("ABACUS_EVIDENCE_RETENTION_DAYS", str(days))
+    assert Settings().evidence_retention_days == days
 
 
 @pytest.mark.parametrize("environment", ["staging", "production"])
