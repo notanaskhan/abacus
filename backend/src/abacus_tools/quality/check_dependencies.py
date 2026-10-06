@@ -30,6 +30,11 @@ _PY_NAME = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)")
 _NPM_NON_REGISTRY = re.compile(r"^(?:npm:|git|github:|https?:|file:|link:)|^[^#]*/")
 REGISTRY = "must be installed from the package registry, not a URL, path, git repository or alias"
 NOT_WORKSPACE = "is not a workspace package"
+PENDING = "is pending in the dependency allowlist, not approved"
+COMPOSE_FILES = ("docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml")
+# name[:tag]@sha256:<64 lowercase hex>; a tag never contains "/", so a registry port stays in
+# the name.
+_PINNED = re.compile(r"^(?P<name>[^@\s]+?)(?::[^:@/\s]+)?@sha256:[0-9a-f]{64}$")
 SOURCE_CHANGE = "is not allowed: it changes where or which dependencies are installed"
 UV_FORBIDDEN = (
     "sources",
@@ -176,6 +181,47 @@ def _verdict(
     return "is pending in the dependency allowlist, not approved"
 
 
+def _container_problems(repo: Path, allowlist: Mapping[str, object], problems: set[str]) -> None:
+    section = allowlist.get("containers")
+    entries = (
+        {str(k): str(v) for k, v in cast(dict[object, object], section).items()}
+        if isinstance(section, dict)
+        else {}
+    )
+    for filename in COMPOSE_FILES:
+        for path in _files(repo, filename):
+            rel = path.relative_to(repo).as_posix()
+            loaded: object = yaml.safe_load(path.read_text(encoding="utf-8"))
+            services = (
+                cast(dict[str, object], loaded).get("services")
+                if isinstance(loaded, dict)
+                else None
+            )
+            if not isinstance(services, dict):
+                continue
+            for name, service in sorted(cast(dict[str, object], services).items()):
+                if not isinstance(service, dict):
+                    continue
+                spec = cast(dict[str, object], service)
+                image = spec.get("image")
+                if image is None:
+                    if "build" in spec:
+                        problems.add(
+                            f"{rel}: service {name} builds an image; "
+                            "build steps are not allowed in compose files"
+                        )
+                    continue
+                pinned = _PINNED.match(str(image))
+                if pinned is None:
+                    problems.add(f"{rel}: {image} must be pinned by digest (name:tag@sha256:...)")
+                    continue
+                status = _status(pinned["name"], entries, normalise=False)
+                if status is None:
+                    problems.add(f"{rel}: {pinned['name']} is not in the dependency allowlist")
+                elif status != "approved":
+                    problems.add(f"{rel}: {pinned['name']} {PENDING}")
+
+
 def check(repo: Path = REPO) -> list[str]:
     loaded: object = yaml.safe_load((repo / ALLOWLIST).read_text(encoding="utf-8"))
     allowlist = cast(dict[str, object], loaded) if isinstance(loaded, dict) else {}
@@ -192,6 +238,7 @@ def check(repo: Path = REPO) -> list[str]:
             verdict = _verdict(dep, runtime, dev, py)
             if verdict:
                 problems.add(f"{dep.manifest}: {dep.name} {verdict}")
+    _container_problems(repo, allowlist, problems)
     return sorted(problems)
 
 

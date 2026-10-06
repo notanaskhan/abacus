@@ -14,7 +14,7 @@ Changes to these paths require the founder's explicit approval. Enforcement is l
 - The constitution and agent configuration: `AGENTS.md`, `CLAUDE.md`, `.claude/`
 - Gates and pipeline: every `Makefile`, `.github/`, `backend/src/abacus_tools/quality/` and its tests `backend/tests/unit/quality/`
 - Repository plumbing: `.git/` (local hooks), every `.gitignore`
-- Infrastructure: `infra/`
+- Infrastructure: `infra/`, every `docker-compose.y*ml` / `compose.y*ml` (which images run, which ports open)
 - Approvals: `work/approvals/` — the founder writes these by hand
 - Policy files: permission matrix, this file, dependency allowlist, glossary, and the coverage floor (`[tool.coverage.report] fail_under` in `backend/pyproject.toml`, ADR-079)
 - CI: `.github/workflows/` (stages 1 and 2 run the same `make` targets as local development)

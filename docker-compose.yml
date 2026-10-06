@@ -1,0 +1,60 @@
+# Local services for `make dev` (ADR-087). PROTECTED.
+# Images are pinned by digest and approved under `containers:` in the dependency allowlist;
+# integration tests start the same images through testcontainers, reading them from this file.
+# Ports bind to 127.0.0.1 only. Credentials are fixed local values, unusable outside this machine.
+name: abacus
+
+services:
+  db:
+    # PostgreSQL 17 with pgvector (ADR-014)
+    image: pgvector/pgvector:0.8.7-pg17-trixie@sha256:7a7e9f22015b67edb4bef5c59daeebcd7e74bfa570df6ce60ae01237c8648a84
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: abacus
+    ports:
+      - "127.0.0.1:55432:5432"  # host 55432: 5432 is often taken by a local Postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d abacus"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  s3:
+    # S3-compatible storage with Object Lock (ADR-016); MinIO's community image is no longer public
+    image: versity/versitygw:v1.8.0@sha256:30292fc2eeacc67a36993b01f7a7a5e3361a19cced0e80c1d71cfa2a4b0a2499
+    environment:
+      ROOT_ACCESS_KEY: abacus
+      ROOT_SECRET_KEY: abacuslocal
+    command: ["--health", "/health", "posix", "--versioning-dir", "/versions", "/data"]
+    ports:
+      - "127.0.0.1:7070:7070"
+    volumes:
+      - s3-data:/data
+      - s3-versions:/versions
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:7070/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  temporal:
+    # Temporal dev server (ADR-017); UI on 8233
+    image: temporalio/temporal:1.9.1@sha256:ad4c82c97bd12b417d1ea942610dbcd511afb250c4d5ed26c694009533df447e
+    # In-memory: workflow history is lost on restart, which is fine locally (no root, no volume).
+    command: ["server", "start-dev", "--ip", "0.0.0.0"]
+    ports:
+      - "127.0.0.1:7233:7233"
+      - "127.0.0.1:8233:8233"
+    healthcheck:
+      test: ["CMD", "temporal", "operator", "cluster", "health", "--address", "127.0.0.1:7233"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  db-data:
+  s3-data:
+  s3-versions:

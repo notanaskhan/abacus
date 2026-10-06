@@ -6,7 +6,7 @@ setup:
 	pnpm install --frozen-lockfile
 
 dev:
-	docker compose up -d db minio temporal
+	docker compose up -d db s3 temporal
 	cd backend && uv run uvicorn abacus.api.main:app --reload & \
 	cd backend && uv run python -m abacus.worker.main & \
 	pnpm -C apps/web dev
