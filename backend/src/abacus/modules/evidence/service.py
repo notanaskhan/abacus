@@ -19,7 +19,7 @@ from typing import Literal
 from uuid import UUID, uuid4
 
 from abacus.kernel.db import TenantContext, tenant_session, transaction_context
-from abacus.kernel.errors import NotFound
+from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.evidence import storage
@@ -39,8 +39,10 @@ Method = Literal["retrieved", "uploaded"]
 StoredObject = storage.StoredObject
 
 
-class EngagementArchived(Exception):
+class EngagementArchived(DomainConflict):
     """Archived engagements are read-only (`archived_write: deny`)."""
+
+    code = "engagement_archived"
 
 
 @dataclass(frozen=True)

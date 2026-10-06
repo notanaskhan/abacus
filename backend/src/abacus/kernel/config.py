@@ -86,7 +86,10 @@ class Settings(BaseSettings):
     fake_connector_dir: Annotated[str | None, classified("internal")] = None
     temporal_target: Annotated[str | None, classified("internal")] = None
     temporal_namespace: Annotated[str, classified("internal")] = "default"
-    temporal_task_queue: Annotated[str, classified("internal")] = "retrieval"
+    temporal_task_queue: Annotated[str, classified("internal")] = "abacus"
+    # Temporal Cloud needs TLS and an API key; both are required outside local and test.
+    temporal_tls: Annotated[bool, classified("internal")] = False
+    temporal_api_key: Annotated[SecretStr | None, classified("restricted")] = None
     # Encrypts every workflow payload before it leaves the process (ADR-017). KMS in TASK-014.
     temporal_payload_key: Annotated[SecretStr | None, classified("restricted")] = None
 
@@ -111,12 +114,16 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def _no_public_keys_outside_local(self) -> Self:
         key = self.temporal_payload_key
-        if (
-            self.environment not in ("local", "test")
-            and key is not None
-            and key.get_secret_value().startswith("example-")
+        if key is not None:
+            value = key.get_secret_value()
+            if len(value) < 32 or len(set(value)) < 8:
+                raise ValueError("temporal_payload_key must be at least 32 varied characters")
+            if self.environment not in ("local", "test") and value.startswith("example-"):
+                raise ValueError("temporal_payload_key must be a real secret outside local/test")
+        if self.environment not in ("local", "test") and (
+            not self.temporal_tls or self.temporal_api_key is None
         ):
-            raise ValueError("temporal_payload_key must be a real secret outside local and test")
+            raise ValueError("Temporal needs TLS and an API key outside local and test")
         return self
 
     @model_validator(mode="after")

@@ -26,9 +26,7 @@ from abacus.modules.connections.pipeline import (
     validate_run,
 )
 from abacus.modules.connections.retrievals import (
-    RetrievalView,
     WorkflowUnavailable,
-    retrieval_status,
     trigger_retrieval,
     workflow_id,
 )
@@ -36,25 +34,29 @@ from abacus.modules.connections.routes import router
 from abacus.modules.connections.service import (
     CONNECTORS,
     NoConnection,
+    RetrievalView,
     RunNotRunning,
+    StartedRun,
     connector_for,
     load_system_context,
+    retrieval_status,
     start_retrieval,
 )
 from abacus.modules.connections.workflow_types import FailInput, RetrievalInput, RetrievalOutcome
 from abacus.modules.connections.workflows import RetrievalWorkflow
-from abacus.modules.requests.api import ItemNotFulfillable
+
+WORKFLOWS = (RetrievalWorkflow,)
 
 __all__ = [
     "ACTIVITIES",
     "CONNECTORS",
+    "WORKFLOWS",
     "Capabilities",
     "Connector",
     "ConnectorError",
     "Dataset",
     "FailInput",
     "FakeConnector",
-    "ItemNotFulfillable",
     "NoConnection",
     "NotSupported",
     "Period",
@@ -66,6 +68,7 @@ __all__ = [
     "RunFailed",
     "RunNotRunning",
     "RunResult",
+    "StartedRun",
     "Unavailable",
     "WorkflowUnavailable",
     "connector_for",

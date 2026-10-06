@@ -153,20 +153,20 @@ forbidden_modules = ["abacus_tools"]
 [[tool.importlinter.contracts]]
 name = "Workflows orchestrate only: no data access or clients (ADR-017)"
 type = "forbidden"
-source_modules = ["abacus.modules.connections.workflows"]
+source_modules = ["abacus.modules.*.workflows"]
 forbidden_modules = [
-    "abacus.kernel.db",
-    "abacus.kernel.storage",
-    "abacus.kernel.uow",
-    "abacus.modules.connections.repository",
-    "abacus.modules.connections.pipeline",
-    "abacus.modules.connections.activities",
+    "abacus.kernel",
+    "abacus.modules.*.repository",
+    "abacus.modules.*.service",
+    "abacus.modules.*.pipeline",
+    "abacus.modules.*.activities",
+    "abacus.modules.*.routes",
 ]
 
 [[tool.importlinter.contracts]]
 name = "In-module layering: routes -> service -> repository (ADR-012)"
 type = "layers"
-layers = ["(routes)", "(service)", "(repository)"]
+layers = ["(routes)", "(retrievals)", "(service)", "(repository)"]
 containers = [
     "abacus.modules.identity",
     "abacus.modules.organisations",
