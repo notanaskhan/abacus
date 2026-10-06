@@ -725,10 +725,7 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "connections": frozenset(
         {"identity", "engagements", "organisations", "ledger", "evidence", "requests"}
     ),
-    "agents": frozenset(
-        {"identity", "engagements", "organisations", "ledger", "evidence", "requests"}
-        | {"connections"}
-    ),
+    "agents": frozenset({"identity", "engagements", "organisations", "evidence", "requests"}),
 }
 
 

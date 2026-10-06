@@ -6,8 +6,8 @@ recorded, except the task layer, which is never cut mid-text (that could sever a
 block): it drops items from the end of one named list until it fits (`trim`, recorded as
 truncated), or is refused (`ContextTooLarge`). Untrusted values (client content, named by the
 agent's spec) go into labelled `<untrusted>` blocks, JSON-encoded so they can't close the block
-or pose as instructions. Task input is structured data: any list longer than `MAX_ROWS` is refused (code computes, models
-judge: raw ledger data never reaches a model).
+or pose as instructions. Task input is structured data: any list longer than `MAX_ROWS` is
+refused (code computes, models judge: raw ledger data never reaches a model).
 """
 
 from __future__ import annotations

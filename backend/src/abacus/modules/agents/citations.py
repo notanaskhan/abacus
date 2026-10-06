@@ -21,11 +21,18 @@ from abacus.modules.agents.handoff import Citation, VerifiedCitation
 
 @dataclass(frozen=True)
 class SheetFacts:
-    """What screening context may say about the rendered sheet: positions, never row data."""
+    """What code computes from the rendered trial balance for screening (ADR-050): cell positions,
+    totals summed here from the line rows, whether the sheet's own Total row agrees, and the
+    account names (client content: untrusted). Never rows of amounts."""
 
     total_row: int
     last_line_row: int
     max_row: int
+    line_count: int
+    total_debit: Decimal
+    total_credit: Decimal
+    total_row_matches: bool
+    account_names: tuple[str, ...]
 
 
 def _sheet(content: bytes) -> Worksheet:
@@ -33,12 +40,44 @@ def _sheet(content: bytes) -> Worksheet:
     return cast(Worksheet, workbook.worksheets[0])
 
 
+def _value(sheet: Worksheet, row: int, column: int) -> object:
+    return cast(Cell, sheet.cell(row=row, column=column)).value
+
+
+def _amount(sheet: Worksheet, row: int, column: int) -> Decimal:
+    found = _as_decimal(_value(sheet, row, column))
+    if found is None:
+        raise ValueError(f"row {row} column {column} is not an amount")
+    return found
+
+
 def facts(content: bytes) -> SheetFacts:
     sheet = _sheet(content)
-    for row in range(2, sheet.max_row + 1):
-        if cast(Cell, sheet.cell(row=row, column=2)).value == "Total":
-            return SheetFacts(total_row=row, last_line_row=row - 1, max_row=sheet.max_row)
-    raise ValueError("the sheet has no Total row")
+    total_row = next(
+        (
+            r
+            for r in range(2, sheet.max_row + 1)
+            if _value(sheet, r, 1) is None and _value(sheet, r, 2) == "Total"
+        ),
+        None,
+    )
+    if total_row is None:
+        raise ValueError("the sheet has no Total row")
+    rows = range(2, total_row)
+    debit = sum((_amount(sheet, r, 3) for r in rows), Decimal(0))
+    credit = sum((_amount(sheet, r, 4) for r in rows), Decimal(0))
+    return SheetFacts(
+        total_row=total_row,
+        last_line_row=total_row - 1,
+        max_row=sheet.max_row,
+        line_count=len(rows),
+        total_debit=debit,
+        total_credit=credit,
+        total_row_matches=(
+            _amount(sheet, total_row, 3) == debit and _amount(sheet, total_row, 4) == credit
+        ),
+        account_names=tuple(str(_value(sheet, r, 2) or "") for r in rows),
+    )
 
 
 def _as_decimal(value: object) -> Decimal | None:

@@ -5,12 +5,13 @@ PROTECTED. TASK-011 design §1, §3-6.
     agent = await load_agent_context(tenant_id, run_id)
     outcome = await screen(agent)
 
-A run is created for the person whose retrieval produced the evidence (the initiator, Q1) and
-the spec's task scope. The agent context is proven from the run row, with the initiator's live
-membership, and `authorise` intersects the two (ADR-025). Screening builds its context from code-
-computed figures only (ADR-050), calls the gateway, verifies every citation against the
-spreadsheet (ADR-066) and records a proposal (ADR-005). It never changes the request item's
-status (Q2). Invalid output is repaired once, then the run is escalated with no result.
+A run is created for the person the evidence was added for (the initiator, Q1: carried on
+`evidence_version.created` as `requested_by`) and the spec's task scope. The agent context is
+proven from the run row, with the initiator's live membership, and `authorise` intersects the two
+(ADR-025). Screening builds its context from figures code computes from the evidence spreadsheet
+itself (ADR-050), calls the gateway, verifies every citation against the spreadsheet (ADR-066)
+and records a proposal (ADR-005). It never changes the request item's status (Q2). Invalid output
+is repaired once, then the run is escalated with no result.
 """
 
 from __future__ import annotations
@@ -20,7 +21,7 @@ from decimal import Decimal
 from typing import cast
 from uuid import UUID
 
-from abacus.ai_gateway import Attribution, ContextBuilder, GatewayCall, call
+from abacus.ai_gateway import MAX_ROWS, Attribution, ContextBuilder, GatewayCall, call
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
@@ -36,7 +37,6 @@ from abacus.modules.agents.repository import (
     run_for_event,
 )
 from abacus.modules.agents.spec import spec
-from abacus.modules.connections.api import initiator_for_snapshot
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.evidence.api import read_content, version_view
 from abacus.modules.identity.api import (
@@ -45,7 +45,6 @@ from abacus.modules.identity.api import (
     authorise,
     initiator_context,
 )
-from abacus.modules.ledger.api import snapshot_view
 from abacus.modules.requests.api import fulfilled_items
 
 SCREENER = "evidence.screener"
@@ -70,16 +69,20 @@ def _reader(tenant_id: UUID, label: str) -> TenantContext:
 
 
 async def create_screening_run(
-    tenant_id: UUID, evidence_version_id: UUID, source_event_id: UUID
+    tenant_id: UUID,
+    evidence_version_id: UUID,
+    source_event_id: UUID,
+    requested_by: UUID | None,
 ) -> UUID | None:
-    """The screener's run for this evidence version, once per event. None when no person can be
-    found whose action produced the evidence: an agent never acts for no one."""
+    """The screener's run for this evidence version, once per event, on behalf of `requested_by`
+    (from the event). None without one: an agent never acts for no one. Only retrieved trial
+    balances are screened today (they carry a ledger snapshot)."""
+    if requested_by is None:
+        return None
+    initiator = requested_by
     reader = _reader(tenant_id, "agents:screening")
     version = await version_view(reader, evidence_version_id)
     if version.snapshot_id is None:
-        return None
-    initiator = await initiator_for_snapshot(reader, version.snapshot_id)
-    if initiator is None:
         return None
     screener = spec(SCREENER)
     run_id: UUID | None = None
@@ -146,41 +149,36 @@ async def screen(agent: AgentContext) -> ScreeningOutcome:
     engagement = await get_ref(agent, agent.engagement_id)
     await authorise(agent, "evidence.read", engagement.resource())
     version = await version_view(agent.tenant, run.evidence_version_id)
-    if version.snapshot_id is None:
-        raise NotFound("ledger_snapshot")
+    if version.period_start is None or version.period_end is None:
+        raise NotFound("evidence_period")
     content = await read_content(agent.tenant, version.stored)
-    sheet = facts(content)
-    snapshot = await snapshot_view(agent.tenant, version.snapshot_id)
-    items = await fulfilled_items(agent.tenant, version.id)
     # Code computes; the model judges (ADR-050): totals and positions, never rows of amounts.
-    total_debit = sum((line.debit for line in snapshot.lines), Decimal(0))
-    total_credit = sum((line.credit for line in snapshot.lines), Decimal(0))
+    sheet = facts(content)
+    items = await fulfilled_items(agent.tenant, version.id)
+    period = f"{version.period_start.isoformat()} to {version.period_end.isoformat()}"
     context = (
         ContextBuilder()
-        .text(
-            "engagement",
-            f"Fiscal period {snapshot.period_start.isoformat()} to "
-            f"{snapshot.period_end.isoformat()}.",
-        )
+        .text("engagement", f"Requested period {period}.")
         .task(
             {
                 "request_items": [
                     {"description": i.description, "audit_area": i.audit_area} for i in items
                 ],
                 "period": {
-                    "start": snapshot.period_start.isoformat(),
-                    "end": snapshot.period_end.isoformat(),
+                    "start": version.period_start.isoformat(),
+                    "end": version.period_end.isoformat(),
                 },
-                "line_count": len(snapshot.lines),
-                "totals": {"debit": str(total_debit), "credit": str(total_credit)},
-                "balanced": total_debit == total_credit,
+                "line_count": sheet.line_count,
+                "totals": {"debit": str(sheet.total_debit), "credit": str(sheet.total_credit)},
+                "balanced": sheet.total_debit == sheet.total_credit,
+                "total_row_matches_lines": sheet.total_row_matches,
                 "cells": {
                     "total_debit": f"C{sheet.total_row}",
                     "total_credit": f"D{sheet.total_row}",
                     "first_line": "A2",
                     "last_line": f"D{sheet.last_line_row}",
                 },
-                "account_names": [line.account_name for line in snapshot.lines[:200]],
+                "account_names": list(sheet.account_names[:MAX_ROWS]),
             },
             untrusted=screener.untrusted_inputs,
             trim="account_names",

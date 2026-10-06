@@ -107,13 +107,15 @@ async def add_version(
     media_type: str,
     provenance: Provenance,
     idempotency_key: str | None = None,
+    requested_by: UUID | None = None,
 ) -> EvidenceVersionRef:
     """Add the next version inside the caller's unit of work. The tenant and actor are the
     transaction's own. The caller has authorised `evidence.upload` for its actor.
 
     With an `idempotency_key` already used in this tenant, returns that version
     (`created=False`) and records nothing: the caller's unit of work must then record its own
-    event, or skip the unit of work after checking `created`."""
+    event, or skip the unit of work after checking `created`. `requested_by` is the person the
+    version is added for (published on `evidence_version.created`)."""
     tenant = await transaction_context(tx.session)
     if stored.key != storage.object_key(tenant.tenant_id, stored.fingerprint):
         raise storage.IntegrityError("staged content belongs to another tenant")
@@ -180,7 +182,10 @@ async def add_version(
     )
     tx.emit(
         EvidenceVersionCreated(
-            evidence_version_id=version.id, evidence_item_id=item_id, engagement_id=engagement_id
+            evidence_version_id=version.id,
+            evidence_item_id=item_id,
+            engagement_id=engagement_id,
+            requested_by=requested_by,
         )
     )
     return _ref(version, created=True)
@@ -216,6 +221,8 @@ class EvidenceVersionView:
     stored: StoredObject
     snapshot_id: UUID | None
     media_type: str
+    period_start: date | None
+    period_end: date | None
 
 
 async def version_view(tenant: TenantContext, version_id: UUID) -> EvidenceVersionView:
@@ -237,4 +244,6 @@ async def version_view(tenant: TenantContext, version_id: UUID) -> EvidenceVersi
         ),
         version.snapshot_id,
         version.media_type,
+        version.period_start,
+        version.period_end,
     )
