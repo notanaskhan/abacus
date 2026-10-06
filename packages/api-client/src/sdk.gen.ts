@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateEngagementData, CreateEngagementErrors, CreateEngagementResponses, CreateRequestItemData, CreateRequestItemErrors, CreateRequestItemResponses, GetEngagementData, GetEngagementErrors, GetEngagementResponses, GetRetrievalData, GetRetrievalErrors, GetRetrievalResponses, ListEngagementsData, ListEngagementsErrors, ListEngagementsResponses, ListRequestItemsData, ListRequestItemsErrors, ListRequestItemsResponses, MeData, MeErrors, MeResponses, StartRetrievalData, StartRetrievalErrors, StartRetrievalResponses } from './types.gen';
+import type { CreateEngagementData, CreateEngagementErrors, CreateEngagementResponses, CreateRequestItemData, CreateRequestItemErrors, CreateRequestItemResponses, GetEngagementData, GetEngagementErrors, GetEngagementResponses, GetRetrievalData, GetRetrievalErrors, GetRetrievalResponses, ListEngagementsData, ListEngagementsErrors, ListEngagementsResponses, ListEvidenceVersionsData, ListEvidenceVersionsErrors, ListEvidenceVersionsResponses, ListRequestItemsData, ListRequestItemsErrors, ListRequestItemsResponses, ListScreeningResultsData, ListScreeningResultsErrors, ListScreeningResultsResponses, MeData, MeErrors, MeResponses, StartRetrievalData, StartRetrievalErrors, StartRetrievalResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -50,6 +50,15 @@ export const getEngagement = <ThrowOnError extends boolean = false>(options: Opt
 });
 
 /**
+ * List Evidence Versions Route
+ */
+export const listEvidenceVersions = <ThrowOnError extends boolean = false>(options: Options<ListEvidenceVersionsData, ThrowOnError>): RequestResult<ListEvidenceVersionsResponses, ListEvidenceVersionsErrors, ThrowOnError> => (options.client ?? client).get<ListEvidenceVersionsResponses, ListEvidenceVersionsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/evidence-versions',
+    ...options
+});
+
+/**
  * List Request Items Route
  */
 export const listRequestItems = <ThrowOnError extends boolean = false>(options: Options<ListRequestItemsData, ThrowOnError>): RequestResult<ListRequestItemsResponses, ListRequestItemsErrors, ThrowOnError> => (options.client ?? client).get<ListRequestItemsResponses, ListRequestItemsErrors, ThrowOnError>({
@@ -90,6 +99,15 @@ export const startRetrieval = <ThrowOnError extends boolean = false>(options: Op
 export const getRetrieval = <ThrowOnError extends boolean = false>(options: Options<GetRetrievalData, ThrowOnError>): RequestResult<GetRetrievalResponses, GetRetrievalErrors, ThrowOnError> => (options.client ?? client).get<GetRetrievalResponses, GetRetrievalErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/engagements/{engagement_id}/retrievals/{sync_run_id}',
+    ...options
+});
+
+/**
+ * List Screening Results Route
+ */
+export const listScreeningResults = <ThrowOnError extends boolean = false>(options: Options<ListScreeningResultsData, ThrowOnError>): RequestResult<ListScreeningResultsResponses, ListScreeningResultsErrors, ThrowOnError> => (options.client ?? client).get<ListScreeningResultsResponses, ListScreeningResultsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/screening-results',
     ...options
 });
 

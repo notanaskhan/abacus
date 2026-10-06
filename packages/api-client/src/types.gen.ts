@@ -5,6 +5,32 @@ export type ClientOptions = {
 };
 
 /**
+ * CitationOut
+ */
+export type CitationOut = {
+    /**
+     * Cell
+     */
+    cell: string;
+    /**
+     * Quote
+     */
+    quote: string | null;
+    /**
+     * Reason
+     */
+    reason: 'cell_not_found' | 'quote_mismatch' | 'value_mismatch' | null;
+    /**
+     * Value
+     */
+    value: string | null;
+    /**
+     * Verified
+     */
+    verified: boolean;
+};
+
+/**
  * EngagementIn
  */
 export type EngagementIn = {
@@ -129,6 +155,48 @@ export type ErrorOut = {
 };
 
 /**
+ * EvidenceVersionOut
+ */
+export type EvidenceVersionOut = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Evidence Item Id
+     */
+    evidence_item_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Method
+     */
+    method: 'retrieved' | 'uploaded';
+    /**
+     * Period End
+     */
+    period_end: string | null;
+    /**
+     * Period Start
+     */
+    period_start: string | null;
+    /**
+     * Pulled At
+     */
+    pulled_at: string | null;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
  * FieldErrorOut
  */
 export type FieldErrorOut = {
@@ -225,6 +293,10 @@ export type RequestItemOut = {
      */
     engagement_id: string;
     /**
+     * Evidence Version Id
+     */
+    evidence_version_id?: string | null;
+    /**
      * Id
      */
     id: string;
@@ -284,6 +356,46 @@ export type RetrievalOut = {
      * Sync Run Id
      */
     sync_run_id: string;
+};
+
+/**
+ * ScreeningResultOut
+ *
+ * Model text (`rationale`, `quote`, `unverified`) is untrusted: render as plain text.
+ */
+export type ScreeningResultOut = {
+    /**
+     * Action
+     */
+    action: 'ready_for_review' | 'needs_revision';
+    /**
+     * Citations
+     */
+    citations: Array<CitationOut>;
+    /**
+     * Confidence
+     */
+    confidence: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Rationale
+     */
+    rationale: string;
+    /**
+     * Unverified
+     */
+    unverified: Array<string>;
 };
 
 /**
@@ -463,6 +575,60 @@ export type GetEngagementResponses = {
 };
 
 export type GetEngagementResponse = GetEngagementResponses[keyof GetEngagementResponses];
+
+export type ListEvidenceVersionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/evidence-versions';
+};
+
+export type ListEvidenceVersionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ListEvidenceVersionsError = ListEvidenceVersionsErrors[keyof ListEvidenceVersionsErrors];
+
+export type ListEvidenceVersionsResponses = {
+    /**
+     * Response List Evidence Versions
+     *
+     * Successful Response
+     */
+    200: Array<EvidenceVersionOut>;
+};
+
+export type ListEvidenceVersionsResponse = ListEvidenceVersionsResponses[keyof ListEvidenceVersionsResponses];
 
 export type ListRequestItemsData = {
     body?: never;
@@ -685,6 +851,60 @@ export type GetRetrievalResponses = {
 };
 
 export type GetRetrievalResponse = GetRetrievalResponses[keyof GetRetrievalResponses];
+
+export type ListScreeningResultsData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/screening-results';
+};
+
+export type ListScreeningResultsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ListScreeningResultsError = ListScreeningResultsErrors[keyof ListScreeningResultsErrors];
+
+export type ListScreeningResultsResponses = {
+    /**
+     * Response List Screening Results
+     *
+     * Successful Response
+     */
+    200: Array<ScreeningResultOut>;
+};
+
+export type ListScreeningResultsResponse = ListScreeningResultsResponses[keyof ListScreeningResultsResponses];
 
 export type MeData = {
     body?: never;

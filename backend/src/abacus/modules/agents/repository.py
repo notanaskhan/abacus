@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
@@ -10,6 +11,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.modules.agents.models import AgentRun, ScreeningResult
+from abacus.modules.identity.api import AuthContext, visible
 
 
 async def insert_run(
@@ -112,3 +114,29 @@ async def insert_screening_result(session: AsyncSession, *, values: dict[str, ob
     result_id = uuid4()
     await session.execute(insert(ScreeningResult).values(id=result_id, **values))
     return result_id
+
+
+async def latest_results(
+    session: AsyncSession, ctx: AuthContext, engagement_id: UUID
+) -> Sequence[ScreeningResult]:
+    """The latest screening result of each evidence version of the engagement the caller may
+    read (a version re-screened by a later event shows its newest result)."""
+    return (
+        (
+            await session.execute(
+                select(ScreeningResult)
+                .where(
+                    ScreeningResult.engagement_id == engagement_id,
+                    visible(ctx, "evidence.read", ScreeningResult.engagement_id),
+                )
+                .distinct(ScreeningResult.evidence_version_id)
+                .order_by(
+                    ScreeningResult.evidence_version_id,
+                    ScreeningResult.created_at.desc(),
+                    ScreeningResult.id.desc(),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )

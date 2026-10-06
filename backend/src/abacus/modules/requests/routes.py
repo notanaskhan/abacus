@@ -43,6 +43,7 @@ class RequestItemOut(BaseModel):
     audit_area: Annotated[str, classified("confidential")]
     status: Annotated[Status, classified("internal")]
     created_at: Annotated[datetime, classified("internal")]
+    evidence_version_id: Annotated[UUID | None, classified("internal")] = None
 
 
 def _out(item: RequestItemView) -> RequestItemOut:

@@ -73,21 +73,25 @@ async def insert_request_item(
 
 async def list_request_items(
     session: AsyncSession, ctx: AuthContext, engagement_id: UUID
-) -> Sequence[RequestItem]:
-    return (
-        (
-            await session.execute(
-                select(RequestItem)
-                .where(
-                    RequestItem.engagement_id == engagement_id,
-                    visible(ctx, "request_item.read", RequestItem.engagement_id),
-                )
-                .order_by(RequestItem.created_at, RequestItem.id)
-            )
-        )
-        .scalars()
-        .all()
+) -> Sequence[tuple[RequestItem, UUID | None]]:
+    """Each visible item of the engagement with the evidence version that last fulfilled it."""
+    latest = (
+        select(Fulfilment.evidence_version_id)
+        .where(Fulfilment.request_item_id == RequestItem.id)
+        .order_by(Fulfilment.created_at.desc(), Fulfilment.id.desc())
+        .limit(1)
+        .correlate(RequestItem)
+        .scalar_subquery()
     )
+    rows = await session.execute(
+        select(RequestItem, latest)
+        .where(
+            RequestItem.engagement_id == engagement_id,
+            visible(ctx, "request_item.read", RequestItem.engagement_id),
+        )
+        .order_by(RequestItem.created_at, RequestItem.id)
+    )
+    return [(item, version_id) for item, version_id in rows.all()]
 
 
 async def get_request_item(session: AsyncSession, item_id: UUID) -> RequestItem | None:

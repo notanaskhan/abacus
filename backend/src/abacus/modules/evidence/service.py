@@ -30,6 +30,7 @@ from abacus.modules.evidence.repository import (
     get_version,
     insert_item,
     insert_version,
+    list_versions,
     next_version_no,
     version_for_key,
 )
@@ -249,3 +250,41 @@ async def version_view(tenant: TenantContext, version_id: UUID) -> EvidenceVersi
         version.period_start,
         version.period_end,
     )
+
+
+@dataclass(frozen=True)
+class EvidenceVersionSummary:
+    """What the evidence board shows of a version (TASK-012 Q1): provenance, never content."""
+
+    id: UUID
+    evidence_item_id: UUID
+    version_no: int
+    method: str  # retrieved | uploaded
+    source: str
+    pulled_at: datetime | None
+    period_start: date | None
+    period_end: date | None
+    created_at: datetime
+
+
+async def evidence_versions_for(
+    ctx: AuthContext, engagement_id: UUID
+) -> list[EvidenceVersionSummary]:
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "evidence.read", ref.resource())
+    async with tenant_session(ctx.tenant) as session:
+        versions = await list_versions(session, ctx, engagement_id)
+    return [
+        EvidenceVersionSummary(
+            v.id,
+            v.evidence_item_id,
+            v.version_no,
+            v.method,
+            v.source,
+            v.pulled_at,
+            v.period_start,
+            v.period_end,
+            v.created_at,
+        )
+        for v in versions
+    ]

@@ -33,9 +33,12 @@ class RequestItemView:
     audit_area: str
     status: str
     created_at: datetime
+    # The evidence version that last fulfilled the item (the board joins evidence and screening
+    # on it; TASK-012 Q1). None until the item has evidence.
+    evidence_version_id: UUID | None = None
 
 
-def _view(item: RequestItem) -> RequestItemView:
+def _view(item: RequestItem, evidence_version_id: UUID | None = None) -> RequestItemView:
     return RequestItemView(
         item.id,
         item.engagement_id,
@@ -43,6 +46,7 @@ def _view(item: RequestItem) -> RequestItemView:
         item.audit_area,
         item.status,
         item.created_at,
+        evidence_version_id,
     )
 
 
@@ -90,7 +94,8 @@ async def request_items_for(ctx: AuthContext, engagement_id: UUID) -> Sequence[R
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, "request_item.read", ref.resource())
     async with tenant_session(ctx.tenant) as session:
-        return [_view(item) for item in await list_request_items(session, ctx, engagement_id)]
+        rows = await list_request_items(session, ctx, engagement_id)
+    return [_view(item, version_id) for item, version_id in rows]
 
 
 class ItemNotFulfillable(DomainConflict):
