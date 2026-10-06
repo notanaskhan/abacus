@@ -355,6 +355,70 @@ The result has a `currency` field.
 - **WF-001** (`src/abacus/modules/*/workflows.py`): any import other than `__future__`, `datetime`, `dataclasses`, `typing`, `temporalio*` or the module's own `workflow_types` is flagged.
 - **import-linter:** "Workflows orchestrate only" forbids `abacus.modules.connections.workflows` from importing `kernel.db`, `kernel.storage`, `kernel.uow`, connections' `repository`, `pipeline` and `activities`.
 
+#### Contract revision 1 — TASK-010b (2026-10-06, from both stage 4 reviews; supersedes the clauses it touches)
+**Workflow identity and starting**
+- `workflow_id(run_id) -> "retrieval:<run_id>"` (one workflow per run).
+- Starts with `ALLOW_DUPLICATE` + `USE_EXISTING` and a 6-hour execution timeout.
+- `start_retrieval(...) -> StartedRun(run_id, created)`:
+  - it also refuses an archived engagement with `EngagementArchived`, which gives 409 `engagement_archived`;
+  - re-triggering after a failed run creates a new run and workflow (202, a new `sync_run_id`) that can succeed.
+- If the workflow start raises *anything*, a run this call **created** is ended `failed`/`workflow_unavailable` and the API returns 503. A pre-existing running run is left as it is (still 503).
+- `RetrievalOut` gains `started_at` and `finished_at`.
+- POST declares 409 and 503 in OpenAPI (`errors=(409, 503)` on `AbacusRouter` verbs; `ErrorOut`).
+
+**Errors (kernel)**
+- `kernel.errors.DomainConflict` (class attribute `code`) → **409** `{"detail": code}`. `NoConnection` (`no_connection`), `ItemNotFulfillable` (`item_not_open`) and `EngagementArchived` (`engagement_archived`) subclass it.
+- `kernel.errors.ServiceUnavailable` → **503** `{"detail":"service unavailable"}`. `WorkflowUnavailable` subclasses it.
+- `connections.api` no longer re-exports `ItemNotFulfillable`.
+- `RunNotRunning(status, failure_code)`.
+
+**Activities**
+- Every exception leaves an activity as an `ApplicationError` whose **message and type are the exception class name** (never its text).
+  - `RunFailed` → type `RunFailed`, details `(status, code)`, non-retryable.
+  - Otherwise retryable exactly when `is_retryable(exc)`.
+  - A missing run (`NotFound`) → non-retryable.
+- A finished non-succeeded run → `RunFailed` with **the run's own** status and code.
+- `render_activity` after success returns the run's recorded `evidence_version_id`.
+- `fail_run_activity`:
+  - accepts status only from {`failed`, `failed_validation`} (else `failed`) and code only from {`provider_unavailable`, `internal_error`, `cancelled`} (else `internal_error`);
+  - on a finished run it returns that run's status, code and evidence version, changing nothing.
+
+**Workflow**
+- Stage failures map: `RunFailed` details → that status and code; `Unavailable` → `provider_unavailable`; anything else → `internal_error`.
+- `fail_run` retries without limit (`maximum_attempts=0`).
+- A cancelled workflow runs `fail_run(failed, cancelled)` and then re-raises the cancellation.
+- Constants live in `workflow_types`: `RUN_FAILED`, `UNAVAILABLE`, `FAIL_STATUSES`, `FAIL_CODES`, `PROVIDER_UNAVAILABLE`, `INTERNAL_ERROR`, `CANCELLED`.
+
+**Encryption**
+- `PayloadEncryptionCodec(keys: Mapping[str, bytes], current: str)` is a keyring:
+  - it encodes with `current` and decodes any known key ID;
+  - an unknown key ID or other encoding → `PayloadDecryptionError`;
+  - a short secret → `ValueError`;
+  - `current` not in the keyring → `ValueError`.
+- `kernel.temporal.SEALING_ID = "platform-v1"`.
+- `data_converter()` uses `DefaultFailureConverterWithEncodedAttributes`: failure messages and stack traces in history are encoded. A test raises an activity error containing a marker string and asserts the marker never appears in the raw history JSON.
+- Settings:
+  - `temporal_payload_key` is ≥ 32 characters with ≥ 8 distinct characters (any environment);
+  - `example-` is refused outside local/test;
+  - outside local/test, `temporal_tls=True` and `temporal_api_key` are required;
+  - `temporal_task_queue` defaults to `abacus`.
+- `create_app()` builds the payload codec at startup, so a bad key fails before any request.
+- The engines use `hide_parameters=True`.
+
+**Worker.** `build_worker()` also pings the database (`kernel.db.ping`). It registers `connections.api.WORKFLOWS`/`ACTIVITIES` and uses a 60-second graceful shutdown.
+
+**Replay (AC-19)**
+- Fixtures are `tests/workflows/histories/retrieval-v1-succeeded.json` and `retrieval-v1-failed-validation.json`. They are **decoded** (plain payloads, IDs only) and **scrubbed** (identity `worker@recorder`, sticky queues `sticky@recorder`). Both replay with `Replayer(workflows=[RetrievalWorkflow])` and **no codec**. The old `retrieval-v1.json` is gone.
+- They were recorded by `python -m abacus_tools.workflows.record_retrieval <dir> [version]`, which refuses to overwrite existing files.
+- `abacus_tools.workflows.histories.decoded_and_scrubbed(history, codec)` opens sealed payloads and scrubs identifiers.
+
+**Static rules**
+- **WF-001** allows only these imports: `__future__`, `asyncio`, `collections.abc`, `dataclasses`, `datetime`, `enum`, `typing`, `temporalio`, `temporalio.workflow`, `temporalio.common`, `temporalio.exceptions`, and the module's own `workflow_types`. It also flags the names `sandbox_unrestricted`, `eval`, `exec`, `__import__`, `import_module` and `compile`, and covers `workflows/*` packages.
+- **import-linter:**
+  - "Workflows orchestrate only" applies to `abacus.modules.*.workflows`, which may not import `abacus.kernel` or any module's `repository`, `service`, `pipeline`, `activities` or `routes`;
+  - the layers contract now reads `routes → retrievals → service → repository`.
+- **DB-001, UOW-003, BOUND-001** exclude the recorder (`src/abacus_tools/workflows/record_retrieval.py`).
+
 ### Approval file text
 ```yaml
 task: TASK-010
@@ -422,6 +486,11 @@ reason: TASK-010 — connector, ledger snapshots, fulfilments, retrieval pipelin
 
   Migration 0009 (my own, unmerged, never applied) was edited in place to add `sync_runs.raw_size_bytes` and `raw_pulled_at`; no new migration. 010a contract written.
 - `2026-10-06` — 010a independent tests (Sonnet): one implementation bug, fixed. The 0009 downgrade guard was blind under forced RLS; it now lifts FORCE within the transaction and also covers evidence, since 0008's guard had the same flaw. Test-side fixes, all by the test author: DB-001 exclusions, a card-shaped test value, and TASK-009 evidence tests adapted to the 0009 snapshot FK and `TRUNCATE … CASCADE` (assertions unchanged). With founder approval, the hook test's unprotected-path sample moved off the now-protected ledger module.
+- `2026-10-06` — 010b reviews: security (S1–S15) and architecture (B1, S1–S9, N1–N10) both requested changes. Fixed via TASK-010b Contract revision 1.
+  - Blockers fixed: a failed run couldn't be retried; the stale-workflow attach; plaintext failure messages in history.
+  - Also fixed: an unstoppable fail path and cancellation handling; the render-retry result; the keyring; TLS and API-key settings; key strength; codec checked at app start; `hide_parameters`; domain error classes and declared 409/503; status timestamps; decoded and scrubbed histories (success plus failed validation) and their recorder; stricter WF-001 and the import contracts; worker registries, graceful shutdown and DB ping; the task queue renamed `abacus`.
+  - The test author's bugs (NotFound non-retryable; `fail_run` code from the run) are fixed too.
+  - Recorded as follow-ups (Gotchas).
 - `2026-10-06` — 010b implemented. Smoke-tested against real Temporal, Postgres and Versity:
   - API 202, duplicate trigger reuses the run;
   - workflow succeeds; status endpoint;
@@ -445,6 +514,15 @@ reason: TASK-010 — connector, ledger snapshots, fulfilments, retrieval pipelin
 | Per-attempt pull logging deferred | Decide before the client-facing access log (arch 24) | No |
 
 ## Gotchas and discoveries
+- From the TASK-010b reviews, recorded rather than fixed:
+  - `make dev` points at stale `abacus.api.main` and `abacus.worker.main`, and the worker isn't in compose. Fix with the frontend's local run (TASK-012; Makefile and compose need approval).
+  - A stuck-run sweeper for runs with no workflow (a crash between commit and start; the worker absent past the execution timeout).
+  - A rate limit and period bound on triggers; re-checking `on_behalf_of` at render.
+  - Binding workflow and run IDs as codec AAD.
+  - KMS-held payload keys, TLS and namespace in AWS (TASK-014).
+  - Activity heartbeats.
+  - A `Location` header on 202.
+  - Exposing `evidence_version_id` to `request_item.read` (revisit with client roles).
 - From TASK-009 (founder, 2026-10-06): add a `SystemContext` that `authorise` accepts (`evidence.upload`, `connection.pull`, `screening.run`).
 - Evidence: stage content with `evidence.api.stage_content` **before** the unit of work, then `add_version(..., idempotency_key=<workflow/activity id>)`. A repeat returns `created=False` and records nothing, so record your own event or skip. Raw payloads use `stage_content`/`read_content` too.
 - Add the `evidence_versions.snapshot_id` composite FK, and `ledger: {identity, engagements, evidence}` in `MODULE_DEPENDENCIES`.
