@@ -98,7 +98,7 @@ def test_ac20_protected_path_is_blocked(project: tuple[Path, Run], rel: str) -> 
 @pytest.mark.parametrize(
     "rel",
     [
-        "backend/src/abacus/modules/ledger/service.py",
+        "backend/src/abacus/modules/sampling/service.py",
         "backend/src/abacus/kernel/outbox/relay.py",
         "docs/adr/ADR-200-new.md",
         "docs/adr/drafts/ADR-1.md",

@@ -43,6 +43,7 @@ Out: real connectors, OAuth and credentials (later specs); GL detail and the rol
 ## Plan
 - [x] Plan approved by human (founder, 2026-10-06: "approved and proceed") — **red: founder reviews each PR line by line before merge**
 - [x] Approval file `work/approvals/TASK-010.yaml` written by the agent at the founder's instruction (2026-10-06); approved by founder: paths under *Approval file text*, expires 2026-10-27
+- [x] 2026-10-06 (founder): `test_hooks.py` added to the approval file to repoint its unprotected-path sample (ledger is now protected).
 - [x] Q1–Q5: all recommendations approved. Split into **TASK-010a** (steps 1–5) and **TASK-010b** (step 6), each with its own PR.
 - Red task: the agent drafts the design here; the founder edits or approves it before any code, then reviews the diff line by line (founder decision 2026-10-06).
 
@@ -319,6 +320,7 @@ paths:
   - backend/src/abacus_tools/quality/schema_check.py
   - backend/src/abacus_tools/quality/banned_patterns.py
   - backend/tests/unit/quality/test_banned_patterns.py
+  - backend/tests/unit/quality/test_hooks.py
   - packages/api-client/**
 reason: TASK-010 — connector, ledger snapshots, fulfilments, retrieval pipeline and workflow
 ```
