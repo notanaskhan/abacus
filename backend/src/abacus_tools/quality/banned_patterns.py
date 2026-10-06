@@ -428,7 +428,11 @@ RULES: list[Rule | TreeRule] = [
         adr="ADR-007, ADR-018",
         check=_check_session_transaction,
         # test_tenancy proves session.commit() is inert inside tenant_session (TASK-005).
-        exclude=("src/abacus/kernel/uow/*", "tests/integration/test_tenancy.py"),
+        exclude=(
+            "src/abacus/kernel/uow/*",
+            "tests/integration/test_tenancy.py",
+            "tests/integration/test_uow_session_rollback.py",
+        ),
     ),
     Rule(
         id="DB-001",

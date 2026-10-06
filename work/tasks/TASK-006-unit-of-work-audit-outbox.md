@@ -4,7 +4,7 @@ title: Unit of work, audit events and outbox
 spec: SPEC-000
 acceptance_criteria: [AC-4, AC-20]
 risk_zone: red
-status: in-progress
+status: in-review
 branch: task-006-uow
 worktree:
 created: 2026-10-06
@@ -176,6 +176,8 @@ reason: TASK-006 — unit of work, audit events, outbox and relay
 
 - `2026-10-06` — Both stage 4 reviews addressed (contract revision 1): migration **0003** (0002 is immutable once it exists) — column-level INSERT for the app, NULL-safe actor CHECK, target/last_error CHECKs, outbox PK `(tenant_id, id)`, `next_attempt_at`; uow refuses nesting, `Target`/`Ref` identifiers only; relay backoff (cap 1 h), parking after 10 attempts, per-tenant deferral within a pass, `RelayResult`, `outbox.publish_failed` log; TENANT-001 covers `app.actor_*`; UOW-002 covers `relay_engine`/`configure_relay_engine`; schema_check checks app insert columns (where declared in `APP_INSERT_COLUMNS`), relay sequences and role membership; `migrated_db` exposes `superuser_dsn`. Relay backoff/deferral is a design change beyond the approved design — flagged for the founder's line-by-line review.
 
+- `2026-10-06` — Independent tests updated for revision 1 (rollback test moved to its own file; superuser plants malformed payload; TENANT-001 message updated — a changed existing test, contract change). One narrow UOW-001 exclusion for `tests/integration/test_uow_session_rollback.py`. `make check` exit 0: 1,644 unit + 238 integration, coverage 97 %.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
@@ -195,8 +197,8 @@ reason: TASK-006 — unit of work, audit events, outbox and relay
 - [x] **Q4 — Domain events carry no Restricted fields.** Approved 2026-10-06. **Recommendation:** yes.
 
 ## Handoff
-- **Current state:** Implementation complete with all review fixes; my probe passes end to end; `schema_check` passes. Independent tests last run: 1,427 passed / 6 failed — all 6 from decisions now made (see next step). Not yet pushed.
-- **Exact next step:** (1) Wait for the test author's report: they are moving `test_ac4_a_session_rollback_inside_the_block_never_leaves_a_partial_write` into `backend/tests/integration/test_uow_session_rollback.py`, using `superuser_dsn` for the malformed-payload test (no TENANT-001 exclusion needed), and updating the TENANT-001 message assertion. (2) Add a UOW-001 (and DB-001 if needed) exclusion for `tests/integration/test_uow_session_rollback.py` only in `banned_patterns.py`. (3) `make check` (needs Docker running and `PATH=/opt/homebrew/opt/node@24/bin:$PATH`). (4) Commit, push branch `task-006-uow`, open PR (red: founder line-by-line), confirm CI. (5) After merge: delete `work/approvals/TASK-006.yaml`, mark done, start TASK-007 design.
-- **Uncommitted or partial work:** see git status — review fixes and test-author files are in the working tree; committed as WIP below.
-- **Known failing checks:** the 6 test-author failures above until they land their changes; banned_patterns flags their two files until step 2.
-- **Open issues:** branch protection off; founder shell PATH still Node 20.
+- **Current state:** Done pending review. PR open on `task-006-uow`; `make check` exit 0.
+- **Exact next step:** Confirm CI; founder reviews line by line (relay backoff/deferral is beyond the approved design — flagged in the PR); merge; delete `work/approvals/TASK-006.yaml`; mark done; TASK-007 design.
+- **Uncommitted or partial work:** none.
+- **Known failing checks:** none.
+- **Open issues:** branch protection off.
