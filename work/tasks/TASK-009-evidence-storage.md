@@ -115,6 +115,86 @@ Out: fulfilments, retrieval and real snapshots (TASK-010); evidence routes, the 
 - **Q4 — Default retention:** GOVERNANCE mode, 2555 days, configurable. Per-engagement retention policies and legal holds come later. Recommend yes.
 - **Q5 — No evidence routes** in this task (board and downloads in TASK-011/012). Recommend yes.
 
+### Interface contract (tests written independently — ADR-078)
+**Imports**
+- `from abacus.kernel.crypto import seal, open_sealed, DecryptionError, LocalKeyService, KeyService, configure_key_service, key_service`
+- `from abacus.kernel.storage import s3_client`
+- `from abacus.modules.evidence import storage` (`put`, `get`, `StoredObject`, `IntegrityError`, `configure_storage`, `object_key`, `fingerprint`)
+- `from abacus.modules.evidence.api import add_version, read_version, NewItem, Provenance, EvidenceVersionRef, TrialBalance, TrialBalanceLine, render_trial_balance, XLSX_MEDIA_TYPE, EvidenceVersionCreated, IntegrityError`
+- `from abacus_tools.local.evidence_bucket import ensure_bucket`
+
+**Crypto**
+- `await seal(tenant_id, plaintext, fingerprint) -> bytes` begins with `b"ABE1"`. Two seals of the same input differ (random data key and nonce).
+- `await open_sealed(tenant_id, sealed, fingerprint)` returns the plaintext.
+- It raises `DecryptionError` for:
+  - another tenant's ID;
+  - another fingerprint;
+  - any flipped byte (header, wrapped key, nonce or ciphertext);
+  - truncation;
+  - a wrong magic number;
+  - a header length over 4096.
+- `LocalKeyService`:
+  - raises `RuntimeError` outside local/test;
+  - raises `ValueError` for a master key under 32 bytes;
+  - its `key_id(t) = "local:<t>"`, and `unwrap` with another tenant's key ID → `DecryptionError`.
+- With no override, `key_service()` uses `LocalKeyService` in local/test, and raises `RuntimeError` in staging/production.
+
+**Storage** (`s3_settings` fixture; create a bucket with `ObjectLockEnabledForBucket=True`; `configure_storage(s3_client(endpoint_url=…, access_key=…, secret_key=…), bucket)`)
+- `put(tenant, content)` → `StoredObject(key="tenants/<tenant>/sha256/<sha256 hex of content>", version_id, fingerprint, size=len(content))`.
+- The stored bytes in S3 are not the plaintext and begin with `ABE1`.
+- The object has Object Lock GOVERNANCE until about now + `evidence_retention_days`.
+- `put` of the same content again → the same key and version ID, and no new object version.
+- A direct `put_object(IfNoneMatch="*")` with different bytes to an existing key is refused by the store.
+- Deleting the object version is refused (Object Lock).
+- `get(tenant, stored)` → the original bytes.
+- `get` raises:
+  - `IntegrityError` for another tenant's ID or a key that doesn't match the tenant and fingerprint;
+  - `DecryptionError` or `IntegrityError` when the stored bytes are replaced — simulate by writing a tampered object under a new key and pointing a `StoredObject` at it, or by using another fingerprint.
+
+**Database (migration 0007)**
+- `evidence_items` and `evidence_versions` are tenant tables with forced RLS, owned by `evidence` in `TABLE_OWNERS`.
+- Composite FKs: a version's (tenant, engagement, item) must match its item; an item's engagement must be in the tenant; `client_entity_id` must be in the tenant.
+- CHECKs:
+  - `storage_key = 'tenants/' || tenant_id || '/sha256/' || fingerprint`;
+  - fingerprint is 64 lower-case hex characters;
+  - `version_no ≥ 1`, unique per item;
+  - `retrieved` ⇒ `pulled_at` is set;
+  - `period_end ≥ period_start`;
+  - method is `retrieved` or `uploaded`.
+- **AC-13:**
+  - `abacus_app` has no UPDATE or DELETE on `evidence_versions` or `evidence_items`, and may INSERT only the listed columns (not `created_at`);
+  - as superuser, `UPDATE`, `DELETE` and `TRUNCATE` on `evidence_versions` raise `insufficient_privilege` from the trigger.
+- `schema_check` reports `evidence_versions: no enabled BEFORE <UPDATE|DELETE|TRUNCATE> trigger calling evidence_versions_immutable` if a trigger is dropped or disabled.
+
+**Service**
+- `async with uow(TenantContext(t, "system", "retrieval")) as tx: await add_version(tx, tx_tenant, engagement_id=…, item=NewItem("Trial balance") | item_id, content=…, media_type=…, provenance=Provenance(...))` returns `EvidenceVersionRef(id, evidence_item_id, engagement_id, version_no, fingerprint, size_bytes, media_type)`.
+  - A new item → `version_no` 1; each later call on the item → n+1. Concurrent calls get distinct consecutive numbers.
+  - Rows carry the provenance fields. `created_by_kind`/`created_by_id` come from the tenant context.
+  - Audit events: `evidence_item.created` (new item; `after.engagement_id`) and `evidence_version.created` (`after.evidence_item_id`, `after.fingerprint`).
+  - Outbox event: `evidence_version.created` with payload `evidence_version_id`, `evidence_item_id`, `engagement_id`.
+  - If the unit of work fails after the object is stored, no rows remain, and a retry reuses the object.
+- `read_version(ctx, version_id)`:
+  - returns the bytes to an actor allowed `evidence.read` on the engagement;
+  - a firm_admin who isn't a member, or a reviewer… (per the matrix) → `Forbidden`;
+  - another firm's version, or a missing one → `NotFound`.
+
+**Renderer**
+- **AC-12:** `render_trial_balance(tb)` is byte-identical across calls and across time (render, wait over a second, render).
+- Line order in the input doesn't change the output.
+- The output opens with openpyxl. Rows are sorted by account code, and there's a Total row with computed sums.
+- The footer has the labels `Source`, `Method` (`retrieved`), `Pulled at` (ISO), `Period`, `Entity`, `Entity ID`, `Snapshot ID`, `Source fingerprint`.
+- An account name starting with `=`, `+`, `-` or `@` is stored as a string cell (`data_type == "s"`) with the value unchanged.
+- `docProps/core.xml` has creator `platform`, and both created and modified equal `pulled_at`.
+
+**Static rules**
+- **STORE-001**: importing `boto3` in `src/abacus/` outside `kernel/storage.py`.
+- **CRYPTO-001**: importing `cryptography` in `src/abacus/` outside `kernel/crypto/` and `modules/identity/tokens.py`.
+- **BOUND-002**: `evidence` may depend on `identity` and `engagements`.
+
+**Tooling**
+- `ensure_bucket()` creates the configured bucket with Object Lock and is idempotent.
+- It raises `RuntimeError` outside local/test.
+
 ### Approval file text
 ```yaml
 task: TASK-009
@@ -164,6 +244,7 @@ reason: TASK-009 — write-once encrypted evidence storage, insert-only versions
 - `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder. Not started.
 - `2026-10-06` — Design drafted (§1–7, Q1–Q5) for founder review.
 - `2026-10-06` — Approved with all recommendations; approval file written at the founder's instruction.
+- `2026-10-06` — Implemented steps 2–4. Smoke-tested end to end: two versions share one object, audit events correct, member read verified, superuser UPDATE/DELETE/TRUNCATE rejected by the trigger. The renderer pins openpyxl's save-time `modified` stamp. `kernel.db.Base` maps `datetime` to timestamptz. Contract written.
 - `2026-10-06` — Versity verified: `If-None-Match: *` → `PreconditionFailed`; Object Lock refuses version deletion. ADR-104 written (Q1). Protected `modules/evidence/**` and `kernel/storage.py`. I added `kernel/storage.py` to the approval file: design §3 creates it, but the original path list omitted it (my error).
 
 ## Decisions made during this task
@@ -178,13 +259,8 @@ reason: TASK-009 — write-once encrypted evidence storage, insert-only versions
 -
 
 ## Handoff
-- **Current state:** Design drafted; awaiting founder approval (red). No code.
-- **Exact next step:** On approval, write `work/approvals/TASK-009.yaml` with these paths:
-  - `.claude/hooks/_protected.py`, `.github/CODEOWNERS`, `docs/architecture/protected-paths.md`
-  - `backend/src/abacus/kernel/crypto/**`, `backend/src/abacus/kernel/db/**`, `backend/src/abacus/modules/evidence/**`
-  - `backend/src/abacus_tools/quality/schema_check.py`, `backend/src/abacus_tools/quality/banned_patterns.py`
-  - `backend/tests/unit/quality/test_banned_patterns.py`
-  - `backend/pyproject.toml`, `backend/uv.lock` (openpyxl, cryptography)
-  - `**/*compose*.y*ml` (bucket bootstrap, if needed)
-
-  Then follow the Steps.
+- **Current state:** Steps 1–4 committed on `task-009-evidence` (WIP). Contract written. The independent test author and two reviews are next.
+- **Exact next step:** Collect tests and reviews; fix findings; `make check`; PR (red: founder line-by-line).
+- **Uncommitted or partial work:** none.
+- **Known failing checks:** none known before tests.
+- **Open issues:** branch protection off.
