@@ -19,7 +19,6 @@ from abacus.modules.identity.routing import (
     current_signed_in,
     declared_action,
 )
-from abacus.modules.identity.service import TENANT_HEADER
 from abacus.modules.identity.tokens import (
     InvalidToken,
     JwtVerifier,
@@ -32,7 +31,6 @@ __all__ = [
     "ACTION_KEY",
     "MFA_RECENT",
     "SELF",
-    "TENANT_HEADER",
     "AbacusRoute",
     "AbacusRouter",
     "AuthContext",

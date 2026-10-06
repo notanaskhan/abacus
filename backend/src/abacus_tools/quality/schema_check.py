@@ -255,6 +255,9 @@ class Grant:
     update: frozenset[str] = frozenset()
 
 
+# Bypass roles that never write: read-only by default (a second line behind the grants).
+READ_ONLY_ROLES = frozenset({IDENTITY})
+_ROLE_CONFIG = "SELECT rolconfig FROM pg_roles WHERE rolname = $1"
 # Roles that bypass row-level security, and everything each may touch (TASK-006, TASK-007).
 BYPASS_ROLE_GRANTS: dict[str, dict[str, Grant]] = {
     RELAY: {RELAY_TABLE: Grant(select=ALL_COLUMNS, update=RELAY_UPDATABLE)},
@@ -343,6 +346,12 @@ async def _bypass_role_problems(
                 problems.append(f"{role_name}: has {privilege} on sequence {name}")
     for membership in await conn.fetch(_MEMBERSHIPS, role_name):
         problems.append(f"{role_name}: is a member of {membership['role']}")
+    for function in await conn.fetch(_LARGE_OBJECT_FUNCTIONS, role_name):
+        problems.append(f"{role_name}: can execute {function['name']}")
+    if role_name in READ_ONLY_ROLES:
+        config = cast(list[str] | None, await conn.fetchval(_ROLE_CONFIG, role_name)) or []
+        if "default_transaction_read_only=on" not in config:
+            problems.append(f"{role_name}: default_transaction_read_only is not on")
     return problems
 
 

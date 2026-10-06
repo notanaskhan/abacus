@@ -405,31 +405,81 @@ def _check_tenant_connection(src: SourceFile) -> Iterator[Finding]:
             yield Finding(node.lineno, f"{node.attr} is for abacus.kernel.uow only")
 
 
-# The sign-in engine (abacus_identity, BYPASSRLS): only the identity repository.
-_IDENTITY_ENGINE = frozenset({"identity_engine", "configure_identity_engine"})
-
-
-def _check_identity_engine(src: SourceFile) -> Iterator[Finding]:
+def _names_used(src: SourceFile) -> Iterator[tuple[int, str]]:
+    """Every identifier the file mentions: imported names, names, attributes, parameters."""
     for node in ast.walk(src.tree):
         if isinstance(node, ast.ImportFrom):
             for alias in node.names:
-                if alias.name in _IDENTITY_ENGINE:
-                    yield Finding(node.lineno, f"{alias.name} is for the identity repository only")
-        elif isinstance(node, ast.Attribute) and node.attr in _IDENTITY_ENGINE:
-            yield Finding(node.lineno, f"{node.attr} is for the identity repository only")
+                yield node.lineno, alias.name
+        elif isinstance(node, ast.Name):
+            yield node.lineno, node.id
+        elif isinstance(node, ast.Attribute):
+            yield node.lineno, node.attr
+        elif isinstance(node, ast.arg):
+            yield node.lineno, node.arg
+
+
+def _imported_modules(src: SourceFile) -> Iterator[tuple[int, str]]:
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                yield node.lineno, alias.name
+        elif isinstance(node, ast.ImportFrom):
+            yield node.lineno, node.module or ""
+        elif (
+            isinstance(node, ast.Call)
+            and _terminal_name(node.func) in {"import_module", "__import__"}
+            and node.args
+            and isinstance(node.args[0], ast.Constant)
+            and isinstance(node.args[0].value, str)
+        ):
+            yield node.lineno, node.args[0].value
+
+
+def _string_constants(src: SourceFile) -> Iterator[tuple[int, str]]:
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            yield node.lineno, node.value
+
+
+# The sign-in engine (abacus_identity, BYPASSRLS) and its URL: only the identity repository.
+_IDENTITY_ENGINE = frozenset(
+    {"identity_engine", "configure_identity_engine", "identity_database_url"}
+)
+
+
+def _check_identity_engine(src: SourceFile) -> Iterator[Finding]:
+    for line, name in _names_used(src):
+        if name in _IDENTITY_ENGINE:
+            yield Finding(line, f"{name} is for the identity repository only")
+    for node in ast.walk(src.tree):
+        if (
+            isinstance(node, ast.ImportFrom)
+            and (node.module or "").startswith("abacus.kernel.db")
+            and any(alias.name == "*" for alias in node.names)
+        ):
+            yield Finding(node.lineno, "star import from abacus.kernel.db")
+
+
+_TOKEN_LIBRARIES = ("jwt", "jose", "josepy", "jwcrypto", "authlib", "python_jose")
 
 
 def _check_token_library(src: SourceFile) -> Iterator[Finding]:
-    message = "tokens are read only in identity.tokens; never take roles from them"
-    for node in ast.walk(src.tree):
-        if isinstance(node, ast.Import):
-            modules = [alias.name for alias in node.names]
-        elif isinstance(node, ast.ImportFrom):
-            modules = [node.module or ""]
-        else:
-            continue
-        if any(module == "jwt" or module.startswith("jwt.") for module in modules):
-            yield Finding(node.lineno, message)
+    for line, module in _imported_modules(src):
+        if any(module == lib or module.startswith(f"{lib}.") for lib in _TOKEN_LIBRARIES):
+            yield Finding(
+                line, "tokens are read only in identity.tokens; never take roles from them"
+            )
+
+
+def _check_authorization_header(src: SourceFile) -> Iterator[Finding]:
+    message = "the Authorization header is read only when building the request context"
+    for line, value in _string_constants(src):
+        if value.strip().lower() == "authorization":
+            yield Finding(line, message)
+    for line, name in _names_used(src):
+        if name == "authorization":
+            yield Finding(line, message)
 
 
 # Every role in the permission matrix; comparing against one is a permission check.
@@ -462,16 +512,53 @@ def _check_role_comparison(src: SourceFile) -> Iterator[Finding]:
             yield Finding(node.lineno, message)
 
 
-def _check_tenant_header(src: SourceFile) -> Iterator[Finding]:
+def _check_firm_role_read(src: SourceFile) -> Iterator[Finding]:
     for node in ast.walk(src.tree):
-        if (
-            isinstance(node, ast.Constant)
-            and isinstance(node.value, str)
-            and "x-abacus-tenant" in node.value.lower()
-        ):
-            yield Finding(
-                node.lineno, "the tenant header is read only when building the request context"
-            )
+        if isinstance(node, ast.Attribute) and node.attr == "firm_role":
+            yield Finding(node.lineno, "firm roles are read only by identity; call authorise()")
+
+
+_TENANT_HEADER_NAMES = frozenset({"x_abacus_tenant", "TENANT_HEADER"})
+
+
+def _check_tenant_header(src: SourceFile) -> Iterator[Finding]:
+    message = "the tenant header is read only when building the request context"
+    for line, value in _string_constants(src):
+        if "x-abacus-tenant" in value.lower():
+            yield Finding(line, message)
+    for line, name in _names_used(src):
+        if name in _TENANT_HEADER_NAMES:
+            yield Finding(line, message)
+
+
+# Ways to serve HTTP without AbacusRouter's authentication and action check.
+_ROUTE_BYPASSES = frozenset(
+    {"APIRouter", "APIRoute", "FastAPI", "Starlette", "Mount", "WebSocketRoute"}
+    | {"APIWebSocketRoute", "add_api_route", "add_route", "add_websocket_route", "websocket"}
+    | {"mount", "include_router", "dependency_overrides"}
+)
+
+
+def _check_route_bypass(src: SourceFile) -> Iterator[Finding]:
+    for line, name in _names_used(src):
+        if name in _ROUTE_BYPASSES:
+            yield Finding(line, f"{name}: serve routes only through identity's AbacusRouter")
+
+
+def _check_self_action(src: SourceFile) -> Iterator[Finding]:
+    for line, name in _names_used(src):
+        if name == "SELF":
+            yield Finding(line, "the SELF action is for /v1/me only")
+
+
+# Request contexts come from a validated membership (ADR-002), never built by hand.
+_CONTEXTS = frozenset({"AuthContext", "TenantContext"})
+
+
+def _check_context_construction(src: SourceFile) -> Iterator[Finding]:
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.Call) and _terminal_name(node.func) in _CONTEXTS:
+            yield Finding(node.lineno, "contexts are built only from a validated membership")
 
 
 # --- tree rules -------------------------------------------------------------------------------
@@ -611,8 +698,10 @@ RULES: list[Rule | TreeRule] = [
         check=_check_identity_engine,
         exclude=(
             "src/abacus/kernel/db/*",
+            "src/abacus/kernel/config.py",
             "src/abacus/modules/identity/repository.py",
             "tests/integration/conftest.py",
+            "tests/unit/kernel/test_config.py",
         ),
     ),
     Rule(
@@ -626,6 +715,17 @@ RULES: list[Rule | TreeRule] = [
         ),
     ),
     Rule(
+        id="AUTH-002",
+        description="Only the request context reads the Authorization header",
+        adr="ADR-020, ADR-029",
+        check=_check_authorization_header,
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/modules/identity/routing.py",
+            "src/abacus/modules/identity/service.py",
+        ),
+    ),
+    Rule(
         id="AUTHZ-001",
         description="No role comparisons outside identity.authz",
         adr="ADR-020",
@@ -634,15 +734,51 @@ RULES: list[Rule | TreeRule] = [
         exclude=("src/abacus/modules/identity/authz/*",),
     ),
     Rule(
+        id="AUTHZ-002",
+        description="Firm roles are read only inside identity",
+        adr="ADR-020",
+        check=_check_firm_role_read,
+        include=("src/abacus/*",),
+        exclude=("src/abacus/modules/identity/*",),
+    ),
+    Rule(
         id="TENANT-002",
         description="Only the request context reads the tenant header",
         adr="ADR-002",
         check=_check_tenant_header,
+        include=("src/abacus/*",),
         exclude=(
             "src/abacus/modules/identity/service.py",
-            "src/abacus_tools/quality/banned_patterns.py",
-            "tests/*",
+            "src/abacus/modules/identity/routing.py",
         ),
+    ),
+    Rule(
+        id="ROUTE-001",
+        description="HTTP routes are served only through AbacusRouter",
+        adr="ADR-012, ADR-027",
+        check=_check_route_bypass,
+        include=("src/abacus/*",),
+        exclude=("src/abacus/modules/identity/routing.py", "src/abacus/api/app.py"),
+    ),
+    Rule(
+        id="ROUTE-002",
+        description="The SELF action is for /v1/me only",
+        adr="ADR-027",
+        check=_check_self_action,
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/modules/identity/routing.py",
+            "src/abacus/modules/identity/routes.py",
+            "src/abacus/modules/identity/api.py",
+        ),
+    ),
+    Rule(
+        id="CTX-001",
+        description="Request contexts are built only from a validated membership",
+        adr="ADR-002, ADR-014",
+        check=_check_context_construction,
+        include=("src/abacus/*",),
+        exclude=("src/abacus/modules/identity/service.py", "src/abacus/kernel/db/*"),
     ),
     Rule(
         id="ANY-001",
