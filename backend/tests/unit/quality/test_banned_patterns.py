@@ -1587,3 +1587,192 @@ def test_ac20_own_001_allows_a_modules_own_tables(
 def test_ac20_own_001_applies_only_inside_modules(tmp_path: Path, rel: str) -> None:
     assert not _flags(tmp_path, "OWN-001", rel, '__tablename__ = "engagements"\n')
     assert not _flags(tmp_path, "OWN-001", rel, 'Q = "SELECT * FROM clients"\n')
+
+
+# --- STORE-001, CRYPTO-001, evidence in BOUND-002 (TASK-009 contract and revision 1) -----------
+
+STORE_VIOLATING = [
+    "import boto3\n",
+    "import boto3.session\n",
+    "from boto3 import client\n",
+    "from boto3.s3.transfer import TransferConfig\n",
+    "import botocore\n",
+    "from botocore.exceptions import ClientError\n",
+    "import aioboto3\n",
+    "import aiobotocore.session\n",
+    "import s3fs\n",
+    'import importlib\nimportlib.import_module("boto3")\n',
+    'm = __import__("botocore.config")\n',
+]
+STORE_CLEAN = [
+    "from abacus.kernel.storage import s3_client\n",
+    "import boto3_helpers\n",
+    "import botox\n",
+    "x = 'import boto3'\n",
+    "# import boto3\n",
+    "from abacus.kernel import storage\n",
+]
+STORE_FLAGGED = [
+    SERVICE,
+    "src/abacus/modules/evidence/storage.py",
+    "src/abacus/kernel/db/session.py",
+    "src/abacus/kernel/storage_extra.py",
+    "src/abacus/kernel/crypto/__init__.py",
+    "src/abacus/api/app.py",
+]
+STORE_EXEMPT = ["src/abacus/kernel/storage.py"]
+STORE_OUTSIDE = [
+    "tests/integration/test_local_stack.py",
+    "tests/unit/x/test_y.py",
+    "src/abacus_tools/local/evidence_bucket.py",
+    "src/abacus_tools/quality/schema_check.py",
+]
+
+
+@pytest.mark.parametrize("source", STORE_VIOLATING)
+@pytest.mark.parametrize("rel", STORE_FLAGGED)
+def test_ac20_store_001_flags_s3_libraries_outside_kernel_storage(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert _flags(tmp_path, "STORE-001", rel, source)
+
+
+@pytest.mark.parametrize("source", STORE_VIOLATING)
+@pytest.mark.parametrize("rel", STORE_EXEMPT)
+def test_ac20_store_001_allows_kernel_storage(tmp_path: Path, rel: str, source: str) -> None:
+    assert not _flags(tmp_path, "STORE-001", rel, source)
+
+
+@pytest.mark.parametrize("source", STORE_VIOLATING)
+@pytest.mark.parametrize("rel", STORE_OUTSIDE)
+def test_ac20_store_001_applies_only_under_src_abacus(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "STORE-001", rel, source)
+
+
+@pytest.mark.parametrize("source", STORE_CLEAN)
+def test_ac20_store_001_ignores_clean_code(tmp_path: Path, source: str) -> None:
+    assert not _flags(tmp_path, "STORE-001", SERVICE, source)
+
+
+def test_ac20_store_001_output_names_the_rule_and_adr(tmp_path: Path) -> None:
+    _write(tmp_path, SERVICE, "import boto3\n")
+    found = [v for v in bp.scan(tmp_path) if v.rule_id == "STORE-001"]
+    assert len(found) == 1
+    assert "boto3" in str(found[0])
+    assert "ADR-" in str(found[0])
+
+
+CRYPTO_VIOLATING = [
+    "import cryptography\n",
+    "from cryptography.hazmat.primitives.ciphers.aead import AESGCM\n",
+    "import cryptography.fernet\n",
+    "import Crypto\n",
+    "from Crypto.Cipher import AES\n",
+    "import Cryptodome.Cipher\n",
+    "from nacl import secret\n",
+    "import nacl.utils\n",
+    'import importlib\nimportlib.import_module("cryptography.fernet")\n',
+    'm = __import__("nacl.secret")\n',
+]
+CRYPTO_CLEAN = [
+    "from abacus.kernel.crypto import seal\n",
+    "import cryptographic_helpers\n",
+    "import hashlib\n",
+    "x = 'from cryptography import x'\n",
+]
+CRYPTO_FLAGGED = [
+    SERVICE,
+    "src/abacus/modules/evidence/storage.py",
+    "src/abacus/kernel/storage.py",
+    "src/abacus/kernel/crypto_extra.py",
+    "src/abacus/modules/identity/service.py",
+    "src/abacus/modules/identity/routes.py",
+]
+CRYPTO_EXEMPT = [
+    "src/abacus/kernel/crypto/__init__.py",
+    "src/abacus/kernel/crypto/local.py",
+    "src/abacus/modules/identity/tokens.py",
+]
+CRYPTO_OUTSIDE = [
+    "tests/unit/kernel/test_crypto.py",
+    "src/abacus_tools/fakes/identity.py",
+    "src/abacus_tools/quality/secrets_scan.py",
+]
+
+
+@pytest.mark.parametrize("source", CRYPTO_VIOLATING)
+@pytest.mark.parametrize("rel", CRYPTO_FLAGGED)
+def test_ac20_crypto_001_flags_crypto_libraries_outside_kernel_crypto(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert _flags(tmp_path, "CRYPTO-001", rel, source)
+
+
+@pytest.mark.parametrize("source", CRYPTO_VIOLATING)
+@pytest.mark.parametrize("rel", CRYPTO_EXEMPT)
+def test_ac20_crypto_001_allows_kernel_crypto_and_identity_tokens(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "CRYPTO-001", rel, source)
+
+
+@pytest.mark.parametrize("source", CRYPTO_VIOLATING)
+@pytest.mark.parametrize("rel", CRYPTO_OUTSIDE)
+def test_ac20_crypto_001_applies_only_under_src_abacus(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "CRYPTO-001", rel, source)
+
+
+@pytest.mark.parametrize("source", CRYPTO_CLEAN)
+def test_ac20_crypto_001_ignores_clean_code(tmp_path: Path, source: str) -> None:
+    assert not _flags(tmp_path, "CRYPTO-001", SERVICE, source)
+
+
+def test_ac20_crypto_001_output_names_the_rule_and_adr(tmp_path: Path) -> None:
+    _write(tmp_path, SERVICE, "from cryptography.fernet import Fernet\n")
+    found = [v for v in bp.scan(tmp_path) if v.rule_id == "CRYPTO-001"]
+    assert len(found) == 1
+    assert "ADR-" in str(found[0])
+
+
+EVIDENCE_VIOLATING = [
+    "from abacus.modules.requests.api import router\n",
+    "from abacus.modules.organisations.api import create_client\n",
+    "from abacus.modules.ledger.api import x\n",
+    "from abacus.modules.sampling.api import x\n",
+    "import abacus.modules.requests.api\n",
+]
+EVIDENCE_CLEAN = [
+    "from abacus.modules.identity.api import AuthContext\n",
+    "from abacus.modules.engagements.api import get_ref\n",
+    "import abacus.modules.engagements.api\n",
+    "from abacus.modules.evidence.api import add_version\n",
+    "from abacus.kernel.uow import uow\n",
+]
+
+
+@pytest.mark.parametrize("source", EVIDENCE_VIOLATING)
+def test_ac20_bound_002_flags_what_evidence_may_not_depend_on(tmp_path: Path, source: str) -> None:
+    assert _flags(tmp_path, "BOUND-002", "src/abacus/modules/evidence/service.py", source)
+
+
+@pytest.mark.parametrize("source", EVIDENCE_CLEAN)
+def test_ac20_bound_002_allows_evidence_to_use_identity_and_engagements(
+    tmp_path: Path, source: str
+) -> None:
+    assert not _flags(tmp_path, "BOUND-002", "src/abacus/modules/evidence/service.py", source)
+
+
+def test_ac20_bound_002_evidence_may_depend_on_identity_and_engagements_only() -> None:
+    assert set(bp.MODULE_DEPENDENCIES["evidence"]) == {"identity", "engagements"}
+
+
+@pytest.mark.parametrize("module", ["identity", "organisations", "engagements", "requests"])
+def test_ac20_bound_002_no_other_module_may_depend_on_evidence(
+    tmp_path: Path, module: str
+) -> None:
+    source = "from abacus.modules.evidence.api import add_version\n"
+    assert _flags(tmp_path, "BOUND-002", f"src/abacus/modules/{module}/service.py", source)
