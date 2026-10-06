@@ -25,6 +25,8 @@ from abacus.modules.identity.tokens import (
     TokenVerifier,
     VerifiedIdentity,
     configure_verifier,
+    reset_verifier,
+    token_verifier,
 )
 
 __all__ = [
@@ -46,6 +48,8 @@ __all__ = [
     "current_context",
     "current_signed_in",
     "declared_action",
+    "reset_verifier",
     "router",
+    "token_verifier",
     "visible",
 ]

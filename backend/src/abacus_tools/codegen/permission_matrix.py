@@ -33,8 +33,29 @@ def _q(value: object) -> str:
     return json.dumps(str(value))
 
 
+def _reject_duplicate_keys(node: yaml.Node | None) -> None:
+    """YAML keeps the last of duplicate keys silently; in a permission matrix that hides a rule."""
+    if isinstance(node, yaml.MappingNode):
+        seen: set[str] = set()
+        for key, value in cast(list[tuple[yaml.Node, yaml.Node]], node.value):
+            name = str(cast(object, key.value))
+            if name in seen:
+                line = key.start_mark.line + 1
+                raise ValueError(f"permission matrix: duplicate key {name!r} (line {line})")
+            seen.add(name)
+            _reject_duplicate_keys(value)
+    elif isinstance(node, yaml.SequenceNode):
+        for item in cast(list[yaml.Node], node.value):
+            _reject_duplicate_keys(item)
+
+
 def render(source: str) -> str:
     """A Python module, already in `ruff format` style (one entry per line, trailing commas)."""
+    loader = yaml.SafeLoader(source)
+    try:
+        _reject_duplicate_keys(loader.get_single_node())
+    finally:
+        loader.dispose()
     document = cast(dict[str, object], yaml.safe_load(source))
     roles = cast(list[str], document["roles"])
     actions = cast(dict[str, dict[str, str]], document["actions"])

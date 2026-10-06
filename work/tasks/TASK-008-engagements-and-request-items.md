@@ -64,6 +64,10 @@ Steps: to be written when the task starts.
 - Add the FK `engagement_members.engagement_id → engagements` and the app grants this task needs (`INSERT` on `engagement_members` for "creator becomes a member", AC-4).
 - `authorise` is not wall-safe (ADR-026). Founder decision 2026-10-06: walls gate the first real firm, not this task.
 - HTTP tests for AC-6 and AC-8 land here, with the routes.
+- ADR-027/ADR-102 enforcement: add the test that inspects every repository list method and fails if `visible()` is not applied.
+- Consider an `EngagementRef` from `engagements.api` that `authorise` accepts and loads itself, closing the check-then-act gap. Make missing and denied engagements answer alike (no 404-vs-403 oracle).
+- FastAPI parses request bodies before dependencies run, so an unauthenticated caller can get a 422 that echoes input. Decide on an auth-first approach for body routes.
+- Add the `export_openapi` module and the `packages/api-client` generator. That switches the drift check on (Makefile keyed on `backend/src/abacus/api/export_openapi.py`; founder, 2026-10-06).
 
 ## Questions for the human
 -

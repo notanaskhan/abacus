@@ -211,6 +211,22 @@ Firm roles come from the database, never from token claims (ADR-029).
 - **ROUTE-002** (new): the identifier `SELF` outside `identity/routing.py`, `identity/routes.py` and `identity/api.py`.
 - **CTX-001** (new): a call to `AuthContext(...)` or `TenantContext(...)` outside `identity/service.py` and `kernel/db/*`.
 
+#### Contract revision 2 (2026-10-06, from the architecture and test review)
+- `identity.api` also exports `reset_verifier()` (clears the override and the settings cache) and `token_verifier()`. `JwtVerifier.key_count` gives the number of usable keys.
+- Outside local and test, building the verifier from settings with no usable key raises `RuntimeError`. `create_app()` builds the verifier eagerly, so the error appears at startup.
+- `schema_check` reports `<role>: bypasses row-level security, not reviewed` for any non-superuser BYPASSRLS role not in `BYPASS_ROLE_GRANTS`.
+- `render()` raises `ValueError("permission matrix: duplicate key ...")` for a duplicate key at any level.
+- Static rules:
+  - **AUTHZ-001** flags a comparison only when a role-shaped operand (`.role`/`.firm_role`/`.roles`, or the names `role`/`firm_role`/`roles`) meets a firm or engagement role name (or a tuple, list or set containing one), or a `match` on a role-shaped subject. Role names are now: firm_admin, practice_leader, quality_partner, engagement_partner, manager, senior, staff, reviewer. `agent`, `system` and client roles are dropped. `role is None` and `message.role == "assistant"` are not flagged.
+  - **AUTH-002**: the string `"authorization"`, a parameter named `authorization`, or an import of `fastapi.security*`. Attributes named `authorization` are no longer flagged.
+  - **ROUTE-001**:
+    - importing `APIRouter`, `APIRoute`, `APIWebSocketRoute`, `FastAPI`, `Starlette`, `Mount`, `Route`, `Router`, `WebSocketRoute`, `BaseHTTPMiddleware` or `StaticFiles` from `fastapi*`/`starlette*`, or `fastapi.<one of those>`;
+    - any `.dependency_overrides`;
+    - a *call* `.add_api_route`/`.add_route`/`.add_websocket_route`/`.add_api_websocket_route`/`.websocket`/`.mount`/`.include_router`/`.add_middleware`.
+  - **CTX-001**: a call to `AuthContext(...)` outside `identity/service.py`, and `replace`/`copy`/`deepcopy`/`__replace__` called with an argument whose name contains `ctx` or `context`. `TenantContext(...)` is no longer flagged: agent and system contexts need it.
+  - **AUTHZ-003** (new, `src/abacus/*` except `identity/authz/*`): a literal `archived=` keyword in a call to `engagement(...)`/`Resource(...)`, or a literal third positional argument to `Resource(...)`.
+- ADR-102 (proposed) records the `visible(ctx, action, engagement_id_column)` signature.
+
 ### Approval file text
 ```yaml
 task: TASK-007
