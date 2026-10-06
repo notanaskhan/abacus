@@ -6,6 +6,7 @@ from abacus.modules.identity.authz import (
     Forbidden,
     Resource,
     UnknownAction,
+    agent_may_hold,
     authorise,
     visible,
 )
@@ -66,6 +67,7 @@ __all__ = [
     "VerifiedIdentity",
     "add_creator_as_partner",
     "agent_context_for_run",
+    "agent_may_hold",
     "authorise",
     "configure_verifier",
     "current_context",

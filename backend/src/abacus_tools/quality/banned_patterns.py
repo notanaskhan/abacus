@@ -655,6 +655,7 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/identity/repository.py", "display_names"),
         ("src/abacus/modules/organisations/repository.py", "names_of"),
         ("src/abacus/modules/ledger/repository.py", "lines_of"),
+        ("src/abacus/modules/requests/repository.py", "items_fulfilled_by"),
     }
 )
 
@@ -723,6 +724,10 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "ledger": frozenset(),
     "connections": frozenset(
         {"identity", "engagements", "organisations", "ledger", "evidence", "requests"}
+    ),
+    "agents": frozenset(
+        {"identity", "engagements", "organisations", "ledger", "evidence", "requests"}
+        | {"connections"}
     ),
 }
 
@@ -859,6 +864,74 @@ def _check_connector_read_only(src: SourceFile) -> Iterator[Finding]:
 
 
 # --- tree rules -------------------------------------------------------------------------------
+
+
+_PROMPT_REF = re.compile(r"[a-z][a-z0-9_.]*@v[0-9]+")
+
+
+def _check_inline_prompt(src: SourceFile) -> Iterator[Finding]:
+    """ADR-019, ADR-057: prompts live in the registry. Outside the gateway, nothing builds a model
+    request, writes the instructions layer from a literal, or names a prompt that isn't a
+    registry reference."""
+    for call in _calls(src.tree):
+        name = _terminal_name(call.func)
+        if name == "ModelRequest":
+            yield Finding(call.lineno, "model requests are built only inside ai_gateway")
+        elif (
+            isinstance(call.func, ast.Attribute)
+            and call.func.attr == "text"
+            and len(call.args) >= 2
+            and isinstance(call.args[0], ast.Constant)
+            and call.args[0].value == "instructions"
+            and isinstance(call.args[1], (ast.Constant, ast.JoinedStr))
+        ):
+            yield Finding(call.lineno, "instructions come from the prompt registry, not a literal")
+        elif name == "GatewayCall":
+            for keyword in call.keywords:
+                value = keyword.value
+                if keyword.arg != "prompt":
+                    continue
+                if isinstance(value, ast.JoinedStr) or (
+                    isinstance(value, ast.Constant)
+                    and not (isinstance(value.value, str) and _PROMPT_REF.fullmatch(value.value))
+                ):
+                    yield Finding(call.lineno, "prompt must be a registry reference (id@vN)")
+
+
+def _agent_denied_actions() -> frozenset[str]:
+    from abacus.modules.identity.authz.matrix import RULES  # tooling may import product
+
+    return frozenset(a for a, rule in RULES.items() if rule.decisions.get("agent") == "deny")
+
+
+def _check_human_decision(src: SourceFile) -> Iterator[Finding]:
+    """ADR-005: a function that authorises a decision agents may never take (agent: deny) takes
+    its actor as `AuthContext`, so no agent context can reach it."""
+    denied = _agent_denied_actions()
+    for function in ast.walk(src.tree):
+        if not isinstance(function, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        params = {
+            a.arg: a.annotation
+            for a in (*function.args.posonlyargs, *function.args.args, *function.args.kwonlyargs)
+        }
+        for call in ast.walk(function):
+            if not (
+                isinstance(call, ast.Call)
+                and _terminal_name(call.func) == "authorise"
+                and len(call.args) >= 2
+                and isinstance(call.args[1], ast.Constant)
+                and call.args[1].value in denied
+            ):
+                continue
+            actor = call.args[0]
+            annotation = params.get(actor.id) if isinstance(actor, ast.Name) else None
+            if annotation is None or _terminal_name(annotation) != "AuthContext":
+                yield Finding(
+                    call.lineno,
+                    f"'{call.args[1].value}' is human-only: its actor must be an AuthContext "
+                    "parameter",
+                )
 
 
 def _check_layout(backend: Path) -> Iterator[tuple[str, Finding]]:
@@ -1155,6 +1228,21 @@ RULES: list[Rule | TreeRule] = [
         adr="ADR-040",
         check=_check_connector_read_only,
         include=("src/abacus/modules/connections/*",),
+    ),
+    Rule(
+        id="PROMPT-001",
+        description="No inline prompts: model requests and instructions come from the registry",
+        adr="ADR-019, ADR-057",
+        check=_check_inline_prompt,
+        include=("src/abacus/*",),
+        exclude=("src/abacus/ai_gateway/*",),
+    ),
+    Rule(
+        id="AGENT-001",
+        description="Decisions agents may never take are authorised for an AuthContext only",
+        adr="ADR-005, ADR-025",
+        check=_check_human_decision,
+        include=("src/abacus/modules/*",),
     ),
     Rule(
         id="ANY-001",

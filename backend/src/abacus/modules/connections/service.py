@@ -19,6 +19,7 @@ from abacus.modules.connections.repository import (
     active_run,
     get_run,
     insert_run,
+    run_for_snapshot,
 )
 from abacus.modules.engagements.api import lock_ref
 from abacus.modules.identity.api import (
@@ -127,3 +128,11 @@ async def load_system_context(tenant_id: UUID, run_id: UUID) -> SystemContext:
         engagement_id=run.engagement_id,
         on_behalf_of=UUID(run.started_by),
     )
+
+
+async def initiator_for_snapshot(tenant: TenantContext, snapshot_id: UUID) -> UUID | None:
+    """The person whose retrieval produced this snapshot: the initiator of agents acting on its
+    evidence (ADR-025; TASK-011 Q1). None if no retrieval recorded it."""
+    async with tenant_session(tenant) as session:
+        run = await run_for_snapshot(session, snapshot_id)
+    return UUID(run.started_by) if run is not None else None

@@ -109,6 +109,11 @@ def _rule(action: str) -> Rule:
     return rule
 
 
+def agent_may_hold(action: str) -> bool:
+    """Whether an agent's task scope may declare this action (matrix `agent: task_scope`)."""
+    return _rule(action).decisions.get("agent") == "task_scope"
+
+
 def _who(ctx: Actor) -> dict[str, object]:
     if isinstance(ctx, AuthContext):
         return {"user_id": ctx.user_id}

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from abacus.kernel.db import tenant_session, transaction_context
+from abacus.kernel.db import TenantContext, tenant_session, transaction_context
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import get_ref, lock_ref
@@ -18,6 +18,7 @@ from abacus.modules.requests.repository import (
     get_request_item,
     insert_fulfilment,
     insert_request_item,
+    items_fulfilled_by,
     list_request_items,
     mark_received,
     request_list_for,
@@ -155,3 +156,18 @@ async def fulfil_by_rule(
             after=Ref(evidence_version_id=evidence_version_id),
         )
     return FulfilmentRef(fulfilment_id, received)
+
+
+@dataclass(frozen=True)
+class RequestItemSummary:
+    id: UUID
+    description: str
+    audit_area: str
+
+
+async def fulfilled_items(
+    tenant: TenantContext, evidence_version_id: UUID
+) -> list[RequestItemSummary]:
+    async with tenant_session(tenant) as session:
+        items = await items_fulfilled_by(session, evidence_version_id)
+        return [RequestItemSummary(i.id, i.description, i.audit_area) for i in items]

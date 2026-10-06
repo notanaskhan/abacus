@@ -134,3 +134,22 @@ async def mark_received(session: AsyncSession, item_id: UUID) -> bool:
         .returning(RequestItem.id)
     )
     return result.scalar_one_or_none() is not None
+
+
+async def items_fulfilled_by(
+    session: AsyncSession, evidence_version_id: UUID
+) -> Sequence[RequestItem]:
+    """Items a version fulfils, for a caller that authorised on the version's engagement
+    (LIST_EXEMPT)."""
+    return (
+        (
+            await session.execute(
+                select(RequestItem)
+                .join(Fulfilment, Fulfilment.request_item_id == RequestItem.id)
+                .where(Fulfilment.evidence_version_id == evidence_version_id)
+                .order_by(RequestItem.created_at, RequestItem.id)
+            )
+        )
+        .scalars()
+        .all()
+    )

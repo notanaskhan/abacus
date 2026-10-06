@@ -150,3 +150,15 @@ async def finish(
         .returning(SyncRun.id)
     )
     return result.scalar_one_or_none() is not None
+
+
+async def run_for_snapshot(session: AsyncSession, snapshot_id: UUID) -> SyncRun | None:
+    """The first run that recorded this snapshot (later identical pulls reuse it)."""
+    return (
+        await session.execute(
+            select(SyncRun)
+            .where(SyncRun.snapshot_id == snapshot_id)
+            .order_by(SyncRun.started_at, SyncRun.id)
+            .limit(1)
+        )
+    ).scalar_one_or_none()

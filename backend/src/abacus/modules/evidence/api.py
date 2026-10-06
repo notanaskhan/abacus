@@ -12,6 +12,7 @@ from abacus.modules.evidence.render import (
 from abacus.modules.evidence.service import (
     EngagementArchived,
     EvidenceVersionRef,
+    EvidenceVersionView,
     NewItem,
     Provenance,
     StoredObject,
@@ -19,6 +20,7 @@ from abacus.modules.evidence.service import (
     read_content,
     read_version,
     stage_content,
+    version_view,
 )
 from abacus.modules.evidence.storage import ContentTooLarge, IntegrityError
 
@@ -28,6 +30,7 @@ __all__ = [
     "EngagementArchived",
     "EvidenceVersionCreated",
     "EvidenceVersionRef",
+    "EvidenceVersionView",
     "IntegrityError",
     "NewItem",
     "Provenance",
@@ -39,4 +42,5 @@ __all__ = [
     "read_version",
     "render_trial_balance",
     "stage_content",
+    "version_view",
 ]

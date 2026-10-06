@@ -29,6 +29,7 @@ from abacus.modules.connections.service import (
     NoConnection,
     RunNotRunning,
     connector_for,
+    initiator_for_snapshot,
     load_system_context,
     start_retrieval,
 )
@@ -51,6 +52,7 @@ __all__ = [
     "connector_for",
     "fail_run",
     "fixture_path",
+    "initiator_for_snapshot",
     "is_retryable",
     "load_system_context",
     "normalise_raw",

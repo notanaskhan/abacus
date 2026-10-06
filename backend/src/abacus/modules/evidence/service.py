@@ -206,3 +206,35 @@ async def read_version(ctx: AuthContext, version_id: UUID) -> bytes:
             version.size_bytes,
         ),
     )
+
+
+@dataclass(frozen=True)
+class EvidenceVersionView:
+    id: UUID
+    engagement_id: UUID
+    evidence_item_id: UUID
+    stored: StoredObject
+    snapshot_id: UUID | None
+    media_type: str
+
+
+async def version_view(tenant: TenantContext, version_id: UUID) -> EvidenceVersionView:
+    """A version's metadata for a caller that has authorised under its own context (`NotFound`
+    outside the tenant)."""
+    async with tenant_session(tenant) as session:
+        version = await get_version(session, version_id)
+    if version is None:
+        raise NotFound("evidence_version")
+    return EvidenceVersionView(
+        version.id,
+        version.engagement_id,
+        version.evidence_item_id,
+        StoredObject(
+            version.storage_key,
+            version.storage_version_id,
+            version.fingerprint,
+            version.size_bytes,
+        ),
+        version.snapshot_id,
+        version.media_type,
+    )
