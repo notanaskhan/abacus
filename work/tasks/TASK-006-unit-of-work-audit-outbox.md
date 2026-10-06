@@ -4,8 +4,8 @@ title: Unit of work, audit events and outbox
 spec: SPEC-000
 acceptance_criteria: [AC-4, AC-20]
 risk_zone: red
-status: todo
-branch:
+status: awaiting-plan-approval
+branch: task-006-uow
 worktree:
 created: 2026-10-06
 updated: 2026-10-06
@@ -20,20 +20,112 @@ updated: 2026-10-06
 > - Append to the *Progress log* before ending any session, even mid-task.
 
 ## Objective
-`abacus.kernel.uow`: every state change commits with its audit event and domain events atomically; append-only audit trail; transactional outbox and **the relay that publishes it** (TASK-011's screening workflow consumes `evidence_version.created` from this relay).
+`abacus.kernel.uow`: every state change commits together with its audit events and domain events, atomically, in one tenant-scoped transaction; the unit of work refuses to commit without an audit event; audit events are insert-only; a relay publishes the outbox at least once, and consumers can deduplicate by event ID (ADR-007, ADR-018).
 
 ## Scope
-Defined when the plan is written. Starts after TASK-005.
+**In**
+- `abacus.kernel.db.tenant_connection(ctx)` — the tenant-scoped connection the unit of work owns (no commit inside `kernel.db`)
+- `abacus.kernel.uow` — `uow(ctx)`, `record(...)`, `emit(...)`, `DomainEvent`, commit/rollback rules
+- Migration `0002_audit_events_and_outbox`: `audit_events` and `outbox` tables
+- Relay role `abacus_relay` (bootstrap) and `abacus.kernel.uow.relay` with a `Publisher` protocol and an in-memory publisher for tests
+- `schema_check` additions for the relay role and the two insert-only tables
+- Tests from an independent session (contract below)
+
+**Out**
+- Reading the audit trail (`audit_event.read`, the `audit_trail` module's API) — later
+- Per-tenant hash chaining of audit events (ADR-007 follow-up)
+- Publishing to Temporal (TASK-010/011 supply that `Publisher`); running the relay in the worker process (TASK-010)
+- Trace IDs (TASK-013 fills the column; it stays `NULL` until then)
+- The "every service command writes an audit event" registry test — there are no service commands until TASK-008, which adds it
 
 ## Context to load
-- Spec: `docs/specs/SPEC-000-walking-skeleton.md`
-- ADRs: ADR-007, ADR-018
+- ADR-007, ADR-018, ADR-014, ADR-031, ADR-101; glossary *Audit event*, *Domain event*, *Outbox*, *Unit of work*
+- `backend/src/abacus/kernel/db/`, `backend/migrations/bootstrap.sql`, `backend/src/abacus_tools/quality/schema_check.py`
+- TASK-005 progress log (why `tenant_session`'s commit is inert)
 
 ## Plan
-- [ ] Plan approved by human (required for amber and red)
-- Red task: the agent drafts the design here; the founder edits or approves it before any code, then reviews the diff line by line (founder decision 2026-10-06).
+- [ ] Plan approved by human — **red: founder edits or approves this design before any code, then reviews the diff line by line**
+- [ ] Approval file `work/approvals/TASK-006.yaml`
+- [ ] Q1–Q4 answered
 
-Steps: to be written when the task starts.
+### Design (for founder review)
+
+**1. The unit of work owns its transaction.** `kernel.db` gains `tenant_connection(ctx)`: the same connection setup as `tenant_session` (app role, `RESET`, transaction-local tenant and actor settings) but it yields the `AsyncConnection` and never commits or rolls back — the caller owns the transaction. Only `kernel.uow` may call it (TENANT-001 and UOW-001 already confine settings and commits to these packages; a new banned pattern **UOW-002** forbids importing `tenant_connection` outside `kernel.uow`).
+
+**2. API** (async, matching ADR-018's shape):
+```python
+async with uow(ctx) as tx:
+    item = await tx.session.get(RequestItem, item_id)        # AsyncSession in the uow's transaction
+    item.status = "received"
+    tx.record("request_item.received", target=Target("request_item", item.id),
+              before=Ref(version=3), after=Ref(version=4))
+    tx.emit(RequestItemReceived(request_item_id=item.id))
+```
+- On normal exit: flush the session, insert the audit events and outbox rows, **commit**.
+- On exception: roll back; nothing is written, not even audit events.
+- **No audit event ⇒ no commit.** Exiting with zero `record(...)` calls raises `MissingAuditEvent` and rolls back (ADR-007/018). Read-only work uses `tenant_session`, never `uow`.
+- Actions must match `^[a-z][a-z_]*\.[a-z][a-z_]*$` (`<entity>.<verb_past>`); targets are `(type, id)`; `before`/`after` are references (ids, versions, fingerprints), never record contents — so Restricted data never enters the audit trail.
+- `DomainEvent` is a Pydantic base class with `event_type: ClassVar[str]` and an `event_id` generated at creation; every field classified, and **no Restricted fields** — events carry identifiers, consumers load data under their own tenant context. `emit` validates this.
+
+**3. Tables** (migration `0002`, both tenant tables via `tenant_table` and both `insert_only`):
+| `audit_events` | `outbox` |
+|---|---|
+| `id uuid PK DEFAULT gen_random_uuid()` | `id uuid PK` (= `event_id`) |
+| `tenant_id uuid NOT NULL` | `tenant_id uuid NOT NULL` |
+| `seq bigint GENERATED ALWAYS AS IDENTITY` (order) | `seq bigint GENERATED ALWAYS AS IDENTITY` |
+| `occurred_at timestamptz NOT NULL DEFAULT clock_timestamp()` | `occurred_at timestamptz NOT NULL DEFAULT clock_timestamp()` |
+| `actor_kind text NOT NULL CHECK (actor_kind IN ('human','agent','system'))`, `actor_id text NOT NULL` | `event_type text NOT NULL` |
+| `action text NOT NULL CHECK (action ~ '^[a-z][a-z_]*\.[a-z][a-z_]*$')` | `payload jsonb NOT NULL` |
+| `target_type text NOT NULL`, `target_id text NOT NULL` | `published_at timestamptz NULL`, `attempts int NOT NULL DEFAULT 0`, `last_error text NULL` |
+| `before_ref jsonb NULL`, `after_ref jsonb NULL`, `trace_id text NULL` | index on `(seq) WHERE published_at IS NULL` |
+
+Actor columns are written from `ctx` **and** checked by the database: `CHECK (actor_kind = current_setting('app.actor_kind', true) AND actor_id = current_setting('app.actor_id', true))`, so an audit event can't claim a different actor than the transaction's. Both tables are added to `INSERT_ONLY_TABLES`.
+
+**4. The relay** (Q1). Forced RLS confines every session to one tenant, but the relay must read every tenant's unpublished events. Proposal: role **`abacus_relay`** (bootstrap) with `BYPASSRLS` and privileges on nothing but `outbox`: `SELECT` and `UPDATE (published_at, attempts, last_error)`, granted in migration 0002. `relay_once(publisher, batch=100)`:
+```sql
+SELECT id, tenant_id, event_type, payload FROM outbox
+WHERE published_at IS NULL ORDER BY seq LIMIT :batch FOR UPDATE SKIP LOCKED
+```
+publish each (`await publisher.publish(event)`), then `UPDATE outbox SET published_at = clock_timestamp()` — or `attempts = attempts + 1, last_error = <type only>` on failure — and commit. **At least once**: a crash between publish and commit republishes; consumers deduplicate by `event_id` (ADR-018). Several relays can run concurrently (`SKIP LOCKED`). `Publisher` is a protocol; tests use `InMemoryPublisher`; TASK-010/011 add the Temporal one.
+
+**5. `schema_check` additions**: `abacus_relay` must exist without `SUPERUSER`/`CREATEROLE`/`CREATEDB`, own nothing, and hold privileges on no table but `outbox` (and there only `SELECT` + column `UPDATE`); `audit_events` and `outbox` insert-only for `abacus_app`.
+
+### Steps
+1. [ ] Protect first: `backend/src/abacus/kernel/uow/**` is already protected (hook, CODEOWNERS) — verify; nothing new to protect.
+2. [ ] `bootstrap.sql`: `abacus_relay` role (+ local password in `bootstrap-local.sql`); settings `relay_database_url`.
+3. [ ] `kernel/db`: `tenant_connection(ctx)`, `relay_engine()`.
+4. [ ] Migration `0002`: tables, constraints, RLS, insert-only, relay grants; update `INSERT_ONLY_TABLES` and relay checks in `schema_check`.
+5. [ ] `kernel/uow`: `uow`, `UnitOfWork`, `record`, `emit`, `Target`, `Ref`, `DomainEvent`, `MissingAuditEvent`; `kernel/uow/relay.py`: `Publisher`, `OutboxEvent`, `relay_once`, `InMemoryPublisher`.
+6. [ ] Banned pattern UOW-002; kernel README.
+7. [ ] Independent tests; `make check`; gate-break (an audit event row updated or deleted by the app fails; a uow with no `record` raises; relay privileges on another table fail `schema_check`).
+
+### Interface contract (tests written independently — ADR-078)
+- `from abacus.kernel.uow import uow, UnitOfWork, Target, Ref, DomainEvent, MissingAuditEvent`; `from abacus.kernel.uow.relay import Publisher, OutboxEvent, InMemoryPublisher, relay_once`.
+- `uow(ctx)` → `AsyncContextManager[UnitOfWork]`; `tx.session: AsyncSession`; `tx.record(action: str, *, target: Target, before: Ref | None = None, after: Ref | None = None) -> None`; `tx.emit(event: DomainEvent) -> None`. `Target(type: str, id: str | UUID)`; `Ref(**fields: str | int | UUID)` → JSON object.
+- Invalid action → `ValueError` at `record`; event with a Restricted (or unclassified) field → `ValueError` at `emit`; zero `record` calls → `MissingAuditEvent` at exit, nothing written.
+- Proven against a real database (`migrated_db`, probe tenant table created in the test through `tenant_table`):
+  - (AC-4) a change, its audit event and its outbox row commit together, or none of them (exception inside the block, `MissingAuditEvent`, a failing audit insert)
+  - audit rows carry the context's tenant and actor; inserting an audit row with another actor or tenant fails
+  - `abacus_app` cannot `UPDATE`/`DELETE` `audit_events` or `outbox`; tenant B's `uow` can't see tenant A's audit rows
+  - `relay_once` publishes every tenant's unpublished events once, in `seq` order, marks them published; a publisher failure leaves the event unpublished with `attempts` incremented; two concurrent relays never publish the same event twice in one pass; a crash before commit (simulated) republishes the event with the **same** `event_id`
+  - `abacus_relay` can read `outbox` only — no other table, no `UPDATE` of `payload`
+- `schema_check` reports: relay with privileges on another table; relay `UPDATE` on `payload`; app `UPDATE`/`DELETE` on `audit_events` or `outbox`.
+
+### Approval file text
+```yaml
+task: TASK-006
+approved_by: founder
+expires: 2026-10-27
+paths:
+  - backend/migrations/bootstrap.sql
+  - backend/migrations/bootstrap-local.sql
+  - backend/src/abacus/kernel/db/**
+  - backend/src/abacus/kernel/uow/**
+  - backend/src/abacus_tools/quality/schema_check.py
+  - backend/src/abacus_tools/quality/banned_patterns.py
+  - backend/tests/unit/quality/test_banned_patterns.py
+reason: TASK-006 — unit of work, audit events, outbox and relay
+```
 
 ## Definition of done
 - [ ] All listed ACs have passing tests that reference them
@@ -43,28 +135,42 @@ Steps: to be written when the task starts.
 - [ ] Full test suite passes; no tests skipped, weakened or deleted
 - [ ] Security scan passes; no secrets committed
 - [ ] No new dependencies, or each one approved and listed below
-- [ ] Every query is tenant-scoped; every endpoint checks authorisation
-- [ ] AI calls (if any) go through the gateway with limits, logging and passing evals
-- [ ] Module README and relevant docs updated
+- [ ] Every query is tenant-scoped; every endpoint checks authorisation — tenant-scoped; no endpoints
+- [ ] AI calls — n/a
+- [ ] Module README and relevant docs updated (kernel README)
 - [ ] Decisions below reviewed; ADR raised where needed
+- [ ] Both CI jobs pass on the PR; reviewed line by line by the founder
 
 ## New dependencies
 | Package | Version | Why | Approved by |
 |---|---|---|---|
+| none | | | |
 
 ## Progress log
-- `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder. Not started.
+- `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder.
+- `2026-10-06` — TASK-005 merged (PR #5). Design drafted for founder review (red task). No code.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| The unit of work owns its transaction through `tenant_connection`, not `tenant_session` | `tenant_session` is read-only by design (TASK-005) | no |
+| No audit event ⇒ no commit; read paths use `tenant_session` | ADR-007/018 enforcement, fail closed | no |
+| Audit stores references, not record contents | Restricted data never enters the audit trail (ADR-031) | no |
+| Domain events carry identifiers only | Events travel to Temporal and other modules; consumers load data in their own tenant context | no |
+| Relay role with `BYPASSRLS` limited to the outbox | The only way one process reads every tenant's events under forced RLS | Q1 |
 
 ## Gotchas and discoveries
 - From TASK-005 review: `tenant_session`'s `session.commit()` is inert by design (rollback-only join). The unit of work must own its transaction (open its own tenant transaction in `kernel.db`, write, audit, outbox, commit) — never build on `tenant_session`'s commit. `app.actor_kind` / `app.actor_id` are set per transaction for the audit trail.
 
 ## Questions for the human
--
+- [ ] **Q1 — Relay role.** `abacus_relay` with `BYPASSRLS`, privileges only on `outbox` (`SELECT`, `UPDATE` of three status columns). Alternatives: iterate tenants under RLS (needs a firm list the relay can read — another cross-tenant read), or a `SECURITY DEFINER` function (FORCE RLS binds the owner too, so it would need a bypass role anyway). **Recommendation:** the relay role.
+- [ ] **Q2 — No audit event, no commit.** Strict rule: a `uow` with zero `record` calls never commits, even if it changed nothing. **Recommendation:** yes — read-only work uses `tenant_session`.
+- [ ] **Q3 — Database-checked actor.** Audit rows must match the transaction's `app.actor_*` settings (CHECK constraint). **Recommendation:** yes — a bug can't attribute an action to someone else.
+- [ ] **Q4 — Domain events carry no Restricted fields.** **Recommendation:** yes.
 
 ## Handoff
-- **Current state:** Not started.
-- **Exact next step:** Write the plan once TASK-005 is done.
+- **Current state:** Design written for founder review. No code. Branch `task-006-uow`.
+- **Exact next step:** Founder edits or approves the design and answers Q1–Q4; approval file; then an independent session writes tests from the contract while the code is built.
+- **Uncommitted or partial work:** this file; TASK-005 marked done.
+- **Known failing checks:** none.
+- **Open issues:** branch protection off.
