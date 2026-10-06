@@ -1,6 +1,6 @@
 ---
 id: TASK-005
-title: Kernel: config, logging, tenant sessions with row-level security, migrations
+title: "Kernel: config, logging, tenant sessions with row-level security, migrations"
 spec: SPEC-000
 acceptance_criteria: [AC-5, AC-13, AC-20]
 risk_zone: red
