@@ -12,6 +12,7 @@
 /docs/architecture/protected-paths.md        @notanaskhan @ayushkbhatia
 /docs/architecture/dependency-allowlist.yaml @notanaskhan @ayushkbhatia
 /docs/product/glossary.md                    @notanaskhan @ayushkbhatia
+/docs/product/failure-taxonomy.md            @notanaskhan @ayushkbhatia
 /backend/pyproject.toml                      @notanaskhan @ayushkbhatia
 /backend/uv.lock                             @notanaskhan @ayushkbhatia
 /backend/quality/                            @notanaskhan @ayushkbhatia

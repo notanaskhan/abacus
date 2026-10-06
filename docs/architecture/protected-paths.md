@@ -16,7 +16,7 @@ Changes to these paths require the founder's explicit approval. Enforcement is l
 - Repository plumbing: `.git/` (local hooks), every `.gitignore`
 - Infrastructure: `infra/`
 - Approvals: `work/approvals/` — the founder writes these by hand
-- Policy files: permission matrix, this file, dependency allowlist, glossary, and the coverage floor (`[tool.coverage.report] fail_under` in `backend/pyproject.toml`, ADR-079)
+- Policy files: permission matrix, this file, dependency allowlist, glossary, failure taxonomy, and the coverage floor (`[tool.coverage.report] fail_under` in `backend/pyproject.toml`, ADR-079)
 - CI: `.github/workflows/` (stages 1 and 2 run the same `make` targets as local development)
 - Dependency manifests and lockfiles: every `package.json` and `pyproject.toml`, `pnpm-workspace.yaml`, `.npmrc`, `backend/uv.lock`, `pnpm-lock.yaml`
 - Red-zone code: authorisation (`abacus.modules.identity.authz`), database session and tenancy, unit of work, encryption (`abacus.kernel.db`, `.uow`, `.crypto`), audit trail (`abacus.modules.audit_trail`)

@@ -27,6 +27,7 @@ PROTECTED = [
     "docs/architecture/protected-paths.md",
     "docs/architecture/dependency-allowlist.yaml",
     "docs/product/glossary.md",
+    "docs/product/failure-taxonomy.md",
     "**/pyproject.toml", "backend/uv.lock",
     "**/package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "**/.npmrc",
     "backend/src/abacus_tools/quality/**",
