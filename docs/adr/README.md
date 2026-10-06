@@ -107,3 +107,4 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-101](ADR-101-namespaced-backend-layout.md) | Namespaced backend package layout | amber | accepted |
 | [ADR-102](ADR-102-visible-takes-action-and-engagement-column.md) | visible() takes the read action and the engagement column | red | accepted |
 | [ADR-103](ADR-103-table-ownership-registry.md) | Table ownership by registry, not name prefix | amber | accepted |
+| [ADR-104](ADR-104-client-side-envelope-encryption.md) | Client-side envelope encryption under per-tenant keys | red | accepted |

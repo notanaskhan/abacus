@@ -41,6 +41,8 @@ PROTECTED = [
     "backend/src/abacus/kernel/uow/**",
     "backend/src/abacus/kernel/crypto/**",
     "backend/src/abacus/modules/audit_trail/**",
+    "backend/src/abacus/modules/evidence/**",
+    "backend/src/abacus/kernel/storage.py",
 ]
 # Protected only once they exist: new files allowed, edits to existing files need approval.
 PROTECTED_IF_EXISTS = ["docs/adr/ADR-*.md", "backend/migrations/versions/*"]
