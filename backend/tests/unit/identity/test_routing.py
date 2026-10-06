@@ -24,6 +24,7 @@ from pydantic import BaseModel
 from sqlalchemy import Uuid, column
 
 import abacus.api.app as app_module
+import abacus.modules.identity.api as identity_api
 from abacus.api import create_app
 from abacus.kernel.db import TenantContext
 from abacus.modules.identity.api import (
@@ -39,6 +40,7 @@ from abacus.modules.identity.api import (
     current_context,
     current_signed_in,
     declared_action,
+    reset_verifier,
     visible,
 )
 from abacus_tools.codegen import permission_matrix as pm
@@ -257,8 +259,11 @@ async def test_ac20_docs_and_openapi_paths_are_not_served(path: str) -> None:
 async def anonymous() -> AsyncIterator[httpx.AsyncClient]:
     configure_verifier(FakeIdentityProvider().verifier())
     transport = httpx.ASGITransport(app=create_app())
-    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-        yield client
+    try:
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            yield client
+    finally:
+        reset_verifier()
 
 
 @pytest.mark.parametrize("path", ["/v1/me"])
@@ -478,3 +483,13 @@ def test_ac20_probe_router_declares_the_expected_actions() -> None:
 
 def test_ac20_pm_source_path_exists() -> None:
     assert Path(pm.SOURCE).is_file()
+
+
+def test_ac20_tenant_header_is_not_exported_from_identity_api() -> None:
+    assert not hasattr(identity_api, "TENANT_HEADER")
+    assert "TENANT_HEADER" not in identity_api.__all__
+
+
+def test_ac20_identity_api_exports_the_verifier_helpers() -> None:
+    assert callable(identity_api.reset_verifier)
+    assert callable(identity_api.token_verifier)

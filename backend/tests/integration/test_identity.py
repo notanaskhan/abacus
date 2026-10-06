@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Literal, Protocol, cast
@@ -19,6 +19,7 @@ from typing import Annotated, Literal, Protocol, cast
 import asyncpg
 import httpx
 import pytest
+import yaml
 from alembic.operations import Operations
 from fastapi import Depends
 from pydantic import BaseModel
@@ -30,7 +31,13 @@ from sqlalchemy.pool import NullPool
 import abacus.api.app as app_module
 from abacus.api import create_app
 from abacus.kernel.config import settings
-from abacus.kernel.db import TenantContext, configure_engine, dispose_engine, tenant_session
+from abacus.kernel.db import (
+    TenantContext,
+    configure_engine,
+    dispose_engine,
+    identity_engine,
+    tenant_session,
+)
 from abacus.kernel.db.migration import tenant_table
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -40,8 +47,10 @@ from abacus.modules.identity.api import (
     authorise,
     configure_verifier,
     current_context,
+    reset_verifier,
     visible,
 )
+from abacus_tools.codegen import permission_matrix as pm
 from abacus_tools.fakes.identity import ISSUER, FakeIdentityProvider
 
 TENANT_HEADER = "X-Abacus-Tenant"
@@ -198,10 +207,11 @@ async def engines(migrated_db: Migrated, monkeypatch: pytest.MonkeyPatch) -> Asy
 
 
 @pytest.fixture
-def idp() -> FakeIdentityProvider:
+def idp() -> Iterator[FakeIdentityProvider]:
     provider = FakeIdentityProvider()
     configure_verifier(provider.verifier())
-    return provider
+    yield provider
+    reset_verifier()
 
 
 # --- probe routes with a real request context ----------------------------------------------------
@@ -261,6 +271,13 @@ async def client(
     transport = httpx.ASGITransport(app=create_app())
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as http:
         yield http
+
+
+def _assert_forbidden(response: httpx.Response) -> None:
+    """A 403 has the fixed body: no layer, no tenant, no user data."""
+    assert response.status_code == 403
+    assert response.json() == {"detail": "forbidden"}
+    assert "WWW-Authenticate" not in response.headers
 
 
 def _auth(token: str, tenant_id: uuid.UUID | str | None = None) -> dict[str, str]:
@@ -386,7 +403,7 @@ async def test_ac1_several_memberships_without_the_header_is_403(
 ) -> None:
     subject, _first, _second = await _two_firms(seed)
     response = await client.get("/probe/context", headers=_auth(idp.token(subject)))
-    assert response.status_code == 403
+    _assert_forbidden(response)
 
 
 @pytest.mark.parametrize(
@@ -397,7 +414,7 @@ async def test_ac1_several_memberships_with_a_malformed_header_is_403(
 ) -> None:
     subject, _first, _second = await _two_firms(seed)
     response = await client.get("/probe/context", headers=_auth(idp.token(subject), value))
-    assert response.status_code == 403
+    _assert_forbidden(response)
 
 
 async def test_ac1_a_header_naming_a_firm_the_user_does_not_belong_to_is_403(
@@ -406,7 +423,7 @@ async def test_ac1_a_header_naming_a_firm_the_user_does_not_belong_to_is_403(
     subject, _first, _second = await _two_firms(seed)
     stranger = await seed.firm()
     response = await client.get("/probe/context", headers=_auth(idp.token(subject), stranger))
-    assert response.status_code == 403
+    _assert_forbidden(response)
 
 
 async def test_ac1_a_header_naming_a_tenant_that_does_not_exist_is_403(
@@ -414,7 +431,7 @@ async def test_ac1_a_header_naming_a_tenant_that_does_not_exist_is_403(
 ) -> None:
     subject, _first, _second = await _two_firms(seed)
     response = await client.get("/probe/context", headers=_auth(idp.token(subject), uuid.uuid4()))
-    assert response.status_code == 403
+    _assert_forbidden(response)
 
 
 async def test_ac1_a_header_naming_a_revoked_membership_is_403(
@@ -426,7 +443,7 @@ async def test_ac1_a_header_naming_a_revoked_membership_is_403(
     await seed.membership(tenant_b, user_id)
     await seed.revoke(tenant_b, user_id)
     token = idp.token(subject)
-    assert (await client.get("/probe/context", headers=_auth(token, tenant_b))).status_code == 403
+    _assert_forbidden(await client.get("/probe/context", headers=_auth(token, tenant_b)))
     assert (await client.get("/probe/context", headers=_auth(token, tenant_a))).status_code == 200
 
 
@@ -441,7 +458,7 @@ async def test_ac1_a_user_in_another_firm_cannot_borrow_this_firms_tenant_id(
     response = await client.get(
         "/probe/context", headers=_auth(idp.token(other_subject), victim.tenant_id)
     )
-    assert response.status_code == 403
+    _assert_forbidden(response)
 
 
 # --- AC-2: no membership, no access --------------------------------------------------------------
@@ -452,7 +469,7 @@ async def test_ac2_a_user_without_memberships_is_403_on_an_action_route(
 ) -> None:
     _user_id, subject = await seed.user()
     response = await client.get("/probe/context", headers=_auth(idp.token(subject)))
-    assert response.status_code == 403
+    _assert_forbidden(response)
 
 
 async def test_ac2_a_user_with_only_revoked_memberships_is_403(
@@ -462,9 +479,9 @@ async def test_ac2_a_user_with_only_revoked_memberships_is_403(
     user_id, subject = await seed.user()
     await seed.membership(tenant_id, user_id, revoked=True)
     response = await client.get("/probe/context", headers=_auth(idp.token(subject), tenant_id))
-    assert response.status_code == 403
+    _assert_forbidden(response)
     response = await client.get("/probe/context", headers=_auth(idp.token(subject)))
-    assert response.status_code == 403
+    _assert_forbidden(response)
 
 
 async def test_ac2_a_valid_token_for_an_unknown_user_is_403_not_401(
@@ -473,7 +490,7 @@ async def test_ac2_a_valid_token_for_an_unknown_user_is_403_not_401(
     response = await client.get(
         "/probe/context", headers=_auth(idp.token("nobody-" + uuid.uuid4().hex))
     )
-    assert response.status_code == 403
+    _assert_forbidden(response)
     assert "WWW-Authenticate" not in response.headers
 
 
@@ -481,7 +498,7 @@ async def test_ac2_an_unknown_user_is_403_on_me(
     client: httpx.AsyncClient, idp: FakeIdentityProvider
 ) -> None:
     response = await client.get("/v1/me", headers=_auth(idp.token("nobody-" + uuid.uuid4().hex)))
-    assert response.status_code == 403
+    _assert_forbidden(response)
 
 
 async def test_ac2_a_user_issued_by_another_issuer_is_unknown(
@@ -491,7 +508,7 @@ async def test_ac2_a_user_issued_by_another_issuer_is_unknown(
     other = FakeIdentityProvider(issuer="https://other-idp.example.test")
     configure_verifier(other.verifier())
     response = await client.get("/probe/context", headers=_auth(other.token(who.subject)))
-    assert response.status_code == 403
+    _assert_forbidden(response)
 
 
 # --- AC-3: revocation applies to the next request ------------------------------------------------
@@ -504,7 +521,7 @@ async def test_ac3_revoking_a_membership_denies_the_next_request_with_the_same_t
     headers = _auth(idp.token(who.subject))
     assert (await client.get("/probe/context", headers=headers)).status_code == 200
     await seed.revoke(who.tenant_id, who.user_id)
-    assert (await client.get("/probe/context", headers=headers)).status_code == 403
+    _assert_forbidden(await client.get("/probe/context", headers=headers))
 
 
 async def test_ac3_nothing_is_cached_reactivation_applies_to_the_next_request(
@@ -513,12 +530,12 @@ async def test_ac3_nothing_is_cached_reactivation_applies_to_the_next_request(
     who = await _single(seed)
     headers = _auth(idp.token(who.subject))
     await seed.revoke(who.tenant_id, who.user_id)
-    assert (await client.get("/probe/context", headers=headers)).status_code == 403
+    _assert_forbidden(await client.get("/probe/context", headers=headers))
     await seed.reactivate(who.tenant_id, who.user_id)
     assert (await client.get("/probe/context", headers=headers)).status_code == 200
 
 
-async def test_ac3_a_changed_firm_role_applies_to_the_next_request(
+async def test_ac1_a_changed_firm_role_applies_to_the_next_request(
     client: httpx.AsyncClient, idp: FakeIdentityProvider, seed: Seeder
 ) -> None:
     who = await _single(seed, "firm_admin")
@@ -544,7 +561,7 @@ async def test_ac3_revoking_one_of_two_memberships_removes_only_that_tenant(
     )
     assert (await client.get("/probe/context", headers=_auth(token, first))).status_code == 200
     await seed.revoke(first, user_id)
-    assert (await client.get("/probe/context", headers=_auth(token, first))).status_code == 403
+    _assert_forbidden(await client.get("/probe/context", headers=_auth(token, first)))
     assert (await client.get("/probe/context", headers=_auth(token, second))).status_code == 200
 
 
@@ -654,7 +671,7 @@ async def test_ac1_me_does_not_expose_other_users_or_firms(
 
 
 @pytest.mark.parametrize("path", ["/v1/me", "/probe/context"])
-async def test_ac20_no_token_is_401_with_www_authenticate(
+async def test_ac1_no_token_is_401_with_www_authenticate(
     client: httpx.AsyncClient, path: str
 ) -> None:
     response = await client.get(path)
@@ -663,7 +680,7 @@ async def test_ac20_no_token_is_401_with_www_authenticate(
 
 
 @pytest.mark.parametrize("path", ["/v1/me", "/probe/context"])
-async def test_ac20_an_expired_token_is_401(
+async def test_ac1_an_expired_token_is_401(
     client: httpx.AsyncClient, idp: FakeIdentityProvider, seed: Seeder, path: str
 ) -> None:
     who = await _single(seed)
@@ -672,7 +689,7 @@ async def test_ac20_an_expired_token_is_401(
     assert response.headers["WWW-Authenticate"] == "Bearer"
 
 
-async def test_ac20_a_token_signed_by_another_provider_is_401_even_for_a_known_user(
+async def test_ac1_a_token_signed_by_another_provider_is_401_even_for_a_known_user(
     client: httpx.AsyncClient, idp: FakeIdentityProvider, seed: Seeder
 ) -> None:
     who = await _single(seed)
@@ -681,7 +698,7 @@ async def test_ac20_a_token_signed_by_another_provider_is_401_even_for_a_known_u
     assert response.status_code == 401
 
 
-async def test_ac20_a_token_older_than_an_hour_lifetime_is_401(
+async def test_ac1_a_token_older_than_an_hour_lifetime_is_401(
     client: httpx.AsyncClient, idp: FakeIdentityProvider, seed: Seeder
 ) -> None:
     who = await _single(seed)
@@ -709,8 +726,7 @@ async def test_ac20_forbidden_is_403_without_the_layer(
 ) -> None:
     who = await _single(seed, None)  # no firm role, no engagement: relationship layer
     response = await client.get("/probe/update", headers=_auth(idp.token(who.subject)))
-    assert response.status_code == 403
-    assert response.json() == {"detail": "forbidden"}
+    _assert_forbidden(response)
     assert "relationship" not in response.text
 
 
@@ -719,8 +735,7 @@ async def test_ac20_a_role_denial_is_the_same_403(
 ) -> None:
     who = await _single(seed, "firm_admin")  # firm_admin may not engagement.update
     response = await client.get("/probe/update", headers=_auth(idp.token(who.subject)))
-    assert response.status_code == 403
-    assert response.json() == {"detail": "forbidden"}
+    _assert_forbidden(response)
 
 
 # --- authorise against the real engagement_members (AC-6, AC-8) ----------------------------------
@@ -782,7 +797,7 @@ async def test_ac8_roles_that_may_create_a_request_item_can(seed: Seeder, role: 
     await authorise(_ctx(who), "request_item.create", resource)
 
 
-async def test_ac8_an_engagement_role_applies_to_its_own_engagement_only(seed: Seeder) -> None:
+async def test_ac20_an_engagement_role_applies_to_its_own_engagement_only(seed: Seeder) -> None:
     who = await _single(seed)
     mine, other = uuid.uuid4(), uuid.uuid4()
     await seed.engagement_member(who.tenant_id, mine, who.user_id, "manager")
@@ -793,7 +808,7 @@ async def test_ac8_an_engagement_role_applies_to_its_own_engagement_only(seed: S
     assert await _denied(ctx, "request_item.create", foreign) == "relationship"
 
 
-async def test_ac8_another_users_engagement_role_is_not_mine(seed: Seeder) -> None:
+async def test_ac20_another_users_engagement_role_is_not_mine(seed: Seeder) -> None:
     me = await _single(seed)
     engagement_id = uuid.uuid4()
     colleague, _subject = await seed.user()
@@ -803,7 +818,7 @@ async def test_ac8_another_users_engagement_role_is_not_mine(seed: Seeder) -> No
     assert await _denied(_ctx(me), "request_item.create", resource) == "relationship"
 
 
-async def test_ac8_an_engagement_role_in_another_firm_does_not_count(seed: Seeder) -> None:
+async def test_ac20_an_engagement_role_in_another_firm_does_not_count(seed: Seeder) -> None:
     mine, other_tenant = await seed.firm(), await seed.firm()
     user_id, subject = await seed.user()
     await seed.membership(mine, user_id)
@@ -815,7 +830,7 @@ async def test_ac8_an_engagement_role_in_another_firm_does_not_count(seed: Seede
     assert await _denied(_ctx(person), "request_item.create", resource) == "relationship"
 
 
-async def test_ac8_an_archived_engagement_denies_a_write_even_for_a_manager(seed: Seeder) -> None:
+async def test_ac20_an_archived_engagement_denies_a_write_even_for_a_manager(seed: Seeder) -> None:
     who = await _single(seed)
     engagement_id = uuid.uuid4()
     await seed.engagement_member(who.tenant_id, engagement_id, who.user_id, "manager")
@@ -824,7 +839,7 @@ async def test_ac8_an_archived_engagement_denies_a_write_even_for_a_manager(seed
     await authorise(_ctx(who), "request_item.read", resource)
 
 
-async def test_ac8_a_resource_of_another_tenant_is_denied_at_tenancy(seed: Seeder) -> None:
+async def test_ac20_a_resource_of_another_tenant_is_denied_at_tenancy(seed: Seeder) -> None:
     who = await _single(seed, "firm_admin")
     foreign = Resource.firm(await seed.firm())
     assert await _denied(_ctx(who, "firm_admin"), "engagement.create", foreign) == "tenancy"
@@ -910,7 +925,7 @@ async def test_ac6_visible_content_for_a_firm_admin_is_only_their_engagements(
 
 
 @pytest.mark.usefixtures("probe_table")
-async def test_ac6_visible_for_a_member_is_their_engagements(seed: Seeder) -> None:
+async def test_ac20_visible_for_a_member_is_their_engagements(seed: Seeder) -> None:
     who = await _single(seed)
     first, second, third = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
     await seed.engagement_member(who.tenant_id, first, who.user_id, "manager")
@@ -921,7 +936,7 @@ async def test_ac6_visible_for_a_member_is_their_engagements(seed: Seeder) -> No
 
 
 @pytest.mark.usefixtures("probe_table")
-async def test_ac6_visible_counts_only_roles_the_matrix_allows_for_the_action(
+async def test_ac20_visible_counts_only_roles_the_matrix_allows_for_the_action(
     seed: Seeder,
 ) -> None:
     who = await _single(seed)
@@ -936,14 +951,14 @@ async def test_ac6_visible_counts_only_roles_the_matrix_allows_for_the_action(
 
 
 @pytest.mark.usefixtures("probe_table")
-async def test_ac6_visible_for_a_user_with_no_engagements_is_nothing(seed: Seeder) -> None:
+async def test_ac20_visible_for_a_user_with_no_engagements_is_nothing(seed: Seeder) -> None:
     who = await _single(seed)
     await _row(seed, who.tenant_id, uuid.uuid4(), "x")
     assert await _visible_bodies(_ctx(who), "engagement.read") == []
 
 
 @pytest.mark.usefixtures("probe_table")
-async def test_ac6_visible_ignores_other_users_memberships(seed: Seeder) -> None:
+async def test_ac20_visible_ignores_other_users_memberships(seed: Seeder) -> None:
     who = await _single(seed)
     colleague, _subject = await seed.user()
     await seed.membership(who.tenant_id, colleague)
@@ -954,7 +969,7 @@ async def test_ac6_visible_ignores_other_users_memberships(seed: Seeder) -> None
 
 
 @pytest.mark.usefixtures("probe_table")
-async def test_ac6_visible_for_an_in_scope_firm_role_falls_back_to_membership(
+async def test_ac20_visible_for_an_in_scope_firm_role_falls_back_to_membership(
     seed: Seeder,
 ) -> None:
     who = await _single(seed, "practice_leader")  # in_scope is not modelled: not an allow
@@ -966,7 +981,7 @@ async def test_ac6_visible_for_an_in_scope_firm_role_falls_back_to_membership(
 
 
 @pytest.mark.usefixtures("probe_table")
-async def test_ac6_visible_never_shows_another_tenants_rows_for_the_same_engagement_id(
+async def test_ac20_visible_never_shows_another_tenants_rows_for_the_same_engagement_id(
     seed: Seeder,
 ) -> None:
     mine, other_tenant = await seed.firm(), await seed.firm()
@@ -1367,3 +1382,140 @@ async def test_ac20_identity_role_has_the_expected_attributes(seed: Seeder) -> N
     assert role["rolbypassrls"] is True
     assert role["rolcanlogin"] is True
     assert (role["rolsuper"], role["rolcreatedb"], role["rolcreaterole"]) == (False, False, False)
+
+
+# --- the production verifier path: no configure_verifier -----------------------------------------
+
+
+@pytest.fixture
+async def production_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> AsyncIterator[tuple[FakeIdentityProvider, httpx.AsyncClient]]:
+    """The verifier is built from `ABACUS_IDENTITY_JWKS`, as outside tests."""
+    provider = FakeIdentityProvider()
+    monkeypatch.setenv("ABACUS_IDENTITY_JWKS", provider.jwks())
+    settings.cache_clear()
+    reset_verifier()
+    transport = httpx.ASGITransport(app=create_app())
+    try:
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as http:
+            yield provider, http
+    finally:
+        reset_verifier()
+        settings.cache_clear()
+
+
+async def test_ac1_a_token_verified_against_the_jwks_setting_signs_in(
+    production_path: tuple[FakeIdentityProvider, httpx.AsyncClient], seed: Seeder
+) -> None:
+    provider, http = production_path
+    who = await _single(seed)
+    response = await http.get("/v1/me", headers=_auth(provider.token(who.subject)))
+    assert response.status_code == 200
+    assert response.json()["user_id"] == str(who.user_id)
+
+
+async def test_ac1_a_token_from_another_key_is_401_on_the_production_path(
+    production_path: tuple[FakeIdentityProvider, httpx.AsyncClient], seed: Seeder
+) -> None:
+    _provider, http = production_path
+    who = await _single(seed)
+    response = await http.get("/v1/me", headers=_auth(FakeIdentityProvider().token(who.subject)))
+    assert response.status_code == 401
+
+
+async def test_ac1_the_default_empty_jwks_verifies_nothing_so_every_token_is_401(
+    monkeypatch: pytest.MonkeyPatch, seed: Seeder
+) -> None:
+    monkeypatch.delenv("ABACUS_IDENTITY_JWKS", raising=False)
+    settings.cache_clear()
+    reset_verifier()
+    who = await _single(seed)
+    transport = httpx.ASGITransport(app=create_app())
+    try:
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as http:
+            response = await http.get(
+                "/v1/me", headers=_auth(FakeIdentityProvider().token(who.subject))
+            )
+        assert response.status_code == 401
+        assert response.headers["WWW-Authenticate"] == "Bearer"
+    finally:
+        reset_verifier()
+        settings.cache_clear()
+
+
+# --- the identity engine's own connection --------------------------------------------------------
+
+
+async def test_ac20_the_identity_engine_connects_read_only_with_a_5s_statement_timeout() -> None:
+    async with identity_engine().connect() as conn:
+        user = (await conn.execute(text("SELECT current_user"))).scalar_one()
+        read_only = (await conn.execute(text("SHOW default_transaction_read_only"))).scalar_one()
+        timeout = (await conn.execute(text("SHOW statement_timeout"))).scalar_one()
+        in_read_only = (await conn.execute(text("SHOW transaction_read_only"))).scalar_one()
+    assert user == "abacus_identity"
+    assert read_only == "on"
+    assert in_read_only == "on"
+    assert timeout == "5s"
+
+
+# --- visible agrees with authorise for every role and read action --------------------------------
+
+READ_ACTIONS = sorted(
+    action
+    for action in cast(
+        dict[str, dict[str, str]],
+        cast(dict[str, object], yaml.safe_load(pm.SOURCE.read_text()))["actions"],
+    )
+    if action.split(".", 1)[1] in {"read", "read_metadata", "read_log"}
+)
+FIRM_ROLES: tuple[FirmRole | None, ...] = (
+    None,
+    "firm_admin",
+    "practice_leader",
+    "quality_partner",
+)
+ENGAGEMENT_ROLES: tuple[str | None, ...] = (
+    None,
+    "engagement_partner",
+    "manager",
+    "senior",
+    "staff",
+    "reviewer",
+)
+
+
+@pytest.mark.usefixtures("probe_table")
+@pytest.mark.parametrize("action", READ_ACTIONS)
+async def test_ac20_visible_agrees_with_authorise_for_every_role_combination(
+    seed: Seeder, action: str
+) -> None:
+    tenant_id = await seed.firm()
+    cases: list[tuple[FirmRole | None, str | None, AuthContext, uuid.UUID]] = []
+    for firm_role in FIRM_ROLES:
+        for engagement_role in ENGAGEMENT_ROLES:
+            user_id, subject = await seed.user()
+            await seed.membership(tenant_id, user_id, firm_role)
+            engagement_id = uuid.uuid4()
+            if engagement_role is not None:
+                await seed.engagement_member(tenant_id, engagement_id, user_id, engagement_role)
+            await _row(seed, tenant_id, engagement_id, "row")
+            ctx = _ctx(Person(user_id, subject, tenant_id), firm_role)
+            cases.append((firm_role, engagement_role, ctx, engagement_id))
+    for firm_role, engagement_role, ctx, engagement_id in cases:
+        try:
+            await authorise(
+                ctx, action, Resource.engagement(tenant_id, engagement_id, archived=False)
+            )
+            allowed = True
+        except Forbidden:
+            allowed = False
+        async with tenant_session(ctx.tenant) as session:
+            rows = await session.execute(
+                select(PROBE.c.engagement_id).where(
+                    visible(ctx, action, PROBE.c.engagement_id),
+                    PROBE.c.engagement_id == engagement_id,
+                )
+            )
+            shown = rows.scalars().all() != []
+        assert shown == allowed, (action, firm_role, engagement_role)
