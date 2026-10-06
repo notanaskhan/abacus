@@ -458,11 +458,12 @@ reason: TASK-011 — AI gateway, agent specs and context, citations, usage recor
 | The task layer trims a named list or refuses; it is never cut mid-text | Cutting could sever an `<untrusted>` block | No |
 | The relay runs inside the worker with the relay role (it reads every firm's outbox) | Q4; the grants are narrow (SELECT plus delivery columns). Accepted risk, recorded in the worker docstring | No |
 | Spec keeps `escalation_tier` and `input_schema` | ADR-047 and ADR-055 require them; the architecture review flagged them as unused, so both are documented and `input_schema` is pinned | No |
+| Screening-run limits are set per plan (not per firm) | Founder decision 2026-10-07; built when plans exist | No |
 | Screening workflow id is tenant-qualified, with no execution timeout | Shared Temporal namespace; a killed workflow would skip `fail_run` | No |
 
 ## Gotchas and discoveries
 - 011b follow-ups:
-  - **Per-tenant cap on screening runs (cost):** the relay is now fair across tenants, but a firm producing many evidence versions still gets one model run each. The limits are a product decision (per firm or per plan); budget per run is enforced.
+  - **Cap on screening runs (cost):** founder decision 2026-10-07: **limits per plan**. Build it when firms have plans; until then the relay is fair across tenants and each run's budget is enforced.
   - **A sweeper for `running` agent runs:** the same need as for sync runs (TASK-010).
   - **Lint, type-check and run `evals/` in `make check`:** needs a Makefile change, which isn't covered by an approval. Move the shared integration fixtures (`world`, `seed`, …) from `test_retrieval.py` into a support module, so the evals don't import a test module.
   - **A real model provider:** nothing configures one outside local; the worker fails closed.
