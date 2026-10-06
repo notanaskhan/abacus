@@ -79,6 +79,8 @@ class Settings(BaseSettings):
     evidence_bucket: Annotated[str | None, classified("internal")] = None
     evidence_retention_days: Annotated[int, classified("internal")] = 2555
     local_master_key: Annotated[SecretStr | None, classified("restricted")] = None
+    # The fake connector serves provider-shaped JSON from here (TASK-010; local and test only).
+    fake_connector_dir: Annotated[str | None, classified("internal")] = None
     temporal_target: Annotated[str | None, classified("internal")] = None
 
     @model_validator(mode="before")
@@ -92,6 +94,12 @@ class Settings(BaseSettings):
             for name, value in _LOCAL_DEFAULTS.items():
                 values.setdefault(name, value)
         return values
+
+    @model_validator(mode="after")
+    def _fake_connector_local_only(self) -> Self:
+        if self.fake_connector_dir is not None and self.environment not in ("local", "test"):
+            raise ValueError("fake_connector_dir is for local runs and tests only")
+        return self
 
     @model_validator(mode="after")
     def _retention_floor(self) -> Self:

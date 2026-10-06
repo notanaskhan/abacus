@@ -22,6 +22,7 @@ from abacus.modules.engagements.repository import (
     lock_engagement,
 )
 from abacus.modules.identity.api import (
+    Actor,
     AuthContext,
     Resource,
     TeamMember,
@@ -40,6 +41,7 @@ class EngagementRef:
     tenant_id: UUID
     id: UUID
     archived: bool
+    client_entity_id: UUID
 
     def resource(self) -> Resource:
         return Resource.engagement(self.tenant_id, self.id, archived=self.archived)
@@ -90,10 +92,15 @@ class EngagementMetadata:
 
 
 def _ref(engagement: Engagement) -> EngagementRef:
-    return EngagementRef(engagement.tenant_id, engagement.id, engagement.status == "archived")
+    return EngagementRef(
+        engagement.tenant_id,
+        engagement.id,
+        engagement.status == "archived",
+        engagement.client_entity_id,
+    )
 
 
-async def get_ref(ctx: AuthContext, engagement_id: UUID) -> EngagementRef:
+async def get_ref(ctx: Actor, engagement_id: UUID) -> EngagementRef:
     """Raises `NotFound` when the engagement doesn't exist in the active tenant."""
     async with tenant_session(ctx.tenant) as session:
         engagement = await get_engagement(session, engagement_id)

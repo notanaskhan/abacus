@@ -627,6 +627,7 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/identity/repository.py", "engagement_members_of"),
         ("src/abacus/modules/identity/repository.py", "display_names"),
         ("src/abacus/modules/organisations/repository.py", "names_of"),
+        ("src/abacus/modules/ledger/repository.py", "lines_of"),
     }
 )
 
@@ -692,6 +693,10 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "engagements": frozenset({"identity", "organisations"}),
     "requests": frozenset({"identity", "engagements"}),
     "evidence": frozenset({"identity", "engagements"}),
+    "ledger": frozenset({"identity", "evidence"}),
+    "connections": frozenset(
+        {"identity", "engagements", "organisations", "ledger", "evidence", "requests"}
+    ),
 }
 
 
@@ -788,6 +793,23 @@ def _check_confined(
                 yield Finding(line, f"{module.split('.')[0]} is used only in {where}")
 
     return check
+
+
+_HTTP_CLIENTS = ("httpx", "requests", "aiohttp", "urllib3", "urllib.request", "http.client")
+_WRITE_VERBS = ("create", "update", "delete", "write", "post", "put", "patch", "upload", "send")
+
+
+def _check_connector_read_only(src: SourceFile) -> Iterator[Finding]:
+    """ADR-040: connectors only read. No write-shaped operations, and no HTTP client until a real
+    connector arrives with its own read-only client and egress allowlist."""
+    for line, module in _imported_modules(src):
+        if any(module == m or module.startswith(f"{m}.") for m in _HTTP_CLIENTS):
+            yield Finding(line, f"{module}: connectors get HTTP only through a read-only client")
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and node.name.lstrip(
+            "_"
+        ).startswith(_WRITE_VERBS):
+            yield Finding(node.lineno, f"{node.name}(): connectors expose read operations only")
 
 
 # --- tree rules -------------------------------------------------------------------------------
@@ -1062,6 +1084,17 @@ RULES: list[Rule | TreeRule] = [
         ),
         include=("src/abacus/*",),
         exclude=("src/abacus/kernel/crypto/*", "src/abacus/modules/identity/tokens.py"),
+    ),
+    Rule(
+        id="CONN-001",
+        description="Connectors are read-only",
+        adr="ADR-040",
+        check=_check_connector_read_only,
+        include=(
+            "src/abacus/modules/connections/connector.py",
+            "src/abacus/modules/connections/fake.py",
+            "src/abacus/modules/connections/connectors/*",
+        ),
     ),
     Rule(
         id="ANY-001",

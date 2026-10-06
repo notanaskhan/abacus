@@ -115,7 +115,7 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "connections": frozenset({"status"}),
     "sync_runs": frozenset(
         {"status", "raw_storage_key", "raw_version_id", "raw_fingerprint", "snapshot_id"}
-        | {"failure_code", "finished_at"}
+        | {"raw_size_bytes", "raw_pulled_at", "failure_code", "finished_at"}
     ),
 }
 # Who owns each table (ADR-103): a module or kernel package. Every table must be listed, and every
