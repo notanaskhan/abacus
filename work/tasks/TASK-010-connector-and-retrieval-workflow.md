@@ -4,7 +4,7 @@ title: Fake connector and the retrieval workflow
 spec: SPEC-000
 acceptance_criteria: [AC-9, AC-10, AC-11, AC-12, AC-19]
 risk_zone: red
-status: in-progress
+status: done
 branch: task-010-retrieval
 worktree:
 created: 2026-10-06
@@ -544,8 +544,6 @@ reason: TASK-010 — connector, ledger snapshots, fulfilments, retrieval pipelin
 -
 
 ## Handoff
-- **Current state:** TASK-010b PR open on `task-010b-workflow`. Local `make check` was still running when the PR opened; CI is the gate.
-- **Exact next step:** Confirm CI. Founder line-by-line review. Merge, delete `work/approvals/TASK-010.yaml`, mark TASK-010 done. Then TASK-011 (AI gateway and screening; screening workflow started from the `evidence_version.created` outbox event, `screening:<evidence_version_id>`, its own module `WORKFLOWS`/`ACTIVITIES`).
-- **Uncommitted or partial work:** none.
-- **Known failing checks:** none known.
+- **Current state:** Done. PR #11 (TASK-010b) merged (rebase) 2026-10-06 after green CI and founder review; approval file deleted. TASK-010a merged earlier.
+- **Exact next step:** none (TASK-011).
 - **Open issues:** branch protection off; follow-ups in Gotchas (make dev and worker in compose, stuck-run sweeper, rate limit, KMS/TLS in TASK-014).
