@@ -1,0 +1,14 @@
+{
+  "name": "@abacus/api-client",
+  "private": true,
+  "type": "module",
+  "description": "Generated from the backend's OpenAPI document (ADR-013). Do not edit src/ by hand: run `make generate`.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "generate": "openapi-ts"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "0.99.0"
+  }
+}

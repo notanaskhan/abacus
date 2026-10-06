@@ -34,6 +34,7 @@ from typing import Literal
 from uuid import UUID
 
 from sqlalchemy import ColumnElement, false, select, true
+from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.logging import get_logger
 from abacus.modules.identity.authz.matrix import RULES, Rule
@@ -148,7 +149,7 @@ async def authorise(
 
 
 def visible(
-    ctx: AuthContext, action: str, engagement_id: ColumnElement[UUID]
+    ctx: AuthContext, action: str, engagement_id: ColumnElement[UUID] | QueryableAttribute[UUID]
 ) -> ColumnElement[bool]:
     """A filter for list queries: rows whose engagement the actor may `action` (a read action).
     Agrees with `authorise` for every role. Apply it: building it counts as the route's check."""

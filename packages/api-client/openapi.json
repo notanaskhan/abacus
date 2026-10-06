@@ -1,0 +1,911 @@
+{
+  "components": {
+    "schemas": {
+      "EngagementIn": {
+        "additionalProperties": false,
+        "properties": {
+          "client_entity_name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Client Entity Name",
+            "type": "string"
+          },
+          "client_name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Client Name",
+            "type": "string"
+          },
+          "fiscal_period_end": {
+            "cls": "confidential",
+            "format": "date",
+            "title": "Fiscal Period End",
+            "type": "string"
+          },
+          "fiscal_period_start": {
+            "cls": "confidential",
+            "format": "date",
+            "title": "Fiscal Period Start",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "client_name",
+          "client_entity_name",
+          "fiscal_period_start",
+          "fiscal_period_end"
+        ],
+        "title": "EngagementIn",
+        "type": "object"
+      },
+      "EngagementOut": {
+        "properties": {
+          "client_entity_name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Client Entity Name",
+            "type": "string"
+          },
+          "client_name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Client Name",
+            "type": "string"
+          },
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "fiscal_period_end": {
+            "cls": "confidential",
+            "format": "date",
+            "title": "Fiscal Period End",
+            "type": "string"
+          },
+          "fiscal_period_start": {
+            "cls": "confidential",
+            "format": "date",
+            "title": "Fiscal Period Start",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "active",
+              "archived"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "team": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/TeamMemberOut"
+            },
+            "title": "Team",
+            "type": "array"
+          },
+          "type": {
+            "cls": "internal",
+            "const": "audit",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "status",
+          "client_name",
+          "client_entity_name",
+          "fiscal_period_start",
+          "fiscal_period_end",
+          "created_at",
+          "team"
+        ],
+        "title": "EngagementOut",
+        "type": "object"
+      },
+      "EngagementSummaryOut": {
+        "properties": {
+          "client_entity_name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Client Entity Name",
+            "type": "string"
+          },
+          "client_name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Client Name",
+            "type": "string"
+          },
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "fiscal_period_end": {
+            "cls": "confidential",
+            "format": "date",
+            "title": "Fiscal Period End",
+            "type": "string"
+          },
+          "fiscal_period_start": {
+            "cls": "confidential",
+            "format": "date",
+            "title": "Fiscal Period Start",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "active",
+              "archived"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "type": {
+            "cls": "internal",
+            "const": "audit",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "status",
+          "client_name",
+          "client_entity_name",
+          "fiscal_period_start",
+          "fiscal_period_end",
+          "created_at"
+        ],
+        "title": "EngagementSummaryOut",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "MeOut": {
+        "properties": {
+          "active_tenant_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Active Tenant Id"
+          },
+          "display_name": {
+            "cls": "confidential",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "cls": "confidential",
+            "title": "Email",
+            "type": "string"
+          },
+          "memberships": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/MembershipOut"
+            },
+            "title": "Memberships",
+            "type": "array"
+          },
+          "user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "email",
+          "display_name",
+          "memberships",
+          "active_tenant_id"
+        ],
+        "title": "MeOut",
+        "type": "object"
+      },
+      "MembershipOut": {
+        "properties": {
+          "firm_name": {
+            "cls": "confidential",
+            "title": "Firm Name",
+            "type": "string"
+          },
+          "firm_role": {
+            "anyOf": [
+              {
+                "enum": [
+                  "firm_admin",
+                  "practice_leader",
+                  "quality_partner"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Firm Role"
+          },
+          "tenant_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Tenant Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tenant_id",
+          "firm_name",
+          "firm_role"
+        ],
+        "title": "MembershipOut",
+        "type": "object"
+      },
+      "RequestItemIn": {
+        "additionalProperties": false,
+        "properties": {
+          "audit_area": {
+            "cls": "confidential",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Audit Area",
+            "type": "string"
+          },
+          "description": {
+            "cls": "confidential",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          }
+        },
+        "required": [
+          "description",
+          "audit_area"
+        ],
+        "title": "RequestItemIn",
+        "type": "object"
+      },
+      "RequestItemOut": {
+        "properties": {
+          "audit_area": {
+            "cls": "confidential",
+            "title": "Audit Area",
+            "type": "string"
+          },
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "cls": "confidential",
+            "title": "Description",
+            "type": "string"
+          },
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "open",
+              "received",
+              "ready_for_review",
+              "needs_revision"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "engagement_id",
+          "description",
+          "audit_area",
+          "status",
+          "created_at"
+        ],
+        "title": "RequestItemOut",
+        "type": "object"
+      },
+      "TeamMemberOut": {
+        "properties": {
+          "display_name": {
+            "cls": "confidential",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "role": {
+            "cls": "internal",
+            "enum": [
+              "engagement_partner",
+              "manager",
+              "senior",
+              "staff",
+              "reviewer"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "display_name",
+          "role"
+        ],
+        "title": "TeamMemberOut",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Abacus",
+    "version": "1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/v1/engagements": {
+      "get": {
+        "operationId": "list_engagements",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EngagementSummaryOut"
+                  },
+                  "title": "Response List Engagements",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Engagements Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "engagement.read_metadata"
+      },
+      "post": {
+        "operationId": "create_engagement",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EngagementIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Engagement Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "engagement.create"
+      }
+    },
+    "/v1/engagements/{engagement_id}": {
+      "get": {
+        "operationId": "get_engagement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Engagement Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "engagement.read_metadata"
+      }
+    },
+    "/v1/engagements/{engagement_id}/request-items": {
+      "get": {
+        "operationId": "list_request_items",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RequestItemOut"
+                  },
+                  "title": "Response List Request Items",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Request Items Route",
+        "tags": [
+          "requests"
+        ],
+        "x-abacus-action": "request_item.read"
+      },
+      "post": {
+        "operationId": "create_request_item",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestItemIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Request Item Route",
+        "tags": [
+          "requests"
+        ],
+        "x-abacus-action": "request_item.create"
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "operationId": "me",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Me",
+        "tags": [
+          "identity"
+        ],
+        "x-abacus-action": "self"
+      }
+    }
+  }
+}

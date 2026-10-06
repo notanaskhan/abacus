@@ -618,6 +618,19 @@ def _check_resource_archived(src: SourceFile) -> Iterator[Finding]:
                 yield Finding(node.lineno, "archived must come from the engagement row")
 
 
+def _check_list_visible(src: SourceFile) -> Iterator[Finding]:
+    """ADR-027: every repository list method applies `visible()`."""
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and node.name.startswith(
+            "list_"
+        ):
+            calls = {
+                _terminal_name(call.func) for call in ast.walk(node) if isinstance(call, ast.Call)
+            }
+            if "visible" not in calls:
+                yield Finding(node.lineno, f"{node.name}() must filter with visible()")
+
+
 # --- tree rules -------------------------------------------------------------------------------
 
 
@@ -846,6 +859,13 @@ RULES: list[Rule | TreeRule] = [
         check=_check_resource_archived,
         include=("src/abacus/*",),
         exclude=("src/abacus/modules/identity/authz/*",),
+    ),
+    Rule(
+        id="LIST-001",
+        description="Every repository list method applies visible()",
+        adr="ADR-027, ADR-102",
+        check=_check_list_visible,
+        include=("src/abacus/modules/*/repository.py",),
     ),
     Rule(
         id="ANY-001",

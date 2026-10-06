@@ -9,6 +9,7 @@ from abacus.modules.identity.authz import (
     visible,
 )
 from abacus.modules.identity.context import AuthContext
+from abacus.modules.identity.repository import EngagementRole
 from abacus.modules.identity.routes import router
 from abacus.modules.identity.routing import (
     ACTION_KEY,
@@ -19,6 +20,7 @@ from abacus.modules.identity.routing import (
     current_signed_in,
     declared_action,
 )
+from abacus.modules.identity.service import TeamMember, add_engagement_member, engagement_team
 from abacus.modules.identity.tokens import (
     InvalidToken,
     JwtVerifier,
@@ -36,18 +38,22 @@ __all__ = [
     "AbacusRoute",
     "AbacusRouter",
     "AuthContext",
+    "EngagementRole",
     "Forbidden",
     "InvalidToken",
     "JwtVerifier",
     "Resource",
+    "TeamMember",
     "TokenVerifier",
     "UnknownAction",
     "VerifiedIdentity",
+    "add_engagement_member",
     "authorise",
     "configure_verifier",
     "current_context",
     "current_signed_in",
     "declared_action",
+    "engagement_team",
     "reset_verifier",
     "router",
     "token_verifier",
