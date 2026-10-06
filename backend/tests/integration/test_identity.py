@@ -169,9 +169,37 @@ class Seeder:
             firm_role,
         )
 
+    async def _engagement(
+        self, tenant_id: uuid.UUID, engagement_id: uuid.UUID, created_by: uuid.UUID
+    ) -> None:
+        """A real engagement (with its client and entity) for the member FK; created once."""
+        if await self.value("SELECT 1 FROM engagements WHERE id = $1", engagement_id):
+            return
+        client_id = await self.value(
+            "INSERT INTO clients (tenant_id, name) VALUES ($1, 'Seeded client') RETURNING id",
+            tenant_id,
+        )
+        entity_id = await self.value(
+            "INSERT INTO client_entities (tenant_id, client_id, name) "
+            "VALUES ($1, $2, 'Seeded entity') RETURNING id",
+            tenant_id,
+            client_id,
+        )
+        await self.run(
+            "INSERT INTO engagements (id, tenant_id, client_id, client_entity_id, name, "
+            "fiscal_period_start, fiscal_period_end, created_by) "
+            "VALUES ($1, $2, $3, $4, 'Seeded engagement', '2025-01-01', '2025-12-31', $5)",
+            engagement_id,
+            tenant_id,
+            client_id,
+            entity_id,
+            created_by,
+        )
+
     async def engagement_member(
         self, tenant_id: uuid.UUID, engagement_id: uuid.UUID, user_id: uuid.UUID, role: str
     ) -> None:
+        await self._engagement(tenant_id, engagement_id, user_id)
         await self.run(
             "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
             "VALUES ($1, $2, $3, $4)",
@@ -990,7 +1018,9 @@ async def test_ac20_visible_never_shows_another_tenants_rows_for_the_same_engage
     await seed.membership(other_tenant, user_id)
     engagement_id = uuid.uuid4()
     await seed.engagement_member(mine, engagement_id, user_id, "manager")
-    await seed.engagement_member(other_tenant, engagement_id, user_id, "manager")
+    # Engagement ids are unique across firms (primary key), so the other firm's member row
+    # belongs to its own engagement; its probe row below still reuses `engagement_id`.
+    await seed.engagement_member(other_tenant, uuid.uuid4(), user_id, "manager")
     await _row(seed, mine, engagement_id, "mine")
     await _row(seed, other_tenant, engagement_id, "theirs")
     ctx = _ctx(Person(user_id, subject, mine))
