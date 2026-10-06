@@ -31,5 +31,8 @@
 /backend/src/abacus/kernel/crypto/           @notanaskhan @ayushkbhatia
 /backend/src/abacus/modules/audit_trail/     @notanaskhan @ayushkbhatia
 /backend/src/abacus/modules/evidence/        @notanaskhan @ayushkbhatia
+/backend/src/abacus/modules/connections/     @notanaskhan @ayushkbhatia
+/backend/src/abacus/modules/ledger/          @notanaskhan @ayushkbhatia
+/backend/src/abacus/worker/                  @notanaskhan @ayushkbhatia
 /backend/src/abacus/kernel/storage.py        @notanaskhan @ayushkbhatia
 /backend/src/abacus/ai_gateway/              @notanaskhan @ayushkbhatia
