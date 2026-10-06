@@ -14,11 +14,19 @@ mark delivery, nothing else (schema_check enforces it). Semantics:
 - Order: per tenant within a pass, best effort across passes. `seq` is insert order, not commit
   order, so consumers must not assume a global order.
 - Locks are held while publishing: keep `batch` small.
+
+`RoutingPublisher` hands each event to the handlers subscribed to its type (modules declare
+them as `SUBSCRIPTIONS` in their `api.py`; the worker composes them). Handlers must be
+idempotent: a redelivery, or a later handler failing, runs them again. `run_relay` is the loop
+the worker runs (TASK-011 Q4).
 """
 
 from __future__ import annotations
 
+import asyncio
 import json
+from collections.abc import Awaitable, Callable, Mapping, Sequence
+from contextlib import suppress
 from dataclasses import dataclass, field
 from typing import Protocol, cast
 from uuid import UUID
@@ -77,6 +85,21 @@ class InMemoryPublisher:
         self.published.append(event)
 
 
+Handler = Callable[[OutboxEvent], Awaitable[None]]
+
+
+@dataclass(frozen=True)
+class RoutingPublisher:
+    """Publishes an event by running every handler subscribed to its type, in order. An event
+    nobody subscribes to is delivered as it is."""
+
+    handlers: Mapping[str, Sequence[Handler]]
+
+    async def publish(self, event: OutboxEvent) -> None:
+        for handler in self.handlers.get(event.event_type, ()):
+            await handler(event)
+
+
 def _payload(raw: object) -> dict[str, object]:
     loaded: object = json.loads(raw) if isinstance(raw, str | bytes) else raw
     if not isinstance(loaded, dict):
@@ -125,3 +148,20 @@ async def relay_once(publisher: Publisher, batch: int = 25) -> RelayResult:
             published += 1
         await conn.commit()
     return RelayResult(published, failed, deferred)
+
+
+async def run_relay(
+    publisher: Publisher, stop: asyncio.Event, *, interval: float = 1.0, batch: int = 25
+) -> None:
+    """Relay until `stop` is set: drain while there is work, then poll every `interval` seconds.
+    A failing pass (the database away) is logged and retried, never fatal."""
+    while not stop.is_set():
+        busy = False
+        try:
+            result = await relay_once(publisher, batch)
+            busy = result.published + result.failed + result.deferred >= batch
+        except Exception as exc:  # log the class only: messages can carry database values
+            _log.warning("outbox.relay_pass_failed", error=type(exc).__name__)
+        if not busy:
+            with suppress(TimeoutError):
+                await asyncio.wait_for(stop.wait(), interval)

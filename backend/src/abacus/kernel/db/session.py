@@ -139,6 +139,12 @@ async def ping() -> None:
         await conn.execute(text("SELECT 1"))
 
 
+async def ping_relay() -> None:
+    """Startup check: the relay's database role connects."""
+    async with relay_engine().connect() as conn:
+        await conn.execute(text("SELECT 1"))
+
+
 async def transaction_context(session: AsyncSession) -> TenantContext:
     """The tenant and actor this transaction was opened for (by `tenant_session`, or the unit of
     work through `tenant_connection`), read back from the transaction itself. Callers that receive

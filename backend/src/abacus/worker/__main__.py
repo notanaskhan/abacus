@@ -2,12 +2,16 @@
 
 Run: python -m abacus.worker
 
-Fails at boot, not at first use, if the database, key service, evidence storage or payload codec
-isn't usable: an AWS environment without its KMS key service never starts (ADR-104). Workflows
-and activities come from each module's registry (`WORKFLOWS`, `ACTIVITIES` in its `api.py`), so
-adding one doesn't touch the worker. On SIGTERM it stops polling and lets running activities
-finish (up to `GRACEFUL_SHUTDOWN`) before exiting. Locally the fake connector's fixture
-directory must be shared with the API (`fake_connector_dir`).
+Fails at boot, not at first use, if the database (application and relay roles), key service,
+evidence storage or payload codec isn't usable: an AWS environment without its KMS key service
+never starts (ADR-104). Workflows and activities come from each module's registry (`WORKFLOWS`,
+`ACTIVITIES` in its `api.py`), so adding one doesn't touch the worker. On SIGTERM it stops
+polling and lets running activities finish (up to `GRACEFUL_SHUTDOWN`) before exiting. Locally
+the fake connector's fixture directory must be shared with the API (`fake_connector_dir`).
+
+It also runs the outbox relay (TASK-011 Q4): events go to the handlers modules subscribe in
+their `SUBSCRIPTIONS` (e.g. `evidence_version.created` starts screening). The relay stops with
+the worker; an event mid-publish is simply republished later (at least once).
 """
 
 from __future__ import annotations
@@ -21,17 +25,29 @@ from temporalio.worker import Worker
 
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import key_service
-from abacus.kernel.db import ping
+from abacus.kernel.db import ping, ping_relay
 from abacus.kernel.temporal import payload_codec, temporal_client
+from abacus.kernel.uow.relay import Handler, RoutingPublisher, run_relay
+from abacus.modules.agents import api as agents
 from abacus.modules.connections import api as connections
 from abacus.modules.evidence.api import check_ready
 
 GRACEFUL_SHUTDOWN = timedelta(seconds=60)
-MODULES = (connections,)
+MODULES = (connections, agents)
+SUBSCRIBERS = (agents.SUBSCRIPTIONS,)
+
+
+def publisher() -> RoutingPublisher:
+    handlers: dict[str, list[Handler]] = {}
+    for subscriptions in SUBSCRIBERS:
+        for event_type, handler in subscriptions.items():
+            handlers.setdefault(event_type, []).append(handler)
+    return RoutingPublisher(handlers)
 
 
 async def build_worker() -> Worker:
     await ping()
+    await ping_relay()
     key_service()
     payload_codec()
     await check_ready()
@@ -52,7 +68,9 @@ async def run() -> None:
     for sig in (signal.SIGTERM, signal.SIGINT):
         loop.add_signal_handler(sig, stop.set)
     async with worker:
+        relay = asyncio.create_task(run_relay(publisher(), stop))
         await stop.wait()
+        await relay
 
 
 def main() -> int:

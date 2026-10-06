@@ -16,6 +16,7 @@ failure: never call it inside a unit of work (the kernel refuses nesting).
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 from dataclasses import dataclass
@@ -91,6 +92,8 @@ class GatewayCall[T: BaseModel]:
     attribution: Attribution
     context: AssembledContext
     max_output_tokens: int = 1_000
+    # Per provider call; exceeding it is a provider error (retryable by the caller).
+    timeout_seconds: float = 60
 
 
 @dataclass(frozen=True)
@@ -234,8 +237,9 @@ async def call[T: BaseModel](c: GatewayCall[T]) -> GatewayResult[T]:
                 raise BudgetExceeded(f"{found.ref} would cost more than {c.budget_usd}")
             return GatewayResult("escalated", None, attempt - 1, spent, inputs_hash, model, found)
         try:
-            response = await provider().complete(request)
-        except ProviderError:
+            async with asyncio.timeout(c.timeout_seconds):
+                response = await provider().complete(request)
+        except (ProviderError, TimeoutError) as exc:
             await _record_usage(
                 c.attribution,
                 found=found,
@@ -246,6 +250,8 @@ async def call[T: BaseModel](c: GatewayCall[T]) -> GatewayResult[T]:
                 outcome="provider_error",
                 inputs_hash=inputs_hash,
             )
+            if isinstance(exc, TimeoutError):
+                raise ProviderError(f"{found.ref} timed out") from None
             raise
         this_cost = cost(c.tier, response.input_tokens, response.output_tokens)
         spent += this_cost

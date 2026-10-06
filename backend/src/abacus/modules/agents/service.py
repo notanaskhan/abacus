@@ -44,6 +44,7 @@ from abacus.modules.agents.repository import (
     insert_run,
     insert_screening_result,
     lock_run,
+    result_for_run,
     run_for_event,
 )
 from abacus.modules.agents.spec import spec
@@ -136,6 +137,23 @@ async def fail_run(tenant_id: UUID, run_id: UUID, code: str) -> bool:
     return True
 
 
+@dataclass(frozen=True)
+class RunOutcome:
+    status: str  # running | completed | escalated | failed
+    failure_code: str | None
+    screening_result_id: UUID | None
+
+
+async def run_outcome(tenant_id: UUID, run_id: UUID) -> RunOutcome:
+    """What a run recorded, for a workflow retry that finds the work already done."""
+    async with tenant_session(_reader(tenant_id, f"agent-run:{run_id}")) as session:
+        run = await get_run(session, run_id)
+        result_id = await result_for_run(session, run_id) if run is not None else None
+    if run is None:
+        raise NotFound("agent_run")
+    return RunOutcome(run.status, run.failure_code, result_id)
+
+
 async def load_agent_context(tenant_id: UUID, run_id: UUID) -> AgentContext:
     """The agent's context, proven from its running run row and its initiator's live membership
     (a revoked initiator ends the agent's rights: `NoActiveTenant`). The task scope is the run's,
@@ -169,7 +187,7 @@ async def _run(agent: AgentContext) -> AgentRun:
 
 
 # Errors that will happen again on retry end the run; provider outages don't (the caller retries).
-_TERMINAL: dict[type[Exception], str] = {
+TERMINAL: dict[type[Exception], str] = {
     SheetLayoutError: "unreadable_evidence",
     DatasetTooLarge: "context_too_large",
     ContextTooLarge: "context_too_large",
@@ -186,8 +204,8 @@ async def screen(agent: AgentContext) -> ScreeningOutcome:
     final write calls the model again, and its spend counts against the run's budget."""
     try:
         return await _screen(agent)
-    except tuple(_TERMINAL) as exc:
-        code = next(c for kind, c in _TERMINAL.items() if isinstance(exc, kind))
+    except tuple(TERMINAL) as exc:
+        code = next(c for kind, c in TERMINAL.items() if isinstance(exc, kind))
         await fail_run(agent.tenant_id, agent.agent_run_id, code)
         raise
 
@@ -246,6 +264,7 @@ async def _screen(agent: AgentContext) -> ScreeningOutcome:
             attribution=Attribution(agent.tenant, agent.engagement_id, run.agent_id, run.id),
             context=context,
             max_output_tokens=screener.limits.max_output_tokens,
+            timeout_seconds=screener.limits.max_seconds,
         )
     )
     if result.output is None:

@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.ai_gateway import Tier, prompt
 from abacus.kernel.classification import classified
+from abacus.modules.agents.handoff import Handoff, ScreeningOutput
 from abacus.modules.agents.specs._specs import SPECS
 from abacus.modules.identity.api import agent_may_hold
 
@@ -45,9 +46,8 @@ class AgentSpec(BaseModel):
     shape: Annotated[Literal["single_call"], classified("internal")]
     prompt: Annotated[str, classified("internal")]
     tier: Annotated[Tier, classified("internal")]
-    escalation_tier: Annotated[Tier, classified("internal")]
-    input_schema: Annotated[str, classified("internal")]
-    output_schema: Annotated[str, classified("internal")]
+    # The handoff model the agent's output must validate against (OUTPUT_SCHEMAS).
+    output_schema: Annotated[Literal["ScreeningOutput"], classified("internal")]
     task_scope: Annotated[frozenset[str], classified("internal")]
     tools: Annotated[tuple[str, ...], classified("internal")]
     limits: Annotated[Limits, classified("internal")]
@@ -64,6 +64,8 @@ def _load() -> dict[str, AgentSpec]:
     loaded = {agent_id: AgentSpec.model_validate(raw) for agent_id, raw in SPECS.items()}
     for spec in loaded.values():
         prompt(spec.prompt)  # a spec must name a registered prompt version
+        if spec.shape == "single_call" and spec.limits.max_steps != 1:
+            raise ValueError(f"agent {spec.id}: a single_call agent takes exactly one step")
         # ADR-005, ADR-025: a task scope holds only actions the matrix lets agents be given.
         refused = sorted(a for a in spec.task_scope if not agent_may_hold(a))
         if refused:
@@ -72,6 +74,9 @@ def _load() -> dict[str, AgentSpec]:
 
 
 AGENTS: dict[str, AgentSpec] = _load()
+
+
+OUTPUT_SCHEMAS: dict[str, type[Handoff]] = {"ScreeningOutput": ScreeningOutput}
 
 
 def spec(agent_id: str) -> AgentSpec:

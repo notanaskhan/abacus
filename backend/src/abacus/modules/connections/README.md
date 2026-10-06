@@ -32,7 +32,7 @@ Connections to clients' systems, sync runs, and the retrieval pipeline (ADR-037,
 - **Routes:**
   - `POST /v1/engagements/{id}/retrievals` (`evidence.upload`) → 202, or 409 (`no_connection`, `item_not_open`, `engagement_archived`) or 503;
   - `GET …/retrievals/{sync_run_id}` (`request_item.read`) with status, code, evidence, `started_at` and `finished_at`.
-- **Worker:** `python -m abacus.worker` checks the database, key service, payload codec and evidence bucket at boot. It registers each module's `WORKFLOWS`/`ACTIVITIES` and shuts down gracefully on SIGTERM. Locally it needs the same `fake_connector_dir` as the API.
+- **Worker:** `python -m abacus.worker` checks the database (application and relay roles), key service, payload codec and evidence bucket at boot. It registers each module's `WORKFLOWS`/`ACTIVITIES`, runs the outbox relay (modules' `SUBSCRIPTIONS`, TASK-011b) and shuts down gracefully on SIGTERM. Locally it needs the same `fake_connector_dir` as the API.
 - **Replay (AC-19):** `tests/workflows/histories/retrieval-v<N>-*.json` are recorded with `python -m abacus_tools.workflows.record_retrieval`, decoded and scrubbed.
   - Never overwrite one: a changed workflow uses `workflow.patched(...)` and adds `v<N+1>`.
   - Every version must keep replaying.

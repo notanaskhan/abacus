@@ -5,6 +5,7 @@ The only path to a model (ADR-019, ADR-050, ADR-052, ADR-057, ADR-070). Owns `us
 ## Public interface (`__init__.py`)
 - `call(GatewayCall) -> GatewayResult`:
   - refuses a call without a purpose, output schema, tier, budget, attribution or registered prompt (`GatewayRefused`);
+  - bounds each provider call by `timeout_seconds` (a timeout is recorded as `provider_error` and raised as `ProviderError`);
   - checks the budget before every attempt (`BudgetExceeded` on the first). For an agent run the budget is the run's: earlier usage for the run counts;
   - validates output against the schema, repairs once, then escalates (`output=None`);
   - records one `usage_records` row and a `model.called` audit event per attempt, each in its own unit of work. Never call it inside one.
