@@ -384,14 +384,31 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Forced row-level security hides every row from the owner here (no tenant is set), so the
+    # guard would see empty tables. Lift FORCE for this transaction only (the tables are dropped
+    # below, or the transaction rolls back and FORCE is back), then look. Evidence is checked too:
+    # this downgrade always runs before 0008's, whose own guard has the same blind spot.
+    for table in (
+        "connections",
+        "sync_runs",
+        "ledger_snapshots",
+        "trial_balance_lines",
+        "fulfilments",
+        "evidence_items",
+        "evidence_versions",
+    ):
+        op.execute("ALTER TABLE " + table + " NO FORCE ROW LEVEL SECURITY")
     op.execute(
         "DO $$ BEGIN "
-        "IF EXISTS (SELECT 1 FROM ledger_snapshots) OR EXISTS (SELECT 1 FROM sync_runs) "
-        "OR EXISTS (SELECT 1 FROM fulfilments) OR EXISTS (SELECT 1 FROM connections) THEN "
-        "RAISE EXCEPTION 'refusing to downgrade: connections, runs, ledger data or fulfilments "
-        "exist (ADR-004, ADR-040)'; "
+        "IF EXISTS (SELECT 1 FROM connections) OR EXISTS (SELECT 1 FROM sync_runs) "
+        "OR EXISTS (SELECT 1 FROM ledger_snapshots) OR EXISTS (SELECT 1 FROM fulfilments) "
+        "OR EXISTS (SELECT 1 FROM evidence_items) OR EXISTS (SELECT 1 FROM evidence_versions) "
+        "THEN RAISE EXCEPTION 'refusing to downgrade: connections, runs, ledger data, "
+        "fulfilments or evidence exist (ADR-004, ADR-040)'; "
         "END IF; END $$"
     )
+    for table in ("evidence_items", "evidence_versions"):  # these survive this downgrade
+        op.execute("ALTER TABLE " + table + " FORCE ROW LEVEL SECURITY")
     op.execute("ALTER TABLE evidence_versions DROP CONSTRAINT evidence_versions_snapshot_fkey")
     op.execute("DROP TABLE fulfilments")
     op.execute("ALTER TABLE sync_runs DROP CONSTRAINT sync_runs_snapshot_fkey")
