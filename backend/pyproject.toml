@@ -81,7 +81,7 @@ known-first-party = ["abacus", "abacus_tools"]
 "tests/**" = ["S101"]
 "tests/unit/quality/test_hooks.py" = ["S101", "S603"]  # runs the repo's own hook scripts
 "tests/unit/quality/test_secrets_scan.py" = ["S101", "S603"]  # git init in a tmp repo
-"tests/unit/synthetic/**" = ["S101", "S314", "S603"]  # runs this interpreter; parses our own XLSX
+"tests/unit/synthetic/**" = ["S314", "S603"]  # runs this interpreter; parses our own XLSX
 
 [tool.ruff.format]
 

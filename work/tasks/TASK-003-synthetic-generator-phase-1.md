@@ -180,6 +180,8 @@ Append-only. Newest at the bottom.
 
 - `2026-10-06` — PR #3 CI: stage 1 pass; stage 2 failed only AC-17 (6.31 s on the runner with branch coverage). Fixed both sides: JSON now encoded by the C encoder via `default=` and XLSX cells built with a fast path (byte-identical output, golden unchanged; 1.9 s → 1.44 s locally under coverage, 0.64 s without); the independent test author marked the AC-17 timing test `@pytest.mark.no_cover` (AC-17 budgets the generator, not the tracer). `make check` exit 0.
 
+- `2026-10-06` — Stage 4 security review (Sonnet): PASS, no high findings; fuzzed 44 clients (seeds incl. negative and 2**63) — no identifier or secret findings, XLSX inert. Fixed its three should-fix items: bank account numbers now `SYN-NNNN-NNNN` (were plausible real numbers); counterparty names are invented syllable words (were everyday words that could match real firms); SIDESTEP-001 also flags `subprocess_exec`/`subprocess_shell` (event-loop APIs), `popen`, `posix_spawn`/`posix_spawnp`. Redundant S101 entry removed. `GENERATOR_VERSION` 1.2.0, golden re-pinned. Tests for all three added independently. `make check` exit 0 (1,237 tests).
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|

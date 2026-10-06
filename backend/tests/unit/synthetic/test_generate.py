@@ -32,8 +32,8 @@ TAXONOMY = Path(__file__).resolve().parents[4] / "docs" / "product" / "failure-t
 # AC-3: the golden hash is pinned together with the generator version it was produced by.
 # Changing GENERATOR_VERSION without updating both constants in the same change fails the
 # golden test. "PENDING" fails the test until the implementer fills both in once.
-GOLDEN_VERSION: str = "1.1.0"
-GOLDEN_SHA256: str = "8846493beb039a0996542e0888d13013294caff665a5ac3e4bc565a33c9fff1f"
+GOLDEN_VERSION: str = "1.2.0"
+GOLDEN_SHA256: str = "a4b281bb626facdd4f52d2dfad410d92dfc869553f3ea8888559d7e54f5eace4"
 
 ARTEFACTS = ("general_ledger", "trial_balance", "bank_statement", "ar_aging", "ap_aging")
 
@@ -425,3 +425,91 @@ def test_public_api_is_exported() -> None:
         "AdversarialPayload",
     ):
         assert hasattr(synthetic, name), name
+
+
+# --- PR #3 security review ---------------------------------------------------------------------
+
+EVERYDAY_WORDS = frozenset(
+    w.lower()
+    for w in (
+        "Amber",
+        "Birch",
+        "Cedar",
+        "Delta",
+        "Echo",
+        "Fern",
+        "Gale",
+        "Jade",
+        "Maple",
+        "Onyx",
+        "Sable",
+        "Acorn",
+        "Alder",
+        "Aspen",
+        "Atlas",
+        "Basil",
+        "Bay",
+        "Cobalt",
+        "Coral",
+        "Crimson",
+        "Dawn",
+        "Eagle",
+        "Ember",
+        "Falcon",
+        "Forest",
+        "Garnet",
+        "Harbor",
+        "Hazel",
+        "Iron",
+        "Ivory",
+        "Juniper",
+        "Lake",
+        "Lotus",
+        "Meadow",
+        "North",
+        "Oak",
+        "Olive",
+        "Opal",
+        "Pearl",
+        "Pine",
+        "Raven",
+        "River",
+        "Ruby",
+        "Silver",
+        "Summit",
+        "Sun",
+        "Willow",
+    )
+)
+BANK_NUMBER = re.compile(r"SYN-\d{4}-\d{4}")
+
+
+@pytest.mark.parametrize("seed", [1, 2, 3, 42])
+def test_bank_account_numbers_use_the_syn_format(seed: int) -> None:
+    client = generate(seed, entities=2, months=2)
+    for entity in client.client_entities:
+        assert entity.bank_accounts
+        numbers = {b.account_number for b in entity.bank_accounts}
+        for number in numbers:
+            assert BANK_NUMBER.fullmatch(number), number
+        assert {s.account_number for s in entity.bank_statements} == numbers
+
+
+@pytest.mark.parametrize("seed", [1, 2, 3, 42])
+def test_counterparty_names_are_invented_not_everyday_words(seed: int) -> None:
+    client = generate(seed, entities=2, months=2)
+    for entity in client.client_entities:
+        journal = {
+            x.counterparty
+            for e in entity.journal_entries
+            for x in e.lines
+            if x.counterparty is not None
+        }
+        aging = [x.counterparty for a in (entity.ar_aging, entity.ap_aging) for x in a.lines]
+        assert journal
+        assert aging
+        for name in journal | set(aging):
+            assert name.split()[0].lower() not in EVERYDAY_WORDS, name
+        for aged in (entity.ar_aging, entity.ap_aging):
+            names = [x.counterparty for x in aged.lines]
+            assert len(set(names)) == len(names)
