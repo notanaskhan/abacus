@@ -38,8 +38,8 @@ def _payload(data: bytes = PLAINTEXT) -> Payload:
     return Payload(metadata={"encoding": b"json/plain"}, data=data)
 
 
-def _codec(secret: bytes = SECRET, key_id: str = "platform-v1") -> PayloadEncryptionCodec:
-    return PayloadEncryptionCodec({key_id: secret}, current=key_id)
+def _codec(material: bytes = SECRET, sealing_id: str = SEALING_ID) -> PayloadEncryptionCodec:
+    return PayloadEncryptionCodec({sealing_id: material}, current=sealing_id)
 
 
 @pytest.fixture(autouse=True)
@@ -118,7 +118,7 @@ def test_ac20_an_empty_keyring_is_a_value_error() -> None:
 
 
 async def test_ac20_encode_gives_one_encrypted_payload_per_input() -> None:
-    codec = _codec(key_id="test-key-7")
+    codec = _codec(sealing_id="test-key-7")
     sealed = await codec.encode([_payload(b"one"), _payload(b"two"), _payload(PLAINTEXT)])
     assert len(sealed) == 3
     for payload in sealed:
@@ -181,9 +181,9 @@ async def test_ac20_decode_refuses_a_payload_with_no_metadata() -> None:
 
 
 async def test_ac20_decode_refuses_an_unknown_key_id() -> None:
-    sealed = await _codec(key_id="test-key-a").encode([_payload()])
+    sealed = await _codec(sealing_id="test-key-a").encode([_payload()])
     with pytest.raises(PayloadDecryptionError):
-        await _codec(key_id="test-key-b").decode(sealed)
+        await _codec(sealing_id="test-key-b").decode(sealed)
 
 
 async def test_ac20_decode_refuses_a_relabelled_key_id() -> None:
