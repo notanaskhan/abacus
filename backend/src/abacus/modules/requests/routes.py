@@ -10,9 +10,14 @@ from fastapi import Depends
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
+from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
-from abacus.modules.requests.models import RequestItem
-from abacus.modules.requests.service import NewRequestItem, add_request_item, request_items_for
+from abacus.modules.requests.service import (
+    NewRequestItem,
+    RequestItemView,
+    add_request_item,
+    request_items_for,
+)
 
 router = AbacusRouter(prefix="/v1/engagements/{engagement_id}/request-items", tags=["requests"])
 Status = Literal["open", "received", "ready_for_review", "needs_revision"]
@@ -21,8 +26,12 @@ Status = Literal["open", "received", "ready_for_review", "needs_revision"]
 class RequestItemIn(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
 
-    description: Annotated[str, Field(min_length=1, max_length=2000), classified("confidential")]
-    audit_area: Annotated[str, Field(min_length=1, max_length=100), classified("confidential")]
+    description: Annotated[
+        MultiLineText, Field(min_length=1, max_length=2000), classified("confidential")
+    ]
+    audit_area: Annotated[
+        SingleLineText, Field(min_length=1, max_length=100), classified("confidential")
+    ]
 
 
 class RequestItemOut(BaseModel):
@@ -36,17 +45,9 @@ class RequestItemOut(BaseModel):
     created_at: Annotated[datetime, classified("internal")]
 
 
-def _out(item: RequestItem) -> RequestItemOut:
-    return RequestItemOut.model_validate(
-        {
-            "id": item.id,
-            "engagement_id": item.engagement_id,
-            "description": item.description,
-            "audit_area": item.audit_area,
-            "status": item.status,
-            "created_at": item.created_at,
-        }
-    )
+def _out(item: RequestItemView) -> RequestItemOut:
+    # Validation, not coercion: an unexpected status from the database is an error, not hidden.
+    return RequestItemOut.model_validate(item, from_attributes=True)
 
 
 Ctx = Annotated[AuthContext, Depends(current_context)]

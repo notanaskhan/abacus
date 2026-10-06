@@ -23,6 +23,7 @@ from typing import Annotated, Final, TypeVar
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
+from pydantic import BaseModel
 
 from abacus.kernel.logging import get_logger
 from abacus.modules.identity.authz import recording_checks
@@ -39,6 +40,31 @@ from abacus.modules.identity.service import (
 
 _Endpoint = TypeVar("_Endpoint", bound=Callable[..., object])
 SELF: Final = "self"
+
+
+class ErrorOut(BaseModel):
+    detail: str
+
+
+class FieldErrorOut(BaseModel):
+    loc: list[str | int]
+    msg: str
+    type: str
+
+
+class ValidationErrorOut(BaseModel):
+    """What a 422 says: where and what, never the submitted value (abacus.api.app)."""
+
+    detail: list[FieldErrorOut]
+
+
+# Every route documents the errors it can return, so the generated client types them (ADR-013).
+_RESPONSES: dict[int | str, dict[str, object]] = {
+    401: {"model": ErrorOut, "description": "Not authenticated"},
+    403: {"model": ErrorOut, "description": "Forbidden"},
+    404: {"model": ErrorOut, "description": "Not found"},
+    422: {"model": ValidationErrorOut, "description": "Invalid request"},
+}
 ACTION_KEY: Final = "x-abacus-action"
 _log = get_logger(__name__)
 
@@ -118,6 +144,7 @@ class AbacusRouter(APIRouter):
             status_code=status_code,
             dependencies=[Depends(auth)],
             openapi_extra={ACTION_KEY: action},
+            responses=_RESPONSES,
         )
 
     def add_api_websocket_route(self, *args: object, **kwargs: object) -> None:

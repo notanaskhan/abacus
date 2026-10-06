@@ -119,13 +119,31 @@ export type EngagementSummaryOut = {
 };
 
 /**
- * HTTPValidationError
+ * ErrorOut
  */
-export type HttpValidationError = {
+export type ErrorOut = {
     /**
      * Detail
      */
-    detail?: Array<ValidationError>;
+    detail: string;
+};
+
+/**
+ * FieldErrorOut
+ */
+export type FieldErrorOut = {
+    /**
+     * Loc
+     */
+    loc: Array<string | number>;
+    /**
+     * Msg
+     */
+    msg: string;
+    /**
+     * Type
+     */
+    type: string;
 };
 
 /**
@@ -235,31 +253,15 @@ export type TeamMemberOut = {
 };
 
 /**
- * ValidationError
+ * ValidationErrorOut
+ *
+ * What a 422 says: where and what, never the submitted value (abacus.api.app).
  */
-export type ValidationError = {
+export type ValidationErrorOut = {
     /**
-     * Context
+     * Detail
      */
-    ctx?: {
-        [key: string]: unknown;
-    };
-    /**
-     * Input
-     */
-    input?: unknown;
-    /**
-     * Location
-     */
-    loc: Array<string | number>;
-    /**
-     * Message
-     */
-    msg: string;
-    /**
-     * Error Type
-     */
-    type: string;
+    detail: Array<FieldErrorOut>;
 };
 
 export type ListEngagementsData = {
@@ -281,9 +283,21 @@ export type ListEngagementsData = {
 
 export type ListEngagementsErrors = {
     /**
-     * Validation Error
+     * Not authenticated
      */
-    422: HttpValidationError;
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
 };
 
 export type ListEngagementsError = ListEngagementsErrors[keyof ListEngagementsErrors];
@@ -318,9 +332,21 @@ export type CreateEngagementData = {
 
 export type CreateEngagementErrors = {
     /**
-     * Validation Error
+     * Not authenticated
      */
-    422: HttpValidationError;
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
 };
 
 export type CreateEngagementError = CreateEngagementErrors[keyof CreateEngagementErrors];
@@ -358,9 +384,21 @@ export type GetEngagementData = {
 
 export type GetEngagementErrors = {
     /**
-     * Validation Error
+     * Not authenticated
      */
-    422: HttpValidationError;
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
 };
 
 export type GetEngagementError = GetEngagementErrors[keyof GetEngagementErrors];
@@ -398,9 +436,21 @@ export type ListRequestItemsData = {
 
 export type ListRequestItemsErrors = {
     /**
-     * Validation Error
+     * Not authenticated
      */
-    422: HttpValidationError;
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
 };
 
 export type ListRequestItemsError = ListRequestItemsErrors[keyof ListRequestItemsErrors];
@@ -440,9 +490,21 @@ export type CreateRequestItemData = {
 
 export type CreateRequestItemErrors = {
     /**
-     * Validation Error
+     * Not authenticated
      */
-    422: HttpValidationError;
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
 };
 
 export type CreateRequestItemError = CreateRequestItemErrors[keyof CreateRequestItemErrors];
@@ -471,9 +533,21 @@ export type MeData = {
 
 export type MeErrors = {
     /**
-     * Validation Error
+     * Not authenticated
      */
-    422: HttpValidationError;
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
 };
 
 export type MeError = MeErrors[keyof MeErrors];

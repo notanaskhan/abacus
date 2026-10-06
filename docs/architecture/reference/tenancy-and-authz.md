@@ -27,17 +27,17 @@ async def add_item(engagement_id: UUID, body: RequestItemIn,
 
 ```python
 async def add_item(ctx: AuthContext, engagement_id: UUID, body: RequestItemIn) -> RequestItemOut:
-    engagement = await engagements.get_ref(ctx, engagement_id)       # tenant_session, RLS-scoped
-    await authorise(ctx, "request_item.create",
-                    Resource.engagement(ctx.tenant_id, engagement.id, archived=engagement.archived))
-    async with uow(ctx.tenant) as tx:                                 # write only after authorise
+    async with uow(ctx.tenant) as tx:
+        ref = await engagements.lock_ref(tx, engagement_id)            # 404 outside the tenant
+        await authorise(ctx, "request_item.create", ref.resource())    # before any write
         ...
         tx.record("request_item.created", target=Target("request_item", item.id))
 ```
 
 - Authorise **before** any write: the guard can hide a response but can't undo a commit.
 - `archived` comes from the row, never a literal (AUTHZ-003).
-- A missing row and a denied row should both answer 403 or 404 consistently, so that existence never leaks across engagements.
+- Missing, or another firm's → 404 (row-level security makes them indistinguishable, so nothing leaks across firms). Found but denied → 403: existence within a firm isn't secret (TASK-008 design §3).
+- For writes, resolve and share-lock the row inside the unit of work (`lock_ref`) and authorise there, so the check and the write see the same row.
 
 ## A list
 

@@ -11,9 +11,10 @@ from fastapi import Depends
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from abacus.kernel.classification import classified
+from abacus.kernel.text import SingleLineText
 from abacus.modules.engagements.service import (
     EngagementMetadata,
-    EngagementSummary,
+    EngagementView,
     NewEngagement,
     create_engagement,
     engagement_metadata,
@@ -22,7 +23,7 @@ from abacus.modules.engagements.service import (
 from abacus.modules.identity.api import AbacusRouter, AuthContext, EngagementRole, current_context
 
 router = AbacusRouter(prefix="/v1/engagements", tags=["engagements"])
-Name = Annotated[str, Field(min_length=1, max_length=200), classified("confidential")]
+Name = Annotated[SingleLineText, Field(min_length=1, max_length=200), classified("confidential")]
 
 
 class EngagementIn(BaseModel):
@@ -67,28 +68,17 @@ class EngagementOut(EngagementSummaryOut):
     team: Annotated[list[TeamMemberOut], classified("confidential")]
 
 
-def _summary(summary: EngagementSummary) -> EngagementSummaryOut:
-    e, names = summary.engagement, summary.names
-    return EngagementSummaryOut(
-        id=e.id,
-        name=e.name,
-        type="audit",
-        status="archived" if e.status == "archived" else "active",
-        client_name=names.client_name,
-        client_entity_name=names.client_entity_name,
-        fiscal_period_start=e.fiscal_period_start,
-        fiscal_period_end=e.fiscal_period_end,
-        created_at=e.created_at,
-    )
+def _summary(view: EngagementView) -> EngagementSummaryOut:
+    # Validation, not coercion: an unexpected type or status from the database is an error.
+    return EngagementSummaryOut.model_validate(view, from_attributes=True)
 
 
 def _out(metadata: EngagementMetadata) -> EngagementOut:
-    summary = _summary(EngagementSummary(metadata.engagement, metadata.names))
     team = [
         TeamMemberOut(user_id=m.user_id, display_name=m.display_name, role=m.role)
         for m in metadata.team
     ]
-    return EngagementOut(**summary.model_dump(), team=team)
+    return EngagementOut(**_summary(metadata.engagement).model_dump(), team=team)
 
 
 Ctx = Annotated[AuthContext, Depends(current_context)]

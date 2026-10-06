@@ -618,17 +618,163 @@ def _check_resource_archived(src: SourceFile) -> Iterator[Finding]:
                 yield Finding(node.lineno, "archived must come from the engagement row")
 
 
-def _check_list_visible(src: SourceFile) -> Iterator[Finding]:
-    """ADR-027: every repository list method applies `visible()`."""
-    for node in ast.walk(src.tree):
-        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and node.name.startswith(
-            "list_"
+_LIST_PREFIXES = ("list_", "all_", "search_")
+# Repository functions that return many rows without `visible()`, each reviewed: they serve
+# lookups for rows the caller has already authorised, or sign-in before a tenant exists.
+LIST_EXEMPT = frozenset(
+    {
+        ("src/abacus/modules/identity/repository.py", "active_memberships"),
+        ("src/abacus/modules/identity/repository.py", "engagement_members_of"),
+        ("src/abacus/modules/identity/repository.py", "display_names"),
+        ("src/abacus/modules/organisations/repository.py", "names_of"),
+    }
+)
+
+
+def _read_actions() -> frozenset[str]:
+    from abacus.modules.identity.authz.matrix import RULES  # tooling may import product
+
+    return frozenset(action for action, rule in RULES.items() if rule.reads)
+
+
+def _visible_in_where(function: ast.AST) -> list[ast.Call]:
+    """`visible(...)` calls passed (directly or nested) to a `.where(...)`."""
+    found: list[ast.Call] = []
+    for call in ast.walk(function):
+        if (
+            isinstance(call, ast.Call)
+            and isinstance(call.func, ast.Attribute)
+            and call.func.attr == "where"
         ):
-            calls = {
-                _terminal_name(call.func) for call in ast.walk(node) if isinstance(call, ast.Call)
-            }
-            if "visible" not in calls:
-                yield Finding(node.lineno, f"{node.name}() must filter with visible()")
+            for arg in call.args:
+                found += [
+                    inner
+                    for inner in ast.walk(arg)
+                    if isinstance(inner, ast.Call) and _terminal_name(inner.func) == "visible"
+                ]
+    return found
+
+
+def _returns_many(function: ast.AST) -> bool:
+    return any(
+        isinstance(call, ast.Call)
+        and isinstance(call.func, ast.Attribute)
+        and call.func.attr == "all"
+        for call in ast.walk(function)
+    )
+
+
+def _check_list_visible(src: SourceFile) -> Iterator[Finding]:
+    """ADR-027, ADR-102: repository functions that list rows filter them with `visible(ctx,
+    "<read action>", <column>)` inside `.where(...)`."""
+    reads = _read_actions()
+    for node in ast.walk(src.tree):
+        if not isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            continue
+        listing = node.name.startswith(_LIST_PREFIXES) or _returns_many(node)
+        if not listing or (src.rel, node.name) in LIST_EXEMPT:
+            continue
+        applied = _visible_in_where(node)
+        if not applied:
+            yield Finding(node.lineno, f"{node.name}() must filter with visible() in .where()")
+            continue
+        for call in applied:
+            action = call.args[1] if len(call.args) > 1 else None
+            if not (isinstance(action, ast.Constant) and action.value in reads):
+                yield Finding(call.lineno, "visible() needs a literal read action from the matrix")
+
+
+# Which other modules each module may import (ADR-008: one-way dependencies). Modules not listed
+# may use identity only. Identity and organisations depend on no module.
+MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
+    "identity": frozenset(),
+    "organisations": frozenset(),
+    "engagements": frozenset({"identity", "organisations"}),
+    "requests": frozenset({"identity", "engagements"}),
+}
+
+
+def _own_module(src: SourceFile) -> str | None:
+    if src.module and src.module.startswith("abacus.modules."):
+        parts = src.module.split(".")
+        return parts[2] if len(parts) > 2 else None
+    return None
+
+
+def _check_module_direction(src: SourceFile) -> Iterator[Finding]:
+    own = _own_module(src)
+    if own is None:
+        return
+    allowed = MODULE_DEPENDENCIES.get(own, frozenset({"identity"}))
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.Import):
+            targets = [(node.lineno, alias.name) for alias in node.names]
+        elif isinstance(node, ast.ImportFrom):
+            base = _resolve_from(src, node)
+            targets = [(node.lineno, base)] if base else []
+        else:
+            continue
+        for line, target in targets:
+            parts = target.split(".")
+            if (
+                len(parts) > 2
+                and parts[:2] == ["abacus", "modules"]
+                and parts[2] != own
+                and parts[2] not in allowed
+            ):
+                yield Finding(line, f"{own} may not depend on {parts[2]} (ADR-008)")
+
+
+# SQL in string constants: statements start with an upper-case verb (the codebase's SQL style).
+_SQL_STATEMENT = re.compile(r"^\s*(?:SELECT|INSERT|UPDATE|DELETE|WITH)\b")
+_SQL_TABLE = re.compile(r"\b(?:FROM|JOIN|INTO|UPDATE)\s+([a-z_][a-z0-9_]*)")
+
+
+def _table_owners() -> dict[str, str]:
+    from abacus_tools.quality.schema_check import TABLE_OWNERS
+
+    return TABLE_OWNERS
+
+
+def _check_table_ownership(src: SourceFile) -> Iterator[Finding]:
+    """ADR-008, ADR-103: a module names only tables it owns (models, Core tables, raw SQL)."""
+    own = _own_module(src)
+    if own is None:
+        return
+    owners = _table_owners()
+
+    def check(table: str, line: int) -> Iterator[Finding]:
+        owner = owners.get(table)
+        if owner != own:
+            whose = f"owned by {owner}" if owner else "not in TABLE_OWNERS"
+            yield Finding(line, f"table {table} is {whose}; {own} may use only its own tables")
+
+    for node in ast.walk(src.tree):
+        if (
+            isinstance(node, ast.Assign | ast.AnnAssign)
+            and any(
+                isinstance(t, ast.Name) and t.id == "__tablename__"
+                for t in (node.targets if isinstance(node, ast.Assign) else [node.target])
+            )
+            and isinstance(node.value, ast.Constant)
+            and isinstance(node.value.value, str)
+        ):
+            yield from check(node.value.value, node.lineno)
+        elif (
+            isinstance(node, ast.Call)
+            and _terminal_name(node.func) == "Table"
+            and node.args
+            and isinstance(node.args[0], ast.Constant)
+            and isinstance(node.args[0].value, str)
+        ):
+            yield from check(node.args[0].value, node.lineno)
+        elif (
+            isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+            and _SQL_STATEMENT.match(node.value)
+        ):
+            for match in _SQL_TABLE.finditer(node.value):
+                yield from check(match.group(1), node.lineno)
 
 
 # --- tree rules -------------------------------------------------------------------------------
@@ -693,7 +839,7 @@ RULES: list[Rule | TreeRule] = [
         description="Other modules are imported only through their api",
         adr="ADR-008, ADR-101",
         check=_check_module_boundary,
-        exclude=("tests/*",),
+        exclude=("tests/*", "src/abacus_tools/quality/banned_patterns.py"),
     ),
     TreeRule(
         id="LAYOUT-001",
@@ -865,7 +1011,21 @@ RULES: list[Rule | TreeRule] = [
         description="Every repository list method applies visible()",
         adr="ADR-027, ADR-102",
         check=_check_list_visible,
-        include=("src/abacus/modules/*/repository.py",),
+        include=("src/abacus/modules/*/repository.py", "src/abacus/modules/*/repository/*.py"),
+    ),
+    Rule(
+        id="BOUND-002",
+        description="Modules depend on each other in one direction only",
+        adr="ADR-008",
+        check=_check_module_direction,
+        include=("src/abacus/modules/*",),
+    ),
+    Rule(
+        id="OWN-001",
+        description="A module names only the tables it owns",
+        adr="ADR-008, ADR-103",
+        check=_check_table_ownership,
+        include=("src/abacus/modules/*",),
     ),
     Rule(
         id="ANY-001",

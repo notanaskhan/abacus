@@ -46,13 +46,31 @@ APP = "abacus_app"
 NON_TENANT_TABLES = frozenset({"alembic_version"})
 # Tables the app may insert into and read, never update or delete (ADR-004); TASK-009/010 add.
 INSERT_ONLY_TABLES: frozenset[str] = frozenset({"audit_events", "outbox"})
-# Columns the app may supply on insert-only tables; everything else is server-set (TASK-006).
+# Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "audit_events": frozenset(
         {"tenant_id", "actor_kind", "actor_id", "action", "target_type", "target_id"}
         | {"before_ref", "after_ref", "trace_id"}
     ),
     "outbox": frozenset({"id", "tenant_id", "event_type", "payload"}),
+    "clients": frozenset({"id", "tenant_id", "name"}),
+    "client_entities": frozenset({"id", "tenant_id", "client_id", "name"}),
+    "engagements": frozenset(
+        {"id", "tenant_id", "client_id", "client_entity_id", "name", "created_by"}
+        | {"fiscal_period_start", "fiscal_period_end"}
+    ),
+    "request_lists": frozenset({"id", "tenant_id", "engagement_id"}),
+    "request_items": frozenset(
+        {"id", "tenant_id", "engagement_id", "request_list_id", "description", "audit_area"}
+        | {"created_by"}
+    ),
+    "engagement_members": frozenset({"tenant_id", "engagement_id", "user_id", "role"}),
+}
+# Columns the app may update; any other UPDATE on these tables is reported (TASK-008). Tables not
+# listed here keep whatever their migration grants (insert-only tables grant none).
+APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    "engagements": frozenset({"status"}),
+    "request_items": frozenset({"status"}),
 }
 # Who owns each table (ADR-103): a module or kernel package. Every table must be listed, and every
 # listed table must exist. Modules touch only their own tables (ADR-008).
@@ -374,20 +392,24 @@ async def _bypass_role_problems(
     return problems
 
 
-async def _insert_column_problems(conn: asyncpg.Connection, table: str) -> list[str]:
-    """Only for insert-only tables with a declared column list; every such table should have one
-    (TASK-009 onwards declare theirs alongside INSERT_ONLY_TABLES)."""
-    allowed = APP_INSERT_COLUMNS.get(table)
+async def _column_problems(
+    conn: asyncpg.Connection, table: str, privilege: str, allowed: frozenset[str] | None
+) -> list[str]:
+    """Columns `privilege` is granted on beyond the declared list (none declared: not checked)."""
     if allowed is None:
         return []
     problems: list[str] = []
     for column in await conn.fetch(_COLUMNS, table):
         name = str(column["attname"])
         if name not in allowed and await conn.fetchval(
-            "SELECT has_column_privilege($1, $2, $3, 'INSERT')", APP, f"public.{table}", name
+            "SELECT has_column_privilege($1, $2, $3, $4)", APP, f"public.{table}", name, privilege
         ):
-            problems.append(f"{table}: {APP} may INSERT {table}.{name}")
+            problems.append(f"{table}: {APP} may {privilege} {table}.{name}")
     return problems
+
+
+async def _insert_column_problems(conn: asyncpg.Connection, table: str) -> list[str]:
+    return await _column_problems(conn, table, "INSERT", APP_INSERT_COLUMNS.get(table))
 
 
 async def _inspect(owner_dsn: str) -> list[str]:
@@ -439,8 +461,9 @@ async def _inspect(owner_dsn: str) -> list[str]:
                     "SELECT has_table_privilege($1, $2, $3)", APP, f"public.{name}", privilege
                 ):
                     problems.append(f"{name}: {APP} has {privilege}")
+            problems += await _insert_column_problems(conn, name)
+            problems += await _column_problems(conn, name, "UPDATE", APP_UPDATE_COLUMNS.get(name))
             if name in INSERT_ONLY_TABLES:
-                problems += await _insert_column_problems(conn, name)
                 for privilege in ("UPDATE", "DELETE"):
                     if await conn.fetchval(
                         "SELECT has_table_privilege($1, $2, $3)", APP, f"public.{name}", privilege

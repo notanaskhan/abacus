@@ -46,6 +46,16 @@ async def get_engagement(session: AsyncSession, engagement_id: UUID) -> Engageme
     ).scalar_one_or_none()
 
 
+async def lock_engagement(session: AsyncSession, engagement_id: UUID) -> Engagement | None:
+    """Inside a unit of work: the row, share-locked until commit, so it can't be archived (or
+    otherwise changed) between the permission check and the write."""
+    return (
+        await session.execute(
+            select(Engagement).where(Engagement.id == engagement_id).with_for_update(read=True)
+        )
+    ).scalar_one_or_none()
+
+
 async def list_engagements(session: AsyncSession, ctx: AuthContext) -> Sequence[Engagement]:
     return (
         (

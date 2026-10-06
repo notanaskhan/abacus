@@ -21,12 +21,17 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 /**
  * List Engagements Route
  */
-export const listEngagements = <ThrowOnError extends boolean = false>(options?: Options<ListEngagementsData, ThrowOnError>): RequestResult<ListEngagementsResponses, ListEngagementsErrors, ThrowOnError> => (options?.client ?? client).get<ListEngagementsResponses, ListEngagementsErrors, ThrowOnError>({ url: '/v1/engagements', ...options });
+export const listEngagements = <ThrowOnError extends boolean = false>(options?: Options<ListEngagementsData, ThrowOnError>): RequestResult<ListEngagementsResponses, ListEngagementsErrors, ThrowOnError> => (options?.client ?? client).get<ListEngagementsResponses, ListEngagementsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements',
+    ...options
+});
 
 /**
  * Create Engagement Route
  */
 export const createEngagement = <ThrowOnError extends boolean = false>(options: Options<CreateEngagementData, ThrowOnError>): RequestResult<CreateEngagementResponses, CreateEngagementErrors, ThrowOnError> => (options.client ?? client).post<CreateEngagementResponses, CreateEngagementErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/engagements',
     ...options,
     headers: {
@@ -38,17 +43,26 @@ export const createEngagement = <ThrowOnError extends boolean = false>(options: 
 /**
  * Get Engagement Route
  */
-export const getEngagement = <ThrowOnError extends boolean = false>(options: Options<GetEngagementData, ThrowOnError>): RequestResult<GetEngagementResponses, GetEngagementErrors, ThrowOnError> => (options.client ?? client).get<GetEngagementResponses, GetEngagementErrors, ThrowOnError>({ url: '/v1/engagements/{engagement_id}', ...options });
+export const getEngagement = <ThrowOnError extends boolean = false>(options: Options<GetEngagementData, ThrowOnError>): RequestResult<GetEngagementResponses, GetEngagementErrors, ThrowOnError> => (options.client ?? client).get<GetEngagementResponses, GetEngagementErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}',
+    ...options
+});
 
 /**
  * List Request Items Route
  */
-export const listRequestItems = <ThrowOnError extends boolean = false>(options: Options<ListRequestItemsData, ThrowOnError>): RequestResult<ListRequestItemsResponses, ListRequestItemsErrors, ThrowOnError> => (options.client ?? client).get<ListRequestItemsResponses, ListRequestItemsErrors, ThrowOnError>({ url: '/v1/engagements/{engagement_id}/request-items', ...options });
+export const listRequestItems = <ThrowOnError extends boolean = false>(options: Options<ListRequestItemsData, ThrowOnError>): RequestResult<ListRequestItemsResponses, ListRequestItemsErrors, ThrowOnError> => (options.client ?? client).get<ListRequestItemsResponses, ListRequestItemsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/request-items',
+    ...options
+});
 
 /**
  * Create Request Item Route
  */
 export const createRequestItem = <ThrowOnError extends boolean = false>(options: Options<CreateRequestItemData, ThrowOnError>): RequestResult<CreateRequestItemResponses, CreateRequestItemErrors, ThrowOnError> => (options.client ?? client).post<CreateRequestItemResponses, CreateRequestItemErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/engagements/{engagement_id}/request-items',
     ...options,
     headers: {
@@ -60,4 +74,8 @@ export const createRequestItem = <ThrowOnError extends boolean = false>(options:
 /**
  * Me
  */
-export const me = <ThrowOnError extends boolean = false>(options?: Options<MeData, ThrowOnError>): RequestResult<MeResponses, MeErrors, ThrowOnError> => (options?.client ?? client).get<MeResponses, MeErrors, ThrowOnError>({ url: '/v1/me', ...options });
+export const me = <ThrowOnError extends boolean = false>(options?: Options<MeData, ThrowOnError>): RequestResult<MeResponses, MeErrors, ThrowOnError> => (options?.client ?? client).get<MeResponses, MeErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/me',
+    ...options
+});

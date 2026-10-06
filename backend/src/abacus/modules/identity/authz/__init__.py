@@ -46,6 +46,9 @@ from abacus.modules.identity.repository import (
 )
 
 MFA_RECENT = timedelta(minutes=15)
+# Ethical walls (ADR-026) are not modelled yet. The API refuses to start in production until they
+# are (founder decision 2026-10-06: walls gate the first real firm). Set True only with walls.
+WALL_SAFE = False
 Layer = Literal["tenancy", "relationship", "role", "attribute"]
 _log = get_logger(__name__)
 _checked: ContextVar[set[str] | None] = ContextVar("abacus_authz_checked", default=None)
@@ -181,6 +184,7 @@ def visible(
 
 __all__ = [
     "MFA_RECENT",
+    "WALL_SAFE",
     "Forbidden",
     "Resource",
     "UnknownAction",
