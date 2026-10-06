@@ -41,7 +41,9 @@ Out: real connectors, OAuth and credentials (later specs); GL detail and the rol
 - ADRs: ADR-017, ADR-037, ADR-038, ADR-040, ADR-090
 
 ## Plan
-- [ ] Plan approved by human (required for amber and red)
+- [x] Plan approved by human (founder, 2026-10-06: "approved and proceed") — **red: founder reviews each PR line by line before merge**
+- [x] Approval file `work/approvals/TASK-010.yaml` written by the agent at the founder's instruction (2026-10-06); approved by founder: paths under *Approval file text*, expires 2026-10-27
+- [x] Q1–Q5: all recommendations approved. Split into **TASK-010a** (steps 1–5) and **TASK-010b** (step 6), each with its own PR.
 - Red task: the agent drafts the design here; the founder edits or approves it before any code, then reviews the diff line by line (founder decision 2026-10-06).
 
 ### Design (for founder review)
@@ -122,6 +124,32 @@ The `evidence_versions.snapshot_id → ledger_snapshots` composite FK is added h
 - **Q4. Who can see retrieval status?** `connection.read_log` (client_admin, partner, manager) is the closest action, but staff and seniors trigger retrievals. Recommend: the trigger response and the request-item list show status, and `GET …/retrievals/{id}` uses `request_item.read`. The client-visible access log stays `connection.read_log` (later spec).
 - **Q5. Payload codec key:** a platform key (not per tenant) for workflow payloads, since payloads carry only IDs. Placeholder locally, KMS in TASK-014. Recommend yes.
 
+### Approval file text
+```yaml
+task: TASK-010
+approved_by: founder
+expires: 2026-10-27
+paths:
+  - .claude/hooks/_protected.py
+  - .github/CODEOWNERS
+  - docs/architecture/protected-paths.md
+  - backend/pyproject.toml
+  - backend/uv.lock
+  - backend/src/abacus/kernel/**
+  - backend/src/abacus/modules/identity/**
+  - backend/src/abacus/modules/connections/**
+  - backend/src/abacus/modules/ledger/**
+  - backend/src/abacus/modules/evidence/**
+  - backend/src/abacus/modules/requests/**
+  - backend/src/abacus/api/**
+  - backend/src/abacus/worker/**
+  - backend/src/abacus_tools/quality/schema_check.py
+  - backend/src/abacus_tools/quality/banned_patterns.py
+  - backend/tests/unit/quality/test_banned_patterns.py
+  - packages/api-client/**
+reason: TASK-010 — connector, ledger snapshots, fulfilments, retrieval pipeline and workflow
+```
+
 ### Steps (if Q1 is approved, TASK-010a is steps 1–5)
 1. Approval file; protect `modules/connections/**`, `modules/ledger/**`, `abacus/worker/**`.
 2. `SystemContext` in identity/authz; migration `0009`; `schema_check` maps, triggers and owners.
@@ -150,6 +178,7 @@ The `evidence_versions.snapshot_id → ledger_snapshots` composite FK is added h
 ## Progress log
 - `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder. Not started.
 - `2026-10-06` — Design drafted (§1–7, Q1–Q5) for founder review.
+- `2026-10-06` — Approved with all recommendations (split into 010a/010b); approval file written at the founder's instruction. Starting TASK-010a.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
