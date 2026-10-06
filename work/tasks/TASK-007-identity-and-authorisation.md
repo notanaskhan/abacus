@@ -275,6 +275,7 @@ reason: TASK-007 — identity, request context, authorise and visible
 -
 
 ## Questions for the human
+- [x] Answered 2026-10-06 (founder: "approved, proceed with your recommendations") — walls gate the first real firm, not TASK-008; firm_admin keeps `audit_event.read`, audit events stay content-free.
 - **Walls before engagement data (security review S3).** `authorise` is not wall-safe: ADR-026 isn't modelled, and SPEC-000 doesn't list it. Recommend: no engagement route ships to a real firm before walls exist. SPEC-000 is synthetic-data-only, so TASK-008 may proceed; the wall spec is a gate before the first real firm, not before TASK-008.
 - **`audit_event.read` for firm_admin (S19).** The matrix lets firm_admin read audit events without an engagement relationship. That is safe while audit events carry only identifiers and references, which TASK-006 enforces: `Target`/`Ref` are identifier-only. Recommend: keep it, and keep audit events content-free.
 
