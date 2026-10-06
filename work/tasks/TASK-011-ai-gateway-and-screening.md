@@ -4,7 +4,7 @@ title: AI gateway, fake model and evidence screening
 spec: SPEC-000
 acceptance_criteria: [AC-14, AC-15, AC-16, AC-17]
 risk_zone: red
-status: in-progress
+status: in-review
 branch: task-011-gateway
 worktree:
 created: 2026-10-06
@@ -469,8 +469,12 @@ reason: TASK-011 — AI gateway, agent specs and context, citations, usage recor
 -
 
 ## Handoff
-- **Current state:** TASK-011a PR open from `task-011a-ai-gateway` (rebuilt on main after PR #11; `task-011a-gateway` is stale and can be deleted). The independent tests found 3 bugs, all fixed. Unit tests pass locally. Local integration runs were blocked by a Docker VM clock skew (S3 `RequestTimeTooSkewed`), so CI is the gate.
-- **Exact next step:** Confirm CI, then the founder's line-by-line review (red). Merge (rebase), then TASK-011b: the relay publisher in the worker, the `screening:<evidence_version_id>` workflow running `screen` as one activity (`fail_run` on terminal errors), `requested_by` from the relayed event only, and the evals scaffold. See Gotchas.
-- **Uncommitted or partial work:** none.
-- **Known failing checks:** none known.
-- **Open issues:** branch protection off; the Gotchas list the 011b items.
+- **Current state:** TASK-011b PR open from `task-011b-screening`, at the founder's request before the independent tests finished ("we will feed the response from the background agent later"). Both reviews are done and their fixes pushed; screening replay histories are recorded.
+- **Exact next step:**
+  - Take in the test author's report: its tests, including the screening replay tests, and any bugs it finds.
+  - Confirm CI.
+  - The founder reviews line by line (red).
+  - Merge (rebase), delete the local `work/approvals/TASK-011.yaml`, and mark TASK-011 done.
+- **Uncommitted or partial work:** the test author's remaining tests.
+- **Known failing checks:** until the test author's updates land, two pinned unit tests fail by design (worker boot checks; the "owed suites" list).
+- **Open issues:** branch protection off; follow-ups in Gotchas (per-firm run cap, run sweeper, evals in `make check`, a real provider).
