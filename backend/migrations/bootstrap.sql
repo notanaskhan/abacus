@@ -14,6 +14,9 @@ BEGIN
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'abacus_relay') THEN
     CREATE ROLE abacus_relay LOGIN;
   END IF;
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'abacus_identity') THEN
+    CREATE ROLE abacus_identity LOGIN;
+  END IF;
 END
 $$;
 
@@ -33,11 +36,16 @@ ALTER ROLE abacus_app   NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS NOREPLIC
 -- The outbox relay reads every tenant's unpublished events (TASK-006, founder-approved): it bypasses
 -- row-level security, so it is granted privileges on `outbox` only (in migration 0002), nothing else.
 ALTER ROLE abacus_relay NOSUPERUSER NOCREATEDB NOCREATEROLE BYPASSRLS NOREPLICATION NOINHERIT;
+-- Sign-in finds a user's memberships before any tenant is chosen (TASK-007, founder-approved): it
+-- bypasses row-level security, so it may only read users, memberships and firms (migration 0004).
+ALTER ROLE abacus_identity NOSUPERUSER NOCREATEDB NOCREATEROLE BYPASSRLS NOREPLICATION NOINHERIT;
+ALTER ROLE abacus_identity SET default_transaction_read_only = on;
 
 DO $$
 BEGIN
   EXECUTE format('GRANT CONNECT, TEMPORARY ON DATABASE %I TO abacus_owner', current_database());
-  EXECUTE format('GRANT CONNECT ON DATABASE %I TO abacus_app, abacus_relay', current_database());
+  EXECUTE format('GRANT CONNECT ON DATABASE %I TO abacus_app, abacus_relay, abacus_identity',
+    current_database());
   EXECUTE format('REVOKE CREATE, TEMPORARY ON DATABASE %I FROM PUBLIC', current_database());
 END
 $$;
@@ -47,7 +55,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 GRANT USAGE, CREATE ON SCHEMA public TO abacus_owner;
-GRANT USAGE ON SCHEMA public TO abacus_app, abacus_relay;
+GRANT USAGE ON SCHEMA public TO abacus_app, abacus_relay, abacus_identity;
 
 -- Tables the owner creates are readable and writable by the app; row-level security decides which
 -- rows. Insert-only tables revoke UPDATE and DELETE in their migration (kernel.db.migration).

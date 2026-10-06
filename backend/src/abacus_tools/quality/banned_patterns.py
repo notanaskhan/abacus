@@ -405,6 +405,75 @@ def _check_tenant_connection(src: SourceFile) -> Iterator[Finding]:
             yield Finding(node.lineno, f"{node.attr} is for abacus.kernel.uow only")
 
 
+# The sign-in engine (abacus_identity, BYPASSRLS): only the identity repository.
+_IDENTITY_ENGINE = frozenset({"identity_engine", "configure_identity_engine"})
+
+
+def _check_identity_engine(src: SourceFile) -> Iterator[Finding]:
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                if alias.name in _IDENTITY_ENGINE:
+                    yield Finding(node.lineno, f"{alias.name} is for the identity repository only")
+        elif isinstance(node, ast.Attribute) and node.attr in _IDENTITY_ENGINE:
+            yield Finding(node.lineno, f"{node.attr} is for the identity repository only")
+
+
+def _check_token_library(src: SourceFile) -> Iterator[Finding]:
+    message = "tokens are read only in identity.tokens; never take roles from them"
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.Import):
+            modules = [alias.name for alias in node.names]
+        elif isinstance(node, ast.ImportFrom):
+            modules = [node.module or ""]
+        else:
+            continue
+        if any(module == "jwt" or module.startswith("jwt.") for module in modules):
+            yield Finding(node.lineno, message)
+
+
+# Every role in the permission matrix; comparing against one is a permission check.
+_ROLE_NAMES = frozenset(
+    {"firm_admin", "practice_leader", "quality_partner", "engagement_partner", "manager"}
+    | {"senior", "staff", "reviewer", "client_admin", "client_contributor", "agent", "system"}
+)
+_ROLE_ATTRIBUTES = frozenset({"role", "firm_role", "roles"})
+
+
+def _is_role_operand(node: ast.expr) -> bool:
+    if isinstance(node, ast.Attribute) and node.attr in _ROLE_ATTRIBUTES:
+        return True
+    if isinstance(node, ast.Name) and node.id in _ROLE_ATTRIBUTES:
+        return True
+    return isinstance(node, ast.Constant) and node.value in _ROLE_NAMES
+
+
+def _check_role_comparison(src: SourceFile) -> Iterator[Finding]:
+    message = "role checks belong in identity.authz; call authorise()"
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.Compare):
+            if any(_is_role_operand(operand) for operand in (node.left, *node.comparators)):
+                yield Finding(node.lineno, message)
+        elif (
+            isinstance(node, ast.MatchValue)
+            and isinstance(node.value, ast.Constant)
+            and node.value.value in _ROLE_NAMES
+        ):
+            yield Finding(node.lineno, message)
+
+
+def _check_tenant_header(src: SourceFile) -> Iterator[Finding]:
+    for node in ast.walk(src.tree):
+        if (
+            isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+            and "x-abacus-tenant" in node.value.lower()
+        ):
+            yield Finding(
+                node.lineno, "the tenant header is read only when building the request context"
+            )
+
+
 # --- tree rules -------------------------------------------------------------------------------
 
 
@@ -533,6 +602,46 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_schema_check_db.py",
             "tests/unit/kernel/test_migration_helpers.py",
             "tests/unit/quality/test_banned_patterns.py",
+        ),
+    ),
+    Rule(
+        id="UOW-003",
+        description="Only the identity repository uses the identity engine",
+        adr="ADR-002, ADR-014",
+        check=_check_identity_engine,
+        exclude=(
+            "src/abacus/kernel/db/*",
+            "src/abacus/modules/identity/repository.py",
+            "tests/integration/conftest.py",
+        ),
+    ),
+    Rule(
+        id="AUTH-001",
+        description="Only identity.tokens reads bearer tokens; roles never come from them",
+        adr="ADR-029",
+        check=_check_token_library,
+        exclude=(
+            "src/abacus/modules/identity/tokens.py",
+            "src/abacus_tools/fakes/identity.py",
+        ),
+    ),
+    Rule(
+        id="AUTHZ-001",
+        description="No role comparisons outside identity.authz",
+        adr="ADR-020",
+        check=_check_role_comparison,
+        include=("src/abacus/*",),
+        exclude=("src/abacus/modules/identity/authz/*",),
+    ),
+    Rule(
+        id="TENANT-002",
+        description="Only the request context reads the tenant header",
+        adr="ADR-002",
+        check=_check_tenant_header,
+        exclude=(
+            "src/abacus/modules/identity/service.py",
+            "src/abacus_tools/quality/banned_patterns.py",
+            "tests/*",
         ),
     ),
     Rule(

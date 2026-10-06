@@ -65,11 +65,11 @@ def configure_engine(url: str) -> None:
 
 
 async def dispose_engine() -> None:
-    global _engine, _relay_engine
-    for engine in (_engine, _relay_engine):
+    global _engine, _relay_engine, _identity_engine
+    for engine in (_engine, _relay_engine, _identity_engine):
         if engine is not None:
             await engine.dispose()
-    _engine = _relay_engine = None
+    _engine = _relay_engine = _identity_engine = None
 
 
 _relay_engine: AsyncEngine | None = None
@@ -90,6 +90,28 @@ def relay_engine() -> AsyncEngine:
             raise RuntimeError("relay_database_url is not configured")
         _relay_engine = _create_engine(url.get_secret_value())
     return _relay_engine
+
+
+_identity_engine: AsyncEngine | None = None
+
+
+def configure_identity_engine(url: str) -> None:
+    """Point sign-in at a database (abacus_identity role). Startup and tests."""
+    global _identity_engine
+    _identity_engine = _create_engine(url)
+
+
+def identity_engine() -> AsyncEngine:
+    """Engine for the abacus_identity role: reads users, memberships and firm names before a
+    tenant is chosen, nothing else, read-only (TASK-007). Only the identity repository uses it
+    (UOW-002)."""
+    global _identity_engine
+    if _identity_engine is None:
+        url = settings().identity_database_url
+        if url is None:  # settings validation makes this unreachable outside local and test
+            raise RuntimeError("identity_database_url is not configured")
+        _identity_engine = _create_engine(url.get_secret_value())
+    return _identity_engine
 
 
 def _current_engine() -> AsyncEngine:

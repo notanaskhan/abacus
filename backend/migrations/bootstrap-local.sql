@@ -2,3 +2,4 @@
 ALTER ROLE abacus_owner PASSWORD 'abacusowner';
 ALTER ROLE abacus_app PASSWORD 'abacusapp';
 ALTER ROLE abacus_relay PASSWORD 'abacusrelay';
+ALTER ROLE abacus_identity PASSWORD 'abacusidentity';

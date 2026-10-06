@@ -1,0 +1,170 @@
+"""`authorise` and `visible`: the only permission logic in the product (ADR-020, ADR-023, ADR-027).
+PROTECTED. TASK-007 design §5.
+
+    await authorise(ctx, "request_item.create", Resource(ctx.tenant_id, engagement_id=eng.id))
+    q = select(Engagement).where(visible(ctx, "engagement.read_metadata", Engagement.id))
+
+`authorise` evaluates four layers in order; any layer denying means deny, and deny is the default:
+  1. tenancy        the resource belongs to the active tenant
+  2. relationships  the roles the actor holds here: firm role, plus engagement role on the
+                    resource's engagement (no relationship at all: deny)
+  3. roles          the matrix decision for those roles; an explicit `deny` beats any `allow`
+  4. attributes     archived engagements are read-only; `mfa_recent`; `requires: reason`
+Matrix conditions not modelled yet (`in_scope`, `firm_setting(...)`, `assigned_only`,
+`client_visible_only`, `task_scope`) are not grants: they deny until their task models them.
+Ethical walls (ADR-026) and client access arrive with their own specs.
+
+Every call is recorded for the request being served, so a route that returns without checking its
+declared action fails closed (`routing.AbacusRoute`).
+"""
+
+from __future__ import annotations
+
+from collections.abc import Generator
+from contextlib import contextmanager
+from contextvars import ContextVar
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from typing import Literal
+from uuid import UUID
+
+from sqlalchemy import ColumnElement, false, select, true
+
+from abacus.kernel.logging import get_logger
+from abacus.modules.identity.authz.matrix import RULES, Rule
+from abacus.modules.identity.context import AuthContext
+from abacus.modules.identity.repository import (
+    ENGAGEMENT_ROLES,
+    engagement_members,
+    engagement_role,
+)
+
+MFA_RECENT = timedelta(minutes=15)
+Layer = Literal["tenancy", "relationship", "role", "attribute"]
+_log = get_logger(__name__)
+_checked: ContextVar[set[str] | None] = ContextVar("abacus_authz_checked", default=None)
+
+
+class Forbidden(Exception):
+    """Access denied. `layer` says which layer denied (logged; never shown to the caller)."""
+
+    def __init__(self, action: str, layer: Layer) -> None:
+        super().__init__(f"{action} denied at {layer}")
+        self.action = action
+        self.layer = layer
+
+
+class UnknownAction(ValueError):
+    """An action that isn't in the permission matrix: a programming error, never a grant."""
+
+
+@dataclass(frozen=True)
+class Resource:
+    """What an action is done to. Firm-level actions pass `Resource(ctx.tenant_id)`."""
+
+    tenant_id: UUID
+    engagement_id: UUID | None = None
+    archived: bool = False
+
+
+@contextmanager
+def recording_checks() -> Generator[set[str]]:
+    """Collect the actions checked while serving one request."""
+    checked: set[str] = set()
+    token = _checked.set(checked)
+    try:
+        yield checked
+    finally:
+        _checked.reset(token)
+
+
+def _record(action: str) -> None:
+    checked = _checked.get()
+    if checked is not None:
+        checked.add(action)
+
+
+def _rule(action: str) -> Rule:
+    rule = RULES.get(action)
+    if rule is None:
+        raise UnknownAction(f"{action!r} is not in the permission matrix")
+    return rule
+
+
+def _deny(ctx: AuthContext, action: str, layer: Layer) -> Forbidden:
+    _log.info(
+        "authz.denied", action=action, layer=layer, tenant_id=ctx.tenant_id, user_id=ctx.user_id
+    )
+    return Forbidden(action, layer)
+
+
+async def authorise(
+    ctx: AuthContext, action: str, resource: Resource, *, reason: str | None = None
+) -> None:
+    """Return if allowed; raise `Forbidden` otherwise."""
+    rule = _rule(action)
+    _record(action)
+    # 1. Tenancy.
+    if resource.tenant_id != ctx.tenant_id:
+        raise _deny(ctx, action, "tenancy")
+    # 2. Relationships.
+    roles: set[str] = set()
+    if ctx.firm_role is not None:
+        roles.add(ctx.firm_role)
+    if resource.engagement_id is not None:
+        role = await engagement_role(ctx.tenant, ctx.user_id, resource.engagement_id)
+        if role is not None:
+            roles.add(role)
+    if not roles:
+        raise _deny(ctx, action, "relationship")
+    # 3. Roles.
+    decisions = {rule.decisions.get(role) for role in roles}
+    if "deny" in decisions or "allow" not in decisions:
+        raise _deny(ctx, action, "role")
+    # 4. Attributes.
+    if resource.archived and not rule.reads:
+        raise _deny(ctx, action, "attribute")
+    if rule.mfa_recent and (ctx.mfa_at is None or datetime.now(UTC) - ctx.mfa_at > MFA_RECENT):
+        raise _deny(ctx, action, "attribute")
+    if rule.requires_reason and not (reason and reason.strip()):
+        raise _deny(ctx, action, "attribute")
+    _log.info("authz.allowed", action=action, tenant_id=ctx.tenant_id, user_id=ctx.user_id)
+
+
+def visible(
+    ctx: AuthContext, action: str, engagement_id: ColumnElement[UUID]
+) -> ColumnElement[bool]:
+    """A filter for list queries: rows whose engagement the actor may `action` (a read action).
+    Row-level security already confines the query to the active tenant."""
+    rule = _rule(action)
+    if not rule.reads:
+        raise ValueError(f"visible() filters reads; {action!r} is not a read action")
+    _record(action)
+    firm = rule.decisions.get(ctx.firm_role) if ctx.firm_role is not None else None
+    if firm == "allow":
+        return true()
+    if firm == "deny":
+        return false()
+    roles = [
+        role
+        for role, decision in rule.decisions.items()
+        if decision == "allow" and role in ENGAGEMENT_ROLES
+    ]
+    if not roles:
+        return false()
+    member_of = select(engagement_members.c.engagement_id).where(
+        engagement_members.c.user_id == ctx.user_id,
+        engagement_members.c.role.in_(roles),
+    )
+    return engagement_id.in_(member_of)
+
+
+__all__ = [
+    "MFA_RECENT",
+    "Forbidden",
+    "Resource",
+    "UnknownAction",
+    "authorise",
+    "recording_checks",
+    "visible",
+]

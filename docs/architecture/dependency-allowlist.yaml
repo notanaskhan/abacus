@@ -13,6 +13,7 @@ python:
     temporalio: approved
     boto3: approved
     httpx: approved
+    pyjwt: approved             # bearer-token verification against the identity provider JWKS (TASK-007, ADR-029)
     pandas: approved
     openpyxl: approved          # deterministic spreadsheet rendering (ADR-042)
     pgvector: approved

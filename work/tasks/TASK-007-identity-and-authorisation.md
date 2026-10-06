@@ -31,7 +31,10 @@ Out: engagements and request items routes (TASK-008), ethical walls (ADR-026 —
 - ADRs: ADR-002, ADR-020, ADR-023, ADR-024, ADR-027, ADR-029
 
 ## Plan
-- [ ] Plan approved by human (required for amber and red)
+- [x] Plan approved by human (founder, 2026-10-06: "approved, proceed") — **red: founder reviews the diff line by line before merge**
+- [x] Approval file `work/approvals/TASK-007.yaml` written by the agent at the founder's instruction (2026-10-06)
+- Approved by founder: paths under *Approval file text*, expires 2026-10-27
+- [x] Q1–Q5 answered: all recommendations approved (2026-10-06)
 - Red task: the agent drafts the design here; the founder edits or approves it before any code, then reviews the diff line by line (founder decision 2026-10-06).
 
 ### Design (for founder review)
@@ -77,7 +80,7 @@ Firm roles come from the database, never from token claims (ADR-029).
 
 **7. Generated matrix tests** (`tests/unit/identity/test_permission_matrix.py`): every role × every action is checked against the matrix, so every allow and every deny is covered, plus each layer denying independently. AC-6 and AC-8 are proved here at `authorise` level (firm_admin: `read_metadata` allow, `engagement.read` deny without membership; reviewer: `request_item.create` deny). The HTTP-level tests for them land with the routes in TASK-008.
 
-**8. Static rules.** **AUTH-001**: no token-claim access outside `modules/identity/tokens.py` (ADR-029). **AUTHZ-001**: no `firm_role`/`.role` comparisons outside `modules/identity/authorisation.py` (ADR-020). **TENANT-002**: `X-Abacus-Tenant` is read only by the context builder.
+**8. Static rules.** **AUTH-001**: no token-claim access outside `modules/identity/tokens.py` (ADR-029). **AUTHZ-001**: no `firm_role`/`.role` comparisons outside `modules/identity/authz/` (ADR-020). **TENANT-002**: `X-Abacus-Tenant` is read only by the context builder.
 
 **9. Dependencies.** `fastapi`, `httpx` (test client) and `cryptography` are already approved. **New: `pyjwt[crypto]`**, which needs an allowlist entry (Q1).
 
@@ -88,12 +91,114 @@ Firm roles come from the database, never from token claims (ADR-029).
 - **Q4 — Unmodelled conditions deny.** `in_scope`, `firm_setting`, client and agent conditions, and walls all deny until their tasks. Practice leaders and quality partners therefore can't read content yet. Recommend yes; walls (ADR-026) get their own spec.
 - **Q5 — Several memberships.** `X-Abacus-Tenant`, validated against memberships, is required only when the user has more than one. Recommend yes.
 
+### Interface contract (tests written independently — ADR-078)
+**Imports**
+- `from abacus.modules.identity.api import AbacusRouter, AbacusRoute, SELF, ACTION_KEY, TENANT_HEADER, AuthContext, Resource, Forbidden, UnknownAction, MFA_RECENT, authorise, visible, current_context, current_signed_in, declared_action, router, JwtVerifier, TokenVerifier, VerifiedIdentity, InvalidToken, configure_verifier`
+- `from abacus.api import create_app`
+- `from abacus_tools.fakes.identity import FakeIdentityProvider, ISSUER, AUDIENCE`
+- `from abacus_tools.codegen.permission_matrix import render, SOURCE, TARGET, main`
+- `from abacus.kernel.db import configure_identity_engine, identity_engine`
+
+**Database** (migration 0004; fixtures: `migrated_db` gains `identity_url`, and `configure_identity_engine` is called)
+- `firms(tenant_id PK, name)`, `users(id, idp_issuer, idp_subject, email, display_name; unique (idp_issuer, idp_subject))` (global, no `tenant_id`), `memberships(tenant_id, id, user_id, firm_role NULL in (firm_admin, practice_leader, quality_partner), status in (active, revoked), revoked_at; unique (tenant_id, user_id); revoked ⇔ revoked_at set)`, `engagement_members(tenant_id, engagement_id, user_id, role in (engagement_partner, manager, senior, staff, reviewer); FK (tenant_id, user_id) → memberships)`.
+- Tenant tables have forced RLS. `abacus_app` may only SELECT `firms`, `memberships` and `engagement_members`, and has **no** privileges on `users`.
+- `abacus_identity`: BYPASSRLS, read-only by default (`default_transaction_read_only`). It may SELECT all of `users`, `memberships (tenant_id, id, user_id, firm_role, status)` and `firms (tenant_id, name)`, and nothing else. Seed rows as the superuser (`migrated_db.superuser_dsn`).
+- `schema_check` reports:
+  - `abacus_identity: has <PRIV> on <table>` and `abacus_identity: may <PRIV> <table>.<column>` for anything beyond those grants (the relay's checks use the same format);
+  - `users: abacus_app has <PRIV> on a non-tenant table` / `users: abacus_app may <PRIV> users.<column>`;
+  - `abacus_identity: has <ATTRIBUTE>`, `is a member of <role>`, and the sequence checks, as for the relay.
+
+**Tokens** (`JwtVerifier(issuer=, audience=, jwks=<JSON str>)`, `.verify(token) -> VerifiedIdentity(issuer, subject, mfa_at)`)
+- Valid: RS256, `kid` in the JWKS, `iss`, `aud`, `exp`, `iat` and `sub` all present and right; 30 s leeway.
+- Everything else raises `InvalidToken`, including: wrong key, unknown or missing `kid`, `alg` none/HS256, expired, `iat`/`nbf` in the future beyond leeway, wrong `iss` or `aud`, a missing required claim, empty or over-255-character `sub`, over 8192 bytes, garbage, and an empty JWKS (`{"keys": []}`).
+- `mfa_at` is the `auth_time` (UTC) only if `amr` contains `"mfa"`; otherwise `None`. Role-like claims (`role`, `roles`, `org_role`) are ignored.
+- `FakeIdentityProvider(issuer=ISSUER, audience=AUDIENCE, kid="fake-1")`: `.jwks() -> str`, `.verifier() -> JwtVerifier`, `.token(subject, *, mfa=False, auth_time=None, expires_in=300, **claims) -> str` (claims override). Use `configure_verifier(idp.verifier())`.
+
+**Request context** (HTTP via `httpx.AsyncClient(transport=httpx.ASGITransport(app=create_app()))`)
+- No or invalid bearer token → **401** with `WWW-Authenticate: Bearer`. Valid token for an unknown user → **403**.
+- `GET /v1/me` (action `SELF`) → `{user_id, email, display_name, memberships: [{tenant_id, firm_name, firm_role}], active_tenant_id}`.
+  - `memberships` lists active memberships only, ordered by firm name.
+  - `active_tenant_id` is set only when there is exactly one membership.
+  - Works with zero or several memberships, and never needs `X-Abacus-Tenant`.
+- Action routes (`current_context`):
+  - Exactly one active membership → that tenant (**AC-1**: `ctx.tenant.tenant_id` is the membership's tenant, `actor_kind="human"`, `actor_id=str(user_id)`).
+  - Several → `X-Abacus-Tenant` must name one of them; missing, malformed or not a membership → **403**.
+  - Zero → **403** (**AC-2**).
+  - Revoked membership: the next request with the same still-valid token → **403** (**AC-3**). Nothing is cached.
+  - Firm role comes from `memberships`, never from the token.
+
+**Routing**
+- `AbacusRouter(prefix=, tags=)` has `.get/.post/.put/.patch/.delete(path, *, action, response_model, status_code=None)`. An action not in the matrix (other than `SELF`) or `response_model=None` → `ValueError` at registration.
+- `declared_action(route)` returns the action (stored in `openapi_extra[ACTION_KEY]`).
+- A route that returns status < 400 without calling `authorise`/`visible` for its declared action → **500** `{"detail": "internal error"}`, logged as `authz.unchecked_route`. A `Forbidden` from `authorise` → **403** `{"detail": "forbidden"}`, never naming the layer.
+- Route introspection over `create_app().routes`:
+  - every route is an `AbacusRoute` with a declared action that is in the matrix, or `SELF`;
+  - `SELF` is allowed only on `/v1/me`;
+  - every route has a `response_model`;
+  - no docs or openapi routes.
+- Tests may mount their own `AbacusRouter` on a `FastAPI()` app (with the same `Forbidden` handler; or append to `abacus.api.app.ROUTERS` before `create_app()`) to exercise action routes.
+
+**authorise(ctx, action, resource, *, reason=None)** (async; returns `None` or raises `Forbidden(action, layer)` with `.layer` in `tenancy | relationship | role | attribute`). Layers in order:
+1. `resource.tenant_id != ctx.tenant_id` → `tenancy`.
+2. Roles held = `ctx.firm_role` (if any) ∪ the user's `engagement_members.role` for `resource.engagement_id` (if given; read under RLS). None → `relationship`.
+3. If any held role's matrix value is `deny`, or none is `allow` → `role`. `in_scope`, `firm_setting(...)`, `assigned_only`, `client_visible_only` and `task_scope` are **not** allow.
+4. `resource.archived` and the action's verb is not `read`/`read_metadata`/`read_log` → `attribute`. `mfa_recent: required` and `ctx.mfa_at` is None or older than `MFA_RECENT` (15 min) → `attribute`. `requires: reason` and `reason` is empty or whitespace → `attribute`.
+- An action not in the matrix → `UnknownAction` (a `ValueError`).
+- AC-6 at this level: a firm_admin with no engagement membership is allowed `engagement.read_metadata` and denied `engagement.read`, `request_item.read` and `evidence.read`.
+- AC-8 at this level: a reviewer is denied `request_item.create`.
+- Decisions are logged (`authz.allowed` / `authz.denied` with `action`, `layer`, `tenant_id`, `user_id`).
+
+**visible(ctx, action, engagement_id_column) -> ColumnElement[bool]**
+- Read actions only; anything else → `ValueError`. Unknown action → `UnknownAction`.
+- Firm role `allow` → true (all rows in the tenant).
+- Otherwise → the rows whose engagement the user is a member of, in a role whose value is `allow`; none → false.
+- Prove it against a probe tenant table with an `engagement_id` column, under `tenant_session`.
+
+**Generated matrix**
+- `render(SOURCE.read_text()) == TARGET.read_text()` (drift test); `main(["--check"])` returns 0.
+- Generated tests over every `(role, action)` in the YAML check the matrix-driven decisions. For human firm and engagement roles, `allow` → no raise and anything else → `Forbidden`, with ctx and roles arranged so layers 1, 2 and 4 pass. Agent, system and client roles have no context type yet and are out of scope here.
+- Each layer denies independently.
+- An unknown role, decision or modifier in the matrix source makes the module fail to import: test via `matrix._rule`/`_decision`, which raise `ValueError`.
+
+**Static rules**
+- **UOW-003**: `identity_engine`/`configure_identity_engine` outside `kernel/db`, `identity/repository.py` and `tests/integration/conftest.py`.
+- **AUTH-001**: importing `jwt` outside `identity/tokens.py` and `abacus_tools/fakes/identity.py`.
+- **AUTHZ-001**: in `src/abacus/` outside `identity/authz/`, a comparison whose operand is a `.role`/`.firm_role`/`.roles` attribute, a name `role`/`firm_role`/`roles`, or a matrix role-name string; also a `match` case on a role-name string.
+- **TENANT-002**: a string containing `x-abacus-tenant` (any case) outside `identity/service.py`, `banned_patterns.py` and `tests/`.
+
+**Config**
+- New settings `identity_database_url` (SecretStr, restricted), `identity_issuer`, `identity_audience` and `identity_jwks`. All four are required outside local/test.
+- Local defaults: issuer `https://identity.abacus.local`, audience `abacus-api`, JWKS `{"keys": []}` (verifies nothing).
+
+### Approval file text
+```yaml
+task: TASK-007
+approved_by: founder
+expires: 2026-10-27
+paths:
+  - .claude/hooks/_protected.py
+  - .github/CODEOWNERS
+  - docs/architecture/protected-paths.md
+  - docs/architecture/dependency-allowlist.yaml
+  - backend/pyproject.toml
+  - backend/uv.lock
+  - backend/migrations/bootstrap.sql
+  - backend/migrations/bootstrap-local.sql
+  - backend/src/abacus/kernel/db/**
+  - backend/src/abacus/modules/identity/**
+  - backend/src/abacus/api/**
+  - backend/src/abacus_tools/quality/schema_check.py
+  - backend/src/abacus_tools/quality/banned_patterns.py
+  - backend/tests/unit/quality/test_banned_patterns.py
+reason: TASK-007 — identity, request context, authorise and visible
+```
+
 ### Steps
 1. Protect first: add `modules/identity/**` and `api/**` to the hook, CODEOWNERS and `protected-paths.md` (with approval).
 2. Allowlist `pyjwt`; `uv add fastapi httpx pyjwt[crypto]`.
 3. `bootstrap.sql`: `abacus_identity` role; settings for `identity_database_url`, `identity_issuer`, `identity_audience`, `identity_jwks`.
 4. Migration `0004`; `schema_check` (`GLOBAL_TABLES`, identity-role checks).
-5. Identity module: `tokens.py`, `repository.py`, `context.py`, `authorisation.py` (matrix, `authorise`, `visible`), `api.py` exports.
+5. Identity module: `tokens.py`, `repository.py`, `context.py`, `authz/` (matrix, `authorise`, `visible`), `api.py` exports.
 6. `abacus.api`: app factory, `AbacusRouter`, error handlers, `/v1/me`.
 7. `abacus_tools`: fake provider and seed command. Static rules. Module README; `tenancy-and-authz.md` reference.
 8. Independent test author (Sonnet) writes tests from the contract; two Sonnet reviews; `make check`; PR for founder line-by-line review.
@@ -118,6 +223,8 @@ Firm roles come from the database, never from token claims (ADR-029).
 ## Progress log
 - `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder. Not started.
 - `2026-10-06` — Design drafted (§1–9, Q1–Q5) for founder review.
+- `2026-10-06` — Approved with all recommendations; approval file written at the founder's instruction. Authorisation goes in `modules/identity/authz/` (the path already protected), not `authorisation.py`.
+- `2026-10-06` — Implemented steps 1–7 (protect, allowlist + deps, bootstrap role, migration 0004 + schema_check, identity module, `abacus.api`, fake provider, matrix codegen, static rules). Smoke-tested end to end (401/403/500/revocation). Seed command dropped: tests seed as superuser; a local seed comes with TASK-012 sign-in. Static rule for the identity engine is a separate UOW-003 rather than extending UOW-002 (clearer message). Interface contract written for the independent test author.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -130,5 +237,8 @@ Firm roles come from the database, never from token claims (ADR-029).
 -
 
 ## Handoff
-- **Current state:** Design drafted; awaiting founder approval (red). No code.
-- **Exact next step:** On approval, write `work/approvals/TASK-007.yaml` (paths: `migrations/bootstrap*.sql`, `migrations/versions/0004_*`, `kernel/config.py`, `kernel/db/**`, `modules/identity/**`, `api/**`, `docs/architecture/dependency-allowlist.yaml`, `docs/architecture/protected-paths.md`, `.claude/hooks/_protected.py`, `.github/CODEOWNERS`, `schema_check.py`, `banned_patterns.py`, `tests/unit/quality/test_banned_patterns.py`), then follow Steps.
+- **Current state:** Implementation of steps 1–7 committed on `task-007-identity` (WIP). Interface contract written. Independent test author (Sonnet) writing tests.
+- **Exact next step:** Collect the test author's tests; run `make check`; fix implementation bugs (send contract/test bugs back to the author); then two Sonnet reviews (security, architecture/test); PR.
+- **Uncommitted or partial work:** tests in progress.
+- **Known failing checks:** `test_config.py::test_ac20_non_local_environment_with_everything_explicit_loads` until the author adds the four identity settings (contract change).
+- **Open issues:** branch protection off.
