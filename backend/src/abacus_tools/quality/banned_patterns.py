@@ -593,7 +593,7 @@ def _check_context_construction(src: SourceFile) -> Iterator[Finding]:
         if not isinstance(node, ast.Call):
             continue
         name = _terminal_name(node.func)
-        if name == "AuthContext":
+        if name in ("AuthContext", "SystemContext"):
             yield Finding(node.lineno, "contexts are built only from a validated membership")
         elif name in {"replace", "copy", "deepcopy", "__replace__"} and any(
             "ctx" in (_terminal_name(arg) or "").lower()

@@ -14,7 +14,7 @@ from uuid import UUID
 
 from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import Ref, Target, UnitOfWork
-from abacus.modules.identity.context import AuthContext
+from abacus.modules.identity.context import AuthContext, SystemContext
 from abacus.modules.identity.repository import (
     EngagementRole,
     MembershipRecord,
@@ -117,3 +117,13 @@ async def engagement_team(ctx: AuthContext, engagement_id: UUID) -> list[TeamMem
     members = await engagement_members_of(ctx.tenant, engagement_id)
     names = await display_names([user_id for user_id, _ in members])
     return [TeamMember(user_id, names.get(user_id, ""), role) for user_id, role in members]
+
+
+def system_context(on_behalf_of: AuthContext, run_id: UUID) -> SystemContext:
+    """The platform acting for `on_behalf_of`'s firm on one run. The caller has authorised the
+    human for the action that starts the run (retrieval: `evidence.upload`)."""
+    return SystemContext(
+        TenantContext(on_behalf_of.tenant_id, "system", f"run:{run_id}"),
+        on_behalf_of.user_id,
+        run_id,
+    )

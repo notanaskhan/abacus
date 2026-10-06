@@ -25,3 +25,21 @@ class AuthContext:
     @property
     def tenant_id(self) -> UUID:
         return self.tenant.tenant_id
+
+
+@dataclass(frozen=True)
+class SystemContext:
+    """The platform acting for a firm (ADR-023, TASK-010 design §1): a retrieval run, started by
+    `on_behalf_of` through an authorised request. Holds the matrix role `system` and nothing else.
+    Built only by `identity.service.system_context` (CTX-001)."""
+
+    tenant: TenantContext
+    on_behalf_of: UUID
+    run_id: UUID
+
+    @property
+    def tenant_id(self) -> UUID:
+        return self.tenant.tenant_id
+
+
+Actor = AuthContext | SystemContext
