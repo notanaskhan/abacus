@@ -9,7 +9,7 @@ from __future__ import annotations
 import socket
 import time
 import urllib.request
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import cast
 
@@ -29,16 +29,24 @@ def compose_image(service: str) -> str:
     return str(services[service]["image"])
 
 
-def _wait(check: object, what: str, timeout: float = 60.0) -> None:
+def _wait(
+    check: Callable[[], bool], what: str, container: DockerContainer, timeout: float = 60.0
+) -> None:
+    """Poll until `check` passes; on timeout, fail with the last error and the container's logs."""
     deadline = time.monotonic() + timeout
+    last: Exception | None = None
     while time.monotonic() < deadline:
         try:
-            if callable(check) and check():
+            if check():
                 return
-        except OSError:
-            pass
+        except Exception as exc:  # startup races raise many kinds of errors; keep polling
+            last = exc
         time.sleep(0.5)
-    raise TimeoutError(f"{what} did not become ready within {timeout:.0f}s")
+    stdout, stderr = container.get_logs()
+    logs = (stdout + stderr).decode(errors="replace")[-4000:]
+    raise TimeoutError(
+        f"{what} not ready within {timeout:.0f}s; last error: {last!r}\n{logs}"
+    ) from last
 
 
 @pytest.fixture(scope="session")
@@ -67,7 +75,7 @@ def s3_settings() -> Iterator[dict[str, str]]:
             with urllib.request.urlopen(f"{endpoint}/health", timeout=2) as response:
                 return response.status == 200
 
-        _wait(healthy, "S3 gateway")
+        _wait(healthy, "S3 gateway", container)
         yield {
             "endpoint_url": endpoint,
             "access_key": S3_ACCESS,
@@ -92,5 +100,5 @@ def temporal_target() -> Iterator[str]:
             result = container.exec(["temporal", "operator", "cluster", "health"])
             return result.exit_code == 0
 
-        _wait(healthy, "Temporal")
+        _wait(healthy, "Temporal", container)
         yield f"{host}:{port}"

@@ -22,7 +22,7 @@ PROTECTED = [
     ".git/**",
     "**/.gitignore",
     "infra/**",
-    "**/docker-compose.y*ml", "**/compose.y*ml",
+    "**/*compose*.y*ml",
     "work/approvals/**",
     "docs/architecture/permission-matrix.yaml",
     "docs/architecture/protected-paths.md",

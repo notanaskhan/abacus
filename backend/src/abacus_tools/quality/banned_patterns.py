@@ -382,8 +382,12 @@ RULES: list[Rule | TreeRule] = [
         description="No engines or raw connections; use tenant_session(ctx)",
         adr="ADR-014",
         check=_check_raw_connection,
-        # Integration tests check the database container itself, before any tenant session exists.
-        exclude=("src/abacus/kernel/db/*", "tests/integration/*"),
+        # The local-stack smoke tests check the database container itself; nothing else may.
+        exclude=(
+            "src/abacus/kernel/db/*",
+            "tests/integration/conftest.py",
+            "tests/integration/test_local_stack.py",
+        ),
     ),
     Rule(
         id="SQL-001",

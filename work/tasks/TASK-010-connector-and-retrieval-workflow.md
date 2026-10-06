@@ -2,7 +2,7 @@
 id: TASK-010
 title: Fake connector and the retrieval workflow
 spec: SPEC-000
-acceptance_criteria: [AC-9, AC-11, AC-12, AC-19]
+acceptance_criteria: [AC-9, AC-10, AC-11, AC-12, AC-19]
 risk_zone: red
 status: todo
 branch:
@@ -20,7 +20,7 @@ updated: 2026-10-06
 > - Append to the *Progress log* before ending any session, even mid-task.
 
 ## Objective
-Connector contract and conformance suite; fake connector serving synthetic-generator trial balances; Temporal retrieval workflow running the six pipeline stages as activities; ledger snapshots; fulfilment by rule; idempotency; replay test.
+Connector contract and conformance suite; fake connector serving synthetic-generator trial balances; Temporal retrieval workflow running the six pipeline stages as activities; ledger snapshots; rendering a validated snapshot into an evidence version with provenance (AC-10, using TASK-009's renderer); fulfilment by rule; idempotency; replay test.
 
 ## Scope
 Defined when the plan is written. Starts after TASK-009.

@@ -20,7 +20,7 @@ updated: 2026-10-06
 > - Append to the *Progress log* before ending any session, even mid-task.
 
 ## Objective
-Users and memberships; sign-in against a local fake OpenID Connect provider behind a token-verification interface (WorkOS later); tenant context resolved from membership on every request; `/v1/me`; `authorise` and `visible`; permission tests generated from the matrix.
+Users and memberships; sign-in against a local fake OpenID Connect provider behind a token-verification interface (WorkOS later); tenant context resolved from membership on every request; `/v1/me`; `authorise` and `visible`; wiring `docs/architecture/permission-matrix.yaml` into `authorise` and generating permission tests from it (every route declares one action). Decide in the plan: fake OpenID provider in-process (a signed-token stub behind the verification interface) or as a container (then it needs a `containers:` allowlist entry and a SPEC-000 note).
 
 ## Scope
 Defined when the plan is written. Starts after TASK-006.

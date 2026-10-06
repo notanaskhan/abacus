@@ -2,7 +2,7 @@
 id: TASK-009
 title: Write-once evidence storage, per-tenant keys, deterministic rendering
 spec: SPEC-000
-acceptance_criteria: [AC-10, AC-12, AC-13]
+acceptance_criteria: [AC-12, AC-13]
 risk_zone: red
 status: todo
 branch:
@@ -20,7 +20,7 @@ updated: 2026-10-06
 > - Append to the *Progress log* before ending any session, even mid-task.
 
 ## Objective
-Evidence items and versions; write-once object storage with Object Lock; per-tenant envelope encryption; SHA-256 fingerprints; deterministic spreadsheet rendering; insert-only enforcement in the database.
+Evidence items and versions; write-once object storage (Versity locally, S3 in staging) with Object Lock; per-tenant envelope encryption; SHA-256 fingerprints; deterministic spreadsheet rendering, tested against a fixture ledger snapshot (real snapshots arrive in TASK-010, which owns AC-10); insert-only enforcement in the database. Wrap `boto3.client("s3")` in a typed kernel factory so the one reasoned pyright ignore from TASK-004 lives in one place.
 
 ## Scope
 Defined when the plan is written. Starts after TASK-006.

@@ -912,14 +912,98 @@ def test_ac20_each_build_service_is_reported_in_order(tmp_path: Path) -> None:
     ]
 
 
-def test_ac20_build_with_image_is_checked_as_an_image(tmp_path: Path) -> None:
+def test_ac20_build_with_image_is_refused_in_addition_to_the_image_checks(
+    tmp_path: Path,
+) -> None:
     _stack(tmp_path, {PG: "approved"}, {"db": {"image": PINNED_PG, "build": "."}})
-    assert cd.check(tmp_path) == []
+    assert cd.check(tmp_path) == [f"{COMPOSE}: service db {BUILD_REFUSED}"]
 
 
-def test_ac20_build_with_unpinned_image_reports_the_pin_failure(tmp_path: Path) -> None:
+def test_ac20_build_with_unpinned_image_reports_both_failures(tmp_path: Path) -> None:
     _stack(tmp_path, {PG: "approved"}, {"db": {"image": f"{PG}:pg17", "build": "."}})
-    assert cd.check(tmp_path) == [_pin_message(COMPOSE, f"{PG}:pg17")]
+    assert cd.check(tmp_path) == sorted(
+        [_pin_message(COMPOSE, f"{PG}:pg17"), f"{COMPOSE}: service db {BUILD_REFUSED}"]
+    )
+
+
+def test_ac20_build_with_unlisted_image_reports_both_failures(tmp_path: Path) -> None:
+    _stack(tmp_path, {}, {"db": {"image": PINNED_PG, "build": {"context": "."}}})
+    assert cd.check(tmp_path) == sorted(
+        [_unlisted(COMPOSE, PG), f"{COMPOSE}: service db {BUILD_REFUSED}"]
+    )
+
+
+# extends, include and invalid YAML
+
+
+def test_ac20_extends_is_refused(tmp_path: Path) -> None:
+    _stack(tmp_path, {PG: "approved"}, {"db": {"image": PINNED_PG, "extends": {"service": "x"}}})
+    assert cd.check(tmp_path) == [
+        f"{COMPOSE}: service db uses extends; compose inheritance is not allowed"
+    ]
+
+
+def test_ac20_extends_as_a_string_or_with_file_is_refused(tmp_path: Path) -> None:
+    _stack(
+        tmp_path,
+        {PG: "approved"},
+        {
+            "b": {"image": PINNED_PG, "extends": {"file": "other.yml", "service": "x"}},
+            "a": {"image": PINNED_PG, "extends": "x"},
+        },
+    )
+    assert cd.check(tmp_path) == [
+        f"{COMPOSE}: service a uses extends; compose inheritance is not allowed",
+        f"{COMPOSE}: service b uses extends; compose inheritance is not allowed",
+    ]
+
+
+def test_ac20_extends_is_reported_in_addition_to_image_failures(tmp_path: Path) -> None:
+    _stack(tmp_path, {}, {"db": {"image": f"{PG}:pg17", "extends": {"service": "x"}}})
+    assert cd.check(tmp_path) == sorted(
+        [
+            _pin_message(COMPOSE, f"{PG}:pg17"),
+            f"{COMPOSE}: service db uses extends; compose inheritance is not allowed",
+        ]
+    )
+
+
+def test_ac20_top_level_include_is_refused(tmp_path: Path) -> None:
+    _stack(tmp_path, {PG: "approved"}, _one(PINNED_PG))
+    _write(
+        tmp_path,
+        COMPOSE,
+        json.dumps({"include": ["other.yml"], "services": _one(PINNED_PG)}),
+    )
+    assert cd.check(tmp_path) == [f"{COMPOSE}: include is not allowed in compose files"]
+
+
+def test_ac20_include_without_services_is_refused(tmp_path: Path) -> None:
+    _stack(tmp_path, {})
+    _write(tmp_path, COMPOSE, json.dumps({"include": [{"path": "other.yml"}]}))
+    assert cd.check(tmp_path) == [f"{COMPOSE}: include is not allowed in compose files"]
+
+
+def test_ac20_invalid_yaml_is_refused(tmp_path: Path) -> None:
+    _stack(tmp_path, {})
+    _write(tmp_path, COMPOSE, "services: [unclosed\n  db: {image\n")
+    assert cd.check(tmp_path) == [f"{COMPOSE}: is not valid YAML"]
+
+
+def test_ac20_invalid_yaml_is_refused_in_every_matching_file(tmp_path: Path) -> None:
+    _stack(tmp_path, {})
+    _write(tmp_path, "docker-compose.override.yml", "a: [\n")
+    _write(tmp_path, ".devcontainer/compose.yaml", "a: {b\n")
+    assert cd.check(tmp_path) == [
+        ".devcontainer/compose.yaml: is not valid YAML",
+        "docker-compose.override.yml: is not valid YAML",
+    ]
+
+
+def test_ac20_invalid_yaml_in_an_ignored_directory_is_not_reported(tmp_path: Path) -> None:
+    _stack(tmp_path, {})
+    _write(tmp_path, "node_modules/x/compose.yml", "a: [\n")
+    assert cd.check(tmp_path) == []
 
 
 # compose filenames and locations
@@ -966,14 +1050,69 @@ def test_ac20_compose_files_in_subdirectories_are_scanned(tmp_path: Path, rel: s
     "rel",
     [
         "docker-compose.override.yml",
+        "docker-compose.prod.yml",
         "docker-compose.dev.yaml",
+        "compose.override.yaml",
         "compose.override.yml",
-        "docker-compose.yml.bak",
         "mycompose.yml",
-        "compose.json",
+        ".devcontainer/docker-compose.yml",
+        ".github/compose.yaml",
+        "apps/.cache/compose.yaml",
     ],
 )
-def test_ac20_other_filenames_are_not_compose_files(tmp_path: Path, rel: str) -> None:
+def test_ac20_every_compose_pattern_file_is_scanned_for_unlisted_images(
+    tmp_path: Path, rel: str
+) -> None:
+    _stack(tmp_path, {}, _one(PINNED_PG), rel=rel)
+    assert cd.check(tmp_path) == [_unlisted(rel, PG)]
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "docker-compose.override.yml",
+        "docker-compose.prod.yml",
+        "compose.override.yaml",
+        ".devcontainer/docker-compose.yml",
+    ],
+)
+def test_ac20_unpinned_image_is_reported_in_override_and_dot_directory_files(
+    tmp_path: Path, rel: str
+) -> None:
+    _stack(tmp_path, {PG: "approved"}, _one(f"{PG}:pg17"), rel=rel)
+    assert cd.check(tmp_path) == [_pin_message(rel, f"{PG}:pg17")]
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "docker-compose.override.yml",
+        "docker-compose.prod.yml",
+        "compose.override.yaml",
+        ".devcontainer/docker-compose.yml",
+    ],
+)
+def test_ac20_approved_pinned_image_passes_in_override_and_dot_directory_files(
+    tmp_path: Path, rel: str
+) -> None:
+    _stack(tmp_path, {PG: "approved"}, _one(PINNED_PG), rel=rel)
+    assert cd.check(tmp_path) == []
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "docker-compose.yml.bak",
+        "docker-compose.yml.txt",
+        "compose.json",
+        "docker-compose.toml",
+        "composer.json",
+        "docker-compose.yaml.orig",
+    ],
+)
+def test_ac20_files_not_matching_the_compose_pattern_are_not_scanned(
+    tmp_path: Path, rel: str
+) -> None:
     _stack(tmp_path, {}, _one(PINNED_PG), rel=rel)
     assert cd.check(tmp_path) == []
 
@@ -987,8 +1126,9 @@ def test_ac20_other_filenames_are_not_compose_files(tmp_path: Path, rel: str) ->
         "dist/compose.yml",
         ".git/docker-compose.yml",
         ".venv/compose.yml",
-        "apps/.cache/compose.yaml",
-        ".github/docker-compose.yml",
+        "apps/.venv/docker-compose.prod.yml",
+        "node_modules/x/docker-compose.override.yml",
+        "dist/compose.override.yaml",
     ],
 )
 def test_ac20_ignored_directories_hide_compose_files(tmp_path: Path, rel: str) -> None:

@@ -65,7 +65,7 @@ async def test_ac20_postgres_accepts_a_connection(postgres_dsn: str) -> None:
 async def test_ac20_postgres_is_version_17(postgres_dsn: str) -> None:
     conn = await asyncpg.connect(postgres_dsn)
     try:
-        assert await conn.fetchval("SHOW server_version_num") >= "170000"
+        assert int(await conn.fetchval("SHOW server_version_num")) // 10000 == 17
     finally:
         await conn.close()
 
@@ -205,6 +205,66 @@ def test_ac20_s3_bucket_has_object_lock_enabled(s3_settings: dict[str, str]) -> 
         assert config.get("ObjectLockConfiguration", {}).get("ObjectLockEnabled") == "Enabled"
     finally:
         s3.delete_bucket(Bucket=bucket)
+
+
+def _empty_locked_bucket(s3: S3Client, bucket: str) -> None:
+    """Remove every version and delete marker (bypassing governance), then the bucket."""
+    listing = s3.list_object_versions(Bucket=bucket)
+    for entry in [*listing.get("Versions", []), *listing.get("DeleteMarkers", [])]:
+        s3.delete_object(
+            Bucket=bucket,
+            Key=entry.get("Key", ""),
+            VersionId=entry.get("VersionId", ""),
+            BypassGovernanceRetention=True,
+        )
+    s3.delete_bucket(Bucket=bucket)
+
+
+def _put_locked(s3: S3Client, bucket: str, key: str, body: bytes) -> str:
+    put = s3.put_object(
+        Bucket=bucket,
+        Key=key,
+        Body=body,
+        ObjectLockMode="GOVERNANCE",
+        ObjectLockRetainUntilDate=datetime.now(UTC) + timedelta(days=1),
+    )
+    return put.get("VersionId", "")
+
+
+def test_ac20_s3_second_put_to_a_locked_key_creates_a_new_version(
+    s3_settings: dict[str, str],
+) -> None:
+    s3 = _s3(s3_settings)
+    bucket = _bucket_name()
+    s3.create_bucket(Bucket=bucket, ObjectLockEnabledForBucket=True)
+    try:
+        first = _put_locked(s3, bucket, "k", b"original")
+        second = s3.put_object(Bucket=bucket, Key="k", Body=b"replacement").get("VersionId", "")
+        assert first
+        assert second
+        assert second != first
+        old = s3.get_object(Bucket=bucket, Key="k", VersionId=first)["Body"].read()
+        assert old == b"original"
+        assert s3.get_object(Bucket=bucket, Key="k")["Body"].read() == b"replacement"
+    finally:
+        _empty_locked_bucket(s3, bucket)
+
+
+def test_ac20_s3_delete_without_a_version_id_leaves_the_locked_version_readable(
+    s3_settings: dict[str, str],
+) -> None:
+    s3 = _s3(s3_settings)
+    bucket = _bucket_name()
+    s3.create_bucket(Bucket=bucket, ObjectLockEnabledForBucket=True)
+    try:
+        version_id = _put_locked(s3, bucket, "k", b"original")
+        s3.delete_object(Bucket=bucket, Key="k")
+        body = s3.get_object(Bucket=bucket, Key="k", VersionId=version_id)["Body"]
+        assert body.read() == b"original"
+        versions = {v.get("VersionId") for v in s3.list_object_versions(Bucket=bucket)["Versions"]}
+        assert version_id in versions
+    finally:
+        _empty_locked_bucket(s3, bucket)
 
 
 def test_ac20_s3_deletes_an_unlocked_object(s3_settings: dict[str, str]) -> None:

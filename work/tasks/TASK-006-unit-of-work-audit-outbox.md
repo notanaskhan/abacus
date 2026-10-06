@@ -20,7 +20,7 @@ updated: 2026-10-06
 > - Append to the *Progress log* before ending any session, even mid-task.
 
 ## Objective
-`abacus.kernel.uow`: every state change commits with its audit event and domain events atomically; append-only audit trail; transactional outbox and relay.
+`abacus.kernel.uow`: every state change commits with its audit event and domain events atomically; append-only audit trail; transactional outbox and **the relay that publishes it** (TASK-011's screening workflow consumes `evidence_version.created` from this relay).
 
 ## Scope
 Defined when the plan is written. Starts after TASK-005.
