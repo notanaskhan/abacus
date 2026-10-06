@@ -5,8 +5,15 @@
 that transaction only, so row-level security confines every statement to the tenant and the setting
 can never leak to the next user of a pooled connection.
 
-It never commits. The connection goes back to the pool at the end, and the pool rolls back whatever
-is open. Writes commit only through the unit of work (TASK-006), which builds on the same pattern.
+It never commits. The session joins the connection's transaction in `rollback_only` mode, so
+`session.commit()` is inert by design; the connection goes back to the pool at the end and the pool
+rolls back whatever is open. Writes commit only through the unit of work (TASK-006), which must
+own the transaction itself rather than build on this session's commit. (`conn.commit()` reached
+through `session.connection()` would commit; UOW-001 forbids it outside `kernel.uow`.)
+
+Before setting the tenant, every session `RESET`s the tenant and actor settings, so a session-level
+`SET app.tenant_id` left on a pooled connection by earlier code can never carry over (TENANT-001
+forbids writing that setting outside this package).
 """
 
 from __future__ import annotations
@@ -77,12 +84,25 @@ def _current_engine() -> AsyncEngine:
 @asynccontextmanager
 async def tenant_session(ctx: TenantContext) -> AsyncGenerator[AsyncSession]:
     async with _current_engine().connect() as conn:
-        # First statement opens the transaction; `true` makes the setting transaction-local.
+        # Clear anything a previous user of this pooled connection set at session level.
+        await conn.execute(text("RESET app.tenant_id"))
+        await conn.execute(text("RESET app.actor_kind"))
+        await conn.execute(text("RESET app.actor_id"))
+        # Transaction-local (`true`): gone when this transaction ends, whatever happens.
         await conn.execute(
-            text("SELECT set_config('app.tenant_id', :tenant, true)"),
-            {"tenant": str(ctx.tenant_id)},
+            text(
+                "SELECT set_config('app.tenant_id', :tenant, true), "
+                "set_config('app.actor_kind', :kind, true), "
+                "set_config('app.actor_id', :actor, true)"
+            ),
+            {"tenant": str(ctx.tenant_id), "kind": ctx.actor_kind, "actor": ctx.actor_id},
         )
-        session = AsyncSession(bind=conn, expire_on_commit=False, autoflush=True)
+        session = AsyncSession(
+            bind=conn,
+            expire_on_commit=False,
+            autoflush=True,
+            join_transaction_mode="rollback_only",
+        )
         try:
             yield session
         finally:

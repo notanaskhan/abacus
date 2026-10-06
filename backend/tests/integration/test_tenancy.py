@@ -454,3 +454,92 @@ async def test_ac13_update_and_delete_privileges_are_revoked_only_where_declared
         ("tenancy_ledger_probe", "UPDATE"): False,
         ("tenancy_ledger_probe", "DELETE"): False,
     }
+
+
+# --- Contract revision 1: pool leak, actor settings, commit, tenant_id change, engine swap -----
+
+SET_SESSION_TENANT = text("SELECT set_config('app.tenant_id', :t, false)")
+
+
+async def test_ac5_session_level_tenant_setting_does_not_leak_to_the_next_session(
+    app_engine: AsyncEngine,
+) -> None:
+    a, b = _ctx(), _ctx()
+    await _seed(app_engine, PROBE, a.tenant_id, "a-row")
+    await _seed(app_engine, PROBE, b.tenant_id, "b-row")
+    async with tenant_session(a) as session:
+        await session.execute(SET_SESSION_TENANT, {"t": str(b.tenant_id)})
+        conn = await session.connection()
+        engine = conn.engine
+        pid = (await session.execute(BACKEND_PID)).scalar_one()
+    async with tenant_session(a) as session:
+        assert (await session.execute(BACKEND_PID)).scalar_one() == pid
+        bodies = (await session.execute(select(PROBE.c.body))).scalars().all()
+        assert list(bodies) == ["a-row"]
+        assert (await session.execute(CURRENT_TENANT)).scalar_one() == str(a.tenant_id)
+    async with engine.connect() as raw:
+        assert (await raw.execute(BACKEND_PID)).scalar_one() == pid
+        assert not (await raw.execute(CURRENT_TENANT)).scalar_one()
+        assert (await raw.execute(select(PROBE))).all() == []
+
+
+async def test_ac5_actor_kind_and_id_are_set_for_the_transaction() -> None:
+    ctx = TenantContext(tenant_id=uuid.uuid4(), actor_kind="agent", actor_id="agent-7")
+    async with tenant_session(ctx) as session:
+        kind = (
+            await session.execute(text("SELECT current_setting('app.actor_kind')"))
+        ).scalar_one()
+        actor = (
+            await session.execute(text("SELECT current_setting('app.actor_id')"))
+        ).scalar_one()
+    assert (kind, actor) == ("agent", "agent-7")
+
+
+async def test_ac5_actor_settings_do_not_survive_the_session() -> None:
+    ctx = TenantContext(tenant_id=uuid.uuid4(), actor_kind="system", actor_id="worker")
+    async with tenant_session(ctx) as session:
+        engine = (await session.connection()).engine
+    async with engine.connect() as raw:
+        for setting in ("app.actor_kind", "app.actor_id"):
+            value = (
+                await raw.execute(text("SELECT current_setting(:s, true)"), {"s": setting})
+            ).scalar_one()
+            assert not value
+
+
+async def test_ac5_commit_inside_tenant_session_is_inert(app_engine: AsyncEngine) -> None:
+    ctx = _ctx()
+    async with tenant_session(ctx) as session:
+        await session.execute(
+            PROBE.insert().values(id=uuid.uuid4(), tenant_id=ctx.tenant_id, body="not-persisted")
+        )
+        await session.commit()
+    async with tenant_session(ctx) as session:
+        assert (await session.execute(select(PROBE.c.body))).all() == []
+    assert await _bodies_as(app_engine, PROBE, ctx.tenant_id) == []
+
+
+async def test_ac5_moving_an_own_row_to_another_tenant_is_rejected(
+    app_engine: AsyncEngine,
+) -> None:
+    a, b = _ctx(), _ctx()
+    row_id = await _seed(app_engine, PROBE, a.tenant_id, "mine")
+    with pytest.raises(DBAPIError, match="row-level security"):
+        async with tenant_session(a) as session:
+            await session.execute(
+                update(PROBE).where(PROBE.c.id == row_id).values(tenant_id=b.tenant_id)
+            )
+    assert await _bodies_as(app_engine, PROBE, a.tenant_id) == ["mine"]
+    assert await _bodies_as(app_engine, PROBE, b.tenant_id) == []
+
+
+async def test_ac5_configure_engine_replaces_a_live_engine(migrated_db: Migrated) -> None:
+    async with tenant_session(_ctx()) as session:
+        first = (await session.execute(text("SELECT current_user"))).scalar_one()
+    configure_engine(migrated_db.owner_url)
+    async with tenant_session(_ctx()) as session:
+        second = (await session.execute(text("SELECT current_user"))).scalar_one()
+    configure_engine(migrated_db.app_url)
+    async with tenant_session(_ctx()) as session:
+        third = (await session.execute(text("SELECT current_user"))).scalar_one()
+    assert (first, second, third) == ("abacus_app", "abacus_owner", "abacus_app")

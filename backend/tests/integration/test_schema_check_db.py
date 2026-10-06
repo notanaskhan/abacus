@@ -20,6 +20,7 @@ import yaml
 from testcontainers.community.postgres import PostgresContainer
 
 from abacus_tools.quality import schema_check as sc
+from abacus_tools.quality.schema_check import provisioned_database
 
 REPO = Path(__file__).resolve().parents[3]
 DATABASE = "abacus"
@@ -94,6 +95,9 @@ def db(cluster: Cluster) -> Iterator[Cluster]:
         cluster.admin,
         "DROP TABLE IF EXISTS probe, probe_a, probe_b, alembic_version CASCADE",
         "DROP SCHEMA IF EXISTS probe_schema CASCADE",
+        "DROP VIEW IF EXISTS probe_view",
+        "DROP MATERIALIZED VIEW IF EXISTS probe_mv",
+        "REVOKE EXECUTE ON FUNCTION pg_catalog.lo_get(oid) FROM abacus_app",
         "ALTER ROLE abacus_app NOSUPERUSER NOBYPASSRLS NOCREATEROLE NOCREATEDB",
     )
 
@@ -297,6 +301,100 @@ def test_ac20_insert_only_table_with_update_and_delete_revoked_passes(
 
 def test_ac20_update_granted_on_a_table_not_declared_insert_only_is_fine(db: Cluster) -> None:
     assert _problems(db, _good("probe")) == []
+
+
+# --- policies, views, large objects, privileges (contract revision 1) ------------------------
+
+CANONICAL = "tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid"
+NOT_CANONICAL = "policy tenant_isolation is not the canonical tenant_isolation policy"
+
+
+def _table_with_policy(policy: str) -> list[str]:
+    return [
+        f"CREATE TABLE probe ({COLUMNS})",
+        ENABLE.format(t="probe"),
+        FORCE.format(t="probe"),
+        policy,
+    ]
+
+
+@pytest.mark.parametrize(
+    "policy",
+    [
+        f"CREATE POLICY tenant_isolation ON probe USING ({CANONICAL} OR true) "
+        f"WITH CHECK ({CANONICAL})",
+        f"CREATE POLICY tenant_isolation ON probe USING ({CANONICAL}) "
+        f"WITH CHECK ({CANONICAL} OR true)",
+        f"CREATE POLICY tenant_isolation ON probe TO abacus_owner USING ({CANONICAL}) "
+        f"WITH CHECK ({CANONICAL})",
+        f"CREATE POLICY tenant_isolation ON probe AS RESTRICTIVE USING ({CANONICAL}) "
+        f"WITH CHECK ({CANONICAL})",
+        f"CREATE POLICY tenant_isolation ON probe FOR SELECT USING ({CANONICAL})",
+    ],
+    ids=["using-or-true", "check-or-true", "to-owner", "restrictive", "select-only"],
+)
+def test_ac20_a_non_canonical_tenant_isolation_policy_is_reported(
+    db: Cluster, policy: str
+) -> None:
+    problems = _problems(db, _table_with_policy(policy))
+    assert f"probe: {NOT_CANONICAL}" in problems, problems
+
+
+def test_ac20_a_second_permissive_policy_is_reported(db: Cluster) -> None:
+    problems = _problems(db, [*_good("probe"), "CREATE POLICY extra ON probe USING (true)"])
+    assert "probe: has 2 policies; exactly one (tenant_isolation) is allowed" in problems
+
+
+def test_ac20_a_non_security_invoker_view_is_reported(db: Cluster) -> None:
+    problems = _problems(db, [*_good("probe"), "CREATE VIEW probe_view AS SELECT * FROM probe"])
+    assert "probe_view: view is not security_invoker" in problems, problems
+
+
+def test_ac20_a_security_invoker_view_passes(db: Cluster) -> None:
+    statements = [
+        *_good("probe"),
+        "CREATE VIEW probe_view WITH (security_invoker = true) AS SELECT * FROM probe",
+    ]
+    assert _problems(db, statements) == []
+
+
+def test_ac20_a_materialized_view_readable_by_the_app_is_reported(db: Cluster) -> None:
+    problems = _problems(
+        db,
+        [
+            *_good("probe"),
+            "CREATE MATERIALIZED VIEW probe_mv AS SELECT * FROM probe",
+            "GRANT SELECT ON probe_mv TO abacus_app",
+        ],
+    )
+    expected = (
+        "probe_mv: materialized view is readable by abacus_app; row-level security does not apply"
+    )
+    assert expected in problems, problems
+
+
+def test_ac20_app_able_to_execute_a_large_object_function_is_reported(db: Cluster) -> None:
+    problems = _problems(db, [], "GRANT EXECUTE ON FUNCTION pg_catalog.lo_get(oid) TO abacus_app")
+    assert any(m.startswith("abacus_app: can execute lo_get") for m in problems), problems
+
+
+@pytest.mark.parametrize("privilege", ["TRUNCATE", "TRIGGER"])
+def test_ac20_truncate_or_trigger_on_a_tenant_table_is_reported(
+    db: Cluster, privilege: str
+) -> None:
+    statements = {
+        "TRUNCATE": "GRANT TRUNCATE ON probe TO abacus_app",
+        "TRIGGER": "GRANT TRIGGER ON probe TO abacus_app",
+    }
+    problems = _problems(db, _good("probe"), statements[privilege])
+    _assert_reports(problems, "probe", privilege.lower())
+
+
+def test_ac20_bootstrap_run_twice_still_passes_the_check() -> None:
+    with provisioned_database(roundtrip=False) as database:
+        script = (REPO / "backend" / "migrations" / "bootstrap.sql").read_text("utf-8")
+        _sql(database.superuser_dsn, script, script)
+        assert sc.check(database.owner_url, database.app_url) == []
 
 
 # --- roles -------------------------------------------------------------------------------------

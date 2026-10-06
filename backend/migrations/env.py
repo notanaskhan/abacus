@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 
 from alembic import context
-from sqlalchemy import Connection, text
+from sqlalchemy import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from abacus.kernel.config import settings
@@ -30,19 +30,28 @@ def _url() -> str:
 
 
 def _migrate(connection: Connection) -> None:
-    connection.execute(text(f"SET lock_timeout = '{LOCK_TIMEOUT}'"))
-    connection.execute(text(f"SET statement_timeout = '{STATEMENT_TIMEOUT}'"))
+    # Timeouts arrive as connection parameters (see _run), so nothing here opens a transaction
+    # before Alembic does: each migration really gets its own transaction, and a failure leaves
+    # earlier migrations applied with their locks already released.
     context.configure(connection=connection, transaction_per_migration=True)
     with context.begin_transaction():
         context.run_migrations()
 
 
 async def _run() -> None:
-    engine = create_async_engine(_url())
+    engine = create_async_engine(
+        _url(),
+        connect_args={
+            "server_settings": {
+                "lock_timeout": LOCK_TIMEOUT,
+                "statement_timeout": STATEMENT_TIMEOUT,
+                "application_name": "abacus-migrations",
+            }
+        },
+    )
     try:
         async with engine.connect() as connection:
             await connection.run_sync(_migrate)
-            await connection.commit()
     finally:
         await engine.dispose()
 

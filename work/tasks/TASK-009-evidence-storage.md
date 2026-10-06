@@ -60,7 +60,7 @@ Steps: to be written when the task starts.
 |---|---|---|
 
 ## Gotchas and discoveries
--
+- From TASK-005 review: every table passed to `insert_only()` must also be added to `INSERT_ONLY_TABLES` in `schema_check.py`, or the check won't verify it.
 
 ## Questions for the human
 -

@@ -18,7 +18,7 @@
 /backend/uv.lock                             @notanaskhan @ayushkbhatia
 /backend/quality/                            @notanaskhan @ayushkbhatia
 /backend/migrations/                         @notanaskhan @ayushkbhatia
-/backend/alembic.ini                          @notanaskhan @ayushkbhatia
+/backend/alembic.ini                         @notanaskhan @ayushkbhatia
 /package.json                                @notanaskhan @ayushkbhatia
 /apps/web/package.json                       @notanaskhan @ayushkbhatia
 /pnpm-lock.yaml                              @notanaskhan @ayushkbhatia

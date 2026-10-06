@@ -376,6 +376,19 @@ def _check_lint_sidestep(src: SourceFile) -> Iterator[Finding]:
             yield Finding(node.lineno, f"{node.attr}: {_SIDESTEPS[node.attr]}")
 
 
+_TENANT_SETTING = "app.tenant_id"
+
+
+def _check_tenant_setting(src: SourceFile) -> Iterator[Finding]:
+    for node in ast.walk(src.tree):
+        if (
+            isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+            and _TENANT_SETTING in node.value
+        ):
+            yield Finding(node.lineno, "the tenant setting is written only by abacus.kernel.db")
+
+
 # --- tree rules -------------------------------------------------------------------------------
 
 
@@ -398,7 +411,8 @@ RULES: list[Rule | TreeRule] = [
         description="No direct session commit, flush or rollback",
         adr="ADR-007, ADR-018",
         check=_check_session_transaction,
-        exclude=("src/abacus/kernel/uow/*",),
+        # test_tenancy proves session.commit() is inert inside tenant_session (TASK-005).
+        exclude=("src/abacus/kernel/uow/*", "tests/integration/test_tenancy.py"),
     ),
     Rule(
         id="DB-001",
@@ -414,6 +428,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_local_stack.py",
             "tests/integration/test_tenancy.py",
             "tests/integration/test_schema_check_db.py",
+            "tests/integration/test_migrations_env.py",
         ),
     ),
     Rule(
@@ -471,6 +486,21 @@ RULES: list[Rule | TreeRule] = [
         description="No APIs that sidestep ruff's security rules; exempt in pyproject instead",
         adr="ADR-083",
         check=_check_lint_sidestep,
+    ),
+    Rule(
+        id="TENANT-001",
+        description="Only abacus.kernel.db touches the app.tenant_id setting",
+        adr="ADR-014",
+        check=_check_tenant_setting,
+        exclude=(
+            "src/abacus/kernel/db/*",
+            "src/abacus_tools/quality/schema_check.py",
+            "src/abacus_tools/quality/banned_patterns.py",
+            "tests/integration/test_tenancy.py",
+            "tests/integration/test_schema_check_db.py",
+            "tests/unit/kernel/test_migration_helpers.py",
+            "tests/unit/quality/test_banned_patterns.py",
+        ),
     ),
     Rule(
         id="ANY-001",
