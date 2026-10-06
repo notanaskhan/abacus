@@ -123,7 +123,8 @@ def location(entity: ClientEntity, artefact: str) -> str:
     if artefact == "trial_balance":
         return f"trial_balance {entity.period_end.isoformat()}"
     if artefact == "bank_statement":
-        return f"bank_statement {entity.bank_accounts[0].account_number} for {entity.period_end:%Y-%m}"
+        number = entity.bank_accounts[0].account_number
+        return f"bank_statement {number} for {entity.period_end:%Y-%m}"
     if artefact in ("ar_aging", "ap_aging"):
         return f"{artefact} {entity.period_end.isoformat()}"
     return "general_ledger"
