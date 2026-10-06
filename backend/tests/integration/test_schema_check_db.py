@@ -143,10 +143,27 @@ def test_ac20_a_database_with_a_correct_tenant_table_passes(db: Cluster) -> None
     assert _problems(db, _good("probe")) == []
 
 
-def test_ac20_alembic_version_is_allowlisted(db: Cluster) -> None:
-    assert (
-        _problems(db, ["CREATE TABLE alembic_version (version_num varchar(32) PRIMARY KEY)"]) == []
+def test_ac20_alembic_version_is_allowlisted_for_tenant_rules(db: Cluster) -> None:
+    problems = _problems(
+        db,
+        [
+            "CREATE TABLE alembic_version (version_num varchar(32) PRIMARY KEY)",
+            "REVOKE ALL ON alembic_version FROM abacus_app",
+        ],
     )
+    assert problems == []
+
+
+def test_ac20_app_privilege_on_alembic_version_is_reported(db: Cluster) -> None:
+    problems = _problems(
+        db,
+        [
+            "CREATE TABLE alembic_version (version_num varchar(32) PRIMARY KEY)",
+            "REVOKE ALL ON alembic_version FROM abacus_app",
+            "GRANT SELECT ON alembic_version TO abacus_app",
+        ],
+    )
+    _assert_reports(problems, "alembic_version", "select", "non-tenant")
 
 
 # --- table violations --------------------------------------------------------------------------

@@ -1,8 +1,8 @@
 """Alembic environment (ADR-015, ADR-091). PROTECTED. TASK-005 design §4.
 
-Connects as `abacus_owner` (ABACUS_MIGRATIONS_DATABASE_URL, or `-x url=...`), never as the app role,
-and bounds every migration session with lock and statement timeouts so a migration can't stall
-production traffic. Online mode only: every migration is reviewed as SQL in its own file.
+Connects as `abacus_owner` (ABACUS_MIGRATIONS_DATABASE_URL, or `-x url=...`), never as the app
+role, and bounds every migration session with lock and statement timeouts so a migration can't
+stall production traffic. Online mode only: every migration is reviewed as SQL in its own file.
 """
 
 from __future__ import annotations
