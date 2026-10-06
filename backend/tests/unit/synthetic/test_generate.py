@@ -32,8 +32,8 @@ TAXONOMY = Path(__file__).resolve().parents[4] / "docs" / "product" / "failure-t
 # AC-3: the golden hash is pinned together with the generator version it was produced by.
 # Changing GENERATOR_VERSION without updating both constants in the same change fails the
 # golden test. "PENDING" fails the test until the implementer fills both in once.
-GOLDEN_VERSION: str = "1.0.1"
-GOLDEN_SHA256: str = "d1088c7aec6b43baeaafa70718c77ad8505017a0f62317072d7f9e3d6b1cc2df"
+GOLDEN_VERSION: str = "1.1.0"
+GOLDEN_SHA256: str = "8846493beb039a0996542e0888d13013294caff665a5ac3e4bc565a33c9fff1f"
 
 ARTEFACTS = ("general_ledger", "trial_balance", "bank_statement", "ar_aging", "ap_aging")
 
@@ -252,6 +252,27 @@ def test_leap_year_month_end_and_fiscal_year_not_starting_in_january() -> None:
     assert entity.period_end == date(2024, 2, 29)
     assert entity.trial_balances[-1].as_of == date(2024, 2, 29)
     assert len(entity.trial_balances) == 12
+    # The year-end close actually happened on the leap-day year end.
+    closing = [e for e in entity.journal_entries if "close" in e.memo.lower()]
+    assert closing
+    assert all(e.date == date(2024, 2, 29) for e in closing)
+    types = {a.code: a.type for a in entity.accounts}
+    for line in entity.trial_balances[-1].lines:
+        if types[line.account_code] in ("revenue", "expense"):
+            assert line.debit == 0
+            assert line.credit == 0
+    assert any(
+        types[line.account_code] in ("revenue", "expense")
+        for line in entity.trial_balances[-2].lines
+    )
+
+
+@pytest.mark.parametrize("start", [date(2025, 1, 15), date(2025, 3, 1), date(2025, 3, 2)])
+def test_no_entry_is_dated_before_a_mid_month_or_weekend_start(start: date) -> None:
+    entity = generate(5, months=2, start=start).client_entities[0]
+    assert entity.period_start == start
+    assert min(e.date for e in entity.journal_entries) >= start
+    assert entity.trial_balances[0].as_of >= start
 
 
 def test_multiple_entities_are_distinct() -> None:

@@ -57,6 +57,7 @@ class TrialBalanceLine:
 class TrialBalance:
     as_of: date
     lines: tuple[TrialBalanceLine, ...]
+    client_entity: str = ""  # whose books these are; lets `wrong_entity` be detected mechanically
 
     @property
     def total_debits(self) -> Decimal:

@@ -32,7 +32,7 @@ def balances_at(entries: Iterable[JournalEntry], as_of: date) -> dict[str, Decim
 
 
 def trial_balances(
-    entries: tuple[JournalEntry, ...], ends: tuple[date, ...]
+    entries: tuple[JournalEntry, ...], ends: tuple[date, ...], entity: str
 ) -> tuple[TrialBalance, ...]:
     running = {a.code: ZERO for a in ACCOUNTS}
     out: list[TrialBalance] = []
@@ -42,16 +42,17 @@ def trial_balances(
             for line in entries[index].lines:
                 running[line.account_code] += line.debit - line.credit
             index += 1
-        out.append(trial_balance_from(running, end))
+        out.append(trial_balance_from(running, end, entity))
     return tuple(out)
 
 
-def trial_balance_from(balances: dict[str, Decimal], as_of: date) -> TrialBalance:
-    lines = tuple(
-        TrialBalanceLine(a.code, a.name, max(balances[a.code], ZERO), max(-balances[a.code], ZERO))
-        for a in ACCOUNTS
-    )
-    return TrialBalance(as_of, lines)
+def trial_balance_from(balances: dict[str, Decimal], as_of: date, entity: str) -> TrialBalance:
+    lines: list[TrialBalanceLine] = []
+    for a in ACCOUNTS:
+        net = balances[a.code]
+        debit, credit = (net, ZERO) if net > 0 else (ZERO, -net if net < 0 else ZERO)
+        lines.append(TrialBalanceLine(a.code, a.name, debit, credit))
+    return TrialBalance(as_of, tuple(lines), entity)
 
 
 def bank_statements(books: Books) -> tuple[BankStatement, ...]:

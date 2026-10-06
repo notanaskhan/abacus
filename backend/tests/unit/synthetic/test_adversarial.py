@@ -137,7 +137,7 @@ def failures(entity: ClientEntity) -> set[str]:
             out.add("bank_internal")
         earlier = previous.get(statement.account_number)
         if earlier is not None and earlier.closing_balance != statement.opening_balance:
-            out.add("bank_internal")
+            out.add("bank_continuity")
         previous[statement.account_number] = statement
         if not bank_ties_ok(entity, ledger, statement):
             out.add("bank_ties")
@@ -412,3 +412,14 @@ def test_ac12_xlsx_stays_inert_no_formulas_macros_or_external_links(
             if name.startswith("xl/worksheets/"):
                 root = parse_xml(data)
                 assert not [el for el in root.iter() if el.tag.rsplit("}", 1)[-1] == "f"]
+
+
+def test_rev1_adversarial_covers_every_category_even_with_one_month() -> None:
+    client = generate(SEED, months=1, adversarial=True)
+    assert {p.category for p in client.manifest.adversarial} == set(ADVERSARIAL_CATEGORIES)
+    for p in client.manifest.adversarial:
+        wanted = p.field.rsplit(".", 1)[-1]
+        values = [v for name, v in artefact_strings(client, p.artefact) if name == wanted]
+        assert any(p.payload in v for v in values), (p.category, p.artefact, p.field)
+    for entity in client.client_entities:
+        assert failures(entity) == set()

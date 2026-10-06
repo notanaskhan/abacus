@@ -8,6 +8,7 @@ import json
 import re
 import xml.etree.ElementTree as ET
 import zipfile
+from collections import Counter
 from collections.abc import Iterator
 from functools import cache
 from pathlib import Path
@@ -262,7 +263,9 @@ def test_ac15_json_is_one_file_with_sorted_keys_string_amounts_and_iso_dates(
 # --- AC-15: XLSX ------------------------------------------------------------------------------
 
 
-def test_ac15_xlsx_is_a_valid_zip_with_one_sheet_per_csv(tmp_path: Path) -> None:
+def test_ac15_xlsx_is_a_valid_zip_with_one_sheet_per_csv_plus_a_manifest_sheet(
+    tmp_path: Path,
+) -> None:
     client = build()
     csv_root, _, workbook = export_all(client, tmp_path)
     csv_rows = sorted(len(read_rows(p)) for p in csv_root.rglob("*.csv"))
@@ -286,11 +289,12 @@ def test_ac15_xlsx_is_a_valid_zip_with_one_sheet_per_csv(tmp_path: Path) -> None
             for n in worksheets
         )
         stamps = {info.date_time for info in archive.infolist()}
-    assert len(sheets) == len(csv_rows)
+    assert len(sheets) == len(csv_rows) + 1
+    assert "manifest" in sheets
     assert len(set(sheets)) == len(sheets)
     assert all(0 < len(s) <= 31 for s in sheets)
     assert len(worksheets) == len(sheets)
-    assert row_counts == csv_rows
+    assert not Counter(csv_rows) - Counter(row_counts)
     assert len(stamps) == 1
 
 
@@ -402,3 +406,81 @@ def test_ac13_secrets_scan_covers_default_client_exports(tmp_path: Path) -> None
     export_all(generate(42), tmp_path)
     files = sorted(p.relative_to(tmp_path).as_posix() for p in tmp_path.rglob("*") if p.is_file())
     assert secrets_scan.scan(tmp_path, files=files) == []
+
+
+# --- contract revision 1 ----------------------------------------------------------------------
+
+
+def test_rev1_trial_balance_csv_has_a_client_entity_column_after_as_of(tmp_path: Path) -> None:
+    client = build(entities=2)
+    csv_root, _, _ = export_all(client, tmp_path)
+    for directory in entity_dirs(csv_root):
+        for path in sorted(directory.glob("trial_balance_*.csv")):
+            rows = read_rows(path)
+            header = rows[0]
+            assert header.index("client_entity") == header.index("as_of") + 1
+            names = {r[header.index("client_entity")] for r in rows[1:]}
+            assert len(names) == 1
+            assert names <= {e.name for e in client.client_entities}
+    for entity in client.client_entities:
+        assert all(tb.client_entity == entity.name for tb in entity.trial_balances)
+
+
+def test_rev1_wrong_entity_trial_balance_csv_names_the_other_entity(tmp_path: Path) -> None:
+    client = build(flaws=("wrong_entity",))
+    entity = client.client_entities[0]
+    csv_root, _, _ = export_all(client, tmp_path)
+    (directory,) = entity_dirs(csv_root)
+    rows = read_rows(
+        directory / f"trial_balance_{entity.trial_balances[-1].as_of.isoformat()}.csv"
+    )
+    index = rows[0].index("client_entity")
+    assert {r[index] for r in rows[1:]} == {entity.trial_balances[-1].client_entity}
+    assert entity.trial_balances[-1].client_entity != entity.name
+
+
+def test_rev1_xlsx_manifest_sheet_lists_flaws(tmp_path: Path) -> None:
+    client = build(flaws=("unbalanced",))
+    workbook = to_xlsx(client, tmp_path / "m.xlsx")
+    with zipfile.ZipFile(workbook) as archive:
+        texts = [
+            el.text
+            for n in archive.namelist()
+            if n.startswith("xl/worksheets/") and n.endswith(".xml")
+            for el in parse_xml(archive.read(n)).iter()
+            if el.text
+        ]
+    assert "unbalanced" in texts
+    assert "trial_balance" in texts
+
+
+def worksheet_texts(path: Path) -> list[str]:
+    with zipfile.ZipFile(path) as archive:
+        return [
+            el.text
+            for n in archive.namelist()
+            if n.startswith("xl/worksheets/") and n.endswith(".xml")
+            for el in parse_xml(archive.read(n)).iter()
+            if el.text
+        ]
+
+
+def test_rev1_xlsx_encodes_characters_xml_cannot_carry_as_ooxml_escapes(tmp_path: Path) -> None:
+    client = build(months=1)
+    entity = client.client_entities[0]
+    entry = dataclasses.replace(entity.journal_entries[0], memo="a\x00b\x0bc_x0041_d")
+    changed = dataclasses.replace(entity, journal_entries=(entry, *entity.journal_entries[1:]))
+    client = dataclasses.replace(client, client_entities=(changed,))
+    workbook = to_xlsx(client, tmp_path / "escapes.xlsx")
+    texts = [t.lower() for t in worksheet_texts(workbook)]
+    assert "a_x0000_b_x000b_c_x005f_x0041_d" in texts
+
+
+def test_rev1_xlsx_never_truncates_the_oversized_payload(tmp_path: Path) -> None:
+    client = generate(SEED, months=1, adversarial=True)
+    workbook = to_xlsx(client, tmp_path / "big.xlsx")
+    texts = worksheet_texts(workbook)
+    for p in client.manifest.adversarial:
+        if p.category == "oversized_field":
+            assert len(p.payload) > 32_767
+            assert any(p.payload in t for t in texts)

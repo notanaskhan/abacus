@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import calendar
 import dataclasses
 import json
 import xml.etree.ElementTree as ET
@@ -133,7 +134,7 @@ def failures(entity: ClientEntity) -> set[str]:
             out.add("bank_internal")
         earlier = previous.get(statement.account_number)
         if earlier is not None and earlier.closing_balance != statement.opening_balance:
-            out.add("bank_internal")
+            out.add("bank_continuity")
         previous[statement.account_number] = statement
         if not bank_ties_ok(entity, ledger, statement):
             out.add("bank_ties")
@@ -145,8 +146,7 @@ def failures(entity: ClientEntity) -> set[str]:
 
 
 SEED = 17
-MONTHS = 3
-PERIOD_END = date(2025, 3, 31)
+CURRENT = [3]  # months of the current run; every test runs at 3 months and at 1 month
 
 # SPEC-001 section 7 table; "aging" means either aging, "any" means every artefact.
 ALLOWED: dict[str, tuple[str, ...]] = {
@@ -182,7 +182,7 @@ DISALLOWED = [(c, a) for c in ALLOWED for a in ARTEFACTS if a not in ALLOWED[c]]
 RELATED: dict[str, set[str]] = {
     "general_ledger": {"tb_ties", "bank_ties", "ar_ties", "ap_ties"},
     "trial_balance": {"tb_balanced", "tb_ties"},
-    "bank_statement": {"bank_internal", "bank_ties"},
+    "bank_statement": {"bank_internal", "bank_continuity", "bank_ties"},
     "ar_aging": {"ar_ties"},
     "ap_aging": {"ap_ties"},
 }
@@ -196,9 +196,34 @@ ENTITY_FIELD = {
 READ_ONLY_FLAWS = ("irrelevant", "unreadable")
 
 
+@pytest.fixture(autouse=True, params=[3, 1], ids=["months3", "months1"])
+def months_in_use(request: pytest.FixtureRequest) -> int:
+    CURRENT[0] = int(request.param)
+    return CURRENT[0]
+
+
 @cache
+def build_months(flaws: tuple[str, ...], entities: int, months: int) -> SyntheticClient:
+    return generate(SEED, entities=entities, months=months, flaws=flaws)
+
+
 def build(flaws: tuple[str, ...] = (), entities: int = 1) -> SyntheticClient:
-    return generate(SEED, entities=entities, months=MONTHS, flaws=flaws)
+    return build_months(flaws, entities, CURRENT[0])
+
+
+def period_end() -> date:
+    year, month = 2025, CURRENT[0]
+    return date(year, month, calendar.monthrange(year, month)[1])
+
+
+def stale_tb_rejected(flaws: tuple[str, ...]) -> bool:
+    """With one month there is no earlier month end, so a stale trial balance is rejected."""
+    return CURRENT[0] == 1 and any(f in ("stale", "stale:trial_balance") for f in flaws)
+
+
+def expect_rejected(flaws: tuple[str, ...]) -> None:
+    with pytest.raises(ValueError):
+        build(flaws)
 
 
 def spec(category: str, artefact: str) -> tuple[str, ...]:
@@ -259,6 +284,8 @@ def test_ac8_every_category_has_an_allowed_artefact_table_entry() -> None:
 
 @pytest.mark.parametrize(("category", "artefact"), CASES)
 def test_ac8_manifest_lists_exactly_the_requested_flaw(category: str, artefact: str) -> None:
+    if stale_tb_rejected(spec(category, artefact)):
+        return expect_rejected(spec(category, artefact))
     client = build(spec(category, artefact))
     entity = client.client_entities[0]
     assert client.manifest.adversarial == ()
@@ -275,6 +302,8 @@ def test_ac8_manifest_lists_exactly_the_requested_flaw(category: str, artefact: 
 
 @pytest.mark.parametrize(("category", "artefact"), list(DEFAULT_ARTEFACT.items()))
 def test_ac8_plain_category_targets_its_first_artefact(category: str, artefact: str) -> None:
+    if stale_tb_rejected((category,)):
+        return expect_rejected((category,))
     client = build((category,))
     assert [(f.category, f.artefact) for f in client.manifest.flaws] == [(category, artefact)]
     assert client == build(spec(category, artefact))
@@ -282,7 +311,7 @@ def test_ac8_plain_category_targets_its_first_artefact(category: str, artefact: 
 
 def test_ac8_no_flaws_means_empty_manifest_and_unchanged_output() -> None:
     assert build().manifest.flaws == ()
-    assert generate(SEED, months=MONTHS, flaws=[]) == build()
+    assert generate(SEED, months=CURRENT[0], flaws=[]) == build()
 
 
 def test_ac8_several_compatible_flaws_are_all_injected() -> None:
@@ -325,6 +354,8 @@ def test_ac8_flaw_on_an_artefact_it_cannot_target_raises(category: str, artefact
 def test_ac9_only_the_named_artefact_changes_and_unrelated_invariants_hold(
     category: str, artefact: str
 ) -> None:
+    if stale_tb_rejected(spec(category, artefact)):
+        return expect_rejected(spec(category, artefact))
     base = build((), entities=2)
     client = build(spec(category, artefact), entities=2)
     base0, entity = base.client_entities[0], client.client_entities[0]
@@ -345,9 +376,11 @@ def test_ac9_only_the_named_artefact_changes_and_unrelated_invariants_hold(
 
 @pytest.mark.parametrize("category", ["wrong_period", "stale", "unbalanced", "wrong_entity"])
 def test_ac9_trial_balance_flaw_touches_only_the_period_end_trial_balance(category: str) -> None:
+    if stale_tb_rejected(spec(category, "trial_balance")):
+        return expect_rejected(spec(category, "trial_balance"))
     base = build().client_entities[0]
     flawed = build(spec(category, "trial_balance")).client_entities[0]
-    assert differing(flawed.trial_balances, base.trial_balances) == [MONTHS - 1]
+    assert differing(flawed.trial_balances, base.trial_balances) == [CURRENT[0] - 1]
 
 
 @pytest.mark.parametrize(
@@ -389,17 +422,19 @@ def test_ac8_wrong_period_moves_the_artefact_one_year_earlier(artefact: str) -> 
         assert after.period_start == one_year_earlier(before.period_start)
         assert after.period_end == one_year_earlier(before.period_end)
     else:
-        assert aging_of(entity, artefact).as_of == one_year_earlier(PERIOD_END)
+        assert aging_of(entity, artefact).as_of == one_year_earlier(period_end())
 
 
 @pytest.mark.parametrize("artefact", ALLOWED["stale"])
 def test_ac8_stale_as_of_is_at_least_a_month_before_period_end(artefact: str) -> None:
+    if stale_tb_rejected(spec("stale", artefact)):
+        return expect_rejected(spec("stale", artefact))
     entity = build(spec("stale", artefact)).client_entities[0]
     as_of = entity.trial_balances[-1].as_of if artefact == "trial_balance" else None
     if as_of is None:
         as_of = aging_of(entity, artefact).as_of
-    assert month_index(PERIOD_END) - month_index(as_of) >= 1
-    assert as_of < PERIOD_END
+    assert month_index(period_end()) - month_index(as_of) >= 1
+    assert as_of < period_end()
 
 
 def test_ac8_wrong_entity_trial_balance_does_not_belong_to_the_entity() -> None:
@@ -421,7 +456,7 @@ def test_ac8_wrong_entity_bank_statement_uses_a_foreign_account_number(entities:
 def test_ac8_incomplete_general_ledger_has_a_month_without_entries() -> None:
     base = build().client_entities[0]
     entity = build(("incomplete",)).client_entities[0]
-    wanted = {(2025, 1), (2025, 2), (2025, 3)}
+    wanted = {(2025, m) for m in range(1, CURRENT[0] + 1)}
     assert {(e.date.year, e.date.month) for e in base.journal_entries} >= wanted
     assert not wanted <= {(e.date.year, e.date.month) for e in entity.journal_entries}
     assert len(entity.journal_entries) < len(base.journal_entries)
@@ -432,7 +467,7 @@ def test_ac8_incomplete_bank_statement_has_a_line_removed() -> None:
     entity = build(spec("incomplete", "bank_statement")).client_entities[0]
     index = bank_target(base)
     assert len(entity.bank_statements[index].lines) < len(base.bank_statements[index].lines)
-    assert failures(entity) & {"bank_internal", "bank_ties"}
+    assert failures(entity) & {"bank_internal", "bank_continuity", "bank_ties"}
 
 
 @pytest.mark.parametrize("artefact", ["ar_aging", "ap_aging"])
@@ -476,6 +511,10 @@ def test_ac8_wrong_currency_keeps_usd_label_but_amounts_do_not_reconcile() -> No
     assert statement.currency == "USD"
     assert statement != base.bank_statements[index]
     assert "bank_ties" in failures(entity)
+    # Contract revision 1: the converted statement is internally consistent.
+    assert bank_internal_ok(statement)
+    assert "bank_internal" not in failures(entity)
+    assert failures(entity) <= {"bank_ties", "bank_continuity"}
 
 
 def test_ac8_altered_bank_statement_has_an_inconsistent_running_balance() -> None:
@@ -571,3 +610,28 @@ def test_ac8_conflicting_flaws_on_one_artefact_raise(flaws: tuple[str, ...]) -> 
 def test_ac8_malformed_flaw_specs_raise(bad: str) -> None:
     with pytest.raises(ValueError):
         generate(SEED, months=1, flaws=(bad,))
+
+
+# --- contract revision 1 ---------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("flaw", ["stale", "stale:trial_balance"])
+def test_rev1_stale_trial_balance_with_one_month_raises(flaw: str) -> None:
+    with pytest.raises(ValueError):
+        generate(SEED, months=1, flaws=(flaw,))
+    assert generate(SEED, months=2, flaws=(flaw,)).manifest.flaws[0].category == "stale"
+
+
+def test_rev1_wrong_entity_trial_balance_carries_the_other_entitys_name() -> None:
+    base = build().client_entities[0]
+    entity = build(("wrong_entity",)).client_entities[0]
+    assert all(tb.client_entity == base.name for tb in base.trial_balances)
+    assert entity.trial_balances[-1].client_entity != entity.name
+    assert entity.trial_balances[-1].client_entity.endswith(" (Synthetic)")
+    assert all(tb.client_entity == entity.name for tb in entity.trial_balances[:-1])
+
+
+def test_rev1_trial_balance_flaws_other_than_wrong_entity_keep_the_entity_name() -> None:
+    for category in ("unbalanced", "wrong_period"):
+        entity = build(spec(category, "trial_balance")).client_entities[0]
+        assert all(tb.client_entity == entity.name for tb in entity.trial_balances)

@@ -79,8 +79,9 @@ class Context:
     entity: ClientEntity
     books: Books
     requests: RequestList
-    rng: Random
+    rng_for: Callable[[str], Random]
     decoy: Callable[[], ClientEntity]
+    rng: Random | None = None
 
 
 def parse(flaws: Sequence[str]) -> tuple[FlawRequest, ...]:
@@ -110,6 +111,7 @@ def apply(
 ) -> tuple[ClientEntity, RequestList, tuple[Flaw, ...]]:
     records: list[Flaw] = []
     for flaw in flaws:
+        ctx.rng = ctx.rng_for(f"{flaw.category}:{flaw.artefact}")  # independent per flaw
         where = location(ctx.entity, flaw.artefact)
         if flaw.category == "irrelevant":
             where = f"request_item {_tb_request_id(ctx.requests)} served {flaw.artefact}"
@@ -175,8 +177,14 @@ def _set_aging(ctx: Context, artefact: str, value: Aging) -> None:
     ctx.entity = replace(ctx.entity, **{field: value})
 
 
+def _rng(ctx: Context) -> Random:
+    if ctx.rng is None:
+        raise AssertionError("flaw applied outside apply()")
+    return ctx.rng
+
+
 def _amount(ctx: Context) -> Decimal:
-    return money(ctx.rng.randint(10_000, 500_000))
+    return money(_rng(ctx).randint(10_000, 500_000))
 
 
 def _tb_request_id(requests: RequestList) -> str:
@@ -217,14 +225,14 @@ def _wrong_entity(ctx: Context, artefact: str) -> None:
 def _incomplete(ctx: Context, artefact: str) -> None:
     if artefact == "general_ledger":
         months = sorted({(e.date.year, e.date.month) for e in ctx.entity.journal_entries})
-        year, month = months[ctx.rng.randrange(len(months))]
+        year, month = months[_rng(ctx).randrange(len(months))]
         kept = tuple(
             e for e in ctx.entity.journal_entries if (e.date.year, e.date.month) != (year, month)
         )
         ctx.entity = replace(ctx.entity, journal_entries=kept)
     else:
         s = _statement(ctx)
-        i = ctx.rng.randrange(len(s.lines))
+        i = _rng(ctx).randrange(len(s.lines))
         _set_statement(ctx, replace(s, lines=(*s.lines[:i], *s.lines[i + 1 :])))
 
 
@@ -255,20 +263,21 @@ def _does_not_tie(ctx: Context, artefact: str) -> None:
 def _duplicate(ctx: Context, artefact: str) -> None:
     if artefact == "general_ledger":
         entries = ctx.entity.journal_entries
-        i = ctx.rng.randrange(len(entries))
+        i = _rng(ctx).randrange(len(entries))
         ctx.entity = replace(
             ctx.entity, journal_entries=(*entries[: i + 1], entries[i], *entries[i + 1 :])
         )
     else:
         s = _statement(ctx)
-        i = ctx.rng.randrange(len(s.lines))
+        i = _rng(ctx).randrange(len(s.lines))
         _set_statement(ctx, replace(s, lines=(*s.lines[: i + 1], s.lines[i], *s.lines[i + 1 :])))
 
 
 def _stale(ctx: Context, artefact: str) -> None:
     earlier = previous_month_end(ctx.entity.period_end)
     if artefact == "trial_balance":
-        _set_tb(ctx, trial_balance_from(balances_at(ctx.books.entries, earlier), earlier))
+        balances = balances_at(ctx.books.entries, earlier)
+        _set_tb(ctx, trial_balance_from(balances, earlier, ctx.entity.name))
     else:
         items = ctx.books.receivables if artefact == "ar_aging" else ctx.books.payables
         _set_aging(ctx, artefact, aging("ar" if artefact == "ar_aging" else "ap", items, earlier))
@@ -281,17 +290,22 @@ def _wrong_currency(ctx: Context, artefact: str) -> None:
     def fx(value: Decimal) -> Decimal:
         return money(value * EUR_PER_USD)
 
-    lines = tuple(
-        BankLine(ln.date, ln.description, fx(ln.amount), fx(ln.balance)) for ln in s.lines
-    )
+    # Convert the opening balance and each amount, then recompute running balances: the statement
+    # stays internally consistent and only its tie to the USD cash account fails.
+    balance = fx(s.opening_balance)
+    lines: list[BankLine] = []
+    for ln in s.lines:
+        amount = fx(ln.amount)
+        balance += amount
+        lines.append(BankLine(ln.date, ln.description, amount, balance))
     items = tuple(replace(item, amount=fx(item.amount)) for item in s.reconciling_items)
     _set_statement(
         ctx,
         replace(
             s,
             opening_balance=fx(s.opening_balance),
-            closing_balance=fx(s.closing_balance),
-            lines=lines,
+            closing_balance=balance,
+            lines=tuple(lines),
             reconciling_items=items,
         ),
     )
@@ -300,7 +314,7 @@ def _wrong_currency(ctx: Context, artefact: str) -> None:
 def _altered(ctx: Context, artefact: str) -> None:
     if artefact == "bank_statement":
         s = _statement(ctx)
-        i = ctx.rng.randrange(len(s.lines))
+        i = _rng(ctx).randrange(len(s.lines))
         line = replace(s.lines[i], balance=s.lines[i].balance + _amount(ctx))
         _set_statement(ctx, replace(s, lines=(*s.lines[:i], line, *s.lines[i + 1 :])))
     else:
