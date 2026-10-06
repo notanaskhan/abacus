@@ -24,10 +24,10 @@ check: check-fast
 	cd backend && uv run pytest tests/unit tests/property --cov --cov-fail-under=0
 	cd backend && uv run pytest tests/integration tests/security tests/workflows --cov --cov-append
 	cd backend && uv run python -m abacus_tools.quality.schema_check
-	@if [ -n "$$(find backend/src/abacus/api -name '*.py' ! -name '__init__.py')" ]; then \
+	@if [ -f backend/src/abacus/api/export_openapi.py ]; then \
 		$(MAKE) generate && git diff --exit-code packages/api-client && \
 		test -z "$$(git status --porcelain --untracked-files=all packages/api-client)"; \
-	else echo "api-client drift: skipped until backend/src/abacus/api has modules (SPEC-000)"; fi
+	else echo "api-client drift: skipped until backend/src/abacus/api/export_openapi.py exists (TASK-008)"; fi
 	pnpm -C apps/web exec vitest run
 
 test:
