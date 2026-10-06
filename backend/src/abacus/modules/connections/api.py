@@ -1,5 +1,6 @@
 """Public interface of the connections module; other modules import only this (ADR-008)."""
 
+from abacus.kernel.uow import Handler
 from abacus.modules.connections.activities import ACTIVITIES
 from abacus.modules.connections.connector import (
     Capabilities,
@@ -46,10 +47,13 @@ from abacus.modules.connections.workflow_types import FailInput, RetrievalInput,
 from abacus.modules.connections.workflows import RetrievalWorkflow
 
 WORKFLOWS = (RetrievalWorkflow,)
+# Outbox events this module handles (the worker's relay routes them): none yet.
+SUBSCRIPTIONS: dict[str, Handler] = {}
 
 __all__ = [
     "ACTIVITIES",
     "CONNECTORS",
+    "SUBSCRIPTIONS",
     "WORKFLOWS",
     "Capabilities",
     "Connector",

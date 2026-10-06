@@ -29,6 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 
 from abacus.kernel.classification import classified, sensitive_paths
 from abacus.kernel.db import TenantContext, tenant_connection
+from abacus.kernel.uow.relay import Handler, OutboxEvent
 
 _ACTION = re.compile(r"[a-z][a-z_]*\.[a-z][a-z_]*")
 _TYPE = re.compile(r"[a-z][a-z_]*")
@@ -225,4 +226,13 @@ async def _unit_of_work(ctx: TenantContext) -> AsyncGenerator[UnitOfWork]:
             await session.close()
 
 
-__all__ = ["DomainEvent", "MissingAuditEvent", "Ref", "Target", "UnitOfWork", "uow"]
+__all__ = [
+    "DomainEvent",
+    "Handler",
+    "MissingAuditEvent",
+    "OutboxEvent",
+    "Ref",
+    "Target",
+    "UnitOfWork",
+    "uow",
+]

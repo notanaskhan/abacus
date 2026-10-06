@@ -14,7 +14,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.ai_gateway import Tier, prompt
 from abacus.kernel.classification import classified
-from abacus.modules.agents.handoff import Handoff, ScreeningOutput
 from abacus.modules.agents.specs._specs import SPECS
 from abacus.modules.identity.api import agent_may_hold
 
@@ -46,7 +45,12 @@ class AgentSpec(BaseModel):
     shape: Annotated[Literal["single_call"], classified("internal")]
     prompt: Annotated[str, classified("internal")]
     tier: Annotated[Tier, classified("internal")]
-    # The handoff model the agent's output must validate against (OUTPUT_SCHEMAS).
+    # ADR-055: declared now; used once escalation can route to a larger model. Today an escalated
+    # run goes to a person (ADR-005).
+    escalation_tier: Annotated[Tier, classified("internal")]
+    # What the agent is started with (`workflow_types.ScreeningInput`).
+    input_schema: Annotated[Literal["ScreeningInput"], classified("internal")]
+    # The handoff model the agent's output must validate against (`handoff.ScreeningOutput`).
     output_schema: Annotated[Literal["ScreeningOutput"], classified("internal")]
     task_scope: Annotated[frozenset[str], classified("internal")]
     tools: Annotated[tuple[str, ...], classified("internal")]
@@ -74,9 +78,6 @@ def _load() -> dict[str, AgentSpec]:
 
 
 AGENTS: dict[str, AgentSpec] = _load()
-
-
-OUTPUT_SCHEMAS: dict[str, type[Handoff]] = {"ScreeningOutput": ScreeningOutput}
 
 
 def spec(agent_id: str) -> AgentSpec:

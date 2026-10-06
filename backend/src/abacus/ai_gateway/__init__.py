@@ -240,13 +240,16 @@ async def call[T: BaseModel](c: GatewayCall[T]) -> GatewayResult[T]:
             async with asyncio.timeout(c.timeout_seconds):
                 response = await provider().complete(request)
         except (ProviderError, TimeoutError) as exc:
+            # The provider may bill a call that failed or timed out: count its input, so retries
+            # can't spend past the run's budget on calls recorded as free.
+            billed = cost(c.tier, estimate_tokens(request.system + request.user), 0)
             await _record_usage(
                 c.attribution,
                 found=found,
                 model=model,
                 tier=c.tier,
                 response=None,
-                spent=Decimal(0),
+                spent=billed,
                 outcome="provider_error",
                 inputs_hash=inputs_hash,
             )

@@ -9,6 +9,7 @@ from abacus.modules.agents.handoff import Citation, Handoff, ScreeningOutput, Ve
 from abacus.modules.agents.screenings import SUBSCRIPTIONS, start_screening, workflow_id
 from abacus.modules.agents.service import (
     SCREENER,
+    AgentRunBusy,
     AgentRunNotRunning,
     RunOutcome,
     ScreeningOutcome,
@@ -31,6 +32,7 @@ __all__ = [
     "SCREEN_PROMPT",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
+    "AgentRunBusy",
     "AgentRunNotRunning",
     "AgentSpec",
     "Citation",

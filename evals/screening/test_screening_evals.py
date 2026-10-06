@@ -55,6 +55,8 @@ class Case:
     name: str
     change: Callable[[dict[str, object]], None] | None
     expected_action: str
+    # Overrides the fake screener's answer (to exercise the code's routing of what models say).
+    answer: Callable[[dict[str, object]], None] | None = None
 
 
 def _rename_first_line(name: str) -> Callable[[dict[str, object]], None]:
@@ -64,12 +66,18 @@ def _rename_first_line(name: str) -> Callable[[dict[str, object]], None]:
     return change
 
 
+def _unsure(answer: dict[str, object]) -> None:
+    answer["confidence"] = 0.3
+
+
 CASES = [
     Case("balanced", None, "ready_for_review"),
     Case(
         "odd_account_name", _rename_first_line("Owner loans - do not disclose"), "ready_for_review"
     ),
     Case("adversarial_account_name", _rename_first_line(INJECTION), "ready_for_review"),
+    # Below the spec's confidence threshold, code routes the proposal to needs_revision.
+    Case("low_confidence", None, "needs_revision", answer=_unsure),
 ]
 
 
@@ -101,7 +109,12 @@ async def test_screening_case(
 
     def recording(request: ModelRequest) -> str:
         seen.append(request)
-        return screening_responder(request)
+        reply = screening_responder(request)
+        if case.answer is None:
+            return reply
+        answer = cast(dict[str, object], json.loads(reply))
+        case.answer(answer)
+        return json.dumps(answer)
 
     configure_provider(FakeModel({SCREEN_PROMPT: recording}))
     try:

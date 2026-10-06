@@ -8,6 +8,8 @@ mark delivery, nothing else (schema_check enforces it). Semantics:
   before the pass commits republishes it with the same `event_id`; consumers deduplicate on
   `(tenant_id, event_id)`.
 - Concurrent relays don't publish an event twice in one pass (`FOR UPDATE SKIP LOCKED`).
+- Fair across tenants: a pass claims at most `per_tenant` events of any one tenant, so one
+  firm's flood can't hold back the others.
 - A failing event backs off exponentially (capped at an hour) and is parked after MAX_ATTEMPTS:
   one poison event can't stall the queue. Its tenant's later events in the same pass are deferred,
   so they don't overtake it.
@@ -16,9 +18,10 @@ mark delivery, nothing else (schema_check enforces it). Semantics:
 - Locks are held while publishing: keep `batch` small.
 
 `RoutingPublisher` hands each event to the handlers subscribed to its type (modules declare
-them as `SUBSCRIPTIONS` in their `api.py`; the worker composes them). Handlers must be
+them as `SUBSCRIPTIONS` in their `api.py`; the worker composes them), each bounded by
+`HANDLER_TIMEOUT` (a hung handler fails the event, which backs off). Handlers must be
 idempotent: a redelivery, or a later handler failing, runs them again. `run_relay` is the loop
-the worker runs (TASK-011 Q4).
+the worker runs (TASK-011 Q4); each pass is bounded by `PASS_TIMEOUT`.
 """
 
 from __future__ import annotations
@@ -38,12 +41,16 @@ from abacus.kernel.logging import get_logger
 
 MAX_ATTEMPTS = 10
 MAX_BACKOFF_SECONDS = 3600
+HANDLER_TIMEOUT = 15.0
+PASS_TIMEOUT = 120.0
 _log = get_logger(__name__)
 
 _CLAIM = text(
-    "SELECT id, tenant_id, event_type, payload, attempts FROM outbox "
-    "WHERE published_at IS NULL AND attempts < :max_attempts "
-    "AND (next_attempt_at IS NULL OR next_attempt_at <= clock_timestamp()) "
+    "SELECT id, tenant_id, event_type, payload, attempts FROM outbox WHERE id IN ("
+    "SELECT id FROM (SELECT id, row_number() OVER (PARTITION BY tenant_id ORDER BY seq) AS n "
+    "FROM outbox WHERE published_at IS NULL AND attempts < :max_attempts "
+    "AND (next_attempt_at IS NULL OR next_attempt_at <= clock_timestamp())) AS due "
+    "WHERE n <= :per_tenant) "
     "ORDER BY seq LIMIT :batch FOR UPDATE SKIP LOCKED"
 )
 _PUBLISHED = text(
@@ -97,7 +104,8 @@ class RoutingPublisher:
 
     async def publish(self, event: OutboxEvent) -> None:
         for handler in self.handlers.get(event.event_type, ()):
-            await handler(event)
+            async with asyncio.timeout(HANDLER_TIMEOUT):
+                await handler(event)
 
 
 def _payload(raw: object) -> dict[str, object]:
@@ -111,12 +119,13 @@ def _backoff(attempts_after_failure: int) -> int:
     return min(2**attempts_after_failure, MAX_BACKOFF_SECONDS)
 
 
-async def relay_once(publisher: Publisher, batch: int = 25) -> RelayResult:
+async def relay_once(publisher: Publisher, batch: int = 25, per_tenant: int = 10) -> RelayResult:
     """Publish up to `batch` due events, oldest first. Never raises for a failing event."""
     published = failed = deferred = 0
     blocked: set[UUID] = set()  # tenants with a failure in this pass
     async with relay_engine().connect() as conn:
-        rows = (await conn.execute(_CLAIM, {"batch": batch, "max_attempts": MAX_ATTEMPTS})).all()
+        claim = {"batch": batch, "per_tenant": per_tenant, "max_attempts": MAX_ATTEMPTS}
+        rows = (await conn.execute(_CLAIM, claim)).all()
         for row in rows:
             tenant = cast(UUID, row.tenant_id)
             if tenant in blocked:
@@ -154,14 +163,20 @@ async def run_relay(
     publisher: Publisher, stop: asyncio.Event, *, interval: float = 1.0, batch: int = 25
 ) -> None:
     """Relay until `stop` is set: drain while there is work, then poll every `interval` seconds.
-    A failing pass (the database away) is logged and retried, never fatal."""
+    A failing or hung pass (bounded by `PASS_TIMEOUT`) is logged and retried with a capped
+    backoff, never fatal."""
+    failures = 0
     while not stop.is_set():
         busy = False
         try:
-            result = await relay_once(publisher, batch)
+            async with asyncio.timeout(PASS_TIMEOUT):
+                result = await relay_once(publisher, batch)
             busy = result.published + result.failed + result.deferred >= batch
+            failures = 0
         except Exception as exc:  # log the class only: messages can carry database values
-            _log.warning("outbox.relay_pass_failed", error=type(exc).__name__)
+            failures += 1
+            _log.warning("outbox.relay_pass_failed", error=type(exc).__name__, failures=failures)
         if not busy:
+            wait = min(interval * 2 ** min(failures, 6), 60.0)
             with suppress(TimeoutError):
-                await asyncio.wait_for(stop.wait(), interval)
+                await asyncio.wait_for(stop.wait(), wait)

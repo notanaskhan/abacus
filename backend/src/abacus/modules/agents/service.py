@@ -46,6 +46,7 @@ from abacus.modules.agents.repository import (
     lock_run,
     result_for_run,
     run_for_event,
+    try_lock_run,
 )
 from abacus.modules.agents.spec import spec
 from abacus.modules.engagements.api import get_ref, lock_ref
@@ -60,6 +61,10 @@ from abacus.modules.identity.api import (
 from abacus.modules.requests.api import fulfilled_items
 
 SCREENER = "evidence.screener"
+
+
+class AgentRunBusy(Exception):
+    """Another attempt is screening this run now (a retry overlapping a timed-out attempt)."""
 
 
 class AgentRunNotRunning(Exception):
@@ -200,10 +205,15 @@ TERMINAL: dict[type[Exception], str] = {
 
 async def screen(agent: AgentContext) -> ScreeningOutcome:
     """Screen the run's evidence version. Terminal errors fail the run (`fail_run`) and re-raise;
-    `ProviderError` leaves it running for a retry. One activity in 011b: a retry after a failed
-    final write calls the model again, and its spend counts against the run's budget."""
+    `ProviderError` and `AgentRunBusy` leave it running for a retry. One activity in 011b: a
+    retry after a failed final write calls the model again; its spend counts against the run's
+    budget."""
     try:
-        return await _screen(agent)
+        # One attempt at a time per run, so overlapping retries can't both pass the budget check.
+        async with tenant_session(agent.tenant) as session:
+            if not await try_lock_run(session, agent.agent_run_id):
+                raise AgentRunBusy(str(agent.agent_run_id))
+            return await _screen(agent)
     except tuple(TERMINAL) as exc:
         code = next(c for kind, c in TERMINAL.items() if isinstance(exc, kind))
         await fail_run(agent.tenant_id, agent.agent_run_id, code)

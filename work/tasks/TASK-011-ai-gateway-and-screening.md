@@ -328,8 +328,8 @@ Out: a real provider (Anthropic) and real model calls (a SPEC-000 non-goal); the
 **Gateway and spec changes**
 - `GatewayCall.timeout_seconds` (default 60) bounds each provider call. A timeout records a `provider_error` usage row and raises `ProviderError`.
 - `screen` passes `limits.max_seconds`.
-- `AgentSpec` no longer has `escalation_tier` or `input_schema`; the YAML drops them too.
-- `output_schema` must be `"ScreeningOutput"` (`OUTPUT_SCHEMAS`).
+- `AgentSpec` keeps `escalation_tier` (ADR-055: declared, used once escalation can route to a larger model) and `input_schema`, which must be `"ScreeningInput"` (ADR-047).
+- `output_schema` must be `"ScreeningOutput"`.
 - A `single_call` spec with `max_steps != 1` fails at import.
 
 **Evals**
@@ -345,8 +345,29 @@ Out: a real provider (Anthropic) and real model calls (a SPEC-000 non-goal); the
 - The cost per case goes to `backend/.evals/screening.json` (gitignored).
 - `evals/screening` now exists, so the "owed suites" allowance from 011a must drop it.
 
+**Contract revision 1 (after the security and architecture reviews; supersedes the bullets above where they differ)**
+- **Workflow id** is tenant-qualified: `workflow_id(tenant_id, evidence_version_id)` = `screening:<tenant_id>:<evidence_version_id>`. There is no execution timeout.
+- **`screening.screen`** has a 5-minute `start_to_close` and a 30-second heartbeat timeout; the activity heartbeats every 10 s. The other activities keep 2 minutes.
+- **One attempt at a time per run.**
+  - `screen` takes a transaction-scoped advisory lock on the run; a second concurrent attempt raises `AgentRunBusy`, which is retryable (exported from `agents.api`).
+- **Error wrapping in activities.** Every error crosses as a class-name-only `ApplicationError`, including database errors from `fail_run` and `run_outcome` inside `screening.screen` and `screening.fail_run`.
+  - `NotFound` and the terminal errors are non-retryable; everything else is retryable.
+- **Gateway billing on failures.** A provider error or timeout records `cost_usd` equal to the input cost estimate (`cost(tier, estimate_tokens(system+user), 0)`), not 0, and it counts against the run's budget.
+- **Relay.**
+  - `relay_once(publisher, batch=25, per_tenant=10)` claims at most `per_tenant` due events per tenant per pass, still in `seq` order.
+  - `RoutingPublisher` bounds each handler by `HANDLER_TIMEOUT` (15 s). A timeout is a failed publish, so the event backs off.
+  - `run_relay` bounds each pass by `PASS_TIMEOUT` (120 s). Consecutive failed passes back off (`interval × 2^failures`, at most 60 s), and the log carries `failures`.
+- **Worker.**
+  - `SUBSCRIBERS` is derived from `MODULES`; connections declares an empty `SUBSCRIPTIONS`.
+  - If the relay task ends, `stop` is set, so the worker stops, and `run()` re-raises the relay's exception. Shutdown is in a `finally`.
+  - With `environment == "local"`, `build_worker` configures `FakeModel` with the screener's fake responses. Elsewhere it configures no provider.
+- **`EVIDENCE_VERSION_CREATED`** is `evidence.api.EvidenceVersionCreated.event_type`. `OutboxEvent` and `Handler` are re-exported from `abacus.kernel.uow`.
+- **Evals.**
+  - `evals/conftest.py` refuses environments other than local and test, and appends (not prepends) `backend/` to `sys.path`.
+  - A fourth case, `low_confidence` (the fake answers 0.3), expects `needs_revision`.
+
 **Existing tests whose pinned facts change (update them; don't weaken them)**
-- `tests/unit/worker/test_worker_main.py::test_ac20_build_worker_checks_every_dependency_then_registers_the_module_registries`: it now checks `ping_relay` too, and registers both modules.
+- `tests/unit/worker/test_worker_main.py::test_ac20_build_worker_checks_every_dependency_then_registers_the_module_registries`: it now checks `ping_relay` too, registers both modules, and configures the fake provider only when local.
 - `tests/unit/agents/test_agent_specs.py::test_ac14_the_owed_list_names_only_suites_that_are_still_missing`: `evals/screening` exists now.
 
 ### Approval file text
@@ -422,8 +443,16 @@ reason: TASK-011 — AI gateway, agent specs and context, citations, usage recor
 | Initiator = `requested_by` on `evidence_version.created` | Keeps agents independent of connections; covers uploads too | No |
 | Screening totals are summed from the evidence sheet, not the ledger | The pinned architecture tests say only connections depends on ledger; this also screens what reviewers see | No |
 | The task layer trims a named list or refuses; it is never cut mid-text | Cutting could sever an `<untrusted>` block | No |
+| The relay runs inside the worker with the relay role (it reads every firm's outbox) | Q4; the grants are narrow (SELECT plus delivery columns). Accepted risk, recorded in the worker docstring | No |
+| Spec keeps `escalation_tier` and `input_schema` | ADR-047 and ADR-055 require them; the architecture review flagged them as unused, so both are documented and `input_schema` is pinned | No |
+| Screening workflow id is tenant-qualified, with no execution timeout | Shared Temporal namespace; a killed workflow would skip `fail_run` | No |
 
 ## Gotchas and discoveries
+- 011b follow-ups:
+  - **Per-tenant cap on screening runs (cost):** the relay is now fair across tenants, but a firm producing many evidence versions still gets one model run each. The limits are a product decision (per firm or per plan); budget per run is enforced.
+  - **A sweeper for `running` agent runs:** the same need as for sync runs (TASK-010).
+  - **Lint, type-check and run `evals/` in `make check`:** needs a Makefile change, which isn't covered by an approval. Move the shared integration fixtures (`world`, `seed`, …) from `test_retrieval.py` into a support module, so the evals don't import a test module.
+  - **A real model provider:** nothing configures one outside local; the worker fails closed.
 - 011b: `screen` is one activity. A retry after a failed final write calls the model again; the spend counts against the run's budget.
 - 011b: the spec fields `limits.max_steps`, `limits.max_seconds`, `escalation_tier`, `input_schema` and `output_schema` are validated but not yet enforced. Enforce them, or drop them, when the workflow lands.
 - 011b: `requested_by` is trusted from the `evidence_version.created` event, which is written in the same transaction as the version. The workflow must take it from the relayed event only. Manual uploads don't pass it yet, so they aren't screened.
