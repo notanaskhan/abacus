@@ -19,7 +19,7 @@ import yaml
 from testcontainers.community.postgres import PostgresContainer
 from testcontainers.core.container import DockerContainer
 
-from abacus.kernel.db import configure_engine
+from abacus.kernel.db import configure_engine, configure_relay_engine
 from abacus_tools.quality.schema_check import provisioned_database
 
 REPO = Path(__file__).resolve().parents[3]
@@ -112,6 +112,7 @@ def temporal_target() -> Iterator[str]:
 class MigratedDatabase:
     owner_url: str
     app_url: str
+    relay_url: str
 
 
 @pytest.fixture(scope="session")
@@ -123,4 +124,5 @@ def migrated_db() -> Iterator[MigratedDatabase]:
     """
     with provisioned_database() as database:
         configure_engine(database.app_url)
-        yield MigratedDatabase(database.owner_url, database.app_url)
+        configure_relay_engine(database.relay_url)
+        yield MigratedDatabase(database.owner_url, database.app_url, database.relay_url)

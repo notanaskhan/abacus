@@ -389,6 +389,15 @@ def _check_tenant_setting(src: SourceFile) -> Iterator[Finding]:
             yield Finding(node.lineno, "the tenant setting is written only by abacus.kernel.db")
 
 
+def _check_tenant_connection(src: SourceFile) -> Iterator[Finding]:
+    for node in ast.walk(src.tree):
+        if (
+            isinstance(node, ast.ImportFrom)
+            and any(a.name == "tenant_connection" for a in node.names)
+        ) or (isinstance(node, ast.Attribute) and node.attr == "tenant_connection"):
+            yield Finding(node.lineno, "tenant_connection is for abacus.kernel.uow only")
+
+
 # --- tree rules -------------------------------------------------------------------------------
 
 
@@ -429,6 +438,8 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_tenancy.py",
             "tests/integration/test_schema_check_db.py",
             "tests/integration/test_migrations_env.py",
+            "tests/integration/test_unit_of_work.py",
+            "tests/integration/test_outbox_relay.py",
         ),
     ),
     Rule(
@@ -486,6 +497,17 @@ RULES: list[Rule | TreeRule] = [
         description="No APIs that sidestep ruff's security rules; exempt in pyproject instead",
         adr="ADR-083",
         check=_check_lint_sidestep,
+    ),
+    Rule(
+        id="UOW-002",
+        description="Only the unit of work uses tenant_connection (it owns the commit)",
+        adr="ADR-018",
+        check=_check_tenant_connection,
+        exclude=(
+            "src/abacus/kernel/db/*",
+            "src/abacus/kernel/uow/*",
+            "tests/integration/*",
+        ),
     ),
     Rule(
         id="TENANT-001",

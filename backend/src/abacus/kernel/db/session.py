@@ -25,7 +25,7 @@ from typing import Literal
 from uuid import UUID
 
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, AsyncSession, create_async_engine
 
 from abacus.kernel.config import settings
 
@@ -65,10 +65,31 @@ def configure_engine(url: str) -> None:
 
 
 async def dispose_engine() -> None:
-    global _engine
-    if _engine is not None:
-        await _engine.dispose()
-        _engine = None
+    global _engine, _relay_engine
+    for engine in (_engine, _relay_engine):
+        if engine is not None:
+            await engine.dispose()
+    _engine = _relay_engine = None
+
+
+_relay_engine: AsyncEngine | None = None
+
+
+def configure_relay_engine(url: str) -> None:
+    """Point the outbox relay at a database (abacus_relay role). Startup and tests."""
+    global _relay_engine
+    _relay_engine = _create_engine(url)
+
+
+def relay_engine() -> AsyncEngine:
+    """Engine for the abacus_relay role: reads and marks the outbox, nothing else (TASK-006)."""
+    global _relay_engine
+    if _relay_engine is None:
+        url = settings().relay_database_url
+        if url is None:  # settings validation makes this unreachable outside local and test
+            raise RuntimeError("relay_database_url is not configured")
+        _relay_engine = _create_engine(url.get_secret_value())
+    return _relay_engine
 
 
 def _current_engine() -> AsyncEngine:
@@ -81,22 +102,36 @@ def _current_engine() -> AsyncEngine:
     return _engine
 
 
+async def _begin_tenant(conn: AsyncConnection, ctx: TenantContext) -> None:
+    """Clear stale settings, then set tenant and actor for this transaction only."""
+    # Clear anything a previous user of this pooled connection set at session level.
+    await conn.execute(text("RESET app.tenant_id"))
+    await conn.execute(text("RESET app.actor_kind"))
+    await conn.execute(text("RESET app.actor_id"))
+    # Transaction-local (`true`): gone when this transaction ends, whatever happens.
+    await conn.execute(
+        text(
+            "SELECT set_config('app.tenant_id', :tenant, true), "
+            "set_config('app.actor_kind', :kind, true), "
+            "set_config('app.actor_id', :actor, true)"
+        ),
+        {"tenant": str(ctx.tenant_id), "kind": ctx.actor_kind, "actor": ctx.actor_id},
+    )
+
+
+@asynccontextmanager
+async def tenant_connection(ctx: TenantContext) -> AsyncGenerator[AsyncConnection]:
+    """A tenant-scoped connection whose transaction the caller owns. Only `kernel.uow` uses it
+    (UOW-002): it commits; leaving without a commit rolls back (pool reset on return)."""
+    async with _current_engine().connect() as conn:
+        await _begin_tenant(conn, ctx)
+        yield conn
+
+
 @asynccontextmanager
 async def tenant_session(ctx: TenantContext) -> AsyncGenerator[AsyncSession]:
     async with _current_engine().connect() as conn:
-        # Clear anything a previous user of this pooled connection set at session level.
-        await conn.execute(text("RESET app.tenant_id"))
-        await conn.execute(text("RESET app.actor_kind"))
-        await conn.execute(text("RESET app.actor_id"))
-        # Transaction-local (`true`): gone when this transaction ends, whatever happens.
-        await conn.execute(
-            text(
-                "SELECT set_config('app.tenant_id', :tenant, true), "
-                "set_config('app.actor_kind', :kind, true), "
-                "set_config('app.actor_id', :actor, true)"
-            ),
-            {"tenant": str(ctx.tenant_id), "kind": ctx.actor_kind, "actor": ctx.actor_id},
-        )
+        await _begin_tenant(conn, ctx)
         session = AsyncSession(
             bind=conn,
             expire_on_commit=False,

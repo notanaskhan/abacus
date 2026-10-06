@@ -628,3 +628,67 @@ def test_ac20_tenant_001_allows_the_setting_in_excluded_paths(
 def test_ac20_tenant_001_ignores_unrelated_strings(tmp_path: Path) -> None:
     _write(tmp_path, SERVICE, 'A = "app.other"\nB = "tenant_id"\n')
     assert "TENANT-001" not in _rule_ids(tmp_path)
+
+
+# --- UOW-002: tenant_connection is for the kernel, the unit of work and integration tests -------
+
+UOW2_VIOLATING = [
+    "from abacus.kernel.db import tenant_connection\n",
+    "from abacus.kernel.db.session import tenant_connection\n",
+    "from abacus.kernel.db import tenant_connection as tc\n",
+    "import abacus.kernel.db\nabacus.kernel.db.tenant_connection(ctx)\n",
+    "from abacus.kernel import db\ndb.tenant_connection(ctx)\n",
+    "from abacus.kernel.db import tenant_session, tenant_connection\n",
+]
+UOW2_FLAGGED_PATHS = [
+    SERVICE,
+    "src/abacus/kernel/config.py",
+    "src/abacus/kernel/uow_helpers.py",
+    "tests/unit/test_something.py",
+    "tests/integration_helpers/x.py",
+]
+UOW2_ALLOWED_PATHS = [
+    "src/abacus/kernel/db/session.py",
+    "src/abacus/kernel/uow/unit.py",
+    "tests/integration/test_unit_of_work.py",
+]
+
+
+@pytest.mark.parametrize("source", UOW2_VIOLATING)
+@pytest.mark.parametrize("rel", UOW2_FLAGGED_PATHS)
+def test_ac20_uow_002_flags_tenant_connection_outside_its_owners(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    _write(tmp_path, rel, source)
+    found = [v for v in bp.scan(tmp_path) if v.rule_id == "UOW-002"]
+    assert found
+    assert {v.path for v in found} == {rel}
+
+
+def test_ac20_uow_002_reports_the_import_line(tmp_path: Path) -> None:
+    _write(tmp_path, SERVICE, "import os\nfrom abacus.kernel.db import tenant_connection\n")
+    found = [v for v in bp.scan(tmp_path) if v.rule_id == "UOW-002"]
+    assert [v.line for v in found] == [2]
+
+
+@pytest.mark.parametrize("source", UOW2_VIOLATING)
+@pytest.mark.parametrize("rel", UOW2_ALLOWED_PATHS)
+def test_ac20_uow_002_allows_the_kernel_the_unit_of_work_and_integration_tests(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    _write(tmp_path, rel, source)
+    assert "UOW-002" not in _rule_ids(tmp_path)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "from abacus.kernel.db import tenant_session\n",
+        "from abacus.kernel.uow import uow\n",
+        "# tenant_connection is for the unit of work\n",
+        "import abacus.kernel.db\nabacus.kernel.db.tenant_session(ctx)\n",
+    ],
+)
+def test_ac20_uow_002_ignores_clean_code_elsewhere(tmp_path: Path, source: str) -> None:
+    _write(tmp_path, SERVICE, source)
+    assert "UOW-002" not in _rule_ids(tmp_path)
