@@ -18,10 +18,15 @@ Environment = Literal["local", "test", "staging", "production"]
 _LOCAL_DB = "postgresql+asyncpg://abacus_app:abacusapp@127.0.0.1:55432/abacus"
 _LOCAL_MIGRATIONS_DB = "postgresql+asyncpg://abacus_owner:abacusowner@127.0.0.1:55432/abacus"
 _LOCAL_RELAY_DB = "postgresql+asyncpg://abacus_relay:abacusrelay@127.0.0.1:55432/abacus"
+_LOCAL_IDENTITY_DB = "postgresql+asyncpg://abacus_identity:abacusidentity@127.0.0.1:55432/abacus"
 _CONNECTIONS = (
     "database_url",
     "migrations_database_url",
     "relay_database_url",
+    "identity_database_url",
+    "identity_issuer",
+    "identity_audience",
+    "identity_jwks",
     "s3_endpoint_url",
     "s3_access_key",
     "s3_secret_key",
@@ -31,6 +36,12 @@ _LOCAL_DEFAULTS: dict[str, object] = {
     "database_url": _LOCAL_DB,
     "migrations_database_url": _LOCAL_MIGRATIONS_DB,
     "relay_database_url": _LOCAL_RELAY_DB,
+    "identity_database_url": _LOCAL_IDENTITY_DB,
+    # The fake identity provider (abacus_tools.fakes.identity) signs with a key made per run; local
+    # runs and tests install its public JWKS. An empty key set verifies nothing: fail closed.
+    "identity_issuer": "https://identity.abacus.local",
+    "identity_audience": "abacus-api",
+    "identity_jwks": '{"keys": []}',
     "s3_endpoint_url": "http://127.0.0.1:7070",
     "s3_access_key": "abacus",
     "s3_secret_key": "abacuslocal",
@@ -48,6 +59,12 @@ class Settings(BaseSettings):
     database_url: Annotated[SecretStr | None, classified("restricted")] = None
     migrations_database_url: Annotated[SecretStr | None, classified("restricted")] = None
     relay_database_url: Annotated[SecretStr | None, classified("restricted")] = None
+    identity_database_url: Annotated[SecretStr | None, classified("restricted")] = None
+    # Who may sign users in (ADR-029): the issuer and audience tokens must carry, and the
+    # provider's public JWKS as JSON. Public keys, not secrets.
+    identity_issuer: Annotated[str | None, classified("internal")] = None
+    identity_audience: Annotated[str | None, classified("internal")] = None
+    identity_jwks: Annotated[str | None, classified("internal")] = None
     database_statement_timeout_ms: Annotated[int, classified("internal")] = 30_000
     s3_endpoint_url: Annotated[str | None, classified("internal")] = None
     s3_access_key: Annotated[SecretStr | None, classified("restricted")] = None

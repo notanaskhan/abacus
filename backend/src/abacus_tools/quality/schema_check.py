@@ -10,6 +10,9 @@ up again (every migration must be reversible), then inspects the catalog. It fai
   - a table not owned by abacus_owner
   - UPDATE or DELETE granted to abacus_app on an insert-only table (INSERT_ONLY_TABLES)
   - abacus_app with SUPERUSER, BYPASSRLS, CREATEROLE or CREATEDB, or owning any relation
+  - a global table (GLOBAL_TABLES) with any app privilege
+  - abacus_relay or abacus_identity (they bypass RLS) holding any privilege not in
+    BYPASS_ROLE_GRANTS
 
 `provisioned_database()` is shared with the integration test fixtures, so tests and this gate build
 the database the same way.
@@ -50,8 +53,17 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "outbox": frozenset({"id", "tenant_id", "event_type", "payload"}),
 }
+# Tables shared by every tenant, readable only through abacus_identity (ADR-002, TASK-007): the app
+# role has no privileges on them at all. Each entry is founder-reviewed (protected file).
+GLOBAL_TABLES = frozenset({"users"})
 RELAY = "abacus_relay"
-_LOCAL_PASSWORDS = {OWNER: "abacusowner", APP: "abacusapp", RELAY: "abacusrelay"}
+IDENTITY = "abacus_identity"
+_LOCAL_PASSWORDS = {
+    OWNER: "abacusowner",
+    APP: "abacusapp",
+    RELAY: "abacusrelay",
+    IDENTITY: "abacusidentity",
+}
 
 
 @dataclass(frozen=True)
@@ -59,6 +71,7 @@ class Database:
     owner_url: str
     app_url: str
     relay_url: str
+    identity_url: str
     superuser_dsn: str
 
 
@@ -110,7 +123,7 @@ def provisioned_database(*, roundtrip: bool = True) -> Generator[Database]:
         if roundtrip:
             migrate(url(OWNER), "base", down=True)
             migrate(url(OWNER), "head")
-        yield Database(url(OWNER), url(APP), url(RELAY), superuser)
+        yield Database(url(OWNER), url(APP), url(RELAY), url(IDENTITY), superuser)
 
 
 _TABLES = """
@@ -231,6 +244,28 @@ WHERE pg_get_userbyid(n.nspowner) = $1
 
 RELAY_TABLE = "outbox"
 RELAY_UPDATABLE = frozenset({"published_at", "attempts", "last_error", "next_attempt_at"})
+ALL_COLUMNS = None  # in a Grant: every column of the table
+
+
+@dataclass(frozen=True)
+class Grant:
+    """What a BYPASSRLS role may do to one table, column by column."""
+
+    select: frozenset[str] | None = frozenset()
+    update: frozenset[str] = frozenset()
+
+
+# Roles that bypass row-level security, and everything each may touch (TASK-006, TASK-007).
+BYPASS_ROLE_GRANTS: dict[str, dict[str, Grant]] = {
+    RELAY: {RELAY_TABLE: Grant(select=ALL_COLUMNS, update=RELAY_UPDATABLE)},
+    IDENTITY: {
+        "users": Grant(select=ALL_COLUMNS),
+        "memberships": Grant(
+            select=frozenset({"tenant_id", "id", "user_id", "firm_role", "status"})
+        ),
+        "firms": Grant(select=frozenset({"tenant_id", "name"})),
+    },
+}
 _TABLE_PRIVILEGES = ("SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER")
 _COLUMNS = """
 SELECT a.attname FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid
@@ -253,44 +288,61 @@ WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p', 'v', 'm', 'f') ORDER BY c
 """
 
 
-async def _relay_problems(conn: asyncpg.Connection) -> list[str]:
-    """abacus_relay bypasses RLS, so its privileges must stop at reading and marking the outbox."""
+def _column_allowed(allowed: frozenset[str] | None, column: str) -> bool:
+    return allowed is None or column in allowed
+
+
+async def _bypass_role_problems(
+    conn: asyncpg.Connection, role_name: str, grants: dict[str, Grant]
+) -> list[str]:
+    """A role that bypasses RLS sees every tenant: its privileges must stop at its grant list."""
     problems: list[str] = []
-    role = await conn.fetchrow(_ROLE, RELAY)
+    role = await conn.fetchrow(_ROLE, role_name)
     if role is None:
-        return [f"{RELAY}: role missing"]
+        return [f"{role_name}: role missing"]
     for column, attribute in _ROLE_ATTRIBUTES.items():
         if column != "rolbypassrls" and role[column]:
-            problems.append(f"{RELAY}: has {attribute}")
+            problems.append(f"{role_name}: has {attribute}")
     for query in (_OWNED, _OWNED_FUNCTIONS, _OWNED_TYPES, _OWNED_SCHEMAS):
-        for owned in await conn.fetch(query, RELAY):
-            problems.append(f"{RELAY}: owns {owned['kind']} {owned['name']}")
+        for owned in await conn.fetch(query, role_name):
+            problems.append(f"{role_name}: owns {owned['kind']} {owned['name']}")
     for relation in await conn.fetch(_ALL_RELATIONS):
         name = str(relation["relname"])
-        allowed = {"SELECT"} if name == RELAY_TABLE else set[str]()
+        grant = grants.get(name)
+        table_wide: set[str] = (
+            {"SELECT"} if grant is not None and grant.select is ALL_COLUMNS else set()
+        )
         for privilege in _TABLE_PRIVILEGES:
-            if privilege not in allowed and await conn.fetchval(
-                "SELECT has_table_privilege($1, $2, $3)", RELAY, f"public.{name}", privilege
+            if privilege not in table_wide and await conn.fetchval(
+                "SELECT has_table_privilege($1, $2, $3)", role_name, f"public.{name}", privilege
             ):
-                problems.append(f"{RELAY}: has {privilege} on {name}")
-    for column in await conn.fetch(_COLUMNS, RELAY_TABLE):
-        name = str(column["attname"])
-        if name not in RELAY_UPDATABLE and await conn.fetchval(
-            "SELECT has_column_privilege($1, $2, $3, 'UPDATE')",
-            RELAY,
-            f"public.{RELAY_TABLE}",
-            name,
-        ):
-            problems.append(f"{RELAY}: may UPDATE {RELAY_TABLE}.{name}")
+                problems.append(f"{role_name}: has {privilege} on {name}")
+        for column in await conn.fetch(_COLUMNS, name):
+            col = str(column["attname"])
+            permitted = {
+                "SELECT": grant is not None and _column_allowed(grant.select, col),
+                "UPDATE": grant is not None and col in grant.update,
+                "INSERT": False,
+                "REFERENCES": False,
+            }
+            for privilege, ok in permitted.items():
+                if not ok and await conn.fetchval(
+                    "SELECT has_column_privilege($1, $2, $3, $4)",
+                    role_name,
+                    f"public.{name}",
+                    col,
+                    privilege,
+                ):
+                    problems.append(f"{role_name}: may {privilege} {name}.{col}")
     for sequence in await conn.fetch(_SEQUENCES):
         name = str(sequence["relname"])
         for privilege in ("USAGE", "SELECT", "UPDATE"):
             if await conn.fetchval(
-                "SELECT has_sequence_privilege($1, $2, $3)", RELAY, f"public.{name}", privilege
+                "SELECT has_sequence_privilege($1, $2, $3)", role_name, f"public.{name}", privilege
             ):
-                problems.append(f"{RELAY}: has {privilege} on sequence {name}")
-    for membership in await conn.fetch(_MEMBERSHIPS, RELAY):
-        problems.append(f"{RELAY}: is a member of {membership['role']}")
+                problems.append(f"{role_name}: has {privilege} on sequence {name}")
+    for membership in await conn.fetch(_MEMBERSHIPS, role_name):
+        problems.append(f"{role_name}: is a member of {membership['role']}")
     return problems
 
 
@@ -319,12 +371,23 @@ async def _inspect(owner_dsn: str) -> list[str]:
             name = str(table["relname"])
             if str(table["owner"]) != OWNER:
                 problems.append(f"{name}: owned by {table['owner']}, not {OWNER}")
-            if name in NON_TENANT_TABLES:
-                for privilege in ("SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE"):
+            if name in NON_TENANT_TABLES or name in GLOBAL_TABLES:
+                for privilege in _TABLE_PRIVILEGES:
                     if await conn.fetchval(
                         "SELECT has_table_privilege($1, $2, $3)", APP, f"public.{name}", privilege
                     ):
                         problems.append(f"{name}: {APP} has {privilege} on a non-tenant table")
+                for column in await conn.fetch(_COLUMNS, name):
+                    col = str(column["attname"])
+                    for privilege in ("SELECT", "INSERT", "UPDATE", "REFERENCES"):
+                        if await conn.fetchval(
+                            "SELECT has_column_privilege($1, $2, $3, $4)",
+                            APP,
+                            f"public.{name}",
+                            col,
+                            privilege,
+                        ):
+                            problems.append(f"{name}: {APP} may {privilege} {name}.{col}")
                 continue
             column = await conn.fetchrow(_TENANT_COLUMN, name)
             if column is None or column["type"] != "uuid" or not column["attnotnull"]:
@@ -365,7 +428,8 @@ async def _inspect(owner_dsn: str) -> list[str]:
                 )
         for function in await conn.fetch(_LARGE_OBJECT_FUNCTIONS, APP):
             problems.append(f"{APP}: can execute {function['name']}")
-        problems += await _relay_problems(conn)
+        for role_name, grants in BYPASS_ROLE_GRANTS.items():
+            problems += await _bypass_role_problems(conn, role_name, grants)
         role = await conn.fetchrow(_ROLE, APP)
         if role is None:
             problems.append(f"{APP}: role missing")
