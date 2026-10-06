@@ -41,14 +41,16 @@ APP = "abacus_app"
 # Tables without tenant_id: only infrastructure. Each entry is founder-reviewed (protected file).
 NON_TENANT_TABLES = frozenset({"alembic_version"})
 # Tables the app may insert into and read, never update or delete (ADR-004); TASK-009/010 add.
-INSERT_ONLY_TABLES: frozenset[str] = frozenset()
-_LOCAL_PASSWORDS = {OWNER: "abacusowner", APP: "abacusapp"}
+INSERT_ONLY_TABLES: frozenset[str] = frozenset({"audit_events", "outbox"})
+RELAY = "abacus_relay"
+_LOCAL_PASSWORDS = {OWNER: "abacusowner", APP: "abacusapp", RELAY: "abacusrelay"}
 
 
 @dataclass(frozen=True)
 class Database:
     owner_url: str
     app_url: str
+    relay_url: str
     superuser_dsn: str
 
 
@@ -100,7 +102,7 @@ def provisioned_database(*, roundtrip: bool = True) -> Generator[Database]:
         if roundtrip:
             migrate(url(OWNER), "base", down=True)
             migrate(url(OWNER), "head")
-        yield Database(url(OWNER), url(APP), superuser)
+        yield Database(url(OWNER), url(APP), url(RELAY), superuser)
 
 
 _TABLES = """
@@ -219,6 +221,53 @@ WHERE pg_get_userbyid(n.nspowner) = $1
 """
 
 
+RELAY_TABLE = "outbox"
+RELAY_UPDATABLE = frozenset({"published_at", "attempts", "last_error"})
+_TABLE_PRIVILEGES = ("SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER")
+_COLUMNS = """
+SELECT a.attname FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public' AND c.relname = $1 AND a.attnum > 0 AND NOT a.attisdropped
+ORDER BY a.attnum
+"""
+_ALL_RELATIONS = """
+SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p', 'v', 'm', 'f') ORDER BY c.relname
+"""
+
+
+async def _relay_problems(conn: asyncpg.Connection) -> list[str]:
+    """abacus_relay bypasses RLS, so its privileges must stop at reading and marking the outbox."""
+    problems: list[str] = []
+    role = await conn.fetchrow(_ROLE, RELAY)
+    if role is None:
+        return [f"{RELAY}: role missing"]
+    for column, attribute in _ROLE_ATTRIBUTES.items():
+        if column != "rolbypassrls" and role[column]:
+            problems.append(f"{RELAY}: has {attribute}")
+    for query in (_OWNED, _OWNED_FUNCTIONS, _OWNED_TYPES, _OWNED_SCHEMAS):
+        for owned in await conn.fetch(query, RELAY):
+            problems.append(f"{RELAY}: owns {owned['kind']} {owned['name']}")
+    for relation in await conn.fetch(_ALL_RELATIONS):
+        name = str(relation["relname"])
+        allowed = {"SELECT"} if name == RELAY_TABLE else set[str]()
+        for privilege in _TABLE_PRIVILEGES:
+            if privilege not in allowed and await conn.fetchval(
+                "SELECT has_table_privilege($1, $2, $3)", RELAY, f"public.{name}", privilege
+            ):
+                problems.append(f"{RELAY}: has {privilege} on {name}")
+    for column in await conn.fetch(_COLUMNS, RELAY_TABLE):
+        name = str(column["attname"])
+        if name not in RELAY_UPDATABLE and await conn.fetchval(
+            "SELECT has_column_privilege($1, $2, $3, 'UPDATE')",
+            RELAY,
+            f"public.{RELAY_TABLE}",
+            name,
+        ):
+            problems.append(f"{RELAY}: may UPDATE {RELAY_TABLE}.{name}")
+    return problems
+
+
 async def _inspect(owner_dsn: str) -> list[str]:
     conn = await asyncpg.connect(owner_dsn)
     problems: list[str] = []
@@ -273,6 +322,7 @@ async def _inspect(owner_dsn: str) -> list[str]:
                 )
         for function in await conn.fetch(_LARGE_OBJECT_FUNCTIONS, APP):
             problems.append(f"{APP}: can execute {function['name']}")
+        problems += await _relay_problems(conn)
         role = await conn.fetchrow(_ROLE, APP)
         if role is None:
             problems.append(f"{APP}: role missing")

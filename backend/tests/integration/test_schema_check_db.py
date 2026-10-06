@@ -444,3 +444,116 @@ def test_ac20_main_exits_1_and_prints_every_problem(
     text = output.out + output.err
     assert "probe: no policy" in text
     assert "probe_b: missing tenant_id" in text
+
+
+# --- relay role and the audit and outbox tables (TASK-006) -----------------------------------
+
+OUTBOX_DDL = (
+    "CREATE TABLE outbox (id uuid PRIMARY KEY, tenant_id uuid NOT NULL, event_type text, "
+    "payload jsonb, published_at timestamptz, attempts int NOT NULL DEFAULT 0, last_error text)"
+)
+AUDIT_DDL = "CREATE TABLE audit_events (id uuid PRIMARY KEY, tenant_id uuid NOT NULL, action text)"
+RELAY_OK = [
+    "GRANT SELECT ON outbox TO abacus_relay",
+    "GRANT UPDATE (published_at, attempts, last_error) ON outbox TO abacus_relay",
+]
+
+
+def _protect(table: str) -> list[str]:
+    return [
+        ENABLE.format(t=table),
+        FORCE.format(t=table),
+        POLICY.format(t=table),
+        f"REVOKE UPDATE, DELETE ON {table} FROM abacus_app",
+    ]
+
+
+def _relay_tables() -> list[str]:
+    return [OUTBOX_DDL, *_protect("outbox"), AUDIT_DDL, *_protect("audit_events"), *RELAY_OK]
+
+
+@pytest.fixture
+def relay_db(db: Cluster) -> Iterator[Cluster]:
+    yield db
+    _sql(
+        db.admin,
+        "DROP TABLE IF EXISTS outbox, audit_events CASCADE",
+        "ALTER ROLE abacus_relay NOSUPERUSER NOCREATEROLE NOCREATEDB",
+    )
+
+
+def test_ac20_a_correct_relay_and_insert_only_audit_tables_pass(relay_db: Cluster) -> None:
+    assert _problems(relay_db, _relay_tables()) == []
+
+
+def test_ac20_relay_with_privileges_on_another_table_is_reported(relay_db: Cluster) -> None:
+    problems = _problems(
+        relay_db,
+        [*_relay_tables(), *_good("probe")],
+        "GRANT SELECT ON probe TO abacus_relay",
+    )
+    _assert_reports(problems, "abacus_relay", "probe", "select")
+
+
+def test_ac20_relay_with_privileges_on_audit_events_is_reported(relay_db: Cluster) -> None:
+    problems = _problems(relay_db, _relay_tables(), "GRANT SELECT ON audit_events TO abacus_relay")
+    _assert_reports(problems, "abacus_relay", "audit_events", "select")
+
+
+@pytest.mark.parametrize("column", ["payload", "event_type", "tenant_id"])
+def test_ac20_relay_update_on_a_column_other_than_the_status_columns_is_reported(
+    relay_db: Cluster, column: str
+) -> None:
+    statements = {
+        "payload": "GRANT UPDATE (payload) ON outbox TO abacus_relay",
+        "event_type": "GRANT UPDATE (event_type) ON outbox TO abacus_relay",
+        "tenant_id": "GRANT UPDATE (tenant_id) ON outbox TO abacus_relay",
+    }
+    problems = _problems(relay_db, _relay_tables(), statements[column])
+    _assert_reports(problems, "abacus_relay", "update", "outbox", column)
+
+
+@pytest.mark.parametrize("privilege", ["UPDATE", "DELETE", "INSERT"])
+def test_ac20_relay_with_a_table_wide_write_privilege_on_outbox_is_reported(
+    relay_db: Cluster, privilege: str
+) -> None:
+    statements = {
+        "UPDATE": "GRANT UPDATE ON outbox TO abacus_relay",
+        "DELETE": "GRANT DELETE ON outbox TO abacus_relay",
+        "INSERT": "GRANT INSERT ON outbox TO abacus_relay",
+    }
+    problems = _problems(relay_db, _relay_tables(), statements[privilege])
+    _assert_reports(problems, "abacus_relay", privilege.lower(), "outbox")
+
+
+@pytest.mark.parametrize("attribute", ["SUPERUSER", "CREATEROLE", "CREATEDB"])
+def test_ac20_relay_role_with_a_dangerous_attribute_is_reported(
+    relay_db: Cluster, attribute: str
+) -> None:
+    statements = {
+        "SUPERUSER": "ALTER ROLE abacus_relay SUPERUSER",
+        "CREATEROLE": "ALTER ROLE abacus_relay CREATEROLE",
+        "CREATEDB": "ALTER ROLE abacus_relay CREATEDB",
+    }
+    problems = _problems(relay_db, _relay_tables(), statements[attribute])
+    _assert_reports(problems, "abacus_relay", attribute.lower())
+
+
+def test_ac20_relay_role_owning_a_table_is_reported(relay_db: Cluster) -> None:
+    problems = _problems(relay_db, _good("probe"), "ALTER TABLE probe OWNER TO abacus_relay")
+    assert any(m.startswith("abacus_relay: ") and "owns" in m for m in problems), problems
+
+
+@pytest.mark.parametrize("table", ["audit_events", "outbox"])
+@pytest.mark.parametrize("privilege", ["UPDATE", "DELETE"])
+def test_ac20_app_update_or_delete_on_audit_events_or_outbox_is_reported(
+    relay_db: Cluster, table: str, privilege: str
+) -> None:
+    grants = {
+        ("audit_events", "UPDATE"): "GRANT UPDATE ON audit_events TO abacus_app",
+        ("audit_events", "DELETE"): "GRANT DELETE ON audit_events TO abacus_app",
+        ("outbox", "UPDATE"): "GRANT UPDATE ON outbox TO abacus_app",
+        ("outbox", "DELETE"): "GRANT DELETE ON outbox TO abacus_app",
+    }
+    problems = _problems(relay_db, _relay_tables(), grants[(table, privilege)])
+    assert f"{table}: abacus_app may {privilege} an insert-only table" in problems, problems

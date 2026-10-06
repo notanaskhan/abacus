@@ -11,7 +11,12 @@ from pydantic import SecretStr
 
 from abacus.kernel.config import Settings
 
-CONNECTION = ("database_url", "migrations_database_url", "temporal_target")
+CONNECTION = (
+    "database_url",
+    "migrations_database_url",
+    "relay_database_url",
+    "temporal_target",
+)
 
 
 @pytest.fixture(autouse=True)
@@ -30,6 +35,7 @@ def _explicit_connection_env(monkeypatch: pytest.MonkeyPatch, omit: str | None =
     values = {
         "database_url": "postgresql+asyncpg://app@db.example.test:5432/abacus",
         "migrations_database_url": "postgresql+asyncpg://owner@db.example.test:5432/abacus",
+        "relay_database_url": "postgresql+asyncpg://relay@db.example.test:5432/abacus",
         "temporal_target": "temporal.example.test:7233",
     }
     for name in Settings.model_fields:
@@ -49,6 +55,8 @@ def test_ac20_local_and_test_environments_load_with_defaults(
     assert settings.environment == environment
     assert "55432" in _plain(settings.database_url)
     assert "55432" in _plain(settings.migrations_database_url)
+    assert "55432" in _plain(settings.relay_database_url)
+    assert "abacus_relay" in _plain(settings.relay_database_url)
     assert settings.temporal_target
 
 
@@ -92,6 +100,28 @@ def test_ac20_non_local_environment_with_everything_explicit_loads(
     assert settings.environment == environment
     assert "db.example.test" in _plain(settings.database_url)
     assert "55432" not in _plain(settings.database_url)
+    assert "db.example.test" in _plain(settings.relay_database_url)
+
+
+@pytest.mark.parametrize("environment", ["staging", "production"])
+def test_ac20_non_local_environment_without_relay_database_url_fails(
+    monkeypatch: pytest.MonkeyPatch, environment: str
+) -> None:
+    monkeypatch.setenv("ABACUS_ENVIRONMENT", environment)
+    _explicit_connection_env(monkeypatch, omit="relay_database_url")
+    with pytest.raises(ValueError, match="relay_database_url"):
+        Settings()
+
+
+def test_ac20_relay_url_is_a_secret_and_never_in_repr(monkeypatch: pytest.MonkeyPatch) -> None:
+    password = secrets.token_hex(8)
+    url = f"postgresql+asyncpg://abacus_relay:{password}@localhost:55432/abacus"
+    monkeypatch.setenv("ABACUS_RELAY_DATABASE_URL", url)
+    settings = Settings()
+    assert isinstance(settings.relay_database_url, SecretStr)
+    assert settings.relay_database_url.get_secret_value() == url
+    for rendered in (repr(settings), str(settings), settings.model_dump_json()):
+        assert password not in rendered
 
 
 def test_ac20_migrations_url_is_a_secret_and_never_in_repr(
@@ -114,7 +144,7 @@ def test_ac20_every_secret_looking_field_is_a_secretstr() -> None:
         for name in Settings.model_fields
         if any(word in name for word in ("secret", "password", "token"))
     ]
-    for name in [*secretish, "migrations_database_url"]:
+    for name in [*secretish, "migrations_database_url", "relay_database_url"]:
         assert isinstance(getattr(settings, name), SecretStr), name
 
 

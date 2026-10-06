@@ -92,13 +92,13 @@ publish each (`await publisher.publish(event)`), then `UPDATE outbox SET publish
 **5. `schema_check` additions**: `abacus_relay` must exist without `SUPERUSER`/`CREATEROLE`/`CREATEDB`, own nothing, and hold privileges on no table but `outbox` (and there only `SELECT` + column `UPDATE`); `audit_events` and `outbox` insert-only for `abacus_app`.
 
 ### Steps
-1. [ ] Protect first: `backend/src/abacus/kernel/uow/**` is already protected (hook, CODEOWNERS) — verify; nothing new to protect.
-2. [ ] `bootstrap.sql`: `abacus_relay` role (+ local password in `bootstrap-local.sql`); settings `relay_database_url`.
-3. [ ] `kernel/db`: `tenant_connection(ctx)`, `relay_engine()`.
-4. [ ] Migration `0002`: tables, constraints, RLS, insert-only, relay grants; update `INSERT_ONLY_TABLES` and relay checks in `schema_check`.
-5. [ ] `kernel/uow`: `uow`, `UnitOfWork`, `record`, `emit`, `Target`, `Ref`, `DomainEvent`, `MissingAuditEvent`; `kernel/uow/relay.py`: `Publisher`, `OutboxEvent`, `relay_once`, `InMemoryPublisher`.
-6. [ ] Banned pattern UOW-002; kernel README.
-7. [ ] Independent tests; `make check`; gate-break (an audit event row updated or deleted by the app fails; a uow with no `record` raises; relay privileges on another table fail `schema_check`).
+1. [x] Protect first: `backend/src/abacus/kernel/uow/**` is already protected (hook, CODEOWNERS) — verify; nothing new to protect.
+2. [x] `bootstrap.sql`: `abacus_relay` role (+ local password in `bootstrap-local.sql`); settings `relay_database_url`.
+3. [x] `kernel/db`: `tenant_connection(ctx)`, `relay_engine()`.
+4. [x] Migration `0002`: tables, constraints, RLS, insert-only, relay grants; update `INSERT_ONLY_TABLES` and relay checks in `schema_check`.
+5. [x] `kernel/uow`: `uow`, `UnitOfWork`, `record`, `emit`, `Target`, `Ref`, `DomainEvent`, `MissingAuditEvent`; `kernel/uow/relay.py`: `Publisher`, `OutboxEvent`, `relay_once`, `InMemoryPublisher`.
+6. [x] Banned pattern UOW-002; kernel README.
+7. [x] Independent tests; `make check`; gate-break (an audit event row updated or deleted by the app fails; a uow with no `record` raises; relay privileges on another table fail `schema_check`).
 
 ### Interface contract (tests written independently — ADR-078)
 - `from abacus.kernel.uow import uow, UnitOfWork, Target, Ref, DomainEvent, MissingAuditEvent`; `from abacus.kernel.uow.relay import Publisher, OutboxEvent, InMemoryPublisher, relay_once`.
@@ -150,6 +150,8 @@ reason: TASK-006 — unit of work, audit events, outbox and relay
 ## Progress log
 - `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder.
 - `2026-10-06` — TASK-005 merged (PR #5). Design drafted for founder review (red task). No code.
+
+- `2026-10-06` — Implemented per the approved design. Probe end to end: uow commit writes change + audit (actor from context, reference not content) + outbox; `MissingAuditEvent` writes nothing; relay publishes once and marks published. Independent tests (Sonnet): 27 uow, 19 relay, 9 API, 8 schema_check, 4 UOW-002, config updated for the new required `relay_database_url` (contract change; their test, updated by them). DB-001 exclusions of the approved kind for `test_unit_of_work.py` and `test_outbox_relay.py` (owner/relay engines for probe tables). `sensitive_paths` moved from `kernel.logging` into `kernel.classification` so `emit` and the logger share one check. `make check` exit 0: 1,499 unit + 176 integration, coverage 97 %.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

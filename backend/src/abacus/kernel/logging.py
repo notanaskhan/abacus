@@ -20,42 +20,17 @@ from uuid import UUID
 import structlog
 from pydantic import BaseModel
 
-from abacus.kernel.classification import restricted_fields, unclassified_fields
+from abacus.kernel.classification import sensitive_paths
 
 _SCALARS = (str, int, float, bool, UUID, date)
 _configured = False
-
-
-def _restricted_paths(value: object, path: str = "") -> list[str]:
-    """Dotted paths of Restricted or unclassified fields anywhere in `value`, nested included."""
-    found: list[str] = []
-    if isinstance(value, BaseModel):
-        restricted = set(restricted_fields(type(value)))
-        unclassified = set(unclassified_fields(type(value)))
-        for field in type(value).model_fields:
-            here = f"{path}.{field}" if path else field
-            if field in restricted:
-                found.append(here)
-            elif (
-                field in unclassified
-            ):  # untagged means unknown, which must be treated as Restricted
-                found.append(f"{here} (unclassified)")
-            else:
-                found += _restricted_paths(getattr(value, field), here)
-    elif isinstance(value, Mapping):
-        for key, item in cast(Mapping[object, object], value).items():
-            found += _restricted_paths(item, f"{path}[{key!r}]")
-    elif isinstance(value, Sequence) and not isinstance(value, str | bytes):
-        for index, item in enumerate(cast(Sequence[object], value)):
-            found += _restricted_paths(item, f"{path}[{index}]")
-    return found
 
 
 def _clean(name: str, value: object) -> object:
     if value is None or isinstance(value, _SCALARS):
         return str(value) if isinstance(value, UUID | date) else value
     if isinstance(value, BaseModel):
-        restricted = _restricted_paths(value)
+        restricted = sensitive_paths(value)
         if restricted:
             raise ValueError(
                 f"log field {name!r}: {type(value).__name__} carries Restricted data "
