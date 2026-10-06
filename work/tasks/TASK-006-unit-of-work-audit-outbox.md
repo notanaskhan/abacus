@@ -112,6 +112,27 @@ publish each (`await publisher.publish(event)`), then `UPDATE outbox SET publish
   - `abacus_relay` can read `outbox` only — no other table, no `UPDATE` of `payload`
 - `schema_check` reports: relay with privileges on another table; relay `UPDATE` on `payload`; app `UPDATE`/`DELETE` on `audit_events` or `outbox`.
 
+#### Contract revision 1 (2026-10-06, from both stage 4 reviews)
+**Database**
+- Column-level INSERT for the app (new helper `insert_columns(op, table, columns)` in `kernel.db.migration`: one `REVOKE INSERT ON <t> FROM abacus_app` then one `GRANT INSERT (<c1>, <c2>, …) ON <t> TO abacus_app`, columns in the given order, same name validation as `tenant_table`). `audit_events`: `tenant_id, actor_kind, actor_id, action, target_type, target_id, before_ref, after_ref, trace_id` — so the app can't set `id`, `seq` (no `OVERRIDING SYSTEM VALUE`), or `occurred_at`. `outbox`: `id, tenant_id, event_type, payload` — so it can't insert a row already published, attempted or failed. `schema_check` reports `<t>: abacus_app may INSERT <t>.<column>` for any other insertable column of an insert-only table.
+- Actor check: `actor_kind IS NOT DISTINCT FROM NULLIF(current_setting('app.actor_kind', true), '')` (same for `actor_id`) — an unset setting now fails.
+- `target_id` must be a UUID or digits (CHECK); `last_error` must look like an exception class name (`^[A-Za-z_][A-Za-z0-9_.]{0,199}$`).
+- `outbox` primary key is `(tenant_id, id)` — tenants can't collide on, or probe, each other's event IDs. Consumers deduplicate on `(tenant_id, event_id)`.
+- `outbox.next_attempt_at timestamptz NULL` (relay-updatable). `schema_check`: relay updatable columns are `published_at, attempts, last_error, next_attempt_at`; relay with any sequence privilege or membership in any role is reported (`abacus_relay: has <PRIVILEGE> on sequence <name>`, `abacus_relay: is a member of <role>`).
+- Known limit, stated honestly: the app role controls its own session settings, so the database actor/tenant checks catch application **bugs**, not malicious SQL in application code. Static rules close the code paths: TENANT-001 now covers every literal containing `app.tenant_id` **or `app.actor_`**.
+
+**Unit of work**
+- Nested `uow` raises `RuntimeError("nested unit of work")` (ContextVar), nothing written by the inner one.
+- `Target(type, id)`: `type` matches `^[a-z][a-z_]*$`; `id` is a `UUID`, an `int`, or a string that is a UUID or all digits — else `ValueError`. `Ref(**fields)`: keys match `^[a-z][a-z_]{0,39}$`; values are `UUID`, `int`, or a 64-character lowercase hex fingerprint — else `ValueError`. References can't carry free text.
+
+**Relay**
+- `relay_once(publisher, batch=25) -> RelayResult(published: int, failed: int, deferred: int)`; never raises for a publisher error or a malformed payload (counted as failed); a `BaseException` (crash, cancel) still propagates and rolls back the pass.
+- Claims only rows with `published_at IS NULL AND attempts < MAX_ATTEMPTS (10) AND (next_attempt_at IS NULL OR next_attempt_at <= now())`, ordered by `seq`.
+- On a failure: `attempts + 1`, `last_error = <exception class name>`, `next_attempt_at = now() + min(2^attempts, 3600) seconds`; **the rest of that tenant's events in this pass are deferred** (not published, not touched) so one tenant's events don't overtake its failed one; other tenants proceed. After `MAX_ATTEMPTS` the event is parked (never claimed again; visible by `attempts >= 10`).
+- Each failure is logged as `outbox.publish_failed` with `event_id`, `tenant_id`, `event_type`, `attempts`, `error` (class name) — never the payload.
+- Ordering: per tenant within a pass, best effort across passes; `seq` is insert order, not commit order. Consumers must be idempotent and must not assume global order.
+- UOW-002 also covers `relay_engine` and `configure_relay_engine` (the BYPASSRLS engine) — allowed only in `kernel/db`, `kernel/uow`, `tests/integration`.
+
 ### Approval file text
 ```yaml
 task: TASK-006
@@ -153,6 +174,8 @@ reason: TASK-006 — unit of work, audit events, outbox and relay
 
 - `2026-10-06` — Implemented per the approved design. Probe end to end: uow commit writes change + audit (actor from context, reference not content) + outbox; `MissingAuditEvent` writes nothing; relay publishes once and marks published. Independent tests (Sonnet): 27 uow, 19 relay, 9 API, 8 schema_check, 4 UOW-002, config updated for the new required `relay_database_url` (contract change; their test, updated by them). DB-001 exclusions of the approved kind for `test_unit_of_work.py` and `test_outbox_relay.py` (owner/relay engines for probe tables). `sensitive_paths` moved from `kernel.logging` into `kernel.classification` so `emit` and the logger share one check. `make check` exit 0: 1,499 unit + 176 integration, coverage 97 %.
 
+- `2026-10-06` — Both stage 4 reviews addressed (contract revision 1): migration **0003** (0002 is immutable once it exists) — column-level INSERT for the app, NULL-safe actor CHECK, target/last_error CHECKs, outbox PK `(tenant_id, id)`, `next_attempt_at`; uow refuses nesting, `Target`/`Ref` identifiers only; relay backoff (cap 1 h), parking after 10 attempts, per-tenant deferral within a pass, `RelayResult`, `outbox.publish_failed` log; TENANT-001 covers `app.actor_*`; UOW-002 covers `relay_engine`/`configure_relay_engine`; schema_check checks app insert columns (where declared in `APP_INSERT_COLUMNS`), relay sequences and role membership; `migrated_db` exposes `superuser_dsn`. Relay backoff/deferral is a design change beyond the approved design — flagged for the founder's line-by-line review.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
@@ -172,8 +195,8 @@ reason: TASK-006 — unit of work, audit events, outbox and relay
 - [x] **Q4 — Domain events carry no Restricted fields.** Approved 2026-10-06. **Recommendation:** yes.
 
 ## Handoff
-- **Current state:** Design written for founder review. No code. Branch `task-006-uow`.
-- **Exact next step:** Founder edits or approves the design and answers Q1–Q4; approval file; then an independent session writes tests from the contract while the code is built.
-- **Uncommitted or partial work:** this file; TASK-005 marked done.
-- **Known failing checks:** none.
-- **Open issues:** branch protection off.
+- **Current state:** Implementation complete with all review fixes; my probe passes end to end; `schema_check` passes. Independent tests last run: 1,427 passed / 6 failed — all 6 from decisions now made (see next step). Not yet pushed.
+- **Exact next step:** (1) Wait for the test author's report: they are moving `test_ac4_a_session_rollback_inside_the_block_never_leaves_a_partial_write` into `backend/tests/integration/test_uow_session_rollback.py`, using `superuser_dsn` for the malformed-payload test (no TENANT-001 exclusion needed), and updating the TENANT-001 message assertion. (2) Add a UOW-001 (and DB-001 if needed) exclusion for `tests/integration/test_uow_session_rollback.py` only in `banned_patterns.py`. (3) `make check` (needs Docker running and `PATH=/opt/homebrew/opt/node@24/bin:$PATH`). (4) Commit, push branch `task-006-uow`, open PR (red: founder line-by-line), confirm CI. (5) After merge: delete `work/approvals/TASK-006.yaml`, mark done, start TASK-007 design.
+- **Uncommitted or partial work:** see git status — review fixes and test-author files are in the working tree; committed as WIP below.
+- **Known failing checks:** the 6 test-author failures above until they land their changes; banned_patterns flags their two files until step 2.
+- **Open issues:** branch protection off; founder shell PATH still Node 20.

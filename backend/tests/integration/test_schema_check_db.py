@@ -449,27 +449,47 @@ def test_ac20_main_exits_1_and_prints_every_problem(
 # --- relay role and the audit and outbox tables (TASK-006) -----------------------------------
 
 OUTBOX_DDL = (
-    "CREATE TABLE outbox (id uuid PRIMARY KEY, tenant_id uuid NOT NULL, event_type text, "
-    "payload jsonb, published_at timestamptz, attempts int NOT NULL DEFAULT 0, last_error text)"
+    "CREATE TABLE outbox (id uuid PRIMARY KEY, tenant_id uuid NOT NULL, "
+    "seq bigint GENERATED ALWAYS AS IDENTITY, occurred_at timestamptz NOT NULL DEFAULT now(), "
+    "event_type text, payload jsonb, published_at timestamptz, attempts int NOT NULL DEFAULT 0, "
+    "last_error text, next_attempt_at timestamptz)"
 )
-AUDIT_DDL = "CREATE TABLE audit_events (id uuid PRIMARY KEY, tenant_id uuid NOT NULL, action text)"
+AUDIT_DDL = (
+    "CREATE TABLE audit_events (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), "
+    "tenant_id uuid NOT NULL, seq bigint GENERATED ALWAYS AS IDENTITY, "
+    "occurred_at timestamptz NOT NULL DEFAULT now(), actor_kind text, actor_id text, "
+    "action text, target_type text, target_id text, before_ref jsonb, after_ref jsonb, "
+    "trace_id text)"
+)
+AUDIT_INSERTABLE = (
+    "tenant_id, actor_kind, actor_id, action, target_type, target_id, before_ref, after_ref, "
+    "trace_id"
+)
+OUTBOX_INSERTABLE = "id, tenant_id, event_type, payload"
 RELAY_OK = [
     "GRANT SELECT ON outbox TO abacus_relay",
-    "GRANT UPDATE (published_at, attempts, last_error) ON outbox TO abacus_relay",
+    "GRANT UPDATE (published_at, attempts, last_error, next_attempt_at) ON outbox TO abacus_relay",
 ]
 
 
-def _protect(table: str) -> list[str]:
+def _protect(table: str, insertable: str) -> list[str]:
     return [
         ENABLE.format(t=table),
         FORCE.format(t=table),
         POLICY.format(t=table),
-        f"REVOKE UPDATE, DELETE ON {table} FROM abacus_app",
+        f"REVOKE UPDATE, DELETE, INSERT ON {table} FROM abacus_app",
+        f"GRANT INSERT ({insertable}) ON {table} TO abacus_app",
     ]
 
 
 def _relay_tables() -> list[str]:
-    return [OUTBOX_DDL, *_protect("outbox"), AUDIT_DDL, *_protect("audit_events"), *RELAY_OK]
+    return [
+        OUTBOX_DDL,
+        *_protect("outbox", OUTBOX_INSERTABLE),
+        AUDIT_DDL,
+        *_protect("audit_events", AUDIT_INSERTABLE),
+        *RELAY_OK,
+    ]
 
 
 @pytest.fixture
@@ -479,6 +499,7 @@ def relay_db(db: Cluster) -> Iterator[Cluster]:
         db.admin,
         "DROP TABLE IF EXISTS outbox, audit_events CASCADE",
         "ALTER ROLE abacus_relay NOSUPERUSER NOCREATEROLE NOCREATEDB",
+        "REVOKE pg_monitor FROM abacus_relay",
     )
 
 
@@ -557,3 +578,90 @@ def test_ac20_app_update_or_delete_on_audit_events_or_outbox_is_reported(
     }
     problems = _problems(relay_db, _relay_tables(), grants[(table, privilege)])
     assert f"{table}: abacus_app may {privilege} an insert-only table" in problems, problems
+
+
+def test_ac20_relay_may_update_next_attempt_at(relay_db: Cluster) -> None:
+    statements = [
+        *_relay_tables()[:-2],
+        "GRANT SELECT ON outbox TO abacus_relay",
+        "GRANT UPDATE (next_attempt_at) ON outbox TO abacus_relay",
+    ]
+    assert _problems(relay_db, statements) == []
+
+
+@pytest.mark.parametrize("column", ["seq", "id", "occurred_at"])
+def test_ac20_app_insert_on_a_non_allowed_audit_events_column_is_reported(
+    relay_db: Cluster, column: str
+) -> None:
+    grants = {
+        "seq": "GRANT INSERT (seq) ON audit_events TO abacus_app",
+        "id": "GRANT INSERT (id) ON audit_events TO abacus_app",
+        "occurred_at": "GRANT INSERT (occurred_at) ON audit_events TO abacus_app",
+    }
+    problems = _problems(relay_db, _relay_tables(), grants[column])
+    assert f"audit_events: abacus_app may INSERT audit_events.{column}" in problems, problems
+
+
+@pytest.mark.parametrize("column", ["published_at", "attempts", "last_error", "next_attempt_at"])
+def test_ac20_app_insert_on_a_non_allowed_outbox_column_is_reported(
+    relay_db: Cluster, column: str
+) -> None:
+    grants = {
+        "published_at": "GRANT INSERT (published_at) ON outbox TO abacus_app",
+        "attempts": "GRANT INSERT (attempts) ON outbox TO abacus_app",
+        "last_error": "GRANT INSERT (last_error) ON outbox TO abacus_app",
+        "next_attempt_at": "GRANT INSERT (next_attempt_at) ON outbox TO abacus_app",
+    }
+    problems = _problems(relay_db, _relay_tables(), grants[column])
+    assert f"outbox: abacus_app may INSERT outbox.{column}" in problems, problems
+
+
+def test_ac20_app_with_table_wide_insert_on_outbox_is_reported(relay_db: Cluster) -> None:
+    problems = _problems(relay_db, _relay_tables(), "GRANT INSERT ON outbox TO abacus_app")
+    assert "outbox: abacus_app may INSERT outbox.published_at" in problems, problems
+
+
+@pytest.mark.parametrize("privilege", ["USAGE", "SELECT", "UPDATE"])
+def test_ac20_relay_with_a_privilege_on_a_sequence_is_reported(
+    relay_db: Cluster, privilege: str
+) -> None:
+    grants = {
+        "USAGE": "GRANT USAGE ON SEQUENCE outbox_seq_seq TO abacus_relay",
+        "SELECT": "GRANT SELECT ON SEQUENCE outbox_seq_seq TO abacus_relay",
+        "UPDATE": "GRANT UPDATE ON SEQUENCE outbox_seq_seq TO abacus_relay",
+    }
+    problems = _problems(relay_db, _relay_tables(), grants[privilege])
+    expected = f"abacus_relay: has {privilege} on sequence outbox_seq_seq"
+    assert expected in problems, problems
+
+
+def test_ac20_relay_membership_in_another_role_is_reported(relay_db: Cluster) -> None:
+    problems = _problems(relay_db, _relay_tables(), "GRANT pg_monitor TO abacus_relay")
+    assert "abacus_relay: is a member of pg_monitor" in problems, problems
+
+
+def test_ac20_relay_message_formats_for_table_privileges_and_columns(relay_db: Cluster) -> None:
+    problems = _problems(
+        relay_db,
+        [*_relay_tables(), *_good("probe")],
+        "GRANT SELECT ON probe TO abacus_relay",
+        "GRANT UPDATE (payload) ON outbox TO abacus_relay",
+    )
+    assert "abacus_relay: has SELECT on probe" in problems, problems
+    assert "abacus_relay: may UPDATE outbox.payload" in problems, problems
+
+
+def test_ac20_a_declared_column_list_is_enforced_for_a_patched_insert_only_table(
+    db: Cluster, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(sc, "INSERT_ONLY_TABLES", frozenset({"probe"}))
+    monkeypatch.setattr(sc, "APP_INSERT_COLUMNS", {"probe": frozenset({"id", "tenant_id"})})
+    problems = _problems(
+        db,
+        [
+            *_good("probe"),
+            "REVOKE UPDATE, DELETE, INSERT ON probe FROM abacus_app",
+            "GRANT INSERT (id, tenant_id, body) ON probe TO abacus_app",
+        ],
+    )
+    assert problems == ["probe: abacus_app may INSERT probe.body"], problems

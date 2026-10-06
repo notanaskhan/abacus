@@ -7,7 +7,7 @@ from typing import cast
 import pytest
 from alembic.operations import Operations
 
-from abacus.kernel.db.migration import insert_only, tenant_table
+from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
 TENANT_ISOLATION = (
     "CREATE POLICY tenant_isolation ON {t} "
@@ -102,3 +102,41 @@ def test_ac13_insert_only_rejects_invalid_names_without_emitting(bad: str) -> No
 def test_ac5_valid_names_are_accepted(good: str) -> None:
     assert len(_tenant_table(good)) == 3
     assert len(_insert_only(good)) == 1
+
+
+def _insert_columns(table: str, columns: list[str]) -> list[str]:
+    op = RecordingOp()
+    insert_columns(cast(Operations, op), table, columns)
+    return op.statements
+
+
+def test_ac13_insert_columns_emits_a_revoke_then_a_column_grant_in_the_given_order() -> None:
+    assert _insert_columns("outbox", ["tenant_id", "id", "payload"]) == [
+        "REVOKE INSERT ON outbox FROM abacus_app",
+        "GRANT INSERT (tenant_id, id, payload) ON outbox TO abacus_app",
+    ]
+
+
+def test_ac13_insert_columns_with_one_column_has_no_trailing_comma() -> None:
+    assert _insert_columns("t", ["a"]) == [
+        "REVOKE INSERT ON t FROM abacus_app",
+        "GRANT INSERT (a) ON t TO abacus_app",
+    ]
+
+
+@pytest.mark.parametrize("bad", ["", "Users", "a-b", "public.t", "t;", "t; DROP TABLE x", "1t"])
+def test_ac13_insert_columns_rejects_invalid_table_names_without_emitting(bad: str) -> None:
+    op = RecordingOp()
+    with pytest.raises(ValueError):
+        insert_columns(cast(Operations, op), bad, ["a"])
+    assert op.statements == []
+
+
+@pytest.mark.parametrize(
+    "bad", ["", "Col", "a-b", "t.c", "c;", "c) TO public; --", '"c"', "1c", "c c", "c\n"]
+)
+def test_ac13_insert_columns_rejects_invalid_column_names_without_emitting(bad: str) -> None:
+    op = RecordingOp()
+    with pytest.raises(ValueError):
+        insert_columns(cast(Operations, op), "t", ["good", bad])
+    assert op.statements == []

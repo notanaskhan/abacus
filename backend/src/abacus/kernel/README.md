@@ -13,3 +13,19 @@ Not a module (ADR-101). Every module uses it; it never imports a module.
 | `kernel.config` | `settings()` | Local and test default to `docker compose`; elsewhere every connection setting is required. |
 
 Database roles (`backend/migrations/bootstrap.sql`, protected): `abacus_owner` owns tables and runs migrations; `abacus_app` is what the API and worker use — not an owner, no `BYPASSRLS`; `abacus_relay` bypasses row-level security but can only read the outbox and mark delivery. Row-level security is forced, so the owner is bound by it too.
+
+## Unit of work rules (TASK-006)
+
+- Call `uow` from the service layer, never from a FastAPI `Depends` with `yield`: the commit and `MissingAuditEvent` must surface inside the request, not after the response.
+- No nesting: a `uow` inside a `uow` raises.
+- Need a server-generated id for `record`? `await tx.session.flush()` first.
+- `Target` and `Ref` take identifiers only (UUIDs, integers, SHA-256 fingerprints) — never names, emails or text.
+- Domain events carry identifiers only; consumers load data under their own tenant context and deduplicate on `(tenant_id, event_id)`.
+
+## Relay semantics
+
+At least once; failures back off exponentially (capped at one hour) and are parked after 10 attempts (`attempts >= 10`, logged as `outbox.publish_failed`); a tenant's later events wait behind its failed one within a pass; no global order — `seq` is insert order, not commit order. Locks are held while publishing, so keep batches small.
+
+## Known limit
+
+The app role sets its own session settings, so the database checks on tenant and actor catch application bugs, not malicious SQL in application code. TENANT-001 confines those settings to `kernel.db`; UOW-001/UOW-002 confine commits and the relay engine to `kernel.uow`.

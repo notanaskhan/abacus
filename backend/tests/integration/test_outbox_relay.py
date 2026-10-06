@@ -9,9 +9,11 @@ The relay role is exercised through a raw engine on `relay_url`.
 from __future__ import annotations
 
 import asyncio
-import contextlib
+import json
+import re
 import uuid
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
 from typing import Annotated, ClassVar, Protocol, cast
 
 import pytest
@@ -38,6 +40,7 @@ class Migrated(Protocol):
     owner_url: str
     app_url: str
     relay_url: str
+    superuser_dsn: str
 
 
 METADATA = MetaData()
@@ -52,6 +55,7 @@ OUTBOX = Table(
     Column("published_at", DateTime(timezone=True)),
     Column("attempts", Integer()),
     Column("last_error", Text()),
+    Column("next_attempt_at", DateTime(timezone=True)),
 )
 RELAY_PROBE = Table(
     "relay_probe",
@@ -89,6 +93,33 @@ class RecordingPublisher:
     @property
     def ids(self) -> list[uuid.UUID]:
         return [_event_id(e) for e in self.events]
+
+
+class FailOnPublisher(RecordingPublisher):
+    """Fails (without recording) for the given event ids; records the rest."""
+
+    def __init__(self, failing: set[uuid.UUID]) -> None:
+        super().__init__()
+        self.failing = failing
+
+    async def publish(self, event: OutboxEvent) -> None:
+        if _event_id(event) in self.failing:
+            raise ValueError("cannot send")
+        await super().publish(event)
+
+
+class BarrierPublisher(RecordingPublisher):
+    """Signals that it holds its claim, then waits to be released before publishing."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.started = asyncio.Event()
+        self.release = asyncio.Event()
+
+    async def publish(self, event: OutboxEvent) -> None:
+        self.started.set()
+        await asyncio.wait_for(self.release.wait(), timeout=20)
+        await super().publish(event)
 
 
 class FailingPublisher:
@@ -170,7 +201,8 @@ async def test_ac20_relay_publishes_every_tenants_events_once_in_seq_order(
         await _emit(b, 4),
     ]
     publisher = RecordingPublisher()
-    await relay_once(publisher)
+    result = await relay_once(publisher)
+    assert (result.published, result.failed, result.deferred) == (4, 0, 0)
     assert publisher.ids == ids
     assert [e.tenant_id for e in publisher.events] == [
         a.tenant_id,
@@ -196,17 +228,21 @@ async def test_ac20_a_second_pass_publishes_nothing_again() -> None:
 
 async def test_ac20_a_pass_with_nothing_to_publish_is_a_no_op() -> None:
     publisher = RecordingPublisher()
-    await relay_once(publisher)
+    result = await relay_once(publisher)
     assert publisher.events == []
+    assert (result.published, result.failed, result.deferred) == (0, 0, 0)
 
 
 async def test_ac20_batch_limits_a_pass_and_the_next_pass_continues_in_order() -> None:
     ctx = _ctx()
     ids = [await _emit(ctx, n) for n in range(5)]
     first, second, third = RecordingPublisher(), RecordingPublisher(), RecordingPublisher()
-    await relay_once(first, batch=2)
-    await relay_once(second, batch=2)
-    await relay_once(third, batch=2)
+    results = [
+        await relay_once(first, batch=2),
+        await relay_once(second, batch=2),
+        await relay_once(third, batch=2),
+    ]
+    assert [r.published for r in results] == [2, 2, 1]
     assert first.ids == ids[:2]
     assert second.ids == ids[2:4]
     assert third.ids == ids[4:]
@@ -219,7 +255,16 @@ async def test_ac20_the_in_memory_publisher_collects_published_events() -> None:
     assert [_event_id(e) for e in memory.published] == [event_id]
 
 
-# --- AC-20: failures --------------------------------------------------------------------------
+# --- AC-20: failures, backoff, parking -------------------------------------------------------
+
+
+async def _row(engine: AsyncEngine, event_id: uuid.UUID) -> dict[str, object]:
+    return (await _rows(engine, [event_id]))[event_id]
+
+
+async def _relay_sql(engine: AsyncEngine, statement: str, **params: object) -> None:
+    async with engine.begin() as conn:
+        await conn.execute(text(statement), params)
 
 
 async def test_ac20_a_publisher_failure_leaves_the_event_unpublished_and_counts_the_attempt(
@@ -227,56 +272,184 @@ async def test_ac20_a_publisher_failure_leaves_the_event_unpublished_and_counts_
 ) -> None:
     secret_marker = f"secret-{uuid.uuid4().hex}"
     event_id = await _emit(_ctx(), marker=secret_marker)
-    failing = FailingPublisher(ValueError(f"cannot send {secret_marker}"))
-    with contextlib.suppress(Exception):  # the relay may re-raise or swallow; both are valid
-        await relay_once(failing)
-    row = (await _rows(relay_engine, [event_id]))[event_id]
+    result = await relay_once(FailingPublisher(ValueError(f"cannot send {secret_marker}")))
+    assert (result.published, result.failed, result.deferred) == (0, 1, 0)
+    row = await _row(relay_engine, event_id)
     assert row["published_at"] is None
     assert row["attempts"] == 1
-    last_error = cast(str, row["last_error"])
-    assert last_error
-    assert "ValueError" in last_error
-    assert secret_marker not in last_error
-    assert secret_marker not in str(row["last_error"])
+    assert row["last_error"] == "ValueError"
+    next_attempt = cast(datetime, row["next_attempt_at"])
+    assert next_attempt > datetime.now(UTC)
 
 
-async def test_ac20_repeated_failures_increment_attempts_and_success_publishes_later(
+async def test_ac20_a_failed_event_is_not_claimed_again_before_its_next_attempt_at(
     relay_engine: AsyncEngine,
 ) -> None:
     event_id = await _emit(_ctx())
-    for _ in range(2):
-        with contextlib.suppress(Exception):  # re-raise or swallow; both are valid
-            await relay_once(FailingPublisher(RuntimeError("down")))
-    row = (await _rows(relay_engine, [event_id]))[event_id]
-    assert (row["published_at"], row["attempts"]) == (None, 2)
-    ok = RecordingPublisher()
-    await relay_once(ok)
-    assert ok.ids == [event_id]
-    row = (await _rows(relay_engine, [event_id]))[event_id]
-    assert row["published_at"] is not None
+    await relay_once(FailingPublisher(RuntimeError("down")))
+    early = RecordingPublisher()
+    result = await relay_once(early)
+    assert early.events == []
+    assert (result.published, result.failed) == (0, 0)
+    assert (await _row(relay_engine, event_id))["attempts"] == 1
+    await _relay_sql(
+        relay_engine,
+        "UPDATE outbox SET next_attempt_at = now() - interval '1 minute' WHERE id = :id",
+        id=event_id,
+    )
+    due = RecordingPublisher()
+    result = await relay_once(due)
+    assert due.ids == [event_id]
+    assert result.published == 1
+    assert (await _row(relay_engine, event_id))["published_at"] is not None
+
+
+async def test_ac20_backoff_grows_with_each_failure(relay_engine: AsyncEngine) -> None:
+    event_id = await _emit(_ctx())
+    delays: list[float] = []
+    for _ in range(3):
+        await relay_once(FailingPublisher(RuntimeError("down")))
+        next_attempt = cast(datetime, (await _row(relay_engine, event_id))["next_attempt_at"])
+        delays.append((next_attempt - datetime.now(UTC)).total_seconds())
+        await _relay_sql(
+            relay_engine,
+            "UPDATE outbox SET next_attempt_at = now() - interval '1 second' WHERE id = :id",
+            id=event_id,
+        )
+    assert delays[0] < delays[1] < delays[2]
+
+
+async def test_ac20_an_event_is_parked_after_ten_attempts(relay_engine: AsyncEngine) -> None:
+    event_id = await _emit(_ctx())
+    for attempt in range(1, 11):
+        result = await relay_once(FailingPublisher(RuntimeError("down")))
+        assert result.failed == 1, attempt
+        await _relay_sql(
+            relay_engine,
+            "UPDATE outbox SET next_attempt_at = now() - interval '1 second' WHERE id = :id",
+            id=event_id,
+        )
+    assert (await _row(relay_engine, event_id))["attempts"] == 10
+    parked = RecordingPublisher()
+    result = await relay_once(parked)
+    assert parked.events == []
+    assert (result.published, result.failed, result.deferred) == (0, 0, 0)
+    row = await _row(relay_engine, event_id)
+    assert (row["published_at"], row["attempts"]) == (None, 10)
+
+
+async def test_ac20_a_failure_defers_the_rest_of_that_tenants_events_but_not_other_tenants(
+    relay_engine: AsyncEngine,
+) -> None:
+    a, b = _ctx(), _ctx()
+    a1, b1, a2, b2, a3 = [
+        await _emit(a, 1),
+        await _emit(b, 2),
+        await _emit(a, 3),
+        await _emit(b, 4),
+        await _emit(a, 5),
+    ]
+    publisher = FailOnPublisher({a1})
+    result = await relay_once(publisher)
+    assert publisher.ids == [b1, b2]
+    assert (result.published, result.failed, result.deferred) == (2, 1, 2)
+    rows = await _rows(relay_engine, [a1, a2, a3, b1, b2])
+    assert rows[a1]["attempts"] == 1
+    for untouched in (a2, a3):
+        assert rows[untouched]["published_at"] is None
+        assert rows[untouched]["attempts"] == 0
+        assert rows[untouched]["last_error"] is None
+        assert rows[untouched]["next_attempt_at"] is None
+    assert rows[b1]["published_at"] is not None
+    assert rows[b2]["published_at"] is not None
+
+
+async def test_ac20_a_malformed_payload_is_counted_as_failed_and_does_not_abort_the_pass(
+    migrated_db: Migrated, relay_engine: AsyncEngine
+) -> None:
+    # The unit of work only writes model objects, so plant the malformed row as superuser.
+    bad_id = uuid.uuid4()
+    superuser = create_async_engine(
+        migrated_db.superuser_dsn.replace("postgresql://", "postgresql+asyncpg://", 1),
+        poolclass=NullPool,
+    )
+    try:
+        async with superuser.begin() as conn:
+            await conn.execute(
+                text(
+                    "INSERT INTO outbox (id, tenant_id, event_type, payload) "
+                    "VALUES (:id, :t, 'probe.malformed', CAST(:p AS jsonb))"
+                ),
+                {"id": bad_id, "t": uuid.uuid4(), "p": json.dumps([1])},
+            )
+        good_id = await _emit(_ctx(), 9)
+        publisher = RecordingPublisher()
+        result = await relay_once(publisher)
+        assert publisher.ids == [good_id]
+        assert (result.published, result.failed) == (1, 1)
+        bad = await _row(relay_engine, bad_id)
+        assert (bad["published_at"], bad["attempts"]) == (None, 1)
+        assert re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.]{0,199}", str(bad["last_error"]))
+        assert (await _row(relay_engine, good_id))["published_at"] is not None
+    finally:
+        async with superuser.begin() as conn:
+            await conn.execute(text("DELETE FROM outbox WHERE id = :id"), {"id": bad_id})
+        await superuser.dispose()
+
+
+async def test_ac20_a_failure_is_logged_as_outbox_publish_failed_without_the_payload(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    marker = f"secret-{uuid.uuid4().hex}"
+    ctx = _ctx()
+    event_id = await _emit(ctx, 1, marker=marker)
+    capsys.readouterr()
+    await relay_once(FailingPublisher(ValueError(f"cannot send {marker}")))
+    out = capsys.readouterr().out
+    lines = [json.loads(line) for line in out.splitlines() if line.strip().startswith("{")]
+    [entry] = [line for line in lines if line.get("event") == "outbox.publish_failed"]
+    assert entry["event_id"] == str(event_id)
+    assert entry["tenant_id"] == str(ctx.tenant_id)
+    assert entry["event_type"] == "probe.pinged"
+    assert entry["attempts"] == 1
+    assert entry["error"] == "ValueError"
+    assert marker not in out
+    assert "payload" not in entry
 
 
 # --- AC-20: concurrency and crashes ----------------------------------------------------------
 
 
-async def test_ac20_two_concurrent_relays_never_publish_the_same_event_twice() -> None:
+async def test_ac20_a_second_relay_claims_while_the_first_holds_its_locks_without_overlap() -> (
+    None
+):
     ctx = _ctx()
     ids = [await _emit(ctx, n) for n in range(6)]
-    one, two = RecordingPublisher(delay=0.05), RecordingPublisher(delay=0.05)
-    await asyncio.gather(relay_once(one, batch=3), relay_once(two, batch=3))
-    published = [*one.ids, *two.ids]
-    assert len(published) == len(set(published))
-    assert set(published) == set(ids)
-    assert one.ids == sorted(one.ids, key=ids.index)
-    assert two.ids == sorted(two.ids, key=ids.index)
+    first, second = BarrierPublisher(), RecordingPublisher()
+    task = asyncio.create_task(relay_once(first, batch=3))
+    await asyncio.wait_for(first.started.wait(), timeout=20)
+    # the first relay now holds its batch locked and has not committed
+    await asyncio.wait_for(relay_once(second, batch=3), timeout=20)
+    first.release.set()
+    await asyncio.wait_for(task, timeout=20)
+    assert first.ids and second.ids
+    assert not set(first.ids) & set(second.ids)
+    assert set(first.ids) | set(second.ids) == set(ids)
+    assert first.ids == ids[:3]
+    assert second.ids == ids[3:]
 
 
-async def test_ac20_two_concurrent_relays_with_one_batch_publish_each_event_once() -> None:
+async def test_ac20_a_second_relay_skips_every_event_the_first_holds() -> None:
     ids = [await _emit(_ctx(), n) for n in range(4)]
-    one, two = RecordingPublisher(delay=0.05), RecordingPublisher(delay=0.05)
-    await asyncio.gather(relay_once(one), relay_once(two))
-    published = [*one.ids, *two.ids]
-    assert sorted(published, key=ids.index) == ids
+    first, second = BarrierPublisher(), RecordingPublisher()
+    task = asyncio.create_task(relay_once(first))
+    await asyncio.wait_for(first.started.wait(), timeout=20)
+    result = await asyncio.wait_for(relay_once(second), timeout=20)
+    first.release.set()
+    await asyncio.wait_for(task, timeout=20)
+    assert second.events == []
+    assert result.published == 0
+    assert first.ids == ids
 
 
 async def test_ac20_a_crash_before_commit_republishes_the_event_with_the_same_event_id(
@@ -287,12 +460,12 @@ async def test_ac20_a_crash_before_commit_republishes_the_event_with_the_same_ev
     with pytest.raises(Crash):
         await relay_once(crashing)
     assert crashing.ids == [event_id]
-    row = (await _rows(relay_engine, [event_id]))[event_id]
-    assert row["published_at"] is None
+    row = await _row(relay_engine, event_id)
+    assert (row["published_at"], row["attempts"]) == (None, 0)
     recovered = RecordingPublisher()
     await relay_once(recovered)
     assert recovered.ids == [event_id]
-    assert (await _rows(relay_engine, [event_id]))[event_id]["published_at"] is not None
+    assert (await _row(relay_engine, event_id))["published_at"] is not None
 
 
 # --- AC-20: the relay role can read the outbox and nothing else -----------------------------
@@ -382,10 +555,33 @@ async def test_ac20_the_relay_role_can_update_the_three_status_columns(
         await conn.execute(
             text(
                 "UPDATE outbox SET published_at = clock_timestamp(), attempts = attempts + 1, "
-                "last_error = 'X' WHERE id = :id"
+                "last_error = 'X', next_attempt_at = now() WHERE id = :id"
             ),
             {"id": event_id},
         )
     row = (await _rows(relay_engine, [event_id]))[event_id]
     assert row["published_at"] is not None
     assert (row["attempts"], row["last_error"]) == (1, "X")
+    assert row["next_attempt_at"] is not None
+
+
+@pytest.mark.parametrize("value", ["has spaces", "", "1Starts", "a-b", "x" * 201, "Value Error"])
+async def test_ac20_the_database_rejects_a_last_error_that_is_not_a_class_name(
+    relay_engine: AsyncEngine, value: str
+) -> None:
+    event_id = await _emit(_ctx())
+    with pytest.raises(DBAPIError, match=r"check constraint|violates"):
+        await _relay_sql(
+            relay_engine, "UPDATE outbox SET last_error = :v WHERE id = :id", v=value, id=event_id
+        )
+
+
+@pytest.mark.parametrize("value", ["ValueError", "asyncpg.exceptions.PostgresError", "_Private"])
+async def test_ac20_the_database_accepts_a_class_name_as_last_error(
+    relay_engine: AsyncEngine, value: str
+) -> None:
+    event_id = await _emit(_ctx())
+    await _relay_sql(
+        relay_engine, "UPDATE outbox SET last_error = :v WHERE id = :id", v=value, id=event_id
+    )
+    assert (await _row(relay_engine, event_id))["last_error"] == value

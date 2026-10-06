@@ -18,6 +18,7 @@ import json
 import re
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import Annotated, ClassVar
 from uuid import UUID, uuid4
@@ -30,6 +31,29 @@ from abacus.kernel.classification import classified, sensitive_paths
 from abacus.kernel.db import TenantContext, tenant_connection
 
 _ACTION = re.compile(r"[a-z][a-z_]*\.[a-z][a-z_]*")
+_TYPE = re.compile(r"[a-z][a-z_]*")
+_REF_KEY = re.compile(r"[a-z][a-z_]{0,39}")
+_FINGERPRINT = re.compile(r"[0-9a-f]{64}")
+_DIGITS = re.compile(r"[0-9]+")
+_active: ContextVar[bool] = ContextVar("abacus_uow_active", default=False)
+
+
+def _identifier(value: object) -> str:
+    """A UUID or an integer, as text. Audit targets are identifiers, never free text."""
+    if isinstance(value, bool):
+        raise ValueError("audit identifiers are UUIDs or integers")
+    if isinstance(value, UUID):
+        return str(value)
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, str):
+        if _DIGITS.fullmatch(value):
+            return value
+        try:
+            return str(UUID(value))
+        except ValueError:
+            pass
+    raise ValueError("audit identifiers are UUIDs or integers")
 
 
 class MissingAuditEvent(RuntimeError):
@@ -41,20 +65,36 @@ class Target:
     """What an action was done to: an entity type and its identifier."""
 
     type: str
-    id: str | UUID
+    id: str | int | UUID
 
     def __post_init__(self) -> None:
-        if not self.type or not str(self.id):
-            raise ValueError("audit target needs a type and an id")
+        if not _TYPE.fullmatch(self.type):
+            raise ValueError(f"audit target type {self.type!r} must match {_TYPE.pattern}")
+        _identifier(self.id)
 
 
 class Ref:
     """A reference to a state (identifiers, versions, fingerprints), never the state itself."""
 
     def __init__(self, **fields: str | int | UUID) -> None:
-        self.fields: dict[str, str | int] = {
-            key: str(value) if isinstance(value, UUID) else value for key, value in fields.items()
-        }
+        self.fields: dict[str, str | int] = {}
+        for key, value in fields.items():
+            if not _REF_KEY.fullmatch(key):
+                raise ValueError(f"reference key {key!r} must match {_REF_KEY.pattern}")
+            self.fields[key] = _ref_value(value)
+
+
+def _ref_value(value: object) -> str | int:
+    """UUIDs, integers and SHA-256 fingerprints only: a reference can never carry free text."""
+    if isinstance(value, bool):
+        raise ValueError("reference values are UUIDs, integers or SHA-256 fingerprints")
+    if isinstance(value, int):
+        return value
+    if isinstance(value, UUID):
+        return str(value)
+    if isinstance(value, str) and _FINGERPRINT.fullmatch(value):
+        return value
+    raise ValueError("reference values are UUIDs, integers or SHA-256 fingerprints")
 
 
 class DomainEvent(BaseModel):
@@ -120,7 +160,7 @@ class UnitOfWork:
                         "actor": ctx.actor_id,
                         "action": a.action,
                         "target_type": a.target.type,
-                        "target_id": str(a.target.id),
+                        "target_id": _identifier(a.target.id),
                         "before": None if a.before is None else json.dumps(a.before.fields),
                         "after": None if a.after is None else json.dumps(a.after.fields),
                     }
@@ -147,6 +187,20 @@ class UnitOfWork:
 
 @asynccontextmanager
 async def uow(ctx: TenantContext) -> AsyncGenerator[UnitOfWork]:
+    if _active.get():
+        # A second uow would be a second connection and transaction: its commit would survive the
+        # outer one's rollback, and the two could deadlock. One state change, one unit of work.
+        raise RuntimeError("nested unit of work")
+    token = _active.set(True)
+    try:
+        async with _unit_of_work(ctx) as work:
+            yield work
+    finally:
+        _active.reset(token)
+
+
+@asynccontextmanager
+async def _unit_of_work(ctx: TenantContext) -> AsyncGenerator[UnitOfWork]:
     async with tenant_connection(ctx) as conn:
         session = AsyncSession(
             bind=conn,

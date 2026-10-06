@@ -42,6 +42,14 @@ APP = "abacus_app"
 NON_TENANT_TABLES = frozenset({"alembic_version"})
 # Tables the app may insert into and read, never update or delete (ADR-004); TASK-009/010 add.
 INSERT_ONLY_TABLES: frozenset[str] = frozenset({"audit_events", "outbox"})
+# Columns the app may supply on insert-only tables; everything else is server-set (TASK-006).
+APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    "audit_events": frozenset(
+        {"tenant_id", "actor_kind", "actor_id", "action", "target_type", "target_id"}
+        | {"before_ref", "after_ref", "trace_id"}
+    ),
+    "outbox": frozenset({"id", "tenant_id", "event_type", "payload"}),
+}
 RELAY = "abacus_relay"
 _LOCAL_PASSWORDS = {OWNER: "abacusowner", APP: "abacusapp", RELAY: "abacusrelay"}
 
@@ -222,13 +230,22 @@ WHERE pg_get_userbyid(n.nspowner) = $1
 
 
 RELAY_TABLE = "outbox"
-RELAY_UPDATABLE = frozenset({"published_at", "attempts", "last_error"})
+RELAY_UPDATABLE = frozenset({"published_at", "attempts", "last_error", "next_attempt_at"})
 _TABLE_PRIVILEGES = ("SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER")
 _COLUMNS = """
 SELECT a.attname FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid
 JOIN pg_namespace n ON n.oid = c.relnamespace
 WHERE n.nspname = 'public' AND c.relname = $1 AND a.attnum > 0 AND NOT a.attisdropped
 ORDER BY a.attnum
+"""
+_SEQUENCES = """
+SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public' AND c.relkind = 'S' ORDER BY c.relname
+"""
+_MEMBERSHIPS = """
+SELECT r.rolname AS role FROM pg_auth_members m
+JOIN pg_roles r ON r.oid = m.roleid JOIN pg_roles u ON u.oid = m.member
+WHERE u.rolname = $1 ORDER BY r.rolname
 """
 _ALL_RELATIONS = """
 SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -265,6 +282,31 @@ async def _relay_problems(conn: asyncpg.Connection) -> list[str]:
             name,
         ):
             problems.append(f"{RELAY}: may UPDATE {RELAY_TABLE}.{name}")
+    for sequence in await conn.fetch(_SEQUENCES):
+        name = str(sequence["relname"])
+        for privilege in ("USAGE", "SELECT", "UPDATE"):
+            if await conn.fetchval(
+                "SELECT has_sequence_privilege($1, $2, $3)", RELAY, f"public.{name}", privilege
+            ):
+                problems.append(f"{RELAY}: has {privilege} on sequence {name}")
+    for membership in await conn.fetch(_MEMBERSHIPS, RELAY):
+        problems.append(f"{RELAY}: is a member of {membership['role']}")
+    return problems
+
+
+async def _insert_column_problems(conn: asyncpg.Connection, table: str) -> list[str]:
+    """Only for insert-only tables with a declared column list; every such table should have one
+    (TASK-009 onwards declare theirs alongside INSERT_ONLY_TABLES)."""
+    allowed = APP_INSERT_COLUMNS.get(table)
+    if allowed is None:
+        return []
+    problems: list[str] = []
+    for column in await conn.fetch(_COLUMNS, table):
+        name = str(column["attname"])
+        if name not in allowed and await conn.fetchval(
+            "SELECT has_column_privilege($1, $2, $3, 'INSERT')", APP, f"public.{table}", name
+        ):
+            problems.append(f"{table}: {APP} may INSERT {table}.{name}")
     return problems
 
 
@@ -298,6 +340,7 @@ async def _inspect(owner_dsn: str) -> list[str]:
                 ):
                     problems.append(f"{name}: {APP} has {privilege}")
             if name in INSERT_ONLY_TABLES:
+                problems += await _insert_column_problems(conn, name)
                 for privilege in ("UPDATE", "DELETE"):
                     if await conn.fetchval(
                         "SELECT has_table_privilege($1, $2, $3)", APP, f"public.{name}", privilege
