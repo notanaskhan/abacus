@@ -501,6 +501,13 @@ reason: TASK-010 — connector, ledger snapshots, fulfilments, retrieval pipelin
   History v1 committed as the AC-19 fixture; it contains no ledger data. 010b contract written.
 - `2026-10-06` — CI: first run failed one TASK-006 relay test (outbox not fully drained between tests: failed/deferred events with backoff); test author made the drain complete; CI green. PR #10 merged (rebase). Starting TASK-010b.
 - `2026-10-06` — `make check` exit 0: 5,664 unit + 1,089 integration, coverage 97 %, schema_check clean.
+- `2026-10-06` — 010b independent tests (Sonnet). Found bugs, all fixed:
+  - `NotFound` should be non-retryable;
+  - the `fail_run` code should be the run's own;
+  - cancellation mid-activity should end as cancelled.
+
+  The contract changed to 403 for archived engagements (`authorise`). The test author updated the 010a tests for `StartedRun` and fixed two secrets-scan findings in test data.
+- `2026-10-06` — PR opened while the full local `make check` was still running (founder: proceed, don't wait); CI on the PR runs the same gates.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -512,6 +519,10 @@ reason: TASK-010 — connector, ledger snapshots, fulfilments, retrieval pipelin
 | Sync runs forward-only and write-once (trigger); entity-tied composite keys | ADR-040 access-log integrity; no cross-client mixing (S5/S8) | No |
 | A re-pull with changed data creates a new evidence item | Acceptable for SPEC-000; revisit with refresh flows (arch 16) | No |
 | Per-attempt pull logging deferred | Decide before the client-facing access log (arch 24) | No |
+| One workflow per run (`retrieval:<run_id>`) | A failed run must be retryable; no stale attach (010b B1/S1/S2) | No |
+| Failure messages encoded in history; activity errors carry only class names | ADR-017: nothing in plaintext (010b S3) | No |
+| Replay fixtures stored decoded and scrubbed; recorder tool; never overwritten | Survive key rotation; no host data; AC-19 across versions | No |
+| `kernel.errors.DomainConflict`/`ServiceUnavailable` → 409/503 | One handler each; fixed codes, no echo | No |
 
 ## Gotchas and discoveries
 - From the TASK-010b reviews, recorded rather than fixed:
@@ -533,8 +544,8 @@ reason: TASK-010 — connector, ledger snapshots, fulfilments, retrieval pipelin
 -
 
 ## Handoff
-- **Current state:** TASK-010b implemented and committed on `task-010b-workflow` (WIP). Contract written. The independent test author and two reviews are next.
-- **Exact next step:** Collect tests and reviews; fix; `make check`; PR (red: founder line-by-line); after merge delete `work/approvals/TASK-010.yaml` and mark TASK-010 done.
+- **Current state:** TASK-010b PR open on `task-010b-workflow`. Local `make check` was still running when the PR opened; CI is the gate.
+- **Exact next step:** Confirm CI. Founder line-by-line review. Merge, delete `work/approvals/TASK-010.yaml`, mark TASK-010 done. Then TASK-011 (AI gateway and screening; screening workflow started from the `evidence_version.created` outbox event, `screening:<evidence_version_id>`, its own module `WORKFLOWS`/`ACTIVITIES`).
 - **Uncommitted or partial work:** none.
-- **Known failing checks:** none known before tests.
-- **Open issues:** branch protection off; the approval file expires 2026-10-27.
+- **Known failing checks:** none known.
+- **Open issues:** branch protection off; follow-ups in Gotchas (make dev and worker in compose, stuck-run sweeper, rate limit, KMS/TLS in TASK-014).
