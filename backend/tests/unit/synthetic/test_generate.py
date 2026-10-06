@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import asyncio
 import dataclasses
 import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 from datetime import date
@@ -83,23 +83,6 @@ def digest_of(root: Path) -> str:
     return digest.hexdigest()
 
 
-async def run_digest_process(env: dict[str, str], cwd: Path) -> str:
-    """Run DIGEST_SCRIPT in a fresh interpreter (sys.executable) and return its stdout."""
-    proc = await asyncio.create_subprocess_exec(
-        sys.executable,
-        "-c",
-        DIGEST_SCRIPT,
-        "42",
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-        env=env,
-        cwd=cwd,
-    )
-    out, err = await proc.communicate()
-    assert proc.returncode == 0, err.decode()
-    return out.decode()
-
-
 def snapshot(root: Path) -> dict[str, bytes]:
     return {p.relative_to(root).as_posix(): p.read_bytes() for p in root.rglob("*") if p.is_file()}
 
@@ -145,8 +128,15 @@ def test_ac1_separate_process_gives_identical_exports(tmp_path: Path, hash_seed:
     env = dict(os.environ)
     env["PYTHONHASHSEED"] = hash_seed
     env["PYTHONPATH"] = os.pathsep.join(sys.path)
-    stdout = asyncio.run(run_digest_process(env, tmp_path))
-    assert stdout.strip() == expected
+    result = subprocess.run(
+        [sys.executable, "-c", DIGEST_SCRIPT, "42"],
+        capture_output=True,
+        text=True,
+        check=True,
+        env=env,
+        cwd=tmp_path,
+    )
+    assert result.stdout.strip() == expected
 
 
 def test_ac1_golden_sha256_of_default_client_exports(tmp_path: Path) -> None:

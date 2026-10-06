@@ -11,7 +11,6 @@ from datetime import date
 from decimal import Decimal
 from functools import cache
 from pathlib import Path
-from typing import cast
 
 import pytest
 
@@ -231,11 +230,7 @@ def aging_of(entity: ClientEntity, artefact: str) -> Aging:
 
 
 def parse_xml(data: bytes) -> ET.Element:
-    parser: ET.XMLPullParser[ET.Element] = ET.XMLPullParser(events=("end",))
-    parser.feed(data)
-    parser.close()
-    events = cast("list[tuple[str, ET.Element]]", list(parser.read_events()))
-    return events[-1][1]
+    return ET.fromstring(data)
 
 
 def sheet_names(path: Path) -> list[str]:

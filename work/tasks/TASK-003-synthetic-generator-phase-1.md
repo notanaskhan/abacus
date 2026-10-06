@@ -4,7 +4,7 @@ title: Synthetic client generator, phase 1
 spec: SPEC-001
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-12, AC-13, AC-14, AC-15, AC-16, AC-17]
 risk_zone: amber
-status: blocked
+status: in-progress
 branch: spec-001-synthetic-generator
 worktree:
 created: 2026-10-06
@@ -160,6 +160,8 @@ Append-only. Newest at the bottom.
   - Only edits to the independent tests: pinning `GOLDEN_VERSION`/`GOLDEN_SHA256` (the contract's designated step) and annotating both as `str` so pyright doesn't flag the "still pending" guard as always false.
   - **Blocked:** ruff S311 flags `random.Random` in `synthetic/rng.py`. See Q1.
 
+- `2026-10-06` — Q1 applied: S311 exempt for `abacus_tools/synthetic/**`; S101/S314/S603 for `tests/unit/synthetic/**`. Test author reverted to `subprocess.run` and `ET.fromstring`. New banned pattern **SIDESTEP-001** (ADR-083: lints grow when an agent repeats a mistake) flags `create_subprocess_exec`/`_shell` and `XMLPullParser`, which ruff's S rules miss; 43 tests written independently from a one-paragraph contract. `make check` exit 0; suite 68 s (was ~160 s with the asyncio workaround).
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
@@ -172,11 +174,11 @@ Append-only. Newest at the bottom.
 - `secrets_scan` PII-002 flags EINs with assigned prefixes only in data files; generated EINs use `00`, which is never assigned.
 
 ## Questions for the human
-- [ ] **Q1 — Lint exemptions in `backend/pyproject.toml` (blocking `make check`).** (a) `"src/abacus_tools/synthetic/**" = ["S311"]` — seeded non-cryptographic randomness is the point of the generator (ADR-085). (b) The independent test author avoided S603 and S314 by switching APIs (`asyncio.create_subprocess_exec` instead of `subprocess.run`; `XMLPullParser` instead of `ET.fromstring`). Both are safe here (running this interpreter; parsing our own XLSX), but sidestepping a lint by API choice is what our "exceptions only via protected config" rule forbids. **Recommendation:** add `backend/pyproject.toml` to the approval; add (a), plus `"tests/unit/synthetic/**" = ["S101", "S314", "S603"]`; have the test author switch back to the plain APIs; add a banned pattern for `asyncio.create_subprocess_exec`/`XMLPullParser` outside allowed paths so the sidestep can't recur.
+- [x] **Q1 — Lint exemptions in `backend/pyproject.toml` (blocking `make check`).** (a) `"src/abacus_tools/synthetic/**" = ["S311"]` — seeded non-cryptographic randomness is the point of the generator (ADR-085). (b) The independent test author avoided S603 and S314 by switching APIs (`asyncio.create_subprocess_exec` instead of `subprocess.run`; `XMLPullParser` instead of `ET.fromstring`). Both are safe here (running this interpreter; parsing our own XLSX), but sidestepping a lint by API choice is what our "exceptions only via protected config" rule forbids. **Recommendation:** add `backend/pyproject.toml` to the approval; add (a), plus `"tests/unit/synthetic/**" = ["S101", "S314", "S603"]`; have the test author switch back to the plain APIs; add a banned pattern for `asyncio.create_subprocess_exec`/`XMLPullParser` outside allowed paths so the sidestep can't recur. **Approved 2026-10-06.** Agent added `backend/pyproject.toml`, `banned_patterns.py` and `test_banned_patterns.py` to the approval file at the founder's instruction.
 
 ## Handoff
-- **Current state:** Generator and 271 independent tests committed; everything passes except ruff S311 (Q1). Full suite 975 tests, ~160 s locally, coverage 98 %.
-- **Exact next step:** Founder answers Q1. Then apply the exemptions, have the test author revert the API sidesteps, run `make check`, cross-model review, push, PR.
+- **Current state:** Steps 1–10 done; `make check` exit 0. Committed, not pushed.
+- **Exact next step:** Cross-model review (stage 4), fix findings, push, PR, confirm CI.
 - **Uncommitted or partial work:** none.
-- **Known failing checks:** `ruff check` (S311 in `synthetic/rng.py`).
-- **Open issues:** branch protection off; test suite now ~160 s (property tests) — fine for stage 2's 15-minute budget, watch it.
+- **Known failing checks:** none.
+- **Open issues:** branch protection off.
