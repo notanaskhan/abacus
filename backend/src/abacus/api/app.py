@@ -19,12 +19,21 @@ from abacus.kernel.config import settings
 from abacus.kernel.errors import DomainConflict, NotFound, ServiceUnavailable
 from abacus.kernel.logging import get_logger
 from abacus.kernel.temporal import payload_codec
+from abacus.modules.agents import api as agents
 from abacus.modules.connections import api as connections
 from abacus.modules.engagements import api as engagements
+from abacus.modules.evidence import api as evidence
 from abacus.modules.identity import api as identity
 from abacus.modules.requests import api as requests
 
-ROUTERS = (identity.router, engagements.router, requests.router, connections.router)
+ROUTERS = (
+    identity.router,
+    engagements.router,
+    requests.router,
+    connections.router,
+    evidence.router,
+    agents.router,
+)
 # What a validation error may say about each problem: never the submitted value (client content
 # is hostile, AGENTS.md #8), never pydantic's internal context.
 _ERROR_FIELDS = ("loc", "msg", "type")

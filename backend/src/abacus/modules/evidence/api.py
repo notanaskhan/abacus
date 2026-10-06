@@ -15,14 +15,17 @@ from abacus.modules.evidence.render import (
 from abacus.modules.evidence.render import (
     MEDIA_TYPE as XLSX_MEDIA_TYPE,
 )
+from abacus.modules.evidence.routes import router
 from abacus.modules.evidence.service import (
     EngagementArchived,
     EvidenceVersionRef,
+    EvidenceVersionSummary,
     EvidenceVersionView,
     NewItem,
     Provenance,
     StoredObject,
     add_version,
+    evidence_versions_for,
     read_content,
     read_version,
     stage_content,
@@ -42,6 +45,7 @@ __all__ = [
     "EngagementArchived",
     "EvidenceVersionCreated",
     "EvidenceVersionRef",
+    "EvidenceVersionSummary",
     "EvidenceVersionView",
     "IntegrityError",
     "NewItem",
@@ -51,9 +55,11 @@ __all__ = [
     "TrialBalanceLine",
     "add_version",
     "check_ready",
+    "evidence_versions_for",
     "read_content",
     "read_version",
     "render_trial_balance",
+    "router",
     "stage_content",
     "version_view",
 ]

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import date, datetime
 from uuid import UUID
 
@@ -9,6 +10,7 @@ from sqlalchemy import func, insert, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.modules.evidence.models import EvidenceItem, EvidenceVersion
+from abacus.modules.identity.api import AuthContext, visible
 
 # Serialises version numbering per item for the rest of the transaction. Row locks would need
 # UPDATE privilege on the item, which the app deliberately doesn't have. Two-key form: the first
@@ -121,3 +123,23 @@ async def version_for_key(session: AsyncSession, idempotency_key: str) -> Eviden
             select(EvidenceVersion).where(EvidenceVersion.idempotency_key == idempotency_key)
         )
     ).scalar_one_or_none()
+
+
+async def list_versions(
+    session: AsyncSession, ctx: AuthContext, engagement_id: UUID
+) -> Sequence[EvidenceVersion]:
+    """The engagement's evidence versions the caller may read, oldest first."""
+    return (
+        (
+            await session.execute(
+                select(EvidenceVersion)
+                .where(
+                    EvidenceVersion.engagement_id == engagement_id,
+                    visible(ctx, "evidence.read", EvidenceVersion.engagement_id),
+                )
+                .order_by(EvidenceVersion.created_at, EvidenceVersion.id)
+            )
+        )
+        .scalars()
+        .all()
+    )

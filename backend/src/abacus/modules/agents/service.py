@@ -17,6 +17,7 @@ is repaired once, then the run is escalated with no result.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
 from typing import cast
 from uuid import UUID
@@ -43,6 +44,7 @@ from abacus.modules.agents.repository import (
     get_run,
     insert_run,
     insert_screening_result,
+    latest_results,
     lock_run,
     result_for_run,
     run_for_event,
@@ -53,6 +55,7 @@ from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.evidence.api import read_content, version_view
 from abacus.modules.identity.api import (
     AgentContext,
+    AuthContext,
     Forbidden,
     agent_context_for_run,
     authorise,
@@ -340,3 +343,40 @@ async def _screen(agent: AgentContext) -> ScreeningOutcome:
             after=Ref(agent_run_id=run.id, evidence_version_id=version.id),
         )
     return ScreeningOutcome(run.id, "completed", result_id, checked)
+
+
+@dataclass(frozen=True)
+class ScreeningResultView:
+    """An agent's proposal about an evidence version, as the evidence board shows it. The
+    rationale and quotes are model text: the UI renders them as sanitised plain text (ADR-065)."""
+
+    id: UUID
+    evidence_version_id: UUID
+    action: str
+    confidence: Decimal
+    rationale: str
+    citations: list[dict[str, object]]
+    unverified: list[str]
+    created_at: datetime
+
+
+async def screening_results_for(
+    ctx: AuthContext, engagement_id: UUID
+) -> list[ScreeningResultView]:
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "evidence.read", ref.resource())
+    async with tenant_session(ctx.tenant) as session:
+        rows = await latest_results(session, ctx, engagement_id)
+    return [
+        ScreeningResultView(
+            r.id,
+            r.evidence_version_id,
+            r.action,
+            r.confidence,
+            r.rationale,
+            r.citations,
+            r.unverified,
+            r.created_at,
+        )
+        for r in rows
+    ]

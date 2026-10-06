@@ -1,6 +1,70 @@
 {
   "components": {
     "schemas": {
+      "CitationOut": {
+        "properties": {
+          "cell": {
+            "cls": "internal",
+            "title": "Cell",
+            "type": "string"
+          },
+          "quote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Quote"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "cell_not_found",
+                  "quote_mismatch",
+                  "value_mismatch"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Value"
+          },
+          "verified": {
+            "cls": "internal",
+            "title": "Verified",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "cell",
+          "quote",
+          "value",
+          "verified",
+          "reason"
+        ],
+        "title": "CitationOut",
+        "type": "object"
+      },
       "EngagementIn": {
         "additionalProperties": false,
         "properties": {
@@ -225,6 +289,99 @@
         "title": "ErrorOut",
         "type": "object"
       },
+      "EvidenceVersionOut": {
+        "properties": {
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "evidence_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Item Id",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "method": {
+            "cls": "internal",
+            "enum": [
+              "retrieved",
+              "uploaded"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Period End"
+          },
+          "period_start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Period Start"
+          },
+          "pulled_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Pulled At"
+          },
+          "source": {
+            "cls": "internal",
+            "title": "Source",
+            "type": "string"
+          },
+          "version_no": {
+            "cls": "internal",
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "evidence_item_id",
+          "version_no",
+          "method",
+          "source",
+          "pulled_at",
+          "period_start",
+          "period_end",
+          "created_at"
+        ],
+        "title": "EvidenceVersionOut",
+        "type": "object"
+      },
       "FieldErrorOut": {
         "properties": {
           "loc": {
@@ -399,6 +556,19 @@
             "title": "Engagement Id",
             "type": "string"
           },
+          "evidence_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Evidence Version Id"
+          },
           "id": {
             "cls": "internal",
             "format": "uuid",
@@ -538,6 +708,77 @@
           "finished_at"
         ],
         "title": "RetrievalOut",
+        "type": "object"
+      },
+      "ScreeningResultOut": {
+        "description": "Model text (`rationale`, `quote`, `unverified`) is untrusted: render as plain text.",
+        "properties": {
+          "action": {
+            "cls": "internal",
+            "enum": [
+              "ready_for_review",
+              "needs_revision"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "citations": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/CitationOut"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "confidence": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Confidence",
+            "type": "string"
+          },
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "rationale": {
+            "cls": "confidential",
+            "title": "Rationale",
+            "type": "string"
+          },
+          "unverified": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Unverified",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "evidence_version_id",
+          "action",
+          "confidence",
+          "rationale",
+          "citations",
+          "unverified",
+          "created_at"
+        ],
+        "title": "ScreeningResultOut",
         "type": "object"
       },
       "TeamMemberOut": {
@@ -915,6 +1156,116 @@
           "engagements"
         ],
         "x-abacus-action": "engagement.read_metadata"
+      }
+    },
+    "/v1/engagements/{engagement_id}/evidence-versions": {
+      "get": {
+        "operationId": "list_evidence_versions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EvidenceVersionOut"
+                  },
+                  "title": "Response List Evidence Versions",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "List Evidence Versions Route",
+        "tags": [
+          "evidence"
+        ],
+        "x-abacus-action": "evidence.read"
       }
     },
     "/v1/engagements/{engagement_id}/request-items": {
@@ -1391,6 +1742,116 @@
           "retrievals"
         ],
         "x-abacus-action": "request_item.read"
+      }
+    },
+    "/v1/engagements/{engagement_id}/screening-results": {
+      "get": {
+        "operationId": "list_screening_results",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ScreeningResultOut"
+                  },
+                  "title": "Response List Screening Results",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "List Screening Results Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "evidence.read"
       }
     },
     "/v1/me": {
