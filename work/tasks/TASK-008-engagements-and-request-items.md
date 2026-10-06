@@ -60,7 +60,10 @@ Steps: to be written when the task starts.
 |---|---|---|
 
 ## Gotchas and discoveries
--
+- From TASK-007: build engagement resources with `Resource.engagement(tenant_id, id, archived=<loaded from the engagements row>)`. Never hard-code `archived=False`; consider having `authorise` load it itself once `engagements` exists.
+- Add the FK `engagement_members.engagement_id → engagements` and the app grants this task needs (`INSERT` on `engagement_members` for "creator becomes a member", AC-4).
+- `authorise` is not wall-safe (ADR-026). Founder decision 2026-10-06: walls gate the first real firm, not this task.
+- HTTP tests for AC-6 and AC-8 land here, with the routes.
 
 ## Questions for the human
 -
