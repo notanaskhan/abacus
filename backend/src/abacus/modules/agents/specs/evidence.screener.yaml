@@ -6,8 +6,6 @@ purpose: Screen a retrieved trial balance and propose whether it is ready for re
 shape: single_call
 prompt: evidence.screen@v0
 tier: small
-escalation_tier: medium
-input_schema: ScreeningInput
 output_schema: ScreeningOutput
 task_scope: [evidence.read, screening.run]
 tools: []

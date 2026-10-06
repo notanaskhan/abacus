@@ -6,10 +6,8 @@ Regenerate: python -m abacus_tools.codegen.agent_specs
 # fmt: off
 SPECS: dict[str, dict[str, object]] = {   'evidence.screener': {   'autonomy': 'propose',
                              'confidence_routing': {'below': '0.5', 'route': 'needs_revision'},
-                             'escalation_tier': 'medium',
                              'evaluation_suite': 'evals/screening',
                              'id': 'evidence.screener',
-                             'input_schema': 'ScreeningInput',
                              'limits': {   'max_cost_usd': '0.03',
                                            'max_output_tokens': 800,
                                            'max_seconds': 60,

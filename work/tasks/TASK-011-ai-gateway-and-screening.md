@@ -4,7 +4,7 @@ title: AI gateway, fake model and evidence screening
 spec: SPEC-000
 acceptance_criteria: [AC-14, AC-15, AC-16, AC-17]
 risk_zone: red
-status: in-review
+status: in-progress
 branch: task-011-gateway
 worktree:
 created: 2026-10-06
@@ -273,6 +273,82 @@ Out: a real provider (Anthropic) and real model calls (a SPEC-000 non-goal); the
 - **AGENT-001:** for any action the matrix gives agents no grant for (no `agent` entry, or `deny`), `authorise(x, action, …)` is flagged unless `x` is a parameter typed `AuthContext` or `SystemContext`. Covers aliased `authorise` and the `ctx=`/`action=` keywords.
 - **BOUND-002:** agents depend on identity, engagements, organisations, evidence and requests only.
 
+### Interface contract — TASK-011b (tests written independently — ADR-078)
+**Imports**
+- `from abacus.modules.agents.api import WORKFLOWS, ACTIVITIES, SUBSCRIPTIONS, ScreeningWorkflow, ScreeningInput, start_screening, workflow_id, run_outcome, RunOutcome, SCREEN_PROMPT, screening_responder` (plus everything from 011a)
+- `from abacus.modules.agents.workflow_types import ScreeningInput, RunInput, FailInput, ScreeningOutcome, FAIL_CODES, PROVIDER_UNAVAILABLE, INTERNAL_ERROR, CANCELLED`
+- `from abacus.modules.agents.activities import create_run_activity, screen_activity, fail_run_activity, INITIATOR_INACTIVE`
+- `from abacus.modules.agents.screenings import screening_input, EVIDENCE_VERSION_CREATED`
+- `from abacus.kernel.uow.relay import RoutingPublisher, Handler, run_relay, relay_once, OutboxEvent`
+- `from abacus.kernel.db import ping_relay`
+- `from abacus.worker.__main__ import build_worker, publisher, MODULES, SUBSCRIBERS, run`
+
+**Relay (kernel)**
+- `RoutingPublisher(handlers)` runs every handler for the event's type, in order. An event with no handlers is published (no error). A handler error propagates, so the relay backs the event off and retries it.
+- `run_relay(publisher, stop, interval=1.0, batch=25)` loops until `stop` is set:
+  - a pass that raises is logged as `outbox.relay_pass_failed` (class name only), and the loop continues;
+  - when a pass did less than `batch`, it waits `interval` (or until `stop`);
+  - it returns promptly once `stop` is set.
+- `ping_relay()` connects as the relay role.
+
+**Worker**
+- `build_worker()` checks, in order: `ping`, `ping_relay`, key service, payload codec, evidence `check_ready`, then the Temporal client.
+- It registers `connections` and `agents` `WORKFLOWS`/`ACTIVITIES` (`MODULES = (connections, agents)`).
+- `publisher()` routes `evidence_version.created` to `agents.start_screening`.
+- `run()` starts `run_relay(publisher(), stop)` inside the worker and awaits it after `stop` (SIGTERM/SIGINT).
+
+**Subscription**
+- `screening_input(event)` → `ScreeningInput(tenant_id, evidence_version_id, event_id, requested_by)`:
+  - built from `event.tenant_id`, `event.event_id` and the payload's `evidence_version_id`/`requested_by` (normalised UUID strings);
+  - `requested_by` absent or null → None;
+  - a missing or malformed `evidence_version_id` raises.
+- `start_screening(event)` starts the workflow `screening`:
+  - id `screening:<evidence_version_id>`, on the configured task queue, with a 1-hour execution timeout;
+  - reuse policy `ALLOW_DUPLICATE_FAILED_ONLY`, conflict policy `USE_EXISTING`;
+  - a finished workflow (`WorkflowAlreadyStartedError`) counts as delivered and doesn't raise.
+- A redelivered event never makes a second run or result.
+
+**Workflow `screening`**
+- `screening.create_run(ScreeningInput)` → run id string, or None.
+  - None → `ScreeningOutcome("skipped")`, with no further activities. Cases: no `requested_by`, a requester without an active membership, a version without a snapshot.
+  - A missing version → non-retryable `NotFound`, so the workflow fails.
+- `screening.screen(RunInput)` → `ScreeningOutcome(status, run_id, code, screening_result_id)`:
+  - `completed` with the result id, or `escalated` with none;
+  - a run that has already ended (a retry after success, or a run failed earlier) → its recorded status, code and result;
+  - an initiator without an active membership → run failed `initiator_inactive`, and that outcome is returned (no exception);
+  - terminal errors (`SheetLayoutError`, `DatasetTooLarge`/`ContextTooLarge`, `BudgetExceeded`, `GatewayRefused`, `Forbidden`, `NotFound`) → non-retryable `ApplicationError` whose message and type are the class name;
+  - `ProviderError` and other errors are retryable. The workflow allows 4 attempts, then calls `screening.fail_run` with `provider_unavailable` (for `ProviderError`) or `internal_error`;
+  - the run's budget covers every attempt (011a).
+- Any activity failure, or cancellation, ends in `screening.fail_run(FailInput)`, which retries without limit:
+  - it ends a running run with the code, or `internal_error` if the code isn't in `FAIL_CODES`;
+  - it returns the run's recorded outcome;
+  - on cancellation the workflow then ends cancelled.
+- Payloads are identifiers only. No ledger values or account names appear in workflow history.
+
+**Gateway and spec changes**
+- `GatewayCall.timeout_seconds` (default 60) bounds each provider call. A timeout records a `provider_error` usage row and raises `ProviderError`.
+- `screen` passes `limits.max_seconds`.
+- `AgentSpec` no longer has `escalation_tier` or `input_schema`; the YAML drops them too.
+- `output_schema` must be `"ScreeningOutput"` (`OUTPUT_SCHEMAS`).
+- A `single_call` spec with `max_steps != 1` fails at import.
+
+**Evals**
+- `make evals` (that is, `cd backend && uv run pytest ../evals`) runs `evals/screening/` with three cases: balanced, odd account name, adversarial account name.
+- They go through the real retrieval pipeline, the agent and the gateway with `FakeModel`.
+- Each case checks:
+  - completed;
+  - an agent-created result;
+  - citations verified;
+  - cost ≤ `max_cost_usd`;
+  - account names only inside their `<untrusted>` block;
+  - the expected action.
+- The cost per case goes to `backend/.evals/screening.json` (gitignored).
+- `evals/screening` now exists, so the "owed suites" allowance from 011a must drop it.
+
+**Existing tests whose pinned facts change (update them; don't weaken them)**
+- `tests/unit/worker/test_worker_main.py::test_ac20_build_worker_checks_every_dependency_then_registers_the_module_registries`: it now checks `ping_relay` too, and registers both modules.
+- `tests/unit/agents/test_agent_specs.py::test_ac14_the_owed_list_names_only_suites_that_are_still_missing`: `evals/screening` exists now.
+
 ### Approval file text
 ```yaml
 task: TASK-011
@@ -330,6 +406,14 @@ reason: TASK-011 — AI gateway, agent specs and context, citations, usage recor
 - `2026-10-06` — 011a implemented: gateway, context builder, prompts, specs, handoff and citations, the agents service, PROMPT-001 and AGENT-001. Smoke-tested end to end with the fake model. The founder chose the reach rule for agent-only actions (`screening.run`): the initiator must hold `evidence.read` (ADR-025 clarified). The initiator is now carried on `evidence_version.created` (`requested_by`), and screening figures are computed from the evidence sheet, so agents doesn't depend on ledger or connections. Contract written; independent tests and reviews next.
 - `2026-10-06` — The security review found one blocker, now fixed: a spoofed Total row could hide an unbalanced trial balance. Fixed with it: should-fix items from both reviews, applied to the code and to the contract above. The first test author stalled; its partial integration tests are carried forward.
 - `2026-10-06` — PR #11 merged; TASK-011a rebuilt on main as `task-011a-ai-gateway` (a force-push of the old branch was refused; `task-011a-gateway` is stale). The independent tests found 3 bugs, all fixed: `fail_run` passed a text code to an audit `Ref` (the code now lives only on the row, as for sync runs); an archived engagement denied agent writes at `delegation` instead of `attribute`; SYS-001 let `connections/service.py` issue agent contexts (the rule now allows each issuer only its own function).
+- `2026-10-06` — PR #12 (TASK-011a) merged after green CI and founder review. 011b started on `task-011b-screening`:
+  - the relay runs in the worker, with `RoutingPublisher` and module `SUBSCRIPTIONS`;
+  - the `screening` workflow and its activities;
+  - per-call timeouts from `max_seconds`;
+  - spec cleanup;
+  - the evals scaffold.
+
+  Smoke-tested end to end (retrieval → relay → screening workflow → result; redelivery is idempotent). The 011b contract is written.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

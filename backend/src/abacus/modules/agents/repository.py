@@ -94,6 +94,14 @@ async def finish_run(
     return result.scalar_one_or_none() is not None
 
 
+async def result_for_run(session: AsyncSession, run_id: UUID) -> UUID | None:
+    return (
+        await session.execute(
+            select(ScreeningResult.id).where(ScreeningResult.agent_run_id == run_id)
+        )
+    ).scalar_one_or_none()
+
+
 async def insert_screening_result(session: AsyncSession, *, values: dict[str, object]) -> UUID:
     result_id = uuid4()
     await session.execute(insert(ScreeningResult).values(id=result_id, **values))

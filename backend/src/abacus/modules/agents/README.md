@@ -25,7 +25,26 @@ Agent specs, agent runs and screening (ADR-005, ADR-025, ADR-047, ADR-050, ADR-0
   - code forces `needs_revision` when a citation fails or the figures don't add up;
   - terminal errors fail the run; `ProviderError` leaves it running for a retry.
   - Output still invalid after one repair escalates the run with no result.
-- `Handoff`, `ScreeningOutput`, `Citation`, `VerifiedCitation`, `verify_citations`; `install_fake_responses(FakeModel)` (local and test only).
+- `Handoff`, `ScreeningOutput`, `Citation`, `VerifiedCitation`, `verify_citations`; `install_fake_responses(FakeModel)` and `screening_responder` (local and test only).
+- `run_outcome(tenant_id, run_id)`: what a run recorded (status, failure code, screening result).
+
+## Temporal (TASK-011b)
+- `SUBSCRIPTIONS`: `evidence_version.created` → `start_screening`, which starts `screening:<evidence_version_id>`.
+  - The worker's outbox relay delivers each event at least once. A redelivery attaches to the running workflow or finds it finished; a failed workflow may be started again.
+  - `requested_by` is taken only from the relayed event.
+- `ScreeningWorkflow` (name `screening`) runs these activities:
+  1. `screening.create_run`: no run (`None`) ends the workflow as `skipped`;
+  2. `screening.screen`: one activity, 2-minute timeout, up to 4 attempts;
+  3. on any failure, cancellation included, `screening.fail_run`, which retries until it succeeds.
+
+  It returns `ScreeningOutcome(status, run_id, code, screening_result_id)`.
+- **Activities** prove the agent's context from the run row:
+  - errors cross to Temporal as class names only;
+  - terminal errors are non-retryable (`screen` has already failed the run); provider outages and infrastructure errors are retried;
+  - a run that has already ended reports what it recorded;
+  - an initiator who has lost their membership ends the run as `initiator_inactive`.
+- **Spec limits:** `max_seconds` bounds each model call (a timeout is a `ProviderError`); a `single_call` agent has `max_steps: 1`; `output_schema` names a model in `OUTPUT_SCHEMAS`.
+- **Evals:** `make evals` runs `evals/screening/` through the real pipeline and gateway (`FakeModel` today) and writes the cost per case to `backend/.evals/screening.json`.
 
 ## Rules
 - **Agents propose; humans decide.**
