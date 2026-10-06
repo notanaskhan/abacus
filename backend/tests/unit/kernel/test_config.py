@@ -279,3 +279,52 @@ def test_ac20_identity_settings_are_read_from_the_environment(
     assert settings.identity_issuer == "https://idp.example.test"
     assert settings.identity_audience == "other-audience"
     assert settings.identity_jwks == '{"keys": [{"kid": "k"}]}'
+
+
+# --- fake_connector_dir (TASK-010a contract, "Settings") -----------------------------------------
+
+
+def test_ac20_fake_connector_dir_defaults_to_none() -> None:
+    assert Settings().fake_connector_dir is None
+
+
+@pytest.mark.parametrize("environment", ["local", "test"])
+def test_ac20_fake_connector_dir_is_accepted_in_local_and_test(
+    monkeypatch: pytest.MonkeyPatch, environment: str, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("ABACUS_ENVIRONMENT", environment)
+    monkeypatch.setenv("ABACUS_FAKE_CONNECTOR_DIR", str(tmp_path))
+    assert Settings().fake_connector_dir == str(tmp_path)
+
+
+@pytest.mark.parametrize("environment", ["staging", "production"])
+def test_ac20_fake_connector_dir_outside_local_and_test_is_a_validation_error(
+    monkeypatch: pytest.MonkeyPatch, environment: str, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("ABACUS_ENVIRONMENT", environment)
+    _explicit_connection_env(monkeypatch)
+    monkeypatch.setenv("ABACUS_FAKE_CONNECTOR_DIR", str(tmp_path))
+    with pytest.raises(ValueError, match="fake_connector_dir"):
+        Settings()
+
+
+@pytest.mark.parametrize("environment", ["staging", "production"])
+def test_ac20_fake_connector_dir_error_does_not_echo_the_path(
+    monkeypatch: pytest.MonkeyPatch, environment: str
+) -> None:
+    fixture_location = "/srv/test-private-fixture-location"
+    monkeypatch.setenv("ABACUS_ENVIRONMENT", environment)
+    _explicit_connection_env(monkeypatch)
+    monkeypatch.setenv("ABACUS_FAKE_CONNECTOR_DIR", fixture_location)
+    with pytest.raises(ValueError) as raised:
+        Settings()
+    assert fixture_location not in str(raised.value)
+
+
+@pytest.mark.parametrize("environment", ["staging", "production"])
+def test_ac20_non_local_environments_load_without_a_fake_connector_dir(
+    monkeypatch: pytest.MonkeyPatch, environment: str
+) -> None:
+    monkeypatch.setenv("ABACUS_ENVIRONMENT", environment)
+    _explicit_connection_env(monkeypatch)
+    assert Settings().fake_connector_dir is None

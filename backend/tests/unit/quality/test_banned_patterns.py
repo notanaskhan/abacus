@@ -8,9 +8,9 @@ import pytest
 
 from abacus_tools.quality import banned_patterns as bp
 
-SERVICE = "src/abacus/modules/ledger/service.py"
-LEDGER_INIT = "src/abacus/modules/ledger/__init__.py"
-NESTED = "src/abacus/modules/ledger/adapters/sql.py"
+SERVICE = "src/abacus/modules/engagements/service.py"
+LEDGER_INIT = "src/abacus/modules/engagements/__init__.py"
+NESTED = "src/abacus/modules/engagements/adapters/sql.py"
 
 
 def _write(root: Path, rel: str, text: str) -> None:
@@ -112,15 +112,15 @@ CASES: list[tuple[str, str, str, str]] = [
         "BOUND-001",
         SERVICE,
         "from abacus.modules.identity import IdentityItem\n",
-        "from abacus.modules.ledger.repository import LedgerRepository\n",
+        "from abacus.modules.engagements.repository import LedgerRepository\n",
     ),
     (
         "BOUND-001",
         SERVICE,
         "from abacus.modules import identity\n",
-        "from abacus.modules import ledger\n",
+        "from abacus.modules import engagements\n",
     ),
-    ("BOUND-001", SERVICE, "from .. import identity\n", "from .. import ledger\n"),
+    ("BOUND-001", SERVICE, "from .. import identity\n", "from .. import engagements\n"),
     ("BOUND-001", SERVICE, "from abacus import modules\n", "from abacus import kernel\n"),
     ("BOUND-001", SERVICE, "import abacus.modules\n", "import abacus.kernel\n"),
     ("BOUND-001", LEDGER_INIT, "from ..identity import service\n", "from . import service\n"),
@@ -1252,13 +1252,13 @@ CTX_CLEAN = [
     "x = copy(items)\n",
     "x = deepcopy(payload)\n",
 ]
-CTX_ALLOWED = [f"{IDENT}/service.py"]
+CTX_ALLOWED = [f"{IDENT}/service.py", f"{IDENT}/context.py"]
 
 
 @pytest.mark.parametrize("source", CTX_VIOLATING)
 @pytest.mark.parametrize(
     "rel",
-    [*INSIDE_SRC, f"{IDENT}/context.py", f"{IDENT}/routing.py", f"{IDENT}/authz/__init__.py"],
+    [*INSIDE_SRC, f"{IDENT}/routing.py", f"{IDENT}/authz/__init__.py", f"{IDENT}/api.py"],
 )
 def test_ac20_ctx_001_flags_hand_built_or_copied_contexts(
     tmp_path: Path, rel: str, source: str
@@ -1491,7 +1491,6 @@ BOUND2_CLEAN = [
     ("engagements", "from abacus.modules.organisations.api import create_client\n"),
     ("requests", "from abacus.modules.identity.api import AuthContext\n"),
     ("requests", "from abacus.modules.engagements.api import get_ref\n"),
-    ("ledger", "from abacus.modules.identity.api import AuthContext\n"),
     ("evidence", "import abacus.modules.identity.api\n"),
     ("engagements", "from abacus.modules.engagements.api import router\n"),
     ("identity", "from abacus.kernel.db import tenant_session\n"),
@@ -1526,6 +1525,11 @@ def test_ac20_bound_002_applies_only_inside_modules(tmp_path: Path, rel: str) ->
         ("organisations", set[str]()),
         ("engagements", {"identity", "organisations"}),
         ("requests", {"identity", "engagements"}),
+        ("ledger", set[str]()),
+        (
+            "connections",
+            {"identity", "engagements", "organisations", "ledger", "evidence", "requests"},
+        ),
     ],
 )
 def test_ac20_bound_002_dependency_map_matches_the_contract(
@@ -1776,3 +1780,433 @@ def test_ac20_bound_002_no_other_module_may_depend_on_evidence(
 ) -> None:
     source = "from abacus.modules.evidence.api import add_version\n"
     assert _flags(tmp_path, "BOUND-002", f"src/abacus/modules/{module}/service.py", source)
+
+
+# --- revision 1 (TASK-010a): CTX-001 aliases, SYS-001, CONN-001, BOUND-002, LIST-001 -------------
+
+CTX_REV1_VIOLATING = [
+    "from abacus.modules.identity.api import AuthContext as AC\nx = AC(a, b)\n",
+    "from abacus.modules.identity.api import SystemContext as S\nx = S(a, b, c, d, e)\n",
+    "from abacus.modules.identity.api import SystemContext as S, AuthContext as A\nx = A(1)\n",
+    "from x import AuthContext as Ctx\ny = Ctx(**kw)\n",
+    "x = SystemContext(a, b, c, d, e)\n",
+    "x = identity.SystemContext(a)\n",
+    "x = AuthContext.__new__(AuthContext)\n",
+    "x = SystemContext.__new__(SystemContext)\n",
+    "from m import SystemContext as S\nx = S.__new__(S)\n",
+    "x = type(ctx)(a, b)\n",
+    "x = type(system)(a, b)\n",
+    "x = replace(system, run_id=other)\n",
+    "x = dataclasses.replace(sys, engagement_id=other)\n",
+    "x = copy(system_context)\n",
+    "x = copy.deepcopy(self.system)\n",
+    "x = __replace__(sys_ctx, run_id=other)\n",
+]
+CTX_REV1_CLEAN = [
+    "from abacus.modules.identity.api import AuthContext as AC\nx = isinstance(a, AC)\n",
+    "from abacus.modules.identity.api import SystemContext as S\n\ndef f(s: S) -> S: ...\n",
+    "x = type(value)\n",
+    "x = type(1)\n",
+    "x = replace(item, a=1)\n",
+    "x = copy(items)\n",
+    "x = SystemContextual()\n",
+]
+CTX_REV1_RULE_FILES = [
+    SERVICE,
+    "src/abacus/modules/connections/pipeline.py",
+    "src/abacus/modules/connections/service.py",
+]
+
+
+@pytest.mark.parametrize("source", CTX_REV1_VIOLATING)
+@pytest.mark.parametrize("rel", CTX_REV1_RULE_FILES)
+def test_ac20_ctx_001_flags_aliased_new_type_and_system_context_construction(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert _flags(tmp_path, "CTX-001", rel, source)
+
+
+@pytest.mark.parametrize("source", CTX_REV1_VIOLATING)
+@pytest.mark.parametrize("rel", [f"{IDENT}/service.py", f"{IDENT}/context.py"])
+def test_ac20_ctx_001_allows_the_identity_builders_to_do_any_of_it(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "CTX-001", rel, source)
+
+
+@pytest.mark.parametrize("source", CTX_REV1_VIOLATING)
+@pytest.mark.parametrize("rel", OUTSIDE_SRC)
+def test_ac20_ctx_001_revision_1_applies_only_under_src_abacus(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "CTX-001", rel, source)
+
+
+@pytest.mark.parametrize("source", CTX_REV1_CLEAN)
+def test_ac20_ctx_001_revision_1_ignores_clean_code(tmp_path: Path, source: str) -> None:
+    assert not _flags(tmp_path, "CTX-001", SERVICE, source)
+
+
+SYS_VIOLATING = [
+    "from abacus.modules.identity.api import system_context_for_run\n",
+    "x = system_context_for_run(tenant_id=t)\n",
+    "x = identity.system_context_for_run(tenant_id=t)\n",
+    "from abacus.modules.identity.api import system_context_for_run as ctx_for\nctx_for()\n",
+    "from abacus.modules.identity.context import _ISSUER\n",
+    "x = context._ISSUER\n",
+    "x = _ISSUER\n",
+    "def f(system_context_for_run):\n    return 1\n",
+]
+SYS_ALLOWED = [
+    f"{IDENT}/context.py",
+    f"{IDENT}/api.py",
+    "src/abacus/modules/connections/service.py",
+]
+SYS_CLEAN = [
+    "x = system_context(a)\n",
+    "x = load_system_context(t, r)\n",
+    "x = issuer\n",
+    "from abacus.modules.identity.api import SystemContext\n",
+    "x = _ISSUED\n",
+]
+
+
+@pytest.mark.parametrize("source", SYS_VIOLATING)
+@pytest.mark.parametrize(
+    "rel",
+    [
+        SERVICE,
+        "src/abacus/modules/connections/pipeline.py",
+        "src/abacus/modules/connections/repository.py",
+        f"{IDENT}/service.py",
+        f"{IDENT}/routing.py",
+        "src/abacus/api/app.py",
+        "src/abacus/kernel/logging.py",
+    ],
+)
+def test_ac20_sys_001_flags_issuing_a_system_context_outside_its_three_files(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert _flags(tmp_path, "SYS-001", rel, source)
+
+
+@pytest.mark.parametrize("source", SYS_VIOLATING)
+@pytest.mark.parametrize("rel", SYS_ALLOWED)
+def test_ac20_sys_001_allows_the_three_files(tmp_path: Path, rel: str, source: str) -> None:
+    assert not _flags(tmp_path, "SYS-001", rel, source)
+
+
+@pytest.mark.parametrize("source", SYS_VIOLATING)
+@pytest.mark.parametrize("rel", OUTSIDE_SRC)
+def test_ac20_sys_001_applies_only_under_src_abacus(tmp_path: Path, rel: str, source: str) -> None:
+    assert not _flags(tmp_path, "SYS-001", rel, source)
+
+
+@pytest.mark.parametrize("source", SYS_CLEAN)
+def test_ac20_sys_001_ignores_clean_code(tmp_path: Path, source: str) -> None:
+    assert not _flags(tmp_path, "SYS-001", SERVICE, source)
+
+
+def test_ac20_sys_001_names_the_line(tmp_path: Path) -> None:
+    _write(tmp_path, SERVICE, "x = 1\ny = system_context_for_run()\n")
+    assert [(v.rule_id, v.line) for v in bp.scan(tmp_path) if v.rule_id == "SYS-001"] == [
+        ("SYS-001", 2)
+    ]
+
+
+CONN_FILES = [
+    "src/abacus/modules/connections/connector.py",
+    "src/abacus/modules/connections/fake.py",
+    "src/abacus/modules/connections/fake_format.py",
+    "src/abacus/modules/connections/pipeline.py",
+    "src/abacus/modules/connections/service.py",
+    "src/abacus/modules/connections/repository.py",
+    "src/abacus/modules/connections/connectors/quickbooks.py",
+    "src/abacus/modules/connections/connectors/nested/deep.py",
+]
+CONN_NETWORK_VIOLATING = [
+    "import httpx\n",
+    "import httpx.sync\n",
+    "from httpx import Client\n",
+    "import requests\n",
+    "from requests.adapters import HTTPAdapter\n",
+    "import aiohttp\n",
+    "import urllib\n",
+    "import urllib.request\n",
+    "from urllib import request\n",
+    "from urllib.request import urlopen\n",
+    "import urllib3\n",
+    "import http.client\n",
+    "from http import client\n",
+    "import http\n",
+    "import socket\n",
+    "import ssl\n",
+    "import smtplib\n",
+    "import ftplib\n",
+    "import subprocess\n",
+    "from subprocess import run\n",
+    "import websockets\n",
+    "import grpc\n",
+    "import asyncssh\n",
+    "import paramiko\n",
+    "import socket as s\n",
+    "import importlib\nimportlib.import_module('httpx')\n",
+    "x = __import__('socket')\n",
+]
+CONN_NETWORK_CLEAN = [
+    "import json\n",
+    "import asyncio\n",
+    "import hashlib\n",
+    "from abacus.kernel.config import settings\n",
+    "import httpxish\n",
+    "from httplib2_like import x\n",
+    "from pathlib import Path\n",
+    "import sockets_in_name\n",
+]
+CONN_WRITE_VIOLATING = [
+    "def create_connection(): ...\n",
+    "def update_status(): ...\n",
+    "def delete_run(): ...\n",
+    "def write_file(): ...\n",
+    "def post_entry(): ...\n",
+    "def put_object(): ...\n",
+    "def patch_record(): ...\n",
+    "def upload_report(): ...\n",
+    "def send_mail(): ...\n",
+    "async def create(): ...\n",
+    "def _write_cache(): ...\n",
+    "def __delete_all(): ...\n",
+    "def Create_Thing(): ...\n",
+    "def UPDATE_x(): ...\n",
+    "def SendNow(): ...\n",
+    "class C:\n    def create(self): ...\n",
+    "class C:\n    async def _upload(self): ...\n",
+    "def outer():\n    def inner_post(): ...\n    def post_inner(): ...\n",
+]
+CONN_WRITE_CLEAN = [
+    "def pull(): ...\n",
+    "def read_bytes(): ...\n",
+    "def fixture_path(): ...\n",
+    "def _is_fault(): ...\n",
+    "def get_run(): ...\n",
+    "def list_items(): ...\n",
+    "def fetch_attachment(): ...\n",
+    "def health(): ...\n",
+    "def re_create(): ...\n",
+    "def last_updated(): ...\n",
+]
+
+
+@pytest.mark.parametrize("source", CONN_NETWORK_VIOLATING)
+@pytest.mark.parametrize("rel", CONN_FILES)
+def test_ac20_conn_001_flags_network_imports_anywhere_in_the_connections_module(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert _flags(tmp_path, "CONN-001", rel, source)
+
+
+@pytest.mark.parametrize("source", CONN_NETWORK_CLEAN)
+def test_ac20_conn_001_ignores_other_imports(tmp_path: Path, source: str) -> None:
+    assert not _flags(tmp_path, "CONN-001", CONN_FILES[0], source)
+
+
+@pytest.mark.parametrize("source", CONN_WRITE_VIOLATING)
+@pytest.mark.parametrize("rel", CONN_FILES)
+def test_ac20_conn_001_flags_write_shaped_functions_case_insensitively(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert _flags(tmp_path, "CONN-001", rel, source)
+
+
+@pytest.mark.parametrize("source", CONN_WRITE_CLEAN)
+@pytest.mark.parametrize("rel", CONN_FILES)
+def test_ac20_conn_001_ignores_read_shaped_functions(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "CONN-001", rel, source)
+
+
+CONTRACT_EIGHT = [
+    "capabilities",
+    "authorise_url",
+    "exchange_code",
+    "refresh",
+    "pull",
+    "changes_since",
+    "fetch_attachment",
+    "health",
+]
+
+
+@pytest.mark.parametrize("name", ["lookup", "fetch_accounts", "list_accounts", "run", "get"])
+@pytest.mark.parametrize(
+    "base", ["Connector", "abc.Connector", "connector.Connector", "Connector, Mixin"]
+)
+def test_ac20_conn_001_flags_a_public_method_outside_the_contract_on_a_connector(
+    tmp_path: Path, name: str, base: str
+) -> None:
+    source = f"class Fake({base}):\n    def {name}(self):\n        return 1\n"
+    assert _flags(tmp_path, "CONN-001", "src/abacus/modules/connections/fake.py", source)
+
+
+@pytest.mark.parametrize("name", ["lookup", "fetch_accounts"])
+def test_ac20_conn_001_flags_an_async_public_method_outside_the_contract(
+    tmp_path: Path, name: str
+) -> None:
+    source = f"class Fake(Connector):\n    async def {name}(self):\n        return 1\n"
+    assert _flags(tmp_path, "CONN-001", "src/abacus/modules/connections/fake.py", source)
+
+
+@pytest.mark.parametrize("name", CONTRACT_EIGHT)
+def test_ac20_conn_001_allows_the_contracts_eight_methods(tmp_path: Path, name: str) -> None:
+    source = f"class Fake(Connector):\n    async def {name}(self):\n        return 1\n"
+    assert not _flags(tmp_path, "CONN-001", "src/abacus/modules/connections/fake.py", source)
+
+
+@pytest.mark.parametrize("name", ["_helper", "__init__", "_lookup", "__repr__"])
+def test_ac20_conn_001_allows_private_and_dunder_methods(tmp_path: Path, name: str) -> None:
+    source = f"class Fake(Connector):\n    def {name}(self):\n        return 1\n"
+    assert not _flags(tmp_path, "CONN-001", "src/abacus/modules/connections/fake.py", source)
+
+
+def test_ac20_conn_001_allows_public_methods_on_classes_that_are_not_connectors(
+    tmp_path: Path,
+) -> None:
+    source = "class Helper:\n    def lookup(self):\n        return 1\n"
+    assert not _flags(tmp_path, "CONN-001", "src/abacus/modules/connections/fake.py", source)
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "src/abacus/modules/ledger/service.py",
+        "src/abacus/modules/requests/service.py",
+        "src/abacus/modules/evidence/storage.py",
+        "src/abacus/kernel/storage.py",
+        "src/abacus/api/app.py",
+        "src/abacus_tools/synthetic/connector_fixtures.py",
+        "tests/unit/connections/test_x.py",
+    ],
+)
+def test_ac20_conn_001_applies_only_to_the_connections_module(tmp_path: Path, rel: str) -> None:
+    assert not _flags(tmp_path, "CONN-001", rel, "import httpx\ndef create_x(): ...\n")
+
+
+def test_ac20_conn_001_names_the_function_and_the_line(tmp_path: Path) -> None:
+    _write(tmp_path, CONN_FILES[0], "x = 1\n\ndef upload_file():\n    pass\n")
+    [found] = [v for v in bp.scan(tmp_path) if v.rule_id == "CONN-001"]
+    assert found.line == 3
+    assert "upload_file" in found.message
+    assert found.adr == "ADR-040"
+
+
+def test_ac20_conn_001_flags_each_import_and_function_once(tmp_path: Path) -> None:
+    _write(
+        tmp_path,
+        CONN_FILES[0],
+        "import httpx\nimport socket\n\ndef send_x():\n    pass\n\ndef put_y():\n    pass\n",
+    )
+    assert [v.line for v in bp.scan(tmp_path) if v.rule_id == "CONN-001"] == [1, 2, 4, 7]
+
+
+# BOUND-002 for ledger and connections ------------------------------------------------------
+
+BOUND2_REV1_VIOLATING = [
+    ("ledger", "from abacus.modules.identity.api import AuthContext\n"),
+    ("ledger", "from abacus.modules.evidence.api import TrialBalance\n"),
+    ("ledger", "import abacus.modules.identity.api\n"),
+    ("ledger", "from abacus.modules.engagements.api import get_ref\n"),
+    ("ledger", "from abacus.modules.organisations.api import client_names\n"),
+    ("ledger", "from abacus.modules.requests.api import fulfil_by_rule\n"),
+    ("ledger", "from abacus.modules.connections.api import Period\n"),
+    ("connections", "from abacus.modules.sampling.api import x\n"),
+    ("connections", "from abacus.modules.agents.api import x\n"),
+    ("connections", "from abacus.modules.communications.api import x\n"),
+    ("connections", "from abacus.modules.audit_trail.api import x\n"),
+    ("connections", "from abacus.modules.platform.api import x\n"),
+    ("identity", "from abacus.modules.connections.api import x\n"),
+    ("organisations", "from abacus.modules.connections.api import x\n"),
+    ("engagements", "from abacus.modules.connections.api import x\n"),
+    ("requests", "from abacus.modules.connections.api import x\n"),
+    ("evidence", "from abacus.modules.connections.api import x\n"),
+    ("engagements", "from abacus.modules.ledger.api import x\n"),
+    ("requests", "from abacus.modules.ledger.api import x\n"),
+    ("evidence", "from abacus.modules.ledger.api import x\n"),
+    ("identity", "from abacus.modules.ledger.api import x\n"),
+]
+BOUND2_REV1_CLEAN = [
+    ("connections", "from abacus.modules.identity.api import AuthContext\n"),
+    ("connections", "from abacus.modules.engagements.api import get_ref\n"),
+    ("connections", "from abacus.modules.organisations.api import client_names\n"),
+    ("connections", "from abacus.modules.ledger.api import validate\n"),
+    ("connections", "from abacus.modules.evidence.api import add_version\n"),
+    ("connections", "from abacus.modules.requests.api import fulfil_by_rule\n"),
+    ("connections", "import abacus.modules.ledger.api\n"),
+    ("connections", "from abacus.kernel.uow import uow\n"),
+    ("connections", "from abacus.modules.connections.api import Period\n"),
+    ("ledger", "from abacus.kernel.uow import UnitOfWork\n"),
+    ("ledger", "from abacus.kernel.db import tenant_session\n"),
+    ("ledger", "from abacus.modules.ledger.api import validate\n"),
+]
+
+
+@pytest.mark.parametrize(("module", "source"), BOUND2_REV1_VIOLATING)
+def test_ac20_bound_002_flags_ledger_and_connections_dependencies_outside_the_map(
+    tmp_path: Path, module: str, source: str
+) -> None:
+    assert _flags(tmp_path, "BOUND-002", f"src/abacus/modules/{module}/service.py", source)
+
+
+@pytest.mark.parametrize(("module", "source"), BOUND2_REV1_CLEAN)
+def test_ac20_bound_002_allows_the_declared_ledger_and_connections_dependencies(
+    tmp_path: Path, module: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "BOUND-002", f"src/abacus/modules/{module}/service.py", source)
+
+
+def test_ac20_bound_002_ledger_depends_on_no_module() -> None:
+    assert bp.MODULE_DEPENDENCIES["ledger"] == frozenset()
+
+
+def test_ac20_bound_002_only_connections_may_depend_on_ledger() -> None:
+    assert [m for m, deps in bp.MODULE_DEPENDENCIES.items() if "ledger" in deps] == ["connections"]
+
+
+def test_ac20_bound_002_nothing_depends_on_connections() -> None:
+    assert [m for m, deps in bp.MODULE_DEPENDENCIES.items() if "connections" in deps] == []
+
+
+# LIST-001: the ledger exemption ------------------------------------------------------------
+
+LEDGER_REPO = "src/abacus/modules/ledger/repository.py"
+
+
+def test_ac20_list_001_exempts_lines_of_in_the_ledger_repository_only() -> None:
+    assert (LEDGER_REPO, "lines_of") in bp.LIST_EXEMPT
+
+
+def test_ac20_list_001_does_not_flag_lines_of_in_the_ledger_repository(tmp_path: Path) -> None:
+    assert not _flags(tmp_path, "LIST-001", LEDGER_REPO, "def lines_of(s):\n    return s.all()\n")
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "src/abacus/modules/connections/repository.py",
+        "src/abacus/modules/requests/repository.py",
+        "src/abacus/modules/evidence/repository.py",
+        "src/abacus/modules/ledger/repository/lines.py",
+    ],
+)
+def test_ac20_list_001_flags_lines_of_anywhere_else(tmp_path: Path, rel: str) -> None:
+    assert _flags(tmp_path, "LIST-001", rel, "def lines_of(s):\n    return s.all()\n")
+
+
+@pytest.mark.parametrize("name", ["snapshots_of", "lines_for", "list_lines", "all_snapshots"])
+def test_ac20_list_001_flags_other_ledger_listings(tmp_path: Path, name: str) -> None:
+    assert _flags(tmp_path, "LIST-001", LEDGER_REPO, f"def {name}(s):\n    return s.all()\n")
+
+
+def test_ac20_list_001_flags_connection_run_listings(tmp_path: Path) -> None:
+    source = "async def list_runs(s):\n    return (await s.execute(q)).scalars().all()\n"
+    assert _flags(tmp_path, "LIST-001", "src/abacus/modules/connections/repository.py", source)

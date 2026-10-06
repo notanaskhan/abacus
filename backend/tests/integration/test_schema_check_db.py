@@ -971,6 +971,11 @@ def test_ac20_table_owners_lists_exactly_the_tables_of_the_migrated_schema(
         ("request_items", "requests"),
         ("engagement_members", "identity"),
         ("memberships", "identity"),
+        ("connections", "connections"),
+        ("sync_runs", "connections"),
+        ("ledger_snapshots", "ledger"),
+        ("trial_balance_lines", "ledger"),
+        ("fulfilments", "requests"),
     ],
 )
 def test_ac20_table_owners_assigns_the_new_tables_to_their_modules(table: str, owner: str) -> None:
@@ -1072,7 +1077,31 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     assert {
         "engagements": frozenset({"status"}),
         "request_items": frozenset({"status"}),
+        "connections": frozenset({"status"}),
+        "sync_runs": frozenset(
+            {"status", "raw_storage_key", "raw_version_id", "raw_fingerprint", "raw_size_bytes"}
+            | {"raw_pulled_at", "source", "snapshot_id", "evidence_version_id"}
+            | {"failure_code", "finished_at"}
+        ),
     } == sc.APP_UPDATE_COLUMNS
+    assert sc.APP_INSERT_COLUMNS["connections"] == frozenset()
+    assert sc.APP_INSERT_COLUMNS["sync_runs"] == frozenset(
+        {"id", "tenant_id", "client_entity_id", "connection_id", "engagement_id"}
+        | {"request_item_id", "dataset", "period_start", "period_end", "started_by"}
+    )
+    assert sc.APP_INSERT_COLUMNS["ledger_snapshots"] == frozenset(
+        {"id", "tenant_id", "client_entity_id", "period_start", "period_end", "pulled_at"}
+        | {"source", "raw_fingerprint", "line_count", "total_debit", "total_credit"}
+    )
+    assert sc.APP_INSERT_COLUMNS["trial_balance_lines"] == frozenset(
+        {"id", "tenant_id", "snapshot_id", "account_code", "account_name", "debit", "credit"}
+        | {"source_ref"}
+    )
+    assert sc.APP_INSERT_COLUMNS["fulfilments"] == frozenset(
+        {"id", "tenant_id", "engagement_id", "request_item_id", "evidence_version_id"}
+        | {"created_by_kind", "created_by_id"}
+    )
+    assert {"ledger_snapshots", "trial_balance_lines", "fulfilments"} <= sc.INSERT_ONLY_TABLES
     assert sc.APP_INSERT_COLUMNS["engagements"] == frozenset(
         {"id", "tenant_id", "client_id", "client_entity_id", "name"}
         | {"fiscal_period_start", "fiscal_period_end", "created_by"}
@@ -1090,6 +1119,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
 # --- evidence immutability trigger (TASK-009 contract and revision 1) ----------------------------
 
 IMMUTABLE_FUNCTION = "evidence_versions_immutable"
+LEDGER_FUNCTION = "ledger_immutable"
 RESTORE_EVIDENCE = [
     "DROP TRIGGER IF EXISTS evidence_versions_no_update_or_delete ON evidence_versions",
     "DROP TRIGGER IF EXISTS evidence_versions_no_truncate ON evidence_versions",
@@ -1132,7 +1162,11 @@ def _missing(op: str) -> str:
 
 
 def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Database) -> None:
-    assert sc.IMMUTABLE_TABLES == {"evidence_versions": IMMUTABLE_FUNCTION}
+    assert sc.IMMUTABLE_TABLES == {
+        "evidence_versions": IMMUTABLE_FUNCTION,
+        "ledger_snapshots": LEDGER_FUNCTION,
+        "trial_balance_lines": LEDGER_FUNCTION,
+    }
     assert _evidence_problems(evidence) == []
 
 
@@ -1224,3 +1258,131 @@ def test_ac20_a_trigger_calling_another_function_does_not_count(evidence: sc.Dat
         "FOR EACH STATEMENT EXECUTE FUNCTION zz_evidence_other_fn()",
     )
     assert _evidence_problems(evidence) == [_missing("TRUNCATE")]
+
+
+# --- ledger immutability triggers (TASK-010a contract, migration 0009) ---------------------------
+
+LEDGER_TABLES = ["ledger_snapshots", "trial_balance_lines"]
+RESTORE_LEDGER = [
+    "DROP TRIGGER IF EXISTS ledger_snapshots_no_update_or_delete ON ledger_snapshots",
+    "DROP TRIGGER IF EXISTS ledger_snapshots_no_truncate ON ledger_snapshots",
+    "DROP TRIGGER IF EXISTS trial_balance_lines_no_update_or_delete ON trial_balance_lines",
+    "DROP TRIGGER IF EXISTS trial_balance_lines_no_truncate ON trial_balance_lines",
+    "DROP TRIGGER IF EXISTS zz_ledger_after ON ledger_snapshots",
+    "CREATE OR REPLACE FUNCTION ledger_immutable() RETURNS trigger LANGUAGE plpgsql AS "
+    "$$ BEGIN RAISE EXCEPTION 'ledger snapshots are immutable (ADR-004)' "
+    "USING ERRCODE = 'insufficient_privilege'; END $$",
+    "CREATE TRIGGER ledger_snapshots_no_update_or_delete BEFORE UPDATE OR DELETE ON "
+    "ledger_snapshots FOR EACH ROW EXECUTE FUNCTION ledger_immutable()",
+    "CREATE TRIGGER ledger_snapshots_no_truncate BEFORE TRUNCATE ON ledger_snapshots "
+    "FOR EACH STATEMENT EXECUTE FUNCTION ledger_immutable()",
+    "CREATE TRIGGER trial_balance_lines_no_update_or_delete BEFORE UPDATE OR DELETE ON "
+    "trial_balance_lines FOR EACH ROW EXECUTE FUNCTION ledger_immutable()",
+    "CREATE TRIGGER trial_balance_lines_no_truncate BEFORE TRUNCATE ON trial_balance_lines "
+    "FOR EACH STATEMENT EXECUTE FUNCTION ledger_immutable()",
+]
+
+
+@pytest.fixture
+def ledger(evidence_db: sc.Database) -> Iterator[sc.Database]:
+    yield evidence_db
+    _sql(evidence_db.superuser_dsn, *RESTORE_LEDGER)
+
+
+def _ledger_problems(database: sc.Database) -> list[str]:
+    return [
+        m
+        for m in sc.check(database.owner_url, database.app_url)
+        if m.startswith(("ledger_snapshots:", "trial_balance_lines:"))
+    ]
+
+
+def _ledger_missing(table: str, op: str) -> str:
+    return f"{table}: no enabled BEFORE {op} trigger calling {LEDGER_FUNCTION} that raises"
+
+
+def test_ac20_the_migrated_ledger_triggers_pass_schema_check(ledger: sc.Database) -> None:
+    assert _ledger_problems(ledger) == []
+    assert sc.check(ledger.owner_url, ledger.app_url) == []
+
+
+@pytest.mark.parametrize("table", LEDGER_TABLES)
+def test_ac20_a_dropped_ledger_truncate_trigger_is_reported(
+    ledger: sc.Database, table: str
+) -> None:
+    _sql(ledger.superuser_dsn, f"DROP TRIGGER {table}_no_truncate ON {table}")
+    assert _ledger_problems(ledger) == [_ledger_missing(table, "TRUNCATE")]
+
+
+@pytest.mark.parametrize("table", LEDGER_TABLES)
+def test_ac20_a_dropped_ledger_update_delete_trigger_reports_both_operations(
+    ledger: sc.Database, table: str
+) -> None:
+    _sql(ledger.superuser_dsn, f"DROP TRIGGER {table}_no_update_or_delete ON {table}")
+    assert sorted(_ledger_problems(ledger)) == sorted(
+        [_ledger_missing(table, "UPDATE"), _ledger_missing(table, "DELETE")]
+    )
+
+
+@pytest.mark.parametrize("table", LEDGER_TABLES)
+def test_ac20_a_disabled_ledger_trigger_is_reported(ledger: sc.Database, table: str) -> None:
+    _sql(ledger.superuser_dsn, f"ALTER TABLE {table} DISABLE TRIGGER {table}_no_truncate")
+    assert _ledger_problems(ledger) == [_ledger_missing(table, "TRUNCATE")]
+
+
+def test_ac20_a_ledger_trigger_function_that_no_longer_raises_is_reported(
+    ledger: sc.Database,
+) -> None:
+    _sql(
+        ledger.superuser_dsn,
+        "CREATE OR REPLACE FUNCTION ledger_immutable() RETURNS trigger LANGUAGE plpgsql AS "
+        "$$ BEGIN RETURN NULL; END $$",
+    )
+    assert len(_ledger_problems(ledger)) == 6
+
+
+def test_ac20_an_after_trigger_does_not_count_for_the_ledger(ledger: sc.Database) -> None:
+    _sql(
+        ledger.superuser_dsn,
+        "DROP TRIGGER ledger_snapshots_no_update_or_delete ON ledger_snapshots",
+        "CREATE TRIGGER zz_ledger_after AFTER UPDATE OR DELETE ON ledger_snapshots "
+        "FOR EACH ROW EXECUTE FUNCTION ledger_immutable()",
+    )
+    assert sorted(_ledger_problems(ledger)) == sorted(
+        [
+            _ledger_missing("ledger_snapshots", "UPDATE"),
+            _ledger_missing("ledger_snapshots", "DELETE"),
+        ]
+    )
+
+
+@pytest.mark.parametrize("table", ["ledger_snapshots", "trial_balance_lines", "fulfilments"])
+def test_ac20_a_granted_update_on_an_insert_only_new_table_is_reported(
+    ledger: sc.Database, table: str
+) -> None:
+    _sql(ledger.superuser_dsn, f"GRANT UPDATE ON {table} TO abacus_app")
+    try:
+        problems = [
+            m for m in sc.check(ledger.owner_url, ledger.app_url) if m.startswith(f"{table}:")
+        ]
+        assert problems
+    finally:
+        _sql(ledger.superuser_dsn, f"REVOKE UPDATE ON {table} FROM abacus_app")
+
+
+def test_ac20_a_wider_update_grant_on_sync_runs_is_reported(ledger: sc.Database) -> None:
+    _sql(ledger.superuser_dsn, "GRANT UPDATE (period_start) ON sync_runs TO abacus_app")
+    try:
+        problems = [m for m in sc.check(ledger.owner_url, ledger.app_url) if "sync_runs" in m]
+        assert any("may UPDATE" in m for m in problems)
+    finally:
+        _sql(ledger.superuser_dsn, "REVOKE UPDATE (period_start) ON sync_runs FROM abacus_app")
+
+
+def test_ac20_an_insert_grant_on_connections_is_reported(ledger: sc.Database) -> None:
+    _sql(ledger.superuser_dsn, "GRANT INSERT (provider) ON connections TO abacus_app")
+    try:
+        problems = [m for m in sc.check(ledger.owner_url, ledger.app_url) if "connections" in m]
+        assert problems
+    finally:
+        _sql(ledger.superuser_dsn, "REVOKE INSERT (provider) ON connections FROM abacus_app")
