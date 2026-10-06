@@ -839,6 +839,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_identity.py",
             "tests/integration/test_engagements.py",
             "tests/integration/test_engagements_schema.py",
+            "tests/integration/test_evidence.py",
         ),
     ),
     Rule(

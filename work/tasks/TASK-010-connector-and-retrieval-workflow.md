@@ -60,6 +60,10 @@ Steps: to be written when the task starts.
 |---|---|---|
 
 ## Gotchas and discoveries
+- From TASK-009 (founder, 2026-10-06): add a `SystemContext` that `authorise` accepts (`evidence.upload`, `connection.pull`, `screening.run`).
+- Evidence: stage content with `evidence.api.stage_content` **before** the unit of work, then `add_version(..., idempotency_key=<workflow/activity id>)`. A repeat returns `created=False` and records nothing, so record your own event or skip. Raw payloads use `stage_content`/`read_content` too.
+- Add the `evidence_versions.snapshot_id` composite FK, and `ledger: {identity, engagements, evidence}` in `MODULE_DEPENDENCIES`.
+- Call `key_service()` and the storage target at worker startup (fail at boot).
 -
 
 ## Questions for the human
