@@ -691,6 +691,7 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "organisations": frozenset(),
     "engagements": frozenset({"identity", "organisations"}),
     "requests": frozenset({"identity", "engagements"}),
+    "evidence": frozenset({"identity", "engagements"}),
 }
 
 
@@ -775,6 +776,18 @@ def _check_table_ownership(src: SourceFile) -> Iterator[Finding]:
         ):
             for match in _SQL_TABLE.finditer(node.value):
                 yield from check(match.group(1), node.lineno)
+
+
+# Libraries that only one kernel package may use (ADR-016, ADR-104).
+def _check_confined(
+    prefixes: tuple[str, ...], where: str
+) -> Callable[[SourceFile], Iterator[Finding]]:
+    def check(src: SourceFile) -> Iterator[Finding]:
+        for line, module in _imported_modules(src):
+            if any(module == p or module.startswith(f"{p}.") for p in prefixes):
+                yield Finding(line, f"{module.split('.')[0]} is used only in {where}")
+
+    return check
 
 
 # --- tree rules -------------------------------------------------------------------------------
@@ -1028,6 +1041,22 @@ RULES: list[Rule | TreeRule] = [
         adr="ADR-008, ADR-103",
         check=_check_table_ownership,
         include=("src/abacus/modules/*",),
+    ),
+    Rule(
+        id="STORE-001",
+        description="Only kernel.storage constructs S3 clients (boto3)",
+        adr="ADR-016, ADR-104",
+        check=_check_confined(("boto3",), "abacus.kernel.storage"),
+        include=("src/abacus/*",),
+        exclude=("src/abacus/kernel/storage.py",),
+    ),
+    Rule(
+        id="CRYPTO-001",
+        description="Only kernel.crypto uses the cryptography library",
+        adr="ADR-035, ADR-104",
+        check=_check_confined(("cryptography",), "abacus.kernel.crypto"),
+        include=("src/abacus/*",),
+        exclude=("src/abacus/kernel/crypto/*", "src/abacus/modules/identity/tokens.py"),
     ),
     Rule(
         id="ANY-001",
