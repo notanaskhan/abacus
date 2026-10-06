@@ -1,0 +1,103 @@
+"""Evidence data access: evidence items and versions only (ADR-008, ADR-103)."""
+
+from __future__ import annotations
+
+from datetime import date, datetime
+from uuid import UUID
+
+from sqlalchemy import func, insert, select, text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from abacus.modules.evidence.models import EvidenceItem, EvidenceVersion
+
+# Serialises version numbering per item for the rest of the transaction. Row locks would need
+# UPDATE privilege on the item, which the app deliberately doesn't have.
+_LOCK_ITEM = text("SELECT pg_advisory_xact_lock(hashtextextended(:item, 0))")
+
+
+async def insert_item(
+    session: AsyncSession,
+    *,
+    item_id: UUID,
+    tenant_id: UUID,
+    engagement_id: UUID,
+    title: str,
+    created_by_kind: str,
+    created_by_id: str,
+) -> None:
+    await session.execute(
+        insert(EvidenceItem).values(
+            id=item_id,
+            tenant_id=tenant_id,
+            engagement_id=engagement_id,
+            title=title,
+            created_by_kind=created_by_kind,
+            created_by_id=created_by_id,
+        )
+    )
+
+
+async def next_version_no(session: AsyncSession, evidence_item_id: UUID) -> int:
+    await session.execute(_LOCK_ITEM, {"item": str(evidence_item_id)})
+    current = (
+        await session.execute(
+            select(func.max(EvidenceVersion.version_no)).where(
+                EvidenceVersion.evidence_item_id == evidence_item_id
+            )
+        )
+    ).scalar_one_or_none()
+    return (current or 0) + 1
+
+
+async def insert_version(
+    session: AsyncSession,
+    *,
+    version_id: UUID,
+    tenant_id: UUID,
+    engagement_id: UUID,
+    evidence_item_id: UUID,
+    version_no: int,
+    fingerprint: str,
+    storage_key: str,
+    storage_version_id: str,
+    size_bytes: int,
+    media_type: str,
+    source: str,
+    method: str,
+    pulled_at: datetime | None,
+    period_start: date | None,
+    period_end: date | None,
+    client_entity_id: UUID | None,
+    snapshot_id: UUID | None,
+) -> EvidenceVersion:
+    return (
+        await session.execute(
+            insert(EvidenceVersion)
+            .values(
+                id=version_id,
+                tenant_id=tenant_id,
+                engagement_id=engagement_id,
+                evidence_item_id=evidence_item_id,
+                version_no=version_no,
+                fingerprint=fingerprint,
+                storage_key=storage_key,
+                storage_version_id=storage_version_id,
+                size_bytes=size_bytes,
+                media_type=media_type,
+                source=source,
+                method=method,
+                pulled_at=pulled_at,
+                period_start=period_start,
+                period_end=period_end,
+                client_entity_id=client_entity_id,
+                snapshot_id=snapshot_id,
+            )
+            .returning(EvidenceVersion)
+        )
+    ).scalar_one()
+
+
+async def get_version(session: AsyncSession, version_id: UUID) -> EvidenceVersion | None:
+    return (
+        await session.execute(select(EvidenceVersion).where(EvidenceVersion.id == version_id))
+    ).scalar_one_or_none()

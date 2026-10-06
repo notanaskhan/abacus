@@ -6,7 +6,10 @@ convention only keeps names predictable when the ORM emits them.
 
 from __future__ import annotations
 
-from sqlalchemy import MetaData
+from datetime import datetime
+from typing import Any, ClassVar
+
+from sqlalchemy import DateTime, MetaData
 from sqlalchemy.orm import DeclarativeBase
 
 NAMING_CONVENTION = {
@@ -20,3 +23,7 @@ NAMING_CONVENTION = {
 
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
+    # Every timestamp column is timestamptz: Python datetimes map to it, aware, in UTC.
+    type_annotation_map: ClassVar[dict[Any, Any]] = {  # Any: SQLAlchemy's own annotation type
+        datetime: DateTime(timezone=True)
+    }
