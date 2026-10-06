@@ -4,7 +4,7 @@ title: Engagements and request items through the API
 spec: SPEC-000
 acceptance_criteria: [AC-4, AC-5, AC-6, AC-7, AC-8]
 risk_zone: amber
-status: in-review
+status: done
 branch: task-008-engagements
 worktree:
 created: 2026-10-06
@@ -296,8 +296,5 @@ reason: TASK-008 — engagements, request items, OpenAPI export and generated cl
 -
 
 ## Handoff
-- **Current state:** Done pending review. PR open on `task-008-engagements`; `make check` exit 0.
-- **Exact next step:** Confirm CI. Founder review (amber; diff review optional). Merge, delete `work/approvals/TASK-008.yaml`, mark done; then TASK-009 design (needs `requests.api.get_item_ref`, see Gotchas).
-- **Uncommitted or partial work:** none.
-- **Known failing checks:** none.
-- **Open issues:** branch protection off; follow-ups listed in Gotchas.
+- **Current state:** Done. PR #8 merged (rebase) 2026-10-06 after green CI; approval file deleted.
+- **Exact next step:** none (TASK-009).
