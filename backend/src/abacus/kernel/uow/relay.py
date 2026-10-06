@@ -1,10 +1,19 @@
-"""Outbox relay: publish domain events at least once (ADR-018). PROTECTED. TASK-006 design §4.
+"""Outbox relay: publish domain events at least once (ADR-018). PROTECTED. TASK-006 design §4,
+contract revision 1.
 
 Runs as `abacus_relay`, the one role that reads every tenant's outbox; it can read the outbox and
-mark delivery, nothing else (schema_check enforces it). Each pass locks a batch with
-`FOR UPDATE SKIP LOCKED`, so relays can run side by side without publishing an event twice in one
-pass. An event is marked published only after `publish` returns; a crash in between republishes it
-with the same `event_id`, which consumers use to deduplicate.
+mark delivery, nothing else (schema_check enforces it). Semantics:
+
+- At least once: an event is marked published only after `publish` returns. A crash or cancel
+  before the pass commits republishes it with the same `event_id`; consumers deduplicate on
+  `(tenant_id, event_id)`.
+- Concurrent relays don't publish an event twice in one pass (`FOR UPDATE SKIP LOCKED`).
+- A failing event backs off exponentially (capped at an hour) and is parked after MAX_ATTEMPTS:
+  one poison event can't stall the queue. Its tenant's later events in the same pass are deferred,
+  so they don't overtake it.
+- Order: per tenant within a pass, best effort across passes. `seq` is insert order, not commit
+  order, so consumers must not assume a global order.
+- Locks are held while publishing: keep `batch` small.
 """
 
 from __future__ import annotations
@@ -17,13 +26,26 @@ from uuid import UUID
 from sqlalchemy import text
 
 from abacus.kernel.db import relay_engine
+from abacus.kernel.logging import get_logger
+
+MAX_ATTEMPTS = 10
+MAX_BACKOFF_SECONDS = 3600
+_log = get_logger(__name__)
 
 _CLAIM = text(
-    "SELECT id, tenant_id, event_type, payload FROM outbox WHERE published_at IS NULL "
+    "SELECT id, tenant_id, event_type, payload, attempts FROM outbox "
+    "WHERE published_at IS NULL AND attempts < :max_attempts "
+    "AND (next_attempt_at IS NULL OR next_attempt_at <= clock_timestamp()) "
     "ORDER BY seq LIMIT :batch FOR UPDATE SKIP LOCKED"
 )
-_PUBLISHED = text("UPDATE outbox SET published_at = clock_timestamp() WHERE id = :id")
-_FAILED = text("UPDATE outbox SET attempts = attempts + 1, last_error = :error WHERE id = :id")
+_PUBLISHED = text(
+    "UPDATE outbox SET published_at = clock_timestamp() WHERE tenant_id = :tenant AND id = :id"
+)
+_FAILED = text(
+    "UPDATE outbox SET attempts = attempts + 1, last_error = :error, "
+    "next_attempt_at = clock_timestamp() + make_interval(secs => :backoff) "
+    "WHERE tenant_id = :tenant AND id = :id"
+)
 
 
 @dataclass(frozen=True)
@@ -32,6 +54,13 @@ class OutboxEvent:
     tenant_id: UUID
     event_type: str
     payload: dict[str, object]
+
+
+@dataclass(frozen=True)
+class RelayResult:
+    published: int
+    failed: int
+    deferred: int
 
 
 class Publisher(Protocol):
@@ -55,19 +84,44 @@ def _payload(raw: object) -> dict[str, object]:
     return cast(dict[str, object], loaded)
 
 
-async def relay_once(publisher: Publisher, batch: int = 100) -> int:
-    """Publish up to `batch` unpublished events, oldest first. Returns how many were published."""
-    published = 0
+def _backoff(attempts_after_failure: int) -> int:
+    return min(2**attempts_after_failure, MAX_BACKOFF_SECONDS)
+
+
+async def relay_once(publisher: Publisher, batch: int = 25) -> RelayResult:
+    """Publish up to `batch` due events, oldest first. Never raises for a failing event."""
+    published = failed = deferred = 0
+    blocked: set[UUID] = set()  # tenants with a failure in this pass
     async with relay_engine().connect() as conn:
-        rows = (await conn.execute(_CLAIM, {"batch": batch})).all()
+        rows = (await conn.execute(_CLAIM, {"batch": batch, "max_attempts": MAX_ATTEMPTS})).all()
         for row in rows:
-            event = OutboxEvent(row.id, row.tenant_id, row.event_type, _payload(row.payload))
-            try:
-                await publisher.publish(event)
-            except Exception as exc:  # the event stays unpublished; record why (type only)
-                await conn.execute(_FAILED, {"id": row.id, "error": type(exc).__name__})
+            tenant = cast(UUID, row.tenant_id)
+            if tenant in blocked:
+                deferred += 1
                 continue
-            await conn.execute(_PUBLISHED, {"id": row.id})
+            keys = {"tenant": tenant, "id": row.id}
+            try:
+                event = OutboxEvent(row.id, tenant, row.event_type, _payload(row.payload))
+                await publisher.publish(event)
+            except Exception as exc:  # stays unpublished; record why (class name only)
+                attempts = int(row.attempts) + 1
+                error = type(exc).__name__
+                await conn.execute(
+                    _FAILED, {**keys, "error": error, "backoff": _backoff(attempts)}
+                )
+                _log.warning(
+                    "outbox.publish_failed",
+                    event_id=row.id,
+                    tenant_id=tenant,
+                    event_type=str(row.event_type),
+                    attempts=attempts,
+                    error=error,
+                    parked=attempts >= MAX_ATTEMPTS,
+                )
+                blocked.add(tenant)
+                failed += 1
+                continue
+            await conn.execute(_PUBLISHED, keys)
             published += 1
         await conn.commit()
-    return published
+    return RelayResult(published, failed, deferred)

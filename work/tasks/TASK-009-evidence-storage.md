@@ -61,6 +61,7 @@ Steps: to be written when the task starts.
 
 ## Gotchas and discoveries
 - From TASK-005 review: every table passed to `insert_only()` must also be added to `INSERT_ONLY_TABLES` in `schema_check.py`, or the check won't verify it.
+- From TASK-006: also declare the app's insertable columns in `APP_INSERT_COLUMNS` and grant them with `insert_columns()`; without a declared list the column check is skipped for that table.
 
 ## Questions for the human
 -

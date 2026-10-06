@@ -376,7 +376,7 @@ def _check_lint_sidestep(src: SourceFile) -> Iterator[Finding]:
             yield Finding(node.lineno, f"{node.attr}: {_SIDESTEPS[node.attr]}")
 
 
-_TENANT_SETTING = "app.tenant_id"
+_TENANT_SETTINGS = ("app.tenant_id", "app.actor_")
 
 
 def _check_tenant_setting(src: SourceFile) -> Iterator[Finding]:
@@ -384,18 +384,25 @@ def _check_tenant_setting(src: SourceFile) -> Iterator[Finding]:
         if (
             isinstance(node, ast.Constant)
             and isinstance(node.value, str)
-            and _TENANT_SETTING in node.value
+            and any(setting in node.value for setting in _TENANT_SETTINGS)
         ):
-            yield Finding(node.lineno, "the tenant setting is written only by abacus.kernel.db")
+            yield Finding(
+                node.lineno, "tenant and actor settings are written only by abacus.kernel.db"
+            )
+
+
+# The unit of work's own connection, and the relay's BYPASSRLS engine.
+_UOW_ONLY = frozenset({"tenant_connection", "relay_engine", "configure_relay_engine"})
 
 
 def _check_tenant_connection(src: SourceFile) -> Iterator[Finding]:
     for node in ast.walk(src.tree):
-        if (
-            isinstance(node, ast.ImportFrom)
-            and any(a.name == "tenant_connection" for a in node.names)
-        ) or (isinstance(node, ast.Attribute) and node.attr == "tenant_connection"):
-            yield Finding(node.lineno, "tenant_connection is for abacus.kernel.uow only")
+        if isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                if alias.name in _UOW_ONLY:
+                    yield Finding(node.lineno, f"{alias.name} is for abacus.kernel.uow only")
+        elif isinstance(node, ast.Attribute) and node.attr in _UOW_ONLY:
+            yield Finding(node.lineno, f"{node.attr} is for abacus.kernel.uow only")
 
 
 # --- tree rules -------------------------------------------------------------------------------
@@ -500,7 +507,7 @@ RULES: list[Rule | TreeRule] = [
     ),
     Rule(
         id="UOW-002",
-        description="Only the unit of work uses tenant_connection (it owns the commit)",
+        description="Only the unit of work uses tenant_connection and the relay engine",
         adr="ADR-018",
         check=_check_tenant_connection,
         exclude=(
@@ -511,7 +518,7 @@ RULES: list[Rule | TreeRule] = [
     ),
     Rule(
         id="TENANT-001",
-        description="Only abacus.kernel.db touches the app.tenant_id setting",
+        description="Only abacus.kernel.db touches the app.tenant_id and app.actor_* settings",
         adr="ADR-014",
         check=_check_tenant_setting,
         exclude=(

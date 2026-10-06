@@ -579,7 +579,7 @@ def test_ac20_sidestep_001_allows_popen_class_and_run(tmp_path: Path, rel: str, 
 
 # --- TENANT-001: the tenant setting is written only by abacus.kernel.db ------------------------
 
-TENANT_MESSAGE = "the tenant setting is written only by abacus.kernel.db"
+TENANT_MESSAGE = "tenant and actor settings are written only by abacus.kernel.db"
 TENANT_LITERALS = [
     "SET app.tenant_id = 'x'",
     "select set_config('app.tenant_id', :t, false)",
@@ -639,6 +639,11 @@ UOW2_VIOLATING = [
     "import abacus.kernel.db\nabacus.kernel.db.tenant_connection(ctx)\n",
     "from abacus.kernel import db\ndb.tenant_connection(ctx)\n",
     "from abacus.kernel.db import tenant_session, tenant_connection\n",
+    "from abacus.kernel.db import relay_engine\n",
+    "from abacus.kernel.db import configure_relay_engine\n",
+    "from abacus.kernel.db.session import relay_engine as engine\n",
+    "import abacus.kernel.db\nabacus.kernel.db.configure_relay_engine(url)\n",
+    "from abacus.kernel import db\ndb.relay_engine()\n",
 ]
 UOW2_FLAGGED_PATHS = [
     SERVICE,
@@ -685,6 +690,8 @@ def test_ac20_uow_002_allows_the_kernel_the_unit_of_work_and_integration_tests(
     [
         "from abacus.kernel.db import tenant_session\n",
         "from abacus.kernel.uow import uow\n",
+        "# relay_engine and configure_relay_engine belong to the kernel\n",
+        "from abacus.kernel.uow.relay import relay_once\n",
         "# tenant_connection is for the unit of work\n",
         "import abacus.kernel.db\nabacus.kernel.db.tenant_session(ctx)\n",
     ],
@@ -692,3 +699,37 @@ def test_ac20_uow_002_allows_the_kernel_the_unit_of_work_and_integration_tests(
 def test_ac20_uow_002_ignores_clean_code_elsewhere(tmp_path: Path, source: str) -> None:
     _write(tmp_path, SERVICE, source)
     assert "UOW-002" not in _rule_ids(tmp_path)
+
+
+# --- TENANT-001 also covers the actor settings ---------------------------------------------
+
+ACTOR_LITERALS = [
+    "SET app.actor_kind = 'x'",
+    "select set_config('app.actor_id', :a, false)",
+    "RESET app.actor_",
+]
+
+
+@pytest.mark.parametrize("literal", ACTOR_LITERALS)
+@pytest.mark.parametrize("rel", [SERVICE, "tests/unit/test_something.py"])
+def test_ac20_tenant_001_flags_the_actor_settings_outside_the_kernel(
+    tmp_path: Path, rel: str, literal: str
+) -> None:
+    _write(tmp_path, rel, _tenant_source(literal, wrapped="set_config" in literal))
+    tenant = [v for v in bp.scan(tmp_path) if v.rule_id == "TENANT-001"]
+    assert [(v.path, v.line) for v in tenant] == [(rel, 1)]
+
+
+@pytest.mark.parametrize("literal", ACTOR_LITERALS)
+@pytest.mark.parametrize("rel", ["src/abacus/kernel/db/session.py", *TENANT_EXCLUDED[2:]])
+def test_ac20_tenant_001_allows_the_actor_settings_in_excluded_paths(
+    tmp_path: Path, rel: str, literal: str
+) -> None:
+    _write(tmp_path, rel, _tenant_source(literal, wrapped="set_config" in literal))
+    assert "TENANT-001" not in _rule_ids(tmp_path)
+
+
+def test_ac20_tenant_001_ignores_other_app_settings_and_similar_strings(tmp_path: Path) -> None:
+    _write(tmp_path, SERVICE, 'A = "app.other"\nB = "actor_kind"\nC = "app.actors"\n')
+    tenant = [v for v in bp.scan(tmp_path) if v.rule_id == "TENANT-001"]
+    assert tenant == []

@@ -8,6 +8,7 @@ be rejected by the database go through `tenant_connection`, which never commits.
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from collections.abc import AsyncIterator
 from typing import Annotated, ClassVar, Protocol, cast
@@ -55,8 +56,24 @@ OUTBOX_SELECT = text(
 )
 INSERT_AUDIT = text(
     "INSERT INTO audit_events (tenant_id, actor_kind, actor_id, action, target_type, target_id) "
-    "VALUES (:tenant_id, :actor_kind, :actor_id, 'probe.checked', 'probe', 'p-1')"
+    "VALUES (:tenant_id, :actor_kind, :actor_id, 'probe.checked', 'probe', '1')"
 )
+
+
+# Test-only triggers (created and dropped by the owner) make exactly the marked inserts fail.
+FAILURE_TRIGGERS = [
+    "CREATE OR REPLACE FUNCTION probe_forced_failure() RETURNS trigger LANGUAGE plpgsql AS "
+    "$$ BEGIN RAISE EXCEPTION 'probe_forced_failure'; END $$",
+    "CREATE TRIGGER probe_fail_audit BEFORE INSERT ON audit_events FOR EACH ROW "
+    "WHEN (NEW.target_type = 'probe_fail') EXECUTE FUNCTION probe_forced_failure()",
+    "CREATE TRIGGER probe_fail_outbox BEFORE INSERT ON outbox FOR EACH ROW "
+    "WHEN (NEW.event_type = 'probe.outbox_failure') EXECUTE FUNCTION probe_forced_failure()",
+]
+FAILURE_TRIGGERS_DOWN = [
+    "DROP TRIGGER IF EXISTS probe_fail_audit ON audit_events",
+    "DROP TRIGGER IF EXISTS probe_fail_outbox ON outbox",
+    "DROP FUNCTION IF EXISTS probe_forced_failure()",
+]
 
 
 class ProbeDone(DomainEvent):
@@ -75,6 +92,11 @@ class UntaggedEvent(DomainEvent):
     event_type: ClassVar[str] = "probe.untagged"
     probe_id: Annotated[uuid.UUID, classified("internal")]
     note: str
+
+
+class FailingOutbox(DomainEvent):
+    event_type: ClassVar[str] = "probe.outbox_failure"
+    probe_id: Annotated[uuid.UUID, classified("internal")]
 
 
 class RecordingOp:
@@ -113,8 +135,12 @@ async def probe_table(migrated_db: Migrated) -> AsyncIterator[None]:
             tenant_table(cast(Operations, op), "uow_probe")
             for statement in op.statements:
                 await conn.exec_driver_sql(statement)
+            for statement in FAILURE_TRIGGERS:
+                await conn.exec_driver_sql(statement)
         yield
         async with engine.begin() as conn:
+            for statement in FAILURE_TRIGGERS_DOWN:
+                await conn.exec_driver_sql(statement)
             await conn.run_sync(METADATA.drop_all)
     finally:
         await engine.dispose()
@@ -189,7 +215,7 @@ async def test_ac4_nothing_is_visible_to_others_until_the_block_exits() -> None:
 async def test_ac4_a_block_without_emit_writes_audit_but_no_outbox_row() -> None:
     ctx = _ctx()
     async with uow(ctx) as tx:
-        tx.record("probe.touched", target=Target("probe", "p-1"))
+        tx.record("probe.touched", target=Target("probe", "1"))
     assert len(await _audit(ctx)) == 1
     assert await _outbox(ctx) == []
 
@@ -201,8 +227,8 @@ async def test_ac4_several_events_are_all_written_in_order() -> None:
         ProbeDone(probe_id=uuid.uuid4(), label="2"),
     )
     async with uow(ctx) as tx:
-        tx.record("probe.created", target=Target("probe", "p-1"))
-        tx.record("probe.renamed", target=Target("probe", "p-1"))
+        tx.record("probe.created", target=Target("probe", "1"))
+        tx.record("probe.renamed", target=Target("probe", "1"))
         tx.emit(first)
         tx.emit(second)
     assert [a["action"] for a in await _audit(ctx)] == ["probe.created", "probe.renamed"]
@@ -256,14 +282,45 @@ async def test_ac4_an_empty_block_raises_missing_audit_event() -> None:
 async def test_ac4_a_failing_audit_insert_rolls_back_the_change_and_the_outbox_row() -> None:
     ctx = _ctx()
     probe_id = uuid.uuid4()
-    with pytest.raises(DBAPIError):
+    with pytest.raises(DBAPIError, match="probe_forced_failure"):
         async with uow(ctx) as tx:
             await tx.session.execute(
                 PROBE.insert().values(id=probe_id, tenant_id=ctx.tenant_id, body="x")
             )
-            # a NUL character cannot be stored in a text column, so the audit insert fails
-            tx.record("probe.created", target=Target("probe", "bad\x00id"))
+            tx.record("probe.created", target=Target("probe_fail", probe_id))
             tx.emit(ProbeDone(probe_id=probe_id, label="made"))
+    assert await _probe_ids(ctx) == []
+    assert await _audit(ctx) == []
+    assert await _outbox(ctx) == []
+
+
+async def test_ac4_a_failing_outbox_insert_after_the_audit_insert_rolls_both_back() -> None:
+    ctx = _ctx()
+    probe_id = uuid.uuid4()
+    with pytest.raises(DBAPIError, match="probe_forced_failure"):
+        async with uow(ctx) as tx:
+            await tx.session.execute(
+                PROBE.insert().values(id=probe_id, tenant_id=ctx.tenant_id, body="x")
+            )
+            tx.record("probe.created", target=Target("probe", probe_id))
+            tx.emit(FailingOutbox(probe_id=probe_id))
+    assert await _probe_ids(ctx) == []
+    assert await _audit(ctx) == []
+    assert await _outbox(ctx) == []
+
+
+async def test_ac4_emitting_the_same_event_twice_rolls_the_whole_unit_of_work_back() -> None:
+    ctx = _ctx()
+    probe_id = uuid.uuid4()
+    event = ProbeDone(probe_id=probe_id, label="made")
+    with pytest.raises((DBAPIError, ValueError)):
+        async with uow(ctx) as tx:
+            await tx.session.execute(
+                PROBE.insert().values(id=probe_id, tenant_id=ctx.tenant_id, body="x")
+            )
+            tx.record("probe.created", target=Target("probe", probe_id))
+            tx.emit(event)
+            tx.emit(event)
     assert await _probe_ids(ctx) == []
     assert await _audit(ctx) == []
     assert await _outbox(ctx) == []
@@ -301,13 +358,13 @@ async def test_ac4_outbox_rows_carry_the_contexts_tenant() -> None:
 
 async def test_ac4_audit_target_and_references_round_trip_without_record_contents() -> None:
     ctx = _ctx()
-    target_id, fingerprint = uuid.uuid4(), uuid.uuid4()
+    target_id, fingerprint, digest = uuid.uuid4(), uuid.uuid4(), "ab" * 32
     async with uow(ctx) as tx:
         tx.record(
             "request_item.received",
             target=Target("request_item", target_id),
             before=Ref(version=3),
-            after=Ref(version=4, fingerprint=fingerprint, state="received"),
+            after=Ref(version=4, fingerprint=fingerprint, content_hash=digest),
         )
     [row] = await _audit(ctx)
     assert row["action"] == "request_item.received"
@@ -316,7 +373,7 @@ async def test_ac4_audit_target_and_references_round_trip_without_record_content
     assert row["after_ref"] == {
         "version": 4,
         "fingerprint": str(fingerprint),
-        "state": "received",
+        "content_hash": digest,
     }
     assert row["trace_id"] is None
 
@@ -324,7 +381,7 @@ async def test_ac4_audit_target_and_references_round_trip_without_record_content
 async def test_ac4_omitted_references_are_stored_as_null() -> None:
     ctx = _ctx()
     async with uow(ctx) as tx:
-        tx.record("probe.created", target=Target("probe", "p-1"))
+        tx.record("probe.created", target=Target("probe", "1"))
     [row] = await _audit(ctx)
     assert row["before_ref"] is None
     assert row["after_ref"] is None
@@ -335,8 +392,8 @@ async def test_ac4_target_accepts_a_string_or_uuid_id() -> None:
     uid = uuid.uuid4()
     async with uow(ctx) as tx:
         tx.record("probe.created", target=Target("probe", uid))
-        tx.record("probe.created", target=Target("probe", "plain-id"))
-    assert [a["target_id"] for a in await _audit(ctx)] == [str(uid), "plain-id"]
+        tx.record("probe.created", target=Target("probe", "12345"))
+    assert [a["target_id"] for a in await _audit(ctx)] == [str(uid), "12345"]
 
 
 # --- the database checks actor and tenant ------------------------------------------------------
@@ -443,7 +500,7 @@ async def test_ac4_inside_another_tenants_unit_of_work_the_first_tenants_rows_ar
     a, b = _ctx(), _ctx()
     await _commit_one(a)
     async with uow(b) as tx:
-        tx.record("probe.touched", target=Target("probe", "p-1"))
+        tx.record("probe.touched", target=Target("probe", "1"))
         seen = (await tx.session.execute(text("SELECT count(*) FROM audit_events"))).scalar_one()
         assert seen == 0
         seen_outbox = (await tx.session.execute(text("SELECT count(*) FROM outbox"))).scalar_one()
@@ -485,7 +542,7 @@ async def test_ac4_an_invalid_action_raises_value_error_and_nothing_is_written(
     ctx = _ctx()
     with pytest.raises(ValueError):
         async with uow(ctx) as tx:
-            tx.record(action, target=Target("probe", "p-1"))
+            tx.record(action, target=Target("probe", "1"))
     assert await _audit(ctx) == []
 
 
@@ -508,7 +565,142 @@ async def test_ac4_emitting_an_event_with_an_unclassified_field_raises() -> None
     ctx = _ctx()
     with pytest.raises(ValueError):
         async with uow(ctx) as tx:
-            tx.record("probe.created", target=Target("probe", "p-1"))
+            tx.record("probe.created", target=Target("probe", "1"))
             tx.emit(UntaggedEvent(probe_id=uuid.uuid4(), note="n"))
     assert await _audit(ctx) == []
     assert await _outbox(ctx) == []
+
+
+# --- column-level INSERT for the app ------------------------------------------------------------
+
+AUDIT_FORBIDDEN_COLUMNS = {
+    "seq": "INSERT INTO audit_events (seq, tenant_id, actor_kind, actor_id, action, target_type, "
+    "target_id) OVERRIDING SYSTEM VALUE VALUES (1, :t, :k, :a, 'probe.checked', 'probe', '1')",
+    "id": "INSERT INTO audit_events (id, tenant_id, actor_kind, actor_id, action, target_type, "
+    "target_id) VALUES (gen_random_uuid(), :t, :k, :a, 'probe.checked', 'probe', '1')",
+    "occurred_at": "INSERT INTO audit_events (occurred_at, tenant_id, actor_kind, actor_id, "
+    "action, target_type, target_id) VALUES (now(), :t, :k, :a, 'probe.checked', 'probe', '1')",
+}
+OUTBOX_FORBIDDEN_COLUMNS = {
+    "published_at": "now()",
+    "attempts": "3",
+    "last_error": "'ValueError'",
+    "next_attempt_at": "now()",
+}
+OUTBOX_INSERT = (
+    "INSERT INTO outbox (id, tenant_id, event_type, payload{extra_cols}) "
+    "VALUES (:id, :t, 'probe.direct', CAST('{{}}' AS jsonb){extra_vals})"
+)
+OUTBOX_PLAIN_INSERT = OUTBOX_INSERT.format(extra_cols="", extra_vals="")
+OUTBOX_FORBIDDEN_INSERTS = {
+    column: OUTBOX_INSERT.format(extra_cols=f", {column}", extra_vals=f", {value}")
+    for column, value in OUTBOX_FORBIDDEN_COLUMNS.items()
+}
+
+
+@pytest.mark.parametrize(
+    "statement", list(AUDIT_FORBIDDEN_COLUMNS.values()), ids=list(AUDIT_FORBIDDEN_COLUMNS)
+)
+async def test_ac4_the_app_cannot_insert_audit_columns_it_does_not_own(statement: str) -> None:
+    ctx = _ctx()
+    with pytest.raises(DBAPIError, match="permission denied"):
+        async with tenant_connection(ctx) as conn:
+            await conn.execute(
+                text(statement),
+                {"t": ctx.tenant_id, "k": ctx.actor_kind, "a": ctx.actor_id},
+            )
+
+
+async def test_ac4_the_app_can_insert_a_plain_outbox_row_directly() -> None:
+    ctx = _ctx()
+    async with tenant_connection(ctx) as conn:
+        await conn.execute(
+            text(OUTBOX_PLAIN_INSERT),
+            {"id": uuid.uuid4(), "t": ctx.tenant_id},
+        )
+
+
+@pytest.mark.parametrize("column", list(OUTBOX_FORBIDDEN_COLUMNS))
+async def test_ac4_the_app_cannot_insert_an_outbox_row_that_is_already_processed(
+    column: str,
+) -> None:
+    ctx = _ctx()
+    statement = OUTBOX_FORBIDDEN_INSERTS[column]
+    with pytest.raises(DBAPIError, match="permission denied"):
+        async with tenant_connection(ctx) as conn:
+            await conn.execute(text(statement), {"id": uuid.uuid4(), "t": ctx.tenant_id})
+
+
+# --- CHECK constraints ------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "target_id", ["abc", "p-1", "", "1 2", "12a", "-1", "DROP TABLE x", "x" * 100]
+)
+async def test_ac4_the_database_rejects_a_target_id_that_is_neither_a_uuid_nor_digits(
+    target_id: str,
+) -> None:
+    ctx = _ctx()
+    with pytest.raises(DBAPIError, match=r"check constraint|violates"):
+        async with tenant_connection(ctx) as conn:
+            await conn.execute(
+                text(
+                    "INSERT INTO audit_events (tenant_id, actor_kind, actor_id, action, "
+                    "target_type, target_id) VALUES (:t, :k, :a, 'probe.checked', 'probe', :id)"
+                ),
+                {"t": ctx.tenant_id, "k": ctx.actor_kind, "a": ctx.actor_id, "id": target_id},
+            )
+
+
+@pytest.mark.parametrize("target_id", ["1", "0042", str(uuid.uuid4())])
+async def test_ac4_the_database_accepts_a_uuid_or_digit_target_id(target_id: str) -> None:
+    ctx = _ctx()
+    async with tenant_connection(ctx) as conn:
+        await conn.execute(
+            text(
+                "INSERT INTO audit_events (tenant_id, actor_kind, actor_id, action, "
+                "target_type, target_id) VALUES (:t, :k, :a, 'probe.checked', 'probe', :id)"
+            ),
+            {"t": ctx.tenant_id, "k": ctx.actor_kind, "a": ctx.actor_id, "id": target_id},
+        )
+
+
+# --- outbox primary key is (tenant_id, id) ----------------------------------------------------
+
+
+async def test_ac4_two_tenants_can_commit_the_same_event_id() -> None:
+    a, b = _ctx(), _ctx()
+    event = ProbeDone(probe_id=uuid.uuid4(), label="shared")
+    for ctx in (a, b):
+        async with uow(ctx) as tx:
+            tx.record("probe.created", target=Target("probe", "1"))
+            tx.emit(event)
+    assert [o["id"] for o in await _outbox(a)] == [event.event_id]
+    assert [o["id"] for o in await _outbox(b)] == [event.event_id]
+
+
+# --- no nesting -------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("same_tenant", [True, False], ids=["same-tenant", "other-tenant"])
+async def test_ac4_a_nested_unit_of_work_raises_and_the_inner_one_writes_nothing(
+    same_tenant: bool,
+) -> None:
+    outer_ctx = _ctx()
+    inner_ctx = outer_ctx if same_tenant else _ctx()
+    async with uow(outer_ctx) as outer:
+        outer.record("probe.created", target=Target("probe", "1"))
+        with pytest.raises(RuntimeError, match="nested unit of work"):
+            async with uow(inner_ctx) as inner:
+                inner.record("probe.nested", target=Target("probe", "2"))
+    assert [a["action"] for a in await _audit(outer_ctx)] == ["probe.created"]
+    if not same_tenant:
+        assert await _audit(inner_ctx) == []
+
+
+async def test_ac4_units_of_work_can_run_one_after_another_and_concurrently() -> None:
+    ctx = _ctx()
+    await _commit_one(ctx)
+    await _commit_one(ctx)
+    await asyncio.gather(_commit_one(_ctx()), _commit_one(_ctx()))
+    assert len(await _audit(ctx)) == 2

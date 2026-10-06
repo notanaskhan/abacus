@@ -543,3 +543,44 @@ async def test_ac5_configure_engine_replaces_a_live_engine(migrated_db: Migrated
     async with tenant_session(_ctx()) as session:
         third = (await session.execute(text("SELECT current_user"))).scalar_one()
     assert (first, second, third) == ("abacus_app", "abacus_owner", "abacus_app")
+
+
+# --- TASK-006: the audit actor check fails closed when the actor setting is unset ---------------
+
+AUDIT_AS_OWNER = text(
+    "INSERT INTO audit_events (tenant_id, actor_kind, actor_id, action, target_type, target_id) "
+    "VALUES (:t, 'human', 'u-1', 'probe.checked', 'probe', '1')"
+)
+SET_ACTOR_KIND = text("SELECT set_config('app.actor_kind', :v, true)")
+SET_ACTOR_ID = text("SELECT set_config('app.actor_id', :v, true)")
+
+
+async def _owner_audit_insert(
+    owner_engine: AsyncEngine, kind: str | None, actor: str | None
+) -> None:
+    tenant = uuid.uuid4()
+    async with owner_engine.connect() as conn:
+        await conn.execute(SET_TENANT, {"t": str(tenant)})
+        if kind is not None:
+            await conn.execute(SET_ACTOR_KIND, {"v": kind})
+        if actor is not None:
+            await conn.execute(SET_ACTOR_ID, {"v": actor})
+        await conn.execute(AUDIT_AS_OWNER, {"t": tenant})
+
+
+async def test_ac4_an_audit_row_is_accepted_when_the_actor_settings_match(
+    owner_engine: AsyncEngine,
+) -> None:
+    await _owner_audit_insert(owner_engine, "human", "u-1")
+
+
+@pytest.mark.parametrize(
+    ("kind", "actor"),
+    [(None, None), ("human", None), (None, "u-1"), ("", ""), ("human", ""), ("", "u-1")],
+    ids=["both-unset", "id-unset", "kind-unset", "both-empty", "id-empty", "kind-empty"],
+)
+async def test_ac4_an_audit_row_fails_the_check_when_an_actor_setting_is_unset_or_empty(
+    owner_engine: AsyncEngine, kind: str | None, actor: str | None
+) -> None:
+    with pytest.raises(DBAPIError, match=r"check constraint|violates"):
+        await _owner_audit_insert(owner_engine, kind, actor)

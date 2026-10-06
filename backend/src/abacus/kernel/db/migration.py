@@ -8,6 +8,7 @@ Identifiers can't be bound parameters, so table names are validated against a st
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from typing import Protocol
 
 _IDENTIFIER = re.compile(r"[a-z_][a-z0-9_]*")
@@ -39,6 +40,17 @@ def tenant_table(op: Executes, table: str) -> None:
         f"CREATE POLICY tenant_isolation ON {t} "
         f"USING (tenant_id = {_TENANT}) WITH CHECK (tenant_id = {_TENANT})"
     )
+
+
+def insert_columns(op: Executes, table: str, columns: Sequence[str]) -> None:
+    """The application role may insert only these columns: defaults, identities and server-set
+    columns (ids, sequence numbers, timestamps, delivery state) stay out of its hands."""
+    t = _checked(table)
+    names = [_checked(column) for column in columns]
+    if not names:
+        raise ValueError("insert_columns needs at least one column")
+    op.execute(f"REVOKE INSERT ON {t} FROM abacus_app")
+    op.execute(f"GRANT INSERT ({', '.join(names)}) ON {t} TO abacus_app")
 
 
 def insert_only(op: Executes, table: str) -> None:

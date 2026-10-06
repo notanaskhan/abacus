@@ -113,6 +113,7 @@ class MigratedDatabase:
     owner_url: str
     app_url: str
     relay_url: str
+    superuser_dsn: str
 
 
 @pytest.fixture(scope="session")
@@ -125,4 +126,6 @@ def migrated_db() -> Iterator[MigratedDatabase]:
     with provisioned_database() as database:
         configure_engine(database.app_url)
         configure_relay_engine(database.relay_url)
-        yield MigratedDatabase(database.owner_url, database.app_url, database.relay_url)
+        yield MigratedDatabase(
+            database.owner_url, database.app_url, database.relay_url, database.superuser_dsn
+        )
