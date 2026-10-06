@@ -1,51 +1,214 @@
-"""Tenant and row-level security schema check (ADR-014, ADR-080; stage 2). PROTECTED.
+"""Tenant and row-level security schema check (ADR-014, ADR-015, ADR-080). PROTECTED.
 
 Run: python -m abacus_tools.quality.schema_check
 
-There are no tables yet, so there is nothing to check and this passes. The moment a migration
-exists it fails until SPEC-000 replaces this with the real check (every table has a non-null
-tenant_id and a row-level security policy), so a schema can never land unchecked.
+Starts Postgres from the compose image, applies bootstrap.sql, migrates to head, down to base and
+up again (every migration must be reversible), then inspects the catalog. It fails on:
+  - a table without `tenant_id uuid NOT NULL`, without row-level security enabled AND forced, or
+    without the `tenant_isolation` policy on `app.tenant_id` (unless listed in NON_TENANT_TABLES)
+  - any app privilege on a non-tenant table
+  - a table not owned by abacus_owner
+  - UPDATE or DELETE granted to abacus_app on an insert-only table (INSERT_ONLY_TABLES)
+  - abacus_app with SUPERUSER, BYPASSRLS, CREATEROLE or CREATEDB, or owning any relation
+
+`provisioned_database()` is shared with the integration test fixtures, so tests and this gate build
+the database the same way.
 """
 
 from __future__ import annotations
 
+import argparse
+import asyncio
 import sys
+from collections.abc import Generator
+from contextlib import contextmanager
+from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
+
+import asyncpg
+import yaml
+from alembic import command
+from alembic.config import Config
+from testcontainers.community.postgres import PostgresContainer
 
 BACKEND = Path(__file__).resolve().parents[3]
-MIGRATIONS = BACKEND / "migrations" / "versions"
-NOT_IMPLEMENTED = (
-    "schema_check is not implemented: SPEC-000 must add the tenant and row-level security "
-    "schema check with its first migration"
+REPO = BACKEND.parent
+OWNER = "abacus_owner"
+APP = "abacus_app"
+# Tables without tenant_id: only infrastructure. Each entry is founder-reviewed (protected file).
+NON_TENANT_TABLES = frozenset({"alembic_version"})
+# Tables the app may insert into and read, never update or delete (ADR-004); TASK-009/010 add.
+INSERT_ONLY_TABLES: frozenset[str] = frozenset()
+_LOCAL_PASSWORDS = {OWNER: "abacusowner", APP: "abacusapp"}
+
+
+@dataclass(frozen=True)
+class Database:
+    owner_url: str
+    app_url: str
+    superuser_dsn: str
+
+
+def compose_image(service: str) -> str:
+    loaded = cast(dict[str, object], yaml.safe_load((REPO / "docker-compose.yml").read_text()))
+    services = cast(dict[str, dict[str, object]], loaded["services"])
+    return str(services[service]["image"])
+
+
+def _dsn(url: str) -> str:
+    return url.replace("postgresql+asyncpg://", "postgresql://", 1)
+
+
+async def _run_sql(dsn: str, *scripts: Path) -> None:
+    conn = await asyncpg.connect(dsn)
+    try:
+        for script in scripts:
+            await conn.execute(script.read_text())
+    finally:
+        await conn.close()
+
+
+def migrate(owner_url: str, revision: str, *, down: bool = False) -> None:
+    config = Config(str(BACKEND / "alembic.ini"))
+    config.cmd_opts = argparse.Namespace(x=[f"url={owner_url}"])
+    if down:
+        command.downgrade(config, revision)
+    else:
+        command.upgrade(config, revision)
+
+
+@contextmanager
+def provisioned_database(*, roundtrip: bool = True) -> Generator[Database]:
+    """Fresh Postgres from the compose image, bootstrapped and migrated to head."""
+    with PostgresContainer(
+        compose_image("db"), username="postgres", password="postgres", dbname="abacus", driver=None
+    ) as container:
+        host, port = container.get_container_host_ip(), container.get_exposed_port(5432)
+        superuser = container.get_connection_url()
+        migrations = BACKEND / "migrations"
+        asyncio.run(
+            _run_sql(superuser, migrations / "bootstrap.sql", migrations / "bootstrap-local.sql")
+        )
+
+        def url(role: str) -> str:
+            return f"postgresql+asyncpg://{role}:{_LOCAL_PASSWORDS[role]}@{host}:{port}/abacus"
+
+        migrate(url(OWNER), "head")
+        if roundtrip:
+            migrate(url(OWNER), "base", down=True)
+            migrate(url(OWNER), "head")
+        yield Database(url(OWNER), url(APP), superuser)
+
+
+_TABLES = """
+SELECT c.relname, pg_get_userbyid(c.relowner) AS owner, c.relrowsecurity, c.relforcerowsecurity
+FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p') ORDER BY c.relname
+"""
+_TENANT_COLUMN = """
+SELECT format_type(a.atttypid, a.atttypmod) AS type, a.attnotnull
+FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public' AND c.relname = $1 AND a.attname = 'tenant_id' AND NOT a.attisdropped
+"""
+_POLICY = """
+SELECT qual, with_check FROM pg_policies
+WHERE schemaname = 'public' AND tablename = $1 AND policyname = 'tenant_isolation'
+"""
+_ROLE = (
+    "SELECT rolsuper, rolbypassrls, rolcreaterole, rolcreatedb FROM pg_roles WHERE rolname = $1"
 )
+_ROLE_ATTRIBUTES = {
+    "rolsuper": "SUPERUSER",
+    "rolbypassrls": "BYPASSRLS",
+    "rolcreaterole": "CREATEROLE",
+    "rolcreatedb": "CREATEDB",
+}
+# The app role must own nothing: an owner can alter or drop the object and bypass its controls.
+_OWNED = """
+SELECT 'relation' AS kind, c.relname AS name FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE pg_get_userbyid(c.relowner) = $1 AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+"""
+_OWNED_FUNCTIONS = """
+SELECT 'function' AS kind, p.proname AS name FROM pg_proc p
+WHERE pg_get_userbyid(p.proowner) = $1
+"""
+_OWNED_TYPES = """
+SELECT 'type' AS kind, t.typname AS name FROM pg_type t
+WHERE pg_get_userbyid(t.typowner) = $1 AND t.typrelid = 0 AND t.typelem = 0
+"""
+_OWNED_SCHEMAS = """
+SELECT 'schema' AS kind, n.nspname AS name FROM pg_namespace n
+WHERE pg_get_userbyid(n.nspowner) = $1
+"""
 
 
-def check(migrations: Path) -> list[str]:
-    if not migrations.is_dir():
-        return []
-    if any(p.name != "__init__.py" for p in migrations.rglob("*.py")):
-        return [NOT_IMPLEMENTED]
-    return []
+async def _inspect(owner_dsn: str) -> list[str]:
+    conn = await asyncpg.connect(owner_dsn)
+    problems: list[str] = []
+    try:
+        for table in await conn.fetch(_TABLES):
+            name = str(table["relname"])
+            if str(table["owner"]) != OWNER:
+                problems.append(f"{name}: owned by {table['owner']}, not {OWNER}")
+            if name in NON_TENANT_TABLES:
+                for privilege in ("SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE"):
+                    if await conn.fetchval(
+                        "SELECT has_table_privilege($1, $2, $3)", APP, f"public.{name}", privilege
+                    ):
+                        problems.append(f"{name}: {APP} has {privilege} on a non-tenant table")
+                continue
+            column = await conn.fetchrow(_TENANT_COLUMN, name)
+            if column is None or column["type"] != "uuid" or not column["attnotnull"]:
+                problems.append(f"{name}: missing tenant_id uuid NOT NULL")
+            if not table["relrowsecurity"]:
+                problems.append(f"{name}: row-level security not enabled")
+            if not table["relforcerowsecurity"]:
+                problems.append(f"{name}: row-level security not forced")
+            policy = await conn.fetchrow(_POLICY, name)
+            if policy is None or any(
+                "app.tenant_id" not in str(policy[clause] or "")
+                for clause in ("qual", "with_check")
+            ):
+                problems.append(f"{name}: missing tenant_isolation policy on app.tenant_id")
+            if name in INSERT_ONLY_TABLES:
+                for privilege in ("UPDATE", "DELETE"):
+                    if await conn.fetchval(
+                        "SELECT has_table_privilege($1, $2, $3)", APP, f"public.{name}", privilege
+                    ):
+                        problems.append(f"{name}: {APP} may {privilege} an insert-only table")
+        role = await conn.fetchrow(_ROLE, APP)
+        if role is None:
+            problems.append(f"{APP}: role missing")
+        else:
+            for column, attribute in _ROLE_ATTRIBUTES.items():
+                if role[column]:
+                    problems.append(f"{APP}: has {attribute}")
+        for query in (_OWNED, _OWNED_FUNCTIONS, _OWNED_TYPES, _OWNED_SCHEMAS):
+            for owned in await conn.fetch(query, APP):
+                problems.append(f"{APP}: owns {owned['kind']} {owned['name']}")
+    finally:
+        await conn.close()
+    return sorted(problems)
 
 
-def check_orm(backend: Path) -> list[str]:
-    """Any sign of a schema outside migrations: Alembic config or ORM model modules."""
-    package = backend / "src" / "abacus"
-    models = package.is_dir() and (
-        any(package.rglob("models.py")) or any(p.is_dir() for p in package.rglob("models"))
-    )
-    if (backend / "alembic.ini").exists() or models:
-        return [NOT_IMPLEMENTED]
-    return []
+def check(dsn_owner: str, dsn_app: str) -> list[str]:
+    """Problems in a migrated database, as `<table or role>: <problem>`, sorted."""
+    del dsn_app  # the catalog is read as the owner; the app role is inspected by name
+    return asyncio.run(_inspect(_dsn(dsn_owner)))
 
 
 def main() -> int:
-    problems = sorted(set(check(MIGRATIONS) + check_orm(BACKEND)))
-    for p in problems:
-        print(p)
+    with provisioned_database() as database:
+        problems = check(database.owner_url, database.app_url)
+    for problem in problems:
+        print(problem)
     if problems:
+        print(f"{len(problems)} schema problem(s).", file=sys.stderr)
         return 1
-    print("schema_check: no migrations yet; nothing to check.")
+    print("schema_check: migrations reversible; every table tenant-scoped with forced RLS.")
     return 0
 
 
