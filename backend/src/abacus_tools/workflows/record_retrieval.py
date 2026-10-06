@@ -15,7 +15,8 @@ import sys
 import tempfile
 import time
 import uuid
-from dataclasses import replace
+from collections.abc import Callable, Coroutine
+from dataclasses import dataclass, replace
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
@@ -43,6 +44,7 @@ from abacus.modules.identity.api import AuthContext
 from abacus_tools.quality.schema_check import compose_image, provisioned_database
 from abacus_tools.synthetic import generate
 from abacus_tools.synthetic.connector_fixtures import write_trial_balance
+from abacus_tools.synthetic.model import TrialBalance
 from abacus_tools.workflows.histories import decoded_and_scrubbed
 
 if TYPE_CHECKING:
@@ -53,16 +55,48 @@ _TASK_QUEUE = "abacus-recorder"
 _LOCAL_S3 = ("abacus", "abacuslocal")
 
 
-async def _record(
-    out: Path, version: str, db_urls: tuple[str, str, str], s3: S3Client, target: str
-) -> None:
-    app_url, identity_url, superuser = db_urls
-    configure_engine(app_url)
-    configure_identity_engine(identity_url)
-    configure_storage(s3, "abacus-evidence")
-    client = await Client.connect(target, data_converter=data_converter())
+@dataclass(frozen=True)
+class Stack:
+    """Throwaway services a recorder runs against: database URLs, S3 client, Temporal target."""
+
+    app_url: str
+    identity_url: str
+    superuser: str
+    s3: S3Client
+    target: str
+
+
+@dataclass(frozen=True)
+class Seeded:
+    """One firm with one engagement, a senior member, two open items and a fake connection."""
+
+    tenant: uuid.UUID
+    user: uuid.UUID
+    engagement: uuid.UUID
+    items: list[uuid.UUID]
+    connection: uuid.UUID
+
+    def context(self) -> AuthContext:
+        return AuthContext(
+            TenantContext(self.tenant, "human", str(self.user)),
+            self.user,
+            uuid.UUID(int=2),
+            None,
+            None,
+        )
+
+
+async def connect(stack: Stack) -> Client:
+    """Point the platform at the stack and return a Temporal client using its converter."""
+    configure_engine(stack.app_url)
+    configure_identity_engine(stack.identity_url)
+    configure_storage(stack.s3, "abacus-evidence")
+    client = await Client.connect(stack.target, data_converter=data_converter())
     configure_temporal_client(client)
-    fixtures = Path(os.environ["ABACUS_FAKE_CONNECTOR_DIR"])
+    return client
+
+
+async def seed(superuser: str) -> Seeded:
     tenant = uuid.UUID(int=1)
     conn = await asyncpg.connect(superuser)
     try:
@@ -126,11 +160,30 @@ async def _record(
         )
     finally:
         await conn.close()
-    tb = generate(7).client_entities[0].trial_balances[-1]
-    period = Period(date(2025, 1, 1), tb.as_of)
-    ctx = AuthContext(
-        TenantContext(tenant, "human", str(user)), user, uuid.UUID(int=2), None, None
+    return Seeded(tenant, user, engagement, items, connection)
+
+
+def trial_balance() -> TrialBalance:
+    return generate(7).client_entities[0].trial_balances[-1]
+
+
+def period_of(tb: TrialBalance) -> Period:
+    return Period(date(2025, 1, 1), tb.as_of)
+
+
+async def _record(out: Path, version: str, stack: Stack) -> None:
+    client = await connect(stack)
+    fixtures = Path(os.environ["ABACUS_FAKE_CONNECTOR_DIR"])
+    world = await seed(stack.superuser)
+    tenant, engagement, items, connection = (
+        world.tenant,
+        world.engagement,
+        world.items,
+        world.connection,
     )
+    tb = trial_balance()
+    period = period_of(tb)
+    ctx = world.context()
     codec = payload_codec()
     worker = Worker(
         client,
@@ -177,14 +230,8 @@ def _wait(url: str) -> None:
     raise RuntimeError(f"{url} did not become healthy")
 
 
-def main(argv: list[str]) -> int:
-    out = Path(argv[0])
-    version = argv[1] if len(argv) > 1 else "v1"
-    for name in ("succeeded", "failed-validation"):
-        if (out / f"retrieval-{version}-{name}.json").exists():
-            print(f"refusing to overwrite retrieval-{version}-{name}.json; record a new version")
-            return 1
-    out.mkdir(parents=True, exist_ok=True)
+def run_with_stack(record: Callable[[Stack], Coroutine[object, object, None]]) -> None:
+    """Start throwaway S3, Temporal and Postgres containers and run `record` against them."""
     os.environ["ABACUS_FAKE_CONNECTOR_DIR"] = tempfile.mkdtemp()
     s3_container = (
         DockerContainer(compose_image("s3"))
@@ -214,9 +261,26 @@ def main(argv: list[str]) -> int:
         s3 = s3_client(endpoint_url=endpoint, access_key=access, secret_key=password)
         s3.create_bucket(Bucket="abacus-evidence", ObjectLockEnabledForBucket=True)
         with provisioned_database(roundtrip=False) as db:
-            asyncio.run(
-                _record(out, version, (db.app_url, db.identity_url, db.superuser_dsn), s3, target)
-            )
+            asyncio.run(record(Stack(db.app_url, db.identity_url, db.superuser_dsn, s3, target)))
+
+
+def refuse_overwrite(out: Path, names: list[str]) -> bool:
+    """True (and a message) if any history file already exists: record a new version instead."""
+    for name in names:
+        if (out / name).exists():
+            print(f"refusing to overwrite {name}; record a new version")
+            return True
+    return False
+
+
+def main(argv: list[str]) -> int:
+    out = Path(argv[0])
+    version = argv[1] if len(argv) > 1 else "v1"
+    names = [f"retrieval-{version}-{n}.json" for n in ("succeeded", "failed-validation")]
+    if refuse_overwrite(out, names):
+        return 1
+    out.mkdir(parents=True, exist_ok=True)
+    run_with_stack(lambda stack: _record(out, version, stack))
     return 0
 
 
