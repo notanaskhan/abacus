@@ -353,6 +353,29 @@ def _check_unlinked_skip(src: SourceFile) -> Iterator[Finding]:
             yield Finding(node.lineno, f"pytest {kind[5:]} without an issue reference")
 
 
+_SIDESTEPS = {
+    "create_subprocess_exec": "use subprocess.run (ruff S603 covers it)",
+    "create_subprocess_shell": "use subprocess.run (ruff S602/S603 cover it)",
+    "XMLPullParser": "use xml.etree.ElementTree.fromstring (ruff S314 covers it)",
+    "subprocess_exec": "use subprocess.run (ruff S603 covers it)",
+    "subprocess_shell": "use subprocess.run (ruff S602/S603 cover it)",
+    "popen": "use subprocess.run (ruff S603 covers it)",
+    "posix_spawn": "use subprocess.run (ruff S603 covers it)",
+    "posix_spawnp": "use subprocess.run (ruff S603 covers it)",
+}
+
+
+def _check_lint_sidestep(src: SourceFile) -> Iterator[Finding]:
+    """APIs equivalent to ones ruff's S rules check, but which those rules miss."""
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                if alias.name in _SIDESTEPS:
+                    yield Finding(node.lineno, f"{alias.name}: {_SIDESTEPS[alias.name]}")
+        elif isinstance(node, ast.Attribute) and node.attr in _SIDESTEPS:
+            yield Finding(node.lineno, f"{node.attr}: {_SIDESTEPS[node.attr]}")
+
+
 # --- tree rules -------------------------------------------------------------------------------
 
 
@@ -436,6 +459,12 @@ RULES: list[Rule | TreeRule] = [
         description="skip and xfail carry an issue reference",
         adr="ADR-079",
         check=_check_unlinked_skip,
+    ),
+    Rule(
+        id="SIDESTEP-001",
+        description="No APIs that sidestep ruff's security rules; exempt in pyproject instead",
+        adr="ADR-083",
+        check=_check_lint_sidestep,
     ),
     Rule(
         id="ANY-001",

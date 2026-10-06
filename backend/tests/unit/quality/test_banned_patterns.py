@@ -459,3 +459,119 @@ def test_ac20_skip_001_alias_message_is_exact(tmp_path: Path) -> None:
 def test_ac20_skip_001_allows_non_aliasing_imports(tmp_path: Path, body: str) -> None:
     _write(tmp_path, TEST_FILE, _test_source(body))
     assert _rule_ids(tmp_path) == []
+
+
+# SIDESTEP-001 (ADR-083): API sidesteps around lint rules.
+SIDESTEP_FILES = [TEST_FILE, SERVICE, "src/abacus_tools/synthetic/export.py"]
+SIDESTEP_VIOLATIONS: list[tuple[str, str, str]] = [
+    (
+        "import asyncio\nasync def f():\n    await asyncio.create_subprocess_exec('x')\n",
+        "create_subprocess_exec",
+        "subprocess.run",
+    ),
+    (
+        "import asyncio\nasync def f():\n    await asyncio.create_subprocess_shell('x')\n",
+        "create_subprocess_shell",
+        "subprocess.run",
+    ),
+    (
+        "import xml.etree.ElementTree as ET\np = ET.XMLPullParser()\n",
+        "XMLPullParser",
+        "xml.etree.ElementTree.fromstring",
+    ),
+    (
+        "import xml.etree.ElementTree as ET\ndef f(p: ET.XMLPullParser) -> None:\n    pass\n",
+        "XMLPullParser",
+        "xml.etree.ElementTree.fromstring",
+    ),
+    (
+        "from asyncio import create_subprocess_exec\n",
+        "create_subprocess_exec",
+        "subprocess.run",
+    ),
+    (
+        "from asyncio.subprocess import create_subprocess_shell\n",
+        "create_subprocess_shell",
+        "subprocess.run",
+    ),
+    (
+        "from xml.etree.ElementTree import XMLPullParser\n",
+        "XMLPullParser",
+        "xml.etree.ElementTree.fromstring",
+    ),
+]
+SIDESTEP_CLEAN = [
+    "import subprocess\nsubprocess.run(['x'], check=True)\n",
+    "import xml.etree.ElementTree as ET\nroot = ET.fromstring('<a/>')\n",
+    "from xml.etree.ElementTree import fromstring\n",
+    "import asyncio\nasyncio.run(main())\n",
+    "from asyncio import run\n",
+    "x = obj.create_subprocess\n",
+    "x = obj.XMLParser\n",
+]
+
+
+@pytest.mark.parametrize("rel", SIDESTEP_FILES)
+@pytest.mark.parametrize(("body", "name", "plain"), SIDESTEP_VIOLATIONS)
+def test_ac20_sidestep_001_flags_sidestep_apis(
+    tmp_path: Path, rel: str, body: str, name: str, plain: str
+) -> None:
+    _write(tmp_path, rel, body)
+    [violation] = bp.scan(tmp_path)
+    assert violation.rule_id == "SIDESTEP-001"
+    assert violation.message.startswith(f"{name}: use ")
+    assert plain in violation.message
+
+
+def test_ac20_sidestep_001_reports_one_finding_per_node(tmp_path: Path) -> None:
+    _write(
+        tmp_path,
+        TEST_FILE,
+        "import asyncio\nimport xml.etree.ElementTree as ET\n"
+        "a = asyncio.create_subprocess_exec\nb = asyncio.create_subprocess_shell\n"
+        "c = ET.XMLPullParser\nd = ET.XMLPullParser\n",
+    )
+    assert _rule_ids(tmp_path) == ["SIDESTEP-001"] * 4
+
+
+@pytest.mark.parametrize("rel", SIDESTEP_FILES)
+@pytest.mark.parametrize("body", SIDESTEP_CLEAN)
+def test_ac20_sidestep_001_allows_plain_apis(tmp_path: Path, rel: str, body: str) -> None:
+    _write(tmp_path, rel, body)
+    assert _rule_ids(tmp_path) == []
+
+
+# SIDESTEP-001 additions: process-spawning names (Popen is a different name, so it is clean).
+SIDESTEP_SPAWN_NAMES = [
+    "subprocess_exec",
+    "subprocess_shell",
+    "popen",
+    "posix_spawn",
+    "posix_spawnp",
+]
+SIDESTEP_SPAWN_CLEAN = [
+    "import subprocess\nsubprocess.Popen(['x'])\n",
+    "from subprocess import Popen\n",
+    "import subprocess\nsubprocess.run(['x'], check=True)\n",
+    "x = os.spawn\n",
+]
+
+
+@pytest.mark.parametrize("rel", SIDESTEP_FILES)
+@pytest.mark.parametrize("name", SIDESTEP_SPAWN_NAMES)
+@pytest.mark.parametrize("form", ["attribute", "import"])
+def test_ac20_sidestep_001_flags_spawn_names(
+    tmp_path: Path, rel: str, name: str, form: str
+) -> None:
+    body = f"x = os.{name}\n" if form == "attribute" else f"from os import {name}\n"
+    _write(tmp_path, rel, body)
+    [violation] = bp.scan(tmp_path)
+    assert violation.rule_id == "SIDESTEP-001"
+    assert violation.message.startswith(f"{name}: use subprocess.run")
+
+
+@pytest.mark.parametrize("rel", SIDESTEP_FILES)
+@pytest.mark.parametrize("body", SIDESTEP_SPAWN_CLEAN)
+def test_ac20_sidestep_001_allows_popen_class_and_run(tmp_path: Path, rel: str, body: str) -> None:
+    _write(tmp_path, rel, body)
+    assert _rule_ids(tmp_path) == []
