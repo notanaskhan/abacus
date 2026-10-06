@@ -4,7 +4,7 @@ title: Unit of work, audit events and outbox
 spec: SPEC-000
 acceptance_criteria: [AC-4, AC-20]
 risk_zone: red
-status: in-review
+status: done
 branch: task-006-uow
 worktree:
 created: 2026-10-06
@@ -197,8 +197,5 @@ reason: TASK-006 — unit of work, audit events, outbox and relay
 - [x] **Q4 — Domain events carry no Restricted fields.** Approved 2026-10-06. **Recommendation:** yes.
 
 ## Handoff
-- **Current state:** Done pending review. PR open on `task-006-uow`; `make check` exit 0.
-- **Exact next step:** Confirm CI; founder reviews line by line (relay backoff/deferral is beyond the approved design — flagged in the PR); merge; delete `work/approvals/TASK-006.yaml`; mark done; TASK-007 design.
-- **Uncommitted or partial work:** none.
-- **Known failing checks:** none.
-- **Open issues:** branch protection off.
+- **Current state:** Done. PR #6 merged (rebase) 2026-10-06 after founder review and green CI; approval file deleted.
+- **Exact next step:** none — TASK-007.
