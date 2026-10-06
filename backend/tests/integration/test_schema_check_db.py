@@ -876,9 +876,12 @@ def test_ac20_a_users_table_left_with_the_default_app_grants_is_reported(
     assert problems == sorted(problems)
 
 
-def test_ac20_users_needs_no_tenant_id_or_row_level_security(identity_db: Cluster) -> None:
+def test_ac20_a_global_users_table_is_not_held_to_the_tenant_table_rules(
+    identity_db: Cluster,
+) -> None:
     problems = _problems(identity_db, IDENTITY_OK)
-    assert not [m for m in problems if m.startswith("users: ")]
+    assert not [m for m in problems if m.startswith("users: ")], problems
+    assert not [m for m in problems if "tenant_id" in m or "row-level" in m], problems
 
 
 def test_ac20_a_table_named_like_a_tenant_table_still_needs_tenant_id(
@@ -894,3 +897,27 @@ def test_ac20_a_table_named_like_a_tenant_table_still_needs_tenant_id(
         ],
     )
     _assert_reports(problems, "probe", "tenant_id")
+
+
+@pytest.fixture
+def probe_role(db: Cluster) -> Iterator[str]:
+    yield "probe_bypass"
+    _sql(db.admin, "DROP ROLE IF EXISTS probe_bypass")
+
+
+def test_ac20_an_unreviewed_bypassrls_role_is_reported(db: Cluster, probe_role: str) -> None:
+    problems = _problems(db, _good("probe"), f"CREATE ROLE {probe_role} LOGIN BYPASSRLS")
+    assert f"{probe_role}: bypasses row-level security, not reviewed" in problems, problems
+    assert problems == sorted(problems)
+
+
+def test_ac20_a_role_without_bypassrls_is_not_reported_as_unreviewed(
+    db: Cluster, probe_role: str
+) -> None:
+    problems = _problems(db, _good("probe"), f"CREATE ROLE {probe_role} LOGIN")
+    assert not [m for m in problems if "not reviewed" in m], problems
+
+
+def test_ac20_the_reviewed_bypass_roles_are_not_reported_as_unreviewed(db: Cluster) -> None:
+    problems = _problems(db, _good("probe"))
+    assert not [m for m in problems if "not reviewed" in m], problems

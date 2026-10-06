@@ -201,6 +201,35 @@ def test_ac20_render_is_deterministic() -> None:
     assert pm.render(source) == pm.render(source)
 
 
+DUPLICATES = {
+    "top-level": (
+        "roles: [firm_admin]\nroles: [manager]\nactions:\n  a.read: {firm_admin: allow}\n"
+    ),
+    "action": (
+        "roles: [firm_admin, manager]\nactions:\n"
+        "  a.read: {firm_admin: allow}\n  a.read: {manager: allow}\n"
+    ),
+    "role": (
+        "roles: [firm_admin, manager]\nactions:\n  a.read: {firm_admin: allow, firm_admin: deny}\n"
+    ),
+    "actions-section": (
+        "roles: [firm_admin]\nactions:\n  a.read: {firm_admin: allow}\n"
+        "actions:\n  b.read: {firm_admin: allow}\n"
+    ),
+}
+
+
+@pytest.mark.parametrize("where", sorted(DUPLICATES))
+def test_ac20_render_rejects_a_duplicate_key_at_any_level(where: str) -> None:
+    with pytest.raises(ValueError, match="duplicate key"):
+        pm.render(DUPLICATES[where])
+
+
+def test_ac20_render_accepts_the_same_document_without_the_duplicate() -> None:
+    source = "roles: [firm_admin]\nactions:\n  a.read: {firm_admin: allow}\n"
+    assert "a.read" in pm.render(source)
+
+
 def test_ac20_render_includes_every_action_and_role() -> None:
     rendered = pm.render(pm.SOURCE.read_text())
     for action in YAML_ACTIONS:
@@ -567,10 +596,38 @@ def test_ac20_visible_rejects_every_non_read_action(action: str) -> None:
         visible(_ctx(firm_role="firm_admin"), action, column("engagement_id", Uuid()))
 
 
-@pytest.mark.parametrize("action", [a for a in YAML_ACTIONS if _is_read(a)])
-def test_ac20_visible_accepts_every_read_action(action: str) -> None:
-    expression = visible(_ctx(firm_role="firm_admin"), action, column("engagement_id", Uuid()))
-    assert expression is not None
+def _sql(expression: object) -> str:
+    return " ".join(str(expression).split())
+
+
+READ_ACTIONS = [a for a in YAML_ACTIONS if _is_read(a)]
+
+
+@pytest.mark.parametrize("action", READ_ACTIONS)
+def test_ac20_visible_for_a_firm_role_allow_compiles_to_true(action: str) -> None:
+    for role in FIRM_ROLES:
+        if YAML_ACTIONS[action].get(role) != "allow":
+            continue
+        assert (
+            _sql(visible(_ctx(firm_role=role), action, column("engagement_id", Uuid()))) == "true"
+        )
+
+
+@pytest.mark.parametrize("action", READ_ACTIONS)
+def test_ac20_visible_without_a_firm_allow_filters_on_engagement_membership(action: str) -> None:
+    ctx = _ctx()
+    expression = visible(ctx, action, column("engagement_id", Uuid()))
+    roles = sorted(r for r in ENGAGEMENT_ROLES if YAML_ACTIONS[action].get(r) == "allow")
+    compiled = expression.compile()
+    assert _sql(expression).startswith(
+        "engagement_id IN (SELECT engagement_members.engagement_id FROM engagement_members WHERE "
+    )
+    assert "engagement_members.tenant_id = :tenant_id_1" in _sql(expression)
+    assert "engagement_members.user_id = :user_id_1" in _sql(expression)
+    assert "engagement_members.role IN" in _sql(expression)
+    assert compiled.params["tenant_id_1"] == ctx.tenant_id
+    assert compiled.params["user_id_1"] == ctx.user_id
+    assert sorted(compiled.params["role_1"]) == roles
 
 
 def test_ac20_visible_with_no_engagement_role_allowed_is_false(
@@ -578,7 +635,7 @@ def test_ac20_visible_with_no_engagement_role_allowed_is_false(
 ) -> None:
     monkeypatch.setitem(RULES, "probe.read", make_rule("probe.read", {"client_admin": "allow"}))
     expression = visible(_ctx(), "probe.read", column("engagement_id", Uuid()))
-    assert str(expression).lower() in {"false", "0 = 1"}
+    assert _sql(expression) == "false"
 
 
 @pytest.mark.parametrize(
@@ -592,13 +649,6 @@ def test_ac20_visible_refuses_a_read_action_carrying_a_modifier(
     )
     with pytest.raises(ValueError):
         visible(_ctx(firm_role="firm_admin"), "probe.read", column("engagement_id", Uuid()))
-
-
-def test_ac20_visible_filters_the_membership_subquery_by_tenant() -> None:
-    expression = visible(
-        _ctx(firm_role="practice_leader"), "engagement.read", column("engagement_id", Uuid())
-    )
-    assert "engagement_members.tenant_id" in str(expression)
 
 
 def test_ac20_the_authz_module_states_it_is_not_wall_safe() -> None:
@@ -626,10 +676,11 @@ def test_ac20_resource_engagement_requires_archived() -> None:
         Resource.engagement(uuid.uuid4(), uuid.uuid4())  # pyright: ignore[reportCallIssue] -- contract
 
 
-def test_ac20_visible_restricts_to_engagement_membership_for_a_member_without_firm_allow() -> None:
+def test_ac20_an_in_scope_firm_role_is_filtered_by_membership_not_true() -> None:
     ctx = _ctx(firm_role="practice_leader")  # in_scope is not an allow
     expression = visible(ctx, "engagement.read", column("engagement_id", Uuid()))
-    assert "engagement_members" in str(expression)
+    assert _sql(expression) != "true"
+    assert "engagement_members.user_id = :user_id_1" in _sql(expression)
 
 
 # --- decisions are logged ----------------------------------------------------------------------

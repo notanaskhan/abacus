@@ -883,15 +883,20 @@ AUTH2_VIOLATING = [
     'x = " authorization "\n',
     'x = "AUTHORIZATION"\n',
     "def f(authorization):\n    pass\n",
-    "authorization = 1\n",
-    "x = obj.authorization\n",
-    "from m import authorization\n",
+    "async def f(authorization: str | None = None):\n    pass\n",
+    "from fastapi.security import HTTPBearer\n",
+    "from fastapi.security.http import HTTPBearer\n",
+    "import fastapi.security\n",
 ]
 AUTH2_CLEAN = [
     'x = "authorization_code"\n',
     'x = "Authorization: Bearer"\n',
     "x = authorize\n",
     "x = Authorization\n",
+    "authorization = 1\n",
+    "x = obj.authorization\n",
+    "from m import authorization\n",
+    "from fastapi import Depends\n",
 ]
 AUTH2_ALLOWED = [f"{IDENT}/routing.py", f"{IDENT}/service.py"]
 
@@ -929,13 +934,15 @@ AUTHZ1_VIOLATING = [
     'def f(m):\n    return m.firm_role == "firm_admin"\n',
     'x = role == "manager"\n',
     'x = firm_role != "reviewer"\n',
-    'x = "manager" == y\n',
-    "x = user.role != y\n",
-    "x = a in roles\n",
-    "x = y.roles == z\n",
-    'x = a == "firm_admin"\n',
-    'match r:\n    case "firm_admin":\n        pass\n',
-    'match r:\n    case "agent" | "system":\n        pass\n',
+    'x = "manager" == y.role\n',
+    'x = role in ("senior", "staff")\n',
+    'x = user.role in ["manager", "senior"]\n',
+    'x = user.role in {"engagement_partner"}\n',
+    'x = y.roles == "quality_partner"\n',
+    'x = roles == "practice_leader"\n',
+    'x = a.role == "firm_admin"\n',
+    'match role:\n    case "firm_admin":\n        pass\n',
+    'match user.firm_role:\n    case "manager" | "senior":\n        pass\n',
 ]
 AUTHZ1_CLEAN = [
     "x = a == b\n",
@@ -943,8 +950,17 @@ AUTHZ1_CLEAN = [
     "x = role\n",
     'x = "manager"\n',
     'x = status == "active"\n',
-    "x = a in roles_list\n",
-    'match r:\n    case "active":\n        pass\n',
+    "x = role is None\n",
+    "x = role is not None\n",
+    'x = message.role == "assistant"\n',
+    'x = role == "agent"\n',
+    'x = role == "system"\n',
+    'x = role == "client_admin"\n',
+    'x = y == "manager"\n',
+    'x = a in ("senior", "staff")\n',
+    "x = a == role\n",
+    'match r:\n    case "firm_admin":\n        pass\n',
+    'match status:\n    case "active":\n        pass\n',
 ]
 
 
@@ -975,6 +991,32 @@ def test_ac20_authz_001_applies_only_under_src_abacus(
 @pytest.mark.parametrize("source", AUTHZ1_CLEAN)
 def test_ac20_authz_001_ignores_clean_code(tmp_path: Path, source: str) -> None:
     assert not _flags(tmp_path, "AUTHZ-001", SERVICE, source)
+
+
+@pytest.mark.parametrize("name", ["agent", "system", "client_admin", "client_contributor"])
+def test_ac20_authz_001_does_not_treat_actor_kinds_or_client_roles_as_matrix_roles(
+    tmp_path: Path, name: str
+) -> None:
+    assert not _flags(tmp_path, "AUTHZ-001", SERVICE, f'x = role == "{name}"\n')
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "firm_admin",
+        "practice_leader",
+        "quality_partner",
+        "engagement_partner",
+        "manager",
+        "senior",
+        "staff",
+        "reviewer",
+    ],
+)
+def test_ac20_authz_001_flags_every_firm_and_engagement_role_name(
+    tmp_path: Path, name: str
+) -> None:
+    assert _flags(tmp_path, "AUTHZ-001", SERVICE, f'x = role == "{name}"\n')
 
 
 AUTHZ2_VIOLATING = [
@@ -1061,69 +1103,82 @@ def test_ac20_tenant_002_ignores_clean_code(tmp_path: Path, source: str) -> None
     assert not _flags(tmp_path, "TENANT-002", SERVICE, source)
 
 
-ROUTE_NAMES = [
+ROUTE_CLASSES = [
     "APIRouter",
     "APIRoute",
+    "APIWebSocketRoute",
     "FastAPI",
     "Starlette",
     "Mount",
+    "Route",
+    "Router",
     "WebSocketRoute",
-    "APIWebSocketRoute",
+    "BaseHTTPMiddleware",
+    "StaticFiles",
+]
+ROUTE_METHODS = [
     "add_api_route",
     "add_route",
     "add_websocket_route",
+    "add_api_websocket_route",
     "websocket",
     "mount",
     "include_router",
-    "dependency_overrides",
+    "add_middleware",
 ]
 ROUTE1_ALLOWED = [f"{IDENT}/routing.py", "src/abacus/api/app.py"]
+ROUTE1_VIOLATING = [
+    *[f"from fastapi import {name}\n" for name in ROUTE_CLASSES],
+    *[f"from starlette.routing import {name}\n" for name in ROUTE_CLASSES],
+    "import fastapi\nx = fastapi.FastAPI()\n",
+    "import fastapi\nx = fastapi.APIRouter\n",
+    "app.dependency_overrides[f] = g\n",
+    "x = app.dependency_overrides\n",
+    *[f"app.{name}(x)\n" for name in ROUTE_METHODS],
+]
 ROUTE1_CLEAN = [
     "from fastapi import Request\n",
     "from fastapi import Depends\n",
+    "from fastapi import HTTPException\n",
+    "from fastapi.responses import JSONResponse\n",
     "x = mount_point\n",
     "x = websockets\n",
     "x = APIRouterish\n",
     'x = "FastAPI"\n',
+    "x = FastAPI\n",
+    "x = obj.include_router\n",
+    "x = obj.add_middleware\n",
+    "from other import FastAPI\n",
 ]
 
 
-@pytest.mark.parametrize("name", ROUTE_NAMES)
-@pytest.mark.parametrize("form", ["import", "attribute", "name", "parameter"])
-def test_ac20_route_001_flags_route_bypass_identifiers(
-    tmp_path: Path, name: str, form: str
-) -> None:
-    sources = {
-        "import": f"from somewhere import {name}\n",
-        "attribute": f"x = obj.{name}\n",
-        "name": f"x = {name}\n",
-        "parameter": f"def f({name}):\n    pass\n",
-    }
-    assert _flags(tmp_path, "ROUTE-001", SERVICE, sources[form])
+@pytest.mark.parametrize("source", ROUTE1_VIOLATING)
+def test_ac20_route_001_flags_route_bypasses(tmp_path: Path, source: str) -> None:
+    assert _flags(tmp_path, "ROUTE-001", SERVICE, source)
 
 
-@pytest.mark.parametrize("name", ROUTE_NAMES)
+@pytest.mark.parametrize("source", ROUTE1_VIOLATING)
 @pytest.mark.parametrize("rel", ROUTE1_ALLOWED)
 def test_ac20_route_001_allows_the_router_and_app_files(
-    tmp_path: Path, name: str, rel: str
+    tmp_path: Path, rel: str, source: str
 ) -> None:
-    assert not _flags(
-        tmp_path, "ROUTE-001", rel, f"from somewhere import {name}\nx = obj.{name}\n"
-    )
+    assert not _flags(tmp_path, "ROUTE-001", rel, source)
 
 
-@pytest.mark.parametrize("name", ROUTE_NAMES)
+@pytest.mark.parametrize("source", ROUTE1_VIOLATING)
 @pytest.mark.parametrize("rel", [f"{IDENT}/routes.py", f"{IDENT}/service.py"])
 def test_ac20_route_001_flags_other_identity_files_too(
-    tmp_path: Path, name: str, rel: str
+    tmp_path: Path, rel: str, source: str
 ) -> None:
-    assert _flags(tmp_path, "ROUTE-001", rel, f"x = obj.{name}\n")
+    assert _flags(tmp_path, "ROUTE-001", rel, source)
 
 
-@pytest.mark.parametrize("name", ROUTE_NAMES)
+@pytest.mark.parametrize("source", ROUTE1_VIOLATING)
 @pytest.mark.parametrize("rel", OUTSIDE_SRC)
-def test_ac20_route_001_applies_only_under_src_abacus(tmp_path: Path, name: str, rel: str) -> None:
-    assert not _flags(tmp_path, "ROUTE-001", rel, f"x = obj.{name}\n")
+def test_ac20_route_001_applies_only_under_src_abacus(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "ROUTE-001", rel, source)
 
 
 @pytest.mark.parametrize("source", ROUTE1_CLEAN)
@@ -1172,10 +1227,17 @@ def test_ac20_route_002_ignores_clean_code(tmp_path: Path, source: str) -> None:
 
 CTX_VIOLATING = [
     "x = AuthContext(a, b)\n",
-    "x = TenantContext(a)\n",
     "x = mod.AuthContext(a)\n",
-    "x = db.TenantContext(1, 'human', 'x')\n",
     "x = AuthContext(**kwargs)\n",
+    "x = replace(ctx, firm_role=None)\n",
+    "x = dataclasses.replace(ctx, firm_role=None)\n",
+    "x = replace(auth_ctx)\n",
+    "x = copy(context)\n",
+    "x = copy.copy(ctx)\n",
+    "x = deepcopy(ctx)\n",
+    "x = copy.deepcopy(self.ctx)\n",
+    "x = __replace__(ctx, firm_role=None)\n",
+    "x = replace(request_context, a=1)\n",
 ]
 CTX_CLEAN = [
     "from abacus.modules.identity.api import AuthContext\n",
@@ -1183,8 +1245,13 @@ CTX_CLEAN = [
     "def f(ctx: AuthContext) -> TenantContext:\n    return ctx.tenant\n",
     "x = AuthContextual()\n",
     "x = isinstance(a, AuthContext)\n",
+    "x = TenantContext(a, 'agent', 'x')\n",
+    "x = db.TenantContext(1, 'system', 'x')\n",
+    "x = replace(item, a=1)\n",
+    "x = copy(items)\n",
+    "x = deepcopy(payload)\n",
 ]
-CTX_ALLOWED = [f"{IDENT}/service.py", "src/abacus/kernel/db/session.py"]
+CTX_ALLOWED = [f"{IDENT}/service.py"]
 
 
 @pytest.mark.parametrize("source", CTX_VIOLATING)
@@ -1192,13 +1259,15 @@ CTX_ALLOWED = [f"{IDENT}/service.py", "src/abacus/kernel/db/session.py"]
     "rel",
     [*INSIDE_SRC, f"{IDENT}/context.py", f"{IDENT}/routing.py", f"{IDENT}/authz/__init__.py"],
 )
-def test_ac20_ctx_001_flags_hand_built_contexts(tmp_path: Path, rel: str, source: str) -> None:
+def test_ac20_ctx_001_flags_hand_built_or_copied_contexts(
+    tmp_path: Path, rel: str, source: str
+) -> None:
     assert _flags(tmp_path, "CTX-001", rel, source)
 
 
 @pytest.mark.parametrize("source", CTX_VIOLATING)
 @pytest.mark.parametrize("rel", CTX_ALLOWED)
-def test_ac20_ctx_001_allows_the_context_builders(tmp_path: Path, rel: str, source: str) -> None:
+def test_ac20_ctx_001_allows_the_context_builder(tmp_path: Path, rel: str, source: str) -> None:
     assert not _flags(tmp_path, "CTX-001", rel, source)
 
 
@@ -1213,6 +1282,62 @@ def test_ac20_ctx_001_ignores_clean_code(tmp_path: Path, source: str) -> None:
     assert not _flags(tmp_path, "CTX-001", SERVICE, source)
 
 
+def test_ac20_ctx_001_no_longer_flags_tenant_context_in_the_kernel_or_elsewhere(
+    tmp_path: Path,
+) -> None:
+    for rel in (SERVICE, "src/abacus/kernel/db/session.py", "src/abacus/modules/agents/x.py"):
+        assert not _flags(tmp_path, "CTX-001", rel, "x = TenantContext(a, 'agent', 'b')\n")
+
+
+AUTHZ3_VIOLATING = [
+    "x = Resource.engagement(t, e, archived=False)\n",
+    "x = Resource.engagement(t, e, archived=True)\n",
+    "x = engagement(t, e, archived=False)\n",
+    "x = Resource(t, e, archived=True)\n",
+    "x = Resource(t, e, True)\n",
+    "x = Resource(t, e, False)\n",
+    "x = authz.Resource(t, e, False)\n",
+]
+AUTHZ3_CLEAN = [
+    "x = Resource.engagement(t, e, archived=row.archived)\n",
+    "x = Resource.engagement(t, e, archived=archived)\n",
+    "x = Resource(t, e, row.archived)\n",
+    "x = Resource(t, e)\n",
+    "x = Resource.firm(t)\n",
+    "x = other(t, e, archived=False)\n",
+    "x = other(t, e, True)\n",
+]
+
+
+@pytest.mark.parametrize("source", AUTHZ3_VIOLATING)
+@pytest.mark.parametrize("rel", [*INSIDE_SRC, f"{IDENT}/service.py", f"{IDENT}/routes.py"])
+def test_ac20_authz_003_flags_a_literal_archived_outside_authz(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert _flags(tmp_path, "AUTHZ-003", rel, source)
+
+
+@pytest.mark.parametrize("source", AUTHZ3_VIOLATING)
+@pytest.mark.parametrize("rel", [f"{IDENT}/authz/__init__.py", f"{IDENT}/authz/matrix.py"])
+def test_ac20_authz_003_allows_literals_inside_authz(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "AUTHZ-003", rel, source)
+
+
+@pytest.mark.parametrize("source", AUTHZ3_VIOLATING)
+@pytest.mark.parametrize("rel", OUTSIDE_SRC)
+def test_ac20_authz_003_applies_only_under_src_abacus(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "AUTHZ-003", rel, source)
+
+
+@pytest.mark.parametrize("source", AUTHZ3_CLEAN)
+def test_ac20_authz_003_ignores_clean_code(tmp_path: Path, source: str) -> None:
+    assert not _flags(tmp_path, "AUTHZ-003", SERVICE, source)
+
+
 @pytest.mark.parametrize(
     ("source", "rule_id"),
     [
@@ -1222,7 +1347,8 @@ def test_ac20_ctx_001_ignores_clean_code(tmp_path: Path, source: str) -> None:
         ('x = role == "manager"\n', "AUTHZ-001"),
         ("x = ctx.firm_role\n", "AUTHZ-002"),
         ('x = "X-Abacus-Tenant"\n', "TENANT-002"),
-        ("x = FastAPI()\n", "ROUTE-001"),
+        ("from fastapi import FastAPI\n", "ROUTE-001"),
+        ("x = Resource(t, e, True)\n", "AUTHZ-003"),
         ("x = SELF\n", "ROUTE-002"),
         ("x = AuthContext(a)\n", "CTX-001"),
     ],
