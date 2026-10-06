@@ -99,6 +99,9 @@ class ContextBuilder:
     def text(self, layer: LayerName, text: str) -> ContextBuilder:
         if layer == "task":
             raise ValueError("task input is structured: use task()")
+        if layer == "instructions":
+            # Instructions are the registered prompt's (ADR-057), sent as the system message.
+            raise ValueError("instructions come from the prompt registry")
         self._texts[layer] = text
         return self
 

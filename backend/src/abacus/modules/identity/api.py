@@ -14,6 +14,7 @@ from abacus.modules.identity.context import (
     Actor,
     AgentContext,
     AuthContext,
+    NoActiveTenant,
     SystemContext,
     agent_context_for_run,
     system_context_for_run,
@@ -33,7 +34,7 @@ from abacus.modules.identity.service import (
     TeamMember,
     add_creator_as_partner,
     engagement_team,
-    initiator_context,
+    is_active_member,
 )
 from abacus.modules.identity.tokens import (
     InvalidToken,
@@ -59,6 +60,7 @@ __all__ = [
     "Forbidden",
     "InvalidToken",
     "JwtVerifier",
+    "NoActiveTenant",
     "Resource",
     "SystemContext",
     "TeamMember",
@@ -74,7 +76,7 @@ __all__ = [
     "current_signed_in",
     "declared_action",
     "engagement_team",
-    "initiator_context",
+    "is_active_member",
     "reset_verifier",
     "router",
     "system_context_for_run",

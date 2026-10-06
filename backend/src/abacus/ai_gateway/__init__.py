@@ -6,6 +6,12 @@ refused. The gateway renders the registered prompt with an `AssembledContext` (t
 type), routes by tier, validates the output against the schema, repairs once with the validation
 errors, then escalates. Every provider call writes a usage record (AC-16) and a log line with the
 model, prompt version, inputs hash and outcome; the output itself is the caller's to store.
+
+For an agent run, `budget_usd` is the run's budget: what earlier calls for the same run already
+spent (its usage records, including retried attempts) counts against it (ADR-070).
+
+`call` records usage in its own unit of work, committed per attempt so spend survives a later
+failure: never call it inside a unit of work (the kernel refuses nesting).
 """
 
 from __future__ import annotations
@@ -28,7 +34,7 @@ from abacus.ai_gateway.context import (
     DatasetTooLarge,
     estimate_tokens,
 )
-from abacus.ai_gateway.prompts import Prompt, UnknownPrompt, prompt
+from abacus.ai_gateway.prompts import Prompt, UnknownPrompt, prompt, registry
 from abacus.ai_gateway.providers import (
     FakeModel,
     ModelProvider,
@@ -39,7 +45,7 @@ from abacus.ai_gateway.providers import (
     configure_provider,
     provider,
 )
-from abacus.kernel.db import TenantContext
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Target, uow
 
@@ -185,18 +191,35 @@ def _parse[T: BaseModel](schema: type[T], body: str) -> tuple[T | None, str | No
         return None, json.dumps(errors, default=str)
 
 
+async def _spent_by_run(attribution: Attribution) -> Decimal:
+    if attribution.agent_run_id is None:
+        return Decimal(0)
+    async with tenant_session(attribution.tenant) as session:
+        total = (
+            await session.execute(
+                text(
+                    "SELECT COALESCE(SUM(cost_usd), 0) FROM usage_records "
+                    "WHERE agent_run_id = :run"
+                ),
+                {"run": attribution.agent_run_id},
+            )
+        ).scalar_one()
+    return Decimal(str(total))
+
+
 async def call[T: BaseModel](c: GatewayCall[T]) -> GatewayResult[T]:
     found = _check(c)
     model = MODELS[c.tier][0]
     user = c.context.render()
     inputs_hash = hashlib.sha256(f"{found.ref}\n{user}".encode()).hexdigest()
     spent = Decimal(0)
+    earlier = await _spent_by_run(c.attribution)
     request = ModelRequest(model, found.text, user, c.max_output_tokens, found.ref)
     for attempt in (1, 2):
         estimate = cost(
             c.tier, estimate_tokens(request.system + request.user), c.max_output_tokens
         )
-        if spent + estimate > c.budget_usd:
+        if earlier + spent + estimate > c.budget_usd:
             await _record_usage(
                 c.attribution,
                 found=found,
@@ -279,8 +302,11 @@ __all__ = [
     "Prompt",
     "ProviderError",
     "Tier",
+    "UnknownPrompt",
     "call",
     "configure_provider",
     "cost",
+    "estimate_tokens",
     "prompt",
+    "registry",
 ]

@@ -14,7 +14,7 @@ from uuid import UUID
 
 from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import Ref, Target, UnitOfWork
-from abacus.modules.identity.context import AuthContext
+from abacus.modules.identity.context import AuthContext, NoActiveTenant
 from abacus.modules.identity.repository import (
     EngagementRole,
     MembershipRecord,
@@ -33,10 +33,6 @@ CREATOR_ROLE: EngagementRole = "engagement_partner"
 
 class Unauthenticated(Exception):
     """No valid bearer token."""
-
-
-class NoActiveTenant(Exception):
-    """Authenticated, but no tenant this user may act in was chosen."""
 
 
 @dataclass(frozen=True)
@@ -119,18 +115,6 @@ async def engagement_team(ctx: AuthContext, engagement_id: UUID) -> list[TeamMem
     return [TeamMember(user_id, names.get(user_id, ""), role) for user_id, role in members]
 
 
-async def initiator_context(tenant_id: UUID, user_id: UUID) -> AuthContext:
-    """The live context of the person an agent acts for (ADR-025): their active membership in
-    this firm, read now. A revoked membership ends the agent's rights with it
-    (`NoActiveTenant`)."""
-    memberships = [m for m in await active_memberships(user_id) if m.tenant_id == tenant_id]
-    if len(memberships) != 1:
-        raise NoActiveTenant("initiator has no active membership in this firm")
-    membership = memberships[0]
-    return AuthContext(
-        tenant=TenantContext(tenant_id, "human", str(user_id)),
-        user_id=user_id,
-        membership_id=membership.membership_id,
-        firm_role=membership.firm_role,
-        mfa_at=None,
-    )
+async def is_active_member(tenant_id: UUID, user_id: UUID) -> bool:
+    """Whether this person has an active membership in this firm now."""
+    return any(m.tenant_id == tenant_id for m in await active_memberships(user_id))

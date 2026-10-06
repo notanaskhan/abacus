@@ -45,6 +45,7 @@ def upgrade() -> None:
             finished_at timestamptz NULL,
             UNIQUE (tenant_id, id),
             UNIQUE (tenant_id, engagement_id, id),
+            UNIQUE (tenant_id, id, evidence_version_id),
             CONSTRAINT agent_runs_finished CHECK ((status = 'running') = (finished_at IS NULL)),
             CONSTRAINT agent_runs_failure_code
                 CHECK ((status = 'failed') = (failure_code IS NOT NULL)),
@@ -77,7 +78,10 @@ def upgrade() -> None:
             FOREIGN KEY (tenant_id, engagement_id, agent_run_id)
                 REFERENCES agent_runs (tenant_id, engagement_id, id),
             FOREIGN KEY (tenant_id, engagement_id, evidence_version_id)
-                REFERENCES evidence_versions (tenant_id, engagement_id, id)
+                REFERENCES evidence_versions (tenant_id, engagement_id, id),
+            -- A result is about its own run's evidence version.
+            FOREIGN KEY (tenant_id, agent_run_id, evidence_version_id)
+                REFERENCES agent_runs (tenant_id, id, evidence_version_id)
         )
         """
     )
@@ -103,7 +107,10 @@ def upgrade() -> None:
             created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
             UNIQUE (tenant_id, id),
             FOREIGN KEY (tenant_id, engagement_id) REFERENCES engagements (tenant_id, id),
-            FOREIGN KEY (tenant_id, agent_run_id) REFERENCES agent_runs (tenant_id, id)
+            FOREIGN KEY (tenant_id, agent_run_id) REFERENCES agent_runs (tenant_id, id),
+            -- Usage for a run is attributed to that run's engagement.
+            FOREIGN KEY (tenant_id, engagement_id, agent_run_id)
+                REFERENCES agent_runs (tenant_id, engagement_id, id)
         )
         """
     )

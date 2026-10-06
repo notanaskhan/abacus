@@ -21,11 +21,21 @@ from decimal import Decimal
 from typing import cast
 from uuid import UUID
 
-from abacus.ai_gateway import MAX_ROWS, Attribution, ContextBuilder, GatewayCall, call
+from abacus.ai_gateway import (
+    MAX_ROWS,
+    Attribution,
+    BudgetExceeded,
+    ContextBuilder,
+    ContextTooLarge,
+    DatasetTooLarge,
+    GatewayCall,
+    GatewayRefused,
+    call,
+)
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
-from abacus.modules.agents.citations import facts, verify
+from abacus.modules.agents.citations import SheetLayoutError, facts, verify
 from abacus.modules.agents.handoff import ScreeningOutput, VerifiedCitation
 from abacus.modules.agents.models import AgentRun
 from abacus.modules.agents.repository import (
@@ -41,9 +51,10 @@ from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.evidence.api import read_content, version_view
 from abacus.modules.identity.api import (
     AgentContext,
+    Forbidden,
     agent_context_for_run,
     authorise,
-    initiator_context,
+    is_active_member,
 )
 from abacus.modules.requests.api import fulfilled_items
 
@@ -77,14 +88,14 @@ async def create_screening_run(
     """The screener's run for this evidence version, once per event, on behalf of `requested_by`
     (from the event). None without one: an agent never acts for no one. Only retrieved trial
     balances are screened today (they carry a ledger snapshot)."""
-    if requested_by is None:
-        return None
+    if requested_by is None or not await is_active_member(tenant_id, requested_by):
+        return None  # nobody (still) to act for; an at-least-once event mustn't retry forever
     initiator = requested_by
-    reader = _reader(tenant_id, "agents:screening")
+    screener = spec(SCREENER)
+    reader = _reader(tenant_id, f"agents:{screener.id}")
     version = await version_view(reader, evidence_version_id)
     if version.snapshot_id is None:
         return None
-    screener = spec(SCREENER)
     run_id: UUID | None = None
     try:
         async with uow(reader) as tx:
@@ -113,23 +124,40 @@ async def create_screening_run(
     return run_id
 
 
+async def fail_run(tenant_id: UUID, run_id: UUID, code: str) -> bool:
+    """End a running run as failed (`agent_run.failed`). Idempotent: False if it already ended."""
+    try:
+        async with uow(_reader(tenant_id, f"agent-run:{run_id}")) as tx:
+            if await finish_run(tx.session, run_id, status="failed", failure_code=code):
+                tx.record(
+                    "agent_run.failed", target=Target("agent_run", run_id), after=Ref(code=code)
+                )
+    except MissingAuditEvent:
+        return False  # it had already ended: nothing written
+    return True
+
+
 async def load_agent_context(tenant_id: UUID, run_id: UUID) -> AgentContext:
     """The agent's context, proven from its running run row and its initiator's live membership
-    (a revoked initiator ends the agent's rights: `NoActiveTenant`)."""
+    (a revoked initiator ends the agent's rights: `NoActiveTenant`). The task scope is the run's,
+    intersected with the agent's current spec; a run from another spec version is failed."""
     async with tenant_session(_reader(tenant_id, f"agent-run:{run_id}")) as session:
         run = await get_run(session, run_id)
     if run is None:
         raise NotFound("agent_run")
     if run.status != "running":
         raise AgentRunNotRunning(run.status)
-    initiator = await initiator_context(tenant_id, run.initiator_user_id)
-    return agent_context_for_run(
+    current = spec(run.agent_id)
+    if run.spec_version != current.version:
+        await fail_run(tenant_id, run.id, "spec_version_changed")
+        raise AgentRunNotRunning("failed")
+    return await agent_context_for_run(
         tenant_id=tenant_id,
         run_id=run.id,
         agent_id=run.agent_id,
         engagement_id=run.engagement_id,
-        task_scope=frozenset(run.task_scope),
-        initiator=initiator,
+        task_scope=frozenset(run.task_scope) & current.task_scope,
+        initiator_user_id=run.initiator_user_id,
     )
 
 
@@ -141,7 +169,31 @@ async def _run(agent: AgentContext) -> AgentRun:
     return run
 
 
+# Errors that will happen again on retry end the run; provider outages don't (the caller retries).
+_TERMINAL: dict[type[Exception], str] = {
+    SheetLayoutError: "unreadable_evidence",
+    DatasetTooLarge: "context_too_large",
+    ContextTooLarge: "context_too_large",
+    BudgetExceeded: "budget_exceeded",
+    GatewayRefused: "gateway_refused",
+    Forbidden: "forbidden",
+    NotFound: "not_found",
+}
+
+
 async def screen(agent: AgentContext) -> ScreeningOutcome:
+    """Screen the run's evidence version. Terminal errors fail the run (`fail_run`) and re-raise;
+    `ProviderError` leaves it running for a retry. One activity in 011b: a retry after a failed
+    final write calls the model again, and its spend counts against the run's budget."""
+    try:
+        return await _screen(agent)
+    except tuple(_TERMINAL) as exc:
+        code = next(c for kind, c in _TERMINAL.items() if isinstance(exc, kind))
+        await fail_run(agent.tenant_id, agent.agent_run_id, code)
+        raise
+
+
+async def _screen(agent: AgentContext) -> ScreeningOutcome:
     run = await _run(agent)
     if run.evidence_version_id is None:
         raise NotFound("evidence_version")
@@ -209,9 +261,23 @@ async def screen(agent: AgentContext) -> ScreeningOutcome:
     unverified = [*output.unverified] + [
         f"citation {c.cell}: {c.reason}" for c in checked if not c.verified
     ]
+    # Code has the last word on what it can check (ADR-066): a claim it can't verify, or figures
+    # that don't add up, never reach a reviewer as "ready".
+    if sheet.total_debit != sheet.total_credit:
+        unverified.append("debits and credits differ")
+    if not sheet.total_row_matches:
+        unverified.append("the sheet's Total row differs from its lines")
+    if context.truncated:
+        unverified.append("only part of the account list was screened")
     action = output.action
     if Decimal(str(output.confidence)) < screener.confidence_routing.below:
         action = screener.confidence_routing.route
+    if (
+        any(not c.verified for c in checked)
+        or sheet.total_debit != sheet.total_credit
+        or not sheet.total_row_matches
+    ):
+        action = "needs_revision"
     result_id: UUID | None = None
     async with uow(agent.tenant) as tx:
         locked = await lock_run(tx.session, run.id)

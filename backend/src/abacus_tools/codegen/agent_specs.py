@@ -9,7 +9,7 @@ a Python literal; `AgentSpec` validates it at import. The unit tests fail when t
 from __future__ import annotations
 
 import argparse
-import json
+import pprint
 import sys
 from pathlib import Path
 from typing import cast
@@ -32,7 +32,8 @@ def render() -> str:
     for path in sorted(SPECS_DIR.glob("*.yaml")):
         document = cast(dict[str, object], yaml.safe_load(path.read_text()))
         specs[str(document["id"])] = document
-    body = json.dumps(specs, indent=4, sort_keys=True)
+    # Python literal syntax (True/None), not JSON (true/null).
+    body = pprint.pformat(specs, indent=4, width=99, sort_dicts=True)
     # fmt: off/on keeps the literal exactly as generated, so the drift check is byte-exact.
     return f"{_HEADER}# fmt: off\nSPECS: dict[str, dict[str, object]] = {body}\n# fmt: on\n"
 

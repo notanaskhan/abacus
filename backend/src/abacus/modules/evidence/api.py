@@ -2,12 +2,18 @@
 
 from abacus.modules.evidence.events import EvidenceVersionCreated
 from abacus.modules.evidence.render import (
-    MEDIA_TYPE as XLSX_MEDIA_TYPE,
-)
-from abacus.modules.evidence.render import (
+    CODE_COLUMN,
+    CREDIT_COLUMN,
+    DEBIT_COLUMN,
+    FIRST_LINE_ROW,
+    NAME_COLUMN,
+    TOTAL_LABEL,
     TrialBalance,
     TrialBalanceLine,
     render_trial_balance,
+)
+from abacus.modules.evidence.render import (
+    MEDIA_TYPE as XLSX_MEDIA_TYPE,
 )
 from abacus.modules.evidence.service import (
     EngagementArchived,
@@ -25,6 +31,12 @@ from abacus.modules.evidence.service import (
 from abacus.modules.evidence.storage import ContentTooLarge, IntegrityError
 
 __all__ = [
+    "CODE_COLUMN",
+    "CREDIT_COLUMN",
+    "DEBIT_COLUMN",
+    "FIRST_LINE_ROW",
+    "NAME_COLUMN",
+    "TOTAL_LABEL",
     "XLSX_MEDIA_TYPE",
     "ContentTooLarge",
     "EngagementArchived",

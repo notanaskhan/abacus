@@ -11,7 +11,7 @@ from datetime import datetime
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext
-from abacus.modules.identity.repository import FirmRole
+from abacus.modules.identity.repository import FirmRole, active_memberships
 
 
 @dataclass(frozen=True)
@@ -104,17 +104,37 @@ def system_context_for_run(
     )
 
 
-def agent_context_for_run(
+class NoActiveTenant(Exception):
+    """Authenticated, but no tenant this user may act in was chosen."""
+
+
+async def agent_context_for_run(
     *,
     tenant_id: UUID,
     run_id: UUID,
     agent_id: str,
     engagement_id: UUID,
     task_scope: frozenset[str],
-    initiator: AuthContext,
+    initiator_user_id: UUID,
 ) -> AgentContext:
-    """The agent acting on one run. The caller (the agents module's run loader only, SYS-001) has
-    read the run under row-level security and resolved its initiator's live membership."""
+    """The agent acting on one run, for the agents module's run loader only (SYS-001), which has
+    read the run under row-level security. The initiator's context (ADR-025) is resolved here from
+    their active membership, read now, and never handed out: no other module can hold a person's
+    context without their request. A revoked membership ends the agent's rights
+    (`NoActiveTenant`)."""
+    memberships = [
+        m for m in await active_memberships(initiator_user_id) if m.tenant_id == tenant_id
+    ]
+    if len(memberships) != 1:
+        raise NoActiveTenant("initiator has no active membership in this firm")
+    membership = memberships[0]
+    initiator = AuthContext(
+        tenant=TenantContext(tenant_id, "human", str(initiator_user_id)),
+        user_id=initiator_user_id,
+        membership_id=membership.membership_id,
+        firm_role=membership.firm_role,
+        mfa_at=None,
+    )
     return AgentContext(
         TenantContext(tenant_id, "agent", f"agent:{agent_id}:{run_id}"),
         agent_id,
