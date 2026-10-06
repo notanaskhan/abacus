@@ -11,6 +11,8 @@ PROTECTED. TASK-007 design §5.
   3. roles          the matrix decision for those roles; an explicit `deny` beats any `allow`
   4. attributes     archived engagements are read-only; `mfa_recent`; `requires: reason`;
                     actions carrying an obligation not built yet (`notify`) deny
+An agent is also bounded by its initiator, checked live (ADR-025): the initiator must be allowed
+the same action, or `AGENT_ONLY_REACH` for actions no human role holds.
 Matrix conditions not modelled yet (`in_scope`, `firm_setting(...)`, `assigned_only`,
 `client_visible_only`, `task_scope`) are not grants: they deny until their task models them.
 
@@ -50,6 +52,11 @@ MFA_RECENT = timedelta(minutes=15)
 # are (founder decision 2026-10-06: walls gate the first real firm). Set True only with walls.
 WALL_SAFE = False
 Layer = Literal["tenancy", "relationship", "role", "attribute", "delegation"]
+# An action no human role holds (agent and system only, e.g. `screening.run`) can't be intersected
+# with the initiator's own right to it; the agent then stays within the initiator's reach: they
+# must be allowed this action on the same engagement (founder decision 2026-10-06, ADR-025).
+AGENT_ONLY_REACH = "evidence.read"
+_NON_HUMAN_ROLES = frozenset({"agent", "system"})
 _log = get_logger(__name__)
 _checked: ContextVar[set[str] | None] = ContextVar("abacus_authz_checked", default=None)
 
@@ -114,6 +121,13 @@ def agent_may_hold(action: str) -> bool:
     return _rule(action).decisions.get("agent") == "task_scope"
 
 
+def _human_held(rule: Rule) -> bool:
+    return any(
+        role not in _NON_HUMAN_ROLES and decision != "deny"
+        for role, decision in rule.decisions.items()
+    )
+
+
 def _who(ctx: Actor) -> dict[str, object]:
     if isinstance(ctx, AuthContext):
         return {"user_id": ctx.user_id}
@@ -168,8 +182,9 @@ async def authorise(
         raise _deny(ctx, action, "role")
     # An agent never exceeds the person it acts for (ADR-025 intersection), checked live.
     if isinstance(ctx, AgentContext):
+        delegated = action if _human_held(rule) else AGENT_ONLY_REACH
         try:
-            await authorise(ctx.initiator, action, resource, reason=reason)
+            await authorise(ctx.initiator, delegated, resource, reason=reason)
         except Forbidden:
             raise _deny(ctx, action, "delegation") from None
     # 4. Attributes.

@@ -18,6 +18,8 @@ Agents process untrusted client content that may contain prompt injection. If th
 ## Decision
 An agent's effective permissions are the intersection of the agent role's permissions, the initiating human or system actor's permissions, and the task's declared scope. Authorisation is enforced inside every tool using the agent's context; the model never decides permissions. Agent contexts never hold decision actions (ADR-005). The delegation chain is recorded on every agent action.
 
+An action no human role holds (agent and system only, such as `screening.run`) can't be intersected with the initiator's right to that action. For such an action the initiator must instead be allowed `evidence.read` on the same engagement, so the agent stays within the initiator's reach (founder decision 2026-10-06, TASK-011).
+
 ## Options considered
 ### Intersection, enforced in tools — chosen
 - Pros: Prompt injection cannot escalate privileges
