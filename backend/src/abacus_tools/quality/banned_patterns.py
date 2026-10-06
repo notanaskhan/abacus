@@ -405,11 +405,15 @@ RULES: list[Rule | TreeRule] = [
         description="No engines or raw connections; use tenant_session(ctx)",
         adr="ADR-014",
         check=_check_raw_connection,
-        # The local-stack smoke tests check the database container itself; nothing else may.
+        # Only code whose job is the database itself: the kernel; schema_check (catalog and roles);
+        # the local-stack smoke tests; the tenancy and schema tests (owner, app and admin roles).
         exclude=(
             "src/abacus/kernel/db/*",
+            "src/abacus_tools/quality/schema_check.py",
             "tests/integration/conftest.py",
             "tests/integration/test_local_stack.py",
+            "tests/integration/test_tenancy.py",
+            "tests/integration/test_schema_check_db.py",
         ),
     ),
     Rule(
@@ -417,6 +421,8 @@ RULES: list[Rule | TreeRule] = [
         description="No SQL built from f-strings, %, + or .format()",
         adr="ADR-014",
         check=_check_built_sql,
+        # DDL can't bind identifiers; migration helpers validate table names first.
+        exclude=("src/abacus/kernel/db/migration.py",),
     ),
     Rule(
         id="BOUND-001",

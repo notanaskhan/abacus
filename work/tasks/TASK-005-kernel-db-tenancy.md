@@ -105,13 +105,13 @@ It replaces TASK-002's "no migrations yet" guard and the `check_orm` stop-gap.
 **8. Settings** — `abacus.kernel.config.Settings` (pydantic-settings, prefix `ABACUS_`): `environment` (`local`/`test`/`staging`/`production`), `database_url`, `migrations_database_url` (`SecretStr`), `s3_*`, `temporal_target`. Local defaults point at `docker compose` (port 55432, local passwords); outside `local`/`test`, every connection setting must be set explicitly or startup fails.
 
 ### Steps
-1. [ ] Protect first: add `backend/migrations/env.py`, `backend/migrations/bootstrap.sql`, `backend/alembic.ini` to the hook, CODEOWNERS and protected-paths.md (Q4).
-2. [ ] Bootstrap SQL; mount into compose `db` init; testcontainers fixture runs it.
-3. [ ] `kernel/config.py`, `kernel/classification.py`, `kernel/logging.py`.
-4. [ ] `kernel/db/` — engine, `TenantContext`, `tenant_session`, `migration.tenant_table`, `migration.insert_only`.
-5. [ ] Alembic: `alembic.ini`, `migrations/env.py`, `0001_baseline`.
-6. [ ] `schema_check` rewrite; `check_orm` removed.
-7. [ ] Independent tests from the contract; `make check` locally and in CI; gate-break: a probe table without `FORCE`, without a policy, with `UPDATE` granted on an insert-only table, and an app role with `BYPASSRLS` each fail `schema_check`.
+1. [x] Protect first: add `backend/migrations/env.py`, `backend/migrations/bootstrap.sql`, `backend/alembic.ini` to the hook, CODEOWNERS and protected-paths.md (Q4).
+2. [x] Bootstrap SQL; mount into compose `db` init; testcontainers fixture runs it.
+3. [x] `kernel/config.py`, `kernel/classification.py`, `kernel/logging.py`.
+4. [x] `kernel/db/` — engine, `TenantContext`, `tenant_session`, `migration.tenant_table`, `migration.insert_only`.
+5. [x] Alembic: `alembic.ini`, `migrations/env.py`, `0001_baseline`.
+6. [x] `schema_check` rewrite; `check_orm` removed.
+7. [x] Independent tests from the contract; `make check` locally and in CI; gate-break: a probe table without `FORCE`, without a policy, with `UPDATE` granted on an insert-only table, and an app role with `BYPASSRLS` each fail `schema_check`.
 
 ### Interface contract (tests written independently — ADR-078)
 - `TenantContext(tenant_id: UUID, actor_kind: "human"|"agent"|"system", actor_id: str)`, frozen.
@@ -174,6 +174,15 @@ New migration files (`backend/migrations/versions/*`) need no approval while new
 
 ## Progress log
 - `2026-10-06` — PRs #3 and #4 merged at founder instruction. Design drafted for founder review (red task). No code.
+
+- `2026-10-06` — Implemented. Protected `alembic.ini`, `migrations/env.py`, `migrations/bootstrap.sql` first. Independent tests (Sonnet, from the contract): 148 across kernel unit tests, tenancy integration (28) and schema-check databases (21). `make check` exit 0: 1,403 tests, coverage 97 %, `schema_check` real and passing (2.4 s).
+  - **Bugs found by the independent tests, fixed in code:** (1) logger let Restricted data through a nested model — now refused at any depth; (2) on a reused pooled connection `current_setting` reads `''`, and `''::uuid` raised instead of returning no rows — policy now `NULLIF(current_setting('app.tenant_id', true), '')::uuid` (contract SQL updated); (3) `Settings` fields were unclassified — now classified, so the gate stays literal.
+  - **Found while building:** pgvector isn't a trusted extension, so `bootstrap.sql` (admin) creates it and `0001_baseline` only verifies it (design §4 said the migration would create it); default privileges let `abacus_app` write `alembic_version` (forge migration state) — `0001` revokes it and `schema_check` now fails any app privilege on a non-tenant table, and any object (relation, function, type, schema) the app role owns.
+  - **Design deviation:** `classified(level)` is used inside `Annotated[...]` rather than as a default value — as a default, a `-> Any` helper made type checkers treat required fields as optional. Same tag, same place (`json_schema_extra={"cls": ...}`).
+  - `tenant_session` relies on the pool's rollback-on-return instead of calling `rollback()` (UOW-001 forbids rollback outside the unit of work).
+  - Founder-approved exclusions (approval file extended at founder instruction): SQL-001 for `kernel/db/migration.py` (DDL can't bind identifiers; names validated); DB-001 for `schema_check.py`, `test_tenancy.py`, `test_schema_check_db.py`. S106/T20 scoped to `schema_check.py` in pyproject.
+  - Local DB volume recreated so `bootstrap.sql` runs (compose init only runs on an empty volume).
+  - Independent author's test bugs (fixed by them): keyword-less assertion that could never pass; `alembic_version` fixture without the 0001 revoke.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
