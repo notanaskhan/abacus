@@ -4,24 +4,26 @@ from abacus.modules.ledger.normalise import (
     LedgerLine,
     NormalisedTrialBalance,
     NormaliseError,
-    normalise,
     validate,
 )
 from abacus.modules.ledger.service import (
+    SnapshotLine,
     SnapshotRef,
+    SnapshotView,
     Unvalidated,
     record_snapshot,
-    trial_balance_for,
+    snapshot_view,
 )
 
 __all__ = [
     "LedgerLine",
     "NormaliseError",
     "NormalisedTrialBalance",
+    "SnapshotLine",
     "SnapshotRef",
+    "SnapshotView",
     "Unvalidated",
-    "normalise",
     "record_snapshot",
-    "trial_balance_for",
+    "snapshot_view",
     "validate",
 ]

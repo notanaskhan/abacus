@@ -2,6 +2,20 @@
 
 from abacus.modules.requests.events import RequestItemCreated
 from abacus.modules.requests.routes import router
-from abacus.modules.requests.service import FulfilmentRef, fulfil_by_rule
+from abacus.modules.requests.service import (
+    FulfilmentRef,
+    ItemNotFulfillable,
+    RequestItemRef,
+    fulfil_by_rule,
+    item_ref,
+)
 
-__all__ = ["FulfilmentRef", "RequestItemCreated", "fulfil_by_rule", "router"]
+__all__ = [
+    "FulfilmentRef",
+    "ItemNotFulfillable",
+    "RequestItemCreated",
+    "RequestItemRef",
+    "fulfil_by_rule",
+    "item_ref",
+    "router",
+]

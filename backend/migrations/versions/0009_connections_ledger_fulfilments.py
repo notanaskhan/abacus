@@ -3,8 +3,9 @@
 - Ledger snapshots and their lines are immutable like evidence (ADR-004): insert-only for the app,
   and a trigger rejects UPDATE, DELETE and TRUNCATE for every role.
 - Fulfilments are insert-only (confirmation states arrive with review, later).
-- Sync runs change status as a pull proceeds; the app may update only the result columns. They are
-  also the record of every pull (ADR-040's access log).
+- Sync runs change status as a pull proceeds; the app may update only the result columns, a
+  trigger keeps them forward-only and write-once, and composite keys tie the connection,
+  engagement, snapshot and evidence to one client entity. They record every pull (ADR-040).
 - Connections are created by tooling for SPEC-000; the app may only read them and change status.
 - Evidence versions now reference their ledger snapshot.
 
@@ -32,6 +33,15 @@ def upgrade() -> None:
         "ALTER TABLE request_items ADD CONSTRAINT request_items_engagement_item "
         "UNIQUE (tenant_id, engagement_id, id)"
     )
+    # Let runs and fulfilments prove their rows belong together (same entity, same engagement).
+    op.execute(
+        "ALTER TABLE engagements ADD CONSTRAINT engagements_entity_engagement "
+        "UNIQUE (tenant_id, client_entity_id, id)"
+    )
+    op.execute(
+        "ALTER TABLE evidence_versions ADD CONSTRAINT evidence_versions_engagement_version "
+        "UNIQUE (tenant_id, engagement_id, id)"
+    )
     op.execute(
         """
         CREATE TABLE connections (
@@ -55,6 +65,7 @@ def upgrade() -> None:
         CREATE TABLE sync_runs (
             id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
             tenant_id uuid NOT NULL,
+            client_entity_id uuid NOT NULL,
             connection_id uuid NOT NULL,
             engagement_id uuid NOT NULL,
             request_item_id uuid NOT NULL,
@@ -68,7 +79,9 @@ def upgrade() -> None:
             raw_fingerprint text NULL CHECK (raw_fingerprint ~ '^[0-9a-f]{64}$'),
             raw_size_bytes bigint NULL CHECK (raw_size_bytes >= 0),
             raw_pulled_at timestamptz NULL,
+            source text NULL CHECK (source ~ '^[a-z][a-z0-9_]{0,49}$'),
             snapshot_id uuid NULL,
+            evidence_version_id uuid NULL,
             failure_code text NULL CHECK (failure_code ~ '^[a-z][a-z_]{0,49}$'),
             started_by text NOT NULL CHECK (length(started_by) BETWEEN 1 AND 200),
             started_at timestamptz NOT NULL DEFAULT clock_timestamp(),
@@ -78,9 +91,22 @@ def upgrade() -> None:
             CONSTRAINT sync_runs_finished CHECK ((status = 'running') = (finished_at IS NULL)),
             CONSTRAINT sync_runs_failure_code
                 CHECK ((status IN ('failed', 'failed_validation')) = (failure_code IS NOT NULL)),
-            FOREIGN KEY (tenant_id, connection_id) REFERENCES connections (tenant_id, id),
+            CONSTRAINT sync_runs_succeeded_complete CHECK (
+                status <> 'succeeded'
+                OR (raw_fingerprint IS NOT NULL AND snapshot_id IS NOT NULL
+                    AND evidence_version_id IS NOT NULL)
+            ),
+            CONSTRAINT sync_runs_failed_validation_unsnapshotted
+                CHECK (status <> 'failed_validation' OR snapshot_id IS NULL),
+            -- The connection, the engagement and the snapshot all belong to the run's entity.
+            FOREIGN KEY (tenant_id, client_entity_id, connection_id)
+                REFERENCES connections (tenant_id, client_entity_id, id),
+            FOREIGN KEY (tenant_id, client_entity_id, engagement_id)
+                REFERENCES engagements (tenant_id, client_entity_id, id),
             FOREIGN KEY (tenant_id, engagement_id, request_item_id)
-                REFERENCES request_items (tenant_id, engagement_id, id)
+                REFERENCES request_items (tenant_id, engagement_id, id),
+            FOREIGN KEY (tenant_id, engagement_id, evidence_version_id)
+                REFERENCES evidence_versions (tenant_id, engagement_id, id)
         )
         """
     )
@@ -100,6 +126,7 @@ def upgrade() -> None:
             total_credit numeric(20, 2) NOT NULL CHECK (total_credit >= 0),
             created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
             UNIQUE (tenant_id, id),
+            UNIQUE (tenant_id, client_entity_id, id),
             -- The same pull of the same period gives the same snapshot (§12 idempotency).
             CONSTRAINT ledger_snapshots_pull
                 UNIQUE (tenant_id, client_entity_id, period_start, period_end, raw_fingerprint),
@@ -132,6 +159,7 @@ def upgrade() -> None:
         CREATE TABLE fulfilments (
             id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
             tenant_id uuid NOT NULL,
+            engagement_id uuid NOT NULL,
             request_item_id uuid NOT NULL,
             evidence_version_id uuid NOT NULL,
             created_by_kind text NOT NULL CHECK (created_by_kind IN ('rule', 'human', 'agent')),
@@ -139,21 +167,31 @@ def upgrade() -> None:
             created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
             UNIQUE (tenant_id, id),
             CONSTRAINT fulfilments_once UNIQUE (tenant_id, request_item_id, evidence_version_id),
-            FOREIGN KEY (tenant_id, request_item_id) REFERENCES request_items (tenant_id, id),
-            FOREIGN KEY (tenant_id, evidence_version_id)
-                REFERENCES evidence_versions (tenant_id, id)
+            -- The evidence fulfils an item of its own engagement.
+            FOREIGN KEY (tenant_id, engagement_id, request_item_id)
+                REFERENCES request_items (tenant_id, engagement_id, id),
+            FOREIGN KEY (tenant_id, engagement_id, evidence_version_id)
+                REFERENCES evidence_versions (tenant_id, engagement_id, id)
         )
         """
     )
     op.execute(
         "ALTER TABLE sync_runs ADD CONSTRAINT sync_runs_snapshot_fkey "
-        "FOREIGN KEY (tenant_id, snapshot_id) REFERENCES ledger_snapshots (tenant_id, id)"
+        "FOREIGN KEY (tenant_id, client_entity_id, snapshot_id) "
+        "REFERENCES ledger_snapshots (tenant_id, client_entity_id, id)"
     )
     op.execute(
         "ALTER TABLE evidence_versions ADD CONSTRAINT evidence_versions_snapshot_fkey "
         "FOREIGN KEY (tenant_id, snapshot_id) REFERENCES ledger_snapshots (tenant_id, id)"
     )
     op.execute("CREATE INDEX sync_runs_request_item ON sync_runs (tenant_id, request_item_id)")
+    op.execute("CREATE INDEX sync_runs_status ON sync_runs (tenant_id, status, started_at)")
+    # One live (or successful) run per item and period: a second trigger gets the same run.
+    op.execute(
+        "CREATE UNIQUE INDEX sync_runs_one_active ON sync_runs "
+        "(tenant_id, request_item_id, period_start, period_end) "
+        "WHERE status IN ('running', 'succeeded')"
+    )
     op.execute("CREATE INDEX fulfilments_request_item ON fulfilments (tenant_id, request_item_id)")
     for table in _TABLES:
         tenant_table(op, table)
@@ -169,6 +207,7 @@ def upgrade() -> None:
         (
             "id",
             "tenant_id",
+            "client_entity_id",
             "connection_id",
             "engagement_id",
             "request_item_id",
@@ -180,7 +219,8 @@ def upgrade() -> None:
     )
     op.execute(
         "GRANT UPDATE (status, raw_storage_key, raw_version_id, raw_fingerprint, raw_size_bytes, "
-        "raw_pulled_at, snapshot_id, failure_code, finished_at) ON sync_runs TO abacus_app"
+        "raw_pulled_at, source, snapshot_id, evidence_version_id, failure_code, finished_at) "
+        "ON sync_runs TO abacus_app"
     )
     # Ledger and fulfilments: insert-only.
     for table in ("ledger_snapshots", "trial_balance_lines", "fulfilments"):
@@ -222,6 +262,7 @@ def upgrade() -> None:
         (
             "id",
             "tenant_id",
+            "engagement_id",
             "request_item_id",
             "evidence_version_id",
             "created_by_kind",
@@ -260,20 +301,110 @@ def upgrade() -> None:
         "FOR EACH STATEMENT EXECUTE FUNCTION ledger_immutable()"
     )
 
+    # Sync runs are the pull log (ADR-040): a run only moves forward, and what it recorded stays.
+    op.execute(
+        """
+        CREATE FUNCTION sync_runs_forward_only() RETURNS trigger
+        LANGUAGE plpgsql AS $$
+        BEGIN
+            IF OLD.status <> 'running' THEN
+                RAISE EXCEPTION 'sync run % is finished', OLD.id
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+            -- Write-once: a recorded result may be set once, never changed or cleared.
+            IF (OLD.raw_storage_key IS NOT NULL
+                AND NEW.raw_storage_key IS DISTINCT FROM OLD.raw_storage_key)
+               OR (OLD.raw_version_id IS NOT NULL
+                AND NEW.raw_version_id IS DISTINCT FROM OLD.raw_version_id)
+               OR (OLD.raw_fingerprint IS NOT NULL
+                AND NEW.raw_fingerprint IS DISTINCT FROM OLD.raw_fingerprint)
+               OR (OLD.raw_size_bytes IS NOT NULL
+                AND NEW.raw_size_bytes IS DISTINCT FROM OLD.raw_size_bytes)
+               OR (OLD.raw_pulled_at IS NOT NULL
+                AND NEW.raw_pulled_at IS DISTINCT FROM OLD.raw_pulled_at)
+               OR (OLD.source IS NOT NULL AND NEW.source IS DISTINCT FROM OLD.source)
+               OR (OLD.snapshot_id IS NOT NULL
+                AND NEW.snapshot_id IS DISTINCT FROM OLD.snapshot_id)
+               OR (OLD.evidence_version_id IS NOT NULL
+                AND NEW.evidence_version_id IS DISTINCT FROM OLD.evidence_version_id) THEN
+                RAISE EXCEPTION 'sync run % results are write-once', OLD.id
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+            RETURN NEW;
+        END
+        $$
+        """
+    )
+    op.execute(
+        "CREATE TRIGGER sync_runs_forward_only BEFORE UPDATE ON sync_runs "
+        "FOR EACH ROW EXECUTE FUNCTION sync_runs_forward_only()"
+    )
+    op.execute(
+        """
+        CREATE FUNCTION connections_no_reactivation() RETURNS trigger
+        LANGUAGE plpgsql AS $$
+        BEGIN
+            IF OLD.status = 'revoked' AND NEW.status <> 'revoked' THEN
+                RAISE EXCEPTION 'a revoked connection stays revoked'
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+            RETURN NEW;
+        END
+        $$
+        """
+    )
+    op.execute(
+        "CREATE TRIGGER connections_no_reactivation BEFORE UPDATE ON connections "
+        "FOR EACH ROW EXECUTE FUNCTION connections_no_reactivation()"
+    )
+    # Lines join a snapshot only in the transaction that created it: a finished snapshot can't
+    # gain lines that its header totals don't account for (ADR-004).
+    op.execute(
+        """
+        CREATE FUNCTION trial_balance_lines_with_snapshot() RETURNS trigger
+        LANGUAGE plpgsql AS $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM ledger_snapshots s
+                WHERE s.tenant_id = NEW.tenant_id AND s.id = NEW.snapshot_id
+                  AND s.xmin::text::bigint = (txid_current() % 4294967296)
+            ) THEN
+                RAISE EXCEPTION 'lines can only be added with their snapshot'
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+            RETURN NEW;
+        END
+        $$
+        """
+    )
+    op.execute(
+        "CREATE TRIGGER trial_balance_lines_with_snapshot BEFORE INSERT ON trial_balance_lines "
+        "FOR EACH ROW EXECUTE FUNCTION trial_balance_lines_with_snapshot()"
+    )
+
 
 def downgrade() -> None:
     op.execute(
         "DO $$ BEGIN "
-        "IF EXISTS (SELECT 1 FROM ledger_snapshots) THEN "
-        "RAISE EXCEPTION 'refusing to downgrade: ledger snapshots exist (ADR-004)'; "
+        "IF EXISTS (SELECT 1 FROM ledger_snapshots) OR EXISTS (SELECT 1 FROM sync_runs) "
+        "OR EXISTS (SELECT 1 FROM fulfilments) OR EXISTS (SELECT 1 FROM connections) THEN "
+        "RAISE EXCEPTION 'refusing to downgrade: connections, runs, ledger data or fulfilments "
+        "exist (ADR-004, ADR-040)'; "
         "END IF; END $$"
     )
     op.execute("ALTER TABLE evidence_versions DROP CONSTRAINT evidence_versions_snapshot_fkey")
     op.execute("DROP TABLE fulfilments")
     op.execute("ALTER TABLE sync_runs DROP CONSTRAINT sync_runs_snapshot_fkey")
     op.execute("DROP TABLE trial_balance_lines")
+    op.execute("DROP FUNCTION trial_balance_lines_with_snapshot()")
     op.execute("DROP TABLE ledger_snapshots")
     op.execute("DROP FUNCTION ledger_immutable()")
     op.execute("DROP TABLE sync_runs")
+    op.execute("DROP FUNCTION sync_runs_forward_only()")
     op.execute("DROP TABLE connections")
+    op.execute("DROP FUNCTION connections_no_reactivation()")
+    op.execute(
+        "ALTER TABLE evidence_versions DROP CONSTRAINT evidence_versions_engagement_version"
+    )
+    op.execute("ALTER TABLE engagements DROP CONSTRAINT engagements_entity_engagement")
     op.execute("ALTER TABLE request_items DROP CONSTRAINT request_items_engagement_item")

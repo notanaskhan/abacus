@@ -1,11 +1,13 @@
-"""The six retrieval stages (ADR-038; TASK-010 design §5). PROTECTED.
+"""The retrieval stages (ADR-038; TASK-010 design §5, revision 1). PROTECTED.
 
-    extract → raw → normalise → validate → snapshot → render (+ fulfilment)
+    pull_raw (extract + raw) → normalise_raw → validate_run → snapshot → render (+ fulfilment)
 
-Each stage takes the system context and the run ID and nothing else, re-reads what it needs, and
-is safe to repeat: TASK-010b runs each as a Temporal activity that may be retried after a crash.
-Only identifiers cross stages; ledger data stays in storage and the database. A stage that finds
-its work done returns the earlier result; a run that has failed raises `RunFailed`.
+Every stage takes only the system context, which `load_system_context` proved from the run row;
+its run and engagement are the only ones it may touch. Each stage authorises its own action,
+re-reads what it needs (only identifiers cross stages: the raw bytes never leave `pull_raw`), and
+is safe to repeat: TASK-010b runs each as a Temporal activity that may be retried or delivered
+twice. A repeat finds its work done and returns the recorded result without new audit events. A
+finished run refuses further work (`RunFailed`), and only a running run is marked failed.
 """
 
 from __future__ import annotations
@@ -13,46 +15,54 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import UUID
 
+from abacus.kernel.crypto import DecryptionError
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound
-from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.connections.connector import ConnectorError, Period, RawPayload, Unavailable
+from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
+from abacus.modules.connections.connector import ConnectorError, Period, Unavailable
+from abacus.modules.connections.fake_format import parse_trial_balance
 from abacus.modules.connections.models import SyncRun
 from abacus.modules.connections.repository import (
     finish,
     get_connection,
     get_run,
     lock_run,
+    set_evidence,
     set_raw,
     set_snapshot,
 )
 from abacus.modules.connections.service import connector_for
-from abacus.modules.engagements.api import get_ref, lock_ref
+from abacus.modules.engagements.api import EngagementRef, get_ref, lock_ref
 from abacus.modules.evidence.api import (
     XLSX_MEDIA_TYPE,
+    IntegrityError,
     NewItem,
     Provenance,
     StoredObject,
+    TrialBalance,
+    TrialBalanceLine,
     add_version,
     read_content,
     render_trial_balance,
     stage_content,
 )
-from abacus.modules.identity.api import SystemContext, authorise
+from abacus.modules.identity.api import Forbidden, SystemContext, authorise
 from abacus.modules.ledger.api import (
     NormalisedTrialBalance,
     NormaliseError,
-    normalise,
+    Unvalidated,
     record_snapshot,
-    trial_balance_for,
+    snapshot_view,
     validate,
 )
 from abacus.modules.organisations.api import client_names
-from abacus.modules.requests.api import fulfil_by_rule
+from abacus.modules.requests.api import ItemNotFulfillable, fulfil_by_rule
 
 
 class RunFailed(Exception):
-    """The run has ended without evidence; `code` and `status` are on the sync run."""
+    """The run has ended without evidence; `status` and `code` are on the sync run."""
+
+    retryable = False
 
     def __init__(self, status: str, code: str) -> None:
         super().__init__(f"{status}: {code}")
@@ -67,71 +77,55 @@ class RunResult:
     evidence_version_id: UUID
 
 
-async def _run(sys: SystemContext, run_id: UUID) -> SyncRun:
+_TERMINAL = (RunFailed, NotFound, Forbidden, Unvalidated, NormaliseError, ItemNotFulfillable)
+
+
+def is_retryable(exc: BaseException) -> bool:
+    """For the workflow (TASK-010b): retry provider outages and infrastructure errors; never
+    retry a decided outcome (failed run, missing or forbidden resource, invalid data)."""
+    if isinstance(exc, ConnectorError):
+        return exc.retryable
+    return not isinstance(exc, _TERMINAL)
+
+
+async def _run(sys: SystemContext) -> SyncRun:
     async with tenant_session(sys.tenant) as session:
-        run = await get_run(session, run_id)
-    if run is None or run.id != sys.run_id:
+        run = await get_run(session, sys.run_id)
+    if run is None or run.engagement_id != sys.engagement_id:
         raise NotFound("sync_run")
     if run.status in ("failed", "failed_validation"):
         raise RunFailed(run.status, run.failure_code or "unknown")
     return run
 
 
-async def fail(sys: SystemContext, run_id: UUID, status: str, code: str) -> RunFailed:
-    """Mark the run failed (once) and return the exception for the caller to raise."""
-    async with uow(sys.tenant) as tx:
-        run = await lock_run(tx.session, run_id)
-        if run is not None and run.status == "running":
-            await finish(tx.session, run_id, status=status, failure_code=code)
-        tx.record("sync_run.failed", target=Target("sync_run", run_id))
-    return RunFailed(status, code)
+async def _authorised(sys: SystemContext, action: str) -> EngagementRef:
+    engagement = await get_ref(sys, sys.engagement_id)
+    await authorise(sys, action, engagement.resource())
+    return engagement
 
 
-# 1. extract ------------------------------------------------------------------------------------
-async def extract(sys: SystemContext, run_id: UUID) -> RawPayload:
-    run = await _run(sys, run_id)
-    engagement = await get_ref(sys, run.engagement_id)
-    await authorise(sys, "connection.pull", engagement.resource())
-    async with tenant_session(sys.tenant) as session:
-        connection = await get_connection(session, run.connection_id)
-    if connection is None or connection.status != "active":
-        raise await fail(sys, run_id, "failed", "connection_inactive")
+def _running(run: SyncRun) -> None:
+    if run.status != "running":
+        raise RunFailed(run.status, run.failure_code or "finished")
+
+
+async def fail_run(sys: SystemContext, status: str, code: str) -> RunFailed:
+    """End a running run as failed (`sync_run.failed`) and return the exception to raise. A run
+    that has already finished is left as it is, with no new audit event. For the workflow's
+    handler after retries are exhausted (TASK-010b)."""
+    current = (status, code)
     try:
-        return await connector_for(connection).pull(
-            "trial_balance", Period(run.period_start, run.period_end), None
-        )
-    except Unavailable:
-        raise  # retryable: the workflow retries the activity (TASK-010b)
-    except ConnectorError as exc:
-        raise await fail(sys, run_id, "failed", exc.code) from None
-
-
-# 2. raw ----------------------------------------------------------------------------------------
-async def store_raw(sys: SystemContext, run_id: UUID, raw: RawPayload) -> StoredObject:
-    run = await _run(sys, run_id)
-    if run.raw_fingerprint is not None:
-        return _stored(run)  # a retry after the raw payload was already recorded
-    stored = await stage_content(sys.tenant_id, raw.content)
-    async with uow(sys.tenant) as tx:
-        locked = await lock_run(tx.session, run_id)
-        if locked is None:
-            raise NotFound("sync_run")
-        if locked.raw_fingerprint is None:
-            await set_raw(
-                tx.session,
-                run_id,
-                key=stored.key,
-                version_id=stored.version_id,
-                fingerprint=stored.fingerprint,
-                size=stored.size,
-                pulled_at=raw.pulled_at,
-            )
-        tx.record(
-            "sync_run.raw_stored",
-            target=Target("sync_run", run_id),
-            after=Ref(raw_fingerprint=stored.fingerprint),
-        )
-    return stored
+        async with uow(sys.tenant) as tx:
+            locked = await lock_run(tx.session, sys.run_id)
+            if locked is not None and locked.status != "running":
+                current = (locked.status, locked.failure_code or code)
+            elif locked is not None and await finish(
+                tx.session, sys.run_id, status=status, failure_code=code
+            ):
+                tx.record("sync_run.failed", target=Target("sync_run", sys.run_id))
+    except MissingAuditEvent:
+        pass  # nothing changed: nothing to commit
+    return RunFailed(*current)
 
 
 def _stored(run: SyncRun) -> StoredObject:
@@ -147,129 +141,230 @@ def _stored(run: SyncRun) -> StoredObject:
     )
 
 
+# 1-2. extract and store the raw payload ----------------------------------------------------------
+async def pull_raw(sys: SystemContext) -> StoredObject:
+    """Pull from the provider and store the bytes write-once, in one step: the raw payload never
+    crosses a stage boundary. Pulls at most once per run: a recorded payload is returned."""
+    run = await _run(sys)
+    if run.raw_fingerprint is not None:
+        return _stored(run)
+    _running(run)
+    await _authorised(sys, "connection.pull")
+    async with tenant_session(sys.tenant) as session:
+        connection = await get_connection(session, run.connection_id)
+    if (
+        connection is None
+        or connection.status != "active"
+        or connection.client_entity_id != run.client_entity_id
+    ):
+        raise await fail_run(sys, "failed", "connection_inactive")
+    try:
+        raw = await connector_for(connection).pull(
+            "trial_balance", Period(run.period_start, run.period_end), None
+        )
+    except Unavailable:
+        raise  # retryable: the workflow retries, then calls fail_run (TASK-010b)
+    except ConnectorError as exc:
+        raise await fail_run(sys, "failed", exc.code) from None
+    stored = await stage_content(sys.tenant_id, raw.content)
+    result = stored
+    try:
+        async with uow(sys.tenant) as tx:
+            locked = await lock_run(tx.session, sys.run_id)
+            if locked is None:
+                raise NotFound("sync_run")
+            _running(locked)
+            if locked.raw_fingerprint is not None:
+                result = _stored(locked)  # a concurrent pull recorded first: keep its payload
+            else:
+                await set_raw(
+                    tx.session,
+                    sys.run_id,
+                    key=stored.key,
+                    version_id=stored.version_id,
+                    fingerprint=stored.fingerprint,
+                    size=stored.size,
+                    pulled_at=raw.pulled_at,
+                    source=raw.source,
+                )
+                tx.record(
+                    "sync_run.raw_stored",
+                    target=Target("sync_run", sys.run_id),
+                    after=Ref(raw_fingerprint=stored.fingerprint, on_behalf_of=sys.on_behalf_of),
+                )
+    except MissingAuditEvent:
+        pass
+    return result
+
+
 # 3. normalise ----------------------------------------------------------------------------------
 async def _normalised(sys: SystemContext, run: SyncRun) -> NormalisedTrialBalance:
-    content = await read_content(sys.tenant, _stored(run))
     try:
-        return normalise(content)
+        content = await read_content(sys.tenant, _stored(run))
+    except (IntegrityError, DecryptionError):
+        raise await fail_run(sys, "failed", "unprocessable") from None
+    try:
+        return parse_trial_balance(content)
     except NormaliseError as exc:
-        raise await fail(sys, run.id, "failed", exc.code) from None
+        raise await fail_run(sys, "failed", exc.code) from None
 
 
-async def normalise_raw(sys: SystemContext, run_id: UUID) -> int:
-    """Stage 3: the stored raw payload parses into the common model. Returns the line count."""
-    return len((await _normalised(sys, await _run(sys, run_id))).lines)
+async def normalise_raw(sys: SystemContext) -> int:
+    """The stored raw payload parses into the common ledger model. Returns the line count."""
+    run = await _run(sys)
+    await _authorised(sys, "connection.pull")
+    return len((await _normalised(sys, run)).lines)
 
 
 # 4. validate -----------------------------------------------------------------------------------
-async def validate_run(sys: SystemContext, run_id: UUID) -> None:
-    """Stage 4: control totals (AC-11). A failure ends the run: no snapshot, no evidence."""
-    run = await _run(sys, run_id)
+async def validate_run(sys: SystemContext) -> None:
+    """Control totals (AC-11). A failure ends the run: no snapshot, no evidence."""
+    run = await _run(sys)
+    if run.snapshot_id is not None:
+        return  # validated before it was snapshotted
+    await _authorised(sys, "connection.pull")
     failure = validate(
         await _normalised(sys, run), period_start=run.period_start, period_end=run.period_end
     )
     if failure is not None:
-        raise await fail(sys, run_id, "failed_validation", failure)
+        raise await fail_run(sys, "failed_validation", failure)
 
 
 # 5. snapshot -----------------------------------------------------------------------------------
-async def snapshot(sys: SystemContext, run_id: UUID) -> UUID:
-    run = await _run(sys, run_id)
+async def snapshot(sys: SystemContext) -> UUID:
+    run = await _run(sys)
     if run.snapshot_id is not None:
         return run.snapshot_id
+    _running(run)
+    await _authorised(sys, "connection.pull")
     tb = await _normalised(sys, run)
     failure = validate(tb, period_start=run.period_start, period_end=run.period_end)
     if failure is not None:  # validate_run ran first; never snapshot unvalidated data
-        raise await fail(sys, run_id, "failed_validation", failure)
-    engagement = await get_ref(sys, run.engagement_id)
-    if run.raw_pulled_at is None or run.raw_fingerprint is None:
+        raise await fail_run(sys, "failed_validation", failure)
+    if run.raw_pulled_at is None or run.raw_fingerprint is None or run.source is None:
         raise NotFound("raw payload")
-    async with uow(sys.tenant) as tx:
-        locked = await lock_run(tx.session, run_id)
-        if locked is None:
-            raise NotFound("sync_run")
-        if locked.snapshot_id is not None:
-            snapshot_id = locked.snapshot_id
-        else:
-            recorded = await record_snapshot(
-                tx,
-                client_entity_id=engagement.client_entity_id,
-                tb=tb,
-                raw_fingerprint=run.raw_fingerprint,
-                pulled_at=run.raw_pulled_at,
-                source="fake",
-            )
-            snapshot_id = recorded.id
-            await set_snapshot(tx.session, run_id, snapshot_id)
-        tx.record(
-            "sync_run.snapshot_linked",
-            target=Target("sync_run", run_id),
-            after=Ref(snapshot_id=snapshot_id),
-        )
-    return snapshot_id
+    result: UUID | None = None
+    try:
+        async with uow(sys.tenant) as tx:
+            locked = await lock_run(tx.session, sys.run_id)
+            if locked is None:
+                raise NotFound("sync_run")
+            _running(locked)
+            if locked.snapshot_id is not None:
+                result = locked.snapshot_id
+            else:
+                recorded = await record_snapshot(
+                    tx,
+                    client_entity_id=run.client_entity_id,
+                    period_start=run.period_start,
+                    period_end=run.period_end,
+                    tb=tb,
+                    raw_fingerprint=run.raw_fingerprint,
+                    pulled_at=run.raw_pulled_at,
+                    source=run.source,
+                )
+                await set_snapshot(tx.session, sys.run_id, recorded.id)
+                tx.record(
+                    "sync_run.snapshot_linked",
+                    target=Target("sync_run", sys.run_id),
+                    after=Ref(snapshot_id=recorded.id, on_behalf_of=sys.on_behalf_of),
+                )
+                result = recorded.id
+    except MissingAuditEvent:
+        pass
+    if result is None:
+        raise NotFound("ledger_snapshot")
+    return result
 
 
 # 6. render (+ fulfilment) ----------------------------------------------------------------------
-async def render(sys: SystemContext, run_id: UUID) -> UUID:
+async def render(sys: SystemContext) -> UUID:
     """Render the snapshot, add it as an evidence version, fulfil the request item by rule, and
-    finish the run (AC-10). Idempotent: the evidence idempotency key is the snapshot and item."""
-    run = await _run(sys, run_id)
+    finish the run (AC-10). Authorises before doing anything. Idempotent: a finished run returns
+    its recorded version; the evidence idempotency key is the snapshot and the item."""
+    run = await _run(sys)
+    if run.evidence_version_id is not None:
+        return run.evidence_version_id
+    _running(run)
     if run.snapshot_id is None:
         raise NotFound("ledger_snapshot")
-    engagement = await get_ref(sys, run.engagement_id)
+    engagement = await _authorised(sys, "evidence.upload")
+    view = await snapshot_view(sys.tenant, run.snapshot_id)
     async with tenant_session(sys.tenant) as session:
         names = await client_names(session, [engagement.client_entity_id])
-    tb = await trial_balance_for(
-        sys.tenant,
-        run.snapshot_id,
+    tb = TrialBalance(
+        client_entity_id=view.client_entity_id,
         entity_name=names[engagement.client_entity_id].client_entity_name,
+        period_start=view.period_start,
+        period_end=view.period_end,
+        pulled_at=view.pulled_at,
+        snapshot_id=view.id,
+        source=view.source,
+        source_fingerprint=view.raw_fingerprint,
+        lines=tuple(
+            TrialBalanceLine(line.account_code, line.account_name, line.debit, line.credit)
+            for line in view.lines
+        ),
     )
     stored = await stage_content(sys.tenant_id, render_trial_balance(tb))
-    async with uow(sys.tenant) as tx:
-        locked_engagement = await lock_ref(tx, run.engagement_id)
-        await authorise(sys, "evidence.upload", locked_engagement.resource())
-        version = await add_version(
-            tx,
-            engagement_id=run.engagement_id,
-            item=NewItem(
-                f"Trial balance {tb.period_start.isoformat()} to {tb.period_end.isoformat()}"
-            ),
-            stored=stored,
-            media_type=XLSX_MEDIA_TYPE,
-            provenance=Provenance(
-                source=tb.source,
-                method="retrieved",
-                pulled_at=tb.pulled_at,
-                period_start=tb.period_start,
-                period_end=tb.period_end,
-                client_entity_id=tb.client_entity_id,
-                snapshot_id=tb.snapshot_id,
-            ),
-            idempotency_key=f"snapshot:{run.snapshot_id}:item:{run.request_item_id}",
-        )
-        await fulfil_by_rule(
-            tx, sys, request_item_id=run.request_item_id, evidence_version_id=version.id
-        )
-        locked = await lock_run(tx.session, run_id)
-        if locked is not None and locked.status == "running":
-            await finish(tx.session, run_id, status="succeeded")
-        tx.record(
-            "sync_run.succeeded",
-            target=Target("sync_run", run_id),
-            after=Ref(evidence_version_id=version.id),
-        )
-    return version.id
-
-
-async def run_pipeline(sys: SystemContext, run_id: UUID) -> RunResult:
-    """All six stages in order, in-process (TASK-010b runs them as Temporal activities)."""
+    result: UUID | None = None
     try:
-        raw = await extract(sys, run_id)
+        async with uow(sys.tenant) as tx:
+            locked = await lock_run(tx.session, sys.run_id)
+            if locked is None:
+                raise NotFound("sync_run")
+            if locked.evidence_version_id is not None:
+                result = locked.evidence_version_id
+            else:
+                _running(locked)
+                locked_engagement = await lock_ref(tx, run.engagement_id)
+                await authorise(sys, "evidence.upload", locked_engagement.resource())
+                version = await add_version(
+                    tx,
+                    engagement_id=run.engagement_id,
+                    item=NewItem(
+                        f"Trial balance {view.period_start.isoformat()} "
+                        f"to {view.period_end.isoformat()}"
+                    ),
+                    stored=stored,
+                    media_type=XLSX_MEDIA_TYPE,
+                    provenance=Provenance(
+                        source=view.source,
+                        method="retrieved",
+                        pulled_at=view.pulled_at,
+                        period_start=view.period_start,
+                        period_end=view.period_end,
+                        client_entity_id=view.client_entity_id,
+                        snapshot_id=view.id,
+                    ),
+                    idempotency_key=f"snapshot:{view.id}:item:{run.request_item_id}",
+                )
+                await fulfil_by_rule(
+                    tx, sys, request_item_id=run.request_item_id, evidence_version_id=version.id
+                )
+                await set_evidence(tx.session, sys.run_id, version.id)
+                if await finish(tx.session, sys.run_id, status="succeeded"):
+                    tx.record(
+                        "sync_run.succeeded",
+                        target=Target("sync_run", sys.run_id),
+                        after=Ref(evidence_version_id=version.id, on_behalf_of=sys.on_behalf_of),
+                    )
+                result = version.id
+    except MissingAuditEvent:
+        pass
+    if result is None:
+        raise NotFound("evidence_version")
+    return result
+
+
+async def run_pipeline(sys: SystemContext) -> RunResult:
+    """All stages in order, in-process (TASK-010b runs them as Temporal activities)."""
+    try:
+        await pull_raw(sys)
     except Unavailable as exc:
-        raise await fail(sys, run_id, "failed", exc.code) from None
-    await store_raw(sys, run_id, raw)
-    await normalise_raw(sys, run_id)
-    await validate_run(sys, run_id)
-    snapshot_id = await snapshot(sys, run_id)
-    version_id = await render(sys, run_id)
-    return RunResult(run_id, snapshot_id, version_id)
+        raise await fail_run(sys, "failed", exc.code) from None
+    await normalise_raw(sys)
+    await validate_run(sys)
+    snapshot_id = await snapshot(sys)
+    version_id = await render(sys)
+    return RunResult(sys.run_id, snapshot_id, version_id)

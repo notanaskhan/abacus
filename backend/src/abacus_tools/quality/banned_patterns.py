@@ -586,21 +586,48 @@ def _check_self_action(src: SourceFile) -> Iterator[Finding]:
             yield Finding(line, "the SELF action is for /v1/me only")
 
 
+_CONTEXT_CLASSES = frozenset({"AuthContext", "SystemContext"})
+_CONTEXT_NAMES = ("ctx", "context", "sys", "system")
+
+
+def _context_aliases(src: SourceFile) -> set[str]:
+    """Names a context class is reachable by in this file, including `import ... as` aliases."""
+    names = set(_CONTEXT_CLASSES)
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                if alias.name in _CONTEXT_CLASSES and alias.asname:
+                    names.add(alias.asname)
+    return names
+
+
 def _check_context_construction(src: SourceFile) -> Iterator[Finding]:
-    """Human request contexts come from a validated membership (ADR-002), never built or copied by
-    hand. (Agent and system `TenantContext`s are built by their own tasks' context builders.)"""
+    """Actor contexts come from a validated membership or a proven run (ADR-002, ADR-023), never
+    built, copied or re-typed by hand. Import aliases count."""
+    aliases = _context_aliases(src)
     for node in ast.walk(src.tree):
         if not isinstance(node, ast.Call):
             continue
         name = _terminal_name(node.func)
-        if name in ("AuthContext", "SystemContext"):
+        if name in aliases or (
+            isinstance(node.func, ast.Attribute)
+            and node.func.attr == "__new__"
+            and _terminal_name(node.func.value) in aliases
+        ):
             yield Finding(node.lineno, "contexts are built only from a validated membership")
         elif name in {"replace", "copy", "deepcopy", "__replace__"} and any(
-            "ctx" in (_terminal_name(arg) or "").lower()
-            or "context" in (_terminal_name(arg) or "")
+            any(n in (_terminal_name(arg) or "").lower() for n in _CONTEXT_NAMES)
             for arg in node.args
         ):
             yield Finding(node.lineno, "contexts are never copied with changes")
+        elif isinstance(node.func, ast.Call) and _terminal_name(node.func.func) == "type":
+            yield Finding(node.lineno, "contexts are never built through type()")
+
+
+def _check_system_issue(src: SourceFile) -> Iterator[Finding]:
+    for line, name in _names_used(src):
+        if name in ("system_context_for_run", "_ISSUER"):
+            yield Finding(line, "system contexts are issued from a proven run only")
 
 
 def _check_resource_archived(src: SourceFile) -> Iterator[Finding]:
@@ -693,7 +720,7 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "engagements": frozenset({"identity", "organisations"}),
     "requests": frozenset({"identity", "engagements"}),
     "evidence": frozenset({"identity", "engagements"}),
-    "ledger": frozenset({"identity", "evidence"}),
+    "ledger": frozenset(),
     "connections": frozenset(
         {"identity", "engagements", "organisations", "ledger", "evidence", "requests"}
     ),
@@ -795,7 +822,14 @@ def _check_confined(
     return check
 
 
-_HTTP_CLIENTS = ("httpx", "requests", "aiohttp", "urllib3", "urllib.request", "http.client")
+_NETWORK_ROOTS = frozenset(
+    {"httpx", "requests", "aiohttp", "urllib", "urllib3", "http", "socket", "ssl", "smtplib"}
+    | {"ftplib", "subprocess", "websockets", "grpc", "asyncssh", "paramiko"}
+)
+_CONNECTOR_METHODS = frozenset(
+    {"capabilities", "authorise_url", "exchange_code", "refresh", "pull", "changes_since"}
+    | {"fetch_attachment", "health"}
+)
 _WRITE_VERBS = ("create", "update", "delete", "write", "post", "put", "patch", "upload", "send")
 
 
@@ -803,13 +837,25 @@ def _check_connector_read_only(src: SourceFile) -> Iterator[Finding]:
     """ADR-040: connectors only read. No write-shaped operations, and no HTTP client until a real
     connector arrives with its own read-only client and egress allowlist."""
     for line, module in _imported_modules(src):
-        if any(module == m or module.startswith(f"{m}.") for m in _HTTP_CLIENTS):
-            yield Finding(line, f"{module}: connectors get HTTP only through a read-only client")
+        if module.split(".")[0] in _NETWORK_ROOTS:
+            yield Finding(line, f"{module}: connectors get network access only through a client")
     for node in ast.walk(src.tree):
         if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and node.name.lstrip(
             "_"
-        ).startswith(_WRITE_VERBS):
+        ).lower().startswith(_WRITE_VERBS):
             yield Finding(node.lineno, f"{node.name}(): connectors expose read operations only")
+        if isinstance(node, ast.ClassDef) and any(
+            _terminal_name(base) == "Connector" for base in node.bases
+        ):
+            for item in node.body:
+                if (
+                    isinstance(item, ast.FunctionDef | ast.AsyncFunctionDef)
+                    and not item.name.startswith("_")
+                    and item.name not in _CONNECTOR_METHODS
+                ):
+                    yield Finding(
+                        item.lineno, f"{item.name}(): a connector offers only the contract's reads"
+                    )
 
 
 # --- tree rules -------------------------------------------------------------------------------
@@ -1034,7 +1080,22 @@ RULES: list[Rule | TreeRule] = [
         adr="ADR-002, ADR-014",
         check=_check_context_construction,
         include=("src/abacus/*",),
-        exclude=("src/abacus/modules/identity/service.py",),
+        exclude=(
+            "src/abacus/modules/identity/service.py",
+            "src/abacus/modules/identity/context.py",
+        ),
+    ),
+    Rule(
+        id="SYS-001",
+        description="Only connections' run loader issues system contexts",
+        adr="ADR-023",
+        check=_check_system_issue,
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/modules/identity/context.py",
+            "src/abacus/modules/identity/api.py",
+            "src/abacus/modules/connections/service.py",
+        ),
     ),
     Rule(
         id="AUTHZ-003",
@@ -1090,11 +1151,7 @@ RULES: list[Rule | TreeRule] = [
         description="Connectors are read-only",
         adr="ADR-040",
         check=_check_connector_read_only,
-        include=(
-            "src/abacus/modules/connections/connector.py",
-            "src/abacus/modules/connections/fake.py",
-            "src/abacus/modules/connections/connectors/*",
-        ),
+        include=("src/abacus/modules/connections/*",),
     ),
     Rule(
         id="ANY-001",

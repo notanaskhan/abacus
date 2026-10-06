@@ -122,7 +122,9 @@ def _deny(ctx: Actor, action: str, layer: Layer) -> Forbidden:
 
 async def _roles(ctx: Actor, resource: Resource) -> set[str]:
     if isinstance(ctx, SystemContext):
-        return {"system"}  # the platform has no firm or engagement role
+        # The platform acts on its run's engagement only: anything else (another engagement, a
+        # firm-level action) has no relationship.
+        return {"system"} if resource.engagement_id == ctx.engagement_id else set()
     roles: set[str] = set()
     if ctx.firm_role is not None:
         roles.add(ctx.firm_role)
@@ -175,7 +177,9 @@ def visible(
         raise ValueError(f"visible() can't apply {action!r}'s conditions; use authorise()")
     _record(action)
     if isinstance(ctx, SystemContext):
-        return true() if rule.decisions.get("system") == "allow" else false()
+        if rule.decisions.get("system") != "allow":
+            return false()
+        return engagement_id == ctx.engagement_id
     firm = rule.decisions.get(ctx.firm_role) if ctx.firm_role is not None else None
     if firm == "allow":
         return true()
