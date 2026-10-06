@@ -376,6 +376,8 @@ def test_ac16_exactly_one_trial_balance_item_and_it_is_tier_a() -> None:
 # --- AC-17 ------------------------------------------------------------------------------------
 
 
+# Timing is measured without coverage instrumentation: AC-17 budgets the generator, not the tracer.
+@pytest.mark.no_cover
 def test_ac17_default_generation_and_exports_finish_within_five_seconds(tmp_path: Path) -> None:
     (tmp_path / "csv").mkdir()
     (tmp_path / "json").mkdir()

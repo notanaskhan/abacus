@@ -178,6 +178,8 @@ Append-only. Newest at the bottom.
   - Not changed (nit): `irrelevant:<artefact>` counts against that artefact's one-flaw limit — harmless.
   - Tests extended independently (Hypothesis now reaches year-end closes, mid-month/weekend/Feb-29/July-fiscal starts; flaw tests also at months=1). `GENERATOR_VERSION` 1.1.0, golden re-pinned. `make check` exit 0: 1,187 tests, 87 s, coverage 98 %.
 
+- `2026-10-06` — PR #3 CI: stage 1 pass; stage 2 failed only AC-17 (6.31 s on the runner with branch coverage). Fixed both sides: JSON now encoded by the C encoder via `default=` and XLSX cells built with a fast path (byte-identical output, golden unchanged; 1.9 s → 1.44 s locally under coverage, 0.64 s without); the independent test author marked the AC-17 timing test `@pytest.mark.no_cover` (AC-17 budgets the generator, not the tracer). `make check` exit 0.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
