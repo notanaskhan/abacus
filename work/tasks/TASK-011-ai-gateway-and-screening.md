@@ -135,15 +135,17 @@ Out: a real provider (Anthropic) and real model calls (a SPEC-000 non-goal); the
 
 ### Interface contract — TASK-011a (tests written independently — ADR-078)
 **Imports**
-- `from abacus.ai_gateway import call, GatewayCall, GatewayResult, Attribution, GatewayRefused, BudgetExceeded, ContextBuilder, AssembledContext, DatasetTooLarge, ContextTooLarge, MAX_ROWS, MODELS, FakeModel, ModelRequest, ModelResponse, ProviderError, configure_provider, prompt, registry, UnknownPrompt, Prompt, cost, estimate_tokens`
-- `from abacus.modules.agents.api import AGENTS, AgentSpec, spec, SCREENER, Citation, Handoff, ScreeningOutput, VerifiedCitation, verify_citations, install_fake_responses, create_screening_run, load_agent_context, screen, ScreeningOutcome, AgentRunNotRunning`
+- `from abacus.ai_gateway import call, GatewayCall, GatewayResult, Attribution, GatewayRefused, BudgetExceeded, ContextBuilder, AssembledContext, DatasetTooLarge, ContextTooLarge, MAX_ROWS, MODELS, FakeModel, ModelRequest, ModelResponse, ProviderError, configure_provider, prompt, registry, UnknownPrompt, Prompt, cost, estimate_tokens` (each one is in `__all__`)
+- `from abacus.modules.agents.api import AGENTS, AgentSpec, spec, SCREENER, Citation, Handoff, ScreeningOutput, VerifiedCitation, verify_citations, install_fake_responses, create_screening_run, load_agent_context, screen, fail_run, ScreeningOutcome, AgentRunNotRunning, SheetLayoutError`
 - `from abacus.modules.agents.citations import facts, SheetFacts` (module-internal; unit tests only)
-- `from abacus.modules.identity.api import AgentContext, agent_context_for_run, initiator_context, agent_may_hold, authorise, visible, Resource, Forbidden`
+- `from abacus.modules.identity.api import AgentContext, agent_context_for_run, is_active_member, NoActiveTenant, agent_may_hold, authorise, visible, Resource, Forbidden`
+- `from abacus.modules.evidence.api import CODE_COLUMN, NAME_COLUMN, DEBIT_COLUMN, CREDIT_COLUMN, FIRST_LINE_ROW, TOTAL_LABEL` (the rendered trial-balance layout)
 
 **AgentContext and `authorise` (§1, ADR-025)**
-- `agent_context_for_run(*, tenant_id, run_id, agent_id, engagement_id, task_scope, initiator: AuthContext)`:
+- `await agent_context_for_run(*, tenant_id, run_id, agent_id, engagement_id, task_scope, initiator_user_id)`:
+  - resolves the initiator's live active membership inside identity; none → `NoActiveTenant`. No function hands another module a person's `AuthContext`;
   - `tenant.actor_kind == "agent"`, `tenant.actor_id == f"agent:{agent_id}:{run_id}"`;
-  - may be called only from `agents/service.py` (SYS-001); hand-built `AgentContext(...)` is CTX-001.
+  - may be called only from `agents/service.py` (SYS-001); a hand-built `AgentContext(...)`, or `replace(agent, …)`, is CTX-001.
 - The agent holds the role `agent` on its own engagement only. Another engagement or a firm resource → `Forbidden` at `relationship`.
 - `task_scope` grants an action only if the run's `task_scope` contains it; otherwise `Forbidden` at `role`. `agent: deny` actions (`evidence.accept`, `evidence.reject`, `fulfilment.confirm`, `suggestion.resolve`, …) → `role`, whatever the scope.
 - **Intersection, checked live:** the initiator must also be allowed the action on that engagement, otherwise `Forbidden` at `delegation`.
@@ -151,7 +153,7 @@ Out: a real provider (Anthropic) and real model calls (a SPEC-000 non-goal); the
   - Covers: an initiator removed from the engagement, an initiator who is a `reviewer`-only member where the action needs more, and an archived engagement (writes → `attribute`).
 - `visible(agent, read_action, col)` = the agent's engagement AND what the initiator can see.
 - Logs carry `agent_id`, `agent_run_id`, `on_behalf_of`.
-- `initiator_context(tenant_id, user_id)` → `AuthContext` from live active memberships. A revoked or absent membership → `NoActiveTenant`.
+- `is_active_member(tenant_id, user_id)` → whether the person has an active membership in that firm now.
 - `agent_may_hold(action)` is True iff the matrix says `agent: task_scope`.
 
 **Prompt registry**
@@ -161,7 +163,7 @@ Out: a real provider (Anthropic) and real model calls (a SPEC-000 non-goal); the
 **ContextBuilder (§4)**
 - Layers are always rendered in the order instructions, firm, engagement, examples, task. Empty layers are omitted. Each layer renders as `## <name>\n<text>`.
 - Budgets are in tokens (4 chars each; defaults instructions 1000, firm 500, engagement 500, examples 1000, task 4000). Non-task text over budget is cut and listed in `.truncated`.
-- `.text("task", …)` → `ValueError`.
+- `.text("task", …)` and `.text("instructions", …)` → `ValueError`. Instructions are the registered prompt's, sent as the system message.
 - `.task(data, untrusted=names, trim=None)`:
   - trusted fields are rendered as one JSON line;
   - each untrusted field is rendered as `<untrusted name="x">\n<json>\n</untrusted>`, with `<` escaped so content can never close the block;
@@ -182,7 +184,8 @@ Out: a real provider (Anthropic) and real model calls (a SPEC-000 non-goal); the
 - Valid JSON for the schema → `status="ok"`, `attempts=1`.
 - Invalid, then valid → `"repaired"`, `attempts=2`; the second request's user text holds a `## repair` section with the validation errors.
 - Invalid twice → `"escalated"`, `output=None`.
-- **Budget:** before each attempt, the estimated cost (`cost(tier, estimate_tokens(system+user), max_output_tokens)`) plus what was spent must be ≤ `budget_usd`. On the first attempt → `BudgetExceeded`; on the repair → `escalated`. Either way a `budget_refused` usage row is recorded.
+- **Budget:** before each attempt, the estimated cost (`cost(tier, estimate_tokens(system+user), max_output_tokens)`) plus what was spent must be ≤ `budget_usd`. With an `agent_run_id`, the budget is the run's: the `cost_usd` of that run's earlier usage records (including retried `screen` calls) counts too.
+- `call` must not run inside a unit of work; it commits usage per attempt. On the first attempt → `BudgetExceeded`; on the repair → `escalated`. Either way a `budget_refused` usage row is recorded.
 - `ProviderError` is recorded as `provider_error` and re-raised.
 - **One `usage_records` row per attempt:**
   - tenant, engagement, agent_id, agent_run_id, prompt_id, prompt_version, model, tier, input and output tokens, `cost_usd`, `outcome ∈ {ok, invalid, repaired, budget_refused, provider_error}` and `inputs_hash` (sha256 of `"<ref>\n<user>"`);
@@ -208,24 +211,28 @@ Out: a real provider (Anthropic) and real model calls (a SPEC-000 non-goal); the
   - `quote_mismatch` when the quote differs from the cell text;
   - `value_mismatch` when the value differs from the cell number;
   - otherwise `verified=True`.
-- `facts(xlsx_bytes)`:
-  - the Total row is the row with an empty column A and `Total` in column B;
-  - `total_debit` and `total_credit` are summed by code from the line rows;
-  - `total_row_matches` compares those sums with the sheet's own Total row;
-  - `line_count` and `account_names` come from the line rows;
-  - an account named `Total` with a code is not the Total row;
-  - no Total row → `ValueError`.
+- `facts(xlsx_bytes)` is strict and uses the evidence layout constants:
+  - exactly one Total row (blank code column, `TOTAL_LABEL` in the name column);
+  - every row from `FIRST_LINE_ROW` to the Total row has an account code and two amounts;
+  - no amount appears after the Total row;
+  - anything else → `SheetLayoutError` (a `ValueError`). Examples: no Total row, two Total rows, a blank-code line named `Total` above the real one, a missing amount;
+  - `total_debit` and `total_credit` are summed by code from the line rows, and `total_row_matches` compares them with the sheet's own Total row;
+  - `line_count` and `account_names` come from the line rows. An account named `Total` with a code is an ordinary line.
 
 **Agents service (§6, Q1, Q2)**
 - `evidence_version.created` now carries `requested_by`. A retrieval sets it to the run's `on_behalf_of`; the default is None.
 - `create_screening_run(tenant_id, evidence_version_id, source_event_id, requested_by)`:
-  - `requested_by=None` or a version without a snapshot → `None`, with nothing written;
+  - `requested_by=None`, a person without an active membership in the firm, or a version without a snapshot → `None`, with nothing written (never an error that an at-least-once event would retry forever);
+  - the audit actor of `agent_run.started` is `agents:evidence.screener`;
   - otherwise inserts an `agent_runs` row (status `running`, `spec_version`, `task_scope` from the spec, `initiator_user_id=requested_by`) and records `agent_run.started`;
   - the same `(agent, source_event_id)` again → the same run id, with no new row or audit event.
 - `load_agent_context(tenant_id, run_id)`:
   - an unknown run → `NotFound`;
   - a finished run → `AgentRunNotRunning(status)`;
-  - an initiator without an active membership → `NoActiveTenant`.
+  - an initiator without an active membership → `NoActiveTenant`;
+  - the context's task scope is the run's `task_scope` ∩ the current spec's;
+  - a run whose `spec_version` differs from the spec → run failed (`spec_version_changed`) and `AgentRunNotRunning("failed")`.
+- `fail_run(tenant_id, run_id, code)` ends a running run as `failed` with that code and records `agent_run.failed`. It returns True. On a run that has already ended it returns False and writes nothing.
 - `screen(agent)` with `install_fake_responses(FakeModel())` on a retrieved trial balance:
   - `status="completed"`, and one `screening_results` row with `created_by_kind='agent'` (AC-14), the action, confidence, rationale, verified citations and `unverified`;
   - the run is `completed` with `context_hash` and `output`;
@@ -237,16 +244,33 @@ Out: a real provider (Anthropic) and real model calls (a SPEC-000 non-goal); the
 - A responder citing a wrong value or a non-existent cell → the result is still recorded, with `verified=false` and a reason, and the citation is listed in `unverified` (AC-15).
 - Invalid output twice → run `escalated`, no `screening_results` row, audit event `agent_run.escalated`.
 - A confidence below 0.5 → action `needs_revision`, whatever the model proposed.
+- Code overrides the model (ADR-066). The action is forced to `needs_revision`, and a note added to `unverified`, when:
+  - any citation fails verification;
+  - the line debits and credits differ;
+  - the sheet's Total row differs from its lines.
+
+  When the account list was trimmed to fit the budget, `unverified` notes it and the action is kept.
+- Terminal errors in `screen` fail the run, then re-raise:
+  - `SheetLayoutError` → `unreadable_evidence`;
+  - `DatasetTooLarge`/`ContextTooLarge` → `context_too_large`;
+  - `BudgetExceeded` → `budget_exceeded`;
+  - `GatewayRefused` → `gateway_refused`;
+  - `Forbidden` → `forbidden`;
+  - `NotFound` → `not_found`.
+
+  `ProviderError` leaves the run `running`, so it can be retried.
 - Screening the same run twice → the second raises `AgentRunNotRunning`, and there is still one result.
-- An initiator removed from the engagement before `screen` → `Forbidden` (`delegation`), with no result.
+- An initiator removed from the engagement before `screen` → `Forbidden` (`delegation`), with no result; the run is failed (`forbidden`).
 - Database: `screening_results` and `usage_records` are insert-only for `abacus_app`. `agent_runs` is forward-only: a finished run can't be updated; `context_hash` and `output` are write-once.
+  - A screening result's `evidence_version_id` must be its run's.
+  - A usage record's `engagement_id` must be its run's (composite foreign keys).
 
 **Rules**
-- **PROMPT-001** flags, outside `ai_gateway`:
+- **PROMPT-001** flags, outside `ai_gateway`, with import aliases and keyword forms counting:
   - `ModelRequest(...)`;
-  - `.text("instructions", <literal or f-string>)`;
-  - `GatewayCall(prompt=<literal not matching id@vN>)`.
-- **AGENT-001** flags `authorise(x, "<agent: deny action>", …)` unless `x` is a parameter annotated `AuthContext`.
+  - `.text("instructions", …)` and `.text(layer="instructions", …)`;
+  - `GatewayCall` whose prompt (second positional argument or `prompt=`) is an f-string, a concatenation, or a literal not matching `id@vN`.
+- **AGENT-001:** for any action the matrix gives agents no grant for (no `agent` entry, or `deny`), `authorise(x, action, …)` is flagged unless `x` is a parameter typed `AuthContext` or `SystemContext`. Covers aliased `authorise` and the `ctx=`/`action=` keywords.
 - **BOUND-002:** agents depend on identity, engagements, organisations, evidence and requests only.
 
 ### Approval file text
@@ -304,6 +328,7 @@ reason: TASK-011 — AI gateway, agent specs and context, citations, usage recor
 - `2026-10-06` — Design drafted (§1–8, Q1–Q5) for founder review, while TASK-010b (PR #11) awaits review.
 - `2026-10-06` — Approved with all recommendations; approval file written at the founder's instruction. 011a started on `task-011a-gateway` from main (it doesn't depend on 010b).
 - `2026-10-06` — 011a implemented: gateway, context builder, prompts, specs, handoff and citations, the agents service, PROMPT-001 and AGENT-001. Smoke-tested end to end with the fake model. The founder chose the reach rule for agent-only actions (`screening.run`): the initiator must hold `evidence.read` (ADR-025 clarified). The initiator is now carried on `evidence_version.created` (`requested_by`), and screening figures are computed from the evidence sheet, so agents doesn't depend on ledger or connections. Contract written; independent tests and reviews next.
+- `2026-10-06` — The security review found one blocker, now fixed: a spoofed Total row could hide an unbalanced trial balance. Fixed with it: should-fix items from both reviews, applied to the code and to the contract above. The first test author stalled; its partial integration tests are carried forward.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -314,7 +339,11 @@ reason: TASK-011 — AI gateway, agent specs and context, citations, usage recor
 | The task layer trims a named list or refuses; it is never cut mid-text | Cutting could sever an `<untrusted>` block | No |
 
 ## Gotchas and discoveries
--
+- 011b: `screen` is one activity. A retry after a failed final write calls the model again; the spend counts against the run's budget.
+- 011b: the spec fields `limits.max_steps`, `limits.max_seconds`, `escalation_tier`, `input_schema` and `output_schema` are validated but not yet enforced. Enforce them, or drop them, when the workflow lands.
+- 011b: `requested_by` is trusted from the `evidence_version.created` event, which is written in the same transaction as the version. The workflow must take it from the relayed event only. Manual uploads don't pass it yet, so they aren't screened.
+- 011b: `agent_context_for_run` builds the initiator with `mfa_at=None`, so an agent can never be delegated an `mfa_recent` action.
+- Later: the `ai_gateway` table-ownership rule (OWN-001 covers only `modules/*`). Screening checks the sheet against itself, not against the ledger; a ledger cross-check is possible later.
 
 ## Questions for the human
 -
