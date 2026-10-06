@@ -42,7 +42,7 @@ Out: the client portal, a connections UI, SSO administration, styling beyond def
 - `.claude/skills/frontend-feature/SKILL.md`
 
 ## Plan
-- [ ] Plan approved by human (required for amber and red)
+- [x] Plan approved by human (founder, 2026-10-07: all recommendations, Q1–Q5)
 
 ### Design (for founder review)
 Amber overall. The read routes touch red-zone modules (requests, evidence, agents, `abacus.api`), so those diffs get a red line-by-line review, independent tests and both reviewers.
@@ -136,6 +136,12 @@ ESLint bans `dangerouslySetInnerHTML` everywhere and bans `fetch`, `XMLHttpReque
 ## Progress log
 - `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder. Not started.
 - `2026-10-07` — Plan drafted (§1–7, Q1–Q5) for founder review while PR #13 (TASK-011b) awaits review. Found that `make dev` points at missing entry points, and that no route returns evidence or screening for the board.
+- `2026-10-07` — Approved with all recommendations:
+  - Q1: three reads joined in the SPA;
+  - Q2: fake OIDC with hand-rolled PKCE;
+  - Q3: allowlisted packages added, plus `@tailwindcss/vite` and `@testing-library/dom` allowlisted;
+  - Q4: the approval file was written at the founder's instruction;
+  - Q5: the journey runs nightly.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -148,5 +154,5 @@ ESLint bans `dangerouslySetInnerHTML` everywhere and bans `fetch`, `XMLHttpReque
 -
 
 ## Handoff
-- **Current state:** Plan drafted; awaiting founder approval (amber with red parts). No code.
-- **Exact next step:** On approval, write `work/approvals/TASK-012.yaml` with the Q4 paths, then step 1.
+- **Current state:** Approved; approval file written. Step 1 (backend reads) in progress.
+- **Exact next step:** Backend read routes, then the contract and independent tests.
