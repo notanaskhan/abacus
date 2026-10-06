@@ -2,7 +2,7 @@
   "events": [
     {
       "eventId": "1",
-      "eventTime": "2026-10-06T13:24:46.805704459Z",
+      "eventTime": "2026-10-06T13:37:21.774793377Z",
       "eventType": "EVENT_TYPE_WORKFLOW_EXECUTION_STARTED",
       "taskId": "1048587",
       "workflowExecutionStartedEventAttributes": {
@@ -10,38 +10,37 @@
           "name": "retrieval"
         },
         "taskQueue": {
-          "name": "retrieval",
+          "name": "abacus-recorder",
           "kind": "TASK_QUEUE_KIND_NORMAL"
         },
         "input": {
           "payloads": [
             {
               "metadata": {
-                "encoding": "YmluYXJ5L2FiYWN1cy1lbmNyeXB0ZWQ=",
-                "encryption-key-id": "cGxhdGZvcm0tdjE="
+                "encoding": "anNvbi9wbGFpbg=="
               },
-              "data": "TByMzaN9Vd/kS46jH82oy0rdyWV7yN7LLEPUW96EDBK6J4L36CMEfsMQGH/aWfmx2nVHOqY+ZPY392PUVuf5eC8JBgpFw+Vso9wfzwEIPl5InMwiCTmxl1XJt8mpVx3k3rX5uwky1i/vZguk7rc4dlHhxVsdDaLViaw850VFk6tckdTo0tfkQePUqpTy7fR0mtWrXcxuT8iMHw=="
+              "data": "eyJydW5faWQiOiIzYTI4NDNkNy0wMTUxLTRmOWYtODk5My02NWZlNTNiMDk0NzkiLCJ0ZW5hbnRfaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEifQ=="
             }
           ]
         },
         "workflowTaskTimeout": "10s",
-        "originalExecutionRunId": "01a11163-5c55-7abd-a5fc-d34babd27d47",
-        "identity": "57004@Anass-MacBook-Pro.local",
-        "firstExecutionRunId": "01a11163-5c55-7abd-a5fc-d34babd27d47",
+        "originalExecutionRunId": "01a1116e-e16e-7c17-a9ea-cea445917093",
+        "identity": "worker@recorder",
+        "firstExecutionRunId": "01a1116e-e16e-7c17-a9ea-cea445917093",
         "attempt": 1,
         "firstWorkflowTaskBackoff": "0s",
-        "workflowId": "retrieval:fe716e5d-d25b-4995-86ff-4df026c8be0f:2025-01-01_2025-12-31",
+        "workflowId": "retrieval:3a2843d7-0151-4f9f-8993-65fe53b09479",
         "priority": {}
       }
     },
     {
       "eventId": "2",
-      "eventTime": "2026-10-06T13:24:46.805770750Z",
+      "eventTime": "2026-10-06T13:37:21.774878377Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
       "taskId": "1048588",
       "workflowTaskScheduledEventAttributes": {
         "taskQueue": {
-          "name": "retrieval",
+          "name": "abacus-recorder",
           "kind": "TASK_QUEUE_KIND_NORMAL"
         },
         "startToCloseTimeout": "10s",
@@ -50,30 +49,30 @@
     },
     {
       "eventId": "3",
-      "eventTime": "2026-10-06T13:24:46.809149750Z",
+      "eventTime": "2026-10-06T13:37:21.778019127Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
       "taskId": "1048593",
       "workflowTaskStartedEventAttributes": {
         "scheduledEventId": "2",
-        "identity": "57004@Anass-MacBook-Pro.local",
-        "requestId": "7ac7435e-035e-4437-905b-b5c72adf82ae",
-        "historySizeBytes": "529",
+        "identity": "worker@recorder",
+        "requestId": "0772fd72-85ab-472c-bbcd-0650120ab111",
+        "historySizeBytes": "519",
         "workerVersion": {
-          "buildId": "3b1cc2100dec669454a734dfca56616c"
+          "buildId": "recorder"
         }
       }
     },
     {
       "eventId": "4",
-      "eventTime": "2026-10-06T13:24:46.818422792Z",
+      "eventTime": "2026-10-06T13:37:21.786036252Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
       "taskId": "1048598",
       "workflowTaskCompletedEventAttributes": {
         "scheduledEventId": "2",
         "startedEventId": "3",
-        "identity": "57004@Anass-MacBook-Pro.local",
+        "identity": "worker@recorder",
         "workerVersion": {
-          "buildId": "3b1cc2100dec669454a734dfca56616c"
+          "buildId": "recorder"
         },
         "sdkMetadata": {
           "coreUsedFlags": [
@@ -89,7 +88,7 @@
     },
     {
       "eventId": "5",
-      "eventTime": "2026-10-06T13:24:46.818506917Z",
+      "eventTime": "2026-10-06T13:37:21.786131044Z",
       "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
       "taskId": "1048599",
       "activityTaskScheduledEventAttributes": {
@@ -98,7 +97,7 @@
           "name": "retrieval.pull_raw"
         },
         "taskQueue": {
-          "name": "retrieval",
+          "name": "abacus-recorder",
           "kind": "TASK_QUEUE_KIND_NORMAL"
         },
         "header": {},
@@ -106,10 +105,9 @@
           "payloads": [
             {
               "metadata": {
-                "encoding": "YmluYXJ5L2FiYWN1cy1lbmNyeXB0ZWQ=",
-                "encryption-key-id": "cGxhdGZvcm0tdjE="
+                "encoding": "anNvbi9wbGFpbg=="
               },
-              "data": "2aSdVw8SuEhFsHMMC5oWcYaWn/3rbWifyxajcaJgUB+VXpXQvRRk8F7cH7tU+b5awkVYguttlr07PuP6Z9P+MmU8Xyj6rPPfAVgXwr9MD5sHTWg/UBy7NDFhhPVovyTn8ywWDaz3hCcuNUZu03aCYc7QXP7zSSqocQ9sgS7jOX2SmkCP4xDOvJxeBBrnvgU45TiZDn/BaKlEXw=="
+              "data": "eyJydW5faWQiOiIzYTI4NDNkNy0wMTUxLTRmOWYtODk5My02NWZlNTNiMDk0NzkiLCJ0ZW5hbnRfaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEifQ=="
             }
           ]
         },
@@ -130,51 +128,49 @@
     },
     {
       "eventId": "6",
-      "eventTime": "2026-10-06T13:24:46.818661750Z",
+      "eventTime": "2026-10-06T13:37:21.786264627Z",
       "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
-      "taskId": "1048609",
+      "taskId": "1048603",
       "activityTaskStartedEventAttributes": {
         "scheduledEventId": "5",
-        "identity": "57004@Anass-MacBook-Pro.local",
-        "requestId": "9f1f4315-51d4-4cfb-a560-fa2e3990c7a1",
+        "identity": "worker@recorder",
+        "requestId": "e5edac35-c478-4f8c-b0e8-3111e2603bfd",
         "attempt": 1,
         "workerVersion": {
-          "buildId": "3b1cc2100dec669454a734dfca56616c"
+          "buildId": "recorder"
         }
       }
     },
     {
       "eventId": "7",
-      "eventTime": "2026-10-06T13:24:46.845284084Z",
+      "eventTime": "2026-10-06T13:37:21.813264919Z",
       "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
-      "taskId": "1048610",
+      "taskId": "1048604",
       "activityTaskCompletedEventAttributes": {
         "result": {
           "payloads": [
             {
               "metadata": {
-                "encoding": "YmluYXJ5L2FiYWN1cy1lbmNyeXB0ZWQ=",
-                "encryption-key-id": "cGxhdGZvcm0tdjE="
-              },
-              "data": "KeqaWsLSuz2EE1VQNLPmHRcvjC86kGt/RkKBYfzxlDMezObquCg12o5YQIySsjnSr9YRews="
+                "encoding": "YmluYXJ5L251bGw="
+              }
             }
           ]
         },
         "scheduledEventId": "5",
         "startedEventId": "6",
-        "identity": "57004@Anass-MacBook-Pro.local"
+        "identity": "worker@recorder"
       }
     },
     {
       "eventId": "8",
-      "eventTime": "2026-10-06T13:24:46.845319167Z",
+      "eventTime": "2026-10-06T13:37:21.813298086Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
-      "taskId": "1048611",
+      "taskId": "1048605",
       "workflowTaskScheduledEventAttributes": {
         "taskQueue": {
-          "name": "57004@Anass-MacBook-Pro.local-24c89568dcba42aeb7a3135075db0e13",
+          "name": "sticky@recorder",
           "kind": "TASK_QUEUE_KIND_STICKY",
-          "normalName": "retrieval"
+          "normalName": "abacus-recorder"
         },
         "startToCloseTimeout": "10s",
         "attempt": 1
@@ -182,30 +178,30 @@
     },
     {
       "eventId": "9",
-      "eventTime": "2026-10-06T13:24:46.846506667Z",
+      "eventTime": "2026-10-06T13:37:21.815630544Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
-      "taskId": "1048615",
+      "taskId": "1048609",
       "workflowTaskStartedEventAttributes": {
         "scheduledEventId": "8",
-        "identity": "57004@Anass-MacBook-Pro.local",
-        "requestId": "6ed1bcbc-75e6-45ed-836b-73a21f02e64b",
-        "historySizeBytes": "1583",
+        "identity": "worker@recorder",
+        "requestId": "9b764077-fe46-477d-966c-8eda877dfe6a",
+        "historySizeBytes": "1585",
         "workerVersion": {
-          "buildId": "3b1cc2100dec669454a734dfca56616c"
+          "buildId": "recorder"
         }
       }
     },
     {
       "eventId": "10",
-      "eventTime": "2026-10-06T13:24:46.849085792Z",
+      "eventTime": "2026-10-06T13:37:21.821457794Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
-      "taskId": "1048620",
+      "taskId": "1048614",
       "workflowTaskCompletedEventAttributes": {
         "scheduledEventId": "8",
         "startedEventId": "9",
-        "identity": "57004@Anass-MacBook-Pro.local",
+        "identity": "worker@recorder",
         "workerVersion": {
-          "buildId": "3b1cc2100dec669454a734dfca56616c"
+          "buildId": "recorder"
         },
         "sdkMetadata": {},
         "meteringMetadata": {}
@@ -213,16 +209,16 @@
     },
     {
       "eventId": "11",
-      "eventTime": "2026-10-06T13:24:46.849113875Z",
+      "eventTime": "2026-10-06T13:37:21.821482044Z",
       "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
-      "taskId": "1048621",
+      "taskId": "1048615",
       "activityTaskScheduledEventAttributes": {
         "activityId": "2",
         "activityType": {
           "name": "retrieval.normalise_raw"
         },
         "taskQueue": {
-          "name": "retrieval",
+          "name": "abacus-recorder",
           "kind": "TASK_QUEUE_KIND_NORMAL"
         },
         "header": {},
@@ -230,10 +226,9 @@
           "payloads": [
             {
               "metadata": {
-                "encoding": "YmluYXJ5L2FiYWN1cy1lbmNyeXB0ZWQ=",
-                "encryption-key-id": "cGxhdGZvcm0tdjE="
+                "encoding": "anNvbi9wbGFpbg=="
               },
-              "data": "Ck7RWL4d6O7oa0gqphJwwBicna/ptVGqpweoNBlGIDXzub1ZWKMPnMgymR/W1MjALl/waBT2LEvacjDK1nYMIxofarL6rxnmYfeSJx1o5bGz7ODQWcCAqyGTBzhMjV5ZB1n682OaoH1LNztvk+nR67wsdk9Y0jWdbL6Dxs9sn4BxTD8wFrkoCQqPYLAPKyADdBHvHCC1vyGcvw=="
+              "data": "eyJydW5faWQiOiIzYTI4NDNkNy0wMTUxLTRmOWYtODk5My02NWZlNTNiMDk0NzkiLCJ0ZW5hbnRfaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEifQ=="
             }
           ]
         },
@@ -254,51 +249,49 @@
     },
     {
       "eventId": "12",
-      "eventTime": "2026-10-06T13:24:46.849127167Z",
+      "eventTime": "2026-10-06T13:37:21.821495044Z",
       "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
-      "taskId": "1048624",
+      "taskId": "1048618",
       "activityTaskStartedEventAttributes": {
         "scheduledEventId": "11",
-        "identity": "57004@Anass-MacBook-Pro.local",
-        "requestId": "d35f3eb1-4e37-4e8e-b386-e5c7584bf9c4",
+        "identity": "worker@recorder",
+        "requestId": "27321e6f-500e-4335-91bc-9335201a775b",
         "attempt": 1,
         "workerVersion": {
-          "buildId": "3b1cc2100dec669454a734dfca56616c"
+          "buildId": "recorder"
         }
       }
     },
     {
       "eventId": "13",
-      "eventTime": "2026-10-06T13:24:46.860898334Z",
+      "eventTime": "2026-10-06T13:37:21.832894086Z",
       "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
-      "taskId": "1048625",
+      "taskId": "1048619",
       "activityTaskCompletedEventAttributes": {
         "result": {
           "payloads": [
             {
               "metadata": {
-                "encoding": "YmluYXJ5L2FiYWN1cy1lbmNyeXB0ZWQ=",
-                "encryption-key-id": "cGxhdGZvcm0tdjE="
-              },
-              "data": "E6wjDsA0lJN6L1yBCgARR5nca6699yuM7/5SjrZYNQu2BRup35UdQTvoVA04SJziyNCf2Sw="
+                "encoding": "YmluYXJ5L251bGw="
+              }
             }
           ]
         },
         "scheduledEventId": "11",
         "startedEventId": "12",
-        "identity": "57004@Anass-MacBook-Pro.local"
+        "identity": "worker@recorder"
       }
     },
     {
       "eventId": "14",
-      "eventTime": "2026-10-06T13:24:46.860906459Z",
+      "eventTime": "2026-10-06T13:37:21.832902377Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
-      "taskId": "1048626",
+      "taskId": "1048620",
       "workflowTaskScheduledEventAttributes": {
         "taskQueue": {
-          "name": "57004@Anass-MacBook-Pro.local-24c89568dcba42aeb7a3135075db0e13",
+          "name": "sticky@recorder",
           "kind": "TASK_QUEUE_KIND_STICKY",
-          "normalName": "retrieval"
+          "normalName": "abacus-recorder"
         },
         "startToCloseTimeout": "10s",
         "attempt": 1
@@ -306,30 +299,30 @@
     },
     {
       "eventId": "15",
-      "eventTime": "2026-10-06T13:24:46.861803834Z",
+      "eventTime": "2026-10-06T13:37:21.833816044Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
-      "taskId": "1048630",
+      "taskId": "1048624",
       "workflowTaskStartedEventAttributes": {
         "scheduledEventId": "14",
-        "identity": "57004@Anass-MacBook-Pro.local",
-        "requestId": "0ebcbf92-0053-4262-b49a-ac016859bab4",
-        "historySizeBytes": "2611",
+        "identity": "worker@recorder",
+        "requestId": "7c041ab2-fac3-4ca4-b64e-3be5dce2ca4c",
+        "historySizeBytes": "2625",
         "workerVersion": {
-          "buildId": "3b1cc2100dec669454a734dfca56616c"
+          "buildId": "recorder"
         }
       }
     },
     {
       "eventId": "16",
-      "eventTime": "2026-10-06T13:24:46.868105584Z",
+      "eventTime": "2026-10-06T13:37:21.836019461Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
-      "taskId": "1048635",
+      "taskId": "1048629",
       "workflowTaskCompletedEventAttributes": {
         "scheduledEventId": "14",
         "startedEventId": "15",
-        "identity": "57004@Anass-MacBook-Pro.local",
+        "identity": "worker@recorder",
         "workerVersion": {
-          "buildId": "3b1cc2100dec669454a734dfca56616c"
+          "buildId": "recorder"
         },
         "sdkMetadata": {},
         "meteringMetadata": {}
@@ -337,16 +330,16 @@
     },
     {
       "eventId": "17",
-      "eventTime": "2026-10-06T13:24:46.868128792Z",
+      "eventTime": "2026-10-06T13:37:21.836041669Z",
       "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
-      "taskId": "1048636",
+      "taskId": "1048630",
       "activityTaskScheduledEventAttributes": {
         "activityId": "3",
         "activityType": {
           "name": "retrieval.validate_run"
         },
         "taskQueue": {
-          "name": "retrieval",
+          "name": "abacus-recorder",
           "kind": "TASK_QUEUE_KIND_NORMAL"
         },
         "header": {},
@@ -354,10 +347,9 @@
           "payloads": [
             {
               "metadata": {
-                "encoding": "YmluYXJ5L2FiYWN1cy1lbmNyeXB0ZWQ=",
-                "encryption-key-id": "cGxhdGZvcm0tdjE="
+                "encoding": "anNvbi9wbGFpbg=="
               },
-              "data": "r6dntsUPKGuFhsj8D6o3zMIVOCbvK+GlD+Y1P8s2FncEJk+0iP6BWN0mtPTMV86NjisAj+snaheZhrYrZD6E3Qn7E2kesaWvL/ri+GYLpEd71nsoNVW8bUUzDoTepAGW30DMdh2V1aLtc0FVxArWQQ0dF7dbJryMi/CeQXlzV3mvvnRzz4i7UAvLdHw5aKqpWVYIyg7xAnxXdg=="
+              "data": "eyJydW5faWQiOiIzYTI4NDNkNy0wMTUxLTRmOWYtODk5My02NWZlNTNiMDk0NzkiLCJ0ZW5hbnRfaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEifQ=="
             }
           ]
         },
@@ -378,51 +370,49 @@
     },
     {
       "eventId": "18",
-      "eventTime": "2026-10-06T13:24:46.868142250Z",
+      "eventTime": "2026-10-06T13:37:21.836052419Z",
       "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
-      "taskId": "1048639",
+      "taskId": "1048633",
       "activityTaskStartedEventAttributes": {
         "scheduledEventId": "17",
-        "identity": "57004@Anass-MacBook-Pro.local",
-        "requestId": "7d4f3799-cba6-4677-8c38-856d88996360",
+        "identity": "worker@recorder",
+        "requestId": "9e010b45-c447-4b43-b2c9-2a7d8b2e53a3",
         "attempt": 1,
         "workerVersion": {
-          "buildId": "3b1cc2100dec669454a734dfca56616c"
+          "buildId": "recorder"
         }
       }
     },
     {
       "eventId": "19",
-      "eventTime": "2026-10-06T13:24:46.880637042Z",
+      "eventTime": "2026-10-06T13:37:21.847642544Z",
       "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
-      "taskId": "1048640",
+      "taskId": "1048634",
       "activityTaskCompletedEventAttributes": {
         "result": {
           "payloads": [
             {
               "metadata": {
-                "encoding": "YmluYXJ5L2FiYWN1cy1lbmNyeXB0ZWQ=",
-                "encryption-key-id": "cGxhdGZvcm0tdjE="
-              },
-              "data": "RGCLQHHVOgy7kyA+Yg7pkzZ1+n2RMGcDdbBSm28qrmd1eOV3DSmUygBf/b405BklrtP5st8="
+                "encoding": "YmluYXJ5L251bGw="
+              }
             }
           ]
         },
         "scheduledEventId": "17",
         "startedEventId": "18",
-        "identity": "57004@Anass-MacBook-Pro.local"
+        "identity": "worker@recorder"
       }
     },
     {
       "eventId": "20",
-      "eventTime": "2026-10-06T13:24:46.880645292Z",
+      "eventTime": "2026-10-06T13:37:21.847649586Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
-      "taskId": "1048641",
+      "taskId": "1048635",
       "workflowTaskScheduledEventAttributes": {
         "taskQueue": {
-          "name": "57004@Anass-MacBook-Pro.local-24c89568dcba42aeb7a3135075db0e13",
+          "name": "sticky@recorder",
           "kind": "TASK_QUEUE_KIND_STICKY",
-          "normalName": "retrieval"
+          "normalName": "abacus-recorder"
         },
         "startToCloseTimeout": "10s",
         "attempt": 1
@@ -430,30 +420,30 @@
     },
     {
       "eventId": "21",
-      "eventTime": "2026-10-06T13:24:46.881670500Z",
+      "eventTime": "2026-10-06T13:37:21.848381169Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
-      "taskId": "1048645",
+      "taskId": "1048639",
       "workflowTaskStartedEventAttributes": {
         "scheduledEventId": "20",
-        "identity": "57004@Anass-MacBook-Pro.local",
-        "requestId": "0ca9f096-d64c-494a-ac20-598201f5e93d",
-        "historySizeBytes": "3638",
+        "identity": "worker@recorder",
+        "requestId": "3d03e83f-3e46-4cd8-862d-5626b4c18c5d",
+        "historySizeBytes": "3664",
         "workerVersion": {
-          "buildId": "3b1cc2100dec669454a734dfca56616c"
+          "buildId": "recorder"
         }
       }
     },
     {
       "eventId": "22",
-      "eventTime": "2026-10-06T13:24:46.884116125Z",
+      "eventTime": "2026-10-06T13:37:21.850513378Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
-      "taskId": "1048650",
+      "taskId": "1048644",
       "workflowTaskCompletedEventAttributes": {
         "scheduledEventId": "20",
         "startedEventId": "21",
-        "identity": "57004@Anass-MacBook-Pro.local",
+        "identity": "worker@recorder",
         "workerVersion": {
-          "buildId": "3b1cc2100dec669454a734dfca56616c"
+          "buildId": "recorder"
         },
         "sdkMetadata": {},
         "meteringMetadata": {}
@@ -461,16 +451,16 @@
     },
     {
       "eventId": "23",
-      "eventTime": "2026-10-06T13:24:46.884140625Z",
+      "eventTime": "2026-10-06T13:37:21.850533419Z",
       "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
-      "taskId": "1048651",
+      "taskId": "1048645",
       "activityTaskScheduledEventAttributes": {
         "activityId": "4",
         "activityType": {
           "name": "retrieval.snapshot"
         },
         "taskQueue": {
-          "name": "retrieval",
+          "name": "abacus-recorder",
           "kind": "TASK_QUEUE_KIND_NORMAL"
         },
         "header": {},
@@ -478,10 +468,9 @@
           "payloads": [
             {
               "metadata": {
-                "encoding": "YmluYXJ5L2FiYWN1cy1lbmNyeXB0ZWQ=",
-                "encryption-key-id": "cGxhdGZvcm0tdjE="
+                "encoding": "anNvbi9wbGFpbg=="
               },
-              "data": "Ef1j6E8/CDiy242l3tXHzXXUCABpwJswibK5346WoLca8k1BUy7j/1riMO4wxfTs+Q81zdeI6DYx8B1Fa++ie+/Xym1RjyINWbrJPXERsD58GFvORx4U9pAXVLqRDwmbMECHdCDu91MGiYMef4VETQ9CBNfpzi/QsbQNnJLElty3fc/Wv7Y9cV0N7qVztdtzksCjitR2fj3Vew=="
+              "data": "eyJydW5faWQiOiIzYTI4NDNkNy0wMTUxLTRmOWYtODk5My02NWZlNTNiMDk0NzkiLCJ0ZW5hbnRfaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEifQ=="
             }
           ]
         },
@@ -502,51 +491,49 @@
     },
     {
       "eventId": "24",
-      "eventTime": "2026-10-06T13:24:46.884154667Z",
+      "eventTime": "2026-10-06T13:37:21.850544628Z",
       "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
-      "taskId": "1048654",
+      "taskId": "1048648",
       "activityTaskStartedEventAttributes": {
         "scheduledEventId": "23",
-        "identity": "57004@Anass-MacBook-Pro.local",
-        "requestId": "cea2ea63-f8c4-4ae4-878e-e36e5f609c5a",
+        "identity": "worker@recorder",
+        "requestId": "b153e14e-7376-4179-a781-c2206bca786e",
         "attempt": 1,
         "workerVersion": {
-          "buildId": "3b1cc2100dec669454a734dfca56616c"
+          "buildId": "recorder"
         }
       }
     },
     {
       "eventId": "25",
-      "eventTime": "2026-10-06T13:24:46.905173Z",
+      "eventTime": "2026-10-06T13:37:21.871283169Z",
       "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
-      "taskId": "1048655",
+      "taskId": "1048649",
       "activityTaskCompletedEventAttributes": {
         "result": {
           "payloads": [
             {
               "metadata": {
-                "encoding": "YmluYXJ5L2FiYWN1cy1lbmNyeXB0ZWQ=",
-                "encryption-key-id": "cGxhdGZvcm0tdjE="
-              },
-              "data": "//+wxaNdWU/ONiwYggesRPZel60LGc+0cQdOsKTFDDvLUTMSAL2lM/TcvKa9zXUAzMb2lfk="
+                "encoding": "YmluYXJ5L251bGw="
+              }
             }
           ]
         },
         "scheduledEventId": "23",
         "startedEventId": "24",
-        "identity": "57004@Anass-MacBook-Pro.local"
+        "identity": "worker@recorder"
       }
     },
     {
       "eventId": "26",
-      "eventTime": "2026-10-06T13:24:46.905181875Z",
+      "eventTime": "2026-10-06T13:37:21.871291336Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
-      "taskId": "1048656",
+      "taskId": "1048650",
       "workflowTaskScheduledEventAttributes": {
         "taskQueue": {
-          "name": "57004@Anass-MacBook-Pro.local-24c89568dcba42aeb7a3135075db0e13",
+          "name": "sticky@recorder",
           "kind": "TASK_QUEUE_KIND_STICKY",
-          "normalName": "retrieval"
+          "normalName": "abacus-recorder"
         },
         "startToCloseTimeout": "10s",
         "attempt": 1
@@ -554,30 +541,30 @@
     },
     {
       "eventId": "27",
-      "eventTime": "2026-10-06T13:24:46.906030792Z",
+      "eventTime": "2026-10-06T13:37:21.872178919Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
-      "taskId": "1048660",
+      "taskId": "1048654",
       "workflowTaskStartedEventAttributes": {
         "scheduledEventId": "26",
-        "identity": "57004@Anass-MacBook-Pro.local",
-        "requestId": "d0c8181f-d29d-4ddf-ab91-21f6de5640e4",
-        "historySizeBytes": "4661",
+        "identity": "worker@recorder",
+        "requestId": "d054de95-dd93-4930-95d9-86fa47913177",
+        "historySizeBytes": "4699",
         "workerVersion": {
-          "buildId": "3b1cc2100dec669454a734dfca56616c"
+          "buildId": "recorder"
         }
       }
     },
     {
       "eventId": "28",
-      "eventTime": "2026-10-06T13:24:46.908172042Z",
+      "eventTime": "2026-10-06T13:37:21.874282419Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
-      "taskId": "1048665",
+      "taskId": "1048659",
       "workflowTaskCompletedEventAttributes": {
         "scheduledEventId": "26",
         "startedEventId": "27",
-        "identity": "57004@Anass-MacBook-Pro.local",
+        "identity": "worker@recorder",
         "workerVersion": {
-          "buildId": "3b1cc2100dec669454a734dfca56616c"
+          "buildId": "recorder"
         },
         "sdkMetadata": {},
         "meteringMetadata": {}
@@ -585,16 +572,16 @@
     },
     {
       "eventId": "29",
-      "eventTime": "2026-10-06T13:24:46.908205292Z",
+      "eventTime": "2026-10-06T13:37:21.874303794Z",
       "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
-      "taskId": "1048666",
+      "taskId": "1048660",
       "activityTaskScheduledEventAttributes": {
         "activityId": "5",
         "activityType": {
           "name": "retrieval.render"
         },
         "taskQueue": {
-          "name": "retrieval",
+          "name": "abacus-recorder",
           "kind": "TASK_QUEUE_KIND_NORMAL"
         },
         "header": {},
@@ -602,10 +589,9 @@
           "payloads": [
             {
               "metadata": {
-                "encoding": "YmluYXJ5L2FiYWN1cy1lbmNyeXB0ZWQ=",
-                "encryption-key-id": "cGxhdGZvcm0tdjE="
+                "encoding": "anNvbi9wbGFpbg=="
               },
-              "data": "Y1ESlACpslGcJpUzaJ+X8VSrVIObpu4piYD0oCHPcZ3uvhxXFpYG8QXBVQJ1MdxXBfMEMAI8vTZ4H6Kqhb5HtdbDIFj52YkOtDiu37/FSn8o8pBJSEjeUbJ3WFN5Psbdu/ZBLQpS2gPXkVNBWrAZs3H2mlzcft6ImETT5ELEtvMYrq8sia7m/0GTqTBCpjxkVsP166liSDmPwg=="
+              "data": "eyJydW5faWQiOiIzYTI4NDNkNy0wMTUxLTRmOWYtODk5My02NWZlNTNiMDk0NzkiLCJ0ZW5hbnRfaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEifQ=="
             }
           ]
         },
@@ -626,51 +612,50 @@
     },
     {
       "eventId": "30",
-      "eventTime": "2026-10-06T13:24:46.908220334Z",
+      "eventTime": "2026-10-06T13:37:21.874315836Z",
       "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
-      "taskId": "1048669",
+      "taskId": "1048663",
       "activityTaskStartedEventAttributes": {
         "scheduledEventId": "29",
-        "identity": "57004@Anass-MacBook-Pro.local",
-        "requestId": "42fcc6de-7173-4b26-aec2-4041f5eb6266",
+        "identity": "worker@recorder",
+        "requestId": "5e97f74f-442f-4d22-824b-f9e39a42b983",
         "attempt": 1,
         "workerVersion": {
-          "buildId": "3b1cc2100dec669454a734dfca56616c"
+          "buildId": "recorder"
         }
       }
     },
     {
       "eventId": "31",
-      "eventTime": "2026-10-06T13:24:46.954807292Z",
+      "eventTime": "2026-10-06T13:37:21.917058461Z",
       "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
-      "taskId": "1048670",
+      "taskId": "1048664",
       "activityTaskCompletedEventAttributes": {
         "result": {
           "payloads": [
             {
               "metadata": {
-                "encoding": "YmluYXJ5L2FiYWN1cy1lbmNyeXB0ZWQ=",
-                "encryption-key-id": "cGxhdGZvcm0tdjE="
+                "encoding": "anNvbi9wbGFpbg=="
               },
-              "data": "a2j8N7+evOQ/RTgP1ZBJ/7WmdJRiZK62nUzTZtZQNPeGfaZksxacokOylyZxL3tQxB3M7oIPZMfSg5qre4KjgZMmC132Wnxe3uuVPhYDIksieAoKoggVcPddleY="
+              "data": "IjIwZmYxN2JhLTBiZmUtNGU2Zi1hYzg0LTI5ZTUwMmNjYzI5MCI="
             }
           ]
         },
         "scheduledEventId": "29",
         "startedEventId": "30",
-        "identity": "57004@Anass-MacBook-Pro.local"
+        "identity": "worker@recorder"
       }
     },
     {
       "eventId": "32",
-      "eventTime": "2026-10-06T13:24:46.954817292Z",
+      "eventTime": "2026-10-06T13:37:21.917069336Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
-      "taskId": "1048671",
+      "taskId": "1048665",
       "workflowTaskScheduledEventAttributes": {
         "taskQueue": {
-          "name": "57004@Anass-MacBook-Pro.local-24c89568dcba42aeb7a3135075db0e13",
+          "name": "sticky@recorder",
           "kind": "TASK_QUEUE_KIND_STICKY",
-          "normalName": "retrieval"
+          "normalName": "abacus-recorder"
         },
         "startToCloseTimeout": "10s",
         "attempt": 1
@@ -678,30 +663,30 @@
     },
     {
       "eventId": "33",
-      "eventTime": "2026-10-06T13:24:46.955974667Z",
+      "eventTime": "2026-10-06T13:37:21.917960794Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
-      "taskId": "1048675",
+      "taskId": "1048669",
       "workflowTaskStartedEventAttributes": {
         "scheduledEventId": "32",
-        "identity": "57004@Anass-MacBook-Pro.local",
-        "requestId": "dc6468b2-b86c-4180-a73b-90158c25caeb",
-        "historySizeBytes": "5722",
+        "identity": "worker@recorder",
+        "requestId": "65a3af7b-a92f-4579-8ef0-093d504234a3",
+        "historySizeBytes": "5772",
         "workerVersion": {
-          "buildId": "3b1cc2100dec669454a734dfca56616c"
+          "buildId": "recorder"
         }
       }
     },
     {
       "eventId": "34",
-      "eventTime": "2026-10-06T13:24:46.961606167Z",
+      "eventTime": "2026-10-06T13:37:21.920208711Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
-      "taskId": "1048679",
+      "taskId": "1048673",
       "workflowTaskCompletedEventAttributes": {
         "scheduledEventId": "32",
         "startedEventId": "33",
-        "identity": "57004@Anass-MacBook-Pro.local",
+        "identity": "worker@recorder",
         "workerVersion": {
-          "buildId": "3b1cc2100dec669454a734dfca56616c"
+          "buildId": "recorder"
         },
         "sdkMetadata": {},
         "meteringMetadata": {}
@@ -709,18 +694,17 @@
     },
     {
       "eventId": "35",
-      "eventTime": "2026-10-06T13:24:46.961687917Z",
+      "eventTime": "2026-10-06T13:37:21.920245336Z",
       "eventType": "EVENT_TYPE_WORKFLOW_EXECUTION_COMPLETED",
-      "taskId": "1048680",
+      "taskId": "1048674",
       "workflowExecutionCompletedEventAttributes": {
         "result": {
           "payloads": [
             {
               "metadata": {
-                "encoding": "YmluYXJ5L2FiYWN1cy1lbmNyeXB0ZWQ=",
-                "encryption-key-id": "cGxhdGZvcm0tdjE="
+                "encoding": "anNvbi9wbGFpbg=="
               },
-              "data": "y9R7UMAA+arQj0m+aQLGd00Sz375GVTarQ4zWfQmMtFdnCxhE3qdAzyZcfjXQEuCUodK6Uhcp2OQwu1JKz72NegFhalwq0zLk8Fjqkj2q3SxUnJhtqVnSBFpiYraMz/tZBiu0fzeVQsRyPmty0nb0jCsgxeDXiWp5BM9+1lyTnIz+HE20smb3Z6YdgWjNf4VCAG0Z2Y="
+              "data": "eyJjb2RlIjpudWxsLCJldmlkZW5jZV92ZXJzaW9uX2lkIjoiMjBmZjE3YmEtMGJmZS00ZTZmLWFjODQtMjllNTAyY2NjMjkwIiwic3RhdHVzIjoic3VjY2VlZGVkIn0="
             }
           ]
         },

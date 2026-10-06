@@ -1,13 +1,23 @@
-"""Workflow and activity payloads for retrieval (TASK-010 design §6). Identifiers only.
+"""Workflow and activity payloads for retrieval (TASK-010 design §6, revision 1). Identifiers
+only.
 
 Plain dataclasses of strings, so they serialise stably (replay, ADR-090). The workflow input is
-never proof of anything: every activity re-derives its context from the run row
-(`load_system_context`).
+never proof of anything: every activity re-derives its context from the run row.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+
+# Error types carried from activities to the workflow (ApplicationError.type).
+RUN_FAILED = "RunFailed"
+UNAVAILABLE = "Unavailable"
+# What a workflow-level failure may record (anything else becomes INTERNAL_ERROR).
+FAIL_STATUSES = frozenset({"failed", "failed_validation"})
+PROVIDER_UNAVAILABLE = "provider_unavailable"
+INTERNAL_ERROR = "internal_error"
+CANCELLED = "cancelled"
+FAIL_CODES = frozenset({PROVIDER_UNAVAILABLE, INTERNAL_ERROR, CANCELLED})
 
 
 @dataclass(frozen=True)

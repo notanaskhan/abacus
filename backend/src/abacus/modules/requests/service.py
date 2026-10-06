@@ -8,7 +8,7 @@ from datetime import datetime
 from uuid import UUID, uuid4
 
 from abacus.kernel.db import tenant_session, transaction_context
-from abacus.kernel.errors import NotFound
+from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.identity.api import Actor, AuthContext, SystemContext, authorise
@@ -92,8 +92,10 @@ async def request_items_for(ctx: AuthContext, engagement_id: UUID) -> Sequence[R
         return [_view(item) for item in await list_request_items(session, ctx, engagement_id)]
 
 
-class ItemNotFulfillable(Exception):
+class ItemNotFulfillable(DomainConflict):
     """Only open or received items take new evidence by rule."""
+
+    code = "item_not_open"
 
 
 @dataclass(frozen=True)

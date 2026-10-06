@@ -47,6 +47,9 @@ _engine: AsyncEngine | None = None
 def _create_engine(url: str, **server_settings: str) -> AsyncEngine:
     return create_async_engine(
         url,
+        # Error messages never carry bound values (ledger data, identifiers): they can travel to
+        # logs and to workflow failure records (TASK-010b security S3).
+        hide_parameters=True,
         pool_pre_ping=True,
         pool_reset_on_return="rollback",
         connect_args={
@@ -128,6 +131,12 @@ def _current_engine() -> AsyncEngine:
             raise RuntimeError("database_url is not configured")
         _engine = _create_engine(url.get_secret_value())
     return _engine
+
+
+async def ping() -> None:
+    """Startup check: the application database answers."""
+    async with _current_engine().connect() as conn:
+        await conn.execute(text("SELECT 1"))
 
 
 async def transaction_context(session: AsyncSession) -> TenantContext:

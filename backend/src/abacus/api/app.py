@@ -16,8 +16,9 @@ from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 
 from abacus.kernel.config import settings
-from abacus.kernel.errors import NotFound
+from abacus.kernel.errors import DomainConflict, NotFound, ServiceUnavailable
 from abacus.kernel.logging import get_logger
+from abacus.kernel.temporal import payload_codec
 from abacus.modules.connections import api as connections
 from abacus.modules.engagements import api as engagements
 from abacus.modules.identity import api as identity
@@ -40,13 +41,8 @@ async def _not_found(_request: Request, _exc: Exception) -> JSONResponse:
 
 
 async def _conflict(_request: Request, exc: Exception) -> JSONResponse:
-    # A fixed code per cause: nothing from the request or the database is echoed.
-    codes = {
-        "NoConnection": "no_connection",
-        "ItemNotFulfillable": "item_not_open",
-        "EngagementArchived": "engagement_archived",
-    }
-    return JSONResponse({"detail": codes.get(type(exc).__name__, "conflict")}, status_code=409)
+    # The class's fixed code: nothing from the request or the database is echoed.
+    return JSONResponse({"detail": cast(DomainConflict, exc).code}, status_code=409)
 
 
 async def _unavailable(_request: Request, _exc: Exception) -> JSONResponse:
@@ -91,6 +87,7 @@ def create_app() -> FastAPI:
         # Founder decision 2026-10-06: ethical walls (ADR-026) gate the first real firm.
         raise RuntimeError("ethical walls are not implemented: refusing to serve production")
     identity.token_verifier()  # a misconfigured identity provider fails here, not per request
+    payload_codec()  # and so does a bad workflow payload key, before any run is recorded
     app = FastAPI(
         title="Abacus",
         version="1",
@@ -103,9 +100,8 @@ def create_app() -> FastAPI:
         app.include_router(router)
     app.add_exception_handler(identity.Forbidden, _forbidden)
     app.add_exception_handler(NotFound, _not_found)
-    app.add_exception_handler(connections.NoConnection, _conflict)
-    app.add_exception_handler(connections.ItemNotFulfillable, _conflict)
-    app.add_exception_handler(connections.WorkflowUnavailable, _unavailable)
+    app.add_exception_handler(DomainConflict, _conflict)
+    app.add_exception_handler(ServiceUnavailable, _unavailable)
     app.add_exception_handler(RequestValidationError, _invalid)
     app.add_exception_handler(Exception, _unexpected)
     app.openapi = lambda: _openapi(app)  # type-safe override of FastAPI's generator

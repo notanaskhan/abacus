@@ -2,10 +2,11 @@
 TASK-010 design §6.
 
 Each activity first proves its system context from the run row (`load_system_context`), then
-runs its stage. Decided outcomes (failed run, invalid data, missing or forbidden resource) are
-raised as non-retryable `ApplicationError`s whose type is the exception's class name; provider
-outages and infrastructure errors propagate and are retried. A retry that finds the run already
-succeeded returns quietly. Activity names are fixed: renaming one breaks replay (ADR-090).
+runs its stage. Every error leaves as an `ApplicationError` carrying only the exception's class
+name (never its message): decided outcomes (failed run, invalid data, missing or forbidden
+resource) are non-retryable, provider outages and infrastructure errors are retryable. A retry
+that finds the run already succeeded returns its recorded result. Activity names are fixed:
+renaming one breaks replay (ADR-090).
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ from uuid import UUID
 from temporalio import activity
 from temporalio.exceptions import ApplicationError
 
+from abacus.kernel.errors import NotFound
 from abacus.modules.connections.pipeline import (
     RunFailed,
     fail_run,
@@ -26,29 +28,48 @@ from abacus.modules.connections.pipeline import (
     snapshot,
     validate_run,
 )
-from abacus.modules.connections.service import RunNotRunning, load_system_context
-from abacus.modules.connections.workflow_types import FailInput, RetrievalInput, RetrievalOutcome
+from abacus.modules.connections.service import (
+    RunNotRunning,
+    load_system_context,
+    succeeded_version,
+)
+from abacus.modules.connections.workflow_types import (
+    FAIL_CODES,
+    FAIL_STATUSES,
+    INTERNAL_ERROR,
+    RUN_FAILED,
+    FailInput,
+    RetrievalInput,
+    RetrievalOutcome,
+)
 from abacus.modules.identity.api import SystemContext
 
 
-def _non_retryable(exc: BaseException) -> ApplicationError:
+def _as_application_error(exc: BaseException, *, retryable: bool) -> ApplicationError:
+    """Only the exception's class name crosses to Temporal, never its message: messages can
+    carry provider text or database values (security S3). `RunFailed` adds its status and
+    failure code as details, which the codec encrypts."""
     if isinstance(exc, RunFailed):
         return ApplicationError(
-            exc.code, exc.status, exc.code, type="RunFailed", non_retryable=True
+            RUN_FAILED, exc.status, exc.code, type=RUN_FAILED, non_retryable=True
         )
-    return ApplicationError(type(exc).__name__, type=type(exc).__name__, non_retryable=True)
+    name = type(exc).__name__
+    return ApplicationError(name, type=name, non_retryable=not retryable)
 
 
 async def _system(input: RetrievalInput) -> SystemContext | None:
-    """None if the run already succeeded (a retry after the work committed)."""
+    """None if the run already succeeded (a retry after the work committed). A finished run
+    reports its own status and code; a missing run is a decided outcome too."""
     try:
         return await load_system_context(UUID(input.tenant_id), UUID(input.run_id))
     except RunNotRunning as exc:
-        if str(exc) == "succeeded":
+        if exc.status == "succeeded":
             return None
-        raise ApplicationError(
-            str(exc), str(exc), str(exc), type="RunFailed", non_retryable=True
+        raise _as_application_error(
+            RunFailed(exc.status, exc.failure_code or "unknown"), retryable=False
         ) from None
+    except NotFound as exc:
+        raise _as_application_error(exc, retryable=False) from None
 
 
 async def _stage[T](
@@ -60,9 +81,7 @@ async def _stage[T](
     try:
         return await stage(system)
     except Exception as exc:
-        if is_retryable(exc):
-            raise
-        raise _non_retryable(exc) from None
+        raise _as_application_error(exc, retryable=is_retryable(exc)) from None
 
 
 @activity.defn(name="retrieval.pull_raw")
@@ -88,6 +107,8 @@ async def snapshot_activity(input: RetrievalInput) -> None:
 @activity.defn(name="retrieval.render")
 async def render_activity(input: RetrievalInput) -> str | None:
     version_id = await _stage(input, render)
+    if version_id is None:  # retried after success: report what the run recorded
+        version_id = await succeeded_version(UUID(input.tenant_id), UUID(input.run_id))
     return str(version_id) if version_id is not None else None
 
 
@@ -98,8 +119,16 @@ async def fail_run_activity(input: FailInput) -> RetrievalOutcome:
     try:
         system = await load_system_context(UUID(input.tenant_id), UUID(input.run_id))
     except RunNotRunning as exc:
-        return RetrievalOutcome(str(exc), input.code)
-    failed = await fail_run(system, input.status, input.code)
+        version = await succeeded_version(UUID(input.tenant_id), UUID(input.run_id))
+        return RetrievalOutcome(
+            exc.status, exc.failure_code, str(version) if version is not None else None
+        )
+    except NotFound as exc:
+        raise _as_application_error(exc, retryable=False) from None
+    # The workflow decides only these; the stage failures are already recorded by the stages.
+    status = input.status if input.status in FAIL_STATUSES else "failed"
+    code = input.code if input.code in FAIL_CODES else INTERNAL_ERROR
+    failed = await fail_run(system, status, code)
     return RetrievalOutcome(failed.status, failed.code)
 
 

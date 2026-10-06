@@ -22,17 +22,21 @@ Connections to clients' systems, sync runs, and the retrieval pipeline (ADR-037,
 
 ## Temporal (TASK-010b)
 - `RetrievalWorkflow` (`workflows.py`, name `retrieval`):
-  - runs the activities `retrieval.pull_raw`, `normalise_raw`, `validate_run`, `snapshot`, `render` in order, each with up to 6 attempts;
-  - on a non-retryable failure, or once retries are exhausted, runs `retrieval.fail_run` and returns `RetrievalOutcome(status, code, evidence_version_id)`;
-  - its input is `RetrievalInput(tenant_id, run_id)`, strings only.
-- **Activities** (`activities.py`) prove their context from the run row first. Decided outcomes are non-retryable `ApplicationError`s whose type is the exception's class name (`RunFailed` carries status and code). A retry after success returns quietly.
-- **Names and history:** activity names are fixed. A change to the workflow needs `workflow.patched(...)`, and `tests/workflows/histories/retrieval-v1.json` must still replay (AC-19).
-- **Starting runs:** `trigger_retrieval` (API) records the run, then starts the workflow. The ID is `retrieval:<item>:<start>_<end>`; it reuses a running workflow and only allows reuse after failure. If Temporal is unreachable the run is ended as `workflow_unavailable` (503).
+  - runs `retrieval.pull_raw`, `normalise_raw`, `validate_run`, `snapshot`, `render` (5-minute timeout each, up to 6 attempts);
+  - any failure, cancellation included, ends in `retrieval.fail_run`, which retries until it succeeds, so a run never stays `running` because of the workflow;
+  - returns `RetrievalOutcome(status, code, evidence_version_id)`;
+  - input `RetrievalInput(tenant_id, run_id)`.
+- **Activities** (`activities.py`) prove their context from the run row first. Every error crosses to Temporal as an `ApplicationError` whose message and type are the exception's class name only, never its text; decided outcomes are non-retryable. A retry after success returns the recorded result.
+- **Encryption:** payloads are sealed by `kernel.crypto.payload_codec` (a keyring, so keys can rotate), and failure messages and stack traces are encoded too (`kernel.temporal`). Outside local and test the client uses TLS and an API key.
+- **One workflow per run** (`retrieval:<run_id>`, 6-hour execution timeout). `trigger_retrieval` records the run, then starts its workflow, attaching if it's already running. If the start fails, a run this request created is ended as `workflow_unavailable` (503); someone else's run is left alone.
 - **Routes:**
-  - `POST /v1/engagements/{id}/retrievals` (`evidence.upload`) → 202 with the run;
-  - `GET …/retrievals/{sync_run_id}` (`request_item.read`).
-- **Worker:** `python -m abacus.worker` checks the key service, payload codec and evidence bucket at boot. Locally it needs the same `fake_connector_dir` as the API.
-- **Payloads** are encrypted by `kernel.crypto.payload_codec` (ADR-017). WF-001 and an import contract keep workflows free of I/O.
+  - `POST /v1/engagements/{id}/retrievals` (`evidence.upload`) → 202, or 409 (`no_connection`, `item_not_open`, `engagement_archived`) or 503;
+  - `GET …/retrievals/{sync_run_id}` (`request_item.read`) with status, code, evidence, `started_at` and `finished_at`.
+- **Worker:** `python -m abacus.worker` checks the database, key service, payload codec and evidence bucket at boot. It registers each module's `WORKFLOWS`/`ACTIVITIES` and shuts down gracefully on SIGTERM. Locally it needs the same `fake_connector_dir` as the API.
+- **Replay (AC-19):** `tests/workflows/histories/retrieval-v<N>-*.json` are recorded with `python -m abacus_tools.workflows.record_retrieval`, decoded and scrubbed.
+  - Never overwrite one: a changed workflow uses `workflow.patched(...)` and adds `v<N+1>`.
+  - Every version must keep replaying.
+- **Static rules:** WF-001 and an import contract keep workflows free of I/O and of anything outside the sandbox.
 
 ## Rules
 - **The system context** acts on its run's engagement only (`authorise` checks it) and is issued only here (SYS-001), from the run row.

@@ -66,6 +66,12 @@ _RESPONSES: dict[int | str, dict[str, object]] = {
     404: {"model": ErrorOut, "description": "Not found"},
     422: {"model": ValidationErrorOut, "description": "Invalid request"},
 }
+# Further errors a route may declare (`errors=`): conflicts with the resource's state, and an
+# unavailable dependency (kernel.errors.DomainConflict, ServiceUnavailable).
+_OPTIONAL_RESPONSES: dict[int, dict[str, object]] = {
+    409: {"model": ErrorOut, "description": "Conflict with the resource's state"},
+    503: {"model": ErrorOut, "description": "Service unavailable"},
+}
 ACTION_KEY: Final = "x-abacus-action"
 _log = get_logger(__name__)
 
@@ -131,6 +137,7 @@ class AbacusRouter(APIRouter):
         response_model: object,
         methods: Sequence[str],
         status_code: int | None = None,
+        errors: Sequence[int] = (),
     ) -> None:
         if action != SELF and action not in RULES:
             raise ValueError(f"route {path}: action {action!r} is not in the permission matrix")
@@ -145,7 +152,7 @@ class AbacusRouter(APIRouter):
             status_code=status_code,
             dependencies=[Depends(auth)],
             openapi_extra={ACTION_KEY: action},
-            responses=_RESPONSES,
+            responses={**_RESPONSES, **{code: _OPTIONAL_RESPONSES[code] for code in errors}},
         )
 
     def add_api_websocket_route(self, *args: object, **kwargs: object) -> None:
@@ -160,7 +167,13 @@ class AbacusRouter(APIRouter):
         raise TypeError("plain Starlette routes are not supported: declare an action")
 
     def _verb(
-        self, method: str, path: str, action: str, response_model: object, status_code: int | None
+        self,
+        method: str,
+        path: str,
+        action: str,
+        response_model: object,
+        status_code: int | None,
+        errors: Sequence[int] = (),
     ) -> Callable[[_Endpoint], _Endpoint]:
         def register(endpoint: _Endpoint) -> _Endpoint:
             self.add_api_route(
@@ -170,32 +183,63 @@ class AbacusRouter(APIRouter):
                 response_model=response_model,
                 methods=[method],
                 status_code=status_code,
+                errors=errors,
             )
             return endpoint
 
         return register
 
     def get(  # pyright: ignore[reportIncompatibleMethodOverride] -- narrows the API
-        self, path: str, *, action: str, response_model: object, status_code: int | None = None
+        self,
+        path: str,
+        *,
+        action: str,
+        response_model: object,
+        status_code: int | None = None,
+        errors: Sequence[int] = (),
     ) -> Callable[[_Endpoint], _Endpoint]:
-        return self._verb("GET", path, action, response_model, status_code)
+        return self._verb("GET", path, action, response_model, status_code, errors)
 
     def post(  # pyright: ignore[reportIncompatibleMethodOverride] -- narrows the API
-        self, path: str, *, action: str, response_model: object, status_code: int | None = None
+        self,
+        path: str,
+        *,
+        action: str,
+        response_model: object,
+        status_code: int | None = None,
+        errors: Sequence[int] = (),
     ) -> Callable[[_Endpoint], _Endpoint]:
-        return self._verb("POST", path, action, response_model, status_code)
+        return self._verb("POST", path, action, response_model, status_code, errors)
 
     def put(  # pyright: ignore[reportIncompatibleMethodOverride] -- narrows the API
-        self, path: str, *, action: str, response_model: object, status_code: int | None = None
+        self,
+        path: str,
+        *,
+        action: str,
+        response_model: object,
+        status_code: int | None = None,
+        errors: Sequence[int] = (),
     ) -> Callable[[_Endpoint], _Endpoint]:
-        return self._verb("PUT", path, action, response_model, status_code)
+        return self._verb("PUT", path, action, response_model, status_code, errors)
 
     def patch(  # pyright: ignore[reportIncompatibleMethodOverride] -- narrows the API
-        self, path: str, *, action: str, response_model: object, status_code: int | None = None
+        self,
+        path: str,
+        *,
+        action: str,
+        response_model: object,
+        status_code: int | None = None,
+        errors: Sequence[int] = (),
     ) -> Callable[[_Endpoint], _Endpoint]:
-        return self._verb("PATCH", path, action, response_model, status_code)
+        return self._verb("PATCH", path, action, response_model, status_code, errors)
 
     def delete(  # pyright: ignore[reportIncompatibleMethodOverride] -- narrows the API
-        self, path: str, *, action: str, response_model: object, status_code: int | None = None
+        self,
+        path: str,
+        *,
+        action: str,
+        response_model: object,
+        status_code: int | None = None,
+        errors: Sequence[int] = (),
     ) -> Callable[[_Endpoint], _Endpoint]:
-        return self._verb("DELETE", path, action, response_model, status_code)
+        return self._verb("DELETE", path, action, response_model, status_code, errors)

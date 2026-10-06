@@ -4,23 +4,26 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import NotFound
+from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.connections.connector import Connector, ConnectorError, Period
 from abacus.modules.connections.fake import FakeConnector
-from abacus.modules.connections.models import Connection
+from abacus.modules.connections.models import Connection, SyncRun
 from abacus.modules.connections.repository import (
     active_connection_for,
     active_run,
     get_run,
     insert_run,
 )
-from abacus.modules.engagements.api import lock_ref
+from abacus.modules.engagements.api import get_ref, lock_ref
+from abacus.modules.evidence.api import EngagementArchived
 from abacus.modules.identity.api import (
     AuthContext,
     SystemContext,
@@ -30,12 +33,36 @@ from abacus.modules.identity.api import (
 from abacus.modules.requests.api import ItemNotFulfillable, item_ref
 
 
-class NoConnection(Exception):
+class NoConnection(DomainConflict):
     """The engagement's client entity has no active connection."""
+
+    code = "no_connection"
 
 
 class RunNotRunning(Exception):
     """The run has finished: there is nothing left for the platform to do on it."""
+
+    def __init__(self, status: str, failure_code: str | None) -> None:
+        super().__init__(status)
+        self.status = status
+        self.failure_code = failure_code
+
+
+@dataclass(frozen=True)
+class StartedRun:
+    run_id: UUID
+    created: bool  # False: an existing running or succeeded run for this item and period
+
+
+@dataclass(frozen=True)
+class RetrievalView:
+    sync_run_id: UUID
+    request_item_id: UUID
+    status: str
+    failure_code: str | None
+    evidence_version_id: UUID | None
+    started_at: datetime
+    finished_at: datetime | None
 
 
 def _fake(connection: Connection) -> Connector:
@@ -57,13 +84,15 @@ def connector_for(connection: Connection) -> Connector:
 
 async def start_retrieval(
     ctx: AuthContext, *, engagement_id: UUID, request_item_id: UUID, period: Period
-) -> UUID:
-    """Authorise the human (`evidence.upload`), check the item and the connection, and record the
-    run (`sync_run.started`). Returns the run ID. Idempotent: while a run for this item and
-    period is running or has succeeded, triggering again returns that run (§12)."""
+) -> StartedRun:
+    """Authorise the human (`evidence.upload`), check the engagement, item and connection, and
+    record the run (`sync_run.started`). Idempotent: while a run for this item and period is
+    running or has succeeded, triggering again returns that run (`created=False`, §12)."""
     async with uow(ctx.tenant) as tx:
         engagement = await lock_ref(tx, engagement_id)
         await authorise(ctx, "evidence.upload", engagement.resource())
+        if engagement.archived:
+            raise EngagementArchived("engagement is archived")
         item = await item_ref(tx, request_item_id)
         if item.engagement_id != engagement_id:
             raise NotFound("request_item")
@@ -76,7 +105,7 @@ async def start_retrieval(
                 target=Target("sync_run", existing.id),
                 after=Ref(user_id=ctx.user_id),
             )
-            return existing.id
+            return StartedRun(existing.id, created=False)
         connection = await active_connection_for(tx.session, engagement.client_entity_id)
         if connection is None:
             raise NoConnection("no active connection for the engagement's client entity")
@@ -100,13 +129,13 @@ async def start_retrieval(
                 target=Target("sync_run", raced.id),
                 after=Ref(user_id=ctx.user_id),
             )
-            return raced.id
+            return StartedRun(raced.id, created=False)
         tx.record(
             "sync_run.started",
             target=Target("sync_run", run.id),
             after=Ref(user_id=ctx.user_id, request_item_id=request_item_id),
         )
-    return run.id
+    return StartedRun(run.id, created=True)
 
 
 async def load_system_context(tenant_id: UUID, run_id: UUID) -> SystemContext:
@@ -120,10 +149,51 @@ async def load_system_context(tenant_id: UUID, run_id: UUID) -> SystemContext:
     if run is None:
         raise NotFound("sync_run")
     if run.status != "running":
-        raise RunNotRunning(run.status)
+        raise RunNotRunning(run.status, run.failure_code)
     return system_context_for_run(
         tenant_id=tenant_id,
         run_id=run.id,
         engagement_id=run.engagement_id,
         on_behalf_of=UUID(run.started_by),
     )
+
+
+def _view(run: SyncRun) -> RetrievalView:
+    return RetrievalView(
+        run.id,
+        run.request_item_id,
+        run.status,
+        run.failure_code,
+        run.evidence_version_id,
+        run.started_at,
+        run.finished_at,
+    )
+
+
+async def run_view(tenant: TenantContext, run_id: UUID) -> RetrievalView:
+    async with tenant_session(tenant) as session:
+        run = await get_run(session, run_id)
+    if run is None:
+        raise NotFound("sync_run")
+    return _view(run)
+
+
+async def retrieval_status(
+    ctx: AuthContext, *, engagement_id: UUID, run_id: UUID
+) -> RetrievalView:
+    """A retrieval's state for anyone who may read the engagement's request items (Q4)."""
+    engagement = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "request_item.read", engagement.resource())
+    async with tenant_session(ctx.tenant) as session:
+        run = await get_run(session, run_id)
+    if run is None or run.engagement_id != engagement_id:
+        raise NotFound("sync_run")
+    return _view(run)
+
+
+async def succeeded_version(tenant_id: UUID, run_id: UUID) -> UUID | None:
+    """The evidence version a succeeded run produced (for an activity retried after success)."""
+    reader = TenantContext(tenant_id, "system", f"run:{run_id}")
+    async with tenant_session(reader) as session:
+        run = await get_run(session, run_id)
+    return run.evidence_version_id if run is not None and run.status == "succeeded" else None

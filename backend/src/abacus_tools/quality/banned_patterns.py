@@ -858,19 +858,28 @@ def _check_connector_read_only(src: SourceFile) -> Iterator[Finding]:
                     )
 
 
-_WORKFLOW_IMPORTS = ("__future__", "datetime", "dataclasses", "typing", "temporalio")
+_WORKFLOW_IMPORTS = frozenset(
+    {"__future__", "asyncio", "collections.abc", "dataclasses", "datetime", "enum", "typing"}
+    | {"temporalio", "temporalio.workflow", "temporalio.common", "temporalio.exceptions"}
+)
+_WORKFLOW_BANNED_NAMES = frozenset(
+    {"sandbox_unrestricted", "eval", "exec", "__import__", "import_module", "compile"}
+)
 
 
 def _check_workflow_imports(src: SourceFile) -> Iterator[Finding]:
-    """ADR-017: workflows orchestrate only. They import Temporal's workflow API, plain
-    standard-library types and their own module's `workflow_types`; never repositories,
-    sessions, clients, clocks or anything with I/O."""
+    """ADR-017: workflows orchestrate only. They import Temporal's workflow-safe API, plain
+    standard-library types and their own module's `workflow_types`; never clients, workers,
+    repositories, sessions, clocks or anything with I/O, and never step out of the sandbox."""
     own = _own_module(src)
     allowed_own = f"abacus.modules.{own}.workflow_types" if own else None
     for line, module in _imported_modules(src):
-        if module.split(".")[0] in _WORKFLOW_IMPORTS or module == allowed_own:
+        if module in _WORKFLOW_IMPORTS or module == allowed_own:
             continue
         yield Finding(line, f"{module}: workflows import only Temporal and their workflow types")
+    for line, name in _names_used(src):
+        if name in _WORKFLOW_BANNED_NAMES:
+            yield Finding(line, f"{name}: workflows never step outside the sandbox")
 
 
 # --- tree rules -------------------------------------------------------------------------------
@@ -925,6 +934,10 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_evidence.py",
             "tests/integration/test_retrieval.py",
             "tests/integration/test_ledger_schema.py",
+            "tests/integration/test_retrieval_workflow.py",
+            "tests/integration/test_retrieval_api.py",
+            # Records replay fixtures against throwaway containers (seeds as the superuser).
+            "src/abacus_tools/workflows/record_retrieval.py",
         ),
     ),
     Rule(
@@ -940,7 +953,11 @@ RULES: list[Rule | TreeRule] = [
         description="Other modules are imported only through their api",
         adr="ADR-008, ADR-101",
         check=_check_module_boundary,
-        exclude=("tests/*", "src/abacus_tools/quality/banned_patterns.py"),
+        exclude=(
+            "tests/*",
+            "src/abacus_tools/quality/banned_patterns.py",
+            "src/abacus_tools/workflows/record_retrieval.py",
+        ),
     ),
     TreeRule(
         id="LAYOUT-001",
@@ -1021,6 +1038,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/conftest.py",
             "tests/unit/kernel/test_config.py",
             "tests/integration/test_identity.py",
+            "src/abacus_tools/workflows/record_retrieval.py",
         ),
     ),
     Rule(
@@ -1175,7 +1193,7 @@ RULES: list[Rule | TreeRule] = [
         description="Workflow modules import only Temporal and their workflow types",
         adr="ADR-017, ADR-090",
         check=_check_workflow_imports,
-        include=("src/abacus/modules/*/workflows.py",),
+        include=("src/abacus/modules/*/workflows.py", "src/abacus/modules/*/workflows/*"),
     ),
     Rule(
         id="ANY-001",

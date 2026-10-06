@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -11,11 +11,8 @@ from pydantic import BaseModel, ConfigDict, model_validator
 
 from abacus.kernel.classification import classified
 from abacus.modules.connections.connector import Period
-from abacus.modules.connections.retrievals import (
-    RetrievalView,
-    retrieval_status,
-    trigger_retrieval,
-)
+from abacus.modules.connections.retrievals import trigger_retrieval
+from abacus.modules.connections.service import RetrievalView, retrieval_status
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
 router = AbacusRouter(prefix="/v1/engagements/{engagement_id}/retrievals", tags=["retrievals"])
@@ -44,6 +41,8 @@ class RetrievalOut(BaseModel):
     status: Annotated[Status, classified("internal")]
     failure_code: Annotated[str | None, classified("internal")]
     evidence_version_id: Annotated[UUID | None, classified("internal")]
+    started_at: Annotated[datetime, classified("internal")]
+    finished_at: Annotated[datetime | None, classified("internal")]
 
 
 def _out(view: RetrievalView) -> RetrievalOut:
@@ -53,7 +52,13 @@ def _out(view: RetrievalView) -> RetrievalOut:
 Ctx = Annotated[AuthContext, Depends(current_context)]
 
 
-@router.post("", action="evidence.upload", response_model=RetrievalOut, status_code=202)
+@router.post(
+    "",
+    action="evidence.upload",
+    response_model=RetrievalOut,
+    status_code=202,
+    errors=(409, 503),
+)
 async def start_retrieval_route(engagement_id: UUID, body: RetrievalIn, ctx: Ctx) -> RetrievalOut:
     view = await trigger_retrieval(
         ctx,
