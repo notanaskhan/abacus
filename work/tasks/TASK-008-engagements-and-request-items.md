@@ -104,6 +104,67 @@ Out: retrievals, evidence and screening on the item list (TASK-009–011); engag
 - **Q4. Clients.** The matrix has no client action, so clients and entities are created inside `engagement.create`. Client management comes later. Recommend yes.
 - **Q5. Request list.** Created on the first item (requests depend on engagements, not the reverse). Recommend yes.
 
+### Interface contract (tests written independently — ADR-078)
+**HTTP** (`create_app()`; authenticate with `FakeIdentityProvider` + `configure_verifier`, reset with `reset_verifier()`; seed firms, users, memberships and engagement members as the superuser):
+- `POST /v1/engagements` with body `{name, client_name, client_entity_name, fiscal_period_start, fiscal_period_end}`:
+  - All three names must be 1–200 characters after trimming. Dates are ISO dates with end > start. Unknown fields are rejected.
+  - Success is **201** with `{id, name, type: "audit", status: "active", client_name, client_entity_name, fiscal_period_start, fiscal_period_end, created_at, team: [{user_id, display_name, role}]}`.
+  - Allowed for firm_admin and practice_leader. Any other user, or one with no firm role, gets **403** `{"detail": "forbidden"}`.
+- **AC-4.** One transaction, and none of it happens if any step fails:
+  - one `engagements` row with the caller's tenant;
+  - one `clients` row and one `client_entities` row;
+  - one `engagement_members` row `(creator, engagement_partner)`;
+  - audit events `client.created`, `client_entity.created`, `engagement.created`, `engagement_member.added`, all with the creator as actor;
+  - one outbox row `engagement.created` whose payload has `engagement_id`.
+  - The creator appears in `team` as `engagement_partner`.
+- `GET /v1/engagements` → **200**, a list of summaries (the same fields without `team`), newest first:
+  - firm_admin and quality_partner see every engagement in the firm;
+  - others see the engagements they're members of in a role that allows `engagement.read_metadata`;
+  - nothing from another firm (**AC-5**).
+- `GET /v1/engagements/{id}` → **200** with metadata and team.
+  - The id doesn't exist, or belongs to another firm → **404** `{"detail": "not found"}`. The two must be indistinguishable (**AC-5**, §12).
+  - Same firm, but no allowing role → **403**.
+- `POST /v1/engagements/{id}/request-items` with `{description (1–2000), audit_area (1–100)}`:
+  - → **201** `{id, engagement_id, description, audit_area, status: "open", created_at}`, with audit event `request_item.created` and outbox event `request_item.created` (payload has `request_item_id` and `engagement_id`) (**AC-7**).
+  - Allowed for engagement_partner, manager and senior on that engagement. A reviewer or staff member → **403**, and nothing written (**AC-8**). Other firm or missing → **404**.
+  - The first item creates the engagement's single request list; later items reuse it.
+- `GET /v1/engagements/{id}/request-items` → **200**, items in creation order, for engagement members whose role allows `request_item.read`.
+  - A firm_admin who isn't a member → **403** (**AC-6**: metadata 200, content 403).
+  - Other firm → **404**.
+- **Validation errors** → **422** `{"detail": [{loc, msg, type}]}`. They never include the submitted input or `ctx`.
+- **AC-5** three ways, with Firm A's engagement and Firm B's user:
+  - the API: list, get and items;
+  - the repository: `abacus.modules.engagements.repository.list_engagements` and `get_engagement` under Firm B's `tenant_session`;
+  - a direct `SELECT` on `engagements`/`request_items` under Firm B's `tenant_session`.
+
+  Firm A's rows never appear.
+
+**Database (migration 0005)**
+- New tenant tables `clients`, `client_entities`, `engagements`, `request_lists`, `request_items`, all with forced RLS.
+- Composite foreign keys keep related rows in one firm and consistent:
+  - an entity of another client → FK error;
+  - a request item whose list belongs to another engagement → FK error;
+  - a `created_by` user who isn't a firm member → FK error.
+- `engagement_members (tenant_id, engagement_id)` → `engagements`.
+- CHECKs: `fiscal_period_end > fiscal_period_start`; status and type values.
+- Grants:
+  - `abacus_app` has no DELETE on the five tables;
+  - no UPDATE on `clients`, `client_entities` or `request_lists`;
+  - it gains INSERT on `engagement_members`.
+- `schema_check`:
+  - `TABLE_OWNERS` lists every table;
+  - it reports `<t>: no owner in TABLE_OWNERS` for an unlisted table and `<t>: in TABLE_OWNERS but missing` for a listed one that doesn't exist.
+
+**Static rule LIST-001** (`src/abacus/modules/*/repository.py` only): a `def`/`async def` named `list_*` that doesn't call `visible(...)` (bare name or attribute) is flagged.
+
+**OpenAPI**
+- `abacus.api.export_openapi.document()` returns identical text on repeated calls (sorted keys, 2-space indent, trailing newline).
+- Operation IDs are `me`, `create_engagement`, `list_engagements`, `get_engagement`, `create_request_item` and `list_request_items`.
+- Every operation carries `x-abacus-action`.
+- `packages/api-client/openapi.json` equals `document()` (drift).
+
+**Route introspection** now covers the five new routes, with the actions in §3.
+
 ### Approval file text
 ```yaml
 task: TASK-008
@@ -150,6 +211,7 @@ reason: TASK-008 — engagements, request items, OpenAPI export and generated cl
 - `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder. Not started.
 - `2026-10-06` — Design drafted (§1–7, Q1–Q5) for founder review.
 - `2026-10-06` — Approved with all recommendations; approval file written at the founder's instruction.
+- `2026-10-06` — Implemented steps 1–5. Smoke-tested end to end: AC-4 to AC-8, Firm B 404s, 422 without input echo. Interface contract written. ADR-103 accepted (Q1).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -169,15 +231,8 @@ reason: TASK-008 — engagements, request items, OpenAPI export and generated cl
 -
 
 ## Handoff
-- **Current state:** Design drafted; awaiting founder approval (amber). No code.
-- **Exact next step:** On approval, write `work/approvals/TASK-008.yaml` with these paths:
-  - `backend/src/abacus/kernel/db/**`
-  - `backend/src/abacus/modules/identity/**`
-  - `backend/src/abacus/api/**`
-  - `backend/src/abacus_tools/quality/schema_check.py`
-  - `backend/src/abacus_tools/quality/banned_patterns.py`
-  - `backend/tests/unit/quality/test_banned_patterns.py`
-  - `packages/api-client/package.json`
-  - `pnpm-lock.yaml`
-
-  Then follow the Steps.
+- **Current state:** Steps 1–5 committed on `task-008-engagements` (WIP). Contract written. The independent test author and two reviews are next.
+- **Exact next step:** Collect the tests and reviews; fix findings; `make check`; PR (amber).
+- **Uncommitted or partial work:** none.
+- **Known failing checks:** none known before tests.
+- **Open issues:** branch protection off; ADR-102 awaiting the founder's accept or reject.
