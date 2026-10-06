@@ -24,7 +24,7 @@ from abacus_tools.synthetic.requests import request_list
 from abacus_tools.synthetic.rng import stream
 
 # Bump whenever output changes for any input; the golden test fails until its hash is updated.
-GENERATOR_VERSION = "1.1.0"
+GENERATOR_VERSION = "1.2.0"
 
 
 def _entity(

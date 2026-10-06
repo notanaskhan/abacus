@@ -539,3 +539,39 @@ def test_ac20_sidestep_001_reports_one_finding_per_node(tmp_path: Path) -> None:
 def test_ac20_sidestep_001_allows_plain_apis(tmp_path: Path, rel: str, body: str) -> None:
     _write(tmp_path, rel, body)
     assert _rule_ids(tmp_path) == []
+
+
+# SIDESTEP-001 additions: process-spawning names (Popen is a different name, so it is clean).
+SIDESTEP_SPAWN_NAMES = [
+    "subprocess_exec",
+    "subprocess_shell",
+    "popen",
+    "posix_spawn",
+    "posix_spawnp",
+]
+SIDESTEP_SPAWN_CLEAN = [
+    "import subprocess\nsubprocess.Popen(['x'])\n",
+    "from subprocess import Popen\n",
+    "import subprocess\nsubprocess.run(['x'], check=True)\n",
+    "x = os.spawn\n",
+]
+
+
+@pytest.mark.parametrize("rel", SIDESTEP_FILES)
+@pytest.mark.parametrize("name", SIDESTEP_SPAWN_NAMES)
+@pytest.mark.parametrize("form", ["attribute", "import"])
+def test_ac20_sidestep_001_flags_spawn_names(
+    tmp_path: Path, rel: str, name: str, form: str
+) -> None:
+    body = f"x = os.{name}\n" if form == "attribute" else f"from os import {name}\n"
+    _write(tmp_path, rel, body)
+    [violation] = bp.scan(tmp_path)
+    assert violation.rule_id == "SIDESTEP-001"
+    assert violation.message.startswith(f"{name}: use subprocess.run")
+
+
+@pytest.mark.parametrize("rel", SIDESTEP_FILES)
+@pytest.mark.parametrize("body", SIDESTEP_SPAWN_CLEAN)
+def test_ac20_sidestep_001_allows_popen_class_and_run(tmp_path: Path, rel: str, body: str) -> None:
+    _write(tmp_path, rel, body)
+    assert _rule_ids(tmp_path) == []

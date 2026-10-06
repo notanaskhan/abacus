@@ -357,6 +357,11 @@ _SIDESTEPS = {
     "create_subprocess_exec": "use subprocess.run (ruff S603 covers it)",
     "create_subprocess_shell": "use subprocess.run (ruff S602/S603 cover it)",
     "XMLPullParser": "use xml.etree.ElementTree.fromstring (ruff S314 covers it)",
+    "subprocess_exec": "use subprocess.run (ruff S603 covers it)",
+    "subprocess_shell": "use subprocess.run (ruff S602/S603 cover it)",
+    "popen": "use subprocess.run (ruff S603 covers it)",
+    "posix_spawn": "use subprocess.run (ruff S603 covers it)",
+    "posix_spawnp": "use subprocess.run (ruff S603 covers it)",
 }
 
 
