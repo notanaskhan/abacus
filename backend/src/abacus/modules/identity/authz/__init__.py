@@ -185,8 +185,10 @@ async def authorise(
         delegated = action if _human_held(rule) else AGENT_ONLY_REACH
         try:
             await authorise(ctx.initiator, delegated, resource, reason=reason)
-        except Forbidden:
-            raise _deny(ctx, action, "delegation") from None
+        except Forbidden as denied:
+            # An attribute the initiator fails (an archived engagement) is the agent's too.
+            layer: Layer = "attribute" if denied.layer == "attribute" else "delegation"
+            raise _deny(ctx, action, layer) from None
     # 4. Attributes.
     if resource.archived and not rule.reads:
         raise _deny(ctx, action, "attribute")
