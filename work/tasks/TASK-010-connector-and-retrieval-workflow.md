@@ -364,10 +364,19 @@ reason: TASK-010 — connector, ledger snapshots, fulfilments, retrieval pipelin
   - AC-11 unbalanced → `failed_validation`, item stays open.
 
   Migration 0009 (my own, unmerged, never applied) was edited in place to add `sync_runs.raw_size_bytes` and `raw_pulled_at`; no new migration. 010a contract written.
+- `2026-10-06` — 010a independent tests (Sonnet): one implementation bug, fixed. The 0009 downgrade guard was blind under forced RLS; it now lifts FORCE within the transaction and also covers evidence, since 0008's guard had the same flaw. Test-side fixes, all by the test author: DB-001 exclusions, a card-shaped test value, and TASK-009 evidence tests adapted to the 0009 snapshot FK and `TRUNCATE … CASCADE` (assertions unchanged). With founder approval, the hook test's unprotected-path sample moved off the now-protected ledger module.
+- `2026-10-06` — `make check` exit 0: 5,664 unit + 1,089 integration, coverage 97 %, schema_check clean.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| Split TASK-010 into 010a (pipeline) and 010b (Temporal) | Line-by-line reviewability (Q1) | No |
+| `SystemContext` issued only from a running run row, scoped to its engagement | A workflow's input is never proof (security S1, arch 2/3) | No |
+| `pull_raw` combines extract and store | Raw bytes never cross a stage or activity boundary (arch 1) | No |
+| Provider parser in connections (`fake_format.py`); ledger keeps the model and validation | Provider shapes differ; ledger stays dependency-free (arch 13/14) | No |
+| Sync runs forward-only and write-once (trigger); entity-tied composite keys | ADR-040 access-log integrity; no cross-client mixing (S5/S8) | No |
+| A re-pull with changed data creates a new evidence item | Acceptable for SPEC-000; revisit with refresh flows (arch 16) | No |
+| Per-attempt pull logging deferred | Decide before the client-facing access log (arch 24) | No |
 
 ## Gotchas and discoveries
 - From TASK-009 (founder, 2026-10-06): add a `SystemContext` that `authorise` accepts (`evidence.upload`, `connection.pull`, `screening.run`).
@@ -380,8 +389,8 @@ reason: TASK-010 — connector, ledger snapshots, fulfilments, retrieval pipelin
 -
 
 ## Handoff
-- **Current state:** TASK-010a implemented and committed on `task-010-retrieval` (WIP). Contract written. The independent test author and two reviews are next.
-- **Exact next step:** Collect tests and reviews; fix; `make check`; PR for TASK-010a (red: founder line-by-line). Then TASK-010b (step 6).
+- **Current state:** TASK-010a done pending review. PR open on `task-010-retrieval`; `make check` exit 0.
+- **Exact next step:** Confirm CI. Founder line-by-line review of 010a, then merge (keep `work/approvals/TASK-010.yaml`: 010b uses it). Then TASK-010b (step 6) on a new branch from main: workflow, activities, worker, codec, trigger route, replay fixture; `load_system_context` at the start of each activity; `is_retryable`/`fail_run` for retry exhaustion.
 - **Uncommitted or partial work:** none.
-- **Known failing checks:** older tests that seed `request_items` may need nothing new; `engagements` tests may check `EngagementRef` fields.
-- **Open issues:** branch protection off.
+- **Known failing checks:** none.
+- **Open issues:** branch protection off; the approval file expires 2026-10-27.
