@@ -209,9 +209,22 @@ def to_csv(client: SyntheticClient, directory: Path) -> tuple[Path, ...]:
     return tuple(sorted(written))
 
 
+_FIELDS: dict[type, tuple[str, ...]] = {}
+
+
+def _field_names(kind: type) -> tuple[str, ...]:
+    names = _FIELDS.get(kind)
+    if names is None:
+        names = tuple(f.name for f in dataclasses.fields(kind))
+        _FIELDS[kind] = names
+    return names
+
+
 def _plain(value: object) -> object:
+    if isinstance(value, str | int | None):
+        return value
     if dataclasses.is_dataclass(value) and not isinstance(value, type):
-        return {f.name: _plain(getattr(value, f.name)) for f in dataclasses.fields(value)}
+        return {name: _plain(getattr(value, name)) for name in _field_names(type(value))}
     if isinstance(value, tuple):
         return [_plain(v) for v in cast(tuple[object, ...], value)]
     if isinstance(value, Decimal):
@@ -222,7 +235,9 @@ def _plain(value: object) -> object:
 
 
 def _json_bytes(data: object) -> bytes:
-    return (json.dumps(data, sort_keys=True, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+    # No `indent`: with it, json falls back to its pure-Python encoder (10x slower on a GL).
+    text = json.dumps(data, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return (text + "\n").encode("utf-8")
 
 
 def to_json(client: SyntheticClient, directory: Path) -> Path:
@@ -244,14 +259,15 @@ def _column(n: int) -> str:
 
 
 def _sheet_xml(rows: Rows) -> bytes:
+    columns = [_column(c) for c in range(1, max((len(r) for r in rows), default=0) + 1)]
     out = [
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
         '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'
     ]
     for r, row in enumerate(rows, start=1):
         out.append(f'<row r="{r}">')
-        for c, value in enumerate(row, start=1):
-            ref = f"{_column(c)}{r}"
+        for c, value in enumerate(row):
+            ref = f"{columns[c]}{r}"
             if r > 1 and _AMOUNT.match(value):
                 out.append(f'<c r="{ref}"><v>{value}</v></c>')
             else:

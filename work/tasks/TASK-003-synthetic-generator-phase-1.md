@@ -4,7 +4,7 @@ title: Synthetic client generator, phase 1
 spec: SPEC-001
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-12, AC-13, AC-14, AC-15, AC-16, AC-17]
 risk_zone: amber
-status: awaiting-plan-approval
+status: blocked
 branch: spec-001-synthetic-generator
 worktree:
 created: 2026-10-06
@@ -39,20 +39,21 @@ Build `abacus_tools.synthetic` as specified in SPEC-001 (phase 1): a determinist
 - Reference pattern: `abacus_tools.quality` modules and tests (frozen dataclasses, exact assertions, pyright strict)
 
 ## Plan
-- [ ] Plan approved by human (required for amber)
-- [ ] Approval file `work/approvals/TASK-003.yaml` with the paths below
+- [x] Plan approved by human (founder, 2026-10-06: "create the file, proceed")
+- [x] Approval file `work/approvals/TASK-003.yaml` written by the agent at the founder's explicit instruction (2026-10-06)
+- Approved by founder: paths under *Approval file text*, expires 2026-10-20
 
 Steps:
-1. [ ] **Protect the taxonomy** (before any code relies on it): add `docs/product/failure-taxonomy.md` to `.claude/hooks/_protected.py`, `.github/CODEOWNERS`, `docs/architecture/protected-paths.md` (policy files bullet); extend `backend/tests/unit/quality/test_hooks.py`'s blocked-path cases with it — **that test file is protected; listed in the approval**.
-2. [ ] **Model** `synthetic/model.py`: frozen dataclasses per the contract; `Decimal` amounts quantised to `0.01`.
-3. [ ] **Randomness** `synthetic/rng.py`: `stream(seed, name) -> random.Random` seeded from `sha256(f"{seed}:{name}")` — independent sub-streams (SPEC-001 §6.2); no global `random`, clock, env, locale or filesystem reads.
-4. [ ] **Names** `synthetic/names.py`: built-in word lists for client, vendor, customer, bank and employee names; addresses on fictitious streets; reserved identifiers (AC-13); `" (Synthetic)"` suffix (AC-14).
-5. [ ] **Ledger** `synthetic/ledger.py`: chart of accounts (~60 accounts, five types, standard code ranges), opening balances, monthly activity (sales, purchases, receipts, payments, payroll, depreciation, accruals), month-end and year-end close; every entry balanced by construction (AC-4, AC-5).
-6. [ ] **Derived artefacts** `synthetic/artefacts.py`: month-end trial balances, monthly bank statements with labelled reconciling items, AR/AP agings at period end (AC-6, AC-7).
-7. [ ] **Request list** `synthetic/requests.py` (AC-16).
-8. [ ] **Flaws** `synthetic/flaws.py` and **adversarial** `synthetic/adversarial.py`: applied to copies of derived artefacts, recorded in the manifest (AC-8 to AC-12).
-9. [ ] **Exports** `synthetic/export.py`: CSV, JSON, and XLSX written **without openpyxl** — a minimal SpreadsheetML writer over `zipfile` with fixed timestamps and inline strings, so output is byte-identical (AC-1, AC-15). Reason: openpyxl stamps creation times and zip entry times, and has no type stubs under pyright strict (`types-openpyxl` is not approved).
-10. [ ] **Golden hash** fixture for the default client (AC-1, AC-3) and a 5-second budget test (AC-17).
+1. [x] **Protect the taxonomy** (before any code relies on it): add `docs/product/failure-taxonomy.md` to `.claude/hooks/_protected.py`, `.github/CODEOWNERS`, `docs/architecture/protected-paths.md` (policy files bullet); extend `backend/tests/unit/quality/test_hooks.py`'s blocked-path cases with it — **that test file is protected; listed in the approval**.
+2. [x] **Model** `synthetic/model.py`: frozen dataclasses per the contract; `Decimal` amounts quantised to `0.01`.
+3. [x] **Randomness** `synthetic/rng.py`: `stream(seed, name) -> random.Random` seeded from `sha256(f"{seed}:{name}")` — independent sub-streams (SPEC-001 §6.2); no global `random`, clock, env, locale or filesystem reads.
+4. [x] **Names** `synthetic/names.py`: built-in word lists for client, vendor, customer, bank and employee names; addresses on fictitious streets; reserved identifiers (AC-13); `" (Synthetic)"` suffix (AC-14).
+5. [x] **Ledger** `synthetic/ledger.py`: chart of accounts (~60 accounts, five types, standard code ranges), opening balances, monthly activity (sales, purchases, receipts, payments, payroll, depreciation, accruals), month-end and year-end close; every entry balanced by construction (AC-4, AC-5).
+6. [x] **Derived artefacts** `synthetic/artefacts.py`: month-end trial balances, monthly bank statements with labelled reconciling items, AR/AP agings at period end (AC-6, AC-7).
+7. [x] **Request list** `synthetic/requests.py` (AC-16).
+8. [x] **Flaws** `synthetic/flaws.py` and **adversarial** `synthetic/adversarial.py`: applied to copies of derived artefacts, recorded in the manifest (AC-8 to AC-12).
+9. [x] **Exports** `synthetic/export.py`: CSV, JSON, and XLSX written **without openpyxl** — a minimal SpreadsheetML writer over `zipfile` with fixed timestamps and inline strings, so output is byte-identical (AC-1, AC-15). Reason: openpyxl stamps creation times and zip entry times, and has no type stubs under pyright strict (`types-openpyxl` is not approved).
+10. [x] **Golden hash** fixture for the default client (AC-1, AC-3) and a 5-second budget test (AC-17).
 11. [ ] **Verify**: `make check` exit 0; mutation spot-checks on invariants; gate-break (a deliberately unbalanced entry fails AC-4; a clock read breaks AC-1).
 
 Files to create or change:
@@ -152,6 +153,13 @@ Append-only. Newest at the bottom.
 
 - `2026-10-06` — SPEC-001 approved by founder with all recommendations (Q1–Q6); failure taxonomy written to `docs/product/failure-taxonomy.md`. Task plan written. No code.
 
+- `2026-10-06` — Steps 1–10 done. Taxonomy protected (hook, CODEOWNERS, protected-paths.md; hook test case added — 116 pass). Generator implemented; independent tests (Sonnet, from the contract, implementation unseen) 271 cases: all pass after pinning the golden hash.
+  - Contract clarifications sent to the test author (recorded here): export files are named by the period the artefact is meant to cover (a stale TB would otherwise overwrite the previous month's file); TB and aging CSVs carry an `as_of` column; plain `irrelevant`/`unreadable` target `general_ledger`, `irrelevant:trial_balance` is invalid; bank locations read `bank_statement <account> for <YYYY-MM>`; `AgingLine.total` is a stored field; bank flaws hit the first account's last statement (positional).
+  - Bugs found in my own smoke run before tests landed: flawed statement lookup broke after `wrong_period`/`wrong_entity` changed its fields (now positional); `irrelevant` looked up its request item after changing it; locations like `4417-2938 2025-02` tripped PII-003 as a card number (now `… for 2025-02`).
+  - AC-17 failed under coverage (branch tracing ~4x slower). Fixed in code, not the test: JSON without `indent` (the C encoder), cached dataclass fields, precomputed XLSX column letters — 1.3 s → 0.75 s. Output changed, so `GENERATOR_VERSION` 1.0.0 → 1.0.1 and the golden hash re-pinned in the same change (AC-3 working as designed).
+  - Only edits to the independent tests: pinning `GOLDEN_VERSION`/`GOLDEN_SHA256` (the contract's designated step) and annotating both as `str` so pyright doesn't flag the "still pending" guard as always false.
+  - **Blocked:** ruff S311 flags `random.Random` in `synthetic/rng.py`. See Q1.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
@@ -164,11 +172,11 @@ Append-only. Newest at the bottom.
 - `secrets_scan` PII-002 flags EINs with assigned prefixes only in data files; generated EINs use `00`, which is never assigned.
 
 ## Questions for the human
-- None blocking. SPEC-001 Q1–Q6 answered.
+- [ ] **Q1 — Lint exemptions in `backend/pyproject.toml` (blocking `make check`).** (a) `"src/abacus_tools/synthetic/**" = ["S311"]` — seeded non-cryptographic randomness is the point of the generator (ADR-085). (b) The independent test author avoided S603 and S314 by switching APIs (`asyncio.create_subprocess_exec` instead of `subprocess.run`; `XMLPullParser` instead of `ET.fromstring`). Both are safe here (running this interpreter; parsing our own XLSX), but sidestepping a lint by API choice is what our "exceptions only via protected config" rule forbids. **Recommendation:** add `backend/pyproject.toml` to the approval; add (a), plus `"tests/unit/synthetic/**" = ["S101", "S314", "S603"]`; have the test author switch back to the plain APIs; add a banned pattern for `asyncio.create_subprocess_exec`/`XMLPullParser` outside allowed paths so the sidestep can't recur.
 
 ## Handoff
-- **Current state:** Plan written; not approved. No code. Branch `spec-001-synthetic-generator` holds SPEC-001 (approved), the failure taxonomy and this file.
-- **Exact next step:** Founder approves the plan and creates (or tells the agent to create) `work/approvals/TASK-003.yaml`. Then step 1, and in parallel an independent session writes tests from the contract.
-- **Uncommitted or partial work:** this file, SPEC-001 approval, failure taxonomy.
-- **Known failing checks:** none.
-- **Open issues:** branch protection off; "Allow GitHub Actions to create and approve pull requests" on.
+- **Current state:** Generator and 271 independent tests committed; everything passes except ruff S311 (Q1). Full suite 975 tests, ~160 s locally, coverage 98 %.
+- **Exact next step:** Founder answers Q1. Then apply the exemptions, have the test author revert the API sidesteps, run `make check`, cross-model review, push, PR.
+- **Uncommitted or partial work:** none.
+- **Known failing checks:** `ruff check` (S311 in `synthetic/rng.py`).
+- **Open issues:** branch protection off; test suite now ~160 s (property tests) — fine for stage 2's 15-minute budget, watch it.
