@@ -213,6 +213,90 @@ The `evidence_versions.snapshot_id → ledger_snapshots` composite FK is added h
   - `connections` → identity, engagements, organisations, ledger, evidence, requests.
 - **LIST-001** exempts `ledger/repository.py:lines_of`.
 
+#### Contract revision 1 — TASK-010a (2026-10-06, from both stage 4 reviews; supersedes the clauses it touches)
+**SystemContext (breaking)**
+- `SystemContext(tenant, on_behalf_of, run_id, engagement_id, issued_by)`. Constructing it directly raises `TypeError`, because only identity holds the issuer token. Its `tenant` must be `TenantContext(t, "system", "run:<run_id>")`, else `ValueError`.
+- `identity.api.system_context_for_run(*, tenant_id, run_id, engagement_id, on_behalf_of)` builds one. SYS-001 allows that call only in `identity/context.py`, `identity/api.py` and `connections/service.py`. The old `system_context(auth_ctx, run_id)` is gone.
+- `authorise(system, action, resource)`: the system has the role `system` only when `resource.engagement_id == system.engagement_id`. Another engagement, or a firm-level resource, → `Forbidden` at layer `relationship`.
+- `visible(system, read_action, col)` → `col == system.engagement_id` if the matrix gives the system `allow`, else `false()`.
+- `connections.api.load_system_context(tenant_id, run_id)`:
+  - loads the run under RLS (a missing run or another tenant's → `NotFound`);
+  - a run that isn't `running` → `RunNotRunning(status)`;
+  - `engagement_id` and `on_behalf_of` (= `started_by`) come from the row.
+
+**Retrieval (breaking)**
+- `start_retrieval(ctx, *, engagement_id, request_item_id, period) -> UUID` (the run ID).
+  - `evidence.upload` on the engagement; an item that's missing or in another engagement → `NotFound`; an item not `open` or `received` → `requests.api.ItemNotFulfillable`; no active, unexpired connection → `NoConnection`.
+  - Inserts the run with `client_entity_id`, `started_by = str(user_id)` and audit event `sync_run.started`.
+  - While a run for the same item and period is `running` or `succeeded`, it returns that run's ID and records `sync_run.requested_again` (`after.user_id`), with no new run.
+- Stages take **only** `system`: `pull_raw(system) -> StoredObject`, `normalise_raw(system) -> int`, `validate_run(system) -> None`, `snapshot(system) -> UUID`, `render(system) -> UUID`, `run_pipeline(system) -> RunResult`, `fail_run(system, status, code) -> RunFailed`. `extract`/`store_raw` are gone.
+- Each stage authorises its own action for the system on the run's engagement: `connection.pull` for pull, normalise, validate and snapshot; `evidence.upload` for render, which authorises before any read or storage.
+- `pull_raw`:
+  - pulls at most once per run (a recorded payload is returned with no connector call);
+  - refuses on a non-running run (`RunFailed`);
+  - checks the connection is active and of the run's entity, else `RunFailed("failed", "connection_inactive")`;
+  - records `raw_*` plus `source` and audit event `sync_run.raw_stored` (`after.raw_fingerprint`, `after.on_behalf_of`). Under a concurrent race the first recorded payload wins and the loser returns it, with no second audit event.
+- **Repeats are quiet.** A stage repeated after its work is recorded returns the recorded result with **no new audit event**:
+  - `render` on a run that has `evidence_version_id` returns it;
+  - `snapshot` with `snapshot_id` returns it;
+  - `validate_run` after a snapshot returns.
+- `fail_run(system, status, code)`:
+  - on a running run, sets the status and code and records `sync_run.failed`;
+  - on a finished run, changes nothing and records nothing, and returns `RunFailed` with the run's own status and code.
+- Stage audit events carry `after.on_behalf_of`. `render` sets `sync_runs.evidence_version_id`, and `sync_run.succeeded` is recorded only when the run moves from running.
+- Read-back failures (`IntegrityError`, `DecryptionError`) → `RunFailed("failed", "unprocessable")`.
+- `is_retryable(exc)`: `Unavailable` → True; `RunFailed`, `NotFound`, `Forbidden`, `Unvalidated`, `NormaliseError`, `ItemNotFulfillable` and non-retryable `ConnectorError`s → False; anything else → True.
+- `ConnectorError(code)`: a code not matching `^[a-z][a-z_]{0,49}$` becomes `provider_error`. `ConnectorError.retryable` is False; `Unavailable.retryable` is True.
+- `RawPayload` gains `request: str` and `next_cursor: str | None = None`. `Capabilities.datasets` is a `frozenset[Dataset]`.
+- `CONNECTORS` is the provider → factory registry. `connector_for` on an unknown provider → `ConnectorError("unknown_provider")`.
+
+**Parsing (moved and hardened).** `connections.api.parse_trial_balance(bytes)` replaces `ledger.normalise` and raises `NormaliseError`:
+- `payload_too_large` over 20 MiB;
+- `malformed_payload` for:
+  - invalid UTF-8 (UTF-16 refused), invalid JSON, duplicate keys at any level, deep nesting;
+  - a non-object, the wrong `dataset`, missing fields;
+  - text that is empty after trimming, over 200 characters, or contains any Unicode category Cc, Cf, Cs, Co, Zl or Zp (controls, zero-width, bidi overrides, surrogates);
+  - over 50,000 lines;
+- `invalid_amount` for any amount not matching `^[0-9]{1,15}(\.[0-9]{1,2})?$` (no exponent, sign, underscore, spaces or non-ASCII digits).
+
+The result has a `currency` field.
+
+**Ledger (breaking)**
+- `ledger.api` no longer has `normalise` or `trial_balance_for`.
+- `validate` checks, in order: `empty`, `period_mismatch`, `unsupported_currency` (anything but `USD`), `duplicate_account` (codes compared after NFKC and casefold), `duplicate_source_ref`, `control_totals_mismatch`, `unbalanced`, `zero_total`.
+- `record_snapshot(tx, *, client_entity_id, period_start, period_end, tb, raw_fingerprint, pulled_at, source)` validates against the **given** period.
+- `snapshot_view(tenant, snapshot_id) -> SnapshotView(id, client_entity_id, period_start, period_end, pulled_at, source, raw_fingerprint, lines: tuple[SnapshotLine])`.
+- BOUND-002: ledger depends on no module.
+
+**Requests**
+- `item_ref(tx, item_id) -> RequestItemRef(id, engagement_id, status)` (`NotFound` outside the tenant).
+- `fulfil_by_rule(tx, ctx, …)`:
+  - `created_by_kind` is `rule` for a `SystemContext` and `human` for an `AuthContext`;
+  - an item not `open`/`received` → `ItemNotFulfillable`;
+  - fulfilments record `engagement_id`, and a version from another engagement → FK error.
+
+**Database (0009, edited before merge)**
+- `sync_runs`:
+  - new columns: `client_entity_id NOT NULL`, `source`, `evidence_version_id`;
+  - composite FKs tie the connection, engagement and snapshot to `client_entity_id`, and `evidence_version_id` to the engagement;
+  - CHECKs: `succeeded` ⇒ raw fingerprint, snapshot and evidence set; `failed_validation` ⇒ no snapshot;
+  - a unique partial index on (tenant, item, period) where status is running or succeeded;
+  - **trigger:** a non-running run can't be updated at all, and `raw_*`, `source`, `snapshot_id` and `evidence_version_id` are write-once (NULL → value).
+- `connections`: a trigger stops a revoked connection being re-activated.
+- `fulfilments.engagement_id`, with composite FKs to `request_items (tenant, engagement, id)` and `evidence_versions (tenant, engagement, id)`.
+- `trial_balance_lines`: an INSERT trigger allows lines only in the transaction that created their snapshot.
+- New unique keys: `engagements (tenant, client_entity_id, id)` and `evidence_versions (tenant, engagement_id, id)`.
+- Downgrade raises if any of connections, sync_runs, ledger_snapshots or fulfilments has rows.
+- `schema_check` maps are updated for the new columns.
+
+**Static rules**
+- **CTX-001** resolves `import … as` aliases, flags `X.__new__(…)` and `type(x)(…)`, and treats arguments named `*ctx*`, `*context*`, `*sys*` or `*system*` as contexts for the replace/copy check. `identity/context.py` is also excluded.
+- **SYS-001** (new): any use of `system_context_for_run` or `_ISSUER` outside `identity/context.py`, `identity/api.py` and `connections/service.py`.
+- **CONN-001** now covers all of `src/abacus/modules/connections/*`:
+  - an import whose root is a network module (`httpx`, `requests`, `aiohttp`, `urllib`, `urllib3`, `http`, `socket`, `ssl`, `smtplib`, `ftplib`, `subprocess`, `websockets`, `grpc`, `asyncssh`, `paramiko`);
+  - a function whose name, case-insensitive and without leading underscores, starts with a write verb;
+  - a public method on a `Connector` subclass that isn't one of the contract's eight.
+
 ### Approval file text
 ```yaml
 task: TASK-010
@@ -268,6 +352,10 @@ reason: TASK-010 — connector, ledger snapshots, fulfilments, retrieval pipelin
 - `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder. Not started.
 - `2026-10-06` — Design drafted (§1–7, Q1–Q5) for founder review.
 - `2026-10-06` — Approved with all recommendations (split into 010a/010b); approval file written at the founder's instruction. Starting TASK-010a.
+- `2026-10-06` — 010a reviews: security (S1–S20) and architecture (1–33) both requested changes. Fixed via Contract revision 1, with migration 0009 edited in place before merge (never applied anywhere).
+  - Blockers fixed: run-proven, engagement-scoped system contexts; per-stage authorisation; `pull_raw` (no bytes across stages); `fail_run`; error classification.
+  - Also fixed: entity-tied keys, the forward-only run trigger, the lines trigger, the fulfilment engagement key, the hardened parser moved to connections, ledger decoupled from evidence, period-checked snapshots, quiet repeats, the unique active run, and rule hardening.
+  - Deferred and noted: per-attempt pull logging (ADR-040), a new item per re-pull (S16 and arch 16, acceptable for SPEC-000), and egress allowlist plus interception tests with the first real connector.
 - `2026-10-06` — 010a implemented. Smoke-tested end to end:
   - AC-9/10 happy path;
   - idempotent re-render and re-retrieval (one snapshot, one version, one fulfilment);
