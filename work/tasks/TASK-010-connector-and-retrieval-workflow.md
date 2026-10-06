@@ -365,6 +365,7 @@ reason: TASK-010 — connector, ledger snapshots, fulfilments, retrieval pipelin
 
   Migration 0009 (my own, unmerged, never applied) was edited in place to add `sync_runs.raw_size_bytes` and `raw_pulled_at`; no new migration. 010a contract written.
 - `2026-10-06` — 010a independent tests (Sonnet): one implementation bug, fixed. The 0009 downgrade guard was blind under forced RLS; it now lifts FORCE within the transaction and also covers evidence, since 0008's guard had the same flaw. Test-side fixes, all by the test author: DB-001 exclusions, a card-shaped test value, and TASK-009 evidence tests adapted to the 0009 snapshot FK and `TRUNCATE … CASCADE` (assertions unchanged). With founder approval, the hook test's unprotected-path sample moved off the now-protected ledger module.
+- `2026-10-06` — CI: first run failed one TASK-006 relay test (outbox not fully drained between tests: failed/deferred events with backoff); test author made the drain complete; CI green. PR #10 merged (rebase). Starting TASK-010b.
 - `2026-10-06` — `make check` exit 0: 5,664 unit + 1,089 integration, coverage 97 %, schema_check clean.
 
 ## Decisions made during this task
@@ -389,8 +390,8 @@ reason: TASK-010 — connector, ledger snapshots, fulfilments, retrieval pipelin
 -
 
 ## Handoff
-- **Current state:** TASK-010a done pending review. PR open on `task-010-retrieval`; `make check` exit 0.
-- **Exact next step:** Confirm CI. Founder line-by-line review of 010a, then merge (keep `work/approvals/TASK-010.yaml`: 010b uses it). Then TASK-010b (step 6) on a new branch from main: workflow, activities, worker, codec, trigger route, replay fixture; `load_system_context` at the start of each activity; `is_retryable`/`fail_run` for retry exhaustion.
+- **Current state:** TASK-010a merged (PR #10). TASK-010b in progress on `task-010b-workflow`.
+- **Exact next step:** Implement step 6: codec, workflow and activities, worker, trigger route, replay fixture. Then contract, tests, reviews, PR.
 - **Uncommitted or partial work:** none.
 - **Known failing checks:** none.
 - **Open issues:** branch protection off; the approval file expires 2026-10-27.
