@@ -13,12 +13,17 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext
+from abacus.kernel.uow import Target, UnitOfWork
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.repository import (
+    EngagementRole,
     MembershipRecord,
     UserRecord,
     active_memberships,
+    display_names,
+    engagement_members_of,
     find_user,
+    insert_engagement_member,
 )
 from abacus.modules.identity.tokens import InvalidToken, VerifiedIdentity, token_verifier
 
@@ -83,3 +88,25 @@ def choose_tenant(signed_in: SignedIn, requested: str | None) -> AuthContext:
         firm_role=membership.firm_role,
         mfa_at=signed_in.identity.mfa_at,
     )
+
+
+@dataclass(frozen=True)
+class TeamMember:
+    user_id: UUID
+    display_name: str
+    role: EngagementRole
+
+
+async def add_engagement_member(
+    tx: UnitOfWork, ctx: AuthContext, engagement_id: UUID, user_id: UUID, role: EngagementRole
+) -> None:
+    """Adds a member inside the caller's unit of work and audits it. The caller has authorised
+    the action that implies it (e.g. `engagement.create` makes the creator a member, AC-4)."""
+    await insert_engagement_member(tx.session, ctx.tenant_id, engagement_id, user_id, role)
+    tx.record("engagement_member.added", target=Target("engagement", engagement_id))
+
+
+async def engagement_team(ctx: AuthContext, engagement_id: UUID) -> list[TeamMember]:
+    members = await engagement_members_of(ctx.tenant, engagement_id)
+    names = await display_names([user_id for user_id, _ in members])
+    return [TeamMember(user_id, names.get(user_id, ""), role) for user_id, role in members]

@@ -13,8 +13,9 @@ from dataclasses import dataclass
 from typing import Literal, cast, get_args
 from uuid import UUID
 
-from sqlalchemy import Column, MetaData, String, Table, select, text
+from sqlalchemy import Column, MetaData, String, Table, bindparam, insert, select, text
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.db import TenantContext, identity_engine, tenant_session
 
@@ -96,3 +97,46 @@ async def engagement_role(
             )
         ).scalar_one_or_none()
     return cast(EngagementRole | None, role)
+
+
+_USER_NAMES = text("SELECT id, display_name FROM users WHERE id IN :ids").bindparams(
+    bindparam("ids", expanding=True)
+)
+
+
+async def insert_engagement_member(
+    session: AsyncSession,
+    tenant_id: UUID,
+    engagement_id: UUID,
+    user_id: UUID,
+    role: EngagementRole,
+) -> None:
+    """Inside the caller's unit of work. The FK to memberships keeps members within the firm."""
+    await session.execute(
+        insert(engagement_members).values(
+            tenant_id=tenant_id, engagement_id=engagement_id, user_id=user_id, role=role
+        )
+    )
+
+
+async def engagement_members_of(
+    tenant: TenantContext, engagement_id: UUID
+) -> list[tuple[UUID, EngagementRole]]:
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                select(engagement_members.c.user_id, engagement_members.c.role)
+                .where(engagement_members.c.engagement_id == engagement_id)
+                .order_by(engagement_members.c.role, engagement_members.c.user_id)
+            )
+        ).all()
+    return [(cast(UUID, row.user_id), cast(EngagementRole, row.role)) for row in rows]
+
+
+async def display_names(user_ids: list[UUID]) -> dict[UUID, str]:
+    """Names for users already known to belong to the tenant (IDs read under RLS by the caller)."""
+    if not user_ids:
+        return {}
+    async with identity_engine().connect() as conn:
+        rows = (await conn.execute(_USER_NAMES, {"ids": user_ids})).all()
+    return {cast(UUID, row.id): str(row.display_name) for row in rows}
