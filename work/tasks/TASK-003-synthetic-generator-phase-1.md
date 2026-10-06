@@ -181,6 +181,7 @@ Append-only. Newest at the bottom.
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| XLSX keeps the `oversized_field` payload whole (> 32,767 chars) | AC-12 exactness; founder confirmed 2026-10-06 ("keep it as is"). Excel repairs such files on open | no |
 | XLSX via a minimal standard-library writer, not openpyxl | Byte-identical output (openpyxl stamps times) and no unapproved `types-openpyxl` | no |
 | Sub-streams seeded from `sha256(seed:name)` | Adding a sub-generator never shifts another's output | no |
 | Flaws applied to copies of derived artefacts | The ledger stays correct, so every unrelated invariant still holds | no |
