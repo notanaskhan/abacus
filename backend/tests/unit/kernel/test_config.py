@@ -17,6 +17,12 @@ CONNECTION = (
     "relay_database_url",
     "temporal_target",
 )
+IDENTITY = (
+    "identity_database_url",
+    "identity_issuer",
+    "identity_audience",
+    "identity_jwks",
+)
 
 
 @pytest.fixture(autouse=True)
@@ -36,6 +42,10 @@ def _explicit_connection_env(monkeypatch: pytest.MonkeyPatch, omit: str | None =
         "database_url": "postgresql+asyncpg://app@db.example.test:5432/abacus",
         "migrations_database_url": "postgresql+asyncpg://owner@db.example.test:5432/abacus",
         "relay_database_url": "postgresql+asyncpg://relay@db.example.test:5432/abacus",
+        "identity_database_url": "postgresql+asyncpg://identity@db.example.test:5432/abacus",
+        "identity_issuer": "https://idp.example.test",
+        "identity_audience": "abacus-api",
+        "identity_jwks": '{"keys": []}',
         "temporal_target": "temporal.example.test:7233",
     }
     for name in Settings.model_fields:
@@ -101,6 +111,10 @@ def test_ac20_non_local_environment_with_everything_explicit_loads(
     assert "db.example.test" in _plain(settings.database_url)
     assert "55432" not in _plain(settings.database_url)
     assert "db.example.test" in _plain(settings.relay_database_url)
+    assert "db.example.test" in _plain(settings.identity_database_url)
+    assert settings.identity_issuer == "https://idp.example.test"
+    assert settings.identity_audience == "abacus-api"
+    assert settings.identity_jwks == '{"keys": []}'
 
 
 @pytest.mark.parametrize("environment", ["staging", "production"])
@@ -144,7 +158,12 @@ def test_ac20_every_secret_looking_field_is_a_secretstr() -> None:
         for name in Settings.model_fields
         if any(word in name for word in ("secret", "password", "token"))
     ]
-    for name in [*secretish, "migrations_database_url", "relay_database_url"]:
+    for name in [
+        *secretish,
+        "migrations_database_url",
+        "relay_database_url",
+        "identity_database_url",
+    ]:
         assert isinstance(getattr(settings, name), SecretStr), name
 
 
@@ -177,3 +196,50 @@ def test_ac20_non_local_environment_requires_the_s3_keys(
     _explicit_connection_env(monkeypatch, omit=missing)
     with pytest.raises(ValueError):
         Settings()
+
+
+@pytest.mark.parametrize("environment", ["staging", "production"])
+@pytest.mark.parametrize("missing", IDENTITY)
+def test_ac20_non_local_environment_requires_each_identity_setting(
+    monkeypatch: pytest.MonkeyPatch, environment: str, missing: str
+) -> None:
+    monkeypatch.setenv("ABACUS_ENVIRONMENT", environment)
+    _explicit_connection_env(monkeypatch, omit=missing)
+    with pytest.raises(ValueError, match=missing):
+        Settings()
+
+
+@pytest.mark.parametrize("environment", ["local", "test"])
+def test_ac20_identity_settings_have_local_defaults(
+    monkeypatch: pytest.MonkeyPatch, environment: str
+) -> None:
+    monkeypatch.setenv("ABACUS_ENVIRONMENT", environment)
+    settings = Settings()
+    assert settings.identity_issuer == "https://identity.abacus.local"
+    assert settings.identity_audience == "abacus-api"
+    assert settings.identity_jwks == '{"keys": []}'
+    assert "abacus_identity" in _plain(settings.identity_database_url)
+    assert "55432" in _plain(settings.identity_database_url)
+
+
+def test_ac20_identity_url_is_a_secret_and_never_in_repr(monkeypatch: pytest.MonkeyPatch) -> None:
+    password = secrets.token_hex(8)
+    url = f"postgresql+asyncpg://abacus_identity:{password}@localhost:55432/abacus"
+    monkeypatch.setenv("ABACUS_IDENTITY_DATABASE_URL", url)
+    settings = Settings()
+    assert isinstance(settings.identity_database_url, SecretStr)
+    assert settings.identity_database_url.get_secret_value() == url
+    for rendered in (repr(settings), str(settings), settings.model_dump_json()):
+        assert password not in rendered
+
+
+def test_ac20_identity_settings_are_read_from_the_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ABACUS_IDENTITY_ISSUER", "https://idp.example.test")
+    monkeypatch.setenv("ABACUS_IDENTITY_AUDIENCE", "other-audience")
+    monkeypatch.setenv("ABACUS_IDENTITY_JWKS", '{"keys": [{"kid": "k"}]}')
+    settings = Settings()
+    assert settings.identity_issuer == "https://idp.example.test"
+    assert settings.identity_audience == "other-audience"
+    assert settings.identity_jwks == '{"keys": [{"kid": "k"}]}'
