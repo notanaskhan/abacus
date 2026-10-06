@@ -760,6 +760,7 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/identity/repository.py",
             "tests/integration/conftest.py",
             "tests/unit/kernel/test_config.py",
+            "tests/integration/test_identity.py",
         ),
     ),
     Rule(
