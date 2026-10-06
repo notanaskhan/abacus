@@ -25,6 +25,7 @@ from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 from pydantic import BaseModel
 
+from abacus.kernel.classification import classified
 from abacus.kernel.logging import get_logger
 from abacus.modules.identity.authz import recording_checks
 from abacus.modules.identity.authz.matrix import RULES
@@ -43,19 +44,19 @@ SELF: Final = "self"
 
 
 class ErrorOut(BaseModel):
-    detail: str
+    detail: Annotated[str, classified("public")]
 
 
 class FieldErrorOut(BaseModel):
-    loc: list[str | int]
-    msg: str
-    type: str
+    loc: Annotated[list[str | int], classified("public")]
+    msg: Annotated[str, classified("public")]
+    type: Annotated[str, classified("public")]
 
 
 class ValidationErrorOut(BaseModel):
     """What a 422 says: where and what, never the submitted value (abacus.api.app)."""
 
-    detail: list[FieldErrorOut]
+    detail: Annotated[list[FieldErrorOut], classified("public")]
 
 
 # Every route documents the errors it can return, so the generated client types them (ADR-013).
