@@ -31,8 +31,9 @@ REPO = Path(__file__).resolve().parents[4]
 BACKEND = REPO / "backend"
 SPECS_DIR = Path(_specs.__file__).parent
 SCREENER_YAML = SPECS_DIR / "evidence.screener.yaml"
-# Specs whose evaluation suite is delivered by a later increment (011b), by evaluation_suite path.
-OWED_TO_011B = {"evals/screening"}
+# Specs whose evaluation suite is delivered by a later increment, by evaluation_suite path.
+# 011b delivered `evals/screening`, so nothing is owed any more.
+OWED_TO_011B: set[str] = set()
 # The loader that runs at import, reached by name: tests drive it with patched SPECS.
 load_specs = cast(Callable[[], dict[str, AgentSpec]], vars(spec_module)["_load"])
 
@@ -113,6 +114,9 @@ def test_ac14_every_spec_has_an_evaluation_suite_that_exists_or_is_owed(agent_id
 
 def test_ac14_the_owed_list_names_only_suites_that_are_still_missing() -> None:
     assert all(not (REPO / suite).exists() for suite in OWED_TO_011B)
+    # `evals/screening` exists now (TASK-011b): it can no longer be owed.
+    assert (REPO / "evals/screening").is_dir()
+    assert "evals/screening" not in OWED_TO_011B
 
 
 # --- validation ----------------------------------------------------------------------------------

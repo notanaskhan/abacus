@@ -94,6 +94,9 @@ async def test_ac20_build_worker_checks_every_dependency_then_registers_the_modu
     async def ping() -> None:
         calls.append("ping")
 
+    async def ping_relay() -> None:
+        calls.append("ping_relay")
+
     async def check_ready() -> None:
         calls.append("storage")
 
@@ -107,14 +110,21 @@ async def test_ac20_build_worker_checks_every_dependency_then_registers_the_modu
         return "the-worker"
 
     monkeypatch.setattr(worker_main, "ping", ping)
+    monkeypatch.setattr(worker_main, "ping_relay", ping_relay)
     monkeypatch.setattr(worker_main, "key_service", lambda: calls.append("keys"))
     monkeypatch.setattr(worker_main, "payload_codec", lambda: calls.append("codec"))
     monkeypatch.setattr(worker_main, "check_ready", check_ready)
     monkeypatch.setattr(worker_main, "temporal_client", client)
     monkeypatch.setattr(worker_main, "Worker", worker)
     assert await worker_main.build_worker() == "the-worker"
-    assert calls == ["ping", "keys", "codec", "storage", "client"]
+    assert calls == ["ping", "ping_relay", "keys", "codec", "storage", "client"]
     assert built["client"] == "temporal-client"
-    assert built["workflows"] == list(worker_main.connections.WORKFLOWS)
-    assert built["activities"] == list(worker_main.connections.ACTIVITIES)
+    assert built["workflows"] == [
+        *worker_main.connections.WORKFLOWS,
+        *worker_main.agents.WORKFLOWS,
+    ]
+    assert built["activities"] == [
+        *worker_main.connections.ACTIVITIES,
+        *worker_main.agents.ACTIVITIES,
+    ]
     assert built["graceful_shutdown_timeout"] == worker_main.GRACEFUL_SHUTDOWN
