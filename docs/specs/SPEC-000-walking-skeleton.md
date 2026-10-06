@@ -7,7 +7,7 @@ risk_zone: red
 related_adrs: [ADR-002, ADR-004, ADR-005, ADR-007, ADR-011, ADR-013, ADR-014, ADR-016, ADR-017, ADR-018, ADR-019, ADR-021, ADR-022, ADR-023, ADR-024, ADR-027, ADR-029, ADR-031, ADR-035, ADR-037, ADR-038, ADR-042, ADR-047, ADR-051, ADR-054, ADR-065, ADR-066, ADR-070, ADR-083, ADR-090, ADR-101]
 related_specs: []
 created: 2026-10-04
-updated: 2026-10-05
+updated: 2026-10-06
 ---
 
 > **Instructions for coding agents**
@@ -180,7 +180,7 @@ Three screens: sign-in redirect, engagement list and creation, evidence board fo
 Staging only. No feature flags needed.
 
 ## 20. Open questions
-- [ ] Identity vendor confirmed? (ADR-029; skeleton may use the vendor's development environment)
+- [x] Identity vendor confirmed? (ADR-029; skeleton may use the vendor's development environment) **Decided 2026-10-06 (founder): the skeleton signs in against a local fake OpenID Connect provider behind the same token-verification interface; WorkOS (ADR-029, still pending its commercial check) replaces it before staging (AC-21). Staging work (Terraform, AWS) is sequenced last.**
 
 ## 21. Future
 Everything in Phase 2 of the build plan.

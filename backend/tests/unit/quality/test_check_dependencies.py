@@ -630,3 +630,556 @@ def test_ac20_plain_pnpm_workspace_passes(tmp_path: Path) -> None:
     text = json.dumps({"packages": ["apps/*", "packages/*"]})
     _repo(tmp_path, _allowlist(), files={"pnpm-workspace.yaml": text})
     assert cd.check(tmp_path) == []
+
+
+# --- Container images (TASK-004) --------------------------------------------------------------
+
+COMPOSE = "docker-compose.yml"
+COMPOSE_NAMES = ["docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml"]
+DIGEST = "sha256:" + "ab" * 32
+OTHER_DIGEST = "sha256:" + "09" * 32
+PG = "pgvector/pgvector"
+PINNED_PG = f"{PG}:pg17@{DIGEST}"
+BUILD_REFUSED = "builds an image; build steps are not allowed in compose files"
+ALLOWLIST_PATH = "docs/architecture/dependency-allowlist.yaml"
+
+
+def _pin_message(rel: str, image: str) -> str:
+    return f"{rel}: {image} must be pinned by digest (name:tag@sha256:...)"
+
+
+def _unlisted(rel: str, name: str) -> str:
+    return f"{rel}: {name} is not in the dependency allowlist"
+
+
+def _pending(rel: str, name: str) -> str:
+    return f"{rel}: {name} is pending in the dependency allowlist, not approved"
+
+
+def _stack(
+    root: Path,
+    containers: dict[str, str],
+    services: dict[str, dict[str, object]] | None = None,
+    *,
+    rel: str = COMPOSE,
+) -> Path:
+    """A repo whose allowlist has a `containers:` section and one compose file."""
+    _repo(root, _allowlist())
+    allow: dict[str, object] = {**_allowlist(), "containers": containers}
+    _write(root, ALLOWLIST_PATH, json.dumps(allow, indent=2))
+    if services is not None:
+        _write(root, rel, json.dumps({"services": services}))
+    return root
+
+
+def _one(image: str) -> dict[str, dict[str, object]]:
+    return {"db": {"image": image}}
+
+
+def test_ac20_pinned_approved_image_passes(tmp_path: Path) -> None:
+    _stack(tmp_path, {PG: "approved"}, _one(PINNED_PG))
+    assert cd.check(tmp_path) == []
+
+
+def test_ac20_compose_file_written_as_yaml_text_is_read(tmp_path: Path) -> None:
+    _stack(tmp_path, {PG: "approved"})
+    text = f"services:\n  db:\n    image: {PG}:pg17@{DIGEST}\n    ports:\n      - '5432:5432'\n"
+    _write(tmp_path, COMPOSE, text)
+    assert cd.check(tmp_path) == []
+
+
+def test_ac20_unpinned_image_in_yaml_text_is_reported(tmp_path: Path) -> None:
+    _stack(tmp_path, {PG: "approved"})
+    _write(tmp_path, COMPOSE, f"services:\n  db:\n    image: {PG}:pg17\n")
+    assert cd.check(tmp_path) == [_pin_message(COMPOSE, f"{PG}:pg17")]
+
+
+def test_ac20_no_compose_file_passes(tmp_path: Path) -> None:
+    _stack(tmp_path, {})
+    assert cd.check(tmp_path) == []
+
+
+def test_ac20_compose_without_images_passes(tmp_path: Path) -> None:
+    _stack(tmp_path, {}, {})
+    assert cd.check(tmp_path) == []
+
+
+def test_ac20_allowlist_without_containers_section_reports_image_as_unlisted(
+    tmp_path: Path,
+) -> None:
+    _repo(tmp_path, _allowlist())
+    _write(tmp_path, COMPOSE, json.dumps({"services": _one(PINNED_PG)}))
+    assert cd.check(tmp_path) == [_unlisted(COMPOSE, PG)]
+
+
+# pinned by digest
+
+
+@pytest.mark.parametrize(
+    "image",
+    [
+        f"{PG}:pg17",
+        f"{PG}:latest",
+        PG,
+        f"{PG}@sha256",
+        f"{PG}@sha256:",
+        f"{PG}@{DIGEST[7:]}",
+        f"{PG}:pg17@md5:{'ab' * 16}",
+        f"{PG}:pg17@sha512:{'ab' * 32}",
+    ],
+    ids=["tag-only", "latest", "bare-name", "no-hex", "empty-hex", "no-algo", "md5", "sha512"],
+)
+def test_ac20_image_without_sha256_digest_is_reported(tmp_path: Path, image: str) -> None:
+    _stack(tmp_path, {PG: "approved"}, _one(image))
+    assert cd.check(tmp_path) == [_pin_message(COMPOSE, image)]
+
+
+@pytest.mark.parametrize(
+    "digest",
+    ["sha256:" + "AB" * 32, "sha256:" + "aB" * 32, "sha256:" + "ab" * 31 + "AB"],
+    ids=["upper", "mixed", "one-upper-pair"],
+)
+def test_ac20_uppercase_hex_digest_is_reported(tmp_path: Path, digest: str) -> None:
+    image = f"{PG}:pg17@{digest}"
+    _stack(tmp_path, {PG: "approved"}, _one(image))
+    assert cd.check(tmp_path) == [_pin_message(COMPOSE, image)]
+
+
+@pytest.mark.parametrize("hex_length", [0, 1, 12, 40, 63, 65, 128])
+def test_ac20_digest_of_wrong_length_is_reported(tmp_path: Path, hex_length: int) -> None:
+    image = f"{PG}:pg17@sha256:" + ("a1" * 64)[:hex_length]
+    _stack(tmp_path, {PG: "approved"}, _one(image))
+    assert cd.check(tmp_path) == [_pin_message(COMPOSE, image)]
+
+
+def test_ac20_non_hex_digest_is_reported(tmp_path: Path) -> None:
+    image = f"{PG}:pg17@sha256:" + "g" * 64
+    _stack(tmp_path, {PG: "approved"}, _one(image))
+    assert cd.check(tmp_path) == [_pin_message(COMPOSE, image)]
+
+
+def test_ac20_digest_without_tag_is_allowed(tmp_path: Path) -> None:
+    _stack(tmp_path, {PG: "approved"}, _one(f"{PG}@{DIGEST}"))
+    assert cd.check(tmp_path) == []
+
+
+def test_ac20_registry_host_and_nested_path_name_is_matched_without_tag_and_digest(
+    tmp_path: Path,
+) -> None:
+    name = "ghcr.io/org/team/img"
+    _stack(tmp_path, {name: "approved"}, _one(f"{name}:1.2.3@{DIGEST}"))
+    assert cd.check(tmp_path) == []
+
+
+def test_ac20_tag_does_not_change_the_approved_name(tmp_path: Path) -> None:
+    _stack(
+        tmp_path,
+        {PG: "approved"},
+        {"a": {"image": f"{PG}:pg16@{DIGEST}"}, "b": {"image": f"{PG}:pg17@{OTHER_DIGEST}"}},
+    )
+    assert cd.check(tmp_path) == []
+
+
+def test_ac20_allowlist_key_with_tag_does_not_approve_the_name(tmp_path: Path) -> None:
+    _stack(tmp_path, {f"{PG}:pg17": "approved"}, _one(PINNED_PG))
+    assert cd.check(tmp_path) == [_unlisted(COMPOSE, PG)]
+
+
+# approved, pending, unlisted
+
+
+def test_ac20_unlisted_image_is_reported_by_name(tmp_path: Path) -> None:
+    _stack(tmp_path, {}, _one(PINNED_PG))
+    assert cd.check(tmp_path) == [_unlisted(COMPOSE, PG)]
+
+
+def test_ac20_image_listed_under_another_name_is_unlisted(tmp_path: Path) -> None:
+    _stack(tmp_path, {"versity/versitygw": "approved"}, _one(PINNED_PG))
+    assert cd.check(tmp_path) == [_unlisted(COMPOSE, PG)]
+
+
+def test_ac20_pending_image_is_reported_by_name(tmp_path: Path) -> None:
+    _stack(tmp_path, {PG: "pending"}, _one(PINNED_PG))
+    assert cd.check(tmp_path) == [_pending(COMPOSE, PG)]
+
+
+def test_ac20_unpinned_approved_image_reports_only_the_pin_failure(tmp_path: Path) -> None:
+    _stack(tmp_path, {PG: "approved"}, _one(f"{PG}:pg17"))
+    assert cd.check(tmp_path) == [_pin_message(COMPOSE, f"{PG}:pg17")]
+
+
+@pytest.mark.parametrize("status", ["pending", None])
+def test_ac20_unpinned_image_that_is_not_approved_still_reports_the_pin_failure(
+    tmp_path: Path, status: str | None
+) -> None:
+    image = f"{PG}:pg17"
+    _stack(tmp_path, {} if status is None else {PG: status}, _one(image))
+    assert _pin_message(COMPOSE, image) in cd.check(tmp_path)
+
+
+def test_ac20_container_allowlist_is_independent_of_package_sections(tmp_path: Path) -> None:
+    _repo(tmp_path, _allowlist(py_runtime={PG: "approved"}, ts_runtime={PG: "approved"}))
+    _write(tmp_path, COMPOSE, json.dumps({"services": _one(PINNED_PG)}))
+    assert cd.check(tmp_path) == [_unlisted(COMPOSE, PG)]
+
+
+def test_ac20_package_allowlist_is_independent_of_container_section(tmp_path: Path) -> None:
+    _stack(tmp_path, {"fastapi": "approved"})
+    _write(
+        tmp_path, PYPROJECT, '[project]\nname = "x"\nversion = "0"\ndependencies = ["fastapi"]\n'
+    )
+    assert cd.check(tmp_path) == [_unlisted(PYPROJECT, "fastapi")]
+
+
+# glob keys and exact-beats-glob
+
+
+def test_ac20_container_glob_matches_names_in_its_namespace(tmp_path: Path) -> None:
+    _stack(
+        tmp_path,
+        {"ghcr.io/org/*": "approved"},
+        {
+            "a": {"image": f"ghcr.io/org/one:1@{DIGEST}"},
+            "b": {"image": f"ghcr.io/org/two@{OTHER_DIGEST}"},
+        },
+    )
+    assert cd.check(tmp_path) == []
+
+
+def test_ac20_container_glob_does_not_match_other_namespaces(tmp_path: Path) -> None:
+    _stack(tmp_path, {"ghcr.io/org/*": "approved"}, _one(f"ghcr.io/other/one:1@{DIGEST}"))
+    assert cd.check(tmp_path) == [_unlisted(COMPOSE, "ghcr.io/other/one")]
+
+
+def test_ac20_pending_container_glob_is_reported(tmp_path: Path) -> None:
+    _stack(tmp_path, {"ghcr.io/org/*": "pending"}, _one(f"ghcr.io/org/one:1@{DIGEST}"))
+    assert cd.check(tmp_path) == [_pending(COMPOSE, "ghcr.io/org/one")]
+
+
+def test_ac20_exact_pending_container_key_beats_approved_glob(tmp_path: Path) -> None:
+    _stack(
+        tmp_path,
+        {"ghcr.io/org/*": "approved", "ghcr.io/org/bad": "pending"},
+        {
+            "bad": {"image": f"ghcr.io/org/bad:1@{DIGEST}"},
+            "good": {"image": f"ghcr.io/org/good:1@{DIGEST}"},
+        },
+    )
+    assert cd.check(tmp_path) == [_pending(COMPOSE, "ghcr.io/org/bad")]
+
+
+def test_ac20_exact_approved_container_key_beats_pending_glob(tmp_path: Path) -> None:
+    _stack(
+        tmp_path,
+        {"ghcr.io/org/*": "pending", "ghcr.io/org/good": "approved"},
+        _one(f"ghcr.io/org/good:1@{DIGEST}"),
+    )
+    assert cd.check(tmp_path) == []
+
+
+# build steps
+
+
+def test_ac20_build_without_image_is_refused(tmp_path: Path) -> None:
+    _stack(tmp_path, {}, {"api": {"build": "./api"}})
+    assert cd.check(tmp_path) == [
+        f"{COMPOSE}: service api builds an image; build steps are not allowed in compose files"
+    ]
+
+
+def test_ac20_build_mapping_without_image_is_refused(tmp_path: Path) -> None:
+    _stack(tmp_path, {}, {"worker": {"build": {"context": ".", "dockerfile": "Dockerfile"}}})
+    assert cd.check(tmp_path) == [
+        f"{COMPOSE}: service worker builds an image; build steps are not allowed in compose files"
+    ]
+
+
+def test_ac20_build_without_image_is_refused_even_when_images_are_approved(
+    tmp_path: Path,
+) -> None:
+    _stack(tmp_path, {PG: "approved"}, {"db": {"image": PINNED_PG}, "api": {"build": "."}})
+    assert cd.check(tmp_path) == [
+        f"{COMPOSE}: service api builds an image; build steps are not allowed in compose files"
+    ]
+
+
+def test_ac20_each_build_service_is_reported_in_order(tmp_path: Path) -> None:
+    _stack(tmp_path, {}, {"zeta": {"build": "."}, "alpha": {"build": "."}})
+    suffix = "builds an image; build steps are not allowed in compose files"
+    assert cd.check(tmp_path) == [
+        f"{COMPOSE}: service alpha {suffix}",
+        f"{COMPOSE}: service zeta {suffix}",
+    ]
+
+
+def test_ac20_build_with_image_is_refused_in_addition_to_the_image_checks(
+    tmp_path: Path,
+) -> None:
+    _stack(tmp_path, {PG: "approved"}, {"db": {"image": PINNED_PG, "build": "."}})
+    assert cd.check(tmp_path) == [f"{COMPOSE}: service db {BUILD_REFUSED}"]
+
+
+def test_ac20_build_with_unpinned_image_reports_both_failures(tmp_path: Path) -> None:
+    _stack(tmp_path, {PG: "approved"}, {"db": {"image": f"{PG}:pg17", "build": "."}})
+    assert cd.check(tmp_path) == sorted(
+        [_pin_message(COMPOSE, f"{PG}:pg17"), f"{COMPOSE}: service db {BUILD_REFUSED}"]
+    )
+
+
+def test_ac20_build_with_unlisted_image_reports_both_failures(tmp_path: Path) -> None:
+    _stack(tmp_path, {}, {"db": {"image": PINNED_PG, "build": {"context": "."}}})
+    assert cd.check(tmp_path) == sorted(
+        [_unlisted(COMPOSE, PG), f"{COMPOSE}: service db {BUILD_REFUSED}"]
+    )
+
+
+# extends, include and invalid YAML
+
+
+def test_ac20_extends_is_refused(tmp_path: Path) -> None:
+    _stack(tmp_path, {PG: "approved"}, {"db": {"image": PINNED_PG, "extends": {"service": "x"}}})
+    assert cd.check(tmp_path) == [
+        f"{COMPOSE}: service db uses extends; compose inheritance is not allowed"
+    ]
+
+
+def test_ac20_extends_as_a_string_or_with_file_is_refused(tmp_path: Path) -> None:
+    _stack(
+        tmp_path,
+        {PG: "approved"},
+        {
+            "b": {"image": PINNED_PG, "extends": {"file": "other.yml", "service": "x"}},
+            "a": {"image": PINNED_PG, "extends": "x"},
+        },
+    )
+    assert cd.check(tmp_path) == [
+        f"{COMPOSE}: service a uses extends; compose inheritance is not allowed",
+        f"{COMPOSE}: service b uses extends; compose inheritance is not allowed",
+    ]
+
+
+def test_ac20_extends_is_reported_in_addition_to_image_failures(tmp_path: Path) -> None:
+    _stack(tmp_path, {}, {"db": {"image": f"{PG}:pg17", "extends": {"service": "x"}}})
+    assert cd.check(tmp_path) == sorted(
+        [
+            _pin_message(COMPOSE, f"{PG}:pg17"),
+            f"{COMPOSE}: service db uses extends; compose inheritance is not allowed",
+        ]
+    )
+
+
+def test_ac20_top_level_include_is_refused(tmp_path: Path) -> None:
+    _stack(tmp_path, {PG: "approved"}, _one(PINNED_PG))
+    _write(
+        tmp_path,
+        COMPOSE,
+        json.dumps({"include": ["other.yml"], "services": _one(PINNED_PG)}),
+    )
+    assert cd.check(tmp_path) == [f"{COMPOSE}: include is not allowed in compose files"]
+
+
+def test_ac20_include_without_services_is_refused(tmp_path: Path) -> None:
+    _stack(tmp_path, {})
+    _write(tmp_path, COMPOSE, json.dumps({"include": [{"path": "other.yml"}]}))
+    assert cd.check(tmp_path) == [f"{COMPOSE}: include is not allowed in compose files"]
+
+
+def test_ac20_invalid_yaml_is_refused(tmp_path: Path) -> None:
+    _stack(tmp_path, {})
+    _write(tmp_path, COMPOSE, "services: [unclosed\n  db: {image\n")
+    assert cd.check(tmp_path) == [f"{COMPOSE}: is not valid YAML"]
+
+
+def test_ac20_invalid_yaml_is_refused_in_every_matching_file(tmp_path: Path) -> None:
+    _stack(tmp_path, {})
+    _write(tmp_path, "docker-compose.override.yml", "a: [\n")
+    _write(tmp_path, ".devcontainer/compose.yaml", "a: {b\n")
+    assert cd.check(tmp_path) == [
+        ".devcontainer/compose.yaml: is not valid YAML",
+        "docker-compose.override.yml: is not valid YAML",
+    ]
+
+
+def test_ac20_invalid_yaml_in_an_ignored_directory_is_not_reported(tmp_path: Path) -> None:
+    _stack(tmp_path, {})
+    _write(tmp_path, "node_modules/x/compose.yml", "a: [\n")
+    assert cd.check(tmp_path) == []
+
+
+# compose filenames and locations
+
+
+@pytest.mark.parametrize("name", COMPOSE_NAMES)
+def test_ac20_every_compose_filename_is_scanned(tmp_path: Path, name: str) -> None:
+    _stack(tmp_path, {}, _one(PINNED_PG), rel=name)
+    assert cd.check(tmp_path) == [_unlisted(name, PG)]
+
+
+@pytest.mark.parametrize("name", COMPOSE_NAMES)
+def test_ac20_approved_image_passes_in_every_compose_filename(tmp_path: Path, name: str) -> None:
+    _stack(tmp_path, {PG: "approved"}, _one(PINNED_PG), rel=name)
+    assert cd.check(tmp_path) == []
+
+
+@pytest.mark.parametrize("name", COMPOSE_NAMES)
+def test_ac20_unpinned_image_is_reported_in_every_compose_filename(
+    tmp_path: Path, name: str
+) -> None:
+    _stack(tmp_path, {PG: "approved"}, _one(f"{PG}:pg17"), rel=name)
+    assert cd.check(tmp_path) == [_pin_message(name, f"{PG}:pg17")]
+
+
+@pytest.mark.parametrize("name", COMPOSE_NAMES)
+def test_ac20_build_is_refused_in_every_compose_filename(tmp_path: Path, name: str) -> None:
+    _stack(tmp_path, {}, {"api": {"build": "."}}, rel=name)
+    assert cd.check(tmp_path) == [
+        f"{name}: service api builds an image; build steps are not allowed in compose files"
+    ]
+
+
+@pytest.mark.parametrize(
+    "rel",
+    ["deploy/docker-compose.yml", "infra/local/compose.yaml", "a/b/c/docker-compose.yaml"],
+)
+def test_ac20_compose_files_in_subdirectories_are_scanned(tmp_path: Path, rel: str) -> None:
+    _stack(tmp_path, {}, _one(PINNED_PG), rel=rel)
+    assert cd.check(tmp_path) == [_unlisted(rel, PG)]
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "docker-compose.override.yml",
+        "docker-compose.prod.yml",
+        "docker-compose.dev.yaml",
+        "compose.override.yaml",
+        "compose.override.yml",
+        "mycompose.yml",
+        ".devcontainer/docker-compose.yml",
+        ".github/compose.yaml",
+        "apps/.cache/compose.yaml",
+    ],
+)
+def test_ac20_every_compose_pattern_file_is_scanned_for_unlisted_images(
+    tmp_path: Path, rel: str
+) -> None:
+    _stack(tmp_path, {}, _one(PINNED_PG), rel=rel)
+    assert cd.check(tmp_path) == [_unlisted(rel, PG)]
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "docker-compose.override.yml",
+        "docker-compose.prod.yml",
+        "compose.override.yaml",
+        ".devcontainer/docker-compose.yml",
+    ],
+)
+def test_ac20_unpinned_image_is_reported_in_override_and_dot_directory_files(
+    tmp_path: Path, rel: str
+) -> None:
+    _stack(tmp_path, {PG: "approved"}, _one(f"{PG}:pg17"), rel=rel)
+    assert cd.check(tmp_path) == [_pin_message(rel, f"{PG}:pg17")]
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "docker-compose.override.yml",
+        "docker-compose.prod.yml",
+        "compose.override.yaml",
+        ".devcontainer/docker-compose.yml",
+    ],
+)
+def test_ac20_approved_pinned_image_passes_in_override_and_dot_directory_files(
+    tmp_path: Path, rel: str
+) -> None:
+    _stack(tmp_path, {PG: "approved"}, _one(PINNED_PG), rel=rel)
+    assert cd.check(tmp_path) == []
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "docker-compose.yml.bak",
+        "docker-compose.yml.txt",
+        "compose.json",
+        "docker-compose.toml",
+        "composer.json",
+        "docker-compose.yaml.orig",
+    ],
+)
+def test_ac20_files_not_matching_the_compose_pattern_are_not_scanned(
+    tmp_path: Path, rel: str
+) -> None:
+    _stack(tmp_path, {}, _one(PINNED_PG), rel=rel)
+    assert cd.check(tmp_path) == []
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "node_modules/x/docker-compose.yml",
+        "apps/web/node_modules/compose.yaml",
+        "apps/web/dist/docker-compose.yaml",
+        "dist/compose.yml",
+        ".git/docker-compose.yml",
+        ".venv/compose.yml",
+        "apps/.venv/docker-compose.prod.yml",
+        "node_modules/x/docker-compose.override.yml",
+        "dist/compose.override.yaml",
+    ],
+)
+def test_ac20_ignored_directories_hide_compose_files(tmp_path: Path, rel: str) -> None:
+    _stack(tmp_path, {}, {"db": {"image": PG}, "api": {"build": "."}}, rel=rel)
+    assert cd.check(tmp_path) == []
+
+
+# ordering and combination
+
+
+def test_ac20_container_messages_are_sorted_and_cover_every_compose_file(tmp_path: Path) -> None:
+    _stack(
+        tmp_path,
+        {PG: "approved", "versity/versitygw": "pending"},
+        {
+            "zz": {"image": f"zzz/unlisted:1@{DIGEST}"},
+            "mid": {"image": f"{PG}:pg17"},
+            "s3": {"image": f"versity/versitygw:rel@{DIGEST}"},
+            "api": {"build": "."},
+        },
+    )
+    _write(
+        tmp_path,
+        "deploy/compose.yaml",
+        json.dumps({"services": {"x": {"image": f"aaa/unlisted@{DIGEST}"}}}),
+    )
+    result = cd.check(tmp_path)
+    assert result == sorted(result)
+    assert result == sorted(
+        [
+            _unlisted("deploy/compose.yaml", "aaa/unlisted"),
+            f"{COMPOSE}: service api {BUILD_REFUSED}",
+            _pending(COMPOSE, "versity/versitygw"),
+            _pin_message(COMPOSE, f"{PG}:pg17"),
+            _unlisted(COMPOSE, "zzz/unlisted"),
+        ]
+    )
+
+
+def test_ac20_container_and_package_messages_are_combined_and_sorted(tmp_path: Path) -> None:
+    _stack(tmp_path, {}, _one(PINNED_PG))
+    _write(tmp_path, PYPROJECT, '[project]\nname = "x"\nversion = "0"\ndependencies = ["zzz"]\n')
+    result = cd.check(tmp_path)
+    assert result == sorted(result)
+    assert result == sorted([_unlisted(PYPROJECT, "zzz"), _unlisted(COMPOSE, PG)])
+
+
+def test_ac20_same_image_in_two_services_is_reported_for_each_occurrence(
+    tmp_path: Path,
+) -> None:
+    _stack(tmp_path, {}, {"a": {"image": PINNED_PG}, "b": {"image": PINNED_PG}})
+    result = cd.check(tmp_path)
+    assert result
+    assert set(result) == {_unlisted(COMPOSE, PG)}

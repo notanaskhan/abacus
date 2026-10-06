@@ -30,6 +30,11 @@ _PY_NAME = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)")
 _NPM_NON_REGISTRY = re.compile(r"^(?:npm:|git|github:|https?:|file:|link:)|^[^#]*/")
 REGISTRY = "must be installed from the package registry, not a URL, path, git repository or alias"
 NOT_WORKSPACE = "is not a workspace package"
+PENDING = "is pending in the dependency allowlist, not approved"
+COMPOSE_SKIPPED_DIRS = frozenset({".git", ".venv", "node_modules", "dist"})
+# name[:tag]@sha256:<64 lowercase hex>; a tag never contains "/", so a registry port stays in
+# the name.
+_PINNED = re.compile(r"^(?P<name>[^@\s]+?)(?::[^:@/\s]+)?@sha256:[0-9a-f]{64}$")
 SOURCE_CHANGE = "is not allowed: it changes where or which dependencies are installed"
 UV_FORBIDDEN = (
     "sources",
@@ -176,6 +181,64 @@ def _verdict(
     return "is pending in the dependency allowlist, not approved"
 
 
+def _compose_files(repo: Path) -> Iterator[Path]:
+    """Every *compose*.y*ml, dot-directories included (e.g. .devcontainer); docker compose loads
+    overrides such as docker-compose.override.yml automatically, so none may escape the check."""
+    for path in sorted(repo.rglob("*compose*.y*ml")):
+        parts = path.relative_to(repo).parts[:-1]
+        if path.is_file() and not any(p in COMPOSE_SKIPPED_DIRS for p in parts):
+            yield path
+
+
+def _container_problems(repo: Path, allowlist: Mapping[str, object], problems: set[str]) -> None:
+    section = allowlist.get("containers")
+    entries = (
+        {str(k): str(v) for k, v in cast(dict[object, object], section).items()}
+        if isinstance(section, dict)
+        else {}
+    )
+    for path in _compose_files(repo):
+        rel = path.relative_to(repo).as_posix()
+        try:
+            loaded: object = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except yaml.YAMLError:
+            problems.add(f"{rel}: is not valid YAML")
+            continue
+        if not isinstance(loaded, dict):
+            continue
+        document = cast(dict[str, object], loaded)
+        if "include" in document:
+            problems.add(f"{rel}: include is not allowed in compose files")
+        services = document.get("services")
+        if not isinstance(services, dict):
+            continue
+        for name, service in sorted(cast(dict[str, object], services).items()):
+            if not isinstance(service, dict):
+                continue
+            spec = cast(dict[str, object], service)
+            if "build" in spec:
+                problems.add(
+                    f"{rel}: service {name} builds an image; "
+                    "build steps are not allowed in compose files"
+                )
+            if "extends" in spec:
+                problems.add(
+                    f"{rel}: service {name} uses extends; compose inheritance is not allowed"
+                )
+            image = spec.get("image")
+            if image is None:
+                continue
+            pinned = _PINNED.match(str(image))
+            if pinned is None:
+                problems.add(f"{rel}: {image} must be pinned by digest (name:tag@sha256:...)")
+                continue
+            status = _status(pinned["name"], entries, normalise=False)
+            if status is None:
+                problems.add(f"{rel}: {pinned['name']} is not in the dependency allowlist")
+            elif status != "approved":
+                problems.add(f"{rel}: {pinned['name']} {PENDING}")
+
+
 def check(repo: Path = REPO) -> list[str]:
     loaded: object = yaml.safe_load((repo / ALLOWLIST).read_text(encoding="utf-8"))
     allowlist = cast(dict[str, object], loaded) if isinstance(loaded, dict) else {}
@@ -192,6 +255,7 @@ def check(repo: Path = REPO) -> list[str]:
             verdict = _verdict(dep, runtime, dev, py)
             if verdict:
                 problems.add(f"{dep.manifest}: {dep.name} {verdict}")
+    _container_problems(repo, allowlist, problems)
     return sorted(problems)
 
 

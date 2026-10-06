@@ -3,7 +3,11 @@
 name = "abacus-backend"
 version = "0.0.0"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "asyncpg",
+    "boto3",
+    "temporalio",
+]
 
 [dependency-groups]
 dev = [
@@ -17,6 +21,9 @@ dev = [
     "bandit",
     "pyyaml",
     "types-PyYAML",
+    "testcontainers",
+    "types-boto3[s3]",
+    "asyncpg-stubs",
 ]
 
 [build-system]
@@ -81,6 +88,8 @@ known-first-party = ["abacus", "abacus_tools"]
 "tests/**" = ["S101"]
 "tests/unit/quality/test_hooks.py" = ["S101", "S603"]  # runs the repo's own hook scripts
 "tests/unit/quality/test_secrets_scan.py" = ["S101", "S603"]  # git init in a tmp repo
+"tests/integration/conftest.py" = ["S105", "S106", "S310"]  # local container credentials; health checks
+"tests/integration/test_local_stack.py" = ["S105", "S106", "S310"]  # local container smoke tests
 "tests/unit/synthetic/**" = ["S314", "S603"]  # runs this interpreter; parses our own XLSX
 
 [tool.ruff.format]
