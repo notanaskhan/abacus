@@ -235,6 +235,50 @@ export type RequestItemOut = {
 };
 
 /**
+ * RetrievalIn
+ */
+export type RetrievalIn = {
+    /**
+     * Period End
+     */
+    period_end: string;
+    /**
+     * Period Start
+     */
+    period_start: string;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+};
+
+/**
+ * RetrievalOut
+ */
+export type RetrievalOut = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string | null;
+    /**
+     * Failure Code
+     */
+    failure_code: string | null;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+    /**
+     * Status
+     */
+    status: 'running' | 'succeeded' | 'failed_validation' | 'failed';
+    /**
+     * Sync Run Id
+     */
+    sync_run_id: string;
+};
+
+/**
  * TeamMemberOut
  */
 export type TeamMemberOut = {
@@ -517,6 +561,114 @@ export type CreateRequestItemResponses = {
 };
 
 export type CreateRequestItemResponse = CreateRequestItemResponses[keyof CreateRequestItemResponses];
+
+export type StartRetrievalData = {
+    body: RetrievalIn;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/retrievals';
+};
+
+export type StartRetrievalErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type StartRetrievalError = StartRetrievalErrors[keyof StartRetrievalErrors];
+
+export type StartRetrievalResponses = {
+    /**
+     * Successful Response
+     */
+    202: RetrievalOut;
+};
+
+export type StartRetrievalResponse = StartRetrievalResponses[keyof StartRetrievalResponses];
+
+export type GetRetrievalData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Sync Run Id
+         */
+        sync_run_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/retrievals/{sync_run_id}';
+};
+
+export type GetRetrievalErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type GetRetrievalError = GetRetrievalErrors[keyof GetRetrievalErrors];
+
+export type GetRetrievalResponses = {
+    /**
+     * Successful Response
+     */
+    200: RetrievalOut;
+};
+
+export type GetRetrievalResponse = GetRetrievalResponses[keyof GetRetrievalResponses];
 
 export type MeData = {
     body?: never;

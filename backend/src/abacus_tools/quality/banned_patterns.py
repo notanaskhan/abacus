@@ -858,6 +858,21 @@ def _check_connector_read_only(src: SourceFile) -> Iterator[Finding]:
                     )
 
 
+_WORKFLOW_IMPORTS = ("__future__", "datetime", "dataclasses", "typing", "temporalio")
+
+
+def _check_workflow_imports(src: SourceFile) -> Iterator[Finding]:
+    """ADR-017: workflows orchestrate only. They import Temporal's workflow API, plain
+    standard-library types and their own module's `workflow_types`; never repositories,
+    sessions, clients, clocks or anything with I/O."""
+    own = _own_module(src)
+    allowed_own = f"abacus.modules.{own}.workflow_types" if own else None
+    for line, module in _imported_modules(src):
+        if module.split(".")[0] in _WORKFLOW_IMPORTS or module == allowed_own:
+            continue
+        yield Finding(line, f"{module}: workflows import only Temporal and their workflow types")
+
+
 # --- tree rules -------------------------------------------------------------------------------
 
 
@@ -1154,6 +1169,13 @@ RULES: list[Rule | TreeRule] = [
         adr="ADR-040",
         check=_check_connector_read_only,
         include=("src/abacus/modules/connections/*",),
+    ),
+    Rule(
+        id="WF-001",
+        description="Workflow modules import only Temporal and their workflow types",
+        adr="ADR-017, ADR-090",
+        check=_check_workflow_imports,
+        include=("src/abacus/modules/*/workflows.py",),
     ),
     Rule(
         id="ANY-001",

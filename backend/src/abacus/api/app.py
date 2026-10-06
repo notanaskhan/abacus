@@ -18,11 +18,12 @@ from fastapi.routing import APIRoute
 from abacus.kernel.config import settings
 from abacus.kernel.errors import NotFound
 from abacus.kernel.logging import get_logger
+from abacus.modules.connections import api as connections
 from abacus.modules.engagements import api as engagements
 from abacus.modules.identity import api as identity
 from abacus.modules.requests import api as requests
 
-ROUTERS = (identity.router, engagements.router, requests.router)
+ROUTERS = (identity.router, engagements.router, requests.router, connections.router)
 # What a validation error may say about each problem: never the submitted value (client content
 # is hostile, AGENTS.md #8), never pydantic's internal context.
 _ERROR_FIELDS = ("loc", "msg", "type")
@@ -36,6 +37,20 @@ async def _forbidden(_request: Request, _exc: Exception) -> JSONResponse:
 
 async def _not_found(_request: Request, _exc: Exception) -> JSONResponse:
     return JSONResponse({"detail": "not found"}, status_code=404)
+
+
+async def _conflict(_request: Request, exc: Exception) -> JSONResponse:
+    # A fixed code per cause: nothing from the request or the database is echoed.
+    codes = {
+        "NoConnection": "no_connection",
+        "ItemNotFulfillable": "item_not_open",
+        "EngagementArchived": "engagement_archived",
+    }
+    return JSONResponse({"detail": codes.get(type(exc).__name__, "conflict")}, status_code=409)
+
+
+async def _unavailable(_request: Request, _exc: Exception) -> JSONResponse:
+    return JSONResponse({"detail": "service unavailable"}, status_code=503)
 
 
 async def _invalid(_request: Request, exc: Exception) -> JSONResponse:
@@ -88,6 +103,9 @@ def create_app() -> FastAPI:
         app.include_router(router)
     app.add_exception_handler(identity.Forbidden, _forbidden)
     app.add_exception_handler(NotFound, _not_found)
+    app.add_exception_handler(connections.NoConnection, _conflict)
+    app.add_exception_handler(connections.ItemNotFulfillable, _conflict)
+    app.add_exception_handler(connections.WorkflowUnavailable, _unavailable)
     app.add_exception_handler(RequestValidationError, _invalid)
     app.add_exception_handler(Exception, _unexpected)
     app.openapi = lambda: _openapi(app)  # type-safe override of FastAPI's generator

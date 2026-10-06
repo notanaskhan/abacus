@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateEngagementData, CreateEngagementErrors, CreateEngagementResponses, CreateRequestItemData, CreateRequestItemErrors, CreateRequestItemResponses, GetEngagementData, GetEngagementErrors, GetEngagementResponses, ListEngagementsData, ListEngagementsErrors, ListEngagementsResponses, ListRequestItemsData, ListRequestItemsErrors, ListRequestItemsResponses, MeData, MeErrors, MeResponses } from './types.gen';
+import type { CreateEngagementData, CreateEngagementErrors, CreateEngagementResponses, CreateRequestItemData, CreateRequestItemErrors, CreateRequestItemResponses, GetEngagementData, GetEngagementErrors, GetEngagementResponses, GetRetrievalData, GetRetrievalErrors, GetRetrievalResponses, ListEngagementsData, ListEngagementsErrors, ListEngagementsResponses, ListRequestItemsData, ListRequestItemsErrors, ListRequestItemsResponses, MeData, MeErrors, MeResponses, StartRetrievalData, StartRetrievalErrors, StartRetrievalResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -69,6 +69,28 @@ export const createRequestItem = <ThrowOnError extends boolean = false>(options:
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Start Retrieval Route
+ */
+export const startRetrieval = <ThrowOnError extends boolean = false>(options: Options<StartRetrievalData, ThrowOnError>): RequestResult<StartRetrievalResponses, StartRetrievalErrors, ThrowOnError> => (options.client ?? client).post<StartRetrievalResponses, StartRetrievalErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/retrievals',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Retrieval Route
+ */
+export const getRetrieval = <ThrowOnError extends boolean = false>(options: Options<GetRetrievalData, ThrowOnError>): RequestResult<GetRetrievalResponses, GetRetrievalErrors, ThrowOnError> => (options.client ?? client).get<GetRetrievalResponses, GetRetrievalErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/retrievals/{sync_run_id}',
+    ...options
 });
 
 /**

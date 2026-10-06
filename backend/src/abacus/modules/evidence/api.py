@@ -20,7 +20,7 @@ from abacus.modules.evidence.service import (
     read_version,
     stage_content,
 )
-from abacus.modules.evidence.storage import ContentTooLarge, IntegrityError
+from abacus.modules.evidence.storage import ContentTooLarge, IntegrityError, check_ready
 
 __all__ = [
     "XLSX_MEDIA_TYPE",
@@ -35,6 +35,7 @@ __all__ = [
     "TrialBalance",
     "TrialBalanceLine",
     "add_version",
+    "check_ready",
     "read_content",
     "read_version",
     "render_trial_balance",
