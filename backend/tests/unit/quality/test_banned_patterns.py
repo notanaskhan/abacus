@@ -2210,3 +2210,136 @@ def test_ac20_list_001_flags_other_ledger_listings(tmp_path: Path, name: str) ->
 def test_ac20_list_001_flags_connection_run_listings(tmp_path: Path) -> None:
     source = "async def list_runs(s):\n    return (await s.execute(q)).scalars().all()\n"
     assert _flags(tmp_path, "LIST-001", "src/abacus/modules/connections/repository.py", source)
+
+
+# --- WF-001 (TASK-010b contract and revision 1): workflows import only Temporal, own types ---
+
+WORKFLOWS = "src/abacus/modules/connections/workflows.py"
+WORKFLOWS_PACKAGE = "src/abacus/modules/connections/workflows/steps.py"
+WF_ALLOWED = [
+    "from __future__ import annotations\n",
+    "import asyncio\n",
+    "from collections.abc import Sequence\n",
+    "from dataclasses import dataclass\n",
+    "from datetime import timedelta\n",
+    "from enum import Enum\n",
+    "from typing import Literal\n",
+    "from temporalio import workflow\n",
+    "import temporalio\n",
+    "import temporalio.workflow\n",
+    "from temporalio.workflow import defn\n",
+    "from temporalio.common import RetryPolicy\n",
+    "from temporalio.exceptions import ActivityError\n",
+    "from abacus.modules.connections.workflow_types import RetrievalInput\n",
+    "with workflow.unsafe.imports_passed_through():\n"
+    "    from abacus.modules.connections.workflow_types import RetrievalInput\n",
+]
+WF_BANNED_IMPORTS = [
+    "import os\n",
+    "import time\n",
+    "import random\n",
+    "import uuid\n",
+    "import json\n",
+    "import httpx\n",
+    "import requests\n",
+    "import logging\n",
+    "from abc import ABC\n",
+    "from collections import OrderedDict\n",
+    "from pathlib import Path\n",
+    "from temporalio.client import Client\n",
+    "from temporalio.worker import Worker\n",
+    "from temporalio.testing import WorkflowEnvironment\n",
+    "from temporalio.activity import defn\n",
+    "from temporalio.converter import DataConverter\n",
+    "from temporalio.api.common.v1 import Payload\n",
+    "from abacus.kernel.db import tenant_session\n",
+    "from abacus.kernel.temporal import temporal_client\n",
+    "from abacus.kernel.config import settings\n",
+    "from abacus.modules.connections.repository import get_run\n",
+    "from abacus.modules.connections.service import start_retrieval\n",
+    "from abacus.modules.connections.pipeline import run_pipeline\n",
+    "from abacus.modules.connections.activities import ACTIVITIES\n",
+    "from abacus.modules.connections.routes import router\n",
+    "from abacus.modules.connections.api import RetrievalWorkflow\n",
+    "from abacus.modules.requests.workflow_types import Anything\n",  # another module's types
+    "from abacus.modules.evidence.api import add_version\n",
+    "with workflow.unsafe.imports_passed_through():\n    import os\n",
+]
+WF_BANNED_NAMES = [
+    "def f():\n    with workflow.unsafe.sandbox_unrestricted():\n        pass\n",
+    "from temporalio.workflow import unsafe\nunsafe.sandbox_unrestricted()\n",
+    "x = eval('1')\n",
+    "exec('x = 1')\n",
+    "x = __import__('os')\n",
+    "m = importlib.import_module('os')\n",
+    "from importlib import import_module\n",
+    "c = compile('1', 'f', 'eval')\n",
+]
+
+
+@pytest.mark.parametrize("source", WF_ALLOWED)
+def test_ac20_wf_001_allows_temporal_the_standard_types_and_the_modules_own_types(
+    tmp_path: Path, source: str
+) -> None:
+    assert not _flags(tmp_path, "WF-001", WORKFLOWS, source)
+
+
+@pytest.mark.parametrize("source", WF_BANNED_IMPORTS)
+def test_ac20_wf_001_flags_any_other_import(tmp_path: Path, source: str) -> None:
+    assert _flags(tmp_path, "WF-001", WORKFLOWS, source)
+
+
+@pytest.mark.parametrize("source", WF_BANNED_NAMES)
+def test_ac20_wf_001_flags_sandbox_escapes_and_dynamic_code(tmp_path: Path, source: str) -> None:
+    assert _flags(tmp_path, "WF-001", WORKFLOWS, source)
+
+
+@pytest.mark.parametrize("rel", ["src/abacus/modules/requests/workflows.py", WORKFLOWS_PACKAGE])
+def test_ac20_wf_001_applies_to_every_modules_workflows_and_workflows_packages(
+    tmp_path: Path, rel: str
+) -> None:
+    assert _flags(tmp_path, "WF-001", rel, "import os\n")
+    assert _flags(tmp_path, "WF-001", rel, "from temporalio.client import Client\n")
+    assert _flags(tmp_path, "WF-001", rel, "x = eval('1')\n")
+    assert not _flags(tmp_path, "WF-001", rel, "from temporalio import workflow\n")
+
+
+def test_ac20_wf_001_allows_only_the_modules_own_workflow_types(tmp_path: Path) -> None:
+    rel = "src/abacus/modules/requests/workflows.py"
+    own = "from abacus.modules.requests.workflow_types import Thing\n"
+    other = "from abacus.modules.connections.workflow_types import Thing\n"
+    assert not _flags(tmp_path, "WF-001", rel, own)
+    assert _flags(tmp_path, "WF-001", rel, other)
+
+
+def test_ac20_wf_001_nested_package_files_are_covered(tmp_path: Path) -> None:
+    rel = "src/abacus/modules/connections/workflows/__init__.py"
+    assert _flags(tmp_path, "WF-001", rel, "import subprocess\n")
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "src/abacus/modules/connections/activities.py",
+        "src/abacus/modules/connections/workflow_types.py",
+        "src/abacus/modules/connections/retrievals.py",
+        "src/abacus/worker/__main__.py",
+        "src/abacus/modules/connections/not_workflows.py",
+    ],
+)
+def test_ac20_wf_001_does_not_apply_outside_workflows(tmp_path: Path, rel: str) -> None:
+    assert not _flags(tmp_path, "WF-001", rel, "import os\nfrom temporalio.client import Client\n")
+
+
+def test_ac20_wf_001_reports_one_finding_per_violation_with_its_line(tmp_path: Path) -> None:
+    _write(
+        tmp_path,
+        WORKFLOWS,
+        "from temporalio import workflow\nimport os\nimport time\n",
+    )
+    found = [(v.rule_id, v.line) for v in bp.scan(tmp_path) if v.rule_id == "WF-001"]
+    assert found == [("WF-001", 2), ("WF-001", 3)]
+
+
+def test_ac20_wf_001_is_clean_on_the_real_workflows() -> None:
+    assert [v for v in bp.scan() if v.rule_id == "WF-001"] == []

@@ -42,6 +42,7 @@ from abacus.modules.connections.api import (
     RunFailed,
     RunNotRunning,
     RunResult,
+    StartedRun,
     Unavailable,
     fail_run,
     load_system_context,
@@ -445,6 +446,22 @@ def evidence_storage(bucket_client: S3Client) -> Iterator[S3Client]:
 # --- helpers -------------------------------------------------------------------------------------
 
 
+async def _begin(
+    world: World,
+    *,
+    ctx: AuthContext | None = None,
+    item_id: uuid.UUID | None = None,
+    period: Period = PERIOD,
+    engagement_id: uuid.UUID | None = None,
+) -> StartedRun:
+    return await start_retrieval(
+        ctx or world.requester.context(),
+        engagement_id=engagement_id or world.engagement_id,
+        request_item_id=item_id or world.item_id,
+        period=period,
+    )
+
+
 async def _start(
     world: World,
     *,
@@ -453,12 +470,9 @@ async def _start(
     period: Period = PERIOD,
     engagement_id: uuid.UUID | None = None,
 ) -> uuid.UUID:
-    return await start_retrieval(
-        ctx or world.requester.context(),
-        engagement_id=engagement_id or world.engagement_id,
-        request_item_id=item_id or world.item_id,
-        period=period,
-    )
+    return (
+        await _begin(world, ctx=ctx, item_id=item_id, period=period, engagement_id=engagement_id)
+    ).run_id
 
 
 async def _started(world: World) -> tuple[uuid.UUID, SystemContext]:
@@ -492,7 +506,10 @@ async def _failure(awaitable: Awaitable[object]) -> RunFailed:
 async def test_ac9_start_retrieval_returns_the_id_of_a_running_run(
     seed: Seeder, world: World
 ) -> None:
-    run_id = await _start(world)
+    started = await _begin(world)
+    assert isinstance(started, StartedRun)
+    assert started.created is True
+    run_id = started.run_id
     assert isinstance(run_id, uuid.UUID)
     row = await seed.run_row(run_id)
     assert row["status"] == "running"
@@ -665,8 +682,11 @@ async def test_ac9_a_connection_that_expires_later_counts(seed: Seeder, world: W
 async def test_ac9_triggering_again_while_running_returns_the_same_run(
     seed: Seeder, world: World
 ) -> None:
-    first = await _start(world)
-    second = await _start(world)
+    started = await _begin(world)
+    repeated = await _begin(world)
+    assert started.created is True
+    assert repeated.created is False
+    first, second = started.run_id, repeated.run_id
     assert second == first
     assert await seed.count("sync_runs", world.tenant_id) == 1
     assert await seed.actions(world.tenant_id) == ["sync_run.started", "sync_run.requested_again"]
@@ -691,7 +711,9 @@ async def test_ac9_triggering_again_after_success_returns_the_same_run(
     seed: Seeder, world: World
 ) -> None:
     run_id, _, _ = await _succeeded(world)
-    assert await _start(world) == run_id
+    repeated = await _begin(world)
+    assert repeated.run_id == run_id
+    assert repeated.created is False
     assert await seed.count("sync_runs", world.tenant_id) == 1
     assert (await seed.actions(world.tenant_id))[-1] == "sync_run.requested_again"
 
@@ -726,7 +748,9 @@ async def test_ac11_after_a_failed_run_a_new_trigger_starts_a_new_run(
     await _failure(run_pipeline(system))
     assert (await seed.run_row(first))["status"] == "failed_validation"
     world.write_fixture()
-    second = await _start(world)
+    again = await _begin(world)
+    assert again.created is True
+    second = again.run_id
     assert second != first
     assert await seed.count("sync_runs", world.tenant_id) == 2
 

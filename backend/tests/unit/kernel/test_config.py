@@ -47,6 +47,9 @@ def _explicit_connection_env(monkeypatch: pytest.MonkeyPatch, omit: str | None =
         "identity_audience": "abacus-api",
         "identity_jwks": '{"keys": []}',
         "temporal_target": "temporal.example.test:7233",
+        "temporal_payload_key": "test-payload-key-Zq8Xv2Lm9Wd4Rt7Bn3Hs",
+        "temporal_tls": "true",
+        "temporal_api_key": "test-temporal-api-key",
         "evidence_bucket": "test-evidence-bucket",
     }
     for name in Settings.model_fields:

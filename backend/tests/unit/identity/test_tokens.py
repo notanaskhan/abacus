@@ -552,6 +552,9 @@ def _explicit_environment(mp: pytest.MonkeyPatch, environment: str) -> None:
         "S3_ACCESS_KEY": "a",
         "S3_SECRET_KEY": "b",
         "TEMPORAL_TARGET": "temporal.example.test:7233",
+        "TEMPORAL_PAYLOAD_KEY": "test-payload-key-Zq8Xv2Lm9Wd4Rt7Bn3Hs",
+        "TEMPORAL_TLS": "true",
+        "TEMPORAL_API_KEY": "test-temporal-api-key",
         "EVIDENCE_BUCKET": "test-evidence-bucket",
     }
     for name, value in values.items():
