@@ -74,14 +74,16 @@ class _LibraryHandler(logging.Handler):
         get_logger(record.name).library(record.levelname.lower(), record.name)
 
 
-def _configure() -> None:
+def configure_logging(level: str | None = None, *, force: bool = False) -> None:
+    """Set up logging (done lazily on the first log line; call it to choose a level, or with
+    `force` to reconfigure, e.g. in tests)."""
     global _configured
-    if _configured:
+    if _configured and not force:
         return
     s = settings()
     # Default: everything locally and in tests, info and up elsewhere.
-    chosen = s.log_level or ("debug" if s.environment in ("local", "test") else "info")
-    level = _LEVELS.get(chosen, logging.ERROR)
+    chosen = level or s.log_level or ("debug" if s.environment in ("local", "test") else "info")
+    threshold = _LEVELS.get(chosen, logging.ERROR)
     structlog.configure(
         processors=[
             structlog.processors.add_log_level,
@@ -89,27 +91,38 @@ def _configure() -> None:
             _add_trace,
             structlog.processors.JSONRenderer(sort_keys=True),
         ],
-        wrapper_class=structlog.make_filtering_bound_logger(level),
+        wrapper_class=structlog.make_filtering_bound_logger(threshold),
         # A fresh stdout reference per logger, so redirected stdout (tests, workers) is honoured.
         logger_factory=lambda *_: structlog.PrintLogger(sys.stdout),
         cache_logger_on_first_use=False,
     )
     _configured = True
     root = logging.getLogger()
-    root.handlers = [_LibraryHandler()]
-    root.setLevel(logging.WARNING)
+    if not any(isinstance(h, _LibraryHandler) for h in root.handlers):
+        # Added, not replacing: a test runner's capture handlers stay in place.
+        root.addHandler(_LibraryHandler())
+    if root.level == logging.NOTSET or root.level < logging.WARNING:
+        root.setLevel(logging.WARNING)
+    # uvicorn configures its own plain-text handlers: its access log carries paths and query
+    # strings, so it is off (requests are traced instead); its other logs go through ours.
+    logging.getLogger("uvicorn.access").disabled = True
+    for name in ("uvicorn", "uvicorn.error"):
+        server = logging.getLogger(name)
+        server.handlers = []
+        server.propagate = True
 
 
 class Logger:
     """The only logger product code uses; validates every field before it reaches structlog."""
 
     def __init__(self, name: str) -> None:
-        _configure()
-        self._log: Any = structlog.get_logger(name)  # Any: structlog's BoundLogger is untyped
+        self._name = name
 
     def _emit(self, level: str, event: str, fields: Mapping[str, object]) -> None:
+        configure_logging()  # lazily: importing a module that logs never reads settings
         cleaned = {key: _clean(key, value) for key, value in fields.items()}
-        getattr(self._log, level)(event, **cleaned)
+        log: Any = structlog.get_logger(self._name)  # Any: structlog's BoundLogger is untyped
+        getattr(log, level)(event, **cleaned)
 
     def debug(self, event: str, **fields: object) -> None:
         self._emit("debug", event, fields)
@@ -126,7 +139,8 @@ class Logger:
     def library(self, level: str, logger: str) -> None:
         """A third-party log record, reduced to where it came from (see the module docstring)."""
         method = level if level in ("debug", "info", "warning", "error") else "error"
-        getattr(self._log, method)("library.log", logger=logger)
+        log: Any = structlog.get_logger(self._name)  # Any: structlog's BoundLogger is untyped
+        getattr(log, method)("library.log", logger=logger)
 
 
 def get_logger(name: str) -> Logger:

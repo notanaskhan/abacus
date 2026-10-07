@@ -32,8 +32,12 @@ from abacus.ai_gateway import FakeModel, configure_provider
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import key_service
 from abacus.kernel.db import ping, ping_relay
-from abacus.kernel.error_tracking import ReportingInterceptor, configure_error_tracking
-from abacus.kernel.telemetry import configure_tracing
+from abacus.kernel.error_tracking import (
+    ReportingInterceptor,
+    configure_error_tracking,
+    flush_errors,
+)
+from abacus.kernel.telemetry import configure_tracing, shutdown_tracing
 from abacus.kernel.temporal import payload_codec, temporal_client
 from abacus.kernel.uow import Handler
 from abacus.kernel.uow.relay import RoutingPublisher, run_relay
@@ -90,6 +94,8 @@ async def run() -> None:
         finally:
             stop.set()
             await relay
+            shutdown_tracing()
+            flush_errors()
 
 
 def main() -> int:

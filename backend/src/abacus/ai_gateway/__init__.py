@@ -25,6 +25,8 @@ from typing import Literal, cast
 from uuid import UUID, uuid4
 
 from opentelemetry import trace
+from opentelemetry.trace import Status as SpanStatus
+from opentelemetry.trace import StatusCode
 from pydantic import BaseModel, ValidationError
 from sqlalchemy import text
 
@@ -49,6 +51,7 @@ from abacus.ai_gateway.providers import (
 )
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.logging import get_logger
+from abacus.kernel.telemetry import tracer
 from abacus.kernel.uow import Target, uow
 
 # Per million tokens (input, output), by tier. The fake model is priced like a small model so
@@ -60,7 +63,7 @@ MODELS: dict[Tier, tuple[str, Decimal, Decimal]] = {
 }
 _MILLION = Decimal(1_000_000)
 _log = get_logger(__name__)
-_tracer = trace.get_tracer(__name__)
+_tracer = tracer(__name__)
 
 Outcome = Literal["ok", "invalid", "repaired", "budget_refused", "provider_error"]
 Status = Literal["ok", "repaired", "escalated"]
@@ -225,21 +228,27 @@ async def call[T: BaseModel](c: GatewayCall[T]) -> GatewayResult[T]:
     """One `ai.call` span per call (ADR-019, ADR-022): identifiers and outcome only, never the
     prompt, context or output. Each attempt is an `ai.attempt` event on it."""
     found = _check(c)
+    # No purpose text or inputs hash on the span (free text; a hash of client context): those stay
+    # in the usage record. Exceptions are recorded by class name only.
     with _tracer.start_as_current_span(
         "ai.call",
         attributes={
             "ai.prompt": found.ref,
             "ai.tier": c.tier,
             "ai.agent_id": c.attribution.agent_id,
-            "ai.purpose": c.purpose,
         },
+        record_exception=False,
+        set_status_on_exception=False,
     ) as span:
-        result = await _call(c, found)
+        try:
+            result = await _call(c, found)
+        except Exception as exc:
+            span.set_status(SpanStatus(StatusCode.ERROR, type(exc).__name__))
+            raise
         span.set_attribute("ai.status", result.status)
         span.set_attribute("ai.attempts", result.attempts)
         span.set_attribute("ai.cost_usd", str(result.cost_usd))
         span.set_attribute("ai.model", result.model)
-        span.set_attribute("ai.inputs_hash", result.inputs_hash)
         return result
 
 

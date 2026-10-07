@@ -149,6 +149,7 @@ async def relay_once(publisher: Publisher, batch: int = 25, per_tenant: int = 10
                             "outbox.event_id": str(event.event_id),
                             "tenant.id": str(tenant),
                         },
+                        record_exception=False,  # the failure is logged below, by class name
                     ),
                 ):
                     await publisher.publish(event)
