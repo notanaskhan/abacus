@@ -12,6 +12,7 @@ from __future__ import annotations
 import dataclasses
 
 from temporalio.client import Client
+from temporalio.contrib.opentelemetry import TracingInterceptor
 from temporalio.converter import DataConverter, DefaultFailureConverterWithEncodedAttributes
 
 from abacus.kernel.config import settings
@@ -55,6 +56,10 @@ async def temporal_client() -> Client:
             s.temporal_target,
             namespace=s.temporal_namespace,
             data_converter=data_converter(),
+            # One trace across processes (TASK-013): the client puts the caller's trace in the
+            # workflow's headers; workers using this client continue it in workflows and
+            # activities. Headers carry the traceparent only (the codec encrypts payloads).
+            interceptors=[TracingInterceptor()],
             tls=s.temporal_tls,
             api_key=s.temporal_api_key.get_secret_value() if s.temporal_api_key else None,
         )

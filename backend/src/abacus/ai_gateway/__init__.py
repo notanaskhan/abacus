@@ -24,6 +24,7 @@ from decimal import Decimal
 from typing import Literal, cast
 from uuid import UUID, uuid4
 
+from opentelemetry import trace
 from pydantic import BaseModel, ValidationError
 from sqlalchemy import text
 
@@ -59,6 +60,7 @@ MODELS: dict[Tier, tuple[str, Decimal, Decimal]] = {
 }
 _MILLION = Decimal(1_000_000)
 _log = get_logger(__name__)
+_tracer = trace.get_tracer(__name__)
 
 Outcome = Literal["ok", "invalid", "repaired", "budget_refused", "provider_error"]
 Status = Literal["ok", "repaired", "escalated"]
@@ -172,6 +174,15 @@ async def _record_usage(
             },
         )
         tx.record("model.called", target=Target("usage_record", record_id))
+    trace.get_current_span().add_event(
+        "ai.attempt",
+        {
+            "outcome": outcome,
+            "input_tokens": response.input_tokens if response else 0,
+            "output_tokens": response.output_tokens if response else 0,
+            "cost_usd": str(spent),
+        },
+    )
     _log.info(
         "ai.call",
         prompt=found.ref,
@@ -211,7 +222,28 @@ async def _spent_by_run(attribution: Attribution) -> Decimal:
 
 
 async def call[T: BaseModel](c: GatewayCall[T]) -> GatewayResult[T]:
+    """One `ai.call` span per call (ADR-019, ADR-022): identifiers and outcome only, never the
+    prompt, context or output. Each attempt is an `ai.attempt` event on it."""
     found = _check(c)
+    with _tracer.start_as_current_span(
+        "ai.call",
+        attributes={
+            "ai.prompt": found.ref,
+            "ai.tier": c.tier,
+            "ai.agent_id": c.attribution.agent_id,
+            "ai.purpose": c.purpose,
+        },
+    ) as span:
+        result = await _call(c, found)
+        span.set_attribute("ai.status", result.status)
+        span.set_attribute("ai.attempts", result.attempts)
+        span.set_attribute("ai.cost_usd", str(result.cost_usd))
+        span.set_attribute("ai.model", result.model)
+        span.set_attribute("ai.inputs_hash", result.inputs_hash)
+        return result
+
+
+async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult[T]:
     model = MODELS[c.tier][0]
     user = c.context.render()
     inputs_hash = hashlib.sha256(f"{found.ref}\n{user}".encode()).hexdigest()

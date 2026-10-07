@@ -3,14 +3,19 @@
     log = get_logger(__name__)
     log.info("ledger.pull.completed", entity_id=entity.id, rows=n)
 
-Each event is one JSON object with `event`, `level`, `timestamp` and the fields. Field values
-must be plain scalars, UUIDs, dates, sequences of those, or classified Pydantic models without
-Restricted fields; anything else raises, so client data can never reach a log by accident (no
-`repr` of arbitrary objects, no Decimal amounts — client financial figures are Restricted).
+Each event is one JSON object with `event`, `level`, `timestamp`, the current `trace_id` and
+`span_id` (when inside a span; TASK-013) and the fields. Field values must be plain scalars,
+UUIDs, dates, sequences of those, or classified Pydantic models without Restricted fields;
+anything else raises, so client data can never reach a log by accident (no `repr` of arbitrary
+objects, no Decimal amounts — client financial figures are Restricted). An exception may be
+passed as a field (`error=exc`): only its class name is logged, never its message, which can
+carry data. `log_level` filters; third-party libraries' own logs (warnings and up) are rendered
+as the same JSON lines, as `event="library.log"` with the logger name and level only.
 """
 
 from __future__ import annotations
 
+import logging
 import sys
 from collections.abc import Mapping, Sequence
 from datetime import date
@@ -19,14 +24,19 @@ from uuid import UUID
 
 import structlog
 from pydantic import BaseModel
+from structlog.types import EventDict
 
 from abacus.kernel.classification import sensitive_paths
+from abacus.kernel.config import settings
+from abacus.kernel.telemetry import current_span_id, current_trace_id
 
 _SCALARS = (str, int, float, bool, UUID, date)
 _configured = False
 
 
 def _clean(name: str, value: object) -> object:
+    if isinstance(value, BaseException):
+        return type(value).__name__  # never the message: it can carry client data
     if value is None or isinstance(value, _SCALARS):
         return str(value) if isinstance(value, UUID | date) else value
     if isinstance(value, BaseModel):
@@ -45,21 +55,49 @@ def _clean(name: str, value: object) -> object:
     )
 
 
+def _add_trace(_logger: object, _method: str, event: EventDict) -> EventDict:
+    trace_id = current_trace_id()
+    if trace_id is not None:
+        event["trace_id"] = trace_id
+        event["span_id"] = current_span_id()
+    return event
+
+
+_LEVELS = {"debug": logging.DEBUG, "info": logging.INFO, "warning": logging.WARNING}
+
+
+class _LibraryHandler(logging.Handler):
+    """Third-party logs as our JSON lines: logger name and level only. Library messages and
+    exception text can quote data (SQL parameters, URLs, payloads), so they are never kept."""
+
+    def emit(self, record: logging.LogRecord) -> None:
+        get_logger(record.name).library(record.levelname.lower(), record.name)
+
+
 def _configure() -> None:
     global _configured
     if _configured:
         return
+    s = settings()
+    # Default: everything locally and in tests, info and up elsewhere.
+    chosen = s.log_level or ("debug" if s.environment in ("local", "test") else "info")
+    level = _LEVELS.get(chosen, logging.ERROR)
     structlog.configure(
         processors=[
             structlog.processors.add_log_level,
             structlog.processors.TimeStamper(fmt="iso", utc=True),
+            _add_trace,
             structlog.processors.JSONRenderer(sort_keys=True),
         ],
+        wrapper_class=structlog.make_filtering_bound_logger(level),
         # A fresh stdout reference per logger, so redirected stdout (tests, workers) is honoured.
         logger_factory=lambda *_: structlog.PrintLogger(sys.stdout),
         cache_logger_on_first_use=False,
     )
     _configured = True
+    root = logging.getLogger()
+    root.handlers = [_LibraryHandler()]
+    root.setLevel(logging.WARNING)
 
 
 class Logger:
@@ -84,6 +122,11 @@ class Logger:
 
     def error(self, event: str, **fields: object) -> None:
         self._emit("error", event, fields)
+
+    def library(self, level: str, logger: str) -> None:
+        """A third-party log record, reduced to where it came from (see the module docstring)."""
+        method = level if level in ("debug", "info", "warning", "error") else "error"
+        getattr(self._log, method)("library.log", logger=logger)
 
 
 def get_logger(name: str) -> Logger:

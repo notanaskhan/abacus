@@ -92,6 +92,15 @@ class Settings(BaseSettings):
     temporal_api_key: Annotated[SecretStr | None, classified("restricted")] = None
     # Encrypts every workflow payload before it leaves the process (ADR-017). KMS in TASK-014.
     temporal_payload_key: Annotated[SecretStr | None, classified("restricted")] = None
+    # Observability (ADR-022; TASK-013). Traces export over OTLP only when an endpoint is set;
+    # errors go to Sentry only when a DSN is set. Neither is required locally.
+    # None: debug locally and in tests, info elsewhere.
+    log_level: Annotated[
+        Literal["debug", "info", "warning", "error"] | None, classified("internal")
+    ] = None
+    otlp_endpoint: Annotated[str | None, classified("internal")] = None
+    sentry_dsn: Annotated[SecretStr | None, classified("restricted")] = None
+    release: Annotated[str | None, classified("internal")] = None
 
     @model_validator(mode="before")
     @classmethod
