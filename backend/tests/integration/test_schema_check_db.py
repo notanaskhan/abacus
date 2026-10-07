@@ -1092,6 +1092,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"queued_reason", "estimated_start_at"}  # TASK-018b
         ),
         "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),  # TASK-016
+        # TASK-019: who has taken a queued version (take, release, reassign).
+        "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
     } == sc.APP_UPDATE_COLUMNS
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset()
     assert sc.APP_INSERT_COLUMNS["ethical_walls"] == frozenset(  # TASK-016
@@ -1193,6 +1195,7 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "evidence_versions": IMMUTABLE_FUNCTION,
         "ledger_snapshots": LEDGER_FUNCTION,
         "trial_balance_lines": LEDGER_FUNCTION,
+        "review_decisions": "review_decisions_immutable",  # TASK-019 (ADR-004)
     }
     assert _evidence_problems(evidence) == []
 

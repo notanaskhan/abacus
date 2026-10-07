@@ -1527,7 +1527,9 @@ async def test_ac10_a_further_version_for_a_received_item_is_a_new_fulfilment_wi
     assert (await seed.actions(world.tenant_id)).count("request_item.received") == 1
 
 
-@pytest.mark.parametrize("status", ["ready_for_review", "needs_revision"])
+# TASK-019 (SPEC-004 amendment): a sent-back `needs_revision` item takes new evidence; an
+# accepted one never does.
+@pytest.mark.parametrize("status", ["ready_for_review", "accepted"])
 async def test_ac20_an_item_past_receipt_takes_no_fulfilment(
     seed: Seeder, fulfilling: Fulfilling, status: str
 ) -> None:
