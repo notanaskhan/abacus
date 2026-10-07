@@ -105,6 +105,64 @@ Amber. It touches protected paths: `abacus.api`, the worker, the kernel uow/rela
   - `backend/src/abacus_tools/quality/banned_patterns.py` and its test (LOG-001);
   - `.claude/skills/**` (the observability skill).
 
+### Interface contract — TASK-013 (tests written independently — ADR-078)
+**Imports:**
+- `abacus.kernel.telemetry`: `configure_tracing`, `tracer`, `current_trace_id`, `current_span_id`, `current_traceparent`, `continue_trace`, `TRACEPARENT`.
+- `abacus.kernel.logging`: `get_logger`.
+- `abacus.kernel.error_tracking`: `configure_error_tracking`, `scrub`, `report`, `ReportingInterceptor`.
+- `abacus.kernel.uow.relay`: `OutboxEvent` (new optional `trace_context`), `relay_once`.
+- `abacus.kernel.config`: `Settings` (`log_level`, `otlp_endpoint`, `sentry_dsn`, `release`).
+
+**Telemetry:**
+- `configure_tracing(service, exporter=None)`:
+  - sets the global tracer provider once (resource: service name, `deployment.environment`, and version when `release` is set);
+  - a later call with an exporter adds it to the existing provider;
+  - exports over OTLP only when `otlp_endpoint` is set.
+- `current_trace_id()` returns 32 hex digits inside a recording span, else None; `current_span_id()` returns 16.
+- `current_traceparent()` returns a W3C traceparent matching `TRACEPARENT`, or None.
+- `continue_trace(tp)`: inside it, new spans belong to `tp`'s trace (children of that span). None or a malformed value is a no-op.
+
+**One trace (integration, with local Temporal and an in-memory exporter):**
+- Under one parent span, `start_retrieval` plus starting the `retrieval` workflow, through a client with `TracingInterceptor` and its worker, gives the workflow spans (`StartWorkflow`/`RunWorkflow:retrieval`) and every activity's `StartActivity`/`RunActivity` spans the parent's trace ID.
+- Every `audit_events` row written in that flow has `trace_id` equal to that trace ID.
+- The `outbox` row for `evidence_version.created` has a `trace_context` whose trace ID is the same.
+- Relaying that event (`relay_once` with the screening subscription) starts the screening workflow in the same trace. Its activities, `ai.call` and the screening audit rows carry the same trace ID.
+- Outside any span, `trace_id` and `trace_context` are NULL.
+- The database enforces formats: `audit_events.trace_id ~ ^[0-9a-f]{32}$`, `outbox.trace_context` a traceparent. The app may insert `outbox.trace_context`; the relay reads it.
+- The recorded workflow histories still replay.
+
+**API:** each request produces one server span named by route template (e.g. `GET /v1/engagements/{engagement_id}/request-items`), with no request or response bodies and no headers as attributes. `/v1/me` with a bearer token: the `Authorization` value appears in no span attribute.
+
+**Gateway:**
+- `call()` produces exactly one `ai.call` span with attributes `ai.prompt`, `ai.tier`, `ai.agent_id`, `ai.purpose`, `ai.status`, `ai.attempts`, `ai.cost_usd` (string), `ai.model` and `ai.inputs_hash`;
+- one `ai.attempt` event per attempt, with `outcome`, `input_tokens`, `output_tokens` and `cost_usd`, including `budget_refused` and `provider_error`;
+- no attribute or event contains the prompt text, rendered context or model output.
+
+**Logging:**
+- Each line has `trace_id`/`span_id` inside a span and omits them outside one.
+- An exception field (`error=exc`) is written as its class name only.
+- `log_level`: None means debug in local/test and info elsewhere; a set level filters lower levels.
+- Stdlib library logs at WARNING and up are written as `{"event":"library.log","logger":<name>,"level":…}` with no message text; logs below WARNING are dropped.
+- Existing refusals (Restricted, unclassified, arbitrary objects) are unchanged.
+
+**LOG-001** (`banned_patterns`), under `src/abacus/` except `kernel/logging.py`, flags:
+- `import logging`, `from logging …`, `import structlog`, `from structlog …`;
+- a log method call (`.debug/.info/.warning/.error`) whose keyword value is `str(e)`, `repr(e)` or an f-string containing `e`, where `e` is bound by `except … as e` in the file.
+
+`str(x)` of other names is allowed.
+
+**Error tracking:**
+- `configure_error_tracking(service)` returns False and does nothing without `sentry_dsn`. With a DSN it initialises Sentry: PII off, no local variables, no source context, no breadcrumbs, no default or auto integrations, `before_send=scrub`. Idempotent.
+- `scrub(event)` returns a new event containing only:
+  - `event_id`, `timestamp`, `level`, `platform`, `environment`, `release`, `sdk`;
+  - `exception.values[]` as `{type, value=type, module?, stacktrace.frames[{module, function, lineno, in_app, filename, abs_path}]}`;
+  - `contexts.trace{trace_id, span_id}`;
+  - `tags` restricted to `route`, `tenant_id`, `error_type`, `activity`.
+- Hostile inputs leave no trace in the output: messages, `vars`/`pre_context`/`context_line` in frames, `request` (URL, headers incl. Authorization, cookies, data, query), `user`, `extra`, `breadcrumbs`, other contexts and other tags.
+- `report(exc, **tags)` is a no-op when unconfigured. Otherwise it captures with only the allowlisted tags.
+- **`ReportingInterceptor`** (worker): an activity raising a retryable `ApplicationError` is reported with `error_type` = its `type` and `activity` = its activity type; a non-retryable one is not reported; any other exception is reported. The exception is always re-raised unchanged.
+- **API:** an unhandled route error returns the fixed 500 body, logs `api.unexpected_error` with the class name, and calls `report` with the route template.
+
 ### Steps
 1. Approval file. Telemetry kernel, the logging helper's trace IDs and error field, LOG-001.
 2. API and worker tracing, the Temporal interceptor, gateway and relay spans, the audit trace ID, and the outbox trace context (Q1).
@@ -140,6 +198,10 @@ Amber. It touches protected paths: `abacus.api`, the worker, the kernel uow/rela
   - Q5: the four allowlisted packages;
   - Q6: the approval file was written at the founder's instruction.
 
+- `2026-10-07` — Implemented telemetry, logging, LOG-001, the audit and outbox trace context (migration 0011), the Temporal `TracingInterceptor` (stable; the plugin is experimental), API instrumentation, the gateway span, the relay span, Sentry with allowlist scrubbing and the worker reporting interceptor.
+  - Smoke test: one trace ID covers the request, the retrieval workflow and its 5 activities, all 9 audit rows and the outbox `trace_context`.
+  - The reference doc and the observability skill are written.
+  - Contract written.
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
