@@ -428,6 +428,60 @@ export type ValidationErrorOut = {
     detail: Array<FieldErrorOut>;
 };
 
+/**
+ * WallIn
+ */
+export type WallIn = {
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * WallOut
+ *
+ * Who is walled off from which client is itself sensitive (conflicts of interest).
+ */
+export type WallOut = {
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Created By
+     */
+    created_by: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Removed At
+     */
+    removed_at: string | null;
+    /**
+     * Removed By
+     */
+    removed_by: string | null;
+    /**
+     * Status
+     */
+    status: 'active' | 'removed';
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
 export type ListEngagementsData = {
     body?: never;
     headers?: {
@@ -948,3 +1002,151 @@ export type MeResponses = {
 };
 
 export type MeResponse = MeResponses[keyof MeResponses];
+
+export type ListWallsData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/walls';
+};
+
+export type ListWallsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ListWallsError = ListWallsErrors[keyof ListWallsErrors];
+
+export type ListWallsResponses = {
+    /**
+     * Response List Walls
+     *
+     * Successful Response
+     */
+    200: Array<WallOut>;
+};
+
+export type ListWallsResponse = ListWallsResponses[keyof ListWallsResponses];
+
+export type CreateWallData = {
+    body: WallIn;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/walls';
+};
+
+export type CreateWallErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type CreateWallError = CreateWallErrors[keyof CreateWallErrors];
+
+export type CreateWallResponses = {
+    /**
+     * Successful Response
+     */
+    201: WallOut;
+};
+
+export type CreateWallResponse = CreateWallResponses[keyof CreateWallResponses];
+
+export type RemoveWallData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Wall Id
+         */
+        wall_id: string;
+    };
+    query?: never;
+    url: '/v1/walls/{wall_id}/remove';
+};
+
+export type RemoveWallErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RemoveWallError = RemoveWallErrors[keyof RemoveWallErrors];
+
+export type RemoveWallResponses = {
+    /**
+     * Successful Response
+     */
+    200: WallOut;
+};
+
+export type RemoveWallResponse = RemoveWallResponses[keyof RemoveWallResponses];

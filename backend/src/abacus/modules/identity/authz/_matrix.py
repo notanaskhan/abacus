@@ -39,6 +39,10 @@ ACTIONS: dict[str, dict[str, str]] = {
         "firm_admin": "allow",
         "mfa_recent": "required",
     },
+    "wall.read": {
+        "firm_admin": "allow",
+        "mfa_recent": "required",
+    },
     "legal_hold.place": {
         "firm_admin": "allow",
         "mfa_recent": "required",

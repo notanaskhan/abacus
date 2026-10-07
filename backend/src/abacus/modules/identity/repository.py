@@ -9,12 +9,27 @@ Two kinds of read:
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Literal, cast, get_args
 from uuid import UUID
 
-from sqlalchemy import Column, MetaData, String, Table, bindparam, insert, select, text
+from sqlalchemy import (
+    Column,
+    DateTime,
+    MetaData,
+    String,
+    Table,
+    bindparam,
+    func,
+    insert,
+    select,
+    text,
+    update,
+)
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
+from sqlalchemy.engine import RowMapping
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.db import TenantContext, identity_engine, tenant_session
@@ -32,6 +47,20 @@ engagement_members = Table(
     Column("engagement_id", PgUUID(as_uuid=True), nullable=False),
     Column("user_id", PgUUID(as_uuid=True), nullable=False),
     Column("role", String, nullable=False),
+)
+# Ethical walls (migration 0012; SPEC-002): `authorise` and `visible()` read active ones.
+ethical_walls = Table(
+    "ethical_walls",
+    _metadata,
+    Column("id", PgUUID(as_uuid=True), primary_key=True),
+    Column("tenant_id", PgUUID(as_uuid=True), nullable=False),
+    Column("user_id", PgUUID(as_uuid=True), nullable=False),
+    Column("client_id", PgUUID(as_uuid=True), nullable=False),
+    Column("status", String, nullable=False),
+    Column("created_by", PgUUID(as_uuid=True), nullable=False),
+    Column("created_at", DateTime(timezone=True), nullable=False),
+    Column("removed_by", PgUUID(as_uuid=True), nullable=True),
+    Column("removed_at", DateTime(timezone=True), nullable=True),
 )
 
 
@@ -140,3 +169,94 @@ async def display_names(user_ids: list[UUID]) -> dict[UUID, str]:
     async with identity_engine().connect() as conn:
         rows = (await conn.execute(_USER_NAMES, {"ids": user_ids})).all()
     return {cast(UUID, row.id): str(row.display_name) for row in rows}
+
+
+@dataclass(frozen=True)
+class WallRecord:
+    id: UUID
+    user_id: UUID
+    client_id: UUID
+    status: str
+    created_by: UUID
+    created_at: datetime
+    removed_by: UUID | None
+    removed_at: datetime | None
+
+
+def _wall(m: RowMapping) -> WallRecord:
+    return WallRecord(
+        id=cast(UUID, m["id"]),
+        user_id=cast(UUID, m["user_id"]),
+        client_id=cast(UUID, m["client_id"]),
+        status=cast(str, m["status"]),
+        created_by=cast(UUID, m["created_by"]),
+        created_at=cast(datetime, m["created_at"]),
+        removed_by=cast(UUID | None, m["removed_by"]),
+        removed_at=cast(datetime | None, m["removed_at"]),
+    )
+
+
+async def walled_clients(tenant: TenantContext, user_id: UUID) -> frozenset[UUID]:
+    """The clients this person is walled off from now (active walls)."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            select(ethical_walls.c.client_id).where(
+                ethical_walls.c.user_id == user_id, ethical_walls.c.status == "active"
+            )
+        )
+        return frozenset(cast(UUID, client) for client in rows.scalars().all())
+
+
+async def insert_wall(
+    session: AsyncSession,
+    *,
+    wall_id: UUID,
+    tenant_id: UUID,
+    user_id: UUID,
+    client_id: UUID,
+    created_by: UUID,
+) -> None:
+    await session.execute(
+        insert(ethical_walls).values(
+            id=wall_id,
+            tenant_id=tenant_id,
+            user_id=user_id,
+            client_id=client_id,
+            created_by=created_by,
+        )
+    )
+
+
+async def remove_wall(session: AsyncSession, wall_id: UUID, removed_by: UUID) -> WallRecord | None:
+    """Mark an active wall removed; None if there is no active wall with this id."""
+    row = (
+        (
+            await session.execute(
+                update(ethical_walls)
+                .where(ethical_walls.c.id == wall_id, ethical_walls.c.status == "active")
+                .values(status="removed", removed_by=removed_by, removed_at=func.clock_timestamp())
+                .returning(*ethical_walls.c)
+            )
+        )
+        .mappings()
+        .one_or_none()
+    )
+    return _wall(row) if row is not None else None
+
+
+async def get_wall(session: AsyncSession, wall_id: UUID) -> WallRecord | None:
+    row = (
+        (await session.execute(select(ethical_walls).where(ethical_walls.c.id == wall_id)))
+        .mappings()
+        .one_or_none()
+    )
+    return _wall(row) if row is not None else None
+
+
+async def all_walls(tenant: TenantContext) -> Sequence[WallRecord]:
+    """Every wall of the firm, newest first (firm-level: the caller authorised `wall.read`)."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            select(ethical_walls).order_by(ethical_walls.c.created_at.desc(), ethical_walls.c.id)
+        )
+        return [_wall(row) for row in rows.mappings().all()]

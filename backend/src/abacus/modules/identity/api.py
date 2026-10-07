@@ -8,6 +8,7 @@ from abacus.modules.identity.authz import (
     UnknownAction,
     agent_may_hold,
     authorise,
+    register_engagement_client,
     visible,
 )
 from abacus.modules.identity.context import (
@@ -77,6 +78,7 @@ __all__ = [
     "declared_action",
     "engagement_team",
     "is_active_member",
+    "register_engagement_client",
     "reset_verifier",
     "router",
     "system_context_for_run",
