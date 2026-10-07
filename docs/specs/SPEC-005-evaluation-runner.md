@@ -1,7 +1,7 @@
 ---
 id: SPEC-005
 title: Evaluation runner, graders and calibration
-status: draft
+status: approved
 owner: founder
 risk_zone: amber
 related_adrs: [ADR-076, ADR-081, ADR-082, ADR-070, ADR-055, ADR-047, ADR-068, ADR-072, ADR-073, ADR-083, ADR-085, ADR-019]
@@ -219,14 +219,15 @@ No UI. The results are a CI summary and the stored runs. A results page is defer
 - **No flag:** eligibility (AC-13) is fail-closed from day one. With no passing real run, no cheaper tier or fallback is used. Today that means none, which is the current behaviour.
 
 ## 20. Open questions
-- [ ] **Q1: suite format.** A declarative YAML suite per agent (cases, graders, thresholds), with cases as Python factories over the synthetic generator? Or suites written as pytest files, as `evals/screening` is today? *Recommendation:* a YAML suite file (protected, because thresholds live there), with cases referencing generator seeds and flaws, and graders by registered name. Keep pytest only as the runner's own test harness. The existing screening pytest cases migrate into the suite.
-- [ ] **Q2: where results live.** Postgres tables, as platform tables like the slot ledger (no tenant, no app privileges, written by tooling), or JSON artefacts in object storage? *Recommendation:* Postgres `eval_runs` and `eval_case_results`, insert-only. A run row is finalised once, then immutable, and has a nullable `tenant_id` for later firm-scoped cases. The runner writes as a dedicated role, and the gateway reads eligibility through a SECURITY DEFINER function. CI also uploads a JSON summary as a build artefact.
-- [ ] **Q3: model graders now?** ADR-081 allows a pinned, human-calibrated judge for subjective qualities. *Recommendation:* build the model-grader wrapper and its calibration record now. The screener's suite uses deterministic and rule graders only, since its outputs are structured, so no judge gates anything until a suite needs one.
-- [ ] **Q4: where real-model runs happen, and with which key.** *Recommendation:* in CI stage 3 and stage 5 jobs, and in a local `evaluation` environment. Use a dedicated provider key with a provider-side spend limit, stored only as a CI secret. Never in staging or production processes.
-- [ ] **Q5: the cost-regression tolerance (ADR-070).** *Recommendation:* fail when the median cost per case rises more than 10% over the baseline. The baseline is updated only by editing the protected baseline file in the same PR, with a reason.
-- [ ] **Q6: cost ceilings.** *Recommendation:* a per-run limit declared per suite (screener: $5), and a daily evaluation ceiling of $50 across all runs (a setting), until a cost model exists.
-- [ ] **Q7: the fast subset.** *Recommendation:* the suite marks which cases are fast. It must include at least one case per dangerous-error class, and the subset aims for under 5 minutes and under $1.
-- [ ] **Q8: initial thresholds for the screener.** *Recommendation:* `needs_revision_recall >= 0.97` (the dangerous error is calling flawed evidence ready), `ready_precision >= 0.85`, adversarial containment 1.00, citation verification 1.00, and expected calibration error <= 0.10. Repeat key cases 5 times, with a 0.8 pass rate. Revisit after the first real baselines.
+None. Answered by the founder on 2026-10-07 (all recommendations):
+- [x] **Q1: suite format.** A declarative YAML suite per agent (cases, graders, thresholds), with cases as Python factories over the synthetic generator? Or suites written as pytest files, as `evals/screening` is today? *Recommendation:* a YAML suite file (protected, because thresholds live there), with cases referencing generator seeds and flaws, and graders by registered name. Keep pytest only as the runner's own test harness. The existing screening pytest cases migrate into the suite.
+- [x] **Q2: where results live.** Postgres tables, as platform tables like the slot ledger (no tenant, no app privileges, written by tooling), or JSON artefacts in object storage? *Recommendation:* Postgres `eval_runs` and `eval_case_results`, insert-only. A run row is finalised once, then immutable, and has a nullable `tenant_id` for later firm-scoped cases. The runner writes as a dedicated role, and the gateway reads eligibility through a SECURITY DEFINER function. CI also uploads a JSON summary as a build artefact.
+- [x] **Q3: model graders now?** ADR-081 allows a pinned, human-calibrated judge for subjective qualities. *Recommendation:* build the model-grader wrapper and its calibration record now. The screener's suite uses deterministic and rule graders only, since its outputs are structured, so no judge gates anything until a suite needs one.
+- [x] **Q4: where real-model runs happen, and with which key.** *Recommendation:* in CI stage 3 and stage 5 jobs, and in a local `evaluation` environment. Use a dedicated provider key with a provider-side spend limit, stored only as a CI secret. Never in staging or production processes.
+- [x] **Q5: the cost-regression tolerance (ADR-070).** *Recommendation:* fail when the median cost per case rises more than 10% over the baseline. The baseline is updated only by editing the protected baseline file in the same PR, with a reason.
+- [x] **Q6: cost ceilings.** *Recommendation:* a per-run limit declared per suite (screener: $5), and a daily evaluation ceiling of $50 across all runs (a setting), until a cost model exists.
+- [x] **Q7: the fast subset.** *Recommendation:* the suite marks which cases are fast. It must include at least one case per dangerous-error class, and the subset aims for under 5 minutes and under $1.
+- [x] **Q8: initial thresholds for the screener.** *Recommendation:* `needs_revision_recall >= 0.97` (the dangerous error is calling flawed evidence ready), `ready_precision >= 0.85`, adversarial containment 1.00, citation verification 1.00, and expected calibration error <= 0.10. Repeat key cases 5 times, with a 0.8 pass rate. Revisit after the first real baselines.
 
 ## 21. Future / explicitly deferred
 - **The learning loop:** corrections become cases and firm rules (ADR-068).
