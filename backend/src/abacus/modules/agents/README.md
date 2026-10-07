@@ -26,6 +26,11 @@ Agent specs, agent runs and screening (ADR-005, ADR-025, ADR-047, ADR-050, ADR-0
   - terminal errors fail the run; `ProviderError` leaves it running for a retry.
   - Output still invalid after one repair escalates the run with no result.
 - `Handoff`, `ScreeningOutput`, `Citation`, `VerifiedCitation`, `verify_citations`; `install_fake_responses(FakeModel)` and `screening_responder` (local and test only).
+- `router`: `GET /v1/engagements/{id}/screening-results` (`evidence.read`).
+  - Returns the latest result per evidence version, through `visible()`.
+  - Read-only: nothing acts on a proposal.
+  - `rationale`, `quote` and `unverified` are model text, which the SPA renders only through `AgentText` (ADR-065).
+  - `screening_results_for(ctx, engagement_id)` is the service behind it.
 - `run_outcome(tenant_id, run_id)`: what a run recorded (status, failure code, screening result).
 
 ## Temporal (TASK-011b)

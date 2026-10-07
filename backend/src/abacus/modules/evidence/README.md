@@ -11,6 +11,10 @@ Evidence items and their immutable versions (glossary; ADR-004). Owns `evidence_
   - outbox event: `evidence_version.created`, carrying `requested_by`: the person the version was added for, the initiator of agents acting on it. A retrieval passes its `on_behalf_of`; the default is None.
 - `version_view(tenant, version_id) -> EvidenceVersionView`: a version's metadata, including storage, snapshot and period, for a caller that has authorised under its own context.
 - `read_version(ctx, version_id) -> bytes`: authorises `evidence.read` on the engagement, then returns the decrypted, fingerprint-verified content. A missing version, or another firm's, raises `NotFound`.
+- `router`: `GET /v1/engagements/{id}/evidence-versions` (`evidence.read`).
+  - Returns the engagement's versions, oldest first, through `visible()`.
+  - Provenance only: method, source, period and version number. Never content, keys or fingerprints.
+  - `evidence_versions_for(ctx, engagement_id)` is the service behind it.
 - `render_trial_balance(TrialBalance) -> bytes`: deterministic `.xlsx` with a provenance footer (ADR-042).
 - Layout constants for readers of the rendered sheet: `CODE_COLUMN`, `NAME_COLUMN`, `DEBIT_COLUMN`, `CREDIT_COLUMN`, `FIRST_LINE_ROW`, `TOTAL_LABEL`.
 

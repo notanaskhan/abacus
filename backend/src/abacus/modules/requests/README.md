@@ -4,6 +4,8 @@ Request lists and request items (glossary). Owns `request_lists` and `request_it
 
 ## Public interface (`api.py`)
 - `router`: `POST /v1/engagements/{id}/request-items` (`request_item.create`) and `GET /v1/engagements/{id}/request-items` (`request_item.read`).
+  - Each listed item carries `evidence_version_id`: the version of its most recent fulfilment, or null.
+  - The evidence board joins evidence and screening on it (TASK-012 Q1).
 
 ## Rules
 - An engagement has one request list, created with its first item.

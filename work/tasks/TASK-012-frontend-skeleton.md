@@ -117,7 +117,7 @@ All three reads:
 - return 403 for a firm member with no relationship to the engagement (and for anyone the matrix denies).
 
 **`GET /v1/engagements/{engagement_id}/request-items`** (`request_item.read`; existing). `RequestItemOut` gains `evidence_version_id: UUID | null`:
-- it is the version of the item's most recent fulfilment (by `created_at`, then `id`);
+- it is the version of the item's most recent fulfilment (by `created_at`, then `id`; the larger `id` wins a tie);
 - it is null when the item has none;
 - after a successful retrieval it equals the retrieval's `evidence_version_id`;
 - other fields are unchanged.
@@ -129,7 +129,7 @@ All three reads:
 - only this engagement's versions.
 
 **`GET /v1/engagements/{engagement_id}/screening-results`** (`evidence.read`; new; agents module):
-- returns `list[ScreeningResultOut]`, one per evidence version (the latest by `created_at`, then `id`);
+- returns `list[ScreeningResultOut]`, one per evidence version (the latest by `created_at`, then `id`; the larger `id` wins a tie);
 - fields: `{id, evidence_version_id, action ("ready_for_review"|"needs_revision"), confidence (decimal string, 3 places), rationale, citations: [{cell, quote, value, verified, reason}], unverified: [str], created_at}`;
 - only this engagement's results; empty when there are none;
 - read-only: there is no route that acts on a result.
