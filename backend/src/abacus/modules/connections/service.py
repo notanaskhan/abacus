@@ -62,6 +62,9 @@ class RetrievalView:
     evidence_version_id: UUID | None
     started_at: datetime
     finished_at: datetime | None
+    # Waiting for a work slot (SPEC-003 AC-13): `status` stays `running`; the API says queued.
+    queued_reason: str | None = None
+    estimated_start_at: datetime | None = None
 
 
 def _fake(connection: Connection) -> Connector:
@@ -165,6 +168,8 @@ def _view(run: SyncRun) -> RetrievalView:
         run.evidence_version_id,
         run.started_at,
         run.finished_at,
+        run.queued_reason,
+        run.estimated_start_at,
     )
 
 

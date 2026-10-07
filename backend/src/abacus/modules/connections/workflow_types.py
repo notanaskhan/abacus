@@ -18,8 +18,12 @@ FAIL_STATUSES = frozenset({"failed", "failed_validation"})
 PROVIDER_UNAVAILABLE = "provider_unavailable"
 INTERNAL_ERROR = "internal_error"
 CANCELLED = "cancelled"
+# Waited for a work slot longer than the class allows (SPEC-003 AC-14).
+CAPACITY_TIMEOUT = "capacity_timeout"
 FORBIDDEN = "forbidden"
-FAIL_CODES = frozenset({PROVIDER_UNAVAILABLE, INTERNAL_ERROR, CANCELLED, FORBIDDEN})
+FAIL_CODES = frozenset(
+    {PROVIDER_UNAVAILABLE, INTERNAL_ERROR, CANCELLED, FORBIDDEN, CAPACITY_TIMEOUT}
+)
 
 
 @dataclass(frozen=True)
@@ -41,3 +45,12 @@ class RetrievalOutcome:
     status: str
     code: str | None = None
     evidence_version_id: str | None = None
+
+
+@dataclass(frozen=True)
+class SlotGrant:
+    """An `acquire_slot` activity's answer (SPEC-003): granted, and the class's maximum wait in
+    seconds before the run fails `capacity_timeout`."""
+
+    granted: bool
+    max_wait_seconds: int
