@@ -63,7 +63,13 @@ def test_ac1_ac3_ac9_ac15_the_runner_repeats_catches_a_wrong_answer_and_stops_at
     tmp_path: Path,
 ) -> None:
     out = tmp_path / "out"
-    honest = _suite((_case("balanced", "none", "ready_for_review", "ready_for_review", key=True),))
+    honest = _suite(
+        (
+            _case("balanced", "none", "ready_for_review", "ready_for_review", key=True),
+            # The dangerous metric needs a case to be defined (undefined fails closed).
+            _case("wrong_entity", "wrong_entity", "needs_revision", "needs_revision"),
+        )
+    )
     wrong = _suite(
         (
             _case("balanced", "none", "ready_for_review", "ready_for_review", key=True),
@@ -81,7 +87,8 @@ def test_ac1_ac3_ac9_ac15_the_runner_repeats_catches_a_wrong_answer_and_stops_at
     finally:
         settings.cache_clear()
     assert passed.status == "passed", passed.reasons
-    assert [c.attempt for c in passed.cases] == [1, 2, 3]  # the key case repeated
+    attempts = [(c.case_id, c.attempt) for c in passed.cases]
+    assert attempts == [("balanced", 1), ("balanced", 2), ("balanced", 3), ("wrong_entity", 1)]
     assert passed.fake
     assert failed.status == "failed"
     assert "threshold:needs_revision_recall" in failed.reasons
