@@ -1563,3 +1563,44 @@ async def test_ac20_fulfilling_is_repeatable_to_the_last_detail(
     assert await seed.count("fulfilments", world.tenant_id) == 1
     assert await seed.count("audit_events", world.tenant_id) == before + 1
     assert run_id == system.run_id
+
+
+async def test_ac9_recording_runs_keeps_working_once_postgres_uses_a_generic_plan(
+    world: World,
+) -> None:
+    """Regression: the conflict target's partial-index predicate was bound as parameters. After
+    about five executions on one connection Postgres switches to a generic plan, can no longer
+    prove the parameters imply the index's predicate, and every further insert failed with "no
+    unique or exclusion constraint matching the ON CONFLICT specification"."""
+    from abacus.kernel.db import tenant_session
+    from abacus.modules.connections.repository import insert_run
+
+    tenant = TenantContext(world.tenant_id, "human", str(world.requester.user_id))
+    async with tenant_session(tenant) as session:  # one connection for every insert
+        for day in range(12):
+            start = PERIOD.start + timedelta(days=day)
+            run = await insert_run(
+                session,
+                tenant_id=world.tenant_id,
+                client_entity_id=world.entity_id,
+                connection_id=world.connection_id,
+                engagement_id=world.engagement_id,
+                request_item_id=world.item_id,
+                period_start=start,
+                period_end=PERIOD.end,
+                started_by=str(world.requester.user_id),
+            )
+            assert run is not None, f"insert {day + 1} failed"
+            # The same item and period again: the conflict target still applies.
+            again = await insert_run(
+                session,
+                tenant_id=world.tenant_id,
+                client_entity_id=world.entity_id,
+                connection_id=world.connection_id,
+                engagement_id=world.engagement_id,
+                request_item_id=world.item_id,
+                period_start=start,
+                period_end=PERIOD.end,
+                started_by=str(world.requester.user_id),
+            )
+            assert again is None

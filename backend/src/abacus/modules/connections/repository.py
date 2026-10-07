@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, date, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import select, update
+from sqlalchemy import select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -67,7 +67,11 @@ async def insert_run(
             )
             .on_conflict_do_nothing(
                 index_elements=["tenant_id", "request_item_id", "period_start", "period_end"],
-                index_where=SyncRun.status.in_(("running", "succeeded")),
+                # A literal predicate, never bound parameters: under a generic plan (after about
+                # five executions on one pooled connection) Postgres can't prove bound values
+                # imply the partial index's predicate, and the insert fails with "no unique or
+                # exclusion constraint matching the ON CONFLICT specification".
+                index_where=text("status IN ('running', 'succeeded')"),
             )
             .returning(SyncRun)
         )
