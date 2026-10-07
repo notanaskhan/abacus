@@ -4,6 +4,7 @@
 setup:
 	cd backend && uv sync --locked
 	pnpm install --frozen-lockfile
+	pnpm -C packages/api-client build:types
 
 # Local runs: the fake connector reads fixtures from here; seed_dev writes them (TASK-012).
 LOCAL_ENV = ABACUS_FAKE_CONNECTOR_DIR=$(CURDIR)/backend/.local/fake-connector
@@ -63,6 +64,7 @@ evals:
 generate:
 	cd backend && uv run python -m abacus.api.export_openapi > ../packages/api-client/openapi.json
 	pnpm -C packages/api-client exec openapi-ts
+	pnpm -C packages/api-client build:types
 
 migrate:
 	cd backend && uv run alembic upgrade head

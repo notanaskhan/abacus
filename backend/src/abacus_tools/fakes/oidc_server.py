@@ -26,6 +26,7 @@ from urllib.parse import parse_qs, urlencode
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 
 from abacus.kernel.config import settings
@@ -99,6 +100,13 @@ def create_app(idp: FakeIdentityProvider | None = None) -> FastAPI:
     signer = idp or provider()
     grants: dict[str, _Grant] = {}
     app = FastAPI(title="Abacus local sign-in", docs_url=None, redoc_url=None, openapi_url=None)
+    # The SPA posts to /token from its own origin (the browser half of PKCE).
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=sorted({uri.removesuffix("/signin/callback") for uri in REDIRECT_URIS}),
+        allow_methods=["POST"],
+        allow_headers=["Content-Type"],
+    )
     base = f"http://{HOST}:{PORT}"
 
     @app.get("/.well-known/openid-configuration")
