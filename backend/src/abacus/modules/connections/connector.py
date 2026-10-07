@@ -2,8 +2,8 @@
 
 Every connector implements this one interface and passes the conformance suite
 (`tests/unit/connections/conformance.py`). Connectors only read: the contract has no write
-operations and CONN-001 forbids adding any. `pull` returns the provider's bytes exactly as sent; the
-pipeline stores them unaltered before anything interprets them (ADR-038).
+operations and CONN-001 forbids adding any. `pull` returns the provider's bytes exactly as
+sent; the pipeline stores them unaltered before anything interprets them (ADR-038).
 """
 
 from __future__ import annotations
