@@ -1085,9 +1085,11 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"status", "raw_storage_key", "raw_version_id", "raw_fingerprint", "raw_size_bytes"}
             | {"raw_pulled_at", "source", "snapshot_id", "evidence_version_id"}
             | {"failure_code", "finished_at"}
+            | {"queued_reason", "estimated_start_at"}  # TASK-018b
         ),
         "agent_runs": frozenset(
             {"status", "context_hash", "output", "failure_code", "finished_at"}
+            | {"queued_reason", "estimated_start_at"}  # TASK-018b
         ),
         "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),  # TASK-016
     } == sc.APP_UPDATE_COLUMNS
