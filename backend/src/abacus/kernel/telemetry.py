@@ -110,11 +110,12 @@ class ScrubbingExporter(SpanExporter):
         return self._inner.force_flush(timeout_millis)
 
 
-def _endpoint(raw: str, environment: str) -> str:
+def otlp_url(raw: str, environment: str, signal: str = "traces") -> str:
+    """The OTLP/HTTP URL of one signal (`traces`, `metrics`): https outside local and test."""
     endpoint = raw.rstrip("/")
     if environment not in ("local", "test") and not endpoint.startswith("https://"):
         raise RuntimeError("otlp_endpoint must use https outside local and test")
-    return f"{endpoint}/v1/traces"
+    return f"{endpoint}/v1/{signal}"
 
 
 def configure_tracing(service: str, exporter: SpanExporter | None = None) -> TracerProvider:
@@ -134,7 +135,7 @@ def configure_tracing(service: str, exporter: SpanExporter | None = None) -> Tra
                 OTLPSpanExporter,
             )
 
-            exporter_ = OTLPSpanExporter(endpoint=_endpoint(s.otlp_endpoint, s.environment))
+            exporter_ = OTLPSpanExporter(endpoint=otlp_url(s.otlp_endpoint, s.environment))
             _provider.add_span_processor(BatchSpanProcessor(ScrubbingExporter(exporter_)))
         trace.set_tracer_provider(_provider)
     if exporter is not None:

@@ -86,7 +86,23 @@ class Settings(BaseSettings):
     fake_connector_dir: Annotated[str | None, classified("internal")] = None
     temporal_target: Annotated[str | None, classified("internal")] = None
     temporal_namespace: Annotated[str, classified("internal")] = "default"
+    # The base name of the task queues: one per work class, `<base>-<class>` (ADR-071, SPEC-003).
+    # The base queue itself is served for one release, until no workflow remains on it (AC-16).
     temporal_task_queue: Annotated[str, classified("internal")] = "abacus"
+    serve_legacy_queue: Annotated[bool, classified("internal")] = True
+    # Each class's worker pool: activities and workflow tasks run at once (TASK-018 design §3).
+    worker_max_activities: Annotated[dict[str, int], classified("internal")] = {
+        "interactive": 50,
+        "time_sensitive": 50,
+        "background": 20,
+        "batch": 10,
+    }
+    worker_max_workflow_tasks: Annotated[dict[str, int], classified("internal")] = {
+        "interactive": 50,
+        "time_sensitive": 50,
+        "background": 20,
+        "batch": 10,
+    }
     # Temporal Cloud needs TLS and an API key; both are required outside local and test.
     temporal_tls: Annotated[bool, classified("internal")] = False
     temporal_api_key: Annotated[SecretStr | None, classified("restricted")] = None

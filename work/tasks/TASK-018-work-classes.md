@@ -4,7 +4,7 @@ title: Work-class queues and admission control
 spec: SPEC-003
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-12, AC-13, AC-14, AC-15, AC-16]
 risk_zone: amber
-status: awaiting-plan-approval
+status: in-progress
 branch: task-018-work-classes
 worktree:
 created: 2026-10-07
@@ -39,7 +39,8 @@ SPEC-003 approved by the founder on 2026-10-07 (all recommendations, Q1–Q7). D
 - Reference: `docs/architecture/reference/` (unit of work, backend module); the `temporal-workflow` skill
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-07: D1–D5 as recommended)
+- Approved by founder: paths `backend/src/abacus/kernel/**`, `worker/**`, `modules/connections/**`, `modules/agents/**`, `ai_gateway/**`, `backend/migrations/**`, `banned_patterns.py` and its test, `schema_check.py`, `packages/api-client/**`, `.claude/skills/**` (local approval file `work/approvals/TASK-018.yaml`, written at the founder's instruction).
 
 ### Design (for founder review)
 
@@ -131,6 +132,74 @@ SPEC-003 approved by the founder on 2026-10-07 (all recommendations, Q1–Q7). D
 - **D4. Priority by reserved headroom, with deferrable agents one class lower?** *Recommendation: yes.* It is simple, works across processes, and can't exceed the limits.
 - **D5. Queue depth comes from Temporal's server metrics (TASK-014), and the app reports waiting runs and schedule-to-start?** *Recommendation: yes.* It avoids polling Temporal.
 
+### Interface contract: 018a (tests written independently, ADR-078)
+Source: SPEC-003 AC-1–5, AC-15 (schedule-to-start) and AC-16, and design §2, §3, §7 and §8. Every test names its AC.
+
+**`abacus.kernel.dispatch`**
+- `WorkClass` is `Literal["interactive", "time_sensitive", "background", "batch"]`. `WORK_CLASSES` is those four, in that order.
+- `queue_for(c)` returns `f"{settings().temporal_task_queue}-{c with '_' replaced by '-'}"`, for example `abacus-time-sensitive`. An unknown class raises `ValueError`.
+- `register_work_classes(mapping)`:
+  - an unknown class raises `ValueError`;
+  - registering the same workflow again with the same class is a no-op;
+  - registering it with a different class raises `ValueError`.
+- `work_class_of(workflow)` raises `LookupError` for an unregistered workflow (AC-4).
+- `await dispatch(Workflow, arg, *, id, id_reuse_policy, id_conflict_policy, execution_timeout=None)`:
+  - starts `Workflow.run` on `queue_for(work_class_of(Workflow))` with the given ID and policies, through `kernel.temporal.temporal_client()`;
+  - logs `dispatch.started` (`workflow`, `work_class`);
+  - an unregistered workflow raises `LookupError` before contacting Temporal.
+
+**Registrations (SPEC-003 Q1)**
+- `connections.api.WORKFLOWS == {RetrievalWorkflow: "interactive"}`.
+- `agents.api.WORKFLOWS == {ScreeningWorkflow: "time_sensitive"}`, taken from the screener's spec.
+- Both are registered at import.
+- `connections.retrievals` and `agents.screenings` start their workflows only through `dispatch`, keeping their existing ID, reuse and conflict policies and the retrieval's 6 h execution timeout.
+
+**Agent specs (AC-4; ADR-105)**
+- `AgentSpec` requires `work_class` (a `WorkClass`), `essential` (`bool`) and `cheaper_tiers` (a tuple of `Tier`; may be empty).
+- A spec missing any of them, or with an unknown class, fails validation (`AGENTS` doesn't load).
+- The screener has `time_sensitive`, `true` and `[]`.
+
+**Worker (`abacus.worker.__main__`) (AC-1, AC-16)**
+- `build_worker()` is replaced by `async build_workers(classes=WORK_CLASSES) -> list[Worker]`.
+- It runs the same boot checks in the same order as before, then builds one `Worker` per class served, with `task_queue=queue_for(c)`, `max_concurrent_activities=settings().worker_max_activities[c]` and `max_concurrent_workflow_tasks=settings().worker_max_workflow_tasks[c]`. When `settings().serve_legacy_queue` is true (the default) it adds one more worker on `settings().temporal_task_queue`, using the interactive limits.
+- Every worker registers every module's workflows and activities, with interceptors `[ReportingInterceptor(), ScheduleToStartInterceptor()]`.
+- It configures tracing, metrics (`configure_metrics("abacus-worker")`) and error tracking.
+- `classes_from(argv)`:
+  - parses `--classes a,b` (default: all four);
+  - drops duplicates and returns them in `WORK_CLASSES` order;
+  - exits with argparse's error for an unknown or empty list.
+- `run(classes)` enters every worker, runs the relay as before, and on exit calls `shutdown_tracing()`, `shutdown_metrics()` and `flush_errors()`.
+- `main(argv=None)` passes `classes_from(argv or sys.argv[1:])` to `run`.
+- Settings defaults:
+  - `worker_max_activities` and `worker_max_workflow_tasks` are `{interactive: 50, time_sensitive: 50, background: 20, batch: 10}`;
+  - `serve_legacy_queue` is `True`.
+
+**DISPATCH-001 (AC-3)**
+- It flags, in `src/abacus/*` except `kernel/dispatch.py` and `worker/__main__.py`:
+  - any call named `start_workflow`, `execute_workflow` or `signal_with_start_workflow`;
+  - any call with a `task_queue=` keyword.
+- The repository is clean.
+
+**Metrics (`abacus.kernel.metrics`) (AC-15, part)**
+- `configure_metrics(service, reader=None)` is idempotent (first call wins). It installs a global `MeterProvider` whose only view keeps the attribute keys `{work_class, provider, model, reason, outcome, tenant.id}`; any other attribute is dropped. An OTLP reader is added when `otlp_endpoint` is set, at `otlp_url(endpoint, env, "metrics")`, with https outside local and test.
+- `test_reader()` returns the process's `InMemoryMetricReader`, refused outside local and test.
+- `shutdown_metrics()` flushes and shuts down.
+- `ScheduleToStartInterceptor` records the histogram `abacus.schedule_to_start` (unit `s`, value `started_time - current_attempt_scheduled_time`, never negative) with `work_class` from the task queue: one of the four, or `legacy`.
+- `kernel.telemetry._endpoint` is replaced by the public `otlp_url(raw, environment, signal="traces")`.
+
+**AC-5 (integration, real Temporal container)**
+- Saturate the background pool: `worker_max_activities["background"] = 1`, with a long-running activity holding it.
+- Dispatch an interactive workflow.
+- Assert that its first activity starts within 2 s.
+
+**AC-16:** a workflow started on the legacy base queue completes, served by the legacy worker. The recorded v1 histories still replay.
+
+**Existing tests that change (pins, not weakening):**
+- `tests/unit/worker/*` (`build_worker` → `build_workers`, a list of workers);
+- `tests/unit/agents/test_screening_contract.py` (the `WORKFLOWS` shape; `start_screening` now goes through `dispatch`);
+- the integration fixtures that run a `Worker` on `QUEUE` and set `ABACUS_TEMPORAL_TASK_QUEUE`. Their workers must poll `queue_for(<class>)`, or the tests must use `build_workers`. This affects `test_retrieval_workflow.py`, `test_retrieval_api.py`, `agent_tests/test_screening_workflow.py`, `test_observability_flow.py` and `test_walls_runs.py`;
+- `tests/unit/worker/conftest.py` already stubs `shutdown_metrics` alongside `shutdown_tracing`.
+
 ### Steps
 1. Design and interface contract, after the spec is approved.
 2. Implementation.
@@ -156,6 +225,7 @@ SPEC-003 approved by the founder on 2026-10-07 (all recommendations, Q1–Q7). D
 ## Progress log
 - `2026-10-07` — Created with SPEC-003 (draft) for founder review.
 - `2026-10-07` — SPEC-003 approved. Design §1–8 and D1–D5 written for founder review.
+- `2026-10-07` — Design approved (D1–D5). 018a implemented: `kernel.dispatch`, `kernel.metrics`, the per-class worker pools and legacy queue, DISPATCH-001, the agent spec fields, ADR-105, and docs (kernel README, temporal reference, skill). Static gates pass on `src`; 11 unit tests and the integration fixtures pin the old worker and queue (handed to the test author).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -168,9 +238,10 @@ SPEC-003 approved by the founder on 2026-10-07 (all recommendations, Q1–Q7). D
 - Design questions D1–D5 (above).
 
 ## Handoff
-- **Current state:** design written; waiting for founder approval of D1–D5. Branch `task-018-work-classes`.
+- **Current state:** 018a implemented on `task-018-work-classes`. The independent test author and reviews are next.
 - **Exact next step:**
-  1. When approved, record the approval and the protected paths in *Plan*.
-  2. Write the approval file at the founder's instruction.
-  3. Write the 018a interface contract.
-  4. Implement 018a, then run the independent tests and reviews.
+  1. Run the Sonnet test author on `task-018-work-classes-tests` with the 018a contract, including the pins.
+  2. Run the security and architecture reviews.
+  3. Cherry-pick the net test diff, fix findings, and run the full suite with the compose DB stopped.
+  4. Open the PR (amber).
+  5. Then do 018b (design §4–5) and 018c (design §6).

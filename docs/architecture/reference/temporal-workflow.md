@@ -5,11 +5,12 @@ The pattern every module copies (SPEC-000 §22), from the retrieval workflow (TA
 ## Shape
 
 ```
-trigger ─▶ start_workflow(name, Input(ids), id=…) ─▶ workflow (orchestration) ─▶ activities (all I/O)
+trigger ─▶ dispatch(Workflow, Input(ids), id=…) ─▶ workflow (orchestration) ─▶ activities (all I/O)
                                                           └── any failure ─▶ <module>.fail_run (retries forever)
 ```
 
-- One module owns a workflow, its activities and its payload types. Each module's `api.py` exports `WORKFLOWS`, `ACTIVITIES` and `SUBSCRIPTIONS`; `abacus/worker/__main__.py` composes them from `MODULES`, so adding a workflow never touches the worker.
+- One module owns a workflow, its activities and its payload types. Each module's `api.py` exports `WORKFLOWS` (each workflow's work class, registered with `register_work_classes`), `ACTIVITIES` and `SUBSCRIPTIONS`; `abacus/worker/__main__.py` composes them from `MODULES`, so adding a workflow never touches the worker.
+- `kernel.dispatch.dispatch` is the only way to start a workflow: it runs on its work class's queue (`<base>-interactive`, `-time-sensitive`, `-background`, `-batch`), each with its own worker pool (ADR-071, SPEC-003). Its activities run on the same queue.
 - Workflows and activities have fixed names (`@workflow.defn(name="retrieval")`, `@activity.defn(name="retrieval.pull_raw")`). Starts and `execute_activity` calls use the name strings. Renaming one breaks replay (ADR-090).
 
 ## The workflow: orchestration only
@@ -128,7 +129,7 @@ cd backend && uv run python -m abacus_tools.workflows.record_screening tests/wor
 2. `workflows.py`: `@workflow.defn(name=…)`, activities by name, a `fail_run` ending with unlimited retries, cancellation handled.
 3. `activities.py`: prove context from the row, class-name-only errors, repeat-safe, an `ACTIVITIES` tuple.
 4. A starter module (`retrievals.py`, `screenings.py`): the workflow ID and its policies; for events, a `SUBSCRIPTIONS` entry.
-5. Export `WORKFLOWS`, `ACTIVITIES` and `SUBSCRIPTIONS` from `api.py`; add the module to `MODULES` in the worker.
+5. Export `WORKFLOWS` (with each workflow's work class), `ACTIVITIES` and `SUBSCRIPTIONS` from `api.py`, and call `register_work_classes(WORKFLOWS)`; add the module to `MODULES` in the worker.
 6. Record `v1` histories and add a replay test with "changed sequence fails" cases.
 
 ## Not yet

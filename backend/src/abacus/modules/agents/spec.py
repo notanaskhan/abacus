@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.ai_gateway import Tier, prompt
 from abacus.kernel.classification import classified
+from abacus.kernel.dispatch import WorkClass
 from abacus.modules.agents.specs._specs import SPECS
 from abacus.modules.identity.api import agent_may_hold
 
@@ -62,6 +63,13 @@ class AgentSpec(BaseModel):
     evaluation_suite: Annotated[
         str, Field(pattern=r"^evals/[a-z][a-z0-9_/]*$"), classified("internal")
     ]
+    # SPEC-003, ADR-071: the queue the agent's work runs on. Required: no class, no agent.
+    work_class: Annotated[WorkClass, classified("internal")]
+    # ADR-069 (named by ADR-105): essential work is admitted before deferrable work in its class.
+    essential: Annotated[bool, classified("internal")]
+    # Tiers the gateway may step down to under pressure; only ones that passed the evaluation
+    # suite at that tier (ADR-072). Empty means never step down.
+    cheaper_tiers: Annotated[tuple[Tier, ...], classified("internal")]
 
 
 def _load() -> dict[str, AgentSpec]:
