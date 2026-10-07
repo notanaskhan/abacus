@@ -10,6 +10,8 @@ created: 2026-10-07
 updated: 2026-10-07
 ---
 
+> **Amended 2026-10-07 during TASK-016** (founder approved the design): the list action is `wall.list`, not `wall.read`, because `*.read` actions are engagement-scoped reads that `visible()` filters. Removal is `POST /v1/walls/{id}/remove` returning the wall, because every route returns a response model. A firm admin can't lift a wall on themself (security review).
+
 > **Instructions for coding agents**
 > - Implement only what this spec describes. Anything not listed here is out of scope.
 > - If anything is ambiguous or contradicts an ADR, **stop** and add it to *Open questions*. Do not guess.
@@ -67,11 +69,11 @@ Audit firms must keep people with a conflict (an independence issue, a personal 
 **Happy path**
 1. A firm admin with recent MFA calls `POST /v1/walls {user_id, client_id}`.
 2. `authorise(ctx, "wall.create", firm)` runs, and the wall row is inserted in a unit of work with `wall.created`.
-3. On U's next request, layer 2 of `authorise` finds the wall for the resource's client and denies (layer `wall`). `visible()` adds `client_id NOT IN (U's walled clients)`.
+3. On U's next request, layer 2 of `authorise` finds the wall for the resource's client and denies (layer `wall`). `visible()` adds a `NOT EXISTS` over U's active walls, matched on each row's engagement's client.
 
 **Alternate paths**
 - Removing a wall marks it removed (it is not deleted; the history stays) and audits `wall.removed`.
-- Walling a user who isn't a member of the firm → 404. Walling the firm admin themself is allowed.
+- Walling a user who isn't a member of the firm → 404. Walling the firm admin themself is allowed; lifting that wall needs another firm admin (409 `own_wall`).
 
 **State transitions**
 | From | Event | To | Who can trigger |
@@ -92,15 +94,15 @@ Audit firms must keep people with a conflict (an independence issue, a personal 
 | Method | Path | Action | Notes |
 |---|---|---|---|
 | POST | /v1/walls | wall.create | `{user_id, client_id}` → 201 WallOut |
-| DELETE | /v1/walls/{wall_id} | wall.remove | 204 |
-| GET | /v1/walls | wall.read | list (new matrix action, firm admin only; see Q2) |
+| POST | /v1/walls/{wall_id}/remove | wall.remove | 200 WallOut, marked removed; 409 `own_wall` on one's own wall |
+| GET | /v1/walls | wall.list | list (new matrix action, firm admin only; see Q2) |
 
 ## 9. Authorisation and tenancy
 - **Order:** in `authorise`, layer 2 checks walls before roles (ADR-026). A walled actor is denied whatever the matrix says; the denial logs layer `wall` and the route answers 404.
 - **Lists:** `visible()` filters every list by the caller's walled clients, through the engagement's `client_id`.
 - **Agents and system contexts:** checked against their initiator / `on_behalf_of` person, live, on every authorised step (ADR-025).
 - **Tenancy:** walls are tenant-scoped; RLS applies.
-- **Matrix:** add `wall.read: {firm_admin: allow, mfa_recent: required}`. This is a protected change, so it needs approval.
+- **Matrix:** add `wall.list: {firm_admin: allow, mfa_recent: required}`. This is a protected change, so it needs approval.
 
 ## 10. AI behaviour
 N/A: no model calls. Agents are stopped by AC-7.
@@ -126,7 +128,7 @@ None.
 Denials log `authz.denied` with layer `wall` (IDs only). Span attributes are unchanged.
 
 ## 16. Performance and scale
-One indexed lookup per request: the caller's walled client IDs, cached for the request. The `visible()` filter adds one `NOT IN`.
+One indexed lookup per request: the caller's walled client IDs, cached for the request (live on every step outside a request). The `visible()` filter adds one correlated `NOT EXISTS` on the `ethical_walls_user` index.
 
 ## 17. UX
 No UI in this spec (API only). The SPA shows walled engagements as not found, which is the existing 404 handling.
@@ -144,7 +146,7 @@ Behind no flag: walls apply as soon as they exist, and none exist until an admin
 ## 20. Open questions
 None. Answered by the founder on 2026-10-07 (all recommendations):
 - **Q1:** walled engagements answer 404.
-- **Q2:** add the matrix action `wall.read` (firm admin, fresh MFA).
+- **Q2:** add a matrix action to list walls (firm admin, fresh MFA); named `wall.list` (see the amendment above).
 - **Q3:** runs already acting for a newly walled person are stopped at their next step.
 - **Q4:** API only; the admin screen comes with the collaboration UI spec.
 
