@@ -4,7 +4,7 @@ title: Evaluation runner, graders and calibration
 spec: SPEC-005
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-12, AC-13, AC-14, AC-15, AC-16]
 risk_zone: amber
-status: blocked
+status: todo
 branch:
 worktree:
 created: 2026-10-07
@@ -25,7 +25,7 @@ Implement SPEC-005: one evaluation runner that runs any agent's suite through th
 ## Scope
 All of SPEC-005 (AC-1 to AC-16), once approved.
 
-**Blocked on SPEC-005 approval** (open questions Q1–Q8).
+SPEC-005 approved by the founder on 2026-10-07 (all recommendations, Q1–Q8). Next: the design, for founder review.
 
 Excluded:
 - the learning loop (ADR-068);
