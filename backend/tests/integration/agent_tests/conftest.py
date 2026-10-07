@@ -12,7 +12,7 @@ from types_boto3_s3 import S3Client
 from abacus.ai_gateway import FakeModel, configure_provider
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
-from abacus.kernel.db import configure_engine, dispose_engine
+from abacus.kernel.db import configure_engine, configure_relay_engine, dispose_engine
 from abacus.kernel.storage import s3_client
 from abacus.modules.agents.api import install_fake_responses
 from abacus.modules.evidence import storage
@@ -52,6 +52,7 @@ async def engines(
     settings.cache_clear()
     await dispose_engine()
     configure_engine(migrated_db.app_url)
+    configure_relay_engine(migrated_db.relay_url)
     yield
     await dispose_engine()
     settings.cache_clear()

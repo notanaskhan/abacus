@@ -318,12 +318,16 @@ async def test_ac16_a_repair_that_would_overrun_the_budget_escalates_and_records
 
 async def test_ac16_a_provider_error_is_recorded_and_reraised(seed: Seeder, world: World) -> None:
     configure_provider(FakeModel())  # no responder for the prompt: a ProviderError
+    c = _call(world)
     with pytest.raises(ProviderError):
-        await call(_call(world))
+        await call(c)
     [row] = await _usage(seed, world)
     assert row["outcome"] == "provider_error"
     assert row["input_tokens"] == 0
-    assert row["cost_usd"] == 0
+    # Contract revision 1 (011b): a failed call is billed its input estimate, not 0.
+    expected = cost(c.tier, estimate_tokens(prompt(c.prompt).text + c.context.render()), 0)
+    assert expected > 0
+    assert row["cost_usd"] == expected
     assert "model.called" in await seed.actions(world.tenant_id)
 
 
