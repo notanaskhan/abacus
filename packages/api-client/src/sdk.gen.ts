@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptData, AcceptErrors, AcceptResponses, AddDocumentData, AddDocumentErrors, AddDocumentResponses, ApplyMethodologyData, ApplyMethodologyErrors, ApplyMethodologyResponses, AssignData, AssignErrors, AssignResponses, CreateEngagementData, CreateEngagementErrors, CreateEngagementResponses, CreateRequestItemData, CreateRequestItemErrors, CreateRequestItemResponses, CreateWallData, CreateWallErrors, CreateWallResponses, EngagementGraphData, EngagementGraphErrors, EngagementGraphResponses, GetBudgetData, GetBudgetErrors, GetBudgetResponses, GetDocumentData, GetDocumentErrors, GetDocumentResponses, GetEngagementData, GetEngagementErrors, GetEngagementResponses, GetRetrievalData, GetRetrievalErrors, GetRetrievalResponses, GetVersionData, GetVersionErrors, GetVersionResponses, ImportTemplateData, ImportTemplateErrors, ImportTemplateResponses, ListDocumentsData, ListDocumentsErrors, ListDocumentsResponses, ListEngagementsData, ListEngagementsErrors, ListEngagementsResponses, ListEvidenceVersionsData, ListEvidenceVersionsErrors, ListEvidenceVersionsResponses, ListRequestItemsData, ListRequestItemsErrors, ListRequestItemsResponses, ListScreeningResultsData, ListScreeningResultsErrors, ListScreeningResultsResponses, ListTemplatesData, ListTemplatesErrors, ListTemplatesResponses, ListWallsData, ListWallsErrors, ListWallsResponses, MeData, MeErrors, MeResponses, MeteringData, MeteringErrors, MeteringResponses, PutBudgetData, PutBudgetErrors, PutBudgetResponses, ReasonCodesData, ReasonCodesErrors, ReasonCodesResponses, RejectData, RejectErrors, RejectResponses, ReleaseData, ReleaseErrors, ReleaseResponses, RemoveWallData, RemoveWallErrors, RemoveWallResponses, ReviewQueueData, ReviewQueueErrors, ReviewQueueResponses, SearchData, SearchErrors, SearchResponses, SendBackData, SendBackErrors, SendBackResponses, StartRetrievalData, StartRetrievalErrors, StartRetrievalResponses, TakeData, TakeErrors, TakeResponses, WithdrawDocumentData, WithdrawDocumentErrors, WithdrawDocumentResponses } from './types.gen';
+import type { AcceptData, AcceptErrors, AcceptResponses, AcknowledgeSupportSessionData, AcknowledgeSupportSessionErrors, AcknowledgeSupportSessionResponses, AddDocumentData, AddDocumentErrors, AddDocumentResponses, ApplyMethodologyData, ApplyMethodologyErrors, ApplyMethodologyResponses, ApproveSupportSessionData, ApproveSupportSessionErrors, ApproveSupportSessionResponses, AssignData, AssignErrors, AssignResponses, CreateEngagementData, CreateEngagementErrors, CreateEngagementResponses, CreateRequestItemData, CreateRequestItemErrors, CreateRequestItemResponses, CreateWallData, CreateWallErrors, CreateWallResponses, EmergencyApproveData, EmergencyApproveErrors, EmergencyApproveResponses, EndSupportSessionData, EndSupportSessionErrors, EndSupportSessionResponses, EngagementGraphData, EngagementGraphErrors, EngagementGraphResponses, GetBudgetData, GetBudgetErrors, GetBudgetResponses, GetDocumentData, GetDocumentErrors, GetDocumentResponses, GetEngagementData, GetEngagementErrors, GetEngagementResponses, GetRetrievalData, GetRetrievalErrors, GetRetrievalResponses, GetVersionData, GetVersionErrors, GetVersionResponses, ImportTemplateData, ImportTemplateErrors, ImportTemplateResponses, ListDocumentsData, ListDocumentsErrors, ListDocumentsResponses, ListEngagementsData, ListEngagementsErrors, ListEngagementsResponses, ListEvidenceVersionsData, ListEvidenceVersionsErrors, ListEvidenceVersionsResponses, ListRequestItemsData, ListRequestItemsErrors, ListRequestItemsResponses, ListScreeningResultsData, ListScreeningResultsErrors, ListScreeningResultsResponses, ListSupportSessionsData, ListSupportSessionsErrors, ListSupportSessionsResponses, ListTemplatesData, ListTemplatesErrors, ListTemplatesResponses, ListWallsData, ListWallsErrors, ListWallsResponses, MeData, MeErrors, MeResponses, MeteringData, MeteringErrors, MeteringResponses, PutBudgetData, PutBudgetErrors, PutBudgetResponses, ReasonCodesData, ReasonCodesErrors, ReasonCodesResponses, RejectData, RejectErrors, RejectResponses, ReleaseData, ReleaseErrors, ReleaseResponses, RemoveWallData, RemoveWallErrors, RemoveWallResponses, RequestSupportSessionData, RequestSupportSessionErrors, RequestSupportSessionResponses, ReviewQueueData, ReviewQueueErrors, ReviewQueueResponses, RevokeSupportSessionData, RevokeSupportSessionErrors, RevokeSupportSessionResponses, SearchData, SearchErrors, SearchResponses, SendBackData, SendBackErrors, SendBackResponses, StartRetrievalData, StartRetrievalErrors, StartRetrievalResponses, TakeData, TakeErrors, TakeResponses, WithdrawDocumentData, WithdrawDocumentErrors, WithdrawDocumentResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -341,6 +341,81 @@ export const getVersion = <ThrowOnError extends boolean = false>(options: Option
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/methodology/versions/{version_id}',
     ...options
+});
+
+/**
+ * List Support Sessions Route
+ */
+export const listSupportSessions = <ThrowOnError extends boolean = false>(options?: Options<ListSupportSessionsData, ThrowOnError>): RequestResult<ListSupportSessionsResponses, ListSupportSessionsErrors, ThrowOnError> => (options?.client ?? client).get<ListSupportSessionsResponses, ListSupportSessionsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/support-sessions',
+    ...options
+});
+
+/**
+ * Acknowledge Support Session Route
+ */
+export const acknowledgeSupportSession = <ThrowOnError extends boolean = false>(options: Options<AcknowledgeSupportSessionData, ThrowOnError>): RequestResult<AcknowledgeSupportSessionResponses, AcknowledgeSupportSessionErrors, ThrowOnError> => (options.client ?? client).post<AcknowledgeSupportSessionResponses, AcknowledgeSupportSessionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/support-sessions/{session_id}/acknowledge',
+    ...options
+});
+
+/**
+ * Approve Support Session Route
+ */
+export const approveSupportSession = <ThrowOnError extends boolean = false>(options: Options<ApproveSupportSessionData, ThrowOnError>): RequestResult<ApproveSupportSessionResponses, ApproveSupportSessionErrors, ThrowOnError> => (options.client ?? client).post<ApproveSupportSessionResponses, ApproveSupportSessionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/support-sessions/{session_id}/approve',
+    ...options
+});
+
+/**
+ * Revoke Support Session Route
+ */
+export const revokeSupportSession = <ThrowOnError extends boolean = false>(options: Options<RevokeSupportSessionData, ThrowOnError>): RequestResult<RevokeSupportSessionResponses, RevokeSupportSessionErrors, ThrowOnError> => (options.client ?? client).post<RevokeSupportSessionResponses, RevokeSupportSessionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/support-sessions/{session_id}/revoke',
+    ...options
+});
+
+/**
+ * Request Support Session Route
+ */
+export const requestSupportSession = <ThrowOnError extends boolean = false>(options: Options<RequestSupportSessionData, ThrowOnError>): RequestResult<RequestSupportSessionResponses, RequestSupportSessionErrors, ThrowOnError> => (options.client ?? client).post<RequestSupportSessionResponses, RequestSupportSessionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/support/sessions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Emergency Approve Route
+ */
+export const emergencyApprove = <ThrowOnError extends boolean = false>(options: Options<EmergencyApproveData, ThrowOnError>): RequestResult<EmergencyApproveResponses, EmergencyApproveErrors, ThrowOnError> => (options.client ?? client).post<EmergencyApproveResponses, EmergencyApproveErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/support/sessions/{session_id}/approve',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * End Support Session Route
+ */
+export const endSupportSession = <ThrowOnError extends boolean = false>(options: Options<EndSupportSessionData, ThrowOnError>): RequestResult<EndSupportSessionResponses, EndSupportSessionErrors, ThrowOnError> => (options.client ?? client).post<EndSupportSessionResponses, EndSupportSessionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/support/sessions/{session_id}/end',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**

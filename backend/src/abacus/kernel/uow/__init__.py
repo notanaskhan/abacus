@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
@@ -241,3 +241,20 @@ __all__ = [
     "UnitOfWork",
     "uow",
 ]
+
+
+async def audit_counts(
+    session: AsyncSession, action: str, target_type: str, target_ids: Sequence[UUID]
+) -> dict[UUID, int]:
+    """How many `action` events each target has in the active tenant's trail (SPEC-012: requests
+    per support session). The audit trail's owner answers; modules never query it directly."""
+    if not target_ids:
+        return {}
+    rows = await session.execute(
+        text(
+            "SELECT target_id, count(*) FROM audit_events WHERE action = :action "
+            "AND target_type = :type AND target_id = ANY(:ids) GROUP BY target_id"
+        ),
+        {"action": action, "type": target_type, "ids": [str(i) for i in target_ids]},
+    )
+    return {UUID(str(target)): int(count) for target, count in rows.all()}

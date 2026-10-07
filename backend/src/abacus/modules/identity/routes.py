@@ -2,23 +2,42 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.repository import FirmRole
-from abacus.modules.identity.routing import SELF, AbacusRouter, current_context, current_signed_in
+from abacus.modules.identity.routing import (
+    SELF,
+    STAFF,
+    AbacusRouter,
+    current_context,
+    current_signed_in,
+    current_staff,
+)
 from abacus.modules.identity.service import (
     SignedIn,
     WallView,
     create_wall,
     list_walls,
     remove_wall_by_id,
+)
+from abacus.modules.identity.support import (
+    Staff,
+    SupportSessionView,
+    acknowledge_session,
+    approve_session,
+    emergency_approve,
+    end_session,
+    firm_sessions,
+    request_session,
+    revoke_session,
 )
 
 router = AbacusRouter(prefix="/v1", tags=["identity"])
@@ -104,3 +123,124 @@ async def remove_wall_route(wall_id: UUID, ctx: Ctx) -> WallOut:
 @router.get("/walls", action="wall.list", response_model=list[WallOut])
 async def list_walls_route(ctx: Ctx) -> list[WallOut]:
     return [_wall_out(wall) for wall in await list_walls(ctx)]
+
+
+# --- Break-glass support sessions (SPEC-012 §8) -------------------------------------------------
+
+StaffDep = Annotated[Staff, Depends(current_staff)]
+SupportCtx = Ctx
+
+
+class SupportSessionOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    staff_id: Annotated[UUID, classified("internal")]
+    staff_subject: Annotated[str, classified("internal")]
+    reason: Annotated[str, classified("confidential")]
+    scope: Annotated[Literal["metadata", "content"], classified("internal")]
+    duration_minutes: Annotated[int, classified("internal")]
+    emergency: Annotated[bool, classified("internal")]
+    status: Annotated[
+        Literal["requested", "active", "ended", "revoked", "expired"], classified("internal")
+    ]
+    approved_by_kind: Annotated[str | None, classified("internal")]
+    starts_at: Annotated[datetime | None, classified("internal")]
+    expires_at: Annotated[datetime | None, classified("internal")]
+    ended_at: Annotated[datetime | None, classified("internal")]
+    acknowledged: Annotated[bool, classified("internal")]
+    created_at: Annotated[datetime, classified("internal")]
+    requests: Annotated[int, classified("internal")]
+
+
+class SupportSessionIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
+
+    firm_id: Annotated[UUID, classified("internal")]
+    reason: Annotated[str, Field(min_length=20, max_length=1000), classified("confidential")]
+    scope: Annotated[Literal["metadata", "content"], classified("internal")]
+    duration_minutes: Annotated[int, Field(ge=1, le=240), classified("internal")]
+    emergency: Annotated[bool, classified("internal")] = False
+
+
+class FirmRefIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    firm_id: Annotated[UUID, classified("internal")]
+
+
+def _session_out(view: SupportSessionView) -> SupportSessionOut:
+    return SupportSessionOut.model_validate(asdict(view))
+
+
+staff_router = AbacusRouter(prefix="/v1/support/sessions", tags=["support"])
+
+
+@staff_router.post(
+    "", action=STAFF, response_model=SupportSessionOut, status_code=201, errors=(409,)
+)
+async def request_support_session_route(
+    body: SupportSessionIn, staff: StaffDep
+) -> SupportSessionOut:
+    view = await request_session(
+        staff, body.firm_id, body.reason, body.scope, body.duration_minutes, body.emergency
+    )
+    return _session_out(view)
+
+
+@staff_router.post(
+    "/{session_id}/approve", action=STAFF, response_model=SupportSessionOut, errors=(409,)
+)
+async def emergency_approve_route(
+    session_id: UUID, body: FirmRefIn, staff: StaffDep
+) -> SupportSessionOut:
+    return _session_out(await emergency_approve(staff, body.firm_id, session_id))
+
+
+@staff_router.post(
+    "/{session_id}/end", action=STAFF, response_model=SupportSessionOut, errors=(409,)
+)
+async def end_support_session_route(
+    session_id: UUID, body: FirmRefIn, staff: StaffDep
+) -> SupportSessionOut:
+    return _session_out(await end_session(staff, body.firm_id, session_id))
+
+
+firm_support_router = AbacusRouter(prefix="/v1/support-sessions", tags=["support"])
+
+
+@firm_support_router.get("", action="support_session.read", response_model=list[SupportSessionOut])
+async def list_support_sessions_route(ctx: SupportCtx) -> list[SupportSessionOut]:
+    return [_session_out(v) for v in await firm_sessions(ctx)]
+
+
+@firm_support_router.post(
+    "/{session_id}/approve",
+    action="support_session.manage",
+    response_model=SupportSessionOut,
+    errors=(409,),
+)
+async def approve_support_session_route(session_id: UUID, ctx: SupportCtx) -> SupportSessionOut:
+    return _session_out(await approve_session(ctx, session_id))
+
+
+@firm_support_router.post(
+    "/{session_id}/revoke",
+    action="support_session.manage",
+    response_model=SupportSessionOut,
+    errors=(409,),
+)
+async def revoke_support_session_route(session_id: UUID, ctx: SupportCtx) -> SupportSessionOut:
+    return _session_out(await revoke_session(ctx, session_id))
+
+
+@firm_support_router.post(
+    "/{session_id}/acknowledge",
+    action="support_session.manage",
+    response_model=SupportSessionOut,
+    errors=(409,),
+)
+async def acknowledge_support_session_route(
+    session_id: UUID, ctx: SupportCtx
+) -> SupportSessionOut:
+    return _session_out(await acknowledge_session(ctx, session_id))

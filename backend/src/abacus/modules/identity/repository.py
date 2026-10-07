@@ -260,3 +260,85 @@ async def all_walls(tenant: TenantContext) -> Sequence[WallRecord]:
             select(ethical_walls).order_by(ethical_walls.c.created_at.desc(), ethical_walls.c.id)
         )
         return [_wall(row) for row in rows.mappings().all()]
+
+
+# --- Support sessions (SPEC-012) ---------------------------------------------------------------
+
+
+async def firm_exists(session: AsyncSession) -> bool:
+    """The active tenant's firm row is visible (row-level security)."""
+    return bool(await session.scalar(text("SELECT EXISTS (SELECT 1 FROM firms)")))
+
+
+async def insert_support_session(session: AsyncSession, values: dict[str, object]) -> None:
+    await session.execute(
+        text(
+            "INSERT INTO support_sessions (id, tenant_id, staff_id, staff_subject, reason, scope, "
+            "duration_minutes, emergency) VALUES (:id, :tenant_id, :staff_id, :staff_subject, "
+            ":reason, :scope, :duration_minutes, :emergency)"
+        ),
+        values,
+    )
+
+
+async def get_support_session(
+    session: AsyncSession, session_id: UUID, *, lock: bool = False
+) -> RowMapping | None:
+    select_one = text(
+        "SELECT id, staff_id, staff_subject, reason, scope, duration_minutes, emergency, status, "
+        "approved_by_kind, approved_by, starts_at, expires_at, ended_at, acknowledged_at, "
+        "created_at, (status = 'active' AND expires_at > clock_timestamp()) AS live "
+        "FROM support_sessions WHERE id = :id"
+    )
+    locked = text(
+        "SELECT id, staff_id, staff_subject, reason, scope, duration_minutes, emergency, status, "
+        "approved_by_kind, approved_by, starts_at, expires_at, ended_at, acknowledged_at, "
+        "created_at, (status = 'active' AND expires_at > clock_timestamp()) AS live "
+        "FROM support_sessions WHERE id = :id FOR UPDATE"
+    )
+    result = await session.execute(locked if lock else select_one, {"id": session_id})
+    return result.mappings().first()
+
+
+async def list_support_sessions(session: AsyncSession) -> Sequence[RowMapping]:
+    listed = text(
+        "SELECT id, staff_id, staff_subject, reason, scope, duration_minutes, emergency, status, "
+        "approved_by_kind, approved_by, starts_at, expires_at, ended_at, acknowledged_at, "
+        "created_at, (status = 'active' AND expires_at > clock_timestamp()) AS live "
+        "FROM support_sessions ORDER BY created_at DESC, id"
+    )
+    return (await session.execute(listed)).mappings().all()
+
+
+async def activate_support_session(
+    session: AsyncSession, session_id: UUID, by_kind: str, by: UUID
+) -> None:
+    await session.execute(
+        text(
+            "UPDATE support_sessions SET status = 'active', approved_by_kind = :kind, "
+            "approved_by = :by, starts_at = clock_timestamp(), "
+            "expires_at = clock_timestamp() + make_interval(mins => duration_minutes) "
+            "WHERE id = :id AND status = 'requested'"
+        ),
+        {"id": session_id, "kind": by_kind, "by": by},
+    )
+
+
+async def close_support_session(session: AsyncSession, session_id: UUID, status: str) -> None:
+    await session.execute(
+        text(
+            "UPDATE support_sessions SET status = :status, ended_at = clock_timestamp() "
+            "WHERE id = :id AND status IN ('requested', 'active')"
+        ),
+        {"id": session_id, "status": status},
+    )
+
+
+async def acknowledge_support_session(session: AsyncSession, session_id: UUID) -> None:
+    await session.execute(
+        text(
+            "UPDATE support_sessions SET acknowledged_at = clock_timestamp() "
+            "WHERE id = :id AND acknowledged_at IS NULL"
+        ),
+        {"id": session_id},
+    )

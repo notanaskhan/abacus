@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Coroutine, Sequence
 from enum import Enum
-from typing import Annotated, Final, TypeVar
+from typing import Annotated, Final, TypeVar, cast
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
@@ -38,9 +38,21 @@ from abacus.modules.identity.service import (
     choose_tenant,
     sign_in,
 )
+from abacus.modules.identity.support import (
+    SUPPORT_HEADER,
+    Staff,
+    SupportSessionInactive,
+    audit_support_request,
+    staff_from_token,
+    support_context,
+)
+from abacus.modules.identity.tokens import InvalidToken
 
 _Endpoint = TypeVar("_Endpoint", bound=Callable[..., object])
 SELF: Final = "self"
+# SPEC-012 (TASK-027 D5): staff-token routes. Staff aren't firm members, so no firm action applies;
+# they are authorised by the staff token and the session rules in `identity.support`.
+STAFF: Final = "staff"
 
 
 class ErrorOut(BaseModel):
@@ -90,13 +102,51 @@ async def current_signed_in(
 
 
 async def current_context(
-    signed_in: Annotated[SignedIn, Depends(current_signed_in)],
+    request: Request,
+    authorization: Annotated[str | None, Header()] = None,
     x_abacus_tenant: Annotated[str | None, Header(alias=TENANT_HEADER)] = None,
+    x_support_session: Annotated[
+        str | None, Header(alias=SUPPORT_HEADER, include_in_schema=False)
+    ] = None,
 ) -> AuthContext:
+    if x_support_session is not None:
+        return await _support_context(request, authorization, x_abacus_tenant, x_support_session)
+    signed_in = await current_signed_in(authorization)
     try:
         return choose_tenant(signed_in, x_abacus_tenant)
     except NoActiveTenant:
         raise HTTPException(403, "forbidden") from None
+
+
+async def _support_context(
+    request: Request, authorization: str | None, firm: str | None, session: str
+) -> AuthContext:
+    """SPEC-012: read-only, one firm, an active session, each request audited first (fail
+    closed). Writes are refused here as well as by the matrix (TASK-027 D2)."""
+    if request.method not in ("GET", "HEAD"):
+        raise HTTPException(403, "forbidden")
+    try:
+        ctx = await support_context(authorization, firm, session)
+    except SupportSessionInactive:
+        raise HTTPException(401, "support_session_inactive") from None
+    route = cast(object, request.scope.get("route"))
+    template = route.path if isinstance(route, APIRoute) else "unmatched"
+    try:
+        await audit_support_request(ctx, template, request.method)
+    except Exception as exc:
+        _log.error("support.audit_failed", error=type(exc).__name__)
+        raise HTTPException(503, "service unavailable") from None
+    return ctx
+
+
+async def current_staff(authorization: Annotated[str | None, Header()] = None) -> Staff:
+    """A platform staff member (the staff issuer, with MFA): staff routes only (`STAFF`)."""
+    try:
+        return staff_from_token(authorization)
+    except InvalidToken:
+        raise HTTPException(
+            401, "not authenticated", headers={"WWW-Authenticate": "Bearer"}
+        ) from None
 
 
 def declared_action(route: APIRoute) -> str | None:
@@ -114,7 +164,11 @@ class AbacusRoute(APIRoute):
         async def guarded(request: Request) -> Response:
             with recording_checks() as checked:
                 response = await handler(request)
-            if action != SELF and action not in checked and response.status_code < 400:
+            if (
+                action not in (SELF, STAFF)
+                and action not in checked
+                and response.status_code < 400
+            ):
                 _log.error("authz.unchecked_route", path=path, action=str(action))
                 return JSONResponse({"detail": "internal error"}, status_code=500)
             return response
@@ -139,11 +193,11 @@ class AbacusRouter(APIRouter):
         status_code: int | None = None,
         errors: Sequence[int] = (),
     ) -> None:
-        if action != SELF and action not in RULES:
+        if action not in (SELF, STAFF) and action not in RULES:
             raise ValueError(f"route {path}: action {action!r} is not in the permission matrix")
         if response_model is None:
             raise ValueError(f"route {path}: a response model is required")
-        auth = current_signed_in if action == SELF else current_context
+        auth = {SELF: current_signed_in, STAFF: current_staff}.get(action, current_context)
         super().add_api_route(
             path,
             endpoint,

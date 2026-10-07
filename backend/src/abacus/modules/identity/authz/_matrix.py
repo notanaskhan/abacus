@@ -16,6 +16,8 @@ ROLES: tuple[str, ...] = (
     "client_contributor",
     "agent",
     "system",
+    "platform_support",
+    "platform_support_content",
 )
 
 ACTIONS: dict[str, dict[str, str]] = {
@@ -27,9 +29,18 @@ ACTIONS: dict[str, dict[str, str]] = {
         "firm_admin": "allow",
         "mfa_recent": "required",
     },
+    "support_session.read": {
+        "firm_admin": "allow",
+    },
+    "support_session.manage": {
+        "firm_admin": "allow",
+        "mfa_recent": "required",
+    },
     "budget.read": {
         "firm_admin": "allow",
         "practice_leader": "allow",
+        "platform_support": "allow",
+        "platform_support_content": "allow",
     },
     "budget.manage": {
         "firm_admin": "allow",
@@ -45,6 +56,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "practice_leader": "allow",
         "engagement_partner": "allow",
         "manager": "allow",
+        "platform_support": "allow",
+        "platform_support_content": "allow",
     },
     "knowledge.manage": {
         "firm_admin": "allow",
@@ -60,6 +73,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "staff": "allow",
         "reviewer": "allow",
+        "platform_support_content": "allow",
     },
     "autonomy_policy.update": {
         "firm_admin": "allow",
@@ -102,6 +116,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "staff": "allow",
         "reviewer": "allow",
+        "platform_support": "allow",
+        "platform_support_content": "allow",
     },
     "engagement.read": {
         "practice_leader": "in_scope",
@@ -113,6 +129,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "reviewer": "allow",
         "client_admin": "client_visible_only",
         "client_contributor": "client_visible_only",
+        "platform_support_content": "allow",
     },
     "engagement.self_join": {
         "firm_admin": "allow",
@@ -144,6 +161,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "client_admin": "client_visible_only",
         "client_contributor": "assigned_only",
         "agent": "task_scope",
+        "platform_support": "allow",
+        "platform_support_content": "allow",
     },
     "request_item.create": {
         "engagement_partner": "allow",
@@ -183,6 +202,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "client_admin": "client_visible_only",
         "client_contributor": "assigned_only",
         "agent": "task_scope",
+        "platform_support_content": "allow",
     },
     "evidence.upload": {
         "engagement_partner": "allow",
@@ -233,6 +253,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "staff": "allow",
         "reviewer": "allow",
         "agent": "deny",
+        "platform_support": "allow",
+        "platform_support_content": "allow",
     },
     "review.take": {
         "engagement_partner": "allow",
@@ -280,6 +302,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "client_admin": "allow",
         "engagement_partner": "allow",
         "manager": "allow",
+        "platform_support": "allow",
+        "platform_support_content": "allow",
     },
     "follow_up.draft": {
         "engagement_partner": "allow",
@@ -308,6 +332,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "manager": "allow",
         "quality_partner": "in_scope",
         "firm_admin": "allow",
+        "platform_support": "allow",
+        "platform_support_content": "allow",
     },
     "export.create": {
         "engagement_partner": "allow",

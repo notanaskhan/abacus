@@ -29,7 +29,8 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, AsyncSession, c
 
 from abacus.kernel.config import settings
 
-ActorKind = Literal["human", "agent", "system"]
+# `support`: a platform staff member in a break-glass session (SPEC-012), read-only.
+ActorKind = Literal["human", "agent", "system", "support"]
 
 
 @dataclass(frozen=True)

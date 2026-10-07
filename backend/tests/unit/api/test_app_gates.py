@@ -82,6 +82,12 @@ NOT_CREATING = {
     REVIEW_QUEUE + "/assign",
     "/v1/knowledge/documents/{document_id}/withdraw",  # SPEC-009: returns the document, so 200
     "/v1/knowledge/search",  # SPEC-009: a query, nothing created
+    # SPEC-012: lifecycle changes return the session, so 200.
+    "/v1/support/sessions/{session_id}/approve",
+    "/v1/support/sessions/{session_id}/end",
+    "/v1/support-sessions/{session_id}/approve",
+    "/v1/support-sessions/{session_id}/revoke",
+    "/v1/support-sessions/{session_id}/acknowledge",
 }
 
 
@@ -96,6 +102,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/methodology/templates/{name}/versions",  # SPEC-008: a template version
         "/v1/engagements/{engagement_id}/methodology",  # SPEC-008: items seeded
         "/v1/knowledge/documents",  # SPEC-009: a knowledge document
+        "/v1/support/sessions",  # SPEC-012: a support session is requested
         decisions + "accept",  # TASK-019: a review decision is created
         decisions + "reject",
         decisions + "send-back",

@@ -36,3 +36,12 @@ At least once; failures back off exponentially (capped at one hour) and are park
 ## Known limit
 
 The app role sets its own session settings, so the database checks on tenant and actor catch application bugs, not malicious SQL in application code. TENANT-001 confines those settings to `kernel.db`; UOW-001/UOW-002 confine commits and the relay engine to `kernel.uow`.
+
+## Feature flags (SPEC-011)
+`kernel.flags.flag(tenant, FLAG)` (and `flag_enabled` / `flag_variant`) reads a firm's value for a flag in `docs/architecture/feature-flags.yaml`, generated into `kernel/_flags.py`.
+- Values are cached for 30 seconds.
+- On any error the registry default is returned.
+- Operators set values with `make flag` (audited).
+
+## Actor kinds
+`TenantContext.actor_kind` is one of `human`, `agent`, `system` or `support` (a break-glass staff member, SPEC-012). Audit events record it.

@@ -390,6 +390,16 @@ export type FieldErrorOut = {
 };
 
 /**
+ * FirmRefIn
+ */
+export type FirmRefIn = {
+    /**
+     * Firm Id
+     */
+    firm_id: string;
+};
+
+/**
  * GraphAccountOut
  */
 export type GraphAccountOut = {
@@ -969,6 +979,98 @@ export type SpendOut = {
 };
 
 /**
+ * SupportSessionIn
+ */
+export type SupportSessionIn = {
+    /**
+     * Duration Minutes
+     */
+    duration_minutes: number;
+    /**
+     * Emergency
+     */
+    emergency?: boolean;
+    /**
+     * Firm Id
+     */
+    firm_id: string;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Scope
+     */
+    scope: 'metadata' | 'content';
+};
+
+/**
+ * SupportSessionOut
+ */
+export type SupportSessionOut = {
+    /**
+     * Acknowledged
+     */
+    acknowledged: boolean;
+    /**
+     * Approved By Kind
+     */
+    approved_by_kind: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Duration Minutes
+     */
+    duration_minutes: number;
+    /**
+     * Emergency
+     */
+    emergency: boolean;
+    /**
+     * Ended At
+     */
+    ended_at: string | null;
+    /**
+     * Expires At
+     */
+    expires_at: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Requests
+     */
+    requests: number;
+    /**
+     * Scope
+     */
+    scope: 'metadata' | 'content';
+    /**
+     * Staff Id
+     */
+    staff_id: string;
+    /**
+     * Staff Subject
+     */
+    staff_subject: string;
+    /**
+     * Starts At
+     */
+    starts_at: string | null;
+    /**
+     * Status
+     */
+    status: 'requested' | 'active' | 'ended' | 'revoked' | 'expired';
+};
+
+/**
  * TakenOut
  */
 export type TakenOut = {
@@ -1168,13 +1270,13 @@ export type GetBudgetData = {
     body?: never;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path?: never;
     query?: never;
@@ -1215,13 +1317,13 @@ export type PutBudgetData = {
     body: BudgetIn;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path?: never;
     query?: never;
@@ -1262,13 +1364,13 @@ export type ListEngagementsData = {
     body?: never;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path?: never;
     query?: never;
@@ -1311,13 +1413,13 @@ export type CreateEngagementData = {
     body: EngagementIn;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path?: never;
     query?: never;
@@ -1358,13 +1460,13 @@ export type GetEngagementData = {
     body?: never;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -1410,13 +1512,13 @@ export type ListEvidenceVersionsData = {
     body?: never;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -1464,13 +1566,13 @@ export type AcceptData = {
     body: AcceptIn;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -1528,13 +1630,13 @@ export type RejectData = {
     body: RejectIn;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -1592,13 +1694,13 @@ export type SendBackData = {
     body: RejectIn;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -1656,13 +1758,13 @@ export type EngagementGraphData = {
     body?: never;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -1708,13 +1810,13 @@ export type ApplyMethodologyData = {
     body: ApplyMethodologyIn;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -1764,13 +1866,13 @@ export type ListRequestItemsData = {
     body?: never;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -1818,13 +1920,13 @@ export type CreateRequestItemData = {
     body: RequestItemIn;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -1870,13 +1972,13 @@ export type StartRetrievalData = {
     body: RetrievalIn;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -1930,13 +2032,13 @@ export type GetRetrievalData = {
     body?: never;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -1986,13 +2088,13 @@ export type ReviewQueueData = {
     body?: never;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -2040,13 +2142,13 @@ export type AssignData = {
     body: AssignIn;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -2100,13 +2202,13 @@ export type ReleaseData = {
     body?: never;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -2160,13 +2262,13 @@ export type TakeData = {
     body?: never;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -2220,13 +2322,13 @@ export type ReasonCodesData = {
     body?: never;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -2278,13 +2380,13 @@ export type ListScreeningResultsData = {
     body?: never;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -2332,13 +2434,13 @@ export type ListDocumentsData = {
     body?: never;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path?: never;
     query?: never;
@@ -2381,13 +2483,13 @@ export type AddDocumentData = {
     body: KnowledgeDocumentIn;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path?: never;
     query?: never;
@@ -2432,13 +2534,13 @@ export type GetDocumentData = {
     body?: never;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -2484,13 +2586,13 @@ export type WithdrawDocumentData = {
     body?: never;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -2540,13 +2642,13 @@ export type SearchData = {
     body: KnowledgeSearchIn;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path?: never;
     query?: never;
@@ -2632,13 +2734,13 @@ export type MeteringData = {
     body?: never;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path?: never;
     query?: {
@@ -2686,13 +2788,13 @@ export type ListTemplatesData = {
     body?: never;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path?: never;
     query?: never;
@@ -2735,13 +2837,13 @@ export type ImportTemplateData = {
     body?: never;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -2787,13 +2889,13 @@ export type GetVersionData = {
     body?: never;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**
@@ -2835,17 +2937,385 @@ export type GetVersionResponses = {
 
 export type GetVersionResponse = GetVersionResponses[keyof GetVersionResponses];
 
-export type ListWallsData = {
+export type ListSupportSessionsData = {
     body?: never;
     headers?: {
-        /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
         /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/support-sessions';
+};
+
+export type ListSupportSessionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ListSupportSessionsError = ListSupportSessionsErrors[keyof ListSupportSessionsErrors];
+
+export type ListSupportSessionsResponses = {
+    /**
+     * Response List Support Sessions
+     *
+     * Successful Response
+     */
+    200: Array<SupportSessionOut>;
+};
+
+export type ListSupportSessionsResponse = ListSupportSessionsResponses[keyof ListSupportSessionsResponses];
+
+export type AcknowledgeSupportSessionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Session Id
+         */
+        session_id: string;
+    };
+    query?: never;
+    url: '/v1/support-sessions/{session_id}/acknowledge';
+};
+
+export type AcknowledgeSupportSessionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AcknowledgeSupportSessionError = AcknowledgeSupportSessionErrors[keyof AcknowledgeSupportSessionErrors];
+
+export type AcknowledgeSupportSessionResponses = {
+    /**
+     * Successful Response
+     */
+    200: SupportSessionOut;
+};
+
+export type AcknowledgeSupportSessionResponse = AcknowledgeSupportSessionResponses[keyof AcknowledgeSupportSessionResponses];
+
+export type ApproveSupportSessionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Session Id
+         */
+        session_id: string;
+    };
+    query?: never;
+    url: '/v1/support-sessions/{session_id}/approve';
+};
+
+export type ApproveSupportSessionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ApproveSupportSessionError = ApproveSupportSessionErrors[keyof ApproveSupportSessionErrors];
+
+export type ApproveSupportSessionResponses = {
+    /**
+     * Successful Response
+     */
+    200: SupportSessionOut;
+};
+
+export type ApproveSupportSessionResponse = ApproveSupportSessionResponses[keyof ApproveSupportSessionResponses];
+
+export type RevokeSupportSessionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Session Id
+         */
+        session_id: string;
+    };
+    query?: never;
+    url: '/v1/support-sessions/{session_id}/revoke';
+};
+
+export type RevokeSupportSessionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RevokeSupportSessionError = RevokeSupportSessionErrors[keyof RevokeSupportSessionErrors];
+
+export type RevokeSupportSessionResponses = {
+    /**
+     * Successful Response
+     */
+    200: SupportSessionOut;
+};
+
+export type RevokeSupportSessionResponse = RevokeSupportSessionResponses[keyof RevokeSupportSessionResponses];
+
+export type RequestSupportSessionData = {
+    body: SupportSessionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/support/sessions';
+};
+
+export type RequestSupportSessionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RequestSupportSessionError = RequestSupportSessionErrors[keyof RequestSupportSessionErrors];
+
+export type RequestSupportSessionResponses = {
+    /**
+     * Successful Response
+     */
+    201: SupportSessionOut;
+};
+
+export type RequestSupportSessionResponse = RequestSupportSessionResponses[keyof RequestSupportSessionResponses];
+
+export type EmergencyApproveData = {
+    body: FirmRefIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Session Id
+         */
+        session_id: string;
+    };
+    query?: never;
+    url: '/v1/support/sessions/{session_id}/approve';
+};
+
+export type EmergencyApproveErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EmergencyApproveError = EmergencyApproveErrors[keyof EmergencyApproveErrors];
+
+export type EmergencyApproveResponses = {
+    /**
+     * Successful Response
+     */
+    200: SupportSessionOut;
+};
+
+export type EmergencyApproveResponse = EmergencyApproveResponses[keyof EmergencyApproveResponses];
+
+export type EndSupportSessionData = {
+    body: FirmRefIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Session Id
+         */
+        session_id: string;
+    };
+    query?: never;
+    url: '/v1/support/sessions/{session_id}/end';
+};
+
+export type EndSupportSessionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EndSupportSessionError = EndSupportSessionErrors[keyof EndSupportSessionErrors];
+
+export type EndSupportSessionResponses = {
+    /**
+     * Successful Response
+     */
+    200: SupportSessionOut;
+};
+
+export type EndSupportSessionResponse = EndSupportSessionResponses[keyof EndSupportSessionResponses];
+
+export type ListWallsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path?: never;
     query?: never;
@@ -2888,13 +3358,13 @@ export type CreateWallData = {
     body: WallIn;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path?: never;
     query?: never;
@@ -2935,13 +3405,13 @@ export type RemoveWallData = {
     body?: never;
     headers?: {
         /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-        /**
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path: {
         /**

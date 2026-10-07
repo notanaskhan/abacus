@@ -94,6 +94,11 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "methodology_account_rules": frozenset(
         {"tenant_id", "version_id", "area_code", "account_from", "account_to", "position"}
     ),
+    # Break-glass (SPEC-012): requested by staff; lifecycle columns updated as it is approved.
+    "support_sessions": frozenset(
+        {"id", "tenant_id", "staff_id", "staff_subject", "reason", "scope", "duration_minutes"}
+        | {"emergency"}
+    ),
     # Feature flags (SPEC-011): set per firm by operators.
     "feature_flag_states": frozenset({"tenant_id", "flag", "value", "set_by", "reason"}),
     # Knowledge (SPEC-009): vectors and status are set later by the embedding workflow.
@@ -183,6 +188,10 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     # SPEC-007 AC-7: a firm admin replaces the firm's budget (upsert).
     "budgets": frozenset({"monthly_soft_usd", "monthly_hard_usd", "updated_by", "updated_at"}),
     "feature_flag_states": frozenset({"value", "set_by", "reason", "set_at"}),  # SPEC-011
+    "support_sessions": frozenset(  # SPEC-012: lifecycle only
+        {"status", "approved_by_kind", "approved_by", "starts_at", "expires_at", "ended_at"}
+        | {"acknowledged_at"}
+    ),
     # SPEC-009: document status, and each chunk's vector written once.
     "knowledge_documents": frozenset({"status", "failure_code", "withdrawn_at"}),
     "knowledge_chunks": frozenset({"embedding", "embedding_model", "embedded_at"}),
@@ -237,6 +246,7 @@ TABLE_OWNERS: dict[str, str] = {
     "usage_records": "ai_gateway",
     "budgets": "ai_gateway",  # SPEC-007 Q2
     "feature_flag_states": "kernel.flags",  # SPEC-011
+    "support_sessions": "identity",  # SPEC-012
     "knowledge_documents": "agents",  # SPEC-009 Q5
     "knowledge_chunks": "agents",
     # The work slot ledger (TASK-018 D3): reached only through SECURITY DEFINER functions.
@@ -260,7 +270,12 @@ DEFINER_FUNCTIONS = frozenset(
     | {"eval_eligible"}  # 0016 (TASK-020): the gateway's evaluation eligibility
     # 0018 (TASK-022): one platform-wide number, and anomalous engagements' identifiers.
     | {"platform_spend_today", "engagement_spend_anomalies"}
+    # 0023 (TASK-027 D4): the quarterly access review, executable by the owner role only.
+    | {"support_sessions_review"}
 )
+# Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
+# to execute them (they read across firms).
+OWNER_ONLY_FUNCTIONS = frozenset({"support_sessions_review"})
 _DEFINER_SEARCH_PATH = "search_path=pg_catalog, public, pg_temp"
 _DEFINERS = """
 SELECT p.oid::regprocedure::text AS signature, p.proname AS name,
@@ -636,9 +651,13 @@ async def _definer_problems(conn: asyncpg.Connection) -> list[str]:
             problems.append(
                 f"{signature}: search_path is not pinned to pg_catalog, public, pg_temp"
             )
-        if not await conn.fetchval(
+        executable = await conn.fetchval(
             "SELECT has_function_privilege($1, $2, 'EXECUTE')", APP, signature
-        ):
+        )
+        if name in OWNER_ONLY_FUNCTIONS:
+            if executable:
+                problems.append(f"{signature}: {APP} must not execute it (owner tooling only)")
+        elif not executable:
             problems.append(f"{signature}: {APP} can't execute it")
         public = await conn.fetchval(
             "SELECT bool_or(a.grantee = 0) FROM pg_proc p, aclexplode(p.proacl) a "

@@ -21,19 +21,22 @@
 
 roles: [firm_admin, practice_leader, quality_partner,
         engagement_partner, manager, senior, staff, reviewer,
-        client_admin, client_contributor, agent, system]
+        client_admin, client_contributor, agent, system,
+        platform_support, platform_support_content]   # SPEC-012: break-glass, read-only
 
 actions:
 
   # --- Firm administration ---
   firm.manage_users:        {firm_admin: allow, mfa_recent: required}
   firm.manage_settings:     {firm_admin: allow, mfa_recent: required}
-  budget.read:              {firm_admin: allow, practice_leader: allow}   # SPEC-007
+  support_session.read:     {firm_admin: allow}   # SPEC-012
+  support_session.manage:   {firm_admin: allow, mfa_recent: required}   # SPEC-012 Q1
+  budget.read:              {firm_admin: allow, practice_leader: allow, platform_support: allow, platform_support_content: allow}   # SPEC-007
   budget.manage:            {firm_admin: allow, mfa_recent: required}     # SPEC-007 Q3
   methodology.manage:       {firm_admin: allow, practice_leader: allow, mfa_recent: required}   # SPEC-008 Q3
-  methodology.read:         {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow}   # SPEC-008
+  methodology.read:         {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow, platform_support: allow, platform_support_content: allow}   # SPEC-008
   knowledge.manage:         {firm_admin: allow, practice_leader: allow, mfa_recent: required}   # SPEC-009 Q4
-  knowledge.read:           {firm_admin: allow, practice_leader: allow, quality_partner: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow}   # SPEC-009 Q4
+  knowledge.read:           {firm_admin: allow, practice_leader: allow, quality_partner: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, platform_support_content: allow}   # SPEC-009 Q4
   autonomy_policy.update:   {firm_admin: allow, mfa_recent: required}
   wall.create:              {firm_admin: allow, mfa_recent: required}
   wall.remove:              {firm_admin: allow, mfa_recent: required}
@@ -53,6 +56,8 @@ actions:
     senior: allow
     staff: allow
     reviewer: allow
+    platform_support: allow   # SPEC-012
+    platform_support_content: allow   # SPEC-012
   engagement.read:          # content, not just metadata — ADR-024
     practice_leader: in_scope
     quality_partner: in_scope
@@ -63,6 +68,7 @@ actions:
     reviewer: allow
     client_admin: client_visible_only
     client_contributor: client_visible_only
+    platform_support_content: allow   # SPEC-012
   engagement.self_join:     {firm_admin: allow, notify: engagement_team}
   engagement.update:        {engagement_partner: allow, manager: allow}
   engagement.member_add:    {engagement_partner: allow, manager: allow}
@@ -81,6 +87,8 @@ actions:
     client_admin: client_visible_only
     client_contributor: assigned_only
     agent: task_scope
+    platform_support: allow   # SPEC-012
+    platform_support_content: allow   # SPEC-012
   request_item.create:      {engagement_partner: allow, manager: allow, senior: allow}
   request_item.update:      {engagement_partner: allow, manager: allow, senior: allow}
   request_item.assign:      {engagement_partner: allow, manager: allow, senior: allow, client_admin: allow}
@@ -99,6 +107,7 @@ actions:
     client_admin: client_visible_only
     client_contributor: assigned_only
     agent: task_scope
+    platform_support_content: allow   # SPEC-012
   evidence.upload:
     engagement_partner: allow
     manager: allow
@@ -133,6 +142,8 @@ actions:
     staff: allow
     reviewer: allow
     agent: deny               # ADR-005
+    platform_support: allow   # SPEC-012
+    platform_support_content: allow   # SPEC-012
   review.take:
     engagement_partner: allow
     manager: allow
@@ -152,7 +163,7 @@ actions:
   connection.create:        {client_admin: allow}                       # only the client grants access
   connection.revoke:        {client_admin: allow, engagement_partner: allow, manager: allow}
   connection.pull:          {system: allow}
-  connection.read_log:      {client_admin: allow, engagement_partner: allow, manager: allow}
+  connection.read_log:      {client_admin: allow, engagement_partner: allow, manager: allow, platform_support: allow, platform_support_content: allow}
 
   # --- Follow-ups ---
   follow_up.draft:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: task_scope}
@@ -167,5 +178,5 @@ actions:
   support_match.run:        {system: allow, agent: task_scope}
 
   # --- Audit trail and export ---
-  audit_event.read:         {engagement_partner: allow, manager: allow, quality_partner: in_scope, firm_admin: allow}
+  audit_event.read:         {engagement_partner: allow, manager: allow, quality_partner: in_scope, firm_admin: allow, platform_support: allow, platform_support_content: allow}
   export.create:            {engagement_partner: allow, manager: allow, mfa_recent: required}
