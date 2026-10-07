@@ -13,6 +13,20 @@ tenant from the session (`app.tenant_id`, set by `tenant_session`), never from a
 return only the caller's own decision and estimate: no firm ever sees another's identity or load.
 Rows hold identifiers and counts only. Leases use database time; an expired lease is reclaimed.
 
+Hardening (TASK-018b security review):
+- every row is keyed by (tenant, holder), and every statement filters by the session's tenant, so
+  a holder ID colliding with another firm's touches only the caller's own rows;
+- caps and lease lengths from the app are bounded (`_MAX_CAP`, 1 to 3600 s);
+- a firm may have at most `4 x max(firm_cap, 1)` waiters per class, and each call has a lock and a
+  statement timeout, so one firm can't make every firm's `acquire` slow;
+- only waiters seen in the last 3 minutes can hold up others (the workflows ask at least every
+  90 s), and waiters unseen for 5 minutes are dropped;
+- `search_path` is pinned with `pg_temp` last and every relation is schema-qualified;
+- the estimate uses only the class's queue position and grant rate (SPEC-003 §13), rounded up to
+  whole minutes, never another firm's identity or count;
+- the ledger tables have row-level security enabled with no policy: a later accidental grant to
+  the app still reads nothing (the definer functions run as the owner, which RLS doesn't bind).
+
 `sync_runs` and `agent_runs` gain `queued_reason` and `estimated_start_at`: a run waiting for a
 slot stays `running` in the database and is reported as queued (design §5, revised).
 
@@ -33,18 +47,25 @@ _CLASSES = "('interactive', 'time_sensitive', 'background', 'batch')"
 _REASONS = "('firm_cap', 'engagement_cap', 'class_capacity', 'provider_capacity', 'deferred')"
 _TABLES = ("work_slots", "work_waiters", "work_grants")
 _TENANT = "NULLIF(current_setting('app.tenant_id', true), '')::uuid"
+_MAX_CAP = 10_000  # also written into the functions' bounds
+_FUNCTIONS = (
+    "work_slot_acquire(text, uuid, text, integer, integer, integer, integer)",
+    "work_slot_release(text)",
+    "work_slot_renew(text, integer)",
+)
 
 
 def upgrade() -> None:
     op.execute(
         f"""
         CREATE TABLE work_slots (
-            holder text PRIMARY KEY CHECK (length(holder) BETWEEN 1 AND 300),
             tenant_id uuid NOT NULL,
+            holder text NOT NULL CHECK (length(holder) BETWEEN 1 AND 300),
             engagement_id uuid NULL,
             work_class text NOT NULL CHECK (work_class IN {_CLASSES}),
             acquired_at timestamptz NOT NULL,
-            lease_until timestamptz NOT NULL
+            lease_until timestamptz NOT NULL,
+            PRIMARY KEY (tenant_id, holder)
         )
         """
     )
@@ -54,16 +75,19 @@ def upgrade() -> None:
     op.execute(
         f"""
         CREATE TABLE work_waiters (
-            holder text PRIMARY KEY CHECK (length(holder) BETWEEN 1 AND 300),
             tenant_id uuid NOT NULL,
+            holder text NOT NULL CHECK (length(holder) BETWEEN 1 AND 300),
             engagement_id uuid NULL,
             work_class text NOT NULL CHECK (work_class IN {_CLASSES}),
             waiting_since timestamptz NOT NULL,
-            last_seen timestamptz NOT NULL
+            last_seen timestamptz NOT NULL,
+            PRIMARY KEY (tenant_id, holder)
         )
         """
     )
-    op.execute("CREATE INDEX work_waiters_class ON work_waiters (work_class, waiting_since)")
+    op.execute(
+        "CREATE INDEX work_waiters_class ON work_waiters (work_class, waiting_since, tenant_id)"
+    )
     op.execute(
         f"""
         CREATE TABLE work_grants (
@@ -73,9 +97,10 @@ def upgrade() -> None:
         )
         """
     )
-    op.execute("CREATE INDEX work_grants_class ON work_grants (work_class, granted_at)")
+    op.execute("CREATE INDEX work_grants_class ON work_grants (work_class, tenant_id, granted_at)")
     for table in _TABLES:
         op.execute(f"REVOKE ALL ON {table} FROM PUBLIC, abacus_app")
+        op.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
 
     op.execute(
         """
@@ -83,11 +108,17 @@ def upgrade() -> None:
             p_holder text, p_engagement_id uuid, p_class text, p_firm_cap integer,
             p_engagement_cap integer, p_class_capacity integer, p_lease_seconds integer
         ) RETURNS TABLE (granted boolean, reason text, estimated_start_at timestamptz)
-        LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public AS $$
+        LANGUAGE plpgsql SECURITY DEFINER
+        SET search_path = pg_catalog, public, pg_temp
+        SET lock_timeout = '5s'
+        SET statement_timeout = '10s'
+        AS $$
         DECLARE
             v_tenant uuid := NULLIF(current_setting('app.tenant_id', true), '')::uuid;
             v_now timestamptz := clock_timestamp();
-            v_first text;
+            v_first_tenant uuid;
+            v_first_holder text;
+            v_waiting integer;
             v_ahead integer;
             v_rate numeric;
             v_reason text;
@@ -97,80 +128,101 @@ def upgrade() -> None:
                     USING ERRCODE = 'insufficient_privilege';
             END IF;
             IF p_class NOT IN ('interactive', 'time_sensitive', 'background', 'batch')
-               OR p_firm_cap < 0 OR p_engagement_cap < 0 OR p_class_capacity < 0
-               OR p_lease_seconds < 1 THEN
+               OR p_firm_cap NOT BETWEEN 0 AND 10000
+               OR p_engagement_cap NOT BETWEEN 0 AND 10000
+               OR p_class_capacity NOT BETWEEN 1 AND 10000
+               OR p_lease_seconds NOT BETWEEN 1 AND 3600 THEN
                 RAISE EXCEPTION 'invalid work slot request'
                     USING ERRCODE = 'invalid_parameter_value';
             END IF;
             PERFORM pg_advisory_xact_lock(hashtext('work_slots:' || p_class));
 
             -- Already holding: renew (idempotent per holder).
-            UPDATE work_slots SET lease_until = v_now + make_interval(secs => p_lease_seconds)
-             WHERE holder = p_holder AND tenant_id = v_tenant;
+            UPDATE public.work_slots
+               SET lease_until = v_now + make_interval(secs => p_lease_seconds)
+             WHERE tenant_id = v_tenant AND holder = p_holder;
             IF FOUND THEN
                 RETURN QUERY SELECT true, NULL::text, NULL::timestamptz;
                 RETURN;
             END IF;
 
-            DELETE FROM work_slots WHERE lease_until < v_now;
-            DELETE FROM work_waiters WHERE last_seen < v_now - interval '5 minutes';
-            DELETE FROM work_grants WHERE granted_at < v_now - interval '10 minutes';
-            INSERT INTO work_waiters AS w
-                (holder, tenant_id, engagement_id, work_class, waiting_since, last_seen)
-            VALUES (p_holder, v_tenant, p_engagement_id, p_class, v_now, v_now)
-            ON CONFLICT (holder) DO UPDATE SET last_seen = v_now
-                WHERE w.tenant_id = v_tenant;
+            DELETE FROM public.work_slots WHERE lease_until < v_now;
+            DELETE FROM public.work_waiters WHERE last_seen < v_now - interval '5 minutes';
+            DELETE FROM public.work_grants WHERE granted_at < v_now - interval '10 minutes';
 
-            -- The first eligible waiter of the class: under the firm and engagement caps;
-            -- firms granted longest ago first, then oldest first.
-            SELECT w.holder INTO v_first
-              FROM work_waiters w
+            -- One firm can't flood the class: a bounded number of waiters per firm.
+            UPDATE public.work_waiters SET last_seen = v_now
+             WHERE tenant_id = v_tenant AND holder = p_holder;
+            IF NOT FOUND THEN
+                SELECT count(*) INTO v_waiting FROM public.work_waiters
+                 WHERE tenant_id = v_tenant AND work_class = p_class;
+                IF v_waiting >= 4 * greatest(p_firm_cap, 1) THEN
+                    RETURN QUERY SELECT false, 'firm_cap'::text, NULL::timestamptz;
+                    RETURN;
+                END IF;
+                INSERT INTO public.work_waiters
+                    (tenant_id, holder, engagement_id, work_class, waiting_since, last_seen)
+                VALUES (v_tenant, p_holder, p_engagement_id, p_class, v_now, v_now);
+            END IF;
+
+            -- The first eligible waiter of the class, among those still asking: under the firm
+            -- and engagement caps; firms granted longest ago first, then oldest first.
+            SELECT w.tenant_id, w.holder INTO v_first_tenant, v_first_holder
+              FROM public.work_waiters w
              WHERE w.work_class = p_class
-               AND (SELECT count(*) FROM work_slots s
+               AND w.last_seen >= v_now - interval '3 minutes'
+               AND (SELECT count(*) FROM public.work_slots s
                      WHERE s.work_class = p_class AND s.tenant_id = w.tenant_id) < p_firm_cap
                AND (w.engagement_id IS NULL
-                    OR (SELECT count(*) FROM work_slots s
+                    OR (SELECT count(*) FROM public.work_slots s
                          WHERE s.work_class = p_class AND s.tenant_id = w.tenant_id
                            AND s.engagement_id = w.engagement_id) < p_engagement_cap)
-             ORDER BY (SELECT max(g.granted_at) FROM work_grants g
+             ORDER BY (SELECT max(g.granted_at) FROM public.work_grants g
                         WHERE g.work_class = p_class AND g.tenant_id = w.tenant_id)
                       ASC NULLS FIRST,
-                      w.waiting_since, w.holder
+                      w.waiting_since, w.tenant_id, w.holder
              LIMIT 1;
 
-            IF v_first = p_holder
-               AND (SELECT count(*) FROM work_slots WHERE work_class = p_class) < p_class_capacity
+            IF v_first_tenant = v_tenant AND v_first_holder = p_holder
+               AND (SELECT count(*) FROM public.work_slots WHERE work_class = p_class)
+                   < p_class_capacity
             THEN
-                INSERT INTO work_slots
-                    (holder, tenant_id, engagement_id, work_class, acquired_at, lease_until)
-                VALUES (p_holder, v_tenant, p_engagement_id, p_class, v_now,
+                INSERT INTO public.work_slots
+                    (tenant_id, holder, engagement_id, work_class, acquired_at, lease_until)
+                VALUES (v_tenant, p_holder, p_engagement_id, p_class, v_now,
                         v_now + make_interval(secs => p_lease_seconds));
-                DELETE FROM work_waiters WHERE holder = p_holder;
-                INSERT INTO work_grants (tenant_id, work_class, granted_at)
+                DELETE FROM public.work_waiters WHERE tenant_id = v_tenant AND holder = p_holder;
+                INSERT INTO public.work_grants (tenant_id, work_class, granted_at)
                 VALUES (v_tenant, p_class, v_now);
                 RETURN QUERY SELECT true, NULL::text, NULL::timestamptz;
                 RETURN;
             END IF;
 
             -- Why the caller waits: only its own firm's and engagement's counts.
-            IF (SELECT count(*) FROM work_slots
+            IF (SELECT count(*) FROM public.work_slots
                  WHERE work_class = p_class AND tenant_id = v_tenant) >= p_firm_cap THEN
                 v_reason := 'firm_cap';
-            ELSIF p_engagement_id IS NOT NULL AND (SELECT count(*) FROM work_slots
+            ELSIF p_engagement_id IS NOT NULL AND (SELECT count(*) FROM public.work_slots
                  WHERE work_class = p_class AND tenant_id = v_tenant
                    AND engagement_id = p_engagement_id) >= p_engagement_cap THEN
                 v_reason := 'engagement_cap';
             ELSE
                 v_reason := 'class_capacity';
             END IF;
-            -- Estimate: waiters ahead in the class, at the class's grant rate over 10 minutes.
-            SELECT count(*) INTO v_ahead FROM work_waiters w, work_waiters me
-             WHERE me.holder = p_holder AND w.work_class = p_class
-               AND (w.waiting_since, w.holder) < (me.waiting_since, me.holder);
-            SELECT count(*) / 10.0 INTO v_rate FROM work_grants WHERE work_class = p_class;
+            -- Estimate (SPEC-003 §13): the caller's position in the class's queue and the class's
+            -- grant rate over 10 minutes, rounded up to whole minutes; null without recent grants.
+            SELECT count(*) INTO v_ahead
+              FROM public.work_waiters w, public.work_waiters me
+             WHERE me.tenant_id = v_tenant AND me.holder = p_holder
+               AND w.work_class = p_class
+               AND w.last_seen >= v_now - interval '3 minutes'
+               AND (w.waiting_since, w.tenant_id, w.holder)
+                   < (me.waiting_since, me.tenant_id, me.holder);
+            SELECT count(*) / 10.0 INTO v_rate FROM public.work_grants WHERE work_class = p_class;
             RETURN QUERY SELECT false, v_reason,
                 CASE WHEN v_rate > 0
-                     THEN v_now + make_interval(secs => ((v_ahead + 1) / v_rate) * 60)
+                     THEN date_trunc('minute', v_now)
+                          + make_interval(mins => ceil((v_ahead + 1) / v_rate)::integer)
                 END;
         END
         $$
@@ -179,7 +231,11 @@ def upgrade() -> None:
     op.execute(
         """
         CREATE FUNCTION work_slot_release(p_holder text) RETURNS void
-        LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public AS $$
+        LANGUAGE plpgsql SECURITY DEFINER
+        SET search_path = pg_catalog, public, pg_temp
+        SET lock_timeout = '5s'
+        SET statement_timeout = '10s'
+        AS $$
         DECLARE
             v_tenant uuid := NULLIF(current_setting('app.tenant_id', true), '')::uuid;
         BEGIN
@@ -187,8 +243,8 @@ def upgrade() -> None:
                 RAISE EXCEPTION 'work slots need a tenant session'
                     USING ERRCODE = 'insufficient_privilege';
             END IF;
-            DELETE FROM work_slots WHERE holder = p_holder AND tenant_id = v_tenant;
-            DELETE FROM work_waiters WHERE holder = p_holder AND tenant_id = v_tenant;
+            DELETE FROM public.work_slots WHERE tenant_id = v_tenant AND holder = p_holder;
+            DELETE FROM public.work_waiters WHERE tenant_id = v_tenant AND holder = p_holder;
         END
         $$
         """
@@ -197,7 +253,11 @@ def upgrade() -> None:
         """
         CREATE FUNCTION work_slot_renew(p_holder text, p_lease_seconds integer)
         RETURNS boolean
-        LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public AS $$
+        LANGUAGE plpgsql SECURITY DEFINER
+        SET search_path = pg_catalog, public, pg_temp
+        SET lock_timeout = '5s'
+        SET statement_timeout = '10s'
+        AS $$
         DECLARE
             v_tenant uuid := NULLIF(current_setting('app.tenant_id', true), '')::uuid;
         BEGIN
@@ -205,19 +265,19 @@ def upgrade() -> None:
                 RAISE EXCEPTION 'work slots need a tenant session'
                     USING ERRCODE = 'insufficient_privilege';
             END IF;
-            UPDATE work_slots
+            IF p_lease_seconds NOT BETWEEN 1 AND 3600 THEN
+                RAISE EXCEPTION 'invalid work slot request'
+                    USING ERRCODE = 'invalid_parameter_value';
+            END IF;
+            UPDATE public.work_slots
                SET lease_until = clock_timestamp() + make_interval(secs => p_lease_seconds)
-             WHERE holder = p_holder AND tenant_id = v_tenant;
+             WHERE tenant_id = v_tenant AND holder = p_holder;
             RETURN FOUND;
         END
         $$
         """
     )
-    for signature in (
-        "work_slot_acquire(text, uuid, text, integer, integer, integer, integer)",
-        "work_slot_release(text)",
-        "work_slot_renew(text, integer)",
-    ):
+    for signature in _FUNCTIONS:
         op.execute(f"REVOKE ALL ON FUNCTION {signature} FROM PUBLIC")
         op.execute(f"GRANT EXECUTE ON FUNCTION {signature} TO abacus_app")
 
@@ -241,10 +301,7 @@ def downgrade() -> None:
             f"ALTER TABLE {table} DROP CONSTRAINT {table}_queued_running, "
             "DROP COLUMN estimated_start_at, DROP COLUMN queued_reason"
         )
-    op.execute("DROP FUNCTION work_slot_renew(text, integer)")
-    op.execute("DROP FUNCTION work_slot_release(text)")
-    op.execute(
-        "DROP FUNCTION work_slot_acquire(text, uuid, text, integer, integer, integer, integer)"
-    )
+    for signature in reversed(_FUNCTIONS):
+        op.execute(f"DROP FUNCTION {signature}")
     for table in reversed(_TABLES):
         op.execute(f"DROP TABLE {table}")

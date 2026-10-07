@@ -10,6 +10,13 @@ created: 2026-10-07
 updated: 2026-10-07
 ---
 
+> **Amended 2026-10-07 during TASK-018 (018b)**:
+> - **Queued status storage:** a run waiting for a slot stays `running` in the database, with `queued_reason` and `estimated_start_at`. Every API reports it as `queued`, never `running` (AC-13 holds).
+> - **New reason:** `class_capacity` (the whole class is full) joins the reasons.
+> - **Screening:** queued screening runs are recorded on the agent run. There is no API for agent runs yet, so showing them is a follow-up.
+> - **No audit for slot bookkeeping:** the slot ledger commits without audit events (founder decision). The run's queued and resumed transitions are audited.
+> - **Estimate:** set when the run is queued and whenever its reason changes. It is rounded up to whole minutes and comes from the class's queue position and grant rate only.
+
 > **Instructions for coding agents**
 > - Implement only what this spec describes. Anything not listed here is out of scope.
 > - If anything is ambiguous or contradicts an ADR, **stop** and add it to *Open questions*. Do not guess.
@@ -72,7 +79,7 @@ Fixing this now, with two workflows, costs much less than retrofitting it across
 - **AC-10** Given contention for a bucket, then admission goes by class priority: interactive, then time-sensitive, then background, then batch. Within a class, essential agents are admitted before deferrable ones (ADR-069).
 - **AC-11** Given the bucket below its pressure thresholds (Q5), then batch work is deferred first and background work second. An agent whose spec lists a cheaper tier that passed its evaluation suite steps down to it. Anything else waits, with a status and estimate. Each step is logged and counted.
 - **AC-12** Given a provider rate-limit response (HTTP 429 or the provider's equivalent), then the gateway drains the bucket for the time the provider asks for, and does not retry the call itself. The calling activity waits for admission again, with no busy loop.
-- **AC-13** Given work waiting for a slot or for admission, then its run shows status `queued` with a reason (`firm_cap`, `engagement_cap`, `provider_capacity` or `deferred`) and an estimated start. Nothing waiting is shown as `running` or `failed`.
+- **AC-13** Given work waiting for a slot or for admission, then its run shows status `queued` with a reason (`firm_cap`, `engagement_cap`, `class_capacity`, `provider_capacity` or `deferred`) and an estimated start. Nothing waiting is shown as `running` or `failed`.
 - **AC-14** Given work that has waited longer than its class's maximum wait (Q6), then it ends as failed with code `capacity_timeout`, and is never dropped silently.
 
 ### Story 4: As an operator I can see and tune it

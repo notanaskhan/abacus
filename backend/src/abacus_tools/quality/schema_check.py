@@ -15,6 +15,9 @@ up again (every migration must be reversible), then inspects the catalog. It fai
   - an IMMUTABLE_TABLES table without enabled BEFORE UPDATE/DELETE/TRUNCATE triggers (ADR-004)
   - abacus_relay or abacus_identity (they bypass RLS) holding any privilege not in
     BYPASS_ROLE_GRANTS, or any other non-superuser role with BYPASSRLS
+  - a SECURITY DEFINER function not in DEFINER_FUNCTIONS, or one not owned by abacus_owner, without
+    a pinned `search_path` ending in pg_temp, executable by PUBLIC or a bypass role, or not by the
+    app (TASK-018 D3)
 
 `provisioned_database()` is shared with the integration test fixtures, so tests and this gate build
 the database the same way.
@@ -43,7 +46,8 @@ BACKEND = Path(__file__).resolve().parents[3]
 REPO = BACKEND.parent
 OWNER = "abacus_owner"
 APP = "abacus_app"
-# Tables without tenant_id: only infrastructure. Each entry is founder-reviewed (protected file).
+# Tables outside row-level security: infrastructure, and the work slot ledger (which has a
+# tenant_id but must see every firm). Each entry is founder-reviewed (protected file).
 # The work slot ledger sees every firm's waiters to hand slots out fairly (TASK-018 D3): no app
 # privilege at all; SECURITY DEFINER functions take the tenant from the session.
 NON_TENANT_TABLES = frozenset({"alembic_version", "work_slots", "work_waiters", "work_grants"})
@@ -174,6 +178,15 @@ TABLE_OWNERS: dict[str, str] = {
 # Tables shared by every tenant, readable only through abacus_identity (ADR-002, TASK-007): the app
 # role has no privileges on them at all. Each entry is founder-reviewed (protected file).
 GLOBAL_TABLES = frozenset({"users", "work_slots", "work_waiters", "work_grants"})
+# SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
+DEFINER_FUNCTIONS = frozenset({"work_slot_acquire", "work_slot_release", "work_slot_renew"})
+_DEFINER_SEARCH_PATH = "search_path=pg_catalog, public, pg_temp"
+_DEFINERS = """
+SELECT p.oid::regprocedure::text AS signature, p.proname AS name,
+       pg_get_userbyid(p.proowner) AS owner, coalesce(p.proconfig, '{}') AS config
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE p.prosecdef AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+"""
 RELAY = "abacus_relay"
 IDENTITY = "abacus_identity"
 _LOCAL_PASSWORDS = {
@@ -529,6 +542,38 @@ async def _immutability_problems(conn: asyncpg.Connection, table: str, function:
     ]
 
 
+async def _definer_problems(conn: asyncpg.Connection) -> list[str]:
+    problems: list[str] = []
+    for function in await conn.fetch(_DEFINERS):
+        name, signature = str(function["name"]), str(function["signature"])
+        if name not in DEFINER_FUNCTIONS:
+            problems.append(f"{signature}: SECURITY DEFINER function not reviewed")
+            continue
+        if str(function["owner"]) != OWNER:
+            problems.append(f"{signature}: owned by {function['owner']}, not {OWNER}")
+        if _DEFINER_SEARCH_PATH not in [str(c) for c in function["config"]]:
+            problems.append(
+                f"{signature}: search_path is not pinned to pg_catalog, public, pg_temp"
+            )
+        if not await conn.fetchval(
+            "SELECT has_function_privilege($1, $2, 'EXECUTE')", APP, signature
+        ):
+            problems.append(f"{signature}: {APP} can't execute it")
+        public = await conn.fetchval(
+            "SELECT bool_or(a.grantee = 0) FROM pg_proc p, aclexplode(p.proacl) a "
+            "WHERE p.oid = $1::regprocedure AND a.privilege_type = 'EXECUTE'",
+            signature,
+        )
+        if public is not False:  # NULL: the default ACL, which lets PUBLIC execute
+            problems.append(f"{signature}: PUBLIC can execute it")
+        for role_name in BYPASS_ROLE_GRANTS:
+            if await conn.fetchval(
+                "SELECT has_function_privilege($1, $2, 'EXECUTE')", role_name, signature
+            ):
+                problems.append(f"{signature}: {role_name} can execute it")
+    return problems
+
+
 async def _inspect(owner_dsn: str) -> list[str]:
     conn = await asyncpg.connect(owner_dsn)
     problems: list[str] = []
@@ -607,6 +652,7 @@ async def _inspect(owner_dsn: str) -> list[str]:
                 )
         for function in await conn.fetch(_LARGE_OBJECT_FUNCTIONS, APP):
             problems.append(f"{APP}: can execute {function['name']}")
+        problems += await _definer_problems(conn)
         for role in await conn.fetch(_BYPASS_ROLES):
             if str(role["rolname"]) not in BYPASS_ROLE_GRANTS:
                 problems.append(f"{role['rolname']}: bypasses row-level security, not reviewed")

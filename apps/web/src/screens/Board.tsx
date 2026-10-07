@@ -260,13 +260,13 @@ function Retrieve({
   const run = useQuery({
     ...getRetrievalOptions({ path: { ...path, sync_run_id: runId ?? "" } }),
     enabled: runId !== null,
-    refetchInterval: (query) =>
-      query.state.data?.status === "running" ? RETRIEVAL_POLL_MS : false,
+    refetchInterval: (query) => (isActive(query.state.data?.status) ? RETRIEVAL_POLL_MS : false),
   });
   const status = run.data?.status ?? null;
-  // Busy from the click until the run ends (no gap between the start and its first poll).
-  const running = start.isPending || (runId !== null && (status === null || status === "running"));
-  const finished = status !== null && status !== "running";
+  // Busy from the click until the run ends (no gap between the start and its first poll). A run
+  // waiting for capacity (`queued`, SPEC-003) hasn't ended either.
+  const running = start.isPending || (runId !== null && (status === null || isActive(status)));
+  const finished = status !== null && !isActive(status);
   // Refresh the board once when the retrieval ends: an effect, never a side effect in render.
   useEffect(() => {
     if (!finished) return;
@@ -295,7 +295,10 @@ function Retrieve({
       >
         Retrieve trial balance
       </Button>
-      {running && <Spinner label="Retrieving…" />}
+      {running && status !== "queued" && <Spinner label="Retrieving…" />}
+      {status === "queued" && (
+        <Spinner label={queuedLabel(run.data?.estimated_start_at ?? null)} />
+      )}
       {status === "failed_validation" && (
         <span className="text-sm text-red-800">The trial balance didn't pass validation.</span>
       )}
@@ -305,6 +308,20 @@ function Retrieve({
       {start.isError && <span className="text-sm text-red-800">{errorMessage(start.error)}</span>}
     </div>
   );
+}
+
+function isActive(status: string | undefined | null): boolean {
+  return status === "running" || status === "queued";
+}
+
+// Waiting for capacity, in plain words: never names another firm (SPEC-003 §17).
+function queuedLabel(estimatedStartAt: string | null): string {
+  if (estimatedStartAt === null) return "Queued: waiting for capacity";
+  const time = new Date(estimatedStartAt).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `Queued: expected to start by ${time}`;
 }
 
 function AddRequestItem({ engagementId }: { engagementId: string }): JSX.Element {

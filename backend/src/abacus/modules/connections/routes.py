@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from datetime import date, datetime
 from typing import Annotated, Literal
 from uuid import UUID
@@ -50,10 +51,9 @@ class RetrievalOut(BaseModel):
 
 
 def _out(view: RetrievalView) -> RetrievalOut:
-    out = RetrievalOut.model_validate(view, from_attributes=True)
-    if view.status == "running" and view.queued_reason is not None:
-        return out.model_copy(update={"status": "queued"})  # waiting is never shown as running
-    return out
+    return RetrievalOut.model_validate(
+        {**asdict(view), "status": view.reported_status}, from_attributes=False
+    )
 
 
 Ctx = Annotated[AuthContext, Depends(current_context)]

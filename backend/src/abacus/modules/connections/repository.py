@@ -157,7 +157,14 @@ async def finish(
     result = await session.execute(
         update(SyncRun)
         .where(SyncRun.id == run_id, SyncRun.status == "running")
-        .values(status=status, failure_code=failure_code, finished_at=datetime.now(UTC))
+        .values(
+            status=status,
+            failure_code=failure_code,
+            finished_at=datetime.now(UTC),
+            # A run that ends is no longer waiting (CHECK sync_runs_queued_running).
+            queued_reason=None,
+            estimated_start_at=None,
+        )
         .returning(SyncRun.id)
     )
     return result.scalar_one_or_none() is not None

@@ -102,6 +102,9 @@ async def finish_run(
             output=output,
             failure_code=failure_code,
             finished_at=datetime.now(UTC),
+            # A run that ends is no longer waiting (CHECK agent_runs_queued_running).
+            queued_reason=None,
+            estimated_start_at=None,
         )
         .returning(AgentRun.id)
     )
