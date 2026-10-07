@@ -129,10 +129,40 @@ jobs:
       - run: make ci-coverage
 
   # One stable check for branch protection: green only when every stage 2 job passed.
+  # Stage 3 (SPEC-005 AC-10; TASK-020b): the fast evaluation subset, only when a pull request
+  # touches what an agent's behaviour depends on (ADR-082 path filters). Fake model until a
+  # provider exists; a real-model run will need the evaluation key secret.
+  evals-fast:
+    name: stage 3 evaluations (fast subset)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - run: corepack enable
+      - run: make setup
+      - name: agent behaviour changed?
+        id: paths
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if git diff --name-only "$BASE" HEAD | grep -qE '^(backend/src/abacus/ai_gateway/|backend/src/abacus/modules/agents/|evals/|backend/src/abacus_tools/evals/)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.paths.outputs.run == 'true'
+        run: make evals EVAL_ARGS="--subset fast"
+
   stage-2:
     name: stages 1 and 2 (make check)
     if: always() && github.event_name == 'pull_request'
-    needs: [stage-1, unit, integration, contracts, coverage]
+    needs: [stage-1, unit, integration, contracts, coverage, evals-fast]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:

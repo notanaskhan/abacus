@@ -4,7 +4,7 @@ title: Evaluation runner, graders and calibration
 spec: SPEC-005
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-12, AC-13, AC-14, AC-15, AC-16]
 risk_zone: amber
-status: in-progress
+status: done
 branch: task-020-eval-runner
 worktree:
 created: 2026-10-07
@@ -161,6 +161,7 @@ Real-model runs need a provider (TASK-014): until then the machinery is proven w
 |---|---|---|---|
 
 ## Progress log
+- `2026-10-07` — 020a merged (#34). 020b: stage 3 `evals-fast` in `ci.yml` (path-filtered on agents, gateway and evals) and stage 5 `evals.yml` (nightly full suites, summaries kept as artifacts); D5 done (suites, baselines and judges protected in the hook and `protected-paths.md`). Full test runs deferred by the founder ("we'll do it together later").
 - `2026-10-07` — 020a review fixes (security and architecture):
   - eligibility needs full, current-suite, real runs; later failures, `aborted_cost` or `errored` runs revoke it;
   - `publish` validates, recomputes, checks the signature, refuses replays and refuses remote stores;
@@ -228,9 +229,4 @@ Real-model runs need a provider (TASK-014): until then the machinery is proven w
 - Glossary entries "evaluation run", "grader", "calibration" and "dangerous error" (protected).
 
 ## Handoff
-- **Current state:** 020a with the review fixes is on `task-020a-runner`. It has no PR yet.
-- **Next:**
-  1. Open the 020a PR.
-  2. 020b: the CI jobs. Stage 3 `evals-fast` filtered by path, and stage 5 `evals-full` nightly. CI sets `ABACUS_ENVIRONMENT=test` or `evaluation`, and `ABACUS_EVAL_SIGNING_KEY` for real runs. Include the AC-13 `cheaper_tiers` spec check.
-  3. D5 (deferred): protect `evals/**/suite.yaml`, `evals/baselines.yaml` and `evals/judges/**` in `protected-paths.md` and the hook.
-  4. With TASK-014: a real provider, the first real runs, and `evals/baselines.yaml`.
+- **Done** (020a #34, 020b). Follow-ups: full test runs with the founder; real-model runs and `publish` wiring come with TASK-014; glossary entries (evaluation run, grader, calibration, dangerous error) need the founder.
