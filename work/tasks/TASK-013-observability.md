@@ -35,7 +35,7 @@ Out:
 - ADRs: ADR-022, ADR-031, ADR-094 (scope only), ADR-007 (audit trace ID), ADR-017/ADR-090 (Temporal), ADR-019 (gateway spans)
 
 ## Plan
-- [ ] Plan approved by human (required for amber and red)
+- [x] Plan approved by human (founder, 2026-10-07: all recommendations, Q1–Q6)
 
 ### Design (for founder review)
 Amber. It touches protected paths: `abacus.api`, the worker, the kernel uow/relay, `ai_gateway`, `pyproject.toml` and `uv.lock`, and possibly a migration.
@@ -132,6 +132,13 @@ Amber. It touches protected paths: `abacus.api`, the worker, the kernel uow/rela
 ## Progress log
 - `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder. Not started.
 - `2026-10-07` — Plan drafted (§1–6, Q1–Q6) for founder review while PR #14 (TASK-012) runs CI.
+- `2026-10-07` — Approved with all recommendations:
+  - Q1: an `outbox.trace_context` column (migration 0011);
+  - Q2: no local collector;
+  - Q3: browser telemetry deferred;
+  - Q4: Sentry scrubbing by allowlist;
+  - Q5: the four allowlisted packages;
+  - Q6: the approval file was written at the founder's instruction.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -144,5 +151,5 @@ Amber. It touches protected paths: `abacus.api`, the worker, the kernel uow/rela
 -
 
 ## Handoff
-- **Current state:** Plan drafted; awaiting founder approval (amber). No code.
+- **Current state:** Approved; approval file written. Step 1 in progress.
 - **Exact next step:** On approval, write `work/approvals/TASK-013.yaml` with the Q6 paths, then step 1. Rebase onto main once PR #14 merges.
