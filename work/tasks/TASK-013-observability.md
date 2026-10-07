@@ -163,6 +163,37 @@ Amber. It touches protected paths: `abacus.api`, the worker, the kernel uow/rela
 - **`ReportingInterceptor`** (worker): an activity raising a retryable `ApplicationError` is reported with `error_type` = its `type` and `activity` = its activity type; a non-retryable one is not reported; any other exception is reported. The exception is always re-raised unchanged.
 - **API:** an unhandled route error returns the fixed 500 body, logs `api.unexpected_error` with the class name, and calls `report` with the route template.
 
+**Contract revision 1 (after the security and architecture reviews; supersedes earlier bullets where they differ)**
+- **Scrubbing exporter.** `configure_tracing(service, exporter)` wraps every exporter (OTLP and test) in `ScrubbingExporter` (`telemetry.scrubbed(span)`). Exported spans have:
+  - only the attributes `http.route`, `http.request.method`, `http.method`, `http.status_code`, `http.response.status_code`, `temporalWorkflowID`, `temporalRunID`, `temporalActivityID`, `temporalActivityType` and `temporalUpdateID`, plus any key starting `ai.`, `outbox.` or `tenant.`;
+  - no `exception` events;
+  - other events keeping only `outcome`, `input_tokens`, `output_tokens` and `cost_usd`;
+  - error status descriptions cut to the class name before any `:` (or `"error"` if that isn't a class name).
+
+  A hostile exception message or URL, query, client address or user agent never reaches an exporter.
+- **Test exporter.** Tests use `telemetry.test_exporter()`, one in-memory exporter per process attached once behind the scrubber; clear it per test. It is refused outside local/test.
+- **Gateway span.** `ai.call` no longer carries `ai.purpose` or `ai.inputs_hash`. On an exception its status is ERROR with the class name, and it records no exception event.
+- **Relay span.** `outbox.publish` records no exception event.
+- **API.** Inbound `traceparent`/`tracestate` request headers are ignored: a request with a chosen traceparent gets a different trace ID, and its audit rows don't carry the caller's. A lifespan shutdown calls `shutdown_tracing()` and `flush_errors()`.
+- **OTLP.** Outside local/test the endpoint must be `https://` (otherwise `RuntimeError` at `configure_tracing`). A trailing slash is normalised; the exporter URL is `<endpoint>/v1/traces`. The sampler is `ParentBased(ALWAYS_ON)`.
+- **Sentry:**
+  - `scrub` also keeps `server_name` (the service); frames no longer keep `abs_path`.
+  - `report` sets `contexts.trace` from the current OpenTelemetry trace and span IDs.
+  - `init` also passes `enable_metrics=False`, `enable_logs=False`, `auto_session_tracking=False` and `send_client_reports=False`.
+  - `flush_errors()` flushes when configured.
+  - `ReportingInterceptor` doesn't report `temporalio.exceptions.CancelledError`, and reports a retryable failure only when `activity.info().attempt == 1`.
+- **Logging:**
+  - Configuration is lazy (on the first emitted line, not on `get_logger`). `configure_logging(level=None, *, force=False)` sets it explicitly; `force=True` reconfigures.
+  - The library handler is added to the root logger only once, and existing handlers stay.
+  - Root is raised to WARNING if lower.
+  - `uvicorn.access` is disabled, and `uvicorn`/`uvicorn.error` have no own handlers and propagate.
+- **LOG-001:**
+  - It checks calls on receivers named `_log`, `log` or `logger` (bare or as an attribute).
+  - The event (positional argument 0) must be a string literal.
+  - Inside an `except … as e` block, a keyword field that mentions `e` in any form other than the bare name, `type(e)` or `type(e).__name__` is flagged.
+  - Also flagged: `__import__("logging"|"structlog")` and `importlib.import_module(...)` of those.
+  - The same names outside that `except` block are not flagged.
+
 ### Steps
 1. Approval file. Telemetry kernel, the logging helper's trace IDs and error field, LOG-001.
 2. API and worker tracing, the Temporal interceptor, gateway and relay spans, the audit trace ID, and the outbox trace context (Q1).
