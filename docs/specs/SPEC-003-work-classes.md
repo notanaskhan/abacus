@@ -15,6 +15,12 @@ updated: 2026-10-07
 > - **New reason:** `class_capacity` (the whole class is full) joins the reasons.
 > - **Screening:** queued screening runs are recorded on the agent run. There is no API for agent runs yet, so showing them is a follow-up.
 > - **No audit for slot bookkeeping:** the slot ledger commits without audit events (founder decision). The run's queued and resumed transitions are audited.
+> - **Admission (018c):**
+>   - **Interface:** `NotAdmitted(reason, retry_after)` is raised by `call()`. The wait loop lives in the workflow, not in an `admit` context manager. An unreachable bucket refuses at once (the wait is the workflow's).
+>   - **Metrics:** one counter, `abacus.admission`, with outcome and reason.
+>   - **Priority within a class:** essential before deferrable is by reserve, not by queue order. Waiting callers ask again, and whoever finds capacity first goes.
+>   - **Reasons:** background and batch work is deferred (never stepped down); interactive and time-sensitive work steps down to a cheaper tier, then waits as `provider_capacity`.
+>   - **Maximum wait:** a class's maximum wait covers the whole wait, for a slot and then for admission.
 > - **Estimate:** set when the run is queued and whenever its reason changes. It is rounded up to whole minutes and comes from the class's queue position and grant rate only.
 
 > **Instructions for coding agents**

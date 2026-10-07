@@ -374,6 +374,29 @@ Source: SPEC-003 AC-9–12, AC-13 (admission reasons), AC-14, AC-15 (admission),
   - Behind `patched("admission")`, the workflow sleeps `retry_after` × jitter (0.5–1.5), clamped to 1–60 s, then screens again. When the class's maximum wait has passed since the first refusal, it fails the run `capacity_timeout`. The slot is held throughout (F1).
 - **Pins:** every `GatewayCall(...)` in tests gains `work_class` and `essential`. The 018b pins still apply.
 
+### Contract revision 1 (018c): review fixes, superseding the 018c contract where they differ
+- **0014.**
+  - Arithmetic is numeric (no integer overflow up to `tpm` 1e8 at a 99% reserve).
+  - NULL arguments are refused, and so is a model name not matching `^[a-z0-9][a-z0-9._-]{0,99}$`.
+  - At most 1,000 buckets (`program_limit_exceeded`).
+  - `capacity_block` updates an existing bucket only and never inserts.
+  - The tenant check casts to uuid.
+  - The outcome CHECK is added `NOT VALID`, then validated.
+- **`admission.admit`.** It raises `CallTooLarge` (a ValueError) when `tokens > tpm × (100 − reserve) / 100`, and never clamps. It logs `admission.unconfigured` for a model with no limits.
+- **Gateway.**
+  - Background and batch calls are never stepped down (deferred first, ADR-072).
+  - On a rate limit, `retry_after` must be finite (otherwise 30), is rounded up, and is clamped to 1–3,600. A failing `block` is logged (`admission.block_failed`) and the call still raises `NotAdmitted`. The reason is `refusal_reason(work_class)`.
+  - `NotAdmitted` doesn't mark the `ai.call` span as an error (`ai.status = not_admitted`, `ai.admission_reason`).
+  - `CallTooLarge` maps to terminal code `context_too_large` in screening.
+  - `check_provider_limits()` (worker boot) refuses to start outside local and test if any `MODELS` entry has no limits.
+- **Screening activity.**
+  - It no longer clears the reason at the start. It clears (`mark_queued(None)`) only after `screen` returns, and repeated refusals with the same reason write nothing.
+  - Only an `ApplicationError` of type `NotAdmitted` crosses as it is; others become class-name-only retryable errors.
+- **Workflow.**
+  - `waiting_from = workflow.now()` is taken before the slot wait, and the class's maximum wait is measured from it (slot plus admission).
+  - The admission sleep is `max(retry_after, backoff) × jitter(0.5–1.5)`, at most 60 s, with backoff from 5 s doubling to 60 s.
+- **Histories still needed.** Screening v3 recordings with refused, slept then admitted, with `capacity_timeout` during admission, and with a cancel while sleeping. v1 and v2 must replay against this code.
+
 ### Steps
 1. Design and interface contract, after the spec is approved.
 2. Implementation.
@@ -399,6 +422,7 @@ Source: SPEC-003 AC-9–12, AC-13 (admission reasons), AC-14, AC-15 (admission),
 ## Progress log
 - `2026-10-07` — Created with SPEC-003 (draft) for founder review.
 - `2026-10-07` — SPEC-003 approved. Design §1–8 and D1–D5 written for founder review.
+- `2026-10-07` — 018c reviews (security B1 integer overflow, B2 audit flapping, S1–S7, N1–N4; architecture B1 flapping, S1 ADR-072 order, S2 history and floor, S3 total wait, S4 block masking, S5 oversize, S6 AC-10, nits). All fixed or recorded; SPEC-003 amended. The security reviewer agreed with the UOW exemption for `admission.py`. Contract revision 1 (018c).
 - `2026-10-07` — 018c implemented on `task-018c-admission` (stacked on 018b): migration 0014, `ai_gateway.admission`, gateway admission and cheaper tiers, rate-limit block, screening wait behind `patched("admission")`, settings, docs and contract. Waits for 018b's tests and merge.
 - `2026-10-07` — 018b reviews. Security: H1 holder keys, H2 estimate, M1–M7. Architecture: B1 a queued run couldn't end, B2 the estimate, B3 the SPA showed queued as finished, B4 replay coverage, S1–S10. Fixed: H1, M1–M7 (S1–S3, S5, S7, S9, S10), B1, B3, N1, N2 (indexes and keys) and N4. The estimate is set on queueing and on a reason change only (B2/H2: refreshing it would need an audit event per ask; spec amended); S6 spec amended. Handed to the test author: the B4 recordings, the S8 identical-loop test, and the pins. Contract revision 1 (018b).
 - `2026-10-07` — 018a merged (PR #26). 018b implemented: migration 0013 (slot ledger and functions; run queued columns), `kernel.slots`, slot activities and workflow waits behind `patched("work-slots")`, `capacity_timeout`, the queued API status, the slots metric and logs, and v2 histories. Founder decision: the ledger commits without audit events. Contract 018b written.
@@ -414,7 +438,9 @@ Source: SPEC-003 AC-9–12, AC-13 (admission reasons), AC-14, AC-15 (admission),
 | The wait loop is copied into each module's `workflows.py` | ADR-017's import contract bars workflows from importing the kernel | No |
 | Slot hand-out is poll-based: a free slot goes to the first live waiter when it next asks (at most about 90 s), so capacity can sit idle briefly. Waiters silent for 3 minutes stop holding others up | Fairness without a cross-process signal; SPEC-003 §12 (018b review S5) | No |
 | `class_capacity` added as a queued reason; SPEC-003 amended (storage of the queued status, the estimate, screening's API as a follow-up) | 018b review S6 | No (spec amended) |
-| Provider capacity commits without audit events, like the slot ledger (UOW exemption for `ai_gateway/admission.py`) | The same operational-ledger reasoning as the founder's slot decision; flagged to the founder | No |
+| Provider capacity commits without audit events, like the slot ledger (UOW exemption for `ai_gateway/admission.py`) | The same operational-ledger reasoning as the founder's slot decision; the security review agreed; the founder was told (2026-10-07) | No |
+| The provider bucket is shared by every firm, with no per-firm share in admission | Per-firm fairness comes from the slot caps (0013). Limits are trusted app input. Accepted risk (security review S2) | No |
+| A batch admission wait of up to 24 h at a 60 s cap is about 14k history events (under the 51k limit, above the 10k warning) | No batch agents exist yet; `continue_as_new` when one does | No |
 | A screen waiting for provider capacity keeps its slot (F1) | Releasing it would let the firm start more work needing the same provider; no audit flapping | No |
 | No per-firm slots-in-use gauge; per-firm detail is in `slot.*` logs | A process-local gauge is wrong across processes, and the metrics allowlist carries no tenant ID | No |
 

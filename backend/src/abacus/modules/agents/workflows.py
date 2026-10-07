@@ -51,7 +51,8 @@ _FAIL_RETRY = RetryPolicy(
     maximum_attempts=0,
 )
 # SPEC-003: ask for a slot at least this often; release a few times, then leave it to the lease.
-_MAX_ASK_INTERVAL = 60.0
+_MAX_ASK_INTERVAL = 60.0  # also bounds slot lease renewal (15 min): never raise past ~5 min
+_MIN_ADMISSION_ASK = 5.0
 _RELEASE_RETRY = RetryPolicy(
     initial_interval=timedelta(seconds=2),
     backoff_coefficient=2.0,
@@ -78,12 +79,14 @@ class ScreeningWorkflow:
         run = RunInput(input.tenant_id, run_id)
         # SPEC-003: hold a work slot of the run's class while it screens (TASK-018 design §4).
         slotted = workflow.patched("work-slots")
+        # The class's maximum wait covers the whole wait, for a slot and then for admission.
+        waiting_from = workflow.now()
         try:
             if slotted and not await wait_for_slot("screening.acquire_slot", run):
                 return await _fail(run, CAPACITY_TIMEOUT)
             # SPEC-003 AC-11: a model call not admitted waits (durably) and screens again.
             admission = workflow.patched("admission")
-            waited_since = None
+            backoff = _MIN_ADMISSION_ASK
             while True:
                 try:
                     return await workflow.execute_activity(
@@ -99,13 +102,13 @@ class ScreeningWorkflow:
                     if refused is None:
                         raise
                     retry_after, max_wait = refused
-                    waited_since = waited_since or workflow.now()
-                    if (workflow.now() - waited_since).total_seconds() >= max_wait:
+                    if (workflow.now() - waiting_from).total_seconds() >= max_wait:
                         return await _fail(run, CAPACITY_TIMEOUT)
-                    jitter = 0.5 + workflow.random().random()
-                    await workflow.sleep(
-                        timedelta(seconds=min(max(retry_after * jitter, 1.0), _MAX_ASK_INTERVAL))
-                    )
+                    # At least what the bucket asked for, backing off per refusal; at most 60 s,
+                    # which also keeps the slot's 15-minute lease renewed (each ask renews it).
+                    delay = max(retry_after, backoff) * (0.5 + workflow.random().random())
+                    await workflow.sleep(timedelta(seconds=min(delay, _MAX_ASK_INTERVAL)))
+                    backoff = min(backoff * 2, _MAX_ASK_INTERVAL)
         except ActivityError as err:
             if is_cancelled_exception(err):
                 await _fail(run, CANCELLED)

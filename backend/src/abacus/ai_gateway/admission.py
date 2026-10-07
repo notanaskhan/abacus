@@ -50,6 +50,11 @@ class NotAdmitted(Exception):
         self.retry_after = retry_after
 
 
+class CallTooLarge(ValueError):
+    """The call needs more tokens than its class may ever take from the model's bucket: it would
+    wait until `capacity_timeout`, so it fails now instead (TASK-018c review)."""
+
+
 def reserve_pct(work_class: WorkClass, essential: bool) -> int:
     return (
         settings()
@@ -72,8 +77,12 @@ async def admit(
     s = settings()
     limits = s.provider_limits.get(model)
     if limits is None:
+        _log.warning("admission.unconfigured", model=model)
         _record(model, work_class, "refused", "unconfigured")
         return False, _UNREACHABLE_RETRY_SECONDS
+    reserve = reserve_pct(work_class, essential)
+    if tokens > limits.tpm * (100 - reserve) // 100:
+        raise CallTooLarge(f"{model}: {tokens} tokens can never fit above a {reserve}% reserve")
     try:
         async with tenant_connection(tenant) as conn:
             row = (
@@ -87,8 +96,8 @@ async def admit(
                         "model": model,
                         "rpm": limits.rpm,
                         "tpm": limits.tpm,
-                        "reserve_pct": reserve_pct(work_class, essential),
-                        "tokens": max(1, min(tokens, limits.tpm)),
+                        "reserve_pct": reserve,
+                        "tokens": max(1, tokens),
                     },
                 )
             ).one()
