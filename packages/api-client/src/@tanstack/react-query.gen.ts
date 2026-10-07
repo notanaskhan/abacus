@@ -3,8 +3,8 @@
 import { queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, applyMethodology, assign, createEngagement, createRequestItem, createWall, engagementGraph, getBudget, getEngagement, getRetrieval, getVersion, importTemplate, listEngagements, listEvidenceVersions, listRequestItems, listScreeningResults, listTemplates, listWalls, me, metering, type Options, putBudget, reasonCodes, reject, release, removeWall, reviewQueue, sendBack, startRetrieval, take } from '../sdk.gen';
-import type { AcceptData, AcceptError, AcceptResponse, ApplyMethodologyData, ApplyMethodologyError, ApplyMethodologyResponse, AssignData, AssignError, AssignResponse, CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, EngagementGraphData, EngagementGraphError, EngagementGraphResponse, GetBudgetData, GetBudgetError, GetBudgetResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, GetVersionData, GetVersionError, GetVersionResponse, ImportTemplateData, ImportTemplateError, ImportTemplateResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListTemplatesData, ListTemplatesError, ListTemplatesResponse, ListWallsData, ListWallsError, ListWallsResponse, MeData, MeError, MeResponse, MeteringData, MeteringError, MeteringResponse, PutBudgetData, PutBudgetError, PutBudgetResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, SendBackData, SendBackError, SendBackResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, TakeData, TakeError, TakeResponse } from '../types.gen';
+import { accept, addDocument, applyMethodology, assign, createEngagement, createRequestItem, createWall, engagementGraph, getBudget, getDocument, getEngagement, getRetrieval, getVersion, importTemplate, listDocuments, listEngagements, listEvidenceVersions, listRequestItems, listScreeningResults, listTemplates, listWalls, me, metering, type Options, putBudget, reasonCodes, reject, release, removeWall, reviewQueue, search, sendBack, startRetrieval, take, withdrawDocument } from '../sdk.gen';
+import type { AcceptData, AcceptError, AcceptResponse, AddDocumentData, AddDocumentError, AddDocumentResponse, ApplyMethodologyData, ApplyMethodologyError, ApplyMethodologyResponse, AssignData, AssignError, AssignResponse, CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, EngagementGraphData, EngagementGraphError, EngagementGraphResponse, GetBudgetData, GetBudgetError, GetBudgetResponse, GetDocumentData, GetDocumentError, GetDocumentResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, GetVersionData, GetVersionError, GetVersionResponse, ImportTemplateData, ImportTemplateError, ImportTemplateResponse, ListDocumentsData, ListDocumentsError, ListDocumentsResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListTemplatesData, ListTemplatesError, ListTemplatesResponse, ListWallsData, ListWallsError, ListWallsResponse, MeData, MeError, MeResponse, MeteringData, MeteringError, MeteringResponse, PutBudgetData, PutBudgetError, PutBudgetResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, SearchData, SearchError, SearchResponse, SendBackData, SendBackError, SendBackResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, TakeData, TakeError, TakeResponse, WithdrawDocumentData, WithdrawDocumentError, WithdrawDocumentResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -405,6 +405,93 @@ export const listScreeningResultsOptions = (options: Options<ListScreeningResult
     },
     queryKey: listScreeningResultsQueryKey(options)
 });
+
+export const listDocumentsQueryKey = (options?: Options<ListDocumentsData>) => createQueryKey('listDocuments', options);
+
+/**
+ * List Documents Route
+ */
+export const listDocumentsOptions = (options?: Options<ListDocumentsData>) => queryOptions<ListDocumentsResponse, ListDocumentsError, ListDocumentsResponse, ReturnType<typeof listDocumentsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listDocuments({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listDocumentsQueryKey(options)
+});
+
+/**
+ * Add Document Route
+ */
+export const addDocumentMutation = (options?: Partial<Options<AddDocumentData>>): UseMutationOptions<AddDocumentResponse, AddDocumentError, Options<AddDocumentData>> => {
+    const mutationOptions: UseMutationOptions<AddDocumentResponse, AddDocumentError, Options<AddDocumentData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await addDocument({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getDocumentQueryKey = (options: Options<GetDocumentData>) => createQueryKey('getDocument', options);
+
+/**
+ * Get Document Route
+ */
+export const getDocumentOptions = (options: Options<GetDocumentData>) => queryOptions<GetDocumentResponse, GetDocumentError, GetDocumentResponse, ReturnType<typeof getDocumentQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getDocument({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getDocumentQueryKey(options)
+});
+
+/**
+ * Withdraw Document Route
+ */
+export const withdrawDocumentMutation = (options?: Partial<Options<WithdrawDocumentData>>): UseMutationOptions<WithdrawDocumentResponse, WithdrawDocumentError, Options<WithdrawDocumentData>> => {
+    const mutationOptions: UseMutationOptions<WithdrawDocumentResponse, WithdrawDocumentError, Options<WithdrawDocumentData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await withdrawDocument({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Search Route
+ */
+export const searchMutation = (options?: Partial<Options<SearchData>>): UseMutationOptions<SearchResponse, SearchError, Options<SearchData>> => {
+    const mutationOptions: UseMutationOptions<SearchResponse, SearchError, Options<SearchData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await search({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
 
 export const meQueryKey = (options?: Options<MeData>) => createQueryKey('me', options);
 

@@ -166,7 +166,11 @@ def test_ac2_retrieval_is_interactive() -> None:
 
 
 def test_ac2_screening_is_time_sensitive_as_its_spec_says() -> None:
-    assert {agents.ScreeningWorkflow: "time_sensitive"} == agents.WORKFLOWS
+    assert agents.WORKFLOWS[agents.ScreeningWorkflow] == "time_sensitive"
+    # SPEC-009: knowledge embedding is batch work.
+    assert [c for w, c in agents.WORKFLOWS.items() if w is not agents.ScreeningWorkflow] == [
+        "batch"
+    ]
     assert agents.spec(agents.SCREENER).work_class == "time_sensitive"
     assert work_class_of(agents.ScreeningWorkflow) == "time_sensitive"
 
@@ -352,8 +356,10 @@ def test_ac4_importing_a_starter_module_alone_registers_its_workflow(
             del sys.modules[name]
         starter = importlib.import_module(module)
         fresh = sys.modules["abacus.kernel.dispatch"]
-        [(flow, _)] = starter.WORKFLOWS.items()
+        flow = next(iter(starter.WORKFLOWS))  # the module's first (its namesake) workflow
         assert fresh.work_class_of(flow) == expected
+        for other, work_class in starter.WORKFLOWS.items():
+            assert fresh.work_class_of(other) == work_class
     finally:
         for name in [n for n in sys.modules if n.split(".")[0] == "abacus"]:
             del sys.modules[name]

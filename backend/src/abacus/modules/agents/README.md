@@ -75,3 +75,18 @@ Agent specs, agent runs and screening (ADR-005, ADR-025, ADR-047, ADR-050, ADR-0
 - the coverage gaps.
 
 Agents will read the same view as context.
+
+## Knowledge (SPEC-009; TASK-024)
+The firm's methodology documents, recalled by vector search. Knowledge is firm-wide in v1, and every read and write is checked on the firm.
+
+**Adding a document:** `POST /v1/knowledge/documents` (`knowledge.manage`, fresh MFA) takes plain text or Markdown. The document is stored as `pending` with deterministic chunks (`knowledge_chunks.py`), and `knowledge_document.added` is emitted.
+
+**Embedding:** `KnowledgeEmbeddingWorkflow` (batch class) then embeds the chunks in batches of 64 through `ai_gateway.embed`:
+- the document becomes `ready` when every chunk has a vector;
+- it becomes `failed` (with a fixed code) on a budget refusal or a provider that stays down.
+
+**Withdrawing:** `POST …/{id}/withdraw` excludes the document from search immediately.
+
+**Searching:** `POST /v1/knowledge/search` (`knowledge.read`) is exact cosine over the caller's firm's `ready` chunks that were embedded with the current model, with the tenant filter explicit as well as under RLS. There is no ANN index, so no index is shared across tenants (Q1, ADR-053).
+
+**For agents:** `search_knowledge` and `knowledge_context` wrap hits as untrusted, delimited `internal` context (ADR-052).

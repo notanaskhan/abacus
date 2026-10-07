@@ -4,7 +4,7 @@ title: Knowledge retrieval infrastructure (pgvector), without content
 spec: SPEC-009
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10]
 risk_zone: red
-status: awaiting-plan-approval
+status: done
 branch: task-024-knowledge-retrieval
 worktree:
 created: 2026-10-07
@@ -31,7 +31,7 @@ All of SPEC-009. Excluded: content, PDF and DOCX, ANN indexes, re-embedding, and
 - Code: `ai_gateway/` (`_call`, `_admitted`, `_record_usage`, `budgets`), `modules/agents/` (`screenings.py` for the outbox subscription and workflow pattern), `kernel/dispatch`
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-07: D1–D4). Approved by founder: paths listed under *Protected paths*
 
 ### Design (for founder review)
 1. **`ai_gateway.embed(EmbedCall) -> EmbedResult`** (`ai_gateway/embeddings.py`):
@@ -109,11 +109,23 @@ All of SPEC-009. Excluded: content, PDF and DOCX, ANN indexes, re-embedding, and
 - [ ] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-07` — Implemented:
+  - `ai_gateway.embed` with `EmbeddingProvider`, `FakeEmbedder` and usage records;
+  - migration 0020 (`vector` extension, `knowledge_documents`, `knowledge_chunks`);
+  - deterministic chunking, add, withdraw and list;
+  - `KnowledgeEmbeddingWorkflow` with its activities and outbox subscription;
+  - exact search and `knowledge_context`;
+  - routes, the matrix actions, the schema maps and the LIST-001 exemptions.
+
+  Gates, the schema check and unit tests pass. Vector binding was checked against local Postgres. Full test runs deferred by the founder.
 - `2026-10-07` — SPEC-009 approved and merged (#42). Design written for founder review.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| Pins updated for the new subscription, workflow, activities and routes (the screening contract, dispatch, worker routing and app gates tests) | Deliberate additions | No |
+| An embedding response of the wrong shape is recorded as outcome `invalid` and raised as a provider error | It is never stored | No |
+| The import route for workbooks (TASK-023) and knowledge `add` both refuse engagement-only users until firm-level reads honour engagement roles (D3) | Approved as a known limitation | No |
 
 ## Questions for the human
 - Design questions D1–D4 (above).

@@ -61,3 +61,27 @@ class SlotGrant:
 
     granted: bool
     max_wait_seconds: int
+
+
+# --- Knowledge embedding (SPEC-009; TASK-024 design §7) ----------------------------------------
+
+
+@dataclass(frozen=True)
+class KnowledgeInput:
+    """From the relayed `knowledge_document.added` event."""
+
+    tenant_id: str
+    document_id: str
+
+
+@dataclass(frozen=True)
+class BatchOutcome:
+    done: bool  # ready, failed, or no longer pending: the workflow ends
+    wait_seconds: int = 0  # > 0: not admitted yet; ask again after this
+
+
+@dataclass(frozen=True)
+class FailKnowledgeInput:
+    tenant_id: str
+    document_id: str
+    code: str

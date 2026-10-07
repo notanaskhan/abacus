@@ -10,10 +10,21 @@ from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
 from abacus.modules.agents.graph import EngagementGraph, engagement_graph
+from abacus.modules.agents.knowledge import (
+    DocumentView,
+    MediaType,
+    NewDocument,
+    SourceKind,
+    add_document,
+    document,
+    documents,
+    search_knowledge,
+    withdraw_document,
+)
 from abacus.modules.agents.service import ScreeningResultView, screening_results_for
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
@@ -179,3 +190,99 @@ def _graph_out(graph: EngagementGraph) -> EngagementGraphOut:
 @graph_router.get("", action="engagement.read", response_model=EngagementGraphOut)
 async def engagement_graph_route(engagement_id: UUID, ctx: Ctx) -> EngagementGraphOut:
     return _graph_out(await engagement_graph(ctx, engagement_id))
+
+
+# --- Knowledge (SPEC-009 §8) -------------------------------------------------------------------
+
+knowledge_router = AbacusRouter(prefix="/v1/knowledge", tags=["knowledge"])
+
+
+class KnowledgeDocumentIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    title: Annotated[str, Field(min_length=1, max_length=200), classified("internal")]
+    source_kind: Annotated[SourceKind, classified("internal")]
+    media_type: Annotated[MediaType, classified("internal")]
+    text: Annotated[str, Field(min_length=1), classified("internal")]
+
+
+class KnowledgeDocumentOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    title: Annotated[str, classified("internal")]
+    source_kind: Annotated[str, classified("internal")]
+    media_type: Annotated[str, classified("internal")]
+    status: Annotated[
+        Literal["pending", "ready", "failed", "withdrawn", "stale"], classified("internal")
+    ]
+    failure_code: Annotated[str | None, classified("internal")]
+    chunk_count: Annotated[int, classified("internal")]
+    created_at: Annotated[datetime, classified("internal")]
+
+
+class KnowledgeSearchIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    query: Annotated[str, Field(min_length=1, max_length=1000), classified("internal")]
+    k: Annotated[int, Field(ge=1, le=20), classified("internal")] = 8
+
+
+class KnowledgeHitOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    document_id: Annotated[UUID, classified("internal")]
+    title: Annotated[str, classified("internal")]
+    heading_path: Annotated[str, classified("internal")]
+    position: Annotated[int, classified("internal")]
+    text: Annotated[str, classified("internal")]
+    score: Annotated[float, classified("internal")]
+
+
+def _document_out(view: DocumentView) -> KnowledgeDocumentOut:
+    return KnowledgeDocumentOut.model_validate(asdict(view))
+
+
+@knowledge_router.post(
+    "/documents",
+    action="knowledge.manage",
+    response_model=KnowledgeDocumentOut,
+    status_code=201,
+    errors=(409,),
+)
+async def add_document_route(body: KnowledgeDocumentIn, ctx: Ctx) -> KnowledgeDocumentOut:
+    document_id = await add_document(
+        ctx, NewDocument(body.title, body.source_kind, body.media_type, body.text)
+    )
+    return _document_out(await document(ctx, document_id))
+
+
+@knowledge_router.get(
+    "/documents", action="knowledge.read", response_model=list[KnowledgeDocumentOut]
+)
+async def list_documents_route(ctx: Ctx) -> list[KnowledgeDocumentOut]:
+    return [_document_out(v) for v in await documents(ctx)]
+
+
+@knowledge_router.get(
+    "/documents/{document_id}", action="knowledge.read", response_model=KnowledgeDocumentOut
+)
+async def get_document_route(document_id: UUID, ctx: Ctx) -> KnowledgeDocumentOut:
+    return _document_out(await document(ctx, document_id))
+
+
+@knowledge_router.post(
+    "/documents/{document_id}/withdraw",
+    action="knowledge.manage",
+    response_model=KnowledgeDocumentOut,
+    errors=(409,),
+)
+async def withdraw_document_route(document_id: UUID, ctx: Ctx) -> KnowledgeDocumentOut:
+    await withdraw_document(ctx, document_id)
+    return _document_out(await document(ctx, document_id))
+
+
+@knowledge_router.post("/search", action="knowledge.read", response_model=list[KnowledgeHitOut])
+async def search_route(body: KnowledgeSearchIn, ctx: Ctx) -> list[KnowledgeHitOut]:
+    hits = await search_knowledge(ctx, body.query, body.k)
+    return [KnowledgeHitOut.model_validate(asdict(h)) for h in hits]

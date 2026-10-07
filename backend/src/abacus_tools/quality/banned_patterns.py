@@ -764,6 +764,11 @@ LIST_EXEMPT = frozenset(
         # (`methodology.read`) or by a caller authorised on the engagement; no engagement rows.
         ("src/abacus/modules/engagements/repository.py", "list_templates"),
         ("src/abacus/modules/engagements/repository.py", "version_rows"),
+        # Knowledge is firm-wide (SPEC-009 §9: `visible()` reduces to the tenant): listed and
+        # searched after `authorise` on the firm, embedded by the platform's own workflow.
+        ("src/abacus/modules/agents/repository.py", "list_documents"),
+        ("src/abacus/modules/agents/repository.py", "chunks_without_vectors"),
+        ("src/abacus/modules/agents/repository.py", "nearest_chunks"),
         # The outbound scope checker (SPEC-006): after `authorise(message.send)`, it must see the
         # firm's other clients, entities and accounts to catch them in a draft; never returned.
         ("src/abacus/modules/organisations/repository.py", "names_in_firm"),

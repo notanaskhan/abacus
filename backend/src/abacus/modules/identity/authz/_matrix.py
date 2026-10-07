@@ -46,6 +46,21 @@ ACTIONS: dict[str, dict[str, str]] = {
         "engagement_partner": "allow",
         "manager": "allow",
     },
+    "knowledge.manage": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
+        "mfa_recent": "required",
+    },
+    "knowledge.read": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
+        "quality_partner": "allow",
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "reviewer": "allow",
+    },
     "autonomy_policy.update": {
         "firm_admin": "allow",
         "mfa_recent": "required",

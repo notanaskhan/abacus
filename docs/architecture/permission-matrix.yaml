@@ -32,6 +32,8 @@ actions:
   budget.manage:            {firm_admin: allow, mfa_recent: required}     # SPEC-007 Q3
   methodology.manage:       {firm_admin: allow, practice_leader: allow, mfa_recent: required}   # SPEC-008 Q3
   methodology.read:         {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow}   # SPEC-008
+  knowledge.manage:         {firm_admin: allow, practice_leader: allow, mfa_recent: required}   # SPEC-009 Q4
+  knowledge.read:           {firm_admin: allow, practice_leader: allow, quality_partner: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow}   # SPEC-009 Q4
   autonomy_policy.update:   {firm_admin: allow, mfa_recent: required}
   wall.create:              {firm_admin: allow, mfa_recent: required}
   wall.remove:              {firm_admin: allow, mfa_recent: required}

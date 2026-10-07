@@ -47,7 +47,8 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
 def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening() -> None:
     built = worker_main.publisher()
     assert isinstance(built, RoutingPublisher)
-    assert list(built.handlers) == [EVIDENCE_VERSION_CREATED]
+    # SPEC-009 adds knowledge embedding beside screening.
+    assert list(built.handlers) == [EVIDENCE_VERSION_CREATED, "knowledge_document.added"]
     assert list(built.handlers[EVIDENCE_VERSION_CREATED]) == [worker_main.agents.start_screening]
 
 
