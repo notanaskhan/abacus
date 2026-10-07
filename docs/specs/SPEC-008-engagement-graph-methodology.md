@@ -1,7 +1,7 @@
 ---
 id: SPEC-008
 title: Engagement graph and methodology configuration v1
-status: draft
+status: approved
 owner: founder
 risk_zone: amber
 related_adrs: [ADR-053, ADR-056, ADR-050, ADR-004, ADR-024, ADR-052, ADR-031]
@@ -182,18 +182,19 @@ None in this spec.
 No flag. The migration is additive, and existing engagements have no template pinned.
 
 ## 20. Open questions
-- [ ] **Q1: the workbook layout.** *Recommendation:* three sheets.
+None. Answered by the founder on 2026-10-07 (all recommendations):
+- [x] **Q1: the workbook layout.** *Recommendation:* three sheets.
   - **`Areas`:** `code`, `name`.
   - **`Requests`:** `area_code`, `description`, `tier`.
   - **`Account rules`:** `area_code`, `account_from`, `account_to`.
 
   Headers are exact, and rows are kept in order. A sample workbook and its layout go in `docs/product/`.
-- [ ] **Q2: the graph is computed on read, not stored.** *Recommendation:* yes. It's always consistent with its sources, and there's no sync to get wrong. Materialise it later only if reads get slow.
-- [ ] **Q3: owner of the methodology tables, and who imports.** *Recommendation:*
+- [x] **Q2: the graph is computed on read, not stored.** *Recommendation:* yes. It's always consistent with its sources, and there's no sync to get wrong. Materialise it later only if reads get slow.
+- [x] **Q3: owner of the methodology tables, and who imports.** *Recommendation:*
   - the `engagements` module owns the tables (methodology configures engagements; no new module, so no ADR-101 change);
   - firm admins and practice leaders import, with fresh MFA.
-- [ ] **Q4: applying a template.** *Recommendation:* once per engagement, and only seeding. Request items added later by hand are untouched. Re-pinning or merging a newer version is deferred.
-- [ ] **Q5: unmapped-account threshold for a gap.** *Recommendation:* any unmapped account with a non-zero balance, as a setting. Materiality-based thresholds come with the materiality work.
+- [x] **Q4: applying a template.** *Recommendation:* once per engagement, and only seeding. Request items added later by hand are untouched. Re-pinning or merging a newer version is deferred.
+- [x] **Q5: unmapped-account threshold for a gap.** *Recommendation:* any unmapped account with a non-zero balance, as a setting. Materiality-based thresholds come with the materiality work.
 
 ## 21. Future / explicitly deferred
 - Engagement facts carried forward, and agent-proposed memories (ADR-053).
