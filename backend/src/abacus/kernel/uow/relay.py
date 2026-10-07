@@ -38,15 +38,17 @@ from sqlalchemy import text
 
 from abacus.kernel.db import relay_engine
 from abacus.kernel.logging import get_logger
+from abacus.kernel.telemetry import continue_trace, tracer
 
 MAX_ATTEMPTS = 10
 MAX_BACKOFF_SECONDS = 3600
 HANDLER_TIMEOUT = 15.0
 PASS_TIMEOUT = 120.0
 _log = get_logger(__name__)
+_tracer = tracer(__name__)
 
 _CLAIM = text(
-    "SELECT id, tenant_id, event_type, payload, attempts FROM outbox WHERE id IN ("
+    "SELECT id, tenant_id, event_type, payload, attempts, trace_context FROM outbox WHERE id IN ("
     "SELECT id FROM (SELECT id, row_number() OVER (PARTITION BY tenant_id ORDER BY seq) AS n "
     "FROM outbox WHERE published_at IS NULL AND attempts < :max_attempts "
     "AND (next_attempt_at IS NULL OR next_attempt_at <= clock_timestamp())) AS due "
@@ -69,6 +71,8 @@ class OutboxEvent:
     tenant_id: UUID
     event_type: str
     payload: dict[str, object]
+    # The W3C traceparent of the transaction that emitted it (TASK-013): publishing continues it.
+    trace_context: str | None = None
 
 
 @dataclass(frozen=True)
@@ -133,8 +137,21 @@ async def relay_once(publisher: Publisher, batch: int = 25, per_tenant: int = 10
                 continue
             keys = {"tenant": tenant, "id": row.id}
             try:
-                event = OutboxEvent(row.id, tenant, row.event_type, _payload(row.payload))
-                await publisher.publish(event)
+                event = OutboxEvent(
+                    row.id, tenant, row.event_type, _payload(row.payload), row.trace_context
+                )
+                with (
+                    continue_trace(event.trace_context),
+                    _tracer.start_as_current_span(
+                        "outbox.publish",
+                        attributes={
+                            "outbox.event_type": event.event_type,
+                            "outbox.event_id": str(event.event_id),
+                            "tenant.id": str(tenant),
+                        },
+                    ),
+                ):
+                    await publisher.publish(event)
             except Exception as exc:  # stays unpublished; record why (class name only)
                 attempts = int(row.attempts) + 1
                 error = type(exc).__name__

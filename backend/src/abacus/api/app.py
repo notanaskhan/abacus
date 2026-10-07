@@ -14,10 +14,13 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 from abacus.kernel.config import settings
+from abacus.kernel.error_tracking import configure_error_tracking, report
 from abacus.kernel.errors import DomainConflict, NotFound, ServiceUnavailable
 from abacus.kernel.logging import get_logger
+from abacus.kernel.telemetry import configure_tracing
 from abacus.kernel.temporal import payload_codec
 from abacus.modules.connections import api as connections
 from abacus.modules.engagements import api as engagements
@@ -58,9 +61,11 @@ async def _invalid(_request: Request, exc: Exception) -> JSONResponse:
     return JSONResponse({"detail": detail}, status_code=422)
 
 
-async def _unexpected(_request: Request, exc: Exception) -> JSONResponse:
+async def _unexpected(request: Request, exc: Exception) -> JSONResponse:
     # A fixed body: never an exception message, a driver error or a stack trace.
-    _log.error("api.unexpected_error", error=type(exc).__name__)
+    _log.error("api.unexpected_error", error=exc)
+    route = request.scope.get("route")
+    report(exc, route=getattr(route, "path", None))
     return JSONResponse({"detail": "internal error"}, status_code=500)
 
 
@@ -105,4 +110,8 @@ def create_app() -> FastAPI:
     app.add_exception_handler(RequestValidationError, _invalid)
     app.add_exception_handler(Exception, _unexpected)
     app.openapi = lambda: _openapi(app)  # type-safe override of FastAPI's generator
+    # One server span per request, named by route template (TASK-013); no headers or bodies.
+    configure_tracing("abacus-api")
+    configure_error_tracking("abacus-api")
+    FastAPIInstrumentor.instrument_app(app, exclude_spans=["receive", "send"])
     return app

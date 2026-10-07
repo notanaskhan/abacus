@@ -983,6 +983,52 @@ def _check_human_decision(src: SourceFile) -> Iterator[Finding]:
                 )
 
 
+_LOG_METHODS = frozenset({"debug", "info", "warning", "error"})
+
+
+def _check_unstructured_logging(src: SourceFile) -> Iterator[Finding]:
+    """ADR-022: product code logs only through `abacus.kernel.logging` (structured, refuses
+    Restricted fields). No stdlib `logging` or direct structlog, and no log field that turns a
+    caught exception into text (`str(exc)`, `repr(exc)`, an f-string with it): pass the
+    exception itself, which is logged by class name only (its message can carry data)."""
+    caught = {
+        handler.name
+        for handler in ast.walk(src.tree)
+        if isinstance(handler, ast.ExceptHandler) and handler.name is not None
+    }
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name.split(".")[0] in ("logging", "structlog"):
+                    yield Finding(node.lineno, f"use abacus.kernel.logging, not {alias.name}")
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module is not None:
+            if node.module.split(".")[0] in ("logging", "structlog"):
+                yield Finding(node.lineno, f"use abacus.kernel.logging, not {node.module}")
+        elif (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr in _LOG_METHODS
+        ):
+            for keyword in node.keywords:
+                if _exception_as_text(keyword.value, caught):
+                    yield Finding(
+                        node.lineno,
+                        f"log field {keyword.arg!r} is an exception as text; pass the exception",
+                    )
+
+
+def _exception_as_text(value: ast.expr, caught: set[str]) -> bool:
+    if isinstance(value, ast.Call) and _terminal_name(value.func) in ("str", "repr"):
+        return any(isinstance(a, ast.Name) and a.id in caught for a in value.args)
+    if isinstance(value, ast.JoinedStr):
+        return any(
+            isinstance(part, ast.FormattedValue)
+            and any(isinstance(n, ast.Name) and n.id in caught for n in ast.walk(part.value))
+            for part in value.values
+        )
+    return False
+
+
 def _check_layout(backend: Path) -> Iterator[tuple[str, Finding]]:
     src = backend / "src"
     if not src.is_dir():
@@ -1307,6 +1353,14 @@ RULES: list[Rule | TreeRule] = [
         adr="ADR-005, ADR-025",
         check=_check_human_decision,
         include=("src/abacus/modules/*",),
+    ),
+    Rule(
+        id="LOG-001",
+        description="Log only through abacus.kernel.logging; exceptions as values, never as text",
+        adr="ADR-022, ADR-031",
+        check=_check_unstructured_logging,
+        include=("src/abacus/*",),
+        exclude=("src/abacus/kernel/logging.py",),
     ),
     Rule(
         id="ANY-001",
