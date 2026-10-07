@@ -1,7 +1,7 @@
 ---
 id: SPEC-002
 title: Ethical walls
-status: draft
+status: approved
 owner: founder
 risk_zone: red
 related_adrs: [ADR-026, ADR-020, ADR-023, ADR-024, ADR-025, ADR-027, ADR-007, ADR-031]
@@ -142,10 +142,11 @@ No UI in this spec (API only). The SPA shows walled engagements as not found, wh
 Behind no flag: walls apply as soon as they exist, and none exist until an admin creates one. Flip `WALL_SAFE` in the same change.
 
 ## 20. Open questions
-- **Q1. Status code for walled engagements:** 404 (recommended; doesn't reveal existence) or 403?
-- **Q2. A new matrix action `wall.read` for listing walls** (firm admin, fresh MFA): approve the protected matrix change?
-- **Q3. A walled person's runs:** end runs already in flight that act for a walled person at their next step (recommended), or let them finish?
-- **Q4. Admin UI:** API only now (recommended), with the screen in the collaboration UI spec?
+None. Answered by the founder on 2026-10-07 (all recommendations):
+- **Q1:** walled engagements answer 404.
+- **Q2:** add the matrix action `wall.read` (firm admin, fresh MFA).
+- **Q3:** runs already acting for a newly walled person are stopped at their next step.
+- **Q4:** API only; the admin screen comes with the collaboration UI spec.
 
 ## 21. Future / explicitly deferred
 - Independence-conflict policy between engagement types (CAS).
