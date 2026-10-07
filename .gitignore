@@ -19,6 +19,8 @@ __pycache__/
 .coverage
 # Evaluation reports (make evals)
 backend/.evals/
+# Local sign-in key (abacus_tools.fakes.oidc_server)
+backend/.local/
 htmlcov/
 mutants/
 

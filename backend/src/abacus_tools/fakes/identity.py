@@ -27,12 +27,18 @@ AUDIENCE = "abacus-api"
 
 class FakeIdentityProvider:
     def __init__(
-        self, *, issuer: str = ISSUER, audience: str = AUDIENCE, kid: str = "fake-1"
+        self,
+        *,
+        issuer: str = ISSUER,
+        audience: str = AUDIENCE,
+        kid: str = "fake-1",
+        key: rsa.RSAPrivateKey | None = None,
     ) -> None:
+        """`key`: a fixed key (the local sign-in server keeps one across restarts)."""
         self.issuer = issuer
         self.audience = audience
         self.kid = kid
-        self._key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        self._key = key or rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
     def jwks(self) -> str:
         public = RSAAlgorithm.to_jwk(self._key.public_key(), as_dict=True)
