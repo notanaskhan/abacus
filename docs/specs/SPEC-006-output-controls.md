@@ -1,7 +1,7 @@
 ---
 id: SPEC-006
 title: Output controls and the outbound message scope checker
-status: draft
+status: approved
 owner: founder
 risk_zone: red
 related_adrs: [ADR-065, ADR-052, ADR-064, ADR-005, ADR-007, ADR-031]
@@ -142,11 +142,12 @@ None in this spec, beyond agent text continuing to render through `AgentText`.
 No flag. The migration is additive. The screener's stored text is sanitised from the next result; existing rows stay as they are, since they're rendered as plain text anyway.
 
 ## 20. Open questions
-- [ ] **Q1: link allowlist.** *Recommendation:* empty by default (every external link removed), with an `output_link_allowlist` setting of host names. Links are never fetched.
-- [ ] **Q2: amounts in scope.** *Recommendation:* every amount in the engagement's ledger snapshots plus their column totals, matched exactly in cents. "Rounded" means to the nearest whole currency unit, 1 thousand or 1 million, as written (`1.25k`). Small numbers (under 100) are ignored as amounts, since they are usually counts or days.
-- [ ] **Q3: name matching.** *Recommendation:* other clients' and entities' names in the firm, case-insensitive on word boundaries, ignoring names under 4 characters and a short stoplist (Inc, LLC, Group). Account names are matched only if they are at least 8 characters long and don't appear in this engagement's ledger.
-- [ ] **Q4: who may send.** *Recommendation:* a new matrix action, `message.send`, for engagement partners, managers and seniors, with agents and system denied. Staff can't send to clients in Phase 1.
-- [ ] **Q5: blocked messages.** *Recommendation:* they're stored with their violations, and the sender sees 409 `out_of_scope` with the violation kinds. There's no override in Phase 1: the person edits the draft and sends again.
+None. Answered by the founder on 2026-10-07 (all recommendations):
+- [x] **Q1: link allowlist.** *Recommendation:* empty by default (every external link removed), with an `output_link_allowlist` setting of host names. Links are never fetched.
+- [x] **Q2: amounts in scope.** *Recommendation:* every amount in the engagement's ledger snapshots plus their column totals, matched exactly in cents. "Rounded" means to the nearest whole currency unit, 1 thousand or 1 million, as written (`1.25k`). Small numbers (under 100) are ignored as amounts, since they are usually counts or days.
+- [x] **Q3: name matching.** *Recommendation:* other clients' and entities' names in the firm, case-insensitive on word boundaries, ignoring names under 4 characters and a short stoplist (Inc, LLC, Group). Account names are matched only if they are at least 8 characters long and don't appear in this engagement's ledger.
+- [x] **Q4: who may send.** *Recommendation:* a new matrix action, `message.send`, for engagement partners, managers and seniors, with agents and system denied. Staff can't send to clients in Phase 1.
+- [x] **Q5: blocked messages.** *Recommendation:* they're stored with their violations, and the sender sees 409 `out_of_scope` with the violation kinds. There's no override in Phase 1: the person edits the draft and sends again.
 
 ## 21. Future / explicitly deferred
 - Delivery transports: email and the portal (increments 2 and 8).
