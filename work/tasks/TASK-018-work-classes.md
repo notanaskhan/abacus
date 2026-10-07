@@ -313,6 +313,31 @@ Source: SPEC-003 AC-6–8, AC-13, AC-14 and AC-15 (slots), design §4–5 and D2
 - **Histories:** v2 is re-recorded. Also needed: v2 recordings with at least two asks and timers, with `capacity_timeout`, and with a cancel while waiting (extend `abacus_tools/workflows/record_*`). The replay tests run over every `*-v2-*` file.
 - **More pins:** `apps/web/src/screens/Board.test.tsx` (the fixtures gain `queued_reason`/`estimated_start_at`; add a queued case).
 
+### 018c detailed design (within approved design §6 and D4)
+- **Migration 0014.**
+  - Platform table `provider_capacity`:
+    - columns: `(provider, model)` as the PK, `rpm`, `tpm`, `requests_left`, `tokens_left` (numeric), `refilled_at`, `blocked_until`;
+    - no app privileges and RLS enabled with no policy, the same pattern as the slot ledger.
+  - SECURITY DEFINER functions:
+    - `capacity_admit(provider, model, rpm, tpm, reserve_pct, tokens) -> (admitted, retry_after_seconds)`. It requires a tenant session, bounds its inputs, and refills by elapsed database time up to `rpm`/`tpm`. It takes one request and `tokens` only if both buckets stay above `reserve_pct` of their size, and it is never admitted while `blocked_until` is in the future.
+    - `capacity_block(provider, model, seconds)`. It sets `blocked_until`, raising it only, and empties both buckets.
+    - Both are added to `DEFINER_FUNCTIONS`, `NON_TENANT_TABLES`/`GLOBAL_TABLES` and `TABLE_OWNERS` (`ai_gateway`).
+  - `usage_records.outcome` gains `rate_limited`.
+- **Settings.**
+  - `provider_limits: dict[model, {rpm, tpm}]`, set at 80% of the provider's limits (Q5). Generous defaults for the fake models.
+  - `WorkClassLimits.admission_reserve_pct`: interactive 0, time-sensitive 0, background 25, batch 50 (D4).
+- **Gateway.**
+  - **New fields:** `GatewayCall` gains `work_class`, `essential` and `cheaper_tiers`. The screening service passes them from its spec.
+  - **Admission:** before each attempt, `call()` admits under an `ai.admit` span. The reserve is the class's own if the call is essential, otherwise the next class's (D4). The token estimate is the input estimate plus `max_output_tokens`.
+  - **If not admitted:** it tries each `cheaper_tiers` model in turn (AC-11; none today). If none is admitted, it raises `NotAdmitted(reason, retry_after)`. The reason is `deferred` when a background or batch call was refused only by its reserve, otherwise `provider_capacity`.
+  - **Rate limits:** `ProviderError` gains `rate_limited` and `retry_after`. A rate-limited response calls `capacity_block`, records usage `rate_limited` with nothing spent, and raises `NotAdmitted("provider_capacity", retry_after)`. The gateway never retries it itself (AC-12).
+  - **Fail closed:** if the capacity store errors, the call raises `NotAdmitted("provider_capacity", 30)` and is never admitted unmetered.
+  - **Metric:** the counter `abacus.admission`, with `provider`, `model`, `work_class`, `outcome` and `reason`.
+- **Screening.**
+  - `screen` turns `NotAdmitted` into a non-retryable `ApplicationError("NotAdmitted", reason, retry_after)`. Before raising, it marks the run queued with the reason and `estimated_start_at = now + retry_after`. Once admitted, it marks the run resumed.
+  - Behind `patched("admission")`, the workflow catches it, sleeps for `retry_after` with jitter (at least 1 s and at most 60 s), and calls `screen` again. Past the class's maximum wait (from the slot grant), the run fails `capacity_timeout`.
+- **F1 (review question): wait for capacity while holding the slot.** Recommended. The slot stands for the run's work in progress. Releasing it to wait would let the firm start more work that needs the same provider, and a run would queue twice. A slot grant clears only slot reasons (`firm_cap`, `engagement_cap`, `class_capacity`), and admission clears only `provider_capacity`/`deferred`, so no queued and resumed entries flap in the audit trail.
+
 ### Steps
 1. Design and interface contract, after the spec is approved.
 2. Implementation.
