@@ -4,7 +4,7 @@ title: Work-class queues and admission control
 spec: SPEC-003
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-12, AC-13, AC-14, AC-15, AC-16]
 risk_zone: amber
-status: in-progress
+status: done
 branch: task-018-work-classes
 worktree:
 created: 2026-10-07
@@ -420,6 +420,7 @@ Source: SPEC-003 AC-9–12, AC-13 (admission reasons), AC-14, AC-15 (admission),
 |---|---|---|---|
 
 ## Progress log
+- `2026-10-07` — Done: merged (018a #26, 018b #28, 018c #29). Independent tests for 018c are deferred (founder, 2026-10-07).
 - `2026-10-07` — Created with SPEC-003 (draft) for founder review.
 - `2026-10-07` — SPEC-003 approved. Design §1–8 and D1–D5 written for founder review.
 - `2026-10-07` — 018c reviews (security B1 integer overflow, B2 audit flapping, S1–S7, N1–N4; architecture B1 flapping, S1 ADR-072 order, S2 history and floor, S3 total wait, S4 block masking, S5 oversize, S6 AC-10, nits). All fixed or recorded; SPEC-003 amended. The security reviewer agreed with the UOW exemption for `admission.py`. Contract revision 1 (018c).
@@ -454,10 +455,4 @@ Source: SPEC-003 AC-9–12, AC-13 (admission reasons), AC-14, AC-15 (admission),
 - Glossary entries "work class" and "essential" (A16): the glossary is protected and not in this task's approval.
 
 ## Handoff
-- **Current state:** 018b implemented on `task-018b-slots` (`task-018b-caps` is stale: cut from the pre-merge 018a branch; ignore it).
-- **Exact next step:**
-  1. Run the independent tests on `task-018b-slots-tests` from the 018b contract, including the pins.
-  2. Run the security and architecture reviews.
-  3. Cherry-pick, fix, and run the full suite with the compose DB stopped.
-  4. Open the PR.
-  5. Then 018c, admission (design §6).
+- **Done** (018a #26, 018b #28, 018c #29). Follow-ups: Independent tests for 018c are deferred (founder, 2026-10-07).

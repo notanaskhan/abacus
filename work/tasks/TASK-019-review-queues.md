@@ -4,7 +4,7 @@ title: Review queues and review decisions
 spec: SPEC-004
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-12, AC-13, AC-14]
 risk_zone: red
-status: in-progress
+status: done
 branch: task-019-review-queues
 worktree:
 created: 2026-10-07
@@ -196,6 +196,7 @@ Errors show the API's messages. Full item detail is increment 6.
 |---|---|---|---|
 
 ## Progress log
+- `2026-10-07` — Done: merged (#31). Independent tests are deferred, and the founder waived the line-by-line review (2026-10-07).
 - `2026-10-07` — Rebased onto main after 018b (#28) and 018c (#29), with pin updates (the 201 routes and the definer functions). The founder waived the red-zone line-by-line review: "merge 019 too when green, skip my review". Independent tests are still deferred.
 - `2026-10-07` — Reviews: security (H1 release across engagements, H2 ADR-005 sidesteps, H3 races, M1–M3, L1–L4) and architecture (B1 reject stranding, B2 BOUND-002 test, B4 pool starvation, M1–M13, nits).
   - **Fixed:**
@@ -256,8 +257,4 @@ Errors show the API's messages. Full item detail is increment 6.
 - Glossary entries "review queue" and "reason code" (protected).
 
 ## Handoff
-- **Current state:** implemented on `task-019-review`, stacked on `task-018c-admission`. Independent tests are deferred, by the founder.
-- **Next:**
-  1. Run the security and architecture reviews.
-  2. After 018b and 018c merge, rebase onto main and open the PR (red: the founder's line-by-line review).
-  3. Add the independent tests when the founder asks.
+- **Done** (#31). Follow-ups: Independent tests are deferred, and the founder waived the line-by-line review (2026-10-07).
