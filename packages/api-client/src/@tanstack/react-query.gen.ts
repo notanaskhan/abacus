@@ -3,8 +3,8 @@
 import { queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, assign, createEngagement, createRequestItem, createWall, getEngagement, getRetrieval, listEngagements, listEvidenceVersions, listRequestItems, listScreeningResults, listWalls, me, type Options, reasonCodes, reject, release, removeWall, reviewQueue, sendBack, startRetrieval, take } from '../sdk.gen';
-import type { AcceptData, AcceptError, AcceptResponse, AssignData, AssignError, AssignResponse, CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListWallsData, ListWallsError, ListWallsResponse, MeData, MeError, MeResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, SendBackData, SendBackError, SendBackResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, TakeData, TakeError, TakeResponse } from '../types.gen';
+import { accept, assign, createEngagement, createRequestItem, createWall, getBudget, getEngagement, getRetrieval, listEngagements, listEvidenceVersions, listRequestItems, listScreeningResults, listWalls, me, metering, type Options, putBudget, reasonCodes, reject, release, removeWall, reviewQueue, sendBack, startRetrieval, take } from '../sdk.gen';
+import type { AcceptData, AcceptError, AcceptResponse, AssignData, AssignError, AssignResponse, CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, GetBudgetData, GetBudgetError, GetBudgetResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListWallsData, ListWallsError, ListWallsResponse, MeData, MeError, MeResponse, MeteringData, MeteringError, MeteringResponse, PutBudgetData, PutBudgetError, PutBudgetResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, SendBackData, SendBackError, SendBackResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, TakeData, TakeError, TakeResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -37,6 +37,41 @@ const createQueryKey = <TOptions extends Options>(id: string, options?: TOptions
         params.query = options.query;
     }
     return [params];
+};
+
+export const getBudgetQueryKey = (options?: Options<GetBudgetData>) => createQueryKey('getBudget', options);
+
+/**
+ * Get Budget Route
+ */
+export const getBudgetOptions = (options?: Options<GetBudgetData>) => queryOptions<GetBudgetResponse, GetBudgetError, GetBudgetResponse, ReturnType<typeof getBudgetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getBudget({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getBudgetQueryKey(options)
+});
+
+/**
+ * Put Budget Route
+ */
+export const putBudgetMutation = (options?: Partial<Options<PutBudgetData>>): UseMutationOptions<PutBudgetResponse, PutBudgetError, Options<PutBudgetData>> => {
+    const mutationOptions: UseMutationOptions<PutBudgetResponse, PutBudgetError, Options<PutBudgetData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await putBudget({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
 };
 
 export const listEngagementsQueryKey = (options?: Options<ListEngagementsData>) => createQueryKey('listEngagements', options);
@@ -352,6 +387,24 @@ export const meOptions = (options?: Options<MeData>) => queryOptions<MeResponse,
         return data;
     },
     queryKey: meQueryKey(options)
+});
+
+export const meteringQueryKey = (options?: Options<MeteringData>) => createQueryKey('metering', options);
+
+/**
+ * Metering Route
+ */
+export const meteringOptions = (options?: Options<MeteringData>) => queryOptions<MeteringResponse, MeteringError, MeteringResponse, ReturnType<typeof meteringQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await metering({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: meteringQueryKey(options)
 });
 
 export const listWallsQueryKey = (options?: Options<ListWallsData>) => createQueryKey('listWalls', options);

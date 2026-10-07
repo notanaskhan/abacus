@@ -48,6 +48,22 @@ async def insert_run(
     ).scalar_one_or_none()
 
 
+async def runs_since(
+    session: AsyncSession, agent_id: str, engagement_id: UUID, since: datetime
+) -> int:
+    """The agent's runs for the engagement since `since` (the action cap, SPEC-007)."""
+    count = await session.scalar(
+        select(func.count())
+        .select_from(AgentRun)
+        .where(
+            AgentRun.agent_id == agent_id,
+            AgentRun.engagement_id == engagement_id,
+            AgentRun.started_at >= since,
+        )
+    )
+    return count or 0
+
+
 async def run_for_event(
     session: AsyncSession, agent_id: str, source_event_id: UUID
 ) -> AgentRun | None:

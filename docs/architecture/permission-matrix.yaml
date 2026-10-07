@@ -28,6 +28,8 @@ actions:
   # --- Firm administration ---
   firm.manage_users:        {firm_admin: allow, mfa_recent: required}
   firm.manage_settings:     {firm_admin: allow, mfa_recent: required}
+  budget.read:              {firm_admin: allow, practice_leader: allow}   # SPEC-007
+  budget.manage:            {firm_admin: allow, mfa_recent: required}     # SPEC-007 Q3
   autonomy_policy.update:   {firm_admin: allow, mfa_recent: required}
   wall.create:              {firm_admin: allow, mfa_recent: required}
   wall.remove:              {firm_admin: allow, mfa_recent: required}

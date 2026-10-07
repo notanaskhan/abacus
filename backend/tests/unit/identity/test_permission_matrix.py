@@ -622,7 +622,18 @@ def test_ac20_visible_for_a_firm_role_allow_compiles_to_true(action: str) -> Non
         assert "engagement_members" not in shown
 
 
-@pytest.mark.parametrize("action", READ_ACTIONS)
+# Firm-level reads (e.g. `budget.read`, SPEC-007) grant no engagement role: nothing to filter on.
+ENGAGEMENT_READS = [
+    a for a in READ_ACTIONS if any(YAML_ACTIONS[a].get(r) == "allow" for r in ENGAGEMENT_ROLES)
+]
+
+
+@pytest.mark.parametrize("action", [a for a in READ_ACTIONS if a not in ENGAGEMENT_READS])
+def test_ac20_visible_for_a_firm_level_read_without_a_firm_role_is_false(action: str) -> None:
+    assert _sql(visible(_ctx(), action, column("engagement_id", Uuid()))) == "false"
+
+
+@pytest.mark.parametrize("action", ENGAGEMENT_READS)
 def test_ac20_visible_without_a_firm_allow_filters_on_engagement_membership(action: str) -> None:
     ctx = _ctx()
     expression = visible(ctx, action, column("engagement_id", Uuid()))
