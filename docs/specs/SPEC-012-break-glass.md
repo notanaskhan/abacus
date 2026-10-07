@@ -1,7 +1,7 @@
 ---
 id: SPEC-012
 title: Break-glass support access
-status: draft
+status: approved
 owner: founder
 risk_zone: red
 related_adrs: [ADR-028, ADR-007, ADR-014, ADR-020, ADR-024, ADR-036, ADR-098]
@@ -171,16 +171,17 @@ None beyond the firm admin API in v1. A sessions panel comes with the admin UI.
 The migration is additive and extends the actor kind. Until staff identities exist (TASK-014), only local and CI use the fake staff issuer.
 
 ## 20. Open questions
-- [ ] **Q1: approval.** *Recommendation:* a firm admin with fresh MFA approves normal sessions. Emergency sessions need a second staff member, last at most 1 hour, and are flagged to the firm until a firm admin acknowledges them.
-- [ ] **Q2: what support can read.** *Recommendation:*
+None. Answered by the founder on 2026-10-07 (all recommendations):
+- [x] **Q1: approval.** *Recommendation:* a firm admin with fresh MFA approves normal sessions. Emergency sessions need a second staff member, last at most 1 hour, and are flagged to the firm until a firm admin acknowledges them.
+- [x] **Q2: what support can read.** *Recommendation:*
   - read actions only;
   - `metadata` scope sees structure (engagements, items, statuses, runs, usage);
   - `content` scope adds evidence and screening content;
   - walls always apply;
   - never any write, decision, export or flag change.
-- [ ] **Q3: duration.** *Recommendation:* at most 4 hours, ended early by the staff member or a firm admin, with one active session per staff member per firm.
-- [ ] **Q4: staff identity.** *Recommendation:* a separate issuer for staff (the identity vendor's staff organisation, with MFA), configured with TASK-014, and the fake issuer locally. Staff are never members of a firm.
-- [ ] **Q5: access review.** *Recommendation:* `make access-review QUARTER=…` writes a JSON report with reasons fingerprinted, committed under `docs/operations/access-reviews/`. The founder signs off each quarter in the commit.
+- [x] **Q3: duration.** *Recommendation:* at most 4 hours, ended early by the staff member or a firm admin, with one active session per staff member per firm.
+- [x] **Q4: staff identity.** *Recommendation:* a separate issuer for staff (the identity vendor's staff organisation, with MFA), configured with TASK-014, and the fake issuer locally. Staff are never members of a firm.
+- [x] **Q5: access review.** *Recommendation:* `make access-review QUARTER=…` writes a JSON report with reasons fingerprinted, committed under `docs/operations/access-reviews/`. The founder signs off each quarter in the commit.
 
 ## 21. Future / explicitly deferred
 - Time-bound infrastructure roles and their alarms (TASK-014).
