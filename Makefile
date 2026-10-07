@@ -89,8 +89,11 @@ test:
 test-integration:
 	cd backend && uv run pytest tests/integration
 
+# Evaluation suites (SPEC-005): `make evals EVAL_ARGS="--agent evidence.screener --subset fast"`.
+# Throwaway containers; exits non-zero unless the run passes. Without a model provider it runs on
+# the fake model (a fake run proves the code paths, never a model's quality).
 evals:
-	cd backend && uv run pytest ../evals
+	cd backend && uv run python -m abacus_tools.evals $(EVAL_ARGS)
 
 generate:
 	cd backend && uv run python -m abacus.api.export_openapi > ../packages/api-client/openapi.json

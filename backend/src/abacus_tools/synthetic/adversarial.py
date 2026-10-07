@@ -47,6 +47,11 @@ def _unicode(name: str) -> str:
     return f"{name[:middle]}​{name[middle:]}‮"
 
 
+# Public names for reuse by evaluation suites (TASK-020).
+lookalike = _lookalike
+unicode_deceptive = _unicode
+
+
 def apply(
     entity: ClientEntity, rng: Random
 ) -> tuple[ClientEntity, tuple[AdversarialPayload, ...]]:
