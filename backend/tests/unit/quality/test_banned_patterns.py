@@ -2472,3 +2472,28 @@ def test_ac3_dispatch_001_is_clean_on_the_real_source() -> None:
 def test_ac3_dispatch_001_is_registered_for_adr_071() -> None:
     [rule] = [r for r in bp.RULES if r.id == "DISPATCH-001"]
     assert rule.adr == "ADR-071"
+
+
+# --- EVAL-001 (TASK-020): evaluation mode is the evaluation runner's only ------------------------
+
+EVAL_MODE_VIOLATING = [
+    "from abacus.ai_gateway import evaluation\n",
+    "import abacus.ai_gateway as g\nwith g.evaluation('small'):\n    pass\n",
+]
+
+
+@pytest.mark.parametrize("source", EVAL_MODE_VIOLATING)
+@pytest.mark.parametrize(
+    "path", ["src/abacus/modules/agents/service.py", "src/abacus_tools/local/seed_dev.py"]
+)
+def test_eval_001_flags_evaluation_mode_outside_the_runner(
+    tmp_path: Path, source: str, path: str
+) -> None:
+    assert _flags(tmp_path, "EVAL-001", path, source)
+
+
+@pytest.mark.parametrize(
+    "path", ["src/abacus_tools/evals/runner.py", "src/abacus/ai_gateway/__init__.py"]
+)
+def test_eval_001_allows_the_runner_and_the_gateway(tmp_path: Path, path: str) -> None:
+    assert not _flags(tmp_path, "EVAL-001", path, EVAL_MODE_VIOLATING[1])

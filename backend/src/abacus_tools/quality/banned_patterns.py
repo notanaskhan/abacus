@@ -705,6 +705,20 @@ def _check_review_decide(src: SourceFile) -> Iterator[Finding]:
             yield Finding(getattr(node, "lineno", 1), "only a person decides (ADR-005)")
 
 
+def _check_evaluation_mode(src: SourceFile) -> Iterator[Finding]:
+    """Only the evaluation runner pins a tier (`ai_gateway.evaluation`, SPEC-005; TASK-020):
+    product code never switches the gateway into evaluation mode."""
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.Call) and _terminal_name(node.func) == "evaluation":
+            yield Finding(node.lineno, "evaluation mode is the evaluation runner's only")
+        elif isinstance(node, ast.ImportFrom) and (node.module or "").startswith(
+            "abacus.ai_gateway"
+        ):
+            for alias in node.names:
+                if alias.name == "evaluation":
+                    yield Finding(node.lineno, "evaluation mode is the evaluation runner's only")
+
+
 def _check_resource_archived(src: SourceFile) -> Iterator[Finding]:
     """`archived` comes from the engagement row, never a literal (TASK-008 loads it)."""
     for node in ast.walk(src.tree):
@@ -1202,10 +1216,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_seed_dev.py",
             # Records replay fixtures against throwaway containers (seeds as the superuser).
             "src/abacus_tools/workflows/record_retrieval.py",
-            "src/abacus_tools/stack.py",  # the throwaway stack the recorders and evals share
-            # Evaluation runs on that stack and their store (SPEC-005 Q2; TASK-020).
-            "src/abacus_tools/evals/runner.py",
-            "src/abacus_tools/evals/publish.py",
+            "src/abacus_tools/stack.py",  # the recorders' and evals' stack (connect_db)
             # Seeds the local stack as its superuser (local only; TASK-012).
             "src/abacus_tools/local/seed_dev.py",
         ),
@@ -1429,6 +1440,14 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/evidence/service.py",
             "src/abacus/modules/evidence/routes.py",
         ),
+    ),
+    Rule(
+        id="EVAL-001",
+        description="Only the evaluation runner switches the gateway into evaluation mode",
+        adr="ADR-019",
+        check=_check_evaluation_mode,
+        include=("src/abacus/*", "src/abacus_tools/*"),
+        exclude=("src/abacus/ai_gateway/__init__.py", "src/abacus_tools/evals/*"),
     ),
     Rule(
         id="AUTHZ-003",

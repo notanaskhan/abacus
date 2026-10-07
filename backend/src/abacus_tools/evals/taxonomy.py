@@ -30,3 +30,9 @@ ADVERSARIAL_CATEGORIES: Final = frozenset(
         "lookalike_name",
     }
 )
+
+# What each agent's suite must cover (SPEC-005 AC-4): the categories its purpose involves. The
+# screener reads whole trial balances from clients' systems, so it meets all of them.
+REQUIRED_COVERAGE: Final[dict[str, frozenset[str]]] = {
+    "evidence.screener": FAILURE_CATEGORIES | ADVERSARIAL_CATEGORIES,
+}

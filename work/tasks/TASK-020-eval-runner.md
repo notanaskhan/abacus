@@ -161,6 +161,28 @@ Real-model runs need a provider (TASK-014): until then the machinery is proven w
 |---|---|---|---|
 
 ## Progress log
+- `2026-10-07` — 020a review fixes (security and architecture):
+  - eligibility needs full, current-suite, real runs; later failures, `aborted_cost` or `errored` runs revoke it;
+  - `publish` validates, recomputes, checks the signature, refuses replays and refuses remote stores;
+  - the store freezes run identity and accepts case results only while a run is running;
+  - the guard has no CI bypass and refuses destinations away from this machine, and the engine is checked against the stack;
+  - error-path cost counts;
+  - `cost_regression:no_baseline` for real runs;
+  - `errored` runs;
+  - evaluation mode never steps down, and the model is asserted;
+  - prompt-keyed eligibility;
+  - EVAL-001;
+  - required coverage, mutation-category matching, key cases and dangerous-class coverage of the fast subset;
+  - `sampling`;
+  - the model-judge wrapper with a calibration record, and the `eval.judge@v0` prompt;
+  - ECE on the model's own answers, routed with the spec's route;
+  - restored `odd_account_name` and `tag_breakout`;
+  - agent and completion checks;
+  - a negative control;
+  - `eval.*` logs and counters;
+  - route and seeds recorded.
+
+  Rebased onto main after the `insert_run` fix (#33), and the per-attempt engine workaround removed.
 - `2026-10-07` — 020a implemented. Every gate passes.
   - **What was built:**
     - `abacus_tools.evals`: suite, taxonomy, cases, graders, metrics, calibration, gate, runner, CLI and publish;
@@ -187,10 +209,17 @@ Real-model runs need a provider (TASK-014): until then the machinery is proven w
 | Expected stages include `failed` (unparseable or rejected content), besides `failed_validation` | `irrelevant`, `unreadable`, `unicode_deception` and `oversized_field` are rejected before validation | No |
 | Cases run one at a time, not concurrently | The fake connector serves one file per connection and period; Phase 1 suite sizes are small | No |
 | Evaluation spend isn't tagged on usage records (`purpose = evaluation`) | Runs use a throwaway database: no firm's spend is ever mixed in. Revisit when runs publish to shared stores | No |
-| The runner opens fresh connections per attempt | Works around a product bug in `connections.repository.insert_run` (below) | No |
+| The runner uses one engine for the whole run | `connections.repository.insert_run`'s prepared-plan bug was fixed on main (#33); the per-attempt workaround is gone | No |
+| Usage records aren't tagged `purpose = evaluation` | Runs use a throwaway database, so no firm's spend is mixed in. Revisit with shared stores | No (deviation from spec §7) |
+| The AC-13 spec check in CI (a `cheaper_tiers` entry with no passing run) is deferred to 020b | It belongs with the CI jobs | No |
+| No fallback-model path | Model routes and failover come with ADR-073's spec | No |
+| Runs record their route (the model provider) and seeds (the synthetic generator's) | Spec §14: runs keep their full inputs | No |
+| `cases:<ids>` is its own failure reason (key cases below the suite's pass rate), besides `threshold:*` | It names which cases are flaky, which a metric can't | No (design §6 note) |
+| Eligibility is keyed on the agent's own prompt and current suite version (generated `ai_gateway._eval_suites`) and full-suite runs only | Review: a call can't borrow another agent's eligibility; fast or old-suite runs never count | No |
+| `publish` recomputes the verdict, needs CI's HMAC signature for real runs, refuses replays and remote stores without `--environment` | Review: the store must hold only runs CI really made | No |
 
 ## Gotchas and discoveries
-- **Product bug (connections, protected, outside this approval):** `insert_run` binds its `ON CONFLICT … WHERE status IN (…)` predicate as parameters. After about five executions on one pooled connection, Postgres switches the prepared statement to a generic plan and the insert fails ("no unique or exclusion constraint matching the ON CONFLICT specification"). Steady retrieval load on one pooled connection would hit it. Fix: write the predicate as a literal (`text("status IN ('running', 'succeeded')")`), with a test that runs more than five retrievals on one connection.
+- **Product bug, fixed on main (#33):** `insert_run` binds its `ON CONFLICT … WHERE status IN (…)` predicate as parameters. After about five executions on one pooled connection, Postgres switches the prepared statement to a generic plan and the insert fails ("no unique or exclusion constraint matching the ON CONFLICT specification"). Steady retrieval load on one pooled connection would hit it. Fix: write the predicate as a literal (`text("status IN ('running', 'succeeded')")`), with a test that runs more than five retrievals on one connection.
 -
 
 ## Questions for the human
@@ -199,9 +228,9 @@ Real-model runs need a provider (TASK-014): until then the machinery is proven w
 - Glossary entries "evaluation run", "grader", "calibration" and "dangerous error" (protected).
 
 ## Handoff
-- **Current state:** 020a is on `task-020-eval-runner`. It has no PR yet.
+- **Current state:** 020a with the review fixes is on `task-020a-runner`. It has no PR yet.
 - **Next:**
-  1. Run the reviews, then open the 020a PR.
-  2. 020b: the CI jobs. Stage 3 `evals-fast` filtered by path (ADR-082 filters) and stage 5 `evals-full` nightly, with a test of their selection.
-  3. D5: add `evals/**/suite.yaml`, `evals/baselines.yaml` and `evals/judges/**` to `protected-paths.md` and the hook. Not done yet.
-  4. Fix the `connections.insert_run` bug (needs a connections approval), then remove the runner's fresh-connection workaround.
+  1. Open the 020a PR.
+  2. 020b: the CI jobs. Stage 3 `evals-fast` filtered by path, and stage 5 `evals-full` nightly. CI sets `ABACUS_ENVIRONMENT=test` or `evaluation`, and `ABACUS_EVAL_SIGNING_KEY` for real runs. Include the AC-13 `cheaper_tiers` spec check.
+  3. D5 (deferred): protect `evals/**/suite.yaml`, `evals/baselines.yaml` and `evals/judges/**` in `protected-paths.md` and the hook.
+  4. With TASK-014: a real provider, the first real runs, and `evals/baselines.yaml`.

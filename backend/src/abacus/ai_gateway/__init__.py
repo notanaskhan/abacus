@@ -35,6 +35,7 @@ from opentelemetry.trace import StatusCode
 from pydantic import BaseModel, ValidationError
 from sqlalchemy import text
 
+from abacus.ai_gateway._eval_suites import EVAL_SUITES
 from abacus.ai_gateway.admission import (
     CallTooLarge,
     NotAdmitted,
@@ -305,16 +306,30 @@ def evaluation(tier: Tier | None) -> Generator[None]:
 async def eligible(
     tenant: TenantContext, agent_id: str, tier: Tier, model: str, prompt_version: str
 ) -> bool:
-    """Whether the latest finished evaluation run of `agent_id` on this tier, model and prompt
-    version passed, on a real model (SPEC-005 AC-13). Fails closed: any error means no."""
+    """Whether the latest finished full-suite evaluation run of `agent_id` on this tier and model,
+    with its current prompt and suite version, passed on a real model (SPEC-005 AC-13). The
+    prompt must be the agent's own (`_eval_suites`, generated from its spec), so a call can't
+    borrow another agent's eligibility. Fails closed: an unknown agent, another prompt, or any
+    error means no."""
+    known = EVAL_SUITES.get(agent_id)
+    if known is None or known[0] != prompt_version:
+        return False
     try:
         async with tenant_session(tenant) as session:
             found = await session.scalar(
-                text("SELECT eval_eligible(:agent, :tier, :model, :prompt)"),
-                {"agent": agent_id, "tier": tier, "model": model, "prompt": prompt_version},
+                text("SELECT eval_eligible(:agent, :tier, :model, :prompt, :suite)"),
+                {
+                    "agent": agent_id,
+                    "tier": tier,
+                    "model": model,
+                    "prompt": prompt_version,
+                    "suite": known[1],
+                },
             )
     except Exception as exc:
-        _log.warning("admission.eligibility_unavailable", agent_id=agent_id, error=exc)
+        _log.warning(
+            "admission.eligibility_unavailable", agent_id=agent_id, error=type(exc).__name__
+        )
         return False
     return bool(found)
 
@@ -346,7 +361,8 @@ async def _admitted(
 
 
 async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult[T]:
-    tier = _evaluation_tier.get() or c.tier
+    pinned = _evaluation_tier.get()
+    tier = pinned or c.tier
     model = MODELS[tier][0]
     user = c.context.render()
     inputs_hash = hashlib.sha256(f"{found.ref}\n{user}".encode()).hexdigest()
@@ -371,7 +387,8 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
             return GatewayResult("escalated", None, attempt - 1, spent, inputs_hash, model, found)
         # Admission before every attempt; only the first may step down to a cheaper tier.
         needed = estimate_tokens(request.system + request.user) + c.max_output_tokens
-        tiers = (tier, *c.cheaper_tiers) if attempt == 1 else (tier,)
+        # Evaluation mode never steps down: a run measures exactly the tier it pinned.
+        tiers = (tier, *c.cheaper_tiers) if attempt == 1 and pinned is None else (tier,)
         tier, model = await _admitted(cast(GatewayCall[BaseModel], c), tiers, needed, found.ref)
         request = replace(request, model=model)
         try:
