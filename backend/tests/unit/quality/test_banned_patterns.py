@@ -2343,3 +2343,127 @@ def test_ac20_wf_001_reports_one_finding_per_violation_with_its_line(tmp_path: P
 
 def test_ac20_wf_001_is_clean_on_the_real_workflows() -> None:
     assert [v for v in bp.scan() if v.rule_id == "WF-001"] == []
+
+
+# --- DISPATCH-001 (TASK-018; ADR-071): workflows start only through kernel.dispatch --------------
+
+DISPATCH_FILES = [
+    "src/abacus/modules/connections/retrievals.py",
+    "src/abacus/modules/agents/screenings.py",
+    "src/abacus/modules/engagements/service.py",
+    "src/abacus/api/app.py",
+    "src/abacus/kernel/logging.py",
+    "src/abacus/kernel/telemetry.py",
+    "src/abacus/kernel/worker_helpers.py",
+    "src/abacus/worker/other.py",
+]
+DISPATCH_ALLOWED = [
+    "src/abacus/kernel/dispatch.py",
+    "src/abacus/kernel/temporal.py",
+    "src/abacus/worker/__main__.py",
+]
+DISPATCH_VIOLATING = [
+    # AC-3: calls
+    "async def f(client):\n    await client.start_workflow('x', 1, id='i')\n",
+    "async def f(client):\n    await client.execute_workflow('x', 1, id='i')\n",
+    "async def f(client):\n    await client.signal_with_start_workflow('x', 1, id='i')\n",
+    "async def f(client):\n    await client.start_update_with_start_workflow('x')\n",
+    "async def f(workflow):\n    await workflow.start_child_workflow('x')\n",
+    "async def f(workflow):\n    await workflow.execute_child_workflow('x')\n",
+    "async def f(client):\n    await client.create_schedule('s', schedule)\n",
+    "def f():\n    return ScheduleActionStartWorkflow('x')\n",
+    "async def f():\n    return await temporal_client()\n",
+    "async def f(kernel):\n    return await kernel.temporal_client()\n",
+    # AC-3: the task queue keyword
+    "def f(Worker, c):\n    return Worker(c, task_queue='q')\n",
+    "def f(client):\n    client.something(id='i', task_queue='q')\n",
+    "def f(Worker, c, name):\n    return Worker(c, task_queue=name)\n",
+    # references that are not calls: an alias, getattr, partial, a mapping value
+    "def f(client):\n    go = client.start_workflow\n    return go\n",
+    "def f(c):\n    return getattr(c, 'start_workflow')\n",
+    "def f(c):\n    return getattr(c, 'execute_child_workflow')\n",
+    "def f(c):\n    return getattr(c, 'create_schedule')(1)\n",
+    "def f(c, partial):\n    return partial(c.start_workflow, 'x')\n",
+    "def f():\n    return {'go': 'start_workflow'}\n",
+    "START = 'signal_with_start_workflow'\n",
+    "def f(c):\n    return [c.execute_workflow, c.start_workflow]\n",
+    "go = start_workflow\n",
+    "x = temporal_client\n",
+    "def f(fn=temporal_client):\n    return fn\n",
+    # imports
+    "from temporalio.client import Client\n",
+    "from temporalio.client import Client as C\n",
+    "from temporalio.client import WorkflowHandle, Client\n",
+    "from temporalio.client import start_workflow as go\n",
+    "from abacus.kernel.temporal import temporal_client\n",
+    "from abacus.kernel.temporal import temporal_client as tc\n",
+    "from somewhere import start_workflow as go\n",
+    "from somewhere import execute_child_workflow as run\n",
+    "import abacus.kernel.temporal as t\nt.temporal_client()\n",
+]
+DISPATCH_CLEAN = [
+    "from abacus.kernel.dispatch import dispatch\n",
+    "async def f(dispatch, W):\n    await dispatch(W, 1, id='i')\n",
+    "from temporalio.common import WorkflowIDReusePolicy\n",
+    "from temporalio.exceptions import WorkflowAlreadyStartedError\n",
+    "from temporalio import workflow\n",
+    "def f(client):\n    return client.get_workflow_handle('x')\n",
+    "def f(task_queue):\n    return task_queue\n",
+    "def f(c):\n    return c.describe(task_queue_name='q')\n",
+    "x = {'queue': 'q'}\n",
+    "def f():\n    return 'started'\n",
+    "async def f(client):\n    await client.start()\n",
+]
+
+
+@pytest.mark.parametrize("source", DISPATCH_VIOLATING)
+@pytest.mark.parametrize("rel", DISPATCH_FILES)
+def test_ac3_dispatch_001_flags_starting_a_workflow_outside_the_kernel(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert _flags(tmp_path, "DISPATCH-001", rel, source)
+
+
+@pytest.mark.parametrize("source", DISPATCH_VIOLATING)
+@pytest.mark.parametrize("rel", DISPATCH_ALLOWED)
+def test_ac3_dispatch_001_allows_the_three_files(tmp_path: Path, rel: str, source: str) -> None:
+    assert not _flags(tmp_path, "DISPATCH-001", rel, source)
+
+
+@pytest.mark.parametrize("source", DISPATCH_VIOLATING)
+@pytest.mark.parametrize("rel", OUTSIDE_SRC)
+def test_ac3_dispatch_001_applies_only_under_src_abacus(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "DISPATCH-001", rel, source)
+
+
+@pytest.mark.parametrize("source", DISPATCH_CLEAN)
+def test_ac3_dispatch_001_ignores_clean_code(tmp_path: Path, source: str) -> None:
+    assert not _flags(tmp_path, "DISPATCH-001", SERVICE, source)
+
+
+def test_ac3_dispatch_001_names_the_line(tmp_path: Path) -> None:
+    _write(tmp_path, SERVICE, "x = 1\nasync def f(c):\n    await c.start_workflow('x')\n")
+    found = [(v.rule_id, v.line) for v in bp.scan(tmp_path) if v.rule_id == "DISPATCH-001"]
+    assert found
+    assert {line for _, line in found} == {3}
+
+
+def test_ac3_dispatch_001_flags_the_getattr_string_on_its_own_line(tmp_path: Path) -> None:
+    _write(tmp_path, SERVICE, "def f(c):\n    return getattr(c, 'start_workflow')\n")
+    assert [v.line for v in bp.scan(tmp_path) if v.rule_id == "DISPATCH-001"] == [2]
+
+
+def test_ac3_dispatch_001_flags_the_task_queue_keyword_on_its_line(tmp_path: Path) -> None:
+    _write(tmp_path, SERVICE, "x = 1\nWorker(c, task_queue='q')\n")
+    assert [v.line for v in bp.scan(tmp_path) if v.rule_id == "DISPATCH-001"] == [2]
+
+
+def test_ac3_dispatch_001_is_clean_on_the_real_source() -> None:
+    assert [v for v in bp.scan() if v.rule_id == "DISPATCH-001"] == []
+
+
+def test_ac3_dispatch_001_is_registered_for_adr_071() -> None:
+    [rule] = [r for r in bp.RULES if r.id == "DISPATCH-001"]
+    assert rule.adr == "ADR-071"

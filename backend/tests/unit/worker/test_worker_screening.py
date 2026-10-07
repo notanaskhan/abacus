@@ -7,8 +7,7 @@ import asyncio
 import os
 import signal
 import uuid
-from types import TracebackType
-from typing import Self
+from collections.abc import Sequence
 
 import pytest
 
@@ -19,20 +18,19 @@ from abacus.worker import __main__ as worker_main
 
 
 class _Worker:
+    """A pool as the worker drives it: `run()` until `shutdown()`."""
+
     def __init__(self, log: list[str]) -> None:
         self.log = log
+        self._stop = asyncio.Event()
 
-    async def __aenter__(self) -> Self:
+    async def run(self) -> None:
         self.log.append("worker entered")
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc: BaseException | None,
-        tb: TracebackType | None,
-    ) -> None:
+        await self._stop.wait()
         self.log.append("worker exited")
+
+    async def shutdown(self) -> None:
+        self._stop.set()
 
 
 def _event(event_type: str) -> OutboxEvent:
@@ -95,7 +93,7 @@ async def test_ac20_a_failed_relay_database_check_stops_the_boot_after_ping(
     monkeypatch.setattr(worker_main, "ping_relay", ping_relay)
     monkeypatch.setattr(worker_main, "key_service", lambda: calls.append("keys"))
     with pytest.raises(RuntimeError, match="relay role cannot connect"):
-        await worker_main.build_worker()
+        await worker_main.build_workers()
     assert calls == ["ping", "ping_relay"]
 
 
@@ -106,23 +104,24 @@ async def test_ac20_run_hosts_the_relay_inside_the_worker_until_the_signal(
     log: list[str] = []
     seen: dict[str, object] = {}
 
-    async def build() -> _Worker:
-        return _Worker(log)
+    async def build(classes: Sequence[str]) -> list[_Worker]:
+        return [_Worker(log)]
 
     async def relay(publisher: Publisher, stop: asyncio.Event) -> None:
         seen["publisher"] = publisher
         seen["stop"] = stop
         log.append("relay started")
         await stop.wait()
-        # Finishing takes a moment: the worker must not exit before the relay has.
         await asyncio.sleep(0.05)
         log.append("relay finished")
 
-    monkeypatch.setattr(worker_main, "build_worker", build)
+    monkeypatch.setattr(worker_main, "build_workers", build)
     monkeypatch.setattr(worker_main, "run_relay", relay)
     asyncio.get_running_loop().call_later(0.1, os.kill, os.getpid(), sig)
     await asyncio.wait_for(worker_main.run(), timeout=10)
-    assert log == ["worker entered", "relay started", "relay finished", "worker exited"]
+    # Pools shut down together with the relay's stop (contract revision 1): no fixed exit order.
+    assert log[:2] == ["worker entered", "relay started"]
+    assert sorted(log[2:]) == ["relay finished", "worker exited"]
     assert isinstance(seen["publisher"], RoutingPublisher)
     stop = seen["stop"]
     assert isinstance(stop, asyncio.Event)
@@ -134,13 +133,13 @@ async def test_ac20_a_relay_that_dies_stops_the_worker_and_its_error_is_raised(
 ) -> None:
     log: list[str] = []
 
-    async def build() -> _Worker:
-        return _Worker(log)
+    async def build(classes: Sequence[str]) -> list[_Worker]:
+        return [_Worker(log)]
 
     async def dying(publisher: Publisher, stop: asyncio.Event) -> None:
         raise RuntimeError("relay crashed")
 
-    monkeypatch.setattr(worker_main, "build_worker", build)
+    monkeypatch.setattr(worker_main, "build_workers", build)
     monkeypatch.setattr(worker_main, "run_relay", dying)
     with pytest.raises(RuntimeError, match="relay crashed"):
         await asyncio.wait_for(worker_main.run(), timeout=10)  # no signal is sent
@@ -173,7 +172,7 @@ async def test_ac14_the_fake_provider_is_configured_only_in_local(
         monkeypatch.setattr(worker_main, "temporal_client", client)
         monkeypatch.setattr(worker_main, "Worker", fake_worker)
         monkeypatch.setattr(worker_main, "configure_provider", provided.append)
-        await worker_main.build_worker()
+        await worker_main.build_workers()
     finally:
         monkeypatch.undo()
         settings.cache_clear()

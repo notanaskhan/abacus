@@ -61,7 +61,7 @@ def _event(payload: dict[str, object], event_type: str = EVIDENCE_VERSION_CREATE
 def test_ac14_screening_starts_from_evidence_version_created() -> None:
     assert EVIDENCE_VERSION_CREATED == "evidence_version.created"
     assert {"evidence_version.created": start_screening} == SUBSCRIPTIONS
-    assert (ScreeningWorkflow,) == WORKFLOWS
+    assert {ScreeningWorkflow: "time_sensitive"} == WORKFLOWS
     assert len(ACTIVITIES) == 3
 
 

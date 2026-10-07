@@ -14,7 +14,8 @@ import base64
 import hashlib
 import json
 import uuid
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, Iterator
+from contextlib import AsyncExitStack, asynccontextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -26,7 +27,10 @@ import pytest
 from botocore.exceptions import ClientError
 from sqlalchemy.exc import DBAPIError
 from temporalio import activity
-from temporalio.client import Client, WorkflowFailureError
+from temporalio.api.enums.v1 import TaskQueueType
+from temporalio.api.taskqueue.v1 import TaskQueue
+from temporalio.api.workflowservice.v1 import DescribeTaskQueueRequest
+from temporalio.client import Client, WorkflowFailureError, WorkflowHandle
 from temporalio.common import WorkflowIDConflictPolicy
 from temporalio.exceptions import ApplicationError, CancelledError
 from temporalio.testing import ActivityEnvironment
@@ -42,6 +46,7 @@ from abacus.kernel.db import (
     configure_relay_engine,
     dispose_engine,
 )
+from abacus.kernel.dispatch import WORK_CLASSES, queue_for
 from abacus.kernel.storage import s3_client
 from abacus.kernel.temporal import configure_temporal_client, data_converter
 from abacus.modules.connections.api import (
@@ -59,7 +64,7 @@ from abacus.modules.connections.api import (
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.api import XLSX_MEDIA_TYPE, check_ready
 from abacus.modules.identity.api import AuthContext
-from abacus.worker.__main__ import build_worker
+from abacus.worker.__main__ import build_workers
 from abacus_tools.synthetic import generate
 from abacus_tools.synthetic.connector_fixtures import (
     trial_balance_document,
@@ -455,6 +460,16 @@ def task_queue(monkeypatch: pytest.MonkeyPatch, fake_dir: Path) -> Iterator[None
     settings.cache_clear()
 
 
+@asynccontextmanager
+async def _serving() -> AsyncGenerator[list[Worker]]:
+    """Every class's pool (and the legacy queue), as `python -m abacus.worker` runs them."""
+    async with AsyncExitStack() as pools:
+        built = await build_workers()
+        for pool in built:
+            await pools.enter_async_context(pool)
+        yield built
+
+
 @pytest.fixture
 async def temporal(temporal_target: str) -> AsyncIterator[Client]:
     client = await Client.connect(temporal_target, data_converter=data_converter())
@@ -464,9 +479,8 @@ async def temporal(temporal_target: str) -> AsyncIterator[Client]:
 
 
 @pytest.fixture
-async def worker(temporal: Client) -> AsyncIterator[Worker]:
-    built = await build_worker()
-    async with built:
+async def worker(temporal: Client) -> AsyncIterator[list[Worker]]:
+    async with _serving() as built:
         yield built
 
 
@@ -490,7 +504,7 @@ async def _execute(temporal: Client, world: World, run_id: uuid.UUID) -> Retriev
         RetrievalWorkflow.run,
         RetrievalInput(str(world.tenant_id), str(run_id)),
         id=f"test-{uuid.uuid4()}",
-        task_queue=QUEUE,
+        task_queue=queue_for("interactive"),
         execution_timeout=timedelta(seconds=90),
     )
 
@@ -642,7 +656,7 @@ async def test_ac9_a_provider_outage_that_clears_is_retried_to_success(
         RetrievalWorkflow.run,
         RetrievalInput(str(world.tenant_id), str(run_id)),
         id=f"test-{uuid.uuid4()}",
-        task_queue=QUEUE,
+        task_queue=queue_for("interactive"),
         execution_timeout=timedelta(seconds=90),
     )
     async with asyncio.timeout(30):
@@ -678,7 +692,7 @@ async def test_ac11_an_outage_that_exhausts_the_retries_maps_to_provider_unavail
     others = [a for a in ACTIVITIES if not a.__name__.startswith("pull_raw")]
     async with Worker(
         temporal,
-        task_queue=QUEUE,
+        task_queue=queue_for("interactive"),
         workflows=[RetrievalWorkflow],
         activities=[always_down, *others],
     ):
@@ -718,7 +732,7 @@ async def test_ac20_every_input_and_result_in_the_history_is_encrypted(
         RetrievalWorkflow.run,
         RetrievalInput(str(world.tenant_id), str(run_id)),
         id=f"test-{uuid.uuid4()}",
-        task_queue=QUEUE,
+        task_queue=queue_for("interactive"),
     )
     await handle.result()
     history = await handle.fetch_history()
@@ -741,7 +755,7 @@ async def test_ac20_a_client_without_the_codec_cannot_read_the_result(
         RetrievalWorkflow.run,
         RetrievalInput(str(world.tenant_id), str(run_id)),
         id=workflow_id_,
-        task_queue=QUEUE,
+        task_queue=queue_for("interactive"),
     )
     plain = await Client.connect(temporal_target)
     handle = plain.get_workflow_handle(workflow_id_)
@@ -1008,14 +1022,14 @@ async def test_ac20_a_second_start_of_the_same_workflow_id_attaches_to_the_runni
     # no worker has run yet: both starts met one open workflow
     open_ones = [w async for w in temporal.list_workflows(f"WorkflowId = '{wid}'")]
     assert len(open_ones) == 1
-    async with await build_worker():
+    async with _serving():
         outcome = await temporal.get_workflow_handle_for(RetrievalWorkflow.run, wid).result()
         # a third start, after completion, still finds the one workflow ID
         await temporal.start_workflow(
             "retrieval",
             RetrievalInput(str(world.tenant_id), str(first.sync_run_id)),
             id=wid,
-            task_queue=QUEUE,
+            task_queue=queue_for("interactive"),
             id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
         )
     assert outcome.status == "succeeded"
@@ -1031,7 +1045,7 @@ async def test_ac20_a_retrigger_after_a_failed_run_makes_a_new_run_and_workflow_
     first = await trigger_retrieval(
         ctx, engagement_id=world.engagement_id, request_item_id=world.item_id, period=PERIOD
     )
-    async with await build_worker():
+    async with _serving():
         failed = await temporal.get_workflow_handle_for(
             RetrievalWorkflow.run, workflow_id(first.sync_run_id)
         ).result()
@@ -1068,13 +1082,16 @@ async def test_ac20_failure_messages_never_appear_in_the_history(
     others = [a for a in ACTIVITIES if not a.__name__.startswith("pull_raw")]
     run_id = await _start(world)
     async with Worker(
-        temporal, task_queue=QUEUE, workflows=[RetrievalWorkflow], activities=[leaks, *others]
+        temporal,
+        task_queue=queue_for("interactive"),
+        workflows=[RetrievalWorkflow],
+        activities=[leaks, *others],
     ):
         handle = await temporal.start_workflow(
             RetrievalWorkflow.run,
             RetrievalInput(str(world.tenant_id), str(run_id)),
             id=f"test-{uuid.uuid4()}",
-            task_queue=QUEUE,
+            task_queue=queue_for("interactive"),
             execution_timeout=timedelta(seconds=30),
         )
         await handle.result()
@@ -1099,7 +1116,7 @@ async def test_ac20_a_cancelled_workflow_ends_its_run_as_cancelled_and_stays_can
         RetrievalWorkflow.run,
         RetrievalInput(str(world.tenant_id), str(run_id)),
         id=f"test-{uuid.uuid4()}",
-        task_queue=QUEUE,
+        task_queue=queue_for("interactive"),
         execution_timeout=timedelta(seconds=60),
     )
     async with asyncio.timeout(30):
@@ -1117,40 +1134,140 @@ async def test_ac20_a_cancelled_workflow_ends_its_run_as_cancelled_and_stays_can
     assert await seed.item_status(world.item_id) == "open"
 
 
+# --- work-class queues (AC-1, AC-2, AC-16) -------------------------------------------------------
+
+
+async def _activity_queues(
+    handle: WorkflowHandle[RetrievalWorkflow, RetrievalOutcome],
+) -> set[str]:
+    history = await handle.fetch_history()
+    return {
+        e.activity_task_scheduled_event_attributes.task_queue.name
+        for e in history.events
+        if e.HasField("activity_task_scheduled_event_attributes")
+    }
+
+
+async def _pollers(temporal: Client, queue: str) -> int:
+    answer = await temporal.workflow_service.describe_task_queue(
+        DescribeTaskQueueRequest(
+            namespace=temporal.namespace,
+            task_queue=TaskQueue(name=queue),
+            task_queue_type=TaskQueueType.TASK_QUEUE_TYPE_WORKFLOW,
+        )
+    )
+    return len(answer.pollers)
+
+
+@pytest.mark.usefixtures("worker")
+async def test_ac1_the_worker_polls_one_queue_per_class_and_the_legacy_queue(
+    temporal: Client,
+) -> None:
+    queues = [*(queue_for(c) for c in WORK_CLASSES), QUEUE]
+    assert len(set(queues)) == 5
+    async with asyncio.timeout(30):
+        while True:
+            counts = [await _pollers(temporal, queue) for queue in queues]
+            if all(counts):
+                break
+            await asyncio.sleep(0.2)
+    # a queue nobody serves has no poller
+    assert await _pollers(temporal, f"{QUEUE}-unserved") == 0
+
+
+@pytest.mark.usefixtures("worker")
+async def test_ac2_a_dispatched_retrieval_and_its_activities_run_on_the_interactive_queue(
+    seed: Seeder, world: World, temporal: Client
+) -> None:
+    ctx = world.requester.context()
+    triggered = await trigger_retrieval(
+        ctx, engagement_id=world.engagement_id, request_item_id=world.item_id, period=PERIOD
+    )
+    handle = temporal.get_workflow_handle_for(
+        RetrievalWorkflow.run, workflow_id(triggered.sync_run_id)
+    )
+    async with asyncio.timeout(90):
+        outcome = await handle.result()
+    assert outcome.status == "succeeded"
+    assert (await handle.describe()).task_queue == queue_for("interactive")
+    assert await _activity_queues(handle) == {queue_for("interactive")}
+    assert (await seed.run_row(triggered.sync_run_id))["status"] == "succeeded"
+
+
+@pytest.mark.usefixtures("worker")
+async def test_ac16_a_workflow_started_on_the_legacy_queue_completes_there(
+    seed: Seeder, world: World, temporal: Client
+) -> None:
+    run_id = await _start(world)
+    handle = await temporal.start_workflow(
+        RetrievalWorkflow.run,
+        RetrievalInput(str(world.tenant_id), str(run_id)),
+        id=f"legacy-{uuid.uuid4()}",
+        task_queue=QUEUE,  # the old single queue, as a workflow open before the release
+        execution_timeout=timedelta(seconds=90),
+    )
+    async with asyncio.timeout(90):
+        outcome = await handle.result()
+    assert outcome.status == "succeeded"
+    assert (await handle.describe()).task_queue == QUEUE
+    assert await _activity_queues(handle) == {QUEUE}
+    assert (await seed.run_row(run_id))["status"] == "succeeded"
+
+
+async def test_ac16_nothing_serves_the_legacy_queue_when_it_is_switched_off(
+    temporal: Client, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # a base queue of its own: earlier tests' pollers on QUEUE linger on the server
+    base = f"no-legacy-{uuid.uuid4().hex[:10]}"
+    monkeypatch.setenv("ABACUS_TEMPORAL_TASK_QUEUE", base)
+    monkeypatch.setenv("ABACUS_SERVE_LEGACY_QUEUE", "false")
+    settings.cache_clear()
+    async with _serving() as built:
+        assert [w.task_queue for w in built] == [queue_for(c) for c in WORK_CLASSES]
+        await asyncio.sleep(1)
+        assert await _pollers(temporal, base) == 0
+        assert await _pollers(temporal, queue_for("interactive")) > 0
+
+
 # --- worker startup ------------------------------------------------------------------------------
 
 
-async def test_ac20_build_worker_uses_the_configured_task_queue(temporal: Client) -> None:
-    built = await build_worker()
-    assert built.task_queue == QUEUE
+async def test_ac20_build_workers_polls_the_class_queues_and_the_configured_legacy_queue(
+    temporal: Client,
+) -> None:
+    built = await build_workers()
+    assert [w.task_queue for w in built] == [
+        *(queue_for(c) for c in WORK_CLASSES),
+        QUEUE,
+    ]
 
 
-async def test_ac20_build_worker_raises_without_a_usable_key_service(
+async def test_ac20_build_workers_raises_without_a_usable_key_service(
     temporal: Client, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     reset_key_service()
     monkeypatch.setenv("ABACUS_S3_ENDPOINT_URL", "https://s3.example.test")
     settings.cache_clear()
     with pytest.raises(RuntimeError, match="key service"):
-        await build_worker()
+        await build_workers()
 
 
-async def test_ac20_build_worker_raises_when_the_database_is_unreachable(
+async def test_ac20_build_workers_raises_when_the_database_is_unreachable(
     temporal: Client,
 ) -> None:
     await dispose_engine()
     configure_engine("postgresql+asyncpg://abacus_app:test-unused@127.0.0.1:1/abacus")
     with pytest.raises((OSError, DBAPIError)):
-        await build_worker()
+        await build_workers()
 
 
-async def test_ac20_build_worker_raises_without_a_usable_payload_codec(
+async def test_ac20_build_workers_raises_without_a_usable_payload_codec(
     temporal: Client, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("ABACUS_TEMPORAL_PAYLOAD_KEY", "test-too-short")
     settings.cache_clear()
     with pytest.raises(ValueError):
-        await build_worker()
+        await build_workers()
 
 
 @pytest.fixture
@@ -1180,10 +1297,10 @@ async def test_ac20_check_ready_accepts_a_bucket_with_object_lock() -> None:
     await check_ready()
 
 
-async def test_ac20_build_worker_raises_for_a_bucket_without_object_lock(
+async def test_ac20_build_workers_raises_for_a_bucket_without_object_lock(
     temporal: Client, unlocked_bucket: tuple[S3Client, str]
 ) -> None:
     client, name = unlocked_bucket
     storage.configure_storage(client, name)
     with pytest.raises((RuntimeError, ClientError)):
-        await build_worker()
+        await build_workers()
