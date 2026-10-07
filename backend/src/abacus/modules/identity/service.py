@@ -18,7 +18,7 @@ from sqlalchemy.exc import IntegrityError
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
-from abacus.modules.identity.authz import Resource, authorise
+from abacus.modules.identity.authz import Forbidden, Resource, authorise
 from abacus.modules.identity.context import AuthContext, NoActiveTenant
 from abacus.modules.identity.repository import (
     EngagementRole,
@@ -123,6 +123,28 @@ async def engagement_team(ctx: AuthContext, engagement_id: UUID) -> list[TeamMem
     members = await engagement_members_of(ctx.tenant, engagement_id)
     names = await display_names([user_id for user_id, _ in members])
     return [TeamMember(user_id, names.get(user_id, ""), role) for user_id, role in members]
+
+
+async def could(ctx: AuthContext, user_id: UUID, action: str, resource: Resource) -> bool:
+    """Whether another active member of the caller's firm may `action` on `resource` now, by the
+    same `authorise` (roles, walls, attributes). For giving work to someone who can do it
+    (TASK-019 security review M2): never a grant for the caller. Fresh-MFA actions answer False,
+    since only the person themself can have signed in recently."""
+    found = [m for m in await active_memberships(user_id) if m.tenant_id == ctx.tenant_id]
+    if not found:
+        return False
+    other = AuthContext(
+        tenant=TenantContext(ctx.tenant_id, "human", str(user_id)),
+        user_id=user_id,
+        membership_id=found[0].membership_id,
+        firm_role=found[0].firm_role,
+        mfa_at=None,
+    )
+    try:
+        await authorise(other, action, resource)
+    except Forbidden:
+        return False
+    return True
 
 
 async def is_active_member(tenant_id: UUID, user_id: UUID) -> bool:
