@@ -252,6 +252,9 @@ def test_ac20_the_yaml_has_the_expected_role_partition() -> None:
         "client_contributor",
         "agent",
         "system",
+        # SPEC-012: break-glass staff, never firm members.
+        "platform_support",
+        "platform_support_content",
     }
 
 
@@ -840,3 +843,22 @@ def test_ac20_decision_accepts_every_documented_value(value: str) -> None:
 def test_ac20_decision_rejects_unknown_values(value: str) -> None:
     with pytest.raises(ValueError):
         make_decision("probe.read", "manager", value)
+
+
+# --- SPEC-012: break-glass roles are read-only ---------------------------------------------------
+
+
+@pytest.mark.parametrize("role", ["platform_support", "platform_support_content"])
+def test_ac5_support_roles_hold_read_actions_only(role: str) -> None:
+    granted = [a for a, decisions in YAML_ACTIONS.items() if decisions.get(role) is not None]
+    assert granted
+    assert [a for a in granted if not _is_read(a)] == []
+
+
+def test_ac4_content_actions_need_the_content_scope() -> None:
+    content_only = {
+        a
+        for a, decisions in YAML_ACTIONS.items()
+        if decisions.get("platform_support_content") and not decisions.get("platform_support")
+    }
+    assert content_only == {"engagement.read", "evidence.read", "knowledge.read"}

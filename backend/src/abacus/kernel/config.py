@@ -154,6 +154,11 @@ class Settings(BaseSettings):
     identity_issuer: Annotated[str | None, classified("internal")] = None
     identity_audience: Annotated[str | None, classified("internal")] = None
     identity_jwks: Annotated[str | None, classified("internal")] = None
+    # SPEC-012 (Q4): platform staff sign in with a separate issuer (never a firm membership).
+    # Unset means no staff can authenticate (break-glass is unavailable).
+    staff_issuer: Annotated[str | None, classified("internal")] = None
+    staff_audience: Annotated[str | None, classified("internal")] = None
+    staff_jwks: Annotated[str | None, classified("internal")] = None
     database_statement_timeout_ms: Annotated[int, classified("internal")] = 30_000
     s3_endpoint_url: Annotated[str | None, classified("internal")] = None
     s3_access_key: Annotated[SecretStr | None, classified("restricted")] = None

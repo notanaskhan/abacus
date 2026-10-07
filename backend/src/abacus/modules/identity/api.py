@@ -22,14 +22,16 @@ from abacus.modules.identity.context import (
     system_context_for_run,
 )
 from abacus.modules.identity.repository import EngagementRole
-from abacus.modules.identity.routes import router
+from abacus.modules.identity.routes import firm_support_router, router, staff_router
 from abacus.modules.identity.routing import (
     ACTION_KEY,
     SELF,
+    STAFF,
     AbacusRoute,
     AbacusRouter,
     current_context,
     current_signed_in,
+    current_staff,
     declared_action,
 )
 from abacus.modules.identity.service import (
@@ -44,6 +46,7 @@ from abacus.modules.identity.tokens import (
     JwtVerifier,
     TokenVerifier,
     VerifiedIdentity,
+    configure_staff_verifier,
     configure_verifier,
     reset_verifier,
     token_verifier,
@@ -53,6 +56,7 @@ __all__ = [
     "ACTION_KEY",
     "MFA_RECENT",
     "SELF",
+    "STAFF",
     "WALL_SAFE",
     "AbacusRoute",
     "AbacusRouter",
@@ -74,17 +78,21 @@ __all__ = [
     "agent_context_for_run",
     "agent_may_hold",
     "authorise",
+    "configure_staff_verifier",
     "configure_verifier",
     "could",
     "current_context",
     "current_signed_in",
+    "current_staff",
     "declared_action",
     "engagement_team",
+    "firm_support_router",
     "is_active_member",
     "register_engagement_client",
     "reset_verifier",
     "router",
     "serving_request",
+    "staff_router",
     "system_context_for_run",
     "token_verifier",
     "visible",

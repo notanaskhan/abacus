@@ -169,3 +169,28 @@ def reset_verifier() -> None:
 
 def token_verifier() -> TokenVerifier:
     return _verifier if _verifier is not None else _from_settings()
+
+
+# --- Staff tokens (SPEC-012 Q4): a separate issuer; never accepted as a firm user's token ------
+
+_staff_verifier: TokenVerifier | None = None
+
+
+def configure_staff_verifier(verifier: TokenVerifier | None) -> None:
+    """Local runs and tests only: the fake staff issuer (None resets to settings)."""
+    if settings().environment not in ("local", "test"):
+        raise RuntimeError("configure_staff_verifier is for local runs and tests only")
+    global _staff_verifier
+    _staff_verifier = verifier
+
+
+def staff_verifier() -> TokenVerifier:
+    """Raises `InvalidToken` when no staff issuer is configured: break-glass is then closed."""
+    if _staff_verifier is not None:
+        return _staff_verifier
+    s = settings()
+    if s.staff_issuer is None or s.staff_audience is None or s.staff_jwks is None:
+        raise InvalidToken("no staff issuer configured")
+    if s.staff_issuer == s.identity_issuer:
+        raise InvalidToken("the staff issuer must differ from the firm issuer")
+    return JwtVerifier(issuer=s.staff_issuer, audience=s.staff_audience, jwks=s.staff_jwks)

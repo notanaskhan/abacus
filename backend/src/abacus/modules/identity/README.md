@@ -38,3 +38,20 @@ Who someone is, which firm they act in, and what they may do. PROTECTED (red zon
 ## Data
 
 `users` is global; only `abacus_identity` (BYPASSRLS, read-only, a few columns) reads it, before a tenant is chosen. `firms`, `memberships` and `engagement_members` are tenant tables the app may only read for now. `ethical_walls` is the app's to insert and to mark removed (forward-only; never deleted).
+
+## Break-glass support (SPEC-012; TASK-027)
+Platform staff have no standing access (ADR-028). Staff sign in with a separate issuer (`staff_*` settings; MFA required) and are never firm members.
+
+**Requesting:** `POST /v1/support/sessions` (staff token, route marker `STAFF`) requests a session for one firm, with a reason, a scope (`metadata` or `content`) and a duration of at most 240 minutes.
+
+**Approving:**
+- normally a firm admin with fresh MFA approves it (`/v1/support-sessions/{id}/approve`);
+- for an emergency, a second staff member does (`/v1/support/sessions/{id}/approve`), the session lasts at most 60 minutes, and it is flagged to the firm until acknowledged.
+
+**During the session:** requests with the staff token and `X-Support-Session` (plus the firm in `X-Abacus-Tenant`) become an `AuthContext`:
+- the firm role is `platform_support`, or `platform_support_content` for the content scope;
+- the tenant actor kind is `support`;
+- only GET and HEAD are allowed, and the matrix grants these roles read actions only;
+- each request is audited (`support.request`) before it runs, and a failed audit refuses it.
+
+**Ending it:** firm admins list sessions, revoke one, and acknowledge emergencies. Staff end their own. `make access-review QUARTER=…` (owner role) writes the quarterly SOC 2 report.

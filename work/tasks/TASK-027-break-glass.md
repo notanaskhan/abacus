@@ -4,7 +4,7 @@ title: Break-glass support access
 spec: SPEC-012
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10]
 risk_zone: red
-status: awaiting-plan-approval
+status: done
 branch: task-027-break-glass
 worktree:
 created: 2026-10-07
@@ -31,7 +31,7 @@ All of SPEC-012. Excluded: infrastructure roles (TASK-014), notifications, and a
 - Code: `modules/identity/` (`routing.py`, `tokens.py`, `context.py`, `authz/`), `kernel/db` (`TenantContext`), migration 0002 (`audit_events.actor_kind`)
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-07: D1–D6). Approved by founder: paths listed under *Protected paths*
 
 ### Design (for founder review)
 1. **Staff tokens** (`identity/tokens.py`):
@@ -89,11 +89,36 @@ All of SPEC-012. Excluded: infrastructure roles (TASK-014), notifications, and a
 - [ ] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-07` — Implemented:
+  - the staff verifier and settings;
+  - `support_sessions` and the `support` actor kind (migration 0023, with the owner-only review function);
+  - the support service (request, firm and emergency approval, end, revoke, acknowledge, the support context, per-request audit);
+  - the `STAFF` route marker and the staff and firm routes;
+  - `current_context` for support sessions (GET and HEAD only);
+  - the matrix support roles and actions;
+  - `kernel.uow.audit_counts`;
+  - `make access-review`;
+  - pin tests that the support roles are read-only.
+
+  Gates, the schema check and unit tests pass. An end-to-end run against local Postgres passed:
+  - not usable before approval;
+  - another staff member refused;
+  - reads allowed and writes and content refused for the metadata scope;
+  - the request count shown;
+  - revocation effective;
+  - self-approval refused;
+  - an emergency approved by a second staff member.
+
+  Full test runs deferred by the founder.
 - `2026-10-07` — SPEC-012 approved and merged (#48). Design written for founder review.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| The staff ID is UUIDv5(issuer#subject), and the subject is stored on the session | Staff aren't users in our table; this gives a stable ID without one | No |
+| Request counts come from `kernel.uow.audit_counts` (the audit trail's owner), not a query in identity | OWN-001 | No |
+| `support.py` is excluded from AUTH-002 and CTX-001, and `access_review.py` from DB-001, each with a stated reason | They read the staff token, build a context from a validated session, and connect as the owner role | No |
+| `schema_check` gains `OWNER_ONLY_FUNCTIONS`: definer functions the app role must not execute | The cross-firm review function | No |
 
 ## Questions for the human
 - Design questions D1–D6 (above).

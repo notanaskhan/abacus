@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: setup dev seed e2e check-fast check ci-unit ci-integration ci-coverage ci-contracts test test-integration evals generate migrate loadtest seed-staging route-parity flag
+.PHONY: setup dev seed e2e check-fast check ci-unit ci-integration ci-coverage ci-contracts test test-integration evals generate migrate loadtest seed-staging route-parity flag access-review
 
 setup:
 	cd backend && uv sync --locked
@@ -95,6 +95,10 @@ test-integration:
 # the fake model (a fake run proves the code paths, never a model's quality).
 evals:
 	cd backend && uv run python -m abacus_tools.evals $(EVAL_ARGS)
+
+# SPEC-012: the quarterly break-glass access review (owner credentials). QUARTER=2026Q4
+access-review:
+	cd backend && uv run python -m abacus_tools.access_review --quarter $(QUARTER)
 
 # SPEC-011: set a firm's feature flag (operators; audited).
 flag:

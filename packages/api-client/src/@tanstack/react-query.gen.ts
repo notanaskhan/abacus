@@ -3,8 +3,8 @@
 import { queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, addDocument, applyMethodology, assign, createEngagement, createRequestItem, createWall, engagementGraph, getBudget, getDocument, getEngagement, getRetrieval, getVersion, importTemplate, listDocuments, listEngagements, listEvidenceVersions, listRequestItems, listScreeningResults, listTemplates, listWalls, me, metering, type Options, putBudget, reasonCodes, reject, release, removeWall, reviewQueue, search, sendBack, startRetrieval, take, withdrawDocument } from '../sdk.gen';
-import type { AcceptData, AcceptError, AcceptResponse, AddDocumentData, AddDocumentError, AddDocumentResponse, ApplyMethodologyData, ApplyMethodologyError, ApplyMethodologyResponse, AssignData, AssignError, AssignResponse, CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, EngagementGraphData, EngagementGraphError, EngagementGraphResponse, GetBudgetData, GetBudgetError, GetBudgetResponse, GetDocumentData, GetDocumentError, GetDocumentResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, GetVersionData, GetVersionError, GetVersionResponse, ImportTemplateData, ImportTemplateError, ImportTemplateResponse, ListDocumentsData, ListDocumentsError, ListDocumentsResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListTemplatesData, ListTemplatesError, ListTemplatesResponse, ListWallsData, ListWallsError, ListWallsResponse, MeData, MeError, MeResponse, MeteringData, MeteringError, MeteringResponse, PutBudgetData, PutBudgetError, PutBudgetResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, SearchData, SearchError, SearchResponse, SendBackData, SendBackError, SendBackResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, TakeData, TakeError, TakeResponse, WithdrawDocumentData, WithdrawDocumentError, WithdrawDocumentResponse } from '../types.gen';
+import { accept, acknowledgeSupportSession, addDocument, applyMethodology, approveSupportSession, assign, createEngagement, createRequestItem, createWall, emergencyApprove, endSupportSession, engagementGraph, getBudget, getDocument, getEngagement, getRetrieval, getVersion, importTemplate, listDocuments, listEngagements, listEvidenceVersions, listRequestItems, listScreeningResults, listSupportSessions, listTemplates, listWalls, me, metering, type Options, putBudget, reasonCodes, reject, release, removeWall, requestSupportSession, reviewQueue, revokeSupportSession, search, sendBack, startRetrieval, take, withdrawDocument } from '../sdk.gen';
+import type { AcceptData, AcceptError, AcceptResponse, AcknowledgeSupportSessionData, AcknowledgeSupportSessionError, AcknowledgeSupportSessionResponse, AddDocumentData, AddDocumentError, AddDocumentResponse, ApplyMethodologyData, ApplyMethodologyError, ApplyMethodologyResponse, ApproveSupportSessionData, ApproveSupportSessionError, ApproveSupportSessionResponse, AssignData, AssignError, AssignResponse, CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, EmergencyApproveData, EmergencyApproveError, EmergencyApproveResponse, EndSupportSessionData, EndSupportSessionError, EndSupportSessionResponse, EngagementGraphData, EngagementGraphError, EngagementGraphResponse, GetBudgetData, GetBudgetError, GetBudgetResponse, GetDocumentData, GetDocumentError, GetDocumentResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, GetVersionData, GetVersionError, GetVersionResponse, ImportTemplateData, ImportTemplateError, ImportTemplateResponse, ListDocumentsData, ListDocumentsError, ListDocumentsResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListSupportSessionsData, ListSupportSessionsError, ListSupportSessionsResponse, ListTemplatesData, ListTemplatesError, ListTemplatesResponse, ListWallsData, ListWallsError, ListWallsResponse, MeData, MeError, MeResponse, MeteringData, MeteringError, MeteringResponse, PutBudgetData, PutBudgetError, PutBudgetResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, RequestSupportSessionData, RequestSupportSessionError, RequestSupportSessionResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, RevokeSupportSessionData, RevokeSupportSessionError, RevokeSupportSessionResponse, SearchData, SearchError, SearchResponse, SendBackData, SendBackError, SendBackResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, TakeData, TakeError, TakeResponse, WithdrawDocumentData, WithdrawDocumentError, WithdrawDocumentResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -583,6 +583,126 @@ export const getVersionOptions = (options: Options<GetVersionData>) => queryOpti
     },
     queryKey: getVersionQueryKey(options)
 });
+
+export const listSupportSessionsQueryKey = (options?: Options<ListSupportSessionsData>) => createQueryKey('listSupportSessions', options);
+
+/**
+ * List Support Sessions Route
+ */
+export const listSupportSessionsOptions = (options?: Options<ListSupportSessionsData>) => queryOptions<ListSupportSessionsResponse, ListSupportSessionsError, ListSupportSessionsResponse, ReturnType<typeof listSupportSessionsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listSupportSessions({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listSupportSessionsQueryKey(options)
+});
+
+/**
+ * Acknowledge Support Session Route
+ */
+export const acknowledgeSupportSessionMutation = (options?: Partial<Options<AcknowledgeSupportSessionData>>): UseMutationOptions<AcknowledgeSupportSessionResponse, AcknowledgeSupportSessionError, Options<AcknowledgeSupportSessionData>> => {
+    const mutationOptions: UseMutationOptions<AcknowledgeSupportSessionResponse, AcknowledgeSupportSessionError, Options<AcknowledgeSupportSessionData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await acknowledgeSupportSession({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Approve Support Session Route
+ */
+export const approveSupportSessionMutation = (options?: Partial<Options<ApproveSupportSessionData>>): UseMutationOptions<ApproveSupportSessionResponse, ApproveSupportSessionError, Options<ApproveSupportSessionData>> => {
+    const mutationOptions: UseMutationOptions<ApproveSupportSessionResponse, ApproveSupportSessionError, Options<ApproveSupportSessionData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await approveSupportSession({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Revoke Support Session Route
+ */
+export const revokeSupportSessionMutation = (options?: Partial<Options<RevokeSupportSessionData>>): UseMutationOptions<RevokeSupportSessionResponse, RevokeSupportSessionError, Options<RevokeSupportSessionData>> => {
+    const mutationOptions: UseMutationOptions<RevokeSupportSessionResponse, RevokeSupportSessionError, Options<RevokeSupportSessionData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await revokeSupportSession({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Request Support Session Route
+ */
+export const requestSupportSessionMutation = (options?: Partial<Options<RequestSupportSessionData>>): UseMutationOptions<RequestSupportSessionResponse, RequestSupportSessionError, Options<RequestSupportSessionData>> => {
+    const mutationOptions: UseMutationOptions<RequestSupportSessionResponse, RequestSupportSessionError, Options<RequestSupportSessionData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await requestSupportSession({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Emergency Approve Route
+ */
+export const emergencyApproveMutation = (options?: Partial<Options<EmergencyApproveData>>): UseMutationOptions<EmergencyApproveResponse, EmergencyApproveError, Options<EmergencyApproveData>> => {
+    const mutationOptions: UseMutationOptions<EmergencyApproveResponse, EmergencyApproveError, Options<EmergencyApproveData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await emergencyApprove({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * End Support Session Route
+ */
+export const endSupportSessionMutation = (options?: Partial<Options<EndSupportSessionData>>): UseMutationOptions<EndSupportSessionResponse, EndSupportSessionError, Options<EndSupportSessionData>> => {
+    const mutationOptions: UseMutationOptions<EndSupportSessionResponse, EndSupportSessionError, Options<EndSupportSessionData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await endSupportSession({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
 
 export const listWallsQueryKey = (options?: Options<ListWallsData>) => createQueryKey('listWalls', options);
 

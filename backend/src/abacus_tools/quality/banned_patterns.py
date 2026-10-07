@@ -783,6 +783,8 @@ LIST_EXEMPT = frozenset(
         # Methodology templates are firm-wide (SPEC-008): read after `authorise` on the firm
         # (`methodology.read`) or by a caller authorised on the engagement; no engagement rows.
         ("src/abacus/modules/engagements/repository.py", "list_templates"),
+        # Support sessions are firm-level records, listed after `authorise(support_session.read)`.
+        ("src/abacus/modules/identity/repository.py", "list_support_sessions"),
         ("src/abacus/modules/engagements/repository.py", "version_rows"),
         # Knowledge is firm-wide (SPEC-009 §9: `visible()` reduces to the tenant): listed and
         # searched after `authorise` on the firm, embedded by the platform's own workflow.
@@ -1260,6 +1262,8 @@ RULES: list[Rule | TreeRule] = [
         exclude=(
             "src/abacus/kernel/db/*",
             "src/abacus_tools/quality/schema_check.py",
+            # SPEC-012: the access review runs as the owner role (the only one that may read it).
+            "src/abacus_tools/access_review.py",
             "tests/integration/conftest.py",
             "tests/integration/test_local_stack.py",
             "tests/integration/test_tenancy.py",
@@ -1410,6 +1414,8 @@ RULES: list[Rule | TreeRule] = [
         exclude=(
             "src/abacus/modules/identity/routing.py",
             "src/abacus/modules/identity/service.py",
+            # SPEC-012: the staff token, verified by the staff issuer (break-glass).
+            "src/abacus/modules/identity/support.py",
         ),
     ),
     Rule(
@@ -1468,6 +1474,8 @@ RULES: list[Rule | TreeRule] = [
         exclude=(
             "src/abacus/modules/identity/service.py",
             "src/abacus/modules/identity/context.py",
+            # SPEC-012: a support context, built only from a validated, active support session.
+            "src/abacus/modules/identity/support.py",
         ),
     ),
     Rule(

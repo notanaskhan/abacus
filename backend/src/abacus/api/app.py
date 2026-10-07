@@ -35,6 +35,8 @@ from abacus.modules.requests import api as requests
 
 ROUTERS = (
     identity.router,
+    identity.staff_router,
+    identity.firm_support_router,
     engagements.router,
     engagements.methodology_router,
     requests.router,

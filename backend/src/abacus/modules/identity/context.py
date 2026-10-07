@@ -8,10 +8,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext
 from abacus.modules.identity.repository import FirmRole, active_memberships
+
+# SPEC-012: a staff member in a break-glass session holds one of these (by the session's scope),
+# never a membership. `user_id` is the staff ID and `membership_id` the session ID.
+SupportRole = Literal["platform_support", "platform_support_content"]
 
 
 @dataclass(frozen=True)
@@ -19,8 +24,12 @@ class AuthContext:
     tenant: TenantContext
     user_id: UUID
     membership_id: UUID
-    firm_role: FirmRole | None
+    firm_role: FirmRole | SupportRole | None
     mfa_at: datetime | None
+
+    @property
+    def is_support(self) -> bool:
+        return self.tenant.actor_kind == "support"
 
     @property
     def tenant_id(self) -> UUID:
