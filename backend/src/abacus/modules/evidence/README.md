@@ -3,12 +3,14 @@
 Evidence items and their immutable versions (glossary; ADR-004). Owns `evidence_items` and `evidence_versions` (ADR-103). PROTECTED.
 
 ## Public interface (`api.py`)
-- `add_version(tx, tenant, *, engagement_id, item, content, media_type, provenance) -> EvidenceVersionRef`:
-  - runs inside the caller's unit of work, after the caller has authorised `evidence.upload`;
-  - `item` is an existing item ID or `NewItem(title)`;
-  - stores the content, then adds version `n+1`;
+- `stage_content(tenant_id, content) -> StoredObject`: seals and stores the bytes write-once under their fingerprint, before (and outside) the unit of work that records them.
+- `add_version(tx, *, engagement_id, item, stored, media_type, provenance, idempotency_key=None, requested_by=None) -> EvidenceVersionRef`:
+  - runs inside the caller's unit of work, after the caller has authorised `evidence.upload`; the tenant and actor are the transaction's own;
+  - `item` is an existing item ID or `NewItem(title)`; `stored` comes from `stage_content`;
+  - adds version `n+1`; an `idempotency_key` already used returns that version (`created=False`) and records nothing;
   - audit events: `evidence_item.created` (for a new item) and `evidence_version.created`;
   - outbox event: `evidence_version.created`, carrying `requested_by`: the person the version was added for, the initiator of agents acting on it. A retrieval passes its `on_behalf_of`; the default is None.
+- `read_content(tenant, stored) -> bytes`: the decrypted, fingerprint-verified content, for a caller that has authorised under its own context (e.g. an agent's `evidence.read`). `check_ready()` verifies the bucket at boot.
 - `version_view(tenant, version_id) -> EvidenceVersionView`: a version's metadata, including storage, snapshot and period, for a caller that has authorised under its own context.
 - `read_version(ctx, version_id) -> bytes`: authorises `evidence.read` on the engagement, then returns the decrypted, fingerprint-verified content. A missing version, or another firm's, raises `NotFound`.
 - `router`: `GET /v1/engagements/{id}/evidence-versions` (`evidence.read`).
