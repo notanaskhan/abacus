@@ -4,11 +4,11 @@ title: Reference implementations and skills
 spec: SPEC-000
 acceptance_criteria: [AC-20]
 risk_zone: green
-status: todo
-branch:
+status: in-progress
+branch: task-015-reference-docs
 worktree:
 created: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-07
 ---
 
 > **Rules for the agent working this task**
@@ -23,7 +23,7 @@ updated: 2026-10-06
 Write the nine reference docs in SPEC-000 §22 to `docs/architecture/reference/` from the merged code, and update the matching skills.
 
 ## Scope
-Defined when the plan is written. Starts after TASK-013.
+Write the six missing SPEC-000 §22 reference docs (`backend-module`, `unit-of-work`, `temporal-workflow`, `connector`, `evidence-storage`, `ai-agent`) from the merged code. `tenancy-and-authz`, `frontend-feature` and `observability` already exist. Update the matching skills to point at them (`.claude/skills/**`, protected; approved). Docs only, no code changes.
 
 ## Context to load
 - Spec: `docs/specs/SPEC-000-walking-skeleton.md`
@@ -54,6 +54,8 @@ Steps: to be written when the task starts.
 
 ## Progress log
 - `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder. Not started.
+
+- `2026-10-07` — Started (green). The founder approved editing `.claude/skills/**`; the approval file was written at the founder's instruction. Three agents are drafting the six docs from main; the implementer reviews them against the code.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
