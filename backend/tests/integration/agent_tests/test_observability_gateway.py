@@ -102,6 +102,8 @@ def _call(
         prompt=REF,
         tier=tier,
         output_schema=Verdict,
+        work_class="time_sensitive",  # SPEC-003 018c: every call declares its class
+        essential=True,
         budget_usd=budget,
         attribution=Attribution(
             TenantContext(world.tenant_id, "agent", actor), world.engagement_id, AGENT_ID, None

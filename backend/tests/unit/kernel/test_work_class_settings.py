@@ -22,27 +22,37 @@ DEFAULTS = {
 }
 
 
-# TASK-018b: each class's slot caps and maximum wait are required fields.
+# TASK-018b: each class's slot caps and maximum wait are required fields; 018c adds the
+# admission reserve.
 SLOTS = {
     "interactive": {
         "firm_cap": 20,
         "engagement_cap": 10,
         "class_capacity": 50,
         "max_wait_seconds": 120,
+        "admission_reserve_pct": 0,
     },
     "time_sensitive": {
         "firm_cap": 20,
         "engagement_cap": 10,
         "class_capacity": 50,
         "max_wait_seconds": 600,
+        "admission_reserve_pct": 0,
     },
     "background": {
         "firm_cap": 10,
         "engagement_cap": 5,
         "class_capacity": 20,
         "max_wait_seconds": 21600,
+        "admission_reserve_pct": 25,
     },
-    "batch": {"firm_cap": 5, "engagement_cap": 2, "class_capacity": 10, "max_wait_seconds": 86400},
+    "batch": {
+        "firm_cap": 5,
+        "engagement_cap": 2,
+        "class_capacity": 10,
+        "max_wait_seconds": 86400,
+        "admission_reserve_pct": 50,
+    },
 }
 
 

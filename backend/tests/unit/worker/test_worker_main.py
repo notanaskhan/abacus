@@ -366,7 +366,13 @@ async def test_ac1_each_class_has_its_own_concurrency_limits(boot: _Boot) -> Non
 
 
 # TASK-018b: the slot caps and maximum wait are required fields of each class.
-SLOT_FIELDS = {"firm_cap": 5, "engagement_cap": 2, "class_capacity": 10, "max_wait_seconds": 60}
+SLOT_FIELDS = {
+    "firm_cap": 5,
+    "engagement_cap": 2,
+    "class_capacity": 10,
+    "max_wait_seconds": 60,
+    "admission_reserve_pct": 0,
+}
 
 
 async def test_ac1_limits_come_from_the_settings_by_class(

@@ -178,6 +178,8 @@ def _call(**changes: object) -> GatewayCall[Verdict]:
         prompt="evidence.screen@v0",
         tier="small",
         output_schema=Verdict,
+        work_class="time_sensitive",  # SPEC-003 018c: every call declares its class
+        essential=True,
         budget_usd=Decimal("0.03"),
         attribution=Attribution(
             TenantContext(uuid.uuid4(), "agent", f"agent:{agent_id}:{uuid.uuid4()}"),

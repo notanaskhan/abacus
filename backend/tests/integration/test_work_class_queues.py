@@ -31,7 +31,13 @@ from abacus.worker import __main__ as worker_main
 
 BASE = f"ac5-{uuid.uuid4().hex[:10]}"
 # TASK-018b: the slot caps and maximum wait are required fields of each class.
-SLOT_FIELDS = {"firm_cap": 20, "engagement_cap": 10, "class_capacity": 50, "max_wait_seconds": 120}
+SLOT_FIELDS = {
+    "firm_cap": 20,
+    "engagement_cap": 10,
+    "class_capacity": 50,
+    "max_wait_seconds": 120,
+    "admission_reserve_pct": 0,
+}
 LIMITS = {
     "interactive": {"max_activities": 4, "max_workflow_tasks": 4, **SLOT_FIELDS},
     "time_sensitive": {"max_activities": 4, "max_workflow_tasks": 4, **SLOT_FIELDS},

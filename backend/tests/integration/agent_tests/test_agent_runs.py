@@ -454,6 +454,8 @@ async def test_ac16_the_gateway_counts_a_runs_earlier_usage_but_not_other_runs(
             prompt=PROMPT,
             tier="small",
             output_schema=Verdict,
+            work_class="time_sensitive",  # SPEC-003 018c: every call declares its class
+            essential=True,
             budget_usd=budget,
             attribution=Attribution(
                 TenantContext(world.tenant_id, "agent", f"agent:{SCREENER}:{for_run}"),

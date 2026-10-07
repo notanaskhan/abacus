@@ -102,6 +102,8 @@ def _call(
         prompt=prompt_ref,
         tier=tier,
         output_schema=Verdict,
+        work_class="time_sensitive",  # SPEC-003 018c: every call declares its class
+        essential=True,
         budget_usd=budget,
         attribution=attribution or _attribution(world),
         context=built,
