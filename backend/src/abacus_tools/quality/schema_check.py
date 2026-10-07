@@ -52,12 +52,13 @@ APP = "abacus_app"
 # privilege at all; SECURITY DEFINER functions take the tenant from the session.
 NON_TENANT_TABLES = frozenset(
     {"alembic_version", "work_slots", "work_waiters", "work_grants", "provider_capacity"}
-    | {"review_reason_codes"}
+    | {"review_reason_codes", "eval_runs", "eval_case_results"}
 )
 # Tables the app may insert into and read, never update or delete (ADR-004); TASK-009/010 add.
 INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     {"audit_events", "outbox", "evidence_versions", "ledger_snapshots", "trial_balance_lines"}
     | {"fulfilments", "screening_results", "usage_records", "review_decisions"}
+    | {"eval_case_results"}
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -137,6 +138,7 @@ APP_INSERT_COLUMNS.update(
 IMMUTABLE_TABLES: dict[str, str] = {
     "evidence_versions": "evidence_versions_immutable",
     "review_decisions": "review_decisions_immutable",
+    "eval_case_results": "eval_case_results_immutable",
     "ledger_snapshots": "ledger_immutable",
     "trial_balance_lines": "ledger_immutable",
 }
@@ -187,6 +189,9 @@ TABLE_OWNERS: dict[str, str] = {
     "review_decisions": "evidence",
     "review_assignments": "evidence",
     "review_reason_codes": "evidence",
+    # Evaluation runs (SPEC-005 Q2): written only by the evaluation tooling.
+    "eval_runs": "abacus_tools.evals",
+    "eval_case_results": "abacus_tools.evals",
     "usage_records": "ai_gateway",
     # The work slot ledger (TASK-018 D3): reached only through SECURITY DEFINER functions.
     "work_slots": "kernel.slots",
@@ -199,13 +204,14 @@ TABLE_OWNERS: dict[str, str] = {
 # role has no privileges on them at all. Each entry is founder-reviewed (protected file).
 GLOBAL_TABLES = frozenset(
     {"users", "work_slots", "work_waiters", "work_grants", "provider_capacity"}
-    | {"review_reason_codes"}
+    | {"review_reason_codes", "eval_runs", "eval_case_results"}
 )
 # SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
 DEFINER_FUNCTIONS = frozenset(
     {"work_slot_acquire", "work_slot_release", "work_slot_renew"}
     | {"capacity_admit", "capacity_block"}
     | {"review_decision_reason_check", "review_reason_codes_list"}
+    | {"eval_eligible"}  # 0016 (TASK-020): the gateway's evaluation eligibility
 )
 _DEFINER_SEARCH_PATH = "search_path=pg_catalog, public, pg_temp"
 _DEFINERS = """
