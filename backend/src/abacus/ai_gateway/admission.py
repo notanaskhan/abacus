@@ -70,7 +70,12 @@ def refusal_reason(work_class: WorkClass) -> str:
 
 
 async def admit(
-    tenant: TenantContext, model: str, work_class: WorkClass, essential: bool, tokens: int
+    tenant: TenantContext,
+    route: str,
+    model: str,
+    work_class: WorkClass,
+    essential: bool,
+    tokens: int,
 ) -> tuple[bool, int]:
     """Take one request and `tokens` from the model's bucket: (admitted, retry_after seconds).
     Fails closed: an unknown model or an unreachable bucket admits nothing."""
@@ -78,7 +83,7 @@ async def admit(
     limits = s.provider_limits.get(model)
     if limits is None:
         _log.warning("admission.unconfigured", model=model)
-        _record(model, work_class, "refused", "unconfigured")
+        _record(route, model, work_class, "refused", "unconfigured")
         return False, _UNREACHABLE_RETRY_SECONDS
     reserve = reserve_pct(work_class, essential)
     if tokens > limits.tpm * (100 - reserve) // 100:
@@ -92,7 +97,7 @@ async def admit(
                         ":provider, :model, :rpm, :tpm, :reserve_pct, :tokens)"
                     ),
                     {
-                        "provider": s.model_provider,
+                        "provider": route,
                         "model": model,
                         "rpm": limits.rpm,
                         "tpm": limits.tpm,
@@ -104,32 +109,35 @@ async def admit(
             await conn.commit()
     except Exception as exc:
         _log.warning("admission.unavailable", model=model, error=exc)
-        _record(model, work_class, "refused", "unavailable")
+        _record(route, model, work_class, "refused", "unavailable")
         return False, _UNREACHABLE_RETRY_SECONDS
     admitted, retry_after = bool(row[0]), int(row[1])
-    _record(model, work_class, "admitted" if admitted else "refused", refusal_reason(work_class))
+    _record(
+        route, model, work_class, "admitted" if admitted else "refused", refusal_reason(work_class)
+    )
     if not admitted:
         _log.info("admission.refused", model=model, work_class=work_class, retry_after=retry_after)
     return admitted, retry_after
 
 
-async def block(tenant: TenantContext, model: str, seconds: int) -> None:
-    """A provider rate-limited `model`: admit nothing for it for `seconds` (AC-12)."""
+async def block(tenant: TenantContext, route: str, model: str, seconds: int) -> None:
+    """A route rate-limited `model` or is out (SPEC-010 Q3): admit nothing for it on that route
+    for `seconds` (SPEC-003 AC-12)."""
     seconds = max(1, min(seconds, 3600))
-    _log.warning("provider.rate_limited", model=model, seconds=seconds)
+    _log.warning("provider.blocked", route=route, model=model, seconds=seconds)
     async with tenant_connection(tenant) as conn:
         await conn.execute(
             text("SELECT capacity_block(:provider, :model, :seconds)"),
-            {"provider": settings().model_provider, "model": model, "seconds": seconds},
+            {"provider": route, "model": model, "seconds": seconds},
         )
         await conn.commit()
 
 
-def _record(model: str, work_class: WorkClass, outcome: str, reason: str) -> None:
+def _record(route: str, model: str, work_class: WorkClass, outcome: str, reason: str) -> None:
     _admissions.add(
         1,
         {
-            "provider": settings().model_provider,
+            "provider": route,
             "model": model,
             "work_class": work_class,
             "outcome": outcome,

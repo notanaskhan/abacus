@@ -5,6 +5,7 @@ version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
     "alembic",
+    "anthropic[bedrock]>=1.11.0",
     "asyncpg",
     "boto3",
     "cryptography>=50.0.2",
@@ -97,7 +98,8 @@ known-first-party = ["abacus", "abacus_tools"]
 "agents".msg = "No agent frameworks (ADR-057)."
 
 [tool.ruff.lint.per-file-ignores]
-"src/abacus/ai_gateway/**" = ["TID251"]
+# SPEC-010 AC-8: provider SDKs only in the route adapters.
+"src/abacus/ai_gateway/routes/**" = ["TID251"]
 "src/abacus_tools/**" = ["T20"]
 "src/abacus_tools/quality/secrets_scan.py" = ["T20", "S603"]  # runs git ls-files
 "src/abacus_tools/quality/schema_check.py" = ["S106", "T20"]  # local container credentials

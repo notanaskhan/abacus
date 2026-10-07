@@ -20,6 +20,7 @@ SPECS: dict[str, dict[str, object]] = {   'evidence.screener': {   'autonomy': '
                              'prompt': 'evidence.screen@v0',
                              'purpose': 'Screen a retrieved trial balance and propose whether it '
                                         'is ready for review.',
+                             'routes': ['bedrock', 'direct'],
                              'shape': 'single_call',
                              'task_scope': ['evidence.read', 'screening.run'],
                              'tier': 'small',

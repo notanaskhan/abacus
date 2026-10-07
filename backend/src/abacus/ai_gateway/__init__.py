@@ -64,6 +64,7 @@ from abacus.ai_gateway.embeddings import (
     configure_embedder,
     embed_cost,
     embedder,
+    embedding_route,
 )
 from abacus.ai_gateway.prompts import Prompt, UnknownPrompt, prompt, registry
 from abacus.ai_gateway.providers import (
@@ -74,18 +75,19 @@ from abacus.ai_gateway.providers import (
     ProviderError,
     Tier,
     configure_provider,
-    provider,
 )
+from abacus.ai_gateway.routes import configure_route, model_id, route_enabled, route_provider
 from abacus.ai_gateway.sanitise import sanitise_text
-from abacus.kernel.config import settings
+from abacus.kernel.config import SYNTHETIC_ENVIRONMENTS, Route, settings
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.logging import get_logger
+from abacus.kernel.metrics import meter
 from abacus.kernel.telemetry import tracer
 from abacus.kernel.uow import Target, uow
 from abacus.kernel.work_class import WorkClass
 
-# Per million tokens (input, output), by tier. The fake model is priced like a small model so
-# budgets and metering are exercised exactly as they will be.
+# The fake route's models (synthetic environments, tests and tooling), per million tokens (input,
+# output), by tier. Prices for every route come from `settings().model_catalog` (SPEC-010).
 MODELS: dict[Tier, tuple[str, Decimal, Decimal]] = {
     "small": ("fake-small", Decimal("0.80"), Decimal("4.00")),
     "medium": ("fake-medium", Decimal("3.00"), Decimal("15.00")),
@@ -94,6 +96,9 @@ MODELS: dict[Tier, tuple[str, Decimal, Decimal]] = {
 _MILLION = Decimal(1_000_000)
 _log = get_logger(__name__)
 _tracer = tracer(__name__)
+_failovers = meter(__name__).create_counter(
+    "abacus.ai.failovers", description="Attempts handed to the next route, by route and reason"
+)
 
 Outcome = Literal["ok", "invalid", "repaired", "budget_refused", "provider_error", "rate_limited"]
 Status = Literal["ok", "repaired", "escalated"]
@@ -130,6 +135,9 @@ class GatewayCall[T: BaseModel]:
     # as named by ADR-105). Required: no call gets a priority by default.
     work_class: WorkClass
     essential: bool
+    # SPEC-010 (ADR-073): the agent's allowed routes, in preference order (from its spec). In
+    # synthetic environments the fake route serves every call.
+    routes: tuple[Route, ...]
     max_output_tokens: int = 1_000
     # Per provider call; exceeding it is a provider error (retryable by the caller).
     timeout_seconds: float = 60
@@ -146,10 +154,12 @@ class GatewayResult[T: BaseModel]:
     inputs_hash: str
     model: str
     prompt: Prompt
+    route: Route = "fake"
 
 
 def cost(tier: Tier, input_tokens: int, output_tokens: int) -> Decimal:
-    _, per_in, per_out = MODELS[tier]
+    entry = settings().model_catalog[tier]
+    per_in, per_out = entry.usd_in, entry.usd_out
     return ((per_in * input_tokens + per_out * output_tokens) / _MILLION).quantize(
         Decimal("0.000001")
     )
@@ -184,6 +194,7 @@ async def _record_usage(
     spent: Decimal,
     outcome: Outcome,
     inputs_hash: str,
+    route: Route,
 ) -> None:
     record_id = uuid4()
     async with uow(attribution.tenant) as tx:
@@ -191,9 +202,9 @@ async def _record_usage(
             text(
                 "INSERT INTO usage_records (id, tenant_id, engagement_id, agent_id, "
                 "agent_run_id, prompt_id, prompt_version, model, tier, input_tokens, "
-                "output_tokens, cost_usd, outcome, inputs_hash) VALUES (:id, :tenant, "
+                "output_tokens, cost_usd, outcome, inputs_hash, route) VALUES (:id, :tenant, "
                 ":engagement, :agent, :run, :prompt_id, :prompt_version, :model, :tier, "
-                ":input_tokens, :output_tokens, :cost, :outcome, :inputs_hash)"
+                ":input_tokens, :output_tokens, :cost, :outcome, :inputs_hash, :route)"
             ),
             {
                 "id": record_id,
@@ -210,12 +221,14 @@ async def _record_usage(
                 "cost": spent,
                 "outcome": outcome,
                 "inputs_hash": inputs_hash,
+                "route": route,
             },
         )
         tx.record("model.called", target=Target("usage_record", record_id))
     trace.get_current_span().add_event(
         "ai.attempt",
         {
+            "route": route,
             "outcome": outcome,
             "input_tokens": response.input_tokens if response else 0,
             "output_tokens": response.output_tokens if response else 0,
@@ -225,6 +238,7 @@ async def _record_usage(
     _log.info(
         "ai.call",
         prompt=found.ref,
+        route=route,
         model=model,
         tier=tier,
         outcome=outcome,
@@ -263,9 +277,9 @@ async def _record_embed(
             text(
                 "INSERT INTO usage_records (id, tenant_id, engagement_id, agent_id, "
                 "agent_run_id, prompt_id, prompt_version, model, tier, input_tokens, "
-                "output_tokens, cost_usd, outcome, inputs_hash) VALUES (:id, :tenant, "
+                "output_tokens, cost_usd, outcome, inputs_hash, route) VALUES (:id, :tenant, "
                 ":engagement, :agent, :run, :prompt_id, '1', :model, 'small', :input_tokens, "
-                "0, :cost, :outcome, :inputs_hash)"
+                "0, :cost, :outcome, :inputs_hash, :route)"
             ),
             {
                 "id": record_id,
@@ -274,6 +288,7 @@ async def _record_embed(
                 "agent": attribution.agent_id,
                 "run": attribution.agent_run_id,
                 "prompt_id": EMBED_PROMPT,
+                "route": embedding_route(),
                 "model": model,
                 "input_tokens": input_tokens,
                 "cost": spent,
@@ -320,7 +335,7 @@ async def embed(c: EmbedCall) -> EmbedResult:
                 c.attribution.tenant, c.attribution.engagement_id, c.essential, estimate
             )
             admitted, wait = await admit(
-                c.attribution.tenant, model, c.work_class, c.essential, tokens
+                c.attribution.tenant, embedding_route(), model, c.work_class, c.essential, tokens
             )
             if not admitted:
                 raise NotAdmitted(refusal_reason(c.work_class), wait)
@@ -412,7 +427,13 @@ def check_provider_limits() -> None:
     s = settings()
     if s.environment in ("local", "test"):
         return
-    missing = sorted(model for model, _, _ in MODELS.values() if model not in s.provider_limits)
+    models = {
+        model
+        for entry in s.model_catalog.values()
+        for route, model in entry.ids.items()
+        if route in s.model_routes
+    }
+    missing = sorted(model for model in models if model not in s.provider_limits)
     if missing:
         raise RuntimeError(f"no provider limits for {', '.join(missing)} (provider_limits)")
 
@@ -420,20 +441,29 @@ def check_provider_limits() -> None:
 # Evaluation mode (SPEC-005; TASK-020): the evaluation runner pins the tier an agent's calls use
 # for one run. Tooling sets it; product code never does.
 _evaluation_tier: ContextVar[Tier | None] = ContextVar("abacus_evaluation_tier", default=None)
+_evaluation_route: ContextVar[Route | None] = ContextVar("abacus_evaluation_route", default=None)
 
 
 @contextmanager
-def evaluation(tier: Tier | None) -> Generator[None]:
-    """Run the block's model calls on `tier` (the evaluation runner's pinned tier)."""
+def evaluation(tier: Tier | None, route: Route | None = None) -> Generator[None]:
+    """Run the block's model calls on `tier` and, if given, `route` (the evaluation runner's
+    pinned tier and route, SPEC-010 AC-6). Evaluation calls aren't gated by eligibility."""
     token = _evaluation_tier.set(tier)
+    route_token = _evaluation_route.set(route)
     try:
         yield
     finally:
+        _evaluation_route.reset(route_token)
         _evaluation_tier.reset(token)
 
 
 async def eligible(
-    tenant: TenantContext, agent_id: str, tier: Tier, model: str, prompt_version: str
+    tenant: TenantContext,
+    agent_id: str,
+    route: Route,
+    tier: Tier,
+    model: str,
+    prompt_version: str,
 ) -> bool:
     """Whether the latest finished full-suite evaluation run of `agent_id` on this tier and model,
     with its current prompt and suite version, passed on a real model (SPEC-005 AC-13). The
@@ -446,9 +476,10 @@ async def eligible(
     try:
         async with tenant_session(tenant) as session:
             found = await session.scalar(
-                text("SELECT eval_eligible(:agent, :tier, :model, :prompt, :suite)"),
+                text("SELECT eval_eligible(:agent, :route, :tier, :model, :prompt, :suite)"),
                 {
                     "agent": agent_id,
+                    "route": route,
                     "tier": tier,
                     "model": model,
                     "prompt": prompt_version,
@@ -463,36 +494,77 @@ async def eligible(
     return bool(found)
 
 
+def _candidate_routes(c: GatewayCall[BaseModel], excluded: frozenset[Route]) -> list[Route]:
+    """The routes this call may try, in order (SPEC-010 §6): the evaluation run's pinned route;
+    else `fake` when enabled (synthetic environments, D1), then the agent's own routes that are
+    enabled with current parity (Q2). Routes refused for credentials this call are left out."""
+    pinned = _evaluation_route.get()
+    if pinned is not None:
+        return [pinned] if pinned in settings().model_routes else []
+    ordered = ["fake", *c.routes]
+    seen: list[Route] = []
+    for route in cast(list[Route], ordered):
+        if route not in seen and route not in excluded and route_enabled(route):
+            seen.append(route)
+    return seen
+
+
 async def _admitted(
-    c: GatewayCall[BaseModel], tiers: tuple[Tier, ...], tokens: int, prompt_version: str
-) -> tuple[Tier, str]:
-    """The first of `tiers` whose model admits this call (an `ai.admit` span), or `NotAdmitted`.
-    ADR-072's order: background and batch work is deferred, never stepped down; interactive and
-    time-sensitive work steps down to a cheaper tier the spec allows, then waits visibly."""
+    c: GatewayCall[BaseModel],
+    tiers: tuple[Tier, ...],
+    tokens: int,
+    prompt_version: str,
+    excluded: frozenset[Route] = frozenset(),
+) -> tuple[Tier, Route, str]:
+    """The first tier and route whose model admits this call (an `ai.admit` span), or
+    `NotAdmitted`. ADR-072's order: background and batch work is deferred, never stepped down;
+    interactive and time-sensitive work steps down to a cheaper tier the spec allows, after every
+    route of the preferred tier (SPEC-010), then waits visibly."""
     tenant = c.attribution.tenant
     if c.work_class in ("background", "batch"):
         tiers = tiers[:1]
+    routes = _candidate_routes(c, excluded)
+    synthetic = settings().environment in SYNTHETIC_ENVIRONMENTS
+    evaluating = _evaluation_route.get() is not None or _evaluation_tier.get() is not None
     with _tracer.start_as_current_span("ai.admit", attributes={"ai.work_class": c.work_class}):
         retry_after = 60
         for index, tier in enumerate(tiers):
-            model = MODELS[tier][0]
-            # A cheaper tier needs a passing evaluation run on this prompt version (SPEC-005).
-            if index > 0 and not await eligible(
-                tenant, c.attribution.agent_id, tier, model, prompt_version
-            ):
-                _log.info("admission.tier_ineligible", agent_id=c.attribution.agent_id, tier=tier)
-                continue
-            admitted, wait = await admit(tenant, model, c.work_class, c.essential, tokens)
-            if admitted:
-                return tier, model
-            retry_after = min(retry_after, wait)
+            for route in routes:
+                model = model_id(tier, route)
+                if model is None:
+                    continue
+                # A cheaper tier needs a passing evaluation run (SPEC-005); outside synthetic
+                # environments so does every real route (SPEC-010 AC-6, ADR-073).
+                gated = index > 0 or (not synthetic and route != "fake" and not evaluating)
+                if gated and not await eligible(
+                    tenant, c.attribution.agent_id, route, tier, model, prompt_version
+                ):
+                    _log.info(
+                        "admission.route_ineligible",
+                        agent_id=c.attribution.agent_id,
+                        route=route,
+                        tier=tier,
+                    )
+                    continue
+                admitted, wait = await admit(
+                    tenant, route, model, c.work_class, c.essential, tokens
+                )
+                if admitted:
+                    return tier, route, model
+                retry_after = min(retry_after, wait)
     raise NotAdmitted(refusal_reason(c.work_class), retry_after)
+
+
+def _next_route_exists(c: GatewayCall[BaseModel], tier: Tier, excluded: frozenset[Route]) -> bool:
+    return any(model_id(tier, r) is not None for r in _candidate_routes(c, excluded))
 
 
 async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult[T]:
     pinned = _evaluation_tier.get()
     tier = pinned or c.tier
-    model = MODELS[tier][0]
+    planned = _candidate_routes(cast(GatewayCall[BaseModel], c), frozenset())
+    route: Route = planned[0] if planned else "fake"
+    model = model_id(tier, route) or settings().model_catalog[tier].name
     user = c.context.render()
     inputs_hash = hashlib.sha256(f"{found.ref}\n{user}".encode()).hexdigest()
     spent = Decimal(0)
@@ -510,10 +582,13 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
                 spent=Decimal(0),
                 outcome="budget_refused",
                 inputs_hash=inputs_hash,
+                route=route,
             )
             if attempt == 1:
                 raise BudgetExceeded(f"{found.ref} would cost more than {c.budget_usd}")
-            return GatewayResult("escalated", None, attempt - 1, spent, inputs_hash, model, found)
+            return GatewayResult(
+                "escalated", None, attempt - 1, spent, inputs_hash, model, found, route
+            )
         # The budget hierarchy (ADR-069; SPEC-007): engagement, firm and platform levels.
         await check_budget(
             c.attribution.tenant, c.attribution.engagement_id, c.essential, estimate
@@ -522,48 +597,50 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
         needed = estimate_tokens(request.system + request.user) + c.max_output_tokens
         # Evaluation mode never steps down: a run measures exactly the tier it pinned.
         tiers = (tier, *c.cheaper_tiers) if attempt == 1 and pinned is None else (tier,)
-        tier, model = await _admitted(cast(GatewayCall[BaseModel], c), tiers, needed, found.ref)
-        request = replace(request, model=model)
-        try:
-            async with asyncio.timeout(c.timeout_seconds):
-                response = await provider().complete(request)
-        except (ProviderError, TimeoutError) as exc:
-            if isinstance(exc, ProviderError) and exc.rate_limited:
-                # Never retried here (AC-12): the model is blocked; the call waits for admission.
-                asked = exc.retry_after
-                wait = 30 if asked is None or not math.isfinite(asked) else max(1, ceil(asked))
-                wait = min(wait, 3600)
-                try:
-                    await block(c.attribution.tenant, model, wait)
-                except Exception as failed:  # the call still waits: never back to the provider now
-                    _log.warning("admission.block_failed", model=model, error=failed)
+        excluded: set[Route] = set()
+        while True:  # SPEC-010: a failed route hands the attempt to the next allowed route
+            tier, route, model = await _admitted(
+                cast(GatewayCall[BaseModel], c), tiers, needed, found.ref, frozenset(excluded)
+            )
+            request = replace(request, model=model)
+            try:
+                async with asyncio.timeout(c.timeout_seconds):
+                    response = await route_provider(route).complete(request)
+                break
+            except (ProviderError, TimeoutError) as exc:
+                error = exc if isinstance(exc, ProviderError) else ProviderError("timeout")
+                wait = await _route_failed(c.attribution, route, model, error)
+                billed = (
+                    Decimal(0)
+                    if error.rate_limited or error.auth
+                    else cost(tier, estimate_tokens(request.system + request.user), 0)
+                )
+                # The provider may bill a call that failed or timed out: count its input, so
+                # retries can't spend past the run's budget on calls recorded as free.
+                spent += billed
                 await _record_usage(
                     c.attribution,
                     found=found,
                     model=model,
                     tier=tier,
                     response=None,
-                    spent=Decimal(0),
-                    outcome="rate_limited",
+                    spent=billed,
+                    outcome="rate_limited" if error.rate_limited else "provider_error",
                     inputs_hash=inputs_hash,
+                    route=route,
                 )
-                raise NotAdmitted(refusal_reason(c.work_class), wait) from None
-            # The provider may bill a call that failed or timed out: count its input, so retries
-            # can't spend past the run's budget on calls recorded as free.
-            billed = cost(tier, estimate_tokens(request.system + request.user), 0)
-            await _record_usage(
-                c.attribution,
-                found=found,
-                model=model,
-                tier=tier,
-                response=None,
-                spent=billed,
-                outcome="provider_error",
-                inputs_hash=inputs_hash,
-            )
-            if isinstance(exc, TimeoutError):
-                raise ProviderError(f"{found.ref} timed out") from None
-            raise
+                excluded.add(route)
+                tiers = (tier,)
+                if _next_route_exists(cast(GatewayCall[BaseModel], c), tier, frozenset(excluded)):
+                    _failovers.add(1, {"route": route, "reason": _reason(error)})
+                    _log.info("ai.failover", route=route, reason=_reason(error))
+                    continue
+                if error.rate_limited:
+                    # Never retried here (SPEC-003 AC-12): the call waits for admission.
+                    raise NotAdmitted(refusal_reason(c.work_class), wait) from None
+                if isinstance(exc, TimeoutError):
+                    raise ProviderError(f"{found.ref} timed out") from None
+                raise error from None
         this_cost = cost(tier, response.input_tokens, response.output_tokens)
         spent += this_cost
         output, errors = _parse(c.output_schema, response.text)
@@ -577,6 +654,7 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
             spent=this_cost,
             outcome=outcome,
             inputs_hash=inputs_hash,
+            route=route,
         )
         if output is not None:
             return GatewayResult(
@@ -587,6 +665,7 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
                 inputs_hash,
                 model,
                 found,
+                route,
             )
         # One repair: the same request plus where the output failed the schema.
         request = ModelRequest(
@@ -597,7 +676,32 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
             c.max_output_tokens,
             found.ref,
         )
-    return GatewayResult("escalated", None, 2, spent, inputs_hash, model, found)
+    return GatewayResult("escalated", None, 2, spent, inputs_hash, model, found, route)
+
+
+def _reason(error: ProviderError) -> str:
+    return "rate_limited" if error.rate_limited else ("auth" if error.auth else "outage")
+
+
+async def _route_failed(
+    attribution: Attribution, route: Route, model: str, error: ProviderError
+) -> int:
+    """Block the route's model (rate limit: for the wait asked; outage: `outage_block_seconds`,
+    SPEC-010 Q3) and return the wait. Credentials refused: no block, an alert."""
+    if error.auth:
+        _log.error("provider.auth_failed", route=route, model=model)
+        return 0
+    if error.rate_limited:
+        asked = error.retry_after
+        wait = 30 if asked is None or not math.isfinite(asked) else max(1, ceil(asked))
+    else:
+        wait = settings().outage_block_seconds
+    wait = min(wait, 3600)
+    try:
+        await block(attribution.tenant, route, model, wait)
+    except Exception as failed:  # the call still moves on: never back to this route now
+        _log.warning("admission.block_failed", route=route, model=model, error=failed)
+    return wait
 
 
 __all__ = [
@@ -627,17 +731,20 @@ __all__ = [
     "NotAdmitted",
     "Prompt",
     "ProviderError",
+    "Route",
     "Tier",
     "UnknownPrompt",
     "call",
     "check_provider_limits",
     "configure_embedder",
     "configure_provider",
+    "configure_route",
     "cost",
     "eligible",
     "embed",
     "estimate_tokens",
     "evaluation",
+    "model_id",
     "prompt",
     "registry",
     "sanitise_text",

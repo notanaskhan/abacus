@@ -147,6 +147,7 @@ async def judge_with_model(
             context=context,
             work_class="batch",
             essential=False,
+            routes=("bedrock", "direct"),  # SPEC-010 Q1 order; fake in synthetic runs
             max_output_tokens=200,
         )
     )

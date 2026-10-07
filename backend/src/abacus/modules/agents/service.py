@@ -337,6 +337,7 @@ async def _screen(agent: AgentContext) -> ScreeningOutcome:
             context=context,
             work_class=screener.work_class,
             essential=screener.essential,
+            routes=screener.routes,
             cheaper_tiers=screener.cheaper_tiers,
             max_output_tokens=screener.limits.max_output_tokens,
             timeout_seconds=screener.limits.max_seconds,

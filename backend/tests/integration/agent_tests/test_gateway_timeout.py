@@ -72,6 +72,7 @@ def _call(world: World) -> GatewayCall[Verdict]:
         tier="small",
         output_schema=Verdict,
         work_class="time_sensitive",  # SPEC-003 018c: every call declares its class
+        routes=("bedrock", "direct"),  # SPEC-010: the fake route serves synthetic runs
         essential=True,
         budget_usd=Decimal("0.05"),
         attribution=Attribution(

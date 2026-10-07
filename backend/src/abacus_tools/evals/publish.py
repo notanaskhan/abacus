@@ -26,7 +26,7 @@ import sys
 from pathlib import Path
 from typing import cast
 
-from abacus.ai_gateway import MODELS
+from abacus.ai_gateway import model_id
 from abacus.modules.agents.api import spec
 from abacus_tools.evals.metrics import Attempt
 from abacus_tools.evals.runner import baseline, store_finish, store_start, suite_for
@@ -44,8 +44,10 @@ class Refused(ValueError):
 def check(summary: Summary, *, database_url: str, environment: str | None) -> None:
     """Every check that needs no database (raises `Refused`)."""
     agent = spec(summary.agent)
-    if summary.model != MODELS[summary.tier][0]:
-        raise Refused("the model isn't its tier's")
+    if summary.route not in ("fake", "direct", "bedrock"):
+        raise Refused("the route isn't a model route")
+    if summary.model != model_id(summary.tier, summary.route):
+        raise Refused("the model isn't its tier's on its route")
     if summary.prompt_version != agent.prompt:
         raise Refused("the prompt isn't the agent's current one")
     suite = suite_for(summary.agent)

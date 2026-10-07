@@ -127,7 +127,7 @@ async def _store(dsn: str, summary: Summary) -> None:
 
 async def _eligible(model: str) -> bool:
     tenant = TenantContext(uuid.uuid4(), "agent", f"agent:{AGENT}:eval")
-    return await eligible(tenant, AGENT, "small", model, PROMPT)
+    return await eligible(tenant, AGENT, "fake", "small", model, PROMPT)  # SPEC-010: per route
 
 
 def _model() -> str:

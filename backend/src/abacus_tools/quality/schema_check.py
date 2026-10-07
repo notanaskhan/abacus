@@ -143,7 +143,7 @@ APP_INSERT_COLUMNS.update(
         "usage_records": frozenset(
             {"id", "tenant_id", "engagement_id", "agent_id", "agent_run_id", "prompt_id"}
             | {"prompt_version", "model", "tier", "input_tokens", "output_tokens", "cost_usd"}
-            | {"outcome", "inputs_hash"}
+            | {"outcome", "inputs_hash", "route"}
         ),
         "review_decisions": frozenset(
             {"id", "tenant_id", "engagement_id", "evidence_version_id", "request_item_id"}
