@@ -73,18 +73,31 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
             assert route.response_model is not None
 
 
+# TASK-019: taking, releasing and assigning a review return the assignment, so 200.
+REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
+NOT_CREATING = {
+    "/v1/walls/{wall_id}/remove",  # TASK-016: returns the removed wall, so 200
+    REVIEW_QUEUE + "/take",
+    REVIEW_QUEUE + "/release",
+    REVIEW_QUEUE + "/assign",
+}
+
+
 def test_ac20_creating_routes_answer_201() -> None:
     posts = [r for r in _routes() if "POST" in _methods(r)]
-    removal = "/v1/walls/{wall_id}/remove"  # TASK-016: returns the removed wall, so 200
-    created = {r.path for r in posts if r.path not in (RETRIEVALS, removal)}
+    created = {r.path for r in posts if r.path != RETRIEVALS and r.path not in NOT_CREATING}
+    decisions = "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/"
     assert created == {
         "/v1/engagements",
         "/v1/engagements/{engagement_id}/request-items",
         "/v1/walls",
+        decisions + "accept",  # TASK-019: a review decision is created
+        decisions + "reject",
+        decisions + "send-back",
     }
-    assert all(r.status_code == 201 for r in posts if r.path not in (RETRIEVALS, removal))
-    assert {r.path for r in posts if r.path == removal} == {removal}
-    assert all(r.status_code in (None, 200) for r in posts if r.path == removal)  # None: default
+    assert all(r.status_code == 201 for r in posts if r.path in created)
+    assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING
+    assert all(r.status_code in (None, 200) for r in posts if r.path in NOT_CREATING)
 
 
 def test_ac20_the_retrieval_routes_exist_with_their_actions_and_the_post_answers_202() -> None:
