@@ -26,6 +26,7 @@ backend/src/abacus/modules/<name>/
 - State changes: `with uow(ctx) as tx:` → change → `tx.record(...)` → `tx.emit(...)` (ADR-018).
 - New tables: `tenant_id NOT NULL`, row-level security policy, classification on every column (ADR-014, 031).
 - Use glossary names for tables, classes and routes.
+- Log, trace and report errors the observability way: `.claude/skills/observability/SKILL.md` (ADR-022).
 - Shared infrastructure comes from the kernel (`from abacus.kernel.uow import …`); other modules only via `from abacus.modules.<m>.api import …` (ADR-101).
 
 ## Checklist before done
