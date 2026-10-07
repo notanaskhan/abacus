@@ -7,6 +7,7 @@ import asyncio
 import os
 import signal
 import uuid
+from collections.abc import Sequence
 from types import TracebackType
 from typing import Self
 
@@ -95,7 +96,7 @@ async def test_ac20_a_failed_relay_database_check_stops_the_boot_after_ping(
     monkeypatch.setattr(worker_main, "ping_relay", ping_relay)
     monkeypatch.setattr(worker_main, "key_service", lambda: calls.append("keys"))
     with pytest.raises(RuntimeError, match="relay role cannot connect"):
-        await worker_main.build_worker()
+        await worker_main.build_workers()
     assert calls == ["ping", "ping_relay"]
 
 
@@ -106,8 +107,8 @@ async def test_ac20_run_hosts_the_relay_inside_the_worker_until_the_signal(
     log: list[str] = []
     seen: dict[str, object] = {}
 
-    async def build() -> _Worker:
-        return _Worker(log)
+    async def build(classes: Sequence[str]) -> list[_Worker]:
+        return [_Worker(log)]
 
     async def relay(publisher: Publisher, stop: asyncio.Event) -> None:
         seen["publisher"] = publisher
@@ -118,7 +119,7 @@ async def test_ac20_run_hosts_the_relay_inside_the_worker_until_the_signal(
         await asyncio.sleep(0.05)
         log.append("relay finished")
 
-    monkeypatch.setattr(worker_main, "build_worker", build)
+    monkeypatch.setattr(worker_main, "build_workers", build)
     monkeypatch.setattr(worker_main, "run_relay", relay)
     asyncio.get_running_loop().call_later(0.1, os.kill, os.getpid(), sig)
     await asyncio.wait_for(worker_main.run(), timeout=10)
@@ -134,13 +135,13 @@ async def test_ac20_a_relay_that_dies_stops_the_worker_and_its_error_is_raised(
 ) -> None:
     log: list[str] = []
 
-    async def build() -> _Worker:
-        return _Worker(log)
+    async def build(classes: Sequence[str]) -> list[_Worker]:
+        return [_Worker(log)]
 
     async def dying(publisher: Publisher, stop: asyncio.Event) -> None:
         raise RuntimeError("relay crashed")
 
-    monkeypatch.setattr(worker_main, "build_worker", build)
+    monkeypatch.setattr(worker_main, "build_workers", build)
     monkeypatch.setattr(worker_main, "run_relay", dying)
     with pytest.raises(RuntimeError, match="relay crashed"):
         await asyncio.wait_for(worker_main.run(), timeout=10)  # no signal is sent
@@ -173,7 +174,7 @@ async def test_ac14_the_fake_provider_is_configured_only_in_local(
         monkeypatch.setattr(worker_main, "temporal_client", client)
         monkeypatch.setattr(worker_main, "Worker", fake_worker)
         monkeypatch.setattr(worker_main, "configure_provider", provided.append)
-        await worker_main.build_worker()
+        await worker_main.build_workers()
     finally:
         monkeypatch.undo()
         settings.cache_clear()

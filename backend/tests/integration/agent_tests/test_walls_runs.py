@@ -10,6 +10,7 @@ comes from the pipeline; the worker and Temporal are real for the workflow test.
 from __future__ import annotations
 
 import uuid
+from contextlib import AsyncExitStack, asynccontextmanager
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from datetime import timedelta
 from typing import cast
@@ -23,6 +24,7 @@ from temporalio.worker import Worker
 
 from abacus.ai_gateway import FakeModel
 from abacus.kernel.config import settings
+from abacus.kernel.dispatch import queue_for
 from abacus.kernel.temporal import configure_temporal_client, data_converter
 from abacus.modules.agents.api import create_screening_run, load_agent_context, screen
 from abacus.modules.connections.api import (
@@ -38,7 +40,7 @@ from abacus.modules.connections.api import (
     start_retrieval,
 )
 from abacus.modules.identity.api import Forbidden, Resource, authorise
-from abacus.worker.__main__ import build_worker
+from abacus.worker.__main__ import build_workers
 from abacus_tools.fakes.identity import FakeIdentityProvider
 
 from .support import PERIOD, Person, Seeder, World, retrieve
@@ -193,6 +195,16 @@ def task_queue(monkeypatch: pytest.MonkeyPatch, fake_dir: object) -> Iterator[No
     settings.cache_clear()
 
 
+@asynccontextmanager
+async def _serving() -> AsyncIterator[list[Worker]]:
+    """Every class's pool (and the legacy queue), as `python -m abacus.worker` runs them."""
+    async with AsyncExitStack() as pools:
+        built = await build_workers()
+        for pool in built:
+            await pools.enter_async_context(pool)
+        yield built
+
+
 @pytest.fixture
 async def temporal(temporal_target: str) -> AsyncIterator[Client]:
     client = await Client.connect(temporal_target, data_converter=data_converter())
@@ -202,9 +214,8 @@ async def temporal(temporal_target: str) -> AsyncIterator[Client]:
 
 
 @pytest.fixture
-async def worker(temporal: Client) -> AsyncIterator[Worker]:
-    built = await build_worker()
-    async with built:
+async def worker(temporal: Client) -> AsyncIterator[list[Worker]]:
+    async with _serving() as built:
         yield built
 
 
@@ -218,7 +229,7 @@ async def test_ac7_a_retrieval_workflow_for_a_walled_person_ends_failed_with_cod
         RetrievalWorkflow.run,
         RetrievalInput(str(world.tenant_id), str(run_id)),
         id=f"walls-{uuid.uuid4()}",
-        task_queue=QUEUE,
+        task_queue=queue_for("interactive"),
         execution_timeout=timedelta(seconds=90),
     )
     assert isinstance(outcome, RetrievalOutcome)

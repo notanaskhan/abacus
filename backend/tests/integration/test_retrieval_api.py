@@ -14,6 +14,7 @@ import asyncio
 import hashlib
 import json
 import uuid
+from contextlib import AsyncExitStack, asynccontextmanager
 from collections.abc import AsyncIterator, Callable, Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -32,6 +33,7 @@ from types_boto3_s3 import S3Client
 
 from abacus.api import create_app
 from abacus.kernel.config import settings
+from abacus.kernel.dispatch import queue_for
 from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
 from abacus.kernel.db import (
     TenantContext,
@@ -41,10 +43,10 @@ from abacus.kernel.db import (
 )
 from abacus.kernel.storage import s3_client
 from abacus.kernel.temporal import configure_temporal_client, data_converter
-from abacus.modules.connections.api import Period, RetrievalInput, workflow_id
+from abacus.modules.connections.api import Period, RetrievalInput, RetrievalWorkflow, workflow_id
 from abacus.modules.evidence import storage
 from abacus.modules.identity.api import AuthContext, configure_verifier, reset_verifier
-from abacus.worker.__main__ import build_worker
+from abacus.worker.__main__ import build_workers
 from abacus_tools.fakes.identity import FakeIdentityProvider
 from abacus_tools.synthetic import generate
 from abacus_tools.synthetic.connector_fixtures import (
@@ -470,6 +472,16 @@ def recorder() -> Recorder:
     return _use(Recorder())
 
 
+@asynccontextmanager
+async def _serving() -> AsyncIterator[list[Worker]]:
+    """Every class's pool (and the legacy queue), as `python -m abacus.worker` runs them."""
+    async with AsyncExitStack() as pools:
+        built = await build_workers()
+        for pool in built:
+            await pools.enter_async_context(pool)
+        yield built
+
+
 @pytest.fixture
 async def temporal(temporal_target: str) -> AsyncIterator[Client]:
     client = await Client.connect(temporal_target, data_converter=data_converter())
@@ -478,9 +490,8 @@ async def temporal(temporal_target: str) -> AsyncIterator[Client]:
 
 
 @pytest.fixture
-async def worker(temporal: Client) -> AsyncIterator[Worker]:
-    built = await build_worker()
-    async with built:
+async def worker(temporal: Client) -> AsyncIterator[list[Worker]]:
+    async with _serving() as built:
         yield built
 
 
@@ -607,10 +618,10 @@ async def test_ac9_the_trigger_starts_the_workflow_bound_to_the_run(
     found = cast(Json, (await api.post()).json())
     run_id = uuid.UUID(cast(str, found["sync_run_id"]))
     [(args, kwargs)] = recorder.calls
-    assert args[0] == "retrieval"
+    assert args[0] == RetrievalWorkflow.run
     assert args[1] == RetrievalInput(str(world.tenant_id), str(run_id))
     assert kwargs["id"] == workflow_id(run_id) == f"retrieval:{run_id}"
-    assert kwargs["task_queue"] == QUEUE
+    assert kwargs["task_queue"] == queue_for("interactive")
     assert kwargs["id_reuse_policy"] == WorkflowIDReusePolicy.ALLOW_DUPLICATE
     assert kwargs["id_conflict_policy"] == WorkflowIDConflictPolicy.USE_EXISTING
     assert kwargs["execution_timeout"] == timedelta(hours=6)

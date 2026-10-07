@@ -2,7 +2,7 @@
 the relay, the screening workflow, `screen` and `ai.call` (TASK-013 interface contract, "One
 trace" and "API"; ADR-007, ADR-017, ADR-022).
 
-The worker runs in this process (`build_worker`) behind a client with the tracing interceptor,
+The worker runs in this process (`build_workers`) behind a client with the tracing interceptor,
 on a queue unique to this module. Spans come from the shared in-memory exporter; audit and outbox
 rows are read back as the superuser. Expectations come from the contract.
 """
@@ -10,6 +10,7 @@ rows are read back as the superuser. Expectations come from the contract.
 from __future__ import annotations
 
 import uuid
+from contextlib import AsyncExitStack, asynccontextmanager
 from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
 from datetime import timedelta
@@ -25,6 +26,7 @@ from temporalio.worker import Worker
 from abacus.ai_gateway import FakeModel, configure_provider
 from abacus.api import create_app
 from abacus.kernel.config import settings
+from abacus.kernel.dispatch import queue_for
 from abacus.kernel.db import configure_relay_engine
 from abacus.kernel.telemetry import TRACEPARENT, current_trace_id, tracer
 from abacus.kernel.temporal import configure_temporal_client, data_converter
@@ -47,7 +49,7 @@ from abacus.modules.connections.api import (
     workflow_id as retrieval_workflow_id,
 )
 from abacus.modules.identity.api import configure_verifier, reset_verifier
-from abacus.worker.__main__ import build_worker
+from abacus.worker.__main__ import build_workers
 from abacus_tools.fakes.identity import FakeIdentityProvider
 
 from . import tracing_support
@@ -82,6 +84,16 @@ def exporter() -> Iterator[InMemorySpanExporter]:
     memory.clear()
 
 
+@asynccontextmanager
+async def _serving() -> AsyncIterator[list[Worker]]:
+    """Every class's pool (and the legacy queue), as `python -m abacus.worker` runs them."""
+    async with AsyncExitStack() as pools:
+        built = await build_workers()
+        for pool in built:
+            await pools.enter_async_context(pool)
+        yield built
+
+
 @pytest.fixture
 async def temporal(temporal_target: str) -> AsyncIterator[Client]:
     """A client WITH the tracing interceptor (the worker and the relay inherit it)."""
@@ -94,9 +106,8 @@ async def temporal(temporal_target: str) -> AsyncIterator[Client]:
 
 
 @pytest.fixture
-async def worker(temporal: Client) -> AsyncIterator[Worker]:
-    built = await build_worker()
-    async with built:
+async def worker(temporal: Client) -> AsyncIterator[list[Worker]]:
+    async with _serving() as built:
         configure_provider(install_fake_responses(FakeModel()))
         yield built
     configure_provider(None)
@@ -146,7 +157,7 @@ async def _flow(temporal: Client, world: World) -> Flow:
             "retrieval",
             RetrievalInput(str(world.tenant_id), str(started.run_id)),
             id=retrieval_workflow_id(started.run_id),
-            task_queue=QUEUE,
+            task_queue=queue_for("interactive"),
             execution_timeout=timedelta(seconds=90),
             result_type=RetrievalOutcome,
         )

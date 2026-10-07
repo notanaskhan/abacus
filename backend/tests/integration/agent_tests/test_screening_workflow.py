@@ -1,7 +1,7 @@
 """AC-14, AC-15, AC-16, AC-17, AC-19: the `screening` workflow against a local Temporal with the
 real worker (TASK-011b interface contract: "Subscription" and "Workflow `screening`"; ADR-017).
 
-The worker runs in this process (`build_worker`, so the registries, the boot order and the
+The worker runs in this process (`build_workers`, so the registries, the boot order and the
 workflow sandbox are all exercised) on a task queue unique to this module, and the client uses
 the platform payload codec. The model is a `FakeModel` or a scripted provider. A retrieved trial
 balance comes from the real pipeline; its `evidence_version.created` event is read back from the
@@ -14,6 +14,7 @@ import asyncio
 import base64
 import json
 import uuid
+from contextlib import AsyncExitStack, asynccontextmanager
 from collections.abc import AsyncIterator, Callable, Iterator
 from datetime import timedelta
 from typing import cast
@@ -32,6 +33,7 @@ from abacus.ai_gateway import (
     configure_provider,
 )
 from abacus.kernel.config import settings
+from abacus.kernel.dispatch import queue_for
 from abacus.kernel.crypto.payload_codec import ENCODING
 from abacus.kernel.db import configure_relay_engine
 from abacus.kernel.temporal import configure_temporal_client, data_converter, payload_codec
@@ -47,7 +49,7 @@ from abacus.modules.agents.api import (
 )
 from abacus.modules.agents.screenings import EVIDENCE_VERSION_CREATED, screening_input
 from abacus.modules.agents.workflow_types import ScreeningOutcome
-from abacus.worker.__main__ import build_worker
+from abacus.worker.__main__ import build_workers
 
 from .support import ENTITY, TB, Migrated, Seeder, World, retrieve, uploaded_version
 
@@ -72,6 +74,16 @@ def relay_engine_for_this_loop(migrated_db: Migrated) -> None:
     configure_relay_engine(migrated_db.relay_url)
 
 
+@asynccontextmanager
+async def _serving() -> AsyncIterator[list[Worker]]:
+    """Every class's pool (and the legacy queue), as `python -m abacus.worker` runs them."""
+    async with AsyncExitStack() as pools:
+        built = await build_workers()
+        for pool in built:
+            await pools.enter_async_context(pool)
+        yield built
+
+
 @pytest.fixture
 async def temporal(temporal_target: str) -> AsyncIterator[Client]:
     client = await Client.connect(temporal_target, data_converter=data_converter())
@@ -81,9 +93,8 @@ async def temporal(temporal_target: str) -> AsyncIterator[Client]:
 
 
 @pytest.fixture
-async def worker(temporal: Client) -> AsyncIterator[Worker]:
-    built = await build_worker()
-    async with built:
+async def worker(temporal: Client) -> AsyncIterator[list[Worker]]:
+    async with _serving() as built:
         yield built
 
 
@@ -165,7 +176,7 @@ async def _execute(temporal: Client, given: ScreeningInput) -> ScreeningOutcome:
         ScreeningWorkflow.run,
         given,
         id=f"test-{uuid.uuid4()}",
-        task_queue=QUEUE,
+        task_queue=queue_for("time_sensitive"),
         execution_timeout=timedelta(seconds=90),
     )
 
@@ -177,7 +188,7 @@ async def _start(
         ScreeningWorkflow.run,
         given,
         id=f"test-{uuid.uuid4()}",
-        task_queue=QUEUE,
+        task_queue=queue_for("time_sensitive"),
         execution_timeout=timedelta(seconds=90),
     )
 
@@ -243,7 +254,7 @@ async def test_ac14_the_workflow_is_started_with_the_tenant_qualified_id_and_que
     handle = _handle(temporal, f"screening:{world.tenant_id}:{version_id}")
     description = await handle.describe()
     assert description.id == f"screening:{world.tenant_id}:{version_id}"
-    assert description.task_queue == QUEUE
+    assert description.task_queue == queue_for("time_sensitive")
     history = await handle.fetch_history()
     started = history.events[0].workflow_execution_started_event_attributes
     assert started.workflow_execution_timeout.seconds == 0  # no execution timeout
