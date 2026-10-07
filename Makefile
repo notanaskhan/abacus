@@ -54,8 +54,8 @@ check: check-fast
 # CI stage 2 runs `check` as parallel jobs (TASK-017). Each suite is split into SHARDS by recorded
 # run time (abacus_tools.ci.shard; every test file runs in exactly one shard), each shard keeps
 # its own coverage data, and ci-coverage combines them and applies the floor. Refresh the timings
-# after large test changes: pytest --junitxml=junit.xml, then
-# python -m abacus_tools.ci.shard --record junit.xml
+# after large test changes: pytest --durations=0 --durations-min=0 > report.txt, then
+# python -m abacus_tools.ci.shard --record report.txt
 UNIT_TESTS = tests/unit tests/property
 INTEGRATION_TESTS = tests/integration tests/security tests/workflows
 SHARD ?= 1
