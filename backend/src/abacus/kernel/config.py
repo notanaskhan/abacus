@@ -71,6 +71,18 @@ class WorkClassLimits(BaseModel):
     engagement_cap: Annotated[int, Field(ge=0), classified("internal")]
     class_capacity: Annotated[int, Field(ge=1), classified("internal")]
     max_wait_seconds: Annotated[int, Field(ge=1), classified("internal")]
+    # Admission (SPEC-003 Q5, D4): the share of a provider's capacity this class leaves for
+    # higher classes. A deferrable agent uses the next class's reserve.
+    admission_reserve_pct: Annotated[int, Field(ge=0, le=99), classified("internal")]
+
+
+class ProviderLimits(BaseModel):
+    """One model's limits, set at 80% of the provider's published or contracted ones (Q5)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    rpm: Annotated[int, Field(ge=1, le=1_000_000), classified("internal")]
+    tpm: Annotated[int, Field(ge=1, le=100_000_000), classified("internal")]
 
 
 class Settings(BaseSettings):
@@ -117,6 +129,7 @@ class Settings(BaseSettings):
             engagement_cap=10,
             class_capacity=50,
             max_wait_seconds=120,
+            admission_reserve_pct=0,
         ),
         "time_sensitive": WorkClassLimits(
             max_activities=10,
@@ -125,6 +138,7 @@ class Settings(BaseSettings):
             engagement_cap=10,
             class_capacity=50,
             max_wait_seconds=600,
+            admission_reserve_pct=0,
         ),
         "background": WorkClassLimits(
             max_activities=5,
@@ -133,6 +147,7 @@ class Settings(BaseSettings):
             engagement_cap=5,
             class_capacity=20,
             max_wait_seconds=6 * 3600,
+            admission_reserve_pct=25,
         ),
         "batch": WorkClassLimits(
             max_activities=2,
@@ -141,6 +156,7 @@ class Settings(BaseSettings):
             engagement_cap=2,
             class_capacity=10,
             max_wait_seconds=24 * 3600,
+            admission_reserve_pct=50,
         ),
     }
     # Temporal Cloud needs TLS and an API key; both are required outside local and test.
@@ -190,6 +206,14 @@ class Settings(BaseSettings):
         ):
             raise ValueError("Temporal needs TLS and an API key outside local and test")
         return self
+
+    # Model provider capacity (ADR-072): per model, shared by every process (migration 0014).
+    model_provider: Annotated[str, classified("internal")] = "fake"
+    provider_limits: Annotated[dict[str, ProviderLimits], classified("internal")] = {
+        "fake-small": ProviderLimits(rpm=600, tpm=1_000_000),
+        "fake-medium": ProviderLimits(rpm=600, tpm=1_000_000),
+        "fake-large": ProviderLimits(rpm=600, tpm=1_000_000),
+    }
 
     @model_validator(mode="after")
     def _every_work_class(self) -> Self:

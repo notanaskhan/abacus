@@ -338,6 +338,42 @@ Source: SPEC-003 AC-6–8, AC-13, AC-14 and AC-15 (slots), design §4–5 and D2
   - Behind `patched("admission")`, the workflow catches it, sleeps for `retry_after` with jitter (at least 1 s and at most 60 s), and calls `screen` again. Past the class's maximum wait (from the slot grant), the run fails `capacity_timeout`.
 - **F1 (review question): wait for capacity while holding the slot.** Recommended. The slot stands for the run's work in progress. Releasing it to wait would let the firm start more work that needs the same provider, and a run would queue twice. A slot grant clears only slot reasons (`firm_cap`, `engagement_cap`, `class_capacity`), and admission clears only `provider_capacity`/`deferred`, so no queued and resumed entries flap in the audit trail.
 
+### Interface contract: 018c admission (tests written independently, ADR-078)
+Source: SPEC-003 AC-9–12, AC-13 (admission reasons), AC-14, AC-15 (admission), design §6 and D4, and the "018c detailed design" above (F1 as recommended). Every test names its AC.
+- **Migration 0014.**
+  - `provider_capacity` is a platform table with no app privileges and RLS enabled with no policy. It is in `NON_TENANT_TABLES`, `GLOBAL_TABLES` and `TABLE_OWNERS` (`ai_gateway`).
+  - `capacity_admit(provider, model, rpm, tpm, reserve_pct, tokens) -> (admitted, retry_after_seconds)`:
+    - it needs a tenant session;
+    - arguments must be `rpm` 1–1,000,000, `tpm` 1–100,000,000, `reserve_pct` 0–99 and `tokens` 1–`tpm`, otherwise `invalid_parameter_value`;
+    - it creates the bucket full on first use and refills by elapsed database time, at most one minute's worth;
+    - it admits only if `requests − 1` and `tokens_left − tokens` both stay at or above `reserve_pct`% of the limit, and never while blocked;
+    - when it refuses, `retry_after` is the time to refill above the reserve, from 1 to 60 s, or the remaining block.
+  - `capacity_block(provider, model, seconds)`: seconds must be 1–3,600. It empties both buckets and moves `blocked_until` later, never earlier.
+  - Both functions are SECURITY DEFINER with the pinned search path and timeouts. They are in `DEFINER_FUNCTIONS`, and EXECUTE is granted to the app only.
+  - `usage_records.outcome` allows `rate_limited`. The downgrade refuses while such rows exist.
+- **Settings.**
+  - `model_provider` (`"fake"`).
+  - `provider_limits: dict[model, ProviderLimits(rpm, tpm)]` (the fake models: 600 and 1,000,000).
+  - `WorkClassLimits.admission_reserve_pct`: interactive 0, time_sensitive 0, background 25, batch 50.
+- **`ai_gateway.admission`.**
+  - `NotAdmitted(reason, retry_after)`.
+  - `reserve_pct(work_class, essential)`: a non-essential call takes the next class's reserve (interactive → time_sensitive → background → batch, and batch → batch).
+  - `refusal_reason(c)`: `deferred` for background and batch, `provider_capacity` otherwise.
+  - `admit(tenant, model, work_class, essential, tokens) -> (admitted, retry_after)`. An unknown model, or an unreachable bucket, gives `(False, 30)`.
+  - `block(tenant, model, seconds)`, with `seconds` clamped to 1–3,600.
+  - Both commit with no audit event (UOW-001/002 exempt this file).
+  - Counter `abacus.admission` (`provider`, `model`, `work_class`, `outcome` admitted or refused, `reason`). Logs `admission.refused`, `admission.unavailable` and `provider.rate_limited`.
+- **Gateway.**
+  - `GatewayCall` requires `work_class` and `essential`, and has `cheaper_tiers` (default empty).
+  - Before every attempt, after the budget check, the call is admitted under an `ai.admit` span, with tokens = the input estimate + `max_output_tokens`. Attempt 1 may step down through `cheaper_tiers`, and cost and usage follow the admitted tier. If nothing admits, it raises `NotAdmitted` with the smallest `retry_after`.
+  - `ProviderError(rate_limited=True, retry_after=…)`: block for `retry_after` (or 30 s), record usage `rate_limited` with nothing spent, and raise `NotAdmitted("provider_capacity", wait)`. It is never retried within the call.
+  - Other provider errors are unchanged.
+- **Screening.**
+  - The service passes the spec's `work_class`, `essential` and `cheaper_tiers`.
+  - The `screen` activity first clears an admission reason with `mark_queued(None)`. On `NotAdmitted` it marks the run queued (reason, now + `retry_after`) and raises a non-retryable `ApplicationError` of type `NotAdmitted`, with details `(reason, retry_after, max_wait_seconds of the class)`.
+  - Behind `patched("admission")`, the workflow sleeps `retry_after` × jitter (0.5–1.5), clamped to 1–60 s, then screens again. When the class's maximum wait has passed since the first refusal, it fails the run `capacity_timeout`. The slot is held throughout (F1).
+- **Pins:** every `GatewayCall(...)` in tests gains `work_class` and `essential`. The 018b pins still apply.
+
 ### Steps
 1. Design and interface contract, after the spec is approved.
 2. Implementation.
@@ -363,6 +399,7 @@ Source: SPEC-003 AC-6–8, AC-13, AC-14 and AC-15 (slots), design §4–5 and D2
 ## Progress log
 - `2026-10-07` — Created with SPEC-003 (draft) for founder review.
 - `2026-10-07` — SPEC-003 approved. Design §1–8 and D1–D5 written for founder review.
+- `2026-10-07` — 018c implemented on `task-018c-admission` (stacked on 018b): migration 0014, `ai_gateway.admission`, gateway admission and cheaper tiers, rate-limit block, screening wait behind `patched("admission")`, settings, docs and contract. Waits for 018b's tests and merge.
 - `2026-10-07` — 018b reviews. Security: H1 holder keys, H2 estimate, M1–M7. Architecture: B1 a queued run couldn't end, B2 the estimate, B3 the SPA showed queued as finished, B4 replay coverage, S1–S10. Fixed: H1, M1–M7 (S1–S3, S5, S7, S9, S10), B1, B3, N1, N2 (indexes and keys) and N4. The estimate is set on queueing and on a reason change only (B2/H2: refreshing it would need an audit event per ask; spec amended); S6 spec amended. Handed to the test author: the B4 recordings, the S8 identical-loop test, and the pins. Contract revision 1 (018b).
 - `2026-10-07` — 018a merged (PR #26). 018b implemented: migration 0013 (slot ledger and functions; run queued columns), `kernel.slots`, slot activities and workflow waits behind `patched("work-slots")`, `capacity_timeout`, the queued API status, the slots metric and logs, and v2 histories. Founder decision: the ledger commits without audit events. Contract 018b written.
 - `2026-10-07` — Independent tests cherry-picked (4ccb451; about 220 tests and about 400 DISPATCH-001 cases; no product bugs). Unit and property: 8,175 passed with the compose DB stopped. 018a PR opened.
@@ -377,6 +414,8 @@ Source: SPEC-003 AC-6–8, AC-13, AC-14 and AC-15 (slots), design §4–5 and D2
 | The wait loop is copied into each module's `workflows.py` | ADR-017's import contract bars workflows from importing the kernel | No |
 | Slot hand-out is poll-based: a free slot goes to the first live waiter when it next asks (at most about 90 s), so capacity can sit idle briefly. Waiters silent for 3 minutes stop holding others up | Fairness without a cross-process signal; SPEC-003 §12 (018b review S5) | No |
 | `class_capacity` added as a queued reason; SPEC-003 amended (storage of the queued status, the estimate, screening's API as a follow-up) | 018b review S6 | No (spec amended) |
+| Provider capacity commits without audit events, like the slot ledger (UOW exemption for `ai_gateway/admission.py`) | The same operational-ledger reasoning as the founder's slot decision; flagged to the founder | No |
+| A screen waiting for provider capacity keeps its slot (F1) | Releasing it would let the firm start more work needing the same provider; no audit flapping | No |
 | No per-firm slots-in-use gauge; per-firm detail is in `slot.*` logs | A process-local gauge is wrong across processes, and the metrics allowlist carries no tenant ID | No |
 
 ## Gotchas and discoveries
