@@ -115,6 +115,44 @@ describe("ac18 ESLint architecture rules", () => {
     expect(found).toEqual([]);
   });
 
+  it("bans writing HTML into the DOM", async () => {
+    const snippets = [
+      "export const f = (e: HTMLElement, h: string) => { e.innerHTML = h; };",
+      "export const f = (e: HTMLElement, h: string) => { e.outerHTML = h; };",
+      "export const f = (e: HTMLElement, h: string) => { e.insertAdjacentHTML('beforeend', h); };",
+      "export const f = (r: Range, h: string) => r.createContextualFragment(h);",
+    ];
+    for (const code of snippets) {
+      const found = await violations(code, "src/screens/Example.tsx");
+      expect(found.length, code).toBeGreaterThan(0);
+    }
+  });
+
+  it("bans dangerouslySetInnerHTML passed as an object property", async () => {
+    const found = await violations(
+      "const props = { dangerouslySetInnerHTML: { __html: 'x' } };\nexport const A = () => <p {...props} />;",
+      "src/screens/Example.tsx",
+    );
+    expect(found.length).toBeGreaterThan(0);
+  });
+
+  it("does not apply the HTML and agent-text rules to test files", async () => {
+    const code =
+      "export const f = (e: HTMLElement) => { e.innerHTML = '<b>x</b>'; };\n" +
+      "export const A = ({ r }: { r: { rationale: string } }) => <p>{r.rationale}</p>;";
+    expect(await violations(code, "src/screens/Example.test.tsx")).toEqual([]);
+    expect((await violations(code, "src/screens/Example.tsx")).length).toBeGreaterThan(0);
+  });
+
+  it("still bans fetch and axios in test files", async () => {
+    const found = await violations(
+      "import axios from 'axios';\nexport const x = [axios, fetch];",
+      "src/screens/Example.test.ts",
+    );
+    expect(found.some((m) => m.startsWith("no-restricted-imports"))).toBe(true);
+    expect(found.some((m) => m.startsWith("no-restricted-globals"))).toBe(true);
+  });
+
   it("does not object to ordinary JSX and fields with other names", async () => {
     const found = await violations(
       "export const A = ({ e }: { e: { name: string } }) => <p>{e.name}</p>;",

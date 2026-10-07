@@ -575,17 +575,29 @@ async def test_ac20_an_archived_engagement_remains_readable(
         assert screened["evidence_version_id"] == str(result.evidence_version_id)
 
 
-async def test_ac20_reads_change_nothing(
+async def test_ac20_reads_change_nothing_but_the_audited_screening_read(
     api: Api, seed: Seeder, world: World, provider: Provider
 ) -> None:
     result = await retrieve(world)
     await _screen(world, result.evidence_version_id)
     before = await seed.actions(world.tenant_id)
-    for read in READS:
+    for read in ("request-items", "evidence-versions"):
         await api.list(read, world.requester, world.engagement_id)
-    assert await seed.actions(world.tenant_id) == before
+        assert await seed.actions(world.tenant_id) == before
+    await api.list("screening-results", world.requester, world.engagement_id)
+    after = await seed.events(world.tenant_id)
+    assert [e.action for e in after] == [*before, "screening_result.read"]
+    assert after[-1].target_id == str(world.engagement_id)
     assert await seed.count("screening_results", world.tenant_id) == 1
     assert await seed.count("evidence_versions", world.tenant_id) == 1
+
+
+async def test_ac20_a_screening_read_that_returns_nothing_writes_no_audit_event(
+    api: Api, seed: Seeder, world: World, provider: Provider
+) -> None:
+    before = await seed.actions(world.tenant_id)
+    assert await api.list("screening-results", world.requester, world.engagement_id) == []
+    assert await seed.actions(world.tenant_id) == before
 
 
 def test_ac20_the_openapi_document_has_the_board_read_operations() -> None:

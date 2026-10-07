@@ -16,7 +16,7 @@ import { render } from "@testing-library/react";
 import type { JSX } from "react";
 import { vi } from "vitest";
 import { configureClient } from "../api";
-import { completeSignIn, signIn } from "../auth/session";
+import { completeSignIn } from "../auth/session";
 
 export interface Call {
   method: string;
@@ -81,7 +81,10 @@ export function stubLocation(pathname = "/"): { assign: ReturnType<typeof vi.fn>
 /** Signs in through the real `signIn` and `completeSignIn`, with the token endpoint stubbed. */
 export async function signInForTest(): Promise<void> {
   const { assign } = stubLocation();
-  await signIn("/");
+  // `signIn` is latched per page load; a fresh module copy stands in for a fresh page.
+  vi.resetModules();
+  const fresh = await import("../auth/session");
+  await fresh.signIn("/");
   const url = new URL(String(assign.mock.calls[0]?.[0]));
   const state = url.searchParams.get("state") ?? "";
   vi.stubGlobal(
@@ -90,7 +93,8 @@ export async function signInForTest(): Promise<void> {
       Promise.resolve(json({ access_token: "tok", token_type: "Bearer", expires_in: 600 })),
     ),
   );
-  await completeSignIn(`?code=c1&state=${state}`);
+  // Signed in a minute ago: a later 401 is a real expiry, not a rejected fresh token.
+  await completeSignIn(`?code=c1&state=${state}`, Date.now() - 60_000);
   vi.unstubAllGlobals();
   stubLocation();
 }

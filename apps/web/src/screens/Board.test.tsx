@@ -273,6 +273,90 @@ describe("ac18 Board screen", () => {
     expect(screen.getByText("Retrieving…")).toBeTruthy();
   });
 
+  it("shows a hostile citation cell and value as text only", async () => {
+    api({
+      results: [
+        screening({
+          citations: [
+            {
+              cell: "<img src=x onerror=alert(1)>",
+              quote: null,
+              value: "<b>1,000</b>‮",
+              verified: true,
+              reason: null,
+            },
+          ],
+        }),
+      ],
+    });
+    const { container } = withQueries(<Board engagementId={E} />);
+    await screen.findByText(/<b>1,000<\/b>/);
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.querySelector("b")).toBeNull();
+    expect(container.textContent).toContain("<img src=x onerror=alert(1)>");
+    expect(container.textContent).not.toContain("‮");
+  });
+
+  it("disables Retrieve from the click, before any response arrives", async () => {
+    api({
+      items: [item({ status: "open", evidence_version_id: null })],
+      versions: [],
+      results: [],
+      [`POST ${BASE}/retrievals`]: never,
+    });
+    withQueries(<Board engagementId={E} />);
+    const button = await screen.findByRole("button", { name: "Retrieve trial balance" });
+    fireEvent.click(button);
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "Retrieve trial balance" }).hasAttribute("disabled"),
+      ).toBe(true);
+    });
+    expect(screen.getByText("Retrieving…")).toBeTruthy();
+  });
+
+  it("stops polling for screening after two minutes and offers Check again", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const { calls } = api({ results: [] });
+      withQueries(<Board engagementId={E} />);
+      await screen.findByText("Retrieved · version 1");
+      expect(screen.queryByText("Screening hasn't finished.")).toBeNull();
+      await vi.advanceTimersByTimeAsync(125_000);
+      expect(await screen.findByText("Screening hasn't finished.")).toBeTruthy();
+      const reads = (): number =>
+        calls.filter((c) => c.path === `${BASE}/screening-results`).length;
+      const before = reads();
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(reads()).toBe(before);
+      fireEvent.click(screen.getByRole("button", { name: "Check again" }));
+      await waitFor(() => {
+        expect(reads()).toBeGreaterThan(before);
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("keeps polling for screening within the first two minutes", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const { calls } = api({ results: [] });
+      withQueries(<Board engagementId={E} />);
+      await screen.findByText("Retrieved · version 1");
+      const reads = (): number =>
+        calls.filter((c) => c.path === `${BASE}/screening-results`).length;
+      const before = reads();
+      await vi.advanceTimersByTimeAsync(10_000);
+      await waitFor(() => {
+        expect(reads()).toBeGreaterThan(before);
+      });
+      expect(screen.queryByText("Screening hasn't finished.")).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("offers nothing that accepts, approves, rejects or waives an agent proposal", async () => {
     api();
     withQueries(<Board engagementId={E} />);
