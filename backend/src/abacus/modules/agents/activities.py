@@ -24,6 +24,7 @@ from abacus.ai_gateway import NotAdmitted
 from abacus.kernel import slots
 from abacus.kernel.config import settings
 from abacus.kernel.errors import NotFound
+from abacus.modules.agents.knowledge import embed_next_batch, fail_document
 from abacus.modules.agents.service import (
     TERMINAL,
     AgentRunNotRunning,
@@ -39,7 +40,10 @@ from abacus.modules.agents.workflow_types import (
     FAIL_CODES,
     INTERNAL_ERROR,
     NOT_ADMITTED,
+    BatchOutcome,
     FailInput,
+    FailKnowledgeInput,
+    KnowledgeInput,
     RunInput,
     ScreeningInput,
     ScreeningOutcome,
@@ -209,10 +213,25 @@ async def fail_run_activity(input: FailInput) -> ScreeningOutcome:
         raise _as_application_error(exc, retryable=True) from None
 
 
+# --- Knowledge embedding (SPEC-009; TASK-024 design §7) ----------------------------------------
+
+
+@activity.defn(name="knowledge.embed_batch")
+async def embed_batch_activity(input: KnowledgeInput) -> BatchOutcome:
+    return await embed_next_batch(UUID(input.tenant_id), UUID(input.document_id))
+
+
+@activity.defn(name="knowledge.fail")
+async def fail_knowledge_activity(input: FailKnowledgeInput) -> None:
+    await fail_document(UUID(input.tenant_id), UUID(input.document_id), input.code)
+
+
 ACTIVITIES = (
     create_run_activity,
     acquire_slot_activity,
     release_slot_activity,
     screen_activity,
     fail_run_activity,
+    embed_batch_activity,
+    fail_knowledge_activity,
 )

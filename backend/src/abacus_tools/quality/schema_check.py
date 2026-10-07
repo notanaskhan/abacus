@@ -94,6 +94,14 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "methodology_account_rules": frozenset(
         {"tenant_id", "version_id", "area_code", "account_from", "account_to", "position"}
     ),
+    # Knowledge (SPEC-009): vectors and status are set later by the embedding workflow.
+    "knowledge_documents": frozenset(
+        {"id", "tenant_id", "title", "source_kind", "media_type", "fingerprint", "char_count"}
+        | {"added_by"}
+    ),
+    "knowledge_chunks": frozenset(
+        {"tenant_id", "document_id", "position", "heading_path", "text", "char_count"}
+    ),
     "engagement_members": frozenset({"tenant_id", "engagement_id", "user_id", "role"}),
     "evidence_items": frozenset(
         {"id", "tenant_id", "engagement_id", "title", "created_by_kind", "created_by_id"}
@@ -172,6 +180,9 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "connections": frozenset({"status"}),
     # SPEC-007 AC-7: a firm admin replaces the firm's budget (upsert).
     "budgets": frozenset({"monthly_soft_usd", "monthly_hard_usd", "updated_by", "updated_at"}),
+    # SPEC-009: document status, and each chunk's vector written once.
+    "knowledge_documents": frozenset({"status", "failure_code", "withdrawn_at"}),
+    "knowledge_chunks": frozenset({"embedding", "embedding_model", "embedded_at"}),
     "agent_runs": frozenset(
         {"status", "context_hash", "output", "failure_code", "finished_at"}
         | {"queued_reason", "estimated_start_at"}
@@ -222,6 +233,8 @@ TABLE_OWNERS: dict[str, str] = {
     "eval_case_results": "abacus_tools.evals",
     "usage_records": "ai_gateway",
     "budgets": "ai_gateway",  # SPEC-007 Q2
+    "knowledge_documents": "agents",  # SPEC-009 Q5
+    "knowledge_chunks": "agents",
     # The work slot ledger (TASK-018 D3): reached only through SECURITY DEFINER functions.
     "work_slots": "kernel.slots",
     "work_waiters": "kernel.slots",

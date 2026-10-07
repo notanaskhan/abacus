@@ -60,9 +60,13 @@ def _event(payload: dict[str, object], event_type: str = EVIDENCE_VERSION_CREATE
 
 def test_ac14_screening_starts_from_evidence_version_created() -> None:
     assert EVIDENCE_VERSION_CREATED == "evidence_version.created"
-    assert {"evidence_version.created": start_screening} == SUBSCRIPTIONS
-    assert {ScreeningWorkflow: "time_sensitive"} == WORKFLOWS
-    assert len(ACTIVITIES) == 5  # TASK-018b: acquire_slot and release_slot join the three
+    assert SUBSCRIPTIONS["evidence_version.created"] is start_screening
+    assert WORKFLOWS[ScreeningWorkflow] == "time_sensitive"
+    # SPEC-009: knowledge embedding is the agents module's only other started workflow.
+    assert set(SUBSCRIPTIONS) == {"evidence_version.created", "knowledge_document.added"}
+    assert len(WORKFLOWS) == 2
+    # TASK-018b: acquire_slot and release_slot join the three; SPEC-009 adds two knowledge steps.
+    assert len(ACTIVITIES) == 7
 
 
 def test_ac14_the_workflow_id_is_tenant_qualified() -> None:

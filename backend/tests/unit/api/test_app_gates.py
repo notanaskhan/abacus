@@ -80,6 +80,8 @@ NOT_CREATING = {
     REVIEW_QUEUE + "/take",
     REVIEW_QUEUE + "/release",
     REVIEW_QUEUE + "/assign",
+    "/v1/knowledge/documents/{document_id}/withdraw",  # SPEC-009: returns the document, so 200
+    "/v1/knowledge/search",  # SPEC-009: a query, nothing created
 }
 
 
@@ -93,6 +95,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/walls",
         "/v1/methodology/templates/{name}/versions",  # SPEC-008: a template version
         "/v1/engagements/{engagement_id}/methodology",  # SPEC-008: items seeded
+        "/v1/knowledge/documents",  # SPEC-009: a knowledge document
         decisions + "accept",  # TASK-019: a review decision is created
         decisions + "reject",
         decisions + "send-back",

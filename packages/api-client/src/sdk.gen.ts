@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptData, AcceptErrors, AcceptResponses, ApplyMethodologyData, ApplyMethodologyErrors, ApplyMethodologyResponses, AssignData, AssignErrors, AssignResponses, CreateEngagementData, CreateEngagementErrors, CreateEngagementResponses, CreateRequestItemData, CreateRequestItemErrors, CreateRequestItemResponses, CreateWallData, CreateWallErrors, CreateWallResponses, EngagementGraphData, EngagementGraphErrors, EngagementGraphResponses, GetBudgetData, GetBudgetErrors, GetBudgetResponses, GetEngagementData, GetEngagementErrors, GetEngagementResponses, GetRetrievalData, GetRetrievalErrors, GetRetrievalResponses, GetVersionData, GetVersionErrors, GetVersionResponses, ImportTemplateData, ImportTemplateErrors, ImportTemplateResponses, ListEngagementsData, ListEngagementsErrors, ListEngagementsResponses, ListEvidenceVersionsData, ListEvidenceVersionsErrors, ListEvidenceVersionsResponses, ListRequestItemsData, ListRequestItemsErrors, ListRequestItemsResponses, ListScreeningResultsData, ListScreeningResultsErrors, ListScreeningResultsResponses, ListTemplatesData, ListTemplatesErrors, ListTemplatesResponses, ListWallsData, ListWallsErrors, ListWallsResponses, MeData, MeErrors, MeResponses, MeteringData, MeteringErrors, MeteringResponses, PutBudgetData, PutBudgetErrors, PutBudgetResponses, ReasonCodesData, ReasonCodesErrors, ReasonCodesResponses, RejectData, RejectErrors, RejectResponses, ReleaseData, ReleaseErrors, ReleaseResponses, RemoveWallData, RemoveWallErrors, RemoveWallResponses, ReviewQueueData, ReviewQueueErrors, ReviewQueueResponses, SendBackData, SendBackErrors, SendBackResponses, StartRetrievalData, StartRetrievalErrors, StartRetrievalResponses, TakeData, TakeErrors, TakeResponses } from './types.gen';
+import type { AcceptData, AcceptErrors, AcceptResponses, AddDocumentData, AddDocumentErrors, AddDocumentResponses, ApplyMethodologyData, ApplyMethodologyErrors, ApplyMethodologyResponses, AssignData, AssignErrors, AssignResponses, CreateEngagementData, CreateEngagementErrors, CreateEngagementResponses, CreateRequestItemData, CreateRequestItemErrors, CreateRequestItemResponses, CreateWallData, CreateWallErrors, CreateWallResponses, EngagementGraphData, EngagementGraphErrors, EngagementGraphResponses, GetBudgetData, GetBudgetErrors, GetBudgetResponses, GetDocumentData, GetDocumentErrors, GetDocumentResponses, GetEngagementData, GetEngagementErrors, GetEngagementResponses, GetRetrievalData, GetRetrievalErrors, GetRetrievalResponses, GetVersionData, GetVersionErrors, GetVersionResponses, ImportTemplateData, ImportTemplateErrors, ImportTemplateResponses, ListDocumentsData, ListDocumentsErrors, ListDocumentsResponses, ListEngagementsData, ListEngagementsErrors, ListEngagementsResponses, ListEvidenceVersionsData, ListEvidenceVersionsErrors, ListEvidenceVersionsResponses, ListRequestItemsData, ListRequestItemsErrors, ListRequestItemsResponses, ListScreeningResultsData, ListScreeningResultsErrors, ListScreeningResultsResponses, ListTemplatesData, ListTemplatesErrors, ListTemplatesResponses, ListWallsData, ListWallsErrors, ListWallsResponses, MeData, MeErrors, MeResponses, MeteringData, MeteringErrors, MeteringResponses, PutBudgetData, PutBudgetErrors, PutBudgetResponses, ReasonCodesData, ReasonCodesErrors, ReasonCodesResponses, RejectData, RejectErrors, RejectResponses, ReleaseData, ReleaseErrors, ReleaseResponses, RemoveWallData, RemoveWallErrors, RemoveWallResponses, ReviewQueueData, ReviewQueueErrors, ReviewQueueResponses, SearchData, SearchErrors, SearchResponses, SendBackData, SendBackErrors, SendBackResponses, StartRetrievalData, StartRetrievalErrors, StartRetrievalResponses, TakeData, TakeErrors, TakeResponses, WithdrawDocumentData, WithdrawDocumentErrors, WithdrawDocumentResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -241,6 +241,59 @@ export const listScreeningResults = <ThrowOnError extends boolean = false>(optio
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/engagements/{engagement_id}/screening-results',
     ...options
+});
+
+/**
+ * List Documents Route
+ */
+export const listDocuments = <ThrowOnError extends boolean = false>(options?: Options<ListDocumentsData, ThrowOnError>): RequestResult<ListDocumentsResponses, ListDocumentsErrors, ThrowOnError> => (options?.client ?? client).get<ListDocumentsResponses, ListDocumentsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/knowledge/documents',
+    ...options
+});
+
+/**
+ * Add Document Route
+ */
+export const addDocument = <ThrowOnError extends boolean = false>(options: Options<AddDocumentData, ThrowOnError>): RequestResult<AddDocumentResponses, AddDocumentErrors, ThrowOnError> => (options.client ?? client).post<AddDocumentResponses, AddDocumentErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/knowledge/documents',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Document Route
+ */
+export const getDocument = <ThrowOnError extends boolean = false>(options: Options<GetDocumentData, ThrowOnError>): RequestResult<GetDocumentResponses, GetDocumentErrors, ThrowOnError> => (options.client ?? client).get<GetDocumentResponses, GetDocumentErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/knowledge/documents/{document_id}',
+    ...options
+});
+
+/**
+ * Withdraw Document Route
+ */
+export const withdrawDocument = <ThrowOnError extends boolean = false>(options: Options<WithdrawDocumentData, ThrowOnError>): RequestResult<WithdrawDocumentResponses, WithdrawDocumentErrors, ThrowOnError> => (options.client ?? client).post<WithdrawDocumentResponses, WithdrawDocumentErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/knowledge/documents/{document_id}/withdraw',
+    ...options
+});
+
+/**
+ * Search Route
+ */
+export const search = <ThrowOnError extends boolean = false>(options: Options<SearchData, ThrowOnError>): RequestResult<SearchResponses, SearchErrors, ThrowOnError> => (options.client ?? client).post<SearchResponses, SearchErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/knowledge/search',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**

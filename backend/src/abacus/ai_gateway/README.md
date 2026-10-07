@@ -43,6 +43,16 @@ The only path to a model (ADR-019, ADR-050, ADR-052, ADR-057, ADR-070). Owns `us
 
 Sums are cached for 5 s per process and dropped after each recorded call. `run_anomaly_job` runs hourly in the worker, beside the relay.
 
+## Embeddings (SPEC-009; TASK-024)
+`embed(EmbedCall)` is the only path to an embedding model. Before the provider is called, the call passes, in order:
+1. its own budget, checked on an estimate;
+2. the budget hierarchy;
+3. admission on the embedding model.
+
+Each provider call writes a usage record (`prompt_id` `embed`, tier `small`).
+
+The provider sits behind `EmbeddingProvider`. `FakeEmbedder` (deterministic, hashed word features, 1,024 dimensions) is used in synthetic environments when none is configured. The real provider comes with ADR-073.
+
 ## Rules
 - **No provider endpoints or SDKs outside this package** (PROVIDER-001).
 - **No inline prompts** (PROMPT-001). Outside this package, nothing builds a `ModelRequest`, writes the instructions layer from a literal, or names a prompt that isn't `id@vN`.

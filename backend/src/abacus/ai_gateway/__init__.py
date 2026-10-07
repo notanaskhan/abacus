@@ -52,6 +52,19 @@ from abacus.ai_gateway.context import (
     DatasetTooLarge,
     estimate_tokens,
 )
+from abacus.ai_gateway.embeddings import (
+    EMBED_PROMPT,
+    MAX_TEXT_CHARS,
+    MAX_TEXTS,
+    EmbeddingProvider,
+    EmbeddingResponse,
+    EmbedResult,
+    EmbedTooLarge,
+    FakeEmbedder,
+    configure_embedder,
+    embed_cost,
+    embedder,
+)
 from abacus.ai_gateway.prompts import Prompt, UnknownPrompt, prompt, registry
 from abacus.ai_gateway.providers import (
     FakeModel,
@@ -221,6 +234,119 @@ async def _record_usage(
         cost_usd=str(spent),
     )
     forget_spend()
+
+
+# --- Embeddings (SPEC-009 AC-5; TASK-024 D1) -----------------------------------------------------
+
+
+@dataclass(frozen=True)
+class EmbedCall:
+    purpose: str
+    texts: tuple[str, ...]
+    attribution: Attribution
+    work_class: WorkClass
+    essential: bool
+    budget_usd: Decimal
+
+
+async def _record_embed(
+    attribution: Attribution,
+    model: str,
+    input_tokens: int,
+    spent: Decimal,
+    outcome: Outcome,
+    inputs_hash: str,
+) -> None:
+    record_id = uuid4()
+    async with uow(attribution.tenant) as tx:
+        await tx.session.execute(
+            text(
+                "INSERT INTO usage_records (id, tenant_id, engagement_id, agent_id, "
+                "agent_run_id, prompt_id, prompt_version, model, tier, input_tokens, "
+                "output_tokens, cost_usd, outcome, inputs_hash) VALUES (:id, :tenant, "
+                ":engagement, :agent, :run, :prompt_id, '1', :model, 'small', :input_tokens, "
+                "0, :cost, :outcome, :inputs_hash)"
+            ),
+            {
+                "id": record_id,
+                "tenant": attribution.tenant.tenant_id,
+                "engagement": attribution.engagement_id,
+                "agent": attribution.agent_id,
+                "run": attribution.agent_run_id,
+                "prompt_id": EMBED_PROMPT,
+                "model": model,
+                "input_tokens": input_tokens,
+                "cost": spent,
+                "outcome": outcome,
+                "inputs_hash": inputs_hash,
+            },
+        )
+        tx.record("model.called", target=Target("usage_record", record_id))
+    _log.info(
+        "ai.embed",
+        model=model,
+        outcome=outcome,
+        input_tokens=input_tokens,
+        cost_usd=str(spent),
+    )
+    forget_spend()
+
+
+async def embed(c: EmbedCall) -> EmbedResult:
+    """Embed up to 64 texts: the per-call budget, the budget hierarchy, admission, then the
+    provider; one usage record per provider call. `BudgetExceeded`, `BudgetExhausted`,
+    `NotAdmitted` and `ProviderError` propagate (the caller retries or fails its work)."""
+    if not 1 <= len(c.texts) <= MAX_TEXTS or any(
+        not t or len(t) > MAX_TEXT_CHARS for t in c.texts
+    ):
+        raise EmbedTooLarge(f"1 to {MAX_TEXTS} texts of 1 to {MAX_TEXT_CHARS} characters")
+    model = settings().embedding_model
+    inputs_hash = hashlib.sha256("\x1f".join(c.texts).encode()).hexdigest()
+    tokens = sum(estimate_tokens(t) for t in c.texts)
+    estimate = embed_cost(tokens)
+    with _tracer.start_as_current_span(
+        "ai.embed",
+        attributes={"ai.agent_id": c.attribution.agent_id, "ai.texts": len(c.texts)},
+        record_exception=False,
+        set_status_on_exception=False,
+    ) as span:
+        try:
+            if estimate > c.budget_usd:
+                await _record_embed(
+                    c.attribution, model, 0, Decimal(0), "budget_refused", inputs_hash
+                )
+                raise BudgetExceeded(f"embedding would cost more than {c.budget_usd}")
+            await check_budget(
+                c.attribution.tenant, c.attribution.engagement_id, c.essential, estimate
+            )
+            admitted, wait = await admit(
+                c.attribution.tenant, model, c.work_class, c.essential, tokens
+            )
+            if not admitted:
+                raise NotAdmitted(refusal_reason(c.work_class), wait)
+            try:
+                response = await embedder().embed(model, c.texts)
+            except ProviderError:
+                await _record_embed(
+                    c.attribution, model, 0, Decimal(0), "provider_error", inputs_hash
+                )
+                raise
+            if len(response.vectors) != len(c.texts) or any(
+                len(v) != settings().embedding_dimensions for v in response.vectors
+            ):
+                await _record_embed(
+                    c.attribution, model, response.input_tokens, Decimal(0), "invalid", inputs_hash
+                )
+                raise ProviderError("embedding response has the wrong shape")
+            spent = embed_cost(response.input_tokens)
+            await _record_embed(
+                c.attribution, model, response.input_tokens, spent, "ok", inputs_hash
+            )
+        except Exception as exc:
+            span.set_status(SpanStatus(StatusCode.ERROR, type(exc).__name__))
+            raise
+        span.set_attribute("ai.cost_usd", str(spent))
+        return EmbedResult(response.vectors, model, spent)
 
 
 def _parse[T: BaseModel](schema: type[T], body: str) -> tuple[T | None, str | None]:
@@ -485,6 +611,12 @@ __all__ = [
     "ContextBuilder",
     "ContextTooLarge",
     "DatasetTooLarge",
+    "EmbedCall",
+    "EmbedResult",
+    "EmbedTooLarge",
+    "EmbeddingProvider",
+    "EmbeddingResponse",
+    "FakeEmbedder",
     "FakeModel",
     "GatewayCall",
     "GatewayRefused",
@@ -499,9 +631,11 @@ __all__ = [
     "UnknownPrompt",
     "call",
     "check_provider_limits",
+    "configure_embedder",
     "configure_provider",
     "cost",
     "eligible",
+    "embed",
     "estimate_tokens",
     "evaluation",
     "prompt",

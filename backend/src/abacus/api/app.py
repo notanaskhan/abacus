@@ -43,6 +43,7 @@ ROUTERS = (
     evidence.router,
     agents.router,
     agents.graph_router,
+    agents.knowledge_router,
     platform.router,
 )
 # What a validation error may say about each problem: never the submitted value (client content

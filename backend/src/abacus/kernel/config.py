@@ -241,10 +241,18 @@ class Settings(BaseSettings):
     methodology_max_items: Annotated[int, classified("internal")] = 2000
     methodology_max_rules: Annotated[int, classified("internal")] = 2000
     unmapped_gap_min_abs_usd: Annotated[Decimal, classified("internal")] = Decimal(0)
+    # Knowledge retrieval (SPEC-009): the embedding model and its price, and the limits (§7).
+    embedding_model: Annotated[str, classified("internal")] = "fake-embed"
+    embedding_dimensions: Annotated[int, classified("internal")] = 1024
+    embedding_usd_per_million: Annotated[Decimal, classified("internal")] = Decimal("0.02")
+    knowledge_max_bytes: Annotated[int, classified("internal")] = 1024 * 1024
+    knowledge_max_chunks_per_document: Annotated[int, classified("internal")] = 2000
+    knowledge_max_chunks_per_firm: Annotated[int, classified("internal")] = 50_000
     provider_limits: Annotated[dict[str, ProviderLimits], classified("internal")] = {
         "fake-small": ProviderLimits(rpm=600, tpm=1_000_000),
         "fake-medium": ProviderLimits(rpm=600, tpm=1_000_000),
         "fake-large": ProviderLimits(rpm=600, tpm=1_000_000),
+        "fake-embed": ProviderLimits(rpm=600, tpm=1_000_000),
     }
 
     @model_validator(mode="after")

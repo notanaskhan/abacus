@@ -7,7 +7,8 @@ from abacus.modules.agents.fake_responses import SCREEN_PROMPT, screening_respon
 from abacus.modules.agents.fake_responses import install as install_fake_responses
 from abacus.modules.agents.graph import EngagementGraph, engagement_graph
 from abacus.modules.agents.handoff import Citation, Handoff, ScreeningOutput, VerifiedCitation
-from abacus.modules.agents.routes import graph_router, router
+from abacus.modules.agents.knowledge import KnowledgeHit, knowledge_context, search_knowledge
+from abacus.modules.agents.routes import graph_router, knowledge_router, router
 from abacus.modules.agents.screenings import (
     SUBSCRIPTIONS,
     WORKFLOWS,
@@ -51,6 +52,7 @@ __all__ = [
     "Citation",
     "EngagementGraph",
     "Handoff",
+    "KnowledgeHit",
     "RunOutcome",
     "ScreeningInput",
     "ScreeningOutcome",
@@ -64,12 +66,15 @@ __all__ = [
     "fail_run",
     "graph_router",
     "install_fake_responses",
+    "knowledge_context",
+    "knowledge_router",
     "load_agent_context",
     "router",
     "run_outcome",
     "screen",
     "screening_responder",
     "screening_results_for",
+    "search_knowledge",
     "spec",
     "start_screening",
     "verify_citations",

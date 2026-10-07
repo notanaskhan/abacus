@@ -534,6 +534,110 @@ export type GraphTeamMemberOut = {
 };
 
 /**
+ * KnowledgeDocumentIn
+ */
+export type KnowledgeDocumentIn = {
+    /**
+     * Media Type
+     */
+    media_type: 'text/plain' | 'text/markdown';
+    /**
+     * Source Kind
+     */
+    source_kind: 'firm_own' | 'public';
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * KnowledgeDocumentOut
+ */
+export type KnowledgeDocumentOut = {
+    /**
+     * Chunk Count
+     */
+    chunk_count: number;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Failure Code
+     */
+    failure_code: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Media Type
+     */
+    media_type: string;
+    /**
+     * Source Kind
+     */
+    source_kind: string;
+    /**
+     * Status
+     */
+    status: 'pending' | 'ready' | 'failed' | 'withdrawn' | 'stale';
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * KnowledgeHitOut
+ */
+export type KnowledgeHitOut = {
+    /**
+     * Document Id
+     */
+    document_id: string;
+    /**
+     * Heading Path
+     */
+    heading_path: string;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Score
+     */
+    score: number;
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * KnowledgeSearchIn
+ */
+export type KnowledgeSearchIn = {
+    /**
+     * K
+     */
+    k?: number;
+    /**
+     * Query
+     */
+    query: string;
+};
+
+/**
  * MeOut
  */
 export type MeOut = {
@@ -2223,6 +2327,263 @@ export type ListScreeningResultsResponses = {
 };
 
 export type ListScreeningResultsResponse = ListScreeningResultsResponses[keyof ListScreeningResultsResponses];
+
+export type ListDocumentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/knowledge/documents';
+};
+
+export type ListDocumentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ListDocumentsError = ListDocumentsErrors[keyof ListDocumentsErrors];
+
+export type ListDocumentsResponses = {
+    /**
+     * Response List Documents
+     *
+     * Successful Response
+     */
+    200: Array<KnowledgeDocumentOut>;
+};
+
+export type ListDocumentsResponse = ListDocumentsResponses[keyof ListDocumentsResponses];
+
+export type AddDocumentData = {
+    body: KnowledgeDocumentIn;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/knowledge/documents';
+};
+
+export type AddDocumentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AddDocumentError = AddDocumentErrors[keyof AddDocumentErrors];
+
+export type AddDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    201: KnowledgeDocumentOut;
+};
+
+export type AddDocumentResponse = AddDocumentResponses[keyof AddDocumentResponses];
+
+export type GetDocumentData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/v1/knowledge/documents/{document_id}';
+};
+
+export type GetDocumentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type GetDocumentError = GetDocumentErrors[keyof GetDocumentErrors];
+
+export type GetDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    200: KnowledgeDocumentOut;
+};
+
+export type GetDocumentResponse = GetDocumentResponses[keyof GetDocumentResponses];
+
+export type WithdrawDocumentData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/v1/knowledge/documents/{document_id}/withdraw';
+};
+
+export type WithdrawDocumentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type WithdrawDocumentError = WithdrawDocumentErrors[keyof WithdrawDocumentErrors];
+
+export type WithdrawDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    200: KnowledgeDocumentOut;
+};
+
+export type WithdrawDocumentResponse = WithdrawDocumentResponses[keyof WithdrawDocumentResponses];
+
+export type SearchData = {
+    body: KnowledgeSearchIn;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/knowledge/search';
+};
+
+export type SearchErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SearchError = SearchErrors[keyof SearchErrors];
+
+export type SearchResponses = {
+    /**
+     * Response Search
+     *
+     * Successful Response
+     */
+    200: Array<KnowledgeHitOut>;
+};
+
+export type SearchResponse = SearchResponses[keyof SearchResponses];
 
 export type MeData = {
     body?: never;

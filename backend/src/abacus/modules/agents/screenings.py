@@ -19,16 +19,22 @@ from temporalio.exceptions import WorkflowAlreadyStartedError
 
 from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.uow import OutboxEvent
+from abacus.modules.agents.events import KnowledgeDocumentAdded
+from abacus.modules.agents.knowledge_workflow import KnowledgeEmbeddingWorkflow
 from abacus.modules.agents.service import SCREENER
 from abacus.modules.agents.spec import spec
-from abacus.modules.agents.workflow_types import ScreeningInput
+from abacus.modules.agents.workflow_types import KnowledgeInput, ScreeningInput
 from abacus.modules.agents.workflows import ScreeningWorkflow
 from abacus.modules.evidence.api import EvidenceVersionCreated
 
 EVIDENCE_VERSION_CREATED = EvidenceVersionCreated.event_type
 # Each workflow's work class (ADR-071): screening runs in the screener's class (its spec).
 # Registered here, beside the only code that starts it, so it can't be started unregistered.
-WORKFLOWS: dict[type, WorkClass] = {ScreeningWorkflow: spec(SCREENER).work_class}
+# Knowledge embedding is batch work (SPEC-009 §6; ADR-071).
+WORKFLOWS: dict[type, WorkClass] = {
+    ScreeningWorkflow: spec(SCREENER).work_class,
+    KnowledgeEmbeddingWorkflow: "batch",
+}
 register_work_classes(WORKFLOWS)
 
 
@@ -63,4 +69,20 @@ async def start_screening(event: OutboxEvent) -> None:
         )
 
 
-SUBSCRIPTIONS = {EVIDENCE_VERSION_CREATED: start_screening}
+async def start_knowledge_embedding(event: OutboxEvent) -> None:
+    """`knowledge-embed:<tenant_id>:<document_id>`; a redelivery attaches or finds it finished."""
+    document_id = UUID(str(event.payload["document_id"]))
+    with suppress(WorkflowAlreadyStartedError):
+        await dispatch(
+            KnowledgeEmbeddingWorkflow,
+            KnowledgeInput(str(event.tenant_id), str(document_id)),
+            id=f"knowledge-embed:{event.tenant_id}:{document_id}",
+            id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
+            id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
+        )
+
+
+SUBSCRIPTIONS = {
+    EVIDENCE_VERSION_CREATED: start_screening,
+    KnowledgeDocumentAdded.event_type: start_knowledge_embedding,
+}

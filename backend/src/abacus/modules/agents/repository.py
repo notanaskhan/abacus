@@ -11,7 +11,12 @@ from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from abacus.modules.agents.models import AgentRun, ScreeningResult
+from abacus.modules.agents.models import (
+    AgentRun,
+    KnowledgeChunk,
+    KnowledgeDocument,
+    ScreeningResult,
+)
 from abacus.modules.identity.api import AuthContext, visible
 
 
@@ -185,3 +190,157 @@ async def latest_results(
         .scalars()
         .all()
     )
+
+
+# --- Knowledge (SPEC-009) ----------------------------------------------------------------------
+
+
+async def firm_chunk_count(session: AsyncSession) -> int:
+    """Chunks of the firm's documents that count against its limit (all but withdrawn)."""
+    count = await session.scalar(
+        select(func.count())
+        .select_from(KnowledgeChunk)
+        .join(KnowledgeDocument, KnowledgeDocument.id == KnowledgeChunk.document_id)
+        .where(KnowledgeDocument.status != "withdrawn")
+    )
+    return count or 0
+
+
+async def active_document_with(session: AsyncSession, fingerprint: str) -> UUID | None:
+    return (
+        await session.execute(
+            select(KnowledgeDocument.id).where(
+                KnowledgeDocument.fingerprint == fingerprint,
+                KnowledgeDocument.status != "withdrawn",
+            )
+        )
+    ).scalar_one_or_none()
+
+
+async def insert_document(session: AsyncSession, values: dict[str, object]) -> None:
+    await session.execute(insert(KnowledgeDocument).values(**values))
+
+
+async def insert_chunks(session: AsyncSession, rows: list[dict[str, object]]) -> None:
+    if rows:
+        await session.execute(insert(KnowledgeChunk), rows)
+
+
+async def lock_document(session: AsyncSession, document_id: UUID) -> KnowledgeDocument | None:
+    return (
+        await session.execute(
+            select(KnowledgeDocument).where(KnowledgeDocument.id == document_id).with_for_update()
+        )
+    ).scalar_one_or_none()
+
+
+async def get_document(session: AsyncSession, document_id: UUID) -> KnowledgeDocument | None:
+    return (
+        await session.execute(select(KnowledgeDocument).where(KnowledgeDocument.id == document_id))
+    ).scalar_one_or_none()
+
+
+async def set_document_status(
+    session: AsyncSession,
+    document_id: UUID,
+    status: str,
+    *,
+    failure_code: str | None = None,
+    withdrawn: bool = False,
+) -> None:
+    values: dict[str, object] = {"status": status, "failure_code": failure_code}
+    if withdrawn:
+        values["withdrawn_at"] = func.clock_timestamp()
+    await session.execute(
+        update(KnowledgeDocument).where(KnowledgeDocument.id == document_id).values(**values)
+    )
+
+
+async def list_documents(
+    session: AsyncSession, model: str
+) -> Sequence[tuple[KnowledgeDocument, int, int]]:
+    """Every document of the firm with its chunk count and how many carry the current model."""
+    current = func.count(KnowledgeChunk.position).filter(KnowledgeChunk.embedding_model == model)
+    rows = await session.execute(
+        select(KnowledgeDocument, func.count(KnowledgeChunk.position), current)
+        .outerjoin(KnowledgeChunk, KnowledgeChunk.document_id == KnowledgeDocument.id)
+        .group_by(KnowledgeDocument.id)
+        .order_by(KnowledgeDocument.created_at.desc(), KnowledgeDocument.id)
+    )
+    return [(d, total, on_model) for d, total, on_model in rows.all()]
+
+
+async def chunks_without_vectors(
+    session: AsyncSession, document_id: UUID, limit: int
+) -> Sequence[KnowledgeChunk]:
+    return (
+        (
+            await session.execute(
+                select(KnowledgeChunk)
+                .where(
+                    KnowledgeChunk.document_id == document_id, KnowledgeChunk.embedding.is_(None)
+                )
+                .order_by(KnowledgeChunk.position)
+                .limit(limit)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def store_vectors(
+    session: AsyncSession,
+    document_id: UUID,
+    vectors: dict[int, tuple[float, ...]],
+    model: str,
+) -> int:
+    """Write each chunk's vector once (null to value); returns how many were written."""
+    written = 0
+    for position, vector in vectors.items():
+        result = await session.execute(
+            update(KnowledgeChunk)
+            .where(
+                KnowledgeChunk.document_id == document_id,
+                KnowledgeChunk.position == position,
+                KnowledgeChunk.embedding.is_(None),
+            )
+            .values(
+                embedding=list(vector),
+                embedding_model=model,
+                embedded_at=func.clock_timestamp(),
+            )
+            .returning(KnowledgeChunk.position)
+        )
+        written += 1 if result.scalar_one_or_none() is not None else 0
+    return written
+
+
+async def remaining_chunks(session: AsyncSession, document_id: UUID) -> int:
+    count = await session.scalar(
+        select(func.count())
+        .select_from(KnowledgeChunk)
+        .where(KnowledgeChunk.document_id == document_id, KnowledgeChunk.embedding.is_(None))
+    )
+    return count or 0
+
+
+async def nearest_chunks(
+    session: AsyncSession, tenant_id: UUID, query: tuple[float, ...], model: str, k: int
+) -> Sequence[tuple[KnowledgeChunk, str, float]]:
+    """Exact cosine search over the firm's ready chunks on the current model (Q1: no ANN index,
+    nothing shared across tenants). The tenant is explicit as well as enforced by RLS (AC-9)."""
+    distance = KnowledgeChunk.embedding.cosine_distance(list(query))
+    rows = await session.execute(
+        select(KnowledgeChunk, KnowledgeDocument.title, distance)
+        .join(KnowledgeDocument, KnowledgeDocument.id == KnowledgeChunk.document_id)
+        .where(
+            KnowledgeChunk.tenant_id == tenant_id,
+            KnowledgeDocument.tenant_id == tenant_id,
+            KnowledgeDocument.status == "ready",
+            KnowledgeChunk.embedding_model == model,
+        )
+        .order_by(distance, KnowledgeChunk.document_id, KnowledgeChunk.position)
+        .limit(k)
+    )
+    return [(chunk, title, float(d)) for chunk, title, d in rows.all()]
