@@ -984,49 +984,83 @@ def _check_human_decision(src: SourceFile) -> Iterator[Finding]:
 
 
 _LOG_METHODS = frozenset({"debug", "info", "warning", "error"})
+_LOGGERS = frozenset({"_log", "log", "logger"})
+_LOGGING_MODULES = ("logging", "structlog")
+
+
+def _is_log_call(node: ast.AST) -> bool:
+    if not (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr in _LOG_METHODS
+    ):
+        return False
+    receiver = node.func.value
+    name = (
+        receiver.id
+        if isinstance(receiver, ast.Name)
+        else receiver.attr
+        if isinstance(receiver, ast.Attribute)
+        else None
+    )
+    return name in _LOGGERS
+
+
+def _uses_as_text(value: ast.expr, name: str) -> bool:
+    """`value` turns the exception `name` into text or data: anything mentioning it except the
+    bare name (the helper logs its class) and `type(name)`."""
+    if isinstance(value, ast.Name):
+        return False
+    if (isinstance(value, ast.Call) and _terminal_name(value.func) == "type") or (
+        isinstance(value, ast.Attribute)
+        and isinstance(value.value, ast.Call)
+        and _terminal_name(value.value.func) == "type"
+    ):
+        return False
+    return any(isinstance(n, ast.Name) and n.id == name for n in ast.walk(value))
 
 
 def _check_unstructured_logging(src: SourceFile) -> Iterator[Finding]:
-    """ADR-022: product code logs only through `abacus.kernel.logging` (structured, refuses
-    Restricted fields). No stdlib `logging` or direct structlog, and no log field that turns a
-    caught exception into text (`str(exc)`, `repr(exc)`, an f-string with it): pass the
-    exception itself, which is logged by class name only (its message can carry data)."""
-    caught = {
-        handler.name
-        for handler in ast.walk(src.tree)
-        if isinstance(handler, ast.ExceptHandler) and handler.name is not None
-    }
+    """ADR-022 (best effort, backed by the runtime guard in the helper): product code logs only
+    through `abacus.kernel.logging`. No stdlib `logging` or structlog (imports, `__import__`,
+    `importlib`); event names are string literals; inside `except ... as e`, a log field never
+    turns `e` into text (`str(e)`, `e.args`, `format(e)`, f-strings): pass `e` itself, which is
+    logged by class name only (messages can carry client data)."""
     for node in ast.walk(src.tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
-                if alias.name.split(".")[0] in ("logging", "structlog"):
+                if alias.name.split(".")[0] in _LOGGING_MODULES:
                     yield Finding(node.lineno, f"use abacus.kernel.logging, not {alias.name}")
         elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module is not None:
-            if node.module.split(".")[0] in ("logging", "structlog"):
+            if node.module.split(".")[0] in _LOGGING_MODULES:
                 yield Finding(node.lineno, f"use abacus.kernel.logging, not {node.module}")
         elif (
             isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Attribute)
-            and node.func.attr in _LOG_METHODS
+            and _terminal_name(node.func) in ("__import__", "import_module")
+            and node.args
+            and isinstance(node.args[0], ast.Constant)
+            and str(node.args[0].value).split(".")[0] in _LOGGING_MODULES
         ):
-            for keyword in node.keywords:
-                if _exception_as_text(keyword.value, caught):
-                    yield Finding(
-                        node.lineno,
-                        f"log field {keyword.arg!r} is an exception as text; pass the exception",
-                    )
-
-
-def _exception_as_text(value: ast.expr, caught: set[str]) -> bool:
-    if isinstance(value, ast.Call) and _terminal_name(value.func) in ("str", "repr"):
-        return any(isinstance(a, ast.Name) and a.id in caught for a in value.args)
-    if isinstance(value, ast.JoinedStr):
-        return any(
-            isinstance(part, ast.FormattedValue)
-            and any(isinstance(n, ast.Name) and n.id in caught for n in ast.walk(part.value))
-            for part in value.values
-        )
-    return False
+            yield Finding(node.lineno, "use abacus.kernel.logging, not a dynamic import")
+        elif _is_log_call(node) and isinstance(node, ast.Call):
+            if node.args and not (
+                isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str)
+            ):
+                yield Finding(node.lineno, "log event names are string literals")
+    for handler in ast.walk(src.tree):
+        if not (isinstance(handler, ast.ExceptHandler) and handler.name is not None):
+            continue
+        for stmt in handler.body:
+            for node in ast.walk(stmt):
+                if not (_is_log_call(node) and isinstance(node, ast.Call)):
+                    continue
+                for keyword in node.keywords:
+                    if _uses_as_text(keyword.value, handler.name):
+                        yield Finding(
+                            node.lineno,
+                            f"log field {keyword.arg!r} turns the exception into text; "
+                            "pass the exception",
+                        )
 
 
 def _check_layout(backend: Path) -> Iterator[tuple[str, Finding]]:
