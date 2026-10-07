@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import func, insert, select, update
+from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -129,7 +130,7 @@ async def latest_results(
                     ScreeningResult.engagement_id == engagement_id,
                     visible(ctx, "evidence.read", ScreeningResult.engagement_id),
                 )
-                .distinct(ScreeningResult.evidence_version_id)
+                .ext(distinct_on(ScreeningResult.evidence_version_id))
                 .order_by(
                     ScreeningResult.evidence_version_id,
                     ScreeningResult.created_at.desc(),
