@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: setup dev seed e2e check-fast check ci-unit ci-integration ci-coverage ci-contracts test test-integration evals generate migrate loadtest seed-staging
+.PHONY: setup dev seed e2e check-fast check ci-unit ci-integration ci-coverage ci-contracts test test-integration evals generate migrate loadtest seed-staging route-parity
 
 setup:
 	cd backend && uv sync --locked
@@ -94,6 +94,10 @@ test-integration:
 # the fake model (a fake run proves the code paths, never a model's quality).
 evals:
 	cd backend && uv run python -m abacus_tools.evals $(EVAL_ARGS)
+
+# SPEC-010: the route parity check, with real credentials (costs a little). ROUTE=direct|bedrock
+route-parity:
+	cd backend && uv run python -m abacus_tools.route_parity --route $(ROUTE)
 
 generate:
 	cd backend && uv run python -m abacus.api.export_openapi > ../packages/api-client/openapi.json

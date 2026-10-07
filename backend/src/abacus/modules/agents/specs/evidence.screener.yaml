@@ -28,3 +28,6 @@ evaluation_suite: evals/screening
 work_class: time_sensitive
 essential: true
 cheaper_tiers: []
+# SPEC-010 (ADR-073): the same model through Bedrock first (inside our AWS trust boundary,
+# Q1), then the provider's own API.
+routes: [bedrock, direct]

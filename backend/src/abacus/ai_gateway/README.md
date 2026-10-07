@@ -53,6 +53,32 @@ Each provider call writes a usage record (`prompt_id` `embed`, tier `small`).
 
 The provider sits behind `EmbeddingProvider`. `FakeEmbedder` (deterministic, hashed word features, 1,024 dimensions) is used in synthetic environments when none is configured. The real provider comes with ADR-073.
 
+## Model routes (SPEC-010; ADR-073; TASK-025)
+The same model family is reachable through two routes, `direct` (the provider's API) and `bedrock` (Amazon Bedrock in our AWS account). `fake` serves synthetic environments only.
+
+**Configuration:**
+- each tier's model ID per route lives in `settings().model_catalog`;
+- each agent spec lists its allowed `routes` in order (the screener: `[bedrock, direct]`).
+
+**When a route can be used:**
+- it is in `model_routes`;
+- it has a parity report from the last 90 days (`route_parity`; run `make route-parity ROUTE=…`);
+- outside synthetic environments, the agent has passed its evaluation on that route.
+
+**Admission:** admission walks tiers, then routes. Capacity and blocks are keyed by route and model.
+
+**Failover within an attempt:**
+- a 429 blocks that route's model for the provider's wait;
+- an outage blocks it for `outage_block_seconds`;
+- a 401 or 403 is logged as `provider.auth_failed` and leaves the route out for this call.
+
+The attempt then moves to the next usable route. When none is left, the call waits (`NotAdmitted`) or fails (`ProviderError`).
+
+**Where things live:**
+- provider SDKs are imported only in `routes/` (ruff TID251; STORE-001 allows boto3 in `routes/bedrock.py` and `routes/parity.py`);
+- usage records and spans carry the route;
+- `embedding_provider = bedrock-titan` switches embeddings to Titan v2 on Bedrock.
+
 ## Rules
 - **No provider endpoints or SDKs outside this package** (PROVIDER-001).
 - **No inline prompts** (PROMPT-001). Outside this package, nothing builds a `ModelRequest`, writes the instructions layer from a literal, or names a prompt that isn't `id@vN`.

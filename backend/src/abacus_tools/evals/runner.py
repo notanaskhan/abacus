@@ -28,7 +28,15 @@ from typing import Literal, cast
 import asyncpg
 import yaml
 
-from abacus.ai_gateway import MODELS, FakeModel, ModelRequest, Tier, configure_provider, evaluation
+from abacus.ai_gateway import (
+    MODELS,
+    FakeModel,
+    ModelRequest,
+    Tier,
+    configure_provider,
+    evaluation,
+    model_id,
+)
 from abacus.kernel.config import SYNTHETIC_ENVIRONMENTS, settings
 from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import meter
@@ -232,13 +240,13 @@ async def _attempt(
         )
         if run_id is None:
             raise RuntimeError("no screening run was created")
-        with evaluation(tier):
+        with evaluation(tier, "fake"):
             outcome = await screen(await load_agent_context(world.tenant, run_id))
         action, kind, citations = await _result(stack.superuser, run_id)
         cost, models = await _spent(stack.superuser, run_id)
         if outcome.status != "completed" or kind != "agent":
             raise RuntimeError(f"screening ended {outcome.status} by {kind}")
-        if models != {MODELS[tier][0]}:
+        if models != {model_id(tier, "fake")}:
             raise RuntimeError("the screener ran on a model other than the pinned tier's")
         answer = answers[-1] if answers else {}
         return Observation(
@@ -391,11 +399,13 @@ async def evaluate_on(
         agent=suite.agent,
         suite_version=suite.version,
         prompt_version=spec(suite.agent).prompt,
-        model=MODELS[tier][0],
+        model=model_id(tier, "fake") or MODELS[tier][0],
         tier=tier,
         subset=subset,
-        fake=True,  # no model provider exists yet (TASK-014): fake runs only
-        route=settings().model_provider,
+        # Fake runs only until real routes have credentials (TASK-014); then a run is per route
+        # (SPEC-010 AC-6) and records the route it pinned.
+        fake=True,
+        route="fake",
         seeds={"trial_balance": TRIAL_BALANCE_SEED},
         sampling=suite.sampling,
         status="errored",  # until finished

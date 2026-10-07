@@ -36,6 +36,7 @@ def _call() -> GatewayCall[BaseModel]:
         context=ContextBuilder().task({"a": 1}).build(),
         work_class="time_sensitive",
         essential=True,
+        routes=("bedrock", "direct"),
         cheaper_tiers=("medium",),
     )
 
@@ -46,7 +47,7 @@ def admits(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     asked: list[str] = []
 
     async def admit(*args: object) -> tuple[bool, int]:
-        model = str(args[1])
+        model = str(args[2])  # (tenant, route, model, ...): SPEC-010
         asked.append(model)
         return model == gateway.MODELS["medium"][0], 5
 
@@ -73,10 +74,10 @@ async def test_ac13_an_eligible_cheaper_tier_is_used(
         return True
 
     monkeypatch.setattr(gateway, "eligible", always)
-    tier, model = await gateway._admitted(  # pyright: ignore[reportPrivateUsage] -- the gateway's own internals
+    tier, route, model = await gateway._admitted(  # pyright: ignore[reportPrivateUsage] -- the gateway's own internals
         _call(), ("large", "medium"), 10, "evidence.screen@v0"
     )
-    assert (tier, model) == ("medium", gateway.MODELS["medium"][0])
+    assert (tier, route, model) == ("medium", "fake", gateway.MODELS["medium"][0])
 
 
 async def test_ac13_eligibility_fails_closed_when_the_store_is_unreachable(
@@ -87,7 +88,7 @@ async def test_ac13_eligibility_fails_closed_when_the_store_is_unreachable(
 
     monkeypatch.setattr(gateway, "tenant_session", broken)
     tenant = TenantContext(uuid.uuid4(), "agent", "agent:x")
-    assert not await gateway.eligible(tenant, "evidence.screener", "small", "m", SCREEN)
+    assert not await gateway.eligible(tenant, "evidence.screener", "fake", "small", "m", SCREEN)
 
 
 @pytest.mark.parametrize(
@@ -102,7 +103,7 @@ async def test_ac13_eligibility_is_keyed_on_the_agents_own_prompt(
 
     monkeypatch.setattr(gateway, "tenant_session", never)
     tenant = TenantContext(uuid.uuid4(), "agent", "agent:x")
-    assert not await gateway.eligible(tenant, agent, "small", "m", prompt_ref)
+    assert not await gateway.eligible(tenant, agent, "fake", "small", "m", prompt_ref)
 
 
 def test_ac13_the_screeners_suite_is_known_to_the_gateway() -> None:

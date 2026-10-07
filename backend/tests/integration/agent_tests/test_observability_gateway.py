@@ -103,6 +103,7 @@ def _call(
         tier=tier,
         output_schema=Verdict,
         work_class="time_sensitive",  # SPEC-003 018c: every call declares its class
+        routes=("bedrock", "direct"),  # SPEC-010: the fake route serves synthetic runs
         essential=True,
         budget_usd=budget,
         attribution=Attribution(

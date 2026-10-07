@@ -6,6 +6,7 @@ must be set explicitly, or startup fails: production can never run on a local de
 
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal
 from functools import lru_cache
 from typing import Annotated, Literal, Self, cast
@@ -78,6 +79,54 @@ class WorkClassLimits(BaseModel):
     # Admission (SPEC-003 Q5, D4): the share of a provider's capacity this class leaves for
     # higher classes. A deferrable agent uses the next class's reserve.
     admission_reserve_pct: Annotated[int, Field(ge=0, le=99), classified("internal")]
+
+
+Route = Literal["fake", "direct", "bedrock"]
+ModelTier = Literal["small", "medium", "large"]
+
+
+class CatalogModel(BaseModel):
+    """One tier's logical model and its ID on each route (SPEC-010): the same model family on
+    every route (ADR-073). A route without an ID can't serve the tier."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    name: Annotated[str, Field(min_length=1, max_length=100), classified("internal")]
+    ids: Annotated[dict[Route, str], classified("internal")]
+    usd_in: Annotated[Decimal, Field(ge=0), classified("internal")]  # per million tokens
+    usd_out: Annotated[Decimal, Field(ge=0), classified("internal")]
+
+
+class ParityRecord(BaseModel):
+    """A passing route parity report (SPEC-010 Q2): when it ran and the committed file's hash."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    checked_on: Annotated[date, classified("internal")]
+    report_sha256: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$"), classified("internal")]
+
+
+def _fake_catalog() -> dict[ModelTier, CatalogModel]:
+    return {
+        "small": CatalogModel(
+            name="fake-small",
+            ids={"fake": "fake-small"},
+            usd_in=Decimal("0.80"),
+            usd_out=Decimal("4.00"),
+        ),
+        "medium": CatalogModel(
+            name="fake-medium",
+            ids={"fake": "fake-medium"},
+            usd_in=Decimal("3.00"),
+            usd_out=Decimal("15.00"),
+        ),
+        "large": CatalogModel(
+            name="fake-large",
+            ids={"fake": "fake-large"},
+            usd_in=Decimal("15.00"),
+            usd_out=Decimal("75.00"),
+        ),
+    }
 
 
 class ProviderLimits(BaseModel):
@@ -211,8 +260,23 @@ class Settings(BaseSettings):
             raise ValueError("Temporal needs TLS and an API key outside local and test")
         return self
 
-    # Model provider capacity (ADR-072): per model, shared by every process (migration 0014).
-    model_provider: Annotated[str, classified("internal")] = "fake"
+    # Model routes (SPEC-010; ADR-073): enabled routes in order, each tier's model per route, and
+    # each real route's passing parity report (Q2). `fake` is for synthetic environments only.
+    model_routes: Annotated[tuple[Route, ...], Field(min_length=1), classified("internal")] = (
+        "fake",
+    )
+    model_catalog: Annotated[dict[ModelTier, CatalogModel], classified("internal")] = Field(
+        default_factory=_fake_catalog
+    )
+    route_parity: Annotated[dict[Route, ParityRecord], classified("internal")] = {}
+    anthropic_api_key: Annotated[SecretStr | None, classified("restricted")] = None
+    bedrock_region: Annotated[str, classified("internal")] = "us-east-1"
+    # Q3: an outage (5xx, timeout, connection) blocks that route's model this long.
+    outage_block_seconds: Annotated[int, Field(ge=1, le=600), classified("internal")] = 30
+    # SPEC-010 Q5: the real embedding model is Titan v2 on Bedrock.
+    embedding_provider: Annotated[Literal["fake", "bedrock-titan"], classified("internal")] = (
+        "fake"
+    )
     # Output controls (ADR-065; SPEC-006 Q1): hosts whose links may stay in model text; empty means
     # every external link is removed.
     output_link_allowlist: Annotated[tuple[str, ...], classified("internal")] = ()

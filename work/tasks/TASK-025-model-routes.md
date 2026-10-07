@@ -4,7 +4,7 @@ title: Model routes, with a second route configured
 spec: SPEC-010
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9]
 risk_zone: red
-status: awaiting-plan-approval
+status: done
 branch: task-025-model-routes
 worktree:
 created: 2026-10-07
@@ -31,7 +31,7 @@ All of SPEC-010. Excluded: live credentials and staging configuration (TASK-014)
 - Code: `ai_gateway/` (`__init__`, `admission`, `providers`, `embeddings`), `abacus_tools/evals`, `modules/agents/spec.py` and `service.py`
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-07: D1–D4). Approved by founder: paths listed under *Protected paths*
 
 ### Design (for founder review)
 1. **The `ai_gateway/routes/` package:**
@@ -112,11 +112,25 @@ All of SPEC-010. Excluded: live credentials and staging configuration (TASK-014)
 - [ ] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-07` — Implemented:
+  - the `routes` package with the direct and Bedrock adapters, the Titan embedder and the parity check;
+  - route settings and the catalog;
+  - route-aware admission, failover and usage records;
+  - per-route eligibility (migration 0021) and agent spec `routes`;
+  - the evaluation tools made route-aware;
+  - `make route-parity`.
+
+  Gates, the schema check and unit tests pass. The direct adapter was checked against a mocked transport (200, 429, 500, 529, 401, 403). Full test runs deferred by the founder.
 - `2026-10-07` — SPEC-010 approved and merged (#44). Design written for founder review.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| `provider_limits` stays keyed by model ID (not `route:model_id`) | Route model IDs differ (`claude-…` vs `anthropic.claude-…`), so the ID is unambiguous | No |
+| The "fake only in synthetic environments" rule is enforced at runtime (`route_enabled`), not as a settings validator | A validator broke every non-local settings fixture; FakeModel and FakeEmbedder already refuse outside synthetic environments | No |
+| The evaluation runner records the route but runs on `fake` only until credentials exist (TASK-014); `publish` checks the model against the summary's route | Real-route runs need real providers | No |
+| Bedrock batch parity checks API access (`list_model_invocation_jobs`), not a full batch job | A real job needs an S3 bucket and service role from TASK-014 | No |
+| `anthropic[bedrock]` added (allowlisted); it brings `httpx2` transitively | The SDK's own HTTP client | No |
 
 ## Questions for the human
 - Design questions D1–D4 (above).

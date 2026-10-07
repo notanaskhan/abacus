@@ -70,12 +70,19 @@ class AgentSpec(BaseModel):
     # Tiers the gateway may step down to under pressure; only ones that passed the evaluation
     # suite at that tier (ADR-072). Empty means never step down.
     cheaper_tiers: Annotated[tuple[Tier, ...], classified("internal")]
+    # SPEC-010 (ADR-073): allowed model routes in preference order; never `fake` (synthetic
+    # environments use it for every agent).
+    routes: Annotated[
+        tuple[Literal["direct", "bedrock"], ...], Field(min_length=1), classified("internal")
+    ]
 
 
 def _load() -> dict[str, AgentSpec]:
     loaded = {agent_id: AgentSpec.model_validate(raw) for agent_id, raw in SPECS.items()}
     for spec in loaded.values():
         prompt(spec.prompt)  # a spec must name a registered prompt version
+        if len(set(spec.routes)) != len(spec.routes):
+            raise ValueError(f"agent {spec.id}: routes are listed once each")
         if spec.shape == "single_call" and spec.limits.max_steps != 1:
             raise ValueError(f"agent {spec.id}: a single_call agent takes exactly one step")
         # ADR-005, ADR-025: a task scope holds only actions the matrix lets agents be given.

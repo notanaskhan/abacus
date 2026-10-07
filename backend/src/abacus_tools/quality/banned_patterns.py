@@ -1532,13 +1532,18 @@ RULES: list[Rule | TreeRule] = [
     ),
     Rule(
         id="STORE-001",
-        description="Only kernel.storage uses the AWS SDK and other S3 clients",
-        adr="ADR-016, ADR-104",
+        description="Only kernel.storage (and the Bedrock route, SPEC-010) uses the AWS SDK",
+        adr="ADR-016, ADR-104, ADR-073",
         check=_check_confined(
             ("boto3", "botocore", "aioboto3", "aiobotocore", "s3fs"), "abacus.kernel.storage"
         ),
         include=("src/abacus/*",),
-        exclude=("src/abacus/kernel/storage.py",),
+        exclude=(
+            "src/abacus/kernel/storage.py",
+            # Bedrock runtime (Titan embeddings) and the parity check's Bedrock API probe.
+            "src/abacus/ai_gateway/routes/bedrock.py",
+            "src/abacus/ai_gateway/routes/parity.py",
+        ),
     ),
     Rule(
         id="CRYPTO-001",

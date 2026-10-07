@@ -13,7 +13,7 @@ import math
 import re
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Final, Protocol
+from typing import Final, Literal, Protocol
 
 from abacus.kernel.config import SYNTHETIC_ENVIRONMENTS, settings
 
@@ -65,13 +65,24 @@ def configure_embedder(embedder: EmbeddingProvider | None) -> None:
     _embedder = embedder
 
 
+def embedding_route() -> Literal["fake", "bedrock"]:
+    """Embeddings have one route (SPEC-010 Q5): Titan v2 on Bedrock, or the fake."""
+    return "bedrock" if settings().embedding_provider == "bedrock-titan" else "fake"
+
+
 def embedder() -> EmbeddingProvider:
-    """The configured provider; in synthetic environments the fake when none is configured."""
+    """The configured provider: Titan on Bedrock when `embedding_provider` says so, else the
+    fake (synthetic environments only)."""
     global _embedder
     if _embedder is None:
-        if settings().environment not in SYNTHETIC_ENVIRONMENTS:
+        if embedding_route() == "bedrock":
+            from abacus.ai_gateway.routes.bedrock import BedrockTitanEmbedder
+
+            _embedder = BedrockTitanEmbedder()
+        elif settings().environment not in SYNTHETIC_ENVIRONMENTS:
             raise RuntimeError("no embedding provider configured")
-        _embedder = FakeEmbedder()
+        else:
+            _embedder = FakeEmbedder()
     return _embedder
 
 

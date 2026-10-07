@@ -23,11 +23,19 @@ class ProviderError(Exception):
     (ADR-072)."""
 
     def __init__(
-        self, message: str = "", *, rate_limited: bool = False, retry_after: float | None = None
+        self,
+        message: str = "",
+        *,
+        rate_limited: bool = False,
+        retry_after: float | None = None,
+        auth: bool = False,
     ) -> None:
         super().__init__(message)
         self.rate_limited = rate_limited
         self.retry_after = retry_after
+        # SPEC-010 Q3: credentials refused (401/403). Not an outage: the route isn't blocked, the
+        # attempt fails over, and operators are alerted.
+        self.auth = auth
 
 
 @dataclass(frozen=True)
