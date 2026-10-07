@@ -1,7 +1,7 @@
 ---
 id: SPEC-004
 title: Review queues and review decisions
-status: draft
+status: approved
 owner: founder
 risk_zone: red
 related_adrs: [ADR-005, ADR-054, ADR-061, ADR-068, ADR-004, ADR-007, ADR-020, ADR-026, ADR-027, ADR-031, ADR-063]
@@ -196,19 +196,20 @@ API first. A minimal queue screen in the SPA (Q6): a list with the agent's propo
 No flag: the queue appears once the routes ship. The migration is additive, adding `accepted` to the item statuses. The reason-code catalogue is seeded by the migration.
 
 ## 20. Open questions
-- [ ] **Q1: the reason-code catalogue.** A platform catalogue seeded now, firm-extensible later, or firm-defined from the start? *Recommendation: a platform catalogue seeded by migration (for example, wrong period, wrong entity, incomplete, illegible, doesn't agree to the ledger, unsigned, other with a required note). Firm-specific codes come with firm settings. Codes are never deleted, only retired.*
-- [ ] **Q2: request item statuses.** Add `accepted`, and decide where reject leaves the item. *Recommendation: add `accepted`. Reject returns the item to `received` if it has other undecided evidence, otherwise to `open`. Send back sets `needs_revision`.*
-- [ ] **Q3: queue ordering, and whether taking is required before deciding.** *Recommendation: order by the agent's proposal (`needs_revision` first, then lowest confidence), then oldest. Taking is advisory coordination: any permitted reviewer may decide, and the decision records who.*
-- [ ] **Q4: which module owns `review_decisions`, the assignments and the catalogue.** The candidates are `evidence` (decisions are on evidence versions) or a new `review` module under `audit_trail`/`requests`. *Recommendation: the `evidence` module owns decisions and assignments, since the decision is on its versions. `requests` exposes the item-status move through its api (no cross-module tables). The catalogue is owned by `evidence`.*
-- [ ] **Q5: screening results versus suggestions.** ADR-005 names both `ScreeningResult`s and `Suggestion`s as agent proposals, and the matrix has `suggestion.resolve`. *Recommendation: in this spec, a review decision responds to a screening result. Suggestions, with `suggestion.resolve`, arrive with the engagement agent (increment 8) and reuse `review_decisions` with a `suggestion_id`.*
-- [ ] **Q6: SPA scope.** API only, or a minimal queue screen? *Recommendation: a minimal queue screen (a list, take, and decide with a reason code), so the loop is demonstrable on staging. Full item detail is increment 6.*
-- [ ] **Q7: new matrix actions.** *Recommendation:*
+None. Answered by the founder on 2026-10-07 (all recommendations):
+- [x] **Q1: the reason-code catalogue.** A platform catalogue seeded now, firm-extensible later, or firm-defined from the start? *Recommendation: a platform catalogue seeded by migration (for example, wrong period, wrong entity, incomplete, illegible, doesn't agree to the ledger, unsigned, other with a required note). Firm-specific codes come with firm settings. Codes are never deleted, only retired.*
+- [x] **Q2: request item statuses.** Add `accepted`, and decide where reject leaves the item. *Recommendation: add `accepted`. Reject returns the item to `received` if it has other undecided evidence, otherwise to `open`. Send back sets `needs_revision`.*
+- [x] **Q3: queue ordering, and whether taking is required before deciding.** *Recommendation: order by the agent's proposal (`needs_revision` first, then lowest confidence), then oldest. Taking is advisory coordination: any permitted reviewer may decide, and the decision records who.*
+- [x] **Q4: which module owns `review_decisions`, the assignments and the catalogue.** The candidates are `evidence` (decisions are on evidence versions) or a new `review` module under `audit_trail`/`requests`. *Recommendation: the `evidence` module owns decisions and assignments, since the decision is on its versions. `requests` exposes the item-status move through its api (no cross-module tables). The catalogue is owned by `evidence`.*
+- [x] **Q5: screening results versus suggestions.** ADR-005 names both `ScreeningResult`s and `Suggestion`s as agent proposals, and the matrix has `suggestion.resolve`. *Recommendation: in this spec, a review decision responds to a screening result. Suggestions, with `suggestion.resolve`, arrive with the engagement agent (increment 8) and reuse `review_decisions` with a `suggestion_id`.*
+- [x] **Q6: SPA scope.** API only, or a minimal queue screen? *Recommendation: a minimal queue screen (a list, take, and decide with a reason code), so the loop is demonstrable on staging. Full item detail is increment 6.*
+- [x] **Q7: new matrix actions.** *Recommendation:*
   - `review.read` (engagement partner, manager, senior, staff, reviewer; in scope for practice leader and quality partner);
   - `review.take` (partner, manager, senior, and staff only if the firm allows);
   - `review.assign` (partner, manager).
 
   Agents are denied on all three.
-- [ ] **Q8: seniors deciding.** The matrix gates seniors on `firm_setting(seniors_can_accept)`, which denies until firm settings exist. *Recommendation: leave it denying (seniors can't decide yet). Model firm settings in their own spec.*
+- [x] **Q8: seniors deciding.** The matrix gates seniors on `firm_setting(seniors_can_accept)`, which denies until firm settings exist. *Recommendation: leave it denying (seniors can't decide yet). Model firm settings in their own spec.*
 
 ## 21. Future / explicitly deferred
 - **The learning loop:** examples, candidate firm rules and evaluation cases from corrections (ADR-068).
