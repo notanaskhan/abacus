@@ -11,7 +11,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Literal, Protocol
 
-from abacus.kernel.config import settings
+from abacus.kernel.config import SYNTHETIC_ENVIRONMENTS, settings
 
 Tier = Literal["small", "medium", "large"]
 
@@ -58,7 +58,7 @@ class FakeModel:
     """Answers each prompt with its registered responder. A prompt with none is an error."""
 
     def __init__(self, responders: dict[str, Responder] | None = None) -> None:
-        if settings().environment not in ("local", "test"):
+        if settings().environment not in SYNTHETIC_ENVIRONMENTS:
             raise RuntimeError("FakeModel is for local runs and tests only")
         self._responders: dict[str, Responder] = dict(responders or {})
 
