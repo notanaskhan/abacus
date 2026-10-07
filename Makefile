@@ -1,15 +1,36 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: setup dev check-fast check test test-integration evals generate migrate loadtest seed-staging
+.PHONY: setup dev seed e2e check-fast check test test-integration evals generate migrate loadtest seed-staging
 
 setup:
 	cd backend && uv sync --locked
 	pnpm install --frozen-lockfile
 
+# Local runs: the fake connector reads fixtures from here; seed_dev writes them (TASK-012).
+LOCAL_ENV = ABACUS_FAKE_CONNECTOR_DIR=$(CURDIR)/backend/.local/fake-connector
+
+# The API on :8001, the local sign-in server on :9000, the worker (relay + screening with the
+# fake model) and the SPA on :5173, which proxies /v1 to the API. Ctrl-C stops them all.
 dev:
 	docker compose up -d db s3 temporal
-	cd backend && uv run uvicorn abacus.api.main:app --reload & \
-	cd backend && uv run python -m abacus.worker.main & \
-	pnpm -C apps/web dev
+	mkdir -p backend/.local/fake-connector
+	cd backend && uv run alembic upgrade head && uv run python -m abacus_tools.local.evidence_bucket
+	cd backend; \
+	export $(LOCAL_ENV); \
+	export ABACUS_IDENTITY_JWKS="$$(uv run python -m abacus_tools.fakes.oidc_server --jwks)"; \
+	trap 'kill 0' EXIT; \
+	uv run python -m abacus_tools.fakes.oidc_server & \
+	uv run uvicorn --factory abacus.api.app:create_app --port 8001 --reload & \
+	uv run python -m abacus.worker & \
+	pnpm -C ../apps/web dev
+
+# Dev firm and users for local sign-in; run again after creating an engagement to connect it.
+seed:
+	mkdir -p backend/.local/fake-connector
+	cd backend && $(LOCAL_ENV) uv run python -m abacus_tools.local.seed_dev
+
+# The Playwright journey (needs `make dev` running and `make seed` done); nightly in CI.
+e2e:
+	pnpm -C apps/web exec playwright test
 
 check-fast:
 	cd backend && uv lock --check

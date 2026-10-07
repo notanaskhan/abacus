@@ -17,6 +17,7 @@ dependencies = [
     "sqlalchemy[asyncio]",
     "structlog",
     "temporalio",
+    "uvicorn>=0.40",
 ]
 
 [dependency-groups]
