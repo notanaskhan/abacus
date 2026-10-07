@@ -4,7 +4,7 @@ title: Sign-in, engagements and evidence board screens
 spec: SPEC-000
 acceptance_criteria: [AC-18]
 risk_zone: amber
-status: in-progress
+status: in-review
 branch: task-012-screens
 worktree:
 created: 2026-10-06
@@ -240,21 +240,25 @@ Run `@axe-core/playwright` on the engagements page and the board, with no seriou
 6. Two reviews, `make check`, PR (amber, with red parts reviewed line by line).
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them
-- [ ] Type check passes
-- [ ] Lint and format pass
-- [ ] Architecture and dependency rules pass
+- [x] All listed ACs have passing tests that reference them
+- [x] Type check passes
+- [x] Lint and format pass
+- [x] Architecture and dependency rules pass
 - [ ] Full test suite passes; no tests skipped, weakened or deleted
-- [ ] Security scan passes; no secrets committed
-- [ ] No new dependencies, or each one approved and listed below
-- [ ] Every query is tenant-scoped; every endpoint checks authorisation
+- [x] Security scan passes; no secrets committed
+- [x] No new dependencies, or each one approved and listed below
+- [x] Every query is tenant-scoped; every endpoint checks authorisation
 - [ ] AI calls (if any) go through the gateway with limits, logging and passing evals
-- [ ] Module README and relevant docs updated
-- [ ] Decisions below reviewed; ADR raised where needed
+- [x] Module README and relevant docs updated
+- [x] Decisions below reviewed; ADR raised where needed
 
 ## New dependencies
 | Package | Version | Why | Approved by |
 |---|---|---|---|
+| uvicorn | >=0.40 (locked 0.54) | ASGI server for `make dev` and the local sign-in server (allowlisted) | founder (allowlist; uv.lock approval 2026-10-07) |
+| @tanstack/react-router, @tanstack/react-query, tailwindcss, @radix-ui/react-{slot,dialog,label}, class-variance-authority, clsx, tailwind-merge, lucide-react | see lockfile | SPA stack (ADR-011; allowlisted) | founder (Q3) |
+| @tailwindcss/vite, @testing-library/dom | see lockfile | Tailwind v4 Vite plugin; Testing Library peer | founder (Q3, allowlisted in this task) |
+| @testing-library/react, @playwright/test, @axe-core/playwright | see lockfile | unit tests and the journey (allowlisted) | founder (Q3) |
 
 ## Progress log
 - `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder. Not started.
@@ -273,6 +277,10 @@ Run `@axe-core/playwright` on the engagements page and the board, with no seriou
   - **Frontend:** `packages/ui` with `AgentText`; generated TanStack Query client with declarations (`--noCheck`); ESLint rules; screens.
   - **Scaffold test:** `App.test.tsx` was kept; `App` is now the sign-in splash.
   - **Smoke:** the full AC-18 journey passes by hand in a real browser (Playwright script): sign in → create → seed → add item → retrieve → Received / Retrieved / Agent proposes, with verified citations.
+- `2026-10-07` — The security review (no blockers) and the architecture review (blocker: tests missing) are fixed; see Contract revision 1.
+  - Independent tests: 102 Vitest tests, 38 sign-in server tests, 11 seed tests, the board reads tests (now with the audited screening read), and the Playwright journey with axe.
+  - They found 2 bugs, both fixed: the firm picker didn't advance, and the polling-cap message never appeared.
+  - `make check-fast` passes, and the journey passes against the local stack.
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
@@ -288,5 +296,8 @@ Run `@axe-core/playwright` on the engagements page and the board, with no seriou
 -
 
 ## Handoff
-- **Current state:** Approved; approval file written. Step 1 (backend reads) in progress.
-- **Exact next step:** Backend read routes, then the contract and independent tests.
+- **Current state:** PR open from `task-012-screens`. Reviews are done and fixed; the independent tests pass; `make check-fast` and the Playwright journey pass locally. The full `make check` runs in CI.
+- **Exact next step:** Confirm CI, then founder review. Red-zone parts (the board reads, the sign-in tooling) get a line-by-line review. Merge (rebase), delete the local `work/approvals/TASK-012.yaml`, mark done. Then TASK-013.
+- **Open issues:** branch protection off. Follow-ups:
+  - TASK-014: WorkOS replaces the fake sign-in; deploy the CSP as a header; refresh tokens.
+  - Screening run status for the board, so it can show failed or skipped instead of the polling cap.
