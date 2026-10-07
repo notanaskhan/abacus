@@ -4,7 +4,7 @@ title: Evaluation runner, graders and calibration
 spec: SPEC-005
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-12, AC-13, AC-14, AC-15, AC-16]
 risk_zone: amber
-status: awaiting-plan-approval
+status: in-progress
 branch: task-020-eval-runner
 worktree:
 created: 2026-10-07
@@ -50,7 +50,8 @@ Real-model runs need a provider (TASK-014): until then the machinery is proven w
 - Reference: `docs/product/failure-taxonomy.md`; `docs/architecture/reference/` (backend module, unit of work)
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-07: "proceed" on D1–D6 as recommended)
+- Approved by founder: the paths in the design's list (local approval file `work/approvals/TASK-020.yaml`).
 
 ### Design (for founder review)
 
@@ -160,14 +161,36 @@ Real-model runs need a provider (TASK-014): until then the machinery is proven w
 |---|---|---|---|
 
 ## Progress log
+- `2026-10-07` — 020a implemented. Every gate passes.
+  - **What was built:**
+    - `abacus_tools.evals`: suite, taxonomy, cases, graders, metrics, calibration, gate, runner, CLI and publish;
+    - `abacus_tools/stack.py`;
+    - migration 0016 (`eval_runs`, `eval_case_results`, `eval_eligible`);
+    - the gateway's `evaluation()` and `eligible()`, with cheaper tiers needing eligibility;
+    - the `evaluation` environment;
+    - `make evals`;
+    - the screener's `evals/screening/suite.yaml`, which replaces the old pytest file;
+    - unit tests;
+    - docs.
+  - **End-to-end run, fake model:**
+    - full suite passed: every metric 1.0, ECE 0.073, recommended `below` 0.5 (the spec's 0.5), $0.0076;
+    - fast subset passed: ECE 0.082.
+  - **Found:** the `insert_run` product bug (Gotchas).
 - `2026-10-07` — SPEC-005 approved and merged (PR #30). Design §1–11 and D1–D6 written for founder review.
 - `2026-10-07` — Created with SPEC-005 (draft) for founder review.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| D2 refined: the runner reuses the recorders' throwaway stack, moved to `abacus_tools/stack.py`; the tests' seeding helpers stay where they are | One stack for recorders and evals; less churn | No |
+| Cases are YAML naming a mutation from `abacus_tools.evals.cases`; `fake_answer` makes a fake run test the code paths | YAML can't hold code; fake runs must be meaningful without a provider | No |
+| Expected stages include `failed` (unparseable or rejected content), besides `failed_validation` | `irrelevant`, `unreadable`, `unicode_deception` and `oversized_field` are rejected before validation | No |
+| Cases run one at a time, not concurrently | The fake connector serves one file per connection and period; Phase 1 suite sizes are small | No |
+| Evaluation spend isn't tagged on usage records (`purpose = evaluation`) | Runs use a throwaway database: no firm's spend is ever mixed in. Revisit when runs publish to shared stores | No |
+| The runner opens fresh connections per attempt | Works around a product bug in `connections.repository.insert_run` (below) | No |
 
 ## Gotchas and discoveries
+- **Product bug (connections, protected, outside this approval):** `insert_run` binds its `ON CONFLICT … WHERE status IN (…)` predicate as parameters. After about five executions on one pooled connection, Postgres switches the prepared statement to a generic plan and the insert fails ("no unique or exclusion constraint matching the ON CONFLICT specification"). Steady retrieval load on one pooled connection would hit it. Fix: write the predicate as a literal (`text("status IN ('running', 'succeeded')")`), with a test that runs more than five retrievals on one connection.
 -
 
 ## Questions for the human
@@ -176,5 +199,9 @@ Real-model runs need a provider (TASK-014): until then the machinery is proven w
 - Glossary entries "evaluation run", "grader", "calibration" and "dangerous error" (protected).
 
 ## Handoff
-- **Current state:** SPEC-005 drafted (branch `spec-005-evals`); waiting for founder approval.
-- **Exact next step:** once SPEC-005 is approved, write the design in *Plan* and stop for approval.
+- **Current state:** 020a is on `task-020-eval-runner`. It has no PR yet.
+- **Next:**
+  1. Run the reviews, then open the 020a PR.
+  2. 020b: the CI jobs. Stage 3 `evals-fast` filtered by path (ADR-082 filters) and stage 5 `evals-full` nightly, with a test of their selection.
+  3. D5: add `evals/**/suite.yaml`, `evals/baselines.yaml` and `evals/judges/**` to `protected-paths.md` and the hook. Not done yet.
+  4. Fix the `connections.insert_run` bug (needs a connections approval), then remove the runner's fresh-connection workaround.

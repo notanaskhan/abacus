@@ -1202,6 +1202,10 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_seed_dev.py",
             # Records replay fixtures against throwaway containers (seeds as the superuser).
             "src/abacus_tools/workflows/record_retrieval.py",
+            "src/abacus_tools/stack.py",  # the throwaway stack the recorders and evals share
+            # Evaluation runs on that stack and their store (SPEC-005 Q2; TASK-020).
+            "src/abacus_tools/evals/runner.py",
+            "src/abacus_tools/evals/publish.py",
             # Seeds the local stack as its superuser (local only; TASK-012).
             "src/abacus_tools/local/seed_dev.py",
         ),
@@ -1223,6 +1227,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/*",
             "src/abacus_tools/quality/banned_patterns.py",
             "src/abacus_tools/workflows/record_retrieval.py",
+            "src/abacus_tools/stack.py",  # the throwaway stack the recorders and evals share
         ),
     ),
     TreeRule(
@@ -1308,6 +1313,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/unit/kernel/test_config.py",
             "tests/integration/test_identity.py",
             "src/abacus_tools/workflows/record_retrieval.py",
+            "src/abacus_tools/stack.py",  # the throwaway stack the recorders and evals share
         ),
     ),
     Rule(
