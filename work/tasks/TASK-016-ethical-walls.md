@@ -81,6 +81,54 @@ All of SPEC-002 (AC-1 to AC-11): the API only, the `wall.read` matrix action (Q2
   - `.claude/skills/**` (the tenancy skill and reference note on walls);
   - `docs/architecture/reference/tenancy-and-authz.md` is not protected.
 
+### Interface contract — TASK-016 (tests written independently — ADR-078)
+**Imports:**
+- `abacus.modules.identity.api`: `register_engagement_client`, `authorise`, `visible`, `Resource`, `Forbidden`, `WALL_SAFE`.
+- `abacus.modules.identity.service`: `create_wall`, `remove_wall_by_id`, `list_walls`, `WallView`, `WallExists`.
+- `abacus.modules.identity.repository`: `walled_clients`, `ethical_walls`.
+- `abacus.modules.engagements.api`: `get_ref`, `lock_ref`, `EngagementRef` (now has `client_id`).
+
+**Routes:**
+- `POST /v1/walls {user_id, client_id}` (`wall.create`, firm admin, MFA within 15 min):
+  - 201 `WallOut {id, user_id, client_id, status:"active", created_by, created_at, removed_by:null, removed_at:null}`;
+  - 409 `{"detail":"wall_exists"}` when an active wall already exists for that pair;
+  - 404 for a user who isn't a member of the firm, or a client not in the firm;
+  - 403 without recent MFA or for non-admins;
+  - audit `wall.created`.
+- `POST /v1/walls/{wall_id}/remove` (`wall.remove`, same rules): 200 `WallOut` with status `removed`, `removed_by`/`removed_at` set; 404 for an unknown or already removed wall; audit `wall.removed`.
+- `GET /v1/walls` (`wall.list`, same rules): every wall of the firm, newest first.
+- After a removal, a new wall for the same pair can be created.
+
+**Enforcement (SPEC-002 AC-4–AC-8, AC-11):**
+- `authorise` with an engagement `Resource` raises `Forbidden(layer="wall")`, before relationship and role checks, when the acting person is walled from the engagement's client. The acting person is:
+  - the user, for `AuthContext`;
+  - `on_behalf_of`, for `SystemContext`;
+  - `initiator.user_id`, for `AgentContext`.
+
+  It applies to every role, including firm_admin, practice_leader and quality_partner, for every engagement-scoped action. Firm-level resources (`Resource.firm`) are never walled.
+- `Resource.client_id` is used when set (`EngagementRef.resource()` sets it). When it is absent, the client comes from the registered lookup. When nothing is registered, a person with any active wall is denied (fail closed).
+- `visible(ctx, read_action, col)` excludes rows whose engagement's client the acting person is walled from. It correlates correctly when the outer query is on `engagements` itself, or on another table's `engagement_id`.
+- **API:** `Forbidden` at layer `wall` answers 404 with exactly the not-found body; other layers stay 403. Walled engagements are missing from `GET /v1/engagements` and from every list route (request items, evidence versions, screening results).
+- **New engagements:** an engagement later created for a walled client is walled too (AC-6).
+- **Runs (AC-7):** a retrieval or screening run acting for a person walled after it started ends failed with code `forbidden` at its next step.
+- **Other clients (AC-8)** are unaffected.
+- **Removal (AC-9):** after a removal, access follows roles again on the next request.
+- **`WALL_SAFE`** is True, and `create_app` starts with `environment="production"`, given its other settings.
+
+**Database (migration 0012):**
+- `ethical_walls` has forced RLS.
+- At most one active wall per (tenant, user, client), through a partial unique index.
+- The app may insert `id, tenant_id, user_id, client_id, created_by`, and update only `status, removed_by, removed_at`, under a forward-only trigger: a removed wall can't change, and identity columns are immutable.
+- No delete.
+- CHECK: removed ⇔ `removed_at` and `removed_by` set.
+- Foreign keys to memberships (user, created_by, removed_by) and clients.
+- The downgrade refuses when walls exist.
+
+**Existing tests whose pinned facts change** (update them; don't weaken them):
+- `tests/unit/identity/test_permission_matrix.py`: it fakes `authz.engagement_role`; it must also fake `authz.walled_clients` (returning no walls), and gain walled cases.
+- `tests/unit/api/test_app_gates.py::test_ac20_creating_routes_answer_201`: the POST set gains `/v1/walls` (201) and `/v1/walls/{wall_id}/remove` (200).
+- Any test asserting production refuses to start because walls aren't safe.
+
 ### Steps
 1. Approval file; migration 0012; the matrix change.
 2. The wall check in `authorise` and `visible()`, the registration, and 404 mapping.
