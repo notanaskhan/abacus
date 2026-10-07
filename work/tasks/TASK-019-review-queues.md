@@ -196,6 +196,7 @@ Errors show the API's messages. Full item detail is increment 6.
 |---|---|---|---|
 
 ## Progress log
+- `2026-10-07` — Rebased onto main after 018b (#28) and 018c (#29), with pin updates (the 201 routes and the definer functions). The founder waived the red-zone line-by-line review: "merge 019 too when green, skip my review". Independent tests are still deferred.
 - `2026-10-07` — Reviews: security (H1 release across engagements, H2 ADR-005 sidesteps, H3 races, M1–M3, L1–L4) and architecture (B1 reject stranding, B2 BOUND-002 test, B4 pool starvation, M1–M13, nits).
   - **Fixed:**
     - decisions read and lock inside their own unit of work, through `requests.review_targets` (items locked FOR UPDATE; `fulfil_by_rule` locks the item too);
