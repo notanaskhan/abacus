@@ -372,15 +372,20 @@ def _errored(run: Summary, error: BaseException) -> Summary:
     )
 
 
-async def evaluate_on(
-    stack: Stack, suite: Suite, subset: Subset, tier: Tier, out: Path
-) -> Summary:
-    """Run `suite` on a throwaway stack that's already up; store and write its summary."""
+async def prepare(stack: Stack) -> Seeded:
+    """Point the platform at a throwaway stack that's already up, check it, and seed its
+    synthetic firm (once per stack)."""
     await connect(stack)
     settings.cache_clear()
     assert_engines_on(stack)
+    return await seed(stack.superuser)
+
+
+async def evaluate_on(
+    stack: Stack, world: Seeded, suite: Suite, subset: Subset, tier: Tier, out: Path
+) -> Summary:
+    """Run `suite` on a prepared stack; store and write its summary."""
     directory = Path(os.environ["ABACUS_FAKE_CONNECTOR_DIR"])
-    world = await seed(stack.superuser)
     run = Summary(
         id=uuid.uuid4(),
         agent=suite.agent,
@@ -480,8 +485,9 @@ def run(
     results: list[Summary] = []
 
     async def record(stack: Stack) -> None:
+        world = await prepare(stack)
         for suite in todo:
-            results.append(await evaluate_on(stack, suite, subset, chosen, out))
+            results.append(await evaluate_on(stack, world, suite, subset, chosen, out))
 
     run_with_stack(record)
     return results
@@ -494,6 +500,7 @@ __all__ = [
     "evaluate_on",
     "guard",
     "judge",
+    "prepare",
     "run",
     "store_finish",
     "store_start",
