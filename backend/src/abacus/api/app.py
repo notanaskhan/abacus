@@ -17,7 +17,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from starlette.types import ASGIApp, Receive, Scope, Send
+from starlette.types import Receive, Scope, Send
 
 from abacus.kernel.config import settings
 from abacus.kernel.error_tracking import configure_error_tracking, flush_errors, report
@@ -90,19 +90,19 @@ def _operation_id(route: APIRoute) -> str:
     return route.name.removesuffix("_route")
 
 
-class _IgnoreInboundTrace:
-    """Drop inbound W3C trace headers: every API request starts its own trace (TASK-013)."""
+_TRACE_HEADERS = (b"traceparent", b"tracestate")
 
-    def __init__(self, app: ASGIApp) -> None:
-        self._app = app
+
+class _Abacus(FastAPI):
+    """The app, with inbound W3C trace headers removed before anything else runs (before the
+    tracing instrumentation, which sits outside every middleware): each API request starts its
+    own trace, so callers can't choose the trace IDs audit rows record (TASK-013). The scope is
+    edited in place, so what the router sets on it (the route) stays visible to handlers."""
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http":
-            headers = [
-                (k, v) for k, v in scope["headers"] if k not in (b"traceparent", b"tracestate")
-            ]
-            scope = {**scope, "headers": headers}
-        await self._app(scope, receive, send)
+            scope["headers"] = [(k, v) for k, v in scope["headers"] if k not in _TRACE_HEADERS]
+        await super().__call__(scope, receive, send)
 
 
 @asynccontextmanager
@@ -119,7 +119,7 @@ def create_app() -> FastAPI:
         raise RuntimeError("ethical walls are not implemented: refusing to serve production")
     identity.token_verifier()  # a misconfigured identity provider fails here, not per request
     payload_codec()  # and so does a bad workflow payload key, before any run is recorded
-    app = FastAPI(
+    app = _Abacus(
         title="Abacus",
         version="1",
         docs_url=None,
@@ -142,6 +142,4 @@ def create_app() -> FastAPI:
     configure_tracing("abacus-api")
     configure_error_tracking("abacus-api")
     FastAPIInstrumentor.instrument_app(app, exclude_spans=["receive", "send"])
-    # Added last, so it runs first: callers can't choose our trace IDs (audit rows record them).
-    app.add_middleware(_IgnoreInboundTrace)
     return app
