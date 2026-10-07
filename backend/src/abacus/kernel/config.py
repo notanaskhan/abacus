@@ -212,6 +212,9 @@ class Settings(BaseSettings):
 
     # Model provider capacity (ADR-072): per model, shared by every process (migration 0014).
     model_provider: Annotated[str, classified("internal")] = "fake"
+    # Output controls (ADR-065; SPEC-006 Q1): hosts whose links may stay in model text; empty means
+    # every external link is removed.
+    output_link_allowlist: Annotated[tuple[str, ...], classified("internal")] = ()
     provider_limits: Annotated[dict[str, ProviderLimits], classified("internal")] = {
         "fake-small": ProviderLimits(rpm=600, tpm=1_000_000),
         "fake-medium": ProviderLimits(rpm=600, tpm=1_000_000),

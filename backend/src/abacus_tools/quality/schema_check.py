@@ -57,7 +57,7 @@ NON_TENANT_TABLES = frozenset(
 # Tables the app may insert into and read, never update or delete (ADR-004); TASK-009/010 add.
 INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     {"audit_events", "outbox", "evidence_versions", "ledger_snapshots", "trial_balance_lines"}
-    | {"fulfilments", "screening_results", "usage_records", "review_decisions"}
+    | {"fulfilments", "screening_results", "usage_records", "review_decisions", "messages"}
     | {"eval_case_results"}
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
@@ -127,6 +127,10 @@ APP_INSERT_COLUMNS.update(
             | {"decision", "reason_code", "note", "screening_result_id", "corrects_proposal"}
             | {"actor_kind", "actor_id"}
         ),
+        "messages": frozenset(
+            {"id", "tenant_id", "engagement_id", "channel", "recipient_ref", "body", "status"}
+            | {"violations", "created_by"}
+        ),
         "review_assignments": frozenset(
             {"tenant_id", "evidence_version_id", "engagement_id", "assignee_user_id"}
             | {"assigned_by"}
@@ -187,6 +191,7 @@ TABLE_OWNERS: dict[str, str] = {
     "screening_results": "agents",
     # Review queues (SPEC-004 Q4): evidence owns decisions, assignments and the catalogue.
     "review_decisions": "evidence",
+    "messages": "communications",
     "review_assignments": "evidence",
     "review_reason_codes": "evidence",
     # Evaluation runs (SPEC-005 Q2): written only by the evaluation tooling.

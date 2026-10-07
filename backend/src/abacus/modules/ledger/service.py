@@ -16,11 +16,14 @@ from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork
 from abacus.modules.ledger.normalise import NormalisedTrialBalance, validate
 from abacus.modules.ledger.repository import (
+    accounts_in_firm,
     find_snapshot,
     get_snapshot,
     insert_lines,
     insert_snapshot,
     lines_of,
+    lines_of_snapshots,
+    totals_of_snapshots,
 )
 
 
@@ -125,3 +128,36 @@ async def snapshot_view(tenant: TenantContext, snapshot_id: UUID) -> SnapshotVie
                 for line in lines
             ),
         )
+
+
+@dataclass(frozen=True)
+class ScopeFacts:
+    """What an engagement's ledger puts in scope (SPEC-006 AC-8): account codes and names, and
+    every amount in cents (line debits and credits, and the snapshots' totals)."""
+
+    codes: frozenset[str]
+    names: frozenset[str]
+    amounts_cents: frozenset[int]
+
+
+def _cents(value: Decimal) -> int:
+    return int((value * 100).to_integral_value())
+
+
+async def scope_facts(tenant: TenantContext, snapshot_ids: list[UUID]) -> ScopeFacts:
+    async with tenant_session(tenant) as session:
+        lines = await lines_of_snapshots(session, snapshot_ids)
+        totals = await totals_of_snapshots(session, snapshot_ids)
+    amounts = {_cents(v) for line in lines for v in (line.debit, line.credit) if v}
+    amounts |= {_cents(v) for pair in totals for v in pair if v}
+    return ScopeFacts(
+        frozenset(line.account_code for line in lines),
+        frozenset(line.account_name for line in lines),
+        frozenset(amounts),
+    )
+
+
+async def firm_accounts(tenant: TenantContext) -> list[tuple[str, str]]:
+    """Every account code and name in the firm's ledger snapshots."""
+    async with tenant_session(tenant) as session:
+        return list(await accounts_in_firm(session))

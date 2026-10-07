@@ -28,6 +28,38 @@ export default defineConfig(
               name: "axios",
               message: "Call the backend only through @abacus/api-client (ADR-011).",
             },
+            {
+              name: "react-markdown",
+              message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+            },
+            {
+              name: "marked",
+              message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+            },
+            {
+              name: "markdown-it",
+              message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+            },
+            {
+              name: "remark",
+              message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+            },
+            {
+              name: "rehype-raw",
+              message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+            },
+            {
+              name: "dompurify",
+              message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+            },
+            {
+              name: "html-react-parser",
+              message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+            },
+            {
+              name: "sanitize-html",
+              message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+            },
           ],
         },
       ],

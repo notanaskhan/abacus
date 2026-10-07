@@ -2173,8 +2173,12 @@ def test_ac20_bound_002_ledger_depends_on_no_module() -> None:
     assert bp.MODULE_DEPENDENCIES["ledger"] == frozenset()
 
 
-def test_ac20_bound_002_only_connections_may_depend_on_ledger() -> None:
-    assert [m for m, deps in bp.MODULE_DEPENDENCIES.items() if "ledger" in deps] == ["connections"]
+def test_ac20_bound_002_only_connections_and_communications_may_depend_on_ledger() -> None:
+    # communications reads scope facts through the ledger API (SPEC-006, TASK-021 D2).
+    assert sorted(m for m, deps in bp.MODULE_DEPENDENCIES.items() if "ledger" in deps) == [
+        "communications",
+        "connections",
+    ]
 
 
 def test_ac20_bound_002_nothing_depends_on_connections() -> None:

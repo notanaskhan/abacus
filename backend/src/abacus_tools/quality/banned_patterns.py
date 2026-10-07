@@ -719,6 +719,27 @@ def _check_evaluation_mode(src: SourceFile) -> Iterator[Finding]:
                     yield Finding(node.lineno, "evaluation mode is the evaluation runner's only")
 
 
+_MESSAGING = frozenset(
+    {"smtplib", "email.mime", "sendgrid", "twilio", "postmarker", "mailgun", "aiosmtplib"}
+)
+
+
+def _check_messaging(src: SourceFile) -> Iterator[Finding]:
+    """ADR-065: a message leaves only through `communications.send`, after its scope check.
+    Nothing else imports a mail or messaging library or emits `message.ready`."""
+    for node in ast.walk(src.tree):
+        modules: list[str] = []
+        if isinstance(node, ast.Import):
+            modules = [a.name for a in node.names]
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            modules = [node.module]
+        for module in modules:
+            if any(module == m or module.startswith(m + ".") for m in _MESSAGING):
+                yield Finding(getattr(node, "lineno", 1), "messages leave only through send")
+        if isinstance(node, ast.Constant) and node.value == "message.ready":
+            yield Finding(getattr(node, "lineno", 1), "only communications emits message.ready")
+
+
 def _check_resource_archived(src: SourceFile) -> Iterator[Finding]:
     """`archived` comes from the engagement row, never a literal (TASK-008 loads it)."""
     for node in ast.walk(src.tree):
@@ -739,6 +760,13 @@ _LIST_PREFIXES = ("list_", "all_", "search_")
 # lookups for rows the caller has already authorised, or sign-in before a tenant exists.
 LIST_EXEMPT = frozenset(
     {
+        # The outbound scope checker (SPEC-006): after `authorise(message.send)`, it must see the
+        # firm's other clients, entities and accounts to catch them in a draft; never returned.
+        ("src/abacus/modules/organisations/repository.py", "names_in_firm"),
+        ("src/abacus/modules/ledger/repository.py", "accounts_in_firm"),
+        ("src/abacus/modules/ledger/repository.py", "lines_of_snapshots"),
+        ("src/abacus/modules/ledger/repository.py", "totals_of_snapshots"),
+        ("src/abacus/modules/evidence/repository.py", "snapshots_of_engagement"),
         # The platform reason-code catalogue: no tenant rows, nothing to filter (SPEC-004 Q1).
         ("src/abacus/modules/evidence/repository.py", "reason_codes"),
         ("src/abacus/modules/identity/repository.py", "active_memberships"),
@@ -823,6 +851,10 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
         {"identity", "engagements", "organisations", "ledger", "evidence", "requests"}
     ),
     "agents": frozenset({"identity", "engagements", "organisations", "evidence", "requests"}),
+    # The outbound scope checker reads each owner's facts through its API (SPEC-006, TASK-021 D2).
+    "communications": frozenset(
+        {"identity", "engagements", "organisations", "ledger", "evidence"}
+    ),
 }
 
 
@@ -1448,6 +1480,14 @@ RULES: list[Rule | TreeRule] = [
         check=_check_evaluation_mode,
         include=("src/abacus/*", "src/abacus_tools/*"),
         exclude=("src/abacus/ai_gateway/__init__.py", "src/abacus_tools/evals/*"),
+    ),
+    Rule(
+        id="COMM-001",
+        description="Messages leave only through communications.send, after the scope check",
+        adr="ADR-065",
+        check=_check_messaging,
+        include=("src/abacus/*",),
+        exclude=("src/abacus/modules/communications/*",),
     ),
     Rule(
         id="AUTHZ-003",

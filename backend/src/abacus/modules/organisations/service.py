@@ -7,8 +7,14 @@ from uuid import UUID, uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import Target, UnitOfWork
-from abacus.modules.organisations.repository import insert_client, insert_client_entity, names_of
+from abacus.modules.organisations.repository import (
+    insert_client,
+    insert_client_entity,
+    names_in_firm,
+    names_of,
+)
 
 
 @dataclass(frozen=True)
@@ -40,3 +46,16 @@ async def create_client(
 async def client_names(session: AsyncSession, entity_ids: list[UUID]) -> dict[UUID, ClientNames]:
     names = await names_of(session, entity_ids)
     return {entity: ClientNames(*pair) for entity, pair in names.items()}
+
+
+@dataclass(frozen=True)
+class FirmName:
+    client_id: UUID
+    id: UUID  # the client's or the entity's
+    name: str
+
+
+async def firm_names(tenant: TenantContext) -> list[FirmName]:
+    """Every client and entity name of the firm (SPEC-006 scope checker)."""
+    async with tenant_session(tenant) as session:
+        return [FirmName(c, i, n) for c, i, n in await names_in_firm(session)]

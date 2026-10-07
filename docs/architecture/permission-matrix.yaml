@@ -138,6 +138,9 @@ actions:
   suggestion.create:        {agent: task_scope}
   suggestion.resolve:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny}
 
+  # --- Communications (SPEC-006 Q4; TASK-021) ---
+  message.send:             {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny}
+
   # --- Connections ---
   connection.create:        {client_admin: allow}                       # only the client grants access
   connection.revoke:        {client_admin: allow, engagement_partner: allow, manager: allow}

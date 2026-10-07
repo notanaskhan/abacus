@@ -220,6 +220,13 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
     },
+    "message.send": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
     "connection.create": {
         "client_admin": "allow",
     },

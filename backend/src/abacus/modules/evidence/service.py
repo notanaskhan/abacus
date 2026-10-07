@@ -46,6 +46,7 @@ from abacus.modules.evidence.repository import (
     next_version_no,
     put_assignment,
     reason_codes,
+    snapshots_of_engagement,
     take_assignment,
     version_for_key,
 )
@@ -681,3 +682,10 @@ async def decide(
         corrects_proposal=corrects,
     )
     return DecisionView(decision_id, version_id, item_ids, decision, reason_code, corrects, to)
+
+
+async def engagement_snapshots(tenant: TenantContext, engagement_id: UUID) -> list[UUID]:
+    """The ledger snapshots behind the engagement's evidence (SPEC-006), for a caller that has
+    authorised on the engagement."""
+    async with tenant_session(tenant) as session:
+        return await snapshots_of_engagement(session, engagement_id)
