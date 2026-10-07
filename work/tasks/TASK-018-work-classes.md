@@ -232,6 +232,66 @@ Source: SPEC-003 AC-1–5, AC-15 (schedule-to-start) and AC-16, and design §2, 
   - Excluded files: `kernel/dispatch.py`, `kernel/temporal.py` and `worker/__main__.py`.
 - **AgentSpec:** every entry of `cheaper_tiers` must be strictly cheaper than `tier` (small < medium < large), or the spec doesn't load.
 
+### Interface contract: 018b caps (tests written independently, ADR-078)
+Source: SPEC-003 AC-6–8, AC-13, AC-14 and AC-15 (slots), design §4–5 and D2–D3, and the founder decision of 2026-10-07 below. Every test names its AC.
+
+**Database (migration 0013)**
+- **Tables:** `work_slots`, `work_waiters` and `work_grants` are platform tables with no privileges for `abacus_app` or PUBLIC. `schema_check` lists them in `NON_TENANT_TABLES`, `GLOBAL_TABLES` and `TABLE_OWNERS` (`kernel.slots`).
+- **Functions:** `work_slot_acquire(holder, engagement_id, class, firm_cap, engagement_cap, class_capacity, lease_seconds) -> (granted, reason, estimated_start_at)`, `work_slot_release(holder)` and `work_slot_renew(holder, lease_seconds) -> bool`.
+  - All three are SECURITY DEFINER, with `search_path` pinned. EXECUTE is granted to `abacus_app` only.
+  - Without `app.tenant_id` they raise (`insufficient_privilege`).
+  - An invalid class or a negative cap raises `invalid_parameter_value`.
+- **Acquire:**
+  - It is idempotent per holder; a holder already holding renews and gets `(true, null, null)`.
+  - Expired leases (database time) and waiters unseen for 5 minutes are reclaimed.
+  - **Grant rule:**
+    - a slot goes only while the class is under `class_capacity`;
+    - the waiter must be the first eligible one: its firm under `firm_cap` and its engagement under `engagement_cap` in that class;
+    - eligible waiters are ordered by their firm's latest grant in the class over the last 10 minutes (none first), then `waiting_since`, then holder.
+  - **Not granted:** the reason is `firm_cap`, `engagement_cap` or `class_capacity`, from the caller's own counts only. The estimate is null when the class had no grants in the last 10 minutes.
+  - A cap of 0 never grants.
+- **Release** frees the slot and the waiter for the caller's tenant only, and is idempotent. A caller can never release or renew another tenant's holder.
+- **Run columns:** `sync_runs` and `agent_runs` gain `queued_reason` (null, or one of `firm_cap`, `engagement_cap`, `class_capacity`, `provider_capacity`, `deferred`) and `estimated_start_at`. The app may update both. CHECK: a run that isn't `running` has both null.
+- The migration is reversible.
+
+**`abacus.kernel.slots`**
+- `acquire(tenant, holder, engagement_id, work_class) -> SlotDecision(granted, reason, estimated_start_at)` passes the class's `settings().work_classes[c]` caps and `LEASE_SECONDS = 900`.
+- `renew(tenant, holder) -> bool` and `release(tenant_id, holder)`.
+- Each call commits on its own, with no audit event (founder decision 2026-10-07). UOW-001 and UOW-002 exempt only `kernel/slots.py`.
+- `current_holder()` returns `"<workflow_id>:<workflow_run_id>"`. `current_class()` returns the class of the activity's task queue, or None.
+- Every `acquire` increments the counter `abacus.slots.decisions` (`work_class`, `outcome` granted or waiting, `reason`) and logs `slot.acquired` or `slot.waiting` (`tenant_id`, `work_class`, `reason`).
+
+**Settings:** `WorkClassLimits` gains `firm_cap` (≥0), `engagement_cap` (≥0), `class_capacity` (≥1) and `max_wait_seconds` (≥1).
+| Class | Firm cap | Engagement cap | Class capacity | Max wait |
+|---|---|---|---|---|
+| interactive | 20 | 10 | 50 | 120 s |
+| time_sensitive | 20 | 10 | 50 | 600 s |
+| background | 10 | 5 | 20 | 21,600 s |
+| batch | 5 | 2 | 10 | 86,400 s |
+
+**Activities**
+- **`retrieval.acquire_slot(RetrievalInput) -> SlotGrant(granted, max_wait_seconds)`** and **`screening.acquire_slot(RunInput)`**:
+  - a run already ended, or an activity on a queue that isn't a class queue, gets `(True, 0)` and takes no slot;
+  - otherwise they acquire, then mark the run queued with the reason and estimate, or running again with both null.
+  - The mark is through the unit of work and audited `sync_run.queued`/`sync_run.resumed` (`agent_run.*` for screening) only when `queued_reason` changes, so repeated asks with the same reason write nothing.
+- **`retrieval.release_slot`** and **`screening.release_slot`** release; they are a no-op off the class queues.
+- Every retrieval stage and `screening.screen` renew the slot first.
+
+**Workflows (behind `workflow.patched("work-slots")`)**
+- **Retrieval** waits for its slot before `pull_raw`. **Screening** waits after `create_run` (a skipped screening takes no slot).
+- `wait_for_slot` asks, then sleeps on durable timers with backoff from 1 s, jittered ×0.5–1.5 with `workflow.random()`, capped at `max(10, max_wait_seconds/300)`.
+- When the class's `max_wait_seconds` has passed since the first ask, the run is failed with `capacity_timeout` (in `FAIL_CODES` of both modules).
+- The slot is released in `finally` on every path.
+- The v1 histories still replay. New histories `retrieval-v2-*` and `screening-v2-*` are recorded and must replay.
+
+**API:** `RetrievalOut` gains `queued_reason` and `estimated_start_at`. A running run with a `queued_reason` is reported as `status: "queued"`, and is never shown as `running` while queued (AC-13).
+
+**Existing tests that change (pins)**
+- Activity-order assertions in `test_retrieval_workflow.py` and `agent_tests/test_screening_workflow.py` (the slot activities are added).
+- The activity count, and the `RetrievalOut` field set in `test_retrieval_api.py`.
+- The update-column map in `test_schema_check_db.py`.
+- `test_ac20_every_input_and_result_in_the_history_is_encrypted`: Temporal's `core_patch` marker and the `TemporalChangeVersion` search attribute are written by Temporal itself in plain JSON and hold only patch names. The test must allow exactly those, and assert they contain nothing but patch IDs.
+
 ### Steps
 1. Design and interface contract, after the spec is approved.
 2. Implementation.
@@ -257,6 +317,7 @@ Source: SPEC-003 AC-1–5, AC-15 (schedule-to-start) and AC-16, and design §2, 
 ## Progress log
 - `2026-10-07` — Created with SPEC-003 (draft) for founder review.
 - `2026-10-07` — SPEC-003 approved. Design §1–8 and D1–D5 written for founder review.
+- `2026-10-07` — 018a merged (PR #26). 018b implemented: migration 0013 (slot ledger and functions; run queued columns), `kernel.slots`, slot activities and workflow waits behind `patched("work-slots")`, `capacity_timeout`, the queued API status, the slots metric and logs, and v2 histories. Founder decision: the ledger commits without audit events. Contract 018b written.
 - `2026-10-07` — Independent tests cherry-picked (4ccb451; about 220 tests and about 400 DISPATCH-001 cases; no product bugs). Unit and property: 8,175 passed with the compose DB stopped. 018a PR opened.
 - `2026-10-07` — 018a reviews: security (S1 DISPATCH-001 sidesteps, S2 legacy pool in non-interactive processes, S3 relay in every process, S4 `tenant.id`, S5 exemplars, S6–S9) and architecture (A1 a dead pool unnoticed, A2 serial shutdown, A3 telemetry shut before drain, A5 settings by class, A6–A7 kernel layering, A9 registration beside the starter, A11–A17). All fixed except A16 (the glossary is protected and outside this approval). Contract revision 1.
 - `2026-10-07` — Design approved (D1–D5). 018a implemented: `kernel.dispatch`, `kernel.metrics`, the per-class worker pools and legacy queue, DISPATCH-001, the agent spec fields, ADR-105, and docs (kernel README, temporal reference, skill). Static gates pass on `src`; 11 unit tests and the integration fixtures pin the old worker and queue (handed to the test author).
@@ -264,6 +325,10 @@ Source: SPEC-003 AC-1–5, AC-15 (schedule-to-start) and AC-16, and design §2, 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| The slot ledger commits without audit events (UOW-001/002 exempt `kernel/slots.py` only); a run's queued and resumed transitions are audited | Polling every few seconds would flood the audit trail; SPEC-003 §14. Founder decision 2026-10-07 | No (recorded here and in `kernel/slots.py`) |
+| A waiting run stays `running` in the database with `queued_reason`; the API reports `queued` | Avoids widening every status check and trigger; the API still never shows waiting work as running (AC-13). Design §5 revised | No |
+| The wait loop is copied into each module's `workflows.py` | ADR-017's import contract bars workflows from importing the kernel | No |
+| No per-firm slots-in-use gauge; per-firm detail is in `slot.*` logs | A process-local gauge is wrong across processes, and the metrics allowlist carries no tenant ID | No |
 
 ## Gotchas and discoveries
 - 018b: workflows can't import `kernel.dispatch` (WF-001), so a workflow's class must come from its input or `workflow.info().task_queue` (`work_class_of_queue`); a legacy-queue workflow has no class and skips slots (it runs behind `patched` anyway).
@@ -275,9 +340,10 @@ Source: SPEC-003 AC-1–5, AC-15 (schedule-to-start) and AC-16, and design §2, 
 - Glossary entries "work class" and "essential" (A16): the glossary is protected and not in this task's approval.
 
 ## Handoff
-- **Current state:** 018a is complete and its PR is open (branch `task-018-work-classes`). Approval file `work/approvals/TASK-018.yaml` covers 018b and 018c too.
+- **Current state:** 018b implemented on `task-018b-caps`.
 - **Exact next step:**
-  1. Merge the 018a PR.
-  2. Start 018b, caps (design §4–5): a contract first, then the slot ledger functions (D3), the `queued` status migration, workflow waits behind `patched("work-slots")` with v2 histories, and `capacity_timeout`.
-  3. Decide where a workflow learns its class (see *Gotchas*).
-  4. Then 018c, admission (design §6).
+  1. Run the independent tests on `task-018b-caps-tests` from the 018b contract, including the pins.
+  2. Run the security and architecture reviews.
+  3. Cherry-pick, fix, and run the full suite with the compose DB stopped.
+  4. Open the PR.
+  5. Then 018c, admission (design §6).

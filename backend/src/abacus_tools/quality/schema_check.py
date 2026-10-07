@@ -44,7 +44,9 @@ REPO = BACKEND.parent
 OWNER = "abacus_owner"
 APP = "abacus_app"
 # Tables without tenant_id: only infrastructure. Each entry is founder-reviewed (protected file).
-NON_TENANT_TABLES = frozenset({"alembic_version"})
+# The work slot ledger sees every firm's waiters to hand slots out fairly (TASK-018 D3): no app
+# privilege at all; SECURITY DEFINER functions take the tenant from the session.
+NON_TENANT_TABLES = frozenset({"alembic_version", "work_slots", "work_waiters", "work_grants"})
 # Tables the app may insert into and read, never update or delete (ADR-004); TASK-009/010 add.
 INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     {"audit_events", "outbox", "evidence_versions", "ledger_snapshots", "trial_balance_lines"}
@@ -128,11 +130,14 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "engagements": frozenset({"status"}),
     "request_items": frozenset({"status"}),
     "connections": frozenset({"status"}),
-    "agent_runs": frozenset({"status", "context_hash", "output", "failure_code", "finished_at"}),
+    "agent_runs": frozenset(
+        {"status", "context_hash", "output", "failure_code", "finished_at"}
+        | {"queued_reason", "estimated_start_at"}
+    ),
     "sync_runs": frozenset(
         {"status", "raw_storage_key", "raw_version_id", "raw_fingerprint", "snapshot_id"}
         | {"raw_size_bytes", "raw_pulled_at", "failure_code", "finished_at", "source"}
-        | {"evidence_version_id"}
+        | {"evidence_version_id", "queued_reason", "estimated_start_at"}
     ),
 }
 # Who owns each table (ADR-103): a module or kernel package. Every table must be listed, and every
@@ -161,10 +166,14 @@ TABLE_OWNERS: dict[str, str] = {
     "agent_runs": "agents",
     "screening_results": "agents",
     "usage_records": "ai_gateway",
+    # The work slot ledger (TASK-018 D3): reached only through SECURITY DEFINER functions.
+    "work_slots": "kernel.slots",
+    "work_waiters": "kernel.slots",
+    "work_grants": "kernel.slots",
 }
 # Tables shared by every tenant, readable only through abacus_identity (ADR-002, TASK-007): the app
 # role has no privileges on them at all. Each entry is founder-reviewed (protected file).
-GLOBAL_TABLES = frozenset({"users"})
+GLOBAL_TABLES = frozenset({"users", "work_slots", "work_waiters", "work_grants"})
 RELAY = "abacus_relay"
 IDENTITY = "abacus_identity"
 _LOCAL_PASSWORDS = {

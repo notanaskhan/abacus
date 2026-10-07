@@ -65,6 +65,12 @@ class WorkClassLimits(BaseModel):
 
     max_activities: Annotated[int, Field(ge=1), classified("internal")]
     max_workflow_tasks: Annotated[int, Field(ge=1), classified("internal")]
+    # Slots (SPEC-003 Q4, Q6): concurrent workflows per firm and per engagement (0 pauses), in the
+    # whole class across every process, and how long work may wait before `capacity_timeout`.
+    firm_cap: Annotated[int, Field(ge=0), classified("internal")]
+    engagement_cap: Annotated[int, Field(ge=0), classified("internal")]
+    class_capacity: Annotated[int, Field(ge=1), classified("internal")]
+    max_wait_seconds: Annotated[int, Field(ge=1), classified("internal")]
 
 
 class Settings(BaseSettings):
@@ -104,10 +110,38 @@ class Settings(BaseSettings):
     serve_legacy_queue: Annotated[bool, classified("internal")] = True
     # Each work class's limits (TASK-018 design §3); 018b and 018c add caps and thresholds here.
     work_classes: Annotated[dict[WorkClass, WorkClassLimits], classified("internal")] = {
-        "interactive": WorkClassLimits(max_activities=10, max_workflow_tasks=10),
-        "time_sensitive": WorkClassLimits(max_activities=10, max_workflow_tasks=10),
-        "background": WorkClassLimits(max_activities=5, max_workflow_tasks=5),
-        "batch": WorkClassLimits(max_activities=2, max_workflow_tasks=2),
+        "interactive": WorkClassLimits(
+            max_activities=10,
+            max_workflow_tasks=10,
+            firm_cap=20,
+            engagement_cap=10,
+            class_capacity=50,
+            max_wait_seconds=120,
+        ),
+        "time_sensitive": WorkClassLimits(
+            max_activities=10,
+            max_workflow_tasks=10,
+            firm_cap=20,
+            engagement_cap=10,
+            class_capacity=50,
+            max_wait_seconds=600,
+        ),
+        "background": WorkClassLimits(
+            max_activities=5,
+            max_workflow_tasks=5,
+            firm_cap=10,
+            engagement_cap=5,
+            class_capacity=20,
+            max_wait_seconds=6 * 3600,
+        ),
+        "batch": WorkClassLimits(
+            max_activities=2,
+            max_workflow_tasks=2,
+            firm_cap=5,
+            engagement_cap=2,
+            class_capacity=10,
+            max_wait_seconds=24 * 3600,
+        ),
     }
     # Temporal Cloud needs TLS and an API key; both are required outside local and test.
     temporal_tls: Annotated[bool, classified("internal")] = False

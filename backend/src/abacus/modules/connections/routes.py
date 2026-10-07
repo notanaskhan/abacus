@@ -16,7 +16,7 @@ from abacus.modules.connections.service import RetrievalView, retrieval_status
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
 router = AbacusRouter(prefix="/v1/engagements/{engagement_id}/retrievals", tags=["retrievals"])
-Status = Literal["running", "succeeded", "failed_validation", "failed"]
+Status = Literal["running", "succeeded", "failed_validation", "failed", "queued"]
 
 
 class RetrievalIn(BaseModel):
@@ -43,10 +43,17 @@ class RetrievalOut(BaseModel):
     evidence_version_id: Annotated[UUID | None, classified("internal")]
     started_at: Annotated[datetime, classified("internal")]
     finished_at: Annotated[datetime | None, classified("internal")]
+    # SPEC-003 AC-13: why a queued run waits (`firm_cap`, `engagement_cap`, `class_capacity`) and
+    # when it is expected to start (None when unknown). Never names another firm.
+    queued_reason: Annotated[str | None, classified("internal")]
+    estimated_start_at: Annotated[datetime | None, classified("internal")]
 
 
 def _out(view: RetrievalView) -> RetrievalOut:
-    return RetrievalOut.model_validate(view, from_attributes=True)
+    out = RetrievalOut.model_validate(view, from_attributes=True)
+    if view.status == "running" and view.queued_reason is not None:
+        return out.model_copy(update={"status": "queued"})  # waiting is never shown as running
+    return out
 
 
 Ctx = Annotated[AuthContext, Depends(current_context)]

@@ -1139,8 +1139,11 @@ RULES: list[Rule | TreeRule] = [
         adr="ADR-007, ADR-018",
         check=_check_session_transaction,
         # test_tenancy proves session.commit() is inert inside tenant_session (TASK-005).
+        # kernel/slots.py: the work slot ledger is operational, not domain state, and commits
+        # without an audit event (SPEC-003 §14; founder decision 2026-10-07, TASK-018).
         exclude=(
             "src/abacus/kernel/uow/*",
+            "src/abacus/kernel/slots.py",
             "tests/integration/test_tenancy.py",
             "tests/integration/test_uow_session_rollback.py",
         ),
@@ -1246,6 +1249,7 @@ RULES: list[Rule | TreeRule] = [
         exclude=(
             "src/abacus/kernel/db/*",
             "src/abacus/kernel/uow/*",
+            "src/abacus/kernel/slots.py",  # see UOW-001
             "tests/integration/*",
         ),
     ),

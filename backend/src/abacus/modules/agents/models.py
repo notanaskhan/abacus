@@ -29,6 +29,9 @@ class AgentRun(Base):
     context_hash: Mapped[str | None]
     output: Mapped[dict[str, object] | None] = mapped_column(JSONB)
     failure_code: Mapped[str | None]
+    # Waiting for a work slot (SPEC-003 AC-13): the run is still `running`, reported as queued.
+    queued_reason: Mapped[str | None]
+    estimated_start_at: Mapped[datetime | None]
     started_at: Mapped[datetime]
     finished_at: Mapped[datetime | None]
 

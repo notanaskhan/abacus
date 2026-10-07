@@ -19,6 +19,9 @@ from uuid import UUID
 from temporalio import activity
 from temporalio.exceptions import ApplicationError
 
+from abacus.kernel import slots
+from abacus.kernel.config import settings
+from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound
 from abacus.modules.agents.service import (
     TERMINAL,
@@ -26,7 +29,9 @@ from abacus.modules.agents.service import (
     create_screening_run,
     fail_run,
     load_agent_context,
+    mark_queued,
     run_outcome,
+    running_engagement,
     screen,
 )
 from abacus.modules.agents.workflow_types import (
@@ -36,6 +41,7 @@ from abacus.modules.agents.workflow_types import (
     RunInput,
     ScreeningInput,
     ScreeningOutcome,
+    SlotGrant,
 )
 from abacus.modules.identity.api import NoActiveTenant
 
@@ -96,6 +102,8 @@ async def create_run_activity(input: ScreeningInput) -> str | None:
 
 
 async def _screen(tenant_id: UUID, run_id: UUID) -> ScreeningOutcome:
+    if slots.current_class() is not None:
+        await slots.renew(_slot_tenant(tenant_id), slots.current_holder())
     try:
         agent = await load_agent_context(tenant_id, run_id)
     except AgentRunNotRunning:
@@ -114,6 +122,47 @@ async def _screen(tenant_id: UUID, run_id: UUID) -> ScreeningOutcome:
         None,
         str(outcome.screening_result_id) if outcome.screening_result_id else None,
     )
+
+
+def _slot_tenant(tenant_id: UUID) -> TenantContext:
+    return TenantContext(tenant_id, "system", "work-slots")
+
+
+@activity.defn(name="screening.acquire_slot")
+async def acquire_slot_activity(input: RunInput) -> SlotGrant:
+    """Ask for the run's work slot (SPEC-003): granted, or the run is marked queued with its
+    reason and estimate. A run already ended, or on the legacy queue, needs none."""
+    tenant_id, run_id = UUID(input.tenant_id), UUID(input.run_id)
+    work_class = slots.current_class()
+    try:
+        engagement_id = await running_engagement(tenant_id, run_id)
+        if engagement_id is None or work_class is None:
+            return SlotGrant(True, 0)
+        decision = await slots.acquire(
+            _slot_tenant(tenant_id), slots.current_holder(), engagement_id, work_class
+        )
+        await mark_queued(
+            tenant_id,
+            run_id,
+            None if decision.granted else decision.reason,
+            None if decision.granted else decision.estimated_start_at,
+        )
+    except NotFound as exc:
+        raise _as_application_error(exc, retryable=False) from None
+    except Exception as exc:
+        raise _as_application_error(exc, retryable=True) from None
+    return SlotGrant(decision.granted, settings().work_classes[work_class].max_wait_seconds)
+
+
+@activity.defn(name="screening.release_slot")
+async def release_slot_activity(input: RunInput) -> None:
+    """Free the run's slot (idempotent; also when the run has ended)."""
+    if slots.current_class() is None:
+        return
+    try:
+        await slots.release(UUID(input.tenant_id), slots.current_holder())
+    except Exception as exc:
+        raise _as_application_error(exc, retryable=True) from None
 
 
 @activity.defn(name="screening.screen")
@@ -141,4 +190,10 @@ async def fail_run_activity(input: FailInput) -> ScreeningOutcome:
         raise _as_application_error(exc, retryable=True) from None
 
 
-ACTIVITIES = (create_run_activity, screen_activity, fail_run_activity)
+ACTIVITIES = (
+    create_run_activity,
+    acquire_slot_activity,
+    release_slot_activity,
+    screen_activity,
+    fail_run_activity,
+)

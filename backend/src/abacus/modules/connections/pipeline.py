@@ -13,6 +13,7 @@ finished run refuses further work (`RunFailed`), and only a running run is marke
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
 from abacus.kernel.crypto import DecryptionError
@@ -28,6 +29,7 @@ from abacus.modules.connections.repository import (
     get_run,
     lock_run,
     set_evidence,
+    set_queued,
     set_raw,
     set_snapshot,
 )
@@ -126,6 +128,24 @@ async def fail_run(sys: SystemContext, status: str, code: str) -> RunFailed:
     except MissingAuditEvent:
         pass  # nothing changed: nothing to commit
     return RunFailed(*current)
+
+
+async def mark_queued(
+    sys: SystemContext, reason: str | None, estimated_start_at: datetime | None
+) -> None:
+    """The run waits for a work slot (`reason`), or runs again (None) (SPEC-003 AC-13). Audited
+    only when that changes (`sync_run.queued`, `sync_run.resumed`), not on every ask; the estimate
+    is refreshed with it."""
+    try:
+        async with uow(sys.tenant) as tx:
+            locked = await lock_run(tx.session, sys.run_id)
+            if locked is None or locked.status != "running" or locked.queued_reason == reason:
+                return
+            await set_queued(tx.session, sys.run_id, reason, estimated_start_at)
+            event = "sync_run.queued" if reason is not None else "sync_run.resumed"
+            tx.record(event, target=Target("sync_run", sys.run_id))
+    except MissingAuditEvent:
+        pass  # nothing changed: nothing to commit
 
 
 def _stored(run: SyncRun) -> StoredObject:

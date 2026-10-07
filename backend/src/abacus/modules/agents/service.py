@@ -48,6 +48,7 @@ from abacus.modules.agents.repository import (
     lock_run,
     result_for_run,
     run_for_event,
+    set_queued,
     try_lock_run,
 )
 from abacus.modules.agents.spec import spec
@@ -143,6 +144,32 @@ async def fail_run(tenant_id: UUID, run_id: UUID, code: str) -> bool:
     except MissingAuditEvent:
         return False  # it had already ended: nothing written
     return True
+
+
+async def running_engagement(tenant_id: UUID, run_id: UUID) -> UUID | None:
+    """The engagement of a running run (for its work slot); None once it has ended."""
+    async with tenant_session(_reader(tenant_id, f"agent-run:{run_id}")) as session:
+        run = await get_run(session, run_id)
+    if run is None:
+        raise NotFound("agent_run")
+    return run.engagement_id if run.status == "running" else None
+
+
+async def mark_queued(
+    tenant_id: UUID, run_id: UUID, reason: str | None, estimated_start_at: datetime | None
+) -> None:
+    """The run waits for a work slot (`reason`), or runs again (None) (SPEC-003 AC-13). Audited
+    only when that changes (`agent_run.queued`, `agent_run.resumed`), not on every ask."""
+    try:
+        async with uow(_reader(tenant_id, f"agent-run:{run_id}")) as tx:
+            locked = await lock_run(tx.session, run_id)
+            if locked is None or locked.status != "running" or locked.queued_reason == reason:
+                return
+            await set_queued(tx.session, run_id, reason, estimated_start_at)
+            event = "agent_run.queued" if reason is not None else "agent_run.resumed"
+            tx.record(event, target=Target("agent_run", run_id))
+    except MissingAuditEvent:
+        pass  # nothing changed: nothing to commit
 
 
 @dataclass(frozen=True)
