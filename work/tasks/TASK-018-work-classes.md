@@ -4,7 +4,7 @@ title: Work-class queues and admission control
 spec: SPEC-003
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-12, AC-13, AC-14, AC-15, AC-16]
 risk_zone: amber
-status: blocked
+status: todo
 branch:
 worktree:
 created: 2026-10-07
@@ -25,7 +25,7 @@ Implement SPEC-003. All asynchronous work runs on four work-class task queues wi
 ## Scope
 All of SPEC-003 (AC-1 to AC-16), once approved. Excluded: the budget hierarchy and metering (ADR-069), the second model route (ADR-073), autoscaling, and Terraform (TASK-014).
 
-**Blocked on SPEC-003 approval** (open questions Q1–Q7).
+SPEC-003 approved by the founder on 2026-10-07 (all recommendations, Q1–Q7). Next: the design for founder review (amber).
 
 ## Context to load
 - Spec: `docs/specs/SPEC-003-work-classes.md`
