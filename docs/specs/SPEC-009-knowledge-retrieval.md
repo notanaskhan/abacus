@@ -1,7 +1,7 @@
 ---
 id: SPEC-009
 title: Knowledge retrieval infrastructure (pgvector), without content
-status: draft
+status: approved
 owner: founder
 risk_zone: red
 related_adrs: [ADR-053, ADR-056, ADR-014, ADR-019, ADR-052, ADR-031, ADR-069, ADR-073]
@@ -195,11 +195,12 @@ None in this spec.
 No flag. The migration is additive and creates the `vector` extension. There is no content until Phase 5.
 
 ## 20. Open questions
-- [ ] **Q1: index design under "no shared embedding index across tenants" (ADR-053).** *Recommendation:* no ANN index in v1. Use exact search over the firm's chunks (btree on `tenant_id`), with a cap of 50,000 chunks per firm. When a firm needs more, list-partition `knowledge_chunks` by tenant with an HNSW index per partition (a later spec). One shared HNSW index filtered by tenant would break the ADR's enforcement line, and per-firm partial indexes need DDL at onboarding.
-- [ ] **Q2: the embedding provider and dimensions.** *Recommendation:* 1,024 dimensions, with a provider-agnostic `EmbeddingProvider` and a deterministic fake now. The real provider is chosen with the second model route (ADR-073, after the TASK-014 inputs). Amazon Titan Text Embeddings v2 on Bedrock (1,024 dimensions; stays in AWS) is the default candidate.
-- [ ] **Q3: formats in v1.** *Recommendation:* plain text and Markdown only. PDF and DOCX extraction need new dependencies and hostile-file handling, so they come with content in Phase 5.
-- [ ] **Q4: who manages and who reads.** *Recommendation:* firm admins and practice leaders manage, with fresh MFA. Every firm role and every engagement role except client users reads, because knowledge is firm-wide.
-- [ ] **Q5: owner module and source kinds.** *Recommendation:*
+None. Answered by the founder on 2026-10-07 (all recommendations):
+- [x] **Q1: index design under "no shared embedding index across tenants" (ADR-053).** *Recommendation:* no ANN index in v1. Use exact search over the firm's chunks (btree on `tenant_id`), with a cap of 50,000 chunks per firm. When a firm needs more, list-partition `knowledge_chunks` by tenant with an HNSW index per partition (a later spec). One shared HNSW index filtered by tenant would break the ADR's enforcement line, and per-firm partial indexes need DDL at onboarding.
+- [x] **Q2: the embedding provider and dimensions.** *Recommendation:* 1,024 dimensions, with a provider-agnostic `EmbeddingProvider` and a deterministic fake now. The real provider is chosen with the second model route (ADR-073, after the TASK-014 inputs). Amazon Titan Text Embeddings v2 on Bedrock (1,024 dimensions; stays in AWS) is the default candidate.
+- [x] **Q3: formats in v1.** *Recommendation:* plain text and Markdown only. PDF and DOCX extraction need new dependencies and hostile-file handling, so they come with content in Phase 5.
+- [x] **Q4: who manages and who reads.** *Recommendation:* firm admins and practice leaders manage, with fresh MFA. Every firm role and every engagement role except client users reads, because knowledge is firm-wide.
+- [x] **Q5: owner module and source kinds.** *Recommendation:*
   - the `agents` module owns the knowledge tables (ADR-053 memory sits with the agents that use it; `ai_gateway` owns only the embedding call);
   - source kinds are `firm_own` and `public`, and `licensed` is refused until a licence exists (ADR-056).
 
