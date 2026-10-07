@@ -11,8 +11,9 @@ LOCAL_ENV = ABACUS_FAKE_CONNECTOR_DIR=$(CURDIR)/backend/.local/fake-connector
 
 # The API on :8001, the local sign-in server on :9000, the worker (relay + screening with the
 # fake model) and the SPA on :5173, which proxies /v1 to the API. Ctrl-C, or any of them
-# exiting, stops them all. The ports are also set in apps/web/vite.config.ts (proxy),
-# abacus_tools/fakes/oidc_server.py (HOST, PORT, REDIRECT_URIS) and .github/workflows/e2e.yml.
+# exiting, stops them all (polled: macOS's /bin/sh is bash 3.2, which has no `wait -n`). The ports
+# are also set in apps/web/vite.config.ts (proxy), abacus_tools/fakes/oidc_server.py (HOST, PORT,
+# REDIRECT_URIS) and .github/workflows/e2e.yml.
 dev:
 	docker compose up -d --wait db s3 temporal
 	mkdir -p backend/.local/fake-connector
@@ -21,11 +22,11 @@ dev:
 	export $(LOCAL_ENV); \
 	export ABACUS_IDENTITY_JWKS="$$(uv run python -m abacus_tools.fakes.oidc_server --jwks)"; \
 	trap 'kill 0' EXIT; \
-	uv run python -m abacus_tools.fakes.oidc_server & \
-	uv run uvicorn --factory abacus.api.app:create_app --port 8001 --reload & \
-	uv run python -m abacus.worker & \
-	pnpm -C ../apps/web dev & \
-	wait -n
+	uv run python -m abacus_tools.fakes.oidc_server & oidc=$$!; \
+	uv run uvicorn --factory abacus.api.app:create_app --port 8001 --reload & api=$$!; \
+	uv run python -m abacus.worker & worker=$$!; \
+	pnpm -C ../apps/web dev & web=$$!; \
+	while kill -0 $$oidc $$api $$worker $$web 2>/dev/null; do sleep 1; done
 
 # Dev firm and users for local sign-in; run again after creating an engagement to connect it.
 seed:
