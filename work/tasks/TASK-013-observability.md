@@ -4,7 +4,7 @@ title: Tracing, structured logs and error tracking
 spec: SPEC-000
 acceptance_criteria: [AC-20]
 risk_zone: amber
-status: in-progress
+status: done
 branch: task-013-observability
 worktree:
 created: 2026-10-06
@@ -255,11 +255,10 @@ Amber. It touches protected paths: `abacus.api`, the worker, the kernel uow/rela
 -
 
 ## Handoff
-- **Current state:** Implementation, reviews and independent tests are done on `task-013-observability` (based on main before PR #14).
-- **Exact next step:** After PR #14 merges, rebuild on main (new branch, cherry-pick), run the full suite with the compose DB stopped (CI-like conditions), open the PR, confirm CI, then founder review.
-- **Open issues:** follow-ups for TASK-014:
-  - the collector and its auth (`OTEL_EXPORTER_OTLP_HEADERS`);
+- **Current state:** Done. PR #15 merged (rebase) 2026-10-07 on founder approval, without waiting for CI (founder instruction); main's CI fixes landed first in PR #16. The approval file is deleted.
+- **Exact next step:** none (TASK-014). Follow-ups for TASK-014:
+  - the OTLP collector and its auth;
   - the Sentry DSN and release;
   - whether a DSN and endpoint are mandatory outside local/test;
-  - pinning `temporalio` and moving to `OpenTelemetryPlugin` when it is stable;
-  - an exporter-only dependency (`opentelemetry-exporter-otlp-proto-http`) to drop grpcio.
+  - pinning `temporalio`;
+  - an HTTP-only OTLP exporter.
