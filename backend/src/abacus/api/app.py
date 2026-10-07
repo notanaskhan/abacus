@@ -7,6 +7,8 @@ document (the API client is generated from `app.openapi()` in code, ADR-013; `ex
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from typing import cast
 
 from fastapi import FastAPI, Request
@@ -15,12 +17,13 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from abacus.kernel.config import settings
-from abacus.kernel.error_tracking import configure_error_tracking, report
+from abacus.kernel.error_tracking import configure_error_tracking, flush_errors, report
 from abacus.kernel.errors import DomainConflict, NotFound, ServiceUnavailable
 from abacus.kernel.logging import get_logger
-from abacus.kernel.telemetry import configure_tracing
+from abacus.kernel.telemetry import configure_tracing, shutdown_tracing
 from abacus.kernel.temporal import payload_codec
 from abacus.modules.agents import api as agents
 from abacus.modules.connections import api as connections
@@ -96,6 +99,29 @@ def _operation_id(route: APIRoute) -> str:
     return route.name.removesuffix("_route")
 
 
+class _IgnoreInboundTrace:
+    """Drop inbound W3C trace headers: every API request starts its own trace (TASK-013)."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self._app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http":
+            headers = [
+                (k, v) for k, v in scope["headers"] if k not in (b"traceparent", b"tracestate")
+            ]
+            scope = {**scope, "headers": headers}
+        await self._app(scope, receive, send)
+
+
+@asynccontextmanager
+async def _lifespan(_app: FastAPI) -> AsyncGenerator[None]:
+    yield
+    # Spans and error reports still buffered at shutdown are sent, not lost.
+    shutdown_tracing()
+    flush_errors()
+
+
 def create_app() -> FastAPI:
     if settings().environment == "production" and not identity.WALL_SAFE:
         # Founder decision 2026-10-06: ethical walls (ADR-026) gate the first real firm.
@@ -109,6 +135,7 @@ def create_app() -> FastAPI:
         redoc_url=None,
         openapi_url=None,
         generate_unique_id_function=_operation_id,
+        lifespan=_lifespan,
     )
     for router in ROUTERS:
         app.include_router(router)
@@ -119,8 +146,11 @@ def create_app() -> FastAPI:
     app.add_exception_handler(RequestValidationError, _invalid)
     app.add_exception_handler(Exception, _unexpected)
     app.openapi = lambda: _openapi(app)  # type-safe override of FastAPI's generator
-    # One server span per request, named by route template (TASK-013); no headers or bodies.
+    # One server span per request, named by route template (TASK-013). The scrubbing exporter
+    # keeps only route, method and status: never URL, query, client address or user agent.
     configure_tracing("abacus-api")
     configure_error_tracking("abacus-api")
     FastAPIInstrumentor.instrument_app(app, exclude_spans=["receive", "send"])
+    # Added last, so it runs first: callers can't choose our trace IDs (audit rows record them).
+    app.add_middleware(_IgnoreInboundTrace)
     return app

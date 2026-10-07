@@ -19,7 +19,7 @@ from typing import cast
 import sentry_sdk
 from sentry_sdk.types import Event, Hint
 from temporalio import activity
-from temporalio.exceptions import ApplicationError
+from temporalio.exceptions import ApplicationError, CancelledError
 from temporalio.worker import (
     ActivityInboundInterceptor,
     ExecuteActivityInput,
@@ -27,8 +27,9 @@ from temporalio.worker import (
 )
 
 from abacus.kernel.config import settings
+from abacus.kernel.telemetry import current_span_id, current_trace_id
 
-_FRAME_KEYS = ("module", "function", "lineno", "in_app", "filename", "abs_path")
+_FRAME_KEYS = ("module", "function", "lineno", "in_app", "filename")
 _TAGS = ("route", "tenant_id", "error_type", "activity")
 _configured = False
 
@@ -85,7 +86,16 @@ def scrub(event: Event, _hint: Hint | None = None) -> Event | None:
     raw = cast(Mapping[str, object], event)
     kept: dict[str, object] = {
         k: raw[k]
-        for k in ("event_id", "timestamp", "level", "platform", "environment", "release", "sdk")
+        for k in (
+            "event_id",
+            "timestamp",
+            "level",
+            "platform",
+            "environment",
+            "release",
+            "sdk",
+            "server_name",  # our service name ("abacus-api", "abacus-worker"), set at init
+        )
         if k in raw
     }
     exception = _exceptions(raw.get("exception"))
@@ -123,6 +133,11 @@ def configure_error_tracking(service: str) -> bool:
         default_integrations=False,
         auto_enabling_integrations=False,
         traces_sample_rate=0.0,
+        # Nothing but scrubbed error events leaves: no metrics, logs, sessions or client reports.
+        enable_metrics=False,
+        enable_logs=False,
+        auto_session_tracking=False,
+        send_client_reports=False,
         before_send=scrub,
         before_send_transaction=lambda _event, _hint: None,
     )
@@ -135,6 +150,10 @@ def report(exc: BaseException, **tags: str | None) -> None:
     if not _configured:
         return
     with sentry_sdk.new_scope() as scope:
+        # Sentry's own trace context is unrelated to ours: use the OpenTelemetry trace.
+        trace_id, span_id = current_trace_id(), current_span_id()
+        if trace_id is not None:
+            scope.set_context("trace", {"trace_id": trace_id, "span_id": span_id})
         for key, value in tags.items():
             if key in _TAGS and value is not None:
                 scope.set_tag(key, value)
@@ -145,15 +164,21 @@ class _ReportingActivityInbound(ActivityInboundInterceptor):
     async def execute_activity(self, input: ExecuteActivityInput) -> object:
         try:
             return await super().execute_activity(input)
+        except CancelledError:
+            raise  # shutdown or workflow cancellation: not a fault
         except ApplicationError as exc:
             # Activities raise ApplicationError named after the original class (class name only).
             # Non-retryable ones are decided outcomes (a failed run, a forbidden action), not
-            # faults; retryable ones are infrastructure trouble worth an alert.
-            if not exc.non_retryable:
-                report(exc, error_type=exc.type, activity=activity.info().activity_type)
+            # faults; retryable ones are infrastructure trouble worth an alert, reported once per
+            # activity (its first attempt), not on every retry.
+            info = activity.info()
+            if not exc.non_retryable and info.attempt == 1:
+                report(exc, error_type=exc.type, activity=info.activity_type)
             raise
         except Exception as exc:
-            report(exc, error_type=type(exc).__name__, activity=activity.info().activity_type)
+            info = activity.info()
+            if info.attempt == 1:
+                report(exc, error_type=type(exc).__name__, activity=info.activity_type)
             raise
 
 
@@ -162,3 +187,9 @@ class ReportingInterceptor(Interceptor):
 
     def intercept_activity(self, next: ActivityInboundInterceptor) -> ActivityInboundInterceptor:
         return _ReportingActivityInbound(next)
+
+
+def flush_errors(timeout_seconds: float = 2.0) -> None:
+    """Send reports still queued (process shutdown)."""
+    if _configured:
+        sentry_sdk.flush(timeout_seconds)
