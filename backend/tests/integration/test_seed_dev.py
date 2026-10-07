@@ -204,6 +204,26 @@ async def test_ac1_seed_counts_each_new_connection(
 
 
 @pytest.mark.parametrize(
+    "dsn",
+    [
+        "postgresql://postgres:postgres@db.example.com:5432/abacus",
+        "postgresql://postgres:postgres@10.0.0.5:5432/abacus",
+    ],
+)
+def test_ac1_seed_main_refuses_a_database_that_is_not_on_this_machine(
+    monkeypatch: pytest.MonkeyPatch, dsn: str
+) -> None:
+    monkeypatch.setattr(
+        seed_dev,
+        "settings",
+        lambda: SimpleNamespace(environment="local", fake_connector_dir="fixtures"),
+    )
+    monkeypatch.setenv(seed_dev.SUPERUSER_ENV, dsn)
+    with pytest.raises(RuntimeError):
+        seed_dev.main()
+
+
+@pytest.mark.parametrize(
     ("environment", "fixtures"),
     [("production", "fixtures"), ("local", None), ("test", None)],
 )

@@ -1,14 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { stubLocation } from "../testing/support";
 import { codeChallenge } from "./pkce";
-import {
-  AUTHORITY,
-  SignInFailed,
-  accessToken,
-  completeSignIn,
-  safeReturnTo,
-  signIn,
-} from "./session";
+import { AUTHORITY, SignInFailed, accessToken, completeSignIn, safeReturnTo } from "./session";
 
 const NOW = 1_700_000_000_000;
 
@@ -60,7 +53,10 @@ afterEach(() => {
 });
 
 async function startSignIn(returnTo?: string): Promise<Pending> {
-  await (returnTo === undefined ? signIn() : signIn(returnTo));
+  // `signIn` is latched per page load; a fresh module copy stands in for a fresh page.
+  vi.resetModules();
+  const fresh = await import("./session");
+  await (returnTo === undefined ? fresh.signIn() : fresh.signIn(returnTo));
   const stored = pending();
   if (stored === null) throw new Error("signIn stored no pending request");
   return stored;
@@ -197,6 +193,56 @@ describe("ac1 accessToken", () => {
     expect(accessToken(NOW + 571_000)).toBeNull();
     expect(accessToken(NOW + 600_000)).toBeNull();
     expect(accessToken(NOW + 700_000)).toBeNull();
+  });
+});
+
+describe("ac1 signIn latch", () => {
+  it("starts one redirect and writes one pending request for concurrent calls", async () => {
+    vi.resetModules();
+    const fresh = await import("./session");
+    await Promise.all([fresh.signIn("/a"), fresh.signIn("/b"), fresh.signIn("/c")]);
+    expect(assign).toHaveBeenCalledOnce();
+    expect(pending()?.returnTo).toBe("/a");
+  });
+});
+
+describe("ac1 handleUnauthorised", () => {
+  async function signedInAt(now: number): Promise<void> {
+    const stored = await startSignIn();
+    fetchMock.mockResolvedValue(tokenResponse({ access_token: "tok", expires_in: 600 }));
+    await completeSignIn(`?code=abc&state=${stored.state}`, now);
+    assign.mockClear();
+    expect(accessToken(now)).toBe("tok");
+  }
+
+  it("rejects, without redirecting, within 10 seconds of signing in, and drops the token", async () => {
+    await signedInAt(NOW);
+    vi.resetModules();
+    const fresh = await import("./session");
+    expect(fresh.handleUnauthorised(NOW + 9_000)).toBe("rejected");
+    expect(assign).not.toHaveBeenCalled();
+    expect(accessToken(NOW + 9_000)).toBeNull();
+  });
+
+  it("redirects through sign-in after that, and drops the token", async () => {
+    await signedInAt(NOW);
+    vi.resetModules();
+    const fresh = await import("./session");
+    expect(fresh.handleUnauthorised(NOW + 11_000)).toBe("redirected");
+    await vi.waitFor(() => {
+      expect(assign).toHaveBeenCalledOnce();
+    });
+    expect(String(assign.mock.calls[0]?.[0])).toContain("/authorize?");
+    expect(accessToken(NOW + 11_000)).toBeNull();
+  });
+
+  it("redirects when the user never signed in during this session", async () => {
+    vi.resetModules();
+    const fresh = await import("./session");
+    expect(fresh.handleUnauthorised(NOW)).toBe("redirected");
+    await vi.waitFor(() => {
+      expect(assign).toHaveBeenCalledOnce();
+    });
   });
 });
 

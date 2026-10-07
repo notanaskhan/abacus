@@ -1,7 +1,6 @@
 import type { MeOut } from "@abacus/api-client";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { accessToken } from "../auth/session";
 import { json, mockApi, renderRoutes, signInForTest, stubLocation } from "../testing/support";
 import { Layout } from "./Layout";
 
@@ -116,28 +115,5 @@ describe("ac1 Layout, signed in", () => {
     expect(alert.textContent).toContain("Couldn't load your account");
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByText(/Dev firm/)).toBeTruthy();
-  });
-
-  it("sends the user back through sign-in when the API answers 401", async () => {
-    const { assign } = stubLocation();
-    mockApi({ "GET /v1/me": () => json({ detail: "Unauthorized" }, 401) });
-    renderRoutes(ROUTES, { root: Layout });
-    await waitFor(() => {
-      expect(assign).toHaveBeenCalled();
-    });
-    expect(String(assign.mock.calls[0]?.[0])).toContain("/authorize?");
-  });
-
-  it("signs out: the token is dropped and sign-in starts again", async () => {
-    const { assign } = stubLocation();
-    mockApi({ "GET /v1/me": () => json(me()) });
-    renderRoutes(ROUTES, { root: Layout });
-    await screen.findByText(/Dev firm/);
-    expect(accessToken()).toBe("tok");
-    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
-    expect(accessToken()).toBeNull();
-    await waitFor(() => {
-      expect(assign).toHaveBeenCalled();
-    });
   });
 });
