@@ -1,5 +1,6 @@
 """Public interface of the agents module; other modules import only this (ADR-008)."""
 
+from abacus.kernel.dispatch import WorkClass, register_work_classes
 from abacus.modules.agents.activities import ACTIVITIES
 from abacus.modules.agents.citations import SheetLayoutError
 from abacus.modules.agents.citations import verify as verify_citations
@@ -26,7 +27,9 @@ from abacus.modules.agents.spec import AGENTS, AgentSpec, spec
 from abacus.modules.agents.workflow_types import ScreeningInput
 from abacus.modules.agents.workflows import ScreeningWorkflow
 
-WORKFLOWS = (ScreeningWorkflow,)
+# Each workflow's work class (ADR-071): screening runs in the screener's class (its spec).
+WORKFLOWS: dict[type, WorkClass] = {ScreeningWorkflow: spec(SCREENER).work_class}
+register_work_classes(WORKFLOWS)
 
 __all__ = [
     "ACTIVITIES",

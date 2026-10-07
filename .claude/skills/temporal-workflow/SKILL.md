@@ -23,7 +23,8 @@ Encrypted by the payload codec (ADR-017). Pass IDs, not large data: frozen datac
 - Prove the context from the run row first (`load_system_context` / `load_agent_context`); the workflow input is never proof.
 - Errors cross as `ApplicationError` carrying the class name only. Decided outcomes are non-retryable; outages are retryable.
 - End every failure, cancellation included, in a `fail_run` activity with unlimited retries, so a run never stays `running`.
-- Register in the module's `WORKFLOWS` / `ACTIVITIES` (and `SUBSCRIPTIONS` for outbox-triggered starts); the worker composes them.
+- Register in the module's `WORKFLOWS` (a map from workflow to its work class: `{RetrievalWorkflow: "interactive"}`, then `register_work_classes(WORKFLOWS)`) and `ACTIVITIES` (and `SUBSCRIPTIONS` for outbox-triggered starts); the worker composes them.
+- Start workflows only with `kernel.dispatch.dispatch(Workflow, input, id=..., ...)`: it picks the class's queue (ADR-071). Never call `start_workflow` or pass `task_queue=` (DISPATCH-001).
 - Workflow ids name the thing (`retrieval:<run_id>`, `screening:<tenant>:<version>`); choose the reuse and conflict policies deliberately.
 
 ## Tests

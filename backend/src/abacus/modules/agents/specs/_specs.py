@@ -5,8 +5,10 @@ Regenerate: python -m abacus_tools.codegen.agent_specs
 
 # fmt: off
 SPECS: dict[str, dict[str, object]] = {   'evidence.screener': {   'autonomy': 'propose',
+                             'cheaper_tiers': [],
                              'confidence_routing': {'below': '0.5', 'route': 'needs_revision'},
                              'escalation_tier': 'medium',
+                             'essential': True,
                              'evaluation_suite': 'evals/screening',
                              'id': 'evidence.screener',
                              'input_schema': 'ScreeningInput',
@@ -23,5 +25,6 @@ SPECS: dict[str, dict[str, object]] = {   'evidence.screener': {   'autonomy': '
                              'tier': 'small',
                              'tools': [],
                              'untrusted_inputs': ['account_names'],
-                             'version': 1}}
+                             'version': 1,
+                             'work_class': 'time_sensitive'}}
 # fmt: on

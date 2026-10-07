@@ -22,3 +22,9 @@ confidence_routing:
   route: needs_revision
 untrusted_inputs: [account_names]
 evaluation_suite: evals/screening
+# SPEC-003: its work class (Q1: time-sensitive), whether it is essential under pressure (ADR-069,
+# named `essential` by ADR-105), and cheaper tiers it may step down to (none has passed its
+# evaluation suite yet).
+work_class: time_sensitive
+essential: true
+cheaper_tiers: []

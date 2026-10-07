@@ -17,10 +17,10 @@ from uuid import UUID
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 from temporalio.exceptions import WorkflowAlreadyStartedError
 
-from abacus.kernel.config import settings
-from abacus.kernel.temporal import temporal_client
+from abacus.kernel.dispatch import dispatch
 from abacus.kernel.uow import OutboxEvent
 from abacus.modules.agents.workflow_types import ScreeningInput
+from abacus.modules.agents.workflows import ScreeningWorkflow
 from abacus.modules.evidence.api import EvidenceVersionCreated
 
 EVIDENCE_VERSION_CREATED = EvidenceVersionCreated.event_type
@@ -45,14 +45,12 @@ def screening_input(event: OutboxEvent) -> ScreeningInput:
 
 async def start_screening(event: OutboxEvent) -> None:
     input = screening_input(event)
-    client = await temporal_client()
     # Already screened (or screening): the event counts as delivered.
     with suppress(WorkflowAlreadyStartedError):
-        await client.start_workflow(
-            "screening",
+        await dispatch(
+            ScreeningWorkflow,
             input,
             id=workflow_id(event.tenant_id, UUID(input.evidence_version_id)),
-            task_queue=settings().temporal_task_queue,
             # A failed workflow may be started again by a redelivery; a finished one may not.
             id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
             id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,

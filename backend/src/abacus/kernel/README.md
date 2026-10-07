@@ -11,6 +11,8 @@ Not a module (ADR-101). Every module uses it; it never imports a module.
 | `kernel.classification` | `Annotated[T, classified("restricted" \| "confidential" \| "internal" \| "public")]` on every Pydantic field | A unit test fails on any unclassified field (ADR-031). |
 | `kernel.logging` | `get_logger(__name__).info("event.name", key=value)` | Refuses Restricted data at any depth, Decimals and arbitrary objects (ADR-022). Adds `trace_id`/`span_id`; `error=exc` logs the class name only (TASK-013). |
 | `kernel.telemetry` | `configure_tracing("abacus-api")`, `tracer(__name__)`, `current_traceparent()`/`continue_trace()` | One trace across processes; every exporter is wrapped in `ScrubbingExporter` (allowlisted attributes, no exception text) (ADR-022, TASK-013). |
+| `kernel.metrics` | `configure_metrics("abacus-worker")`, `meter(__name__)`, `ScheduleToStartInterceptor` | Metrics with allowlisted attribute keys only; OTLP when `otlp_endpoint` is set; schedule-to-start by work class (ADR-094, SPEC-003). |
+| `kernel.dispatch` | `dispatch(Workflow, input, id=..., ...)`, `register_work_classes(WORKFLOWS)`, `queue_for(work_class)` | The only way to start a workflow: it runs on its work class's queue, `<base>-<class>` (ADR-071, SPEC-003). DISPATCH-001 bans `start_workflow` and `task_queue=` elsewhere. |
 | `kernel.error_tracking` | `configure_error_tracking("abacus-api")`, `report(exc, route=…)`, `ReportingInterceptor()` | Sentry only with a DSN; every event rebuilt from an allowlist (`scrub`) (ADR-022, ADR-031, TASK-013). |
 | `kernel.config` | `settings()` | Local and test default to `docker compose`; elsewhere every connection setting is required. |
 

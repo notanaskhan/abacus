@@ -12,9 +12,8 @@ from uuid import UUID
 
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
-from abacus.kernel.config import settings
+from abacus.kernel.dispatch import dispatch
 from abacus.kernel.errors import ServiceUnavailable
-from abacus.kernel.temporal import temporal_client
 from abacus.modules.connections.connector import Period
 from abacus.modules.connections.pipeline import fail_run
 from abacus.modules.connections.service import (
@@ -24,6 +23,7 @@ from abacus.modules.connections.service import (
     start_retrieval,
 )
 from abacus.modules.connections.workflow_types import RetrievalInput
+from abacus.modules.connections.workflows import RetrievalWorkflow
 from abacus.modules.identity.api import AuthContext
 
 EXECUTION_TIMEOUT_HOURS = 6
@@ -39,12 +39,10 @@ def workflow_id(run_id: UUID) -> str:
 
 
 async def _start(tenant_id: UUID, run_id: UUID) -> None:
-    client = await temporal_client()
-    await client.start_workflow(
-        "retrieval",
+    await dispatch(
+        RetrievalWorkflow,
         RetrievalInput(str(tenant_id), str(run_id)),
         id=workflow_id(run_id),
-        task_queue=settings().temporal_task_queue,
         id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE,
         id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
         execution_timeout=timedelta(hours=EXECUTION_TIMEOUT_HOURS),

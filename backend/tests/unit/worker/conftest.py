@@ -15,3 +15,11 @@ def tracing_shutdowns(monkeypatch: pytest.MonkeyPatch) -> list[bool]:
     calls: list[bool] = []
     monkeypatch.setattr(worker_main, "shutdown_tracing", lambda: calls.append(True))
     return calls
+
+
+@pytest.fixture(autouse=True)
+def metrics_shutdowns(monkeypatch: pytest.MonkeyPatch) -> list[bool]:
+    """Likewise for the process's meter provider (`metrics.test_reader`)."""
+    calls: list[bool] = []
+    monkeypatch.setattr(worker_main, "shutdown_metrics", lambda: calls.append(True))
+    return calls

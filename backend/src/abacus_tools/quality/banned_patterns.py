@@ -640,6 +640,20 @@ def _check_system_issue(src: SourceFile) -> Iterator[Finding]:
             yield Finding(line, "system contexts are issued from a proven run only")
 
 
+_STARTS_WORKFLOW = frozenset({"start_workflow", "execute_workflow", "signal_with_start_workflow"})
+
+
+def _check_dispatch(src: SourceFile) -> Iterator[Finding]:
+    """Workflows start only through `kernel.dispatch`, which routes by work class (ADR-071)."""
+    for node in ast.walk(src.tree):
+        if not isinstance(node, ast.Call):
+            continue
+        if _terminal_name(node.func) in _STARTS_WORKFLOW:
+            yield Finding(node.lineno, "start workflows with kernel.dispatch.dispatch")
+        elif any(keyword.arg == "task_queue" for keyword in node.keywords):
+            yield Finding(node.lineno, "task queues come from the work class (kernel.dispatch)")
+
+
 def _check_resource_archived(src: SourceFile) -> Iterator[Finding]:
     """`archived` comes from the engagement row, never a literal (TASK-008 loads it)."""
     for node in ast.walk(src.tree):
@@ -1320,6 +1334,14 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/identity/context.py",
             "src/abacus/modules/identity/api.py",
         ),
+    ),
+    Rule(
+        id="DISPATCH-001",
+        description="Workflows start only through kernel.dispatch, on their work class's queue",
+        adr="ADR-071",
+        check=_check_dispatch,
+        include=("src/abacus/*",),
+        exclude=("src/abacus/kernel/dispatch.py", "src/abacus/worker/__main__.py"),
     ),
     Rule(
         id="AUTHZ-003",
