@@ -688,6 +688,23 @@ def _check_dispatch(src: SourceFile) -> Iterator[Finding]:
             )
 
 
+def _check_review_decide(src: SourceFile) -> Iterator[Finding]:
+    """ADR-005: agents propose, humans decide. Agent, connector and worker code never reaches the
+    review decision (`decide`), whatever it is called through (TASK-019 D4)."""
+    for node in ast.walk(src.tree):
+        name = None
+        if isinstance(node, ast.Name):
+            name = node.id
+        elif isinstance(node, ast.Attribute):
+            name = node.attr
+        elif isinstance(node, ast.alias):
+            name = node.name.rsplit(".", 1)[-1]
+        elif isinstance(node, ast.Constant) and node.value == "decide":
+            name = "decide"
+        if name == "decide":
+            yield Finding(getattr(node, "lineno", 1), "only a person decides (ADR-005)")
+
+
 def _check_resource_archived(src: SourceFile) -> Iterator[Finding]:
     """`archived` comes from the engagement row, never a literal (TASK-008 loads it)."""
     for node in ast.walk(src.tree):
@@ -708,6 +725,8 @@ _LIST_PREFIXES = ("list_", "all_", "search_")
 # lookups for rows the caller has already authorised, or sign-in before a tenant exists.
 LIST_EXEMPT = frozenset(
     {
+        # The platform reason-code catalogue: no tenant rows, nothing to filter (SPEC-004 Q1).
+        ("src/abacus/modules/evidence/repository.py", "reason_codes"),
         ("src/abacus/modules/identity/repository.py", "active_memberships"),
         ("src/abacus/modules/identity/repository.py", "engagement_members_of"),
         ("src/abacus/modules/identity/repository.py", "display_names"),
@@ -782,7 +801,9 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "organisations": frozenset(),
     "engagements": frozenset({"identity", "organisations"}),
     "requests": frozenset({"identity", "engagements"}),
-    "evidence": frozenset({"identity", "engagements"}),
+    # evidence reads which versions fulfil which items, and moves items after a review decision
+    # (SPEC-004 Q4, TASK-019); requests never imports evidence.
+    "evidence": frozenset({"identity", "engagements", "requests"}),
     "ledger": frozenset(),
     "connections": frozenset(
         {"identity", "engagements", "organisations", "ledger", "evidence", "requests"}
@@ -1389,6 +1410,18 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/kernel/dispatch.py",
             "src/abacus/kernel/temporal.py",
             "src/abacus/worker/__main__.py",
+        ),
+    ),
+    Rule(
+        id="REVIEW-001",
+        description="Agent, connector and worker code never calls the review decision",
+        adr="ADR-005",
+        check=_check_review_decide,
+        include=(
+            "src/abacus/modules/agents/*",
+            "src/abacus/modules/connections/*",
+            "src/abacus/worker/*",
+            "src/abacus/ai_gateway/*",
         ),
     ),
     Rule(

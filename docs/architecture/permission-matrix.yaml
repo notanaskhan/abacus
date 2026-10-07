@@ -116,6 +116,23 @@ actions:
   fulfilment.propose:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: task_scope, system: allow}
   fulfilment.confirm:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny}
 
+  # --- Review queues (SPEC-004 Q7, Q8; TASK-019) ---
+  review.read:
+    practice_leader: in_scope
+    quality_partner: in_scope
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    staff: allow
+    reviewer: allow
+    agent: deny               # ADR-005
+  review.take:
+    engagement_partner: allow
+    manager: allow
+    senior: firm_setting(seniors_can_accept)
+    agent: deny               # ADR-005
+  review.assign:            {engagement_partner: allow, manager: allow, agent: deny}
+
   # --- Screening and suggestions ---
   screening.run:            {system: allow, agent: task_scope}
   suggestion.create:        {agent: task_scope}

@@ -5,6 +5,16 @@ export type ClientOptions = {
 };
 
 /**
+ * AssignIn
+ */
+export type AssignIn = {
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
  * CitationOut
  */
 export type CitationOut = {
@@ -28,6 +38,58 @@ export type CitationOut = {
      * Verified
      */
     verified: boolean;
+};
+
+/**
+ * DecisionIn
+ */
+export type DecisionIn = {
+    /**
+     * Decision
+     */
+    decision: 'accept' | 'reject' | 'send_back';
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Reason Code
+     */
+    reason_code?: string | null;
+};
+
+/**
+ * DecisionOut
+ */
+export type DecisionOut = {
+    /**
+     * Corrects Proposal
+     */
+    corrects_proposal: boolean;
+    /**
+     * Decision
+     */
+    decision: 'accept' | 'reject' | 'send_back';
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Item Status
+     */
+    item_status: string;
+    /**
+     * Reason Code
+     */
+    reason_code: string | null;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
 };
 
 /**
@@ -259,6 +321,86 @@ export type MembershipOut = {
 };
 
 /**
+ * ProposalOut
+ *
+ * The agent's proposal. Rationale and quotes are model text: shown as plain text (ADR-065).
+ */
+export type ProposalOut = {
+    /**
+     * Action
+     */
+    action: 'ready_for_review' | 'needs_revision';
+    /**
+     * Citations
+     */
+    citations: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Confidence
+     */
+    confidence: string;
+    /**
+     * Rationale
+     */
+    rationale: string;
+    /**
+     * Screening Result Id
+     */
+    screening_result_id: string;
+    /**
+     * Unverified
+     */
+    unverified: Array<string>;
+};
+
+/**
+ * QueueEntryOut
+ */
+export type QueueEntryOut = {
+    /**
+     * Assignee User Id
+     */
+    assignee_user_id: string | null;
+    evidence_version: EvidenceVersionOut;
+    /**
+     * Item Audit Area
+     */
+    item_audit_area: string;
+    /**
+     * Item Description
+     */
+    item_description: string;
+    proposal: ProposalOut | null;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+};
+
+/**
+ * ReasonCodeOut
+ */
+export type ReasonCodeOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Requires Note
+     */
+    requires_note: boolean;
+};
+
+/**
  * RequestItemIn
  */
 export type RequestItemIn = {
@@ -404,6 +546,20 @@ export type ScreeningResultOut = {
      * Unverified
      */
     unverified: Array<string>;
+};
+
+/**
+ * TakenOut
+ */
+export type TakenOut = {
+    /**
+     * Assignee User Id
+     */
+    assignee_user_id: string | null;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
 };
 
 /**
@@ -692,6 +848,198 @@ export type ListEvidenceVersionsResponses = {
 
 export type ListEvidenceVersionsResponse = ListEvidenceVersionsResponses[keyof ListEvidenceVersionsResponses];
 
+export type AcceptData = {
+    body: DecisionIn;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/accept';
+};
+
+export type AcceptErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type AcceptError = AcceptErrors[keyof AcceptErrors];
+
+export type AcceptResponses = {
+    /**
+     * Successful Response
+     */
+    201: DecisionOut;
+};
+
+export type AcceptResponse = AcceptResponses[keyof AcceptResponses];
+
+export type RejectData = {
+    body: DecisionIn;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/reject';
+};
+
+export type RejectErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type RejectError = RejectErrors[keyof RejectErrors];
+
+export type RejectResponses = {
+    /**
+     * Successful Response
+     */
+    201: DecisionOut;
+};
+
+export type RejectResponse = RejectResponses[keyof RejectResponses];
+
+export type SendBackData = {
+    body: DecisionIn;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/send-back';
+};
+
+export type SendBackErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type SendBackError = SendBackErrors[keyof SendBackErrors];
+
+export type SendBackResponses = {
+    /**
+     * Successful Response
+     */
+    201: DecisionOut;
+};
+
+export type SendBackResponse = SendBackResponses[keyof SendBackResponses];
+
 export type ListRequestItemsData = {
     body?: never;
     headers?: {
@@ -913,6 +1261,290 @@ export type GetRetrievalResponses = {
 };
 
 export type GetRetrievalResponse = GetRetrievalResponses[keyof GetRetrievalResponses];
+
+export type ReviewQueueData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/review-queue';
+};
+
+export type ReviewQueueErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ReviewQueueError = ReviewQueueErrors[keyof ReviewQueueErrors];
+
+export type ReviewQueueResponses = {
+    /**
+     * Response Review Queue
+     *
+     * Successful Response
+     */
+    200: Array<QueueEntryOut>;
+};
+
+export type ReviewQueueResponse = ReviewQueueResponses[keyof ReviewQueueResponses];
+
+export type AssignData = {
+    body: AssignIn;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/review-queue/{version_id}/assign';
+};
+
+export type AssignErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AssignError = AssignErrors[keyof AssignErrors];
+
+export type AssignResponses = {
+    /**
+     * Successful Response
+     */
+    200: TakenOut;
+};
+
+export type AssignResponse = AssignResponses[keyof AssignResponses];
+
+export type ReleaseData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/review-queue/{version_id}/release';
+};
+
+export type ReleaseErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ReleaseError = ReleaseErrors[keyof ReleaseErrors];
+
+export type ReleaseResponses = {
+    /**
+     * Successful Response
+     */
+    200: TakenOut;
+};
+
+export type ReleaseResponse = ReleaseResponses[keyof ReleaseResponses];
+
+export type TakeData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/review-queue/{version_id}/take';
+};
+
+export type TakeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type TakeError = TakeErrors[keyof TakeErrors];
+
+export type TakeResponses = {
+    /**
+     * Successful Response
+     */
+    200: TakenOut;
+};
+
+export type TakeResponse = TakeResponses[keyof TakeResponses];
+
+export type ReasonCodesData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Applies To
+         */
+        applies_to: 'reject' | 'send_back';
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/review-reason-codes/{applies_to}';
+};
+
+export type ReasonCodesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ReasonCodesError = ReasonCodesErrors[keyof ReasonCodesErrors];
+
+export type ReasonCodesResponses = {
+    /**
+     * Response Reason Codes
+     *
+     * Successful Response
+     */
+    200: Array<ReasonCodeOut>;
+};
+
+export type ReasonCodesResponse = ReasonCodesResponses[keyof ReasonCodesResponses];
 
 export type ListScreeningResultsData = {
     body?: never;

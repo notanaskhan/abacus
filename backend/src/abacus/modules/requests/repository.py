@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from datetime import datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import insert, select, update
@@ -130,11 +131,41 @@ async def insert_fulfilment(
 
 
 async def mark_received(session: AsyncSession, item_id: UUID) -> bool:
-    """`open → received`; False if the item was not open (already received or further on)."""
+    """`open` or `needs_revision` → `received`; False if the item was neither (already received or
+    further on). A sent-back item takes new evidence (SPEC-004, TASK-019)."""
     result = await session.execute(
         update(RequestItem)
-        .where(RequestItem.id == item_id, RequestItem.status == "open")
+        .where(RequestItem.id == item_id, RequestItem.status.in_(("open", "needs_revision")))
         .values(status="received")
+        .returning(RequestItem.id)
+    )
+    return result.scalar_one_or_none() is not None
+
+
+async def list_fulfilled_versions(
+    session: AsyncSession, ctx: AuthContext, engagement_id: UUID
+) -> Sequence[tuple[RequestItem, UUID, datetime]]:
+    """Every (item, version, fulfilled at) of the engagement the actor may review (SPEC-004)."""
+    rows = await session.execute(
+        select(RequestItem, Fulfilment.evidence_version_id, Fulfilment.created_at)
+        .join(Fulfilment, Fulfilment.request_item_id == RequestItem.id)
+        .where(
+            RequestItem.engagement_id == engagement_id,
+            visible(ctx, "review.read", RequestItem.engagement_id),
+        )
+        .order_by(RequestItem.created_at, RequestItem.id, Fulfilment.created_at)
+    )
+    return [(item, version_id, at) for item, version_id, at in rows.all()]
+
+
+async def set_status(
+    session: AsyncSession, item_id: UUID, *, allowed_from: tuple[str, ...], to: str
+) -> bool:
+    """Move the item to `to` if it is in one of `allowed_from`; False otherwise."""
+    result = await session.execute(
+        update(RequestItem)
+        .where(RequestItem.id == item_id, RequestItem.status.in_(allowed_from))
+        .values(status=to)
         .returning(RequestItem.id)
     )
     return result.scalar_one_or_none() is not None
