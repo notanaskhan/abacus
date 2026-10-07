@@ -1196,6 +1196,7 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "ledger_snapshots": LEDGER_FUNCTION,
         "trial_balance_lines": LEDGER_FUNCTION,
         "review_decisions": "review_decisions_immutable",  # TASK-019 (ADR-004)
+        "eval_case_results": "eval_case_results_immutable",  # TASK-020
     }
     assert _evidence_problems(evidence) == []
 
@@ -1557,5 +1558,6 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         {"work_slot_acquire", "work_slot_release", "work_slot_renew"}
         | {"capacity_admit", "capacity_block"}
         | {"review_decision_reason_check", "review_reason_codes_list"}  # 0015 (TASK-019)
+        | {"eval_eligible"}  # 0016 (TASK-020)
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
