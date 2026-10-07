@@ -5,38 +5,81 @@ SIGTERM handling (`abacus.worker.__main__`; TASK-010 design section 6; TASK-018 
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import signal
 import sys
-from collections.abc import Sequence
-from types import TracebackType
-from typing import Self, cast
+from collections.abc import Callable, Sequence
+from typing import cast
 
 import pytest
 
 from abacus.kernel.config import settings
-from abacus.kernel.dispatch import WORK_CLASSES, queue_for
+from abacus.kernel.dispatch import WORK_CLASSES, WorkClass, queue_for
 from abacus.kernel.error_tracking import ReportingInterceptor
-from abacus.kernel.metrics import ScheduleToStartInterceptor
+from abacus.kernel.temporal_metrics import ScheduleToStartInterceptor
 from abacus.worker import __main__ as worker_main
 
 
 class _FakeWorker:
-    def __init__(self) -> None:
+    """A pool as the worker drives it: `run()` until `shutdown()`, or until it fails or ends."""
+
+    def __init__(
+        self,
+        *,
+        fail: BaseException | None = None,
+        end_early: bool = False,
+        log: list[str] | None = None,
+    ) -> None:
         self.entered = False
         self.exited = False
+        self.shutdowns = 0
+        self.fail = fail
+        self.end_early = end_early
+        self.log = log if log is not None else []
+        self._stop = asyncio.Event()
 
-    async def __aenter__(self) -> Self:
+    async def run(self) -> None:
         self.entered = True
-        return self
+        try:
+            if self.fail is not None:
+                raise self.fail
+            if not self.end_early:
+                await self._stop.wait()
+        finally:
+            self.exited = True
 
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc: BaseException | None,
-        tb: TracebackType | None,
-    ) -> None:
-        self.exited = True
+    async def shutdown(self) -> None:
+        self.shutdowns += 1
+        self.log.append("shutdown")
+        self._stop.set()
+
+
+class _Relay:
+    """Stands in for `run_relay`: records that it ran, until the stop event."""
+
+    def __init__(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        self.started = 0
+        monkeypatch.setattr(worker_main, "run_relay", self._run)
+
+    async def _run(self, publisher: object, stop: asyncio.Event) -> None:
+        self.started += 1
+        await stop.wait()
+
+
+def _build(monkeypatch: pytest.MonkeyPatch, pools: Sequence[_FakeWorker]) -> list[tuple[str, ...]]:
+    asked: list[tuple[str, ...]] = []
+
+    async def build(classes: Sequence[str]) -> list[_FakeWorker]:
+        asked.append(tuple(classes))
+        return list(pools)
+
+    monkeypatch.setattr(worker_main, "build_workers", build)
+    return asked
+
+
+def _signal(sig: signal.Signals = signal.SIGTERM, after: float = 0.05) -> None:
+    asyncio.get_running_loop().call_later(after, os.kill, os.getpid(), sig)
 
 
 async def test_ac20_the_worker_polls_until_sigterm_then_exits_cleanly(
@@ -44,61 +87,123 @@ async def test_ac20_the_worker_polls_until_sigterm_then_exits_cleanly(
 ) -> None:
     error_flushes: list[bool] = []
     monkeypatch.setattr(worker_main, "flush_errors", lambda: error_flushes.append(True))
+    _Relay(monkeypatch)
     fake = _FakeWorker()
-
-    async def build(classes: Sequence[str]) -> list[_FakeWorker]:
-        return [fake]
-
-    monkeypatch.setattr(worker_main, "build_workers", build)
-    asyncio.get_running_loop().call_later(0.05, os.kill, os.getpid(), signal.SIGTERM)
+    _build(monkeypatch, [fake])
+    _signal()
     await asyncio.wait_for(worker_main.run(), timeout=10)
     assert fake.entered
     assert fake.exited
+    assert fake.shutdowns == 1
     assert tracing_shutdowns == [True]  # spans are flushed on the way out
     assert metrics_shutdowns == [True]  # and metrics
     assert error_flushes == [True]  # and buffered error reports
 
 
-async def test_ac1_run_enters_every_worker_and_passes_the_classes_to_build_workers(
+async def test_ac1_run_runs_and_shuts_down_every_pool_together(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    _Relay(monkeypatch)
     pools = [_FakeWorker(), _FakeWorker(), _FakeWorker()]
-    asked: list[tuple[str, ...]] = []
-
-    async def build(classes: Sequence[str]) -> list[_FakeWorker]:
-        asked.append(tuple(classes))
-        return pools
-
-    monkeypatch.setattr(worker_main, "build_workers", build)
-    asyncio.get_running_loop().call_later(0.05, os.kill, os.getpid(), signal.SIGTERM)
-    await asyncio.wait_for(worker_main.run(("background", "batch")), timeout=10)
-    assert asked == [("background", "batch")]
-    assert all(p.entered and p.exited for p in pools)
+    asked = _build(monkeypatch, pools)
+    _signal()
+    await asyncio.wait_for(worker_main.run(("interactive", "batch")), timeout=10)
+    assert asked == [("interactive", "batch")]
+    assert all(p.entered and p.exited and p.shutdowns == 1 for p in pools)
 
 
 async def test_ac1_run_serves_every_class_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
-    asked: list[tuple[str, ...]] = []
-
-    async def build(classes: Sequence[str]) -> list[_FakeWorker]:
-        asked.append(tuple(classes))
-        return [_FakeWorker()]
-
-    monkeypatch.setattr(worker_main, "build_workers", build)
-    asyncio.get_running_loop().call_later(0.05, os.kill, os.getpid(), signal.SIGTERM)
+    _Relay(monkeypatch)
+    asked = _build(monkeypatch, [_FakeWorker()])
+    _signal()
     await asyncio.wait_for(worker_main.run(), timeout=10)
     assert asked == [WORK_CLASSES]
 
 
-async def test_ac20_sigint_also_stops_the_worker(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_ac20_telemetry_is_shut_down_only_after_every_pool_has_drained(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    log: list[str] = []
+    _Relay(monkeypatch)
+    pools = [_FakeWorker(log=log), _FakeWorker(log=log)]
+    _build(monkeypatch, pools)
+    monkeypatch.setattr(worker_main, "shutdown_tracing", lambda: log.append("tracing"))
+    monkeypatch.setattr(worker_main, "shutdown_metrics", lambda: log.append("metrics"))
+    monkeypatch.setattr(worker_main, "flush_errors", lambda: log.append("errors"))
+    _signal()
+    await asyncio.wait_for(worker_main.run(), timeout=10)
+    assert log == ["shutdown", "shutdown", "tracing", "metrics", "errors"]
+    assert all(p.exited for p in pools)
+
+
+@pytest.mark.parametrize("sig", [signal.SIGTERM, signal.SIGINT])
+async def test_ac20_either_signal_stops_the_worker(
+    monkeypatch: pytest.MonkeyPatch, sig: signal.Signals
+) -> None:
+    _Relay(monkeypatch)
     fake = _FakeWorker()
-
-    async def build(classes: Sequence[str]) -> list[_FakeWorker]:
-        return [fake]
-
-    monkeypatch.setattr(worker_main, "build_workers", build)
-    asyncio.get_running_loop().call_later(0.05, os.kill, os.getpid(), signal.SIGINT)
+    _build(monkeypatch, [fake])
+    _signal(sig)
     await asyncio.wait_for(worker_main.run(), timeout=10)
     assert fake.exited
+
+
+async def test_ac1_a_pool_that_ends_before_the_signal_stops_the_process_with_an_error(
+    monkeypatch: pytest.MonkeyPatch, tracing_shutdowns: list[bool]
+) -> None:
+    _Relay(monkeypatch)
+    dead, alive = _FakeWorker(end_early=True), _FakeWorker()
+    _build(monkeypatch, [dead, alive])
+    with pytest.raises(RuntimeError):
+        await asyncio.wait_for(worker_main.run(), timeout=10)  # no signal is sent
+    assert alive.shutdowns == 1  # the others are stopped too
+    assert alive.exited
+    assert tracing_shutdowns == [True]  # and telemetry is still flushed
+
+
+async def test_ac1_a_pool_that_fails_before_the_signal_raises_its_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _Relay(monkeypatch)
+    broken, alive = _FakeWorker(fail=ValueError("pool crashed")), _FakeWorker()
+    _build(monkeypatch, [alive, broken])
+    with pytest.raises(ValueError, match="pool crashed"):
+        await asyncio.wait_for(worker_main.run(), timeout=10)
+    assert alive.exited
+
+
+async def test_ac1_a_relay_that_ends_before_the_signal_is_an_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def ends(publisher: object, stop: asyncio.Event) -> None:
+        return None
+
+    monkeypatch.setattr(worker_main, "run_relay", ends)
+    fake = _FakeWorker()
+    _build(monkeypatch, [fake])
+    with pytest.raises(RuntimeError):
+        await asyncio.wait_for(worker_main.run(), timeout=10)
+    assert fake.shutdowns == 1
+    assert fake.exited
+
+
+@pytest.mark.parametrize(
+    ("classes", "expected"),
+    [
+        (("batch",), 0),
+        (("background", "time_sensitive"), 0),
+        (("interactive",), 1),
+        (("interactive", "batch"), 1),
+    ],
+)
+async def test_ac1_the_relay_runs_only_in_a_process_serving_interactive(
+    monkeypatch: pytest.MonkeyPatch, classes: tuple[WorkClass, ...], expected: int
+) -> None:
+    relay = _Relay(monkeypatch)
+    _build(monkeypatch, [_FakeWorker()])
+    _signal()
+    await asyncio.wait_for(worker_main.run(classes), timeout=10)
+    assert relay.started == expected
 
 
 async def test_ac20_a_failed_boot_check_stops_the_worker_before_it_polls(
@@ -233,7 +338,10 @@ async def test_ac15_every_worker_has_the_reporting_and_schedule_to_start_interce
     await worker_main.build_workers()
     for kwargs in boot.built:
         interceptors = cast("list[object]", kwargs["interceptors"])
-        assert [type(i) for i in interceptors] == [ReportingInterceptor, ScheduleToStartInterceptor]
+        assert [type(i) for i in interceptors] == [
+            ReportingInterceptor,
+            ScheduleToStartInterceptor,
+        ]
 
 
 async def test_ac1_one_worker_per_class_polls_its_queue_then_the_legacy_queue(
@@ -251,7 +359,7 @@ async def test_ac1_one_worker_per_class_polls_its_queue_then_the_legacy_queue(
 
 async def test_ac1_each_class_has_its_own_concurrency_limits(boot: _Boot) -> None:
     await worker_main.build_workers()
-    expected = {"interactive": 50, "time_sensitive": 50, "background": 20, "batch": 10}
+    expected = {"interactive": 10, "time_sensitive": 10, "background": 5, "batch": 2}
     for kwargs, work_class in zip(boot.built, WORK_CLASSES, strict=False):
         assert kwargs["max_concurrent_activities"] == expected[work_class]
         assert kwargs["max_concurrent_workflow_tasks"] == expected[work_class]
@@ -261,12 +369,15 @@ async def test_ac1_limits_come_from_the_settings_by_class(
     boot: _Boot, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv(
-        "ABACUS_WORKER_MAX_ACTIVITIES",
-        '{"interactive": 7, "time_sensitive": 6, "background": 1, "batch": 2}',
-    )
-    monkeypatch.setenv(
-        "ABACUS_WORKER_MAX_WORKFLOW_TASKS",
-        '{"interactive": 17, "time_sensitive": 16, "background": 11, "batch": 12}',
+        "ABACUS_WORK_CLASSES",
+        json.dumps(
+            {
+                "interactive": {"max_activities": 7, "max_workflow_tasks": 17},
+                "time_sensitive": {"max_activities": 6, "max_workflow_tasks": 16},
+                "background": {"max_activities": 1, "max_workflow_tasks": 11},
+                "batch": {"max_activities": 2, "max_workflow_tasks": 12},
+            }
+        ),
     )
     settings.cache_clear()
     try:
@@ -281,11 +392,29 @@ async def test_ac1_limits_come_from_the_settings_by_class(
 
 async def test_ac1_a_process_serves_only_the_classes_it_is_given(boot: _Boot) -> None:
     await worker_main.build_workers(("time_sensitive", "batch"))
+    assert boot.queues() == [queue_for("time_sensitive"), queue_for("batch")]
+
+
+async def test_ac16_the_legacy_queue_is_served_only_beside_the_interactive_pool(
+    boot: _Boot,
+) -> None:
+    await worker_main.build_workers(("interactive", "batch"))
     assert boot.queues() == [
-        queue_for("time_sensitive"),
+        queue_for("interactive"),
         queue_for("batch"),
         settings().temporal_task_queue,
     ]
+
+
+@pytest.mark.parametrize(
+    "classes",
+    [("batch",), ("background",), ("time_sensitive",), ("time_sensitive", "background", "batch")],
+)
+async def test_ac16_a_process_without_the_interactive_pool_does_not_serve_the_legacy_queue(
+    boot: _Boot, classes: tuple[WorkClass, ...]
+) -> None:
+    await worker_main.build_workers(classes)
+    assert boot.queues() == [queue_for(c) for c in classes]
 
 
 async def test_ac16_the_legacy_queue_is_not_served_when_switched_off(
@@ -328,11 +457,16 @@ async def test_ac15_build_workers_configures_tracing_metrics_and_error_tracking(
     boot: _Boot, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     configured: list[tuple[str, str]] = []
-    monkeypatch.setattr(worker_main, "configure_tracing", lambda s: configured.append(("t", s)))
-    monkeypatch.setattr(worker_main, "configure_metrics", lambda s: configured.append(("m", s)))
-    monkeypatch.setattr(
-        worker_main, "configure_error_tracking", lambda s: configured.append(("e", s))
-    )
+
+    def recorder(kind: str) -> Callable[[str], None]:
+        def record(service: str) -> None:
+            configured.append((kind, service))
+
+        return record
+
+    monkeypatch.setattr(worker_main, "configure_tracing", recorder("t"))
+    monkeypatch.setattr(worker_main, "configure_metrics", recorder("m"))
+    monkeypatch.setattr(worker_main, "configure_error_tracking", recorder("e"))
     await worker_main.build_workers()
     assert sorted(configured) == [
         ("e", "abacus-worker"),
@@ -342,9 +476,9 @@ async def test_ac15_build_workers_configures_tracing_metrics_and_error_tracking(
 
 
 def test_ac1_the_default_pool_sizes_are_set_per_class() -> None:
-    expected = {"interactive": 50, "time_sensitive": 50, "background": 20, "batch": 10}
-    assert settings().worker_max_activities == expected
-    assert settings().worker_max_workflow_tasks == expected
+    expected = {"interactive": 10, "time_sensitive": 10, "background": 5, "batch": 2}
+    assert {c: v.max_activities for c, v in settings().work_classes.items()} == expected
+    assert {c: v.max_workflow_tasks for c, v in settings().work_classes.items()} == expected
 
 
 # --- classes_from --------------------------------------------------------------------------------

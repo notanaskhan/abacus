@@ -8,7 +8,9 @@ Expectations come from the contract, not the implementation.
 
 from __future__ import annotations
 
+import importlib
 import json
+import sys
 from collections.abc import Iterator
 from datetime import timedelta
 from typing import cast, get_args
@@ -25,6 +27,7 @@ from abacus.kernel.dispatch import (
     queue_for,
     register_work_classes,
     work_class_of,
+    work_class_of_queue,
 )
 from abacus.kernel.temporal import configure_temporal_client
 from abacus.modules.agents import api as agents
@@ -130,7 +133,7 @@ def test_ac4_a_workflow_that_was_never_registered_has_no_class() -> None:
 def test_ac4_registering_an_unknown_class_raises(unknown: str) -> None:
     flow = _workflow("Unknown")
     with pytest.raises(ValueError):
-        register_work_classes({flow: unknown})
+        register_work_classes({flow: cast("WorkClass", unknown)})
     with pytest.raises(LookupError):  # and nothing was registered
         work_class_of(flow)
 
@@ -158,12 +161,12 @@ def test_ac4_an_empty_registration_does_nothing() -> None:
 
 
 def test_ac2_retrieval_is_interactive() -> None:
-    assert connections.WORKFLOWS == {connections.RetrievalWorkflow: "interactive"}
+    assert {connections.RetrievalWorkflow: "interactive"} == connections.WORKFLOWS
     assert work_class_of(connections.RetrievalWorkflow) == "interactive"
 
 
 def test_ac2_screening_is_time_sensitive_as_its_spec_says() -> None:
-    assert agents.WORKFLOWS == {agents.ScreeningWorkflow: "time_sensitive"}
+    assert {agents.ScreeningWorkflow: "time_sensitive"} == agents.WORKFLOWS
     assert agents.spec(agents.SCREENER).work_class == "time_sensitive"
     assert work_class_of(agents.ScreeningWorkflow) == "time_sensitive"
 
@@ -309,3 +312,49 @@ async def test_ac2_dispatch_logs_the_workflow_and_its_class(
     assert line["workflow"] == "Logged"
     assert line["work_class"] == "background"
     assert "client-content-must-not-be-logged" not in json.dumps(line)
+
+
+# --- contract revision 1 -------------------------------------------------------------------------
+
+
+def test_ac1_the_classes_live_in_a_leaf_module_that_dispatch_re_exports() -> None:
+    from abacus.kernel import work_class as leaf
+
+    assert leaf.WORK_CLASSES == WORK_CLASSES == CLASSES
+    assert get_args(leaf.WorkClass) == CLASSES
+
+
+@pytest.mark.parametrize("work_class", CLASSES)
+def test_ac1_a_class_queue_maps_back_to_its_class(work_class: WorkClass) -> None:
+    assert work_class_of_queue(queue_for(work_class)) == work_class
+
+
+@pytest.mark.parametrize("queue", ["abacus", "", "abacus-urgent", "other-interactive"])
+def test_ac16_the_legacy_queue_and_any_other_queue_have_no_class(queue: str) -> None:
+    assert work_class_of_queue(queue) is None
+
+
+@pytest.mark.parametrize(
+    ("module", "expected"),
+    [
+        ("abacus.modules.connections.retrievals", "interactive"),
+        ("abacus.modules.agents.screenings", "time_sensitive"),
+    ],
+)
+def test_ac4_importing_a_starter_module_alone_registers_its_workflow(
+    module: str, expected: str
+) -> None:
+    """In a clean registry: drop every `abacus` module, import only the starter, and ask the
+    freshly imported kernel. The process's own modules are put back afterwards."""
+    saved = {name: m for name, m in sys.modules.items() if name.split(".")[0] == "abacus"}
+    try:
+        for name in saved:
+            del sys.modules[name]
+        starter = importlib.import_module(module)
+        fresh = sys.modules["abacus.kernel.dispatch"]
+        [(flow, _)] = starter.WORKFLOWS.items()
+        assert fresh.work_class_of(flow) == expected
+    finally:
+        for name in [n for n in sys.modules if n.split(".")[0] == "abacus"]:
+            del sys.modules[name]
+        sys.modules.update(saved)

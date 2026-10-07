@@ -10,8 +10,8 @@ rows are read back as the superuser. Expectations come from the contract.
 from __future__ import annotations
 
 import uuid
+from collections.abc import AsyncGenerator, AsyncIterator, Iterator
 from contextlib import AsyncExitStack, asynccontextmanager
-from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
 from datetime import timedelta
 
@@ -26,8 +26,8 @@ from temporalio.worker import Worker
 from abacus.ai_gateway import FakeModel, configure_provider
 from abacus.api import create_app
 from abacus.kernel.config import settings
-from abacus.kernel.dispatch import queue_for
 from abacus.kernel.db import configure_relay_engine
+from abacus.kernel.dispatch import queue_for
 from abacus.kernel.telemetry import TRACEPARENT, current_trace_id, tracer
 from abacus.kernel.temporal import configure_temporal_client, data_converter
 from abacus.kernel.uow.relay import OutboxEvent, relay_once
@@ -85,7 +85,7 @@ def exporter() -> Iterator[InMemorySpanExporter]:
 
 
 @asynccontextmanager
-async def _serving() -> AsyncIterator[list[Worker]]:
+async def _serving() -> AsyncGenerator[list[Worker]]:
     """Every class's pool (and the legacy queue), as `python -m abacus.worker` runs them."""
     async with AsyncExitStack() as pools:
         built = await build_workers()

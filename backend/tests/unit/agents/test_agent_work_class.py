@@ -1,5 +1,6 @@
 """AC-2, AC-4: agent specs carry a work class, and screening starts through `dispatch`
-(TASK-018 interface contract, "Agent specs" and "Registrations"; SPEC-003 Q1, Q2; ADR-071, ADR-105).
+(TASK-018 interface contract, "Agent specs" and "Registrations"; SPEC-003 Q1, Q2;
+ADR-071, ADR-105).
 
 A spec without `work_class`, `essential` or `cheaper_tiers`, or with an unknown class, fails
 validation, so `AGENTS` does not load. Expectations come from the contract, not the implementation.
@@ -106,8 +107,43 @@ def test_ac4_essential_is_a_boolean(essential: bool) -> None:
 
 
 def test_ac4_cheaper_tiers_may_list_known_tiers() -> None:
-    found = AgentSpec.model_validate({**_raw(), "cheaper_tiers": ["small"]})
+    found = AgentSpec.model_validate({**_raw(), "tier": "large", "cheaper_tiers": ["small"]})
     assert found.cheaper_tiers == ("small",)
+
+
+@pytest.mark.parametrize(
+    ("tier", "tiers"),
+    [("large", ["medium"]), ("large", ["small", "medium"]), ("medium", ["small"])],
+)
+def test_ac11_a_spec_whose_cheaper_tiers_are_all_cheaper_loads(
+    monkeypatch: pytest.MonkeyPatch, tier: str, tiers: list[str]
+) -> None:
+    monkeypatch.setattr(
+        spec_module, "SPECS", {SCREENER: {**_raw(), "tier": tier, "cheaper_tiers": tiers}}
+    )
+    assert load_specs()[SCREENER].cheaper_tiers == tuple(tiers)
+
+
+@pytest.mark.parametrize(
+    ("tier", "tiers"),
+    [
+        ("small", ["small"]),
+        ("small", ["medium"]),
+        ("small", ["large"]),
+        ("medium", ["medium"]),
+        ("medium", ["large"]),
+        ("large", ["large"]),
+        ("large", ["small", "large"]),
+    ],
+)
+def test_ac11_a_spec_with_a_tier_that_is_not_strictly_cheaper_does_not_load(
+    monkeypatch: pytest.MonkeyPatch, tier: str, tiers: list[str]
+) -> None:
+    monkeypatch.setattr(
+        spec_module, "SPECS", {SCREENER: {**_raw(), "tier": tier, "cheaper_tiers": tiers}}
+    )
+    with pytest.raises(ValueError):
+        load_specs()
 
 
 @pytest.mark.parametrize("tiers", [["huge"], [""], ["small", "huge"]])

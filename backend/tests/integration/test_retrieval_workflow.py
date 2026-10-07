@@ -14,8 +14,8 @@ import base64
 import hashlib
 import json
 import uuid
+from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import AsyncExitStack, asynccontextmanager
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -27,7 +27,10 @@ import pytest
 from botocore.exceptions import ClientError
 from sqlalchemy.exc import DBAPIError
 from temporalio import activity
-from temporalio.client import Client, WorkflowFailureError
+from temporalio.api.enums.v1 import TaskQueueType
+from temporalio.api.taskqueue.v1 import TaskQueue
+from temporalio.api.workflowservice.v1 import DescribeTaskQueueRequest
+from temporalio.client import Client, WorkflowFailureError, WorkflowHandle
 from temporalio.common import WorkflowIDConflictPolicy
 from temporalio.exceptions import ApplicationError, CancelledError
 from temporalio.testing import ActivityEnvironment
@@ -35,7 +38,6 @@ from temporalio.worker import Worker
 from types_boto3_s3 import S3Client
 
 from abacus.kernel.config import settings
-from abacus.kernel.dispatch import WORK_CLASSES, queue_for
 from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
 from abacus.kernel.crypto.payload_codec import ENCODING
 from abacus.kernel.db import (
@@ -44,6 +46,7 @@ from abacus.kernel.db import (
     configure_relay_engine,
     dispose_engine,
 )
+from abacus.kernel.dispatch import WORK_CLASSES, queue_for
 from abacus.kernel.storage import s3_client
 from abacus.kernel.temporal import configure_temporal_client, data_converter
 from abacus.modules.connections.api import (
@@ -458,7 +461,7 @@ def task_queue(monkeypatch: pytest.MonkeyPatch, fake_dir: Path) -> Iterator[None
 
 
 @asynccontextmanager
-async def _serving() -> AsyncIterator[list[Worker]]:
+async def _serving() -> AsyncGenerator[list[Worker]]:
     """Every class's pool (and the legacy queue), as `python -m abacus.worker` runs them."""
     async with AsyncExitStack() as pools:
         built = await build_workers()
@@ -1079,7 +1082,10 @@ async def test_ac20_failure_messages_never_appear_in_the_history(
     others = [a for a in ACTIVITIES if not a.__name__.startswith("pull_raw")]
     run_id = await _start(world)
     async with Worker(
-        temporal, task_queue=queue_for("interactive"), workflows=[RetrievalWorkflow], activities=[leaks, *others]
+        temporal,
+        task_queue=queue_for("interactive"),
+        workflows=[RetrievalWorkflow],
+        activities=[leaks, *others],
     ):
         handle = await temporal.start_workflow(
             RetrievalWorkflow.run,
@@ -1126,6 +1132,101 @@ async def test_ac20_a_cancelled_workflow_ends_its_run_as_cancelled_and_stays_can
     row = await seed.run_row(run_id)
     assert (row["status"], row["failure_code"]) == ("failed", "cancelled")
     assert await seed.item_status(world.item_id) == "open"
+
+
+# --- work-class queues (AC-1, AC-2, AC-16) -------------------------------------------------------
+
+
+async def _activity_queues(
+    handle: WorkflowHandle[RetrievalWorkflow, RetrievalOutcome],
+) -> set[str]:
+    history = await handle.fetch_history()
+    return {
+        e.activity_task_scheduled_event_attributes.task_queue.name
+        for e in history.events
+        if e.HasField("activity_task_scheduled_event_attributes")
+    }
+
+
+async def _pollers(temporal: Client, queue: str) -> int:
+    answer = await temporal.workflow_service.describe_task_queue(
+        DescribeTaskQueueRequest(
+            namespace=temporal.namespace,
+            task_queue=TaskQueue(name=queue),
+            task_queue_type=TaskQueueType.TASK_QUEUE_TYPE_WORKFLOW,
+        )
+    )
+    return len(answer.pollers)
+
+
+@pytest.mark.usefixtures("worker")
+async def test_ac1_the_worker_polls_one_queue_per_class_and_the_legacy_queue(
+    temporal: Client,
+) -> None:
+    queues = [*(queue_for(c) for c in WORK_CLASSES), QUEUE]
+    assert len(set(queues)) == 5
+    async with asyncio.timeout(30):
+        while True:
+            counts = [await _pollers(temporal, queue) for queue in queues]
+            if all(counts):
+                break
+            await asyncio.sleep(0.2)
+    # a queue nobody serves has no poller
+    assert await _pollers(temporal, f"{QUEUE}-unserved") == 0
+
+
+@pytest.mark.usefixtures("worker")
+async def test_ac2_a_dispatched_retrieval_and_its_activities_run_on_the_interactive_queue(
+    seed: Seeder, world: World, temporal: Client
+) -> None:
+    ctx = world.requester.context()
+    triggered = await trigger_retrieval(
+        ctx, engagement_id=world.engagement_id, request_item_id=world.item_id, period=PERIOD
+    )
+    handle = temporal.get_workflow_handle_for(
+        RetrievalWorkflow.run, workflow_id(triggered.sync_run_id)
+    )
+    async with asyncio.timeout(90):
+        outcome = await handle.result()
+    assert outcome.status == "succeeded"
+    assert (await handle.describe()).task_queue == queue_for("interactive")
+    assert await _activity_queues(handle) == {queue_for("interactive")}
+    assert (await seed.run_row(triggered.sync_run_id))["status"] == "succeeded"
+
+
+@pytest.mark.usefixtures("worker")
+async def test_ac16_a_workflow_started_on_the_legacy_queue_completes_there(
+    seed: Seeder, world: World, temporal: Client
+) -> None:
+    run_id = await _start(world)
+    handle = await temporal.start_workflow(
+        RetrievalWorkflow.run,
+        RetrievalInput(str(world.tenant_id), str(run_id)),
+        id=f"legacy-{uuid.uuid4()}",
+        task_queue=QUEUE,  # the old single queue, as a workflow open before the release
+        execution_timeout=timedelta(seconds=90),
+    )
+    async with asyncio.timeout(90):
+        outcome = await handle.result()
+    assert outcome.status == "succeeded"
+    assert (await handle.describe()).task_queue == QUEUE
+    assert await _activity_queues(handle) == {QUEUE}
+    assert (await seed.run_row(run_id))["status"] == "succeeded"
+
+
+async def test_ac16_nothing_serves_the_legacy_queue_when_it_is_switched_off(
+    temporal: Client, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # a base queue of its own: earlier tests' pollers on QUEUE linger on the server
+    base = f"no-legacy-{uuid.uuid4().hex[:10]}"
+    monkeypatch.setenv("ABACUS_TEMPORAL_TASK_QUEUE", base)
+    monkeypatch.setenv("ABACUS_SERVE_LEGACY_QUEUE", "false")
+    settings.cache_clear()
+    async with _serving() as built:
+        assert [w.task_queue for w in built] == [queue_for(c) for c in WORK_CLASSES]
+        await asyncio.sleep(1)
+        assert await _pollers(temporal, base) == 0
+        assert await _pollers(temporal, queue_for("interactive")) > 0
 
 
 # --- worker startup ------------------------------------------------------------------------------

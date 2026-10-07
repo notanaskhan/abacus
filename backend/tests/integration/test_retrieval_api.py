@@ -14,8 +14,8 @@ import asyncio
 import hashlib
 import json
 import uuid
+from collections.abc import AsyncGenerator, AsyncIterator, Callable, Iterator
 from contextlib import AsyncExitStack, asynccontextmanager
-from collections.abc import AsyncIterator, Callable, Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -33,7 +33,6 @@ from types_boto3_s3 import S3Client
 
 from abacus.api import create_app
 from abacus.kernel.config import settings
-from abacus.kernel.dispatch import queue_for
 from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
 from abacus.kernel.db import (
     TenantContext,
@@ -41,6 +40,7 @@ from abacus.kernel.db import (
     configure_relay_engine,
     dispose_engine,
 )
+from abacus.kernel.dispatch import queue_for
 from abacus.kernel.storage import s3_client
 from abacus.kernel.temporal import configure_temporal_client, data_converter
 from abacus.modules.connections.api import Period, RetrievalInput, RetrievalWorkflow, workflow_id
@@ -473,7 +473,7 @@ def recorder() -> Recorder:
 
 
 @asynccontextmanager
-async def _serving() -> AsyncIterator[list[Worker]]:
+async def _serving() -> AsyncGenerator[list[Worker]]:
     """Every class's pool (and the legacy queue), as `python -m abacus.worker` runs them."""
     async with AsyncExitStack() as pools:
         built = await build_workers()

@@ -8,8 +8,6 @@ import os
 import signal
 import uuid
 from collections.abc import Sequence
-from types import TracebackType
-from typing import Self
 
 import pytest
 
@@ -20,20 +18,19 @@ from abacus.worker import __main__ as worker_main
 
 
 class _Worker:
+    """A pool as the worker drives it: `run()` until `shutdown()`."""
+
     def __init__(self, log: list[str]) -> None:
         self.log = log
+        self._stop = asyncio.Event()
 
-    async def __aenter__(self) -> Self:
+    async def run(self) -> None:
         self.log.append("worker entered")
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc: BaseException | None,
-        tb: TracebackType | None,
-    ) -> None:
+        await self._stop.wait()
         self.log.append("worker exited")
+
+    async def shutdown(self) -> None:
+        self._stop.set()
 
 
 def _event(event_type: str) -> OutboxEvent:
@@ -115,7 +112,6 @@ async def test_ac20_run_hosts_the_relay_inside_the_worker_until_the_signal(
         seen["stop"] = stop
         log.append("relay started")
         await stop.wait()
-        # Finishing takes a moment: the worker must not exit before the relay has.
         await asyncio.sleep(0.05)
         log.append("relay finished")
 
@@ -123,7 +119,9 @@ async def test_ac20_run_hosts_the_relay_inside_the_worker_until_the_signal(
     monkeypatch.setattr(worker_main, "run_relay", relay)
     asyncio.get_running_loop().call_later(0.1, os.kill, os.getpid(), sig)
     await asyncio.wait_for(worker_main.run(), timeout=10)
-    assert log == ["worker entered", "relay started", "relay finished", "worker exited"]
+    # Pools shut down together with the relay's stop (contract revision 1): no fixed exit order.
+    assert log[:2] == ["worker entered", "relay started"]
+    assert sorted(log[2:]) == ["relay finished", "worker exited"]
     assert isinstance(seen["publisher"], RoutingPublisher)
     stop = seen["stop"]
     assert isinstance(stop, asyncio.Event)

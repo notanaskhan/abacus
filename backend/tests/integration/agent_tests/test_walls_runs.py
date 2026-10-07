@@ -10,8 +10,8 @@ comes from the pipeline; the worker and Temporal are real for the workflow test.
 from __future__ import annotations
 
 import uuid
+from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import AsyncExitStack, asynccontextmanager
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from datetime import timedelta
 from typing import cast
 
@@ -196,7 +196,7 @@ def task_queue(monkeypatch: pytest.MonkeyPatch, fake_dir: object) -> Iterator[No
 
 
 @asynccontextmanager
-async def _serving() -> AsyncIterator[list[Worker]]:
+async def _serving() -> AsyncGenerator[list[Worker]]:
     """Every class's pool (and the legacy queue), as `python -m abacus.worker` runs them."""
     async with AsyncExitStack() as pools:
         built = await build_workers()
