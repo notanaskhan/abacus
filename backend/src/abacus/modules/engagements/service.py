@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from uuid import UUID, uuid4
 
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Target, UnitOfWork, uow
 from abacus.modules.engagements.events import EngagementCreated
@@ -42,9 +42,14 @@ class EngagementRef:
     id: UUID
     archived: bool
     client_entity_id: UUID
+    # The client, for ethical walls (SPEC-002): carried on the resource, so `authorise` needn't
+    # look it up.
+    client_id: UUID
 
     def resource(self) -> Resource:
-        return Resource.engagement(self.tenant_id, self.id, archived=self.archived)
+        return Resource.engagement(
+            self.tenant_id, self.id, archived=self.archived, client_id=self.client_id
+        )
 
 
 @dataclass(frozen=True)
@@ -97,6 +102,7 @@ def _ref(engagement: Engagement) -> EngagementRef:
         engagement.id,
         engagement.status == "archived",
         engagement.client_entity_id,
+        engagement.client_id,
     )
 
 
@@ -163,3 +169,10 @@ async def engagements_for(ctx: AuthContext) -> Sequence[EngagementView]:
         engagements = await list_engagements(session, ctx)
         names = await client_names(session, [e.client_entity_id for e in engagements])
         return [_view(e, names[e.client_entity_id]) for e in engagements]
+
+
+async def client_of(tenant: TenantContext, engagement_id: UUID) -> UUID | None:
+    """The engagement's client, or None outside the tenant (for walls in `authorise`)."""
+    async with tenant_session(tenant) as session:
+        engagement = await get_engagement(session, engagement_id)
+    return engagement.client_id if engagement is not None else None

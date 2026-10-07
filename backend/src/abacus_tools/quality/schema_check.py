@@ -57,6 +57,7 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"before_ref", "after_ref", "trace_id"}
     ),
     "outbox": frozenset({"id", "tenant_id", "event_type", "payload", "trace_context"}),
+    "ethical_walls": frozenset({"id", "tenant_id", "user_id", "client_id", "created_by"}),
     "clients": frozenset({"id", "tenant_id", "name"}),
     "client_entities": frozenset({"id", "tenant_id", "client_id", "name"}),
     "engagements": frozenset(
@@ -123,6 +124,7 @@ IMMUTABLE_TABLES: dict[str, str] = {
 # Columns the app may update; any other UPDATE on these tables is reported (TASK-008). Tables not
 # listed here keep whatever their migration grants (insert-only tables grant none).
 APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),
     "engagements": frozenset({"status"}),
     "request_items": frozenset({"status"}),
     "connections": frozenset({"status"}),
@@ -143,6 +145,7 @@ TABLE_OWNERS: dict[str, str] = {
     "users": "identity",
     "memberships": "identity",
     "engagement_members": "identity",
+    "ethical_walls": "identity",
     "clients": "organisations",
     "client_entities": "organisations",
     "engagements": "engagements",

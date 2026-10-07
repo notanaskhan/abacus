@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateEngagementData, CreateEngagementErrors, CreateEngagementResponses, CreateRequestItemData, CreateRequestItemErrors, CreateRequestItemResponses, GetEngagementData, GetEngagementErrors, GetEngagementResponses, GetRetrievalData, GetRetrievalErrors, GetRetrievalResponses, ListEngagementsData, ListEngagementsErrors, ListEngagementsResponses, ListEvidenceVersionsData, ListEvidenceVersionsErrors, ListEvidenceVersionsResponses, ListRequestItemsData, ListRequestItemsErrors, ListRequestItemsResponses, ListScreeningResultsData, ListScreeningResultsErrors, ListScreeningResultsResponses, MeData, MeErrors, MeResponses, StartRetrievalData, StartRetrievalErrors, StartRetrievalResponses } from './types.gen';
+import type { CreateEngagementData, CreateEngagementErrors, CreateEngagementResponses, CreateRequestItemData, CreateRequestItemErrors, CreateRequestItemResponses, CreateWallData, CreateWallErrors, CreateWallResponses, GetEngagementData, GetEngagementErrors, GetEngagementResponses, GetRetrievalData, GetRetrievalErrors, GetRetrievalResponses, ListEngagementsData, ListEngagementsErrors, ListEngagementsResponses, ListEvidenceVersionsData, ListEvidenceVersionsErrors, ListEvidenceVersionsResponses, ListRequestItemsData, ListRequestItemsErrors, ListRequestItemsResponses, ListScreeningResultsData, ListScreeningResultsErrors, ListScreeningResultsResponses, ListWallsData, ListWallsErrors, ListWallsResponses, MeData, MeErrors, MeResponses, RemoveWallData, RemoveWallErrors, RemoveWallResponses, StartRetrievalData, StartRetrievalErrors, StartRetrievalResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -117,5 +117,38 @@ export const listScreeningResults = <ThrowOnError extends boolean = false>(optio
 export const me = <ThrowOnError extends boolean = false>(options?: Options<MeData, ThrowOnError>): RequestResult<MeResponses, MeErrors, ThrowOnError> => (options?.client ?? client).get<MeResponses, MeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/me',
+    ...options
+});
+
+/**
+ * List Walls Route
+ */
+export const listWalls = <ThrowOnError extends boolean = false>(options?: Options<ListWallsData, ThrowOnError>): RequestResult<ListWallsResponses, ListWallsErrors, ThrowOnError> => (options?.client ?? client).get<ListWallsResponses, ListWallsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/walls',
+    ...options
+});
+
+/**
+ * Create Wall Route
+ */
+export const createWall = <ThrowOnError extends boolean = false>(options: Options<CreateWallData, ThrowOnError>): RequestResult<CreateWallResponses, CreateWallErrors, ThrowOnError> => (options.client ?? client).post<CreateWallResponses, CreateWallErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/walls',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Remove Wall Route
+ *
+ * Walls are never deleted: removing one returns it, marked removed.
+ */
+export const removeWall = <ThrowOnError extends boolean = false>(options: Options<RemoveWallData, ThrowOnError>): RequestResult<RemoveWallResponses, RemoveWallErrors, ThrowOnError> => (options.client ?? client).post<RemoveWallResponses, RemoveWallErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/walls/{wall_id}/remove',
     ...options
 });

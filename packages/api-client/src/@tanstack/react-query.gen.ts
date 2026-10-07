@@ -3,8 +3,8 @@
 import { queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { createEngagement, createRequestItem, getEngagement, getRetrieval, listEngagements, listEvidenceVersions, listRequestItems, listScreeningResults, me, type Options, startRetrieval } from '../sdk.gen';
-import type { CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, MeData, MeError, MeResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse } from '../types.gen';
+import { createEngagement, createRequestItem, createWall, getEngagement, getRetrieval, listEngagements, listEvidenceVersions, listRequestItems, listScreeningResults, listWalls, me, type Options, removeWall, startRetrieval } from '../sdk.gen';
+import type { CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListWallsData, ListWallsError, ListWallsResponse, MeData, MeError, MeResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -215,3 +215,57 @@ export const meOptions = (options?: Options<MeData>) => queryOptions<MeResponse,
     },
     queryKey: meQueryKey(options)
 });
+
+export const listWallsQueryKey = (options?: Options<ListWallsData>) => createQueryKey('listWalls', options);
+
+/**
+ * List Walls Route
+ */
+export const listWallsOptions = (options?: Options<ListWallsData>) => queryOptions<ListWallsResponse, ListWallsError, ListWallsResponse, ReturnType<typeof listWallsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listWalls({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listWallsQueryKey(options)
+});
+
+/**
+ * Create Wall Route
+ */
+export const createWallMutation = (options?: Partial<Options<CreateWallData>>): UseMutationOptions<CreateWallResponse, CreateWallError, Options<CreateWallData>> => {
+    const mutationOptions: UseMutationOptions<CreateWallResponse, CreateWallError, Options<CreateWallData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createWall({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Remove Wall Route
+ *
+ * Walls are never deleted: removing one returns it, marked removed.
+ */
+export const removeWallMutation = (options?: Partial<Options<RemoveWallData>>): UseMutationOptions<RemoveWallResponse, RemoveWallError, Options<RemoveWallData>> => {
+    const mutationOptions: UseMutationOptions<RemoveWallResponse, RemoveWallError, Options<RemoveWallData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await removeWall({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};

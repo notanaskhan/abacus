@@ -6,8 +6,9 @@ from collections.abc import Sequence
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import insert, select
+from sqlalchemy import ColumnElement, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import QueryableAttribute
 
 from abacus.modules.engagements.models import Engagement
 from abacus.modules.identity.api import AuthContext, visible
@@ -68,3 +69,10 @@ async def list_engagements(session: AsyncSession, ctx: AuthContext) -> Sequence[
         .scalars()
         .all()
     )
+
+
+def client_column(
+    engagement_id: ColumnElement[UUID] | QueryableAttribute[UUID],
+) -> ColumnElement[UUID]:
+    """The engagement's client, as a subquery (for ethical walls in `visible()`)."""
+    return select(Engagement.client_id).where(Engagement.id == engagement_id).scalar_subquery()

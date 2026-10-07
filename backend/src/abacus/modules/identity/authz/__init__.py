@@ -27,7 +27,7 @@ guard hides the response; it can't undo a write, so authorise before doing anyth
 
 from __future__ import annotations
 
-from collections.abc import Generator
+from collections.abc import Awaitable, Callable, Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
@@ -38,6 +38,7 @@ from uuid import UUID
 from sqlalchemy import ColumnElement, and_, false, select, true
 from sqlalchemy.orm import QueryableAttribute
 
+from abacus.kernel.db import TenantContext
 from abacus.kernel.logging import get_logger
 from abacus.modules.identity.authz.matrix import RULES, Rule
 from abacus.modules.identity.context import Actor, AgentContext, AuthContext, SystemContext
@@ -45,13 +46,32 @@ from abacus.modules.identity.repository import (
     ENGAGEMENT_ROLES,
     engagement_members,
     engagement_role,
+    ethical_walls,
+    walled_clients,
 )
 
 MFA_RECENT = timedelta(minutes=15)
-# Ethical walls (ADR-026) are not modelled yet. The API refuses to start in production until they
-# are (founder decision 2026-10-06: walls gate the first real firm). Set True only with walls.
-WALL_SAFE = False
-Layer = Literal["tenancy", "relationship", "role", "attribute", "delegation"]
+# Ethical walls (ADR-026; SPEC-002) are enforced below, before roles: the API may start in
+# production (founder decision 2026-10-06: walls gate the first real firm).
+WALL_SAFE = True
+Layer = Literal["tenancy", "wall", "relationship", "role", "attribute", "delegation"]
+
+EngagementColumn = ColumnElement[UUID] | QueryableAttribute[UUID]
+# The engagements module tells identity how to find an engagement's client (TASK-016 Q1):
+# identity owns walls, engagements owns the engagement-to-client fact, and identity never imports
+# engagements. `column` turns an engagement-ID column into its client-ID subquery (for
+# `visible()`); `lookup` finds one engagement's client (for `authorise`, when the resource
+# doesn't carry it). Unregistered, walled people are denied everything engagement-scoped.
+ClientColumn = Callable[[EngagementColumn], ColumnElement[UUID]]
+ClientLookup = Callable[[TenantContext, UUID], Awaitable[UUID | None]]
+_engagement_client: tuple[ClientColumn, ClientLookup] | None = None
+
+
+def register_engagement_client(column: ClientColumn, lookup: ClientLookup) -> None:
+    global _engagement_client
+    _engagement_client = (column, lookup)
+
+
 # An action no human role holds (agent and system only, e.g. `screening.run`) can't be intersected
 # with the initiator's own right to it; the agent then stays within the initiator's reach: they
 # must be allowed this action on the same engagement (founder decision 2026-10-06, ADR-025).
@@ -82,14 +102,23 @@ class Resource:
     tenant_id: UUID
     engagement_id: UUID | None
     archived: bool
+    # The engagement's client, for the wall check (SPEC-002). Looked up when absent.
+    client_id: UUID | None = None
 
     @classmethod
     def firm(cls, tenant_id: UUID) -> Resource:
         return cls(tenant_id, None, False)
 
     @classmethod
-    def engagement(cls, tenant_id: UUID, engagement_id: UUID, *, archived: bool) -> Resource:
-        return cls(tenant_id, engagement_id, archived)
+    def engagement(
+        cls,
+        tenant_id: UUID,
+        engagement_id: UUID,
+        *,
+        archived: bool,
+        client_id: UUID | None = None,
+    ) -> Resource:
+        return cls(tenant_id, engagement_id, archived, client_id)
 
 
 @contextmanager
@@ -170,7 +199,11 @@ async def authorise(
     # 1. Tenancy.
     if resource.tenant_id != ctx.tenant_id:
         raise _deny(ctx, action, "tenancy")
-    # 2. Relationships.
+    # 2a. Ethical walls, before any role (ADR-026): the person acting (a user, the person a
+    # system run or agent acts for) must not be walled off from the engagement's client.
+    if await _walled(ctx, resource):
+        raise _deny(ctx, action, "wall")
+    # 2b. Relationships.
     roles = await _roles(ctx, resource)
     if not roles:
         raise _deny(ctx, action, "relationship")
@@ -203,11 +236,54 @@ async def authorise(
     _log.info("authz.allowed", action=action, tenant_id=ctx.tenant_id, **_who(ctx))
 
 
-def visible(
-    ctx: Actor, action: str, engagement_id: ColumnElement[UUID] | QueryableAttribute[UUID]
+def _person(ctx: Actor) -> UUID:
+    """Who is acting, for walls: the user, or the person a system run or agent acts for."""
+    if isinstance(ctx, AuthContext):
+        return ctx.user_id
+    if isinstance(ctx, AgentContext):
+        return ctx.initiator.user_id
+    return ctx.on_behalf_of
+
+
+async def _walled(ctx: Actor, resource: Resource) -> bool:
+    if resource.engagement_id is None:
+        return False  # walls are on clients' engagements; firm-level actions aren't walled
+    walls = await walled_clients(ctx.tenant, _person(ctx))
+    if not walls:
+        return False
+    client = resource.client_id
+    if client is None:
+        if _engagement_client is None:
+            return True  # can't tell which client: a walled person is denied (fail closed)
+        client = await _engagement_client[1](ctx.tenant, resource.engagement_id)
+    return client is None or client in walls
+
+
+def _not_walled(ctx: Actor, engagement_id: EngagementColumn) -> ColumnElement[bool]:
+    """Rows whose engagement's client the acting person isn't walled off from (ADR-026)."""
+    walls = select(ethical_walls.c.id).where(
+        ethical_walls.c.tenant_id == ctx.tenant_id,
+        ethical_walls.c.user_id == _person(ctx),
+        ethical_walls.c.status == "active",
+    )
+    if _engagement_client is not None:
+        walls = walls.where(ethical_walls.c.client_id == _engagement_client[0](engagement_id))
+    return ~walls.exists()
+
+
+def visible(ctx: Actor, action: str, engagement_id: EngagementColumn) -> ColumnElement[bool]:
+    """A filter for list queries: rows whose engagement the actor may `action` (a read action),
+    minus walled clients. Agrees with `authorise` for every role. Apply it: building it counts as
+    the route's check."""
+    by_role = _visible_by_role(ctx, action, engagement_id)
+    if isinstance(ctx, AgentContext):
+        return by_role  # the initiator's filter, inside, already excludes their walls
+    return and_(by_role, _not_walled(ctx, engagement_id))
+
+
+def _visible_by_role(
+    ctx: Actor, action: str, engagement_id: EngagementColumn
 ) -> ColumnElement[bool]:
-    """A filter for list queries: rows whose engagement the actor may `action` (a read action).
-    Agrees with `authorise` for every role. Apply it: building it counts as the route's check."""
     rule = _rule(action)
     if not rule.reads:
         raise ValueError(f"visible() filters reads; {action!r} is not a read action")
@@ -253,5 +329,6 @@ __all__ = [
     "UnknownAction",
     "authorise",
     "recording_checks",
+    "register_engagement_client",
     "visible",
 ]

@@ -31,6 +31,7 @@ actions:
   autonomy_policy.update:   {firm_admin: allow, mfa_recent: required}
   wall.create:              {firm_admin: allow, mfa_recent: required}
   wall.remove:              {firm_admin: allow, mfa_recent: required}
+  wall.read:                {firm_admin: allow, mfa_recent: required}   # SPEC-002 Q2
   legal_hold.place:         {firm_admin: allow, mfa_recent: required}
   legal_hold.lift:          {firm_admin: allow, mfa_recent: required}
 
