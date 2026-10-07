@@ -19,7 +19,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from decimal import Decimal
 from typing import Literal, cast
 from uuid import UUID, uuid4
@@ -30,6 +30,7 @@ from opentelemetry.trace import StatusCode
 from pydantic import BaseModel, ValidationError
 from sqlalchemy import text
 
+from abacus.ai_gateway.admission import NotAdmitted, admit, block, refusal_reason
 from abacus.ai_gateway.context import (
     MAX_ROWS,
     AssembledContext,
@@ -53,6 +54,7 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.logging import get_logger
 from abacus.kernel.telemetry import tracer
 from abacus.kernel.uow import Target, uow
+from abacus.kernel.work_class import WorkClass
 
 # Per million tokens (input, output), by tier. The fake model is priced like a small model so
 # budgets and metering are exercised exactly as they will be.
@@ -65,7 +67,7 @@ _MILLION = Decimal(1_000_000)
 _log = get_logger(__name__)
 _tracer = tracer(__name__)
 
-Outcome = Literal["ok", "invalid", "repaired", "budget_refused", "provider_error"]
+Outcome = Literal["ok", "invalid", "repaired", "budget_refused", "provider_error", "rate_limited"]
 Status = Literal["ok", "repaired", "escalated"]
 
 
@@ -96,9 +98,15 @@ class GatewayCall[T: BaseModel]:
     budget_usd: Decimal
     attribution: Attribution
     context: AssembledContext
+    # Admission (ADR-072, SPEC-003): the caller's work class and whether it is essential (ADR-069
+    # as named by ADR-105). Required: no call gets a priority by default.
+    work_class: WorkClass
+    essential: bool
     max_output_tokens: int = 1_000
     # Per provider call; exceeding it is a provider error (retryable by the caller).
     timeout_seconds: float = 60
+    # Cheaper tiers the call may step down to under pressure (its spec's, ADR-072).
+    cheaper_tiers: tuple[Tier, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -252,23 +260,39 @@ async def call[T: BaseModel](c: GatewayCall[T]) -> GatewayResult[T]:
         return result
 
 
+async def _admitted(
+    c: GatewayCall[BaseModel], tiers: tuple[Tier, ...], tokens: int
+) -> tuple[Tier, str]:
+    """The first of `tiers` whose model admits this call (an `ai.admit` span), or `NotAdmitted`
+    (ADR-072: step down to a cheaper tier the spec allows, then wait visibly)."""
+    tenant = c.attribution.tenant
+    with _tracer.start_as_current_span("ai.admit", attributes={"ai.work_class": c.work_class}):
+        retry_after = 60
+        for tier in tiers:
+            model = MODELS[tier][0]
+            admitted, wait = await admit(tenant, model, c.work_class, c.essential, tokens)
+            if admitted:
+                return tier, model
+            retry_after = min(retry_after, wait)
+    raise NotAdmitted(refusal_reason(c.work_class), retry_after)
+
+
 async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult[T]:
-    model = MODELS[c.tier][0]
+    tier = c.tier
+    model = MODELS[tier][0]
     user = c.context.render()
     inputs_hash = hashlib.sha256(f"{found.ref}\n{user}".encode()).hexdigest()
     spent = Decimal(0)
     earlier = await _spent_by_run(c.attribution)
     request = ModelRequest(model, found.text, user, c.max_output_tokens, found.ref)
     for attempt in (1, 2):
-        estimate = cost(
-            c.tier, estimate_tokens(request.system + request.user), c.max_output_tokens
-        )
+        estimate = cost(tier, estimate_tokens(request.system + request.user), c.max_output_tokens)
         if earlier + spent + estimate > c.budget_usd:
             await _record_usage(
                 c.attribution,
                 found=found,
                 model=model,
-                tier=c.tier,
+                tier=tier,
                 response=None,
                 spent=Decimal(0),
                 outcome="budget_refused",
@@ -277,18 +301,38 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
             if attempt == 1:
                 raise BudgetExceeded(f"{found.ref} would cost more than {c.budget_usd}")
             return GatewayResult("escalated", None, attempt - 1, spent, inputs_hash, model, found)
+        # Admission before every attempt; only the first may step down to a cheaper tier.
+        needed = estimate_tokens(request.system + request.user) + c.max_output_tokens
+        tiers = (tier, *c.cheaper_tiers) if attempt == 1 else (tier,)
+        tier, model = await _admitted(cast(GatewayCall[BaseModel], c), tiers, needed)
+        request = replace(request, model=model)
         try:
             async with asyncio.timeout(c.timeout_seconds):
                 response = await provider().complete(request)
         except (ProviderError, TimeoutError) as exc:
+            if isinstance(exc, ProviderError) and exc.rate_limited:
+                # Never retried here (AC-12): the model is blocked; the call waits for admission.
+                wait = max(1, min(int(exc.retry_after or 30), 3600))
+                await block(c.attribution.tenant, model, wait)
+                await _record_usage(
+                    c.attribution,
+                    found=found,
+                    model=model,
+                    tier=tier,
+                    response=None,
+                    spent=Decimal(0),
+                    outcome="rate_limited",
+                    inputs_hash=inputs_hash,
+                )
+                raise NotAdmitted("provider_capacity", wait) from None
             # The provider may bill a call that failed or timed out: count its input, so retries
             # can't spend past the run's budget on calls recorded as free.
-            billed = cost(c.tier, estimate_tokens(request.system + request.user), 0)
+            billed = cost(tier, estimate_tokens(request.system + request.user), 0)
             await _record_usage(
                 c.attribution,
                 found=found,
                 model=model,
-                tier=c.tier,
+                tier=tier,
                 response=None,
                 spent=billed,
                 outcome="provider_error",
@@ -297,7 +341,7 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
             if isinstance(exc, TimeoutError):
                 raise ProviderError(f"{found.ref} timed out") from None
             raise
-        this_cost = cost(c.tier, response.input_tokens, response.output_tokens)
+        this_cost = cost(tier, response.input_tokens, response.output_tokens)
         spent += this_cost
         output, errors = _parse(c.output_schema, response.text)
         outcome: Outcome = "invalid" if output is None else ("ok" if attempt == 1 else "repaired")
@@ -305,7 +349,7 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
             c.attribution,
             found=found,
             model=model,
-            tier=c.tier,
+            tier=tier,
             response=response,
             spent=this_cost,
             outcome=outcome,
@@ -349,6 +393,7 @@ __all__ = [
     "ModelProvider",
     "ModelRequest",
     "ModelResponse",
+    "NotAdmitted",
     "Prompt",
     "ProviderError",
     "Tier",

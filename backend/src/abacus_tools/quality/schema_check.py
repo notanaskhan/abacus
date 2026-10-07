@@ -50,7 +50,9 @@ APP = "abacus_app"
 # tenant_id but must see every firm). Each entry is founder-reviewed (protected file).
 # The work slot ledger sees every firm's waiters to hand slots out fairly (TASK-018 D3): no app
 # privilege at all; SECURITY DEFINER functions take the tenant from the session.
-NON_TENANT_TABLES = frozenset({"alembic_version", "work_slots", "work_waiters", "work_grants"})
+NON_TENANT_TABLES = frozenset(
+    {"alembic_version", "work_slots", "work_waiters", "work_grants", "provider_capacity"}
+)
 # Tables the app may insert into and read, never update or delete (ADR-004); TASK-009/010 add.
 INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     {"audit_events", "outbox", "evidence_versions", "ledger_snapshots", "trial_balance_lines"}
@@ -174,12 +176,19 @@ TABLE_OWNERS: dict[str, str] = {
     "work_slots": "kernel.slots",
     "work_waiters": "kernel.slots",
     "work_grants": "kernel.slots",
+    # Provider capacity (TASK-018c): through SECURITY DEFINER functions only, like the slots.
+    "provider_capacity": "ai_gateway",
 }
 # Tables shared by every tenant, readable only through abacus_identity (ADR-002, TASK-007): the app
 # role has no privileges on them at all. Each entry is founder-reviewed (protected file).
-GLOBAL_TABLES = frozenset({"users", "work_slots", "work_waiters", "work_grants"})
+GLOBAL_TABLES = frozenset(
+    {"users", "work_slots", "work_waiters", "work_grants", "provider_capacity"}
+)
 # SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
-DEFINER_FUNCTIONS = frozenset({"work_slot_acquire", "work_slot_release", "work_slot_renew"})
+DEFINER_FUNCTIONS = frozenset(
+    {"work_slot_acquire", "work_slot_release", "work_slot_renew"}
+    | {"capacity_admit", "capacity_block"}
+)
 _DEFINER_SEARCH_PATH = "search_path=pg_catalog, public, pg_temp"
 _DEFINERS = """
 SELECT p.oid::regprocedure::text AS signature, p.proname AS name,

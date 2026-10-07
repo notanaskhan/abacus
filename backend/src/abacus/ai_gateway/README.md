@@ -16,6 +16,16 @@ The only path to a model (ADR-019, ADR-050, ADR-052, ADR-057, ADR-070). Owns `us
 - `prompt(ref)`, `registry()`, `UnknownPrompt`, `estimate_tokens`: prompts live in `prompts/<id>/<version>.txt`; a reference is `id@vN`.
 - `ModelProvider`, `configure_provider`, `FakeModel` (local and test only), `ProviderError`, `MODELS` (tier to model and prices).
 
+- `NotAdmitted(reason, retry_after)`: a call refused admission (`admission.py`; ADR-072, SPEC-003). `GatewayCall` requires `work_class` and `essential`, and may list `cheaper_tiers`.
+
+## Admission (ADR-072; SPEC-003 AC-9 to AC-12)
+- Before every attempt, the call takes one request and its estimated tokens from its model's bucket (`provider_capacity`, migration 0014). The bucket is shared by every process and reached only through SECURITY DEFINER functions. It commits without audit events (founder decision 2026-10-07; UOW-001/002 exempt `admission.py`).
+- **Priority by reserve:** a class may take capacity only above its reserve (`work_classes[c].admission_reserve_pct`: 0, 0, 25, 50). A non-essential call uses the next class's reserve.
+- **Refused:** the call tries the spec's `cheaper_tiers`, then raises `NotAdmitted`. The reason is `deferred` for background or batch work, `provider_capacity` otherwise. The workflow waits and asks again; the gateway never loops.
+- **Rate limits:** a `ProviderError(rate_limited=True)` blocks the model for `retry_after`, records usage `rate_limited` (spending nothing), and raises `NotAdmitted`. It is never retried here.
+- **Fail closed:** an unknown model, or an unreachable bucket, admits nothing.
+- **Telemetry:** an `ai.admit` span, and the counter `abacus.admission` (provider, model, class, outcome, reason).
+
 ## Rules
 - **No provider endpoints or SDKs outside this package** (PROVIDER-001).
 - **No inline prompts** (PROMPT-001). Outside this package, nothing builds a `ModelRequest`, writes the instructions layer from a literal, or names a prompt that isn't `id@vN`.

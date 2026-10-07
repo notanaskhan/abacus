@@ -303,6 +303,9 @@ async def _screen(agent: AgentContext) -> ScreeningOutcome:
             budget_usd=screener.limits.max_cost_usd,
             attribution=Attribution(agent.tenant, agent.engagement_id, run.agent_id, run.id),
             context=context,
+            work_class=screener.work_class,
+            essential=screener.essential,
+            cheaper_tiers=screener.cheaper_tiers,
             max_output_tokens=screener.limits.max_output_tokens,
             timeout_seconds=screener.limits.max_seconds,
         )
