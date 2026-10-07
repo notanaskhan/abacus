@@ -4,7 +4,7 @@ title: Sign-in, engagements and evidence board screens
 spec: SPEC-000
 acceptance_criteria: [AC-18]
 risk_zone: amber
-status: in-review
+status: done
 branch: task-012-screens
 worktree:
 created: 2026-10-06
@@ -296,8 +296,5 @@ Run `@axe-core/playwright` on the engagements page and the board, with no seriou
 -
 
 ## Handoff
-- **Current state:** PR open from `task-012-screens`. Reviews are done and fixed; the independent tests pass; `make check-fast` and the Playwright journey pass locally. The full `make check` runs in CI.
-- **Exact next step:** Confirm CI, then founder review. Red-zone parts (the board reads, the sign-in tooling) get a line-by-line review. Merge (rebase), delete the local `work/approvals/TASK-012.yaml`, mark done. Then TASK-013.
-- **Open issues:** branch protection off. Follow-ups:
-  - TASK-014: WorkOS replaces the fake sign-in; deploy the CSP as a header; refresh tokens.
-  - Screening run status for the board, so it can show failed or skipped instead of the polling cap.
+- **Current state:** Done. PR #14 merged (rebase) 2026-10-07 at the founder's instruction while its full CI was still red: the integration stage failed on test fixtures that relied on the local compose stack and on pins that predate 011b/012. A test author is fixing those on `task-012-screens-ci`; the fixes land on main separately. The approval file is deleted.
+- **Exact next step:** none (TASK-013). Follow-ups: WorkOS, the CSP header and refresh tokens (TASK-014); screening run status on the board.
