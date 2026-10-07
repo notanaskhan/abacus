@@ -11,7 +11,10 @@ model and counts.
 estimated tokens only if both stay above the caller's reserve (a share of the bucket kept for
 higher work classes, D4), and never while the model is blocked. `capacity_block` empties the
 buckets and blocks the model for the time a provider's rate-limit response asked for (AC-12).
-Limits come from the app, bounded here.
+Limits come from the app (trusted input, like every app-side setting), bounded here; at most
+1000 buckets exist, and only a bucket an admitted call created can be blocked. Accepted risk
+(TASK-018c security review S2): the bucket is shared by every firm; per-firm fairness for model
+calls comes from the work slot caps (0013), which bound each firm's concurrent runs.
 
 `usage_records.outcome` gains `rate_limited`: a provider's rate-limit response, spending nothing.
 
@@ -69,14 +72,24 @@ def upgrade() -> None:
             v_tokens numeric;
             v_wait numeric;
         BEGIN
-            IF NULLIF(current_setting('app.tenant_id', true), '') IS NULL THEN
+            IF NULLIF(current_setting('app.tenant_id', true), '')::uuid IS NULL THEN
                 RAISE EXCEPTION 'provider capacity needs a tenant session'
                     USING ERRCODE = 'insufficient_privilege';
             END IF;
-            IF p_rpm NOT BETWEEN 1 AND 1000000 OR p_tpm NOT BETWEEN 1 AND 100000000
+            IF p_provider IS NULL OR p_model IS NULL OR p_rpm IS NULL OR p_tpm IS NULL
+               OR p_reserve_pct IS NULL OR p_tokens IS NULL
+               OR p_model !~ '^[a-z0-9][a-z0-9._-]{0,99}$'
+               OR p_rpm NOT BETWEEN 1 AND 1000000 OR p_tpm NOT BETWEEN 1 AND 100000000
                OR p_reserve_pct NOT BETWEEN 0 AND 99 OR p_tokens NOT BETWEEN 1 AND p_tpm THEN
                 RAISE EXCEPTION 'invalid capacity request'
                     USING ERRCODE = 'invalid_parameter_value';
+            END IF;
+            -- A bounded number of buckets: models come from the app's settings, not from tenants.
+            IF NOT EXISTS (SELECT 1 FROM public.provider_capacity
+                            WHERE provider = p_provider AND model = p_model)
+               AND (SELECT count(*) FROM public.provider_capacity) >= 1000 THEN
+                RAISE EXCEPTION 'too many provider capacity buckets'
+                    USING ERRCODE = 'program_limit_exceeded';
             END IF;
             INSERT INTO public.provider_capacity
                 (provider, model, requests_left, tokens_left, refilled_at)
@@ -96,8 +109,9 @@ def upgrade() -> None:
             v_tokens := least(p_tpm, v_row.tokens_left
                 + p_tpm * extract(epoch FROM v_now - v_row.refilled_at) / 60.0);
 
-            IF v_requests - 1 >= p_rpm * p_reserve_pct / 100.0
-               AND v_tokens - p_tokens >= p_tpm * p_reserve_pct / 100.0 THEN
+            -- numeric throughout: p_tpm * p_reserve_pct overflows integer above about 21M tpm.
+            IF v_requests - 1 >= p_rpm::numeric * p_reserve_pct / 100.0
+               AND v_tokens - p_tokens >= p_tpm::numeric * p_reserve_pct / 100.0 THEN
                 UPDATE public.provider_capacity
                    SET requests_left = v_requests - 1, tokens_left = v_tokens - p_tokens,
                        refilled_at = v_now, blocked_until = NULL
@@ -110,8 +124,8 @@ def upgrade() -> None:
              WHERE provider = p_provider AND model = p_model;
             -- When enough will have refilled for this call above the reserve.
             v_wait := greatest(
-                (p_rpm * p_reserve_pct / 100.0 + 1 - v_requests) * 60.0 / p_rpm,
-                (p_tpm * p_reserve_pct / 100.0 + p_tokens - v_tokens) * 60.0 / p_tpm,
+                (p_rpm::numeric * p_reserve_pct / 100.0 + 1 - v_requests) * 60.0 / p_rpm,
+                (p_tpm::numeric * p_reserve_pct / 100.0 + p_tokens - v_tokens) * 60.0 / p_tpm,
                 1
             );
             RETURN QUERY SELECT false, least(ceil(v_wait), 60)::integer;
@@ -131,21 +145,21 @@ def upgrade() -> None:
         DECLARE
             v_now timestamptz := clock_timestamp();
         BEGIN
-            IF NULLIF(current_setting('app.tenant_id', true), '') IS NULL THEN
+            IF NULLIF(current_setting('app.tenant_id', true), '')::uuid IS NULL THEN
                 RAISE EXCEPTION 'provider capacity needs a tenant session'
                     USING ERRCODE = 'insufficient_privilege';
             END IF;
-            IF p_seconds NOT BETWEEN 1 AND 3600 THEN
+            IF p_provider IS NULL OR p_model IS NULL OR p_seconds IS NULL
+               OR p_seconds NOT BETWEEN 1 AND 3600 THEN
                 RAISE EXCEPTION 'invalid capacity block'
                     USING ERRCODE = 'invalid_parameter_value';
             END IF;
-            INSERT INTO public.provider_capacity AS c
-                (provider, model, requests_left, tokens_left, refilled_at, blocked_until)
-            VALUES (p_provider, p_model, 0, 0, v_now, v_now + make_interval(secs => p_seconds))
-            ON CONFLICT (provider, model) DO UPDATE
+            -- Only a bucket an admitted call created can be blocked: no rows from thin air.
+            UPDATE public.provider_capacity
                SET requests_left = 0, tokens_left = 0, refilled_at = v_now,
-                   blocked_until = greatest(coalesce(c.blocked_until, v_now),
-                                            v_now + make_interval(secs => p_seconds));
+                   blocked_until = greatest(coalesce(blocked_until, v_now),
+                                            v_now + make_interval(secs => p_seconds))
+             WHERE provider = p_provider AND model = p_model;
         END
         $$
         """
@@ -156,8 +170,9 @@ def upgrade() -> None:
     op.execute("ALTER TABLE usage_records DROP CONSTRAINT usage_records_outcome_check")
     op.execute(
         "ALTER TABLE usage_records ADD CONSTRAINT usage_records_outcome_check "
-        "CHECK (outcome IN " + _OUTCOMES + ", 'rate_limited'))"
+        "CHECK (outcome IN " + _OUTCOMES + ", 'rate_limited')) NOT VALID"
     )
+    op.execute("ALTER TABLE usage_records VALIDATE CONSTRAINT usage_records_outcome_check")
 
 
 def downgrade() -> None:

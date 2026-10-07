@@ -19,8 +19,10 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import math
 from dataclasses import dataclass, replace
 from decimal import Decimal
+from math import ceil
 from typing import Literal, cast
 from uuid import UUID, uuid4
 
@@ -30,7 +32,13 @@ from opentelemetry.trace import StatusCode
 from pydantic import BaseModel, ValidationError
 from sqlalchemy import text
 
-from abacus.ai_gateway.admission import NotAdmitted, admit, block, refusal_reason
+from abacus.ai_gateway.admission import (
+    CallTooLarge,
+    NotAdmitted,
+    admit,
+    block,
+    refusal_reason,
+)
 from abacus.ai_gateway.context import (
     MAX_ROWS,
     AssembledContext,
@@ -50,6 +58,7 @@ from abacus.ai_gateway.providers import (
     configure_provider,
     provider,
 )
+from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.logging import get_logger
 from abacus.kernel.telemetry import tracer
@@ -250,6 +259,10 @@ async def call[T: BaseModel](c: GatewayCall[T]) -> GatewayResult[T]:
     ) as span:
         try:
             result = await _call(c, found)
+        except NotAdmitted as waiting:  # waiting for capacity is not a failure
+            span.set_attribute("ai.status", "not_admitted")
+            span.set_attribute("ai.admission_reason", waiting.reason)
+            raise
         except Exception as exc:
             span.set_status(SpanStatus(StatusCode.ERROR, type(exc).__name__))
             raise
@@ -260,12 +273,26 @@ async def call[T: BaseModel](c: GatewayCall[T]) -> GatewayResult[T]:
         return result
 
 
+def check_provider_limits() -> None:
+    """Boot check: outside local and test, every model has provider limits. Without them its calls
+    would never be admitted (fail closed), which should stop a deploy, not degrade it."""
+    s = settings()
+    if s.environment in ("local", "test"):
+        return
+    missing = sorted(model for model, _, _ in MODELS.values() if model not in s.provider_limits)
+    if missing:
+        raise RuntimeError(f"no provider limits for {', '.join(missing)} (provider_limits)")
+
+
 async def _admitted(
     c: GatewayCall[BaseModel], tiers: tuple[Tier, ...], tokens: int
 ) -> tuple[Tier, str]:
-    """The first of `tiers` whose model admits this call (an `ai.admit` span), or `NotAdmitted`
-    (ADR-072: step down to a cheaper tier the spec allows, then wait visibly)."""
+    """The first of `tiers` whose model admits this call (an `ai.admit` span), or `NotAdmitted`.
+    ADR-072's order: background and batch work is deferred, never stepped down; interactive and
+    time-sensitive work steps down to a cheaper tier the spec allows, then waits visibly."""
     tenant = c.attribution.tenant
+    if c.work_class in ("background", "batch"):
+        tiers = tiers[:1]
     with _tracer.start_as_current_span("ai.admit", attributes={"ai.work_class": c.work_class}):
         retry_after = 60
         for tier in tiers:
@@ -312,8 +339,13 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
         except (ProviderError, TimeoutError) as exc:
             if isinstance(exc, ProviderError) and exc.rate_limited:
                 # Never retried here (AC-12): the model is blocked; the call waits for admission.
-                wait = max(1, min(int(exc.retry_after or 30), 3600))
-                await block(c.attribution.tenant, model, wait)
+                asked = exc.retry_after
+                wait = 30 if asked is None or not math.isfinite(asked) else max(1, ceil(asked))
+                wait = min(wait, 3600)
+                try:
+                    await block(c.attribution.tenant, model, wait)
+                except Exception as failed:  # the call still waits: never back to the provider now
+                    _log.warning("admission.block_failed", model=model, error=failed)
                 await _record_usage(
                     c.attribution,
                     found=found,
@@ -324,7 +356,7 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
                     outcome="rate_limited",
                     inputs_hash=inputs_hash,
                 )
-                raise NotAdmitted("provider_capacity", wait) from None
+                raise NotAdmitted(refusal_reason(c.work_class), wait) from None
             # The provider may bill a call that failed or timed out: count its input, so retries
             # can't spend past the run's budget on calls recorded as free.
             billed = cost(tier, estimate_tokens(request.system + request.user), 0)
@@ -383,6 +415,7 @@ __all__ = [
     "AssembledContext",
     "Attribution",
     "BudgetExceeded",
+    "CallTooLarge",
     "ContextBuilder",
     "ContextTooLarge",
     "DatasetTooLarge",
@@ -399,6 +432,7 @@ __all__ = [
     "Tier",
     "UnknownPrompt",
     "call",
+    "check_provider_limits",
     "configure_provider",
     "cost",
     "estimate_tokens",

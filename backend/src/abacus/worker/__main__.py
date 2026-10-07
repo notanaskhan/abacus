@@ -36,7 +36,7 @@ from datetime import timedelta
 from temporalio.client import Client
 from temporalio.worker import Worker
 
-from abacus.ai_gateway import FakeModel, configure_provider
+from abacus.ai_gateway import FakeModel, check_provider_limits, configure_provider
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import key_service
 from abacus.kernel.db import ping, ping_relay
@@ -97,6 +97,7 @@ async def build_workers(classes: Sequence[WorkClass] = WORK_CLASSES) -> list[Wor
     key_service()
     payload_codec()
     await check_ready()
+    check_provider_limits()
     if settings().environment == "local":
         configure_provider(agents.install_fake_responses(FakeModel()))
     client = await temporal_client()
