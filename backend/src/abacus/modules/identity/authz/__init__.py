@@ -16,8 +16,9 @@ the same action, or `AGENT_ONLY_REACH` for actions no human role holds.
 Matrix conditions not modelled yet (`in_scope`, `firm_setting(...)`, `assigned_only`,
 `client_visible_only`, `task_scope`) are not grants: they deny until their task models them.
 
-NOT WALL-SAFE YET: ethical walls (ADR-026) are not modelled, so `walled: deny` is never applied.
-No route serving engagement data may ship to a firm before walls exist (TASK-007 decision log).
+Ethical walls (ADR-026, SPEC-002) come before roles: a person walled off from a client is denied
+every engagement of it, whatever their roles, and agents and system runs with them. The walled
+clients are read once per request (`recording_checks`) and live on every step elsewhere.
 Client access (`access_expired`) arrives with client users.
 
 A successful `authorise` (and every `visible` filter built) is recorded for the request being
@@ -69,6 +70,8 @@ _engagement_client: tuple[ClientColumn, ClientLookup] | None = None
 
 def register_engagement_client(column: ClientColumn, lookup: ClientLookup) -> None:
     global _engagement_client
+    if _engagement_client is not None and _engagement_client != (column, lookup):
+        raise RuntimeError("the engagement-to-client lookup is already registered")
     _engagement_client = (column, lookup)
 
 
@@ -79,6 +82,10 @@ AGENT_ONLY_REACH = "evidence.read"
 _NON_HUMAN_ROLES = frozenset({"agent", "system"})
 _log = get_logger(__name__)
 _checked: ContextVar[set[str] | None] = ContextVar("abacus_authz_checked", default=None)
+# Each person's walled clients, read once per request (SPEC-002 §16); None outside a request.
+_walls: ContextVar[dict[UUID, frozenset[UUID]] | None] = ContextVar(
+    "abacus_authz_walls", default=None
+)
 
 
 class Forbidden(Exception):
@@ -126,9 +133,11 @@ def recording_checks() -> Generator[set[str]]:
     """Collect the actions checked while serving one request."""
     checked: set[str] = set()
     token = _checked.set(checked)
+    walls_token = _walls.set({})
     try:
         yield checked
     finally:
+        _walls.reset(walls_token)
         _checked.reset(token)
 
 
@@ -248,7 +257,13 @@ def _person(ctx: Actor) -> UUID:
 async def _walled(ctx: Actor, resource: Resource) -> bool:
     if resource.engagement_id is None:
         return False  # walls are on clients' engagements; firm-level actions aren't walled
-    walls = await walled_clients(ctx.tenant, _person(ctx))
+    person = _person(ctx)
+    cache = _walls.get()
+    walls = cache.get(person) if cache is not None else None
+    if walls is None:
+        walls = await walled_clients(ctx.tenant, person)
+        if cache is not None:
+            cache[person] = walls
     if not walls:
         return False
     client = resource.client_id
