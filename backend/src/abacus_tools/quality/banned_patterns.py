@@ -689,8 +689,8 @@ def _check_dispatch(src: SourceFile) -> Iterator[Finding]:
 
 
 def _check_review_decide(src: SourceFile) -> Iterator[Finding]:
-    """ADR-005: agents propose, humans decide. Agent, connector and worker code never reaches the
-    review decision (`decide`), whatever it is called through (TASK-019 D4)."""
+    """ADR-005: agents propose, humans decide. Nothing but the evidence routes reaches the review
+    decision (`decide`), whatever it is called through (TASK-019 D4, security review H2)."""
     for node in ast.walk(src.tree):
         name = None
         if isinstance(node, ast.Name):
@@ -1410,14 +1410,14 @@ RULES: list[Rule | TreeRule] = [
     ),
     Rule(
         id="REVIEW-001",
-        description="Agent, connector and worker code never calls the review decision",
+        description="Only the evidence routes reach the review decision",
         adr="ADR-005",
         check=_check_review_decide,
-        include=(
-            "src/abacus/modules/agents/*",
-            "src/abacus/modules/connections/*",
-            "src/abacus/worker/*",
-            "src/abacus/ai_gateway/*",
+        # An allowlist (TASK-019 security review H2): any other file naming `decide` fails.
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/modules/evidence/service.py",
+            "src/abacus/modules/evidence/routes.py",
         ),
     ),
     Rule(

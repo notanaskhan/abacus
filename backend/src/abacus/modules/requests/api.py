@@ -8,11 +8,13 @@ from abacus.modules.requests.service import (
     ItemNotFulfillable,
     RequestItemRef,
     RequestItemSummary,
+    ReviewTarget,
     fulfil_by_rule,
     fulfilled_items,
     fulfilled_versions,
     item_ref,
     move_after_review,
+    review_targets,
 )
 
 __all__ = [
@@ -22,10 +24,12 @@ __all__ = [
     "RequestItemCreated",
     "RequestItemRef",
     "RequestItemSummary",
+    "ReviewTarget",
     "fulfil_by_rule",
     "fulfilled_items",
     "fulfilled_versions",
     "item_ref",
     "move_after_review",
+    "review_targets",
     "router",
 ]

@@ -17,5 +17,12 @@ class DomainConflict(Exception):
     code: ClassVar[str] = "conflict"
 
 
+class DomainInvalid(Exception):
+    """The request is well-formed but breaks a domain rule: 422 with the class's fixed `code`
+    (never a message from the request or the database)."""
+
+    code: ClassVar[str] = "invalid"
+
+
 class ServiceUnavailable(Exception):
     """A dependency isn't reachable right now: 503."""

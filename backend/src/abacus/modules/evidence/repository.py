@@ -210,14 +210,49 @@ async def insert_decision(session: AsyncSession, *, values: dict[str, object]) -
     await session.execute(insert(ReviewDecision).values(**values))
 
 
-async def assignment_for(session: AsyncSession, version_id: UUID) -> ReviewAssignment | None:
+async def assignment_for(
+    session: AsyncSession, engagement_id: UUID, version_id: UUID
+) -> ReviewAssignment | None:
+    """The version's assignment within this engagement only (TASK-019 security review H1)."""
     return (
         await session.execute(
             select(ReviewAssignment)
-            .where(ReviewAssignment.evidence_version_id == version_id)
+            .where(
+                ReviewAssignment.engagement_id == engagement_id,
+                ReviewAssignment.evidence_version_id == version_id,
+            )
             .with_for_update()
         )
     ).scalar_one_or_none()
+
+
+async def take_assignment(
+    session: AsyncSession, *, tenant_id: UUID, engagement_id: UUID, version_id: UUID, me: UUID
+) -> bool:
+    """Take the version unless someone else holds it, in one statement (no race between two
+    first takes): False when another person has it."""
+    taken = await session.execute(
+        pg_insert(ReviewAssignment)
+        .values(
+            tenant_id=tenant_id,
+            evidence_version_id=version_id,
+            engagement_id=engagement_id,
+            assignee_user_id=me,
+            assigned_by=me,
+        )
+        .on_conflict_do_update(
+            index_elements=[ReviewAssignment.tenant_id, ReviewAssignment.evidence_version_id],
+            set_={
+                "assignee_user_id": me,
+                "assigned_by": me,
+                "assigned_at": func.clock_timestamp(),
+            },
+            where=(ReviewAssignment.assignee_user_id.is_(None))
+            | (ReviewAssignment.assignee_user_id == me),
+        )
+        .returning(ReviewAssignment.evidence_version_id)
+    )
+    return taken.scalar_one_or_none() is not None
 
 
 async def put_assignment(
@@ -250,10 +285,15 @@ async def put_assignment(
     )
 
 
-async def clear_assignment(session: AsyncSession, version_id: UUID, by: UUID) -> None:
+async def clear_assignment(
+    session: AsyncSession, engagement_id: UUID, version_id: UUID, by: UUID
+) -> None:
     await session.execute(
         update(ReviewAssignment)
-        .where(ReviewAssignment.evidence_version_id == version_id)
+        .where(
+            ReviewAssignment.engagement_id == engagement_id,
+            ReviewAssignment.evidence_version_id == version_id,
+        )
         .values(assignee_user_id=None, assigned_by=by, assigned_at=func.clock_timestamp())
     )
 

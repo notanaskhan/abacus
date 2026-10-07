@@ -22,6 +22,7 @@ from abacus.modules.requests.repository import (
     list_fulfilled_versions,
     list_request_items,
     mark_received,
+    newest_fulfilment,
     request_list_for,
     set_status,
 )
@@ -113,9 +114,10 @@ class RequestItemRef:
     status: str
 
 
-async def item_ref(tx: UnitOfWork, request_item_id: UUID) -> RequestItemRef:
-    """The item as this transaction sees it (`NotFound` outside the tenant)."""
-    item = await get_request_item(tx.session, request_item_id)
+async def item_ref(tx: UnitOfWork, request_item_id: UUID, *, lock: bool = False) -> RequestItemRef:
+    """The item as this transaction sees it (`NotFound` outside the tenant); `lock` holds its row
+    for the rest of the transaction."""
+    item = await get_request_item(tx.session, request_item_id, lock=lock)
     if item is None:
         raise NotFound("request_item")
     return RequestItemRef(item.id, item.engagement_id, item.status)
@@ -137,7 +139,7 @@ async def fulfil_by_rule(
     links are `rule` (AC-10), a person's are `human`. The evidence must belong to the item's
     engagement (composite key). Only open or received items take new evidence."""
     tenant = await transaction_context(tx.session)
-    item = await item_ref(tx, request_item_id)
+    item = await item_ref(tx, request_item_id, lock=True)
     ref = await lock_ref(tx, item.engagement_id)
     await authorise(ctx, "fulfilment.propose", ref.resource())
     if item.status not in ("open", "received", "needs_revision"):
@@ -177,6 +179,7 @@ class FulfilledVersion:
     item_status: str
     evidence_version_id: UUID
     fulfilled_at: datetime
+    fulfilment_id: UUID
 
 
 async def fulfilled_versions(ctx: AuthContext, engagement_id: UUID) -> list[FulfilledVersion]:
@@ -185,8 +188,10 @@ async def fulfilled_versions(ctx: AuthContext, engagement_id: UUID) -> list[Fulf
     async with tenant_session(ctx.tenant) as session:
         rows = await list_fulfilled_versions(session, ctx, engagement_id)
     return [
-        FulfilledVersion(item.id, item.description, item.audit_area, item.status, version, at)
-        for item, version, at in rows
+        FulfilledVersion(
+            item.id, item.description, item.audit_area, item.status, version, at, fulfilment_id
+        )
+        for item, version, at, fulfilment_id in rows
     ]
 
 
@@ -195,9 +200,32 @@ _REVIEWABLE = ("received", "ready_for_review", "needs_revision")
 _AFTER_REVIEW = frozenset({"accepted", "received", "open", "needs_revision"})
 
 
+@dataclass(frozen=True)
+class ReviewTarget:
+    """An item a version fulfils, locked for the decision: its status, and whether that version
+    is still the item's newest evidence."""
+
+    request_item_id: UUID
+    status: str
+    newest: bool
+
+
+async def review_targets(tx: UnitOfWork, evidence_version_id: UUID) -> list[ReviewTarget]:
+    """Every item the version fulfils, each row locked until the decision commits (so a new
+    fulfilment of the item waits for it). For a caller that has authorised the decision."""
+    targets: list[ReviewTarget] = []
+    for item in await items_fulfilled_by(tx.session, evidence_version_id):
+        locked = await item_ref(tx, item.id, lock=True)
+        newest = await newest_fulfilment(tx.session, item.id)
+        targets.append(ReviewTarget(item.id, locked.status, newest == evidence_version_id))
+    return targets
+
+
 async def move_after_review(tx: UnitOfWork, request_item_id: UUID, to: str) -> None:
-    """Apply a review decision's effect on its item, inside the decision's unit of work (the
-    caller authorised the decision). Audited `request_item.<to>`."""
+    """Apply a review decision's effect on its item, inside the decision's unit of work. The
+    caller must have authorised the decision (`evidence.accept` or `evidence.reject`) and locked
+    the item (`review_targets`): this moves a status, it checks no rights. Audited
+    `request_item.<to>`."""
     if to not in _AFTER_REVIEW:
         raise ValueError(f"a review decision can't move an item to {to!r}")
     item = await item_ref(tx, request_item_id)

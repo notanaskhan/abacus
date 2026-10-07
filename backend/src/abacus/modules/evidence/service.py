@@ -21,9 +21,10 @@ from typing import Literal
 from uuid import UUID, uuid4
 
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.db import TenantContext, tenant_session, transaction_context
-from abacus.kernel.errors import DomainConflict, NotFound, ServiceUnavailable
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, ServiceUnavailable
 from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import meter
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
@@ -45,10 +46,23 @@ from abacus.modules.evidence.repository import (
     next_version_no,
     put_assignment,
     reason_codes,
+    take_assignment,
     version_for_key,
 )
-from abacus.modules.identity.api import AuthContext, authorise, engagement_team
-from abacus.modules.requests.api import FulfilledVersion, fulfilled_versions, move_after_review
+from abacus.modules.identity.api import (
+    AuthContext,
+    Forbidden,
+    authorise,
+    engagement_team,
+    serving_request,
+)
+from abacus.modules.requests.api import (
+    FulfilledVersion,
+    ReviewTarget,
+    fulfilled_versions,
+    move_after_review,
+    review_targets,
+)
 
 Method = Literal["retrieved", "uploaded"]
 StoredObject = storage.StoredObject
@@ -312,7 +326,15 @@ _DECISION_ACTION: dict[str, str] = {
     "reject": "evidence.reject",
     "send_back": "evidence.reject",
 }
-_UNIQUE_VIOLATION = "23505"
+# What each decision moves the version's items to (SPEC-004 §6, Q2). A rejected item awaits new
+# evidence: the rejected version was its newest (else the decision is `superseded`), so nothing
+# older is reviewable any more (TASK-019 reviews B1/M1).
+_ITEM_AFTER: dict[str, str] = {
+    "accept": "accepted",
+    "reject": "open",
+    "send_back": "needs_revision",
+}
+_ONE_DECISION = "review_decisions_once"
 _CHECK_VIOLATION = "23514"
 _log = get_logger(__name__)
 _decisions = meter(__name__).create_counter(
@@ -333,10 +355,10 @@ class Proposal:
 
 
 ProposalsFor = Callable[[AuthContext, UUID], Awaitable[dict[UUID, Proposal]]]
-ProposalOf = Callable[[TenantContext, UUID], Awaitable[Proposal | None]]
-# The agents module tells evidence what agents proposed (TASK-019 D1): agents already depends on
-# evidence, so evidence can't import agents. Unregistered, the queue shows no proposals and a
-# decision is refused (503): whether it corrects a proposal is never guessed.
+ProposalOf = Callable[[AsyncSession, UUID], Awaitable[Proposal | None]]
+# The agents module tells evidence what agents proposed (TASK-019 D1; ADR-106): agents already
+# depends on evidence, so evidence can't import agents. Unregistered, the queue shows no proposals
+# and a decision is refused (503): whether it corrects a proposal is never guessed.
 _proposals: tuple[ProposalsFor, ProposalOf] | None = None
 
 
@@ -361,9 +383,17 @@ class Superseded(DomainConflict):
     code = "superseded"
 
 
-class InvalidReason(ValueError):
+class ProposalChanged(DomainConflict):
+    """The agent's proposal changed since the reviewer saw it: look again (AC-10)."""
+
+    code = "proposal_changed"
+
+
+class InvalidReason(DomainInvalid):
     """A reason code missing, unknown, retired, not for this decision, or `other` without a
-    note (422)."""
+    note."""
+
+    code = "invalid_reason_code"
 
 
 @dataclass(frozen=True)
@@ -388,42 +418,11 @@ class ReasonCode:
 class DecisionView:
     id: UUID
     evidence_version_id: UUID
-    request_item_id: UUID
+    request_item_ids: list[UUID]
     decision: str
     reason_code: str | None
     corrects_proposal: bool
     item_status: str
-
-
-@dataclass(frozen=True)
-class _Queued:
-    version: EvidenceVersion
-    item: FulfilledVersion
-
-
-async def _queue(ctx: AuthContext, engagement_id: UUID) -> list[_Queued]:
-    """Per request item, its newest fulfilled version, if undecided (SPEC-004 AC-1, AC-2). A
-    version fulfilling several items is queued once, for its first item."""
-    fulfilled = await fulfilled_versions(ctx, engagement_id)
-    async with tenant_session(ctx.tenant) as session:
-        versions, decided, _ = await list_review_state(session, ctx, engagement_id)
-    by_id = {v.id: v for v in versions}
-    newest: dict[UUID, tuple[FulfilledVersion, EvidenceVersion]] = {}
-    for f in fulfilled:
-        version = by_id.get(f.evidence_version_id)
-        if version is None:
-            continue
-        held = newest.get(f.request_item_id)
-        if held is None or (f.fulfilled_at, version.version_no) > (
-            held[0].fulfilled_at,
-            held[1].version_no,
-        ):
-            newest[f.request_item_id] = (f, version)
-    queued: dict[UUID, _Queued] = {}
-    for f, version in newest.values():
-        if version.id not in decided and version.id not in queued:
-            queued[version.id] = _Queued(version, f)
-    return list(queued.values())
 
 
 def _summary(v: EvidenceVersion) -> EvidenceVersionSummary:
@@ -440,7 +439,7 @@ def _summary(v: EvidenceVersion) -> EvidenceVersionSummary:
     )
 
 
-def _order(entry: QueueEntry) -> tuple[int, int, Decimal, datetime]:
+def _order(entry: QueueEntry) -> tuple[int, int, Decimal, datetime, UUID]:
     """Q3: proposals needing revision first, then lowest confidence (none last), then oldest."""
     p = entry.proposal
     return (
@@ -448,26 +447,42 @@ def _order(entry: QueueEntry) -> tuple[int, int, Decimal, datetime]:
         0 if p is not None else 1,
         p.confidence if p is not None else Decimal(1),
         entry.evidence_version.created_at,
+        entry.evidence_version.id,
     )
 
 
 async def review_queue(ctx: AuthContext, engagement_id: UUID) -> list[QueueEntry]:
+    """Per request item, its newest fulfilled version, if undecided (AC-1, AC-2). A version
+    fulfilling several items is listed once; deciding it moves all of them."""
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, "review.read", ref.resource())
-    queued = await _queue(ctx, engagement_id)
-    proposals = await _proposals[0](ctx, engagement_id) if _proposals is not None else {}
+    fulfilled = await fulfilled_versions(ctx, engagement_id)
     async with tenant_session(ctx.tenant) as session:
-        _, _, taken = await list_review_state(session, ctx, engagement_id)
+        versions, decided, taken = await list_review_state(session, ctx, engagement_id)
+    by_id = {v.id: v for v in versions}
+    newest: dict[UUID, FulfilledVersion] = {}
+    for f in fulfilled:  # newest fulfilment per item: latest time, then fulfilment id
+        held = newest.get(f.request_item_id)
+        if held is None or (f.fulfilled_at, f.fulfilment_id) > (
+            held.fulfilled_at,
+            held.fulfilment_id,
+        ):
+            newest[f.request_item_id] = f
+    queued: dict[UUID, FulfilledVersion] = {}
+    for f in newest.values():
+        if f.evidence_version_id in by_id and f.evidence_version_id not in decided:
+            queued.setdefault(f.evidence_version_id, f)
+    proposals = await _proposals[0](ctx, engagement_id) if _proposals and queued else {}
     entries = [
         QueueEntry(
-            _summary(q.version),
-            q.item.request_item_id,
-            q.item.description,
-            q.item.audit_area,
-            proposals.get(q.version.id),
-            taken.get(q.version.id),
+            _summary(by_id[version_id]),
+            f.request_item_id,
+            f.description,
+            f.audit_area,
+            proposals.get(version_id),
+            taken.get(version_id),
         )
-        for q in queued
+        for version_id, f in queued.items()
     ]
     return sorted(entries, key=_order)
 
@@ -482,11 +497,20 @@ async def reason_codes_for(
     return [ReasonCode(*row) for row in rows]
 
 
-async def _queued_version(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> _Queued:
-    for q in await _queue(ctx, engagement_id):
-        if q.version.id == version_id:
-            return q
-    raise NotFound("review_queue_entry")
+async def _reviewable(tx: UnitOfWork, engagement_id: UUID, version_id: UUID) -> list[ReviewTarget]:
+    """The version's items, locked, if it belongs to this engagement, is undecided, and is the
+    newest evidence of every item it fulfils; else `NotFound`, `AlreadyDecided` or `Superseded`."""
+    version = await get_version(tx.session, version_id)
+    if version is None or version.engagement_id != engagement_id:
+        raise NotFound("evidence_version")
+    targets = await review_targets(tx, version_id)
+    if not targets:
+        raise NotFound("review_queue_entry")
+    if await decision_for(tx.session, version_id) is not None:
+        raise AlreadyDecided
+    if not all(t.newest for t in targets):
+        raise Superseded
+    return targets
 
 
 async def take(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> None:
@@ -494,42 +518,41 @@ async def take(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> None:
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "review.take", ref.resource())
-        await _queued_version(ctx, engagement_id, version_id)
-        current = await assignment_for(tx.session, version_id)
-        if current is not None and current.assignee_user_id not in (None, ctx.user_id):
-            raise AlreadyTaken
-        await put_assignment(
+        await _reviewable(tx, engagement_id, version_id)
+        if not await take_assignment(
             tx.session,
             tenant_id=ctx.tenant_id,
             engagement_id=engagement_id,
             version_id=version_id,
-            assignee=ctx.user_id,
-            assigned_by=ctx.user_id,
-        )
+            me=ctx.user_id,
+        ):
+            raise AlreadyTaken
         tx.record("review.taken", target=Target("evidence_version", version_id))
     _log.info("review.taken", evidence_version_id=version_id)
 
 
 async def release(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> None:
-    """Release a taken version: its taker, or a partner or manager (`review.assign`)."""
+    """Release a taken version of this engagement: its taker, or a partner or manager
+    (`review.assign`)."""
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "review.take", ref.resource())
-        current = await assignment_for(tx.session, version_id)
+        current = await assignment_for(tx.session, engagement_id, version_id)
         if current is None or current.assignee_user_id is None:
             raise NotFound("review_assignment")
         if current.assignee_user_id != ctx.user_id:
             await authorise(ctx, "review.assign", ref.resource())
-        await clear_assignment(tx.session, version_id, ctx.user_id)
+        await clear_assignment(tx.session, engagement_id, version_id, ctx.user_id)
         tx.record("review.released", target=Target("evidence_version", version_id))
 
 
 async def assign(ctx: AuthContext, engagement_id: UUID, version_id: UUID, user_id: UUID) -> None:
-    """Give a queued version to a member of the engagement's team (`review.assign`)."""
+    """Give a queued version to a member of the engagement's team (`review.assign`). Whether they
+    may decide is checked when they decide (decisions table, TASK-019)."""
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "review.assign", ref.resource())
-        await _queued_version(ctx, engagement_id, version_id)
+        await _reviewable(tx, engagement_id, version_id)
         if user_id not in {m.user_id for m in await engagement_team(ctx, engagement_id)}:
             raise NotFound("engagement_member")
         await put_assignment(
@@ -565,33 +588,36 @@ async def decide(
     *,
     reason_code: str | None,
     note: str | None,
+    seen_proposal: UUID | None,
 ) -> DecisionView:
-    """A person's decision on a queued version (SPEC-004 AC-6 to AC-13). Only an `AuthContext`
-    can decide (ADR-005): agents and system runs can't call this, the matrix denies them, the
-    database refuses a non-human actor, and REVIEW-001 bans calls from agent and worker code."""
-    if not isinstance(ctx, AuthContext):  # pyright: ignore[reportUnnecessaryIsInstance] -- ADR-005 at runtime too
-        raise TypeError("only a person decides (ADR-005)")
-    if (decision == "accept") != (reason_code is None):
-        raise InvalidReason("reject and send back need a reason code; accept takes none")
-    if _proposals is None:
-        raise ServiceUnavailable("no proposal source registered")
+    """A person's decision on a queued version (SPEC-004 AC-6 to AC-13; ADR-005). Only a person,
+    in a request they are making themself, decides:
+    - only an `AuthContext`, and only while serving an API request (`serving_request`: workers,
+      agents and scripts never are, whatever context they hold);
+    - the matrix denies agents;
+    - the database binds the row to the session's actor and refuses any but a human;
+    - REVIEW-001 lets only the evidence routes reference `decide`.
+
+    `seen_proposal` is the screening result the reviewer was shown (None: none was): if the
+    agent's latest proposal differs, the decision is refused (`proposal_changed`), so a recorded
+    correction is always against what the person saw."""
+    if not isinstance(ctx, AuthContext) or not serving_request():  # pyright: ignore[reportUnnecessaryIsInstance] -- ADR-005 at runtime too
+        raise Forbidden(_DECISION_ACTION.get(decision, "evidence.accept"), "role")
     decision_id = uuid4()
     try:
         async with uow(ctx.tenant) as tx:
             ref = await lock_ref(tx, engagement_id)
             await authorise(ctx, _DECISION_ACTION[decision], ref.resource())
-            version = await get_version(tx.session, version_id)
-            if version is None or version.engagement_id != engagement_id:
-                raise NotFound("evidence_version")
-            if await decision_for(tx.session, version_id) is not None:
-                raise AlreadyDecided
-            queue = await _queue(ctx, engagement_id)
-            entry = next((q for q in queue if q.version.id == version_id), None)
-            if entry is None:
-                raise Superseded
-            proposal = await _proposals[1](ctx.tenant, version_id)
+            if (decision == "accept") != (reason_code is None):
+                raise InvalidReason
+            if _proposals is None:
+                raise ServiceUnavailable("no proposal source registered")
+            targets = await _reviewable(tx, engagement_id, version_id)
+            proposal = await _proposals[1](tx.session, version_id)
+            if (proposal.screening_result_id if proposal else None) != seen_proposal:
+                raise ProposalChanged
             corrects = _corrects(decision, proposal)
-            item_id = entry.item.request_item_id
+            item_ids = [t.request_item_id for t in targets]
             await insert_decision(
                 tx.session,
                 values={
@@ -599,50 +625,42 @@ async def decide(
                     "tenant_id": ctx.tenant_id,
                     "engagement_id": engagement_id,
                     "evidence_version_id": version_id,
-                    "request_item_id": item_id,
+                    "request_item_id": item_ids[0],
                     "decision": decision,
                     "reason_code": reason_code,
                     "note": note,
                     "screening_result_id": proposal.screening_result_id if proposal else None,
                     "corrects_proposal": corrects,
-                    "actor_kind": "human",
-                    "actor_id": str(ctx.user_id),
+                    # The session's actor: the database checks the row against it (0015).
+                    "actor_kind": ctx.tenant.actor_kind,
+                    "actor_id": ctx.tenant.actor_id,
                 },
             )
-            if decision == "accept":
-                to = "accepted"
-            elif decision == "send_back":
-                to = "needs_revision"
-            else:  # reject: back to waiting for evidence (Q2)
-                others = await fulfilled_versions(ctx, engagement_id)
-                pending = {
-                    f.evidence_version_id
-                    for f in others
-                    if f.request_item_id == item_id and f.evidence_version_id != version_id
-                }
-                undecided = [v for v in pending if await decision_for(tx.session, v) is None]
-                to = "received" if undecided else "open"
-            await move_after_review(tx, item_id, to)
-            if await assignment_for(tx.session, version_id) is not None:
-                await clear_assignment(tx.session, version_id, ctx.user_id)
-            refs = Ref(evidence_version_id=version_id, request_item_id=item_id)
-            if proposal is not None:
-                refs = Ref(
+            to = _ITEM_AFTER[decision]
+            for item_id in item_ids:
+                await move_after_review(tx, item_id, to)
+            if await assignment_for(tx.session, engagement_id, version_id) is not None:
+                await clear_assignment(tx.session, engagement_id, version_id, ctx.user_id)
+            refs = (
+                Ref(
                     evidence_version_id=version_id,
-                    request_item_id=item_id,
                     screening_result_id=proposal.screening_result_id,
                 )
+                if proposal is not None
+                else Ref(evidence_version_id=version_id)
+            )
             tx.record(
                 "review_decision.created",
                 target=Target("review_decision", decision_id),
                 after=refs,
             )
     except IntegrityError as exc:
-        state = getattr(exc.orig, "sqlstate", None)
-        if state == _UNIQUE_VIOLATION:
+        constraint = getattr(exc.orig, "constraint_name", None)
+        if constraint == _ONE_DECISION:
             raise AlreadyDecided from None
-        if state == _CHECK_VIOLATION:
-            raise InvalidReason("unknown or retired reason code, or a note is required") from None
+        state = getattr(exc.orig, "sqlstate", None)
+        if state == _CHECK_VIOLATION and constraint is None:  # the reason-code trigger
+            raise InvalidReason from None
         raise
     _decisions.add(
         1,
@@ -658,4 +676,4 @@ async def decide(
         reason_code=reason_code,
         corrects_proposal=corrects,
     )
-    return DecisionView(decision_id, version_id, item_id, decision, reason_code, corrects, to)
+    return DecisionView(decision_id, version_id, item_ids, decision, reason_code, corrects, to)
