@@ -518,6 +518,8 @@ def test_ac20_downgrading_0012_is_refused_while_walls_exist(private_db: sc.Datab
         return wall_id, firm.admin.user_id, firm.tenant_id
 
     wall_id, admin_id, _tenant = asyncio.run(setup())
+    # TASK-018b: head is 0013 now; step down to 0012 first (0013 holds no walls).
+    migrate(private_db.owner_url, "0012", down=True)
     assert _revision(private_db) == "0012"
     with pytest.raises(DBAPIError, match="refusing to downgrade"):
         migrate(private_db.owner_url, "0011", down=True)
@@ -550,5 +552,5 @@ def test_ac20_downgrading_0012_with_no_walls_drops_the_table_and_upgrading_resto
         == 0
     )
     migrate(private_db.owner_url, "head")
-    assert _revision(private_db) == "0012"
+    assert _revision(private_db) == "0013"  # head, after TASK-018b
     assert asyncio.run(seed.value("SELECT to_regclass('public.ethical_walls')")) is not None

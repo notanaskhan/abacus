@@ -1085,9 +1085,11 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"status", "raw_storage_key", "raw_version_id", "raw_fingerprint", "raw_size_bytes"}
             | {"raw_pulled_at", "source", "snapshot_id", "evidence_version_id"}
             | {"failure_code", "finished_at"}
+            | {"queued_reason", "estimated_start_at"}  # TASK-018b
         ),
         "agent_runs": frozenset(
             {"status", "context_hash", "output", "failure_code", "finished_at"}
+            | {"queued_reason", "estimated_start_at"}  # TASK-018b
         ),
         "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),  # TASK-016
     } == sc.APP_UPDATE_COLUMNS
@@ -1411,3 +1413,142 @@ def test_ac20_an_insert_grant_on_connections_is_reported(ledger: sc.Database) ->
         assert problems
     finally:
         _sql(ledger.superuser_dsn, "REVOKE INSERT (provider) ON connections FROM abacus_app")
+
+
+# --- SECURITY DEFINER functions (TASK-018 018b, contract revision 1) -----------------------------
+
+PINNED = "SET search_path = pg_catalog, public, pg_temp"
+RENEW = "work_slot_renew(p_holder text, p_lease integer)"
+RENEW_SIGNATURE = "work_slot_renew(text, integer)"
+
+
+def _definer(*, config: str = PINNED, execute_public: bool = False, app: bool = True) -> list[str]:
+    statements = [
+        f"CREATE FUNCTION {RENEW} RETURNS boolean LANGUAGE sql SECURITY DEFINER {config} "
+        "AS $$ SELECT true $$"
+    ]
+    statements.append(
+        f"{'GRANT EXECUTE' if execute_public else 'REVOKE ALL'} ON FUNCTION {RENEW_SIGNATURE} "
+        f"{'TO' if execute_public else 'FROM'} PUBLIC"
+    )
+    if app:
+        statements.append(f"GRANT EXECUTE ON FUNCTION {RENEW_SIGNATURE} TO abacus_app")
+    return statements
+
+
+@pytest.fixture
+def definer_db(db: Cluster) -> Iterator[Cluster]:
+    yield db
+    _sql(
+        db.admin,
+        f"DROP FUNCTION IF EXISTS {RENEW_SIGNATURE}",
+        "DROP FUNCTION IF EXISTS rogue_definer()",
+        "DROP FUNCTION IF EXISTS rogue_invoker()",
+    )
+
+
+def _definer_problems(db: Cluster) -> list[str]:
+    return [m for m in sc.check(db.owner_url, db.app_url) if "work_slot_" in m or "rogue" in m]
+
+
+def test_ac20_a_reviewed_definer_function_that_is_pinned_and_app_only_passes(
+    definer_db: Cluster,
+) -> None:
+    _sql(definer_db.owner_url, *_definer())
+    assert _definer_problems(definer_db) == []
+
+
+def test_ac20_a_security_definer_function_that_is_not_listed_is_reported(
+    definer_db: Cluster,
+) -> None:
+    _sql(
+        definer_db.owner_url,
+        "CREATE FUNCTION rogue_definer() RETURNS int LANGUAGE sql SECURITY DEFINER "
+        f"{PINNED} AS $$ SELECT 1 $$",
+        "REVOKE ALL ON FUNCTION rogue_definer() FROM PUBLIC",
+        "GRANT EXECUTE ON FUNCTION rogue_definer() TO abacus_app",
+    )
+    problems = _definer_problems(definer_db)
+    assert len(problems) == 1
+    assert problems[0].startswith("rogue_definer")
+    assert "SECURITY DEFINER function not reviewed" in problems[0]
+
+
+def test_ac20_a_security_invoker_function_is_not_a_definer_and_is_not_reported(
+    definer_db: Cluster,
+) -> None:
+    _sql(
+        definer_db.owner_url,
+        "CREATE FUNCTION rogue_invoker() RETURNS int LANGUAGE sql AS $$ SELECT 1 $$",
+    )
+    assert _definer_problems(definer_db) == []
+
+
+def test_ac20_a_listed_definer_function_without_a_pinned_search_path_is_reported(
+    definer_db: Cluster,
+) -> None:
+    _sql(definer_db.owner_url, *_definer(config=""))
+    [problem] = _definer_problems(definer_db)
+    assert "search_path" in problem
+    assert problem.startswith("work_slot_renew")
+
+
+@pytest.mark.parametrize(
+    "config",
+    [
+        "SET search_path = pg_catalog, public",  # pg_temp not last: a temp object can shadow
+        "SET search_path = public, pg_catalog, pg_temp",
+        "SET search_path = pg_temp, pg_catalog, public",
+        "SET search_path = public",
+    ],
+)
+def test_ac20_a_search_path_other_than_the_pinned_one_is_reported(
+    definer_db: Cluster, config: str
+) -> None:
+    _sql(definer_db.owner_url, *_definer(config=config))
+    problems = _definer_problems(definer_db)
+    assert any("search_path" in m for m in problems), problems
+
+
+def test_ac20_a_listed_definer_function_that_public_can_execute_is_reported(
+    definer_db: Cluster,
+) -> None:
+    _sql(definer_db.owner_url, *_definer(execute_public=True))
+    problems = _definer_problems(definer_db)
+    assert any("PUBLIC can execute" in m for m in problems), problems
+
+
+def test_ac20_a_listed_definer_function_the_app_cannot_execute_is_reported(
+    definer_db: Cluster,
+) -> None:
+    _sql(definer_db.owner_url, *_definer(app=False))
+    problems = _definer_problems(definer_db)
+    assert any("abacus_app can't execute" in m for m in problems), problems
+
+
+@pytest.mark.parametrize("role", ["abacus_relay", "abacus_identity"])
+def test_ac20_a_bypass_role_that_can_execute_a_definer_function_is_reported(
+    definer_db: Cluster, role: str
+) -> None:
+    _sql(definer_db.owner_url, *_definer())
+    _sql(definer_db.admin, f"GRANT EXECUTE ON FUNCTION {RENEW_SIGNATURE} TO {role}")
+    problems = _definer_problems(definer_db)
+    assert any(f"{role} can execute it" in m for m in problems), problems
+
+
+def test_ac20_a_listed_definer_function_owned_by_someone_else_is_reported(
+    definer_db: Cluster,
+) -> None:
+    _sql(definer_db.owner_url, *_definer())
+    _sql(definer_db.admin, f"ALTER FUNCTION {RENEW_SIGNATURE} OWNER TO postgres")
+    problems = _definer_problems(definer_db)
+    assert any("owned by postgres, not abacus_owner" in m for m in problems), problems
+
+
+def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
+    migrated_db: Migrated,
+) -> None:
+    assert frozenset({"work_slot_acquire", "work_slot_release", "work_slot_renew"}) == (
+        sc.DEFINER_FUNCTIONS
+    )
+    assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []

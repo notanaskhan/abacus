@@ -459,6 +459,8 @@ def test_ac20_the_app_may_update_only_the_declared_connection_and_run_columns() 
             "evidence_version_id",
             "failure_code",
             "finished_at",
+            "queued_reason",  # TASK-018b
+            "estimated_start_at",
         }
     )
 

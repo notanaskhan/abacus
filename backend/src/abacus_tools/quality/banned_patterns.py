@@ -1146,6 +1146,8 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/kernel/slots.py",
             "tests/integration/test_tenancy.py",
             "tests/integration/test_uow_session_rollback.py",
+            # Calls the slot ledger's functions as the app, one committed call at a time.
+            "tests/integration/agent_tests/test_work_slots_db.py",
         ),
     ),
     Rule(
@@ -1174,6 +1176,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_retrieval_workflow.py",
             "tests/integration/test_retrieval_api.py",
             "tests/integration/agent_tests/support.py",
+            "tests/integration/agent_tests/test_work_slots_db.py",  # the ledger, as the app
             "tests/integration/test_seed_dev.py",
             # Records replay fixtures against throwaway containers (seeds as the superuser).
             "src/abacus_tools/workflows/record_retrieval.py",
@@ -1264,6 +1267,7 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus_tools/quality/banned_patterns.py",
             "tests/integration/test_tenancy.py",
             "tests/integration/test_schema_check_db.py",
+            "tests/integration/agent_tests/test_work_slots_db.py",  # calls the ledger functions
             "tests/unit/kernel/test_migration_helpers.py",
             "tests/unit/quality/test_banned_patterns.py",
         ),

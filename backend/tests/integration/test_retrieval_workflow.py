@@ -13,6 +13,7 @@ import asyncio
 import base64
 import hashlib
 import json
+import re
 import uuid
 from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import AsyncExitStack, asynccontextmanager
@@ -706,21 +707,68 @@ async def test_ac11_an_outage_that_exhausts_the_retries_maps_to_provider_unavail
 # --- every payload is encrypted at rest (ADR-017) ------------------------------------------------
 
 
-def _encodings(node: object) -> list[str]:
+PATCH_ID = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
+CORE_PATCH = "core_patch"
+CHANGE_VERSION = "TemporalChangeVersion"
+
+
+def _decoded(payload: Json) -> object:
+    metadata = cast(dict[str, str], payload.get("metadata", {}))
+    assert base64.b64decode(metadata.get("encoding", "")).decode() == "json/plain"
+    return json.loads(base64.b64decode(cast(str, payload["data"])))
+
+
+def _encodings(node: object, plain: list[object]) -> list[str]:
+    """Every payload's encoding. The only payloads allowed in the clear are Temporal's own
+    `core_patch` marker details and `TemporalChangeVersion` search attribute (TASK-018b, SPEC-003:
+    `workflow.patched` writes them as plain JSON); they are returned decoded in `plain`."""
     found: list[str] = []
     if isinstance(node, dict):
         mapping = cast(Json, node)
+        if mapping.get("markerName") == CORE_PATCH:
+            for entry in cast(Json, mapping.get("details", {})).values():
+                for payload in cast(list[Json], cast(Json, entry).get("payloads", [])):
+                    plain.append(_decoded(payload))
+            return found
+        indexed = mapping.get("indexedFields")
+        if isinstance(indexed, dict):
+            fields = cast(Json, indexed)
+            versions = fields.pop(CHANGE_VERSION, None)
+            if versions is not None:
+                plain.append(_decoded(cast(Json, versions)))
+            assert not fields, f"unexpected search attributes in the history: {sorted(fields)}"
+            return found
         payloads = mapping.get("payloads")
         if isinstance(payloads, list):
             for payload in cast(list[Json], payloads):
                 metadata = cast(dict[str, str], payload.get("metadata", {}))
                 found.append(base64.b64decode(metadata.get("encoding", "")).decode())
         for value in mapping.values():
-            found.extend(_encodings(value))
+            found.extend(_encodings(value, plain))
     elif isinstance(node, list):
         for item in cast(list[object], node):
-            found.extend(_encodings(item))
+            found.extend(_encodings(item, plain))
     return found
+
+
+def _patch_ids(plain: list[object]) -> set[str]:
+    """The patch IDs in the plain-JSON payloads, asserting they hold nothing else."""
+    ids: set[str] = set()
+    for value in plain:
+        if isinstance(value, dict):  # the marker: {"id": ..., "deprecated": ...}
+            marker = cast(Json, value)
+            assert set(marker) <= {"id", "deprecated"}, marker
+            assert isinstance(marker["id"], str)
+            assert isinstance(marker.get("deprecated", False), bool)
+            ids.add(marker["id"])
+        else:  # the search attribute: a list of patch IDs
+            assert isinstance(value, list), value
+            for item in cast(list[object], value):
+                assert isinstance(item, str)
+                ids.add(item)
+    for patch in ids:
+        assert PATCH_ID.match(patch), patch
+    return ids
 
 
 @pytest.mark.usefixtures("worker")
@@ -737,9 +785,14 @@ async def test_ac20_every_input_and_result_in_the_history_is_encrypted(
     await handle.result()
     history = await handle.fetch_history()
     text = history.to_json()
-    encodings = _encodings(json.loads(text))
-    assert len(encodings) >= 11  # the workflow's and each of five stages' input and result
+    plain: list[object] = []
+    encodings = _encodings(json.loads(text), plain)
+    # the workflow's and each of seven activities' input and result (five stages and two slots)
+    assert len(encodings) >= 11
     assert set(encodings) == {ENCODING.decode()}
+    # Temporal's own patch marker and search attribute are plain JSON and hold only patch IDs
+    assert len(plain) == 2  # exactly the marker and the search attribute
+    assert "work-slots" in _patch_ids(plain)
     # identifiers never appear in the clear
     assert str(world.tenant_id) not in text
     assert str(run_id) not in text
@@ -784,8 +837,10 @@ async def _call[T](function: Callable[[T], Awaitable[object]], argument: T) -> o
     return await ActivityEnvironment().run(function, argument)
 
 
-def test_ac20_there_are_six_activities_one_per_stage_plus_fail_run() -> None:
-    assert len(ACTIVITIES) == 6
+def test_ac20_there_are_eight_activities_the_six_plus_the_two_slot_ones() -> None:
+    assert len(ACTIVITIES) == 8  # TASK-018b: acquire_slot and release_slot join the six
+    names = {a.__name__ for a in ACTIVITIES}
+    assert {"acquire_slot_activity", "release_slot_activity"} <= names
 
 
 @pytest.mark.parametrize("name", STAGE_NAMES)
