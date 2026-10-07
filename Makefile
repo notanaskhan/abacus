@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: setup dev seed e2e check-fast check test test-integration evals generate migrate loadtest seed-staging
+.PHONY: setup dev seed e2e check-fast check ci-unit ci-integration ci-coverage ci-contracts test test-integration evals generate migrate loadtest seed-staging
 
 setup:
 	cd backend && uv sync --locked
@@ -47,8 +47,34 @@ check-fast:
 	pnpm -C packages/ui exec tsc --noEmit && pnpm -C packages/ui exec eslint . && pnpm -C packages/ui exec prettier --check .
 
 check: check-fast
-	cd backend && uv run pytest tests/unit tests/property --cov --cov-fail-under=0
-	cd backend && uv run pytest tests/integration tests/security tests/workflows --cov --cov-append
+	cd backend && uv run pytest $(UNIT_TESTS) --cov --cov-fail-under=0
+	cd backend && uv run pytest $(INTEGRATION_TESTS) --cov --cov-append
+	$(MAKE) ci-contracts
+
+# CI stage 2 runs `check` as parallel jobs (TASK-017). Each suite is split into SHARDS by recorded
+# run time (abacus_tools.ci.shard; every test file runs in exactly one shard), each shard keeps
+# its own coverage data, and ci-coverage combines them and applies the floor. Refresh the timings
+# after large test changes: pytest --junitxml=junit.xml, then
+# python -m abacus_tools.ci.shard --record junit.xml
+UNIT_TESTS = tests/unit tests/property
+INTEGRATION_TESTS = tests/integration tests/security tests/workflows
+SHARD ?= 1
+SHARDS ?= 1
+
+ci-unit:
+	cd backend && files="$$(uv run python -m abacus_tools.ci.shard $(SHARD) $(SHARDS) $(UNIT_TESTS))" && \
+		test -n "$$files" && COVERAGE_FILE=.coverage.unit-$(SHARD) \
+		uv run pytest --cov --cov-report= --cov-fail-under=0 $$files
+
+ci-integration:
+	cd backend && files="$$(uv run python -m abacus_tools.ci.shard $(SHARD) $(SHARDS) $(INTEGRATION_TESTS))" && \
+		test -n "$$files" && COVERAGE_FILE=.coverage.integration-$(SHARD) \
+		uv run pytest --cov --cov-report= --cov-fail-under=0 $$files
+
+ci-coverage:
+	cd backend && uv run coverage combine && uv run coverage report
+
+ci-contracts:
 	cd backend && uv run python -m abacus_tools.quality.schema_check
 	@if [ -f backend/src/abacus/api/export_openapi.py ]; then \
 		$(MAKE) generate && git diff --exit-code packages/api-client && \

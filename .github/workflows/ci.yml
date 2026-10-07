@@ -30,12 +30,18 @@ jobs:
       - run: make setup
       - run: make check-fast
 
-  stage-2:
-    name: stages 1 and 2 (make check)
+  # Stage 2 is `make check` split into parallel jobs (TASK-017): the suites run in shards balanced
+  # by recorded run time (every test file in exactly one shard), and the coverage floor applies to
+  # the combined data. Stage 1 is the job above, so it isn't repeated here.
+  unit:
+    name: stage 2 unit tests (${{ matrix.shard }}/2)
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
-    # The integration suite (Postgres, S3 and Temporal containers) outgrew 20 minutes.
-    timeout-minutes: 40
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -46,4 +52,93 @@ jobs:
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
       - run: corepack enable
       - run: make setup
-      - run: make check
+      - run: make ci-unit SHARD=${{ matrix.shard }} SHARDS=2
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-unit-${{ matrix.shard }}
+          path: backend/.coverage.unit-${{ matrix.shard }}
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  integration:
+    name: stage 2 integration tests (${{ matrix.shard }}/5)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - run: corepack enable
+      - run: make setup
+      - run: make ci-integration SHARD=${{ matrix.shard }} SHARDS=5
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-integration-${{ matrix.shard }}
+          path: backend/.coverage.integration-${{ matrix.shard }}
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  contracts:
+    name: stage 2 schema, api-client and frontend tests
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - run: corepack enable
+      - run: make setup
+      - run: make ci-contracts
+
+  coverage:
+    name: stage 2 coverage floor
+    needs: [unit, integration]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - run: corepack enable
+      - run: make setup
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: coverage-*
+          path: backend
+          merge-multiple: true
+      - run: make ci-coverage
+
+  # One stable check for branch protection: green only when every stage 2 job passed.
+  stage-2:
+    name: stages 1 and 2 (make check)
+    if: always() && github.event_name == 'pull_request'
+    needs: [stage-1, unit, integration, contracts, coverage]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: every stage 1 and 2 job passed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "$RESULTS"
+          for result in $RESULTS; do [ "$result" = success ] || exit 1; done
