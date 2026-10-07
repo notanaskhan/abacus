@@ -17,11 +17,14 @@ from uuid import UUID
 from temporalio import activity
 from temporalio.exceptions import ApplicationError
 
+from abacus.kernel import slots
+from abacus.kernel.config import settings
 from abacus.kernel.errors import NotFound
 from abacus.modules.connections.pipeline import (
     RunFailed,
     fail_run,
     is_retryable,
+    mark_queued,
     normalise_raw,
     pull_raw,
     render,
@@ -41,6 +44,7 @@ from abacus.modules.connections.workflow_types import (
     FailInput,
     RetrievalInput,
     RetrievalOutcome,
+    SlotGrant,
 )
 from abacus.modules.identity.api import SystemContext
 
@@ -78,10 +82,45 @@ async def _stage[T](
     system = await _system(input)
     if system is None:
         return None
+    if slots.current_class() is not None:
+        await slots.renew(system.tenant, slots.current_holder())  # the slot outlives each stage
     try:
         return await stage(system)
     except Exception as exc:
         raise _as_application_error(exc, retryable=is_retryable(exc)) from None
+
+
+@activity.defn(name="retrieval.acquire_slot")
+async def acquire_slot_activity(input: RetrievalInput) -> SlotGrant:
+    """Ask for the run's work slot (SPEC-003): granted, or the run is marked queued with its
+    reason and estimate. A run already finished, or on the legacy queue, needs none."""
+    system = await _system(input)
+    work_class = slots.current_class()
+    if system is None or work_class is None:
+        return SlotGrant(True, 0)
+    try:
+        decision = await slots.acquire(
+            system.tenant, slots.current_holder(), system.engagement_id, work_class
+        )
+        await mark_queued(
+            system,
+            None if decision.granted else decision.reason,
+            None if decision.granted else decision.estimated_start_at,
+        )
+    except Exception as exc:
+        raise _as_application_error(exc, retryable=True) from None
+    return SlotGrant(decision.granted, settings().work_classes[work_class].max_wait_seconds)
+
+
+@activity.defn(name="retrieval.release_slot")
+async def release_slot_activity(input: RetrievalInput) -> None:
+    """Free the run's slot (idempotent; also when the run has ended)."""
+    if slots.current_class() is None:
+        return
+    try:
+        await slots.release(UUID(input.tenant_id), slots.current_holder())
+    except Exception as exc:
+        raise _as_application_error(exc, retryable=True) from None
 
 
 @activity.defn(name="retrieval.pull_raw")
@@ -133,6 +172,8 @@ async def fail_run_activity(input: FailInput) -> RetrievalOutcome:
 
 
 ACTIVITIES = (
+    acquire_slot_activity,
+    release_slot_activity,
     pull_raw_activity,
     normalise_raw_activity,
     validate_run_activity,

@@ -47,6 +47,9 @@ class SyncRun(Base):
     snapshot_id: Mapped[UUID | None]
     evidence_version_id: Mapped[UUID | None]
     failure_code: Mapped[str | None]
+    # Waiting for a work slot (SPEC-003 AC-13): the run is still `running`, reported as queued.
+    queued_reason: Mapped[str | None]
+    estimated_start_at: Mapped[datetime | None]
     started_by: Mapped[str]
     started_at: Mapped[datetime]
     finished_at: Mapped[datetime | None]

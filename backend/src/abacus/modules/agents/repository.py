@@ -72,6 +72,17 @@ async def lock_run(session: AsyncSession, run_id: UUID) -> AgentRun | None:
     ).scalar_one_or_none()
 
 
+async def set_queued(
+    session: AsyncSession, run_id: UUID, reason: str | None, estimated_start_at: datetime | None
+) -> None:
+    """Mark a running run as waiting for a work slot (`reason`), or running again (None)."""
+    await session.execute(
+        update(AgentRun)
+        .where(AgentRun.id == run_id, AgentRun.status == "running")
+        .values(queued_reason=reason, estimated_start_at=estimated_start_at)
+    )
+
+
 async def finish_run(
     session: AsyncSession,
     run_id: UUID,

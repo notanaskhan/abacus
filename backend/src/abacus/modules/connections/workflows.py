@@ -22,6 +22,7 @@ from temporalio.exceptions import ActivityError, ApplicationError, is_cancelled_
 with workflow.unsafe.imports_passed_through():
     from abacus.modules.connections.workflow_types import (
         CANCELLED,
+        CAPACITY_TIMEOUT,
         FORBIDDEN,
         FORBIDDEN_ERROR,
         INTERNAL_ERROR,
@@ -31,6 +32,7 @@ with workflow.unsafe.imports_passed_through():
         FailInput,
         RetrievalInput,
         RetrievalOutcome,
+        SlotGrant,
     )
 
 _TIMEOUT = timedelta(minutes=5)
@@ -53,7 +55,11 @@ _FAIL_RETRY = RetryPolicy(
 class RetrievalWorkflow:
     @workflow.run
     async def run(self, input: RetrievalInput) -> RetrievalOutcome:
+        # SPEC-003: hold a work slot of the run's class for the whole run (TASK-018 design §4).
+        slotted = workflow.patched("work-slots")
         try:
+            if slotted and not await wait_for_slot("retrieval.acquire_slot", input):
+                return await _fail(input, "failed", CAPACITY_TIMEOUT)
             await workflow.execute_activity(
                 "retrieval.pull_raw", input, start_to_close_timeout=_TIMEOUT, retry_policy=_RETRY
             )
@@ -90,6 +96,14 @@ class RetrievalWorkflow:
         except asyncio.CancelledError:
             await _fail(input, "failed", CANCELLED)
             raise
+        finally:
+            if slotted:
+                await workflow.execute_activity(
+                    "retrieval.release_slot",
+                    input,
+                    start_to_close_timeout=_TIMEOUT,
+                    retry_policy=_FAIL_RETRY,
+                )
         return RetrievalOutcome("succeeded", None, version_id)
 
 
@@ -114,3 +128,28 @@ def _failure(err: ActivityError) -> tuple[str, str]:
         if cause.type == FORBIDDEN_ERROR and workflow.patched("retrieval-forbidden-code"):
             return "failed", FORBIDDEN
     return "failed", INTERNAL_ERROR
+
+
+async def wait_for_slot(activity: str, arg: object) -> bool:
+    """SPEC-003 (TASK-018 design §4, D2): ask `activity` for the run's work slot until granted
+    (True), or until the class's maximum wait has passed (False). Between asks the workflow
+    sleeps on a durable timer with jittered backoff, so waiting holds no worker slot and survives
+    deploys; the backoff grows with the maximum wait, so a day-long wait stays a few hundred
+    activities in the history. The same loop is in the other module's workflows (ADR-017 keeps
+    workflows from sharing code outside their module)."""
+    started = workflow.now()
+    delay = 1.0
+    while True:
+        grant = await workflow.execute_activity(
+            activity,
+            arg,
+            result_type=SlotGrant,
+            start_to_close_timeout=_TIMEOUT,
+            retry_policy=_RETRY,
+        )
+        if grant.granted:
+            return True
+        if (workflow.now() - started).total_seconds() >= grant.max_wait_seconds:
+            return False
+        await workflow.sleep(timedelta(seconds=delay * (0.5 + workflow.random().random())))
+        delay = min(delay * 2, max(10.0, grant.max_wait_seconds / 300))

@@ -139,6 +139,17 @@ async def set_evidence(session: AsyncSession, run_id: UUID, evidence_version_id:
     )
 
 
+async def set_queued(
+    session: AsyncSession, run_id: UUID, reason: str | None, estimated_start_at: datetime | None
+) -> None:
+    """Mark a running run as waiting for a work slot (`reason`), or running again (None)."""
+    await session.execute(
+        update(SyncRun)
+        .where(SyncRun.id == run_id, SyncRun.status == "running")
+        .values(queued_reason=reason, estimated_start_at=estimated_start_at)
+    )
+
+
 async def finish(
     session: AsyncSession, run_id: UUID, *, status: str, failure_code: str | None = None
 ) -> bool:
