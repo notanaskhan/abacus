@@ -22,7 +22,8 @@ backend/src/abacus/modules/<name>/
 
 ## Rules
 - Every route declares one action from the permission matrix and depends on the auth context (ADR-012, 027).
-- Every list query applies `visible(ctx, Model)` (ADR-027).
+- Every list query applies `visible(ctx, Model)` (ADR-027); it also applies ethical walls (ADR-026).
+- Engagement resources come from `EngagementRef.resource()` only: it carries the client the wall check needs.
 - State changes: `with uow(ctx) as tx:` → change → `tx.record(...)` → `tx.emit(...)` (ADR-018).
 - New tables: `tenant_id NOT NULL`, row-level security policy, classification on every column (ADR-014, 031).
 - Use glossary names for tables, classes and routes.
