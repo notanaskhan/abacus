@@ -630,6 +630,19 @@
       },
       "RetrievalOut": {
         "properties": {
+          "estimated_start_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Estimated Start At"
+          },
           "evidence_version_id": {
             "anyOf": [
               {
@@ -668,6 +681,18 @@
             "cls": "internal",
             "title": "Finished At"
           },
+          "queued_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Queued Reason"
+          },
           "request_item_id": {
             "cls": "internal",
             "format": "uuid",
@@ -686,7 +711,8 @@
               "running",
               "succeeded",
               "failed_validation",
-              "failed"
+              "failed",
+              "queued"
             ],
             "title": "Status",
             "type": "string"
@@ -705,7 +731,9 @@
           "failure_code",
           "evidence_version_id",
           "started_at",
-          "finished_at"
+          "finished_at",
+          "queued_reason",
+          "estimated_start_at"
         ],
         "title": "RetrievalOut",
         "type": "object"
