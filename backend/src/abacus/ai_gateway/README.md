@@ -79,6 +79,15 @@ The attempt then moves to the next usable route. When none is left, the call wai
 - usage records and spans carry the route;
 - `embedding_provider = bedrock-titan` switches embeddings to Titan v2 on Bedrock.
 
+## Prompt rollouts (SPEC-011; TASK-026)
+A variant flag named `prompt.<agent_id>` (in `docs/architecture/feature-flags.yaml`) may switch one firm to another prompt version.
+
+**When the flag is honoured:**
+- the prompt must be registered;
+- outside synthetic environments, the agent must have passed its evaluation for that prompt version on its first usable route. `EVAL_SUITES` keys on the agent's own prompt, so a variant counts as eligible only after the suite is regenerated for it.
+
+**When it isn't:** the call keeps its spec's prompt, and `flag.variant_rejected` is logged and counted. Evaluation runs ignore the flag.
+
 ## Rules
 - **No provider endpoints or SDKs outside this package** (PROVIDER-001).
 - **No inline prompts** (PROMPT-001). Outside this package, nothing builds a `ModelRequest`, writes the instructions layer from a literal, or names a prompt that isn't `id@vN`.

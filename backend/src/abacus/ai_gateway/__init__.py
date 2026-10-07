@@ -78,8 +78,10 @@ from abacus.ai_gateway.providers import (
 )
 from abacus.ai_gateway.routes import configure_route, model_id, route_enabled, route_provider
 from abacus.ai_gateway.sanitise import sanitise_text
+from abacus.kernel._flags import FLAGS
 from abacus.kernel.config import SYNTHETIC_ENVIRONMENTS, Route, settings
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.flags import flag_variant
 from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import meter
 from abacus.kernel.telemetry import tracer
@@ -96,6 +98,9 @@ MODELS: dict[Tier, tuple[str, Decimal, Decimal]] = {
 _MILLION = Decimal(1_000_000)
 _log = get_logger(__name__)
 _tracer = tracer(__name__)
+_variants_rejected = meter(__name__).create_counter(
+    "abacus.flags.variant_rejected", description="Prompt-variant flags not honoured, by reason"
+)
 _failovers = meter(__name__).create_counter(
     "abacus.ai.failovers", description="Attempts handed to the next route, by route and reason"
 )
@@ -389,10 +394,41 @@ async def _spent_by_run(attribution: Attribution) -> Decimal:
     return Decimal(str(total))
 
 
+async def _prompt_for[T: BaseModel](c: GatewayCall[T], found: Prompt) -> Prompt:
+    """A prompt-variant flag (`prompt.<agent_id>`, SPEC-011 AC-7, AC-8) may switch this firm to
+    another registered prompt version; outside synthetic environments only one eligible on the
+    agent's first usable route. Anything else keeps the call's prompt. Evaluation runs measure
+    the prompt they were given and ignore the flag."""
+    declared = FLAGS.get(f"prompt.{c.attribution.agent_id}")
+    if declared is None or _evaluation_tier.get() is not None:
+        return found
+    chosen = await flag_variant(c.attribution.tenant, declared)
+    if chosen == found.ref:
+        return found
+    try:
+        variant = prompt(chosen)
+    except UnknownPrompt:
+        return _variant_rejected(c, "unregistered", found)
+    if settings().environment not in SYNTHETIC_ENVIRONMENTS:
+        routes = _candidate_routes(cast(GatewayCall[BaseModel], c), frozenset())
+        model = model_id(c.tier, routes[0]) if routes else None
+        if model is None or not await eligible(
+            c.attribution.tenant, c.attribution.agent_id, routes[0], c.tier, model, variant.ref
+        ):
+            return _variant_rejected(c, "ineligible", found)
+    return variant
+
+
+def _variant_rejected[T: BaseModel](c: GatewayCall[T], reason: str, found: Prompt) -> Prompt:
+    _variants_rejected.add(1, {"agent_id": c.attribution.agent_id, "reason": reason})
+    _log.warning("flag.variant_rejected", agent_id=c.attribution.agent_id, reason=reason)
+    return found
+
+
 async def call[T: BaseModel](c: GatewayCall[T]) -> GatewayResult[T]:
     """One `ai.call` span per call (ADR-019, ADR-022): identifiers and outcome only, never the
     prompt, context or output. Each attempt is an `ai.attempt` event on it."""
-    found = _check(c)
+    found = await _prompt_for(c, _check(c))
     # No purpose text or inputs hash on the span (free text; a hash of client context): those stay
     # in the usage record. Exceptions are recorded by class name only.
     with _tracer.start_as_current_span(
