@@ -19,9 +19,11 @@ from abacus.modules.requests.repository import (
     insert_fulfilment,
     insert_request_item,
     items_fulfilled_by,
+    list_fulfilled_versions,
     list_request_items,
     mark_received,
     request_list_for,
+    set_status,
 )
 
 
@@ -138,7 +140,7 @@ async def fulfil_by_rule(
     item = await item_ref(tx, request_item_id)
     ref = await lock_ref(tx, item.engagement_id)
     await authorise(ctx, "fulfilment.propose", ref.resource())
-    if item.status not in ("open", "received"):
+    if item.status not in ("open", "received", "needs_revision"):
         raise ItemNotFulfillable(item.status)
     fulfilment_id = await insert_fulfilment(
         tx.session,
@@ -163,6 +165,47 @@ async def fulfil_by_rule(
             after=Ref(evidence_version_id=evidence_version_id),
         )
     return FulfilmentRef(fulfilment_id, received)
+
+
+@dataclass(frozen=True)
+class FulfilledVersion:
+    """One evidence version fulfilling one request item (for the review queue, SPEC-004)."""
+
+    request_item_id: UUID
+    description: str
+    audit_area: str
+    item_status: str
+    evidence_version_id: UUID
+    fulfilled_at: datetime
+
+
+async def fulfilled_versions(ctx: AuthContext, engagement_id: UUID) -> list[FulfilledVersion]:
+    """The engagement's fulfilled versions the actor may review, `visible()`-filtered. The caller
+    has authorised `review.read` on the engagement."""
+    async with tenant_session(ctx.tenant) as session:
+        rows = await list_fulfilled_versions(session, ctx, engagement_id)
+    return [
+        FulfilledVersion(item.id, item.description, item.audit_area, item.status, version, at)
+        for item, version, at in rows
+    ]
+
+
+# A review decision moves its item (SPEC-004 §6, Q2): only from a status that awaits review.
+_REVIEWABLE = ("received", "ready_for_review", "needs_revision")
+_AFTER_REVIEW = frozenset({"accepted", "received", "open", "needs_revision"})
+
+
+async def move_after_review(tx: UnitOfWork, request_item_id: UUID, to: str) -> None:
+    """Apply a review decision's effect on its item, inside the decision's unit of work (the
+    caller authorised the decision). Audited `request_item.<to>`."""
+    if to not in _AFTER_REVIEW:
+        raise ValueError(f"a review decision can't move an item to {to!r}")
+    item = await item_ref(tx, request_item_id)
+    if item.status == to:
+        return
+    if not await set_status(tx.session, request_item_id, allowed_from=_REVIEWABLE, to=to):
+        raise ItemNotFulfillable(item.status)
+    tx.record(f"request_item.{to}", target=Target("request_item", request_item_id))
 
 
 @dataclass(frozen=True)

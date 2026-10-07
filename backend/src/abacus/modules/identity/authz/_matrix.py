@@ -186,6 +186,27 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
     },
+    "review.read": {
+        "practice_leader": "in_scope",
+        "quality_partner": "in_scope",
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "reviewer": "allow",
+        "agent": "deny",
+    },
+    "review.take": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "firm_setting(seniors_can_accept)",
+        "agent": "deny",
+    },
+    "review.assign": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "agent": "deny",
+    },
     "screening.run": {
         "system": "allow",
         "agent": "task_scope",

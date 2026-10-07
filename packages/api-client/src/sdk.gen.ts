@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateEngagementData, CreateEngagementErrors, CreateEngagementResponses, CreateRequestItemData, CreateRequestItemErrors, CreateRequestItemResponses, CreateWallData, CreateWallErrors, CreateWallResponses, GetEngagementData, GetEngagementErrors, GetEngagementResponses, GetRetrievalData, GetRetrievalErrors, GetRetrievalResponses, ListEngagementsData, ListEngagementsErrors, ListEngagementsResponses, ListEvidenceVersionsData, ListEvidenceVersionsErrors, ListEvidenceVersionsResponses, ListRequestItemsData, ListRequestItemsErrors, ListRequestItemsResponses, ListScreeningResultsData, ListScreeningResultsErrors, ListScreeningResultsResponses, ListWallsData, ListWallsErrors, ListWallsResponses, MeData, MeErrors, MeResponses, RemoveWallData, RemoveWallErrors, RemoveWallResponses, StartRetrievalData, StartRetrievalErrors, StartRetrievalResponses } from './types.gen';
+import type { AcceptData, AcceptErrors, AcceptResponses, AssignData, AssignErrors, AssignResponses, CreateEngagementData, CreateEngagementErrors, CreateEngagementResponses, CreateRequestItemData, CreateRequestItemErrors, CreateRequestItemResponses, CreateWallData, CreateWallErrors, CreateWallResponses, GetEngagementData, GetEngagementErrors, GetEngagementResponses, GetRetrievalData, GetRetrievalErrors, GetRetrievalResponses, ListEngagementsData, ListEngagementsErrors, ListEngagementsResponses, ListEvidenceVersionsData, ListEvidenceVersionsErrors, ListEvidenceVersionsResponses, ListRequestItemsData, ListRequestItemsErrors, ListRequestItemsResponses, ListScreeningResultsData, ListScreeningResultsErrors, ListScreeningResultsResponses, ListWallsData, ListWallsErrors, ListWallsResponses, MeData, MeErrors, MeResponses, ReasonCodesData, ReasonCodesErrors, ReasonCodesResponses, RejectData, RejectErrors, RejectResponses, ReleaseData, ReleaseErrors, ReleaseResponses, RemoveWallData, RemoveWallErrors, RemoveWallResponses, ReviewQueueData, ReviewQueueErrors, ReviewQueueResponses, SendBackData, SendBackErrors, SendBackResponses, StartRetrievalData, StartRetrievalErrors, StartRetrievalResponses, TakeData, TakeErrors, TakeResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -59,6 +59,45 @@ export const listEvidenceVersions = <ThrowOnError extends boolean = false>(optio
 });
 
 /**
+ * Accept Route
+ */
+export const accept = <ThrowOnError extends boolean = false>(options: Options<AcceptData, ThrowOnError>): RequestResult<AcceptResponses, AcceptErrors, ThrowOnError> => (options.client ?? client).post<AcceptResponses, AcceptErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/accept',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Reject Route
+ */
+export const reject = <ThrowOnError extends boolean = false>(options: Options<RejectData, ThrowOnError>): RequestResult<RejectResponses, RejectErrors, ThrowOnError> => (options.client ?? client).post<RejectResponses, RejectErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/reject',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Send Back Route
+ */
+export const sendBack = <ThrowOnError extends boolean = false>(options: Options<SendBackData, ThrowOnError>): RequestResult<SendBackResponses, SendBackErrors, ThrowOnError> => (options.client ?? client).post<SendBackResponses, SendBackErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/send-back',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * List Request Items Route
  */
 export const listRequestItems = <ThrowOnError extends boolean = false>(options: Options<ListRequestItemsData, ThrowOnError>): RequestResult<ListRequestItemsResponses, ListRequestItemsErrors, ThrowOnError> => (options.client ?? client).get<ListRequestItemsResponses, ListRequestItemsErrors, ThrowOnError>({
@@ -99,6 +138,55 @@ export const startRetrieval = <ThrowOnError extends boolean = false>(options: Op
 export const getRetrieval = <ThrowOnError extends boolean = false>(options: Options<GetRetrievalData, ThrowOnError>): RequestResult<GetRetrievalResponses, GetRetrievalErrors, ThrowOnError> => (options.client ?? client).get<GetRetrievalResponses, GetRetrievalErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/engagements/{engagement_id}/retrievals/{sync_run_id}',
+    ...options
+});
+
+/**
+ * Review Queue Route
+ */
+export const reviewQueue = <ThrowOnError extends boolean = false>(options: Options<ReviewQueueData, ThrowOnError>): RequestResult<ReviewQueueResponses, ReviewQueueErrors, ThrowOnError> => (options.client ?? client).get<ReviewQueueResponses, ReviewQueueErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/review-queue',
+    ...options
+});
+
+/**
+ * Assign Route
+ */
+export const assign = <ThrowOnError extends boolean = false>(options: Options<AssignData, ThrowOnError>): RequestResult<AssignResponses, AssignErrors, ThrowOnError> => (options.client ?? client).post<AssignResponses, AssignErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/review-queue/{version_id}/assign',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Release Route
+ */
+export const release = <ThrowOnError extends boolean = false>(options: Options<ReleaseData, ThrowOnError>): RequestResult<ReleaseResponses, ReleaseErrors, ThrowOnError> => (options.client ?? client).post<ReleaseResponses, ReleaseErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/review-queue/{version_id}/release',
+    ...options
+});
+
+/**
+ * Take Route
+ */
+export const take = <ThrowOnError extends boolean = false>(options: Options<TakeData, ThrowOnError>): RequestResult<TakeResponses, TakeErrors, ThrowOnError> => (options.client ?? client).post<TakeResponses, TakeErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/review-queue/{version_id}/take',
+    ...options
+});
+
+/**
+ * Reason Codes Route
+ */
+export const reasonCodes = <ThrowOnError extends boolean = false>(options: Options<ReasonCodesData, ThrowOnError>): RequestResult<ReasonCodesResponses, ReasonCodesErrors, ThrowOnError> => (options.client ?? client).get<ReasonCodesResponses, ReasonCodesErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/review-reason-codes/{applies_to}',
     ...options
 });
 

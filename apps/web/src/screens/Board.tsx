@@ -111,6 +111,9 @@ export function Board({ engagementId }: { engagementId: string }): JSX.Element {
         <h1 id="board-heading" className="text-xl font-semibold">
           {engagement.data.name}
         </h1>
+        <a href={`/engagements/${engagementId}/review`} className="text-sm underline">
+          Review queue
+        </a>
         <p className="text-sm text-neutral-600">
           {engagement.data.client_name} — {engagement.data.client_entity_name} ·{" "}
           {engagement.data.fiscal_period_start} to {engagement.data.fiscal_period_end}

@@ -131,6 +131,20 @@ async def insert_screening_result(session: AsyncSession, *, values: dict[str, ob
     return result_id
 
 
+async def latest_result_for_version(
+    session: AsyncSession, evidence_version_id: UUID
+) -> ScreeningResult | None:
+    """The newest screening result about one version (the caller authorised on its engagement)."""
+    return (
+        await session.execute(
+            select(ScreeningResult)
+            .where(ScreeningResult.evidence_version_id == evidence_version_id)
+            .order_by(ScreeningResult.created_at.desc(), ScreeningResult.id.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
 async def latest_results(
     session: AsyncSession, ctx: AuthContext, engagement_id: UUID
 ) -> Sequence[ScreeningResult]:

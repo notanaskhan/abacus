@@ -1,4 +1,5 @@
-"""Evidence data access: evidence items and versions only (ADR-008, ADR-103)."""
+"""Evidence data access: evidence items and versions, and review decisions, assignments and the
+reason-code catalogue (ADR-008, ADR-103; SPEC-004 Q4)."""
 
 from __future__ import annotations
 
@@ -6,10 +7,16 @@ from collections.abc import Sequence
 from datetime import date, datetime
 from uuid import UUID
 
-from sqlalchemy import func, insert, select, text
+from sqlalchemy import func, insert, select, text, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from abacus.modules.evidence.models import EvidenceItem, EvidenceVersion
+from abacus.modules.evidence.models import (
+    EvidenceItem,
+    EvidenceVersion,
+    ReviewAssignment,
+    ReviewDecision,
+)
 from abacus.modules.identity.api import AuthContext, visible
 
 # Serialises version numbering per item for the rest of the transaction. Row locks would need
@@ -143,3 +150,122 @@ async def list_versions(
         .scalars()
         .all()
     )
+
+
+# --- review (SPEC-004) ------------------------------------------------------------------------
+
+
+async def list_review_state(
+    session: AsyncSession, ctx: AuthContext, engagement_id: UUID
+) -> tuple[Sequence[EvidenceVersion], set[UUID], dict[UUID, UUID | None]]:
+    """For the queue: the engagement's versions the caller may review, which are decided, and who
+    has taken which."""
+    seen = visible(ctx, "review.read", EvidenceVersion.engagement_id)
+    versions = (
+        (
+            await session.execute(
+                select(EvidenceVersion).where(EvidenceVersion.engagement_id == engagement_id, seen)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    decided = set(
+        (
+            await session.execute(
+                select(ReviewDecision.evidence_version_id).where(
+                    ReviewDecision.engagement_id == engagement_id,
+                    visible(ctx, "review.read", ReviewDecision.engagement_id),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    taken = {
+        version_id: assignee
+        for version_id, assignee in (
+            await session.execute(
+                select(
+                    ReviewAssignment.evidence_version_id, ReviewAssignment.assignee_user_id
+                ).where(
+                    ReviewAssignment.engagement_id == engagement_id,
+                    visible(ctx, "review.read", ReviewAssignment.engagement_id),
+                )
+            )
+        ).all()
+    }
+    return versions, decided, taken
+
+
+async def decision_for(session: AsyncSession, version_id: UUID) -> ReviewDecision | None:
+    return (
+        await session.execute(
+            select(ReviewDecision).where(ReviewDecision.evidence_version_id == version_id)
+        )
+    ).scalar_one_or_none()
+
+
+async def insert_decision(session: AsyncSession, *, values: dict[str, object]) -> None:
+    await session.execute(insert(ReviewDecision).values(**values))
+
+
+async def assignment_for(session: AsyncSession, version_id: UUID) -> ReviewAssignment | None:
+    return (
+        await session.execute(
+            select(ReviewAssignment)
+            .where(ReviewAssignment.evidence_version_id == version_id)
+            .with_for_update()
+        )
+    ).scalar_one_or_none()
+
+
+async def put_assignment(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    engagement_id: UUID,
+    version_id: UUID,
+    assignee: UUID | None,
+    assigned_by: UUID,
+) -> None:
+    """Set who has taken the version (None: released)."""
+    await session.execute(
+        pg_insert(ReviewAssignment)
+        .values(
+            tenant_id=tenant_id,
+            evidence_version_id=version_id,
+            engagement_id=engagement_id,
+            assignee_user_id=assignee,
+            assigned_by=assigned_by,
+        )
+        .on_conflict_do_update(
+            index_elements=[ReviewAssignment.tenant_id, ReviewAssignment.evidence_version_id],
+            set_={
+                "assignee_user_id": assignee,
+                "assigned_by": assigned_by,
+                "assigned_at": func.clock_timestamp(),
+            },
+        )
+    )
+
+
+async def clear_assignment(session: AsyncSession, version_id: UUID, by: UUID) -> None:
+    await session.execute(
+        update(ReviewAssignment)
+        .where(ReviewAssignment.evidence_version_id == version_id)
+        .values(assignee_user_id=None, assigned_by=by, assigned_at=func.clock_timestamp())
+    )
+
+
+async def reason_codes(
+    session: AsyncSession, applies_to: str
+) -> Sequence[tuple[str, str, str, bool]]:
+    """The active catalogue for a decision kind, through its SECURITY DEFINER function (0015)."""
+    listed = func.review_reason_codes_list(applies_to).table_valued(
+        "code", "label", "description", "requires_note"
+    )
+    rows = await session.execute(
+        select(listed.c.code, listed.c.label, listed.c.description, listed.c.requires_note)
+    )
+    return [(str(r[0]), str(r[1]), str(r[2]), bool(r[3])) for r in rows.all()]
