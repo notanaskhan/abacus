@@ -11,6 +11,12 @@ trigger ─▶ dispatch(Workflow, Input(ids), id=…) ─▶ workflow (orchestra
 
 - One module owns a workflow, its activities and its payload types. Each module's `api.py` exports `WORKFLOWS` (each workflow's work class, registered with `register_work_classes` in the module that starts it), `ACTIVITIES` and `SUBSCRIPTIONS`; `abacus/worker/__main__.py` composes them from `MODULES`, so adding a workflow never touches the worker.
 - `kernel.dispatch.dispatch` is the only way to start a workflow: it runs on its work class's queue (`<base>-interactive`, `-time-sensitive`, `-background`, `-batch`), each with its own worker pool (ADR-071, SPEC-003). Its activities run on the same queue.
+- **Waiting for capacity (SPEC-003):**
+  - A workflow waits on durable timers, never inside an activity.
+  - For a work slot, it asks its module's `acquire_slot` activity (`wait_for_slot`, copied per module, since ADR-017 bars sharing).
+  - For model admission, an activity raises a non-retryable `ApplicationError` of type `NotAdmitted` with details `(reason, retry_after, max_wait_seconds)`. The workflow sleeps (5–60 s, backing off, jittered with `workflow.random()`) and calls the activity again.
+  - Each wait is behind its own `workflow.patched` key. The class's maximum wait covers the whole wait and ends in `capacity_timeout`.
+  - Asks stay at most 60 s apart, so each ask renews the slot's 15-minute lease.
 - Workflows and activities have fixed names (`@workflow.defn(name="retrieval")`, `@activity.defn(name="retrieval.pull_raw")`). `execute_activity` calls use the name strings; starts pass the workflow class to `dispatch`. Renaming one breaks replay (ADR-090).
 
 ## The workflow: orchestration only

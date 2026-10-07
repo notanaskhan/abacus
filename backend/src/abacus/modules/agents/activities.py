@@ -104,8 +104,6 @@ async def create_run_activity(input: ScreeningInput) -> str | None:
 
 
 async def _screen(tenant_id: UUID, run_id: UUID) -> ScreeningOutcome:
-    # Admitted or not, a new attempt isn't waiting for the provider any more (it may be again).
-    await mark_queued(tenant_id, run_id, None, None)
     try:
         agent = await load_agent_context(tenant_id, run_id)
     except AgentRunNotRunning:
@@ -119,6 +117,9 @@ async def _screen(tenant_id: UUID, run_id: UUID) -> ScreeningOutcome:
         await slots.keep(agent.tenant, agent.engagement_id, work_class)
     try:
         outcome = await screen(agent)
+        # Admitted and done: no longer waiting for the provider. Only here, so a repeated refusal
+        # with the same reason writes nothing (no queued/resumed flapping in the audit trail).
+        await mark_queued(tenant_id, run_id, None, None)
     except NotAdmitted as refused:
         # SPEC-003 AC-11/13: the run waits for the provider, visibly; the workflow asks again.
         estimate = datetime.now(UTC) + timedelta(seconds=refused.retry_after)
@@ -184,8 +185,10 @@ async def screen_activity(input: RunInput) -> ScreeningOutcome:
     try:
         async with _heartbeating():
             return await _screen(UUID(input.tenant_id), UUID(input.run_id))
-    except ApplicationError:
-        raise  # already decided and safe to cross (NotAdmitted: identifiers and numbers only)
+    except ApplicationError as exc:
+        if exc.type == NOT_ADMITTED:
+            raise  # a reason and two numbers: safe to cross as they are
+        raise _as_application_error(exc, retryable=True) from None
     except (NotFound, *TERMINAL) as exc:
         raise _as_application_error(exc, retryable=False) from None
     except Exception as exc:  # anything else, database errors included: class name only

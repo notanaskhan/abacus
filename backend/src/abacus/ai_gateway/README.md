@@ -21,8 +21,11 @@ The only path to a model (ADR-019, ADR-050, ADR-052, ADR-057, ADR-070). Owns `us
 ## Admission (ADR-072; SPEC-003 AC-9 to AC-12)
 - Before every attempt, the call takes one request and its estimated tokens from its model's bucket (`provider_capacity`, migration 0014). The bucket is shared by every process and reached only through SECURITY DEFINER functions. It commits without audit events (founder decision 2026-10-07; UOW-001/002 exempt `admission.py`).
 - **Priority by reserve:** a class may take capacity only above its reserve (`work_classes[c].admission_reserve_pct`: 0, 0, 25, 50). A non-essential call uses the next class's reserve.
-- **Refused:** the call tries the spec's `cheaper_tiers`, then raises `NotAdmitted`. The reason is `deferred` for background or batch work, `provider_capacity` otherwise. The workflow waits and asks again; the gateway never loops.
-- **Rate limits:** a `ProviderError(rate_limited=True)` blocks the model for `retry_after`, records usage `rate_limited` (spending nothing), and raises `NotAdmitted`. It is never retried here.
+- **Refused:** background and batch calls are deferred (`NotAdmitted("deferred")`) and never stepped down. Interactive and time-sensitive calls try the spec's `cheaper_tiers`, then raise `NotAdmitted("provider_capacity")`. The workflow waits and asks again; the gateway never loops. A call needing more tokens than its class may ever take raises `CallTooLarge`.
+- **Estimate:** the input estimate plus `max_output_tokens`, not settled against actual use. The bucket is over-reserved, and the 80% limits cover a heuristic under-estimate.
+- **Repair attempts:** a refusal on the repair attempt discards the first response, and the next ask starts over. The budget still holds (`_spent_by_run`).
+- **Boot check:** `check_provider_limits()` (worker boot) refuses to start outside local and test when any model has no limits.
+- **Rate limits:** a `ProviderError(rate_limited=True)` blocks the model for `retry_after` (a finite value clamped to 1–3,600 s; otherwise 30 s), records usage `rate_limited` (spending nothing), and raises `NotAdmitted`. If the block itself fails, the call still waits. It is never retried here.
 - **Fail closed:** an unknown model, or an unreachable bucket, admits nothing.
 - **Telemetry:** an `ai.admit` span, and the counter `abacus.admission` (provider, model, class, outcome, reason).
 
