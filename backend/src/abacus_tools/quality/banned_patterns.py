@@ -1042,11 +1042,15 @@ def _check_unstructured_logging(src: SourceFile) -> Iterator[Finding]:
             and str(node.args[0].value).split(".")[0] in _LOGGING_MODULES
         ):
             yield Finding(node.lineno, "use abacus.kernel.logging, not a dynamic import")
-        elif _is_log_call(node) and isinstance(node, ast.Call):
-            if node.args and not (
+        elif (
+            _is_log_call(node)
+            and isinstance(node, ast.Call)
+            and node.args
+            and not (
                 isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str)
-            ):
-                yield Finding(node.lineno, "log event names are string literals")
+            )
+        ):
+            yield Finding(node.lineno, "log event names are string literals")
     for handler in ast.walk(src.tree):
         if not (isinstance(handler, ast.ExceptHandler) and handler.name is not None):
             continue
