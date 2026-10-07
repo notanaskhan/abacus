@@ -5,8 +5,9 @@ from abacus.modules.agents.citations import SheetLayoutError
 from abacus.modules.agents.citations import verify as verify_citations
 from abacus.modules.agents.fake_responses import SCREEN_PROMPT, screening_responder
 from abacus.modules.agents.fake_responses import install as install_fake_responses
+from abacus.modules.agents.graph import EngagementGraph, engagement_graph
 from abacus.modules.agents.handoff import Citation, Handoff, ScreeningOutput, VerifiedCitation
-from abacus.modules.agents.routes import router
+from abacus.modules.agents.routes import graph_router, router
 from abacus.modules.agents.screenings import (
     SUBSCRIPTIONS,
     WORKFLOWS,
@@ -48,6 +49,7 @@ __all__ = [
     "AgentRunNotRunning",
     "AgentSpec",
     "Citation",
+    "EngagementGraph",
     "Handoff",
     "RunOutcome",
     "ScreeningInput",
@@ -58,7 +60,9 @@ __all__ = [
     "SheetLayoutError",
     "VerifiedCitation",
     "create_screening_run",
+    "engagement_graph",
     "fail_run",
+    "graph_router",
     "install_fake_responses",
     "load_agent_context",
     "router",

@@ -35,6 +35,89 @@
         "title": "AcceptIn",
         "type": "object"
       },
+      "AccountRuleOut": {
+        "properties": {
+          "account_from": {
+            "cls": "internal",
+            "title": "Account From",
+            "type": "string"
+          },
+          "account_to": {
+            "cls": "internal",
+            "title": "Account To",
+            "type": "string"
+          },
+          "area_code": {
+            "cls": "internal",
+            "title": "Area Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "area_code",
+          "account_from",
+          "account_to"
+        ],
+        "title": "AccountRuleOut",
+        "type": "object"
+      },
+      "AppliedMethodologyOut": {
+        "properties": {
+          "items_created": {
+            "cls": "internal",
+            "title": "Items Created",
+            "type": "integer"
+          },
+          "version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version_id",
+          "items_created"
+        ],
+        "title": "AppliedMethodologyOut",
+        "type": "object"
+      },
+      "ApplyMethodologyIn": {
+        "additionalProperties": false,
+        "properties": {
+          "version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version_id"
+        ],
+        "title": "ApplyMethodologyIn",
+        "type": "object"
+      },
+      "AreaOut": {
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "cls": "internal",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ],
+        "title": "AreaOut",
+        "type": "object"
+      },
       "AssignIn": {
         "additionalProperties": false,
         "properties": {
@@ -132,6 +215,51 @@
         "title": "BudgetOut",
         "type": "object"
       },
+      "CoverageGapsOut": {
+        "properties": {
+          "areas_with_accounts_without_requests": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Areas With Accounts Without Requests",
+            "type": "array"
+          },
+          "areas_without_requests": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Areas Without Requests",
+            "type": "array"
+          },
+          "items_without_evidence": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Items Without Evidence",
+            "type": "array"
+          },
+          "unmapped_accounts": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/GraphAccountOut"
+            },
+            "title": "Unmapped Accounts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "areas_without_requests",
+          "areas_with_accounts_without_requests",
+          "unmapped_accounts",
+          "items_without_evidence"
+        ],
+        "title": "CoverageGapsOut",
+        "type": "object"
+      },
       "DecisionOut": {
         "properties": {
           "corrects_proposal": {
@@ -198,6 +326,77 @@
           "item_status"
         ],
         "title": "DecisionOut",
+        "type": "object"
+      },
+      "EngagementGraphOut": {
+        "properties": {
+          "areas": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/GraphAreaOut"
+            },
+            "title": "Areas",
+            "type": "array"
+          },
+          "engagement": {
+            "$ref": "#/components/schemas/GraphEngagementOut",
+            "cls": "confidential"
+          },
+          "gaps": {
+            "$ref": "#/components/schemas/CoverageGapsOut",
+            "cls": "confidential"
+          },
+          "methodology": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GraphMethodologyOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "snapshot_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Snapshot Id"
+          },
+          "team": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/GraphTeamMemberOut"
+            },
+            "title": "Team",
+            "type": "array"
+          },
+          "unmapped_accounts": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/GraphAccountOut"
+            },
+            "title": "Unmapped Accounts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "engagement",
+          "team",
+          "methodology",
+          "snapshot_id",
+          "areas",
+          "unmapped_accounts",
+          "gaps"
+        ],
+        "title": "EngagementGraphOut",
         "type": "object"
       },
       "EngagementIn": {
@@ -553,6 +752,259 @@
         "title": "FieldErrorOut",
         "type": "object"
       },
+      "GraphAccountOut": {
+        "properties": {
+          "balance": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Balance",
+            "type": "string"
+          },
+          "code": {
+            "cls": "confidential",
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "balance"
+        ],
+        "title": "GraphAccountOut",
+        "type": "object"
+      },
+      "GraphAreaOut": {
+        "properties": {
+          "accounts": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/GraphAccountOut"
+            },
+            "title": "Accounts",
+            "type": "array"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Code"
+          },
+          "items": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/GraphItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "items",
+          "accounts"
+        ],
+        "title": "GraphAreaOut",
+        "type": "object"
+      },
+      "GraphEngagementOut": {
+        "properties": {
+          "client_entity_name": {
+            "cls": "confidential",
+            "title": "Client Entity Name",
+            "type": "string"
+          },
+          "client_name": {
+            "cls": "confidential",
+            "title": "Client Name",
+            "type": "string"
+          },
+          "fiscal_period_end": {
+            "cls": "confidential",
+            "format": "date",
+            "title": "Fiscal Period End",
+            "type": "string"
+          },
+          "fiscal_period_start": {
+            "cls": "confidential",
+            "format": "date",
+            "title": "Fiscal Period Start",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "client_name",
+          "client_entity_name",
+          "fiscal_period_start",
+          "fiscal_period_end",
+          "status"
+        ],
+        "title": "GraphEngagementOut",
+        "type": "object"
+      },
+      "GraphItemOut": {
+        "properties": {
+          "description": {
+            "cls": "confidential",
+            "title": "Description",
+            "type": "string"
+          },
+          "evidence_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Evidence Version Id"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "retrievability_tier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Retrievability Tier"
+          },
+          "screening_action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Screening Action"
+          },
+          "status": {
+            "cls": "internal",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "description",
+          "status",
+          "retrievability_tier",
+          "evidence_version_id",
+          "screening_action"
+        ],
+        "title": "GraphItemOut",
+        "type": "object"
+      },
+      "GraphMethodologyOut": {
+        "properties": {
+          "template_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Template Id",
+            "type": "string"
+          },
+          "template_name": {
+            "cls": "internal",
+            "title": "Template Name",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          },
+          "version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "template_id",
+          "template_name",
+          "version_id",
+          "version"
+        ],
+        "title": "GraphMethodologyOut",
+        "type": "object"
+      },
+      "GraphTeamMemberOut": {
+        "properties": {
+          "display_name": {
+            "cls": "confidential",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "role": {
+            "cls": "internal",
+            "title": "Role",
+            "type": "string"
+          },
+          "user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "display_name",
+          "role"
+        ],
+        "title": "GraphTeamMemberOut",
+        "type": "object"
+      },
       "MeOut": {
         "properties": {
           "active_tenant_id": {
@@ -640,6 +1092,46 @@
           "firm_role"
         ],
         "title": "MembershipOut",
+        "type": "object"
+      },
+      "MethodologyVersionOut": {
+        "properties": {
+          "areas": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/AreaOut"
+            },
+            "title": "Areas",
+            "type": "array"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/TemplateItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "rules": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/AccountRuleOut"
+            },
+            "title": "Rules",
+            "type": "array"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/TemplateVersionOut",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "summary",
+          "areas",
+          "items",
+          "rules"
+        ],
+        "title": "MethodologyVersionOut",
         "type": "object"
       },
       "ProposalOut": {
@@ -900,6 +1392,25 @@
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "retrievability_tier": {
+            "anyOf": [
+              {
+                "enum": [
+                  "A",
+                  "B",
+                  "C",
+                  "D",
+                  "E"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Retrievability Tier"
           },
           "status": {
             "cls": "internal",
@@ -1238,6 +1749,73 @@
           "role"
         ],
         "title": "TeamMemberOut",
+        "type": "object"
+      },
+      "TemplateItemOut": {
+        "properties": {
+          "area_code": {
+            "cls": "internal",
+            "title": "Area Code",
+            "type": "string"
+          },
+          "description": {
+            "cls": "internal",
+            "title": "Description",
+            "type": "string"
+          },
+          "tier": {
+            "cls": "internal",
+            "title": "Tier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "area_code",
+          "description",
+          "tier"
+        ],
+        "title": "TemplateItemOut",
+        "type": "object"
+      },
+      "TemplateVersionOut": {
+        "properties": {
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "template_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Template Id",
+            "type": "string"
+          },
+          "template_name": {
+            "cls": "internal",
+            "title": "Template Name",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          },
+          "version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "template_id",
+          "template_name",
+          "version_id",
+          "version",
+          "created_at"
+        ],
+        "title": "TemplateVersionOut",
         "type": "object"
       },
       "ValidationErrorOut": {
@@ -2562,6 +3140,238 @@
           "evidence"
         ],
         "x-abacus-action": "evidence.reject"
+      }
+    },
+    "/v1/engagements/{engagement_id}/graph": {
+      "get": {
+        "operationId": "engagement_graph",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementGraphOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Engagement Graph Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "engagement.read"
+      }
+    },
+    "/v1/engagements/{engagement_id}/methodology": {
+      "post": {
+        "operationId": "apply_methodology",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyMethodologyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppliedMethodologyOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Apply Methodology Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "engagement.apply_methodology"
       }
     },
     "/v1/engagements/{engagement_id}/request-items": {
@@ -3963,6 +4773,320 @@
           "budget"
         ],
         "x-abacus-action": "budget.read"
+      }
+    },
+    "/v1/methodology/templates": {
+      "get": {
+        "operationId": "list_templates",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TemplateVersionOut"
+                  },
+                  "title": "Response List Templates",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "List Templates Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.read"
+      }
+    },
+    "/v1/methodology/templates/{name}/versions": {
+      "post": {
+        "description": "The raw `.xlsx` workbook is the request body (TASK-023 D3: no multipart dependency).",
+        "operationId": "import_template",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateVersionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Import Template Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.manage"
+      }
+    },
+    "/v1/methodology/versions/{version_id}": {
+      "get": {
+        "operationId": "get_version",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MethodologyVersionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Get Version Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.read"
       }
     },
     "/v1/walls": {

@@ -19,6 +19,62 @@ export type AcceptIn = {
 };
 
 /**
+ * AccountRuleOut
+ */
+export type AccountRuleOut = {
+    /**
+     * Account From
+     */
+    account_from: string;
+    /**
+     * Account To
+     */
+    account_to: string;
+    /**
+     * Area Code
+     */
+    area_code: string;
+};
+
+/**
+ * AppliedMethodologyOut
+ */
+export type AppliedMethodologyOut = {
+    /**
+     * Items Created
+     */
+    items_created: number;
+    /**
+     * Version Id
+     */
+    version_id: string;
+};
+
+/**
+ * ApplyMethodologyIn
+ */
+export type ApplyMethodologyIn = {
+    /**
+     * Version Id
+     */
+    version_id: string;
+};
+
+/**
+ * AreaOut
+ */
+export type AreaOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
  * AssignIn
  */
 export type AssignIn = {
@@ -69,6 +125,28 @@ export type BudgetOut = {
 };
 
 /**
+ * CoverageGapsOut
+ */
+export type CoverageGapsOut = {
+    /**
+     * Areas With Accounts Without Requests
+     */
+    areas_with_accounts_without_requests: Array<string>;
+    /**
+     * Areas Without Requests
+     */
+    areas_without_requests: Array<string>;
+    /**
+     * Items Without Evidence
+     */
+    items_without_evidence: Array<string>;
+    /**
+     * Unmapped Accounts
+     */
+    unmapped_accounts: Array<GraphAccountOut>;
+};
+
+/**
  * DecisionOut
  */
 export type DecisionOut = {
@@ -100,6 +178,31 @@ export type DecisionOut = {
      * Request Item Ids
      */
     request_item_ids: Array<string>;
+};
+
+/**
+ * EngagementGraphOut
+ */
+export type EngagementGraphOut = {
+    /**
+     * Areas
+     */
+    areas: Array<GraphAreaOut>;
+    engagement: GraphEngagementOut;
+    gaps: CoverageGapsOut;
+    methodology: GraphMethodologyOut | null;
+    /**
+     * Snapshot Id
+     */
+    snapshot_id: string | null;
+    /**
+     * Team
+     */
+    team: Array<GraphTeamMemberOut>;
+    /**
+     * Unmapped Accounts
+     */
+    unmapped_accounts: Array<GraphAccountOut>;
 };
 
 /**
@@ -287,6 +390,150 @@ export type FieldErrorOut = {
 };
 
 /**
+ * GraphAccountOut
+ */
+export type GraphAccountOut = {
+    /**
+     * Balance
+     */
+    balance: string;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * GraphAreaOut
+ */
+export type GraphAreaOut = {
+    /**
+     * Accounts
+     */
+    accounts: Array<GraphAccountOut>;
+    /**
+     * Code
+     */
+    code: string | null;
+    /**
+     * Items
+     */
+    items: Array<GraphItemOut>;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * GraphEngagementOut
+ */
+export type GraphEngagementOut = {
+    /**
+     * Client Entity Name
+     */
+    client_entity_name: string;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Fiscal Period End
+     */
+    fiscal_period_end: string;
+    /**
+     * Fiscal Period Start
+     */
+    fiscal_period_start: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Status
+     */
+    status: string;
+};
+
+/**
+ * GraphItemOut
+ */
+export type GraphItemOut = {
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Retrievability Tier
+     */
+    retrievability_tier: string | null;
+    /**
+     * Screening Action
+     */
+    screening_action: string | null;
+    /**
+     * Status
+     */
+    status: string;
+};
+
+/**
+ * GraphMethodologyOut
+ */
+export type GraphMethodologyOut = {
+    /**
+     * Template Id
+     */
+    template_id: string;
+    /**
+     * Template Name
+     */
+    template_name: string;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Version Id
+     */
+    version_id: string;
+};
+
+/**
+ * GraphTeamMemberOut
+ */
+export type GraphTeamMemberOut = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Role
+     */
+    role: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
  * MeOut
  */
 export type MeOut = {
@@ -328,6 +575,25 @@ export type MembershipOut = {
      * Tenant Id
      */
     tenant_id: string;
+};
+
+/**
+ * MethodologyVersionOut
+ */
+export type MethodologyVersionOut = {
+    /**
+     * Areas
+     */
+    areas: Array<AreaOut>;
+    /**
+     * Items
+     */
+    items: Array<TemplateItemOut>;
+    /**
+     * Rules
+     */
+    rules: Array<AccountRuleOut>;
+    summary: TemplateVersionOut;
 };
 
 /**
@@ -470,6 +736,10 @@ export type RequestItemOut = {
      * Id
      */
     id: string;
+    /**
+     * Retrievability Tier
+     */
+    retrievability_tier?: 'A' | 'B' | 'C' | 'D' | 'E' | null;
     /**
      * Status
      */
@@ -624,6 +894,50 @@ export type TeamMemberOut = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * TemplateItemOut
+ */
+export type TemplateItemOut = {
+    /**
+     * Area Code
+     */
+    area_code: string;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Tier
+     */
+    tier: string;
+};
+
+/**
+ * TemplateVersionOut
+ */
+export type TemplateVersionOut = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Template Id
+     */
+    template_id: string;
+    /**
+     * Template Name
+     */
+    template_name: string;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Version Id
+     */
+    version_id: string;
 };
 
 /**
@@ -1233,6 +1547,114 @@ export type SendBackResponses = {
 };
 
 export type SendBackResponse = SendBackResponses[keyof SendBackResponses];
+
+export type EngagementGraphData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/graph';
+};
+
+export type EngagementGraphErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EngagementGraphError = EngagementGraphErrors[keyof EngagementGraphErrors];
+
+export type EngagementGraphResponses = {
+    /**
+     * Successful Response
+     */
+    200: EngagementGraphOut;
+};
+
+export type EngagementGraphResponse = EngagementGraphResponses[keyof EngagementGraphResponses];
+
+export type ApplyMethodologyData = {
+    body: ApplyMethodologyIn;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/methodology';
+};
+
+export type ApplyMethodologyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ApplyMethodologyError = ApplyMethodologyErrors[keyof ApplyMethodologyErrors];
+
+export type ApplyMethodologyResponses = {
+    /**
+     * Successful Response
+     */
+    201: AppliedMethodologyOut;
+};
+
+export type ApplyMethodologyResponse = ApplyMethodologyResponses[keyof ApplyMethodologyResponses];
 
 export type ListRequestItemsData = {
     body?: never;
@@ -1898,6 +2320,159 @@ export type MeteringResponses = {
 };
 
 export type MeteringResponse = MeteringResponses[keyof MeteringResponses];
+
+export type ListTemplatesData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/methodology/templates';
+};
+
+export type ListTemplatesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ListTemplatesError = ListTemplatesErrors[keyof ListTemplatesErrors];
+
+export type ListTemplatesResponses = {
+    /**
+     * Response List Templates
+     *
+     * Successful Response
+     */
+    200: Array<TemplateVersionOut>;
+};
+
+export type ListTemplatesResponse = ListTemplatesResponses[keyof ListTemplatesResponses];
+
+export type ImportTemplateData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Name
+         */
+        name: string;
+    };
+    query?: never;
+    url: '/v1/methodology/templates/{name}/versions';
+};
+
+export type ImportTemplateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ImportTemplateError = ImportTemplateErrors[keyof ImportTemplateErrors];
+
+export type ImportTemplateResponses = {
+    /**
+     * Successful Response
+     */
+    201: TemplateVersionOut;
+};
+
+export type ImportTemplateResponse = ImportTemplateResponses[keyof ImportTemplateResponses];
+
+export type GetVersionData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}';
+};
+
+export type GetVersionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type GetVersionError = GetVersionErrors[keyof GetVersionErrors];
+
+export type GetVersionResponses = {
+    /**
+     * Successful Response
+     */
+    200: MethodologyVersionOut;
+};
+
+export type GetVersionResponse = GetVersionResponses[keyof GetVersionResponses];
 
 export type ListWallsData = {
     body?: never;

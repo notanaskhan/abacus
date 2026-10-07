@@ -36,10 +36,13 @@ from abacus.modules.requests import api as requests
 ROUTERS = (
     identity.router,
     engagements.router,
+    engagements.methodology_router,
     requests.router,
+    requests.methodology_router,
     connections.router,
     evidence.router,
     agents.router,
+    agents.graph_router,
     platform.router,
 )
 # What a validation error may say about each problem: never the submitted value (client content

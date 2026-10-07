@@ -128,7 +128,7 @@ The workbook itself isn't stored, only its fingerprint. The firm keeps its sourc
 | `GET /v1/methodology/templates` and `GET /v1/methodology/versions/{id}` | List templates and versions, and read one version; `methodology.read` |
 | `POST /v1/engagements/{id}/methodology` `{version_id}` | Apply (AC-4, AC-5); `engagement.apply_methodology` |
 | `GET /v1/engagements/{id}/graph` | The graph (AC-6 to AC-9); `engagement.read` |
-| `engagements.api.engagement_graph(ctx, engagement_id) -> EngagementGraph` | The same view, for agents' context later |
+| `agents.api.engagement_graph(ctx, engagement_id) -> EngagementGraph` | The same view, for agents' context later (assembled in `agents`, TASK-023 D1) |
 
 ## 9. Authorisation and tenancy
 - **New matrix actions (a protected change):**

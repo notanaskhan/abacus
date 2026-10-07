@@ -235,6 +235,12 @@ class Settings(BaseSettings):
     screening_daily_cap: Annotated[int, classified("internal")] = 200
     anomaly_multiple: Annotated[Decimal, classified("internal")] = Decimal(5)
     anomaly_floor_usd: Annotated[Decimal, classified("internal")] = Decimal(5)
+    # Methodology workbooks (SPEC-008 §12) and the unmapped-account gap (Q5: any non-zero balance).
+    methodology_max_bytes: Annotated[int, classified("internal")] = 5 * 1024 * 1024
+    methodology_max_areas: Annotated[int, classified("internal")] = 50
+    methodology_max_items: Annotated[int, classified("internal")] = 2000
+    methodology_max_rules: Annotated[int, classified("internal")] = 2000
+    unmapped_gap_min_abs_usd: Annotated[Decimal, classified("internal")] = Decimal(0)
     provider_limits: Annotated[dict[str, ProviderLimits], classified("internal")] = {
         "fake-small": ProviderLimits(rpm=600, tpm=1_000_000),
         "fake-medium": ProviderLimits(rpm=600, tpm=1_000_000),

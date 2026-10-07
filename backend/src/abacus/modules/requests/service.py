@@ -10,7 +10,7 @@ from uuid import UUID, uuid4
 from abacus.kernel.db import TenantContext, tenant_session, transaction_context
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
-from abacus.modules.engagements.api import get_ref, lock_ref
+from abacus.modules.engagements.api import get_ref, lock_ref, pin_methodology
 from abacus.modules.identity.api import Actor, AuthContext, SystemContext, authorise
 from abacus.modules.requests.events import RequestItemCreated
 from abacus.modules.requests.models import RequestItem
@@ -39,6 +39,8 @@ class RequestItemView:
     # The evidence version that last fulfilled the item (the board joins evidence and screening
     # on it; TASK-012 Q1). None until the item has evidence.
     evidence_version_id: UUID | None = None
+    # From the methodology template that seeded it (SPEC-008); None for items added by hand.
+    retrievability_tier: str | None = None
 
 
 def _view(item: RequestItem, evidence_version_id: UUID | None = None) -> RequestItemView:
@@ -50,6 +52,7 @@ def _view(item: RequestItem, evidence_version_id: UUID | None = None) -> Request
         item.status,
         item.created_at,
         evidence_version_id,
+        item.retrievability_tier,
     )
 
 
@@ -99,6 +102,56 @@ async def request_items_for(ctx: AuthContext, engagement_id: UUID) -> Sequence[R
     async with tenant_session(ctx.tenant) as session:
         rows = await list_request_items(session, ctx, engagement_id)
     return [_view(item, version_id) for item, version_id in rows]
+
+
+@dataclass(frozen=True)
+class AppliedMethodology:
+    version_id: UUID
+    items_created: int
+
+
+async def apply_methodology(
+    ctx: AuthContext, engagement_id: UUID, version_id: UUID
+) -> AppliedMethodology:
+    """Pin the engagement to the version and seed one request item per template item, once
+    (SPEC-008 AC-4, AC-5; Q4). Existing items are never changed."""
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, "engagement.apply_methodology", ref.resource())
+        methodology = await pin_methodology(tx, engagement_id, version_id)
+        names = {area.code: area.name for area in methodology.areas}
+        list_id, created = await request_list_for(tx.session, ctx.tenant_id, engagement_id)
+        if created:
+            tx.record(
+                "request_list.created",
+                target=Target("request_list", list_id),
+                after=Ref(engagement_id=engagement_id),
+            )
+        for template_item in methodology.items:
+            item_id = uuid4()
+            await insert_request_item(
+                tx.session,
+                item_id=item_id,
+                tenant_id=ctx.tenant_id,
+                engagement_id=engagement_id,
+                request_list_id=list_id,
+                description=template_item.description,
+                audit_area=names[template_item.area_code],
+                created_by=ctx.user_id,
+                retrievability_tier=template_item.tier,
+            )
+            tx.record(
+                "request_item.created",
+                target=Target("request_item", item_id),
+                after=Ref(engagement_id=engagement_id, methodology_version_id=version_id),
+            )
+            tx.emit(RequestItemCreated(request_item_id=item_id, engagement_id=engagement_id))
+        tx.record(
+            "methodology.applied",
+            target=Target("engagement", engagement_id),
+            after=Ref(methodology_version_id=version_id, items=len(methodology.items)),
+        )
+    return AppliedMethodology(version_id, len(methodology.items))
 
 
 class ItemNotFulfillable(DomainConflict):

@@ -28,6 +28,8 @@ class RequestItem(Base):
     request_list_id: Mapped[UUID]
     description: Mapped[str]
     audit_area: Mapped[str]
+    # From the methodology template that seeded the item (SPEC-008); None for items added by hand.
+    retrievability_tier: Mapped[str | None]
     status: Mapped[str]
     created_by: Mapped[UUID]
     created_at: Mapped[datetime]

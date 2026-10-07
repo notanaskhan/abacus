@@ -760,6 +760,10 @@ _LIST_PREFIXES = ("list_", "all_", "search_")
 # lookups for rows the caller has already authorised, or sign-in before a tenant exists.
 LIST_EXEMPT = frozenset(
     {
+        # Methodology templates are firm-wide (SPEC-008): read after `authorise` on the firm
+        # (`methodology.read`) or by a caller authorised on the engagement; no engagement rows.
+        ("src/abacus/modules/engagements/repository.py", "list_templates"),
+        ("src/abacus/modules/engagements/repository.py", "version_rows"),
         # The outbound scope checker (SPEC-006): after `authorise(message.send)`, it must see the
         # firm's other clients, entities and accounts to catch them in a draft; never returned.
         ("src/abacus/modules/organisations/repository.py", "names_in_firm"),
@@ -850,7 +854,10 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "connections": frozenset(
         {"identity", "engagements", "organisations", "ledger", "evidence", "requests"}
     ),
-    "agents": frozenset({"identity", "engagements", "organisations", "evidence", "requests"}),
+    # The engagement graph reads the latest snapshot's accounts (SPEC-008, TASK-023 D1).
+    "agents": frozenset(
+        {"identity", "engagements", "organisations", "evidence", "requests", "ledger"}
+    ),
     # The outbound scope checker reads each owner's facts through its API (SPEC-006, TASK-021 D2).
     "communications": frozenset(
         {"identity", "engagements", "organisations", "ledger", "evidence"}

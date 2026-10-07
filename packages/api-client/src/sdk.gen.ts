@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptData, AcceptErrors, AcceptResponses, AssignData, AssignErrors, AssignResponses, CreateEngagementData, CreateEngagementErrors, CreateEngagementResponses, CreateRequestItemData, CreateRequestItemErrors, CreateRequestItemResponses, CreateWallData, CreateWallErrors, CreateWallResponses, GetBudgetData, GetBudgetErrors, GetBudgetResponses, GetEngagementData, GetEngagementErrors, GetEngagementResponses, GetRetrievalData, GetRetrievalErrors, GetRetrievalResponses, ListEngagementsData, ListEngagementsErrors, ListEngagementsResponses, ListEvidenceVersionsData, ListEvidenceVersionsErrors, ListEvidenceVersionsResponses, ListRequestItemsData, ListRequestItemsErrors, ListRequestItemsResponses, ListScreeningResultsData, ListScreeningResultsErrors, ListScreeningResultsResponses, ListWallsData, ListWallsErrors, ListWallsResponses, MeData, MeErrors, MeResponses, MeteringData, MeteringErrors, MeteringResponses, PutBudgetData, PutBudgetErrors, PutBudgetResponses, ReasonCodesData, ReasonCodesErrors, ReasonCodesResponses, RejectData, RejectErrors, RejectResponses, ReleaseData, ReleaseErrors, ReleaseResponses, RemoveWallData, RemoveWallErrors, RemoveWallResponses, ReviewQueueData, ReviewQueueErrors, ReviewQueueResponses, SendBackData, SendBackErrors, SendBackResponses, StartRetrievalData, StartRetrievalErrors, StartRetrievalResponses, TakeData, TakeErrors, TakeResponses } from './types.gen';
+import type { AcceptData, AcceptErrors, AcceptResponses, ApplyMethodologyData, ApplyMethodologyErrors, ApplyMethodologyResponses, AssignData, AssignErrors, AssignResponses, CreateEngagementData, CreateEngagementErrors, CreateEngagementResponses, CreateRequestItemData, CreateRequestItemErrors, CreateRequestItemResponses, CreateWallData, CreateWallErrors, CreateWallResponses, EngagementGraphData, EngagementGraphErrors, EngagementGraphResponses, GetBudgetData, GetBudgetErrors, GetBudgetResponses, GetEngagementData, GetEngagementErrors, GetEngagementResponses, GetRetrievalData, GetRetrievalErrors, GetRetrievalResponses, GetVersionData, GetVersionErrors, GetVersionResponses, ImportTemplateData, ImportTemplateErrors, ImportTemplateResponses, ListEngagementsData, ListEngagementsErrors, ListEngagementsResponses, ListEvidenceVersionsData, ListEvidenceVersionsErrors, ListEvidenceVersionsResponses, ListRequestItemsData, ListRequestItemsErrors, ListRequestItemsResponses, ListScreeningResultsData, ListScreeningResultsErrors, ListScreeningResultsResponses, ListTemplatesData, ListTemplatesErrors, ListTemplatesResponses, ListWallsData, ListWallsErrors, ListWallsResponses, MeData, MeErrors, MeResponses, MeteringData, MeteringErrors, MeteringResponses, PutBudgetData, PutBudgetErrors, PutBudgetResponses, ReasonCodesData, ReasonCodesErrors, ReasonCodesResponses, RejectData, RejectErrors, RejectResponses, ReleaseData, ReleaseErrors, ReleaseResponses, RemoveWallData, RemoveWallErrors, RemoveWallResponses, ReviewQueueData, ReviewQueueErrors, ReviewQueueResponses, SendBackData, SendBackErrors, SendBackResponses, StartRetrievalData, StartRetrievalErrors, StartRetrievalResponses, TakeData, TakeErrors, TakeResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -112,6 +112,28 @@ export const reject = <ThrowOnError extends boolean = false>(options: Options<Re
 export const sendBack = <ThrowOnError extends boolean = false>(options: Options<SendBackData, ThrowOnError>): RequestResult<SendBackResponses, SendBackErrors, ThrowOnError> => (options.client ?? client).post<SendBackResponses, SendBackErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/send-back',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Engagement Graph Route
+ */
+export const engagementGraph = <ThrowOnError extends boolean = false>(options: Options<EngagementGraphData, ThrowOnError>): RequestResult<EngagementGraphResponses, EngagementGraphErrors, ThrowOnError> => (options.client ?? client).get<EngagementGraphResponses, EngagementGraphErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/graph',
+    ...options
+});
+
+/**
+ * Apply Methodology Route
+ */
+export const applyMethodology = <ThrowOnError extends boolean = false>(options: Options<ApplyMethodologyData, ThrowOnError>): RequestResult<ApplyMethodologyResponses, ApplyMethodologyErrors, ThrowOnError> => (options.client ?? client).post<ApplyMethodologyResponses, ApplyMethodologyErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/methodology',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -236,6 +258,35 @@ export const me = <ThrowOnError extends boolean = false>(options?: Options<MeDat
 export const metering = <ThrowOnError extends boolean = false>(options?: Options<MeteringData, ThrowOnError>): RequestResult<MeteringResponses, MeteringErrors, ThrowOnError> => (options?.client ?? client).get<MeteringResponses, MeteringErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/metering',
+    ...options
+});
+
+/**
+ * List Templates Route
+ */
+export const listTemplates = <ThrowOnError extends boolean = false>(options?: Options<ListTemplatesData, ThrowOnError>): RequestResult<ListTemplatesResponses, ListTemplatesErrors, ThrowOnError> => (options?.client ?? client).get<ListTemplatesResponses, ListTemplatesErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/methodology/templates',
+    ...options
+});
+
+/**
+ * Import Template Route
+ *
+ * The raw `.xlsx` workbook is the request body (TASK-023 D3: no multipart dependency).
+ */
+export const importTemplate = <ThrowOnError extends boolean = false>(options: Options<ImportTemplateData, ThrowOnError>): RequestResult<ImportTemplateResponses, ImportTemplateErrors, ThrowOnError> => (options.client ?? client).post<ImportTemplateResponses, ImportTemplateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/methodology/templates/{name}/versions',
+    ...options
+});
+
+/**
+ * Get Version Route
+ */
+export const getVersion = <ThrowOnError extends boolean = false>(options: Options<GetVersionData, ThrowOnError>): RequestResult<GetVersionResponses, GetVersionErrors, ThrowOnError> => (options.client ?? client).get<GetVersionResponses, GetVersionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/methodology/versions/{version_id}',
     ...options
 });
 

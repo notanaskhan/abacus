@@ -3,8 +3,8 @@
 import { queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, assign, createEngagement, createRequestItem, createWall, getBudget, getEngagement, getRetrieval, listEngagements, listEvidenceVersions, listRequestItems, listScreeningResults, listWalls, me, metering, type Options, putBudget, reasonCodes, reject, release, removeWall, reviewQueue, sendBack, startRetrieval, take } from '../sdk.gen';
-import type { AcceptData, AcceptError, AcceptResponse, AssignData, AssignError, AssignResponse, CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, GetBudgetData, GetBudgetError, GetBudgetResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListWallsData, ListWallsError, ListWallsResponse, MeData, MeError, MeResponse, MeteringData, MeteringError, MeteringResponse, PutBudgetData, PutBudgetError, PutBudgetResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, SendBackData, SendBackError, SendBackResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, TakeData, TakeError, TakeResponse } from '../types.gen';
+import { accept, applyMethodology, assign, createEngagement, createRequestItem, createWall, engagementGraph, getBudget, getEngagement, getRetrieval, getVersion, importTemplate, listEngagements, listEvidenceVersions, listRequestItems, listScreeningResults, listTemplates, listWalls, me, metering, type Options, putBudget, reasonCodes, reject, release, removeWall, reviewQueue, sendBack, startRetrieval, take } from '../sdk.gen';
+import type { AcceptData, AcceptError, AcceptResponse, ApplyMethodologyData, ApplyMethodologyError, ApplyMethodologyResponse, AssignData, AssignError, AssignResponse, CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, EngagementGraphData, EngagementGraphError, EngagementGraphResponse, GetBudgetData, GetBudgetError, GetBudgetResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, GetVersionData, GetVersionError, GetVersionResponse, ImportTemplateData, ImportTemplateError, ImportTemplateResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListTemplatesData, ListTemplatesError, ListTemplatesResponse, ListWallsData, ListWallsError, ListWallsResponse, MeData, MeError, MeResponse, MeteringData, MeteringError, MeteringResponse, PutBudgetData, PutBudgetError, PutBudgetResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, SendBackData, SendBackError, SendBackResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, TakeData, TakeError, TakeResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -186,6 +186,41 @@ export const sendBackMutation = (options?: Partial<Options<SendBackData>>): UseM
     const mutationOptions: UseMutationOptions<SendBackResponse, SendBackError, Options<SendBackData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await sendBack({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const engagementGraphQueryKey = (options: Options<EngagementGraphData>) => createQueryKey('engagementGraph', options);
+
+/**
+ * Engagement Graph Route
+ */
+export const engagementGraphOptions = (options: Options<EngagementGraphData>) => queryOptions<EngagementGraphResponse, EngagementGraphError, EngagementGraphResponse, ReturnType<typeof engagementGraphQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await engagementGraph({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: engagementGraphQueryKey(options)
+});
+
+/**
+ * Apply Methodology Route
+ */
+export const applyMethodologyMutation = (options?: Partial<Options<ApplyMethodologyData>>): UseMutationOptions<ApplyMethodologyResponse, ApplyMethodologyError, Options<ApplyMethodologyData>> => {
+    const mutationOptions: UseMutationOptions<ApplyMethodologyResponse, ApplyMethodologyError, Options<ApplyMethodologyData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await applyMethodology({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -405,6 +440,61 @@ export const meteringOptions = (options?: Options<MeteringData>) => queryOptions
         return data;
     },
     queryKey: meteringQueryKey(options)
+});
+
+export const listTemplatesQueryKey = (options?: Options<ListTemplatesData>) => createQueryKey('listTemplates', options);
+
+/**
+ * List Templates Route
+ */
+export const listTemplatesOptions = (options?: Options<ListTemplatesData>) => queryOptions<ListTemplatesResponse, ListTemplatesError, ListTemplatesResponse, ReturnType<typeof listTemplatesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listTemplates({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listTemplatesQueryKey(options)
+});
+
+/**
+ * Import Template Route
+ *
+ * The raw `.xlsx` workbook is the request body (TASK-023 D3: no multipart dependency).
+ */
+export const importTemplateMutation = (options?: Partial<Options<ImportTemplateData>>): UseMutationOptions<ImportTemplateResponse, ImportTemplateError, Options<ImportTemplateData>> => {
+    const mutationOptions: UseMutationOptions<ImportTemplateResponse, ImportTemplateError, Options<ImportTemplateData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await importTemplate({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getVersionQueryKey = (options: Options<GetVersionData>) => createQueryKey('getVersion', options);
+
+/**
+ * Get Version Route
+ */
+export const getVersionOptions = (options: Options<GetVersionData>) => queryOptions<GetVersionResponse, GetVersionError, GetVersionResponse, ReturnType<typeof getVersionQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getVersion({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getVersionQueryKey(options)
 });
 
 export const listWallsQueryKey = (options?: Options<ListWallsData>) => createQueryKey('listWalls', options);

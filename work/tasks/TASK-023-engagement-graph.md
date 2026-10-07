@@ -4,7 +4,7 @@ title: Engagement graph and methodology configuration v1
 spec: SPEC-008
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9]
 risk_zone: amber
-status: awaiting-plan-approval
+status: done
 branch: task-023-engagement-graph
 worktree:
 created: 2026-10-07
@@ -31,7 +31,7 @@ All of SPEC-008. Excluded: engagement facts, knowledge retrieval, and any UI.
 - Code: the `engagements`, `requests`, `evidence`, `agents` and `ledger` APIs, and `ledger`'s workbook parsing (`SheetLayoutError`)
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-07: D1–D4). Approved by founder: paths listed under *Protected paths*, the SPEC-008 §8 amendment and the BOUND-002 test
 
 ### Design (for founder review)
 1. **Templates** (`engagements`, Q3):
@@ -90,11 +90,23 @@ All of SPEC-008. Excluded: engagement facts, knowledge retrieval, and any UI.
 - [ ] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-07` — Implemented:
+  - the workbook parser and template import (engagements);
+  - apply methodology (requests);
+  - the engagement graph and its route (agents);
+  - migration 0019, the matrix actions, the BOUND-002 edge agents → ledger, the schema maps, the sample workbook and the READMEs.
+
+  Gates, the schema check and unit tests pass. Full test runs deferred by the founder.
 - `2026-10-07` — SPEC-008 approved and merged (#40). Design written for founder review.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| `methodology.read` is checked on the firm, so engagement partners and managers (engagement roles) can't list templates yet; they apply a version by ID and see the pinned version in the graph | `authorise` gives engagement roles nothing on firm resources | No; revisit with the UI |
+| The import route's body isn't described in OpenAPI (AbacusRouter has no `openapi_extra`), so the generated client has no typed body for it | D3 (raw body) | No |
+| Seeding records `request_item.created` per item plus `methodology.applied` | Same trail as items added by hand | No |
+| Two concurrent applies to one engagement can deadlock (share lock, then update); Postgres aborts one, which gets 500 rather than 409 | Rare (a double submit); the pin itself stays single | No |
+| The graph reads every snapshot of the engagement to pick the latest | Few snapshots per engagement in v1; a ledger metadata query later if slow | No |
 
 ## Questions for the human
 - Design questions D1–D4 (above).
