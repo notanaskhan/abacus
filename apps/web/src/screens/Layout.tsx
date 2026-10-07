@@ -2,7 +2,7 @@ import { meOptions } from "@abacus/api-client/query";
 import { Alert, Button, Card, Spinner } from "@abacus/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Outlet } from "@tanstack/react-router";
-import { type JSX, useEffect } from "react";
+import { type JSX, useEffect, useState } from "react";
 import { App } from "../App";
 import { errorMessage } from "../api";
 import { accessToken, chooseTenant, chosenTenant, signIn, signOut } from "../auth/session";
@@ -22,6 +22,9 @@ export function Layout(): JSX.Element {
 function SignedIn(): JSX.Element {
   const queryClient = useQueryClient();
   const me = useQuery(meOptions());
+  // React state, so choosing a firm re-renders (the API reports no active firm for users in
+  // several; the choice is also kept for the client's X-Abacus-Tenant header).
+  const [picked, setPicked] = useState<string | null>(chosenTenant);
 
   if (me.isPending) {
     return (
@@ -47,7 +50,7 @@ function SignedIn(): JSX.Element {
     );
   }
 
-  const tenant = me.data.active_tenant_id ?? chosenTenant();
+  const tenant = me.data.active_tenant_id ?? picked;
   const firm = me.data.memberships.find((m) => m.tenant_id === tenant);
   if (firm === undefined) {
     return (
@@ -62,6 +65,7 @@ function SignedIn(): JSX.Element {
                   className="w-full"
                   onClick={() => {
                     chooseTenant(m.tenant_id);
+                    setPicked(m.tenant_id);
                     void queryClient.invalidateQueries();
                   }}
                 >

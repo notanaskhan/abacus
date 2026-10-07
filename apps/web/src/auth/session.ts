@@ -83,7 +83,10 @@ export function chooseTenant(tenantId: string): void {
 
 /** Only same-origin paths may be returned to after sign-in (no open redirect). */
 export function safeReturnTo(path: string): string {
-  return path.startsWith("/") && !path.startsWith("//") && !path.startsWith(CALLBACK_PATH)
+  return path.startsWith("/") &&
+    !path.startsWith("//") &&
+    !path.includes("\\") &&
+    !path.startsWith(CALLBACK_PATH)
     ? path
     : "/";
 }

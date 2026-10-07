@@ -1035,6 +1035,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_retrieval_workflow.py",
             "tests/integration/test_retrieval_api.py",
             "tests/integration/agent_tests/support.py",
+            "tests/integration/test_seed_dev.py",
             # Records replay fixtures against throwaway containers (seeds as the superuser).
             "src/abacus_tools/workflows/record_retrieval.py",
             # Seeds the local stack as its superuser (local only; TASK-012).
