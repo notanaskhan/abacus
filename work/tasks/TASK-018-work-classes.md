@@ -200,6 +200,38 @@ Source: SPEC-003 AC-1–5, AC-15 (schedule-to-start) and AC-16, and design §2, 
 - the integration fixtures that run a `Worker` on `QUEUE` and set `ABACUS_TEMPORAL_TASK_QUEUE`. Their workers must poll `queue_for(<class>)`, or the tests must use `build_workers`. This affects `test_retrieval_workflow.py`, `test_retrieval_api.py`, `agent_tests/test_screening_workflow.py`, `test_observability_flow.py` and `test_walls_runs.py`;
 - `tests/unit/worker/conftest.py` already stubs `shutdown_metrics` alongside `shutdown_tracing`.
 
+### Contract revision 1: 018a review fixes (supersedes the contract above where they differ)
+- **Leaf module:** `WorkClass` and `WORK_CLASSES` live in `abacus.kernel.work_class`, re-exported by `kernel.dispatch`. `dispatch.work_class_of_queue(q)` returns the class or `None` (the legacy queue, or any other). `register_work_classes` takes `Mapping[type, WorkClass]`.
+- **Registration lives beside the starter:**
+  - `connections.retrievals.WORKFLOWS` (interactive) and `agents.screenings.WORKFLOWS` (the screener spec's class) are registered when those modules are imported, and re-exported as `api.WORKFLOWS`.
+  - Importing `retrievals` or `screenings` on its own is enough to dispatch.
+- **Settings:**
+  - `worker_max_activities` and `worker_max_workflow_tasks` are replaced by `work_classes: dict[WorkClass, WorkClassLimits]`.
+  - `WorkClassLimits` has `max_activities` and `max_workflow_tasks`, both at least 1, frozen, with extra fields forbidden.
+  - Defaults: interactive 10/10, time_sensitive 10/10, background 5/5, batch 2/2, lowered for the database pool.
+  - The settings are refused unless they hold exactly the four classes.
+- **Worker:**
+  - The legacy worker is added only when `serve_legacy_queue` is true and `interactive` is among the classes served.
+  - The relay runs only in a process serving `interactive`.
+  - `run`:
+    1. starts `worker.run()` for every pool as a task, plus the relay task;
+    2. waits for the signal or for any task to end;
+    3. calls `shutdown()` on every worker together, then awaits the tasks;
+    4. only then calls `shutdown_tracing()`, `shutdown_metrics()` and `flush_errors()`;
+    5. re-raises the first task's exception; a pool or relay that ended before the signal without one raises `RuntimeError`.
+- **Metrics:**
+  - The allowlist is `{work_class, provider, model, reason, outcome}`; there is no `tenant.id` (018b adds a per-instrument view).
+  - Exemplars are off (`AlwaysOffExemplarFilter`).
+  - `test_reader` is renamed `in_memory_reader`.
+  - `configure_metrics(service, reader)` raises `RuntimeError` when a reader is passed after the provider exists.
+  - `ScheduleToStartInterceptor` and `SCHEDULE_TO_START` move to `abacus.kernel.temporal_metrics`, with work class `legacy` for a queue that isn't a class queue.
+- **DISPATCH-001:**
+  - It also flags any reference to these names, not only a call: `start_workflow`, `execute_workflow`, `signal_with_start_workflow`, `start_update_with_start_workflow`, `start_child_workflow`, `execute_child_workflow`, `create_schedule`, `ScheduleActionStartWorkflow` or `temporal_client`. That covers an attribute, a name, an import alias and a string constant (`getattr(c, "start_workflow")`).
+  - It also flags any `from temporalio.client import ...`.
+  - It still flags `task_queue=`.
+  - Excluded files: `kernel/dispatch.py`, `kernel/temporal.py` and `worker/__main__.py`.
+- **AgentSpec:** every entry of `cheaper_tiers` must be strictly cheaper than `tier` (small < medium < large), or the spec doesn't load.
+
 ### Steps
 1. Design and interface contract, after the spec is approved.
 2. Implementation.
@@ -225,6 +257,7 @@ Source: SPEC-003 AC-1–5, AC-15 (schedule-to-start) and AC-16, and design §2, 
 ## Progress log
 - `2026-10-07` — Created with SPEC-003 (draft) for founder review.
 - `2026-10-07` — SPEC-003 approved. Design §1–8 and D1–D5 written for founder review.
+- `2026-10-07` — 018a reviews: security (S1 DISPATCH-001 sidesteps, S2 legacy pool in non-interactive processes, S3 relay in every process, S4 `tenant.id`, S5 exemplars, S6–S9) and architecture (A1 a dead pool unnoticed, A2 serial shutdown, A3 telemetry shut before drain, A5 settings by class, A6–A7 kernel layering, A9 registration beside the starter, A11–A17). All fixed except A16 (the glossary is protected and outside this approval). Contract revision 1.
 - `2026-10-07` — Design approved (D1–D5). 018a implemented: `kernel.dispatch`, `kernel.metrics`, the per-class worker pools and legacy queue, DISPATCH-001, the agent spec fields, ADR-105, and docs (kernel README, temporal reference, skill). Static gates pass on `src`; 11 unit tests and the integration fixtures pin the old worker and queue (handed to the test author).
 
 ## Decisions made during this task
@@ -232,10 +265,13 @@ Source: SPEC-003 AC-1–5, AC-15 (schedule-to-start) and AC-16, and design §2, 
 |---|---|---|
 
 ## Gotchas and discoveries
--
+- 018b: workflows can't import `kernel.dispatch` (WF-001), so a workflow's class must come from its input or `workflow.info().task_queue` (`work_class_of_queue`); a legacy-queue workflow has no class and skips slots (it runs behind `patched` anyway).
+- Deploy order: workers before the API, or dispatched work waits for pollers on the new class queues.
+- Database pool: worker concurrency now totals 27 (plus 10 legacy) per process against SQLAlchemy's default pool (5 + 10); size the pool with TASK-014.
+- The design text says `dispatch(workflow_name, ...)` and `cheaper_tiers` default `[]`; the contract (the workflow class; required) supersedes it.
 
 ## Questions for the human
-- Design questions D1–D5 (above).
+- Glossary entries "work class" and "essential" (A16): the glossary is protected and not in this task's approval.
 
 ## Handoff
 - **Current state:** 018a implemented on `task-018-work-classes`. The independent test author and reviews are next.

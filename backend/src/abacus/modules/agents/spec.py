@@ -79,6 +79,10 @@ def _load() -> dict[str, AgentSpec]:
         if spec.shape == "single_call" and spec.limits.max_steps != 1:
             raise ValueError(f"agent {spec.id}: a single_call agent takes exactly one step")
         # ADR-005, ADR-025: a task scope holds only actions the matrix lets agents be given.
+        # ADR-072: a step down is to a strictly cheaper tier.
+        order = {"small": 0, "medium": 1, "large": 2}
+        if any(order[t] >= order[spec.tier] for t in spec.cheaper_tiers):
+            raise ValueError(f"agent {spec.id}: cheaper_tiers must be cheaper than {spec.tier}")
         refused = sorted(a for a in spec.task_scope if not agent_may_hold(a))
         if refused:
             raise ValueError(f"agent {spec.id}: task scope may not include {refused}")

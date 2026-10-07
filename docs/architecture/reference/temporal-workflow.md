@@ -9,9 +9,9 @@ trigger ─▶ dispatch(Workflow, Input(ids), id=…) ─▶ workflow (orchestra
                                                           └── any failure ─▶ <module>.fail_run (retries forever)
 ```
 
-- One module owns a workflow, its activities and its payload types. Each module's `api.py` exports `WORKFLOWS` (each workflow's work class, registered with `register_work_classes`), `ACTIVITIES` and `SUBSCRIPTIONS`; `abacus/worker/__main__.py` composes them from `MODULES`, so adding a workflow never touches the worker.
+- One module owns a workflow, its activities and its payload types. Each module's `api.py` exports `WORKFLOWS` (each workflow's work class, registered with `register_work_classes` in the module that starts it), `ACTIVITIES` and `SUBSCRIPTIONS`; `abacus/worker/__main__.py` composes them from `MODULES`, so adding a workflow never touches the worker.
 - `kernel.dispatch.dispatch` is the only way to start a workflow: it runs on its work class's queue (`<base>-interactive`, `-time-sensitive`, `-background`, `-batch`), each with its own worker pool (ADR-071, SPEC-003). Its activities run on the same queue.
-- Workflows and activities have fixed names (`@workflow.defn(name="retrieval")`, `@activity.defn(name="retrieval.pull_raw")`). Starts and `execute_activity` calls use the name strings. Renaming one breaks replay (ADR-090).
+- Workflows and activities have fixed names (`@workflow.defn(name="retrieval")`, `@activity.defn(name="retrieval.pull_raw")`). `execute_activity` calls use the name strings; starts pass the workflow class to `dispatch`. Renaming one breaks replay (ADR-090).
 
 ## The workflow: orchestration only
 

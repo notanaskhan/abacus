@@ -1,6 +1,5 @@
 """Public interface of the connections module; other modules import only this (ADR-008)."""
 
-from abacus.kernel.dispatch import WorkClass, register_work_classes
 from abacus.kernel.uow import Handler
 from abacus.modules.connections.activities import ACTIVITIES
 from abacus.modules.connections.connector import (
@@ -28,6 +27,7 @@ from abacus.modules.connections.pipeline import (
     validate_run,
 )
 from abacus.modules.connections.retrievals import (
+    WORKFLOWS,
     WorkflowUnavailable,
     trigger_retrieval,
     workflow_id,
@@ -47,9 +47,6 @@ from abacus.modules.connections.service import (
 from abacus.modules.connections.workflow_types import FailInput, RetrievalInput, RetrievalOutcome
 from abacus.modules.connections.workflows import RetrievalWorkflow
 
-# Each workflow's work class (ADR-071; SPEC-003 Q1): a person waits on a retrieval they start.
-WORKFLOWS: dict[type, WorkClass] = {RetrievalWorkflow: "interactive"}
-register_work_classes(WORKFLOWS)
 # Outbox events this module handles (the worker's relay routes them): none yet.
 SUBSCRIPTIONS: dict[str, Handler] = {}
 

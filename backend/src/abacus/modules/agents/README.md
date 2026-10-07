@@ -7,6 +7,8 @@ Agent specs, agent runs and screening (ADR-005, ADR-025, ADR-047, ADR-050, ADR-0
   - validated at import;
   - a spec's prompt must be registered;
   - its task scope may hold only actions the matrix gives agents as `task_scope`.
+  - it declares `work_class` (its queue, ADR-071; the screener is `time_sensitive`), `essential` (ADR-069 as named by ADR-105) and `cheaper_tiers` (each strictly cheaper than `tier`; empty until one passes its evaluation suite).
+- Screening starts only through `kernel.dispatch` (`screenings.py`, which registers `WORKFLOWS`), on the screener's class queue.
 - `create_screening_run(tenant_id, evidence_version_id, source_event_id, requested_by) -> run_id | None`:
   - one run per agent and event;
   - the initiator is `requested_by` from `evidence_version.created`: the person a retrieval ran for (retrievals only for now; uploads don't pass it yet);

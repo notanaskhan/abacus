@@ -13,7 +13,7 @@ risk_zone: amber
 > - Never edit an accepted ADR. Propose a new one that supersedes it.
 
 ## Context
-ADR-069's guidance names an agent's essential or deferrable flag `work_class: essential | deferrable`. ADR-071 uses "work class" for something else: one of four queues (interactive, time-sensitive, background, batch). An agent spec needs both, so one name can't mean two things (SPEC-003 Q2).
+ADR-069's guidance names an agent's essential or deferrable flag `work_class: essential | deferrable`. ADR-071 uses "work class" for something else: one of four queues (interactive, time-sensitive, background, batch). An agent spec needs both, so one name can't mean two things (SPEC-003 Q2). This ADR is amber although ADR-069 is red: it renames a field and changes no decision.
 
 ## Decision
 In agent specs, `work_class` means ADR-071's queue class. ADR-069's flag is `essential: true | false`. This amends only ADR-069's guidance and enforcement wording; its decision is unchanged.
@@ -37,7 +37,9 @@ In agent specs, `work_class` means ADR-071's queue class. ADR-069's flag is `ess
 - Readers of ADR-069 need this ADR for the field's name
 
 ## Enforcement
-- `AgentSpec` requires `work_class` (one of the four classes) and `essential` (a boolean); a spec without either doesn't load
+- Test: `AgentSpec` rejects a spec without `work_class` (one of the four classes) or `essential` (a boolean)
+- Reviewer checklist: a new agent spec declares both
+- Note: ADR-071's example routes by `spec.work_class`; the code routes by the workflow's registered class, which for an agent's workflow is taken from its spec (SPEC-003 §7)
 
 ## Guidance for agents
 **Do**

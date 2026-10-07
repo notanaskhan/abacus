@@ -17,13 +17,19 @@ from uuid import UUID
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 from temporalio.exceptions import WorkflowAlreadyStartedError
 
-from abacus.kernel.dispatch import dispatch
+from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.uow import OutboxEvent
+from abacus.modules.agents.service import SCREENER
+from abacus.modules.agents.spec import spec
 from abacus.modules.agents.workflow_types import ScreeningInput
 from abacus.modules.agents.workflows import ScreeningWorkflow
 from abacus.modules.evidence.api import EvidenceVersionCreated
 
 EVIDENCE_VERSION_CREATED = EvidenceVersionCreated.event_type
+# Each workflow's work class (ADR-071): screening runs in the screener's class (its spec).
+# Registered here, beside the only code that starts it, so it can't be started unregistered.
+WORKFLOWS: dict[type, WorkClass] = {ScreeningWorkflow: spec(SCREENER).work_class}
+register_work_classes(WORKFLOWS)
 
 
 def workflow_id(tenant_id: UUID, evidence_version_id: UUID) -> str:

@@ -12,7 +12,7 @@ from uuid import UUID
 
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
-from abacus.kernel.dispatch import dispatch
+from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.errors import ServiceUnavailable
 from abacus.modules.connections.connector import Period
 from abacus.modules.connections.pipeline import fail_run
@@ -27,6 +27,10 @@ from abacus.modules.connections.workflows import RetrievalWorkflow
 from abacus.modules.identity.api import AuthContext
 
 EXECUTION_TIMEOUT_HOURS = 6
+# Each workflow's work class (ADR-071; SPEC-003 Q1): a person waits on a retrieval they start.
+# Registered here, beside the only code that starts it, so it can't be started unregistered.
+WORKFLOWS: dict[type, WorkClass] = {RetrievalWorkflow: "interactive"}
+register_work_classes(WORKFLOWS)
 WORKFLOW_UNAVAILABLE = "workflow_unavailable"
 
 

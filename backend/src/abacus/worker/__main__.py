@@ -3,8 +3,9 @@
 Run: python -m abacus.worker [--classes interactive,time_sensitive,background,batch]
 
 One worker pool per work class served (ADR-071, SPEC-003), each polling `<base>-<class>` with its
-own concurrency limits; by default a process serves all four. For one release it also drains the
-legacy single queue (`serve_legacy_queue`).
+own concurrency limits; by default a process serves all four. The process serving the interactive
+pool also runs the outbox relay and, for one release, drains the legacy single queue
+(`serve_legacy_queue`).
 
 Fails at boot, not at first use, if the database (application and relay roles), key service,
 evidence storage or payload codec isn't usable: an AWS environment without its KMS key service
@@ -30,7 +31,6 @@ import asyncio
 import signal
 import sys
 from collections.abc import Sequence
-from contextlib import AsyncExitStack
 from datetime import timedelta
 
 from temporalio.client import Client
@@ -46,13 +46,10 @@ from abacus.kernel.error_tracking import (
     configure_error_tracking,
     flush_errors,
 )
-from abacus.kernel.metrics import (
-    ScheduleToStartInterceptor,
-    configure_metrics,
-    shutdown_metrics,
-)
+from abacus.kernel.metrics import configure_metrics, shutdown_metrics
 from abacus.kernel.telemetry import configure_tracing, shutdown_tracing
 from abacus.kernel.temporal import payload_codec, temporal_client
+from abacus.kernel.temporal_metrics import ScheduleToStartInterceptor
 from abacus.kernel.uow import Handler
 from abacus.kernel.uow.relay import RoutingPublisher, run_relay
 from abacus.modules.agents import api as agents
@@ -74,15 +71,14 @@ def publisher() -> RoutingPublisher:
 
 def _worker(client: Client, task_queue: str, work_class: WorkClass | None) -> Worker:
     """One pool: every module's workflows and activities, polling one task queue."""
-    limits = settings()
-    key = work_class or "interactive"  # the legacy queue drains with interactive limits
+    limits = settings().work_classes[work_class or "interactive"]  # legacy: interactive limits
     return Worker(
         client,
         task_queue=task_queue,
         workflows=[w for module in MODULES for w in module.WORKFLOWS],
         activities=[a for module in MODULES for a in module.ACTIVITIES],
-        max_concurrent_activities=limits.worker_max_activities[key],
-        max_concurrent_workflow_tasks=limits.worker_max_workflow_tasks[key],
+        max_concurrent_activities=limits.max_activities,
+        max_concurrent_workflow_tasks=limits.max_workflow_tasks,
         # Tracing comes with the client (kernel.temporal); error reporting and the
         # schedule-to-start metric are the worker's.
         interceptors=[ReportingInterceptor(), ScheduleToStartInterceptor()],
@@ -105,7 +101,9 @@ async def build_workers(classes: Sequence[WorkClass] = WORK_CLASSES) -> list[Wor
         configure_provider(agents.install_fake_responses(FakeModel()))
     client = await temporal_client()
     workers = [_worker(client, queue_for(c), c) for c in classes]
-    if settings().serve_legacy_queue:
+    # The legacy queue (any class's work) drains only beside the interactive pool, so a batch-only
+    # process never runs interactive work.
+    if settings().serve_legacy_queue and "interactive" in classes:
         workers.append(_worker(client, settings().temporal_task_queue, None))
     return workers
 
@@ -123,24 +121,39 @@ def classes_from(argv: Sequence[str]) -> tuple[WorkClass, ...]:
 
 
 async def run(classes: Sequence[WorkClass] = WORK_CLASSES) -> None:
+    """Run every pool (and, beside the interactive pool, the relay) until a signal, or until any
+    of them stops: one pool or the relay dying stops the process, which exits non-zero."""
     workers = await build_workers(classes)
     stop = asyncio.Event()
     loop = asyncio.get_running_loop()
     for sig in (signal.SIGTERM, signal.SIGINT):
         loop.add_signal_handler(sig, stop.set)
-    async with AsyncExitStack() as pools:
-        for worker in workers:
-            await pools.enter_async_context(worker)
-        relay = asyncio.create_task(run_relay(publisher(), stop))
-        relay.add_done_callback(lambda _: stop.set())  # a dead relay stops the worker
-        try:
-            await stop.wait()
-        finally:
-            stop.set()
-            await relay
-            shutdown_tracing()
-            shutdown_metrics()
-            flush_errors()
+    pools = [asyncio.create_task(worker.run()) for worker in workers]
+    # The relay (and its role, which reads every firm's outbox) runs only in the process that
+    # serves the interactive pool, so splitting classes doesn't multiply it.
+    relay = run_relay(publisher(), stop) if "interactive" in classes else None
+    tasks = [*pools, *([asyncio.create_task(relay)] if relay is not None else [])]
+    stopped = asyncio.create_task(stop.wait())
+    early: list[asyncio.Task[None]] = []
+    try:
+        await asyncio.wait([*tasks, stopped], return_when=asyncio.FIRST_COMPLETED)
+        # Anything that ended before the signal ended unexpectedly, even without an error.
+        early = [task for task in tasks if task.done()] if not stop.is_set() else []
+    finally:
+        stop.set()
+        # Every pool stops polling at once, then drains (up to GRACEFUL_SHUTDOWN each, together).
+        await asyncio.gather(*(worker.shutdown() for worker in workers), return_exceptions=True)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        stopped.cancel()
+        # Only after the drain: spans, metrics and errors of the last activities are exported.
+        shutdown_tracing()
+        shutdown_metrics()
+        flush_errors()
+    failures = [r for r in results if isinstance(r, BaseException)]
+    if failures:
+        raise failures[0]
+    if early:
+        raise RuntimeError("a worker pool or the relay stopped before the signal")
 
 
 def main(argv: Sequence[str] | None = None) -> int:

@@ -9,10 +9,11 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Annotated, Literal, Self, cast
 
-from pydantic import SecretStr, model_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from abacus.kernel.classification import classified
+from abacus.kernel.work_class import WORK_CLASSES, WorkClass
 
 Environment = Literal["local", "test", "staging", "production"]
 _LOCAL_DB = "postgresql+asyncpg://abacus_app:abacusapp@127.0.0.1:55432/abacus"
@@ -57,6 +58,15 @@ _LOCAL_DEFAULTS: dict[str, object] = {
 }
 
 
+class WorkClassLimits(BaseModel):
+    """One work class's worker pool: activities and workflow tasks run at once (ADR-071)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    max_activities: Annotated[int, Field(ge=1), classified("internal")]
+    max_workflow_tasks: Annotated[int, Field(ge=1), classified("internal")]
+
+
 class Settings(BaseSettings):
     # hide_input_in_errors: a validation error must never echo environment values (secrets).
     model_config = SettingsConfigDict(
@@ -88,20 +98,16 @@ class Settings(BaseSettings):
     temporal_namespace: Annotated[str, classified("internal")] = "default"
     # The base name of the task queues: one per work class, `<base>-<class>` (ADR-071, SPEC-003).
     # The base queue itself is served for one release, until no workflow remains on it (AC-16).
+    # Remove it once this query is empty in every environment:
+    # temporal workflow list --query "TaskQueue='abacus' AND ExecutionStatus='Running'"
     temporal_task_queue: Annotated[str, classified("internal")] = "abacus"
     serve_legacy_queue: Annotated[bool, classified("internal")] = True
-    # Each class's worker pool: activities and workflow tasks run at once (TASK-018 design §3).
-    worker_max_activities: Annotated[dict[str, int], classified("internal")] = {
-        "interactive": 50,
-        "time_sensitive": 50,
-        "background": 20,
-        "batch": 10,
-    }
-    worker_max_workflow_tasks: Annotated[dict[str, int], classified("internal")] = {
-        "interactive": 50,
-        "time_sensitive": 50,
-        "background": 20,
-        "batch": 10,
+    # Each work class's limits (TASK-018 design §3); 018b and 018c add caps and thresholds here.
+    work_classes: Annotated[dict[WorkClass, WorkClassLimits], classified("internal")] = {
+        "interactive": WorkClassLimits(max_activities=10, max_workflow_tasks=10),
+        "time_sensitive": WorkClassLimits(max_activities=10, max_workflow_tasks=10),
+        "background": WorkClassLimits(max_activities=5, max_workflow_tasks=5),
+        "batch": WorkClassLimits(max_activities=2, max_workflow_tasks=2),
     }
     # Temporal Cloud needs TLS and an API key; both are required outside local and test.
     temporal_tls: Annotated[bool, classified("internal")] = False
@@ -149,6 +155,13 @@ class Settings(BaseSettings):
             not self.temporal_tls or self.temporal_api_key is None
         ):
             raise ValueError("Temporal needs TLS and an API key outside local and test")
+        return self
+
+    @model_validator(mode="after")
+    def _every_work_class(self) -> Self:
+        # Limits for exactly the four classes: an override names all of them.
+        if set(self.work_classes) != set(WORK_CLASSES):
+            raise ValueError(f"work_classes needs limits for exactly {', '.join(WORK_CLASSES)}")
         return self
 
     @model_validator(mode="after")

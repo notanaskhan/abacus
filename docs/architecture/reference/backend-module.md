@@ -30,7 +30,7 @@ __all__ = ["FulfilmentRef", "RequestItemCreated", "fulfil_by_rule", "item_ref", 
 
 - Export the `router`, the service functions, the small frozen dataclasses other modules need (`RequestItemRef`, `FulfilmentRef`) and the events others subscribe to. Never export ORM models or repository functions; return dataclasses, not rows.
 - A function that joins the caller's transaction takes `tx: UnitOfWork` first (`item_ref(tx, id)`, `fulfil_by_rule(tx, ctx, ...)`); a read takes a `TenantContext` or `AuthContext`.
-- A module with workflows or event handlers also exports `WORKFLOWS`, `ACTIVITIES`, `SUBSCRIPTIONS` from `api.py` (`connections`, `agents`); the worker composes them.
+- A module with workflows or event handlers also exports `WORKFLOWS` (each workflow's work class), `ACTIVITIES`, `SUBSCRIPTIONS` from `api.py` (`connections`, `agents`); the worker composes them. Workflows start only through `kernel.dispatch` (ADR-071).
 - Outside a module, import `abacus.modules.<m>.api` only, never `abacus.modules` itself (BOUND-001).
 
 ## Dependencies and tables
