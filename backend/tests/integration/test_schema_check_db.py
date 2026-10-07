@@ -1089,8 +1089,12 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "agent_runs": frozenset(
             {"status", "context_hash", "output", "failure_code", "finished_at"}
         ),
+        "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),  # TASK-016
     } == sc.APP_UPDATE_COLUMNS
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset()
+    assert sc.APP_INSERT_COLUMNS["ethical_walls"] == frozenset(  # TASK-016
+        {"id", "tenant_id", "user_id", "client_id", "created_by"}
+    )
     assert sc.APP_INSERT_COLUMNS["sync_runs"] == frozenset(
         {"id", "tenant_id", "client_entity_id", "connection_id", "engagement_id"}
         | {"request_item_id", "dataset", "period_start", "period_end", "started_by"}
