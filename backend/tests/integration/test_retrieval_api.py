@@ -77,6 +77,7 @@ DISTINCT_INPUT = "ZX-DISTINCTIVE-9137-input"
 class Migrated(Protocol):
     owner_url: str
     app_url: str
+    relay_url: str
     identity_url: str
     superuser_dsn: str
 
