@@ -56,7 +56,7 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "actor_kind", "actor_id", "action", "target_type", "target_id"}
         | {"before_ref", "after_ref", "trace_id"}
     ),
-    "outbox": frozenset({"id", "tenant_id", "event_type", "payload"}),
+    "outbox": frozenset({"id", "tenant_id", "event_type", "payload", "trace_context"}),
     "clients": frozenset({"id", "tenant_id", "name"}),
     "client_entities": frozenset({"id", "tenant_id", "client_id", "name"}),
     "engagements": frozenset(

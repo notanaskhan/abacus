@@ -32,6 +32,8 @@ from abacus.ai_gateway import FakeModel, configure_provider
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import key_service
 from abacus.kernel.db import ping, ping_relay
+from abacus.kernel.error_tracking import ReportingInterceptor, configure_error_tracking
+from abacus.kernel.telemetry import configure_tracing
 from abacus.kernel.temporal import payload_codec, temporal_client
 from abacus.kernel.uow import Handler
 from abacus.kernel.uow.relay import RoutingPublisher, run_relay
@@ -53,6 +55,8 @@ def publisher() -> RoutingPublisher:
 
 
 async def build_worker() -> Worker:
+    configure_tracing("abacus-worker")
+    configure_error_tracking("abacus-worker")
     await ping()
     await ping_relay()
     key_service()
@@ -66,6 +70,8 @@ async def build_worker() -> Worker:
         task_queue=settings().temporal_task_queue,
         workflows=[w for module in MODULES for w in module.WORKFLOWS],
         activities=[a for module in MODULES for a in module.ACTIVITIES],
+        # Tracing comes with the client (kernel.temporal); error reporting is the worker's.
+        interceptors=[ReportingInterceptor()],
         graceful_shutdown_timeout=GRACEFUL_SHUTDOWN,
     )
 

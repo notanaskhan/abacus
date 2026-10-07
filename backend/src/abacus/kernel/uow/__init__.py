@@ -29,6 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 
 from abacus.kernel.classification import classified, sensitive_paths
 from abacus.kernel.db import TenantContext, tenant_connection
+from abacus.kernel.telemetry import current_trace_id, current_traceparent
 from abacus.kernel.uow.relay import Handler, OutboxEvent
 
 _ACTION = re.compile(r"[a-z][a-z_]*\.[a-z][a-z_]*")
@@ -146,13 +147,15 @@ class UnitOfWork:
         self._events.append(event)
 
     async def _write(self, ctx: TenantContext) -> None:
+        # Every row can be followed to its trace (ADR-007; TASK-013).
+        trace_id = current_trace_id()
         if self._audit:
             await self._connection.execute(
                 text(
                     "INSERT INTO audit_events (tenant_id, actor_kind, actor_id, action, "
-                    "target_type, target_id, before_ref, after_ref) VALUES (:tenant, :kind, "
-                    ":actor, :action, :target_type, :target_id, CAST(:before AS jsonb), "
-                    "CAST(:after AS jsonb))"
+                    "target_type, target_id, before_ref, after_ref, trace_id) VALUES (:tenant, "
+                    ":kind, :actor, :action, :target_type, :target_id, CAST(:before AS jsonb), "
+                    "CAST(:after AS jsonb), :trace_id)"
                 ),
                 [
                     {
@@ -164,6 +167,7 @@ class UnitOfWork:
                         "target_id": _identifier(a.target.id),
                         "before": None if a.before is None else json.dumps(a.before.fields),
                         "after": None if a.after is None else json.dumps(a.after.fields),
+                        "trace_id": trace_id,
                     }
                     for a in self._audit
                 ],
@@ -171,8 +175,8 @@ class UnitOfWork:
         if self._events:
             await self._connection.execute(
                 text(
-                    "INSERT INTO outbox (id, tenant_id, event_type, payload) "
-                    "VALUES (:id, :tenant, :event_type, CAST(:payload AS jsonb))"
+                    "INSERT INTO outbox (id, tenant_id, event_type, payload, trace_context) "
+                    "VALUES (:id, :tenant, :event_type, CAST(:payload AS jsonb), :trace_context)"
                 ),
                 [
                     {
@@ -180,6 +184,7 @@ class UnitOfWork:
                         "tenant": ctx.tenant_id,
                         "event_type": e.event_type,
                         "payload": e.model_dump_json(),
+                        "trace_context": current_traceparent(),
                     }
                     for e in self._events
                 ],
