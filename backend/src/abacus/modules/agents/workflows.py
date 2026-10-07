@@ -1,6 +1,7 @@
 """The screening workflow (ADR-017, ADR-090). PROTECTED. TASK-011 design §7.
 
-Started by the relay for each `evidence_version.created` (`screening:<tenant_id>:<evidence_version_id>`).
+Started by the relay for each `evidence_version.created`
+(`screening:<tenant_id>:<evidence_version_id>`).
 Orchestration only: activities by name, identifiers in and out, no I/O (WF-001). Steps:
 create the agent run (none: `skipped`), then screen it as one activity. Any failure,
 cancellation included, ends in `screening.fail_run`, which retries until it succeeds, so a run
