@@ -257,6 +257,7 @@ Source: SPEC-003 AC-1–5, AC-15 (schedule-to-start) and AC-16, and design §2, 
 ## Progress log
 - `2026-10-07` — Created with SPEC-003 (draft) for founder review.
 - `2026-10-07` — SPEC-003 approved. Design §1–8 and D1–D5 written for founder review.
+- `2026-10-07` — Independent tests cherry-picked (4ccb451; about 220 tests and about 400 DISPATCH-001 cases; no product bugs). Unit and property: 8,175 passed with the compose DB stopped. 018a PR opened.
 - `2026-10-07` — 018a reviews: security (S1 DISPATCH-001 sidesteps, S2 legacy pool in non-interactive processes, S3 relay in every process, S4 `tenant.id`, S5 exemplars, S6–S9) and architecture (A1 a dead pool unnoticed, A2 serial shutdown, A3 telemetry shut before drain, A5 settings by class, A6–A7 kernel layering, A9 registration beside the starter, A11–A17). All fixed except A16 (the glossary is protected and outside this approval). Contract revision 1.
 - `2026-10-07` — Design approved (D1–D5). 018a implemented: `kernel.dispatch`, `kernel.metrics`, the per-class worker pools and legacy queue, DISPATCH-001, the agent spec fields, ADR-105, and docs (kernel README, temporal reference, skill). Static gates pass on `src`; 11 unit tests and the integration fixtures pin the old worker and queue (handed to the test author).
 
@@ -274,10 +275,9 @@ Source: SPEC-003 AC-1–5, AC-15 (schedule-to-start) and AC-16, and design §2, 
 - Glossary entries "work class" and "essential" (A16): the glossary is protected and not in this task's approval.
 
 ## Handoff
-- **Current state:** 018a implemented on `task-018-work-classes`. The independent test author and reviews are next.
+- **Current state:** 018a is complete and its PR is open (branch `task-018-work-classes`). Approval file `work/approvals/TASK-018.yaml` covers 018b and 018c too.
 - **Exact next step:**
-  1. Run the Sonnet test author on `task-018-work-classes-tests` with the 018a contract, including the pins.
-  2. Run the security and architecture reviews.
-  3. Cherry-pick the net test diff, fix findings, and run the full suite with the compose DB stopped.
-  4. Open the PR (amber).
-  5. Then do 018b (design §4–5) and 018c (design §6).
+  1. Merge the 018a PR.
+  2. Start 018b, caps (design §4–5): a contract first, then the slot ledger functions (D3), the `queued` status migration, workflow waits behind `patched("work-slots")` with v2 histories, and `capacity_timeout`.
+  3. Decide where a workflow learns its class (see *Gotchas*).
+  4. Then 018c, admission (design §6).
