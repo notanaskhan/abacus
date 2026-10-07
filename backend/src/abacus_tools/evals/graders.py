@@ -11,8 +11,23 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Final
+from datetime import date
+from decimal import Decimal
+from pathlib import Path
+from typing import Annotated, Final
 
+import yaml
+from pydantic import BaseModel, ConfigDict, Field
+
+from abacus.ai_gateway import (
+    MODELS,
+    Attribution,
+    ContextBuilder,
+    GatewayCall,
+    Tier,
+    call,
+)
+from abacus.kernel.classification import classified
 from abacus_tools.evals.observation import Observation
 from abacus_tools.evals.suite import Case
 
@@ -56,8 +71,97 @@ class UncalibratedJudge(RuntimeError):
     """A model judge without a calibration record against human labels can't gate (Q3)."""
 
 
+JUDGES = Path(__file__).resolve().parents[4] / "evals" / "judges"
+JUDGE_PROMPT = "eval.judge@v0"
+MIN_AGREEMENT = 0.9  # the judge must agree with human labels this often to gate
+
+
+class JudgeRecord(BaseModel):
+    """`evals/judges/<prompt>.yaml`: how well this judge, on this model and tier, agreed with
+    human labels, and when that was measured (AC-6)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    prompt: str
+    model: str
+    tier: Tier
+    human_agreement: Annotated[float, Field(ge=0, le=1)]
+    labels: Annotated[int, Field(ge=1)]
+    measured: date
+
+
+class JudgeVerdict(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    passed: Annotated[bool, classified("internal")]
+    reason: Annotated[str, Field(max_length=500), classified("internal")]
+
+
+def judge_record(prompt_ref: str, tier: Tier) -> JudgeRecord:
+    """The judge's calibration record; refused if missing, for another model or tier, or below
+    the agreement the gate needs."""
+    path = JUDGES / f"{prompt_ref}.yaml"
+    if not path.exists():
+        raise UncalibratedJudge(f"no calibration record for {prompt_ref} (evals/judges/)")
+    record = JudgeRecord.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
+    if record.prompt != prompt_ref or record.tier != tier or record.model != MODELS[tier][0]:
+        raise UncalibratedJudge(f"{prompt_ref}'s record is for another prompt, model or tier")
+    if record.human_agreement < MIN_AGREEMENT:
+        raise UncalibratedJudge(f"{prompt_ref} agrees with human labels too rarely to gate")
+    return record
+
+
+async def judge_with_model(
+    case: Case,
+    seen: Observation,
+    *,
+    attribution: Attribution,
+    tier: Tier,
+    budget_usd: Decimal,
+    prompt_ref: str = JUDGE_PROMPT,
+) -> tuple[Grade, Decimal]:
+    """A model grades the attempt, through the gateway with its own registered prompt, a pinned
+    model and tier, a budget and an output schema (AC-6). Returns the grade and what it cost,
+    which counts towards the run. An invalid verdict fails the case."""
+    judge_record(prompt_ref, tier)
+    context = (
+        ContextBuilder()
+        .task(
+            {
+                "case": case.id,
+                "expected": case.expected.model_dump(mode="json"),
+                "proposal": {"stage": seen.stage, "action": seen.action},
+            },
+            untrusted=("proposal",),
+        )
+        .build()
+    )
+    result = await call(
+        GatewayCall(
+            purpose="evaluation judge",
+            prompt=prompt_ref,
+            tier=tier,
+            output_schema=JudgeVerdict,
+            budget_usd=budget_usd,
+            attribution=attribution,
+            context=context,
+            work_class="batch",
+            essential=False,
+            max_output_tokens=200,
+        )
+    )
+    if result.output is None:
+        return Grade("model_judge", False, "judge_invalid"), result.cost_usd
+    verdict = result.output
+    return Grade("model_judge", verdict.passed, None if verdict.passed else verdict.reason), (
+        result.cost_usd
+    )
+
+
 def model_judge(case: Case, seen: Observation) -> Grade:
-    raise UncalibratedJudge("no model judge has a calibration record yet (evals/judges/)")
+    """The synchronous entry refuses: a model judge runs only through `judge_with_model`, which
+    the runner awaits when a suite lists `model_judge`."""
+    raise UncalibratedJudge("the model judge runs through judge_with_model (the runner)")
 
 
 GRADERS: Final[dict[str, Grader]] = {

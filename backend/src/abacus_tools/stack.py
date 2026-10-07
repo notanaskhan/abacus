@@ -13,13 +13,19 @@ from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from datetime import date
 from typing import TYPE_CHECKING
+from urllib.parse import urlsplit
 
 import asyncpg
 import httpx
 from temporalio.client import Client
 from testcontainers.core.container import DockerContainer
 
-from abacus.kernel.db import TenantContext, configure_engine, configure_identity_engine
+from abacus.kernel.db import (
+    TenantContext,
+    configure_engine,
+    configure_identity_engine,
+)
+from abacus.kernel.db import session as db_session
 from abacus.kernel.storage import s3_client
 from abacus.kernel.temporal import configure_temporal_client, data_converter
 from abacus.modules.connections.api import Period
@@ -143,8 +149,37 @@ async def seed(superuser: str) -> Seeded:
     return Seeded(tenant, user, engagement, items, connection)
 
 
+# The synthetic generator's seed for the stack's trial balance (recorded with evaluation runs).
+TRIAL_BALANCE_SEED = 7
+
+
 def trial_balance() -> TrialBalance:
-    return generate(7).client_entities[0].trial_balances[-1]
+    return generate(TRIAL_BALANCE_SEED).client_entities[0].trial_balances[-1]
+
+
+_LOOPBACK = frozenset({"localhost", "127.0.0.1", "::1", "host.docker.internal"})
+
+
+def is_loopback(url: str) -> bool:
+    """Whether a database URL, endpoint or `host:port` target names this machine."""
+    parsed = urlsplit(url if "://" in url else f"tcp://{url}")
+    return (parsed.hostname or "") in _LOOPBACK
+
+
+async def connect_db(dsn: str) -> asyncpg.Connection:
+    """A direct connection to a stack's database (seeding and the evaluation store, as the
+    superuser or owner): tooling only, never product code (DB-001 exempts this file)."""
+    return await asyncpg.connect(dsn)
+
+
+def assert_engines_on(stack: Stack) -> None:
+    """The platform's engine points at the stack's database, never anywhere else (SPEC-005
+    AC-16)."""
+    engine = db_session._current_engine()  # pyright: ignore[reportPrivateUsage] -- tooling check of the configured engine
+    configured = urlsplit(stack.app_url)
+    actual = engine.url
+    if (actual.host, actual.port) != (configured.hostname, configured.port):
+        raise RuntimeError("the application engine doesn't point at the throwaway stack")
 
 
 def period_of(tb: TrialBalance) -> Period:

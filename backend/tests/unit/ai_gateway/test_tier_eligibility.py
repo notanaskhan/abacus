@@ -13,6 +13,8 @@ import abacus.ai_gateway as gateway
 from abacus.ai_gateway import Attribution, ContextBuilder, GatewayCall, NotAdmitted
 from abacus.kernel.db import TenantContext
 
+SCREEN = "evidence.screen@v0"
+
 
 class Out(BaseModel):
     ok: bool
@@ -77,9 +79,34 @@ async def test_ac13_an_eligible_cheaper_tier_is_used(
     assert (tier, model) == ("medium", gateway.MODELS["medium"][0])
 
 
-async def test_ac13_eligibility_fails_closed_when_the_store_is_unreachable() -> None:
+async def test_ac13_eligibility_fails_closed_when_the_store_is_unreachable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def broken(tenant: object) -> object:
+        raise ConnectionError("down")
+
+    monkeypatch.setattr(gateway, "tenant_session", broken)
     tenant = TenantContext(uuid.uuid4(), "agent", "agent:x")
-    assert not await gateway.eligible(tenant, "evidence.screener", "small", "m", "p@v0")
+    assert not await gateway.eligible(tenant, "evidence.screener", "small", "m", SCREEN)
+
+
+@pytest.mark.parametrize(
+    ("agent", "prompt_ref"),
+    [("evidence.screener", "other.prompt@v0"), ("other.agent", SCREEN)],
+)
+async def test_ac13_eligibility_is_keyed_on_the_agents_own_prompt(
+    monkeypatch: pytest.MonkeyPatch, agent: str, prompt_ref: str
+) -> None:
+    def never(tenant: object) -> object:
+        raise AssertionError("the store isn't asked for another agent's prompt")
+
+    monkeypatch.setattr(gateway, "tenant_session", never)
+    tenant = TenantContext(uuid.uuid4(), "agent", "agent:x")
+    assert not await gateway.eligible(tenant, agent, "small", "m", prompt_ref)
+
+
+def test_ac13_the_screeners_suite_is_known_to_the_gateway() -> None:
+    assert gateway.EVAL_SUITES["evidence.screener"][0] == SCREEN
 
 
 def test_evaluation_mode_pins_the_tier_for_the_block() -> None:

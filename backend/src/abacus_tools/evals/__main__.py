@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
 from typing import cast
@@ -22,15 +21,14 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--subset", choices=["fast", "full"], default="full")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     args = parser.parse_args(argv)
-    summary = run(
+    [summary] = run(
         cast(str, args.agent),
         cast(Tier | None, args.tier),
         cast(Subset, args.subset),
         cast(Path, args.out),
     )
-    shown = {k: v for k, v in summary.items() if k != "cases"}
-    print(json.dumps(shown, indent=2))
-    return 0 if summary.get("status") == "passed" else 1
+    print(summary.model_dump_json(indent=2, exclude={"cases"}))
+    return 0 if summary.status == "passed" else 1
 
 
 if __name__ == "__main__":

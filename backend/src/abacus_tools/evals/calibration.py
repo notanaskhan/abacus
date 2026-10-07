@@ -1,10 +1,11 @@
 """Calibration (SPEC-005 AC-8, AC-9; TASK-020 design §5): does stated confidence mean anything?
 
-Ten equal confidence bands; per band, how often the final proposal was right against how
-confident the model said it was; the expected calibration error (ECE) weights each band's gap by
-its share of answers. The recommended routing threshold is the lowest `confidence_routing.below`
-that keeps the dangerous-error metric (needs-revision recall) at or above its threshold: answers
-below it are routed to needs revision, as the screener's code does.
+Ten equal confidence bands; per band, how often the model's own answer was right (before the
+code's routing) against how confident it said it was; the expected calibration error (ECE)
+weights each band's gap by its share of answers. The recommended routing threshold is the lowest
+`confidence_routing.below` that keeps the dangerous-error metric (needs-revision recall) at or
+above its threshold: answers below it are routed to the spec's `confidence_routing.route`, as the
+screener's code does.
 """
 
 from __future__ import annotations
@@ -56,36 +57,43 @@ def expected_calibration_error(
     return ece, bands
 
 
-def _routed(attempts: Sequence[Attempt], below: float) -> list[Attempt]:
-    routed: list[Attempt] = []
+def routed(attempts: Sequence[Attempt], below: float, route: str) -> list[Attempt]:
+    """The attempts as the code would route them with `below` as the threshold."""
+    result: list[Attempt] = []
     for case, seen in attempts:
         if (
             seen.stage == "screened"
             and seen.confidence is not None
             and seen.model_action is not None
         ):
-            action = "needs_revision" if seen.confidence < below else seen.model_action
+            action = route if seen.confidence < below else seen.model_action
             seen = replace(seen, action=action)
-        routed.append((case, seen))
-    return routed
+        result.append((case, seen))
+    return result
 
 
 def calibrate(
-    attempts: Sequence[Attempt], *, current_below: float, dangerous_minimum: float
+    attempts: Sequence[Attempt],
+    *,
+    current_below: float,
+    route: str,
+    dangerous_minimum: float,
 ) -> Calibration:
     points = [
-        (seen.confidence, seen.action == case.expected.action)
+        (seen.confidence, seen.model_action == case.expected.action)
         for case, seen in attempts
-        if seen.stage == "screened" and seen.confidence is not None
+        if seen.stage == "screened"
+        and case.expected.stage == "screened"
+        and seen.confidence is not None
     ]
     ece, bands = expected_calibration_error(points)
     recommended = next(
         (
             step / 20
             for step in range(21)
-            if needs_revision_recall(_routed(attempts, step / 20)) >= dangerous_minimum
+            if needs_revision_recall(routed(attempts, step / 20, route)) >= dangerous_minimum
         ),
         None,
     )
-    meets = needs_revision_recall(_routed(attempts, current_below)) >= dangerous_minimum
+    meets = needs_revision_recall(routed(attempts, current_below, route)) >= dangerous_minimum
     return Calibration(ece, bands, recommended, current_below, meets)
