@@ -6,16 +6,20 @@ import uuid
 from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 
+import httpx
 import pytest
 from types_boto3_s3 import S3Client
 
 from abacus.ai_gateway import FakeModel, configure_provider
+from abacus.api import create_app
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
 from abacus.kernel.db import configure_engine, configure_relay_engine, dispose_engine
 from abacus.kernel.storage import s3_client
 from abacus.modules.agents.api import install_fake_responses
 from abacus.modules.evidence import storage
+from abacus.modules.identity.api import configure_verifier, reset_verifier
+from abacus_tools.fakes.identity import FakeIdentityProvider
 
 from .support import Migrated, Seeder, World, make_world
 
@@ -88,6 +92,22 @@ def evidence_storage(bucket_client: S3Client) -> Iterator[S3Client]:
     yield bucket_client
     storage.reset_storage()
     reset_key_service()
+
+
+@pytest.fixture
+def idp() -> Iterator[FakeIdentityProvider]:
+    """Sign-in tokens for the HTTP tests (TASK-016 walls tests; modules may override it)."""
+    provider = FakeIdentityProvider()
+    configure_verifier(provider.verifier())
+    yield provider
+    reset_verifier()
+
+
+@pytest.fixture
+async def http(idp: FakeIdentityProvider) -> AsyncIterator[httpx.AsyncClient]:
+    transport = httpx.ASGITransport(app=create_app(), raise_app_exceptions=False)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
 
 
 @pytest.fixture

@@ -217,7 +217,7 @@ async def remove_wall_by_id(ctx: AuthContext, wall_id: UUID) -> WallView:
     await authorise(ctx, "wall.remove", Resource.firm(ctx.tenant_id))
     async with uow(ctx.tenant) as tx:
         wall = await get_wall(tx.session, wall_id)
-        if wall is not None and wall.user_id == ctx.user_id:
+        if wall is not None and wall.status == "active" and wall.user_id == ctx.user_id:
             raise OwnWall
         removed = await remove_wall(tx.session, wall_id, ctx.user_id)
         if removed is None:

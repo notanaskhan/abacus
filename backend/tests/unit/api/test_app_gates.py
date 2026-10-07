@@ -22,6 +22,9 @@ EXPECTED = {
     ("GET", "/v1/engagements/{engagement_id}"): "engagement.read_metadata",
     ("POST", "/v1/engagements/{engagement_id}/request-items"): "request_item.create",
     ("GET", "/v1/engagements/{engagement_id}/request-items"): "request_item.read",
+    ("POST", "/v1/walls"): "wall.create",
+    ("POST", "/v1/walls/{wall_id}/remove"): "wall.remove",
+    ("GET", "/v1/walls"): "wall.list",
 }
 
 
@@ -72,9 +75,16 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 
 def test_ac20_creating_routes_answer_201() -> None:
     posts = [r for r in _routes() if "POST" in _methods(r)]
-    created = {r.path for r in posts if r.path != RETRIEVALS}
-    assert created == {"/v1/engagements", "/v1/engagements/{engagement_id}/request-items"}
-    assert all(r.status_code == 201 for r in posts if r.path != RETRIEVALS)
+    removal = "/v1/walls/{wall_id}/remove"  # TASK-016: returns the removed wall, so 200
+    created = {r.path for r in posts if r.path not in (RETRIEVALS, removal)}
+    assert created == {
+        "/v1/engagements",
+        "/v1/engagements/{engagement_id}/request-items",
+        "/v1/walls",
+    }
+    assert all(r.status_code == 201 for r in posts if r.path not in (RETRIEVALS, removal))
+    assert {r.path for r in posts if r.path == removal} == {removal}
+    assert all(r.status_code in (None, 200) for r in posts if r.path == removal)  # None: default
 
 
 def test_ac20_the_retrieval_routes_exist_with_their_actions_and_the_post_answers_202() -> None:
@@ -145,6 +155,15 @@ def test_ac20_production_refuses_to_start_while_walls_are_not_implemented(
     try:
         with pytest.raises(RuntimeError):
             create_app()
+    finally:
+        settings.cache_clear()
+
+
+def test_ac11_production_starts_now_that_walls_are_enforced(production: None) -> None:
+    # TASK-016: WALL_SAFE is True, so the gate lets `create_app` start in production.
+    assert identity_api.WALL_SAFE is True
+    try:
+        assert create_app() is not None
     finally:
         settings.cache_clear()
 
