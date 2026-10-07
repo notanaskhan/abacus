@@ -26,7 +26,7 @@ const HIDDEN = new RegExp(
 export function sanitiseAgentText(text: string, limit: number = AGENT_TEXT_LIMIT): string {
   const visible = text
     .normalize("NFC")
-    .replace(/\r\n?/g, "\n")
+    .replace(/\r\n?/g, "\n") // before stripping controls: a lone CR is a line break, not noise
     .replace(HIDDEN, "")
     .replace(
       new RegExp(`\\n{${String(MAX_BLANK_LINES + 2)},}`, "g"),

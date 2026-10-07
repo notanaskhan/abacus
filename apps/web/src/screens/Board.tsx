@@ -47,6 +47,16 @@ export function Board({ engagementId }: { engagementId: string }): JSX.Element {
   const items = useQuery(listRequestItemsOptions(path));
   const versions = useQuery(listEvidenceVersionsOptions(path));
   const [pollingSince] = useState(() => Date.now());
+  // A timer, not a clock read in render: when the cap passes, re-render to offer Check again.
+  const [pollingExpired, setPollingExpired] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPollingExpired(true);
+    }, SCREENING_POLL_LIMIT_MS);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, []);
   const results = useQuery({
     ...listScreeningResultsOptions(path),
     // Keep checking while some evidence still waits for the agent's proposal, for a while.
@@ -55,11 +65,11 @@ export function Board({ engagementId }: { engagementId: string }): JSX.Element {
       versions.data !== undefined &&
       query.state.data !== undefined &&
       awaitingScreening(boardRows(items.data, versions.data, query.state.data)) &&
+      !pollingExpired &&
       Date.now() - pollingSince < SCREENING_POLL_LIMIT_MS
         ? SCREENING_POLL_MS
         : false,
   });
-  const pollingExpired = Date.now() - pollingSince >= SCREENING_POLL_LIMIT_MS;
 
   if (engagement.isPending || items.isPending || versions.isPending || results.isPending) {
     return (
