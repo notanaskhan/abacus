@@ -4,7 +4,7 @@ title: Feature flag registry with per-firm enablement
 spec: SPEC-011
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8]
 risk_zone: amber
-status: awaiting-plan-approval
+status: done
 branch: task-026-feature-flags
 worktree:
 created: 2026-10-07
@@ -31,7 +31,7 @@ All of SPEC-011. Excluded: percentage rollouts, a UI, and SPA flags.
 - Code: `abacus_tools/codegen/permission_matrix.py` (pattern), `kernel/` (db, uow), `ai_gateway/__init__.py` (`_call`, prompt lookup), `abacus_tools/quality/banned_patterns.py`
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-07: D1–D3). Approved by founder: paths listed under *Protected paths*
 
 ### Design (for founder review)
 1. **The registry:**
@@ -78,11 +78,23 @@ All of SPEC-011. Excluded: percentage rollouts, a UI, and SPA flags.
 - [ ] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-07` — Implemented:
+  - the registry (`docs/architecture/feature-flags.yaml`) and its codegen (validation, expiry, stale check in `check-fast`);
+  - `kernel.flags` (`flag`, `flag_enabled`, `flag_variant`; 30-second cache; fail-safe default);
+  - migration 0022 (`feature_flag_states`);
+  - the operator CLI (`make flag`, audited);
+  - FLAG-001;
+  - prompt variants in the gateway.
+
+  Gates, the schema check and unit tests pass. The CLI and reads were checked against local Postgres (set, re-set, refusals, read back). Full test runs deferred by the founder.
 - `2026-10-07` — SPEC-011 approved and merged (#46). Design written for founder review.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| FLAG-001 forbids constructing `Flag` outside the generated module and reading a flag by a written name (a string or an f-string); registry lookups (`FLAGS.get(...)`) are allowed | The gateway resolves `prompt.<agent_id>` from the registry; typing already requires a `Flag` | No |
+| The audit target for `feature_flag.set` is the flag's registry position (an integer) | Audit targets are UUIDs or integers | No |
+| A prompt variant outside synthetic environments needs eligibility that only a regenerated evaluation suite can give | Fails closed: no unevaluated prompt reaches a firm | No |
 
 ## Questions for the human
 - Design questions D1–D3 (above).

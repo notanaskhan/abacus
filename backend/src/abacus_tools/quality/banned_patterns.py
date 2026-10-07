@@ -123,6 +123,26 @@ def _resolve_from(src: SourceFile, node: ast.ImportFrom) -> str | None:
 # --- file rules -------------------------------------------------------------------------------
 
 
+_FLAG_READERS = frozenset({"flag", "flag_enabled", "flag_variant"})
+
+
+def _check_flags(src: SourceFile) -> Iterator[Finding]:
+    """SPEC-011 AC-5: flags are declared only in the registry (constructed in the generated
+    `kernel/_flags.py`) and read by their generated constant, never by a computed name."""
+    for call in _calls(src.tree):
+        name = _terminal_name(call.func)
+        if name == "Flag":
+            yield Finding(call.lineno, "Flag(...) outside the generated kernel/_flags.py")
+        # A generated constant, or a registry entry (`FLAGS.get(...)`, already a `Flag`); never a
+        # name written in the call (a string or an f-string).
+        elif (
+            name in _FLAG_READERS
+            and len(call.args) >= 2
+            and isinstance(call.args[1], (ast.Constant, ast.JoinedStr))
+        ):
+            yield Finding(call.lineno, f"{name}() reads a flag object, not a name")
+
+
 def _check_session_transaction(src: SourceFile) -> Iterator[Finding]:
     for call in _calls(src.tree):
         func = call.func
@@ -1583,6 +1603,14 @@ RULES: list[Rule | TreeRule] = [
         adr="ADR-005, ADR-025",
         check=_check_human_decision,
         include=("src/abacus/modules/*",),
+    ),
+    Rule(
+        id="FLAG-001",
+        description="Flags come from the registry and are read by their generated constant",
+        adr="ADR-089",
+        check=_check_flags,
+        include=("src/abacus/*",),
+        exclude=("src/abacus/kernel/_flags.py", "src/abacus/kernel/flags.py"),
     ),
     Rule(
         id="LOG-001",

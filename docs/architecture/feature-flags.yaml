@@ -1,0 +1,16 @@
+# Feature flag registry (ADR-089; SPEC-011). PROTECTED: changes need the founder's approval.
+#
+# Each flag: name, description, owner, created, expires (at most 90 days after created; an
+# expired flag fails `make check-fast` until it is removed), kind (boolean | variant), values
+# (variants only) and default (the safe behaviour: flags fall back to it on any read error).
+# Regenerate the runtime module after editing: python -m abacus_tools.codegen.feature_flags
+
+flags:
+  - name: prompt.evidence.screener
+    description: The screener's prompt version per firm (prompt rollouts, SPEC-011 Q3).
+    owner: founder
+    created: 2026-10-07
+    expires: 2027-01-05
+    kind: variant
+    values: [evidence.screen@v0]
+    default: evidence.screen@v0

@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: setup dev seed e2e check-fast check ci-unit ci-integration ci-coverage ci-contracts test test-integration evals generate migrate loadtest seed-staging route-parity
+.PHONY: setup dev seed e2e check-fast check ci-unit ci-integration ci-coverage ci-contracts test test-integration evals generate migrate loadtest seed-staging route-parity flag
 
 setup:
 	cd backend && uv sync --locked
@@ -42,6 +42,7 @@ check-fast:
 	cd backend && uv run ruff format --check . && uv run ruff check . && uv run pyright && uv run lint-imports
 	cd backend && uv run python -m abacus_tools.quality.banned_patterns
 	cd backend && uv run python -m abacus_tools.quality.validate_docs
+	cd backend && uv run python -m abacus_tools.codegen.feature_flags --check
 	cd backend && uv run python -m abacus_tools.quality.secrets_scan
 	cd backend && uv run python -m abacus_tools.quality.check_dependencies
 	pnpm -C apps/web exec tsc --noEmit && pnpm -C apps/web exec eslint . && pnpm -C apps/web exec prettier --check .
@@ -94,6 +95,10 @@ test-integration:
 # the fake model (a fake run proves the code paths, never a model's quality).
 evals:
 	cd backend && uv run python -m abacus_tools.evals $(EVAL_ARGS)
+
+# SPEC-011: set a firm's feature flag (operators; audited).
+flag:
+	cd backend && uv run python -m abacus_tools.flags --firm $(FIRM) --flag $(FLAG) --value $(VALUE) --operator $(OPERATOR) --reason "$(REASON)"
 
 # SPEC-010: the route parity check, with real credentials (costs a little). ROUTE=direct|bedrock
 route-parity:
