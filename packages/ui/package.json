@@ -1,0 +1,25 @@
+{
+  "name": "@abacus/ui",
+  "private": true,
+  "type": "module",
+  "description": "Design-system components (ADR-011): shadcn-style primitives on Radix, and AgentText for model output (ADR-065).",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "peerDependencies": {
+    "react": "^19.3.0"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.2.0",
+    "@radix-ui/react-label": "^2.1.16",
+    "@radix-ui/react-slot": "^1.4.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.52.0",
+    "tailwind-merge": "^3.7.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "react": "^19.3.0",
+    "typescript": "~5.9.3"
+  }
+}
