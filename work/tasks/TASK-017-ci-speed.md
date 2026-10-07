@@ -44,7 +44,8 @@ Not done, on purpose: pytest-xdist (a new dependency, and the integration fixtur
 - [ ] Coverage floor still enforced on the combined data
 
 ## Progress log
-- `2026-10-07` — Implemented the shard tool and tests, the Make targets and the parallel stage 2.
+- `2026-10-07` — Implemented the shard tool and tests, the Make targets and the parallel stage 2 (PR #23, merged without waiting for CI).
+- `2026-10-07` — PR #23 broke main: a `# noqa: S314` in `shard.py` (SUPPRESS-001). Fixed by reading the plain-text `pytest --durations=0` report instead of JUnit XML. Timings recorded.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -58,5 +59,5 @@ Not done, on purpose: pytest-xdist (a new dependency, and the integration fixtur
 -
 
 ## Handoff
-- **Current state:** merged without waiting for CI (founder). Shards are split by file count until `backend/tests/durations.json` is recorded.
-- **Next:** record the timings from a full local run (`--junitxml`, then `python -m abacus_tools.ci.shard --record`), commit `tests/durations.json`, and note stage 2's wall-clock time from the first PR run. Then delete `work/approvals/TASK-017.yaml`.
+- **Current state:** merged without waiting for CI (founder). Timings recorded in `backend/tests/durations.json` (a full local run; unit shards about 38 s each, integration about 120 s each, locally).
+- **Next:** note stage 2's wall-clock time from the first PR run. Then delete `work/approvals/TASK-017.yaml`.

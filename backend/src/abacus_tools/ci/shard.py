@@ -7,16 +7,17 @@ Prints the test files of shard `<shard>` (1-based) of `<shards>`, one per line. 
 a file missing from the timings (a new file) still runs, weighted as the median file. Greedy
 longest-first, deterministic: the same files and timings always give the same split.
 
-Timings: `tests/durations.json`, seconds per file, from a JUnit report of a full run:
-python -m abacus_tools.ci.shard --record <junit.xml>
+Timings: `tests/durations.json`, seconds per file, from the durations report of a full run:
+pytest --durations=0 --durations-min=0 > report.txt, then
+python -m abacus_tools.ci.shard --record report.txt
 """
 
 from __future__ import annotations
 
 import json
+import re
 import statistics
 import sys
-import xml.etree.ElementTree as ET
 from collections import defaultdict
 from pathlib import Path
 
@@ -45,17 +46,17 @@ def split(files: list[str], durations: dict[str, float], shards: int) -> list[li
     return [sorted(shard) for shard in out]
 
 
-def file_durations(junit: str) -> dict[str, float]:
-    """Seconds per test file, from a pytest JUnit report (classnames are dotted file paths)."""
+# A line of pytest's durations report: `1.23s call     tests/unit/kernel/test_x.py::test_y`.
+_DURATION = re.compile(r"^\s*(\d+(?:\.\d+)?)s\s+(?:setup|call|teardown)\s+(\S+?\.py)::")
+
+
+def file_durations(report: str) -> dict[str, float]:
+    """Seconds per test file (setup, call and teardown), from `pytest --durations=0` output."""
     totals: dict[str, float] = defaultdict(float)
-    for case in ET.fromstring(junit).iter("testcase"):  # noqa: S314 -- our own pytest report
-        module = case.get("classname", "").split("::")[0]
-        parts = module.split(".")
-        # `tests.unit.kernel.test_x.TestClass` → `tests/unit/kernel/test_x.py`
-        while parts and not parts[-1].startswith("test_"):
-            parts.pop()
-        if parts:
-            totals["/".join(parts) + ".py"] += float(case.get("time", "0"))
+    for line in report.splitlines():
+        match = _DURATION.match(line)
+        if match:
+            totals[match.group(2)] += float(match.group(1))
     return {f: round(t, 2) for f, t in sorted(totals.items())}
 
 

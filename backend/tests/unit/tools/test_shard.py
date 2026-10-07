@@ -52,14 +52,16 @@ def test_test_files_finds_only_test_modules(tmp_path: Path) -> None:
     assert sorted(Path(f).name for f in found) == ["test_a.py", "test_b.py"]
 
 
-def test_durations_are_summed_per_file_from_junit() -> None:
-    junit = """<testsuites><testsuite>
-      <testcase classname="tests.unit.kernel.test_x" name="a" time="1.5"/>
-      <testcase classname="tests.unit.kernel.test_x.TestThing" name="b" time="0.5"/>
-      <testcase classname="tests.integration.test_y" name="c" time="3"/>
-      <testcase classname="" name="d" time="9"/>
-    </testsuite></testsuites>"""
-    assert shard.file_durations(junit) == {
+def test_durations_are_summed_per_file_from_the_pytest_report() -> None:
+    report = """
+============================= slowest durations ==============================
+1.50s call     tests/unit/kernel/test_x.py::test_a
+0.50s setup    tests/unit/kernel/test_x.py::TestThing::test_b[1]
+3.00s teardown tests/integration/test_y.py::test_c
+0.01s call     not a test line
+== 2 passed in 5.0s ==
+"""
+    assert shard.file_durations(report) == {
         "tests/integration/test_y.py": 3.0,
         "tests/unit/kernel/test_x.py": 2.0,
     }
@@ -85,11 +87,8 @@ def test_main_refuses_bad_arguments(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 def test_main_records_durations(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    report = tmp_path / "junit.xml"
-    report.write_text(
-        '<testsuite><testcase classname="tests.a.test_z" name="t" time="2"/></testsuite>',
-        encoding="utf-8",
-    )
+    report = tmp_path / "report.txt"
+    report.write_text("2.00s call     tests/a/test_z.py::test_t\n", encoding="utf-8")
     out = tmp_path / "durations.json"
     monkeypatch.setattr(shard, "DURATIONS", out)
     assert shard.main(["--record", str(report)]) == 0
