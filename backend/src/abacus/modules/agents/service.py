@@ -367,6 +367,11 @@ async def screening_results_for(
     await authorise(ctx, "evidence.read", ref.resource())
     async with tenant_session(ctx.tenant) as session:
         rows = await latest_results(session, ctx, engagement_id)
+    if rows:
+        # Results quote evidence content (cells, values): their reads are audited like
+        # `evidence_version.read` (ADR-104; security review, TASK-012).
+        async with uow(ctx.tenant) as tx:
+            tx.record("screening_result.read", target=Target("engagement", engagement_id))
     return [
         ScreeningResultView(
             r.id,

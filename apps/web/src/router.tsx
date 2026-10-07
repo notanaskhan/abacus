@@ -1,4 +1,5 @@
-import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import { Alert, Button, EmptyState } from "@abacus/ui";
+import { Link, createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
 import type { JSX } from "react";
 import { CALLBACK_PATH } from "./auth/session";
 import { Board } from "./screens/Board";
@@ -7,7 +8,48 @@ import { Layout } from "./screens/Layout";
 import { SignInCallback } from "./screens/SignInCallback";
 
 // Code-based routes (no file-router plugin): firm users only in this spec (ADR-011).
-const rootRoute = createRootRoute();
+const rootRoute = createRootRoute({
+  notFoundComponent: NotFound,
+  errorComponent: RouteError,
+});
+
+function NotFound(): JSX.Element {
+  return (
+    <main className="mx-auto max-w-md p-8">
+      <EmptyState
+        title="Page not found"
+        action={
+          <Link to="/" className="text-sm underline">
+            Go to engagements
+          </Link>
+        }
+      />
+    </main>
+  );
+}
+
+function RouteError(): JSX.Element {
+  return (
+    <main className="mx-auto max-w-md p-8">
+      <Alert
+        title="Something went wrong"
+        action={
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              window.location.reload();
+            }}
+          >
+            Reload
+          </Button>
+        }
+      >
+        The page couldn&apos;t be shown.
+      </Alert>
+    </main>
+  );
+}
 const callbackRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: CALLBACK_PATH,

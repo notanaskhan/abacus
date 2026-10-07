@@ -20,7 +20,10 @@ const items = useQuery(listRequestItemsOptions({ path: { engagement_id: engageme
 - **Joining data:**
   - Join data from several modules in the screen, not in the API. The board joins request items, evidence versions and screening results on `evidence_version_id` (`src/board/join.ts`), because module boundaries forbid one endpoint reading all three.
   - Keep joins as pure functions with unit tests.
-- **Types:** the client's sources are generated and type-checked through their declarations (`packages/api-client/dist`, built by `make setup` and `make generate`). Never edit `src/`.
+- **Types:** the client's sources are generated, and consumers type-check against their declarations (`packages/api-client/dist`, gitignored, built by `make setup` and `make generate` with `tsc --noCheck`), while Vite bundles the sources.
+  - The generated runtime internals don't satisfy `exactOptionalPropertyTypes`; the declarations keep that flag for app code.
+  - Never edit `src/`: `make check`'s drift check regenerates and compares it.
+  - After regenerating by hand, run `pnpm -C packages/api-client build:types` so the declarations match.
 
 ## Components: the design system only
 
@@ -38,7 +41,7 @@ Every data view handles each state explicitly:
 |---|---|
 | Loading | `Skeleton` (`aria-busy`) or `Spinner` with a label |
 | Empty | `EmptyState` with the next action |
-| Partial | What exists, with progress for the rest (the board's "Screening…" while evidence awaits its proposal; polling stops when nothing is pending) |
+| Partial | What exists, with progress for the rest (the board's "Screening…" while evidence awaits its proposal). Polling stops when nothing is pending, or after 2 minutes; then "Screening hasn't finished" offers Check again (a failed or skipped run never produces a result) |
 | Error | `Alert` with Retry; `errorMessage()` shows only short server `detail` strings |
 | Success | The data |
 
@@ -54,6 +57,10 @@ Every data view handles each state explicitly:
   - Locally the provider is `abacus_tools.fakes.oidc_server`: `make dev` runs it, and `make seed` creates its dev users and connects engagements to the fake connector.
   - In staging it is WorkOS (TASK-014).
 - **Tokens:** they live in `sessionStorage` for this tab only. An expired token means signing in again; there are no refresh tokens yet (ADR-030).
+- **Redirect:** the signed-in guard lives in the `Layout` route component, not a router `beforeLoad`.
+  - A 401 triggers one sign-in, even when several requests fail at once.
+  - A 401 within 10 s of signing in is treated as a rejected session (an error, not another redirect), so a misconfigured API can't cause a redirect loop.
+  - Production builds carry a Content-Security-Policy; the deployment sends the same policy as a header (TASK-014).
 
 ## Tests
 

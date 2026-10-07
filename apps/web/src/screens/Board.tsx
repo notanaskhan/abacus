@@ -24,7 +24,7 @@ import {
   Spinner,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type SyntheticEvent, type JSX, useState } from "react";
+import { type JSX, type SyntheticEvent, useEffect, useState } from "react";
 import { errorMessage } from "../api";
 import {
   type BoardRow,
@@ -36,6 +36,8 @@ import {
 } from "../board/join";
 
 const SCREENING_POLL_MS = 3000;
+// Stop asking after this long: a run that failed or was skipped never produces a result.
+const SCREENING_POLL_LIMIT_MS = 2 * 60_000;
 const RETRIEVAL_POLL_MS = 2000;
 
 /** The evidence board for one engagement (SPEC-000 §17, AC-18). */
@@ -44,16 +46,20 @@ export function Board({ engagementId }: { engagementId: string }): JSX.Element {
   const engagement = useQuery(getEngagementOptions(path));
   const items = useQuery(listRequestItemsOptions(path));
   const versions = useQuery(listEvidenceVersionsOptions(path));
+  const [pollingSince] = useState(() => Date.now());
   const results = useQuery({
     ...listScreeningResultsOptions(path),
-    // Keep checking while some evidence still waits for the agent's proposal.
+    // Keep checking while some evidence still waits for the agent's proposal, for a while.
     refetchInterval: (query) =>
-      items.data !== undefined && versions.data !== undefined && query.state.data !== undefined
-        ? awaitingScreening(boardRows(items.data, versions.data, query.state.data))
-          ? SCREENING_POLL_MS
-          : false
+      items.data !== undefined &&
+      versions.data !== undefined &&
+      query.state.data !== undefined &&
+      awaitingScreening(boardRows(items.data, versions.data, query.state.data)) &&
+      Date.now() - pollingSince < SCREENING_POLL_LIMIT_MS
+        ? SCREENING_POLL_MS
         : false,
   });
+  const pollingExpired = Date.now() - pollingSince >= SCREENING_POLL_LIMIT_MS;
 
   if (engagement.isPending || items.isPending || versions.isPending || results.isPending) {
     return (
@@ -109,7 +115,12 @@ export function Board({ engagementId }: { engagementId: string }): JSX.Element {
         <ul className="flex flex-col gap-3" aria-label="Request items">
           {rows.map((row) => (
             <li key={row.item.id}>
-              <RequestItemCard row={row} engagement={engagement.data} />
+              <RequestItemCard
+                row={row}
+                engagement={engagement.data}
+                pollingExpired={pollingExpired}
+                onRefresh={() => void results.refetch()}
+              />
             </li>
           ))}
         </ul>
@@ -121,9 +132,13 @@ export function Board({ engagementId }: { engagementId: string }): JSX.Element {
 function RequestItemCard({
   row,
   engagement,
+  pollingExpired,
+  onRefresh,
 }: {
   row: BoardRow;
   engagement: EngagementOut;
+  pollingExpired: boolean;
+  onRefresh: () => void;
 }): JSX.Element {
   const { item, evidence, screening } = row;
   return (
@@ -149,7 +164,16 @@ function RequestItemCard({
           {screening.kind === "none" ? (
             "—"
           ) : screening.kind === "pending" ? (
-            <Spinner label="Screening…" />
+            pollingExpired ? (
+              <span className="flex items-center gap-2">
+                Screening hasn&apos;t finished.
+                <Button size="sm" variant="ghost" onClick={onRefresh}>
+                  Check again
+                </Button>
+              </span>
+            ) : (
+              <Spinner label="Screening…" />
+            )
           ) : (
             <ScreeningSummary result={screening.result} />
           )}
@@ -181,9 +205,11 @@ function ScreeningSummary({ result }: { result: ScreeningResultOut }): JSX.Eleme
               <Badge tone={c.verified ? "success" : "danger"}>
                 {c.verified ? "Verified" : "Unverified"}
               </Badge>
-              <span>Cell {c.cell}</span>
+              <span>
+                Cell <AgentText inline text={c.cell} />
+              </span>
               {c.quote !== null && <AgentText inline text={`“${c.quote}”`} />}
-              {c.value !== null && <span>{c.value}</span>}
+              {c.value !== null && <AgentText inline text={c.value} />}
             </li>
           ))}
         </ul>
@@ -212,7 +238,8 @@ function Retrieve({
   engagement: EngagementOut;
 }): JSX.Element {
   const queryClient = useQueryClient();
-  const path = { engagement_id: engagement.id };
+  const engagementId = engagement.id;
+  const path = { engagement_id: engagementId };
   const [runId, setRunId] = useState<string | null>(null);
   const start = useMutation({
     ...startRetrievalMutation(),
@@ -226,20 +253,25 @@ function Retrieve({
     refetchInterval: (query) =>
       query.state.data?.status === "running" ? RETRIEVAL_POLL_MS : false,
   });
-  const status = run.data?.status ?? (start.isPending ? "running" : null);
+  const status = run.data?.status ?? null;
+  // Busy from the click until the run ends (no gap between the start and its first poll).
+  const running = start.isPending || (runId !== null && (status === null || status === "running"));
   const finished = status !== null && status !== "running";
-  if (finished && run.isFetchedAfterMount) {
-    void queryClient.invalidateQueries({ queryKey: listRequestItemsQueryKey({ path }) });
-    void queryClient.invalidateQueries({ queryKey: listEvidenceVersionsQueryKey({ path }) });
-    void queryClient.invalidateQueries({ queryKey: listScreeningResultsQueryKey({ path }) });
-  }
+  // Refresh the board once when the retrieval ends: an effect, never a side effect in render.
+  useEffect(() => {
+    if (!finished) return;
+    const board = { path: { engagement_id: engagementId } };
+    void queryClient.invalidateQueries({ queryKey: listRequestItemsQueryKey(board) });
+    void queryClient.invalidateQueries({ queryKey: listEvidenceVersionsQueryKey(board) });
+    void queryClient.invalidateQueries({ queryKey: listScreeningResultsQueryKey(board) });
+  }, [finished, runId, engagementId, queryClient]);
 
   return (
     <div className="flex items-center gap-3">
       <Button
         variant="outline"
         size="sm"
-        disabled={status === "running"}
+        disabled={running}
         onClick={() => {
           start.mutate({
             path,
@@ -253,7 +285,7 @@ function Retrieve({
       >
         Retrieve trial balance
       </Button>
-      {status === "running" && <Spinner label="Retrieving…" />}
+      {running && <Spinner label="Retrieving…" />}
       {status === "failed_validation" && (
         <span className="text-sm text-red-800">The trial balance didn't pass validation.</span>
       )}

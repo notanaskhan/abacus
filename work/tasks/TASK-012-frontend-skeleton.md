@@ -190,6 +190,38 @@ All three reads:
   - **Layout:** signed out → redirect to sign-in (the splash `App` shows); several firms and no active tenant → firm picker, whose choice is sent as `X-Abacus-Tenant`.
 - **Lint rules** (`apps/web/eslint.config.js`; test with ESLint's API): `dangerouslySetInnerHTML`, `fetch`/`XMLHttpRequest` (except `src/auth/session.ts`), `axios`, and a `.rationale`/`.quote` rendered outside `AgentText` are all errors.
 
+**Contract revision 1 (after the security and architecture reviews; supersedes earlier bullets where they differ)**
+- **Board reads.** `GET …/screening-results` records one audit event, `screening_result.read`, targeting the engagement, when it returns at least one result (results quote evidence content, as `evidence_version.read` does). The other two reads still write nothing.
+- **`sanitiseAgentText`:**
+  - normalises to NFC and CRLF to LF;
+  - also removes U+00AD, U+034F, U+061C, U+115F/U+1160, U+17B4/U+17B5, U+180B–U+180F, U+2028–U+202E, U+2060–U+206F, U+2800, U+3164, U+FE00–U+FE0F, U+FFA0, U+FFF9–U+FFFC, and the tag and variation characters U+E0000–U+E007F and U+E0100–U+E01EF;
+  - collapses 3 or more consecutive newlines to 2;
+  - then truncates as before.
+  - `AgentText` uses classes (`whitespace-pre-line` for blocks, `overflow-wrap:anywhere`), not inline styles.
+- **Board citations.** `cell` and `value` are rendered through `AgentText` too.
+- **Polling.** Screening is polled for at most 2 minutes from mount. After that, a pending row shows "Screening hasn't finished." with a "Check again" button, which refetches.
+- **Retrieve.** The button is disabled from the click until the run ends (no gap before the first poll). The board refreshes once, in an effect, when the run ends.
+- **Session.**
+  - `signIn()` is latched: concurrent calls start one redirect and write one pending request.
+  - `completeSignIn` also stores `abacus.signedInAt`.
+  - `handleUnauthorised(now)` removes the token. It returns `"rejected"` (no redirect) if the last sign-in was within 10 s; otherwise it calls `signIn()` and returns `"redirected"`. The API client's 401 handler calls it.
+  - Queries don't retry 4xx errors (`shouldRetry` in `src/api.ts`).
+- **Router.** The root route has a not-found page ("Page not found", with a link to engagements) and an error page ("Something went wrong", with Reload).
+- **CSP.** Production builds (`vite build`) carry a CSP meta tag: `default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' <authority>; frame-ancestors 'none'; object-src 'none'; base-uri 'none'`. Dev builds have none.
+- **ESLint.**
+  - The HTML/agent-text `no-restricted-syntax` rules apply to `src/**`, excluding `*.test.*`.
+  - Writing HTML through a `dangerouslySetInnerHTML` object property, `innerHTML`/`outerHTML` assignment, or `insertAdjacentHTML`/`createContextualFragment` is an error.
+  - `packages/ui` has its own lint config (HTML ban, no `fetch`), tsconfig and Prettier, all run by `make check-fast`.
+- **Sign-in server.**
+  - `code_verifier` must match RFC 7636 (43–128 of `[A-Za-z0-9-._~]`), otherwise `invalid_grant`, still consuming the code.
+  - Expired codes are purged.
+  - The key file is created mode 0600.
+- **`seed_dev`.** `main()` refuses a superuser DSN whose host isn't loopback.
+- **Journey.**
+  - The workflow seeds before the journey (users must exist to sign in).
+  - The journey runs the seed again after creating its engagement, to connect it (as the contract's step 3 says).
+  - On failure the Playwright report is uploaded.
+
 **Playwright journey** (`apps/web/e2e/journey.spec.ts`, config `apps/web/playwright.config.ts`, base URL `http://localhost:5173`; assumes `make dev` and `make seed`):
 1. Sign in as `dev-leader` and see the firm name.
 2. Create an engagement.
