@@ -217,6 +217,8 @@ Amber. It touches protected paths: `abacus.api`, the worker, the kernel uow/rela
 ## New dependencies
 | Package | Version | Why | Approved by |
 |---|---|---|---|
+| opentelemetry-sdk, opentelemetry-instrumentation-fastapi, opentelemetry-exporter-otlp | >=1.45.1 / >=0.66b1 (locked) | tracing (ADR-022); allowlisted. The exporter brings grpcio, protobuf and requests transitively (stage-3 audit) | founder (Q5) |
+| sentry-sdk | >=2.71.0 (locked) | error tracking (ADR-022); allowlisted | founder (Q5) |
 
 ## Progress log
 - `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder. Not started.
@@ -233,6 +235,15 @@ Amber. It touches protected paths: `abacus.api`, the worker, the kernel uow/rela
   - Smoke test: one trace ID covers the request, the retrieval workflow and its 5 activities, all 9 audit rows and the outbox `trace_context`.
   - The reference doc and the observability skill are written.
   - Contract written.
+- `2026-10-07` — Reviews fixed (contract revision 1).
+  - Security blockers: exception text on spans, and URL/query/IP/user agent on API spans. Fixed with a scrubbing exporter over every exporter, plus inbound trace headers ignored.
+  - Independent tests: about 168 test functions, 3,800 cases. They found 2 API bugs, both fixed:
+    - the inbound traceparent was not ignored, because the middleware ran after the instrumentation;
+    - the route was lost from error reports, because the middleware copied the scope.
+
+    The fix strips the headers at the app entry, editing the scope in place.
+  - Results: 6,999 unit tests pass; the TASK-013 integration and replay tests (94) pass.
+  - Pending: PR #14's CI fixes (the relay engine in worker fixtures; a pin that predates 011b's billing). Rebuild on main after #14 merges.
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
@@ -244,5 +255,11 @@ Amber. It touches protected paths: `abacus.api`, the worker, the kernel uow/rela
 -
 
 ## Handoff
-- **Current state:** Approved; approval file written. Step 1 in progress.
-- **Exact next step:** On approval, write `work/approvals/TASK-013.yaml` with the Q6 paths, then step 1. Rebase onto main once PR #14 merges.
+- **Current state:** Implementation, reviews and independent tests are done on `task-013-observability` (based on main before PR #14).
+- **Exact next step:** After PR #14 merges, rebuild on main (new branch, cherry-pick), run the full suite with the compose DB stopped (CI-like conditions), open the PR, confirm CI, then founder review.
+- **Open issues:** follow-ups for TASK-014:
+  - the collector and its auth (`OTEL_EXPORTER_OTLP_HEADERS`);
+  - the Sentry DSN and release;
+  - whether a DSN and endpoint are mandatory outside local/test;
+  - pinning `temporalio` and moving to `OpenTelemetryPlugin` when it is stable;
+  - an exporter-only dependency (`opentelemetry-exporter-otlp-proto-http`) to drop grpcio.
