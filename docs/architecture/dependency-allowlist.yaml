@@ -73,6 +73,8 @@ typescript:
     "@types/react": approved          # React types for strict tsc (ADR-009)
     "@types/react-dom": approved      # React DOM types for strict tsc (ADR-009)
     jsdom: approved                   # DOM environment for vitest (ADR-077, TASK-002)
+    "@tailwindcss/vite": approved     # Tailwind v4's Vite plugin (TASK-012 Q3, founder 2026-10-07)
+    "@testing-library/dom": approved  # required peer of @testing-library/react (TASK-012 Q3)
 
 # Container images: referenced only by digest (name:tag@sha256:...), checked by check_dependencies.
 containers:
