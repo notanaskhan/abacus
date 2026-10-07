@@ -10,11 +10,17 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from uuid import UUID, uuid4
 
+from sqlalchemy import ColumnElement
+from sqlalchemy.orm import QueryableAttribute
+
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Target, UnitOfWork, uow
 from abacus.modules.engagements.events import EngagementCreated
 from abacus.modules.engagements.models import Engagement
+from abacus.modules.engagements.repository import (
+    client_column as _client_column,
+)
 from abacus.modules.engagements.repository import (
     get_engagement,
     insert_engagement,
@@ -169,6 +175,13 @@ async def engagements_for(ctx: AuthContext) -> Sequence[EngagementView]:
         engagements = await list_engagements(session, ctx)
         names = await client_names(session, [e.client_entity_id for e in engagements])
         return [_view(e, names[e.client_entity_id]) for e in engagements]
+
+
+def client_subquery(
+    engagement_id: ColumnElement[UUID] | QueryableAttribute[UUID],
+) -> ColumnElement[UUID]:
+    """The engagement's client, as a subquery per row (for walls in `visible()`)."""
+    return _client_column(engagement_id)
 
 
 async def client_of(tenant: TenantContext, engagement_id: UUID) -> UUID | None:

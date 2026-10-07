@@ -95,7 +95,7 @@ async def create_wall_route(body: WallIn, ctx: Ctx) -> WallOut:
     return _wall_out(await create_wall(ctx, user_id=body.user_id, client_id=body.client_id))
 
 
-@router.post("/walls/{wall_id}/remove", action="wall.remove", response_model=WallOut)
+@router.post("/walls/{wall_id}/remove", action="wall.remove", response_model=WallOut, errors=[409])
 async def remove_wall_route(wall_id: UUID, ctx: Ctx) -> WallOut:
     """Walls are never deleted: removing one returns it, marked removed."""
     return _wall_out(await remove_wall_by_id(ctx, wall_id))

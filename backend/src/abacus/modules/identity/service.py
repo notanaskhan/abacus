@@ -142,6 +142,13 @@ class WallExists(DomainConflict):
     code = "wall_exists"
 
 
+class OwnWall(DomainConflict):
+    """A firm admin can't lift a wall on themself: another firm admin must (ADR-026: walls are
+    absolute; TASK-016 security review)."""
+
+    code = "own_wall"
+
+
 @dataclass(frozen=True)
 class WallView:
     id: UUID
@@ -209,6 +216,9 @@ async def remove_wall_by_id(ctx: AuthContext, wall_id: UUID) -> WallView:
     """Lift an active wall (firm admin, fresh MFA); its record stays, marked removed."""
     await authorise(ctx, "wall.remove", Resource.firm(ctx.tenant_id))
     async with uow(ctx.tenant) as tx:
+        wall = await get_wall(tx.session, wall_id)
+        if wall is not None and wall.user_id == ctx.user_id:
+            raise OwnWall
         removed = await remove_wall(tx.session, wall_id, ctx.user_id)
         if removed is None:
             raise NotFound("ethical wall")

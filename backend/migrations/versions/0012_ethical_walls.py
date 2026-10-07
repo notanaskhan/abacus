@@ -62,6 +62,10 @@ def upgrade() -> None:
                 RAISE EXCEPTION 'ethical wall % is removed', OLD.id
                     USING ERRCODE = 'insufficient_privilege';
             END IF;
+            IF NEW.status <> 'removed' THEN
+                RAISE EXCEPTION 'ethical wall % may only be removed', OLD.id
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
             IF NEW.user_id IS DISTINCT FROM OLD.user_id
                OR NEW.client_id IS DISTINCT FROM OLD.client_id
                OR NEW.created_by IS DISTINCT FROM OLD.created_by
