@@ -501,6 +501,15 @@ def private_db() -> Iterator[sc.Database]:
         yield database
 
 
+def _script_head() -> str:
+    """The newest migration in the repository (later tasks add migrations after 0012)."""
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+
+    config = Config(str(sc.BACKEND / "alembic.ini"))
+    return str(ScriptDirectory.from_config(config).get_current_head())
+
+
 def _revision(database: sc.Database) -> str:
     return str(
         asyncio.run(
@@ -543,7 +552,6 @@ def test_ac20_downgrading_0012_with_no_walls_drops_the_table_and_upgrading_resto
     private_db: sc.Database,
 ) -> None:
     seed = Seeder(private_db.superuser_dsn)
-    head = _revision(private_db)  # the newest migration, 0012 or later
     asyncio.run(seed.run("DELETE FROM ethical_walls"))
     migrate(private_db.owner_url, "0011", down=True)
     assert _revision(private_db) == "0011"
@@ -553,5 +561,5 @@ def test_ac20_downgrading_0012_with_no_walls_drops_the_table_and_upgrading_resto
         == 0
     )
     migrate(private_db.owner_url, "head")
-    assert _revision(private_db) == head
+    assert _revision(private_db) == _script_head()  # whatever migration is newest
     assert asyncio.run(seed.value("SELECT to_regclass('public.ethical_walls')")) is not None
