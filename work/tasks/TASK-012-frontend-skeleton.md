@@ -142,6 +142,63 @@ All three reads:
 
 **OpenAPI and client.** The operations are `list_evidence_versions` and `list_screening_results`. `packages/api-client` is regenerated: `make check`'s drift check passes, and `test_openapi` matches.
 
+### Interface contract — SPA, sign-in and journey (tests written independently — ADR-078)
+**Local sign-in** (`backend/src/abacus_tools/fakes/oidc_server.py`; Python tests):
+- `create_app()` refuses environments other than local and test.
+- **`GET /authorize`**:
+  - requires `response_type=code`, `client_id=abacus-web`, a `redirect_uri` in `REDIRECT_URIS`, `code_challenge_method=S256`, a `code_challenge` and a `state`; anything else → 400 `invalid_request`;
+  - lists `DEV_USERS`, with every value HTML-escaped.
+- **`POST /authorize`** (form: `redirect_uri`, `state`, `code_challenge`, `subject`): an unknown subject or redirect → 400; otherwise a 303 to `redirect_uri?code=…&state=…`.
+- **`POST /token`** (form): the code is single use, even when the exchange fails; it expires after 60 s; `redirect_uri` and `client_id` must match; S256 of `code_verifier` must equal the challenge; otherwise 400 `invalid_grant`.
+  - Success returns `{access_token, token_type:"Bearer", expires_in:600}` with `Cache-Control: no-store`.
+  - The token verifies with `JwtVerifier(issuer=ISSUER, audience=AUDIENCE, jwks=<GET /jwks>)` and has `sub` = the chosen subject.
+- **CORS:** only the two SPA origins, for POST.
+- **Discovery** names the endpoints.
+- **The key** persists in `backend/.local/oidc-key.pem` (tests must use a temporary path, e.g. by monkeypatching `KEY_FILE`).
+
+**Seeding** (`abacus_tools.local.seed_dev.seed(dsn, fixtures_dir)`; integration):
+- idempotent; creates the Dev firm, the `dev-leader` (practice_leader) and `dev-staff` users with memberships;
+- for each engagement of the firm, ensures one active fake connection for its client entity and writes a balanced trial-balance fixture for its fiscal period;
+- returns the number of new connections;
+- refuses outside local/test or without `fake_connector_dir`.
+
+**SPA units** (Vitest + Testing Library, files in `apps/web/src/**/*.test.tsx`; import the UI through `@abacus/ui`):
+- **`sanitiseAgentText`** removes C0/C1 controls except newline/tab, bidi overrides and isolates (U+202A–202E, U+2066–2069), zero-width characters and the BOM; normalises CRLF to LF; truncates to 2000 code points plus `…`.
+- **`AgentText`** renders text, never HTML: `<img onerror>` stays visible text; there is no anchor for URLs.
+- **`codeChallenge(v)`** is base64url(SHA-256(v)) with no padding (RFC 7636 test vector). **`randomString`** is URL-safe and at least 43 chars for 32 bytes.
+- **Session:**
+  - `signIn()` stores `{state, verifier, returnTo}` and navigates to `${AUTHORITY}/authorize` with S256 parameters.
+  - `completeSignIn` fails (`SignInFailed`) on a missing or mismatched state, no pending request, or a non-OK or malformed token response; on success it stores the token with its expiry and returns `returnTo`. The pending request is removed either way.
+  - `accessToken()` is null within 30 s of expiry.
+  - `safeReturnTo` rejects `//evil`, absolute URLs and the callback path.
+- **`boardRows`:**
+  - joins on `evidence_version_id` to give `none`, `pending` or `result`;
+  - `awaitingScreening` is true only while some row is pending;
+  - `sourceLabel` gives "Retrieved" or "Uploaded";
+  - `statusLabel` covers all four statuses;
+  - `confidencePercent("0.900")` is "90%".
+- **Screens** (mock the network through the generated client, e.g. `client.setConfig({ fetch })`, never real HTTP):
+  - **Engagements:** loading (busy skeleton), empty ("No engagements yet" plus a create button), error (alert with Retry), and the list with links to the board. Create sends the five fields and refreshes the list.
+  - **Board:**
+    - the item shows status, source `Retrieved · version N` and the screening result;
+    - the rationale goes through `AgentText`: a hostile rationale is shown as text;
+    - citations are marked Verified or Unverified, and `unverified` notes are listed;
+    - pending evidence shows "Screening…";
+    - error and empty states;
+    - *Retrieve trial balance* posts the engagement's fiscal period and is disabled while running;
+    - nothing on the board accepts a proposal (no accept/approve control).
+  - **Layout:** signed out → redirect to sign-in (the splash `App` shows); several firms and no active tenant → firm picker, whose choice is sent as `X-Abacus-Tenant`.
+- **Lint rules** (`apps/web/eslint.config.js`; test with ESLint's API): `dangerouslySetInnerHTML`, `fetch`/`XMLHttpRequest` (except `src/auth/session.ts`), `axios`, and a `.rationale`/`.quote` rendered outside `AgentText` are all errors.
+
+**Playwright journey** (`apps/web/e2e/journey.spec.ts`, config `apps/web/playwright.config.ts`, base URL `http://localhost:5173`; assumes `make dev` and `make seed`):
+1. Sign in as `dev-leader` and see the firm name.
+2. Create an engagement.
+3. Run `make seed` (or `uv run python -m abacus_tools.local.seed_dev` with `ABACUS_FAKE_CONNECTOR_DIR`) to connect its entity.
+4. Add a request item and press *Retrieve trial balance*.
+5. The card shows "Received", "Retrieved · version 1", then an "Agent proposes" result with verified citations (screening by the worker's fake model; allow about 90 s).
+
+Run `@axe-core/playwright` on the engagements page and the board, with no serious or critical violations. `make e2e` runs it; CI runs it nightly (implementer-owned workflow).
+
 ### Steps
 1. Approval file. Backend reads (red): contract, independent tests, reviews.
 2. Fake OIDC server, `seed_dev`, the `make dev`/`seed`/`e2e` targets.
@@ -177,9 +234,20 @@ All three reads:
   - Q4: the approval file was written at the founder's instruction;
   - Q5: the journey runs nightly.
 
+- `2026-10-07` — Implementation progress:
+  - **Board reads** (with independent tests, 56 passing).
+  - **Local sign-in:** a fake OIDC server with PKCE, `seed_dev`, `uvicorn`. The `uv.lock` approval was extended at the founder's OK.
+  - **`make dev`/`seed`/`e2e`:** fixed, with the API on :8001 because :8000 is in use locally.
+  - **Frontend:** `packages/ui` with `AgentText`; generated TanStack Query client with declarations (`--noCheck`); ESLint rules; screens.
+  - **Scaffold test:** `App.test.tsx` was kept; `App` is now the sign-in splash.
+  - **Smoke:** the full AC-18 journey passes by hand in a real browser (Playwright script): sign in → create → seed → add item → retrieve → Received / Retrieved / Agent proposes, with verified citations.
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| API on :8001 in `make dev` | :8000 is commonly taken locally | No |
+| The client publishes declarations (`dist/`, `tsc --noCheck`) and consumers type-check against them | Generated sources fail `exactOptionalPropertyTypes`; this keeps the flag for app code | No |
+| A local helper (`seed_dev`) connects engagements to the fake connector | No connections UI in SPEC-000; each engagement creates its own client entity | No |
+| `App` is now the sign-in splash | Keeps the scaffold test (never delete a test) while giving `App` a role | No |
 
 ## Gotchas and discoveries
 -
