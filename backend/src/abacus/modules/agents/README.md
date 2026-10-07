@@ -66,3 +66,12 @@ Agent specs, agent runs and screening (ADR-005, ADR-025, ADR-047, ADR-050, ADR-0
 - **Every model call goes through `ai_gateway`** with the spec's prompt, tier, budget and limits.
 - **Dependencies:** identity, engagements, organisations, evidence and requests (BOUND-002).
 - **Review proposals (TASK-019; ADR-106):** at import, `api.py` registers `proposals_for` (the latest proposal per version, read like the board's screening results and audited) and `proposal_of` (one version's latest, in the caller's transaction) with evidence (`register_proposal_source`). Agents never decide (REVIEW-001).
+
+## The engagement graph (SPEC-008; TASK-023 D1)
+`engagement_graph(ctx, engagement_id)` (`GET /v1/engagements/{id}/graph`, `engagement.read`) is built on read, by code, from the owning modules' APIs. It returns:
+- the engagement and its team;
+- the pinned methodology version;
+- each audit area with its request items (status, tier, latest evidence version and screening action) and its accounts in the latest ledger snapshot, mapped by the version's rules;
+- the coverage gaps.
+
+Agents will read the same view as context.

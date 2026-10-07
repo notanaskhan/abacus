@@ -30,6 +30,8 @@ actions:
   firm.manage_settings:     {firm_admin: allow, mfa_recent: required}
   budget.read:              {firm_admin: allow, practice_leader: allow}   # SPEC-007
   budget.manage:            {firm_admin: allow, mfa_recent: required}     # SPEC-007 Q3
+  methodology.manage:       {firm_admin: allow, practice_leader: allow, mfa_recent: required}   # SPEC-008 Q3
+  methodology.read:         {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow}   # SPEC-008
   autonomy_policy.update:   {firm_admin: allow, mfa_recent: required}
   wall.create:              {firm_admin: allow, mfa_recent: required}
   wall.remove:              {firm_admin: allow, mfa_recent: required}
@@ -39,6 +41,7 @@ actions:
 
   # --- Engagements ---
   engagement.create:        {firm_admin: allow, practice_leader: allow}
+  engagement.apply_methodology: {engagement_partner: allow, manager: allow}   # SPEC-008 AC-4
   engagement.read_metadata:
     firm_admin: allow
     practice_leader: in_scope

@@ -59,6 +59,8 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     {"audit_events", "outbox", "evidence_versions", "ledger_snapshots", "trial_balance_lines"}
     | {"fulfilments", "screening_results", "usage_records", "review_decisions", "messages"}
     | {"eval_case_results"}
+    | {"methodology_templates", "methodology_versions", "methodology_areas"}
+    | {"methodology_request_items", "methodology_account_rules"}
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -77,7 +79,20 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "request_lists": frozenset({"id", "tenant_id", "engagement_id"}),
     "request_items": frozenset(
         {"id", "tenant_id", "engagement_id", "request_list_id", "description", "audit_area"}
-        | {"created_by"}
+        | {"created_by", "retrievability_tier"}
+    ),
+    # Methodology templates (SPEC-008): insert-only, immutable versions.
+    "methodology_templates": frozenset({"id", "tenant_id", "name", "created_by"}),
+    "methodology_versions": frozenset(
+        {"id", "tenant_id", "template_id", "version", "source_fingerprint", "imported_by"}
+    ),
+    "methodology_areas": frozenset({"tenant_id", "version_id", "code", "name", "position"}),
+    "methodology_request_items": frozenset(
+        {"tenant_id", "version_id", "area_code", "description", "retrievability_tier"}
+        | {"position"}
+    ),
+    "methodology_account_rules": frozenset(
+        {"tenant_id", "version_id", "area_code", "account_from", "account_to", "position"}
     ),
     "engagement_members": frozenset({"tenant_id", "engagement_id", "user_id", "role"}),
     "evidence_items": frozenset(
@@ -151,7 +166,7 @@ IMMUTABLE_TABLES: dict[str, str] = {
 # listed here keep whatever their migration grants (insert-only tables grant none).
 APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),
-    "engagements": frozenset({"status"}),
+    "engagements": frozenset({"status", "methodology_version_id"}),  # SPEC-008: pinned once
     "request_items": frozenset({"status"}),
     "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
     "connections": frozenset({"status"}),
@@ -181,6 +196,11 @@ TABLE_OWNERS: dict[str, str] = {
     "clients": "organisations",
     "client_entities": "organisations",
     "engagements": "engagements",
+    "methodology_templates": "engagements",
+    "methodology_versions": "engagements",
+    "methodology_areas": "engagements",
+    "methodology_request_items": "engagements",
+    "methodology_account_rules": "engagements",
     "request_lists": "requests",
     "request_items": "requests",
     "evidence_items": "evidence",

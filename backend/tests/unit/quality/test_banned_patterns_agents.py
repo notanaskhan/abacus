@@ -409,18 +409,17 @@ def test_ac17_ctx_001_ignores_using_an_agent_context(tmp_path: Path, source: str
 
 
 @pytest.mark.parametrize(
-    "module", ["identity", "engagements", "organisations", "evidence", "requests"]
+    "module", ["identity", "engagements", "organisations", "evidence", "requests", "ledger"]
 )
-def test_ac17_bound_002_lets_agents_depend_on_its_five_modules(
-    tmp_path: Path, module: str
-) -> None:
+def test_ac17_bound_002_lets_agents_depend_on_its_six_modules(tmp_path: Path, module: str) -> None:
     source = f"from abacus.modules.{module}.api import x\n"
     assert not _flags(tmp_path, "BOUND-002", AGENTS_SERVICE, source)
 
 
 @pytest.mark.parametrize(
     "module",
-    ["connections", "ledger", "sampling", "audit_trail", "communications", "platform"],
+    # ledger is allowed since SPEC-008 (the engagement graph's accounts, TASK-023 D1).
+    ["connections", "sampling", "audit_trail", "communications", "platform"],
 )
 def test_ac17_bound_002_keeps_agents_off_every_other_module(tmp_path: Path, module: str) -> None:
     source = f"from abacus.modules.{module}.api import x\n"

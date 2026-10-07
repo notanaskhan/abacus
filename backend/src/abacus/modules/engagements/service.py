@@ -5,27 +5,43 @@ Authorise before any write: the route guard can hide a response but can't undo a
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
+from typing import cast
 from uuid import UUID, uuid4
 
 from sqlalchemy import ColumnElement
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import NotFound
-from abacus.kernel.uow import Target, UnitOfWork, uow
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.events import EngagementCreated
-from abacus.modules.engagements.models import Engagement
+from abacus.modules.engagements.models import Engagement, MethodologyTemplate, MethodologyVersion
 from abacus.modules.engagements.repository import (
     client_column as _client_column,
 )
 from abacus.modules.engagements.repository import (
     get_engagement,
+    get_version,
     insert_engagement,
+    insert_version,
     list_engagements,
+    list_templates,
     lock_engagement,
+    lock_or_insert_template,
+    set_methodology_version,
+    version_rows,
+)
+from abacus.modules.engagements.workbook import (
+    AccountRule,
+    Area,
+    TemplateItem,
+    Tier,
+    parse_workbook,
 )
 from abacus.modules.identity.api import (
     Actor,
@@ -51,6 +67,8 @@ class EngagementRef:
     # The client, for ethical walls (SPEC-002): carried on the resource, so `authorise` needn't
     # look it up.
     client_id: UUID
+    # The pinned methodology version (SPEC-008), None until applied.
+    methodology_version_id: UUID | None = None
 
     def resource(self) -> Resource:
         return Resource.engagement(
@@ -109,6 +127,7 @@ def _ref(engagement: Engagement) -> EngagementRef:
         engagement.status == "archived",
         engagement.client_entity_id,
         engagement.client_id,
+        engagement.methodology_version_id,
     )
 
 
@@ -189,3 +208,123 @@ async def client_of(tenant: TenantContext, engagement_id: UUID) -> UUID | None:
     async with tenant_session(tenant) as session:
         engagement = await get_engagement(session, engagement_id)
     return engagement.client_id if engagement is not None else None
+
+
+# --- Methodology templates (SPEC-008) ---------------------------------------------------------
+
+
+class TemplateNameInvalid(DomainInvalid):
+    """A template name is 1 to 100 characters."""
+
+    code = "template_name_invalid"
+
+
+class MethodologyAlreadyApplied(DomainConflict):
+    """An engagement is pinned to one methodology version, once (SPEC-008 Q4)."""
+
+    code = "methodology_already_applied"
+
+
+@dataclass(frozen=True)
+class TemplateVersionSummary:
+    template_id: UUID
+    template_name: str
+    version_id: UUID
+    version: int
+    created_at: datetime
+
+
+@dataclass(frozen=True)
+class MethodologyVersionView:
+    summary: TemplateVersionSummary
+    areas: tuple[Area, ...]
+    items: tuple[TemplateItem, ...]
+    rules: tuple[AccountRule, ...]
+
+
+def _summary(template: MethodologyTemplate, version: MethodologyVersion) -> TemplateVersionSummary:
+    return TemplateVersionSummary(
+        template.id, template.name, version.id, version.version, version.created_at
+    )
+
+
+async def import_template(ctx: AuthContext, name: str, data: bytes) -> TemplateVersionSummary:
+    """Parse and store the workbook as the template's next version (AC-1 to AC-3). Raises
+    `TemplateInvalid` with every problem, storing nothing."""
+    await authorise(ctx, "methodology.manage", Resource.firm(ctx.tenant_id))
+    name = name.strip()
+    if not 1 <= len(name) <= 100:
+        raise TemplateNameInvalid(name)
+    methodology = parse_workbook(data)
+    fingerprint = hashlib.sha256(data).hexdigest()
+    async with uow(ctx.tenant) as tx:
+        template_id, _ = await lock_or_insert_template(
+            tx.session, tenant_id=ctx.tenant_id, name=name, created_by=ctx.user_id
+        )
+        version_id, number = await insert_version(
+            tx.session,
+            tenant_id=ctx.tenant_id,
+            template_id=template_id,
+            fingerprint=fingerprint,
+            imported_by=ctx.user_id,
+            methodology=methodology,
+        )
+        tx.record(
+            "methodology.imported",
+            target=Target("methodology_version", version_id),
+            after=Ref(
+                template_id=template_id,
+                version=number,
+                source_fingerprint=fingerprint,
+                areas=len(methodology.areas),
+                items=len(methodology.items),
+                rules=len(methodology.rules),
+            ),
+        )
+    found = await version_detail(ctx.tenant, version_id)
+    return found.summary
+
+
+async def methodology_templates(ctx: AuthContext) -> list[TemplateVersionSummary]:
+    await authorise(ctx, "methodology.read", Resource.firm(ctx.tenant_id))
+    async with tenant_session(ctx.tenant) as session:
+        return [_summary(t, v) for t, v in await list_templates(session)]
+
+
+async def methodology_version(ctx: AuthContext, version_id: UUID) -> MethodologyVersionView:
+    await authorise(ctx, "methodology.read", Resource.firm(ctx.tenant_id))
+    return await version_detail(ctx.tenant, version_id)
+
+
+async def version_detail(tenant: TenantContext, version_id: UUID) -> MethodologyVersionView:
+    """A version's rows for a caller that has authorised under its own context (`NotFound`
+    outside the tenant)."""
+    async with tenant_session(tenant) as session:
+        return await _detail(session, version_id)
+
+
+async def _detail(session: AsyncSession, version_id: UUID) -> MethodologyVersionView:
+    found = await get_version(session, version_id)
+    if found is None:
+        raise NotFound("methodology_version")
+    areas, items, rules = await version_rows(session, version_id)
+    return MethodologyVersionView(
+        _summary(*found),
+        tuple(Area(a.code, a.name) for a in areas),
+        tuple(
+            TemplateItem(i.area_code, i.description, cast(Tier, i.retrievability_tier))
+            for i in items
+        ),
+        tuple(AccountRule(r.area_code, r.account_from, r.account_to) for r in rules),
+    )
+
+
+async def pin_methodology(
+    tx: UnitOfWork, engagement_id: UUID, version_id: UUID
+) -> MethodologyVersionView:
+    """Inside the caller's unit of work, after `lock_ref` and its `authorise`: pin the version
+    (`MethodologyAlreadyApplied` if one is pinned) and return its rows."""
+    detail = await _detail(tx.session, version_id)
+    if not await set_methodology_version(tx.session, engagement_id, version_id):
+        raise MethodologyAlreadyApplied(str(engagement_id))
+    return detail

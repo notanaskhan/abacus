@@ -13,14 +13,17 @@ from abacus.kernel.classification import classified
 from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 from abacus.modules.requests.service import (
+    AppliedMethodology,
     NewRequestItem,
     RequestItemView,
     add_request_item,
+    apply_methodology,
     request_items_for,
 )
 
 router = AbacusRouter(prefix="/v1/engagements/{engagement_id}/request-items", tags=["requests"])
 Status = Literal["open", "received", "ready_for_review", "needs_revision"]
+Tier = Literal["A", "B", "C", "D", "E"]
 
 
 class RequestItemIn(BaseModel):
@@ -44,6 +47,7 @@ class RequestItemOut(BaseModel):
     status: Annotated[Status, classified("internal")]
     created_at: Annotated[datetime, classified("internal")]
     evidence_version_id: Annotated[UUID | None, classified("internal")] = None
+    retrievability_tier: Annotated[Tier | None, classified("internal")] = None
 
 
 def _out(item: RequestItemView) -> RequestItemOut:
@@ -65,3 +69,38 @@ async def create_request_item_route(
 @router.get("", action="request_item.read", response_model=list[RequestItemOut])
 async def list_request_items_route(engagement_id: UUID, ctx: Ctx) -> list[RequestItemOut]:
     return [_out(item) for item in await request_items_for(ctx, engagement_id)]
+
+
+# Applying a methodology version to the engagement (SPEC-008 §8; TASK-023 D2).
+methodology_router = AbacusRouter(
+    prefix="/v1/engagements/{engagement_id}/methodology", tags=["methodology"]
+)
+
+
+class ApplyMethodologyIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    version_id: Annotated[UUID, classified("internal")]
+
+
+class AppliedMethodologyOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    version_id: Annotated[UUID, classified("internal")]
+    items_created: Annotated[int, classified("internal")]
+
+
+@methodology_router.post(
+    "",
+    action="engagement.apply_methodology",
+    response_model=AppliedMethodologyOut,
+    status_code=201,
+    errors=(409,),
+)
+async def apply_methodology_route(
+    engagement_id: UUID, body: ApplyMethodologyIn, ctx: Ctx
+) -> AppliedMethodologyOut:
+    applied: AppliedMethodology = await apply_methodology(ctx, engagement_id, body.version_id)
+    return AppliedMethodologyOut(
+        version_id=applied.version_id, items_created=applied.items_created
+    )

@@ -54,6 +54,7 @@ async def insert_request_item(
     description: str,
     audit_area: str,
     created_by: UUID,
+    retrievability_tier: str | None = None,
 ) -> RequestItem:
     return (
         await session.execute(
@@ -66,6 +67,7 @@ async def insert_request_item(
                 description=description,
                 audit_area=audit_area,
                 created_by=created_by,
+                retrievability_tier=retrievability_tier,
             )
             .returning(RequestItem)
         )

@@ -35,6 +35,17 @@ ACTIONS: dict[str, dict[str, str]] = {
         "firm_admin": "allow",
         "mfa_recent": "required",
     },
+    "methodology.manage": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
+        "mfa_recent": "required",
+    },
+    "methodology.read": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
+        "engagement_partner": "allow",
+        "manager": "allow",
+    },
     "autonomy_policy.update": {
         "firm_admin": "allow",
         "mfa_recent": "required",
@@ -62,6 +73,10 @@ ACTIONS: dict[str, dict[str, str]] = {
     "engagement.create": {
         "firm_admin": "allow",
         "practice_leader": "allow",
+    },
+    "engagement.apply_methodology": {
+        "engagement_partner": "allow",
+        "manager": "allow",
     },
     "engagement.read_metadata": {
         "firm_admin": "allow",
