@@ -329,6 +329,10 @@ export type RetrievalIn = {
  */
 export type RetrievalOut = {
     /**
+     * Estimated Start At
+     */
+    estimated_start_at: string | null;
+    /**
      * Evidence Version Id
      */
     evidence_version_id: string | null;
@@ -341,6 +345,10 @@ export type RetrievalOut = {
      */
     finished_at: string | null;
     /**
+     * Queued Reason
+     */
+    queued_reason: string | null;
+    /**
      * Request Item Id
      */
     request_item_id: string;
@@ -351,7 +359,7 @@ export type RetrievalOut = {
     /**
      * Status
      */
-    status: 'running' | 'succeeded' | 'failed_validation' | 'failed';
+    status: 'running' | 'succeeded' | 'failed_validation' | 'failed' | 'queued';
     /**
      * Sync Run Id
      */

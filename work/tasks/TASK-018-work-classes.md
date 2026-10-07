@@ -340,9 +340,9 @@ Source: SPEC-003 AC-6–8, AC-13, AC-14 and AC-15 (slots), design §4–5 and D2
 - Glossary entries "work class" and "essential" (A16): the glossary is protected and not in this task's approval.
 
 ## Handoff
-- **Current state:** 018b implemented on `task-018b-caps`.
+- **Current state:** 018b implemented on `task-018b-slots` (`task-018b-caps` is stale: cut from the pre-merge 018a branch; ignore it).
 - **Exact next step:**
-  1. Run the independent tests on `task-018b-caps-tests` from the 018b contract, including the pins.
+  1. Run the independent tests on `task-018b-slots-tests` from the 018b contract, including the pins.
   2. Run the security and architecture reviews.
   3. Cherry-pick, fix, and run the full suite with the compose DB stopped.
   4. Open the PR.
