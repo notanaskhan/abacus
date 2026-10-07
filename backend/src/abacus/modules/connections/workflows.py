@@ -22,6 +22,8 @@ from temporalio.exceptions import ActivityError, ApplicationError, is_cancelled_
 with workflow.unsafe.imports_passed_through():
     from abacus.modules.connections.workflow_types import (
         CANCELLED,
+        FORBIDDEN,
+        FORBIDDEN_ERROR,
         INTERNAL_ERROR,
         PROVIDER_UNAVAILABLE,
         RUN_FAILED,
@@ -108,4 +110,7 @@ def _failure(err: ActivityError) -> tuple[str, str]:
             return str(cause.details[0]), str(cause.details[1])
         if cause.type == UNAVAILABLE:
             return "failed", PROVIDER_UNAVAILABLE
+        # A denial (a wall on the person the run acts for) ends the run `forbidden` (SPEC-002 §12).
+        if cause.type == FORBIDDEN_ERROR and workflow.patched("retrieval-forbidden-code"):
+            return "failed", FORBIDDEN
     return "failed", INTERNAL_ERROR

@@ -12,12 +12,14 @@ from dataclasses import dataclass
 # Error types carried from activities to the workflow (ApplicationError.type).
 RUN_FAILED = "RunFailed"
 UNAVAILABLE = "Unavailable"
+FORBIDDEN_ERROR = "Forbidden"  # identity's Forbidden, e.g. a wall on the person (SPEC-002 AC-7)
 # What a workflow-level failure may record (anything else becomes INTERNAL_ERROR).
 FAIL_STATUSES = frozenset({"failed", "failed_validation"})
 PROVIDER_UNAVAILABLE = "provider_unavailable"
 INTERNAL_ERROR = "internal_error"
 CANCELLED = "cancelled"
-FAIL_CODES = frozenset({PROVIDER_UNAVAILABLE, INTERNAL_ERROR, CANCELLED})
+FORBIDDEN = "forbidden"
+FAIL_CODES = frozenset({PROVIDER_UNAVAILABLE, INTERNAL_ERROR, CANCELLED, FORBIDDEN})
 
 
 @dataclass(frozen=True)
