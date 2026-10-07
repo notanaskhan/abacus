@@ -3,10 +3,9 @@
   "private": true,
   "type": "module",
   "description": "Generated from the backend's OpenAPI document (ADR-013). Do not edit src/ by hand: run `make generate`.",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
   "scripts": {
-    "generate": "openapi-ts"
+    "generate": "openapi-ts",
+    "build:types": "tsc -p . --noCheck"
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "0.99.0",
@@ -16,7 +15,17 @@
     "@tanstack/react-query": "^5.104.1"
   },
   "exports": {
-    ".": "./src/index.ts",
-    "./query": "./src/@tanstack/react-query.gen.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
+    },
+    "./client": {
+      "types": "./dist/client.gen.d.ts",
+      "default": "./src/client.gen.ts"
+    },
+    "./query": {
+      "types": "./dist/@tanstack/react-query.gen.d.ts",
+      "default": "./src/@tanstack/react-query.gen.ts"
+    }
   }
 }
