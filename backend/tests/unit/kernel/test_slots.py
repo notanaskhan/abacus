@@ -202,6 +202,7 @@ async def test_ac6_acquire_uses_the_configured_limits_not_the_defaults(
             "engagement_cap": 2,
             "class_capacity": 4,
             "max_wait_seconds": 5,
+            "admission_reserve_pct": 0,
         }
         for c in CLASSES
     }

@@ -71,6 +71,8 @@ def _call(world: World) -> GatewayCall[Verdict]:
         prompt=REF,
         tier="small",
         output_schema=Verdict,
+        work_class="time_sensitive",  # SPEC-003 018c: every call declares its class
+        essential=True,
         budget_usd=Decimal("0.05"),
         attribution=Attribution(
             TenantContext(world.tenant_id, "agent", actor), world.engagement_id, AGENT_ID, None
