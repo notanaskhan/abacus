@@ -107,10 +107,12 @@ All of SPEC-002 (AC-1 to AC-11): the API only, the `wall.read` matrix action (Q2
 ## Progress log
 - `2026-10-07` — Created from SPEC-002 (approved by the founder). Design drafted (§1–8, Q1–Q2) for founder review.
 - `2026-10-07` — Approved with all recommendations: Q1 engagements registers the engagement→client lookup; Q2 the approval file was written at the founder's instruction.
+- `2026-10-07` — Implemented and committed (f147743): migration 0012; the identity repository and service; routes (POST /v1/walls, POST /v1/walls/{id}/remove, GET /v1/walls); the wall check in `authorise` (layer `wall`) and in `visible()` (NOT EXISTS subquery); the engagements registration (`register_engagement_client`); the 404 mapping; `wall.read` in the matrix; `WALL_SAFE=True`; the client regenerated; `schema_check` and LIST-001 updated. Static checks pass.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| Removal is `POST /v1/walls/{id}/remove` returning the removed wall, not `DELETE` (204) | AbacusRouter requires a response model on every route | No (spec §8 note) |
 
 ## Gotchas and discoveries
 -
@@ -119,5 +121,17 @@ All of SPEC-002 (AC-1 to AC-11): the API only, the `wall.read` matrix action (Q2
 -
 
 ## Handoff
-- **Current state:** Approved; implementing.
-- **Exact next step:** On approval, write `work/approvals/TASK-016.yaml` with the Q2 paths, then step 1.
+- **Current state:** Implementation committed on `task-016-ethical-walls` (f147743, pushed). Approval file `work/approvals/TASK-016.yaml` exists locally (gitignored).
+- **Known bug (fix first):** `backend/src/abacus/modules/engagements/repository.py` `client_column()` builds `select(Engagement.client_id).where(Engagement.id == engagement_id).scalar_subquery()`. When `engagement_id` is `Engagement.id` itself (the engagements list), it doesn't correlate to the outer row → "more than one row returned by a subquery" (it also fails in `test_identity` `visible` probes). Fix: `e = aliased(Engagement)`; `select(e.client_id).where(e.id == engagement_id).scalar_subquery()`. Then rerun `uv run pytest tests/integration/test_engagements.py tests/integration/test_identity.py`.
+- **Expected test-pin updates (for the test author, not the implementer):**
+  - `tests/unit/identity/test_permission_matrix.py`: fakes `authz.engagement_role` but not the new `authz.walled_clients`, so it now hits the DB; fake it.
+  - `tests/unit/api/test_app_gates.py::test_ac20_creating_routes_answer_201`: the POST route set gains `/v1/walls` (201) and `/v1/walls/{wall_id}/remove` (200).
+  - The TASK-007 `WALL_SAFE` production-guard test, if one pins the refusal.
+- **Exact next step:**
+  1. Fix the bug above.
+  2. Write the interface contract (SPEC-002 AC-1–11; routes; 404 on layer `wall`; agents, system runs and `visible`; DB forward-only and unique-active; the registration and its fail-closed behaviour).
+  3. Launch the Sonnet test author on its own branch `task-016-ethical-walls-tests` (push there only; I cherry-pick). Include the pin updates.
+  4. Run the security and architecture reviews.
+  5. Run the full suite with the compose DB stopped (`docker stop abacus-db-1`; restart after).
+  6. PR, then the founder's line-by-line review (red). Merge without waiting for CI if the founder says so; delete the approval file; mark done.
+- **Elsewhere:** TASK-014 is blocked on founder inputs (AWS account/credentials, budget, Terraform state, WorkOS approval, OTel/Sentry targets). Other ADR gaps (ADR-038 reconciliation, ADR-040 egress, ADR-031 for SQLAlchemy models) need specs. Main is up to date through PR #19.
