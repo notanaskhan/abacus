@@ -112,3 +112,43 @@ async def lines_of(session: AsyncSession, snapshot_id: UUID) -> Sequence[TrialBa
         .scalars()
         .all()
     )
+
+
+async def lines_of_snapshots(
+    session: AsyncSession, snapshot_ids: Sequence[UUID]
+) -> Sequence[TrialBalanceLineRow]:
+    """The lines of these snapshots (SPEC-006 scope), for a caller that authorised on them."""
+    if not snapshot_ids:
+        return []
+    return (
+        (
+            await session.execute(
+                select(TrialBalanceLineRow).where(
+                    TrialBalanceLineRow.snapshot_id.in_(snapshot_ids)
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def totals_of_snapshots(
+    session: AsyncSession, snapshot_ids: Sequence[UUID]
+) -> Sequence[tuple[Decimal, Decimal]]:
+    if not snapshot_ids:
+        return []
+    rows = await session.execute(
+        select(LedgerSnapshot.total_debit, LedgerSnapshot.total_credit).where(
+            LedgerSnapshot.id.in_(snapshot_ids)
+        )
+    )
+    return [(d, c) for d, c in rows.all()]
+
+
+async def accounts_in_firm(session: AsyncSession) -> Sequence[tuple[str, str]]:
+    """Every (account code, account name) in the tenant's snapshots (SPEC-006 scope)."""
+    rows = await session.execute(
+        select(TrialBalanceLineRow.account_code, TrialBalanceLineRow.account_name).distinct()
+    )
+    return [(c, n) for c, n in rows.all()]

@@ -35,6 +35,7 @@ from abacus.ai_gateway import (
     GatewayCall,
     GatewayRefused,
     call,
+    sanitise_text,
 )
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
@@ -238,6 +239,14 @@ TERMINAL: dict[type[Exception], str] = {
 }
 
 
+def _sanitised(citation: dict[str, object]) -> dict[str, object]:
+    """A citation with its model-written text sanitised (ADR-065)."""
+    return {
+        k: sanitise_text(v) if k in ("quote", "value") and isinstance(v, str) else v
+        for k, v in citation.items()
+    }
+
+
 async def screen(agent: AgentContext) -> ScreeningOutcome:
     """Screen the run's evidence version. Terminal errors fail the run (`fail_run`) and re-raise;
     `ProviderError` and `AgentRunBusy` leave it running for a retry. One activity in 011b: a
@@ -360,9 +369,10 @@ async def _screen(agent: AgentContext) -> ScreeningOutcome:
                 "agent_run_id": run.id,
                 "action": action,
                 "confidence": Decimal(str(output.confidence)).quantize(Decimal("0.001")),
-                "rationale": output.rationale,
-                "citations": [c.model_dump() for c in checked],
-                "unverified": unverified,
+                # Model text is stored sanitised (ADR-065; SPEC-006 AC-1).
+                "rationale": sanitise_text(output.rationale),
+                "citations": [_sanitised(c.model_dump()) for c in checked],
+                "unverified": [sanitise_text(u) for u in unverified],
             },
         )
         await finish_run(

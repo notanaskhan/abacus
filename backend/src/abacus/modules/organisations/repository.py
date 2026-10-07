@@ -43,3 +43,13 @@ async def names_of(session: AsyncSession, entity_ids: list[UUID]) -> dict[UUID, 
         )
     ).all()
     return {row[0]: (row[1], row[2]) for row in rows}
+
+
+async def names_in_firm(session: AsyncSession) -> list[tuple[UUID, UUID, str]]:
+    """Every client and entity name in the tenant: (client id, entity or client id, name). For
+    the outbound scope checker (SPEC-006), which needs names outside an engagement too."""
+    clients = (await session.execute(select(Client.id, Client.name))).all()
+    entities = (
+        await session.execute(select(ClientEntity.client_id, ClientEntity.id, ClientEntity.name))
+    ).all()
+    return [(c, c, n) for c, n in clients] + [(c, e, n) for c, e, n in entities]

@@ -4,7 +4,7 @@ title: Output controls and the outbound message scope checker
 spec: SPEC-006
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9]
 risk_zone: red
-status: awaiting-plan-approval
+status: done
 branch: task-021-output-controls
 worktree:
 created: 2026-10-07
@@ -31,7 +31,7 @@ All of SPEC-006. Excluded: delivery transports, drafting, and any message UI.
 - Code: `ai_gateway/`, `modules/agents/service.py` (where results are stored), `modules/communications/`, the `ledger`, `organisations`, `engagements` and `evidence` APIs, and `apps/web/eslint.config.js`
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-07: D1–D4)
 
 ### Design (for founder review)
 1. **Sanitiser** (`ai_gateway/sanitise.py`, exported as `sanitise_text`):
@@ -80,14 +80,26 @@ All of SPEC-006. Excluded: delivery transports, drafting, and any message UI.
 - [ ] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-07` — Implemented:
+  - `ai_gateway.sanitise_text`, applied to the screener's text;
+  - eslint OUT-001;
+  - scope APIs in organisations, ledger and evidence;
+  - `communications` (scope checker, `send`, `messages`);
+  - migration 0017 and the `message.send` matrix action;
+  - COMM-001 and the BOUND-002 map.
+
+  Gates, the schema check and unit tests pass. Full test runs deferred by the founder.
 - `2026-10-07` — SPEC-006 approved and merged (#36). Design written for founder review.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| Purely numeric account codes are checked as amounts, not as codes | They're indistinguishable from amounts in text | No |
+| Bare years (1900–2100, no symbol, no decimals) aren't amounts | Otherwise "FY 2025" blocks every message | No |
+| The scope lookups are LIST_EXEMPT | The checker must see the firm's other clients and accounts; it runs only after `authorise` and never returns them | No |
 
 ## Questions for the human
 - Design questions D1–D4 (above).
 
 ## Handoff
-- **Next:** on approval, write the approval file and implement design 1–6.
+- **Done.** Follow-ups: independent tests and full runs with the founder; a send route arrives with drafting (increment 8).

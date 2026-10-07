@@ -7,11 +7,14 @@ from abacus.modules.ledger.normalise import (
     validate,
 )
 from abacus.modules.ledger.service import (
+    ScopeFacts,
     SnapshotLine,
     SnapshotRef,
     SnapshotView,
     Unvalidated,
+    firm_accounts,
     record_snapshot,
+    scope_facts,
     snapshot_view,
 )
 
@@ -19,11 +22,14 @@ __all__ = [
     "LedgerLine",
     "NormaliseError",
     "NormalisedTrialBalance",
+    "ScopeFacts",
     "SnapshotLine",
     "SnapshotRef",
     "SnapshotView",
     "Unvalidated",
+    "firm_accounts",
     "record_snapshot",
+    "scope_facts",
     "snapshot_view",
     "validate",
 ]

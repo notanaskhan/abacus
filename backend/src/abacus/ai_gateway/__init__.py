@@ -62,6 +62,7 @@ from abacus.ai_gateway.providers import (
     configure_provider,
     provider,
 )
+from abacus.ai_gateway.sanitise import sanitise_text
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.logging import get_logger
@@ -498,4 +499,5 @@ __all__ = [
     "evaluation",
     "prompt",
     "registry",
+    "sanitise_text",
 ]

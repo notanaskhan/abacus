@@ -2,9 +2,11 @@
 
 from abacus.modules.organisations.service import (
     ClientNames,
+    FirmName,
     NewClient,
     client_names,
     create_client,
+    firm_names,
 )
 
-__all__ = ["ClientNames", "NewClient", "client_names", "create_client"]
+__all__ = ["ClientNames", "FirmName", "NewClient", "client_names", "create_client", "firm_names"]

@@ -309,3 +309,16 @@ async def reason_codes(
         select(listed.c.code, listed.c.label, listed.c.description, listed.c.requires_note)
     )
     return [(str(r[0]), str(r[1]), str(r[2]), bool(r[3])) for r in rows.all()]
+
+
+async def snapshots_of_engagement(session: AsyncSession, engagement_id: UUID) -> list[UUID]:
+    """The ledger snapshots behind the engagement's evidence versions (SPEC-006 scope)."""
+    rows = await session.execute(
+        select(EvidenceVersion.snapshot_id)
+        .where(
+            EvidenceVersion.engagement_id == engagement_id,
+            EvidenceVersion.snapshot_id.is_not(None),
+        )
+        .distinct()
+    )
+    return [r for r in rows.scalars().all() if r is not None]
