@@ -1,7 +1,7 @@
 ---
 id: SPEC-003
 title: Work-class queues and admission control
-status: draft
+status: approved
 owner: founder
 risk_zone: amber
 related_adrs: [ADR-071, ADR-072, ADR-017, ADR-069, ADR-073, ADR-075, ADR-090, ADR-093, ADR-094, ADR-047]
@@ -229,21 +229,22 @@ No new screens. Wherever the SPA shows a retrieval or screening status, it shows
 - **Rollback:** redeploy the previous release. Workflows started on class queues need a worker that polls them, so the previous release can't be deployed after rollout (deploy forward instead). Recorded in the runbook.
 
 ## 20. Open questions
-- [ ] **Q1: initial classes.** Retrieval started by a person is interactive and screening is time-sensitive (§6 table)? *Recommendation: yes.*
-- [ ] **Q2: naming clash.** ADR-069's spec field is `work_class: essential | deferrable`, but ADR-071's "work class" means one of four queues. *Recommendation: `work_class` keeps ADR-071's meaning, and ADR-069's flag becomes `essential: true|false`. Record this as a one-line ADR amending ADR-069's guidance.*
-- [ ] **Q3: how caps are enforced.** Options: database slot leases (`work_slots`), Temporal worker-level limits only, or Temporal task-queue fairness keys. *Recommendation: database slot leases. Worker limits can't be per firm, and Temporal fairness keys aren't generally available on our pinned server and SDK. Fair order: round-robin across waiting firms, oldest first within a firm.*
-- [ ] **Q4: targets and default caps.** *Recommendation:*
+None. Answered by the founder on 2026-10-07 (all recommendations):
+- [x] **Q1: initial classes.** Retrieval started by a person is interactive and screening is time-sensitive (§6 table)? *Recommendation: yes.*
+- [x] **Q2: naming clash.** ADR-069's spec field is `work_class: essential | deferrable`, but ADR-071's "work class" means one of four queues. *Recommendation: `work_class` keeps ADR-071's meaning, and ADR-069's flag becomes `essential: true|false`. Record this as a one-line ADR amending ADR-069's guidance.*
+- [x] **Q3: how caps are enforced.** Options: database slot leases (`work_slots`), Temporal worker-level limits only, or Temporal task-queue fairness keys. *Recommendation: database slot leases. Worker limits can't be per firm, and Temporal fairness keys aren't generally available on our pinned server and SDK. Fair order: round-robin across waiting firms, oldest first within a firm.*
+- [x] **Q4: targets and default caps.** *Recommendation:*
   - interactive schedule-to-start p95 under 2 s;
   - per-firm cap per class: interactive 20, time-sensitive 20, background 10, batch 5;
   - per-engagement cap: half the firm cap;
   - all of these are settings.
-- [ ] **Q5: where provider capacity lives, and the pressure thresholds.** *Recommendation:*
+- [x] **Q5: where provider capacity lives, and the pressure thresholds.** *Recommendation:*
   - a Postgres table updated atomically, so there's no new dependency (Redis isn't allowlisted);
   - limits set to 80% of the provider's limits;
   - batch deferred below 50% remaining, and background below 25%;
   - interactive and time-sensitive always admitted while any capacity remains.
-- [ ] **Q6: maximum wait before `capacity_timeout`.** *Recommendation:* interactive 2 min, time-sensitive 10 min, background 6 h, batch 24 h.
-- [ ] **Q7: worker topology.** One process serving all four pools, or one process per class? *Recommendation:* one process locally and in CI (`--classes` defaults to all). In staging and production, a separate interactive process, so it scales independently. Deployment itself comes with TASK-014.
+- [x] **Q6: maximum wait before `capacity_timeout`.** *Recommendation:* interactive 2 min, time-sensitive 10 min, background 6 h, batch 24 h.
+- [x] **Q7: worker topology.** One process serving all four pools, or one process per class? *Recommendation:* one process locally and in CI (`--classes` defaults to all). In staging and production, a separate interactive process, so it scales independently. Deployment itself comes with TASK-014.
 
 ## 21. Future / explicitly deferred
 - The budget hierarchy, metering and anomaly alerts (ADR-069), as their own spec.
