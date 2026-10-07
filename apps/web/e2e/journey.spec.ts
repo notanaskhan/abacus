@@ -52,7 +52,7 @@ test("ac1 ac18 journey: sign in, create, retrieve, screened", async ({ page }) =
   await page.getByLabel("Audit area").fill("Financial reporting");
   await page.getByRole("button", { name: "Add request item" }).click();
   const card = page.getByRole("list", { name: "Request items" }).getByRole("listitem").first();
-  await expect(card.getByText("Trial balance")).toBeVisible();
+  await expect(card.getByText("Trial balance", { exact: true })).toBeVisible();
   await card.getByRole("button", { name: "Retrieve trial balance" }).click();
 
   await expect(card.getByText("Received", { exact: true })).toBeVisible();

@@ -291,6 +291,46 @@ async def test_ac1_cors_allows_only_the_spa_origins_for_post(client: httpx.Async
     assert "DELETE" not in delete.headers.get("access-control-allow-methods", "")
 
 
+@pytest.mark.parametrize("verifier", ["a" * 42, "a" * 129, "a" * 42 + "!", ""])
+async def test_ac1_a_verifier_that_breaks_rfc_7636_is_refused_and_burns_the_code(
+    client: httpx.AsyncClient, verifier: str
+) -> None:
+    approved = await client.post(
+        "/authorize",
+        data={
+            "redirect_uri": REDIRECT,
+            "state": "s",
+            "code_challenge": _challenge(verifier),
+            "subject": "dev-leader",
+        },
+    )
+    code = parse_qs(urlparse(approved.headers["location"]).query)["code"][0]
+    refused = await client.post("/token", data=_exchange(code, code_verifier=verifier))
+    assert refused.status_code == 400
+    assert refused.json() == {"error": "invalid_grant"}
+    retry = await client.post("/token", data=_exchange(code))
+    assert retry.status_code == 400
+
+
+@pytest.mark.parametrize("length", [43, 128])
+async def test_ac1_verifiers_at_the_rfc_7636_bounds_are_accepted(
+    client: httpx.AsyncClient, length: int
+) -> None:
+    verifier = ("A-._~" * 30)[:length]
+    approved = await client.post(
+        "/authorize",
+        data={
+            "redirect_uri": REDIRECT,
+            "state": "s",
+            "code_challenge": _challenge(verifier),
+            "subject": "dev-leader",
+        },
+    )
+    code = parse_qs(urlparse(approved.headers["location"]).query)["code"][0]
+    response = await client.post("/token", data=_exchange(code, code_verifier=verifier))
+    assert response.status_code == 200
+
+
 def test_ac1_the_key_persists_across_restarts(key_file: Path) -> None:
     first = oidc_server.provider().jwks()
     assert key_file.exists()
