@@ -543,6 +543,7 @@ def test_ac20_downgrading_0012_with_no_walls_drops_the_table_and_upgrading_resto
     private_db: sc.Database,
 ) -> None:
     seed = Seeder(private_db.superuser_dsn)
+    head = _revision(private_db)  # the newest migration, 0012 or later
     asyncio.run(seed.run("DELETE FROM ethical_walls"))
     migrate(private_db.owner_url, "0011", down=True)
     assert _revision(private_db) == "0011"
@@ -552,5 +553,5 @@ def test_ac20_downgrading_0012_with_no_walls_drops_the_table_and_upgrading_resto
         == 0
     )
     migrate(private_db.owner_url, "head")
-    assert _revision(private_db) == "0013"  # head, after TASK-018b
+    assert _revision(private_db) == head
     assert asyncio.run(seed.value("SELECT to_regclass('public.ethical_walls')")) is not None
