@@ -34,12 +34,12 @@ Agent specs, agent runs and screening (ADR-005, ADR-025, ADR-047, ADR-050, ADR-0
 - `run_outcome(tenant_id, run_id)`: what a run recorded (status, failure code, screening result).
 
 ## Temporal (TASK-011b)
-- `SUBSCRIPTIONS`: `evidence_version.created` → `start_screening`, which starts `screening:<evidence_version_id>`.
+- `SUBSCRIPTIONS`: `evidence_version.created` → `start_screening`, which starts `screening:<tenant_id>:<evidence_version_id>` (tenant-qualified: the Temporal namespace is shared).
   - The worker's outbox relay delivers each event at least once. A redelivery attaches to the running workflow or finds it finished; a failed workflow may be started again.
   - `requested_by` is taken only from the relayed event.
 - `ScreeningWorkflow` (name `screening`) runs these activities:
   1. `screening.create_run`: no run (`None`) ends the workflow as `skipped`;
-  2. `screening.screen`: one activity, 2-minute timeout, up to 4 attempts;
+  2. `screening.screen`: one activity, 5-minute timeout with a 30-second heartbeat (a timed-out attempt is cancelled before its retry), up to 4 attempts; `create_run` and `fail_run` have 2-minute timeouts;
   3. on any failure, cancellation included, `screening.fail_run`, which retries until it succeeds.
 
   It returns `ScreeningOutcome(status, run_id, code, screening_result_id)`.

@@ -4,7 +4,7 @@ title: Reference implementations and skills
 spec: SPEC-000
 acceptance_criteria: [AC-20]
 risk_zone: green
-status: in-review
+status: done
 branch: task-015-reference-docs
 worktree:
 created: 2026-10-06
@@ -63,7 +63,7 @@ Steps: to be written when the task starts.
 |---|---|---|
 
 ## Gotchas and discoveries
-- **Stale module docs** (protected paths; not changed in this task):
+- **Stale module docs:** fixed in a follow-up, on founder approval (approval extended to these four paths):
   - `modules/evidence/README.md` shows an old `add_version` signature.
   - `modules/agents/README.md` and the `workflows.py` docstring say `screening:<evidence_version_id>`, but the code uses the tenant-qualified ID. The README says a 2-minute `screen` timeout; it is 5 minutes with a heartbeat.
   - The `connector.py` docstring names `tests/connectors/` (it is `tests/unit/connections/conformance.py`).
@@ -79,5 +79,5 @@ Steps: to be written when the task starts.
 -
 
 ## Handoff
-- **Current state:** PR open from `task-015-reference-docs`; docs and skills only.
-- **Exact next step:** Founder review (ADR-086: every merge needs approval for now). Merge (rebase), delete `work/approvals/TASK-015.yaml`, mark done. Optionally fix the stale module READMEs and docstrings listed in Gotchas, which needs approval for those protected paths.
+- **Current state:** Done. PR #17 merged (rebase) 2026-10-07; the stale module docs were fixed in a follow-up PR. The approval file is deleted once that merges.
+- **Exact next step:** none. The ADR gaps listed in Gotchas need their own tasks (proposed to the founder). TASK-014 is waiting on the founder's inputs.
