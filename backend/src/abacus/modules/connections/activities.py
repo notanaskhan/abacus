@@ -82,9 +82,10 @@ async def _stage[T](
     system = await _system(input)
     if system is None:
         return None
-    if slots.current_class() is not None:
-        await slots.renew(system.tenant, slots.current_holder())  # the slot outlives each stage
     try:
+        work_class = slots.current_class()
+        if work_class is not None:
+            await slots.keep(system.tenant, system.engagement_id, work_class)
         return await stage(system)
     except Exception as exc:
         raise _as_application_error(exc, retryable=is_retryable(exc)) from None

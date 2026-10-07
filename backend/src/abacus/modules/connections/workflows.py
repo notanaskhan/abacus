@@ -18,6 +18,7 @@ from datetime import timedelta
 from temporalio import workflow
 from temporalio.common import RetryPolicy
 from temporalio.exceptions import ActivityError, ApplicationError, is_cancelled_exception
+from temporalio.workflow import ActivityCancellationType
 
 with workflow.unsafe.imports_passed_through():
     from abacus.modules.connections.workflow_types import (
@@ -49,6 +50,15 @@ _FAIL_RETRY = RetryPolicy(
     maximum_interval=timedelta(minutes=1),
     maximum_attempts=0,
 )
+# SPEC-003: ask for a slot at least this often; release a few times, then leave it to the lease.
+_MAX_ASK_INTERVAL = 60.0
+_RELEASE_RETRY = RetryPolicy(
+    initial_interval=timedelta(seconds=2),
+    backoff_coefficient=2.0,
+    maximum_interval=timedelta(minutes=1),
+    maximum_attempts=5,
+)
+_RELEASE_WITHIN = timedelta(hours=1)
 
 
 @workflow.defn(name="retrieval")
@@ -98,12 +108,7 @@ class RetrievalWorkflow:
             raise
         finally:
             if slotted:
-                await workflow.execute_activity(
-                    "retrieval.release_slot",
-                    input,
-                    start_to_close_timeout=_TIMEOUT,
-                    retry_policy=_FAIL_RETRY,
-                )
+                await _release("retrieval.release_slot", input)
         return RetrievalOutcome("succeeded", None, version_id)
 
 
@@ -133,10 +138,10 @@ def _failure(err: ActivityError) -> tuple[str, str]:
 async def wait_for_slot(activity: str, arg: object) -> bool:
     """SPEC-003 (TASK-018 design §4, D2): ask `activity` for the run's work slot until granted
     (True), or until the class's maximum wait has passed (False). Between asks the workflow
-    sleeps on a durable timer with jittered backoff, so waiting holds no worker slot and survives
-    deploys; the backoff grows with the maximum wait, so a day-long wait stays a few hundred
-    activities in the history. The same loop is in the other module's workflows (ADR-017 keeps
-    workflows from sharing code outside their module)."""
+    sleeps on a durable timer with jittered backoff (capped at 60 s, so at most 90 s between asks,
+    well inside the 3 minutes after which the ledger stops counting a silent waiter). Waiting holds
+    no worker slot and survives deploys. The same loop is in the other module's workflows: ADR-017
+    keeps workflows from sharing code outside their module, and a test keeps the two identical."""
     started = workflow.now()
     delay = 1.0
     while True:
@@ -146,10 +151,27 @@ async def wait_for_slot(activity: str, arg: object) -> bool:
             result_type=SlotGrant,
             start_to_close_timeout=_TIMEOUT,
             retry_policy=_RETRY,
+            # A cancelled workflow waits for an ask in flight, so the release comes after it.
+            cancellation_type=ActivityCancellationType.WAIT_CANCELLATION_COMPLETED,
         )
         if grant.granted:
             return True
         if (workflow.now() - started).total_seconds() >= grant.max_wait_seconds:
             return False
         await workflow.sleep(timedelta(seconds=delay * (0.5 + workflow.random().random())))
-        delay = min(delay * 2, max(10.0, grant.max_wait_seconds / 300))
+        delay = min(delay * 2, _MAX_ASK_INTERVAL)
+
+
+async def _release(activity: str, arg: object) -> None:
+    """Free the run's slot, a bounded number of times: if the ledger is unreachable the lease
+    reclaims the slot anyway, and a failed release never changes the run's outcome."""
+    try:
+        await workflow.execute_activity(
+            activity,
+            arg,
+            start_to_close_timeout=_TIMEOUT,
+            schedule_to_close_timeout=_RELEASE_WITHIN,
+            retry_policy=_RELEASE_RETRY,
+        )
+    except ActivityError:
+        return  # the lease reclaims the slot

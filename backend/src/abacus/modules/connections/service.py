@@ -66,6 +66,12 @@ class RetrievalView:
     queued_reason: str | None = None
     estimated_start_at: datetime | None = None
 
+    @property
+    def reported_status(self) -> str:
+        """What callers are told: a run waiting for a work slot is `queued`, never `running`
+        (SPEC-003 AC-13). `status` stays the stored one, for the service's own checks."""
+        return "queued" if self.status == "running" and self.queued_reason else self.status
+
 
 def _fake(connection: Connection) -> Connector:
     directory = settings().fake_connector_dir

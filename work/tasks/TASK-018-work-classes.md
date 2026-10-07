@@ -292,6 +292,27 @@ Source: SPEC-003 AC-6–8, AC-13, AC-14 and AC-15 (slots), design §4–5 and D2
 - The update-column map in `test_schema_check_db.py`.
 - `test_ac20_every_input_and_result_in_the_history_is_encrypted`: Temporal's `core_patch` marker and the `TemporalChangeVersion` search attribute are written by Temporal itself in plain JSON and hold only patch names. The test must allow exactly those, and assert they contain nothing but patch IDs.
 
+### Contract revision 1 (018b): review fixes, superseding the 018b contract where they differ
+- **Ledger keys:** `work_slots` and `work_waiters` are keyed `(tenant_id, holder)`, and every statement filters by the session's tenant. A holder ID colliding with another firm's touches only the caller's rows and never raises across firms.
+- **Bounds:** acquire refuses (`invalid_parameter_value`) caps outside 0–10,000, `class_capacity` outside 1–10,000, and a lease outside 1–3,600 s; renew bounds the lease the same way. A firm with `4 × max(firm_cap, 1)` waiters in a class gets `(false, 'firm_cap', null)` for a new holder, without being added.
+- **Function settings:** each function sets `lock_timeout = 5s` and `statement_timeout = 10s`, and pins `search_path = pg_catalog, public, pg_temp`; every relation is written as `public.*`.
+- **Liveness and the estimate:** only waiters seen in the last 3 minutes are eligible, or count for the estimate. The estimate is `date_trunc('minute', now) + ceil((ahead + 1) / rate)` minutes, where `ahead` is the live waiters before the caller in the class and `rate` is the class's grants per minute over 10 minutes.
+- **RLS:** the ledger tables have row-level security enabled with no policy, and no `abacus_app` privileges.
+- **`schema_check`:** every SECURITY DEFINER function must be in `DEFINER_FUNCTIONS`, owned by `abacus_owner`, with `search_path=pg_catalog, public, pg_temp`, executable by `abacus_app`, and not by PUBLIC or the bypass roles.
+- **Ending a run:** `finish` (sync runs) and `finish_run` (agent runs) clear `queued_reason` and `estimated_start_at`. A run queued, then failed `capacity_timeout` or cancelled, ends cleanly.
+- **`kernel.slots`:**
+  - `system_tenant(tenant_id)` is the firm's slot context.
+  - `keep(tenant, engagement_id, work_class)` runs before every retrieval stage and before `screen`, inside the activity's error mapping. It renews the slot, re-acquires it if the lease was reclaimed, and if none is free logs `slot.lost` (warning) and lets the stage run.
+- **Workflows:**
+  - Between asks, the backoff is capped at 60 s, jittered by ×0.5–1.5.
+  - Asks use `ActivityCancellationType.WAIT_CANCELLATION_COMPLETED`.
+  - Release (`_release`) takes at most 5 attempts within 1 hour, and its `ActivityError` is swallowed: a failed release never changes the run's outcome.
+  - The two modules' `wait_for_slot` bodies are identical (test it, comparing the ASTs).
+- **API:** `RetrievalView.reported_status` is `queued` for a running run with a reason, and `RetrievalOut.status` comes from it. Internal checks keep using the stored `status`.
+- **SPA:** the board treats `queued` like `running`: it keeps polling and keeps the button disabled. It shows "Queued: expected to start by HH:MM", or "Queued: waiting for capacity" when there's no estimate.
+- **Histories:** v2 is re-recorded. Also needed: v2 recordings with at least two asks and timers, with `capacity_timeout`, and with a cancel while waiting (extend `abacus_tools/workflows/record_*`). The replay tests run over every `*-v2-*` file.
+- **More pins:** `apps/web/src/screens/Board.test.tsx` (the fixtures gain `queued_reason`/`estimated_start_at`; add a queued case).
+
 ### Steps
 1. Design and interface contract, after the spec is approved.
 2. Implementation.
@@ -317,6 +338,7 @@ Source: SPEC-003 AC-6–8, AC-13, AC-14 and AC-15 (slots), design §4–5 and D2
 ## Progress log
 - `2026-10-07` — Created with SPEC-003 (draft) for founder review.
 - `2026-10-07` — SPEC-003 approved. Design §1–8 and D1–D5 written for founder review.
+- `2026-10-07` — 018b reviews. Security: H1 holder keys, H2 estimate, M1–M7. Architecture: B1 a queued run couldn't end, B2 the estimate, B3 the SPA showed queued as finished, B4 replay coverage, S1–S10. Fixed: H1, M1–M7 (S1–S3, S5, S7, S9, S10), B1, B3, N1, N2 (indexes and keys) and N4. The estimate is set on queueing and on a reason change only (B2/H2: refreshing it would need an audit event per ask; spec amended); S6 spec amended. Handed to the test author: the B4 recordings, the S8 identical-loop test, and the pins. Contract revision 1 (018b).
 - `2026-10-07` — 018a merged (PR #26). 018b implemented: migration 0013 (slot ledger and functions; run queued columns), `kernel.slots`, slot activities and workflow waits behind `patched("work-slots")`, `capacity_timeout`, the queued API status, the slots metric and logs, and v2 histories. Founder decision: the ledger commits without audit events. Contract 018b written.
 - `2026-10-07` — Independent tests cherry-picked (4ccb451; about 220 tests and about 400 DISPATCH-001 cases; no product bugs). Unit and property: 8,175 passed with the compose DB stopped. 018a PR opened.
 - `2026-10-07` — 018a reviews: security (S1 DISPATCH-001 sidesteps, S2 legacy pool in non-interactive processes, S3 relay in every process, S4 `tenant.id`, S5 exemplars, S6–S9) and architecture (A1 a dead pool unnoticed, A2 serial shutdown, A3 telemetry shut before drain, A5 settings by class, A6–A7 kernel layering, A9 registration beside the starter, A11–A17). All fixed except A16 (the glossary is protected and outside this approval). Contract revision 1.
@@ -328,6 +350,8 @@ Source: SPEC-003 AC-6–8, AC-13, AC-14 and AC-15 (slots), design §4–5 and D2
 | The slot ledger commits without audit events (UOW-001/002 exempt `kernel/slots.py` only); a run's queued and resumed transitions are audited | Polling every few seconds would flood the audit trail; SPEC-003 §14. Founder decision 2026-10-07 | No (recorded here and in `kernel/slots.py`) |
 | A waiting run stays `running` in the database with `queued_reason`; the API reports `queued` | Avoids widening every status check and trigger; the API still never shows waiting work as running (AC-13). Design §5 revised | No |
 | The wait loop is copied into each module's `workflows.py` | ADR-017's import contract bars workflows from importing the kernel | No |
+| Slot hand-out is poll-based: a free slot goes to the first live waiter when it next asks (at most about 90 s), so capacity can sit idle briefly. Waiters silent for 3 minutes stop holding others up | Fairness without a cross-process signal; SPEC-003 §12 (018b review S5) | No |
+| `class_capacity` added as a queued reason; SPEC-003 amended (storage of the queued status, the estimate, screening's API as a follow-up) | 018b review S6 | No (spec amended) |
 | No per-firm slots-in-use gauge; per-firm detail is in `slot.*` logs | A process-local gauge is wrong across processes, and the metrics allowlist carries no tenant ID | No |
 
 ## Gotchas and discoveries

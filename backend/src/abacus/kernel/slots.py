@@ -101,13 +101,30 @@ async def renew(tenant: TenantContext, holder: str) -> bool:
     return bool(renewed)
 
 
+def system_tenant(tenant_id: UUID) -> TenantContext:
+    """The firm's context for slot bookkeeping (no run or person behind it)."""
+    return TenantContext(tenant_id, "system", "work-slots")
+
+
 async def release(tenant_id: UUID, holder: str) -> None:
     """Free the holder's slot and forget it as a waiter (idempotent). Works for a run that has
     already ended, so it needs only the firm."""
-    tenant = TenantContext(tenant_id, "system", "work-slots")
+    tenant = system_tenant(tenant_id)
     async with tenant_connection(tenant) as conn:
         await conn.execute(text("SELECT work_slot_release(:holder)"), {"holder": holder})
         await conn.commit()
+
+
+async def keep(tenant: TenantContext, engagement_id: UUID | None, work_class: WorkClass) -> None:
+    """Before each stage: renew the slot; if its lease was reclaimed (a stage or outage longer
+    than the lease), take one again. If none is free, the stage still runs (stopping work half
+    done is worse) and `slot.lost` is logged, so a breach of the caps is never silent."""
+    holder = current_holder()
+    if await renew(tenant, holder):
+        return
+    decision = await acquire(tenant, holder, engagement_id, work_class)
+    if not decision.granted:
+        _log.warning("slot.lost", tenant_id=tenant.tenant_id, work_class=work_class)
 
 
 # --- inside an activity ------------------------------------------------------------------------

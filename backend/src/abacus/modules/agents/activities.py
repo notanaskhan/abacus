@@ -21,7 +21,6 @@ from temporalio.exceptions import ApplicationError
 
 from abacus.kernel import slots
 from abacus.kernel.config import settings
-from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound
 from abacus.modules.agents.service import (
     TERMINAL,
@@ -102,8 +101,6 @@ async def create_run_activity(input: ScreeningInput) -> str | None:
 
 
 async def _screen(tenant_id: UUID, run_id: UUID) -> ScreeningOutcome:
-    if slots.current_class() is not None:
-        await slots.renew(_slot_tenant(tenant_id), slots.current_holder())
     try:
         agent = await load_agent_context(tenant_id, run_id)
     except AgentRunNotRunning:
@@ -112,6 +109,9 @@ async def _screen(tenant_id: UUID, run_id: UUID) -> ScreeningOutcome:
         # The person the agent acts for is gone: the run ends, nobody is acted for.
         await fail_run(tenant_id, run_id, INITIATOR_INACTIVE)
         return await _recorded(tenant_id, run_id)
+    work_class = slots.current_class()
+    if work_class is not None:
+        await slots.keep(agent.tenant, agent.engagement_id, work_class)
     try:
         outcome = await screen(agent)
     except AgentRunNotRunning:
@@ -122,10 +122,6 @@ async def _screen(tenant_id: UUID, run_id: UUID) -> ScreeningOutcome:
         None,
         str(outcome.screening_result_id) if outcome.screening_result_id else None,
     )
-
-
-def _slot_tenant(tenant_id: UUID) -> TenantContext:
-    return TenantContext(tenant_id, "system", "work-slots")
 
 
 @activity.defn(name="screening.acquire_slot")
@@ -139,7 +135,7 @@ async def acquire_slot_activity(input: RunInput) -> SlotGrant:
         if engagement_id is None or work_class is None:
             return SlotGrant(True, 0)
         decision = await slots.acquire(
-            _slot_tenant(tenant_id), slots.current_holder(), engagement_id, work_class
+            slots.system_tenant(tenant_id), slots.current_holder(), engagement_id, work_class
         )
         await mark_queued(
             tenant_id,
