@@ -20,6 +20,9 @@ import asyncio
 import hashlib
 import json
 import math
+from collections.abc import Generator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, replace
 from decimal import Decimal
 from math import ceil
@@ -284,8 +287,40 @@ def check_provider_limits() -> None:
         raise RuntimeError(f"no provider limits for {', '.join(missing)} (provider_limits)")
 
 
+# Evaluation mode (SPEC-005; TASK-020): the evaluation runner pins the tier an agent's calls use
+# for one run. Tooling sets it; product code never does.
+_evaluation_tier: ContextVar[Tier | None] = ContextVar("abacus_evaluation_tier", default=None)
+
+
+@contextmanager
+def evaluation(tier: Tier | None) -> Generator[None]:
+    """Run the block's model calls on `tier` (the evaluation runner's pinned tier)."""
+    token = _evaluation_tier.set(tier)
+    try:
+        yield
+    finally:
+        _evaluation_tier.reset(token)
+
+
+async def eligible(
+    tenant: TenantContext, agent_id: str, tier: Tier, model: str, prompt_version: str
+) -> bool:
+    """Whether the latest finished evaluation run of `agent_id` on this tier, model and prompt
+    version passed, on a real model (SPEC-005 AC-13). Fails closed: any error means no."""
+    try:
+        async with tenant_session(tenant) as session:
+            found = await session.scalar(
+                text("SELECT eval_eligible(:agent, :tier, :model, :prompt)"),
+                {"agent": agent_id, "tier": tier, "model": model, "prompt": prompt_version},
+            )
+    except Exception as exc:
+        _log.warning("admission.eligibility_unavailable", agent_id=agent_id, error=exc)
+        return False
+    return bool(found)
+
+
 async def _admitted(
-    c: GatewayCall[BaseModel], tiers: tuple[Tier, ...], tokens: int
+    c: GatewayCall[BaseModel], tiers: tuple[Tier, ...], tokens: int, prompt_version: str
 ) -> tuple[Tier, str]:
     """The first of `tiers` whose model admits this call (an `ai.admit` span), or `NotAdmitted`.
     ADR-072's order: background and batch work is deferred, never stepped down; interactive and
@@ -295,8 +330,14 @@ async def _admitted(
         tiers = tiers[:1]
     with _tracer.start_as_current_span("ai.admit", attributes={"ai.work_class": c.work_class}):
         retry_after = 60
-        for tier in tiers:
+        for index, tier in enumerate(tiers):
             model = MODELS[tier][0]
+            # A cheaper tier needs a passing evaluation run on this prompt version (SPEC-005).
+            if index > 0 and not await eligible(
+                tenant, c.attribution.agent_id, tier, model, prompt_version
+            ):
+                _log.info("admission.tier_ineligible", agent_id=c.attribution.agent_id, tier=tier)
+                continue
             admitted, wait = await admit(tenant, model, c.work_class, c.essential, tokens)
             if admitted:
                 return tier, model
@@ -305,7 +346,7 @@ async def _admitted(
 
 
 async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult[T]:
-    tier = c.tier
+    tier = _evaluation_tier.get() or c.tier
     model = MODELS[tier][0]
     user = c.context.render()
     inputs_hash = hashlib.sha256(f"{found.ref}\n{user}".encode()).hexdigest()
@@ -331,7 +372,7 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
         # Admission before every attempt; only the first may step down to a cheaper tier.
         needed = estimate_tokens(request.system + request.user) + c.max_output_tokens
         tiers = (tier, *c.cheaper_tiers) if attempt == 1 else (tier,)
-        tier, model = await _admitted(cast(GatewayCall[BaseModel], c), tiers, needed)
+        tier, model = await _admitted(cast(GatewayCall[BaseModel], c), tiers, needed, found.ref)
         request = replace(request, model=model)
         try:
             async with asyncio.timeout(c.timeout_seconds):
@@ -435,7 +476,9 @@ __all__ = [
     "check_provider_limits",
     "configure_provider",
     "cost",
+    "eligible",
     "estimate_tokens",
+    "evaluation",
     "prompt",
     "registry",
 ]

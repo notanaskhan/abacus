@@ -15,7 +15,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from abacus.kernel.classification import classified
 from abacus.kernel.work_class import WORK_CLASSES, WorkClass
 
-Environment = Literal["local", "test", "staging", "production"]
+Environment = Literal["local", "test", "evaluation", "staging", "production"]
+# Where synthetic data may stand in for clients' systems: the fake connector and the fake model.
+# `evaluation` (SPEC-005 Q4) runs evaluation suites on synthetic firms only, never client data.
+SYNTHETIC_ENVIRONMENTS: tuple[str, ...] = ("local", "test", "evaluation")
 _LOCAL_DB = "postgresql+asyncpg://abacus_app:abacusapp@127.0.0.1:55432/abacus"
 _LOCAL_MIGRATIONS_DB = "postgresql+asyncpg://abacus_owner:abacusowner@127.0.0.1:55432/abacus"
 _LOCAL_RELAY_DB = "postgresql+asyncpg://abacus_relay:abacusrelay@127.0.0.1:55432/abacus"
@@ -188,8 +191,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _fake_connector_local_only(self) -> Self:
-        if self.fake_connector_dir is not None and self.environment not in ("local", "test"):
-            raise ValueError("fake_connector_dir is for local runs and tests only")
+        if self.fake_connector_dir is not None and self.environment not in SYNTHETIC_ENVIRONMENTS:
+            raise ValueError("fake_connector_dir is for local runs, tests and evaluations only")
         return self
 
     @model_validator(mode="after")

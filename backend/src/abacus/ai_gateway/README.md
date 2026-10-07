@@ -29,6 +29,11 @@ The only path to a model (ADR-019, ADR-050, ADR-052, ADR-057, ADR-070). Owns `us
 - **Fail closed:** an unknown model, or an unreachable bucket, admits nothing.
 - **Telemetry:** an `ai.admit` span, and the counter `abacus.admission` (provider, model, class, outcome, reason).
 
+## Evaluation (SPEC-005; TASK-020)
+- **`evaluation(tier)`:** a context manager that pins the tier of the block's calls. Only the evaluation runner uses it.
+- **`eligible(tenant, agent_id, tier, model, prompt_version)`:** asks `eval_eligible`, a SECURITY DEFINER function (migration 0016). It is true only if the latest finished run for that key passed on a real model. It fails closed.
+- **Cheaper tiers:** in admission, an entry after the call's own tier is tried only if it is eligible; otherwise it is skipped (`admission.tier_ineligible`). No tier is eligible until real-model runs are published (TASK-014).
+
 ## Rules
 - **No provider endpoints or SDKs outside this package** (PROVIDER-001).
 - **No inline prompts** (PROMPT-001). Outside this package, nothing builds a `ModelRequest`, writes the instructions layer from a literal, or names a prompt that isn't `id@vN`.
