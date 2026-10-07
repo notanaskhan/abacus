@@ -96,11 +96,14 @@ def _resource(
 
 
 class EngagementRoles:
-    """Stands in for the database read of `engagement_members`; records its calls."""
+    """Stands in for the database reads of `engagement_members` and `ethical_walls` (TASK-016:
+    no walls unless a test sets `walls`); records its calls."""
 
     def __init__(self) -> None:
         self.role: str | None = None
+        self.walls: frozenset[uuid.UUID] = frozenset()
         self.calls: list[tuple[TenantContext, uuid.UUID, uuid.UUID]] = []
+        self.wall_calls: list[tuple[TenantContext, uuid.UUID]] = []
 
     async def __call__(
         self, tenant: TenantContext, user_id: uuid.UUID, engagement_id: uuid.UUID
@@ -108,11 +111,16 @@ class EngagementRoles:
         self.calls.append((tenant, user_id, engagement_id))
         return self.role
 
+    async def walled(self, tenant: TenantContext, user_id: uuid.UUID) -> frozenset[uuid.UUID]:
+        self.wall_calls.append((tenant, user_id))
+        return self.walls
+
 
 @pytest.fixture
 def engagement(monkeypatch: pytest.MonkeyPatch) -> EngagementRoles:
     fake = EngagementRoles()
     monkeypatch.setattr(authz, "engagement_role", fake)
+    monkeypatch.setattr(authz, "walled_clients", fake.walled)
     return fake
 
 
@@ -608,9 +616,10 @@ def test_ac20_visible_for_a_firm_role_allow_compiles_to_true(action: str) -> Non
     for role in FIRM_ROLES:
         if YAML_ACTIONS[action].get(role) != "allow":
             continue
-        assert (
-            _sql(visible(_ctx(firm_role=role), action, column("engagement_id", Uuid()))) == "true"
-        )
+        # The role part is `true` (nothing left of it); TASK-016 leaves only the wall clause.
+        shown = _sql(visible(_ctx(firm_role=role), action, column("engagement_id", Uuid())))
+        assert shown.startswith("NOT (EXISTS (SELECT ethical_walls.id FROM ethical_walls WHERE ")
+        assert "engagement_members" not in shown
 
 
 @pytest.mark.parametrize("action", READ_ACTIONS)
@@ -651,8 +660,11 @@ def test_ac20_visible_refuses_a_read_action_carrying_a_modifier(
         visible(_ctx(firm_role="firm_admin"), "probe.read", column("engagement_id", Uuid()))
 
 
-def test_ac20_the_authz_module_states_it_is_not_wall_safe() -> None:
-    assert "not wall-safe" in (authz.__doc__ or "").lower()
+def test_ac20_the_authz_module_no_longer_states_it_is_not_wall_safe() -> None:
+    # TASK-016: walls are enforced (WALL_SAFE is True), so the module doc must not say otherwise.
+    doc = (authz.__doc__ or "").lower()
+    assert "not wall-safe" not in doc
+    assert "wall" in doc
 
 
 def test_ac20_resource_has_no_defaults() -> None:

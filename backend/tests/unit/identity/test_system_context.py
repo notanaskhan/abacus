@@ -72,6 +72,7 @@ class EngagementRoles:
 
     def __init__(self) -> None:
         self.role: str | None = None
+        self.walls: frozenset[uuid.UUID] = frozenset()  # TASK-016: nobody is walled by default
         self.calls: list[tuple[TenantContext, uuid.UUID, uuid.UUID]] = []
 
     async def __call__(
@@ -80,11 +81,15 @@ class EngagementRoles:
         self.calls.append((tenant, user_id, engagement_id))
         return self.role
 
+    async def walled(self, tenant: TenantContext, user_id: uuid.UUID) -> frozenset[uuid.UUID]:
+        return self.walls
+
 
 @pytest.fixture
 def engagement(monkeypatch: pytest.MonkeyPatch) -> EngagementRoles:
     fake = EngagementRoles()
     monkeypatch.setattr(authz, "engagement_role", fake)
+    monkeypatch.setattr(authz, "walled_clients", fake.walled)
     return fake
 
 
@@ -428,12 +433,17 @@ def _sql(expression: object) -> str:
     return " ".join(str(expression).split())
 
 
+# The role filter is unchanged by TASK-016; walls (ADR-026) add this clause after it, for the
+# person the system acts for.
+WALL_CLAUSE = "AND NOT (EXISTS (SELECT ethical_walls.id FROM ethical_walls WHERE "
+
+
 @pytest.mark.parametrize("action", READ_ACTIONS)
 def test_ac20_visible_for_the_system_follows_the_matrix(action: str) -> None:
     ctx = _system()
     expression = visible(ctx, action, column("engagement_id", Uuid()))
     if YAML_ACTIONS[action].get("system") == "allow":
-        assert _sql(expression) == "engagement_id = :engagement_id_1"
+        assert _sql(expression).startswith("engagement_id = :engagement_id_1 " + WALL_CLAUSE)
     else:
         assert _sql(expression) == "false"
 
@@ -444,8 +454,10 @@ def test_ac20_visible_for_an_allowed_system_is_its_own_engagement_only(
     monkeypatch.setitem(RULES, "probe.read", make_rule("probe.read", {"system": "allow"}))
     ctx = _system()
     expression = visible(ctx, "probe.read", column("engagement_id", Uuid()))
-    assert _sql(expression) == "engagement_id = :engagement_id_1"
-    assert expression.compile().params["engagement_id_1"] == ctx.engagement_id
+    assert _sql(expression).startswith("engagement_id = :engagement_id_1 " + WALL_CLAUSE)
+    params = expression.compile().params
+    assert params["engagement_id_1"] == ctx.engagement_id
+    assert ctx.on_behalf_of in params.values()  # the wall clause is for the person it acts for
 
 
 @pytest.mark.parametrize(

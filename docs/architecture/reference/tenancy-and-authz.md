@@ -38,15 +38,6 @@ async def add_item(ctx: AuthContext, engagement_id: UUID, body: RequestItemIn) -
 - `archived` comes from the row, never a literal (AUTHZ-003).
 - Missing, or another firm's → 404 (row-level security makes them indistinguishable, so nothing leaks across firms). Found but denied → 403: existence within a firm isn't secret (TASK-008 design §3).
 - For writes, resolve and share-lock the row inside the unit of work (`lock_ref`) and authorise there, so the check and the write see the same row.
-- Build engagement resources with `ref.resource()` only: it carries `archived` and the engagement's `client_id`, which the wall check needs.
-
-## Ethical walls (ADR-026, SPEC-002)
-
-- `authorise` checks walls before roles, so a wall beats every role, firm admin included. The person checked is the user, the person who started an agent's run, or the person a system run acts for.
-- A walled engagement answers **404**, with the same body as a missing engagement (`Forbidden(layer="wall")`, mapped in `abacus.api.app`).
-- `visible()` adds the wall filter itself: nothing to do in a list query.
-- Identity owns walls and engagements owns which client an engagement belongs to. `engagements.api` registers that lookup with `register_engagement_client` at import, so identity never imports engagements (dependency inversion, TASK-016 Q1). Without the registration, a walled person is denied everything engagement-scoped (fail closed).
-- Walls are read once per request and live on every step outside one (workers), so a new wall applies from the next request or step.
 
 ## A list
 
