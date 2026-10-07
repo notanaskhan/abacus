@@ -29,6 +29,10 @@ PROTECTED = [
     "docs/architecture/dependency-allowlist.yaml",
     "docs/product/glossary.md",
     "docs/product/failure-taxonomy.md",
+    # Evaluation thresholds, cost baselines and judge calibration (ADR-079, ADR-070; TASK-020 D5).
+    "evals/*/suite.yaml",
+    "evals/baselines.yaml",
+    "evals/judges/*",
     "**/pyproject.toml", "backend/uv.lock",
     "**/package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "**/.npmrc",
     "backend/src/abacus_tools/quality/**",

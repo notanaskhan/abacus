@@ -16,7 +16,7 @@ Changes to these paths require the founder's explicit approval. Enforcement is l
 - Repository plumbing: `.git/` (local hooks), every `.gitignore`
 - Infrastructure: `infra/`, every `*compose*.y*ml`, overrides included (which images run, which ports open)
 - Approvals: `work/approvals/` — the founder writes these by hand
-- Policy files: permission matrix, this file, dependency allowlist, glossary, failure taxonomy, and the coverage floor (`[tool.coverage.report] fail_under` in `backend/pyproject.toml`, ADR-079)
+- Policy files: permission matrix, this file, dependency allowlist, glossary, failure taxonomy, and the coverage floor (`[tool.coverage.report] fail_under` in `backend/pyproject.toml`, ADR-079), and the evaluation suites, cost baselines and judge calibration records (`evals/*/suite.yaml`, `evals/baselines.yaml`, `evals/judges/*`; ADR-079, ADR-070)
 - CI: `.github/workflows/` (stages 1 and 2 run the same `make` targets as local development)
 - Dependency manifests and lockfiles: every `package.json` and `pyproject.toml`, `pnpm-workspace.yaml`, `.npmrc`, `backend/uv.lock`, `pnpm-lock.yaml`
 - Red-zone code: identity and authorisation (`abacus.modules.identity`), the API surface that binds every route to an action (`abacus.api`), database session and tenancy, unit of work, encryption and object storage (`abacus.kernel.db`, `.uow`, `.crypto`, `.storage`), evidence, connectors and ledger (`abacus.modules.evidence`, `.connections`, `.ledger`), the workflow worker (`abacus.worker`), audit trail (`abacus.modules.audit_trail`)
