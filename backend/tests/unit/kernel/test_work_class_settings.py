@@ -22,9 +22,36 @@ DEFAULTS = {
 }
 
 
+# TASK-018b: each class's slot caps and maximum wait are required fields.
+SLOTS = {
+    "interactive": {
+        "firm_cap": 20,
+        "engagement_cap": 10,
+        "class_capacity": 50,
+        "max_wait_seconds": 120,
+    },
+    "time_sensitive": {
+        "firm_cap": 20,
+        "engagement_cap": 10,
+        "class_capacity": 50,
+        "max_wait_seconds": 600,
+    },
+    "background": {
+        "firm_cap": 10,
+        "engagement_cap": 5,
+        "class_capacity": 20,
+        "max_wait_seconds": 21600,
+    },
+    "batch": {"firm_cap": 5, "engagement_cap": 2, "class_capacity": 10, "max_wait_seconds": 86400},
+}
+
+
 def _limits(**overrides: tuple[int, int]) -> dict[str, dict[str, int]]:
     merged = {**DEFAULTS, **overrides}
-    return {c: {"max_activities": a, "max_workflow_tasks": t} for c, (a, t) in merged.items()}
+    return {
+        c: {"max_activities": a, "max_workflow_tasks": t, **SLOTS[c]}
+        for c, (a, t) in merged.items()
+    }
 
 
 @pytest.fixture(autouse=True)
@@ -48,8 +75,12 @@ def test_ac1_the_defaults_are_small_enough_for_the_database_pool() -> None:
 
 def test_ac1_an_override_names_all_four_classes(monkeypatch: pytest.MonkeyPatch) -> None:
     found = _load(monkeypatch, _limits(background=(1, 3))).work_classes
-    assert found["background"] == WorkClassLimits(max_activities=1, max_workflow_tasks=3)
-    assert found["interactive"] == WorkClassLimits(max_activities=10, max_workflow_tasks=10)
+    assert found["background"] == WorkClassLimits(
+        max_activities=1, max_workflow_tasks=3, **SLOTS["background"]
+    )
+    assert found["interactive"] == WorkClassLimits(
+        max_activities=10, max_workflow_tasks=10, **SLOTS["interactive"]
+    )
 
 
 @pytest.mark.parametrize("missing", ["interactive", "time_sensitive", "background", "batch"])

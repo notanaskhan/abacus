@@ -62,7 +62,7 @@ def test_ac14_screening_starts_from_evidence_version_created() -> None:
     assert EVIDENCE_VERSION_CREATED == "evidence_version.created"
     assert {"evidence_version.created": start_screening} == SUBSCRIPTIONS
     assert {ScreeningWorkflow: "time_sensitive"} == WORKFLOWS
-    assert len(ACTIVITIES) == 3
+    assert len(ACTIVITIES) == 5  # TASK-018b: acquire_slot and release_slot join the three
 
 
 def test_ac14_the_workflow_id_is_tenant_qualified() -> None:
@@ -132,7 +132,10 @@ def test_ac14_the_failure_codes_a_workflow_may_record() -> None:
     assert PROVIDER_UNAVAILABLE == "provider_unavailable"
     assert INTERNAL_ERROR == "internal_error"
     assert CANCELLED == "cancelled"
-    assert frozenset({"provider_unavailable", "internal_error", "cancelled"}) == FAIL_CODES
+    assert (
+        frozenset({"provider_unavailable", "internal_error", "cancelled", "capacity_timeout"})
+        == FAIL_CODES
+    )  # TASK-018b adds capacity_timeout
     assert INITIATOR_INACTIVE == "initiator_inactive"
 
 

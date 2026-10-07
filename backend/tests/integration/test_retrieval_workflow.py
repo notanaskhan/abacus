@@ -732,10 +732,11 @@ def _encodings(node: object, plain: list[object]) -> list[str]:
             return found
         indexed = mapping.get("indexedFields")
         if isinstance(indexed, dict):
-            versions = cast(Json, indexed).pop(CHANGE_VERSION, None)
+            fields = cast(Json, indexed)
+            versions = fields.pop(CHANGE_VERSION, None)
             if versions is not None:
                 plain.append(_decoded(cast(Json, versions)))
-            assert not indexed, f"unexpected search attributes in the history: {sorted(indexed)}"
+            assert not fields, f"unexpected search attributes in the history: {sorted(fields)}"
             return found
         payloads = mapping.get("payloads")
         if isinstance(payloads, list):
@@ -836,7 +837,7 @@ async def _call[T](function: Callable[[T], Awaitable[object]], argument: T) -> o
     return await ActivityEnvironment().run(function, argument)
 
 
-def test_ac20_there_are_eight_activities_one_per_stage_plus_fail_run_and_the_two_slot_ones() -> None:
+def test_ac20_there_are_eight_activities_the_six_plus_the_two_slot_ones() -> None:
     assert len(ACTIVITIES) == 8  # TASK-018b: acquire_slot and release_slot join the six
     names = {a.__name__ for a in ACTIVITIES}
     assert {"acquire_slot_activity", "release_slot_activity"} <= names
