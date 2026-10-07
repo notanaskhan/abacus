@@ -45,7 +45,15 @@ ENGAGEMENT_KEYS = {
     "created_at",
     "team",
 }
-ITEM_KEYS = {"id", "engagement_id", "description", "audit_area", "status", "created_at"}
+ITEM_KEYS = {
+    "id",
+    "engagement_id",
+    "description",
+    "audit_area",
+    "status",
+    "created_at",
+    "evidence_version_id",
+}
 ALL_ROLES = ["engagement_partner", "manager", "senior", "staff", "reviewer"]
 
 
@@ -879,6 +887,7 @@ async def test_ac7_partner_manager_and_senior_create_request_items(
     assert body["description"] == "Aged AR"
     assert body["audit_area"] == "AR"
     assert body["status"] == "open"
+    assert body["evidence_version_id"] is None
     assert datetime.fromisoformat(cast(str, body["created_at"])).tzinfo is not None
 
     rows = await seed.rows(
@@ -1208,6 +1217,7 @@ async def test_ac6_items_are_listed_in_creation_order(api: Api, firm: Firm) -> N
     rows = cast(list[Json], response.json())
     assert [row["id"] for row in rows] == created
     assert all(set(row) == ITEM_KEYS for row in rows)
+    assert all(row["evidence_version_id"] is None for row in rows)
     assert all(row["engagement_id"] == engagement["id"] for row in rows)
 
 
