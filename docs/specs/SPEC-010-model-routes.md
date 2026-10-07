@@ -1,7 +1,7 @@
 ---
 id: SPEC-010
 title: Model routes, with a second route configured
-status: draft
+status: approved
 owner: founder
 risk_zone: red
 related_adrs: [ADR-073, ADR-019, ADR-072, ADR-069, ADR-070, ADR-055, ADR-057, ADR-097]
@@ -168,11 +168,12 @@ None.
 - **Rollback:** the migration is additive (the route columns), and `model_routes` can drop a route at once.
 
 ## 20. Open questions
-- [ ] **Q1: which route is primary.** *Recommendation:* `bedrock` first, `direct` second for every agent. Data stays in our AWS trust boundary by default. Direct carries outages and Bedrock model-availability gaps.
-- [ ] **Q2: what enables a route.** *Recommendation:* the route appears in `model_routes`, and a committed parity report for its catalog models passed within the last 90 days. Enabling or disabling is an operator settings change.
-- [ ] **Q3: outage handling.** *Recommendation:* any 5xx, timeout or connection error blocks that route's model for 30 seconds (`outage_block_seconds`), and the retry fails over. A 401 or 403 doesn't block, alerts, and fails over for that attempt.
-- [ ] **Q4: the TASK-014 dependency.** *Recommendation:* build and test everything now with fakes and recorded responses. Enabling the real routes in staging waits for the AWS account, Bedrock model access, the Anthropic API key, and the counsel-reviewed terms (ADR-097).
-- [ ] **Q5: embeddings route.** *Recommendation:* Titan v2 on Bedrock only, with no second route. A Titan outage pauses ingestion (batch work waits) and fails searches with 503. A second embedding route would need re-embedding into a separate vector space, which is deferred.
+None. Answered by the founder on 2026-10-07 (all recommendations):
+- [x] **Q1: which route is primary.** *Recommendation:* `bedrock` first, `direct` second for every agent. Data stays in our AWS trust boundary by default. Direct carries outages and Bedrock model-availability gaps.
+- [x] **Q2: what enables a route.** *Recommendation:* the route appears in `model_routes`, and a committed parity report for its catalog models passed within the last 90 days. Enabling or disabling is an operator settings change.
+- [x] **Q3: outage handling.** *Recommendation:* any 5xx, timeout or connection error blocks that route's model for 30 seconds (`outage_block_seconds`), and the retry fails over. A 401 or 403 doesn't block, alerts, and fails over for that attempt.
+- [x] **Q4: the TASK-014 dependency.** *Recommendation:* build and test everything now with fakes and recorded responses. Enabling the real routes in staging waits for the AWS account, Bedrock model access, the Anthropic API key, and the counsel-reviewed terms (ADR-097).
+- [x] **Q5: embeddings route.** *Recommendation:* Titan v2 on Bedrock only, with no second route. A Titan outage pauses ingestion (batch work waits) and fails searches with 503. A second embedding route would need re-embedding into a separate vector space, which is deferred.
 
 ## 21. Future / explicitly deferred
 - Cross-family failover with per-agent evaluations.
