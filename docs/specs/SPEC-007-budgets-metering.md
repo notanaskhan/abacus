@@ -1,7 +1,7 @@
 ---
 id: SPEC-007
 title: Budget hierarchy, metering and denial-of-wallet controls
-status: draft
+status: approved
 owner: founder
 risk_zone: red
 related_adrs: [ADR-069, ADR-070, ADR-055, ADR-072, ADR-019, ADR-105]
@@ -139,17 +139,18 @@ API only in this spec. A budget page comes later.
 Generous defaults (Q1, Q3), so nothing in local development or CI is throttled. The migration is additive.
 
 ## 20. Open questions
-- [ ] **Q1: the levels' defaults (soft / hard).** *Recommendation:*
+None. Answered by the founder on 2026-10-07 (all recommendations):
+- [x] **Q1: the levels' defaults (soft / hard).** *Recommendation:*
   - per call and per run: as today, from the agent spec;
   - per engagement: $50 / $100 a month;
   - per firm: $500 / $1,000 a month;
   - platform: $200 / $400 a day.
 
   All are settings, revisited with real usage.
-- [ ] **Q2: owner of `budgets` and the spend functions.** *Recommendation:* `ai_gateway`, which already owns `usage_records` and enforces the limits.
-- [ ] **Q3: who sets the firm budget.** *Recommendation:* a firm admin with fresh MFA, up to the plan's hard limit (a setting, default $1,000 a month). Raising the plan limit is an operator change.
-- [ ] **Q4: action caps.** *Recommendation:* per engagement per day, 50 retrievals and 200 screenings. Settings.
-- [ ] **Q5: anomaly rule.** *Recommendation:* the last hour's spend is more than 5 times the trailing seven-day hourly average, and more than $5. It only alerts; it never blocks.
+- [x] **Q2: owner of `budgets` and the spend functions.** *Recommendation:* `ai_gateway`, which already owns `usage_records` and enforces the limits.
+- [x] **Q3: who sets the firm budget.** *Recommendation:* a firm admin with fresh MFA, up to the plan's hard limit (a setting, default $1,000 a month). Raising the plan limit is an operator change.
+- [x] **Q4: action caps.** *Recommendation:* per engagement per day, 50 retrievals and 200 screenings. Settings.
+- [x] **Q5: anomaly rule.** *Recommendation:* the last hour's spend is more than 5 times the trailing seven-day hourly average, and more than $5. It only alerts; it never blocks.
 
 ## 21. Future / explicitly deferred
 - Per-engagement budget overrides, and a budget and metering page.
