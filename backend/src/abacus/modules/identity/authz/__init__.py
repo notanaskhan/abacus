@@ -141,6 +141,12 @@ def recording_checks() -> Generator[set[str]]:
         _checked.reset(token)
 
 
+def serving_request() -> bool:
+    """Whether this code runs inside an API request being served (`AbacusRoute`). Workers, agents
+    and scripts never are: a decision only a person may make refuses outside one (ADR-005)."""
+    return _checked.get() is not None
+
+
 def _record(action: str) -> None:
     checked = _checked.get()
     if checked is not None:
@@ -345,5 +351,6 @@ __all__ = [
     "authorise",
     "recording_checks",
     "register_engagement_client",
+    "serving_request",
     "visible",
 ]

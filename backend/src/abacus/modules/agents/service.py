@@ -22,6 +22,8 @@ from decimal import Decimal
 from typing import cast
 from uuid import UUID
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from abacus.ai_gateway import (
     MAX_ROWS,
     Attribution,
@@ -439,8 +441,8 @@ async def proposals_for(ctx: AuthContext, engagement_id: UUID) -> dict[UUID, Pro
     }
 
 
-async def proposal_of(tenant: TenantContext, evidence_version_id: UUID) -> Proposal | None:
-    """The latest proposal about one version, for a decision the caller has authorised."""
-    async with tenant_session(tenant) as session:
-        found = await latest_result_for_version(session, evidence_version_id)
+async def proposal_of(session: AsyncSession, evidence_version_id: UUID) -> Proposal | None:
+    """The latest proposal about one version, read in the caller's transaction (a decision the
+    caller has authorised), so it sees what the decision commits against."""
+    found = await latest_result_for_version(session, evidence_version_id)
     return _proposal(found) if found is not None else None

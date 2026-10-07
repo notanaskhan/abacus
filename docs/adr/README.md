@@ -109,3 +109,4 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-103](ADR-103-table-ownership-registry.md) | Table ownership by registry, not name prefix | amber | accepted |
 | [ADR-104](ADR-104-client-side-envelope-encryption.md) | Client-side envelope encryption under per-tenant keys | red | accepted |
 | [ADR-105](ADR-105-essential-flag-name.md) | An agent's essential or deferrable flag is named `essential` (amends ADR-069's guidance) | amber | accepted |
+| [ADR-106](ADR-106-module-registrations.md) | Modules hand facts to each other by registration, and evidence may depend on requests | amber | accepted |

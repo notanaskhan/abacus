@@ -10,6 +10,14 @@ created: 2026-10-07
 updated: 2026-10-07
 ---
 
+> **Amended 2026-10-07 during TASK-019** (founder-approved design D1–D5, and the review fixes):
+> - **Decision routes:** three, one per matrix action: `…/decision/accept` with `evidence.accept`; `…/decision/reject` and `…/decision/send-back` with `evidence.reject`. Bodies carry `reason_code` (reject and send back only), `note`, and `seen_proposal`: the proposal the reviewer was shown. If the agent's latest proposal differs, the decision answers 409 `proposal_changed`, so a correction is always against what the person saw.
+> - **Reason codes:** `GET /v1/engagements/{id}/review-reason-codes/{reject|send_back}` (D3).
+> - **Reject:** moves the item to `open`. The rejected version was its newest, so nothing older is reviewable (Q2 refined).
+> - **Several items:** a decision moves every item its version fulfils.
+> - **Who decides:** only in a live API request, bound in the database to the session's actor (ADR-005).
+> - **New evidence after a send back:** a sent-back item takes new evidence and becomes `received`.
+
 > **Instructions for coding agents**
 > - Implement only what this spec describes. Anything not listed here is out of scope.
 > - If anything is ambiguous or contradicts an ADR, **stop** and add it to *Open questions*. Do not guess.
@@ -128,8 +136,9 @@ Agents now propose (`screening_results`, with `ready_for_review` or `needs_revis
 | POST | …/review-queue/{version_id}/take | review.take (Q7) | 409 `already_taken` |
 | POST | …/review-queue/{version_id}/release | review.take | the taker, or a manager or partner |
 | POST | …/review-queue/{version_id}/assign | review.assign (Q7) | `{user_id}`; partner or manager |
-| POST | /v1/engagements/{id}/evidence-versions/{version_id}/decision | evidence.accept or evidence.reject (by decision) | `{decision, reason_code?, note?}` → 201; 409 `already_decided` |
-| GET | /v1/review-reason-codes | review.read | the catalogue (AC-14) |
+| POST | /v1/engagements/{id}/evidence-versions/{version_id}/decision/accept | evidence.accept | `{note?, seen_proposal?}` → 201; 409 `already_decided`, `superseded` or `proposal_changed` |
+| POST | …/decision/reject and …/decision/send-back | evidence.reject | `{reason_code, note?, seen_proposal?}` → 201; 422 `invalid_reason_code` |
+| GET | /v1/engagements/{id}/review-reason-codes/{reject\|send_back} | review.read | the catalogue (AC-14) |
 
 Module interface: `decide(ctx: AuthContext, version_id, decision, reason_code, note)`. It takes only an `AuthContext`, so agent and system contexts can't even type-check into it (ADR-005).
 

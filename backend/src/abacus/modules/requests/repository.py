@@ -95,10 +95,15 @@ async def list_request_items(
     return [(item, version_id) for item, version_id in rows.all()]
 
 
-async def get_request_item(session: AsyncSession, item_id: UUID) -> RequestItem | None:
-    return (
-        await session.execute(select(RequestItem).where(RequestItem.id == item_id))
-    ).scalar_one_or_none()
+async def get_request_item(
+    session: AsyncSession, item_id: UUID, *, lock: bool = False
+) -> RequestItem | None:
+    """The item; `lock` holds its row until the transaction ends, so a review decision and a new
+    fulfilment of the same item never interleave (TASK-019 security review H3)."""
+    query = select(RequestItem).where(RequestItem.id == item_id)
+    if lock:
+        query = query.with_for_update()
+    return (await session.execute(query)).scalar_one_or_none()
 
 
 async def insert_fulfilment(
@@ -142,20 +147,32 @@ async def mark_received(session: AsyncSession, item_id: UUID) -> bool:
     return result.scalar_one_or_none() is not None
 
 
+async def newest_fulfilment(session: AsyncSession, item_id: UUID) -> UUID | None:
+    """The version that last fulfilled the item (newest fulfilment first, then its id)."""
+    return (
+        await session.execute(
+            select(Fulfilment.evidence_version_id)
+            .where(Fulfilment.request_item_id == item_id)
+            .order_by(Fulfilment.created_at.desc(), Fulfilment.id.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
 async def list_fulfilled_versions(
     session: AsyncSession, ctx: AuthContext, engagement_id: UUID
-) -> Sequence[tuple[RequestItem, UUID, datetime]]:
+) -> Sequence[tuple[RequestItem, UUID, datetime, UUID]]:
     """Every (item, version, fulfilled at) of the engagement the actor may review (SPEC-004)."""
     rows = await session.execute(
-        select(RequestItem, Fulfilment.evidence_version_id, Fulfilment.created_at)
+        select(RequestItem, Fulfilment.evidence_version_id, Fulfilment.created_at, Fulfilment.id)
         .join(Fulfilment, Fulfilment.request_item_id == RequestItem.id)
         .where(
             RequestItem.engagement_id == engagement_id,
             visible(ctx, "review.read", RequestItem.engagement_id),
         )
-        .order_by(RequestItem.created_at, RequestItem.id, Fulfilment.created_at)
+        .order_by(RequestItem.created_at, RequestItem.id, Fulfilment.created_at, Fulfilment.id)
     )
-    return [(item, version_id, at) for item, version_id, at in rows.all()]
+    return [(item, version_id, at, fid) for item, version_id, at, fid in rows.all()]
 
 
 async def set_status(

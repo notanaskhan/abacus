@@ -1,99 +1,9 @@
 {
   "components": {
     "schemas": {
-      "AssignIn": {
+      "AcceptIn": {
         "additionalProperties": false,
         "properties": {
-          "user_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "User Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "user_id"
-        ],
-        "title": "AssignIn",
-        "type": "object"
-      },
-      "CitationOut": {
-        "properties": {
-          "cell": {
-            "cls": "internal",
-            "title": "Cell",
-            "type": "string"
-          },
-          "quote": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "Quote"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "enum": [
-                  "cell_not_found",
-                  "quote_mismatch",
-                  "value_mismatch"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Reason"
-          },
-          "value": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "Value"
-          },
-          "verified": {
-            "cls": "internal",
-            "title": "Verified",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "cell",
-          "quote",
-          "value",
-          "verified",
-          "reason"
-        ],
-        "title": "CitationOut",
-        "type": "object"
-      },
-      "DecisionIn": {
-        "additionalProperties": false,
-        "properties": {
-          "decision": {
-            "cls": "internal",
-            "enum": [
-              "accept",
-              "reject",
-              "send_back"
-            ],
-            "title": "Decision",
-            "type": "string"
-          },
           "note": {
             "anyOf": [
               {
@@ -108,24 +18,37 @@
             "cls": "confidential",
             "title": "Note"
           },
-          "reason_code": {
+          "seen_proposal": {
             "anyOf": [
               {
-                "pattern": "^[a-z][a-z_]{0,49}$",
+                "format": "uuid",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "cls": "public",
-            "title": "Reason Code"
+            "cls": "internal",
+            "title": "Seen Proposal"
+          }
+        },
+        "title": "AcceptIn",
+        "type": "object"
+      },
+      "AssignIn": {
+        "additionalProperties": false,
+        "properties": {
+          "user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
           }
         },
         "required": [
-          "decision"
+          "user_id"
         ],
-        "title": "DecisionIn",
+        "title": "AssignIn",
         "type": "object"
       },
       "DecisionOut": {
@@ -174,17 +97,20 @@
             "cls": "public",
             "title": "Reason Code"
           },
-          "request_item_id": {
+          "request_item_ids": {
             "cls": "internal",
-            "format": "uuid",
-            "title": "Request Item Id",
-            "type": "string"
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Request Item Ids",
+            "type": "array"
           }
         },
         "required": [
           "id",
           "evidence_version_id",
-          "request_item_id",
+          "request_item_ids",
           "decision",
           "reason_code",
           "corrects_proposal",
@@ -650,8 +576,7 @@
           "citations": {
             "cls": "confidential",
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/abacus__modules__evidence__routes__CitationOut"
             },
             "title": "Citations",
             "type": "array"
@@ -781,6 +706,50 @@
           "requires_note"
         ],
         "title": "ReasonCodeOut",
+        "type": "object"
+      },
+      "RejectIn": {
+        "additionalProperties": false,
+        "description": "Reject or send back: a reason code from the catalogue is required (AC-7, AC-8).",
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
+          "reason_code": {
+            "cls": "public",
+            "pattern": "^[a-z][a-z_]{0,49}$",
+            "title": "Reason Code",
+            "type": "string"
+          },
+          "seen_proposal": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Seen Proposal"
+          }
+        },
+        "required": [
+          "reason_code"
+        ],
+        "title": "RejectIn",
         "type": "object"
       },
       "RequestItemIn": {
@@ -1029,7 +998,7 @@
           "citations": {
             "cls": "confidential",
             "items": {
-              "$ref": "#/components/schemas/CitationOut"
+              "$ref": "#/components/schemas/abacus__modules__agents__routes__CitationOut"
             },
             "title": "Citations",
             "type": "array"
@@ -1269,6 +1238,134 @@
           "removed_at"
         ],
         "title": "WallOut",
+        "type": "object"
+      },
+      "abacus__modules__agents__routes__CitationOut": {
+        "properties": {
+          "cell": {
+            "cls": "internal",
+            "title": "Cell",
+            "type": "string"
+          },
+          "quote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Quote"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "cell_not_found",
+                  "quote_mismatch",
+                  "value_mismatch"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Value"
+          },
+          "verified": {
+            "cls": "internal",
+            "title": "Verified",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "cell",
+          "quote",
+          "value",
+          "verified",
+          "reason"
+        ],
+        "title": "CitationOut",
+        "type": "object"
+      },
+      "abacus__modules__evidence__routes__CitationOut": {
+        "description": "A checked citation of the proposal (the same shape as the board's).",
+        "properties": {
+          "cell": {
+            "cls": "internal",
+            "title": "Cell",
+            "type": "string"
+          },
+          "quote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Quote"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "cell_not_found",
+                  "quote_mismatch",
+                  "value_mismatch"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Value"
+          },
+          "verified": {
+            "cls": "internal",
+            "title": "Verified",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "cell",
+          "quote",
+          "value",
+          "verified"
+        ],
+        "title": "CitationOut",
         "type": "object"
       }
     },
@@ -1767,7 +1864,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DecisionIn"
+                "$ref": "#/components/schemas/AcceptIn"
               }
             }
           },
@@ -1913,7 +2010,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DecisionIn"
+                "$ref": "#/components/schemas/RejectIn"
               }
             }
           },
@@ -2059,7 +2156,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DecisionIn"
+                "$ref": "#/components/schemas/RejectIn"
               }
             }
           },
@@ -2838,6 +2935,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2953,6 +3060,16 @@
               }
             },
             "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
           },
           "422": {
             "content": {

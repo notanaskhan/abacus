@@ -21,7 +21,7 @@ from starlette.types import Receive, Scope, Send
 
 from abacus.kernel.config import settings
 from abacus.kernel.error_tracking import configure_error_tracking, flush_errors, report
-from abacus.kernel.errors import DomainConflict, NotFound, ServiceUnavailable
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, ServiceUnavailable
 from abacus.kernel.logging import get_logger
 from abacus.kernel.telemetry import configure_tracing, shutdown_tracing
 from abacus.kernel.temporal import payload_codec
@@ -61,6 +61,11 @@ async def _not_found(_request: Request, _exc: Exception) -> JSONResponse:
 async def _conflict(_request: Request, exc: Exception) -> JSONResponse:
     # The class's fixed code: nothing from the request or the database is echoed.
     return JSONResponse({"detail": cast(DomainConflict, exc).code}, status_code=409)
+
+
+async def _domain_invalid(_request: Request, exc: Exception) -> JSONResponse:
+    # The class's fixed code, like a conflict: nothing from the request or the database is echoed.
+    return JSONResponse({"detail": cast(DomainInvalid, exc).code}, status_code=422)
 
 
 async def _unavailable(_request: Request, _exc: Exception) -> JSONResponse:
@@ -145,6 +150,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(identity.Forbidden, _forbidden)
     app.add_exception_handler(NotFound, _not_found)
     app.add_exception_handler(DomainConflict, _conflict)
+    app.add_exception_handler(DomainInvalid, _domain_invalid)
     app.add_exception_handler(ServiceUnavailable, _unavailable)
     app.add_exception_handler(RequestValidationError, _invalid)
     app.add_exception_handler(Exception, _unexpected)

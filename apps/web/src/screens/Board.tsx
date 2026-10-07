@@ -24,7 +24,7 @@ import {
   Spinner,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type JSX, type SyntheticEvent, useEffect, useState } from "react";
+import { type JSX, type ReactNode, type SyntheticEvent, useEffect, useState } from "react";
 import { errorMessage } from "../api";
 import {
   type BoardRow,
@@ -41,7 +41,14 @@ const SCREENING_POLL_LIMIT_MS = 2 * 60_000;
 const RETRIEVAL_POLL_MS = 2000;
 
 /** The evidence board for one engagement (SPEC-000 §17, AC-18). */
-export function Board({ engagementId }: { engagementId: string }): JSX.Element {
+export function Board({
+  engagementId,
+  reviewLink = null,
+}: {
+  engagementId: string;
+  /** The router's link to the review queue (the router passes it; tests may leave it out). */
+  reviewLink?: ReactNode;
+}): JSX.Element {
   const path = { path: { engagement_id: engagementId } };
   const engagement = useQuery(getEngagementOptions(path));
   const items = useQuery(listRequestItemsOptions(path));
@@ -111,9 +118,7 @@ export function Board({ engagementId }: { engagementId: string }): JSX.Element {
         <h1 id="board-heading" className="text-xl font-semibold">
           {engagement.data.name}
         </h1>
-        <a href={`/engagements/${engagementId}/review`} className="text-sm underline">
-          Review queue
-        </a>
+        {reviewLink}
         <p className="text-sm text-neutral-600">
           {engagement.data.client_name} — {engagement.data.client_entity_name} ·{" "}
           {engagement.data.fiscal_period_start} to {engagement.data.fiscal_period_end}

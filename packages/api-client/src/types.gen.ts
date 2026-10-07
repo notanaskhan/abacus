@@ -5,6 +5,20 @@ export type ClientOptions = {
 };
 
 /**
+ * AcceptIn
+ */
+export type AcceptIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Seen Proposal
+     */
+    seen_proposal?: string | null;
+};
+
+/**
  * AssignIn
  */
 export type AssignIn = {
@@ -12,50 +26,6 @@ export type AssignIn = {
      * User Id
      */
     user_id: string;
-};
-
-/**
- * CitationOut
- */
-export type CitationOut = {
-    /**
-     * Cell
-     */
-    cell: string;
-    /**
-     * Quote
-     */
-    quote: string | null;
-    /**
-     * Reason
-     */
-    reason: 'cell_not_found' | 'quote_mismatch' | 'value_mismatch' | null;
-    /**
-     * Value
-     */
-    value: string | null;
-    /**
-     * Verified
-     */
-    verified: boolean;
-};
-
-/**
- * DecisionIn
- */
-export type DecisionIn = {
-    /**
-     * Decision
-     */
-    decision: 'accept' | 'reject' | 'send_back';
-    /**
-     * Note
-     */
-    note?: string | null;
-    /**
-     * Reason Code
-     */
-    reason_code?: string | null;
 };
 
 /**
@@ -87,9 +57,9 @@ export type DecisionOut = {
      */
     reason_code: string | null;
     /**
-     * Request Item Id
+     * Request Item Ids
      */
-    request_item_id: string;
+    request_item_ids: Array<string>;
 };
 
 /**
@@ -333,9 +303,7 @@ export type ProposalOut = {
     /**
      * Citations
      */
-    citations: Array<{
-        [key: string]: unknown;
-    }>;
+    citations: Array<AbacusModulesEvidenceRoutesCitationOut>;
     /**
      * Confidence
      */
@@ -398,6 +366,26 @@ export type ReasonCodeOut = {
      * Requires Note
      */
     requires_note: boolean;
+};
+
+/**
+ * RejectIn
+ *
+ * Reject or send back: a reason code from the catalogue is required (AC-7, AC-8).
+ */
+export type RejectIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Reason Code
+     */
+    reason_code: string;
+    /**
+     * Seen Proposal
+     */
+    seen_proposal?: string | null;
 };
 
 /**
@@ -521,7 +509,7 @@ export type ScreeningResultOut = {
     /**
      * Citations
      */
-    citations: Array<CitationOut>;
+    citations: Array<AbacusModulesAgentsRoutesCitationOut>;
     /**
      * Confidence
      */
@@ -644,6 +632,60 @@ export type WallOut = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * CitationOut
+ */
+export type AbacusModulesAgentsRoutesCitationOut = {
+    /**
+     * Cell
+     */
+    cell: string;
+    /**
+     * Quote
+     */
+    quote: string | null;
+    /**
+     * Reason
+     */
+    reason: 'cell_not_found' | 'quote_mismatch' | 'value_mismatch' | null;
+    /**
+     * Value
+     */
+    value: string | null;
+    /**
+     * Verified
+     */
+    verified: boolean;
+};
+
+/**
+ * CitationOut
+ *
+ * A checked citation of the proposal (the same shape as the board's).
+ */
+export type AbacusModulesEvidenceRoutesCitationOut = {
+    /**
+     * Cell
+     */
+    cell: string;
+    /**
+     * Quote
+     */
+    quote: string | null;
+    /**
+     * Reason
+     */
+    reason?: 'cell_not_found' | 'quote_mismatch' | 'value_mismatch' | null;
+    /**
+     * Value
+     */
+    value: string | null;
+    /**
+     * Verified
+     */
+    verified: boolean;
 };
 
 export type ListEngagementsData = {
@@ -849,7 +891,7 @@ export type ListEvidenceVersionsResponses = {
 export type ListEvidenceVersionsResponse = ListEvidenceVersionsResponses[keyof ListEvidenceVersionsResponses];
 
 export type AcceptData = {
-    body: DecisionIn;
+    body: AcceptIn;
     headers?: {
         /**
          * X-Abacus-Tenant
@@ -913,7 +955,7 @@ export type AcceptResponses = {
 export type AcceptResponse = AcceptResponses[keyof AcceptResponses];
 
 export type RejectData = {
-    body: DecisionIn;
+    body: RejectIn;
     headers?: {
         /**
          * X-Abacus-Tenant
@@ -977,7 +1019,7 @@ export type RejectResponses = {
 export type RejectResponse = RejectResponses[keyof RejectResponses];
 
 export type SendBackData = {
-    body: DecisionIn;
+    body: RejectIn;
     headers?: {
         /**
          * X-Abacus-Tenant
@@ -1356,6 +1398,10 @@ export type AssignErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -1411,6 +1457,10 @@ export type ReleaseErrors = {
      * Not found
      */
     404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
     /**
      * Invalid request
      */

@@ -9,6 +9,7 @@ from abacus.modules.identity.authz import (
     agent_may_hold,
     authorise,
     register_engagement_client,
+    serving_request,
     visible,
 )
 from abacus.modules.identity.context import (
@@ -81,6 +82,7 @@ __all__ = [
     "register_engagement_client",
     "reset_verifier",
     "router",
+    "serving_request",
     "system_context_for_run",
     "token_verifier",
     "visible",
