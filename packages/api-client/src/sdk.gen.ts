@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptData, AcceptErrors, AcceptResponses, AssignData, AssignErrors, AssignResponses, CreateEngagementData, CreateEngagementErrors, CreateEngagementResponses, CreateRequestItemData, CreateRequestItemErrors, CreateRequestItemResponses, CreateWallData, CreateWallErrors, CreateWallResponses, GetEngagementData, GetEngagementErrors, GetEngagementResponses, GetRetrievalData, GetRetrievalErrors, GetRetrievalResponses, ListEngagementsData, ListEngagementsErrors, ListEngagementsResponses, ListEvidenceVersionsData, ListEvidenceVersionsErrors, ListEvidenceVersionsResponses, ListRequestItemsData, ListRequestItemsErrors, ListRequestItemsResponses, ListScreeningResultsData, ListScreeningResultsErrors, ListScreeningResultsResponses, ListWallsData, ListWallsErrors, ListWallsResponses, MeData, MeErrors, MeResponses, ReasonCodesData, ReasonCodesErrors, ReasonCodesResponses, RejectData, RejectErrors, RejectResponses, ReleaseData, ReleaseErrors, ReleaseResponses, RemoveWallData, RemoveWallErrors, RemoveWallResponses, ReviewQueueData, ReviewQueueErrors, ReviewQueueResponses, SendBackData, SendBackErrors, SendBackResponses, StartRetrievalData, StartRetrievalErrors, StartRetrievalResponses, TakeData, TakeErrors, TakeResponses } from './types.gen';
+import type { AcceptData, AcceptErrors, AcceptResponses, AssignData, AssignErrors, AssignResponses, CreateEngagementData, CreateEngagementErrors, CreateEngagementResponses, CreateRequestItemData, CreateRequestItemErrors, CreateRequestItemResponses, CreateWallData, CreateWallErrors, CreateWallResponses, GetBudgetData, GetBudgetErrors, GetBudgetResponses, GetEngagementData, GetEngagementErrors, GetEngagementResponses, GetRetrievalData, GetRetrievalErrors, GetRetrievalResponses, ListEngagementsData, ListEngagementsErrors, ListEngagementsResponses, ListEvidenceVersionsData, ListEvidenceVersionsErrors, ListEvidenceVersionsResponses, ListRequestItemsData, ListRequestItemsErrors, ListRequestItemsResponses, ListScreeningResultsData, ListScreeningResultsErrors, ListScreeningResultsResponses, ListWallsData, ListWallsErrors, ListWallsResponses, MeData, MeErrors, MeResponses, MeteringData, MeteringErrors, MeteringResponses, PutBudgetData, PutBudgetErrors, PutBudgetResponses, ReasonCodesData, ReasonCodesErrors, ReasonCodesResponses, RejectData, RejectErrors, RejectResponses, ReleaseData, ReleaseErrors, ReleaseResponses, RemoveWallData, RemoveWallErrors, RemoveWallResponses, ReviewQueueData, ReviewQueueErrors, ReviewQueueResponses, SendBackData, SendBackErrors, SendBackResponses, StartRetrievalData, StartRetrievalErrors, StartRetrievalResponses, TakeData, TakeErrors, TakeResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -17,6 +17,28 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      */
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
+
+/**
+ * Get Budget Route
+ */
+export const getBudget = <ThrowOnError extends boolean = false>(options?: Options<GetBudgetData, ThrowOnError>): RequestResult<GetBudgetResponses, GetBudgetErrors, ThrowOnError> => (options?.client ?? client).get<GetBudgetResponses, GetBudgetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/budget',
+    ...options
+});
+
+/**
+ * Put Budget Route
+ */
+export const putBudget = <ThrowOnError extends boolean = false>(options: Options<PutBudgetData, ThrowOnError>): RequestResult<PutBudgetResponses, PutBudgetErrors, ThrowOnError> => (options.client ?? client).put<PutBudgetResponses, PutBudgetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/budget',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * List Engagements Route
@@ -205,6 +227,15 @@ export const listScreeningResults = <ThrowOnError extends boolean = false>(optio
 export const me = <ThrowOnError extends boolean = false>(options?: Options<MeData, ThrowOnError>): RequestResult<MeResponses, MeErrors, ThrowOnError> => (options?.client ?? client).get<MeResponses, MeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/me',
+    ...options
+});
+
+/**
+ * Metering Route
+ */
+export const metering = <ThrowOnError extends boolean = false>(options?: Options<MeteringData, ThrowOnError>): RequestResult<MeteringResponses, MeteringErrors, ThrowOnError> => (options?.client ?? client).get<MeteringResponses, MeteringErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/metering',
     ...options
 });
 

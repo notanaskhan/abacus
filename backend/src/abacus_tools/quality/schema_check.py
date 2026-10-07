@@ -131,6 +131,7 @@ APP_INSERT_COLUMNS.update(
             {"id", "tenant_id", "engagement_id", "channel", "recipient_ref", "body", "status"}
             | {"violations", "created_by"}
         ),
+        "budgets": frozenset({"tenant_id", "monthly_soft_usd", "monthly_hard_usd", "updated_by"}),
         "review_assignments": frozenset(
             {"tenant_id", "evidence_version_id", "engagement_id", "assignee_user_id"}
             | {"assigned_by"}
@@ -154,6 +155,8 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "request_items": frozenset({"status"}),
     "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
     "connections": frozenset({"status"}),
+    # SPEC-007 AC-7: a firm admin replaces the firm's budget (upsert).
+    "budgets": frozenset({"monthly_soft_usd", "monthly_hard_usd", "updated_by", "updated_at"}),
     "agent_runs": frozenset(
         {"status", "context_hash", "output", "failure_code", "finished_at"}
         | {"queued_reason", "estimated_start_at"}
@@ -198,6 +201,7 @@ TABLE_OWNERS: dict[str, str] = {
     "eval_runs": "abacus_tools.evals",
     "eval_case_results": "abacus_tools.evals",
     "usage_records": "ai_gateway",
+    "budgets": "ai_gateway",  # SPEC-007 Q2
     # The work slot ledger (TASK-018 D3): reached only through SECURITY DEFINER functions.
     "work_slots": "kernel.slots",
     "work_waiters": "kernel.slots",
@@ -217,6 +221,8 @@ DEFINER_FUNCTIONS = frozenset(
     | {"capacity_admit", "capacity_block"}
     | {"review_decision_reason_check", "review_reason_codes_list"}
     | {"eval_eligible"}  # 0016 (TASK-020): the gateway's evaluation eligibility
+    # 0018 (TASK-022): one platform-wide number, and anomalous engagements' identifiers.
+    | {"platform_spend_today", "engagement_spend_anomalies"}
 )
 _DEFINER_SEARCH_PATH = "search_path=pg_catalog, public, pg_temp"
 _DEFINERS = """

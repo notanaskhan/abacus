@@ -4,7 +4,7 @@ title: Budget hierarchy, metering and denial-of-wallet controls
 spec: SPEC-007
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8]
 risk_zone: red
-status: awaiting-plan-approval
+status: done
 branch: task-022-budgets
 worktree:
 created: 2026-10-07
@@ -69,11 +69,21 @@ All of SPEC-007. Excluded: billing, per-engagement overrides, and UI.
 - [ ] Type check, lint, format, architecture and dependency rules pass
 
 ## Progress log
+- `2026-10-07` — Implemented:
+  - the gateway budget check (`ai_gateway/budgets.py`), with `BudgetExhausted` mapped to `budget_exhausted`;
+  - retrieval and screening daily caps (`action_cap.refused`, 409 `action_cap`);
+  - the hourly anomaly job in the worker;
+  - the platform routes, the matrix actions, migration 0018 and the schema maps.
+
+  Gates, the schema check and unit tests pass. Full test runs deferred by the founder.
 - `2026-10-07` — SPEC-007 approved and merged (#38). Design written for founder review.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| The anomaly job is an asyncio task beside the relay, not a Temporal schedule | Approved in D1; no new schedule infrastructure | No |
+| An idempotent retrigger (an existing run) doesn't count against the retrieval cap | It starts nothing | No |
+| Firm-level reads (`budget.read`) compile `visible()` to `false` for engagement roles; the matrix test is split accordingly | No engagement role holds them | No |
 
 ## Questions for the human
 - D1–D3 (above).

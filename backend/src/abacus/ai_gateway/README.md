@@ -34,6 +34,15 @@ The only path to a model (ADR-019, ADR-050, ADR-052, ADR-057, ADR-070). Owns `us
 - **`eligible(tenant, agent_id, tier, model, prompt_version)`:** asks `eval_eligible`, a SECURITY DEFINER function (migration 0016). It is true only if the latest finished run for that key passed on a real model. It fails closed.
 - **Cheaper tiers:** in admission, an entry after the call's own tier is tried only if it is eligible; otherwise it is skipped (`admission.tier_ineligible`). No tier is eligible until real-model runs are published (TASK-014).
 
+## Budgets (ADR-069; SPEC-007; TASK-022)
+`budgets.check_budget` runs before every attempt, after the run's budget and before admission:
+- **Levels:** the engagement's month, the firm's month (`budgets` row, else the default) and the platform's day (`platform_spend_today()`, SECURITY DEFINER).
+- **Soft limit:** deferrable work gets `NotAdmitted("deferred")` and waits; the alert is raised once per level and period.
+- **Hard limit:** deferrable work raises `BudgetExhausted`; the platform's hard limit stops all work.
+- **Failure:** if the sums can't be read, deferrable work is refused (fail closed).
+
+Sums are cached for 5 s per process and dropped after each recorded call. `run_anomaly_job` runs hourly in the worker, beside the relay.
+
 ## Rules
 - **No provider endpoints or SDKs outside this package** (PROVIDER-001).
 - **No inline prompts** (PROMPT-001). Outside this package, nothing builds a `ModelRequest`, writes the instructions layer from a literal, or names a prompt that isn't `id@vN`.

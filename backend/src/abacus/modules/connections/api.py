@@ -35,6 +35,7 @@ from abacus.modules.connections.retrievals import (
 from abacus.modules.connections.routes import router
 from abacus.modules.connections.service import (
     CONNECTORS,
+    ActionCapReached,
     NoConnection,
     RetrievalView,
     RunNotRunning,
@@ -55,6 +56,7 @@ __all__ = [
     "CONNECTORS",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
+    "ActionCapReached",
     "Capabilities",
     "Connector",
     "ConnectorError",

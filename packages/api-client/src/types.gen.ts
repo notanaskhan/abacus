@@ -29,6 +29,46 @@ export type AssignIn = {
 };
 
 /**
+ * BudgetIn
+ */
+export type BudgetIn = {
+    /**
+     * Monthly Hard Usd
+     */
+    monthly_hard_usd: number | string;
+    /**
+     * Monthly Soft Usd
+     */
+    monthly_soft_usd: number | string;
+};
+
+/**
+ * BudgetOut
+ */
+export type BudgetOut = {
+    /**
+     * Is Default
+     */
+    is_default: boolean;
+    /**
+     * Monthly Hard Usd
+     */
+    monthly_hard_usd: string;
+    /**
+     * Monthly Soft Usd
+     */
+    monthly_soft_usd: string;
+    /**
+     * Plan Cap Usd
+     */
+    plan_cap_usd: string;
+    /**
+     * Spent This Month Usd
+     */
+    spent_this_month_usd: string;
+};
+
+/**
  * DecisionOut
  */
 export type DecisionOut = {
@@ -537,6 +577,24 @@ export type ScreeningResultOut = {
 };
 
 /**
+ * SpendOut
+ */
+export type SpendOut = {
+    /**
+     * Agent Id
+     */
+    agent_id: string | null;
+    /**
+     * Cost Usd
+     */
+    cost_usd: string;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string | null;
+};
+
+/**
  * TakenOut
  */
 export type TakenOut = {
@@ -687,6 +745,100 @@ export type AbacusModulesEvidenceRoutesCitationOut = {
      */
     verified: boolean;
 };
+
+export type GetBudgetData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/budget';
+};
+
+export type GetBudgetErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type GetBudgetError = GetBudgetErrors[keyof GetBudgetErrors];
+
+export type GetBudgetResponses = {
+    /**
+     * Successful Response
+     */
+    200: BudgetOut;
+};
+
+export type GetBudgetResponse = GetBudgetResponses[keyof GetBudgetResponses];
+
+export type PutBudgetData = {
+    body: BudgetIn;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/budget';
+};
+
+export type PutBudgetErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PutBudgetError = PutBudgetErrors[keyof PutBudgetErrors];
+
+export type PutBudgetResponses = {
+    /**
+     * Successful Response
+     */
+    200: BudgetOut;
+};
+
+export type PutBudgetResponse = PutBudgetResponses[keyof PutBudgetResponses];
 
 export type ListEngagementsData = {
     body?: never;
@@ -1692,6 +1844,60 @@ export type MeResponses = {
 };
 
 export type MeResponse = MeResponses[keyof MeResponses];
+
+export type MeteringData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Period
+         */
+        period?: 'day' | 'month';
+    };
+    url: '/v1/metering';
+};
+
+export type MeteringErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type MeteringError = MeteringErrors[keyof MeteringErrors];
+
+export type MeteringResponses = {
+    /**
+     * Response Metering
+     *
+     * Successful Response
+     */
+    200: Array<SpendOut>;
+};
+
+export type MeteringResponse = MeteringResponses[keyof MeteringResponses];
 
 export type ListWallsData = {
     body?: never;

@@ -17,7 +17,7 @@ is repaired once, then the run is escalated with no result.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import cast
 from uuid import UUID
@@ -28,6 +28,7 @@ from abacus.ai_gateway import (
     MAX_ROWS,
     Attribution,
     BudgetExceeded,
+    BudgetExhausted,
     CallTooLarge,
     ContextBuilder,
     ContextTooLarge,
@@ -37,6 +38,7 @@ from abacus.ai_gateway import (
     call,
     sanitise_text,
 )
+from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
@@ -53,6 +55,7 @@ from abacus.modules.agents.repository import (
     lock_run,
     result_for_run,
     run_for_event,
+    runs_since,
     set_queued,
     try_lock_run,
 )
@@ -90,6 +93,10 @@ class ScreeningOutcome:
     citations: tuple[VerifiedCitation, ...]
 
 
+def _today() -> datetime:
+    return datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+
+
 def _reader(tenant_id: UUID, label: str) -> TenantContext:
     return TenantContext(tenant_id, "system", label)
 
@@ -114,6 +121,16 @@ async def create_screening_run(
     run_id: UUID | None = None
     try:
         async with uow(reader) as tx:
+            if await run_for_event(tx.session, screener.id, source_event_id) is None and (
+                await runs_since(tx.session, screener.id, version.engagement_id, _today())
+                >= settings().screening_daily_cap
+            ):  # the engagement's daily cap (SPEC-007 AC-4): audited, nothing started
+                tx.record(
+                    "action_cap.refused",
+                    target=Target("engagement", version.engagement_id),
+                    after=Ref(evidence_version_id=evidence_version_id),
+                )
+                return None
             run_id = await insert_run(
                 tx.session,
                 tenant_id=tenant_id,
@@ -232,6 +249,7 @@ TERMINAL: dict[type[Exception], str] = {
     DatasetTooLarge: "context_too_large",
     ContextTooLarge: "context_too_large",
     BudgetExceeded: "budget_exceeded",
+    BudgetExhausted: "budget_exhausted",
     CallTooLarge: "context_too_large",
     GatewayRefused: "gateway_refused",
     Forbidden: "forbidden",

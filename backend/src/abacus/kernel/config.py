@@ -6,6 +6,7 @@ must be set explicitly, or startup fails: production can never run on a local de
 
 from __future__ import annotations
 
+from decimal import Decimal
 from functools import lru_cache
 from typing import Annotated, Literal, Self, cast
 
@@ -215,6 +216,25 @@ class Settings(BaseSettings):
     # Output controls (ADR-065; SPEC-006 Q1): hosts whose links may stay in model text; empty means
     # every external link is removed.
     output_link_allowlist: Annotated[tuple[str, ...], classified("internal")] = ()
+    # Budgets (ADR-069; SPEC-007 Q1, Q3 to Q5): soft limits alert and defer deferrable work; hard
+    # limits allow essential work only (the platform's daily hard limit stops everything).
+    engagement_budget_usd: Annotated[tuple[Decimal, Decimal], classified("internal")] = (
+        Decimal(50),
+        Decimal(100),
+    )
+    firm_budget_usd: Annotated[tuple[Decimal, Decimal], classified("internal")] = (
+        Decimal(500),
+        Decimal(1000),
+    )
+    platform_daily_budget_usd: Annotated[tuple[Decimal, Decimal], classified("internal")] = (
+        Decimal(200),
+        Decimal(400),
+    )
+    firm_budget_cap_usd: Annotated[Decimal, classified("internal")] = Decimal(1000)
+    retrieval_daily_cap: Annotated[int, classified("internal")] = 50
+    screening_daily_cap: Annotated[int, classified("internal")] = 200
+    anomaly_multiple: Annotated[Decimal, classified("internal")] = Decimal(5)
+    anomaly_floor_usd: Annotated[Decimal, classified("internal")] = Decimal(5)
     provider_limits: Annotated[dict[str, ProviderLimits], classified("internal")] = {
         "fake-small": ProviderLimits(rpm=600, tpm=1_000_000),
         "fake-medium": ProviderLimits(rpm=600, tpm=1_000_000),

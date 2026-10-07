@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID
 
@@ -21,6 +21,7 @@ from abacus.modules.connections.repository import (
     active_run,
     get_run,
     insert_run,
+    runs_since,
 )
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.identity.api import (
@@ -36,6 +37,16 @@ class NoConnection(DomainConflict):
     """The engagement's client entity has no active connection."""
 
     code = "no_connection"
+
+
+class ActionCapReached(DomainConflict):
+    """The engagement reached its daily cap for this action (SPEC-007 AC-4)."""
+
+    code = "action_cap"
+
+
+def today_start() -> datetime:
+    return datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 class RunNotRunning(Exception):
@@ -94,8 +105,12 @@ async def start_retrieval(
     ctx: AuthContext, *, engagement_id: UUID, request_item_id: UUID, period: Period
 ) -> StartedRun:
     """Authorise the human (`evidence.upload`), check the engagement, item and connection, and
-    record the run (`sync_run.started`). Idempotent: while a run for this item and period is
-    running or has succeeded, triggering again returns that run (`created=False`, §12)."""
+    record the run (`sync_run.started`). At the engagement's daily cap the refusal is audited
+    and `ActionCapReached` raised (SPEC-007 AC-4). Idempotent: while a run for this item and
+    period is running or has succeeded, triggering again returns that run (`created=False`,
+    §12)."""
+    cap = settings().retrieval_daily_cap
+    run: SyncRun | None = None
     async with uow(ctx.tenant) as tx:
         engagement = await lock_ref(tx, engagement_id)
         # An archived engagement is read-only: authorise denies the upload (403, archived_write).
@@ -113,35 +128,45 @@ async def start_retrieval(
                 after=Ref(user_id=ctx.user_id),
             )
             return StartedRun(existing.id, created=False)
-        connection = await active_connection_for(tx.session, engagement.client_entity_id)
-        if connection is None:
-            raise NoConnection("no active connection for the engagement's client entity")
-        run = await insert_run(
-            tx.session,
-            tenant_id=ctx.tenant_id,
-            client_entity_id=engagement.client_entity_id,
-            connection_id=connection.id,
-            engagement_id=engagement_id,
-            request_item_id=request_item_id,
-            period_start=period.start,
-            period_end=period.end,
-            started_by=str(ctx.user_id),
-        )
-        if run is None:  # a concurrent trigger won the unique index
-            raced = await active_run(tx.session, request_item_id, period.start, period.end)
-            if raced is None:
-                raise NotFound("sync_run")
+        capped = await runs_since(tx.session, engagement_id, today_start()) >= cap
+        if capped:  # recorded (committed), then refused below: nothing is started
             tx.record(
-                "sync_run.requested_again",
-                target=Target("sync_run", raced.id),
-                after=Ref(user_id=ctx.user_id),
+                "action_cap.refused",
+                target=Target("engagement", engagement_id),
+                after=Ref(user_id=ctx.user_id, request_item_id=request_item_id),
             )
-            return StartedRun(raced.id, created=False)
-        tx.record(
-            "sync_run.started",
-            target=Target("sync_run", run.id),
-            after=Ref(user_id=ctx.user_id, request_item_id=request_item_id),
-        )
+        else:
+            connection = await active_connection_for(tx.session, engagement.client_entity_id)
+            if connection is None:
+                raise NoConnection("no active connection for the engagement's client entity")
+            run = await insert_run(
+                tx.session,
+                tenant_id=ctx.tenant_id,
+                client_entity_id=engagement.client_entity_id,
+                connection_id=connection.id,
+                engagement_id=engagement_id,
+                request_item_id=request_item_id,
+                period_start=period.start,
+                period_end=period.end,
+                started_by=str(ctx.user_id),
+            )
+            if run is None:  # a concurrent trigger won the unique index
+                raced = await active_run(tx.session, request_item_id, period.start, period.end)
+                if raced is None:
+                    raise NotFound("sync_run")
+                tx.record(
+                    "sync_run.requested_again",
+                    target=Target("sync_run", raced.id),
+                    after=Ref(user_id=ctx.user_id),
+                )
+                return StartedRun(raced.id, created=False)
+            tx.record(
+                "sync_run.started",
+                target=Target("sync_run", run.id),
+                after=Ref(user_id=ctx.user_id, request_item_id=request_item_id),
+            )
+    if capped or run is None:
+        raise ActionCapReached("retrieval")
     return StartedRun(run.id, created=True)
 
 

@@ -43,6 +43,7 @@ from abacus.ai_gateway.admission import (
     block,
     refusal_reason,
 )
+from abacus.ai_gateway.budgets import BudgetExhausted, check_budget, forget_spend
 from abacus.ai_gateway.context import (
     MAX_ROWS,
     AssembledContext,
@@ -219,6 +220,7 @@ async def _record_usage(
         output_tokens=response.output_tokens if response else 0,
         cost_usd=str(spent),
     )
+    forget_spend()
 
 
 def _parse[T: BaseModel](schema: type[T], body: str) -> tuple[T | None, str | None]:
@@ -386,6 +388,10 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
             if attempt == 1:
                 raise BudgetExceeded(f"{found.ref} would cost more than {c.budget_usd}")
             return GatewayResult("escalated", None, attempt - 1, spent, inputs_hash, model, found)
+        # The budget hierarchy (ADR-069; SPEC-007): engagement, firm and platform levels.
+        await check_budget(
+            c.attribution.tenant, c.attribution.engagement_id, c.essential, estimate
+        )
         # Admission before every attempt; only the first may step down to a cheaper tier.
         needed = estimate_tokens(request.system + request.user) + c.max_output_tokens
         # Evaluation mode never steps down: a run measures exactly the tier it pinned.
@@ -474,6 +480,7 @@ __all__ = [
     "AssembledContext",
     "Attribution",
     "BudgetExceeded",
+    "BudgetExhausted",
     "CallTooLarge",
     "ContextBuilder",
     "ContextTooLarge",

@@ -27,6 +27,14 @@ ACTIONS: dict[str, dict[str, str]] = {
         "firm_admin": "allow",
         "mfa_recent": "required",
     },
+    "budget.read": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
+    },
+    "budget.manage": {
+        "firm_admin": "allow",
+        "mfa_recent": "required",
+    },
     "autonomy_policy.update": {
         "firm_admin": "allow",
         "mfa_recent": "required",

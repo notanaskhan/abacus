@@ -37,6 +37,7 @@ from temporalio.client import Client
 from temporalio.worker import Worker
 
 from abacus.ai_gateway import FakeModel, check_provider_limits, configure_provider
+from abacus.ai_gateway.budgets import run_anomaly_job
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import key_service
 from abacus.kernel.db import ping, ping_relay
@@ -133,7 +134,10 @@ async def run(classes: Sequence[WorkClass] = WORK_CLASSES) -> None:
     # The relay (and its role, which reads every firm's outbox) runs only in the process that
     # serves the interactive pool, so splitting classes doesn't multiply it.
     relay = run_relay(publisher(), stop) if "interactive" in classes else None
-    tasks = [*pools, *([asyncio.create_task(relay)] if relay is not None else [])]
+    # The spend-anomaly job (SPEC-007 AC-6) runs hourly beside the relay, once per deployment.
+    anomaly = run_anomaly_job(stop) if "interactive" in classes else None
+    side = [job for job in (relay, anomaly) if job is not None]
+    tasks = [*pools, *(asyncio.create_task(job) for job in side)]
     stopped = asyncio.create_task(stop.wait())
     early: list[asyncio.Task[None]] = []
     try:

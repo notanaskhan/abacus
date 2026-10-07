@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, date, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import select, text, update
+from sqlalchemy import func, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -91,6 +91,16 @@ async def active_run(
             )
         )
     ).scalar_one_or_none()
+
+
+async def runs_since(session: AsyncSession, engagement_id: UUID, since: datetime) -> int:
+    """Retrieval runs started for the engagement since `since` (the action cap, SPEC-007)."""
+    count = await session.scalar(
+        select(func.count())
+        .select_from(SyncRun)
+        .where(SyncRun.engagement_id == engagement_id, SyncRun.started_at >= since)
+    )
+    return count or 0
 
 
 async def get_run(session: AsyncSession, run_id: UUID) -> SyncRun | None:
