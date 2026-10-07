@@ -35,6 +35,7 @@ from abacus.modules.identity.routing import (
 from abacus.modules.identity.service import (
     TeamMember,
     add_creator_as_partner,
+    could,
     engagement_team,
     is_active_member,
 )
@@ -74,6 +75,7 @@ __all__ = [
     "agent_may_hold",
     "authorise",
     "configure_verifier",
+    "could",
     "current_context",
     "current_signed_in",
     "declared_action",

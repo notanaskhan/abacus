@@ -219,7 +219,8 @@ Errors show the API's messages. Full item detail is increment 6.
     - SPEC-004 §8 amended;
     - READMEs.
   - A throwaway check passed against Postgres: concurrent takes, refusal outside a request, the actor bound to the session, and a cross-engagement release answering 404.
-  - **Open:** M2-security (an assignee needn't be able to decide; recorded as a decision); N3 and N4 (the SPA shows decision controls to staff, and has no confirmation before a decision).
+  - **Open:** N3 (the SPA shows decision controls to staff, who get a 403).
+- `2026-10-07` — Founder approved the recommendations: `assign` checks `identity.could` (M2); the SPA asks for confirmation before a decision (N4).
 - `2026-10-07` — SPEC-004 approved and merged (PR #27). Design approved (D1–D5). Implemented:
   - migration 0015;
   - the matrix actions `review.read`, `review.take` and `review.assign`;
@@ -240,7 +241,7 @@ Errors show the API's messages. Full item detail is increment 6.
 |---|---|---|
 | Three decision routes (`…/decision/accept`, `/reject`, `/send-back`), not one | Each route declares exactly one matrix action, and accept and reject differ | No (spec §8 note) |
 | A sent-back (`needs_revision`) item takes new evidence and becomes `received` | Otherwise send back is a dead end: retrieval refused anything but `open`/`received` | No |
-| The assignee of `assign` must be on the engagement's team, whatever their role | Role comparisons outside `authz` are banned (AUTHZ-001), and deciding is checked at decide time. This changes design §5 ("could decide"), and the security review flagged it (M2). It needs the founder's OK; the alternative is an identity API `could(user, action, resource)` | No |
+| The assignee of `assign` must be someone who could decide now (`identity.could(ctx, user, evidence.accept or reject, resource)`, the same `authorise`, walls included) | Design §5; security review M2; founder chose the recommendation (2026-10-07) | No |
 | A decision is refused outside a live API request (`serving_request`) and bound to the session's actor in the database | An agent holding its initiator's `AuthContext` must still be unable to decide (security review H2) | No (ADR-005 enforcement) |
 | A version fulfilling several items is queued once, for its first item | Retrievals fulfil one item; multi-item versions are an edge case for increment 6 | No |
 | TASK-019 is stacked on TASK-018c (migration 0015 follows 0014) | Avoids two Alembic heads; rebase onto main after 018b and 018c merge | No |

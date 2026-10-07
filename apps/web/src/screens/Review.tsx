@@ -150,6 +150,8 @@ function ReviewEntry({
   const item = entry.item_description;
   const assignee = entry.assignee_user_id;
   const decide = (): void => {
+    // A decision is final (insert-only; there is no reopen yet): ask once.
+    if (!window.confirm(`${KIND_LABEL[kind]} "${item}"? A decision can't be changed.`)) return;
     const shared = {
       note: note.trim() === "" ? null : note.trim(),
       seen_proposal: entry.proposal?.screening_result_id ?? null,

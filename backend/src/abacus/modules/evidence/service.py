@@ -53,7 +53,7 @@ from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
     authorise,
-    engagement_team,
+    could,
     serving_request,
 )
 from abacus.modules.requests.api import (
@@ -547,14 +547,18 @@ async def release(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> No
 
 
 async def assign(ctx: AuthContext, engagement_id: UUID, version_id: UUID, user_id: UUID) -> None:
-    """Give a queued version to a member of the engagement's team (`review.assign`). Whether they
-    may decide is checked when they decide (decisions table, TASK-019)."""
+    """Give a queued version to someone who could decide it now (`review.assign`; the assignee
+    must be allowed `evidence.accept` or `evidence.reject` on the engagement, walls included)."""
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "review.assign", ref.resource())
         await _reviewable(tx, engagement_id, version_id)
-        if user_id not in {m.user_id for m in await engagement_team(ctx, engagement_id)}:
-            raise NotFound("engagement_member")
+        resource = ref.resource()
+        if not (
+            await could(ctx, user_id, "evidence.accept", resource)
+            or await could(ctx, user_id, "evidence.reject", resource)
+        ):
+            raise NotFound("reviewer")
         await put_assignment(
             tx.session,
             tenant_id=ctx.tenant_id,
