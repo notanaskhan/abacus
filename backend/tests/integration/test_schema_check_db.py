@@ -1548,7 +1548,9 @@ def test_ac20_a_listed_definer_function_owned_by_someone_else_is_reported(
 def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
     migrated_db: Migrated,
 ) -> None:
-    assert frozenset({"work_slot_acquire", "work_slot_release", "work_slot_renew"}) == (
-        sc.DEFINER_FUNCTIONS
-    )
+    # 0013's slot functions, and 0014's provider capacity functions (TASK-018c).
+    assert frozenset(
+        {"work_slot_acquire", "work_slot_release", "work_slot_renew"}
+        | {"capacity_admit", "capacity_block"}
+    ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []

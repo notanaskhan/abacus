@@ -1041,7 +1041,8 @@ async def _exists(seed: Seeder) -> dict[str, object]:
 
 def test_ac13_migration_0013_downgrades_and_upgrades_again(private_db: sc.Database) -> None:
     seed = Seeder(private_db.superuser_dsn)
-    assert _revision(private_db) == "0013"
+    head = _revision(private_db)  # 0013 or a later migration on top of it
+    assert head >= "0013"
     assert asyncio.run(_exists(seed)) == {
         "tables": 3,
         "functions": 3,
@@ -1063,7 +1064,7 @@ def test_ac13_migration_0013_downgrades_and_upgrades_again(private_db: sc.Databa
         "constraints": 0,
     }
     migrate(private_db.owner_url, "head")
-    assert _revision(private_db) == "0013"
+    assert _revision(private_db) == head
     assert asyncio.run(_exists(seed))["tables"] == 3
     assert asyncio.run(seed.value("SELECT count(*) FROM work_slots")) == 0
     assert sc.check(private_db.owner_url, private_db.app_url) == []

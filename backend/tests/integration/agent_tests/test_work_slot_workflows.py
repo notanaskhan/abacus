@@ -107,6 +107,7 @@ def caps(monkeypatch: pytest.MonkeyPatch) -> Callable[..., None]:
                 "engagement_cap": 10,
                 "class_capacity": 50,
                 "max_wait_seconds": 120,
+                "admission_reserve_pct": 0,
             }
             for name in CLASSES
         }
