@@ -8,15 +8,14 @@ from decimal import Decimal
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import Depends, HTTPException
-from pydantic import BaseModel, ConfigDict, Field
+from fastapi import Depends
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from abacus.kernel.classification import classified
 from abacus.modules.evidence.service import (
     Decision,
     DecisionView,
     EvidenceVersionSummary,
-    InvalidReason,
     Proposal,
     QueueEntry,
     assign,
@@ -62,6 +61,21 @@ async def list_evidence_versions_route(engagement_id: UUID, ctx: Ctx) -> list[Ev
 # --- Review queues and decisions (SPEC-004) ---------------------------------------------------
 
 
+class CitationOut(BaseModel):
+    """A checked citation of the proposal (the same shape as the board's)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    cell: Annotated[str, classified("internal")]
+    quote: Annotated[str | None, classified("confidential")]
+    value: Annotated[str | None, classified("confidential")]
+    verified: Annotated[bool, classified("internal")]
+    reason: Annotated[
+        Literal["cell_not_found", "quote_mismatch", "value_mismatch"] | None,
+        classified("internal"),
+    ] = None
+
+
 class ProposalOut(BaseModel):
     """The agent's proposal. Rationale and quotes are model text: shown as plain text (ADR-065)."""
 
@@ -71,7 +85,7 @@ class ProposalOut(BaseModel):
     action: Annotated[Literal["ready_for_review", "needs_revision"], classified("internal")]
     confidence: Annotated[Decimal, classified("internal")]
     rationale: Annotated[str, classified("confidential")]
-    citations: Annotated[list[dict[str, object]], classified("confidential")]
+    citations: Annotated[list[CitationOut], classified("confidential")]
     unverified: Annotated[list[str], classified("confidential")]
 
 
@@ -99,17 +113,32 @@ class AssignIn(BaseModel):
     user_id: Annotated[UUID, classified("internal")]
 
 
-class DecisionIn(BaseModel):
+# May discuss client data: stored confidential, never logged (AC-9). Blank notes don't count.
+Note = Annotated[
+    str | None,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=2000),
+    classified("confidential"),
+]
+# The proposal the reviewer was shown (None: none was), so a correction is recorded against what
+# they saw; a newer one answers 409 `proposal_changed` (AC-10).
+SeenProposal = Annotated[UUID | None, classified("internal")]
+
+
+class AcceptIn(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    decision: Annotated[Literal["accept", "reject", "send_back"], classified("internal")]
-    reason_code: Annotated[
-        str | None, Field(default=None, pattern=r"^[a-z][a-z_]{0,49}$"), classified("public")
-    ]
-    # May discuss client data: stored confidential, never logged (AC-9).
-    note: Annotated[
-        str | None, Field(default=None, min_length=1, max_length=2000), classified("confidential")
-    ]
+    note: Note = None
+    seen_proposal: SeenProposal = None
+
+
+class RejectIn(BaseModel):
+    """Reject or send back: a reason code from the catalogue is required (AC-7, AC-8)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    reason_code: Annotated[str, Field(pattern=r"^[a-z][a-z_]{0,49}$"), classified("public")]
+    note: Note = None
+    seen_proposal: SeenProposal = None
 
 
 class DecisionOut(BaseModel):
@@ -117,7 +146,7 @@ class DecisionOut(BaseModel):
 
     id: Annotated[UUID, classified("internal")]
     evidence_version_id: Annotated[UUID, classified("internal")]
-    request_item_id: Annotated[UUID, classified("internal")]
+    request_item_ids: Annotated[list[UUID], classified("internal")]
     decision: Annotated[Literal["accept", "reject", "send_back"], classified("internal")]
     reason_code: Annotated[str | None, classified("public")]
     corrects_proposal: Annotated[bool, classified("internal")]
@@ -161,13 +190,23 @@ async def take_route(engagement_id: UUID, version_id: UUID, ctx: Ctx) -> TakenOu
     return TakenOut(evidence_version_id=version_id, assignee_user_id=ctx.user_id)
 
 
-@router.post("/review-queue/{version_id}/release", action="review.take", response_model=TakenOut)
+@router.post(
+    "/review-queue/{version_id}/release",
+    action="review.take",
+    response_model=TakenOut,
+    errors=(409,),
+)
 async def release_route(engagement_id: UUID, version_id: UUID, ctx: Ctx) -> TakenOut:
     await release(ctx, engagement_id, version_id)
     return TakenOut(evidence_version_id=version_id, assignee_user_id=None)
 
 
-@router.post("/review-queue/{version_id}/assign", action="review.assign", response_model=TakenOut)
+@router.post(
+    "/review-queue/{version_id}/assign",
+    action="review.assign",
+    response_model=TakenOut,
+    errors=(409,),
+)
 async def assign_route(
     engagement_id: UUID, version_id: UUID, body: AssignIn, ctx: Ctx
 ) -> TakenOut:
@@ -180,17 +219,28 @@ def _decision_out(d: DecisionView) -> DecisionOut:
 
 
 async def _decide(
-    ctx: AuthContext, engagement_id: UUID, version_id: UUID, body: DecisionIn, kind: Decision
+    ctx: AuthContext,
+    engagement_id: UUID,
+    version_id: UUID,
+    kind: Decision,
+    *,
+    reason_code: str | None,
+    note: str | None,
+    seen_proposal: UUID | None,
 ) -> DecisionOut:
-    if body.decision != kind:
-        raise HTTPException(422, "decision does not match the route")
-    try:
-        view = await decide(
-            ctx, engagement_id, version_id, kind, reason_code=body.reason_code, note=body.note
-        )
-    except InvalidReason:
-        raise HTTPException(422, "invalid_reason_code") from None
+    view = await decide(
+        ctx,
+        engagement_id,
+        version_id,
+        kind,
+        reason_code=reason_code,
+        note=note,
+        seen_proposal=seen_proposal,
+    )
     return _decision_out(view)
+
+
+_DECISION_ERRORS = (409, 503)  # plus 401/403/404/422, which every route declares
 
 
 # One route per matrix action (AbacusRouter: one action per route): accept is `evidence.accept`;
@@ -200,12 +250,20 @@ async def _decide(
     action="evidence.accept",
     response_model=DecisionOut,
     status_code=201,
-    errors=(409, 503),
+    errors=_DECISION_ERRORS,
 )
 async def accept_route(
-    engagement_id: UUID, version_id: UUID, body: DecisionIn, ctx: Ctx
+    engagement_id: UUID, version_id: UUID, body: AcceptIn, ctx: Ctx
 ) -> DecisionOut:
-    return await _decide(ctx, engagement_id, version_id, body, "accept")
+    return await _decide(
+        ctx,
+        engagement_id,
+        version_id,
+        "accept",
+        reason_code=None,
+        note=body.note,
+        seen_proposal=body.seen_proposal,
+    )
 
 
 @router.post(
@@ -213,12 +271,20 @@ async def accept_route(
     action="evidence.reject",
     response_model=DecisionOut,
     status_code=201,
-    errors=(409, 503),
+    errors=_DECISION_ERRORS,
 )
 async def reject_route(
-    engagement_id: UUID, version_id: UUID, body: DecisionIn, ctx: Ctx
+    engagement_id: UUID, version_id: UUID, body: RejectIn, ctx: Ctx
 ) -> DecisionOut:
-    return await _decide(ctx, engagement_id, version_id, body, "reject")
+    return await _decide(
+        ctx,
+        engagement_id,
+        version_id,
+        "reject",
+        reason_code=body.reason_code,
+        note=body.note,
+        seen_proposal=body.seen_proposal,
+    )
 
 
 @router.post(
@@ -226,12 +292,20 @@ async def reject_route(
     action="evidence.reject",
     response_model=DecisionOut,
     status_code=201,
-    errors=(409, 503),
+    errors=_DECISION_ERRORS,
 )
 async def send_back_route(
-    engagement_id: UUID, version_id: UUID, body: DecisionIn, ctx: Ctx
+    engagement_id: UUID, version_id: UUID, body: RejectIn, ctx: Ctx
 ) -> DecisionOut:
-    return await _decide(ctx, engagement_id, version_id, body, "send_back")
+    return await _decide(
+        ctx,
+        engagement_id,
+        version_id,
+        "send_back",
+        reason_code=body.reason_code,
+        note=body.note,
+        seen_proposal=body.seen_proposal,
+    )
 
 
 @router.get(

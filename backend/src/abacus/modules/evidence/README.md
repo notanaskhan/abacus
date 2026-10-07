@@ -22,13 +22,17 @@ Evidence items and their immutable versions (glossary; ADR-004). Owns `evidence_
 
 ## Review queues and decisions (SPEC-004; TASK-019)
 - **The queue** (`GET /v1/engagements/{id}/review-queue`, `review.read`): per request item, its newest fulfilled version without a decision. Order: proposals needing revision first, then lowest confidence, then oldest. Each entry shows the agent's proposal. A version fulfilling several items is queued once.
-- **Taking** (`…/review-queue/{version_id}/take`, `release`, `assign`): advisory (Q3), and every change is audited (`review.taken`, `review.released`, `review.assigned`). Someone else's item answers 409 `already_taken`. Release and reassign need `review.assign` for another person's item. The assignee must be on the engagement's team.
-- **Deciding** (`…/evidence-versions/{version_id}/decision/accept` with `evidence.accept`; `…/reject` and `…/send-back` with `evidence.reject`): one route per matrix action.
-  - **One save:** the decision is one unit of work. It is insert-only (`review_decisions`), audited `review_decision.created`, moves the item (`requests.move_after_review`) and clears the assignment.
+- **Taking** (`…/review-queue/{version_id}/take`, `release`, `assign`): advisory (Q3), and every change is audited (`review.taken`, `review.released`, `review.assigned`). Taking is one statement, so two first takes can't both win; someone else's item answers 409 `already_taken`. Assignments are always scoped to the route's engagement. Release and reassign need `review.assign` for another person's item. The assignee must be on the engagement's team.
+- **Deciding** (`…/evidence-versions/{version_id}/decision/accept` with `evidence.accept`; `…/reject` and `…/send-back` with `evidence.reject`): one route per matrix action. The body carries `seen_proposal`: if the agent's proposal changed since, the answer is 409 `proposal_changed`.
+  - **One save:** the decision is one unit of work, and every read happens inside it. It locks the version's items (`requests.review_targets`), so a new fulfilment waits. The row is insert-only (`review_decisions`), audited `review_decision.created`. It moves every item the version fulfils (accept → `accepted`, reject → `open`, send back → `needs_revision`) and clears the assignment.
   - **Conflicts:** 409 `already_decided` or `superseded`.
   - **Reason codes:** a reason code is required for reject and send back, and refused for accept. An invalid code answers 422 `invalid_reason_code`.
   - **Correction flag:** `corrects_proposal` is set when the decision disagrees with the agent's latest proposal.
-- **Only a person decides (ADR-005), four ways:** `decide` takes an `AuthContext` only; the matrix denies agents; the database CHECK `actor_kind = 'human'`; and REVIEW-001 bans `decide` in agent, connector, gateway and worker code.
+- **Only a person decides (ADR-005):**
+  - `decide` takes an `AuthContext` and refuses outside a live API request (`serving_request()`), so a worker or agent holding a person's context still can't decide;
+  - the matrix denies agents;
+  - the database binds the row to the session's actor and CHECKs `actor_kind = 'human'`;
+  - REVIEW-001 lets only `evidence/service.py` and `evidence/routes.py` name `decide`.
 - **Proposals come from agents by registration** (`register_proposal_source`, TASK-019 D1): agents depends on evidence, not the other way round. Unregistered, the queue shows none and decisions answer 503.
 - **The reason-code catalogue** (`review_reason_codes`) is platform-wide with no app privileges. It is listed through `review_reason_codes_list` (`GET …/review-reason-codes/{reject|send_back}`) and enforced by an insert trigger, both SECURITY DEFINER. The note is confidential and never logged.
 

@@ -9,7 +9,8 @@ ADR-054).
 - `review_reason_codes`: the platform catalogue (Q1), seeded here; codes are retired, never
   deleted. No tenant, so no app privileges at all: the app lists codes through a SECURITY DEFINER
   function, and a SECURITY DEFINER insert trigger refuses an unknown, retired or misapplied code
-  (and `other` without a note), the same pattern as the work slot ledger (TASK-018 D3).
+  (and `other` without a note), the same pattern as the work slot ledger (TASK-018 D3). The same
+  trigger binds each decision to the session's actor (`app.actor_kind`, `app.actor_id`).
 - `request_items.status` gains `accepted` (Q2).
 
 Revision ID: 0015
@@ -94,7 +95,7 @@ def upgrade() -> None:
             request_item_id uuid NOT NULL,
             decision text NOT NULL CHECK (decision IN ('accept', 'reject', 'send_back')),
             reason_code text NULL,
-            note text NULL CHECK (length(note) BETWEEN 1 AND 2000),
+            note text NULL CHECK (length(note) BETWEEN 1 AND 2000 AND btrim(note) <> ''),
             screening_result_id uuid NULL,
             corrects_proposal boolean NOT NULL,
             -- ADR-005: only a person decides; agents and system contexts never can.
@@ -182,7 +183,10 @@ def upgrade() -> None:
         "CREATE TRIGGER review_decisions_no_truncate BEFORE TRUNCATE ON review_decisions "
         "FOR EACH STATEMENT EXECUTE FUNCTION review_decisions_immutable()"
     )
-    # The code must be in the catalogue, active, apply to the decision, and `other` needs a note.
+    # The row's actor must be the session's (set by `tenant_connection` from the request's
+    # context, never by the caller), so the human-only CHECK checks something real (ADR-005;
+    # TASK-019 security review H2). The code must be in the catalogue, active, apply to the
+    # decision, and `other` needs a note.
     op.execute(
         """
         CREATE FUNCTION review_decision_reason_check() RETURNS trigger
@@ -192,6 +196,11 @@ def upgrade() -> None:
         DECLARE
             v_code public.review_reason_codes;
         BEGIN
+            IF NEW.actor_kind IS DISTINCT FROM current_setting('app.actor_kind', true)
+               OR NEW.actor_id IS DISTINCT FROM current_setting('app.actor_id', true) THEN
+                RAISE EXCEPTION 'a review decision is made by the session''s own actor'
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
             IF NEW.reason_code IS NULL THEN
                 RETURN NEW;
             END IF;

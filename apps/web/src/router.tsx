@@ -70,7 +70,20 @@ const boardRoute = createRoute({
 
 function BoardPage(): JSX.Element {
   const { engagementId } = boardRoute.useParams();
-  return <Board engagementId={engagementId} />;
+  return (
+    <Board
+      engagementId={engagementId}
+      reviewLink={
+        <Link
+          to="/engagements/$engagementId/review"
+          params={{ engagementId }}
+          className="text-sm underline"
+        >
+          Review queue
+        </Link>
+      }
+    />
+  );
 }
 
 const reviewRoute = createRoute({

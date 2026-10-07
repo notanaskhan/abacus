@@ -1483,7 +1483,8 @@ BOUND2_VIOLATING = [
     ("requests", "from abacus.modules.organisations.api import ClientNames\n"),
     ("requests", "import abacus.modules.ledger.api\n"),
     ("ledger", "from abacus.modules.engagements.api import get_ref\n"),
-    ("evidence", "from abacus.modules.requests.api import router\n"),
+    # The edge runs evidence → requests only (TASK-019): requests never imports evidence.
+    ("requests", "from abacus.modules.evidence.api import add_version\n"),
     ("sampling", "from abacus.modules.ledger.api import x\n"),
 ]
 BOUND2_CLEAN = [
@@ -1492,6 +1493,7 @@ BOUND2_CLEAN = [
     ("requests", "from abacus.modules.identity.api import AuthContext\n"),
     ("requests", "from abacus.modules.engagements.api import get_ref\n"),
     ("evidence", "import abacus.modules.identity.api\n"),
+    ("evidence", "from abacus.modules.requests.api import fulfilled_versions\n"),
     ("engagements", "from abacus.modules.engagements.api import router\n"),
     ("identity", "from abacus.kernel.db import tenant_session\n"),
     ("requests", "from abacus.kernel.uow import uow\n"),
@@ -1743,11 +1745,10 @@ def test_ac20_crypto_001_output_names_the_rule_and_adr(tmp_path: Path) -> None:
 
 
 EVIDENCE_VIOLATING = [
-    "from abacus.modules.requests.api import router\n",
     "from abacus.modules.organisations.api import create_client\n",
     "from abacus.modules.ledger.api import x\n",
     "from abacus.modules.sampling.api import x\n",
-    "import abacus.modules.requests.api\n",
+    "from abacus.modules.agents.api import spec\n",
 ]
 EVIDENCE_CLEAN = [
     "from abacus.modules.identity.api import AuthContext\n",
@@ -1755,6 +1756,9 @@ EVIDENCE_CLEAN = [
     "import abacus.modules.engagements.api\n",
     "from abacus.modules.evidence.api import add_version\n",
     "from abacus.kernel.uow import uow\n",
+    # Review queues read fulfilments and move items through requests (SPEC-004 Q4, TASK-019).
+    "from abacus.modules.requests.api import router\n",
+    "import abacus.modules.requests.api\n",
 ]
 
 
@@ -1764,14 +1768,15 @@ def test_ac20_bound_002_flags_what_evidence_may_not_depend_on(tmp_path: Path, so
 
 
 @pytest.mark.parametrize("source", EVIDENCE_CLEAN)
-def test_ac20_bound_002_allows_evidence_to_use_identity_and_engagements(
+def test_ac20_bound_002_allows_evidence_to_use_identity_engagements_and_requests(
     tmp_path: Path, source: str
 ) -> None:
     assert not _flags(tmp_path, "BOUND-002", "src/abacus/modules/evidence/service.py", source)
 
 
-def test_ac20_bound_002_evidence_may_depend_on_identity_and_engagements_only() -> None:
-    assert set(bp.MODULE_DEPENDENCIES["evidence"]) == {"identity", "engagements"}
+def test_ac20_bound_002_evidence_may_depend_on_identity_engagements_and_requests_only() -> None:
+    # requests added by TASK-019 (review queues, SPEC-004 Q4; ADR-106).
+    assert set(bp.MODULE_DEPENDENCIES["evidence"]) == {"identity", "engagements", "requests"}
 
 
 @pytest.mark.parametrize("module", ["identity", "organisations", "engagements", "requests"])

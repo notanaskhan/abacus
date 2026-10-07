@@ -65,3 +65,4 @@ Agent specs, agent runs and screening (ADR-005, ADR-025, ADR-047, ADR-050, ADR-0
 - **Code computes, models judge.** No rows of amounts reach the model, only totals and positions. Screening checks the sheet against itself, not against the ledger.
 - **Every model call goes through `ai_gateway`** with the spec's prompt, tier, budget and limits.
 - **Dependencies:** identity, engagements, organisations, evidence and requests (BOUND-002).
+- **Review proposals (TASK-019; ADR-106):** at import, `api.py` registers `proposals_for` (the latest proposal per version, read like the board's screening results and audited) and `proposal_of` (one version's latest, in the caller's transaction) with evidence (`register_proposal_source`). Agents never decide (REVIEW-001).
