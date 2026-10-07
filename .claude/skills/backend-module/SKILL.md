@@ -5,7 +5,7 @@ description: How to add or extend a backend module — layering, public API, ten
 
 # Backend module pattern
 
-**Reference implementation:** `docs/architecture/reference/backend-module.md` (written from the walking skeleton — read it first; if it doesn't exist yet, stop and ask).
+**Reference implementation:** `docs/architecture/reference/backend-module.md` (worked example: `modules/requests`). Read it first, with `tenancy-and-authz.md`, `unit-of-work.md` and, for evidence, `evidence-storage.md`.
 
 ## Layout
 ```
@@ -27,6 +27,8 @@ backend/src/abacus/modules/<name>/
 - New tables: `tenant_id NOT NULL`, row-level security policy, classification on every column (ADR-014, 031).
 - Use glossary names for tables, classes and routes.
 - Log, trace and report errors the observability way: `.claude/skills/observability/SKILL.md` (ADR-022).
+- A new module, a new dependency between modules or a new table needs `MODULE_DEPENDENCIES`, `TABLE_OWNERS` (`abacus_tools/quality/`) and `ROUTERS` (`abacus/api/app.py`) entries: protected paths, so ask for approval first.
+- After changing routes or response models: `make generate`; `make check` fails on client drift.
 - Shared infrastructure comes from the kernel (`from abacus.kernel.uow import …`); other modules only via `from abacus.modules.<m>.api import …` (ADR-101).
 
 ## Checklist before done
