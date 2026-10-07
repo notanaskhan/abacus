@@ -16,6 +16,8 @@ from __future__ import annotations
 import base64
 import hashlib
 import html
+import os
+import re
 import secrets
 import sys
 import time
@@ -71,19 +73,23 @@ def _key() -> rsa.RSAPrivateKey:
         return loaded
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     KEY_FILE.parent.mkdir(parents=True, exist_ok=True)
-    KEY_FILE.write_bytes(
-        key.private_bytes(
-            serialization.Encoding.PEM,
-            serialization.PrivateFormat.PKCS8,
-            serialization.NoEncryption(),
-        )
+    pem = key.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
     )
-    KEY_FILE.chmod(0o600)
+    # Created owner-only from the start (no window where it is world-readable).
+    fd = os.open(KEY_FILE, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, "wb") as out:
+        out.write(pem)
     return key
 
 
 def provider() -> FakeIdentityProvider:
     return FakeIdentityProvider(issuer=ISSUER, audience=AUDIENCE, key=_key())
+
+
+_VERIFIER = re.compile(r"[A-Za-z0-9\-._~]{43,128}")  # RFC 7636 §4.1
 
 
 def _s256(verifier: str) -> str:
@@ -171,14 +177,19 @@ def create_app(idp: FakeIdentityProvider | None = None) -> FastAPI:
     @app.post("/token")
     async def token(request: Request) -> JSONResponse:
         form = {k: v[0] for k, v in parse_qs((await request.body()).decode()).items()}
+        now = time.time()
+        for expired in [code for code, g in grants.items() if g.expires < now]:
+            del grants[expired]
         grant = grants.pop(form.get("code", ""), None)  # single use, even when it fails
+        verifier = form.get("code_verifier", "")
         if (
             form.get("grant_type") != "authorization_code"
+            or not _VERIFIER.fullmatch(verifier)
             or form.get("client_id") != CLIENT_ID
             or grant is None
             or grant.expires < time.time()
             or form.get("redirect_uri") != grant.redirect_uri
-            or _s256(form.get("code_verifier", "")) != grant.challenge
+            or _s256(verifier) != grant.challenge
         ):
             return _error(400, "invalid_grant")
         access = signer.token(grant.subject, expires_in=TOKEN_SECONDS)

@@ -1,7 +1,7 @@
 // The generated client, configured once: same-origin `/v1` (Vite proxies it locally), the bearer
 // token and, for users in several firms, the chosen firm. A 401 means the session is over.
 import { client } from "@abacus/api-client/client";
-import { accessToken, chosenTenant, signIn } from "./auth/session";
+import { accessToken, chosenTenant, handleUnauthorised } from "./auth/session";
 
 export const TENANT_HEADER = "X-Abacus-Tenant";
 
@@ -15,9 +15,16 @@ export function configureClient(): void {
     return request;
   });
   client.interceptors.response.use((response) => {
-    if (response.status === 401) void signIn();
+    if (response.status === 401) handleUnauthorised();
     return response;
   });
+}
+
+/** Retry transient failures once; never an auth or client error. */
+export function shouldRetry(failureCount: number, error: unknown): boolean {
+  const status =
+    typeof error === "object" && error !== null && "status" in error ? error.status : undefined;
+  return failureCount < 1 && !(typeof status === "number" && status >= 400 && status < 500);
 }
 
 /** A readable message for an API error body (`{"detail": ...}`), never raw server text. */

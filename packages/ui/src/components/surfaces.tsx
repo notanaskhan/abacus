@@ -3,7 +3,12 @@ import type { HTMLAttributes, JSX, ReactNode } from "react";
 import { cn } from "../cn";
 
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>): JSX.Element {
-  return <div className={cn("rounded-lg border border-neutral-200 bg-white p-4", className)} {...props} />;
+  return (
+    <div
+      className={cn("rounded-lg border border-neutral-200 bg-white p-4", className)}
+      {...props}
+    />
+  );
 }
 
 type Tone = "neutral" | "success" | "warning" | "danger";
@@ -29,7 +34,11 @@ export function Badge({
 
 export function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>): JSX.Element {
   return (
-    <div aria-hidden="true" className={cn("animate-pulse rounded bg-neutral-200", className)} {...props} />
+    <div
+      aria-hidden="true"
+      className={cn("animate-pulse rounded bg-neutral-200", className)}
+      {...props}
+    />
   );
 }
 
@@ -52,7 +61,10 @@ export function Alert({
   action?: ReactNode;
 }): JSX.Element {
   return (
-    <div role="alert" className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+    <div
+      role="alert"
+      className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4"
+    >
       <CircleAlert aria-hidden="true" className="mt-0.5 size-4 text-red-700" />
       <div className="flex-1 text-sm">
         <p className="font-medium text-red-900">{title}</p>

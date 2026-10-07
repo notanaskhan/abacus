@@ -21,6 +21,7 @@ import sys
 from dataclasses import replace
 from datetime import date
 from pathlib import Path
+from urllib.parse import urlsplit
 from uuid import UUID
 
 import asyncpg
@@ -119,9 +120,17 @@ async def seed(dsn: str, fixtures: Path) -> int:
         await conn.close()
 
 
+def _loopback(dsn: str) -> str:
+    """Superuser writes only ever go to a database on this machine."""
+    host = urlsplit(dsn).hostname
+    if host not in ("127.0.0.1", "localhost", "::1"):
+        raise RuntimeError(f"{SUPERUSER_ENV} must point at a local database")
+    return dsn
+
+
 def main() -> int:
     fixtures = _local_only()
-    dsn = os.environ.get(SUPERUSER_ENV, DEFAULT_SUPERUSER)
+    dsn = _loopback(os.environ.get(SUPERUSER_ENV, DEFAULT_SUPERUSER))
     connected = asyncio.run(seed(dsn, fixtures))
     print(f"seeded Dev firm; {connected} new fake connection(s)")
     return 0

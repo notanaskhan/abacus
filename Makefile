@@ -10,9 +10,11 @@ setup:
 LOCAL_ENV = ABACUS_FAKE_CONNECTOR_DIR=$(CURDIR)/backend/.local/fake-connector
 
 # The API on :8001, the local sign-in server on :9000, the worker (relay + screening with the
-# fake model) and the SPA on :5173, which proxies /v1 to the API. Ctrl-C stops them all.
+# fake model) and the SPA on :5173, which proxies /v1 to the API. Ctrl-C, or any of them
+# exiting, stops them all. The ports are also set in apps/web/vite.config.ts (proxy),
+# abacus_tools/fakes/oidc_server.py (HOST, PORT, REDIRECT_URIS) and .github/workflows/e2e.yml.
 dev:
-	docker compose up -d db s3 temporal
+	docker compose up -d --wait db s3 temporal
 	mkdir -p backend/.local/fake-connector
 	cd backend && uv run alembic upgrade head && uv run python -m abacus_tools.local.evidence_bucket
 	cd backend; \
@@ -22,7 +24,8 @@ dev:
 	uv run python -m abacus_tools.fakes.oidc_server & \
 	uv run uvicorn --factory abacus.api.app:create_app --port 8001 --reload & \
 	uv run python -m abacus.worker & \
-	pnpm -C ../apps/web dev
+	pnpm -C ../apps/web dev & \
+	wait -n
 
 # Dev firm and users for local sign-in; run again after creating an engagement to connect it.
 seed:
@@ -41,6 +44,7 @@ check-fast:
 	cd backend && uv run python -m abacus_tools.quality.secrets_scan
 	cd backend && uv run python -m abacus_tools.quality.check_dependencies
 	pnpm -C apps/web exec tsc --noEmit && pnpm -C apps/web exec eslint . && pnpm -C apps/web exec prettier --check .
+	pnpm -C packages/ui exec tsc --noEmit && pnpm -C packages/ui exec eslint . && pnpm -C packages/ui exec prettier --check .
 
 check: check-fast
 	cd backend && uv run pytest tests/unit tests/property --cov --cov-fail-under=0

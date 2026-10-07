@@ -10,6 +10,11 @@ const TOKEN_KEY = "abacus.session";
 const PENDING_KEY = "abacus.signin";
 const TENANT_KEY = "abacus.tenant";
 const EXPIRY_MARGIN_MS = 30_000;
+const SIGNED_IN_AT_KEY = "abacus.signedInAt";
+// A 401 this soon after signing in means the API rejects fresh tokens (misconfiguration):
+// redirecting again would loop, so the app shows an error instead.
+const LOOP_WINDOW_MS = 10_000;
+let signingIn = false;
 
 interface Stored {
   accessToken: string;
@@ -84,6 +89,8 @@ export function safeReturnTo(path: string): string {
 }
 
 export async function signIn(returnTo: string = window.location.pathname): Promise<void> {
+  if (signingIn) return; // parallel 401s start one sign-in, not several racing ones
+  signingIn = true;
   const pending: Pending = {
     state: randomString(),
     verifier: randomString(48),
@@ -131,7 +138,17 @@ export async function completeSignIn(search: string, now: number = Date.now()): 
     expiresAt: now + body.expires_in * 1000,
   };
   sessionStorage.setItem(TOKEN_KEY, JSON.stringify(stored));
+  sessionStorage.setItem(SIGNED_IN_AT_KEY, String(now));
   return pending.returnTo;
+}
+
+/** On a 401: sign in again, unless we just did (the API rejects fresh tokens: don't loop). */
+export function handleUnauthorised(now: number = Date.now()): "redirected" | "rejected" {
+  const signedInAt = Number(sessionStorage.getItem(SIGNED_IN_AT_KEY) ?? "0");
+  sessionStorage.removeItem(TOKEN_KEY);
+  if (now - signedInAt < LOOP_WINDOW_MS) return "rejected";
+  void signIn();
+  return "redirected";
 }
 
 export function signOut(): void {

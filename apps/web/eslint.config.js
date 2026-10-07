@@ -37,12 +37,27 @@ export default defineConfig(
         { name: "fetch", message: "Call the backend only through @abacus/api-client (ADR-011)." },
         { name: "XMLHttpRequest", message: "Call the backend only through @abacus/api-client." },
       ],
+    },
+  },
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/**/*.test.{ts,tsx}"],
+    rules: {
       // ADR-065: model output is plain text, rendered only through AgentText.
       "no-restricted-syntax": [
         "error",
         {
           selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
           message: "Never render HTML (ADR-065).",
+        },
+        {
+          selector: "Property[key.name='dangerouslySetInnerHTML']",
+          message: "Never render HTML (ADR-065).",
+        },
+        {
+          selector:
+            "AssignmentExpression > MemberExpression.left[property.name=/^(innerHTML|outerHTML)$/], CallExpression > MemberExpression.callee[property.name=/^(insertAdjacentHTML|createContextualFragment)$/]",
+          message: "Never write HTML into the DOM (ADR-065).",
         },
         {
           // Rendered directly, or as the result of `&&` / `?:` inside JSX.
