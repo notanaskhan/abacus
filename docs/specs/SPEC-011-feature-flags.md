@@ -1,7 +1,7 @@
 ---
 id: SPEC-011
 title: Feature flag registry with per-firm enablement
-status: draft
+status: approved
 owner: founder
 risk_zone: amber
 related_adrs: [ADR-089, ADR-007, ADR-014, ADR-019, ADR-073]
@@ -146,11 +146,12 @@ None.
 The migration is additive. The registry starts with one flag, `prompt.evidence.screener` (variant, default `evidence.screen@v0`), to prove the mechanism.
 
 ## 20. Open questions
-- [ ] **Q1: where the registry lives.** *Recommendation:* `docs/architecture/feature-flags.yaml` (protected, reviewed like the permission matrix), with a generated `kernel/_flags.py` checked in CI.
-- [ ] **Q2: who sets flags, and how.** *Recommendation:* platform operators through `make flag` (a CLI in `abacus_tools`, run with the app database credentials in the firm's tenant context), audited with the operator's name and a reason. There is no firm self-service and no UI in v1.
-- [ ] **Q3: prompt rollouts.** *Recommendation:* `variant` flags named `prompt.<agent_id>`, honoured only for registered prompts that are eligible on the call's route (synthetic environments: registered only). Model choice stays with the catalog and routes (SPEC-010).
-- [ ] **Q4: expiry policy.** *Recommendation:* at most 90 days from `created`. Expiry fails `check-fast`. Extending means a new `expires` in a reviewed change, still within 90 days of a new `created`, so each extension is a deliberate decision.
-- [ ] **Q5: cache and failure.** *Recommendation:* a 30-second per-process cache. On a read error, return the registry default (off for booleans). Flags must be written so that the default is the safe behaviour.
+None. Answered by the founder on 2026-10-07 (all recommendations):
+- [x] **Q1: where the registry lives.** *Recommendation:* `docs/architecture/feature-flags.yaml` (protected, reviewed like the permission matrix), with a generated `kernel/_flags.py` checked in CI.
+- [x] **Q2: who sets flags, and how.** *Recommendation:* platform operators through `make flag` (a CLI in `abacus_tools`, run with the app database credentials in the firm's tenant context), audited with the operator's name and a reason. There is no firm self-service and no UI in v1.
+- [x] **Q3: prompt rollouts.** *Recommendation:* `variant` flags named `prompt.<agent_id>`, honoured only for registered prompts that are eligible on the call's route (synthetic environments: registered only). Model choice stays with the catalog and routes (SPEC-010).
+- [x] **Q4: expiry policy.** *Recommendation:* at most 90 days from `created`. Expiry fails `check-fast`. Extending means a new `expires` in a reviewed change, still within 90 days of a new `created`, so each extension is a deliberate decision.
+- [x] **Q5: cache and failure.** *Recommendation:* a 30-second per-process cache. On a read error, return the registry default (off for booleans). Flags must be written so that the default is the safe behaviour.
 
 ## 21. Future / explicitly deferred
 - Percentage and user-level rollouts.
