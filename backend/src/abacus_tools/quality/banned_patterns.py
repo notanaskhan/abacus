@@ -640,18 +640,52 @@ def _check_system_issue(src: SourceFile) -> Iterator[Finding]:
             yield Finding(line, "system contexts are issued from a proven run only")
 
 
-_STARTS_WORKFLOW = frozenset({"start_workflow", "execute_workflow", "signal_with_start_workflow"})
+# Everything that starts a workflow, a child workflow or a scheduled workflow (ADR-071).
+_STARTS_WORKFLOW = frozenset(
+    {
+        "start_workflow",
+        "execute_workflow",
+        "signal_with_start_workflow",
+        "start_update_with_start_workflow",
+        "start_child_workflow",
+        "execute_child_workflow",
+        "create_schedule",
+        "ScheduleActionStartWorkflow",
+        "temporal_client",
+    }
+)
 
 
 def _check_dispatch(src: SourceFile) -> Iterator[Finding]:
-    """Workflows start only through `kernel.dispatch`, which routes by work class (ADR-071)."""
+    """Workflows start only through `kernel.dispatch`, which routes by work class (ADR-071).
+    Any reference counts, not only a call: an alias, `getattr` or `partial` is still a start."""
     for node in ast.walk(src.tree):
-        if not isinstance(node, ast.Call):
+        name = None
+        if isinstance(node, ast.Attribute):
+            name = node.attr
+        elif isinstance(node, ast.Name):
+            name = node.id
+        elif isinstance(node, ast.alias):
+            name = node.asname or node.name.rsplit(".", 1)[-1]
+            if node.name in _STARTS_WORKFLOW:
+                name = node.name
+        elif isinstance(node, ast.ImportFrom) and (node.module or "").startswith(
+            "temporalio.client"
+        ):
+            yield Finding(node.lineno, "the Temporal client is the kernel's (kernel.dispatch)")
             continue
-        if _terminal_name(node.func) in _STARTS_WORKFLOW:
+        elif isinstance(node, ast.Constant) and node.value in _STARTS_WORKFLOW:
             yield Finding(node.lineno, "start workflows with kernel.dispatch.dispatch")
-        elif any(keyword.arg == "task_queue" for keyword in node.keywords):
+            continue
+        elif isinstance(node, ast.Call) and any(
+            keyword.arg == "task_queue" for keyword in node.keywords
+        ):
             yield Finding(node.lineno, "task queues come from the work class (kernel.dispatch)")
+            continue
+        if name in _STARTS_WORKFLOW:
+            yield Finding(
+                getattr(node, "lineno", 1), "start workflows with kernel.dispatch.dispatch"
+            )
 
 
 def _check_resource_archived(src: SourceFile) -> Iterator[Finding]:
@@ -1341,7 +1375,11 @@ RULES: list[Rule | TreeRule] = [
         adr="ADR-071",
         check=_check_dispatch,
         include=("src/abacus/*",),
-        exclude=("src/abacus/kernel/dispatch.py", "src/abacus/worker/__main__.py"),
+        exclude=(
+            "src/abacus/kernel/dispatch.py",
+            "src/abacus/kernel/temporal.py",
+            "src/abacus/worker/__main__.py",
+        ),
     ),
     Rule(
         id="AUTHZ-003",

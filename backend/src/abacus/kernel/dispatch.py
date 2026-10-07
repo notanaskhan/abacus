@@ -15,16 +15,14 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from datetime import timedelta
-from typing import Final, Literal, get_args
 
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
 from abacus.kernel.config import settings
 from abacus.kernel.logging import get_logger
 from abacus.kernel.temporal import temporal_client
+from abacus.kernel.work_class import WORK_CLASSES, WorkClass
 
-WorkClass = Literal["interactive", "time_sensitive", "background", "batch"]
-WORK_CLASSES: Final[tuple[WorkClass, ...]] = get_args(WorkClass)
 _classes: dict[type, WorkClass] = {}
 _log = get_logger(__name__)
 
@@ -36,7 +34,15 @@ def queue_for(work_class: WorkClass) -> str:
     return f"{settings().temporal_task_queue}-{work_class.replace('_', '-')}"
 
 
-def register_work_classes(workflows: Mapping[type, str]) -> None:
+def work_class_of_queue(task_queue: str) -> WorkClass | None:
+    """The work class a task queue serves; None for the legacy single queue (or any other)."""
+    for work_class in WORK_CLASSES:
+        if task_queue == queue_for(work_class):
+            return work_class
+    return None
+
+
+def register_work_classes(workflows: Mapping[type, WorkClass]) -> None:
     """Declare workflows' classes (each module's `WORKFLOWS`, at import). A workflow is
     registered once; registering it again with another class is a programming error."""
     for workflow, work_class in workflows.items():
@@ -78,3 +84,14 @@ async def dispatch(
         execution_timeout=execution_timeout,
     )
     _log.info("dispatch.started", workflow=workflow.__name__, work_class=work_class)
+
+
+__all__ = [
+    "WORK_CLASSES",
+    "WorkClass",
+    "dispatch",
+    "queue_for",
+    "register_work_classes",
+    "work_class_of",
+    "work_class_of_queue",
+]
