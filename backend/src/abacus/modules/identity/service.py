@@ -223,5 +223,5 @@ async def remove_wall_by_id(ctx: AuthContext, wall_id: UUID) -> WallView:
 async def list_walls(ctx: AuthContext) -> list[WallView]:
     """Every wall of the firm, active and removed (firm admin, fresh MFA): who is walled off
     from which client is itself sensitive."""
-    await authorise(ctx, "wall.read", Resource.firm(ctx.tenant_id))
+    await authorise(ctx, "wall.list", Resource.firm(ctx.tenant_id))
     return [_wall_view(wall) for wall in await all_walls(ctx.tenant)]

@@ -667,7 +667,7 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/ledger/repository.py", "lines_of"),
         ("src/abacus/modules/requests/repository.py", "items_fulfilled_by"),
         # Ethical walls are firm-level, not engagement-scoped (SPEC-002): authz reads a person's
-        # own walls; listing every wall needs `wall.read`, authorised by the service first.
+        # own walls; listing every wall needs `wall.list`, authorised by the service first.
         ("src/abacus/modules/identity/repository.py", "walled_clients"),
         ("src/abacus/modules/identity/repository.py", "all_walls"),
     }

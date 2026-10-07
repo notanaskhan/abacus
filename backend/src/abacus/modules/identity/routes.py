@@ -101,6 +101,6 @@ async def remove_wall_route(wall_id: UUID, ctx: Ctx) -> WallOut:
     return _wall_out(await remove_wall_by_id(ctx, wall_id))
 
 
-@router.get("/walls", action="wall.read", response_model=list[WallOut])
+@router.get("/walls", action="wall.list", response_model=list[WallOut])
 async def list_walls_route(ctx: Ctx) -> list[WallOut]:
     return [_wall_out(wall) for wall in await list_walls(ctx)]

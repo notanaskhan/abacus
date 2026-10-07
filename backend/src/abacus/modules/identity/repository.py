@@ -254,7 +254,7 @@ async def get_wall(session: AsyncSession, wall_id: UUID) -> WallRecord | None:
 
 
 async def all_walls(tenant: TenantContext) -> Sequence[WallRecord]:
-    """Every wall of the firm, newest first (firm-level: the caller authorised `wall.read`)."""
+    """Every wall of the firm, newest first (firm-level: the caller authorised `wall.list`)."""
     async with tenant_session(tenant) as session:
         rows = await session.execute(
             select(ethical_walls).order_by(ethical_walls.c.created_at.desc(), ethical_walls.c.id)

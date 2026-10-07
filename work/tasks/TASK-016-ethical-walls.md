@@ -112,6 +112,7 @@ All of SPEC-002 (AC-1 to AC-11): the API only, the `wall.read` matrix action (Q2
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| The matrix action is `wall.list`, not SPEC-002's `wall.read` | `*.read` verbs mean engagement-scoped reads that `visible()` filters; listing walls is firm-level and needs fresh MFA | No |
 | Removal is `POST /v1/walls/{id}/remove` returning the removed wall, not `DELETE` (204) | AbacusRouter requires a response model on every route | No (spec §8 note) |
 
 ## Gotchas and discoveries
@@ -122,7 +123,7 @@ All of SPEC-002 (AC-1 to AC-11): the API only, the `wall.read` matrix action (Q2
 
 ## Handoff
 - **Current state:** Implementation committed on `task-016-ethical-walls` (f147743, pushed). Approval file `work/approvals/TASK-016.yaml` exists locally (gitignored).
-- **Known bug (fix first):** `backend/src/abacus/modules/engagements/repository.py` `client_column()` builds `select(Engagement.client_id).where(Engagement.id == engagement_id).scalar_subquery()`. When `engagement_id` is `Engagement.id` itself (the engagements list), it doesn't correlate to the outer row → "more than one row returned by a subquery" (it also fails in `test_identity` `visible` probes). Fix: `e = aliased(Engagement)`; `select(e.client_id).where(e.id == engagement_id).scalar_subquery()`. Then rerun `uv run pytest tests/integration/test_engagements.py tests/integration/test_identity.py`.
+- **Fixed:** the client subquery now aliases `Engagement` and correlates explicitly (`correlate_except`), as does the walls EXISTS; 288 engagements and identity integration tests pass. Previously: `backend/src/abacus/modules/engagements/repository.py` `client_column()` builds `select(Engagement.client_id).where(Engagement.id == engagement_id).scalar_subquery()`. When `engagement_id` is `Engagement.id` itself (the engagements list), it doesn't correlate to the outer row → "more than one row returned by a subquery" (it also fails in `test_identity` `visible` probes). Fix: `e = aliased(Engagement)`; `select(e.client_id).where(e.id == engagement_id).scalar_subquery()`. Then rerun `uv run pytest tests/integration/test_engagements.py tests/integration/test_identity.py`.
 - **Expected test-pin updates (for the test author, not the implementer):**
   - `tests/unit/identity/test_permission_matrix.py`: fakes `authz.engagement_role` but not the new `authz.walled_clients`, so it now hits the DB; fake it.
   - `tests/unit/api/test_app_gates.py::test_ac20_creating_routes_answer_201`: the POST route set gains `/v1/walls` (201) and `/v1/walls/{wall_id}/remove` (200).
