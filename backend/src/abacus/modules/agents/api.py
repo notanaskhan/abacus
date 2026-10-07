@@ -23,6 +23,8 @@ from abacus.modules.agents.service import (
     create_screening_run,
     fail_run,
     load_agent_context,
+    proposal_of,
+    proposals_for,
     run_outcome,
     screen,
     screening_results_for,
@@ -30,6 +32,10 @@ from abacus.modules.agents.service import (
 from abacus.modules.agents.spec import AGENTS, AgentSpec, spec
 from abacus.modules.agents.workflow_types import ScreeningInput
 from abacus.modules.agents.workflows import ScreeningWorkflow
+from abacus.modules.evidence.api import register_proposal_source
+
+# Evidence owns review decisions; agents owns what was proposed (TASK-019 D1).
+register_proposal_source(proposals_for, proposal_of)
 
 __all__ = [
     "ACTIVITIES",

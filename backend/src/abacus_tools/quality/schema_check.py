@@ -52,11 +52,12 @@ APP = "abacus_app"
 # privilege at all; SECURITY DEFINER functions take the tenant from the session.
 NON_TENANT_TABLES = frozenset(
     {"alembic_version", "work_slots", "work_waiters", "work_grants", "provider_capacity"}
+    | {"review_reason_codes"}
 )
 # Tables the app may insert into and read, never update or delete (ADR-004); TASK-009/010 add.
 INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     {"audit_events", "outbox", "evidence_versions", "ledger_snapshots", "trial_balance_lines"}
-    | {"fulfilments", "screening_results", "usage_records"}
+    | {"fulfilments", "screening_results", "usage_records", "review_decisions"}
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -120,12 +121,22 @@ APP_INSERT_COLUMNS.update(
             | {"prompt_version", "model", "tier", "input_tokens", "output_tokens", "cost_usd"}
             | {"outcome", "inputs_hash"}
         ),
+        "review_decisions": frozenset(
+            {"id", "tenant_id", "engagement_id", "evidence_version_id", "request_item_id"}
+            | {"decision", "reason_code", "note", "screening_result_id", "corrects_proposal"}
+            | {"actor_kind", "actor_id"}
+        ),
+        "review_assignments": frozenset(
+            {"tenant_id", "evidence_version_id", "engagement_id", "assignee_user_id"}
+            | {"assigned_by"}
+        ),
     }
 )
 # Tables whose rows no role may change or remove: a BEFORE UPDATE OR DELETE trigger and a BEFORE
 # TRUNCATE trigger must call this function (ADR-004 second layer, TASK-009).
 IMMUTABLE_TABLES: dict[str, str] = {
     "evidence_versions": "evidence_versions_immutable",
+    "review_decisions": "review_decisions_immutable",
     "ledger_snapshots": "ledger_immutable",
     "trial_balance_lines": "ledger_immutable",
 }
@@ -135,6 +146,7 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),
     "engagements": frozenset({"status"}),
     "request_items": frozenset({"status"}),
+    "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
     "connections": frozenset({"status"}),
     "agent_runs": frozenset(
         {"status", "context_hash", "output", "failure_code", "finished_at"}
@@ -171,6 +183,10 @@ TABLE_OWNERS: dict[str, str] = {
     "fulfilments": "requests",
     "agent_runs": "agents",
     "screening_results": "agents",
+    # Review queues (SPEC-004 Q4): evidence owns decisions, assignments and the catalogue.
+    "review_decisions": "evidence",
+    "review_assignments": "evidence",
+    "review_reason_codes": "evidence",
     "usage_records": "ai_gateway",
     # The work slot ledger (TASK-018 D3): reached only through SECURITY DEFINER functions.
     "work_slots": "kernel.slots",
@@ -183,11 +199,13 @@ TABLE_OWNERS: dict[str, str] = {
 # role has no privileges on them at all. Each entry is founder-reviewed (protected file).
 GLOBAL_TABLES = frozenset(
     {"users", "work_slots", "work_waiters", "work_grants", "provider_capacity"}
+    | {"review_reason_codes"}
 )
 # SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
 DEFINER_FUNCTIONS = frozenset(
     {"work_slot_acquire", "work_slot_release", "work_slot_renew"}
     | {"capacity_admit", "capacity_block"}
+    | {"review_decision_reason_check", "review_reason_codes_list"}
 )
 _DEFINER_SEARCH_PATH = "search_path=pg_catalog, public, pg_temp"
 _DEFINERS = """

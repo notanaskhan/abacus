@@ -5,6 +5,7 @@ import { CALLBACK_PATH } from "./auth/session";
 import { Board } from "./screens/Board";
 import { Engagements } from "./screens/Engagements";
 import { Layout } from "./screens/Layout";
+import { Review } from "./screens/Review";
 import { SignInCallback } from "./screens/SignInCallback";
 
 // Code-based routes (no file-router plugin): firm users only in this spec (ADR-011).
@@ -72,9 +73,20 @@ function BoardPage(): JSX.Element {
   return <Board engagementId={engagementId} />;
 }
 
+const reviewRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/engagements/$engagementId/review",
+  component: ReviewPage,
+});
+
+function ReviewPage(): JSX.Element {
+  const { engagementId } = reviewRoute.useParams();
+  return <Review engagementId={engagementId} />;
+}
+
 const routeTree = rootRoute.addChildren([
   callbackRoute,
-  appRoute.addChildren([engagementsRoute, boardRoute]),
+  appRoute.addChildren([engagementsRoute, boardRoute, reviewRoute]),
 ]);
 
 export const router = createRouter({ routeTree });

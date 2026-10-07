@@ -39,12 +39,13 @@ from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
 from abacus.modules.agents.citations import SheetLayoutError, facts, verify
 from abacus.modules.agents.handoff import ScreeningOutput, VerifiedCitation
-from abacus.modules.agents.models import AgentRun
+from abacus.modules.agents.models import AgentRun, ScreeningResult
 from abacus.modules.agents.repository import (
     finish_run,
     get_run,
     insert_run,
     insert_screening_result,
+    latest_result_for_version,
     latest_results,
     lock_run,
     result_for_run,
@@ -54,7 +55,7 @@ from abacus.modules.agents.repository import (
 )
 from abacus.modules.agents.spec import spec
 from abacus.modules.engagements.api import get_ref, lock_ref
-from abacus.modules.evidence.api import read_content, version_view
+from abacus.modules.evidence.api import Proposal, read_content, version_view
 from abacus.modules.identity.api import (
     AgentContext,
     AuthContext,
@@ -417,3 +418,29 @@ async def screening_results_for(
         )
         for r in rows
     ]
+
+
+# --- Proposals for review queues (SPEC-004; TASK-019 D1) -----------------------------------------
+
+
+def _proposal(r: ScreeningResult) -> Proposal:
+    return Proposal(r.id, r.action, r.confidence, r.rationale, r.citations, r.unverified)
+
+
+async def proposals_for(ctx: AuthContext, engagement_id: UUID) -> dict[UUID, Proposal]:
+    """The latest proposal per version, for the review queue: read like the evidence board's
+    screening results (authorised `evidence.read`, and audited when any is shown)."""
+    results = await screening_results_for(ctx, engagement_id)
+    return {
+        r.evidence_version_id: Proposal(
+            r.id, r.action, r.confidence, r.rationale, r.citations, r.unverified
+        )
+        for r in results
+    }
+
+
+async def proposal_of(tenant: TenantContext, evidence_version_id: UUID) -> Proposal | None:
+    """The latest proposal about one version, for a decision the caller has authorised."""
+    async with tenant_session(tenant) as session:
+        found = await latest_result_for_version(session, evidence_version_id)
+    return _proposal(found) if found is not None else None

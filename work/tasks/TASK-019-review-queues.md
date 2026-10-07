@@ -4,7 +4,7 @@ title: Review queues and review decisions
 spec: SPEC-004
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-12, AC-13, AC-14]
 risk_zone: red
-status: awaiting-plan-approval
+status: in-progress
 branch: task-019-review-queues
 worktree:
 created: 2026-10-07
@@ -50,7 +50,8 @@ SPEC-004 approved by the founder on 2026-10-07 (all recommendations, Q1–Q8). N
 - **Reference:** `docs/architecture/reference/` (backend module, tenancy and authz, unit of work); the `backend-module` skill
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-07: D1–D5 as recommended)
+- Approved by founder: paths in the design's "Protected paths" list (local approval file `work/approvals/TASK-019.yaml`, written at the founder's instruction).
 
 ### Design (for founder review)
 
@@ -195,11 +196,29 @@ Errors show the API's messages. Full item detail is increment 6.
 |---|---|---|---|
 
 ## Progress log
+- `2026-10-07` — SPEC-004 approved and merged (PR #27). Design approved (D1–D5). Implemented:
+  - migration 0015;
+  - the matrix actions `review.read`, `review.take` and `review.assign`;
+  - requests `fulfilled_versions` and `move_after_review`;
+  - evidence's review service, routes and proposal registration;
+  - agents `proposals_for` and `proposal_of`;
+  - REVIEW-001;
+  - the schema_check maps;
+  - the SPA Review screen;
+  - the API client;
+  - the docs.
+
+  Static gates pass, and `schema_check` passes. A throwaway end-to-end check passed against Postgres (queue, take and conflict, reason-code validation, a 403 for staff, reject, accept, item statuses, audit events, and the database refusing a non-human actor); it wasn't committed. Independent tests are deferred (founder, 2026-10-07: "skip test authors for now").
 - `2026-10-07` — Created with SPEC-004 (draft) for founder review.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| Three decision routes (`…/decision/accept`, `/reject`, `/send-back`), not one | Each route declares exactly one matrix action, and accept and reject differ | No (spec §8 note) |
+| A sent-back (`needs_revision`) item takes new evidence and becomes `received` | Otherwise send back is a dead end: retrieval refused anything but `open`/`received` | No |
+| The assignee of `assign` must be on the engagement's team, whatever their role | Role comparisons outside `authz` are banned (AUTHZ-001); deciding is checked at decide time | No |
+| A version fulfilling several items is queued once, for its first item | Retrievals fulfil one item; multi-item versions are an edge case for increment 6 | No |
+| TASK-019 is stacked on TASK-018c (migration 0015 follows 0014) | Avoids two Alembic heads; rebase onto main after 018b and 018c merge | No |
 
 ## Gotchas and discoveries
 -
@@ -210,5 +229,8 @@ Errors show the API's messages. Full item detail is increment 6.
 - Glossary entries "review queue" and "reason code" (protected).
 
 ## Handoff
-- **Current state:** SPEC-004 drafted (branch `spec-004-review-queues`); waiting for founder approval.
-- **Exact next step:** once SPEC-004 is approved, write the design in *Plan* and stop for approval.
+- **Current state:** implemented on `task-019-review`, stacked on `task-018c-admission`. Independent tests are deferred, by the founder.
+- **Next:**
+  1. Run the security and architecture reviews.
+  2. After 018b and 018c merge, rebase onto main and open the PR (red: the founder's line-by-line review).
+  3. Add the independent tests when the founder asks.

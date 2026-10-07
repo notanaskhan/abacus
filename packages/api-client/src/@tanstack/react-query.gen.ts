@@ -3,8 +3,8 @@
 import { queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { createEngagement, createRequestItem, createWall, getEngagement, getRetrieval, listEngagements, listEvidenceVersions, listRequestItems, listScreeningResults, listWalls, me, type Options, removeWall, startRetrieval } from '../sdk.gen';
-import type { CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListWallsData, ListWallsError, ListWallsResponse, MeData, MeError, MeResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse } from '../types.gen';
+import { accept, assign, createEngagement, createRequestItem, createWall, getEngagement, getRetrieval, listEngagements, listEvidenceVersions, listRequestItems, listScreeningResults, listWalls, me, type Options, reasonCodes, reject, release, removeWall, reviewQueue, sendBack, startRetrieval, take } from '../sdk.gen';
+import type { AcceptData, AcceptError, AcceptResponse, AssignData, AssignError, AssignResponse, CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListWallsData, ListWallsError, ListWallsResponse, MeData, MeError, MeResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, SendBackData, SendBackError, SendBackResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, TakeData, TakeError, TakeResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -110,6 +110,57 @@ export const listEvidenceVersionsOptions = (options: Options<ListEvidenceVersion
     queryKey: listEvidenceVersionsQueryKey(options)
 });
 
+/**
+ * Accept Route
+ */
+export const acceptMutation = (options?: Partial<Options<AcceptData>>): UseMutationOptions<AcceptResponse, AcceptError, Options<AcceptData>> => {
+    const mutationOptions: UseMutationOptions<AcceptResponse, AcceptError, Options<AcceptData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await accept({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Reject Route
+ */
+export const rejectMutation = (options?: Partial<Options<RejectData>>): UseMutationOptions<RejectResponse, RejectError, Options<RejectData>> => {
+    const mutationOptions: UseMutationOptions<RejectResponse, RejectError, Options<RejectData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await reject({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Send Back Route
+ */
+export const sendBackMutation = (options?: Partial<Options<SendBackData>>): UseMutationOptions<SendBackResponse, SendBackError, Options<SendBackData>> => {
+    const mutationOptions: UseMutationOptions<SendBackResponse, SendBackError, Options<SendBackData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await sendBack({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
 export const listRequestItemsQueryKey = (options: Options<ListRequestItemsData>) => createQueryKey('listRequestItems', options);
 
 /**
@@ -178,6 +229,93 @@ export const getRetrievalOptions = (options: Options<GetRetrievalData>) => query
         return data;
     },
     queryKey: getRetrievalQueryKey(options)
+});
+
+export const reviewQueueQueryKey = (options: Options<ReviewQueueData>) => createQueryKey('reviewQueue', options);
+
+/**
+ * Review Queue Route
+ */
+export const reviewQueueOptions = (options: Options<ReviewQueueData>) => queryOptions<ReviewQueueResponse, ReviewQueueError, ReviewQueueResponse, ReturnType<typeof reviewQueueQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await reviewQueue({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: reviewQueueQueryKey(options)
+});
+
+/**
+ * Assign Route
+ */
+export const assignMutation = (options?: Partial<Options<AssignData>>): UseMutationOptions<AssignResponse, AssignError, Options<AssignData>> => {
+    const mutationOptions: UseMutationOptions<AssignResponse, AssignError, Options<AssignData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await assign({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Release Route
+ */
+export const releaseMutation = (options?: Partial<Options<ReleaseData>>): UseMutationOptions<ReleaseResponse, ReleaseError, Options<ReleaseData>> => {
+    const mutationOptions: UseMutationOptions<ReleaseResponse, ReleaseError, Options<ReleaseData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await release({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Take Route
+ */
+export const takeMutation = (options?: Partial<Options<TakeData>>): UseMutationOptions<TakeResponse, TakeError, Options<TakeData>> => {
+    const mutationOptions: UseMutationOptions<TakeResponse, TakeError, Options<TakeData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await take({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const reasonCodesQueryKey = (options: Options<ReasonCodesData>) => createQueryKey('reasonCodes', options);
+
+/**
+ * Reason Codes Route
+ */
+export const reasonCodesOptions = (options: Options<ReasonCodesData>) => queryOptions<ReasonCodesResponse, ReasonCodesError, ReasonCodesResponse, ReturnType<typeof reasonCodesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await reasonCodes({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: reasonCodesQueryKey(options)
 });
 
 export const listScreeningResultsQueryKey = (options: Options<ListScreeningResultsData>) => createQueryKey('listScreeningResults', options);

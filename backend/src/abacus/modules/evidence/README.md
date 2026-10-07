@@ -20,6 +20,18 @@ Evidence items and their immutable versions (glossary; ADR-004). Owns `evidence_
 - `render_trial_balance(TrialBalance) -> bytes`: deterministic `.xlsx` with a provenance footer (ADR-042).
 - Layout constants for readers of the rendered sheet: `CODE_COLUMN`, `NAME_COLUMN`, `DEBIT_COLUMN`, `CREDIT_COLUMN`, `FIRST_LINE_ROW`, `TOTAL_LABEL`.
 
+## Review queues and decisions (SPEC-004; TASK-019)
+- **The queue** (`GET /v1/engagements/{id}/review-queue`, `review.read`): per request item, its newest fulfilled version without a decision. Order: proposals needing revision first, then lowest confidence, then oldest. Each entry shows the agent's proposal. A version fulfilling several items is queued once.
+- **Taking** (`…/review-queue/{version_id}/take`, `release`, `assign`): advisory (Q3), and every change is audited (`review.taken`, `review.released`, `review.assigned`). Someone else's item answers 409 `already_taken`. Release and reassign need `review.assign` for another person's item. The assignee must be on the engagement's team.
+- **Deciding** (`…/evidence-versions/{version_id}/decision/accept` with `evidence.accept`; `…/reject` and `…/send-back` with `evidence.reject`): one route per matrix action.
+  - **One save:** the decision is one unit of work. It is insert-only (`review_decisions`), audited `review_decision.created`, moves the item (`requests.move_after_review`) and clears the assignment.
+  - **Conflicts:** 409 `already_decided` or `superseded`.
+  - **Reason codes:** a reason code is required for reject and send back, and refused for accept. An invalid code answers 422 `invalid_reason_code`.
+  - **Correction flag:** `corrects_proposal` is set when the decision disagrees with the agent's latest proposal.
+- **Only a person decides (ADR-005), four ways:** `decide` takes an `AuthContext` only; the matrix denies agents; the database CHECK `actor_kind = 'human'`; and REVIEW-001 bans `decide` in agent, connector, gateway and worker code.
+- **Proposals come from agents by registration** (`register_proposal_source`, TASK-019 D1): agents depends on evidence, not the other way round. Unregistered, the queue shows none and decisions answer 503.
+- **The reason-code catalogue** (`review_reason_codes`) is platform-wide with no app privileges. It is listed through `review_reason_codes_list` (`GET …/review-reason-codes/{reject|send_back}`) and enforced by an insert trigger, both SECURITY DEFINER. The note is confidential and never logged.
+
 ## Rules
 - **Versions are insert-only.** The app has no UPDATE or DELETE privilege, and a trigger rejects UPDATE, DELETE and TRUNCATE for every role (AC-13). There is no "superseded" flag: the highest `version_no` is current.
 - **Storage** (`storage.py`):
