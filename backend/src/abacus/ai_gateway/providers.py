@@ -17,7 +17,17 @@ Tier = Literal["small", "medium", "large"]
 
 
 class ProviderError(Exception):
-    """The provider failed (network, outage, refusal). Retryable by the caller's workflow."""
+    """The provider failed (network, outage, refusal). Retryable by the caller's workflow. A
+    rate-limit response (HTTP 429 or the provider's equivalent) sets `rate_limited`, with the wait
+    the provider asked for, if any: the gateway then stops admitting calls to that model
+    (ADR-072)."""
+
+    def __init__(
+        self, message: str = "", *, rate_limited: bool = False, retry_after: float | None = None
+    ) -> None:
+        super().__init__(message)
+        self.rate_limited = rate_limited
+        self.retry_after = retry_after
 
 
 @dataclass(frozen=True)

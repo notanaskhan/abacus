@@ -23,6 +23,7 @@ with workflow.unsafe.imports_passed_through():
         CANCELLED,
         CAPACITY_TIMEOUT,
         INTERNAL_ERROR,
+        NOT_ADMITTED,
         PROVIDER_UNAVAILABLE,
         FailInput,
         RunInput,
@@ -80,14 +81,31 @@ class ScreeningWorkflow:
         try:
             if slotted and not await wait_for_slot("screening.acquire_slot", run):
                 return await _fail(run, CAPACITY_TIMEOUT)
-            return await workflow.execute_activity(
-                "screening.screen",
-                run,
-                result_type=ScreeningOutcome,
-                start_to_close_timeout=_SCREEN_TIMEOUT,
-                heartbeat_timeout=_SCREEN_HEARTBEAT,
-                retry_policy=_RETRY,
-            )
+            # SPEC-003 AC-11: a model call not admitted waits (durably) and screens again.
+            admission = workflow.patched("admission")
+            waited_since = None
+            while True:
+                try:
+                    return await workflow.execute_activity(
+                        "screening.screen",
+                        run,
+                        result_type=ScreeningOutcome,
+                        start_to_close_timeout=_SCREEN_TIMEOUT,
+                        heartbeat_timeout=_SCREEN_HEARTBEAT,
+                        retry_policy=_RETRY,
+                    )
+                except ActivityError as err:
+                    refused = _not_admitted(err) if admission else None
+                    if refused is None:
+                        raise
+                    retry_after, max_wait = refused
+                    waited_since = waited_since or workflow.now()
+                    if (workflow.now() - waited_since).total_seconds() >= max_wait:
+                        return await _fail(run, CAPACITY_TIMEOUT)
+                    jitter = 0.5 + workflow.random().random()
+                    await workflow.sleep(
+                        timedelta(seconds=min(max(retry_after * jitter, 1.0), _MAX_ASK_INTERVAL))
+                    )
         except ActivityError as err:
             if is_cancelled_exception(err):
                 await _fail(run, CANCELLED)
@@ -99,6 +117,17 @@ class ScreeningWorkflow:
         finally:
             if slotted:
                 await _release("screening.release_slot", run)
+
+
+def _not_admitted(err: ActivityError) -> tuple[float, float] | None:
+    """(retry_after, max_wait) seconds if the screen wasn't admitted; None for any other error."""
+    cause = err.cause
+    if not isinstance(cause, ApplicationError) or cause.type != NOT_ADMITTED:
+        return None
+    details = cause.details
+    retry_after = float(str(details[1])) if len(details) >= 2 else 30.0
+    max_wait = float(str(details[2])) if len(details) >= 3 else 600.0
+    return retry_after, max_wait
 
 
 async def _fail(run: RunInput, code: str) -> ScreeningOutcome:

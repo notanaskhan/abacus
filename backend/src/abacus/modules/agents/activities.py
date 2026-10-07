@@ -14,11 +14,13 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager, suppress
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from temporalio import activity
 from temporalio.exceptions import ApplicationError
 
+from abacus.ai_gateway import NotAdmitted
 from abacus.kernel import slots
 from abacus.kernel.config import settings
 from abacus.kernel.errors import NotFound
@@ -36,6 +38,7 @@ from abacus.modules.agents.service import (
 from abacus.modules.agents.workflow_types import (
     FAIL_CODES,
     INTERNAL_ERROR,
+    NOT_ADMITTED,
     FailInput,
     RunInput,
     ScreeningInput,
@@ -101,6 +104,8 @@ async def create_run_activity(input: ScreeningInput) -> str | None:
 
 
 async def _screen(tenant_id: UUID, run_id: UUID) -> ScreeningOutcome:
+    # Admitted or not, a new attempt isn't waiting for the provider any more (it may be again).
+    await mark_queued(tenant_id, run_id, None, None)
     try:
         agent = await load_agent_context(tenant_id, run_id)
     except AgentRunNotRunning:
@@ -114,6 +119,19 @@ async def _screen(tenant_id: UUID, run_id: UUID) -> ScreeningOutcome:
         await slots.keep(agent.tenant, agent.engagement_id, work_class)
     try:
         outcome = await screen(agent)
+    except NotAdmitted as refused:
+        # SPEC-003 AC-11/13: the run waits for the provider, visibly; the workflow asks again.
+        estimate = datetime.now(UTC) + timedelta(seconds=refused.retry_after)
+        await mark_queued(tenant_id, run_id, refused.reason, estimate)
+        max_wait = settings().work_classes[work_class].max_wait_seconds if work_class else 600
+        raise ApplicationError(
+            NOT_ADMITTED,
+            refused.reason,
+            refused.retry_after,
+            max_wait,
+            type=NOT_ADMITTED,
+            non_retryable=True,
+        ) from None
     except AgentRunNotRunning:
         return await _recorded(tenant_id, run_id)
     return ScreeningOutcome(
@@ -166,6 +184,8 @@ async def screen_activity(input: RunInput) -> ScreeningOutcome:
     try:
         async with _heartbeating():
             return await _screen(UUID(input.tenant_id), UUID(input.run_id))
+    except ApplicationError:
+        raise  # already decided and safe to cross (NotAdmitted: identifiers and numbers only)
     except (NotFound, *TERMINAL) as exc:
         raise _as_application_error(exc, retryable=False) from None
     except Exception as exc:  # anything else, database errors included: class name only

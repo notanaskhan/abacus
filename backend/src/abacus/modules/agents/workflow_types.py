@@ -14,6 +14,9 @@ INTERNAL_ERROR = "internal_error"
 CANCELLED = "cancelled"
 # Waited for a work slot longer than the class allows (SPEC-003 AC-14).
 CAPACITY_TIMEOUT = "capacity_timeout"
+# The model call wasn't admitted (SPEC-003 AC-11): ApplicationError type, with details
+# (reason, retry_after seconds, the class's maximum wait in seconds).
+NOT_ADMITTED = "NotAdmitted"
 FAIL_CODES = frozenset({PROVIDER_UNAVAILABLE, INTERNAL_ERROR, CANCELLED, CAPACITY_TIMEOUT})
 
 

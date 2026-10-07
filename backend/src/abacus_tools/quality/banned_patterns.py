@@ -1144,6 +1144,7 @@ RULES: list[Rule | TreeRule] = [
         exclude=(
             "src/abacus/kernel/uow/*",
             "src/abacus/kernel/slots.py",
+            "src/abacus/ai_gateway/admission.py",  # the provider bucket: the same decision
             "tests/integration/test_tenancy.py",
             "tests/integration/test_uow_session_rollback.py",
             # Calls the slot ledger's functions as the app, one committed call at a time.
@@ -1253,6 +1254,7 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/kernel/db/*",
             "src/abacus/kernel/uow/*",
             "src/abacus/kernel/slots.py",  # see UOW-001
+            "src/abacus/ai_gateway/admission.py",  # see UOW-001
             "tests/integration/*",
         ),
     ),
