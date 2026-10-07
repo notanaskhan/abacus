@@ -365,6 +365,10 @@ async def test_ac1_each_class_has_its_own_concurrency_limits(boot: _Boot) -> Non
         assert kwargs["max_concurrent_workflow_tasks"] == expected[work_class]
 
 
+# TASK-018b: the slot caps and maximum wait are required fields of each class.
+SLOT_FIELDS = {"firm_cap": 5, "engagement_cap": 2, "class_capacity": 10, "max_wait_seconds": 60}
+
+
 async def test_ac1_limits_come_from_the_settings_by_class(
     boot: _Boot, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -372,10 +376,10 @@ async def test_ac1_limits_come_from_the_settings_by_class(
         "ABACUS_WORK_CLASSES",
         json.dumps(
             {
-                "interactive": {"max_activities": 7, "max_workflow_tasks": 17},
-                "time_sensitive": {"max_activities": 6, "max_workflow_tasks": 16},
-                "background": {"max_activities": 1, "max_workflow_tasks": 11},
-                "batch": {"max_activities": 2, "max_workflow_tasks": 12},
+                "interactive": {"max_activities": 7, "max_workflow_tasks": 17, **SLOT_FIELDS},
+                "time_sensitive": {"max_activities": 6, "max_workflow_tasks": 16, **SLOT_FIELDS},
+                "background": {"max_activities": 1, "max_workflow_tasks": 11, **SLOT_FIELDS},
+                "batch": {"max_activities": 2, "max_workflow_tasks": 12, **SLOT_FIELDS},
             }
         ),
     )

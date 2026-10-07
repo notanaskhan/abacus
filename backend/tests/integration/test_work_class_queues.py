@@ -30,11 +30,13 @@ from abacus.kernel.temporal import configure_temporal_client, data_converter
 from abacus.worker import __main__ as worker_main
 
 BASE = f"ac5-{uuid.uuid4().hex[:10]}"
+# TASK-018b: the slot caps and maximum wait are required fields of each class.
+SLOT_FIELDS = {"firm_cap": 20, "engagement_cap": 10, "class_capacity": 50, "max_wait_seconds": 120}
 LIMITS = {
-    "interactive": {"max_activities": 4, "max_workflow_tasks": 4},
-    "time_sensitive": {"max_activities": 4, "max_workflow_tasks": 4},
-    "background": {"max_activities": 1, "max_workflow_tasks": 4},
-    "batch": {"max_activities": 1, "max_workflow_tasks": 4},
+    "interactive": {"max_activities": 4, "max_workflow_tasks": 4, **SLOT_FIELDS},
+    "time_sensitive": {"max_activities": 4, "max_workflow_tasks": 4, **SLOT_FIELDS},
+    "background": {"max_activities": 1, "max_workflow_tasks": 4, **SLOT_FIELDS},
+    "batch": {"max_activities": 1, "max_workflow_tasks": 4, **SLOT_FIELDS},
 }
 TARGET_SECONDS = 2.0
 

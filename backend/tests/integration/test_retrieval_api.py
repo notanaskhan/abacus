@@ -72,6 +72,8 @@ RESPONSE_KEYS = {
     "evidence_version_id",
     "started_at",
     "finished_at",
+    "queued_reason",  # TASK-018b (SPEC-003 AC-13)
+    "estimated_start_at",
 }
 DISTINCT_INPUT = "ZX-DISTINCTIVE-9137-input"
 

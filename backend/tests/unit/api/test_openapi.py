@@ -191,6 +191,8 @@ def test_ac20_the_retrieval_response_schema_has_the_contract_fields() -> None:
         "evidence_version_id",
         "started_at",
         "finished_at",
+        "queued_reason",  # TASK-018b (SPEC-003 AC-13)
+        "estimated_start_at",
     }
 
 

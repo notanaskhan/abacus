@@ -245,6 +245,8 @@ describe("ac18 Board screen", () => {
       finished_at: null,
       evidence_version_id: null,
       failure_code: null,
+      queued_reason: null,
+      estimated_start_at: null,
     };
     const { calls } = api({
       items: [item({ status: "open", evidence_version_id: null })],
@@ -271,6 +273,131 @@ describe("ac18 Board screen", () => {
       period_end: "2025-12-31",
     });
     expect(screen.getByText("Retrieving…")).toBeTruthy();
+  });
+
+  describe("a retrieval waiting for capacity (SPEC-003 AC-13, TASK-018 018b)", () => {
+    function queuedRun(over: Partial<RetrievalOut> = {}): RetrievalOut {
+      return {
+        sync_run_id: "r1",
+        request_item_id: "i1",
+        status: "queued",
+        started_at: "2025-01-06T00:00:00Z",
+        finished_at: null,
+        evidence_version_id: null,
+        failure_code: null,
+        queued_reason: "firm_cap",
+        estimated_start_at: null,
+        ...over,
+      };
+    }
+
+    function openItemApi(get: () => Response | Promise<Response>): ReturnType<typeof mockApi> {
+      return api({
+        items: [item({ status: "open", evidence_version_id: null })],
+        versions: [],
+        results: [],
+        [`POST ${BASE}/retrievals`]: () => json(queuedRun(), 202),
+        [`GET ${BASE}/retrievals/r1`]: get,
+      });
+    }
+
+    async function startRetrieval(): Promise<void> {
+      withQueries(<Board engagementId={E} />);
+      fireEvent.click(await screen.findByRole("button", { name: "Retrieve trial balance" }));
+    }
+
+    it("says Queued with the expected time when there is an estimate, and keeps Retrieve disabled", async () => {
+      openItemApi(() => json(queuedRun({ estimated_start_at: "2025-01-06T09:30:00Z" })));
+      await startRetrieval();
+      const expected = new Date("2025-01-06T09:30:00Z").toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      expect(await screen.findByText(`Queued: expected to start by ${expected}`)).toBeTruthy();
+      expect(
+        screen.getByRole("button", { name: "Retrieve trial balance" }).hasAttribute("disabled"),
+      ).toBe(true);
+      expect(screen.queryByText("Retrieving…")).toBeNull();
+    });
+
+    it("says Queued: waiting for capacity when the estimate is unknown", async () => {
+      openItemApi(() => json(queuedRun()));
+      await startRetrieval();
+      expect(await screen.findByText("Queued: waiting for capacity")).toBeTruthy();
+      expect(screen.queryByText("Retrieving…")).toBeNull();
+      expect(
+        screen.getByRole("button", { name: "Retrieve trial balance" }).hasAttribute("disabled"),
+      ).toBe(true);
+    });
+
+    it("never names the reason or another firm", async () => {
+      const { container } = (() => {
+        openItemApi(() => json(queuedRun({ queued_reason: "firm_cap" })));
+        return withQueries(<Board engagementId={E} />);
+      })();
+      fireEvent.click(await screen.findByRole("button", { name: "Retrieve trial balance" }));
+      await screen.findByText(/^Queued:/);
+      expect(container.textContent).not.toContain("firm_cap");
+    });
+
+    it("keeps polling while queued, then ends and enables Retrieve again", async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      try {
+        let reads = 0;
+        const { calls } = openItemApi(() => {
+          reads += 1;
+          return json(
+            reads < 3
+              ? queuedRun()
+              : queuedRun({
+                  status: "succeeded",
+                  queued_reason: null,
+                  finished_at: "2025-01-06T00:01:00Z",
+                  evidence_version_id: "v1",
+                }),
+          );
+        });
+        await startRetrieval();
+        await screen.findByText("Queued: waiting for capacity");
+        const polls = (): number => calls.filter((c) => c.path === `${BASE}/retrievals/r1`).length;
+        const before = polls();
+        await vi.advanceTimersByTimeAsync(2_100);
+        expect(polls()).toBeGreaterThan(before); // a queued run is still polled
+        await vi.advanceTimersByTimeAsync(6_000);
+        await waitFor(() => {
+          expect(screen.queryByText(/^Queued:/)).toBeNull();
+        });
+        await waitFor(() => {
+          expect(
+            screen
+              .getByRole("button", { name: "Retrieve trial balance" })
+              .hasAttribute("disabled"),
+          ).toBe(false);
+        });
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("shows a failed capacity_timeout run as ended, not as queued", async () => {
+      openItemApi(() =>
+        json(
+          queuedRun({
+            status: "failed",
+            failure_code: "capacity_timeout",
+            queued_reason: null,
+            finished_at: "2025-01-06T00:02:00Z",
+          }),
+        ),
+      );
+      await startRetrieval();
+      expect(await screen.findByText("Retrieval failed. Try again.")).toBeTruthy();
+      expect(screen.queryByText(/^Queued:/)).toBeNull();
+      expect(screen.queryByText("Retrieving…")).toBeNull();
+      expect(
+        screen.getByRole("button", { name: "Retrieve trial balance" }).hasAttribute("disabled"),
+      ).toBe(false);
+    });
   });
 
   it("shows a hostile citation cell and value as text only", async () => {

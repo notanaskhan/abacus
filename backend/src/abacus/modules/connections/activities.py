@@ -95,7 +95,12 @@ async def _stage[T](
 async def acquire_slot_activity(input: RetrievalInput) -> SlotGrant:
     """Ask for the run's work slot (SPEC-003): granted, or the run is marked queued with its
     reason and estimate. A run already finished, or on the legacy queue, needs none."""
-    system = await _system(input)
+    try:
+        system = await _system(input)
+    except ApplicationError as ended:
+        if ended.type == RUN_FAILED:  # the run already ended: nothing to hold a slot for
+            return SlotGrant(True, 0)
+        raise
     work_class = slots.current_class()
     if system is None or work_class is None:
         return SlotGrant(True, 0)
