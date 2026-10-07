@@ -4,7 +4,7 @@ title: Ethical walls
 spec: SPEC-002
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11]
 risk_zone: red
-status: awaiting-plan-approval
+status: in-progress
 branch: task-016-ethical-walls
 worktree:
 created: 2026-10-07
@@ -31,7 +31,7 @@ All of SPEC-002 (AC-1 to AC-11): the API only, the `wall.read` matrix action (Q2
 - Reference: `docs/architecture/reference/tenancy-and-authz.md`, `backend-module.md`, `unit-of-work.md`
 
 ## Plan
-- [ ] Plan approved by human (required for amber and red)
+- [x] Plan approved by human (founder, 2026-10-07: all recommendations, Q1–Q2)
 
 ### Design (for founder review)
 **1. Data (identity; migration `0012`).**
@@ -106,6 +106,7 @@ All of SPEC-002 (AC-1 to AC-11): the API only, the `wall.read` matrix action (Q2
 
 ## Progress log
 - `2026-10-07` — Created from SPEC-002 (approved by the founder). Design drafted (§1–8, Q1–Q2) for founder review.
+- `2026-10-07` — Approved with all recommendations: Q1 engagements registers the engagement→client lookup; Q2 the approval file was written at the founder's instruction.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -118,5 +119,5 @@ All of SPEC-002 (AC-1 to AC-11): the API only, the `wall.read` matrix action (Q2
 -
 
 ## Handoff
-- **Current state:** Design drafted; awaiting founder approval (red). No code.
+- **Current state:** Approved; implementing.
 - **Exact next step:** On approval, write `work/approvals/TASK-016.yaml` with the Q2 paths, then step 1.
