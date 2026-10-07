@@ -268,7 +268,7 @@ def _not_walled(ctx: Actor, engagement_id: EngagementColumn) -> ColumnElement[bo
     )
     if _engagement_client is not None:
         walls = walls.where(ethical_walls.c.client_id == _engagement_client[0](engagement_id))
-    return ~walls.exists()
+    return ~walls.correlate_except(ethical_walls).exists()
 
 
 def visible(ctx: Actor, action: str, engagement_id: EngagementColumn) -> ColumnElement[bool]:

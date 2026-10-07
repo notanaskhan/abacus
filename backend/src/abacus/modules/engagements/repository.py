@@ -8,7 +8,7 @@ from uuid import UUID
 
 from sqlalchemy import ColumnElement, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import QueryableAttribute
+from sqlalchemy.orm import QueryableAttribute, aliased
 
 from abacus.modules.engagements.models import Engagement
 from abacus.modules.identity.api import AuthContext, visible
@@ -74,5 +74,12 @@ async def list_engagements(session: AsyncSession, ctx: AuthContext) -> Sequence[
 def client_column(
     engagement_id: ColumnElement[UUID] | QueryableAttribute[UUID],
 ) -> ColumnElement[UUID]:
-    """The engagement's client, as a subquery (for ethical walls in `visible()`)."""
-    return select(Engagement.client_id).where(Engagement.id == engagement_id).scalar_subquery()
+    """The engagement's client, as a subquery (for ethical walls in `visible()`). Aliased, so it
+    correlates with the outer row even when the outer query lists engagements itself."""
+    inner = aliased(Engagement)
+    return (
+        select(inner.client_id)
+        .where(inner.id == engagement_id)
+        .correlate_except(inner)  # it may sit inside another subquery (walls' EXISTS)
+        .scalar_subquery()
+    )

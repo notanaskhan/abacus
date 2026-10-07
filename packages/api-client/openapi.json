@@ -2136,7 +2136,7 @@
         "tags": [
           "identity"
         ],
-        "x-abacus-action": "wall.read"
+        "x-abacus-action": "wall.list"
       },
       "post": {
         "operationId": "create_wall",
