@@ -33,7 +33,7 @@ class _FakeWorker:
 
 
 async def test_ac20_the_worker_polls_until_sigterm_then_exits_cleanly(
-    monkeypatch: pytest.MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch, tracing_shutdowns: list[bool]
 ) -> None:
     fake = _FakeWorker()
 
@@ -45,6 +45,7 @@ async def test_ac20_the_worker_polls_until_sigterm_then_exits_cleanly(
     await asyncio.wait_for(worker_main.run(), timeout=10)
     assert fake.entered
     assert fake.exited
+    assert tracing_shutdowns == [True]  # spans are flushed on the way out
 
 
 async def test_ac20_sigint_also_stops_the_worker(monkeypatch: pytest.MonkeyPatch) -> None:

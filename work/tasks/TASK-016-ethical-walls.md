@@ -176,7 +176,7 @@ All of SPEC-002 (AC-1 to AC-11): the API only, the `wall.read` matrix action (Q2
 ## Handoff
 - **Current state:** Merged to main. Approval file deleted.
 - **Follow-ups:**
-  - Triage the 24 failures from the full run with the compose DB stopped. Seven are in `tests/integration/agent_tests/test_observability_gateway.py` (TASK-013); check them on main.
+  - ~~Triage the 24 failures~~ Done: they were TASK-013 tracing tests failing only when the worker unit tests ran first in the same process (`worker.run()` shut the shared tracer provider down). Fixed in `tests/unit/worker/conftest.py`; not a walls regression.
   - Glossary entry "ethical wall" (protected; needs approval).
   - An ADR for the engagement→client registration pattern, if the founder wants one.
   - A replay history for the retrieval `forbidden` branch (`retrieval-v2-*`).
