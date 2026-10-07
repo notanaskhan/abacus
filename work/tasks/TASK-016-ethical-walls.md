@@ -4,7 +4,7 @@ title: Ethical walls
 spec: SPEC-002
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11]
 risk_zone: red
-status: in-progress
+status: done
 branch: task-016-ethical-walls
 worktree:
 created: 2026-10-07
@@ -157,6 +157,7 @@ All of SPEC-002 (AC-1 to AC-11): the API only, the `wall.read` matrix action (Q2
 - `2026-10-07` — Approved with all recommendations: Q1 engagements registers the engagement→client lookup; Q2 the approval file was written at the founder's instruction.
 - `2026-10-07` — Implemented and committed (f147743): migration 0012; the identity repository and service; routes (POST /v1/walls, POST /v1/walls/{id}/remove, GET /v1/walls); the wall check in `authorise` (layer `wall`) and in `visible()` (NOT EXISTS subquery); the engagements registration (`register_engagement_client`); the 404 mapping; `wall.read` in the matrix; `WALL_SAFE=True`; the client regenerated; `schema_check` and LIST-001 updated. Static checks pass.
 - `2026-10-07` — Subquery correlation fixed (9d4e308); interface contract (03ea35e). Security and architecture reviews: no blockers. Fixed (91920fb): no self-removal of a wall (409 `own_wall`), walls cached per request, registration guard, the trigger requires `status='removed'`, the client subquery goes through the service. Docs (380d448): identity README, tenancy reference, backend-module skill, SPEC-002 amended. Not done: the glossary entry (protected, not in the approval); an ADR for the registration pattern (documented in the tenancy reference instead).
+- `2026-10-07` — Independent tests cherry-picked (af1185d, ~580 tests); they found the retrieval failure code bug, fixed (`forbidden`, patched `retrieval-forbidden-code`; founder approved the connections paths). Full suite with the compose DB stopped: 9,387 passed, 24 failed (7 seen in TASK-013's `test_observability_gateway.py`; the rest not yet listed). The founder chose to merge without waiting and add fixes later.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -173,10 +174,11 @@ All of SPEC-002 (AC-1 to AC-11): the API only, the `wall.read` matrix action (Q2
 -
 
 ## Handoff
-- **Current state:** `task-016-ethical-walls` at 380d448 (pushed): implementation, review fixes and docs. Approval file `work/approvals/TASK-016.yaml` exists locally (gitignored). The independent test author is writing tests on `task-016-ethical-walls-tests` (told about `own_wall` and the registration guard).
-- **Exact next step:**
-  1. Cherry-pick the test author's commits from `origin/task-016-ethical-walls-tests`; check `git status` for unexpected deletions.
-  2. Fix any product bugs the tests find.
-  3. Run the full suite with the compose DB stopped (`docker stop abacus-db-1`; restart after).
-  4. PR, then the founder's line-by-line review (red). Merge without waiting for CI if the founder says so; delete the approval file; mark done.
-- **Elsewhere:** TASK-014 is blocked on founder inputs (AWS account/credentials, budget, Terraform state, WorkOS approval, OTel/Sentry targets). Other ADR gaps (ADR-038 reconciliation, ADR-040 egress, ADR-031 for SQLAlchemy models) need specs. Main is up to date through PR #19.
+- **Current state:** Merged to main. Approval file deleted.
+- **Follow-ups:**
+  - Triage the 24 failures from the full run with the compose DB stopped. Seven are in `tests/integration/agent_tests/test_observability_gateway.py` (TASK-013); check them on main.
+  - Glossary entry "ethical wall" (protected; needs approval).
+  - An ADR for the engagement→client registration pattern, if the founder wants one.
+  - A replay history for the retrieval `forbidden` branch (`retrieval-v2-*`).
+  - Pagination for `GET /v1/walls`.
+- **Elsewhere:** TASK-014 is blocked on founder inputs (AWS account/credentials, budget, Terraform state, WorkOS approval, OTel/Sentry targets). Other ADR gaps (ADR-038 reconciliation, ADR-040 egress, ADR-031 for SQLAlchemy models) need specs.
