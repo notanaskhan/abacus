@@ -4,7 +4,7 @@ title: Review queues and review decisions
 spec: SPEC-004
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-12, AC-13, AC-14]
 risk_zone: red
-status: blocked
+status: todo
 branch:
 worktree:
 created: 2026-10-07
@@ -36,7 +36,7 @@ Excluded:
 - sign-off workflows;
 - firm settings.
 
-**Blocked on SPEC-004 approval** (open questions Q1–Q8).
+SPEC-004 approved by the founder on 2026-10-07 (all recommendations, Q1–Q8). Next: the design, for founder review (red: authorisation and human decisions).
 
 ## Context to load
 - **Spec:** `docs/specs/SPEC-004-review-queues.md`
