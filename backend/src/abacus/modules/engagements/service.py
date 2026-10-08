@@ -46,16 +46,22 @@ from abacus.modules.engagements.workbook import (
 from abacus.modules.identity.api import (
     Actor,
     AuthContext,
+    Candidate,
     ContactView,
     Resource,
+    StaffRole,
     TeamMember,
     add_creator_as_partner,
+    add_member,
     add_self_joined_admin,
     authorise,
+    candidates,
+    change_role,
     contacts,
     create_invitation,
     engagement_team,
     remove_client,
+    remove_member,
     resend_invitation,
     revoke_invitation,
 )
@@ -395,3 +401,43 @@ async def remove_client_contact(ctx: AuthContext, engagement_id: UUID, user_id: 
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "client_contact.remove", ref.resource())
         await remove_client(tx, ctx, engagement_id, user_id)
+
+
+# --- Engagement team (SPEC-017) -----------------------------------------------------------------
+
+
+async def team_of_engagement(ctx: AuthContext, engagement_id: UUID) -> list[TeamMember]:
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "engagement.read_metadata", ref.resource())
+    return await engagement_team(ctx, engagement_id)
+
+
+async def team_candidates(ctx: AuthContext, engagement_id: UUID) -> list[Candidate]:
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "engagement.member_add", ref.resource())
+    return await candidates(ctx.tenant, engagement_id, ref.client_id)
+
+
+async def add_to_team(
+    ctx: AuthContext, engagement_id: UUID, user_id: UUID, role: StaffRole
+) -> None:
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, "engagement.member_add", ref.resource())
+        await add_member(tx, ctx, engagement_id, ref.client_id, user_id, role)
+
+
+async def change_team_role(
+    ctx: AuthContext, engagement_id: UUID, user_id: UUID, role: StaffRole
+) -> None:
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, "engagement.member_add", ref.resource())
+        await change_role(tx, ctx, engagement_id, user_id, role)
+
+
+async def remove_from_team(ctx: AuthContext, engagement_id: UUID, user_id: UUID) -> None:
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, "engagement.member_remove", ref.resource())
+        await remove_member(tx, ctx, engagement_id, user_id)

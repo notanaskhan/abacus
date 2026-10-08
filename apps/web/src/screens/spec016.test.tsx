@@ -10,6 +10,7 @@ import { Layout } from "./Layout";
 import { MapView } from "./MapView";
 import { Methodology } from "./Methodology";
 import { Overview } from "./Overview";
+import { People } from "./People";
 
 const E = "e1";
 
@@ -248,5 +249,36 @@ describe("ac8 client users stay in the client portal", () => {
     ]);
     expect(await screen.findByText("Client home")).toBeTruthy();
     expect(screen.queryByRole("navigation", { name: "Workspace" })).toBeNull();
+  });
+});
+
+describe("SPEC-017 ac7 people tab", () => {
+  it("lets a manager handle seniors, staff and reviewers only, with confirmation to remove", async () => {
+    const me: MeOut = {
+      user_id: "u-m",
+      display_name: "Max Manager",
+      email: "m@dev.test",
+      active_tenant_id: "t1",
+      memberships: [{ tenant_id: "t1", firm_name: "Dev firm", firm_role: null, kind: "staff" }],
+    };
+    mockApi({
+      "GET /v1/me": () => json(me),
+      [`GET /v1/engagements/${E}/team`]: () =>
+        json([
+          { user_id: "u-p", display_name: "Pat Partner", role: "engagement_partner" },
+          { user_id: "u-m", display_name: "Max Manager", role: "manager" },
+          { user_id: "u-s", display_name: "Sam Staff", role: "staff" },
+        ]),
+      [`GET /v1/engagements/${E}/client-contacts`]: () => json([]),
+    });
+    renderRoutes([{ path: "/", component: () => <People engagementId={E} /> }]);
+    expect(await screen.findByText("Pat Partner")).toBeTruthy();
+    expect(screen.queryByLabelText("Role for Pat Partner")).toBeNull();
+    const samRole = await screen.findByLabelText("Role for Sam Staff");
+    const options = Array.from((samRole as HTMLSelectElement).options).map((o) => o.value);
+    expect(options).toEqual(["senior", "staff", "reviewer"]);
+    expect(screen.getAllByRole("button", { name: "Remove" })).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+    expect(await screen.findByRole("dialog", { name: "Remove Sam Staff?" })).toBeTruthy();
   });
 });

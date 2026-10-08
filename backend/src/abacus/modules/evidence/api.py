@@ -31,10 +31,12 @@ from abacus.modules.evidence.service import (
     read_content,
     read_version,
     register_proposal_source,
+    release_member_assignments,
     stage_content,
     version_view,
 )
 from abacus.modules.evidence.storage import ContentTooLarge, IntegrityError, check_ready
+from abacus.modules.identity.api import register_member_removed
 
 __all__ = [
     "CODE_COLUMN",
@@ -69,3 +71,6 @@ __all__ = [
     "stage_content",
     "version_view",
 ]
+
+# SPEC-017 (TASK-032 D2): a removed team member's review assignments go back to the queue.
+register_member_removed(release_member_assignments)

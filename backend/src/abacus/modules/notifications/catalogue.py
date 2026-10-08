@@ -43,6 +43,11 @@ async def _team_but_joiner(tenant_id: UUID, payload: dict[str, object]) -> list[
     return sorted({user for user, _ in await team_of(tenant_id, engagement_id) if user != joiner})
 
 
+async def _added_member(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    added = _uuid(payload, "user_id")
+    return [added] if added is not None else []
+
+
 async def _assignee(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     assignee = _uuid(payload, "assignee_user_id")
     return [assignee] if assignee is not None else []
@@ -71,6 +76,9 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "engagement.member_self_joined": Kind(
         "engagement.member_self_joined", _team_but_joiner, "engagement", "engagement_id"
     ),
+    "engagement_member.added": Kind(
+        "engagement_member.added", _added_member, "engagement", "engagement_id"
+    ),
     "review.assigned": Kind(
         "review.assigned", _assignee, "evidence_version", "evidence_version_id"
     ),
@@ -85,5 +93,6 @@ TEMPLATES: Final[dict[str, str]] = {
     "budget.soft_crossed": "Model spend passed its soft limit for {subject}.",
     "budget.anomaly": "Unusual model spend on {engagement} in the last hour.",
     "engagement.member_self_joined": "A firm admin joined {engagement} to view its content.",
+    "engagement_member.added": "You were added to {engagement}.",
     "review.assigned": "Evidence on {engagement} was assigned to you for review.",
 }

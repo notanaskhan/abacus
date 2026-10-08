@@ -42,7 +42,7 @@ export function EngagementLayout({ engagementId }: { engagementId: string }): JS
           { label: "Overview", to: "/engagements/$engagementId", params, exact: true },
           { label: "Requests", to: "/engagements/$engagementId/requests", params },
           { label: "Map", to: "/engagements/$engagementId/map", params },
-          { label: "Contacts", to: "/engagements/$engagementId/contacts", params },
+          { label: "People", to: "/engagements/$engagementId/people", params },
           { label: "Review", to: "/engagements/$engagementId/review", params },
         ]}
       />

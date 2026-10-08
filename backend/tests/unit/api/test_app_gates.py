@@ -111,6 +111,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/knowledge/documents",  # SPEC-009: a knowledge document
         "/v1/support/sessions",  # SPEC-012: a support session is requested
         "/v1/engagements/{engagement_id}/client-invitations",  # SPEC-015: an invitation
+        "/v1/engagements/{engagement_id}/team",  # SPEC-017: a team member
         decisions + "accept",  # TASK-019: a review decision is created
         decisions + "reject",
         decisions + "send-back",

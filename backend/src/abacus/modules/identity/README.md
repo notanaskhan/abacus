@@ -77,3 +77,13 @@ Members are `staff` or `client` (`memberships.kind`). A client membership has no
 - 10 failures in an hour lock the identity for 15 minutes.
 
 **Managing contacts:** firm partners and managers invite, list, revoke, resend and remove (`/v1/engagements/{id}/client-…`). Client admins manage contributors only.
+
+## Engagement team (SPEC-017; TASK-032)
+`team.py` (called by engagements after `lock_ref` and `authorise`):
+- **Candidates:** active staff, not on the team, not walled from the client.
+- **Changes:** add, change role and remove.
+- **Managers** handle seniors, staff and reviewers only.
+
+Role changes and removals go through the definer functions `team_member_set_role` and `team_member_remove`, which keep at least one engagement partner (409 `last_partner`).
+
+On removal, the hook that evidence registers (`register_member_removed`) releases the person's review assignments in the same unit of work. The person added is notified (`engagement_member.added`).
