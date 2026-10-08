@@ -55,3 +55,10 @@ Platform staff have no standing access (ADR-028). Staff sign in with a separate 
 - each request is audited (`support.request`) before it runs, and a failed audit refuses it.
 
 **Ending it:** firm admins list sessions, revoke one, and acknowledge emergencies. Staff end their own. `make access-review QUARTER=…` (owner role) writes the quarterly SOC 2 report.
+
+## Firm-level reads by engagement role (SPEC-014; TASK-029)
+On a firm-level resource (`Resource.firm`), a **read** action counts the person's engagement roles on the firm's non-archived engagements, as well as their firm role.
+- The non-archived engagements come from a subquery the engagements module registers (`register_active_engagements`).
+- The lookup is skipped when the firm role already allows the action, cached per request, and fails closed.
+- Only `allow` grants; conditional decisions and firm-level writes are unchanged.
+- Support contexts, agents and system contexts never gain engagement roles here.

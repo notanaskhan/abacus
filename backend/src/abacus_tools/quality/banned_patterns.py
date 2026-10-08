@@ -783,6 +783,8 @@ LIST_EXEMPT = frozenset(
         # Methodology templates are firm-wide (SPEC-008): read after `authorise` on the firm
         # (`methodology.read`) or by a caller authorised on the engagement; no engagement rows.
         ("src/abacus/modules/engagements/repository.py", "list_templates"),
+        # SPEC-014: authorisation's own lookup (the caller's roles; visible() can't apply to it).
+        ("src/abacus/modules/identity/repository.py", "engagement_roles_in_firm"),
         # SPEC-013: notification recipients (the platform resolving who to tell, never returned
         # to a caller) and the idempotent insert's RETURNING.
         ("src/abacus/modules/identity/repository.py", "active_firm_admins"),

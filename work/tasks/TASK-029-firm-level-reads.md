@@ -4,7 +4,7 @@ title: Firm-level reads for engagement roles
 spec: SPEC-014
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7]
 risk_zone: red
-status: awaiting-plan-approval
+status: done
 branch: task-029-firm-reads
 worktree:
 created: 2026-10-08
@@ -31,7 +31,7 @@ All of SPEC-014. Excluded: firm-level writes and practice scope.
 - Code: `identity/authz/__init__.py` (`_roles`, `authorise`, the walls cache, `register_engagement_client`), `identity/repository.py`, `engagements/api.py`, the generated matrix tests
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-08: D1–D3). Approved by founder: paths listed under *Protected paths*
 
 ### Design (for founder review)
 1. **A slot (D1, ADR-106):**
@@ -60,11 +60,20 @@ All of SPEC-014. Excluded: firm-level writes and practice scope.
 - [ ] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-08` — Implemented:
+  - the `register_active_engagements` slot, registered by engagements;
+  - `engagement_roles_in_firm`, cached per request and fail-closed;
+  - `_roles` counting engagement roles on firm-level reads, skipped when the firm role allows;
+  - 59 generated and probe tests (AC-1 to AC-5, AC-7), plus the shared fixture stubbing the lookup for firm-role cases.
+
+  Unit tests (8,802) and gates pass. The real lookup was checked against local Postgres (an engagement partner is allowed `knowledge.read`; a user with no engagement role is refused).
 - `2026-10-08` — SPEC-014 approved and merged (#52). Design written for founder review.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| A failed role lookup returns no roles (deny) instead of raising | SPEC-014 §12 fail closed; avoids a 500 | No |
+| `banned_patterns.py` gained a LIST-001 exemption for the lookup; added to the approval file | It is authorisation's own query, so `visible()` can't apply to it | No |
 
 ## Questions for the human
 - Design questions D1–D3 (above).

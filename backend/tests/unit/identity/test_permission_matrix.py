@@ -121,6 +121,11 @@ def engagement(monkeypatch: pytest.MonkeyPatch) -> EngagementRoles:
     fake = EngagementRoles()
     monkeypatch.setattr(authz, "engagement_role", fake)
     monkeypatch.setattr(authz, "walled_clients", fake.walled)
+
+    async def no_engagement_roles(*args: object) -> frozenset[str]:
+        return frozenset()  # SPEC-014: these cases test firm roles alone at firm level
+
+    monkeypatch.setattr(authz, "engagement_roles_in_firm", no_engagement_roles)
     return fake
 
 
@@ -863,3 +868,83 @@ def test_ac4_content_actions_need_the_content_scope() -> None:
         if decisions.get("platform_support_content") and not decisions.get("platform_support")
     }
     assert content_only == {"engagement.read", "evidence.read", "knowledge.read"}
+
+
+# --- SPEC-014: firm-level reads count engagement roles on active engagements ---------------------
+
+FIRM_READS = [a for a in YAML_ACTIONS if _is_read(a)]
+
+
+@pytest.fixture
+def firm_roles(monkeypatch: pytest.MonkeyPatch) -> dict[uuid.UUID, frozenset[str]]:
+    """The engagement roles each user holds on the firm's active engagements."""
+    held: dict[uuid.UUID, frozenset[str]] = {}
+
+    async def lookup(tenant: object, user_id: uuid.UUID, active: object) -> frozenset[str]:
+        return held.get(user_id, frozenset())
+
+    monkeypatch.setattr(authz, "engagement_roles_in_firm", lookup)
+    monkeypatch.setattr(authz, "_active_engagements", lambda: None)
+    return held
+
+
+@pytest.mark.parametrize("action", FIRM_READS)
+@pytest.mark.parametrize("role", sorted(ENGAGEMENT_ROLES))
+async def test_ac1_ac2_firm_level_reads_follow_the_matrix_for_engagement_roles(
+    firm_roles: dict[uuid.UUID, frozenset[str]], action: str, role: str
+) -> None:
+    ctx = _ctx()
+    firm_roles[ctx.user_id] = frozenset({role})
+    resource = Resource.firm(ctx.tenant_id)
+    if YAML_ACTIONS[action].get(role) == "allow" and not (
+        RULES[action].mfa_recent or RULES[action].requires_reason
+    ):
+        await authorise(ctx, action, resource)
+    else:
+        with pytest.raises(Forbidden):
+            await authorise(ctx, action, resource)
+
+
+async def test_ac3_no_active_engagement_role_grants_nothing(
+    firm_roles: dict[uuid.UUID, frozenset[str]],
+) -> None:
+    ctx = _ctx()  # no firm role, no roles on active engagements (archived ones aren't returned)
+    with pytest.raises(Forbidden) as raised:
+        await authorise(ctx, "knowledge.read", Resource.firm(ctx.tenant_id))
+    assert raised.value.layer == "relationship"
+
+
+async def test_ac4_a_firm_level_write_never_counts_engagement_roles(
+    firm_roles: dict[uuid.UUID, frozenset[str]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setitem(RULES, "probe.update", make_rule("probe.update", {"manager": "allow"}))
+    ctx = _ctx()
+    firm_roles[ctx.user_id] = frozenset({"manager"})
+    with pytest.raises(Forbidden):
+        await authorise(ctx, "probe.update", Resource.firm(ctx.tenant_id))
+
+
+async def test_ac5_a_conditional_decision_does_not_grant_at_firm_level(
+    firm_roles: dict[uuid.UUID, frozenset[str]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setitem(RULES, "probe.read", make_rule("probe.read", {"senior": "in_scope"}))
+    ctx = _ctx()
+    firm_roles[ctx.user_id] = frozenset({"senior"})
+    with pytest.raises(Forbidden):
+        await authorise(ctx, "probe.read", Resource.firm(ctx.tenant_id))
+
+
+async def test_ac7_support_contexts_never_hold_engagement_roles(
+    firm_roles: dict[uuid.UUID, frozenset[str]],
+) -> None:
+    user_id = uuid.uuid4()
+    ctx = AuthContext(
+        tenant=TenantContext(uuid.uuid4(), "support", f"support:{uuid.uuid4()}"),
+        user_id=user_id,
+        membership_id=uuid.uuid4(),
+        firm_role="platform_support",
+        mfa_at=datetime.now(UTC),
+    )
+    firm_roles[user_id] = frozenset({"senior"})  # would grant knowledge.read if counted
+    with pytest.raises(Forbidden):
+        await authorise(ctx, "knowledge.read", Resource.firm(ctx.tenant_id))
