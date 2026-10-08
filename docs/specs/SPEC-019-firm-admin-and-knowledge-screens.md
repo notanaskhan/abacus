@@ -1,7 +1,7 @@
 ---
 id: SPEC-019
 title: Knowledge, budget, support access and walls screens
-status: draft
+status: approved
 owner: founder
 risk_zone: amber
 related_adrs: [ADR-011, ADR-028, ADR-026, ADR-069, ADR-053]
@@ -134,10 +134,11 @@ As in §4, in the SPEC-016 shell. Admin pages share a tabbed admin header.
 No migration and no flag.
 
 ## 20. Open questions
-- [ ] **Q1: navigation.** *Recommendation:* the rail gains Knowledge for everyone. Firm admin becomes one section with tabs (Methodology · Knowledge documents · Budget · Support access · Walls), each shown by role.
-- [ ] **Q2: names in metering.** *Recommendation:* show the engagement's name where the admin can see it (from the engagements list), else "Engagement" plus a short ID. No new API.
-- [ ] **Q3: emergency support sessions.** *Recommendation:* a persistent banner on all Firm admin pages until a firm admin acknowledges it, besides the notification.
-- [ ] **Q4: pickers for walls.** *Recommendation:* add two small read routes:
+None. Answered by the founder on 2026-10-08 (all recommendations):
+- [x] **Q1: navigation.** *Recommendation:* the rail gains Knowledge for everyone. Firm admin becomes one section with tabs (Methodology · Knowledge documents · Budget · Support access · Walls), each shown by role.
+- [x] **Q2: names in metering.** *Recommendation:* show the engagement's name where the admin can see it (from the engagements list), else "Engagement" plus a short ID. No new API.
+- [x] **Q3: emergency support sessions.** *Recommendation:* a persistent banner on all Firm admin pages until a firm admin acknowledges it, besides the notification.
+- [x] **Q4: pickers for walls.** *Recommendation:* add two small read routes:
   - `GET /v1/firm/members` (`wall.create`): staff names;
   - `GET /v1/firm/clients` (`wall.create`): client names.
 
