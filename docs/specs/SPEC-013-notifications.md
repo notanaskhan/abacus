@@ -1,7 +1,7 @@
 ---
 id: SPEC-013
 title: In-app notifications
-status: draft
+status: approved
 owner: founder
 risk_zone: amber
 related_adrs: [ADR-024, ADR-028, ADR-018, ADR-031, ADR-032, ADR-102, ADR-106]
@@ -152,11 +152,12 @@ API only. The SPA bell and centre are a separate task.
 The migration is additive. Self-join becomes possible for firm admins (it is refused today), which is a protected matrix change.
 
 ## 20. Open questions
-- [ ] **Q1: the v1 catalogue.** *Recommendation:* the six kinds in §4, with recipients as listed. Later kinds are added with their increments (invitations, follow-ups, retrieval failures).
-- [ ] **Q2: channels.** *Recommendation:* in-app only in v1, with no preferences. Email, through the communications module's transport and the same catalogue, comes with SES in TASK-014.
-- [ ] **Q3: authorising own-notification routes.** *Recommendation:* a route marker `OWN` (an authenticated member acting only on their own rows, enforced by the query and RLS), so engagement-only users aren't blocked by the firm-level read limitation. The alternative is to fix firm-level reads for engagement roles first, which is a broader authz change.
-- [ ] **Q4: retention.** *Recommendation:* 180 days, purged daily by a background task beside the anomaly job. Notifications aren't evidence, so ADR-032's minimums don't apply.
-- [ ] **Q5: owner module.** *Recommendation:* a new `notifications` module. That means amending ADR-101's module map, a small protected docs change. The alternative is putting it inside `communications`, which is about outbound messages to clients under the scope checker, a different trust boundary.
+None. Answered by the founder on 2026-10-08 (all recommendations):
+- [x] **Q1: the v1 catalogue.** *Recommendation:* the six kinds in §4, with recipients as listed. Later kinds are added with their increments (invitations, follow-ups, retrieval failures).
+- [x] **Q2: channels.** *Recommendation:* in-app only in v1, with no preferences. Email, through the communications module's transport and the same catalogue, comes with SES in TASK-014.
+- [x] **Q3: authorising own-notification routes.** *Recommendation:* a route marker `OWN` (an authenticated member acting only on their own rows, enforced by the query and RLS), so engagement-only users aren't blocked by the firm-level read limitation. The alternative is to fix firm-level reads for engagement roles first, which is a broader authz change.
+- [x] **Q4: retention.** *Recommendation:* 180 days, purged daily by a background task beside the anomaly job. Notifications aren't evidence, so ADR-032's minimums don't apply.
+- [x] **Q5: owner module.** *Recommendation:* a new `notifications` module. That means amending ADR-101's module map, a small protected docs change. The alternative is putting it inside `communications`, which is about outbound messages to clients under the scope checker, a different trust boundary.
 
 ## 21. Future / explicitly deferred
 - Email and digest channels, and user preferences.
