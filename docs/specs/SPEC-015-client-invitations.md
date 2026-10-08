@@ -1,7 +1,7 @@
 ---
 id: SPEC-015
 title: Client invitations and client users
-status: draft
+status: approved
 owner: founder
 risk_zone: red
 related_adrs: [ADR-029, ADR-030, ADR-024, ADR-014, ADR-020, ADR-065, ADR-011]
@@ -174,11 +174,12 @@ API only. The client route tree and invitation page are the next UI task.
 Additive migrations. Existing memberships become `staff`.
 
 ## 20. Open questions
-- [ ] **Q1: delivery before SES.** *Recommendation:* communications gains a transport interface with a local file mailbox (and a test double). The API never returns the link. SES is configured in TASK-014.
-- [ ] **Q2: who invites whom.** *Recommendation:* engagement partners and managers invite client admins and contributors. Client admins invite contributors to their own engagement only.
-- [ ] **Q3: expiry.** *Recommendation:* 7 days, single-use, and a resend issues a new token.
-- [ ] **Q4: limits.** *Recommendation:* at most 50 invitations per engagement per day, and 10 failed acceptances per identity per hour, then 15 minutes refused.
-- [ ] **Q5: one person as staff and client of the same firm.** *Recommendation:* not allowed. A person is either staff or client within a firm, which keeps the separation simple and auditable. Across firms anything is allowed.
+None. Answered by the founder on 2026-10-08 (all recommendations):
+- [x] **Q1: delivery before SES.** *Recommendation:* communications gains a transport interface with a local file mailbox (and a test double). The API never returns the link. SES is configured in TASK-014.
+- [x] **Q2: who invites whom.** *Recommendation:* engagement partners and managers invite client admins and contributors. Client admins invite contributors to their own engagement only.
+- [x] **Q3: expiry.** *Recommendation:* 7 days, single-use, and a resend issues a new token.
+- [x] **Q4: limits.** *Recommendation:* at most 50 invitations per engagement per day, and 10 failed acceptances per identity per hour, then 15 minutes refused.
+- [x] **Q5: one person as staff and client of the same firm.** *Recommendation:* not allowed. A person is either staff or client within a firm, which keeps the separation simple and auditable. Across firms anything is allowed.
 
 ## 21. Future / explicitly deferred
 - The client route tree and branded invitation page (UI and increment 2).
