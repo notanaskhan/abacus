@@ -10,7 +10,7 @@ PROTECTED. TASK-007 design §5.
                     resource's engagement (no relationship at all: deny)
   3. roles          the matrix decision for those roles; an explicit `deny` beats any `allow`
   4. attributes     archived engagements are read-only; `mfa_recent`; `requires: reason`;
-                    actions carrying an obligation not built yet (`notify`) deny
+                    `notify` obligations are met by the action's own event (SPEC-013)
 An agent is also bounded by its initiator, checked live (ADR-025): the initiator must be allowed
 the same action, or `AGENT_ONLY_REACH` for actions no human role holds.
 Matrix conditions not modelled yet (`in_scope`, `firm_setting(...)`, `assigned_only`,
@@ -245,7 +245,10 @@ async def authorise(
         raise _deny(ctx, action, "attribute")
     if rule.requires_reason and not (reason and reason.strip()):
         raise _deny(ctx, action, "attribute")
-    if rule.notify:
+    # `notify` (SPEC-013): a person's action is allowed, and its service emits the event its
+    # catalogue entry notifies on, in the same unit of work (today only `engagement.self_join`).
+    # Agents and the platform never carry the obligation.
+    if rule.notify and not isinstance(ctx, AuthContext):
         raise _deny(ctx, action, "attribute")
     _record(action)
     _log.info("authz.allowed", action=action, tenant_id=ctx.tenant_id, **_who(ctx))

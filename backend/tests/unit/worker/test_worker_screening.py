@@ -38,7 +38,12 @@ def _event(event_type: str) -> OutboxEvent:
 
 
 def test_ac14_the_worker_hosts_connections_and_agents() -> None:
-    assert (worker_main.connections, worker_main.agents) == worker_main.MODULES
+    # SPEC-013: notifications subscribes to its catalogued events.
+    assert (
+        worker_main.connections,
+        worker_main.agents,
+        worker_main.notifications,
+    ) == worker_main.MODULES
     assert tuple(m.SUBSCRIPTIONS for m in worker_main.MODULES) == worker_main.SUBSCRIBERS
     assert worker_main.connections.SUBSCRIPTIONS == {}
     assert worker_main.agents.SUBSCRIPTIONS in worker_main.SUBSCRIBERS
@@ -48,7 +53,8 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
     built = worker_main.publisher()
     assert isinstance(built, RoutingPublisher)
     # SPEC-009 adds knowledge embedding beside screening.
-    assert list(built.handlers) == [EVIDENCE_VERSION_CREATED, "knowledge_document.added"]
+    assert list(built.handlers)[:2] == [EVIDENCE_VERSION_CREATED, "knowledge_document.added"]
+    assert set(list(built.handlers)[2:]) == set(worker_main.notifications.CATALOGUE)  # SPEC-013
     assert list(built.handlers[EVIDENCE_VERSION_CREATED]) == [worker_main.agents.start_screening]
 
 

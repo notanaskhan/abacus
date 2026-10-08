@@ -30,7 +30,7 @@ from abacus.kernel.metrics import meter
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.evidence import storage
-from abacus.modules.evidence.events import EvidenceVersionCreated
+from abacus.modules.evidence.events import EvidenceVersionCreated, ReviewAssigned
 from abacus.modules.evidence.models import EvidenceVersion
 from abacus.modules.evidence.repository import (
     assignment_for,
@@ -572,6 +572,13 @@ async def assign(ctx: AuthContext, engagement_id: UUID, version_id: UUID, user_i
             "review.assigned",
             target=Target("evidence_version", version_id),
             after=Ref(user_id=user_id),
+        )
+        tx.emit(
+            ReviewAssigned(
+                engagement_id=engagement_id,
+                evidence_version_id=version_id,
+                assignee_user_id=user_id,
+            )
         )
 
 

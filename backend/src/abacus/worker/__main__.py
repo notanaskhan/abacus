@@ -56,9 +56,10 @@ from abacus.kernel.uow.relay import RoutingPublisher, run_relay
 from abacus.modules.agents import api as agents
 from abacus.modules.connections import api as connections
 from abacus.modules.evidence.api import check_ready
+from abacus.modules.notifications import api as notifications
 
 GRACEFUL_SHUTDOWN = timedelta(seconds=60)
-MODULES = (connections, agents)
+MODULES = (connections, agents, notifications)
 SUBSCRIBERS = tuple(module.SUBSCRIPTIONS for module in MODULES)
 
 
@@ -136,7 +137,9 @@ async def run(classes: Sequence[WorkClass] = WORK_CLASSES) -> None:
     relay = run_relay(publisher(), stop) if "interactive" in classes else None
     # The spend-anomaly job (SPEC-007 AC-6) runs hourly beside the relay, once per deployment.
     anomaly = run_anomaly_job(stop) if "interactive" in classes else None
-    side = [job for job in (relay, anomaly) if job is not None]
+    # SPEC-013 AC-10: the daily notification purge, once per deployment like the relay.
+    purge = notifications.run_purge_job(stop) if "interactive" in classes else None
+    side = [job for job in (relay, anomaly, purge) if job is not None]
     tasks = [*pools, *(asyncio.create_task(job) for job in side)]
     stopped = asyncio.create_task(stop.wait())
     early: list[asyncio.Task[None]] = []

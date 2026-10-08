@@ -26,7 +26,7 @@ backend/src/
     api/                       HTTP entry point (was app/)
     worker/                    Temporal worker entry point
     kernel/                    shared kernel
-    modules/<module>/          the twelve modules
+    modules/<module>/          the thirteen modules (ADR-008)
     ai_gateway/
   abacus_tools/                tooling — never imported by abacus
     quality/                   stage 1 and 2 checkers (was backend/quality/)
@@ -35,7 +35,7 @@ backend/src/
 ```
 
 **Kernel and platform are different things.**
-- The **shared kernel**, `abacus.kernel`, holds database sessions, tenant context, unit of work, outbox, encryption, config and logging. It is not a module and not one of the twelve. Modules use it; it never imports a module.
+- The **shared kernel**, `abacus.kernel`, holds database sessions, tenant context, unit of work, outbox, encryption, config and logging. It is not a module and not one of the thirteen. Modules use it; it never imports a module.
 - **`abacus.modules.platform`** is the twelfth domain module — tenant settings, feature flags, usage metering — exactly as ADR-008 and AGENTS.md list it.
 
 **Layers** (higher may import lower, never the reverse): `abacus.api | abacus.worker` → `abacus.modules` → `abacus.ai_gateway` → `abacus.kernel`.

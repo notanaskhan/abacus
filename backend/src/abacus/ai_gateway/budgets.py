@@ -25,10 +25,12 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.ai_gateway.admission import NotAdmitted
+from abacus.ai_gateway.events import BudgetAnomaly, BudgetSoftCrossed
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import meter
+from abacus.kernel.uow import Target, uow
 
 CACHE_SECONDS: Final = 5.0
 DEFER_SECONDS: Final = 300
@@ -101,6 +103,27 @@ def _period(level: str) -> str:
     return now.strftime("%Y-%m-%d") if level == "platform" else now.strftime("%Y-%m")
 
 
+async def _publish_soft_crossed(tenant_id: UUID, level: str, engagement_id: UUID | None) -> None:
+    """Audit and publish the crossing once per level and period (SPEC-013: firm admins, and an
+    engagement's partner and managers, are notified). Never blocks the call it was found on."""
+    ctx = TenantContext(tenant_id, "system", "budget:monitor")
+    scoped = engagement_id if level == "engagement" else None
+    try:
+        async with uow(ctx) as tx:
+            tx.record(
+                "budget.soft_crossed",
+                target=Target("engagement", scoped) if scoped else Target("firm", tenant_id),
+            )
+            tx.emit(
+                BudgetSoftCrossed(
+                    level="engagement" if level == "engagement" else "firm",
+                    engagement_id=scoped,
+                )
+            )
+    except Exception as exc:
+        _log.warning("budget.soft_crossed_unpublished", error=type(exc).__name__)
+
+
 async def check_budget(
     tenant: TenantContext, engagement_id: UUID | None, essential: bool, estimate: Decimal
 ) -> None:
@@ -133,6 +156,8 @@ async def check_budget(
                 _alerted.add(key)
                 _crossed.add(1, {"reason": level})
                 _log.warning("budget.soft_crossed", level=level, tenant_id=tenant.tenant_id)
+                if level != "platform":  # the platform's own limit is an operator alert only
+                    await _publish_soft_crossed(tenant.tenant_id, level, engagement_id)
             if not essential:
                 _refused.add(1, {"reason": level, "outcome": "deferred"})
                 raise NotAdmitted("deferred", DEFER_SECONDS)
@@ -161,6 +186,9 @@ async def flag_anomalies() -> int:
     for tenant_id, engagement_id in rows:
         _anomalies.add(1)
         _log.warning("budget.anomaly", tenant_id=tenant_id, engagement_id=engagement_id)
+        async with uow(TenantContext(tenant_id, "system", "budget:anomaly")) as tx:
+            tx.record("budget.anomaly", target=Target("engagement", engagement_id))
+            tx.emit(BudgetAnomaly(engagement_id=engagement_id))
     return len(rows)
 
 

@@ -82,6 +82,9 @@ NOT_CREATING = {
     REVIEW_QUEUE + "/assign",
     "/v1/knowledge/documents/{document_id}/withdraw",  # SPEC-009: returns the document, so 200
     "/v1/knowledge/search",  # SPEC-009: a query, nothing created
+    "/v1/engagements/{engagement_id}/self-join",  # SPEC-013: returns the engagement, so 200
+    "/v1/notifications/{notification_id}/read",  # SPEC-013: own read state
+    "/v1/notifications/read-all",
     # SPEC-012: lifecycle changes return the session, so 200.
     "/v1/support/sessions/{session_id}/approve",
     "/v1/support/sessions/{session_id}/end",

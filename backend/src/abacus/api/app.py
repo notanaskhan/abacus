@@ -30,6 +30,7 @@ from abacus.modules.connections import api as connections
 from abacus.modules.engagements import api as engagements
 from abacus.modules.evidence import api as evidence
 from abacus.modules.identity import api as identity
+from abacus.modules.notifications import api as notifications
 from abacus.modules.platform import api as platform
 from abacus.modules.requests import api as requests
 
@@ -47,6 +48,7 @@ ROUTERS = (
     agents.graph_router,
     agents.knowledge_router,
     platform.router,
+    notifications.router,
 )
 # What a validation error may say about each problem: never the submitted value (client content
 # is hostile, AGENTS.md #8), never pydantic's internal context.

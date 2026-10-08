@@ -278,11 +278,12 @@ async def test_ac20_matrix_anything_but_allow_is_forbidden_at_the_role_layer(
 
 
 @pytest.mark.parametrize(("action", "role"), NOTIFY_PAIRS, ids=NOTIFY_IDS)
-async def test_ac20_actions_carrying_notify_deny_at_the_attribute_layer(
+async def test_ac8_actions_carrying_notify_are_allowed_for_people(
     engagement: EngagementRoles, action: str, role: str
 ) -> None:
+    # SPEC-013 AC-8: the obligation is met by the action's own event (its service emits it).
     ctx, resource = _arranged(role, engagement)
-    assert await _denied_layer(ctx, action, resource) == "attribute"
+    await authorise(ctx, action, resource, reason=REASON)
 
 
 def test_ac20_engagement_self_join_is_a_notify_action() -> None:

@@ -342,3 +342,15 @@ async def acknowledge_support_session(session: AsyncSession, session_id: UUID) -
         ),
         {"id": session_id},
     )
+
+
+async def active_firm_admins(tenant: TenantContext) -> list[UUID]:
+    """The firm's active firm admins (SPEC-013 recipients), read under the tenant."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            text(
+                "SELECT user_id FROM memberships WHERE firm_role = 'firm_admin' "
+                "AND status = 'active' ORDER BY user_id"
+            )
+        )
+        return [cast(UUID, row.user_id) for row in rows.all()]

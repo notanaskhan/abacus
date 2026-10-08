@@ -783,6 +783,10 @@ LIST_EXEMPT = frozenset(
         # Methodology templates are firm-wide (SPEC-008): read after `authorise` on the firm
         # (`methodology.read`) or by a caller authorised on the engagement; no engagement rows.
         ("src/abacus/modules/engagements/repository.py", "list_templates"),
+        # SPEC-013: notification recipients (the platform resolving who to tell, never returned
+        # to a caller) and the idempotent insert's RETURNING.
+        ("src/abacus/modules/identity/repository.py", "active_firm_admins"),
+        ("src/abacus/modules/notifications/repository.py", "insert_notifications"),
         # Support sessions are firm-level records, listed after `authorise(support_session.read)`.
         ("src/abacus/modules/identity/repository.py", "list_support_sessions"),
         ("src/abacus/modules/engagements/repository.py", "version_rows"),
@@ -889,6 +893,9 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "communications": frozenset(
         {"identity", "engagements", "organisations", "ledger", "evidence"}
     ),
+    # Notifications subscribes to events and resolves recipients through identity (SPEC-013);
+    # nothing imports it.
+    "notifications": frozenset({"identity"}),
 }
 
 
