@@ -20,12 +20,17 @@ from abacus.modules.engagements.service import (
     EngagementView,
     NewEngagement,
     TemplateVersionSummary,
+    client_contacts_of,
     create_engagement,
     engagement_metadata,
     engagements_for,
     import_template,
+    invite_client,
     methodology_templates,
     methodology_version,
+    remove_client_contact,
+    resend_client_invitation,
+    revoke_client_invitation,
     self_join,
 )
 from abacus.modules.engagements.workbook import Problem, TemplateInvalid
@@ -124,6 +129,99 @@ async def get_engagement_route(engagement_id: UUID, ctx: Ctx) -> EngagementOut:
 async def self_join_route(engagement_id: UUID, ctx: Ctx) -> EngagementOut:
     """ADR-024; SPEC-013 AC-8: a firm admin joins (as reviewer) and the team is notified."""
     return _out(await self_join(ctx, engagement_id))
+
+
+# --- Client contacts (SPEC-015 §8) -------------------------------------------------------------
+
+
+class ClientInvitationIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
+
+    email: Annotated[str, Field(min_length=3, max_length=320), classified("confidential")]
+    role: Annotated[Literal["client_admin", "client_contributor"], classified("internal")]
+
+
+class ClientInvitationOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    invitation_id: Annotated[UUID, classified("internal")]
+
+
+class ClientContactOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    kind: Annotated[Literal["member", "invitation"], classified("internal")]
+    id: Annotated[UUID, classified("internal")]
+    role: Annotated[str, classified("internal")]
+    email: Annotated[str | None, classified("confidential")]
+    expires_at: Annotated[datetime | None, classified("internal")]
+
+
+@router.post(
+    "/{engagement_id}/client-invitations",
+    action="client_contact.invite",
+    response_model=ClientInvitationOut,
+    status_code=201,
+    errors=(409,),
+)
+async def invite_client_route(
+    engagement_id: UUID, body: ClientInvitationIn, ctx: Ctx
+) -> ClientInvitationOut:
+    """The link is emailed, never returned (SPEC-015 AC-1)."""
+    invitation_id = await invite_client(ctx, engagement_id, body.email, body.role)
+    return ClientInvitationOut(invitation_id=invitation_id)
+
+
+@router.get(
+    "/{engagement_id}/client-contacts",
+    action="client_contact.read",
+    response_model=list[ClientContactOut],
+)
+async def client_contacts_route(engagement_id: UUID, ctx: Ctx) -> list[ClientContactOut]:
+    return [
+        ClientContactOut.model_validate(asdict(c))
+        for c in await client_contacts_of(ctx, engagement_id)
+    ]
+
+
+@router.post(
+    "/{engagement_id}/client-invitations/{invitation_id}/revoke",
+    action="client_contact.invite",
+    response_model=ClientInvitationOut,
+)
+async def revoke_client_invitation_route(
+    engagement_id: UUID, invitation_id: UUID, ctx: Ctx
+) -> ClientInvitationOut:
+    await revoke_client_invitation(ctx, engagement_id, invitation_id)
+    return ClientInvitationOut(invitation_id=invitation_id)
+
+
+@router.post(
+    "/{engagement_id}/client-invitations/{invitation_id}/resend",
+    action="client_contact.invite",
+    response_model=ClientInvitationOut,
+)
+async def resend_client_invitation_route(
+    engagement_id: UUID, invitation_id: UUID, ctx: Ctx
+) -> ClientInvitationOut:
+    await resend_client_invitation(ctx, engagement_id, invitation_id)
+    return ClientInvitationOut(invitation_id=invitation_id)
+
+
+class RemovedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    user_id: Annotated[UUID, classified("internal")]
+
+
+@router.delete(
+    "/{engagement_id}/client-contacts/{user_id}",
+    action="client_contact.remove",
+    response_model=RemovedOut,
+)
+async def remove_client_contact_route(engagement_id: UUID, user_id: UUID, ctx: Ctx) -> RemovedOut:
+    await remove_client_contact(ctx, engagement_id, user_id)
+    return RemovedOut(user_id=user_id)
 
 
 # --- Methodology templates (SPEC-008 §8) -------------------------------------------------------

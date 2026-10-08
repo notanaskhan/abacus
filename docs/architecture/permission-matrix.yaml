@@ -70,6 +70,9 @@ actions:
     client_contributor: client_visible_only
     platform_support_content: allow   # SPEC-012
   engagement.self_join:     {firm_admin: allow, notify: engagement_team}
+  client_contact.invite:    {engagement_partner: allow, manager: allow, client_admin: allow}   # SPEC-015 Q2 (client admins: contributors only, in the service)
+  client_contact.read:      {engagement_partner: allow, manager: allow, senior: allow, client_admin: allow}   # SPEC-015
+  client_contact.remove:    {engagement_partner: allow, manager: allow, client_admin: allow}   # SPEC-015 (client admins: contributors only)
   engagement.update:        {engagement_partner: allow, manager: allow}
   engagement.member_add:    {engagement_partner: allow, manager: allow}
   engagement.member_remove: {engagement_partner: allow, manager: allow}

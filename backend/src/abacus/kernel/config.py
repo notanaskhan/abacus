@@ -310,6 +310,9 @@ class Settings(BaseSettings):
     methodology_max_items: Annotated[int, classified("internal")] = 2000
     methodology_max_rules: Annotated[int, classified("internal")] = 2000
     unmapped_gap_min_abs_usd: Annotated[Decimal, classified("internal")] = Decimal(0)
+    # SPEC-015: links in emails point at the SPA; the local mailbox stands in for SES (Q1).
+    app_base_url: Annotated[str, classified("internal")] = "http://localhost:5173"
+    local_mailbox_dir: Annotated[str, classified("internal")] = ".local/mailbox"
     # Knowledge retrieval (SPEC-009): the embedding model and its price, and the limits (§7).
     embedding_model: Annotated[str, classified("internal")] = "fake-embed"
     embedding_dimensions: Annotated[int, classified("internal")] = 1024

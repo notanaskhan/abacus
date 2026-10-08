@@ -37,6 +37,8 @@ from abacus.kernel.db import TenantContext, identity_engine, tenant_session
 
 FirmRole = Literal["firm_admin", "practice_leader", "quality_partner"]
 EngagementRole = Literal["engagement_partner", "manager", "senior", "staff", "reviewer"]
+# SPEC-015: client users' roles on an engagement (client memberships only, a database trigger).
+ClientRole = Literal["client_admin", "client_contributor"]
 ENGAGEMENT_ROLES: frozenset[str] = frozenset(get_args(EngagementRole))
 
 _metadata = MetaData()
@@ -78,6 +80,7 @@ class MembershipRecord:
     membership_id: UUID
     firm_role: FirmRole | None
     firm_name: str
+    kind: str = "staff"  # SPEC-015: staff | client
 
 
 _USER = text(
@@ -85,7 +88,7 @@ _USER = text(
     "WHERE idp_issuer = :issuer AND idp_subject = :subject"
 )
 _ACTIVE_MEMBERSHIPS = text(
-    "SELECT m.tenant_id, m.id, m.firm_role, f.name FROM memberships m "
+    "SELECT m.tenant_id, m.id, m.firm_role, f.name, m.kind FROM memberships m "
     "JOIN firms f ON f.tenant_id = m.tenant_id "
     "WHERE m.user_id = :user AND m.status = 'active' ORDER BY f.name, m.tenant_id"
 )
@@ -109,6 +112,7 @@ async def active_memberships(user_id: UUID) -> list[MembershipRecord]:
             cast(UUID, row.id),
             cast(FirmRole | None, row.firm_role),
             str(row.name),
+            str(row.kind),
         )
         for row in rows
     ]
@@ -116,7 +120,7 @@ async def active_memberships(user_id: UUID) -> list[MembershipRecord]:
 
 async def engagement_role(
     tenant: TenantContext, user_id: UUID, engagement_id: UUID
-) -> EngagementRole | None:
+) -> EngagementRole | ClientRole | None:
     async with tenant_session(tenant) as session:
         role = (
             await session.execute(
@@ -126,7 +130,7 @@ async def engagement_role(
                 )
             )
         ).scalar_one_or_none()
-    return cast(EngagementRole | None, role)
+    return cast(EngagementRole | ClientRole | None, role)
 
 
 async def engagement_roles_in_firm(
@@ -371,3 +375,137 @@ async def active_firm_admins(tenant: TenantContext) -> list[UUID]:
             )
         )
         return [cast(UUID, row.user_id) for row in rows.all()]
+
+
+# --- Client invitations (SPEC-015) -------------------------------------------------------------
+
+
+async def insert_invitation(session: AsyncSession, values: dict[str, object]) -> None:
+    await session.execute(
+        text(
+            "INSERT INTO client_invitations (id, tenant_id, engagement_id, email, role, "
+            "invited_by, expires_at) VALUES (:id, :tenant_id, :engagement_id, :email, :role, "
+            ":invited_by, clock_timestamp() + make_interval(days => :days))"
+        ),
+        values,
+    )
+
+
+async def invitations_today(session: AsyncSession, engagement_id: UUID) -> int:
+    count = await session.scalar(
+        text(
+            "SELECT count(*) FROM client_invitations WHERE engagement_id = :e "
+            "AND created_at > clock_timestamp() - interval '1 day'"
+        ),
+        {"e": engagement_id},
+    )
+    return int(count or 0)
+
+
+async def get_invitation(
+    session: AsyncSession, invitation_id: UUID, *, lock: bool = False
+) -> RowMapping | None:
+    plain = text(
+        "SELECT id, engagement_id, email, role, invited_by, status, expires_at, created_at, "
+        "(status = 'pending' AND expires_at > clock_timestamp()) AS live "
+        "FROM client_invitations WHERE id = :id"
+    )
+    locked = text(
+        "SELECT id, engagement_id, email, role, invited_by, status, expires_at, created_at, "
+        "(status = 'pending' AND expires_at > clock_timestamp()) AS live "
+        "FROM client_invitations WHERE id = :id FOR UPDATE"
+    )
+    result = await session.execute(locked if lock else plain, {"id": invitation_id})
+    return result.mappings().first()
+
+
+async def pending_invitation_for(
+    session: AsyncSession, engagement_id: UUID, email: str
+) -> UUID | None:
+    return await session.scalar(
+        text(
+            "SELECT id FROM client_invitations WHERE engagement_id = :e "
+            "AND lower(email) = lower(:email) AND status = 'pending' FOR UPDATE"
+        ),
+        {"e": engagement_id, "email": email},
+    )
+
+
+async def set_invitation_status(
+    session: AsyncSession, invitation_id: UUID, status: str, accepted_by: UUID | None = None
+) -> None:
+    await session.execute(
+        text(
+            "UPDATE client_invitations SET status = :status, accepted_by = :by, "
+            "accepted_at = CASE WHEN :status = 'accepted' THEN clock_timestamp() END "
+            "WHERE id = :id"
+        ),
+        {"id": invitation_id, "status": status, "by": accepted_by},
+    )
+
+
+async def extend_invitation(session: AsyncSession, invitation_id: UUID, days: int) -> None:
+    await session.execute(
+        text(
+            "UPDATE client_invitations SET expires_at = clock_timestamp() + "
+            "make_interval(days => :days) WHERE id = :id AND status = 'pending'"
+        ),
+        {"id": invitation_id, "days": days},
+    )
+
+
+async def set_token_hash(session: AsyncSession, invitation_id: UUID, digest: str | None) -> None:
+    await session.execute(
+        text("SELECT invitation_token_set(:id, :hash)"), {"id": invitation_id, "hash": digest}
+    )
+
+
+async def find_token(session: AsyncSession, digest: str, identity: str) -> RowMapping | None:
+    result = await session.execute(
+        text("SELECT (invitation_token_find(:hash, :identity)).*"),
+        {"hash": digest, "identity": identity},
+    )
+    return result.mappings().first()
+
+
+async def provision_client_user(
+    session: AsyncSession, issuer: str, subject: str, email: str, display_name: str
+) -> UUID:
+    found = await session.scalar(
+        text("SELECT provision_client_user(:issuer, :subject, :email, :name)"),
+        {"issuer": issuer, "subject": subject, "email": email, "name": display_name},
+    )
+    return cast(UUID, found)
+
+
+async def membership_kind(session: AsyncSession, user_id: UUID) -> str | None:
+    return await session.scalar(
+        text("SELECT kind FROM memberships WHERE user_id = :u"), {"u": user_id}
+    )
+
+
+async def add_client_membership(session: AsyncSession, user_id: UUID) -> None:
+    await session.execute(text("SELECT add_client_membership(:u)"), {"u": user_id})
+
+
+async def remove_client_member(session: AsyncSession, engagement_id: UUID, user_id: UUID) -> bool:
+    removed = await session.scalar(
+        text("SELECT remove_client_member(:e, :u)"), {"e": engagement_id, "u": user_id}
+    )
+    return bool(removed)
+
+
+async def client_contacts(session: AsyncSession, engagement_id: UUID) -> Sequence[RowMapping]:
+    """The engagement's client members (with their names) and pending invitations."""
+    result = await session.execute(
+        text(
+            "SELECT 'member' AS kind, em.user_id AS id, em.role, NULL::text AS email, "
+            "NULL::timestamptz AS expires_at FROM engagement_members em "
+            "WHERE em.engagement_id = :e AND em.role IN ('client_admin', 'client_contributor') "
+            "UNION ALL SELECT 'invitation', ci.id, ci.role, ci.email, ci.expires_at "
+            "FROM client_invitations ci WHERE ci.engagement_id = :e AND ci.status = 'pending' "
+            "AND ci.expires_at > clock_timestamp() ORDER BY 1, 3, 2"
+        ),
+        {"e": engagement_id},
+    )
+    return result.mappings().all()

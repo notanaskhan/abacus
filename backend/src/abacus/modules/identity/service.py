@@ -66,6 +66,11 @@ def _bearer(authorization: str | None) -> str:
     return token.strip()
 
 
+def verify_bearer(authorization: str | None) -> VerifiedIdentity:
+    """The firm-user issuer's verification of a bearer token (`InvalidToken` otherwise)."""
+    return token_verifier().verify(_bearer(authorization))
+
+
 async def sign_in(authorization: str | None) -> SignedIn:
     try:
         identity = token_verifier().verify(_bearer(authorization))

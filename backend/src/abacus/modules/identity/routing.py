@@ -37,6 +37,7 @@ from abacus.modules.identity.service import (
     Unauthenticated,
     choose_tenant,
     sign_in,
+    verify_bearer,
 )
 from abacus.modules.identity.support import (
     SUPPORT_HEADER,
@@ -46,7 +47,7 @@ from abacus.modules.identity.support import (
     staff_from_token,
     support_context,
 )
-from abacus.modules.identity.tokens import InvalidToken
+from abacus.modules.identity.tokens import InvalidToken, VerifiedIdentity
 
 _Endpoint = TypeVar("_Endpoint", bound=Callable[..., object])
 SELF: Final = "self"
@@ -56,6 +57,9 @@ STAFF: Final = "staff"
 # SPEC-013 (Q3): a firm member acting only on their own rows (their notifications). No firm matrix
 # action applies; the service filters to the caller, and support contexts are refused.
 OWN: Final = "own"
+# SPEC-015 (TASK-030 D2): a verified firm-issuer identity with no account or membership needed
+# (accepting a client invitation). The service binds it to the invited email.
+IDENTITY: Final = "identity"
 
 
 class ErrorOut(BaseModel):
@@ -142,6 +146,18 @@ async def _support_context(
     return ctx
 
 
+async def current_identity(
+    authorization: Annotated[str | None, Header()] = None,
+) -> VerifiedIdentity:
+    """A token from the firm-user issuer, verified; no account required (`IDENTITY` routes)."""
+    try:
+        return verify_bearer(authorization)
+    except (InvalidToken, Unauthenticated):
+        raise HTTPException(
+            401, "not authenticated", headers={"WWW-Authenticate": "Bearer"}
+        ) from None
+
+
 async def current_member(
     ctx: Annotated[AuthContext, Depends(current_context)],
 ) -> AuthContext:
@@ -177,7 +193,7 @@ class AbacusRoute(APIRoute):
             with recording_checks() as checked:
                 response = await handler(request)
             if (
-                action not in (SELF, STAFF, OWN)
+                action not in (SELF, STAFF, OWN, IDENTITY)
                 and action not in checked
                 and response.status_code < 400
             ):
@@ -205,13 +221,16 @@ class AbacusRouter(APIRouter):
         status_code: int | None = None,
         errors: Sequence[int] = (),
     ) -> None:
-        if action not in (SELF, STAFF, OWN) and action not in RULES:
+        if action not in (SELF, STAFF, OWN, IDENTITY) and action not in RULES:
             raise ValueError(f"route {path}: action {action!r} is not in the permission matrix")
         if response_model is None:
             raise ValueError(f"route {path}: a response model is required")
-        auth = {SELF: current_signed_in, STAFF: current_staff, OWN: current_member}.get(
-            action, current_context
-        )
+        auth = {
+            SELF: current_signed_in,
+            STAFF: current_staff,
+            OWN: current_member,
+            IDENTITY: current_identity,
+        }.get(action, current_context)
         super().add_api_route(
             path,
             endpoint,

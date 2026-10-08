@@ -275,8 +275,9 @@ def test_ac1_role_like_claims_are_ignored(
     assert verifier.verify(mint(idp)) == verifier.verify(idp.token("user-1"))
 
 
-def test_ac1_verified_identity_carries_only_issuer_subject_and_mfa_at() -> None:
-    assert {f.name for f in fields(VerifiedIdentity)} == {"issuer", "subject", "mfa_at"}
+def test_ac1_verified_identity_carries_only_issuer_subject_mfa_at_and_verified_email() -> None:
+    # SPEC-015: the provider-verified email binds an invitation to the person accepting it.
+    assert {f.name for f in fields(VerifiedIdentity)} == {"issuer", "subject", "mfa_at", "email"}
 
 
 # --- invalid tokens ----------------------------------------------------------------------------

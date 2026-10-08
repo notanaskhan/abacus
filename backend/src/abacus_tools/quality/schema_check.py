@@ -53,6 +53,7 @@ APP = "abacus_app"
 NON_TENANT_TABLES = frozenset(
     {"alembic_version", "work_slots", "work_waiters", "work_grants", "provider_capacity"}
     | {"review_reason_codes", "eval_runs", "eval_case_results"}
+    | {"invitation_tokens", "invitation_failures"}  # SPEC-015: definer functions only
 )
 # Tables the app may insert into and read, never update or delete (ADR-004); TASK-009/010 add.
 INSERT_ONLY_TABLES: frozenset[str] = frozenset(
@@ -93,6 +94,10 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "methodology_account_rules": frozenset(
         {"tenant_id", "version_id", "area_code", "account_from", "account_to", "position"}
+    ),
+    # Client invitations (SPEC-015): never the token (only its hash, elsewhere).
+    "client_invitations": frozenset(
+        {"id", "tenant_id", "engagement_id", "email", "role", "invited_by", "expires_at"}
     ),
     # Notifications (SPEC-013): identifiers only; one per recipient per event.
     "notifications": frozenset(
@@ -194,6 +199,7 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "budgets": frozenset({"monthly_soft_usd", "monthly_hard_usd", "updated_by", "updated_at"}),
     "feature_flag_states": frozenset({"value", "set_by", "reason", "set_at"}),  # SPEC-011
     "notifications": frozenset({"read_at"}),  # SPEC-013
+    "client_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
     "support_sessions": frozenset(  # SPEC-012: lifecycle only
         {"status", "approved_by_kind", "approved_by", "starts_at", "expires_at", "ended_at"}
         | {"acknowledged_at"}
@@ -254,6 +260,10 @@ TABLE_OWNERS: dict[str, str] = {
     "feature_flag_states": "kernel.flags",  # SPEC-011
     "support_sessions": "identity",  # SPEC-012
     "notifications": "notifications",  # SPEC-013
+    # SPEC-015: invitations, and the token and failure tables reached only by definer functions.
+    "client_invitations": "identity",
+    "invitation_tokens": "identity",
+    "invitation_failures": "identity",
     "knowledge_documents": "agents",  # SPEC-009 Q5
     "knowledge_chunks": "agents",
     # The work slot ledger (TASK-018 D3): reached only through SECURITY DEFINER functions.
@@ -268,6 +278,7 @@ TABLE_OWNERS: dict[str, str] = {
 GLOBAL_TABLES = frozenset(
     {"users", "work_slots", "work_waiters", "work_grants", "provider_capacity"}
     | {"review_reason_codes", "eval_runs", "eval_case_results"}
+    | {"invitation_tokens", "invitation_failures"}
 )
 # SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
 DEFINER_FUNCTIONS = frozenset(
@@ -281,6 +292,9 @@ DEFINER_FUNCTIONS = frozenset(
     | {"support_sessions_review"}
     # 0024 (TASK-028): the daily notification purge (a count only).
     | {"notifications_purge"}
+    # 0025 (TASK-030 D3, D5): invitation tokens and failures, client users and memberships.
+    | {"invitation_token_set", "invitation_token_find", "provision_client_user"}
+    | {"add_client_membership", "remove_client_member"}
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).

@@ -12,12 +12,15 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
 from abacus.modules.identity.context import AuthContext
+from abacus.modules.identity.invitations import accept_invitation
 from abacus.modules.identity.repository import FirmRole
 from abacus.modules.identity.routing import (
+    IDENTITY,
     SELF,
     STAFF,
     AbacusRouter,
     current_context,
+    current_identity,
     current_signed_in,
     current_staff,
 )
@@ -39,6 +42,7 @@ from abacus.modules.identity.support import (
     request_session,
     revoke_session,
 )
+from abacus.modules.identity.tokens import VerifiedIdentity
 
 router = AbacusRouter(prefix="/v1", tags=["identity"])
 
@@ -49,6 +53,8 @@ class MembershipOut(BaseModel):
     tenant_id: Annotated[UUID, classified("internal")]
     firm_name: Annotated[str, classified("confidential")]
     firm_role: Annotated[FirmRole | None, classified("internal")]
+    # SPEC-015: `client` members use the client route tree (ADR-011); `staff` the firm's.
+    kind: Annotated[Literal["staff", "client"], classified("internal")] = "staff"
 
 
 class MeOut(BaseModel):
@@ -71,7 +77,12 @@ async def me(signed_in: Annotated[SignedIn, Depends(current_signed_in)]) -> MeOu
         email=signed_in.user.email,
         display_name=signed_in.user.display_name,
         memberships=[
-            MembershipOut(tenant_id=m.tenant_id, firm_name=m.firm_name, firm_role=m.firm_role)
+            MembershipOut(
+                tenant_id=m.tenant_id,
+                firm_name=m.firm_name,
+                firm_role=m.firm_role,
+                kind="client" if m.kind == "client" else "staff",
+            )
             for m in memberships
         ],
         active_tenant_id=memberships[0].tenant_id if len(memberships) == 1 else None,
@@ -244,3 +255,32 @@ async def acknowledge_support_session_route(
     session_id: UUID, ctx: SupportCtx
 ) -> SupportSessionOut:
     return _session_out(await acknowledge_session(ctx, session_id))
+
+
+# --- Accepting a client invitation (SPEC-015 §8) -------------------------------------------------
+
+invitation_router = AbacusRouter(prefix="/v1/invitations", tags=["invitations"])
+
+
+class AcceptInvitationIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    token: Annotated[str, Field(min_length=20, max_length=200), classified("restricted")]
+
+
+class AcceptedInvitationOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    tenant_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+
+
+@invitation_router.post("/accept", action=IDENTITY, response_model=AcceptedInvitationOut)
+async def accept_invitation_route(
+    body: AcceptInvitationIn, identity: Annotated[VerifiedIdentity, Depends(current_identity)]
+) -> AcceptedInvitationOut:
+    """A passwordlessly signed-in person accepts (TASK-030 D2): no account is needed yet."""
+    accepted = await accept_invitation(identity, body.token)
+    return AcceptedInvitationOut(
+        tenant_id=accepted.tenant_id, engagement_id=accepted.engagement_id
+    )

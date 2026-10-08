@@ -43,6 +43,7 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
         worker_main.connections,
         worker_main.agents,
         worker_main.notifications,
+        worker_main.communications,  # SPEC-015: invitation emails
     ) == worker_main.MODULES
     assert tuple(m.SUBSCRIPTIONS for m in worker_main.MODULES) == worker_main.SUBSCRIBERS
     assert worker_main.connections.SUBSCRIPTIONS == {}
@@ -54,7 +55,9 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
     assert isinstance(built, RoutingPublisher)
     # SPEC-009 adds knowledge embedding beside screening.
     assert list(built.handlers)[:2] == [EVIDENCE_VERSION_CREATED, "knowledge_document.added"]
-    assert set(list(built.handlers)[2:]) == set(worker_main.notifications.CATALOGUE)  # SPEC-013
+    assert set(list(built.handlers)[2:]) == set(worker_main.notifications.CATALOGUE) | {
+        "client_invitation.issued"  # SPEC-015
+    }
     assert list(built.handlers[EVIDENCE_VERSION_CREATED]) == [worker_main.agents.start_screening]
 
 

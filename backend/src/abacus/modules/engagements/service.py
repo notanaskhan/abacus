@@ -9,7 +9,7 @@ import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import cast
+from typing import Literal, cast
 from uuid import UUID, uuid4
 
 from sqlalchemy import ColumnElement, Select, select
@@ -46,14 +46,22 @@ from abacus.modules.engagements.workbook import (
 from abacus.modules.identity.api import (
     Actor,
     AuthContext,
+    ContactView,
     Resource,
     TeamMember,
     add_creator_as_partner,
     add_self_joined_admin,
     authorise,
+    contacts,
+    create_invitation,
     engagement_team,
+    remove_client,
+    resend_invitation,
+    revoke_invitation,
 )
 from abacus.modules.organisations.api import ClientNames, client_names, create_client
+
+ClientRole = Literal["client_admin", "client_contributor"]
 
 
 @dataclass(frozen=True)
@@ -344,3 +352,46 @@ async def pin_methodology(
 def active_engagements() -> Select[UUID]:
     """The firm's non-archived engagements, as a subquery for identity (SPEC-014)."""
     return select(Engagement.id).where(Engagement.status != "archived")
+
+
+# --- Client contacts (SPEC-015) ----------------------------------------------------------------
+
+
+async def invite_client(
+    ctx: AuthContext, engagement_id: UUID, email: str, role: ClientRole
+) -> UUID:
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, "client_contact.invite", ref.resource())
+        return await create_invitation(tx, ctx, engagement_id, email, role)
+
+
+async def client_contacts_of(ctx: AuthContext, engagement_id: UUID) -> list[ContactView]:
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "client_contact.read", ref.resource())
+    return await contacts(ctx, engagement_id)
+
+
+async def revoke_client_invitation(
+    ctx: AuthContext, engagement_id: UUID, invitation_id: UUID
+) -> None:
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, "client_contact.invite", ref.resource())
+        await revoke_invitation(tx, ctx, engagement_id, invitation_id)
+
+
+async def resend_client_invitation(
+    ctx: AuthContext, engagement_id: UUID, invitation_id: UUID
+) -> None:
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, "client_contact.invite", ref.resource())
+        await resend_invitation(tx, ctx, engagement_id, invitation_id)
+
+
+async def remove_client_contact(ctx: AuthContext, engagement_id: UUID, user_id: UUID) -> None:
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, "client_contact.remove", ref.resource())
+        await remove_client(tx, ctx, engagement_id, user_id)

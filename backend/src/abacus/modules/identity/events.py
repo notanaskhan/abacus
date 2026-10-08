@@ -32,3 +32,12 @@ class EngagementMemberSelfJoined(DomainEvent):
 
     engagement_id: Annotated[UUID, classified("internal")]
     user_id: Annotated[UUID, classified("internal")]
+
+
+class ClientInvitationIssued(DomainEvent):
+    """An invitation needs its email (created or resent): communications issues the token at
+    delivery, so it is never stored (SPEC-015; TASK-030 D1)."""
+
+    event_type: ClassVar[str] = "client_invitation.issued"
+
+    invitation_id: Annotated[UUID, classified("internal")]
