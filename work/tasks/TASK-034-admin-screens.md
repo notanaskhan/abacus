@@ -4,7 +4,7 @@ title: Knowledge, budget, support access and walls screens
 spec: SPEC-019
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7]
 risk_zone: amber
-status: awaiting-plan-approval
+status: done
 branch: task-034-admin-screens
 worktree:
 created: 2026-10-08
@@ -30,7 +30,7 @@ All of SPEC-019.
 - Code: `apps/web` (shell, `Methodology`, `mfa`), the generated client, `identity` (walls, memberships), `organisations.api.firm_names`, `engagements` routes
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-08: D1–D2). Approved by founder: paths listed under *Protected paths*
 
 ### Design (for founder review)
 1. **The picker routes (Q4, D1):**
@@ -58,12 +58,18 @@ All of SPEC-019.
 - **D2. Write the approval file for the protected paths above?** *Recommendation: yes.*
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
-- [ ] Type check, lint, format, architecture and dependency rules pass
-- [ ] Every endpoint checks authorisation
-- [ ] Docs updated
+- [x] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
+- [x] Type check, lint, format, architecture and dependency rules pass
+- [x] Every endpoint checks authorisation
+- [x] Docs updated
 
 ## Progress log
+- `2026-10-08` — Implemented:
+  - the picker routes `GET /v1/firm/members` (identity) and `GET /v1/firm/clients` (engagements), both authorised by `wall.create`;
+  - Knowledge on the rail; the Firm admin section with role-filtered tabs and the emergency banner;
+  - the Knowledge, Knowledge documents (with polling and plain-words failures), Budget and spend, Support access and Walls screens.
+
+  Component tests for AC-1 to AC-7 (15 new; web 135), backend unit (8,903) and the gates pass.
 - `2026-10-08` — SPEC-019 approved and merged (#63). Design written for founder review.
 
 ## Decisions made during this task

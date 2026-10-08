@@ -65,7 +65,13 @@ from abacus.modules.identity.api import (
     resend_invitation,
     revoke_invitation,
 )
-from abacus.modules.organisations.api import ClientNames, client_names, create_client
+from abacus.modules.organisations.api import (
+    ClientNames,
+    FirmName,
+    client_names,
+    create_client,
+    firm_names,
+)
 
 ClientRole = Literal["client_admin", "client_contributor"]
 
@@ -441,3 +447,10 @@ async def remove_from_team(ctx: AuthContext, engagement_id: UUID, user_id: UUID)
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "engagement.member_remove", ref.resource())
         await remove_member(tx, ctx, engagement_id, user_id)
+
+
+async def firm_clients(ctx: AuthContext) -> list[FirmName]:
+    """SPEC-019 Q4: the firm's clients (entities left out), for the wall picker."""
+    await authorise(ctx, "wall.create", Resource.firm(ctx.tenant_id))
+    names = await firm_names(ctx.tenant)
+    return sorted((n for n in names if n.id == n.client_id), key=lambda n: n.name.casefold())

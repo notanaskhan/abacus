@@ -26,6 +26,7 @@ from abacus.modules.engagements.service import (
     create_engagement,
     engagement_metadata,
     engagements_for,
+    firm_clients,
     import_template,
     invite_client,
     methodology_templates,
@@ -434,3 +435,20 @@ async def get_version_route(version_id: UUID, ctx: Ctx) -> MethodologyVersionOut
             for r in view.rules
         ],
     )
+
+
+# --- Firm clients, for the wall picker (SPEC-019 Q4) ---------------------------------------------
+
+firm_router = AbacusRouter(prefix="/v1/firm", tags=["firm"])
+
+
+class FirmClientOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    client_id: Annotated[UUID, classified("internal")]
+    name: Annotated[str, classified("confidential")]
+
+
+@firm_router.get("/clients", action="wall.create", response_model=list[FirmClientOut])
+async def firm_clients_route(ctx: Ctx) -> list[FirmClientOut]:
+    return [FirmClientOut(client_id=c.client_id, name=c.name) for c in await firm_clients(ctx)]

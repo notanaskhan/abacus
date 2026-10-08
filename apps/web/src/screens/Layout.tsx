@@ -2,6 +2,7 @@ import { meOptions } from "@abacus/api-client/query";
 import {
   Alert,
   Bell,
+  BookOpen,
   Building2,
   Button,
   Card,
@@ -110,6 +111,9 @@ function SignedIn(): JSX.Element {
         </Link>
         <Link to="/" aria-label="Engagements" title="Engagements" className={RAIL_LINK}>
           <FolderOpen aria-hidden="true" className="size-5" />
+        </Link>
+        <Link to="/knowledge" aria-label="Knowledge" title="Knowledge" className={RAIL_LINK}>
+          <BookOpen aria-hidden="true" className="size-5" />
         </Link>
         {isAdmin && (
           <Link

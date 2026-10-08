@@ -546,3 +546,14 @@ async def remove_team_member_row(session: AsyncSession, engagement_id: UUID, use
         text("SELECT team_member_remove(:e, :u)"), {"e": engagement_id, "u": user_id}
     )
     return str(found)
+
+
+async def active_staff_ids(session: AsyncSession) -> list[UUID]:
+    """The firm's active staff members (SPEC-019 Q4: the wall picker); never client users."""
+    rows = await session.execute(
+        text(
+            "SELECT user_id FROM memberships WHERE kind = 'staff' AND status = 'active' "
+            "ORDER BY user_id"
+        )
+    )
+    return [cast(UUID, row[0]) for row in rows.all()]
