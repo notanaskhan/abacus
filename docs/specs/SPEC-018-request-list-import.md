@@ -1,7 +1,7 @@
 ---
 id: SPEC-018
 title: Request list import from Excel
-status: draft
+status: approved
 owner: founder
 risk_zone: amber
 related_adrs: [ADR-052, ADR-050, ADR-007, ADR-020]
@@ -135,11 +135,12 @@ None.
 No migration and no flag.
 
 ## 20. Open questions
-- [ ] **Q1: how a firm's layout is read.** *Recommendation:* map columns on upload (sheet, header row, which columns), with a preview, because firms' layouts vary too much for one fixed template. Suggestions come from header names.
-- [ ] **Q2: matching audit areas.** *Recommendation:* match the cell to the pinned methodology's area name or code, case-insensitively and with whitespace normalised. Otherwise keep the cell's text as a new free-text area, flagged "new" in the preview. Rows with an empty area go to "Unassigned".
-- [ ] **Q3: duplicates.** *Recommendation:* skip rows whose normalised (area, description) already exists on the engagement or earlier in the file. Report the count. Never change existing items.
-- [ ] **Q4: limits.** *Recommendation:* 5 MB, 2,000 data rows, descriptions up to 2,000 characters and areas up to 100. Over the limit is an error, not a truncation.
-- [ ] **Q5: the file.** *Recommendation:* not stored. Its SHA-256 goes in the `request_list.imported` audit event, and the user re-sends it for the import step (no server-side upload store).
+None. Answered by the founder on 2026-10-08 (all recommendations):
+- [x] **Q1: how a firm's layout is read.** *Recommendation:* map columns on upload (sheet, header row, which columns), with a preview, because firms' layouts vary too much for one fixed template. Suggestions come from header names.
+- [x] **Q2: matching audit areas.** *Recommendation:* match the cell to the pinned methodology's area name or code, case-insensitively and with whitespace normalised. Otherwise keep the cell's text as a new free-text area, flagged "new" in the preview. Rows with an empty area go to "Unassigned".
+- [x] **Q3: duplicates.** *Recommendation:* skip rows whose normalised (area, description) already exists on the engagement or earlier in the file. Report the count. Never change existing items.
+- [x] **Q4: limits.** *Recommendation:* 5 MB, 2,000 data rows, descriptions up to 2,000 characters and areas up to 100. Over the limit is an error, not a truncation.
+- [x] **Q5: the file.** *Recommendation:* not stored. Its SHA-256 goes in the `request_list.imported` audit event, and the user re-sends it for the import step (no server-side upload store).
 
 ## 21. Future / explicitly deferred
 - Model fallback for tiers and areas (increment 5).
