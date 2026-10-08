@@ -135,6 +135,22 @@ ACTIONS: dict[str, dict[str, str]] = {
         "firm_admin": "allow",
         "notify": "engagement_team",
     },
+    "client_contact.invite": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "client_admin": "allow",
+    },
+    "client_contact.read": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "client_admin": "allow",
+    },
+    "client_contact.remove": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "client_admin": "allow",
+    },
     "engagement.update": {
         "engagement_partner": "allow",
         "manager": "allow",

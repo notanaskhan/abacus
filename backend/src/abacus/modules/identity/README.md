@@ -62,3 +62,18 @@ On a firm-level resource (`Resource.firm`), a **read** action counts the person'
 - The lookup is skipped when the firm role already allows the action, cached per request, and fails closed.
 - Only `allow` grants; conditional decisions and firm-level writes are unchanged.
 - Support contexts, agents and system contexts never gain engagement roles here.
+
+## Client users and invitations (SPEC-015; TASK-030)
+Members are `staff` or `client` (`memberships.kind`). A client membership has no firm role, and client engagement roles (`client_admin`, `client_contributor`) belong only to client memberships, enforced by a trigger.
+
+**The token:**
+- An invitation stores no token.
+- On `client_invitation.issued`, communications calls `issue_invitation_token`, which keeps only the SHA-256 in `invitation_tokens`, and emails the link (`#token=…`).
+- A resend issues a new token, and the old one stops working.
+
+**Accepting:** `POST /v1/invitations/accept` (route marker `IDENTITY`) needs only a verified identity whose provider-verified email matches the invitation.
+- Users and client memberships are created only by the definer functions `provision_client_user` and `add_client_membership`.
+- Every failure is the same 404.
+- 10 failures in an hour lock the identity for 15 minutes.
+
+**Managing contacts:** firm partners and managers invite, list, revoke, resend and remove (`/v1/engagements/{id}/client-…`). Client admins manage contributors only.

@@ -38,6 +38,7 @@ ROUTERS = (
     identity.router,
     identity.staff_router,
     identity.firm_support_router,
+    identity.invitation_router,
     engagements.router,
     engagements.methodology_router,
     requests.router,

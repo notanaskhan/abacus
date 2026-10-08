@@ -41,6 +41,8 @@ class VerifiedIdentity:
     subject: str
     # When the user last authenticated with multi-factor, per the provider; None if not MFA.
     mfa_at: datetime | None
+    # SPEC-015: the provider-verified email (`email` with `email_verified: true`), else None.
+    email: str | None = None
 
 
 class TokenVerifier(Protocol):
@@ -100,7 +102,15 @@ class JwtVerifier:
         subject = claims["sub"]
         if not isinstance(subject, str) or not 1 <= len(subject) <= 255:
             raise InvalidToken("subject must be a non-empty string")
-        return VerifiedIdentity(self._issuer, subject, _mfa_at(claims))
+        return VerifiedIdentity(self._issuer, subject, _mfa_at(claims), _verified_email(claims))
+
+
+def _verified_email(claims: dict[str, object]) -> str | None:
+    email = claims.get("email")
+    if claims.get("email_verified") is not True or not isinstance(email, str):
+        return None
+    email = email.strip()
+    return email if 3 <= len(email) <= 320 and "@" in email else None
 
 
 def _parse_key(entry: object) -> jwt.PyJWK | None:

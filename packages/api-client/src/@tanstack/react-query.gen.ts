@@ -3,8 +3,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, acknowledgeSupportSession, addDocument, applyMethodology, approveSupportSession, assign, createEngagement, createRequestItem, createWall, emergencyApprove, endSupportSession, engagementGraph, getBudget, getDocument, getEngagement, getRetrieval, getVersion, importTemplate, listDocuments, listEngagements, listEvidenceVersions, listNotifications, listRequestItems, listScreeningResults, listSupportSessions, listTemplates, listWalls, me, metering, type Options, putBudget, readAll, readNotification, reasonCodes, reject, release, removeWall, requestSupportSession, reviewQueue, revokeSupportSession, search, selfJoin, sendBack, startRetrieval, take, withdrawDocument } from '../sdk.gen';
-import type { AcceptData, AcceptError, AcceptResponse, AcknowledgeSupportSessionData, AcknowledgeSupportSessionError, AcknowledgeSupportSessionResponse, AddDocumentData, AddDocumentError, AddDocumentResponse, ApplyMethodologyData, ApplyMethodologyError, ApplyMethodologyResponse, ApproveSupportSessionData, ApproveSupportSessionError, ApproveSupportSessionResponse, AssignData, AssignError, AssignResponse, CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, EmergencyApproveData, EmergencyApproveError, EmergencyApproveResponse, EndSupportSessionData, EndSupportSessionError, EndSupportSessionResponse, EngagementGraphData, EngagementGraphError, EngagementGraphResponse, GetBudgetData, GetBudgetError, GetBudgetResponse, GetDocumentData, GetDocumentError, GetDocumentResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, GetVersionData, GetVersionError, GetVersionResponse, ImportTemplateData, ImportTemplateError, ImportTemplateResponse, ListDocumentsData, ListDocumentsError, ListDocumentsResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListNotificationsData, ListNotificationsError, ListNotificationsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListSupportSessionsData, ListSupportSessionsError, ListSupportSessionsResponse, ListTemplatesData, ListTemplatesError, ListTemplatesResponse, ListWallsData, ListWallsError, ListWallsResponse, MeData, MeError, MeResponse, MeteringData, MeteringError, MeteringResponse, PutBudgetData, PutBudgetError, PutBudgetResponse, ReadAllData, ReadAllError, ReadAllResponse, ReadNotificationData, ReadNotificationError, ReadNotificationResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, RequestSupportSessionData, RequestSupportSessionError, RequestSupportSessionResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, RevokeSupportSessionData, RevokeSupportSessionError, RevokeSupportSessionResponse, SearchData, SearchError, SearchResponse, SelfJoinData, SelfJoinError, SelfJoinResponse, SendBackData, SendBackError, SendBackResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, TakeData, TakeError, TakeResponse, WithdrawDocumentData, WithdrawDocumentError, WithdrawDocumentResponse } from '../types.gen';
+import { accept, acceptInvitation, acknowledgeSupportSession, addDocument, applyMethodology, approveSupportSession, assign, clientContacts, createEngagement, createRequestItem, createWall, emergencyApprove, endSupportSession, engagementGraph, getBudget, getDocument, getEngagement, getRetrieval, getVersion, importTemplate, inviteClient, listDocuments, listEngagements, listEvidenceVersions, listNotifications, listRequestItems, listScreeningResults, listSupportSessions, listTemplates, listWalls, me, metering, type Options, putBudget, readAll, readNotification, reasonCodes, reject, release, removeClientContact, removeWall, requestSupportSession, resendClientInvitation, reviewQueue, revokeClientInvitation, revokeSupportSession, search, selfJoin, sendBack, startRetrieval, take, withdrawDocument } from '../sdk.gen';
+import type { AcceptData, AcceptError, AcceptInvitationData, AcceptInvitationError, AcceptInvitationResponse, AcceptResponse, AcknowledgeSupportSessionData, AcknowledgeSupportSessionError, AcknowledgeSupportSessionResponse, AddDocumentData, AddDocumentError, AddDocumentResponse, ApplyMethodologyData, ApplyMethodologyError, ApplyMethodologyResponse, ApproveSupportSessionData, ApproveSupportSessionError, ApproveSupportSessionResponse, AssignData, AssignError, AssignResponse, ClientContactsData, ClientContactsError, ClientContactsResponse, CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, EmergencyApproveData, EmergencyApproveError, EmergencyApproveResponse, EndSupportSessionData, EndSupportSessionError, EndSupportSessionResponse, EngagementGraphData, EngagementGraphError, EngagementGraphResponse, GetBudgetData, GetBudgetError, GetBudgetResponse, GetDocumentData, GetDocumentError, GetDocumentResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, GetVersionData, GetVersionError, GetVersionResponse, ImportTemplateData, ImportTemplateError, ImportTemplateResponse, InviteClientData, InviteClientError, InviteClientResponse, ListDocumentsData, ListDocumentsError, ListDocumentsResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListNotificationsData, ListNotificationsError, ListNotificationsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListSupportSessionsData, ListSupportSessionsError, ListSupportSessionsResponse, ListTemplatesData, ListTemplatesError, ListTemplatesResponse, ListWallsData, ListWallsError, ListWallsResponse, MeData, MeError, MeResponse, MeteringData, MeteringError, MeteringResponse, PutBudgetData, PutBudgetError, PutBudgetResponse, ReadAllData, ReadAllError, ReadAllResponse, ReadNotificationData, ReadNotificationError, ReadNotificationResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseResponse, RemoveClientContactData, RemoveClientContactError, RemoveClientContactResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, RequestSupportSessionData, RequestSupportSessionError, RequestSupportSessionResponse, ResendClientInvitationData, ResendClientInvitationError, ResendClientInvitationResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, RevokeClientInvitationData, RevokeClientInvitationError, RevokeClientInvitationResponse, RevokeSupportSessionData, RevokeSupportSessionError, RevokeSupportSessionResponse, SearchData, SearchError, SearchResponse, SelfJoinData, SelfJoinError, SelfJoinResponse, SendBackData, SendBackError, SendBackResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, TakeData, TakeError, TakeResponse, WithdrawDocumentData, WithdrawDocumentError, WithdrawDocumentResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -126,6 +126,94 @@ export const getEngagementOptions = (options: Options<GetEngagementData>) => que
     },
     queryKey: getEngagementQueryKey(options)
 });
+
+export const clientContactsQueryKey = (options: Options<ClientContactsData>) => createQueryKey('clientContacts', options);
+
+/**
+ * Client Contacts Route
+ */
+export const clientContactsOptions = (options: Options<ClientContactsData>) => queryOptions<ClientContactsResponse, ClientContactsError, ClientContactsResponse, ReturnType<typeof clientContactsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await clientContacts({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: clientContactsQueryKey(options)
+});
+
+/**
+ * Remove Client Contact Route
+ */
+export const removeClientContactMutation = (options?: Partial<Options<RemoveClientContactData>>): UseMutationOptions<RemoveClientContactResponse, RemoveClientContactError, Options<RemoveClientContactData>> => {
+    const mutationOptions: UseMutationOptions<RemoveClientContactResponse, RemoveClientContactError, Options<RemoveClientContactData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await removeClientContact({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Invite Client Route
+ *
+ * The link is emailed, never returned (SPEC-015 AC-1).
+ */
+export const inviteClientMutation = (options?: Partial<Options<InviteClientData>>): UseMutationOptions<InviteClientResponse, InviteClientError, Options<InviteClientData>> => {
+    const mutationOptions: UseMutationOptions<InviteClientResponse, InviteClientError, Options<InviteClientData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await inviteClient({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Resend Client Invitation Route
+ */
+export const resendClientInvitationMutation = (options?: Partial<Options<ResendClientInvitationData>>): UseMutationOptions<ResendClientInvitationResponse, ResendClientInvitationError, Options<ResendClientInvitationData>> => {
+    const mutationOptions: UseMutationOptions<ResendClientInvitationResponse, ResendClientInvitationError, Options<ResendClientInvitationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await resendClientInvitation({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Revoke Client Invitation Route
+ */
+export const revokeClientInvitationMutation = (options?: Partial<Options<RevokeClientInvitationData>>): UseMutationOptions<RevokeClientInvitationResponse, RevokeClientInvitationError, Options<RevokeClientInvitationData>> => {
+    const mutationOptions: UseMutationOptions<RevokeClientInvitationResponse, RevokeClientInvitationError, Options<RevokeClientInvitationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await revokeClientInvitation({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
 
 export const listEvidenceVersionsQueryKey = (options: Options<ListEvidenceVersionsData>) => createQueryKey('listEvidenceVersions', options);
 
@@ -415,6 +503,25 @@ export const selfJoinMutation = (options?: Partial<Options<SelfJoinData>>): UseM
     const mutationOptions: UseMutationOptions<SelfJoinResponse, SelfJoinError, Options<SelfJoinData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await selfJoin({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Accept Invitation Route
+ *
+ * A passwordlessly signed-in person accepts (TASK-030 D2): no account is needed yet.
+ */
+export const acceptInvitationMutation = (options?: Partial<Options<AcceptInvitationData>>): UseMutationOptions<AcceptInvitationResponse, AcceptInvitationError, Options<AcceptInvitationData>> => {
+    const mutationOptions: UseMutationOptions<AcceptInvitationResponse, AcceptInvitationError, Options<AcceptInvitationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await acceptInvitation({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

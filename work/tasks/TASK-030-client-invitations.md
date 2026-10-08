@@ -4,7 +4,7 @@ title: Client invitations and client users
 spec: SPEC-015
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10]
 risk_zone: red
-status: awaiting-plan-approval
+status: done
 branch: task-030-client-invitations
 worktree:
 created: 2026-10-08
@@ -34,7 +34,7 @@ All of SPEC-015. Excluded: the client SPA route tree, SES, and bulk import.
   - migrations 0001, 0005 and 0006 (`users`, `memberships`, `engagement_members`)
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-08: D1–D6). Approved by founder: paths listed under *Protected paths*
 
 ### Design (for founder review)
 1. **The token is never at rest (D1):**
@@ -96,11 +96,25 @@ All of SPEC-015. Excluded: the client SPA route tree, SES, and bulk import.
 - [ ] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-08` — Implemented:
+  - migration 0025 (membership kind, client roles and the kind trigger, `client_invitations`, `invitation_tokens`, `invitation_failures`, five definer functions);
+  - identity invitations (create, revoke, resend, remove, contacts, issue token, accept);
+  - the `IDENTITY` route marker and `current_identity`;
+  - the verified email claim;
+  - the membership kind on `/v1/me`;
+  - engagement contact routes;
+  - the communications transport (local mailbox) and invitation delivery;
+  - the matrix actions, schema maps and pins.
+
+  Unit tests (8,903) and gates pass. An end-to-end run against local Postgres passed: invite, email to the mailbox, resend kills the old link, wrong email refused, accept once, replay refused, client authorised by client rows and refused firm actions, removal effective.
 - `2026-10-08` — SPEC-015 approved and merged (#54). Design written for founder review.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| The invitation email isn't run through the scope checker | It's a fixed template with only the link and a date; nothing client-specific to check | No |
+| Each acceptance attempt is audited in the platform (nil) tenant, because the unit of work needs an event to commit the failure counter | Security attempts are worth a trail; the firm is unknown until the token matches | No |
+| The link carries the token in the URL fragment (`#token=`) | Fragments aren't sent to servers or logged by proxies | No |
 
 ## Questions for the human
 - Design questions D1–D6 (above).

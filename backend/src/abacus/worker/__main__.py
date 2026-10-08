@@ -54,12 +54,13 @@ from abacus.kernel.temporal_metrics import ScheduleToStartInterceptor
 from abacus.kernel.uow import Handler
 from abacus.kernel.uow.relay import RoutingPublisher, run_relay
 from abacus.modules.agents import api as agents
+from abacus.modules.communications import api as communications
 from abacus.modules.connections import api as connections
 from abacus.modules.evidence.api import check_ready
 from abacus.modules.notifications import api as notifications
 
 GRACEFUL_SHUTDOWN = timedelta(seconds=60)
-MODULES = (connections, agents, notifications)
+MODULES = (connections, agents, notifications, communications)
 SUBSCRIBERS = tuple(module.SUBSCRIPTIONS for module in MODULES)
 
 

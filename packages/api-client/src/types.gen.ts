@@ -19,6 +19,30 @@ export type AcceptIn = {
 };
 
 /**
+ * AcceptInvitationIn
+ */
+export type AcceptInvitationIn = {
+    /**
+     * Token
+     */
+    token: string;
+};
+
+/**
+ * AcceptedInvitationOut
+ */
+export type AcceptedInvitationOut = {
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Tenant Id
+     */
+    tenant_id: string;
+};
+
+/**
  * AccountRuleOut
  */
 export type AccountRuleOut = {
@@ -122,6 +146,56 @@ export type BudgetOut = {
      * Spent This Month Usd
      */
     spent_this_month_usd: string;
+};
+
+/**
+ * ClientContactOut
+ */
+export type ClientContactOut = {
+    /**
+     * Email
+     */
+    email: string | null;
+    /**
+     * Expires At
+     */
+    expires_at: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'member' | 'invitation';
+    /**
+     * Role
+     */
+    role: string;
+};
+
+/**
+ * ClientInvitationIn
+ */
+export type ClientInvitationIn = {
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Role
+     */
+    role: 'client_admin' | 'client_contributor';
+};
+
+/**
+ * ClientInvitationOut
+ */
+export type ClientInvitationOut = {
+    /**
+     * Invitation Id
+     */
+    invitation_id: string;
 };
 
 /**
@@ -686,6 +760,10 @@ export type MembershipOut = {
      */
     firm_role: 'firm_admin' | 'practice_leader' | 'quality_partner' | null;
     /**
+     * Kind
+     */
+    kind?: 'staff' | 'client';
+    /**
      * Tenant Id
      */
     tenant_id: string;
@@ -864,6 +942,16 @@ export type RejectIn = {
      * Seen Proposal
      */
     seen_proposal?: string | null;
+};
+
+/**
+ * RemovedOut
+ */
+export type RemovedOut = {
+    /**
+     * User Id
+     */
+    user_id: string;
 };
 
 /**
@@ -1565,6 +1653,284 @@ export type GetEngagementResponses = {
 };
 
 export type GetEngagementResponse = GetEngagementResponses[keyof GetEngagementResponses];
+
+export type ClientContactsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/client-contacts';
+};
+
+export type ClientContactsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ClientContactsError = ClientContactsErrors[keyof ClientContactsErrors];
+
+export type ClientContactsResponses = {
+    /**
+     * Response Client Contacts
+     *
+     * Successful Response
+     */
+    200: Array<ClientContactOut>;
+};
+
+export type ClientContactsResponse = ClientContactsResponses[keyof ClientContactsResponses];
+
+export type RemoveClientContactData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/client-contacts/{user_id}';
+};
+
+export type RemoveClientContactErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RemoveClientContactError = RemoveClientContactErrors[keyof RemoveClientContactErrors];
+
+export type RemoveClientContactResponses = {
+    /**
+     * Successful Response
+     */
+    200: RemovedOut;
+};
+
+export type RemoveClientContactResponse = RemoveClientContactResponses[keyof RemoveClientContactResponses];
+
+export type InviteClientData = {
+    body: ClientInvitationIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/client-invitations';
+};
+
+export type InviteClientErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type InviteClientError = InviteClientErrors[keyof InviteClientErrors];
+
+export type InviteClientResponses = {
+    /**
+     * Successful Response
+     */
+    201: ClientInvitationOut;
+};
+
+export type InviteClientResponse = InviteClientResponses[keyof InviteClientResponses];
+
+export type ResendClientInvitationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Invitation Id
+         */
+        invitation_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/client-invitations/{invitation_id}/resend';
+};
+
+export type ResendClientInvitationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ResendClientInvitationError = ResendClientInvitationErrors[keyof ResendClientInvitationErrors];
+
+export type ResendClientInvitationResponses = {
+    /**
+     * Successful Response
+     */
+    200: ClientInvitationOut;
+};
+
+export type ResendClientInvitationResponse = ResendClientInvitationResponses[keyof ResendClientInvitationResponses];
+
+export type RevokeClientInvitationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Invitation Id
+         */
+        invitation_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/client-invitations/{invitation_id}/revoke';
+};
+
+export type RevokeClientInvitationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RevokeClientInvitationError = RevokeClientInvitationErrors[keyof RevokeClientInvitationErrors];
+
+export type RevokeClientInvitationResponses = {
+    /**
+     * Successful Response
+     */
+    200: ClientInvitationOut;
+};
+
+export type RevokeClientInvitationResponse = RevokeClientInvitationResponses[keyof RevokeClientInvitationResponses];
 
 export type ListEvidenceVersionsData = {
     body?: never;
@@ -2543,6 +2909,49 @@ export type SelfJoinResponses = {
 };
 
 export type SelfJoinResponse = SelfJoinResponses[keyof SelfJoinResponses];
+
+export type AcceptInvitationData = {
+    body: AcceptInvitationIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/invitations/accept';
+};
+
+export type AcceptInvitationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AcceptInvitationError = AcceptInvitationErrors[keyof AcceptInvitationErrors];
+
+export type AcceptInvitationResponses = {
+    /**
+     * Successful Response
+     */
+    200: AcceptedInvitationOut;
+};
+
+export type AcceptInvitationResponse = AcceptInvitationResponses[keyof AcceptInvitationResponses];
 
 export type ListDocumentsData = {
     body?: never;
