@@ -1181,6 +1181,38 @@
         "title": "GraphTeamMemberOut",
         "type": "object"
       },
+      "ImportCountsOut": {
+        "properties": {
+          "created": {
+            "cls": "internal",
+            "title": "Created",
+            "type": "integer"
+          },
+          "duplicates": {
+            "cls": "internal",
+            "title": "Duplicates",
+            "type": "integer"
+          },
+          "empty": {
+            "cls": "internal",
+            "title": "Empty",
+            "type": "integer"
+          },
+          "unmatched_areas": {
+            "cls": "internal",
+            "title": "Unmatched Areas",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "created",
+          "duplicates",
+          "empty",
+          "unmatched_areas"
+        ],
+        "title": "ImportCountsOut",
+        "type": "object"
+      },
       "KnowledgeDocumentIn": {
         "additionalProperties": false,
         "properties": {
@@ -2129,6 +2161,80 @@
           "created_at"
         ],
         "title": "ScreeningResultOut",
+        "type": "object"
+      },
+      "SheetPreviewOut": {
+        "properties": {
+          "headers": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Headers",
+            "type": "array"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "suggested_area": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Suggested Area"
+          },
+          "suggested_description": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Suggested Description"
+          },
+          "suggested_tier": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Suggested Tier"
+          }
+        },
+        "required": [
+          "name",
+          "headers",
+          "rows",
+          "suggested_description",
+          "suggested_area",
+          "suggested_tier"
+        ],
+        "title": "SheetPreviewOut",
         "type": "object"
       },
       "SpendOut": {
@@ -4904,6 +5010,297 @@
           }
         },
         "summary": "Create Request Item Route",
+        "tags": [
+          "requests"
+        ],
+        "x-abacus-action": "request_item.create"
+      }
+    },
+    "/v1/engagements/{engagement_id}/request-items/import": {
+      "post": {
+        "operationId": "import",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sheet",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Sheet",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "description",
+            "required": true,
+            "schema": {
+              "maximum": 200,
+              "minimum": 0,
+              "title": "Description",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "area",
+            "required": true,
+            "schema": {
+              "maximum": 200,
+              "minimum": 0,
+              "title": "Area",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "header_row",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Header Row",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tier",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 200,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tier"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportCountsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Import Route",
+        "tags": [
+          "requests"
+        ],
+        "x-abacus-action": "request_item.create"
+      }
+    },
+    "/v1/engagements/{engagement_id}/request-items/import/preview": {
+      "post": {
+        "operationId": "preview_import",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "header_row",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Header Row",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SheetPreviewOut"
+                  },
+                  "title": "Response Preview Import",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Preview Import Route",
         "tags": [
           "requests"
         ],

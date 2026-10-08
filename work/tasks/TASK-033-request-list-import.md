@@ -4,7 +4,7 @@ title: Request list import from Excel
 spec: SPEC-018
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6]
 risk_zone: amber
-status: awaiting-plan-approval
+status: done
 branch: task-033-request-list-import
 worktree:
 created: 2026-10-08
@@ -30,7 +30,7 @@ All of SPEC-018.
 - Code: `requests` (service, repository, routes), `engagements.api` (`EngagementRef.methodology_version_id`, `version_detail`), the engagements workbook parser (as a pattern only), `apps/web` Board
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-08: D1–D2)
 
 ### Design (for founder review)
 1. **The parser** (`requests/workbook.py`, pure):
@@ -70,6 +70,13 @@ No protected paths (requests, engagements and `apps/web` aren't protected), so n
 - [ ] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-08` — Implemented:
+  - the workbook parser (preview, mapped rows, limits, problems);
+  - the import service (area matching, tiers, de-duplication, one unit of work, audit);
+  - the preview and import routes;
+  - the three-step import dialog on the Requests tab, with the matching mirrored for the preview.
+
+  Backend unit (8,902) and web (120) tests and the gates pass. A local Postgres run passed: column suggestions, an in-file duplicate and an empty row skipped, a re-import creating nothing, a non-workbook refused.
 - `2026-10-08` — SPEC-018 approved and merged (#61). Design written for founder review.
 
 ## Decisions made during this task

@@ -87,6 +87,7 @@ NOT_CREATING = {
     "/v1/notifications/read-all",
     # SPEC-015: acceptance returns the engagement; revoke and resend return the invitation.
     "/v1/invitations/accept",
+    "/v1/engagements/{engagement_id}/request-items/import/preview",  # SPEC-018: nothing stored
     "/v1/engagements/{engagement_id}/client-invitations/{invitation_id}/revoke",
     "/v1/engagements/{engagement_id}/client-invitations/{invitation_id}/resend",
     # SPEC-012: lifecycle changes return the session, so 200.
@@ -112,6 +113,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/support/sessions",  # SPEC-012: a support session is requested
         "/v1/engagements/{engagement_id}/client-invitations",  # SPEC-015: an invitation
         "/v1/engagements/{engagement_id}/team",  # SPEC-017: a team member
+        "/v1/engagements/{engagement_id}/request-items/import",  # SPEC-018: items created
         decisions + "accept",  # TASK-019: a review decision is created
         decisions + "reject",
         decisions + "send-back",

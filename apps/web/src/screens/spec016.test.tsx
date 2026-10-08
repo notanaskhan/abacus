@@ -6,6 +6,7 @@ import { NotificationPanel } from "../shell/NotificationPanel";
 import { json, mockApi, renderRoutes, signInForTest } from "../testing/support";
 import { takeTokenFromFragment } from "./ClientAccept";
 import { Contacts } from "./Contacts";
+import { ImportRequestList } from "./ImportRequestList";
 import { Layout } from "./Layout";
 import { MapView } from "./MapView";
 import { Methodology } from "./Methodology";
@@ -280,5 +281,42 @@ describe("SPEC-017 ac7 people tab", () => {
     expect(screen.getAllByRole("button", { name: "Remove" })).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "Remove" }));
     expect(await screen.findByRole("dialog", { name: "Remove Sam Staff?" })).toBeTruthy();
+  });
+});
+
+describe("SPEC-018 ac6 request list import", () => {
+  it("previews what will import, marks duplicates and new areas, then shows the counts", async () => {
+    const { calls } = mockApi({
+      [`GET /v1/engagements/${E}/graph`]: () => json(graph()),
+      [`POST /v1/engagements/${E}/request-items/import/preview`]: () =>
+        json([
+          {
+            name: "PBC",
+            headers: ["Area", "Request", "Tier"],
+            rows: [
+              ["AR", "Aged receivables listing", "a"],
+              ["Leases", "Lease agreements", "C"],
+            ],
+            suggested_description: 1,
+            suggested_area: 0,
+            suggested_tier: 2,
+          },
+        ]),
+      [`POST /v1/engagements/${E}/request-items/import`]: () =>
+        json({ created: 1, duplicates: 1, empty: 0, unmatched_areas: 1 }, 201),
+    });
+    renderRoutes([{ path: "/", component: () => <ImportRequestList engagementId={E} /> }]);
+    fireEvent.click(await screen.findByRole("button", { name: "Import from Excel" }));
+    fireEvent.change(await screen.findByLabelText("Workbook (.xlsx)"), {
+      target: { files: [new File(['"x"'], "pbc.xlsx")] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(await screen.findByText("Lease agreements")).toBeTruthy();
+    expect(screen.getByText("Duplicate")).toBeTruthy();
+    expect(screen.getByText("New area")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Import" }));
+    expect(await screen.findByText("Created")).toBeTruthy();
+    const posted = calls.find((c) => c.path.endsWith("/import"));
+    expect(posted).toBeTruthy();
   });
 });

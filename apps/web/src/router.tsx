@@ -4,6 +4,7 @@ import type { JSX } from "react";
 import { CALLBACK_PATH } from "./auth/session";
 import { Board } from "./screens/Board";
 import { Engagements } from "./screens/Engagements";
+import { ImportRequestList } from "./screens/ImportRequestList";
 import { Layout } from "./screens/Layout";
 import { Methodology } from "./screens/Methodology";
 import { MethodologyVersion } from "./screens/MethodologyVersion";
@@ -94,18 +95,23 @@ const boardRoute = createRoute({
   component: function BoardPage(): JSX.Element {
     const { engagementId } = engagementRoute.useParams();
     return (
-      <Board
-        engagementId={engagementId}
-        reviewLink={
-          <Link
-            to="/engagements/$engagementId/review"
-            params={{ engagementId }}
-            className="text-sm text-accent hover:underline"
-          >
-            Review queue
-          </Link>
-        }
-      />
+      <div className="flex flex-col gap-3">
+        <div className="flex justify-end">
+          <ImportRequestList engagementId={engagementId} />
+        </div>
+        <Board
+          engagementId={engagementId}
+          reviewLink={
+            <Link
+              to="/engagements/$engagementId/review"
+              params={{ engagementId }}
+              className="text-sm text-accent hover:underline"
+            >
+              Review queue
+            </Link>
+          }
+        />
+      </div>
     );
   },
 });
