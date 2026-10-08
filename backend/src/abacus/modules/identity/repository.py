@@ -509,3 +509,40 @@ async def client_contacts(session: AsyncSession, engagement_id: UUID) -> Sequenc
         {"e": engagement_id},
     )
     return result.mappings().all()
+
+
+# --- Engagement team (SPEC-017) ----------------------------------------------------------------
+
+
+async def team_candidate_ids(
+    session: AsyncSession, engagement_id: UUID, client_id: UUID
+) -> list[UUID]:
+    """Active staff of the firm, not on the team, not walled from the engagement's client."""
+    rows = await session.execute(
+        text(
+            "SELECT m.user_id FROM memberships m WHERE m.kind = 'staff' AND m.status = 'active' "
+            "AND NOT EXISTS (SELECT 1 FROM engagement_members em WHERE em.engagement_id = :e "
+            "AND em.user_id = m.user_id) AND NOT EXISTS (SELECT 1 FROM ethical_walls w "
+            "WHERE w.user_id = m.user_id AND w.client_id = :c AND w.status = 'active') "
+            "ORDER BY m.user_id"
+        ),
+        {"e": engagement_id, "c": client_id},
+    )
+    return [cast(UUID, row[0]) for row in rows.all()]
+
+
+async def set_team_role(
+    session: AsyncSession, engagement_id: UUID, user_id: UUID, role: str
+) -> str:
+    found = await session.scalar(
+        text("SELECT team_member_set_role(:e, :u, :r)"),
+        {"e": engagement_id, "u": user_id, "r": role},
+    )
+    return str(found)
+
+
+async def remove_team_member_row(session: AsyncSession, engagement_id: UUID, user_id: UUID) -> str:
+    found = await session.scalar(
+        text("SELECT team_member_remove(:e, :u)"), {"e": engagement_id, "u": user_id}
+    )
+    return str(found)

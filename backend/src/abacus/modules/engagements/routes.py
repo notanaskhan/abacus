@@ -20,6 +20,8 @@ from abacus.modules.engagements.service import (
     EngagementView,
     NewEngagement,
     TemplateVersionSummary,
+    add_to_team,
+    change_team_role,
     client_contacts_of,
     create_engagement,
     engagement_metadata,
@@ -29,9 +31,12 @@ from abacus.modules.engagements.service import (
     methodology_templates,
     methodology_version,
     remove_client_contact,
+    remove_from_team,
     resend_client_invitation,
     revoke_client_invitation,
     self_join,
+    team_candidates,
+    team_of_engagement,
 )
 from abacus.modules.engagements.workbook import Problem, TemplateInvalid
 from abacus.modules.identity.api import AbacusRouter, AuthContext, EngagementRole, current_context
@@ -129,6 +134,90 @@ async def get_engagement_route(engagement_id: UUID, ctx: Ctx) -> EngagementOut:
 async def self_join_route(engagement_id: UUID, ctx: Ctx) -> EngagementOut:
     """ADR-024; SPEC-013 AC-8: a firm admin joins (as reviewer) and the team is notified."""
     return _out(await self_join(ctx, engagement_id))
+
+
+# --- Engagement team (SPEC-017 §8) -------------------------------------------------------------
+
+StaffRoleName = Literal["engagement_partner", "manager", "senior", "staff", "reviewer"]
+
+
+class CandidateOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    user_id: Annotated[UUID, classified("internal")]
+    display_name: Annotated[str, classified("confidential")]
+
+
+class TeamMemberIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    user_id: Annotated[UUID, classified("internal")]
+    role: Annotated[StaffRoleName, classified("internal")]
+
+
+class TeamRoleIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    role: Annotated[StaffRoleName, classified("internal")]
+
+
+@router.get(
+    "/{engagement_id}/team", action="engagement.read_metadata", response_model=list[TeamMemberOut]
+)
+async def team_route(engagement_id: UUID, ctx: Ctx) -> list[TeamMemberOut]:
+    team = await team_of_engagement(ctx, engagement_id)
+    return [
+        TeamMemberOut(user_id=m.user_id, display_name=m.display_name, role=m.role) for m in team
+    ]
+
+
+@router.get(
+    "/{engagement_id}/team/candidates",
+    action="engagement.member_add",
+    response_model=list[CandidateOut],
+)
+async def team_candidates_route(engagement_id: UUID, ctx: Ctx) -> list[CandidateOut]:
+    found = await team_candidates(ctx, engagement_id)
+    return [CandidateOut(user_id=c.user_id, display_name=c.display_name) for c in found]
+
+
+@router.post(
+    "/{engagement_id}/team",
+    action="engagement.member_add",
+    response_model=list[TeamMemberOut],
+    status_code=201,
+)
+async def add_team_member_route(
+    engagement_id: UUID, body: TeamMemberIn, ctx: Ctx
+) -> list[TeamMemberOut]:
+    await add_to_team(ctx, engagement_id, body.user_id, body.role)
+    return await team_route(engagement_id, ctx)
+
+
+@router.put(
+    "/{engagement_id}/team/{user_id}",
+    action="engagement.member_add",
+    response_model=list[TeamMemberOut],
+    errors=(409,),
+)
+async def change_team_role_route(
+    engagement_id: UUID, user_id: UUID, body: TeamRoleIn, ctx: Ctx
+) -> list[TeamMemberOut]:
+    await change_team_role(ctx, engagement_id, user_id, body.role)
+    return await team_route(engagement_id, ctx)
+
+
+@router.delete(
+    "/{engagement_id}/team/{user_id}",
+    action="engagement.member_remove",
+    response_model=list[TeamMemberOut],
+    errors=(409,),
+)
+async def remove_team_member_route(
+    engagement_id: UUID, user_id: UUID, ctx: Ctx
+) -> list[TeamMemberOut]:
+    await remove_from_team(ctx, engagement_id, user_id)
+    return await team_route(engagement_id, ctx)
 
 
 # --- Client contacts (SPEC-015 §8) -------------------------------------------------------------

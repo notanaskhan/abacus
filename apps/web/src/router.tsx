@@ -9,7 +9,7 @@ import { Methodology } from "./screens/Methodology";
 import { MethodologyVersion } from "./screens/MethodologyVersion";
 import { Accept } from "./screens/ClientAccept";
 import { ClientHome } from "./screens/ClientHome";
-import { Contacts } from "./screens/Contacts";
+import { People } from "./screens/People";
 import { EngagementLayout } from "./screens/EngagementLayout";
 import { MapView } from "./screens/MapView";
 import { Overview } from "./screens/Overview";
@@ -117,12 +117,12 @@ const mapRoute = createRoute({
     return <MapView engagementId={engagementId} />;
   },
 });
-const contactsRoute = createRoute({
+const peopleRoute = createRoute({
   getParentRoute: () => engagementRoute,
-  path: "/contacts",
-  component: function ContactsPage(): JSX.Element {
+  path: "/people",
+  component: function PeoplePage(): JSX.Element {
     const { engagementId } = engagementRoute.useParams();
-    return <Contacts engagementId={engagementId} />;
+    return <People engagementId={engagementId} />;
   },
 });
 const reviewRoute = createRoute({
@@ -167,7 +167,7 @@ const routeTree = rootRoute.addChildren([
   acceptRoute,
   appRoute.addChildren([
     engagementsRoute,
-    engagementRoute.addChildren([overviewRoute, boardRoute, mapRoute, contactsRoute, reviewRoute]),
+    engagementRoute.addChildren([overviewRoute, boardRoute, mapRoute, peopleRoute, reviewRoute]),
     methodologyRoute,
     methodologyVersionRoute,
   ]),

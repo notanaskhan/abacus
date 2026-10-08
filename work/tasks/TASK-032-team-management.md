@@ -4,7 +4,7 @@ title: Engagement team management
 spec: SPEC-017
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7]
 risk_zone: red
-status: awaiting-plan-approval
+status: done
 branch: task-032-team-management
 worktree:
 created: 2026-10-08
@@ -31,7 +31,7 @@ All of SPEC-017.
 - Code: `identity` (team, walls, repository), `engagements` (service, routes), `evidence` (review assignments), `notifications` (catalogue), `apps/web` (`EngagementLayout`, `Contacts`)
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-08: D1–D3). Approved by founder: paths listed under *Protected paths*
 
 ### Design (for founder review)
 1. **Changing and removing go through definer functions (D1):**
@@ -71,10 +71,21 @@ All of SPEC-017.
 - [ ] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-08` — Implemented:
+  - migration 0027 (the two definer functions);
+  - identity `team.py` (candidates, add, change role, remove, the member-removed slot);
+  - evidence releases assignments through the slot;
+  - engagement team routes;
+  - the `engagement_member.added` notification;
+  - the People tab (team plus client contacts).
+
+  Backend unit (8,902) and web (119) tests, the gates and the schema check pass. A local Postgres smoke run passed: candidates, add, the manager limits refused, the last partner refused, role change, removal.
 - `2026-10-08` — SPEC-017 approved and merged (#59). Design written for founder review.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| The candidate list reads in a plain tenant session (not a unit of work) | It is a read, so no audit event is needed | No |
+| The member-removed hook takes the acting user, so released assignments record who released them | `UnitOfWork` doesn't expose its actor | No |
 
 ## Handoff

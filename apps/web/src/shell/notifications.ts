@@ -8,6 +8,7 @@ const TEXT: Record<string, string> = {
   "budget.soft_crossed": "Model spend passed its soft limit.",
   "budget.anomaly": "Unusual model spend on an engagement in the last hour.",
   "engagement.member_self_joined": "A firm admin joined an engagement to view its content.",
+  "engagement_member.added": "You were added to an engagement's team.",
   "review.assigned": "Evidence was assigned to you for review.",
 };
 

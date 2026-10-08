@@ -298,6 +298,22 @@ async def clear_assignment(
     )
 
 
+async def release_assignments_of(
+    session: AsyncSession, engagement_id: UUID, user_id: UUID, by: UUID
+) -> list[UUID]:
+    """Clear `user_id`'s review assignments on the engagement (SPEC-017 AC-5): their versions."""
+    released = await session.execute(
+        update(ReviewAssignment)
+        .where(
+            ReviewAssignment.engagement_id == engagement_id,
+            ReviewAssignment.assignee_user_id == user_id,
+        )
+        .values(assignee_user_id=None, assigned_by=by, assigned_at=func.clock_timestamp())
+        .returning(ReviewAssignment.evidence_version_id)
+    )
+    return [row[0] for row in released.all()]
+
+
 async def reason_codes(
     session: AsyncSession, applies_to: str
 ) -> Sequence[tuple[str, str, str, bool]]:

@@ -46,6 +46,7 @@ from abacus.modules.evidence.repository import (
     next_version_no,
     put_assignment,
     reason_codes,
+    release_assignments_of,
     snapshots_of_engagement,
     take_assignment,
     version_for_key,
@@ -696,3 +697,16 @@ async def engagement_snapshots(tenant: TenantContext, engagement_id: UUID) -> li
     authorised on the engagement."""
     async with tenant_session(tenant) as session:
         return await snapshots_of_engagement(session, engagement_id)
+
+
+async def release_member_assignments(
+    tx: UnitOfWork, engagement_id: UUID, user_id: UUID, by: UUID
+) -> None:
+    """Identity's member-removed hook (SPEC-017 AC-5; TASK-032 D2), in the removal's unit of
+    work: the removed person's queued reviews go back to the queue, each audited."""
+    for version_id in await release_assignments_of(tx.session, engagement_id, user_id, by):
+        tx.record(
+            "review.released",
+            target=Target("evidence_version", version_id),
+            after=Ref(user_id=user_id),
+        )

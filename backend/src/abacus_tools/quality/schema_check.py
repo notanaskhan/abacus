@@ -295,6 +295,8 @@ DEFINER_FUNCTIONS = frozenset(
     # 0025 (TASK-030 D3, D5): invitation tokens and failures, client users and memberships.
     | {"invitation_token_set", "invitation_token_find", "provision_client_user"}
     | {"add_client_membership", "remove_client_member"}
+    # 0027 (TASK-032 D1): staff role changes and removals, keeping a partner.
+    | {"team_member_set_role", "team_member_remove"}
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).

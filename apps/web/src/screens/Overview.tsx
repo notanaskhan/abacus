@@ -211,11 +211,11 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
               {g.team.length === 0 ? "nobody yet" : g.team.map((m) => m.display_name).join(", ")}
             </p>
             <Link
-              to="/engagements/$engagementId/contacts"
+              to="/engagements/$engagementId/people"
               params={{ engagementId }}
               className="text-sm text-accent hover:underline"
             >
-              Manage client contacts
+              Manage people
             </Link>
           </Panel>
         </div>

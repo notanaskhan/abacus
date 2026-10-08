@@ -783,6 +783,10 @@ LIST_EXEMPT = frozenset(
         # Methodology templates are firm-wide (SPEC-008): read after `authorise` on the firm
         # (`methodology.read`) or by a caller authorised on the engagement; no engagement rows.
         ("src/abacus/modules/engagements/repository.py", "list_templates"),
+        # SPEC-017: team candidates (after `authorise(engagement.member_add)`; walls applied in the
+        # query) and the removed member's assignments, released inside the removal.
+        ("src/abacus/modules/identity/repository.py", "team_candidate_ids"),
+        ("src/abacus/modules/evidence/repository.py", "release_assignments_of"),
         # SPEC-015: one engagement's contacts, read after `authorise(client_contact.read)` on it.
         ("src/abacus/modules/identity/repository.py", "client_contacts"),
         # SPEC-014: authorisation's own lookup (the caller's roles; visible() can't apply to it).

@@ -41,3 +41,12 @@ class ClientInvitationIssued(DomainEvent):
     event_type: ClassVar[str] = "client_invitation.issued"
 
     invitation_id: Annotated[UUID, classified("internal")]
+
+
+class EngagementMemberAdded(DomainEvent):
+    """Someone was added to an engagement's team: they are notified (SPEC-017 Q4)."""
+
+    event_type: ClassVar[str] = "engagement_member.added"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    user_id: Annotated[UUID, classified("internal")]

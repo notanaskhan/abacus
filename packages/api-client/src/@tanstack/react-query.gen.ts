@@ -3,8 +3,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, acceptInvitation, acknowledgeSupportSession, addDocument, applyMethodology, approveSupportSession, assign, clientContacts, createEngagement, createRequestItem, createWall, emergencyApprove, endSupportSession, engagementGraph, getBudget, getDocument, getEngagement, getRetrieval, getVersion, importTemplate, inviteClient, listDocuments, listEngagements, listEvidenceVersions, listNotifications, listRequestItems, listScreeningResults, listSupportSessions, listTemplates, listWalls, me, metering, type Options, putBudget, readAll, readNotification, reasonCodes, reject, release, removeClientContact, removeWall, requestSupportSession, resendClientInvitation, reviewQueue, revokeClientInvitation, revokeSupportSession, search, selfJoin, sendBack, startRetrieval, take, withdrawDocument } from '../sdk.gen';
-import type { AcceptData, AcceptError, AcceptInvitationData, AcceptInvitationError, AcceptInvitationResponse, AcceptResponse, AcknowledgeSupportSessionData, AcknowledgeSupportSessionError, AcknowledgeSupportSessionResponse, AddDocumentData, AddDocumentError, AddDocumentResponse, ApplyMethodologyData, ApplyMethodologyError, ApplyMethodologyResponse, ApproveSupportSessionData, ApproveSupportSessionError, ApproveSupportSessionResponse, AssignData, AssignError, AssignResponse, ClientContactsData, ClientContactsError, ClientContactsResponse, CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, EmergencyApproveData, EmergencyApproveError, EmergencyApproveResponse, EndSupportSessionData, EndSupportSessionError, EndSupportSessionResponse, EngagementGraphData, EngagementGraphError, EngagementGraphResponse, GetBudgetData, GetBudgetError, GetBudgetResponse, GetDocumentData, GetDocumentError, GetDocumentResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, GetVersionData, GetVersionError, GetVersionResponse, ImportTemplateData, ImportTemplateError, ImportTemplateResponse, InviteClientData, InviteClientError, InviteClientResponse, ListDocumentsData, ListDocumentsError, ListDocumentsResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListNotificationsData, ListNotificationsError, ListNotificationsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListSupportSessionsData, ListSupportSessionsError, ListSupportSessionsResponse, ListTemplatesData, ListTemplatesError, ListTemplatesResponse, ListWallsData, ListWallsError, ListWallsResponse, MeData, MeError, MeResponse, MeteringData, MeteringError, MeteringResponse, PutBudgetData, PutBudgetError, PutBudgetResponse, ReadAllData, ReadAllError, ReadAllResponse, ReadNotificationData, ReadNotificationError, ReadNotificationResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseResponse, RemoveClientContactData, RemoveClientContactError, RemoveClientContactResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, RequestSupportSessionData, RequestSupportSessionError, RequestSupportSessionResponse, ResendClientInvitationData, ResendClientInvitationError, ResendClientInvitationResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, RevokeClientInvitationData, RevokeClientInvitationError, RevokeClientInvitationResponse, RevokeSupportSessionData, RevokeSupportSessionError, RevokeSupportSessionResponse, SearchData, SearchError, SearchResponse, SelfJoinData, SelfJoinError, SelfJoinResponse, SendBackData, SendBackError, SendBackResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, TakeData, TakeError, TakeResponse, WithdrawDocumentData, WithdrawDocumentError, WithdrawDocumentResponse } from '../types.gen';
+import { accept, acceptInvitation, acknowledgeSupportSession, addDocument, addTeamMember, applyMethodology, approveSupportSession, assign, changeTeamRole, clientContacts, createEngagement, createRequestItem, createWall, emergencyApprove, endSupportSession, engagementGraph, getBudget, getDocument, getEngagement, getRetrieval, getVersion, importTemplate, inviteClient, listDocuments, listEngagements, listEvidenceVersions, listNotifications, listRequestItems, listScreeningResults, listSupportSessions, listTemplates, listWalls, me, metering, type Options, putBudget, readAll, readNotification, reasonCodes, reject, release, removeClientContact, removeTeamMember, removeWall, requestSupportSession, resendClientInvitation, reviewQueue, revokeClientInvitation, revokeSupportSession, search, selfJoin, sendBack, startRetrieval, take, team, teamCandidates, withdrawDocument } from '../sdk.gen';
+import type { AcceptData, AcceptError, AcceptInvitationData, AcceptInvitationError, AcceptInvitationResponse, AcceptResponse, AcknowledgeSupportSessionData, AcknowledgeSupportSessionError, AcknowledgeSupportSessionResponse, AddDocumentData, AddDocumentError, AddDocumentResponse, AddTeamMemberData, AddTeamMemberError, AddTeamMemberResponse, ApplyMethodologyData, ApplyMethodologyError, ApplyMethodologyResponse, ApproveSupportSessionData, ApproveSupportSessionError, ApproveSupportSessionResponse, AssignData, AssignError, AssignResponse, ChangeTeamRoleData, ChangeTeamRoleError, ChangeTeamRoleResponse, ClientContactsData, ClientContactsError, ClientContactsResponse, CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, EmergencyApproveData, EmergencyApproveError, EmergencyApproveResponse, EndSupportSessionData, EndSupportSessionError, EndSupportSessionResponse, EngagementGraphData, EngagementGraphError, EngagementGraphResponse, GetBudgetData, GetBudgetError, GetBudgetResponse, GetDocumentData, GetDocumentError, GetDocumentResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, GetVersionData, GetVersionError, GetVersionResponse, ImportTemplateData, ImportTemplateError, ImportTemplateResponse, InviteClientData, InviteClientError, InviteClientResponse, ListDocumentsData, ListDocumentsError, ListDocumentsResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListNotificationsData, ListNotificationsError, ListNotificationsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListSupportSessionsData, ListSupportSessionsError, ListSupportSessionsResponse, ListTemplatesData, ListTemplatesError, ListTemplatesResponse, ListWallsData, ListWallsError, ListWallsResponse, MeData, MeError, MeResponse, MeteringData, MeteringError, MeteringResponse, PutBudgetData, PutBudgetError, PutBudgetResponse, ReadAllData, ReadAllError, ReadAllResponse, ReadNotificationData, ReadNotificationError, ReadNotificationResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseResponse, RemoveClientContactData, RemoveClientContactError, RemoveClientContactResponse, RemoveTeamMemberData, RemoveTeamMemberError, RemoveTeamMemberResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, RequestSupportSessionData, RequestSupportSessionError, RequestSupportSessionResponse, ResendClientInvitationData, ResendClientInvitationError, ResendClientInvitationResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, RevokeClientInvitationData, RevokeClientInvitationError, RevokeClientInvitationResponse, RevokeSupportSessionData, RevokeSupportSessionError, RevokeSupportSessionResponse, SearchData, SearchError, SearchResponse, SelfJoinData, SelfJoinError, SelfJoinResponse, SendBackData, SendBackError, SendBackResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, TakeData, TakeError, TakeResponse, TeamCandidatesData, TeamCandidatesError, TeamCandidatesResponse, TeamData, TeamError, TeamResponse, WithdrawDocumentData, WithdrawDocumentError, WithdrawDocumentResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -503,6 +503,93 @@ export const selfJoinMutation = (options?: Partial<Options<SelfJoinData>>): UseM
     const mutationOptions: UseMutationOptions<SelfJoinResponse, SelfJoinError, Options<SelfJoinData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await selfJoin({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const teamQueryKey = (options: Options<TeamData>) => createQueryKey('team', options);
+
+/**
+ * Team Route
+ */
+export const teamOptions = (options: Options<TeamData>) => queryOptions<TeamResponse, TeamError, TeamResponse, ReturnType<typeof teamQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await team({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: teamQueryKey(options)
+});
+
+/**
+ * Add Team Member Route
+ */
+export const addTeamMemberMutation = (options?: Partial<Options<AddTeamMemberData>>): UseMutationOptions<AddTeamMemberResponse, AddTeamMemberError, Options<AddTeamMemberData>> => {
+    const mutationOptions: UseMutationOptions<AddTeamMemberResponse, AddTeamMemberError, Options<AddTeamMemberData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await addTeamMember({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const teamCandidatesQueryKey = (options: Options<TeamCandidatesData>) => createQueryKey('teamCandidates', options);
+
+/**
+ * Team Candidates Route
+ */
+export const teamCandidatesOptions = (options: Options<TeamCandidatesData>) => queryOptions<TeamCandidatesResponse, TeamCandidatesError, TeamCandidatesResponse, ReturnType<typeof teamCandidatesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await teamCandidates({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: teamCandidatesQueryKey(options)
+});
+
+/**
+ * Remove Team Member Route
+ */
+export const removeTeamMemberMutation = (options?: Partial<Options<RemoveTeamMemberData>>): UseMutationOptions<RemoveTeamMemberResponse, RemoveTeamMemberError, Options<RemoveTeamMemberData>> => {
+    const mutationOptions: UseMutationOptions<RemoveTeamMemberResponse, RemoveTeamMemberError, Options<RemoveTeamMemberData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await removeTeamMember({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Change Team Role Route
+ */
+export const changeTeamRoleMutation = (options?: Partial<Options<ChangeTeamRoleData>>): UseMutationOptions<ChangeTeamRoleResponse, ChangeTeamRoleError, Options<ChangeTeamRoleData>> => {
+    const mutationOptions: UseMutationOptions<ChangeTeamRoleResponse, ChangeTeamRoleError, Options<ChangeTeamRoleData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await changeTeamRole({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

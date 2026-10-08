@@ -149,6 +149,20 @@ export type BudgetOut = {
 };
 
 /**
+ * CandidateOut
+ */
+export type CandidateOut = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
  * ClientContactOut
  */
 export type ClientContactOut = {
@@ -1231,6 +1245,20 @@ export type TakenOut = {
 };
 
 /**
+ * TeamMemberIn
+ */
+export type TeamMemberIn = {
+    /**
+     * Role
+     */
+    role: 'engagement_partner' | 'manager' | 'senior' | 'staff' | 'reviewer';
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
  * TeamMemberOut
  */
 export type TeamMemberOut = {
@@ -1246,6 +1274,16 @@ export type TeamMemberOut = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * TeamRoleIn
+ */
+export type TeamRoleIn = {
+    /**
+     * Role
+     */
+    role: 'engagement_partner' | 'manager' | 'senior' | 'staff' | 'reviewer';
 };
 
 /**
@@ -2909,6 +2947,292 @@ export type SelfJoinResponses = {
 };
 
 export type SelfJoinResponse = SelfJoinResponses[keyof SelfJoinResponses];
+
+export type TeamData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/team';
+};
+
+export type TeamErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type TeamError = TeamErrors[keyof TeamErrors];
+
+export type TeamResponses = {
+    /**
+     * Response Team
+     *
+     * Successful Response
+     */
+    200: Array<TeamMemberOut>;
+};
+
+export type TeamResponse = TeamResponses[keyof TeamResponses];
+
+export type AddTeamMemberData = {
+    body: TeamMemberIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/team';
+};
+
+export type AddTeamMemberErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AddTeamMemberError = AddTeamMemberErrors[keyof AddTeamMemberErrors];
+
+export type AddTeamMemberResponses = {
+    /**
+     * Response Add Team Member
+     *
+     * Successful Response
+     */
+    201: Array<TeamMemberOut>;
+};
+
+export type AddTeamMemberResponse = AddTeamMemberResponses[keyof AddTeamMemberResponses];
+
+export type TeamCandidatesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/team/candidates';
+};
+
+export type TeamCandidatesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type TeamCandidatesError = TeamCandidatesErrors[keyof TeamCandidatesErrors];
+
+export type TeamCandidatesResponses = {
+    /**
+     * Response Team Candidates
+     *
+     * Successful Response
+     */
+    200: Array<CandidateOut>;
+};
+
+export type TeamCandidatesResponse = TeamCandidatesResponses[keyof TeamCandidatesResponses];
+
+export type RemoveTeamMemberData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/team/{user_id}';
+};
+
+export type RemoveTeamMemberErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RemoveTeamMemberError = RemoveTeamMemberErrors[keyof RemoveTeamMemberErrors];
+
+export type RemoveTeamMemberResponses = {
+    /**
+     * Response Remove Team Member
+     *
+     * Successful Response
+     */
+    200: Array<TeamMemberOut>;
+};
+
+export type RemoveTeamMemberResponse = RemoveTeamMemberResponses[keyof RemoveTeamMemberResponses];
+
+export type ChangeTeamRoleData = {
+    body: TeamRoleIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/team/{user_id}';
+};
+
+export type ChangeTeamRoleErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ChangeTeamRoleError = ChangeTeamRoleErrors[keyof ChangeTeamRoleErrors];
+
+export type ChangeTeamRoleResponses = {
+    /**
+     * Response Change Team Role
+     *
+     * Successful Response
+     */
+    200: Array<TeamMemberOut>;
+};
+
+export type ChangeTeamRoleResponse = ChangeTeamRoleResponses[keyof ChangeTeamRoleResponses];
 
 export type AcceptInvitationData = {
     body: AcceptInvitationIn;
