@@ -2,6 +2,10 @@
 import { defineConfig } from "eslint/config";
 import tseslint from "typescript-eslint";
 
+const PALETTE =
+  "/\\b(bg|text|border|ring|outline|divide|fill|stroke|placeholder|from|to)-(neutral|gray|red|green|amber|blue|slate|zinc|stone|yellow|white|black)\\b/";
+const HEX = "/#[0-9a-fA-F]{6}\\b|#[0-9a-fA-F]{3}\\b/";
+
 export default defineConfig(
   { ignores: ["dist"] },
   tseslint.configs.strictTypeChecked,
@@ -30,35 +34,43 @@ export default defineConfig(
             },
             {
               name: "react-markdown",
-              message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+              message:
+                "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
             },
             {
               name: "marked",
-              message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+              message:
+                "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
             },
             {
               name: "markdown-it",
-              message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+              message:
+                "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
             },
             {
               name: "remark",
-              message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+              message:
+                "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
             },
             {
               name: "rehype-raw",
-              message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+              message:
+                "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
             },
             {
               name: "dompurify",
-              message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+              message:
+                "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
             },
             {
               name: "html-react-parser",
-              message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+              message:
+                "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
             },
             {
               name: "sanitize-html",
-              message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+              message:
+                "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
             },
           ],
         },
@@ -78,6 +90,16 @@ export default defineConfig(
       // ADR-065: model output is plain text, rendered only through AgentText.
       "no-restricted-syntax": [
         "error",
+        // SPEC-016 AC-1: colours come only from the design tokens (packages/ui/src/theme.css).
+        {
+          selector: `Literal[value=${PALETTE}], TemplateElement[value.raw=${PALETTE}]`,
+          message:
+            "Use the design tokens (bg-surface, text-muted, …), not Tailwind's palette (SPEC-016).",
+        },
+        {
+          selector: `Literal[value=${HEX}], TemplateElement[value.raw=${HEX}]`,
+          message: "No raw hex colours: use the design tokens (SPEC-016).",
+        },
         {
           selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
           message: "Never render HTML (ADR-065).",

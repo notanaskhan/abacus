@@ -1,13 +1,25 @@
 import { meOptions } from "@abacus/api-client/query";
-import { Alert, Button, Card, Spinner } from "@abacus/ui";
+import {
+  Alert,
+  Bell,
+  Building2,
+  Button,
+  Card,
+  FolderOpen,
+  LogOut,
+  Rail,
+  RailButton,
+  Spinner,
+} from "@abacus/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, Outlet } from "@tanstack/react-router";
+import { Link, Navigate, Outlet } from "@tanstack/react-router";
 import { type JSX, useEffect, useState } from "react";
 import { App } from "../App";
 import { errorMessage } from "../api";
 import { accessToken, chooseTenant, chosenTenant, signIn, signOut } from "../auth/session";
+import { NotificationPanel, useUnreadCount } from "../shell/NotificationPanel";
 
-/** Signed-in shell: who you are, in which firm (SPEC-000 AC-1), and the page. */
+/** The signed-in firm workspace (SPEC-016): rail, header, notifications, and the page. */
 export function Layout(): JSX.Element {
   const signedIn = accessToken() !== null;
   useEffect(() => {
@@ -19,12 +31,16 @@ export function Layout(): JSX.Element {
   return <SignedIn />;
 }
 
+const RAIL_LINK =
+  "flex size-11 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-sunken hover:text-ink data-[status=active]:bg-accent-soft data-[status=active]:text-accent";
+
 function SignedIn(): JSX.Element {
   const queryClient = useQueryClient();
   const me = useQuery(meOptions());
   // React state, so choosing a firm re-renders (the API reports no active firm for users in
   // several; the choice is also kept for the client's X-Abacus-Tenant header).
   const [picked, setPicked] = useState<string | null>(chosenTenant);
+  const [panel, setPanel] = useState(false);
 
   if (me.isPending) {
     return (
@@ -56,7 +72,7 @@ function SignedIn(): JSX.Element {
     return (
       <main className="mx-auto max-w-md p-8">
         <Card>
-          <h1 className="mb-3 text-lg font-semibold">Choose a firm</h1>
+          <h1 className="mb-3 text-xl">Choose a firm</h1>
           <ul className="flex flex-col gap-2">
             {me.data.memberships.map((m) => (
               <li key={m.tenant_id}>
@@ -78,33 +94,88 @@ function SignedIn(): JSX.Element {
       </main>
     );
   }
+  // SPEC-016 AC-8: client users have their own route tree.
+  if (firm.kind === "client") return <Navigate to="/client" />;
 
+  const isAdmin = firm.firm_role === "firm_admin" || firm.firm_role === "practice_leader";
   return (
-    <div className="min-h-screen bg-neutral-50">
-      <header className="flex items-center justify-between border-b border-neutral-200 bg-white px-6 py-3">
-        <Link to="/" className="font-semibold">
-          Abacus
+    <div className="flex min-h-screen flex-col bg-ground sm:flex-row">
+      <Rail label="Workspace">
+        <Link
+          to="/"
+          aria-label="Abacus home"
+          className="mb-2 flex size-9 items-center justify-center rounded-[var(--radius-control)] bg-accent font-display text-lg font-semibold text-on-accent"
+        >
+          A
         </Link>
-        <div className="flex items-center gap-3 text-sm">
-          <span>
+        <Link to="/" aria-label="Engagements" title="Engagements" className={RAIL_LINK}>
+          <FolderOpen aria-hidden="true" className="size-5" />
+        </Link>
+        {isAdmin && (
+          <Link
+            to="/admin/methodology"
+            aria-label="Firm admin"
+            title="Firm admin"
+            className={RAIL_LINK}
+          >
+            <Building2 aria-hidden="true" className="size-5" />
+          </Link>
+        )}
+        <span className="flex-1" />
+        <NotificationsButton
+          active={panel}
+          onToggle={() => {
+            setPanel((open) => !open);
+          }}
+        />
+        <RailButton
+          label="Sign out"
+          onClick={() => {
+            signOut();
+            queryClient.clear();
+            void signIn("/");
+          }}
+        >
+          <LogOut aria-hidden="true" className="size-5" />
+        </RailButton>
+      </Rail>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-surface px-6 py-3">
+          <Link to="/" className="font-display text-lg font-semibold">
+            Abacus
+          </Link>
+          <span className="text-sm text-muted">
             {me.data.display_name} · {firm.firm_name}
           </span>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              signOut();
-              queryClient.clear();
-              void signIn("/");
-            }}
-          >
-            Sign out
-          </Button>
+        </header>
+        <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
+          <main className="mx-auto w-full max-w-7xl min-w-0 flex-1 p-6">
+            <Outlet />
+          </main>
+          {panel && (
+            <NotificationPanel
+              onClose={() => {
+                setPanel(false);
+              }}
+            />
+          )}
         </div>
-      </header>
-      <main className="mx-auto max-w-5xl p-6">
-        <Outlet />
-      </main>
+      </div>
     </div>
+  );
+}
+
+function NotificationsButton({
+  active,
+  onToggle,
+}: {
+  active: boolean;
+  onToggle: () => void;
+}): JSX.Element {
+  const unread = useUnreadCount();
+  return (
+    <RailButton label="Notifications" badge={unread} active={active} onClick={onToggle}>
+      <Bell aria-hidden="true" className="size-5" />
+    </RailButton>
   );
 }

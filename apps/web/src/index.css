@@ -1,3 +1,5 @@
 @import "tailwindcss";
+/* Direction C tokens and fonts (SPEC-016). */
+@import "../../../packages/ui/src/theme.css";
 /* The design system's components live in packages/ui: let Tailwind see their classes. */
 @source "../../../packages/ui/src";

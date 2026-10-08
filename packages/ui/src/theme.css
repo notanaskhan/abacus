@@ -1,0 +1,53 @@
+/* Direction C, "Atelier" (SPEC-016): the only place colours, fonts and radii are defined. */
+@import "@fontsource/source-sans-3/latin-400.css";
+@import "@fontsource/source-sans-3/latin-600.css";
+@import "@fontsource/source-sans-3/latin-700.css";
+@import "@fontsource/newsreader/latin-500.css";
+@import "@fontsource/newsreader/latin-600.css";
+
+@theme {
+  --color-ground: #f6f4f0;
+  --color-surface: #fffdfa;
+  --color-rail: #efebe4;
+  --color-sunken: #f1ede6;
+  --color-ink: #23201c;
+  --color-muted: #5f5850;
+  --color-line: #e2dcd2;
+  --color-accent: #7a4e12;
+  --color-accent-hover: #643f0d;
+  --color-accent-soft: #f3e8d6;
+  --color-on-accent: #ffffff;
+  --color-ok: #24502a;
+  --color-ok-soft: #e6efe6;
+  --color-warn: #7a3b0b;
+  --color-warn-soft: #f7e6d5;
+  --color-info: #4e3470;
+  --color-info-soft: #ede6f4;
+  --color-danger: #8a1c1c;
+  --color-danger-soft: #f8e3e1;
+  --color-ai: #5e3f86;
+  --color-ai-line: #c9b6de;
+  --font-sans: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Newsreader", Georgia, serif;
+  --radius-control: 8px;
+  --radius-panel: 12px;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    color: var(--color-ink);
+    background: var(--color-ground);
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}

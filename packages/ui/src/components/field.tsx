@@ -9,7 +9,7 @@ export function Input({
   return (
     <input
       className={cn(
-        "h-9 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm focus-visible:outline-2 focus-visible:outline-neutral-900",
+        "h-9 w-full rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm text-ink placeholder:text-muted",
         className,
       )}
       {...props}
@@ -21,5 +21,7 @@ export function Label({
   className,
   ...props
 }: ComponentProps<typeof LabelPrimitive.Root>): JSX.Element {
-  return <LabelPrimitive.Root className={cn("text-sm font-medium", className)} {...props} />;
+  return (
+    <LabelPrimitive.Root className={cn("text-sm font-semibold text-ink", className)} {...props} />
+  );
 }

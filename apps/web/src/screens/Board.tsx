@@ -119,7 +119,7 @@ export function Board({
           {engagement.data.name}
         </h1>
         {reviewLink}
-        <p className="text-sm text-neutral-600">
+        <p className="text-sm text-muted">
           {engagement.data.client_name} — {engagement.data.client_entity_name} ·{" "}
           {engagement.data.fiscal_period_start} to {engagement.data.fiscal_period_end}
         </p>
@@ -164,20 +164,20 @@ function RequestItemCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="font-medium">{item.description}</p>
-          <p className="text-sm text-neutral-600">{item.audit_area}</p>
+          <p className="text-sm text-muted">{item.audit_area}</p>
         </div>
         <Badge tone={statusTone(item.status)} aria-label={`Status: ${statusLabel(item.status)}`}>
           {statusLabel(item.status)}
         </Badge>
       </div>
       <dl className="grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1 text-sm">
-        <dt className="text-neutral-600">Source</dt>
+        <dt className="text-muted">Source</dt>
         <dd>
           {evidence === null
             ? "No evidence yet"
             : `${sourceLabel(evidence)} · version ${String(evidence.version_no)}`}
         </dd>
-        <dt className="text-neutral-600">Screening</dt>
+        <dt className="text-muted">Screening</dt>
         <dd>
           {screening.kind === "none" ? (
             "—"
@@ -209,13 +209,13 @@ function ScreeningSummary({ result }: { result: ScreeningResultOut }): JSX.Eleme
   return (
     <div className="flex flex-col gap-2" aria-label="Screening result">
       <p>
-        <span className="text-neutral-600">Agent proposes: </span>
+        <span className="text-muted">Agent proposes: </span>
         <Badge tone={result.action === "ready_for_review" ? "success" : "warning"}>
           {result.action === "ready_for_review" ? "Ready for review" : "Needs revision"}
         </Badge>{" "}
-        <span className="text-neutral-600">confidence {confidencePercent(result.confidence)}</span>
+        <span className="text-muted">confidence {confidencePercent(result.confidence)}</span>
       </p>
-      <AgentText text={result.rationale} className="text-neutral-800" />
+      <AgentText text={result.rationale} className="text-ink" />
       {result.citations.length > 0 && (
         <ul className="flex flex-col gap-1" aria-label="Citations">
           {result.citations.map((c) => (
@@ -234,7 +234,7 @@ function ScreeningSummary({ result }: { result: ScreeningResultOut }): JSX.Eleme
       )}
       {result.unverified.length > 0 && (
         <div>
-          <p className="text-neutral-600">Couldn't be verified:</p>
+          <p className="text-muted">Couldn't be verified:</p>
           <ul className="list-disc pl-5">
             {result.unverified.map((note, i) => (
               <li key={`${String(i)}-${note}`}>
@@ -308,12 +308,12 @@ function Retrieve({
         <Spinner label={queuedLabel(run.data?.estimated_start_at ?? null)} />
       )}
       {status === "failed_validation" && (
-        <span className="text-sm text-red-800">The trial balance didn't pass validation.</span>
+        <span className="text-sm text-danger">The trial balance didn't pass validation.</span>
       )}
       {status === "failed" && (
-        <span className="text-sm text-red-800">Retrieval failed. Try again.</span>
+        <span className="text-sm text-danger">Retrieval failed. Try again.</span>
       )}
-      {start.isError && <span className="text-sm text-red-800">{errorMessage(start.error)}</span>}
+      {start.isError && <span className="text-sm text-danger">{errorMessage(start.error)}</span>}
     </div>
   );
 }

@@ -5,10 +5,18 @@ import { CALLBACK_PATH } from "./auth/session";
 import { Board } from "./screens/Board";
 import { Engagements } from "./screens/Engagements";
 import { Layout } from "./screens/Layout";
+import { Methodology } from "./screens/Methodology";
+import { MethodologyVersion } from "./screens/MethodologyVersion";
+import { Accept } from "./screens/ClientAccept";
+import { ClientHome } from "./screens/ClientHome";
+import { Contacts } from "./screens/Contacts";
+import { EngagementLayout } from "./screens/EngagementLayout";
+import { MapView } from "./screens/MapView";
+import { Overview } from "./screens/Overview";
 import { Review } from "./screens/Review";
 import { SignInCallback } from "./screens/SignInCallback";
 
-// Code-based routes (no file-router plugin): firm users only in this spec (ADR-011).
+// Code-based routes (no file-router plugin): the firm workspace and the client portal (ADR-011).
 const rootRoute = createRootRoute({
   notFoundComponent: NotFound,
   errorComponent: RouteError,
@@ -62,44 +70,107 @@ const engagementsRoute = createRoute({
   path: "/",
   component: Engagements,
 });
-const boardRoute = createRoute({
+
+// An engagement (SPEC-016): Overview · Requests · Map · Contacts · Review under one header.
+const engagementRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/engagements/$engagementId",
-  component: BoardPage,
+  component: function EngagementPage(): JSX.Element {
+    const { engagementId } = engagementRoute.useParams();
+    return <EngagementLayout engagementId={engagementId} />;
+  },
 });
-
-function BoardPage(): JSX.Element {
-  const { engagementId } = boardRoute.useParams();
-  return (
-    <Board
-      engagementId={engagementId}
-      reviewLink={
-        <Link
-          to="/engagements/$engagementId/review"
-          params={{ engagementId }}
-          className="text-sm underline"
-        >
-          Review queue
-        </Link>
-      }
-    />
-  );
-}
-
+const overviewRoute = createRoute({
+  getParentRoute: () => engagementRoute,
+  path: "/",
+  component: function OverviewPage(): JSX.Element {
+    const { engagementId } = engagementRoute.useParams();
+    return <Overview engagementId={engagementId} />;
+  },
+});
+const boardRoute = createRoute({
+  getParentRoute: () => engagementRoute,
+  path: "/requests",
+  component: function BoardPage(): JSX.Element {
+    const { engagementId } = engagementRoute.useParams();
+    return (
+      <Board
+        engagementId={engagementId}
+        reviewLink={
+          <Link
+            to="/engagements/$engagementId/review"
+            params={{ engagementId }}
+            className="text-sm text-accent hover:underline"
+          >
+            Review queue
+          </Link>
+        }
+      />
+    );
+  },
+});
+const mapRoute = createRoute({
+  getParentRoute: () => engagementRoute,
+  path: "/map",
+  component: function MapPage(): JSX.Element {
+    const { engagementId } = engagementRoute.useParams();
+    return <MapView engagementId={engagementId} />;
+  },
+});
+const contactsRoute = createRoute({
+  getParentRoute: () => engagementRoute,
+  path: "/contacts",
+  component: function ContactsPage(): JSX.Element {
+    const { engagementId } = engagementRoute.useParams();
+    return <Contacts engagementId={engagementId} />;
+  },
+});
 const reviewRoute = createRoute({
-  getParentRoute: () => appRoute,
-  path: "/engagements/$engagementId/review",
-  component: ReviewPage,
+  getParentRoute: () => engagementRoute,
+  path: "/review",
+  component: function ReviewPage(): JSX.Element {
+    const { engagementId } = engagementRoute.useParams();
+    return <Review engagementId={engagementId} />;
+  },
 });
 
-function ReviewPage(): JSX.Element {
-  const { engagementId } = reviewRoute.useParams();
-  return <Review engagementId={engagementId} />;
-}
+// Firm admin (SPEC-016): methodology now; budget, knowledge, support and walls later.
+const methodologyRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/admin/methodology",
+  component: Methodology,
+});
+const methodologyVersionRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/admin/methodology/$versionId",
+  component: function VersionPage(): JSX.Element {
+    const { versionId } = methodologyVersionRoute.useParams();
+    return <MethodologyVersion versionId={versionId} />;
+  },
+});
+
+// The client portal: a separate tree (ADR-011; SPEC-015, SPEC-016).
+const clientRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/client",
+  component: ClientHome,
+});
+const acceptRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/client/accept",
+  component: Accept,
+});
 
 const routeTree = rootRoute.addChildren([
   callbackRoute,
-  appRoute.addChildren([engagementsRoute, boardRoute, reviewRoute]),
+  clientRoute,
+  acceptRoute,
+  appRoute.addChildren([
+    engagementsRoute,
+    engagementRoute.addChildren([overviewRoute, boardRoute, mapRoute, contactsRoute, reviewRoute]),
+    methodologyRoute,
+    methodologyVersionRoute,
+  ]),
 ]);
 
 export const router = createRouter({ routeTree });

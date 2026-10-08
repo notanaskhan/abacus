@@ -91,7 +91,10 @@ export function safeReturnTo(path: string): string {
     : "/";
 }
 
-export async function signIn(returnTo: string = window.location.pathname): Promise<void> {
+export async function signIn(
+  returnTo: string = window.location.pathname,
+  options: { forceLogin?: boolean } = {},
+): Promise<void> {
   if (signingIn) return; // parallel 401s start one sign-in, not several racing ones
   signingIn = true;
   const pending: Pending = {
@@ -108,6 +111,11 @@ export async function signIn(returnTo: string = window.location.pathname): Promi
     code_challenge: await codeChallenge(pending.verifier),
     code_challenge_method: "S256",
   });
+  if (options.forceLogin === true) {
+    // SPEC-016: a fresh sign-in (and its MFA) for actions that need recent MFA (ADR-030).
+    params.set("prompt", "login");
+    params.set("max_age", "0");
+  }
   window.location.assign(`${AUTHORITY}/authorize?${params.toString()}`);
 }
 
