@@ -12,7 +12,7 @@ from datetime import date, datetime
 from typing import cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import ColumnElement
+from sqlalchemy import ColumnElement, Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import QueryableAttribute
 
@@ -339,3 +339,8 @@ async def pin_methodology(
     if not await set_methodology_version(tx.session, engagement_id, version_id):
         raise MethodologyAlreadyApplied(str(engagement_id))
     return detail
+
+
+def active_engagements() -> Select[UUID]:
+    """The firm's non-archived engagements, as a subquery for identity (SPEC-014)."""
+    return select(Engagement.id).where(Engagement.status != "archived")

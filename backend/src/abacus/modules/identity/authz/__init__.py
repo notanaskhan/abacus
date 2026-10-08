@@ -36,7 +36,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Literal
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, and_, false, select, true
+from sqlalchemy import ColumnElement, Select, and_, false, select, true
 from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.db import TenantContext
@@ -47,6 +47,7 @@ from abacus.modules.identity.repository import (
     ENGAGEMENT_ROLES,
     engagement_members,
     engagement_role,
+    engagement_roles_in_firm,
     ethical_walls,
     walled_clients,
 )
@@ -75,6 +76,19 @@ def register_engagement_client(column: ClientColumn, lookup: ClientLookup) -> No
     _engagement_client = (column, lookup)
 
 
+# SPEC-014 (ADR-106): the firm's non-archived engagements, registered by the engagements module;
+# without it, engagement roles never count at firm level (fail closed).
+ActiveEngagements = Callable[[], Select[UUID]]
+_active_engagements: ActiveEngagements | None = None
+
+
+def register_active_engagements(active: ActiveEngagements) -> None:
+    global _active_engagements
+    if _active_engagements is not None and _active_engagements is not active:
+        raise RuntimeError("the active-engagement subquery is already registered")
+    _active_engagements = active
+
+
 # An action no human role holds (agent and system only, e.g. `screening.run`) can't be intersected
 # with the initiator's own right to it; the agent then stays within the initiator's reach: they
 # must be allowed this action on the same engagement (founder decision 2026-10-06, ADR-025).
@@ -85,6 +99,10 @@ _checked: ContextVar[set[str] | None] = ContextVar("abacus_authz_checked", defau
 # Each person's walled clients, read once per request (SPEC-002 §16); None outside a request.
 _walls: ContextVar[dict[UUID, frozenset[UUID]] | None] = ContextVar(
     "abacus_authz_walls", default=None
+)
+# Each person's engagement roles in the firm, read once per request (SPEC-014).
+_firm_engagement_roles: ContextVar[dict[UUID, frozenset[str]] | None] = ContextVar(
+    "abacus_authz_firm_engagement_roles", default=None
 )
 
 
@@ -134,9 +152,11 @@ def recording_checks() -> Generator[set[str]]:
     checked: set[str] = set()
     token = _checked.set(checked)
     walls_token = _walls.set({})
+    roles_token = _firm_engagement_roles.set({})
     try:
         yield checked
     finally:
+        _firm_engagement_roles.reset(roles_token)
         _walls.reset(walls_token)
         _checked.reset(token)
 
@@ -189,7 +209,23 @@ def _deny(ctx: Actor, action: str, layer: Layer) -> Forbidden:
     return Forbidden(action, layer)
 
 
-async def _roles(ctx: Actor, resource: Resource) -> set[str]:
+async def _engagement_roles_in_firm(ctx: AuthContext) -> frozenset[str]:
+    if _active_engagements is None:
+        return frozenset()
+    cache = _firm_engagement_roles.get()
+    found = cache.get(ctx.user_id) if cache is not None else None
+    if found is None:
+        try:
+            found = await engagement_roles_in_firm(ctx.tenant, ctx.user_id, _active_engagements())
+        except Exception as exc:  # fail closed: no engagement roles (SPEC-014 §12)
+            _log.warning("authz.firm_roles_unavailable", error=type(exc).__name__)
+            return frozenset()
+        if cache is not None:
+            cache[ctx.user_id] = found
+    return found
+
+
+async def _roles(ctx: Actor, resource: Resource, rule: Rule) -> set[str]:
     if isinstance(ctx, AgentContext):
         return {"agent"} if resource.engagement_id == ctx.engagement_id else set()
     if isinstance(ctx, SystemContext):
@@ -203,6 +239,14 @@ async def _roles(ctx: Actor, resource: Resource) -> set[str]:
         role = await engagement_role(ctx.tenant, ctx.user_id, resource.engagement_id)
         if role is not None:
             roles.add(role)
+    elif (
+        rule.reads
+        and not ctx.is_support
+        and (ctx.firm_role is None or rule.decisions.get(ctx.firm_role) != "allow")
+    ):
+        # SPEC-014: a firm-level read counts the person's engagement roles on the firm's active
+        # engagements; skipped when the firm role already allows it (TASK-029 D2).
+        roles |= await _engagement_roles_in_firm(ctx)
     return roles
 
 
@@ -219,7 +263,7 @@ async def authorise(
     if await _walled(ctx, resource):
         raise _deny(ctx, action, "wall")
     # 2b. Relationships.
-    roles = await _roles(ctx, resource)
+    roles = await _roles(ctx, resource, rule)
     if not roles:
         raise _deny(ctx, action, "relationship")
     # 3. Roles. For an agent, `task_scope` grants only what its run declared (ADR-025).
@@ -353,6 +397,7 @@ __all__ = [
     "UnknownAction",
     "authorise",
     "recording_checks",
+    "register_active_engagements",
     "register_engagement_client",
     "serving_request",
     "visible",

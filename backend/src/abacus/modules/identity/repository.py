@@ -19,6 +19,7 @@ from sqlalchemy import (
     Column,
     DateTime,
     MetaData,
+    Select,
     String,
     Table,
     bindparam,
@@ -126,6 +127,22 @@ async def engagement_role(
             )
         ).scalar_one_or_none()
     return cast(EngagementRole | None, role)
+
+
+async def engagement_roles_in_firm(
+    tenant: TenantContext, user_id: UUID, active: Select[UUID]
+) -> frozenset[str]:
+    """The distinct roles the user holds on the firm's active engagements (SPEC-014)."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            select(engagement_members.c.role)
+            .where(
+                engagement_members.c.user_id == user_id,
+                engagement_members.c.engagement_id.in_(active.scalar_subquery()),
+            )
+            .distinct()
+        )
+        return frozenset(str(role) for role in rows.scalars().all())
 
 
 _USER_NAMES = text("SELECT id, display_name FROM users WHERE id IN :ids").bindparams(
