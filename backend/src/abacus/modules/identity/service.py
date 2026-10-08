@@ -20,15 +20,18 @@ from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.identity.authz import Forbidden, Resource, authorise
 from abacus.modules.identity.context import AuthContext, NoActiveTenant
+from abacus.modules.identity.events import EngagementMemberSelfJoined
 from abacus.modules.identity.repository import (
     EngagementRole,
     MembershipRecord,
     UserRecord,
     WallRecord,
+    active_firm_admins,
     active_memberships,
     all_walls,
     display_names,
     engagement_members_of,
+    engagement_role,
     find_user,
     get_wall,
     insert_engagement_member,
@@ -117,6 +120,52 @@ async def add_creator_as_partner(tx: UnitOfWork, ctx: AuthContext, engagement_id
         target=Target("engagement", engagement_id),
         after=Ref(user_id=ctx.user_id),
     )
+
+
+class AlreadyMember(DomainConflict):
+    """The caller is already on the engagement's team."""
+
+    code = "already_member"
+
+
+SELF_JOIN_ROLE: EngagementRole = "reviewer"
+
+
+async def add_self_joined_admin(tx: UnitOfWork, ctx: AuthContext, engagement_id: UUID) -> None:
+    """ADR-024: a firm admin joins to see content, as `reviewer` (content reads, no decisions;
+    TASK-028 D1), inside the caller's unit of work after `authorise(engagement.self_join)`. The
+    `notify: engagement_team` obligation is met by the event emitted here (SPEC-013 AC-8)."""
+    if await engagement_role(ctx.tenant, ctx.user_id, engagement_id) is not None:
+        raise AlreadyMember(str(engagement_id))
+    await insert_engagement_member(
+        tx.session, ctx.tenant_id, engagement_id, ctx.user_id, SELF_JOIN_ROLE
+    )
+    tx.record(
+        "engagement_member.self_joined",
+        target=Target("engagement", engagement_id),
+        after=Ref(user_id=ctx.user_id),
+    )
+    tx.emit(EngagementMemberSelfJoined(engagement_id=engagement_id, user_id=ctx.user_id))
+
+
+async def firm_admins(tenant_id: UUID) -> list[UUID]:
+    """Recipients for firm-level notifications (SPEC-013)."""
+    return await active_firm_admins(TenantContext(tenant_id, "system", "notifications"))
+
+
+async def team_of(tenant_id: UUID, engagement_id: UUID) -> list[tuple[UUID, EngagementRole]]:
+    """An engagement's members and roles, for notification recipients (SPEC-013)."""
+    return await engagement_members_of(
+        TenantContext(tenant_id, "system", "notifications"), engagement_id
+    )
+
+
+LEAD_ROLES: frozenset[EngagementRole] = frozenset({"engagement_partner", "manager"})
+
+
+async def engagement_leads(tenant_id: UUID, engagement_id: UUID) -> list[UUID]:
+    """The engagement's partner and managers (SPEC-013 recipients)."""
+    return [user for user, role in await team_of(tenant_id, engagement_id) if role in LEAD_ROLES]
 
 
 async def engagement_team(ctx: AuthContext, engagement_id: UUID) -> list[TeamMember]:

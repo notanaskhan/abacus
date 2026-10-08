@@ -26,6 +26,7 @@ from abacus.modules.engagements.service import (
     import_template,
     methodology_templates,
     methodology_version,
+    self_join,
 )
 from abacus.modules.engagements.workbook import Problem, TemplateInvalid
 from abacus.modules.identity.api import AbacusRouter, AuthContext, EngagementRole, current_context
@@ -112,6 +113,17 @@ async def list_engagements_route(ctx: Ctx) -> list[EngagementSummaryOut]:
 @router.get("/{engagement_id}", action="engagement.read_metadata", response_model=EngagementOut)
 async def get_engagement_route(engagement_id: UUID, ctx: Ctx) -> EngagementOut:
     return _out(await engagement_metadata(ctx, engagement_id))
+
+
+@router.post(
+    "/{engagement_id}/self-join",
+    action="engagement.self_join",
+    response_model=EngagementOut,
+    errors=(409,),
+)
+async def self_join_route(engagement_id: UUID, ctx: Ctx) -> EngagementOut:
+    """ADR-024; SPEC-013 AC-8: a firm admin joins (as reviewer) and the team is notified."""
+    return _out(await self_join(ctx, engagement_id))
 
 
 # --- Methodology templates (SPEC-008 §8) -------------------------------------------------------

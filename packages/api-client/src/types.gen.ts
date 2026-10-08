@@ -711,6 +711,54 @@ export type MethodologyVersionOut = {
 };
 
 /**
+ * NotificationOut
+ */
+export type NotificationOut = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Read
+     */
+    read: boolean;
+    /**
+     * Subject Id
+     */
+    subject_id: string;
+    /**
+     * Subject Type
+     */
+    subject_type: string;
+};
+
+/**
+ * NotificationPageOut
+ */
+export type NotificationPageOut = {
+    /**
+     * Items
+     */
+    items: Array<NotificationOut>;
+    /**
+     * Unread Count
+     */
+    unread_count: number;
+};
+
+/**
  * ProposalOut
  *
  * The agent's proposal. Rationale and quotes are model text: shown as plain text (ADR-065).
@@ -764,6 +812,16 @@ export type QueueEntryOut = {
      * Request Item Id
      */
     request_item_id: string;
+};
+
+/**
+ * ReadAllOut
+ */
+export type ReadAllOut = {
+    /**
+     * Marked
+     */
+    marked: number;
 };
 
 /**
@@ -2430,6 +2488,62 @@ export type ListScreeningResultsResponses = {
 
 export type ListScreeningResultsResponse = ListScreeningResultsResponses[keyof ListScreeningResultsResponses];
 
+export type SelfJoinData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/self-join';
+};
+
+export type SelfJoinErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SelfJoinError = SelfJoinErrors[keyof SelfJoinErrors];
+
+export type SelfJoinResponses = {
+    /**
+     * Successful Response
+     */
+    200: EngagementOut;
+};
+
+export type SelfJoinResponse = SelfJoinResponses[keyof SelfJoinResponses];
+
 export type ListDocumentsData = {
     body?: never;
     headers?: {
@@ -2936,6 +3050,165 @@ export type GetVersionResponses = {
 };
 
 export type GetVersionResponse = GetVersionResponses[keyof GetVersionResponses];
+
+export type ListNotificationsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Unread
+         */
+        unread?: boolean;
+        /**
+         * Before
+         */
+        before?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/notifications';
+};
+
+export type ListNotificationsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ListNotificationsError = ListNotificationsErrors[keyof ListNotificationsErrors];
+
+export type ListNotificationsResponses = {
+    /**
+     * Successful Response
+     */
+    200: NotificationPageOut;
+};
+
+export type ListNotificationsResponse = ListNotificationsResponses[keyof ListNotificationsResponses];
+
+export type ReadAllData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/notifications/read-all';
+};
+
+export type ReadAllErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ReadAllError = ReadAllErrors[keyof ReadAllErrors];
+
+export type ReadAllResponses = {
+    /**
+     * Successful Response
+     */
+    200: ReadAllOut;
+};
+
+export type ReadAllResponse = ReadAllResponses[keyof ReadAllResponses];
+
+export type ReadNotificationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Notification Id
+         */
+        notification_id: string;
+    };
+    query?: never;
+    url: '/v1/notifications/{notification_id}/read';
+};
+
+export type ReadNotificationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ReadNotificationError = ReadNotificationErrors[keyof ReadNotificationErrors];
+
+export type ReadNotificationResponses = {
+    /**
+     * Successful Response
+     */
+    200: NotificationPageOut;
+};
+
+export type ReadNotificationResponse = ReadNotificationResponses[keyof ReadNotificationResponses];
 
 export type ListSupportSessionsData = {
     body?: never;

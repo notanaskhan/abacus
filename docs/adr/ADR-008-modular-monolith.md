@@ -16,7 +16,7 @@ risk_zone: amber
 A solo founder building with AI coding agents needs a codebase agents can understand and change safely. Microservices add distributed-systems problems the product doesn't have.
 
 ## Decision
-One deployable backend containing twelve modules: identity, organisations, engagements, requests, evidence, connections, ledger, sampling, agents, audit_trail, communications, platform. The API and the workflow workers run the same modules from different entry points. Each module exposes only its `api` package; no module imports another's internals or touches its tables. Cross-module asynchronous work uses domain events.
+One deployable backend containing thirteen modules: identity, organisations, engagements, requests, evidence, connections, ledger, sampling, agents, audit_trail, communications, notifications, platform. (`notifications` added by SPEC-013, 2026-10-08.) The API and the workflow workers run the same modules from different entry points. Each module exposes only its `api` package; no module imports another's internals or touches its tables. Cross-module asynchronous work uses domain events.
 
 ## Options considered
 ### Modular monolith — chosen

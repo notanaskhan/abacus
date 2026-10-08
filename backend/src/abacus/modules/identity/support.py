@@ -24,6 +24,10 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, audit_counts, uow
 from abacus.modules.identity.authz import Resource, authorise
 from abacus.modules.identity.context import AuthContext
+from abacus.modules.identity.events import (
+    SupportSessionEmergencyApproved,
+    SupportSessionRequested,
+)
 from abacus.modules.identity.repository import (
     acknowledge_support_session,
     activate_support_session,
@@ -154,6 +158,7 @@ async def request_session(
                 target=Target("support_session", session_id),
                 after=Ref(staff_id=staff.id, minutes=minutes, emergency=int(emergency)),
             )
+            tx.emit(SupportSessionRequested(session_id=session_id))
     except IntegrityError:
         raise SupportSessionConflict("a session is already open") from None
     return await _read(tenant, session_id)
@@ -182,6 +187,7 @@ async def emergency_approve(staff: Staff, firm_id: UUID, session_id: UUID) -> Su
             target=Target("support_session", session_id),
             after=Ref(staff_id=staff.id),
         )
+        tx.emit(SupportSessionEmergencyApproved(session_id=session_id))
     _log.warning("support.emergency_session", firm_id=firm_id, session_id=session_id)
     return await _read(tenant, session_id)
 

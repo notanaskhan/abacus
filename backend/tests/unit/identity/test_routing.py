@@ -29,6 +29,7 @@ from abacus.api import create_app
 from abacus.kernel.db import TenantContext
 from abacus.modules.identity.api import (
     ACTION_KEY,
+    OWN,
     SELF,
     STAFF,
     AbacusRoute,
@@ -39,6 +40,7 @@ from abacus.modules.identity.api import (
     authorise,
     configure_verifier,
     current_context,
+    current_member,
     current_signed_in,
     current_staff,
     declared_action,
@@ -212,7 +214,7 @@ def test_ac20_every_route_declares_an_action_in_the_matrix_or_self() -> None:
     for route in _routes():
         action = declared_action(route)
         assert action is not None, route.path
-        assert action in (SELF, STAFF) or action in MATRIX, (route.path, action)
+        assert action in (SELF, STAFF, OWN) or action in MATRIX, (route.path, action)
 
 
 def test_ac20_self_is_used_only_on_v1_me() -> None:
@@ -232,7 +234,8 @@ def test_ac20_every_route_has_a_response_model() -> None:
 def test_ac20_every_route_has_the_authentication_dependency() -> None:
     for route in _routes():
         dependencies = [d.dependency for d in route.dependencies]
-        auth = (current_signed_in, current_context, current_staff)  # STAFF: SPEC-012
+        # STAFF: SPEC-012; OWN (current_member): SPEC-013
+        auth = (current_signed_in, current_context, current_staff, current_member)
         assert any(d in dependencies for d in auth), route.path
 
 

@@ -53,6 +53,9 @@ SELF: Final = "self"
 # SPEC-012 (TASK-027 D5): staff-token routes. Staff aren't firm members, so no firm action applies;
 # they are authorised by the staff token and the session rules in `identity.support`.
 STAFF: Final = "staff"
+# SPEC-013 (Q3): a firm member acting only on their own rows (their notifications). No firm matrix
+# action applies; the service filters to the caller, and support contexts are refused.
+OWN: Final = "own"
 
 
 class ErrorOut(BaseModel):
@@ -139,6 +142,15 @@ async def _support_context(
     return ctx
 
 
+async def current_member(
+    ctx: Annotated[AuthContext, Depends(current_context)],
+) -> AuthContext:
+    """A firm member themself (`OWN` routes): never a break-glass support context."""
+    if ctx.is_support:
+        raise HTTPException(403, "forbidden")
+    return ctx
+
+
 async def current_staff(authorization: Annotated[str | None, Header()] = None) -> Staff:
     """A platform staff member (the staff issuer, with MFA): staff routes only (`STAFF`)."""
     try:
@@ -165,7 +177,7 @@ class AbacusRoute(APIRoute):
             with recording_checks() as checked:
                 response = await handler(request)
             if (
-                action not in (SELF, STAFF)
+                action not in (SELF, STAFF, OWN)
                 and action not in checked
                 and response.status_code < 400
             ):
@@ -193,11 +205,13 @@ class AbacusRouter(APIRouter):
         status_code: int | None = None,
         errors: Sequence[int] = (),
     ) -> None:
-        if action not in (SELF, STAFF) and action not in RULES:
+        if action not in (SELF, STAFF, OWN) and action not in RULES:
             raise ValueError(f"route {path}: action {action!r} is not in the permission matrix")
         if response_model is None:
             raise ValueError(f"route {path}: a response model is required")
-        auth = {SELF: current_signed_in, STAFF: current_staff}.get(action, current_context)
+        auth = {SELF: current_signed_in, STAFF: current_staff, OWN: current_member}.get(
+            action, current_context
+        )
         super().add_api_route(
             path,
             endpoint,

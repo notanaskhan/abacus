@@ -49,6 +49,7 @@ from abacus.modules.identity.api import (
     Resource,
     TeamMember,
     add_creator_as_partner,
+    add_self_joined_admin,
     authorise,
     engagement_team,
 )
@@ -169,6 +170,16 @@ async def create_engagement(ctx: AuthContext, new: NewEngagement) -> EngagementM
         tx.record("engagement.created", target=Target("engagement", engagement_id))
         await add_creator_as_partner(tx, ctx, engagement_id)
         tx.emit(EngagementCreated(engagement_id=engagement_id))
+    return await _metadata(ctx, engagement_id)
+
+
+async def self_join(ctx: AuthContext, engagement_id: UUID) -> EngagementMetadata:
+    """ADR-024: a firm admin joins an engagement to see its content (as reviewer); the team is
+    notified (SPEC-013 AC-8). Walls apply through `authorise`."""
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, "engagement.self_join", ref.resource())
+        await add_self_joined_admin(tx, ctx, engagement_id)
     return await _metadata(ctx, engagement_id)
 
 

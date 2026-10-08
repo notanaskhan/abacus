@@ -4,7 +4,7 @@ title: In-app notifications
 spec: SPEC-013
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10]
 risk_zone: amber
-status: awaiting-plan-approval
+status: done
 branch: task-028-notifications
 worktree:
 created: 2026-10-08
@@ -31,7 +31,7 @@ All of SPEC-013. Excluded: email, preferences, the SPA bell, and client users.
 - Code: `kernel/uow` (emit and outbox), `worker/__main__.py` (`MODULES`, `SUBSCRIPTIONS`), `identity` (`authorise` notify, team, the support service, routing markers), `evidence/service.py` (`assign`), `ai_gateway/budgets.py`
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-08: D1–D3). Approved by founder: paths listed under *Protected paths*
 
 ### Design (for founder review)
 1. **The module** `modules/notifications/` (`api.py`, `catalogue.py`, `service.py`, `repository.py`, `routes.py`, `models.py`, `README.md`):
@@ -87,11 +87,25 @@ All of SPEC-013. Excluded: email, preferences, the SPA bell, and client users.
 - [ ] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-08` — Implemented:
+  - the `notifications` module (catalogue, idempotent fan-out, own-only reads with read-time walls, a daily purge);
+  - events from identity (support sessions, self-join), evidence (review assigned) and the gateway (budget soft-crossed and anomaly, now audited);
+  - the self-join route (as reviewer);
+  - the `notify` obligation met for people;
+  - the `OWN` route marker and `current_member`;
+  - migration 0024;
+  - module map updates (AGENTS.md, ADR-008, ADR-101).
+
+  Gates, the schema check and unit tests pass. A local Postgres smoke run passed: fan-out, idempotent redelivery, uncatalogued events ignored, another user refused, read and read-all, purge. Full test runs deferred by the founder.
 - `2026-10-08` — SPEC-013 approved and merged (#50). Design written for founder review.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| Marking notifications read **is** audited (`notification.read`, `notification.read_all`), unlike SPEC-013 AC-6 | AGENTS.md #3: every state change goes through the unit of work with an audit event; `tenant_session` always rolls back | No (the spec should be amended) |
+| `notify` stays denied for agents and system contexts | Only a person's action carries the obligation; keeps the existing system-context invariant | No |
+| ADR-008's module list also updated to thirteen (it holds the canonical list), added to the approval file | Q5 amends the module map wherever it is stated | No |
+| Platform-level budget crossings aren't notified (log and metric only) | The platform's own ceiling is an operator concern, not a firm's | No |
 
 ## Questions for the human
 - Design questions D1–D3 (above).
