@@ -1,7 +1,7 @@
 ---
 id: SPEC-014
 title: Firm-level reads for engagement roles
-status: draft
+status: approved
 owner: founder
 risk_zone: red
 related_adrs: [ADR-020, ADR-024, ADR-027, ADR-102]
@@ -114,9 +114,10 @@ None.
 No migration and no flag. The behaviour widens only to what the matrix already states.
 
 ## 20. Open questions
-- [ ] **Q1: which engagements count.** *Recommendation:* any non-archived engagement in the firm where the user holds the role. An archived engagement confers nothing new.
-- [ ] **Q2: where the lookup lives.** *Recommendation:* identity's repository reads `engagement_members` (identity's table) joined to `engagements.status` through the existing `register_engagement_client` slot, extended with an `active_engagements` subquery. That respects module ownership (ADR-106), and identity never imports engagements.
-- [ ] **Q3: reads only.** *Recommendation:* yes, the rule applies only to read actions (the matrix's read verbs). Firm-level writes stay firm-role-only until a spec needs otherwise.
+None. Answered by the founder on 2026-10-08 (all recommendations):
+- [x] **Q1: which engagements count.** *Recommendation:* any non-archived engagement in the firm where the user holds the role. An archived engagement confers nothing new.
+- [x] **Q2: where the lookup lives.** *Recommendation:* identity's repository reads `engagement_members` (identity's table) joined to `engagements.status` through the existing `register_engagement_client` slot, extended with an `active_engagements` subquery. That respects module ownership (ADR-106), and identity never imports engagements.
+- [x] **Q3: reads only.** *Recommendation:* yes, the rule applies only to read actions (the matrix's read verbs). Firm-level writes stay firm-role-only until a spec needs otherwise.
 
 ## 21. Future / explicitly deferred
 - Firm-level writes for engagement roles, if ever needed.
