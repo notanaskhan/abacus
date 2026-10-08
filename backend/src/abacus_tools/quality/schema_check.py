@@ -516,7 +516,8 @@ BYPASS_ROLE_GRANTS: dict[str, dict[str, Grant]] = {
     IDENTITY: {
         "users": Grant(select=ALL_COLUMNS),
         "memberships": Grant(
-            select=frozenset({"tenant_id", "id", "user_id", "firm_role", "status"})
+            # `kind` (SPEC-015, migration 0026): staff or client, read at sign-in.
+            select=frozenset({"tenant_id", "id", "user_id", "firm_role", "status", "kind"})
         ),
         "firms": Grant(select=frozenset({"tenant_id", "name"})),
     },
