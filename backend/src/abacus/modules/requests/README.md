@@ -19,3 +19,15 @@ Request lists and request items (glossary). Owns `request_lists` and `request_it
 - it creates one request item per template item, with the area name as `audit_area` and the item's `retrievability_tier`.
 
 Items added by hand are never changed.
+
+## Request list import (SPEC-018; TASK-033)
+`POST …/request-items/import/preview` and `…/import` take the raw `.xlsx` as the body.
+
+**Preview:** the sheets, headers, sample rows and suggested columns.
+
+**Import:** columns are mapped by position (`description`, `area`, optional `tier`).
+- **Areas** match the pinned methodology's names or codes, ignoring case and spacing; otherwise the cell's text is kept, and a blank area becomes "Unassigned".
+- **Duplicates** (by area and request, normalised) are skipped and never changed.
+- **Audit:** each item is audited, and `request_list.imported` records the file's fingerprint and the counts.
+
+The parser (`workbook.py`) is read-only, bounded (5 MB, 2,000 rows), and reports problems without cell contents.

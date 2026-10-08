@@ -632,6 +632,28 @@ export type GraphTeamMemberOut = {
 };
 
 /**
+ * ImportCountsOut
+ */
+export type ImportCountsOut = {
+    /**
+     * Created
+     */
+    created: number;
+    /**
+     * Duplicates
+     */
+    duplicates: number;
+    /**
+     * Empty
+     */
+    empty: number;
+    /**
+     * Unmatched Areas
+     */
+    unmatched_areas: number;
+};
+
+/**
  * KnowledgeDocumentIn
  */
 export type KnowledgeDocumentIn = {
@@ -1118,6 +1140,36 @@ export type ScreeningResultOut = {
      * Unverified
      */
     unverified: Array<string>;
+};
+
+/**
+ * SheetPreviewOut
+ */
+export type SheetPreviewOut = {
+    /**
+     * Headers
+     */
+    headers: Array<string>;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Rows
+     */
+    rows: Array<Array<string>>;
+    /**
+     * Suggested Area
+     */
+    suggested_area: number | null;
+    /**
+     * Suggested Description
+     */
+    suggested_description: number | null;
+    /**
+     * Suggested Tier
+     */
+    suggested_tier: number | null;
 };
 
 /**
@@ -2429,6 +2481,138 @@ export type CreateRequestItemResponses = {
 };
 
 export type CreateRequestItemResponse = CreateRequestItemResponses[keyof CreateRequestItemResponses];
+
+export type ImportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query: {
+        /**
+         * Sheet
+         */
+        sheet: string;
+        /**
+         * Description
+         */
+        description: number;
+        /**
+         * Area
+         */
+        area: number;
+        /**
+         * Header Row
+         */
+        header_row?: number;
+        /**
+         * Tier
+         */
+        tier?: number | null;
+    };
+    url: '/v1/engagements/{engagement_id}/request-items/import';
+};
+
+export type ImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ImportError = ImportErrors[keyof ImportErrors];
+
+export type ImportResponses = {
+    /**
+     * Successful Response
+     */
+    201: ImportCountsOut;
+};
+
+export type ImportResponse = ImportResponses[keyof ImportResponses];
+
+export type PreviewImportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: {
+        /**
+         * Header Row
+         */
+        header_row?: number;
+    };
+    url: '/v1/engagements/{engagement_id}/request-items/import/preview';
+};
+
+export type PreviewImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PreviewImportError = PreviewImportErrors[keyof PreviewImportErrors];
+
+export type PreviewImportResponses = {
+    /**
+     * Response Preview Import
+     *
+     * Successful Response
+     */
+    200: Array<SheetPreviewOut>;
+};
+
+export type PreviewImportResponse = PreviewImportResponses[keyof PreviewImportResponses];
 
 export type StartRetrievalData = {
     body: RetrievalIn;

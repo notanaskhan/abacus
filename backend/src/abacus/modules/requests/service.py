@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
@@ -10,7 +11,7 @@ from uuid import UUID, uuid4
 from abacus.kernel.db import TenantContext, tenant_session, transaction_context
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
-from abacus.modules.engagements.api import get_ref, lock_ref, pin_methodology
+from abacus.modules.engagements.api import get_ref, lock_ref, pin_methodology, version_detail
 from abacus.modules.identity.api import Actor, AuthContext, SystemContext, authorise
 from abacus.modules.requests.events import RequestItemCreated
 from abacus.modules.requests.models import RequestItem
@@ -18,6 +19,7 @@ from abacus.modules.requests.repository import (
     get_request_item,
     insert_fulfilment,
     insert_request_item,
+    item_keys,
     items_fulfilled_by,
     list_fulfilled_versions,
     list_request_items,
@@ -26,6 +28,7 @@ from abacus.modules.requests.repository import (
     request_list_for,
     set_status,
 )
+from abacus.modules.requests.workbook import SheetPreview, normalise, preview, read_rows
 
 
 @dataclass(frozen=True)
@@ -302,3 +305,101 @@ async def fulfilled_items(
     async with tenant_session(tenant) as session:
         items = await items_fulfilled_by(session, evidence_version_id)
         return [RequestItemSummary(i.id, i.description, i.audit_area) for i in items]
+
+
+# --- Request list import (SPEC-018) -------------------------------------------------------------
+
+UNASSIGNED = "Unassigned"
+
+
+@dataclass(frozen=True)
+class ImportCounts:
+    created: int
+    duplicates: int
+    empty: int
+    unmatched_areas: int
+
+
+async def preview_request_list(
+    ctx: AuthContext, engagement_id: UUID, data: bytes, header_row: int
+) -> list[SheetPreview]:
+    """AC-1: nothing stored or audited."""
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "request_item.create", ref.resource())
+    return preview(data, header_row)
+
+
+async def import_request_list(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    data: bytes,
+    *,
+    sheet: str,
+    header_row: int,
+    description: int,
+    area: int,
+    tier: int | None,
+) -> ImportCounts:
+    """AC-2 to AC-4: one unit of work; duplicates skipped, never changed."""
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, "request_item.create", ref.resource())
+        rows, empty = read_rows(data, sheet, header_row, description, area, tier)
+        areas: dict[str, str] = {}
+        if ref.methodology_version_id is not None:
+            pinned = await version_detail(ctx.tenant, ref.methodology_version_id)
+            for a in pinned.areas:
+                areas[normalise(a.name)] = a.name
+                areas[normalise(a.code)] = a.name
+        seen = {
+            (normalise(a), normalise(d))
+            for a, d in await item_keys(tx.session, ctx, engagement_id)
+        }
+        list_id, created_list = await request_list_for(tx.session, ctx.tenant_id, engagement_id)
+        if created_list:
+            tx.record(
+                "request_list.created",
+                target=Target("request_list", list_id),
+                after=Ref(engagement_id=engagement_id),
+            )
+        created = duplicates = unmatched = 0
+        for row in rows:
+            matched = areas.get(normalise(row.area))
+            area_name = matched or row.area or UNASSIGNED
+            key = (normalise(area_name), normalise(row.description))
+            if key in seen:
+                duplicates += 1
+                continue
+            seen.add(key)
+            if matched is None and row.area:
+                unmatched += 1
+            item_id = uuid4()
+            await insert_request_item(
+                tx.session,
+                item_id=item_id,
+                tenant_id=ctx.tenant_id,
+                engagement_id=engagement_id,
+                request_list_id=list_id,
+                description=row.description,
+                audit_area=area_name,
+                created_by=ctx.user_id,
+                retrievability_tier=row.tier,
+            )
+            tx.record(
+                "request_item.created",
+                target=Target("request_item", item_id),
+                after=Ref(engagement_id=engagement_id),
+            )
+            tx.emit(RequestItemCreated(request_item_id=item_id, engagement_id=engagement_id))
+            created += 1
+        tx.record(
+            "request_list.imported",
+            target=Target("request_list", list_id),
+            after=Ref(
+                source_fingerprint=hashlib.sha256(data).hexdigest(),
+                created=created,
+                duplicates=duplicates,
+                empty=empty,
+            ),
+        )
+    return ImportCounts(created, duplicates, empty, unmatched)

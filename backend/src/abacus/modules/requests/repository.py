@@ -207,3 +207,16 @@ async def items_fulfilled_by(
         .scalars()
         .all()
     )
+
+
+async def item_keys(
+    session: AsyncSession, ctx: AuthContext, engagement_id: UUID
+) -> Sequence[tuple[str, str]]:
+    """(audit area, description) of the engagement's items, for de-duplication (SPEC-018 Q3)."""
+    rows = await session.execute(
+        select(RequestItem.audit_area, RequestItem.description).where(
+            RequestItem.engagement_id == engagement_id,
+            visible(ctx, "request_item.read", RequestItem.engagement_id),
+        )
+    )
+    return [(area, description) for area, description in rows.all()]
