@@ -161,3 +161,26 @@ describe("ac18 ESLint architecture rules", () => {
     expect(found).toEqual([]);
   });
 });
+
+describe("SPEC-016 design tokens", () => {
+  it("ac1 bans Tailwind palette colours in screens", async () => {
+    const found = await violations(
+      'export const A = () => <p className="bg-neutral-100 text-red-700">x</p>;',
+      "src/screens/Example.tsx",
+    );
+    expect(found.some((m) => m.includes("design tokens"))).toBe(true);
+  });
+
+  it("ac1 bans raw hex colours in screens", async () => {
+    const found = await violations('export const c = "#7a4e12";', "src/screens/Example.tsx");
+    expect(found.some((m) => m.includes("raw hex"))).toBe(true);
+  });
+
+  it("ac1 allows the tokens", async () => {
+    const found = await violations(
+      'export const A = () => <p className="bg-surface text-muted border-line">x</p>;',
+      "src/screens/Example.tsx",
+    );
+    expect(found).toEqual([]);
+  });
+});

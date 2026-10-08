@@ -3,7 +3,10 @@ import { cn } from "../cn";
 
 export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>): JSX.Element {
   return (
-    <table className={cn("w-full border-collapse text-left text-sm", className)} {...props} />
+    <table
+      className={cn("w-full border-collapse text-left text-sm tabular-nums", className)}
+      {...props}
+    />
   );
 }
 
@@ -12,7 +15,7 @@ export function Th({ className, ...props }: ThHTMLAttributes<HTMLTableCellElemen
     <th
       scope="col"
       className={cn(
-        "border-b border-neutral-200 px-3 py-2 font-medium text-neutral-600",
+        "border-b border-line bg-sunken px-3 py-2 text-xs font-semibold tracking-wide text-muted",
         className,
       )}
       {...props}
@@ -21,7 +24,5 @@ export function Th({ className, ...props }: ThHTMLAttributes<HTMLTableCellElemen
 }
 
 export function Td({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>): JSX.Element {
-  return (
-    <td className={cn("border-b border-neutral-100 px-3 py-2 align-top", className)} {...props} />
-  );
+  return <td className={cn("border-b border-line px-3 py-2.5 align-top", className)} {...props} />;
 }

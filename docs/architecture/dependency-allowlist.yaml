@@ -57,6 +57,8 @@ typescript:
     clsx: approved
     tailwind-merge: approved
     lucide-react: approved
+    "@fontsource/source-sans-3": approved   # self-hosted UI font; the CSP blocks remote fonts (SPEC-016)
+    "@fontsource/newsreader": approved      # self-hosted heading font (SPEC-016)
     "@workos-inc/authkit-react": pending
   dev:
     typescript: approved

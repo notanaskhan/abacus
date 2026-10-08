@@ -71,9 +71,7 @@ function Proposal({ proposal }: { proposal: ProposalOut }): JSX.Element {
         <Badge tone={proposal.action === "ready_for_review" ? "success" : "warning"}>
           {proposal.action === "ready_for_review" ? "Agent: ready" : "Agent: needs revision"}
         </Badge>{" "}
-        <span className="text-neutral-600">
-          confidence {confidencePercent(proposal.confidence)}
-        </span>
+        <span className="text-muted">confidence {confidencePercent(proposal.confidence)}</span>
       </p>
       <AgentText text={proposal.rationale} />
       {proposal.citations.length > 0 && (
@@ -93,7 +91,7 @@ function Proposal({ proposal }: { proposal: ProposalOut }): JSX.Element {
       )}
       {proposal.unverified.length > 0 && (
         <div>
-          <p className="text-neutral-600">Couldn't be verified:</p>
+          <p className="text-muted">Couldn't be verified:</p>
           <ul className="list-disc pl-5">
             {proposal.unverified.map((note, i) => (
               <li key={`${String(i)}-${note}`}>
@@ -170,13 +168,13 @@ function ReviewEntry({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-medium">{item}</p>
-          <p className="text-sm text-neutral-600">
+          <p className="text-sm text-muted">
             {entry.item_audit_area} · {sourceLabel(version)} from {version.source}
             {version.period_start !== null &&
               ` · ${version.period_start} to ${version.period_end ?? ""}`}{" "}
             · version {String(version.version_no)}
           </p>
-          <p className="text-sm text-neutral-600">
+          <p className="text-sm text-muted">
             {assignee === null
               ? "Not taken"
               : assignee === meId
