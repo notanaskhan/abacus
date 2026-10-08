@@ -1,7 +1,7 @@
 ---
 id: SPEC-017
 title: Engagement team management
-status: draft
+status: approved
 owner: founder
 risk_zone: red
 related_adrs: [ADR-024, ADR-026, ADR-020, ADR-007]
@@ -134,10 +134,11 @@ Small: teams of under 50 people.
 A migration for the grants. No flag.
 
 ## 20. Open questions
-- [ ] **Q1: who may grant which roles.** *Recommendation:* partners grant, change and remove any role. Managers handle seniors, staff and reviewers only.
-- [ ] **Q2: the last partner.** *Recommendation:* every engagement keeps at least one partner. Removing or demoting the last one is refused, so another partner must be added first.
-- [ ] **Q3: one tab or two.** *Recommendation:* one **People** tab, with the team first and client contacts below. It replaces the Contacts tab, so there's one place for "who's on this".
-- [ ] **Q4: notifications.** *Recommendation:* notify the person added (`engagement_member.added`). Role changes and removals aren't notified in v1, though they are audited.
+None. Answered by the founder on 2026-10-08 (all recommendations):
+- [x] **Q1: who may grant which roles.** *Recommendation:* partners grant, change and remove any role. Managers handle seniors, staff and reviewers only.
+- [x] **Q2: the last partner.** *Recommendation:* every engagement keeps at least one partner. Removing or demoting the last one is refused, so another partner must be added first.
+- [x] **Q3: one tab or two.** *Recommendation:* one **People** tab, with the team first and client contacts below. It replaces the Contacts tab, so there's one place for "who's on this".
+- [x] **Q4: notifications.** *Recommendation:* notify the person added (`engagement_member.added`). Role changes and removals aren't notified in v1, though they are audited.
 
 ## 21. Future / explicitly deferred
 - Firm membership management (with the identity vendor).
