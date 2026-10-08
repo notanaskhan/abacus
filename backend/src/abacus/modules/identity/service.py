@@ -15,7 +15,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy.exc import IntegrityError
 
-from abacus.kernel.db import TenantContext
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.identity.authz import Forbidden, Resource, authorise
@@ -28,6 +28,7 @@ from abacus.modules.identity.repository import (
     WallRecord,
     active_firm_admins,
     active_memberships,
+    active_staff_ids,
     all_walls,
     display_names,
     engagement_members_of,
@@ -311,3 +312,19 @@ async def list_walls(ctx: AuthContext) -> list[WallView]:
     from which client is itself sensitive."""
     await authorise(ctx, "wall.list", Resource.firm(ctx.tenant_id))
     return [_wall_view(wall) for wall in await all_walls(ctx.tenant)]
+
+
+@dataclass(frozen=True)
+class FirmMember:
+    user_id: UUID
+    display_name: str
+
+
+async def firm_members(ctx: AuthContext) -> list[FirmMember]:
+    """For picking whom to wall (SPEC-019 Q4): authorised as `wall.create`."""
+    await authorise(ctx, "wall.create", Resource.firm(ctx.tenant_id))
+    async with tenant_session(ctx.tenant) as session:
+        ids = await active_staff_ids(session)
+    names = await display_names(ids)
+    members = [FirmMember(user_id, names.get(user_id, "")) for user_id in ids]
+    return sorted(members, key=lambda m: (m.display_name.casefold(), str(m.user_id)))

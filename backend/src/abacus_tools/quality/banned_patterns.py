@@ -783,6 +783,8 @@ LIST_EXEMPT = frozenset(
         # Methodology templates are firm-wide (SPEC-008): read after `authorise` on the firm
         # (`methodology.read`) or by a caller authorised on the engagement; no engagement rows.
         ("src/abacus/modules/engagements/repository.py", "list_templates"),
+        # SPEC-019 Q4: the firm's staff for the wall picker, after `authorise(wall.create)`.
+        ("src/abacus/modules/identity/repository.py", "active_staff_ids"),
         # SPEC-017: team candidates (after `authorise(engagement.member_add)`; walls applied in the
         # query) and the removed member's assignments, released inside the removal.
         ("src/abacus/modules/identity/repository.py", "team_candidate_ids"),

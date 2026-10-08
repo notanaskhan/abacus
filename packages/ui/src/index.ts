@@ -16,4 +16,4 @@ export {
 export { AiTag, Count, Panel, Rail, RailButton, StatusPill } from "./components/workspace";
 export { Table, Td, Th } from "./components/table";
 // Icons for the shell, so apps use one icon set without depending on it directly.
-export { Bell, Building2, FolderOpen, LogOut } from "lucide-react";
+export { Bell, BookOpen, Building2, FolderOpen, LogOut } from "lucide-react";

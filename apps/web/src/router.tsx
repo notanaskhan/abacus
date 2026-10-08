@@ -2,7 +2,13 @@ import { Alert, Button, EmptyState } from "@abacus/ui";
 import { Link, createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
 import type { JSX } from "react";
 import { CALLBACK_PATH } from "./auth/session";
+import { AdminLayout } from "./screens/AdminLayout";
 import { Board } from "./screens/Board";
+import { Budget } from "./screens/Budget";
+import { Knowledge } from "./screens/Knowledge";
+import { KnowledgeDocuments } from "./screens/KnowledgeDocuments";
+import { SupportAccess } from "./screens/SupportAccess";
+import { Walls } from "./screens/Walls";
 import { Engagements } from "./screens/Engagements";
 import { ImportRequestList } from "./screens/ImportRequestList";
 import { Layout } from "./screens/Layout";
@@ -140,19 +146,49 @@ const reviewRoute = createRoute({
   },
 });
 
-// Firm admin (SPEC-016): methodology now; budget, knowledge, support and walls later.
-const methodologyRoute = createRoute({
+// Firm admin (SPEC-016, SPEC-019 Q1): one section with tabs; Knowledge is on the rail for all staff.
+const knowledgeRoute = createRoute({
   getParentRoute: () => appRoute,
+  path: "/knowledge",
+  component: Knowledge,
+});
+const adminRoute = createRoute({
+  getParentRoute: () => appRoute,
+  id: "admin",
+  component: AdminLayout,
+});
+const methodologyRoute = createRoute({
+  getParentRoute: () => adminRoute,
   path: "/admin/methodology",
   component: Methodology,
 });
 const methodologyVersionRoute = createRoute({
-  getParentRoute: () => appRoute,
+  getParentRoute: () => adminRoute,
   path: "/admin/methodology/$versionId",
   component: function VersionPage(): JSX.Element {
     const { versionId } = methodologyVersionRoute.useParams();
     return <MethodologyVersion versionId={versionId} />;
   },
+});
+const knowledgeDocumentsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/admin/knowledge",
+  component: KnowledgeDocuments,
+});
+const budgetRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/admin/budget",
+  component: Budget,
+});
+const supportRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/admin/support",
+  component: SupportAccess,
+});
+const wallsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/admin/walls",
+  component: Walls,
 });
 
 // The client portal: a separate tree (ADR-011; SPEC-015, SPEC-016).
@@ -174,8 +210,15 @@ const routeTree = rootRoute.addChildren([
   appRoute.addChildren([
     engagementsRoute,
     engagementRoute.addChildren([overviewRoute, boardRoute, mapRoute, peopleRoute, reviewRoute]),
-    methodologyRoute,
-    methodologyVersionRoute,
+    knowledgeRoute,
+    adminRoute.addChildren([
+      methodologyRoute,
+      methodologyVersionRoute,
+      knowledgeDocumentsRoute,
+      budgetRoute,
+      supportRoute,
+      wallsRoute,
+    ]),
   ]),
 ]);
 

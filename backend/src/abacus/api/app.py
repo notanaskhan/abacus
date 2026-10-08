@@ -41,6 +41,7 @@ ROUTERS = (
     identity.invitation_router,
     engagements.router,
     engagements.methodology_router,
+    engagements.firm_router,
     requests.router,
     requests.methodology_router,
     connections.router,

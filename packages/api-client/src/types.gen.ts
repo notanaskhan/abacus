@@ -478,6 +478,34 @@ export type FieldErrorOut = {
 };
 
 /**
+ * FirmClientOut
+ */
+export type FirmClientOut = {
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * FirmMemberOut
+ */
+export type FirmMemberOut = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
  * FirmRefIn
  */
 export type FirmRefIn = {
@@ -3417,6 +3445,104 @@ export type ChangeTeamRoleResponses = {
 };
 
 export type ChangeTeamRoleResponse = ChangeTeamRoleResponses[keyof ChangeTeamRoleResponses];
+
+export type FirmClientsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/clients';
+};
+
+export type FirmClientsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type FirmClientsError = FirmClientsErrors[keyof FirmClientsErrors];
+
+export type FirmClientsResponses = {
+    /**
+     * Response Firm Clients
+     *
+     * Successful Response
+     */
+    200: Array<FirmClientOut>;
+};
+
+export type FirmClientsResponse = FirmClientsResponses[keyof FirmClientsResponses];
+
+export type FirmMembersData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/members';
+};
+
+export type FirmMembersErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type FirmMembersError = FirmMembersErrors[keyof FirmMembersErrors];
+
+export type FirmMembersResponses = {
+    /**
+     * Response Firm Members
+     *
+     * Successful Response
+     */
+    200: Array<FirmMemberOut>;
+};
+
+export type FirmMembersResponse = FirmMembersResponses[keyof FirmMembersResponses];
 
 export type AcceptInvitationData = {
     body: AcceptInvitationIn;

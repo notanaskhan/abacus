@@ -28,6 +28,7 @@ from abacus.modules.identity.service import (
     SignedIn,
     WallView,
     create_wall,
+    firm_members,
     list_walls,
     remove_wall_by_id,
 )
@@ -134,6 +135,22 @@ async def remove_wall_route(wall_id: UUID, ctx: Ctx) -> WallOut:
 @router.get("/walls", action="wall.list", response_model=list[WallOut])
 async def list_walls_route(ctx: Ctx) -> list[WallOut]:
     return [_wall_out(wall) for wall in await list_walls(ctx)]
+
+
+class FirmMemberOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    user_id: Annotated[UUID, classified("internal")]
+    display_name: Annotated[str, classified("confidential")]
+
+
+@router.get("/firm/members", action="wall.create", response_model=list[FirmMemberOut])
+async def firm_members_route(ctx: Ctx) -> list[FirmMemberOut]:
+    """SPEC-019 Q4: the firm's staff, for the wall picker."""
+    return [
+        FirmMemberOut(user_id=m.user_id, display_name=m.display_name)
+        for m in await firm_members(ctx)
+    ]
 
 
 # --- Break-glass support sessions (SPEC-012 §8) -------------------------------------------------

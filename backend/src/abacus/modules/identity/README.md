@@ -87,3 +87,6 @@ Members are `staff` or `client` (`memberships.kind`). A client membership has no
 Role changes and removals go through the definer functions `team_member_set_role` and `team_member_remove`, which keep at least one engagement partner (409 `last_partner`).
 
 On removal, the hook that evidence registers (`register_member_removed`) releases the person's review assignments in the same unit of work. The person added is notified (`engagement_member.added`).
+
+## Firm members picker (SPEC-019 Q4; TASK-034)
+`GET /v1/firm/members` (`wall.create`) lists the firm's active **staff** members with names, never client users, for the walls screen's person picker. Engagements serves the matching client picker at `GET /v1/firm/clients`.
