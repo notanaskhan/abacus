@@ -38,7 +38,7 @@ from abacus.modules.connections.repository import (
     spend_state,
 )
 from abacus.modules.connections.service import connector_for
-from abacus.modules.engagements.api import get_ref, lock_ref
+from abacus.modules.engagements.api import gate_client_data, get_ref, lock_ref
 from abacus.modules.identity.api import AuthContext, authorise
 
 STATE_TTL: Final = timedelta(minutes=10)
@@ -129,6 +129,7 @@ async def start(ctx: AuthContext, engagement_id: UUID, provider: str) -> Started
     """AC-2, AC-3: authorise (fresh MFA), keep the hashed state, return the provider's URL."""
     if provider not in _available():
         raise UnknownProvider
+    await gate_client_data(ctx, engagement_id, "connection.create")  # SPEC-025 AC-7
     state = secrets.token_urlsafe(32)
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
@@ -173,6 +174,7 @@ async def complete(ctx: AuthContext, state: str, code: str) -> UUID:
     if found is None:
         raise InvalidState
     engagement_id, client_entity_id, provider = found
+    await gate_client_data(ctx, engagement_id, "connection.create")  # SPEC-025 AC-7
     connector = connector_for(_unsaved(provider, client_entity_id, ctx))
     try:
         credentials = await connector.exchange_code(code, _redirect_uri())

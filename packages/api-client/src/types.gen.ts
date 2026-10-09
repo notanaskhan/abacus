@@ -29,6 +29,90 @@ export type AcceptInvitationIn = {
 };
 
 /**
+ * AcceptanceIn
+ */
+export type AcceptanceIn = {
+    /**
+     * Decision
+     */
+    decision: 'accepted' | 'declined';
+    /**
+     * Documented At
+     */
+    documented_at: string;
+    /**
+     * Independence Concluded
+     */
+    independence_concluded?: boolean;
+    /**
+     * Independence Documented At
+     */
+    independence_documented_at?: string | null;
+    /**
+     * Kind
+     */
+    kind?: 'new_client' | 'continuance' | null;
+    /**
+     * Predecessor Auditor
+     */
+    predecessor_auditor?: string | null;
+    /**
+     * Predecessor Communicated On
+     */
+    predecessor_communicated_on?: string | null;
+};
+
+/**
+ * AcceptanceOut
+ */
+export type AcceptanceOut = {
+    /**
+     * Before Act 1
+     */
+    before_act_1: boolean;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Decided By
+     */
+    decided_by: string;
+    /**
+     * Decision
+     */
+    decision: 'accepted' | 'declined';
+    /**
+     * Documented At
+     */
+    documented_at: string;
+    /**
+     * File Name
+     */
+    file_name: string | null;
+    /**
+     * Independence Concluded At
+     */
+    independence_concluded_at: string | null;
+    /**
+     * Independence Documented At
+     */
+    independence_documented_at: string | null;
+    /**
+     * Kind
+     */
+    kind: 'new_client' | 'continuance';
+    /**
+     * Predecessor Auditor
+     */
+    predecessor_auditor: string | null;
+    /**
+     * Predecessor Communicated On
+     */
+    predecessor_communicated_on: string | null;
+};
+
+/**
  * AcceptedInvitationOut
  */
 export type AcceptedInvitationOut = {
@@ -344,6 +428,36 @@ export type CompleteOut = {
      * Engagement Id
      */
     engagement_id: string;
+};
+
+/**
+ * ConfirmationOut
+ */
+export type ConfirmationOut = {
+    /**
+     * Answered At
+     */
+    answered_at: string | null;
+    /**
+     * Before Act 1
+     */
+    before_act_1: boolean;
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Note
+     */
+    note: string | null;
+    /**
+     * Status
+     */
+    status: 'requested' | 'confirmed' | 'declined';
+    /**
+     * User Id
+     */
+    user_id: string;
 };
 
 /**
@@ -998,6 +1112,20 @@ export type InboxFileOut = {
 };
 
 /**
+ * IndependenceIn
+ */
+export type IndependenceIn = {
+    /**
+     * Confirm
+     */
+    confirm: boolean;
+    /**
+     * Note
+     */
+    note?: string | null;
+};
+
+/**
  * ItemVersionOut
  */
 export type ItemVersionOut = {
@@ -1183,6 +1311,68 @@ export type KnowledgeSearchIn = {
 };
 
 /**
+ * LetterIn
+ */
+export type LetterIn = {
+    /**
+     * Letter Date
+     */
+    letter_date?: string | null;
+    /**
+     * Link
+     */
+    link?: string | null;
+    /**
+     * Reason
+     */
+    reason?: string | null;
+    /**
+     * Status
+     */
+    status: 'not_started' | 'sent' | 'signed' | 'not_required_this_year';
+};
+
+/**
+ * LetterOut
+ */
+export type LetterOut = {
+    /**
+     * File Name
+     */
+    file_name: string | null;
+    /**
+     * Letter Date
+     */
+    letter_date: string | null;
+    /**
+     * Link
+     */
+    link: string | null;
+    /**
+     * Reason
+     */
+    reason: string | null;
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
+    /**
+     * Status
+     */
+    status: string;
+};
+
+/**
+ * LetterPolicyOut
+ */
+export type LetterPolicyOut = {
+    /**
+     * Required
+     */
+    required: boolean;
+};
+
+/**
  * LogEntryOut
  */
 export type LogEntryOut = {
@@ -1351,6 +1541,32 @@ export type OnboardingOut = {
      * Steps
      */
     steps: Array<StepOut>;
+};
+
+/**
+ * OpenConfirmationOut
+ */
+export type OpenConfirmationOut = {
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Engagement Name
+     */
+    engagement_name: string;
+    /**
+     * Statement
+     */
+    statement: string;
+    /**
+     * Status
+     */
+    status: 'requested' | 'declined';
 };
 
 /**
@@ -1679,6 +1895,36 @@ export type ScreeningResultOut = {
      * Unverified
      */
     unverified: Array<string>;
+};
+
+/**
+ * SetupFileOut
+ */
+export type SetupFileOut = {
+    /**
+     * Stored
+     */
+    stored: boolean;
+};
+
+/**
+ * SetupOut
+ */
+export type SetupOut = {
+    acceptance: AcceptanceOut | null;
+    /**
+     * Blocked
+     */
+    blocked: string | null;
+    /**
+     * Confirmations
+     */
+    confirmations: Array<ConfirmationOut>;
+    letter: LetterOut | null;
+    /**
+     * Letter Required
+     */
+    letter_required: boolean;
 };
 
 /**
@@ -2564,6 +2810,119 @@ export type GetEngagementResponses = {
 
 export type GetEngagementResponse = GetEngagementResponses[keyof GetEngagementResponses];
 
+export type AcceptanceData = {
+    body: AcceptanceIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/acceptance';
+};
+
+export type AcceptanceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AcceptanceError = AcceptanceErrors[keyof AcceptanceErrors];
+
+export type AcceptanceResponses = {
+    /**
+     * Successful Response
+     */
+    200: SetupOut;
+};
+
+export type AcceptanceResponse = AcceptanceResponses[keyof AcceptanceResponses];
+
+export type AcceptanceFileData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query: {
+        /**
+         * Filename
+         */
+        filename: string;
+    };
+    url: '/v1/engagements/{engagement_id}/acceptance/file';
+};
+
+export type AcceptanceFileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AcceptanceFileError = AcceptanceFileErrors[keyof AcceptanceFileErrors];
+
+export type AcceptanceFileResponses = {
+    /**
+     * Successful Response
+     */
+    201: SetupFileOut;
+};
+
+export type AcceptanceFileResponse = AcceptanceFileResponses[keyof AcceptanceFileResponses];
+
 export type BoardSummaryData = {
     body?: never;
     headers?: {
@@ -3209,6 +3568,10 @@ export type StartErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -3823,6 +4186,171 @@ export type DiscardResponses = {
 };
 
 export type DiscardResponse = DiscardResponses[keyof DiscardResponses];
+
+export type IndependenceData = {
+    body: IndependenceIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/independence';
+};
+
+export type IndependenceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type IndependenceError = IndependenceErrors[keyof IndependenceErrors];
+
+export type IndependenceResponses = {
+    /**
+     * Successful Response
+     */
+    200: SetupOut;
+};
+
+export type IndependenceResponse = IndependenceResponses[keyof IndependenceResponses];
+
+export type LetterData = {
+    body: LetterIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/letter';
+};
+
+export type LetterErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type LetterError = LetterErrors[keyof LetterErrors];
+
+export type LetterResponses = {
+    /**
+     * Successful Response
+     */
+    200: SetupOut;
+};
+
+export type LetterResponse = LetterResponses[keyof LetterResponses];
+
+export type LetterFileData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query: {
+        /**
+         * Filename
+         */
+        filename: string;
+    };
+    url: '/v1/engagements/{engagement_id}/letter/file';
+};
+
+export type LetterFileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type LetterFileError = LetterFileErrors[keyof LetterFileErrors];
+
+export type LetterFileResponses = {
+    /**
+     * Successful Response
+     */
+    201: SetupFileOut;
+};
+
+export type LetterFileResponse = LetterFileResponses[keyof LetterFileResponses];
 
 export type ApplyMethodologyData = {
     body: ApplyMethodologyIn;
@@ -5049,6 +5577,58 @@ export type SelfJoinResponses = {
 
 export type SelfJoinResponse = SelfJoinResponses[keyof SelfJoinResponses];
 
+export type SetupData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/setup';
+};
+
+export type SetupErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SetupError = SetupErrors[keyof SetupErrors];
+
+export type SetupResponses = {
+    /**
+     * Successful Response
+     */
+    200: SetupOut;
+};
+
+export type SetupResponse = SetupResponses[keyof SetupResponses];
+
 export type TeamData = {
     body?: never;
     headers?: {
@@ -5335,6 +5915,68 @@ export type ChangeTeamRoleResponses = {
 
 export type ChangeTeamRoleResponse = ChangeTeamRoleResponses[keyof ChangeTeamRoleResponses];
 
+export type SetupFileData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Which
+         */
+        which: 'acceptance' | 'letter';
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/{which}/file';
+};
+
+export type SetupFileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SetupFileError = SetupFileErrors[keyof SetupFileErrors];
+
+export type SetupFileResponses = {
+    /**
+     * Response Setup File
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type SetupFileResponse = SetupFileResponses[keyof SetupFileResponses];
+
 export type AutonomyData = {
     body?: never;
     headers?: {
@@ -5535,6 +6177,149 @@ export type SearchClientsResponses = {
 };
 
 export type SearchClientsResponse = SearchClientsResponses[keyof SearchClientsResponses];
+
+export type MyConfirmationsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/confirmations';
+};
+
+export type MyConfirmationsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type MyConfirmationsError = MyConfirmationsErrors[keyof MyConfirmationsErrors];
+
+export type MyConfirmationsResponses = {
+    /**
+     * Response My Confirmations
+     *
+     * Successful Response
+     */
+    200: Array<OpenConfirmationOut>;
+};
+
+export type MyConfirmationsResponse = MyConfirmationsResponses[keyof MyConfirmationsResponses];
+
+export type LetterPolicyData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/letter-policy';
+};
+
+export type LetterPolicyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type LetterPolicyError = LetterPolicyErrors[keyof LetterPolicyErrors];
+
+export type LetterPolicyResponses = {
+    /**
+     * Successful Response
+     */
+    200: LetterPolicyOut;
+};
+
+export type LetterPolicyResponse = LetterPolicyResponses[keyof LetterPolicyResponses];
+
+export type SetLetterPolicyData = {
+    body: LetterPolicyOut;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/letter-policy';
+};
+
+export type SetLetterPolicyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SetLetterPolicyError = SetLetterPolicyErrors[keyof SetLetterPolicyErrors];
+
+export type SetLetterPolicyResponses = {
+    /**
+     * Successful Response
+     */
+    200: LetterPolicyOut;
+};
+
+export type SetLetterPolicyResponse = SetLetterPolicyResponses[keyof SetLetterPolicyResponses];
 
 export type FirmMembersData = {
     body?: never;

@@ -43,8 +43,25 @@ from abacus.modules.engagements.service import (
     team_candidates,
     team_of_engagement,
 )
+from abacus.modules.engagements.setup import (
+    AcceptanceInput,
+    LetterInput,
+    SetupView,
+    answer_independence,
+    my_confirmations,
+    record_acceptance,
+    record_letter,
+    setup,
+)
 from abacus.modules.engagements.workbook import Problem, TemplateInvalid
-from abacus.modules.identity.api import AbacusRouter, AuthContext, EngagementRole, current_context
+from abacus.modules.identity.api import (
+    OWN,
+    AbacusRouter,
+    AuthContext,
+    EngagementRole,
+    current_context,
+    current_member,
+)
 
 router = AbacusRouter(prefix="/v1/engagements", tags=["engagements"])
 Name = Annotated[SingleLineText, Field(min_length=1, max_length=200), classified("confidential")]
@@ -563,3 +580,171 @@ async def search_clients_route(
         )
         for c in await search_clients(ctx, q)
     ]
+
+
+# --- Acceptance, independence and the letter (SPEC-025 AC-4 to AC-7; TASK-044) -----------------
+
+Decision = Literal["accepted", "declined"]
+Kind = Literal["new_client", "continuance"]
+
+
+class AcceptanceIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
+
+    decision: Annotated[Decision, classified("internal")]
+    documented_at: Annotated[str, Field(min_length=1, max_length=300), classified("internal")]
+    kind: Annotated[Kind | None, classified("internal")] = None
+    predecessor_auditor: Annotated[str | None, Field(max_length=200), classified("internal")] = (
+        None
+    )
+    predecessor_communicated_on: Annotated[date | None, classified("internal")] = None
+    independence_concluded: Annotated[bool, classified("internal")] = False
+    independence_documented_at: Annotated[
+        str | None, Field(max_length=300), classified("internal")
+    ] = None
+
+
+class LetterIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
+
+    status: Annotated[
+        Literal["not_started", "sent", "signed", "not_required_this_year"], classified("internal")
+    ]
+    letter_date: Annotated[date | None, classified("internal")] = None
+    reason: Annotated[str | None, Field(max_length=500), classified("internal")] = None
+    link: Annotated[str | None, Field(max_length=2000), classified("internal")] = None
+
+
+class IndependenceIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    confirm: Annotated[bool, classified("internal")]
+    note: Annotated[str | None, Field(max_length=1000), classified("confidential")] = None
+
+
+class AcceptanceOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    kind: Annotated[Kind, classified("internal")]
+    decision: Annotated[Decision, classified("internal")]
+    decided_by: Annotated[str, classified("internal")]
+    documented_at: Annotated[str, classified("internal")]
+    predecessor_auditor: Annotated[str | None, classified("internal")]
+    predecessor_communicated_on: Annotated[date | None, classified("internal")]
+    independence_concluded_at: Annotated[datetime | None, classified("internal")]
+    independence_documented_at: Annotated[str | None, classified("internal")]
+    file_name: Annotated[str | None, classified("confidential")]
+    before_act_1: Annotated[bool, classified("internal")]
+    created_at: Annotated[datetime, classified("internal")]
+
+
+class LetterOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    status: Annotated[str, classified("internal")]
+    letter_date: Annotated[date | None, classified("internal")]
+    reason: Annotated[str | None, classified("internal")]
+    link: Annotated[str | None, classified("internal")]
+    file_name: Annotated[str | None, classified("confidential")]
+    recorded_at: Annotated[datetime, classified("internal")]
+
+
+class ConfirmationOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    user_id: Annotated[UUID, classified("internal")]
+    display_name: Annotated[str, classified("confidential")]
+    status: Annotated[Literal["requested", "confirmed", "declined"], classified("internal")]
+    note: Annotated[str | None, classified("confidential")]
+    before_act_1: Annotated[bool, classified("internal")]
+    answered_at: Annotated[datetime | None, classified("internal")]
+
+
+class SetupOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    acceptance: Annotated[AcceptanceOut | None, classified("internal")]
+    letter: Annotated[LetterOut | None, classified("internal")]
+    confirmations: Annotated[list[ConfirmationOut], classified("confidential")]
+    letter_required: Annotated[bool, classified("internal")]
+    blocked: Annotated[str | None, classified("internal")]
+
+
+class OpenConfirmationOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    engagement_name: Annotated[str, classified("confidential")]
+    client_name: Annotated[str, classified("confidential")]
+    status: Annotated[Literal["requested", "declined"], classified("internal")]
+    statement: Annotated[str, classified("confidential")]
+
+
+def _setup_out(view: SetupView) -> SetupOut:
+    return SetupOut(
+        acceptance=AcceptanceOut.model_validate(view.acceptance, from_attributes=True)
+        if view.acceptance is not None
+        else None,
+        letter=LetterOut.model_validate(view.letter, from_attributes=True)
+        if view.letter is not None
+        else None,
+        confirmations=[ConfirmationOut.model_validate(asdict(c)) for c in view.confirmations],
+        letter_required=view.letter_required,
+        blocked=view.blocked,
+    )
+
+
+@router.get("/{engagement_id}/setup", action="setup.read", response_model=SetupOut)
+async def setup_route(engagement_id: UUID, ctx: Ctx) -> SetupOut:
+    """SPEC-025: acceptance, the letter, everyone's independence, and why it isn't open yet."""
+    return _setup_out(await setup(ctx, engagement_id))
+
+
+@router.put("/{engagement_id}/acceptance", action="acceptance.record", response_model=SetupOut)
+async def acceptance_route(engagement_id: UUID, body: AcceptanceIn, ctx: Ctx) -> SetupOut:
+    """SPEC-025 AC-4: the engagement partner's decision and independence conclusion."""
+    await record_acceptance(
+        ctx,
+        engagement_id,
+        AcceptanceInput(
+            decision=body.decision,
+            documented_at=body.documented_at,
+            kind=body.kind,
+            predecessor_auditor=body.predecessor_auditor,
+            predecessor_communicated_on=body.predecessor_communicated_on,
+            independence_concluded=body.independence_concluded,
+            independence_documented_at=body.independence_documented_at,
+        ),
+    )
+    return _setup_out(await setup(ctx, engagement_id))
+
+
+@router.put("/{engagement_id}/letter", action="letter.record", response_model=SetupOut)
+async def letter_route(engagement_id: UUID, body: LetterIn, ctx: Ctx) -> SetupOut:
+    """SPEC-025 AC-6: the letter's status, date, and where the signed copy lives."""
+    await record_letter(
+        ctx,
+        engagement_id,
+        LetterInput(
+            status=body.status, letter_date=body.letter_date, reason=body.reason, link=body.link
+        ),
+    )
+    return _setup_out(await setup(ctx, engagement_id))
+
+
+@router.post(
+    "/{engagement_id}/independence", action="independence.confirm", response_model=SetupOut
+)
+async def independence_route(engagement_id: UUID, body: IndependenceIn, ctx: Ctx) -> SetupOut:
+    """SPEC-025 AC-5: for oneself: confirm, or decline with a note for the partner."""
+    await answer_independence(ctx, engagement_id, confirm=body.confirm, note=body.note)
+    return _setup_out(await setup(ctx, engagement_id))
+
+
+Member = Annotated[AuthContext, Depends(current_member)]
+
+
+@firm_router.get("/confirmations", action=OWN, response_model=list[OpenConfirmationOut])
+async def my_confirmations_route(ctx: Member) -> list[OpenConfirmationOut]:
+    """The person's own independence requests still to answer."""
+    return [OpenConfirmationOut.model_validate(asdict(c)) for c in await my_confirmations(ctx)]

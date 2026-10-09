@@ -177,7 +177,9 @@ async def providers_route(engagement_id: UUID, ctx: Ctx) -> list[ProviderOut]:
     ]
 
 
-@connection_router.post("/start", action="connection.create", response_model=StartOut)
+@connection_router.post(
+    "/start", action="connection.create", response_model=StartOut, errors=(409,)
+)
 async def start_route(engagement_id: UUID, body: StartIn, ctx: Ctx) -> StartOut:
     """SPEC-020 AC-2, AC-3: a client admin, signed in recently, starts connecting."""
     started = await start(ctx, engagement_id, body.provider)

@@ -136,3 +136,7 @@ On removal, the hook that evidence registers (`register_member_removed`) release
   - `firm_facts(ctx)` gives the checklist identity's facts (staff, pending invitations, walls, acknowledgements);
   - `acknowledge(ctx, step)` (`firm.manage_settings`) records "budget looks right", "no walls needed", "SSO skipped" or the dismissal;
   - `note_budget_reviewed(tx)` marks the budget step when a budget is saved.
+
+## Member-added hook and the letter policy (SPEC-025; TASK-044)
+- **Hook:** `member_hooks.register_member_added` is called from every way a person joins a team (engagements asks them to confirm independence).
+- **Letter policy:** `firms.require_letter`, read with `GET` and set with `PUT /v1/firm/letter-policy` (`firm.manage_settings`), makes the engagement letter block client data.

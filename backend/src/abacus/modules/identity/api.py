@@ -34,8 +34,10 @@ from abacus.modules.identity.firm_settings import (
     autonomy,
     autonomy_level,
     firm_facts,
+    letter_policy,
     note_budget_reviewed,
     set_autonomy,
+    set_letter_policy,
 )
 from abacus.modules.identity.invitations import (
     ContactView,
@@ -48,6 +50,7 @@ from abacus.modules.identity.invitations import (
     resend_invitation,
     revoke_invitation,
 )
+from abacus.modules.identity.member_hooks import register_member_added
 from abacus.modules.identity.repository import EngagementRole
 from abacus.modules.identity.routes import (
     firm_support_router,
@@ -181,11 +184,13 @@ __all__ = [
     "is_active_member",
     "issue_invitation_token",
     "issue_staff_invitation_token",
+    "letter_policy",
     "member_context",
     "names_of",
     "note_budget_reviewed",
     "register_active_engagements",
     "register_engagement_client",
+    "register_member_added",
     "register_member_removed",
     "remove_client",
     "remove_member",
@@ -195,6 +200,7 @@ __all__ = [
     "router",
     "serving_request",
     "set_autonomy",
+    "set_letter_policy",
     "signup_router",
     "staff_router",
     "system_context_for_run",

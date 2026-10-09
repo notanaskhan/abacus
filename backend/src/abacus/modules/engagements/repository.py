@@ -13,6 +13,9 @@ from sqlalchemy.orm import QueryableAttribute, aliased
 
 from abacus.modules.engagements.models import (
     Engagement,
+    EngagementAcceptance,
+    EngagementLetter,
+    IndependenceConfirmation,
     MethodologyAccountRule,
     MethodologyArea,
     MethodologyRequestItem,
@@ -277,3 +280,122 @@ async def setup_counts(session: AsyncSession) -> tuple[int, int]:
     templates = await session.scalar(select(func.count()).select_from(MethodologyTemplate))
     engagements = await session.scalar(select(func.count()).select_from(Engagement))
     return int(templates or 0), int(engagements or 0)
+
+
+# --- Acceptance, independence and the letter (SPEC-025; TASK-044) ------------------------------
+
+
+async def latest_acceptance(
+    session: AsyncSession, engagement_id: UUID
+) -> EngagementAcceptance | None:
+    return (
+        await session.execute(
+            select(EngagementAcceptance)
+            .where(EngagementAcceptance.engagement_id == engagement_id)
+            .order_by(EngagementAcceptance.created_at.desc(), EngagementAcceptance.id.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
+async def insert_acceptance(session: AsyncSession, **values: object) -> None:
+    await session.execute(insert(EngagementAcceptance).values(**values))
+
+
+async def other_engagements_of_client(
+    session: AsyncSession, client_id: UUID, engagement_id: UUID
+) -> int:
+    found = await session.scalar(
+        select(func.count())
+        .select_from(Engagement)
+        .where(Engagement.client_id == client_id, Engagement.id != engagement_id)
+    )
+    return int(found or 0)
+
+
+async def request_confirmation(
+    session: AsyncSession, tenant_id: UUID, engagement_id: UUID, user_id: UUID
+) -> bool:
+    """A `requested` row unless one exists (an earlier answer stands). True if created."""
+    created = await session.execute(
+        pg_insert(IndependenceConfirmation)
+        .values(tenant_id=tenant_id, engagement_id=engagement_id, user_id=user_id)
+        .on_conflict_do_nothing()
+        .returning(IndependenceConfirmation.user_id)
+    )
+    return created.scalar_one_or_none() is not None
+
+
+async def answer_confirmation(
+    session: AsyncSession,
+    engagement_id: UUID,
+    user_id: UUID,
+    *,
+    status: str,
+    statement_version: str | None,
+    note: str | None,
+) -> None:
+    await session.execute(
+        update(IndependenceConfirmation)
+        .where(
+            IndependenceConfirmation.engagement_id == engagement_id,
+            IndependenceConfirmation.user_id == user_id,
+        )
+        .values(
+            status=status,
+            statement_version=statement_version,
+            note=note,
+            answered_at=func.clock_timestamp(),
+        )
+    )
+
+
+async def confirmations_of(
+    session: AsyncSession, engagement_id: UUID
+) -> Sequence[IndependenceConfirmation]:
+    """The engagement's confirmations, for a caller that authorised `setup.read` on it
+    (LIST_EXEMPT)."""
+    return (
+        (
+            await session.execute(
+                select(IndependenceConfirmation)
+                .where(IndependenceConfirmation.engagement_id == engagement_id)
+                .order_by(IndependenceConfirmation.requested_at, IndependenceConfirmation.user_id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def my_open_confirmations(
+    session: AsyncSession, user_id: UUID
+) -> Sequence[tuple[IndependenceConfirmation, Engagement]]:
+    """The person's own unanswered requests in the session's firm (LIST_EXEMPT: own rows)."""
+    rows = await session.execute(
+        select(IndependenceConfirmation, Engagement)
+        .join(Engagement, Engagement.id == IndependenceConfirmation.engagement_id)
+        .where(
+            IndependenceConfirmation.user_id == user_id,
+            IndependenceConfirmation.status != "confirmed",
+        )
+        .order_by(IndependenceConfirmation.requested_at)
+    )
+    return list(rows.tuples().all())
+
+
+async def get_letter(session: AsyncSession, engagement_id: UUID) -> EngagementLetter | None:
+    return (
+        await session.execute(
+            select(EngagementLetter).where(EngagementLetter.engagement_id == engagement_id)
+        )
+    ).scalar_one_or_none()
+
+
+async def put_letter(session: AsyncSession, values: dict[str, object]) -> None:
+    keep = {k: v for k, v in values.items() if k not in ("tenant_id", "engagement_id")}
+    await session.execute(
+        pg_insert(EngagementLetter)
+        .values(**values)
+        .on_conflict_do_update(index_elements=["tenant_id", "engagement_id"], set_=keep)
+    )

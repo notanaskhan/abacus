@@ -1,4 +1,11 @@
-import { autonomyOptions, autonomyQueryKey, setAutonomyMutation } from "@abacus/api-client/query";
+import {
+  autonomyOptions,
+  autonomyQueryKey,
+  letterPolicyOptions,
+  letterPolicyQueryKey,
+  setAutonomyMutation,
+  setLetterPolicyMutation,
+} from "@abacus/api-client/query";
 import { Alert, Button, Panel, Skeleton, StatusPill } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
@@ -118,6 +125,46 @@ export function Autonomy({ canSet }: { canSet: boolean }): JSX.Element {
           {errorMessage(save.error)}
         </p>
       )}
+      <ConfirmItsYou open={confirm} onOpenChange={setConfirm} />
+    </Panel>
+  );
+}
+
+/** SPEC-025 Q4: whether the engagement letter must be recorded before client data. */
+export function LetterPolicy({ canSet }: { canSet: boolean }): JSX.Element | null {
+  const queryClient = useQueryClient();
+  const policy = useQuery({ ...letterPolicyOptions(), retry: false });
+  const [confirm, setConfirm] = useState(false);
+  const save = useMutation({
+    ...setLetterPolicyMutation(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: letterPolicyQueryKey() });
+    },
+    onError: (error) => {
+      if (isForbidden(error)) setConfirm(true);
+    },
+  });
+  if (policy.data === undefined) return null;
+  return (
+    <Panel title="Engagement letters">
+      <label className="flex items-start gap-3 text-sm">
+        <input
+          type="checkbox"
+          className="mt-1"
+          checked={policy.data.required}
+          disabled={!canSet || save.isPending}
+          onChange={(event) => {
+            save.mutate({ body: { required: event.target.checked } });
+          }}
+        />
+        <span>
+          Require the engagement letter before client data
+          <span className="block text-muted">
+            Off: a missing letter is flagged but doesn&apos;t block. The standards say the letter
+            should be agreed, preferably before the work begins.
+          </span>
+        </span>
+      </label>
       <ConfirmItsYou open={confirm} onOpenChange={setConfirm} />
     </Panel>
   );

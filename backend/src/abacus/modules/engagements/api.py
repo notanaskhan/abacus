@@ -1,6 +1,6 @@
 """Public interface of the engagements module; other modules import only this (ADR-008)."""
 
-from abacus.modules.engagements.events import EngagementCreated
+from abacus.modules.engagements.events import EngagementCreated, IndependenceRequested
 from abacus.modules.engagements.routes import firm_router, methodology_router, router
 from abacus.modules.engagements.service import (
     EngagementMetadata,
@@ -14,38 +14,62 @@ from abacus.modules.engagements.service import (
     engagement_label,
     engagement_metadata,
     entity_of,
+    gate_client_data,
     get_ref,
     lock_ref,
     pin_methodology,
     version_detail,
 )
+from abacus.modules.engagements.setup import (
+    EngagementNotOpen,
+    StoredFile,
+    attach_acceptance_file,
+    attach_letter_file,
+    request_independence,
+    require_open,
+    stored_file,
+)
 from abacus.modules.engagements.workbook import AccountRule, Area, TemplateItem, area_for
-from abacus.modules.identity.api import register_active_engagements, register_engagement_client
+from abacus.modules.identity.api import (
+    register_active_engagements,
+    register_engagement_client,
+    register_member_added,
+)
 
 # Identity owns ethical walls; this module owns which client an engagement belongs to (TASK-016).
 register_engagement_client(client_subquery, client_of)
 # SPEC-014: which engagements count for firm-level reads by engagement role (not archived).
 register_active_engagements(active_engagements)
+# SPEC-025 (TASK-044): whoever joins a team is asked to confirm their independence.
+register_member_added(request_independence)
 
 __all__ = [
     "AccountRule",
     "Area",
     "EngagementCreated",
     "EngagementMetadata",
+    "EngagementNotOpen",
     "EngagementRef",
+    "IndependenceRequested",
     "MethodologyAlreadyApplied",
     "MethodologyVersionView",
+    "StoredFile",
     "TemplateItem",
     "TemplateVersionSummary",
     "area_for",
+    "attach_acceptance_file",
+    "attach_letter_file",
     "engagement_label",
     "engagement_metadata",
     "entity_of",
     "firm_router",
+    "gate_client_data",
     "get_ref",
     "lock_ref",
     "methodology_router",
     "pin_methodology",
+    "require_open",
     "router",
+    "stored_file",
     "version_detail",
 ]

@@ -77,3 +77,8 @@ Evidence items and their immutable versions (glossary; ADR-004). Owns `evidence_
   - **Assign:** `uploads.attach` (the per-item path: re-authorise with the item's facts, refuse closed items and duplicates, add the version, link it, emit `EvidenceUploaded`), then the row becomes `assigned`, audited with `followed_suggestion`.
   - **Discard:** the uploader or staff.
 - **Matching** (`matching.py`): file-name words against item descriptions, plus a bonus when both match the same classification rule; at most three suggestions scoring at least 35. Computed on read from the items the reader can see. The file itself is never opened.
+
+## Acceptance files and signed letters (SPEC-025; TASK-044)
+`setup_files.py`:
+- **Upload:** `POST …/acceptance/file` and `…/letter/file`, with the SPEC-020 checks; stored write-once, and the reference attached to engagements' records.
+- **Download:** `GET …/{acceptance|letter}/file` (`setup.read`) as an attachment, audited and verified.

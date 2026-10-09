@@ -12,7 +12,12 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
 from abacus.modules.identity.context import AuthContext
-from abacus.modules.identity.firm_settings import autonomy, set_autonomy
+from abacus.modules.identity.firm_settings import (
+    autonomy,
+    read_letter_policy,
+    set_autonomy,
+    set_letter_policy,
+)
 from abacus.modules.identity.invitations import accept_invitation
 from abacus.modules.identity.repository import FirmRole
 from abacus.modules.identity.routing import (
@@ -503,3 +508,22 @@ async def set_autonomy_route(body: AutonomyIn, ctx: Ctx) -> AutonomyOut:
     """ADR-061: Advise (0) or Routine (1) for now; Manage and Portfolio come later."""
     view = await set_autonomy(ctx, body.level)
     return AutonomyOut(level=view.level, set_at=view.set_at)
+
+
+# --- The letter before client data (SPEC-025 Q4; TASK-044) -------------------------------------
+
+
+class LetterPolicyOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    required: Annotated[bool, classified("internal")]
+
+
+@router.get("/firm/letter-policy", action="firm.read_settings", response_model=LetterPolicyOut)
+async def letter_policy_route(ctx: Ctx) -> LetterPolicyOut:
+    return LetterPolicyOut(required=await read_letter_policy(ctx))
+
+
+@router.put("/firm/letter-policy", action="firm.manage_settings", response_model=LetterPolicyOut)
+async def set_letter_policy_route(body: LetterPolicyOut, ctx: Ctx) -> LetterPolicyOut:
+    return LetterPolicyOut(required=await set_letter_policy(ctx, body.required))

@@ -52,3 +52,14 @@ Seven steps, each computed from data (identity's `firm_facts` plus this module's
   - A walled creator is refused before anything is written, and again by `authorise` on the engagement inside the unit of work.
   - A new client whose normalised name matches an existing one is refused (409 `possible_duplicate`) unless `confirm_new`.
 - **Labels:** `engagement_label` gives communications the engagement, client and fiscal year for invitations in the firm's name.
+
+## Acceptance, independence, the letter and the gate (SPEC-025 AC-4 to AC-7; TASK-044)
+`setup.py`. These are recorded, not performed.
+- **Acceptance** (`acceptance.record`, the engagement partner, fresh MFA): decision, kind (pre-filled from the client's earlier engagements), where it's documented, the predecessor auditor (new clients), and the partner's independence conclusion. Each save is a new row; the newest is live, and the file and predecessor fields carry forward.
+- **Independence:**
+  - every team join (added member, creator, self-joined administrator) asks the person to confirm, through identity's `register_member_added` hook, and notifies them (`independence.requested`);
+  - `independence.confirm` is for oneself only; a decline needs a note, which only the partner and manager see.
+- **Letter** (`letter.record`, partner and manager): status, date, a reason (when not required this year), and a link or signed copy.
+- **The gate:** `gate_client_data` / `require_open` refuse client invitations, connections, retrievals, client uploads and inbox actions until acceptance is `accepted` and the partner has concluded (and the letter is recorded, if the firm requires it). Each refusal is audited `client_data.gate_refused`, with codes `acceptance_missing`, `acceptance_declined`, `independence_conclusion_missing` and `letter_missing`. Automatic retrieval waits too.
+- **Existing engagements:** marked "accepted, before Act 1", with their staff confirmed, by migration 0036.
+- **Still to come:** per-person access to client data is TASK-045, in `authorise`.

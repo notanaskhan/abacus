@@ -27,11 +27,21 @@ export function shouldRetry(failureCount: number, error: unknown): boolean {
   return failureCount < 1 && !(typeof status === "number" && status >= 400 && status < 500);
 }
 
+// SPEC-025 AC-7: why client data isn't open yet, in plain words, wherever it's refused.
+const GATE_REASONS: Record<string, string> = {
+  acceptance_missing: "This opens once the engagement partner records acceptance.",
+  acceptance_declined:
+    "The engagement partner declined this engagement, so client data stays closed.",
+  independence_conclusion_missing:
+    "This opens once the engagement partner records their independence conclusion.",
+  letter_missing: "Your firm requires the engagement letter to be recorded first.",
+};
+
 /** A readable message for an API error body (`{"detail": ...}`), never raw server text. */
 export function errorMessage(error: unknown): string {
   if (typeof error === "object" && error !== null && "detail" in error) {
     const detail = error.detail;
-    if (typeof detail === "string" && detail.length <= 200) return detail;
+    if (typeof detail === "string" && detail.length <= 200) return GATE_REASONS[detail] ?? detail;
   }
   return "Something went wrong. Try again.";
 }

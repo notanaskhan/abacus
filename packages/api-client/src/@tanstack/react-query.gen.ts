@@ -3,8 +3,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, acceptInvitation, acceptStaffInvitation, acknowledgeStep, acknowledgeSupportSession, addDocument, addTeamMember, addToInbox, applyMethodology, approveSupportSession, assign, assignInboxFile, assignToClient, autonomy, boardSummary, changeFirmRole, changeTeamRole, check, clientContacts, complete, connection, content, createEngagement, createRequestItem, createWall, discard, dismissOnboarding, emergencyApprove, endSupportSession, engagementGraph, firmClients, firmMembers, getBudget, getDocument, getEngagement, getRetrieval, getVersion, import_, importTemplate, inbox, inviteClient, inviteStaff, itemVersions, listDocuments, listEngagements, listEvidenceVersions, listNotifications, listRequestItems, listScreeningResults, listSupportSessions, listTemplates, listUploads, listWalls, log, me, metering, onboarding, type Options, previewImport, providers, putBudget, readAll, readNotification, reasonCodes, reject, release, removeClientContact, removeTeamMember, removeWall, requestScreening, requestSupportSession, resendClientInvitation, resendStaffInvitation, reviewQueue, revoke, revokeClientInvitation, revokeStaff, revokeStaffInvitation, revokeSupportSession, search, searchClients, selfJoin, sendBack, setAutonomy, setClientVisibility, setTier, signup, staff, start, startRetrieval, take, team, teamCandidates, upload, withdrawDocument } from '../sdk.gen';
-import type { AcceptData, AcceptError, AcceptInvitationData, AcceptInvitationError, AcceptInvitationResponse, AcceptResponse, AcceptStaffInvitationData, AcceptStaffInvitationError, AcceptStaffInvitationResponse, AcknowledgeStepData, AcknowledgeStepError, AcknowledgeStepResponse, AcknowledgeSupportSessionData, AcknowledgeSupportSessionError, AcknowledgeSupportSessionResponse, AddDocumentData, AddDocumentError, AddDocumentResponse, AddTeamMemberData, AddTeamMemberError, AddTeamMemberResponse, AddToInboxData, AddToInboxError, AddToInboxResponse, ApplyMethodologyData, ApplyMethodologyError, ApplyMethodologyResponse, ApproveSupportSessionData, ApproveSupportSessionError, ApproveSupportSessionResponse, AssignData, AssignError, AssignInboxFileData, AssignInboxFileError, AssignInboxFileResponse, AssignResponse, AssignToClientData, AssignToClientError, AssignToClientResponse, AutonomyData, AutonomyError, AutonomyResponse, BoardSummaryData, BoardSummaryError, BoardSummaryResponse, ChangeFirmRoleData, ChangeFirmRoleError, ChangeFirmRoleResponse, ChangeTeamRoleData, ChangeTeamRoleError, ChangeTeamRoleResponse, CheckData, CheckError, CheckResponse, ClientContactsData, ClientContactsError, ClientContactsResponse, CompleteData, CompleteError, CompleteResponse, ConnectionData, ConnectionError, ConnectionResponse, ContentData, ContentError, ContentResponse, CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, DiscardData, DiscardError, DiscardResponse, DismissOnboardingData, DismissOnboardingError, DismissOnboardingResponse, EmergencyApproveData, EmergencyApproveError, EmergencyApproveResponse, EndSupportSessionData, EndSupportSessionError, EndSupportSessionResponse, EngagementGraphData, EngagementGraphError, EngagementGraphResponse, FirmClientsData, FirmClientsError, FirmClientsResponse, FirmMembersData, FirmMembersError, FirmMembersResponse, GetBudgetData, GetBudgetError, GetBudgetResponse, GetDocumentData, GetDocumentError, GetDocumentResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, GetVersionData, GetVersionError, GetVersionResponse, ImportData, ImportError, ImportResponse, ImportTemplateData, ImportTemplateError, ImportTemplateResponse, InboxData, InboxError, InboxResponse, InviteClientData, InviteClientError, InviteClientResponse, InviteStaffData, InviteStaffError, InviteStaffResponse, ItemVersionsData, ItemVersionsError, ItemVersionsResponse, ListDocumentsData, ListDocumentsError, ListDocumentsResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListNotificationsData, ListNotificationsError, ListNotificationsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListSupportSessionsData, ListSupportSessionsError, ListSupportSessionsResponse, ListTemplatesData, ListTemplatesError, ListTemplatesResponse, ListUploadsData, ListUploadsError, ListUploadsResponse, ListWallsData, ListWallsError, ListWallsResponse, LogData, LogError, LogResponse, MeData, MeError, MeResponse, MeteringData, MeteringError, MeteringResponse, OnboardingData, OnboardingError, OnboardingResponse, PreviewImportData, PreviewImportError, PreviewImportResponse, ProvidersData, ProvidersError, ProvidersResponse, PutBudgetData, PutBudgetError, PutBudgetResponse, ReadAllData, ReadAllError, ReadAllResponse, ReadNotificationData, ReadNotificationError, ReadNotificationResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseResponse, RemoveClientContactData, RemoveClientContactError, RemoveClientContactResponse, RemoveTeamMemberData, RemoveTeamMemberError, RemoveTeamMemberResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, RequestScreeningData, RequestScreeningError, RequestScreeningResponse, RequestSupportSessionData, RequestSupportSessionError, RequestSupportSessionResponse, ResendClientInvitationData, ResendClientInvitationError, ResendClientInvitationResponse, ResendStaffInvitationData, ResendStaffInvitationError, ResendStaffInvitationResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, RevokeClientInvitationData, RevokeClientInvitationError, RevokeClientInvitationResponse, RevokeData, RevokeError, RevokeResponse, RevokeStaffData, RevokeStaffError, RevokeStaffInvitationData, RevokeStaffInvitationError, RevokeStaffInvitationResponse, RevokeStaffResponse, RevokeSupportSessionData, RevokeSupportSessionError, RevokeSupportSessionResponse, SearchClientsData, SearchClientsError, SearchClientsResponse, SearchData, SearchError, SearchResponse, SelfJoinData, SelfJoinError, SelfJoinResponse, SendBackData, SendBackError, SendBackResponse, SetAutonomyData, SetAutonomyError, SetAutonomyResponse, SetClientVisibilityData, SetClientVisibilityError, SetClientVisibilityResponse, SetTierData, SetTierError, SetTierResponse, SignupData, SignupError, SignupResponse, StaffData, StaffError, StaffResponse, StartData, StartError, StartResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, TakeData, TakeError, TakeResponse, TeamCandidatesData, TeamCandidatesError, TeamCandidatesResponse, TeamData, TeamError, TeamResponse, UploadData, UploadError, UploadResponse, WithdrawDocumentData, WithdrawDocumentError, WithdrawDocumentResponse } from '../types.gen';
+import { accept, acceptance, acceptanceFile, acceptInvitation, acceptStaffInvitation, acknowledgeStep, acknowledgeSupportSession, addDocument, addTeamMember, addToInbox, applyMethodology, approveSupportSession, assign, assignInboxFile, assignToClient, autonomy, boardSummary, changeFirmRole, changeTeamRole, check, clientContacts, complete, connection, content, createEngagement, createRequestItem, createWall, discard, dismissOnboarding, emergencyApprove, endSupportSession, engagementGraph, firmClients, firmMembers, getBudget, getDocument, getEngagement, getRetrieval, getVersion, import_, importTemplate, inbox, independence, inviteClient, inviteStaff, itemVersions, letter, letterFile, letterPolicy, listDocuments, listEngagements, listEvidenceVersions, listNotifications, listRequestItems, listScreeningResults, listSupportSessions, listTemplates, listUploads, listWalls, log, me, metering, myConfirmations, onboarding, type Options, previewImport, providers, putBudget, readAll, readNotification, reasonCodes, reject, release, removeClientContact, removeTeamMember, removeWall, requestScreening, requestSupportSession, resendClientInvitation, resendStaffInvitation, reviewQueue, revoke, revokeClientInvitation, revokeStaff, revokeStaffInvitation, revokeSupportSession, search, searchClients, selfJoin, sendBack, setAutonomy, setClientVisibility, setLetterPolicy, setTier, setup, setupFile, signup, staff, start, startRetrieval, take, team, teamCandidates, upload, withdrawDocument } from '../sdk.gen';
+import type { AcceptanceData, AcceptanceError, AcceptanceFileData, AcceptanceFileError, AcceptanceFileResponse, AcceptanceResponse, AcceptData, AcceptError, AcceptInvitationData, AcceptInvitationError, AcceptInvitationResponse, AcceptResponse, AcceptStaffInvitationData, AcceptStaffInvitationError, AcceptStaffInvitationResponse, AcknowledgeStepData, AcknowledgeStepError, AcknowledgeStepResponse, AcknowledgeSupportSessionData, AcknowledgeSupportSessionError, AcknowledgeSupportSessionResponse, AddDocumentData, AddDocumentError, AddDocumentResponse, AddTeamMemberData, AddTeamMemberError, AddTeamMemberResponse, AddToInboxData, AddToInboxError, AddToInboxResponse, ApplyMethodologyData, ApplyMethodologyError, ApplyMethodologyResponse, ApproveSupportSessionData, ApproveSupportSessionError, ApproveSupportSessionResponse, AssignData, AssignError, AssignInboxFileData, AssignInboxFileError, AssignInboxFileResponse, AssignResponse, AssignToClientData, AssignToClientError, AssignToClientResponse, AutonomyData, AutonomyError, AutonomyResponse, BoardSummaryData, BoardSummaryError, BoardSummaryResponse, ChangeFirmRoleData, ChangeFirmRoleError, ChangeFirmRoleResponse, ChangeTeamRoleData, ChangeTeamRoleError, ChangeTeamRoleResponse, CheckData, CheckError, CheckResponse, ClientContactsData, ClientContactsError, ClientContactsResponse, CompleteData, CompleteError, CompleteResponse, ConnectionData, ConnectionError, ConnectionResponse, ContentData, ContentError, ContentResponse, CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, DiscardData, DiscardError, DiscardResponse, DismissOnboardingData, DismissOnboardingError, DismissOnboardingResponse, EmergencyApproveData, EmergencyApproveError, EmergencyApproveResponse, EndSupportSessionData, EndSupportSessionError, EndSupportSessionResponse, EngagementGraphData, EngagementGraphError, EngagementGraphResponse, FirmClientsData, FirmClientsError, FirmClientsResponse, FirmMembersData, FirmMembersError, FirmMembersResponse, GetBudgetData, GetBudgetError, GetBudgetResponse, GetDocumentData, GetDocumentError, GetDocumentResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, GetVersionData, GetVersionError, GetVersionResponse, ImportData, ImportError, ImportResponse, ImportTemplateData, ImportTemplateError, ImportTemplateResponse, InboxData, InboxError, InboxResponse, IndependenceData, IndependenceError, IndependenceResponse, InviteClientData, InviteClientError, InviteClientResponse, InviteStaffData, InviteStaffError, InviteStaffResponse, ItemVersionsData, ItemVersionsError, ItemVersionsResponse, LetterData, LetterError, LetterFileData, LetterFileError, LetterFileResponse, LetterPolicyData, LetterPolicyError, LetterPolicyResponse, LetterResponse, ListDocumentsData, ListDocumentsError, ListDocumentsResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListNotificationsData, ListNotificationsError, ListNotificationsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListSupportSessionsData, ListSupportSessionsError, ListSupportSessionsResponse, ListTemplatesData, ListTemplatesError, ListTemplatesResponse, ListUploadsData, ListUploadsError, ListUploadsResponse, ListWallsData, ListWallsError, ListWallsResponse, LogData, LogError, LogResponse, MeData, MeError, MeResponse, MeteringData, MeteringError, MeteringResponse, MyConfirmationsData, MyConfirmationsError, MyConfirmationsResponse, OnboardingData, OnboardingError, OnboardingResponse, PreviewImportData, PreviewImportError, PreviewImportResponse, ProvidersData, ProvidersError, ProvidersResponse, PutBudgetData, PutBudgetError, PutBudgetResponse, ReadAllData, ReadAllError, ReadAllResponse, ReadNotificationData, ReadNotificationError, ReadNotificationResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseResponse, RemoveClientContactData, RemoveClientContactError, RemoveClientContactResponse, RemoveTeamMemberData, RemoveTeamMemberError, RemoveTeamMemberResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, RequestScreeningData, RequestScreeningError, RequestScreeningResponse, RequestSupportSessionData, RequestSupportSessionError, RequestSupportSessionResponse, ResendClientInvitationData, ResendClientInvitationError, ResendClientInvitationResponse, ResendStaffInvitationData, ResendStaffInvitationError, ResendStaffInvitationResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, RevokeClientInvitationData, RevokeClientInvitationError, RevokeClientInvitationResponse, RevokeData, RevokeError, RevokeResponse, RevokeStaffData, RevokeStaffError, RevokeStaffInvitationData, RevokeStaffInvitationError, RevokeStaffInvitationResponse, RevokeStaffResponse, RevokeSupportSessionData, RevokeSupportSessionError, RevokeSupportSessionResponse, SearchClientsData, SearchClientsError, SearchClientsResponse, SearchData, SearchError, SearchResponse, SelfJoinData, SelfJoinError, SelfJoinResponse, SendBackData, SendBackError, SendBackResponse, SetAutonomyData, SetAutonomyError, SetAutonomyResponse, SetClientVisibilityData, SetClientVisibilityError, SetClientVisibilityResponse, SetLetterPolicyData, SetLetterPolicyError, SetLetterPolicyResponse, SetTierData, SetTierError, SetTierResponse, SetupData, SetupError, SetupFileData, SetupFileError, SetupFileResponse, SetupResponse, SignupData, SignupError, SignupResponse, StaffData, StaffError, StaffResponse, StartData, StartError, StartResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, TakeData, TakeError, TakeResponse, TeamCandidatesData, TeamCandidatesError, TeamCandidatesResponse, TeamData, TeamError, TeamResponse, UploadData, UploadError, UploadResponse, WithdrawDocumentData, WithdrawDocumentError, WithdrawDocumentResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -145,6 +145,44 @@ export const getEngagementOptions = (options: Options<GetEngagementData>) => que
     },
     queryKey: getEngagementQueryKey(options)
 });
+
+/**
+ * Acceptance Route
+ *
+ * SPEC-025 AC-4: the engagement partner's decision and independence conclusion.
+ */
+export const acceptanceMutation = (options?: Partial<Options<AcceptanceData>>): UseMutationOptions<AcceptanceResponse, AcceptanceError, Options<AcceptanceData>> => {
+    const mutationOptions: UseMutationOptions<AcceptanceResponse, AcceptanceError, Options<AcceptanceData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await acceptance({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Acceptance File Route
+ *
+ * The acceptance or continuance documentation, attached to the latest record.
+ */
+export const acceptanceFileMutation = (options?: Partial<Options<AcceptanceFileData>>): UseMutationOptions<AcceptanceFileResponse, AcceptanceFileError, Options<AcceptanceFileData>> => {
+    const mutationOptions: UseMutationOptions<AcceptanceFileResponse, AcceptanceFileError, Options<AcceptanceFileData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await acceptanceFile({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
 
 export const boardSummaryQueryKey = (options: Options<BoardSummaryData>) => createQueryKey('boardSummary', options);
 
@@ -617,6 +655,63 @@ export const discardMutation = (options?: Partial<Options<DiscardData>>): UseMut
 };
 
 /**
+ * Independence Route
+ *
+ * SPEC-025 AC-5: for oneself: confirm, or decline with a note for the partner.
+ */
+export const independenceMutation = (options?: Partial<Options<IndependenceData>>): UseMutationOptions<IndependenceResponse, IndependenceError, Options<IndependenceData>> => {
+    const mutationOptions: UseMutationOptions<IndependenceResponse, IndependenceError, Options<IndependenceData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await independence({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Letter Route
+ *
+ * SPEC-025 AC-6: the letter's status, date, and where the signed copy lives.
+ */
+export const letterMutation = (options?: Partial<Options<LetterData>>): UseMutationOptions<LetterResponse, LetterError, Options<LetterData>> => {
+    const mutationOptions: UseMutationOptions<LetterResponse, LetterError, Options<LetterData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await letter({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Letter File Route
+ *
+ * The signed engagement letter.
+ */
+export const letterFileMutation = (options?: Partial<Options<LetterFileData>>): UseMutationOptions<LetterFileResponse, LetterFileError, Options<LetterFileData>> => {
+    const mutationOptions: UseMutationOptions<LetterFileResponse, LetterFileError, Options<LetterFileData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await letterFile({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
  * Apply Methodology Route
  */
 export const applyMethodologyMutation = (options?: Partial<Options<ApplyMethodologyData>>): UseMutationOptions<ApplyMethodologyResponse, ApplyMethodologyError, Options<ApplyMethodologyData>> => {
@@ -997,6 +1092,26 @@ export const selfJoinMutation = (options?: Partial<Options<SelfJoinData>>): UseM
     return mutationOptions;
 };
 
+export const setupQueryKey = (options: Options<SetupData>) => createQueryKey('setup', options);
+
+/**
+ * Setup Route
+ *
+ * SPEC-025: acceptance, the letter, everyone's independence, and why it isn't open yet.
+ */
+export const setupOptions = (options: Options<SetupData>) => queryOptions<SetupResponse, SetupError, SetupResponse, ReturnType<typeof setupQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await setup({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: setupQueryKey(options)
+});
+
 export const teamQueryKey = (options: Options<TeamData>) => createQueryKey('team', options);
 
 /**
@@ -1084,6 +1199,26 @@ export const changeTeamRoleMutation = (options?: Partial<Options<ChangeTeamRoleD
     return mutationOptions;
 };
 
+export const setupFileQueryKey = (options: Options<SetupFileData>) => createQueryKey('setupFile', options);
+
+/**
+ * Setup File Route
+ *
+ * The file as an attachment, never inline; audited and verified.
+ */
+export const setupFileOptions = (options: Options<SetupFileData>) => queryOptions<SetupFileResponse, SetupFileError, SetupFileResponse, ReturnType<typeof setupFileQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await setupFile({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: setupFileQueryKey(options)
+});
+
 export const autonomyQueryKey = (options?: Options<AutonomyData>) => createQueryKey('autonomy', options);
 
 /**
@@ -1158,6 +1293,61 @@ export const searchClientsOptions = (options: Options<SearchClientsData>) => que
     },
     queryKey: searchClientsQueryKey(options)
 });
+
+export const myConfirmationsQueryKey = (options?: Options<MyConfirmationsData>) => createQueryKey('myConfirmations', options);
+
+/**
+ * My Confirmations Route
+ *
+ * The person's own independence requests still to answer.
+ */
+export const myConfirmationsOptions = (options?: Options<MyConfirmationsData>) => queryOptions<MyConfirmationsResponse, MyConfirmationsError, MyConfirmationsResponse, ReturnType<typeof myConfirmationsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await myConfirmations({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: myConfirmationsQueryKey(options)
+});
+
+export const letterPolicyQueryKey = (options?: Options<LetterPolicyData>) => createQueryKey('letterPolicy', options);
+
+/**
+ * Letter Policy Route
+ */
+export const letterPolicyOptions = (options?: Options<LetterPolicyData>) => queryOptions<LetterPolicyResponse, LetterPolicyError, LetterPolicyResponse, ReturnType<typeof letterPolicyQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await letterPolicy({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: letterPolicyQueryKey(options)
+});
+
+/**
+ * Set Letter Policy Route
+ */
+export const setLetterPolicyMutation = (options?: Partial<Options<SetLetterPolicyData>>): UseMutationOptions<SetLetterPolicyResponse, SetLetterPolicyError, Options<SetLetterPolicyData>> => {
+    const mutationOptions: UseMutationOptions<SetLetterPolicyResponse, SetLetterPolicyError, Options<SetLetterPolicyData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await setLetterPolicy({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
 
 export const firmMembersQueryKey = (options?: Options<FirmMembersData>) => createQueryKey('firmMembers', options);
 

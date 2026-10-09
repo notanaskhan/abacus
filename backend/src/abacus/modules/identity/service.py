@@ -21,6 +21,7 @@ from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.identity.authz import Forbidden, Resource, authorise
 from abacus.modules.identity.context import AuthContext, NoActiveTenant
 from abacus.modules.identity.events import EngagementMemberSelfJoined
+from abacus.modules.identity.member_hooks import member_added
 from abacus.modules.identity.repository import (
     EngagementRole,
     MembershipRecord,
@@ -128,6 +129,7 @@ async def add_creator_as_partner(tx: UnitOfWork, ctx: AuthContext, engagement_id
         target=Target("engagement", engagement_id),
         after=Ref(user_id=ctx.user_id),
     )
+    await member_added(tx, engagement_id, ctx.user_id)  # SPEC-025: confirm independence
 
 
 class AlreadyMember(DomainConflict):
@@ -154,6 +156,7 @@ async def add_self_joined_admin(tx: UnitOfWork, ctx: AuthContext, engagement_id:
         after=Ref(user_id=ctx.user_id),
     )
     tx.emit(EngagementMemberSelfJoined(engagement_id=engagement_id, user_id=ctx.user_id))
+    await member_added(tx, engagement_id, ctx.user_id)  # SPEC-025: confirm independence
 
 
 async def firm_admins(tenant_id: UUID) -> list[UUID]:

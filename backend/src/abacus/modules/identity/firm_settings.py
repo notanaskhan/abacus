@@ -22,8 +22,10 @@ from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.repository import (
     acknowledge_onboarding,
     firm_settings,
+    letter_required,
     onboarding_counts,
     set_autonomy_level,
+    set_letter_required,
 )
 
 ROUTINE: Final = 1
@@ -125,3 +127,29 @@ async def note_budget_reviewed(tx: UnitOfWork) -> None:
     """Inside the caller's unit of work, after its `budget.manage`: setting a budget also
     completes the checklist's budget step (the caller's own event audits the change)."""
     await acknowledge_onboarding(tx.session, "budget")
+
+
+# --- The engagement letter before client data (SPEC-025 Q4; TASK-044) --------------------------
+
+
+async def letter_policy(tenant: TenantContext) -> bool:
+    """Whether the firm requires the letter before client data (the gate reads it)."""
+    async with tenant_session(tenant) as session:
+        return await letter_required(session)
+
+
+async def read_letter_policy(ctx: AuthContext) -> bool:
+    await authorise(ctx, "firm.read_settings", Resource.firm(ctx.tenant_id))
+    return await letter_policy(ctx.tenant)
+
+
+async def set_letter_policy(ctx: AuthContext, required: bool) -> bool:
+    await authorise(ctx, "firm.manage_settings", Resource.firm(ctx.tenant_id))
+    async with uow(ctx.tenant) as tx:
+        await set_letter_required(tx.session, required)
+        tx.record(
+            "firm.letter_policy_changed",
+            target=Target("firm", ctx.tenant_id),
+            after=Ref(required=int(required)),
+        )
+    return required

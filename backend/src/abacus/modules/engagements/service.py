@@ -18,6 +18,7 @@ from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.events import EngagementCreated
 from abacus.modules.engagements.models import Engagement, MethodologyTemplate, MethodologyVersion
@@ -448,6 +449,7 @@ def active_engagements() -> Select[UUID]:
 async def invite_client(
     ctx: AuthContext, engagement_id: UUID, email: str, role: ClientRole
 ) -> UUID:
+    await gate_client_data(ctx, engagement_id, "client_contact.invite")
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "client_contact.invite", ref.resource())
@@ -562,3 +564,21 @@ async def engagement_label(tenant: TenantContext, engagement_id: UUID) -> Engage
         found.client_name if found is not None else "your company",
         engagement.fiscal_period_end.year,
     )
+
+
+async def gate_client_data(ctx: AuthContext, engagement_id: UUID, action: str) -> None:
+    """SPEC-025 AC-7: client-data actions wait until the engagement is open (audited refusal)."""
+    from abacus.modules.engagements.setup import (  # setup imports this module
+        EngagementNotOpen,
+        require_open,
+    )
+
+    try:
+        await require_open(ctx.tenant, engagement_id)
+    except EngagementNotOpen:
+        async with uow(ctx.tenant) as tx:
+            tx.record("client_data.gate_refused", target=Target("engagement", engagement_id))
+        get_logger(__name__).info(
+            "client_data.gate_refused", engagement_id=str(engagement_id), action=action
+        )
+        raise

@@ -13,3 +13,12 @@ class EngagementCreated(DomainEvent):
     event_type: ClassVar[str] = "engagement.created"
 
     engagement_id: Annotated[UUID, classified("internal")]
+
+
+class IndependenceRequested(DomainEvent):
+    """Someone joined an engagement's team and must confirm their independence (SPEC-025)."""
+
+    event_type: ClassVar[str] = "independence.requested"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    user_id: Annotated[UUID, classified("internal")]
