@@ -15,6 +15,9 @@ from datetime import date, datetime
 from typing import Final, Literal
 from uuid import UUID
 
+from sqlalchemy import ColumnElement
+from sqlalchemy.orm import QueryableAttribute
+
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
@@ -23,9 +26,11 @@ from abacus.modules.engagements.models import EngagementAcceptance, EngagementLe
 from abacus.modules.engagements.repository import (
     answer_confirmation,
     confirmations_of,
+    confirmed_column,
     get_engagement,
     get_letter,
     insert_acceptance,
+    is_confirmed,
     latest_acceptance,
     my_open_confirmations,
     other_engagements_of_client,
@@ -461,3 +466,16 @@ async def setup(ctx: AuthContext, engagement_id: UUID) -> SetupView:
         needs_letter,
         blocked.code if blocked is not None else None,
     )
+
+
+def confirmed_subquery(
+    engagement_id: ColumnElement[UUID] | QueryableAttribute[UUID], user_id: UUID
+) -> ColumnElement[bool]:
+    """For identity's `visible()` (TASK-045 D2): the person confirmed for the row's engagement."""
+    return confirmed_column(engagement_id, user_id)
+
+
+async def confirmed_for(tenant: TenantContext, engagement_id: UUID, user_id: UUID) -> bool:
+    """For identity's `authorise` (TASK-045 D2): the person confirmed for this engagement."""
+    async with tenant_session(tenant) as session:
+        return await is_confirmed(session, engagement_id, user_id)

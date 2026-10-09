@@ -12,6 +12,7 @@ Who someone is, which firm they act in, and what they may do. PROTECTED (red zon
 | `visible(ctx, action, engagement_id_column)` | Filter for list queries over engagement-scoped rows (ADR-102). |
 | `Resource.firm(tenant_id)`, `Resource.engagement(tenant_id, id, archived=..., client_id=...)` | What an action is done to; `archived` and `client_id` come from the engagement row (`EngagementRef.resource()`), never a literal (AUTHZ-003). |
 | `register_engagement_client(column, lookup)` | Called once by `engagements.api`: how to find an engagement's client, for walls. Identity never imports engagements (TASK-016 Q1). |
+| `register_independence(column, lookup)` | Called once by `engagements.api`: whether a person has confirmed their independence for an engagement (SPEC-025, TASK-045). Unregistered means refused. |
 | `ctx.tenant` | The `TenantContext` for `tenant_session` and `uow`. |
 
 ## Rules
@@ -23,6 +24,7 @@ Who someone is, which firm they act in, and what they may do. PROTECTED (red zon
 - `authz/_matrix.py` is generated from `docs/architecture/permission-matrix.yaml`: `python -m abacus_tools.codegen.permission_matrix`. Tests fail when they drift.
 - Wiring a module's routes: its `api.py` exports an `AbacusRouter` named `router`, and `abacus/api/app.py` lists it in `ROUTERS`. Pattern: `docs/architecture/reference/tenancy-and-authz.md`.
 - Ethical walls (ADR-026, SPEC-002) are checked in `authorise` before roles and in every `visible()` filter, for the user, the person an agent's run was started by, or the person a system run acts for. A walled engagement answers 404, not 403. The walled clients are read once per request and live on every step outside one. A firm admin can't lift a wall on themself (409 `own_wall`). `WALL_SAFE` is true, so production may start.
+- Independence (SPEC-025 AC-7, per person; TASK-045): actions marked `independence: required` in the matrix (evidence read, upload, accept and reject; review read, take and assign; "Screen now"; the connection access log) are granted by a staff engagement role only once that person has confirmed their independence for the engagement. `authorise` checks it after roles (layer `independence`, logged, never shown) and `visible()` adds it to the staff-role membership filter. Firm and client roles, break-glass support and system runs aren't bound; an agent is, through its initiator. Firm-level reads leave it to `visible()`, row by row. The answer is read once per request.
 - Static rules:
   - UOW-003: only `repository.py` uses the `abacus_identity` engine.
   - AUTH-001: only `tokens.py` imports token libraries.

@@ -15,7 +15,7 @@ from typing import Literal, cast, get_args
 
 import pytest
 import yaml
-from sqlalchemy import Uuid, column
+from sqlalchemy import ColumnElement, Uuid, column, literal_column
 
 from abacus.kernel.db import TenantContext
 from abacus.modules.identity import authz
@@ -41,7 +41,7 @@ CLIENT_ROLES = ("client_admin", "client_contributor")
 MEMBER_ROLES = (*ENGAGEMENT_ROLES, *CLIENT_ROLES)
 HUMAN_ROLES = (*FIRM_ROLES, *ENGAGEMENT_ROLES)
 READ_VERBS = {"read", "read_metadata", "read_log"}
-MODIFIERS = {"mfa_recent", "requires", "notify"}
+MODIFIERS = {"mfa_recent", "requires", "notify", "independence"}
 
 # Reached by the contract's `matrix._rule` / `matrix._decision` validators, which are private by
 # name only; the contract tests them directly.
@@ -101,10 +101,12 @@ def _resource(
 
 class EngagementRoles:
     """Stands in for the database reads of `engagement_members` and `ethical_walls` (TASK-016:
-    no walls unless a test sets `walls`); records its calls."""
+    no walls unless a test sets `walls`), and engagements' independence lookup (TASK-045: every
+    person has confirmed unless a test sets `confirmed`); records its calls."""
 
     def __init__(self) -> None:
         self.role: str | None = None
+        self.confirmed = True
         self.walls: frozenset[uuid.UUID] = frozenset()
         self.calls: list[tuple[TenantContext, uuid.UUID, uuid.UUID]] = []
         self.wall_calls: list[tuple[TenantContext, uuid.UUID]] = []
@@ -119,12 +121,23 @@ class EngagementRoles:
         self.wall_calls.append((tenant, user_id))
         return self.walls
 
+    async def confirmed_for(
+        self, tenant: TenantContext, engagement_id: uuid.UUID, user_id: uuid.UUID
+    ) -> bool:
+        return self.confirmed
+
+
+def _confirmed_column(engagement_id: object, user_id: uuid.UUID) -> ColumnElement[bool]:
+    """Stands in for engagements' confirmation EXISTS (SPEC-025, TASK-045)."""
+    return literal_column("independence_confirmed")
+
 
 @pytest.fixture
 def engagement(monkeypatch: pytest.MonkeyPatch) -> EngagementRoles:
     fake = EngagementRoles()
     monkeypatch.setattr(authz, "engagement_role", fake)
     monkeypatch.setattr(authz, "walled_clients", fake.walled)
+    monkeypatch.setattr(authz, "_independence", (_confirmed_column, fake.confirmed_for))
 
     async def no_engagement_roles(*args: object) -> frozenset[str]:
         return frozenset()  # SPEC-014: these cases test firm roles alone at firm level
@@ -646,7 +659,9 @@ def test_ac20_visible_for_a_firm_level_read_without_a_firm_role_is_false(action:
     assert _sql(visible(_ctx(), action, column("engagement_id", Uuid()))) == "false"
 
 
-@pytest.mark.parametrize("action", ENGAGEMENT_READS)
+@pytest.mark.parametrize(
+    "action", [a for a in ENGAGEMENT_READS if YAML_ACTIONS[a].get("independence") is None]
+)
 def test_ac20_visible_without_a_firm_allow_filters_on_engagement_membership(action: str) -> None:
     ctx = _ctx()
     expression = visible(ctx, action, column("engagement_id", Uuid()))

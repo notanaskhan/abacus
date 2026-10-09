@@ -26,7 +26,14 @@ _SIMPLE: frozenset[str] = frozenset(
     {"allow", "deny", "assigned_only", "client_visible_only", "in_scope", "task_scope"}
 )
 _FIRM_SETTING = re.compile(r"firm_setting\(([a-z_]+)\)")
-_MODIFIERS = {"mfa_recent": "required", "requires": "reason", "notify": "engagement_team"}
+_MODIFIERS = {
+    "mfa_recent": "required",
+    "requires": "reason",
+    "notify": "engagement_team",
+    # SPEC-025 (TASK-045): a staff member's engagement role counts only once they've confirmed
+    # their independence for that engagement.
+    "independence": "required",
+}
 _ACTION = re.compile(r"[a-z][a-z_]*\.[a-z][a-z_]*")
 # Verbs that only read: archived engagements still allow them (`archived_write: deny`).
 READ_VERBS = frozenset({"read", "read_metadata", "read_log"})
@@ -41,6 +48,8 @@ class Rule:
     # An obligation the platform can't discharge yet (engagement-team notification, ADR-024):
     # such actions deny until it can.
     notify: bool
+    # SPEC-025 (TASK-045): client data; see `independence` in `authorise`.
+    independence: bool = False
 
     @property
     def reads(self) -> bool:
@@ -75,6 +84,7 @@ def _rule(action: str, entries: dict[str, str]) -> Rule:
         mfa_recent="mfa_recent" in modifiers,
         requires_reason="requires" in modifiers,
         notify="notify" in modifiers,
+        independence="independence" in modifiers,
     )
 
 

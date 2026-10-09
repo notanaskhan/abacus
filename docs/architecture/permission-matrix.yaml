@@ -109,6 +109,7 @@ actions:
 
   # --- Evidence ---
   evidence.read:
+    independence: required   # SPEC-025 (TASK-045): client data, per person
     practice_leader: in_scope
     quality_partner: in_scope
     engagement_partner: allow
@@ -121,6 +122,7 @@ actions:
     agent: task_scope
     platform_support_content: allow   # SPEC-012
   evidence.upload:
+    independence: required   # SPEC-025 (TASK-045): client data, per person
     engagement_partner: allow
     manager: allow
     senior: allow
@@ -129,11 +131,13 @@ actions:
     client_contributor: assigned_only
     system: allow             # retrieval via connections
   evidence.accept:
+    independence: required   # SPEC-025 (TASK-045): client data, per person
     engagement_partner: allow
     manager: allow
     senior: firm_setting(seniors_can_accept)
     agent: deny               # ADR-005
   evidence.reject:
+    independence: required   # SPEC-025 (TASK-045): client data, per person
     engagement_partner: allow
     manager: allow
     senior: firm_setting(seniors_can_accept)
@@ -146,6 +150,7 @@ actions:
 
   # --- Review queues (SPEC-004 Q7, Q8; TASK-019) ---
   review.read:
+    independence: required   # SPEC-025 (TASK-045): client data, per person
     practice_leader: in_scope
     quality_partner: in_scope
     engagement_partner: allow
@@ -157,15 +162,16 @@ actions:
     platform_support: allow   # SPEC-012
     platform_support_content: allow   # SPEC-012
   review.take:
+    independence: required   # SPEC-025 (TASK-045): client data, per person
     engagement_partner: allow
     manager: allow
     senior: firm_setting(seniors_can_accept)
     agent: deny               # ADR-005
-  review.assign:            {engagement_partner: allow, manager: allow, agent: deny}
+  review.assign:           {engagement_partner: allow, manager: allow, agent: deny, independence: required}
 
   # --- Screening and suggestions ---
   screening.run:            {system: allow, agent: task_scope}
-  screening.request:        {engagement_partner: allow, manager: allow, senior: allow, staff: allow}   # SPEC-024 (TASK-042 D1): "Screen now" at Advise
+  screening.request:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # SPEC-024 (TASK-042 D1): "Screen now" at Advise
   suggestion.create:        {agent: task_scope}
   suggestion.resolve:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny}
 
@@ -177,7 +183,7 @@ actions:
   connection.check:         {client_admin: allow, engagement_partner: allow, manager: allow}   # SPEC-020 AC-4 (TASK-036 D4)
   connection.revoke:        {client_admin: allow, engagement_partner: allow, manager: allow}
   connection.pull:          {system: allow}
-  connection.read_log:      {client_admin: allow, engagement_partner: allow, manager: allow, platform_support: allow, platform_support_content: allow}
+  connection.read_log:     {client_admin: allow, engagement_partner: allow, manager: allow, platform_support: allow, platform_support_content: allow, independence: required}
 
   # --- Follow-ups ---
   follow_up.draft:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: task_scope}

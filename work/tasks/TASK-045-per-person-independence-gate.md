@@ -4,7 +4,7 @@ title: Per-person independence gate in authorisation
 spec: SPEC-025
 acceptance_criteria: [AC-7]
 risk_zone: red
-status: awaiting-plan-approval
+status: done
 branch: task-045-independence-gate
 worktree:
 created: 2026-10-09
@@ -37,7 +37,7 @@ SPEC-025 AC-7 (per person), plus the screens' handling of it (AC-9).
   - `apps/web` `EngagementLayout`.
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-09: D1–D4). Approved by founder: the paths named under *Protected paths*, including `identity/authz/__init__.py` and `authz/matrix.py`
 
 ### Why this is in `identity/authz` (as discussed in TASK-044 D1)
 Every read and list of client data passes through `authorise` or `visible()`. A check in each service would miss the list queries (the Board's evidence, the review queue, screening results, the access log) and anything built later. Walls are enforced the same way.
@@ -110,12 +110,24 @@ Not touched:
 - **D4. Write the approval file for the paths above, including `identity/authz/__init__.py` and `authz/matrix.py`?** *Recommendation: yes.*
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
-- [ ] Type check, lint, format, architecture and dependency rules pass
-- [ ] Every query is tenant-scoped; every endpoint checks authorisation
-- [ ] Module READMEs and the relevant docs are updated
+- [x] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
+- [x] Type check, lint, format, architecture and dependency rules pass
+- [x] Every query is tenant-scoped; every endpoint checks authorisation
+- [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-09` — Implemented:
+  - the `independence: required` modifier (`Rule.independence`; the codegen needed no change, as generated actions carry modifier keys as written), on the nine actions of D1;
+  - the `independence` layer in `authorise`, after roles; the `register_independence` slot (fail closed), cached per request; `visible()` requires a confirmation for staff roles on marked actions, client reach unchanged;
+  - a firm-level read (no engagement on the resource) leaves the check to `visible()`, row by row; otherwise the firm-wide lists would refuse anyone unconfirmed anywhere;
+  - engagements registers `confirmed_subquery` / `confirmed_for`;
+  - web: the engagement shows "Confirm your independence to see client data" with Confirm / "I can't confirm" above every tab until the person confirms, and refetches on answering. The tabs keep their own generic refusal under that banner rather than each rewriting its 403.
+
+  Tests and checks:
+  - existing permission, walls and system-context fixtures now register a confirmed person (the layer is a new precondition, not under test there); the membership SQL-shape test covers unmarked reads, and `test_independence.py` covers marked ones;
+  - `test_independence.py`: confirmed allowed and unconfirmed refused for every marked action and staff role; unmarked reads unaffected; client roles, break-glass support and system runs unaffected; an unconfirmed person's agent refused (delegation); unregistered refused; one lookup per request; one engagement's confirmation doesn't open another; `visible()` shapes;
+  - backend unit 9,341 passed, web 187 passed, gates pass;
+  - local smoke: dev-staff added to an open engagement was asked to confirm, refused evidence (independence), refused again after declining, then saw its 6 versions after confirming; the practice leader saw them throughout.
 - `2026-10-09` — Design written for founder review after TASK-044 merged (#80).
 
 ## Decisions made during this task

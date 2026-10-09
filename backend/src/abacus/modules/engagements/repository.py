@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from datetime import date
 from uuid import UUID, uuid4
 
-from sqlalchemy import ColumnElement, func, insert, select, update
+from sqlalchemy import ColumnElement, exists, func, insert, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import QueryableAttribute, aliased
@@ -348,6 +348,32 @@ async def answer_confirmation(
             answered_at=func.clock_timestamp(),
         )
     )
+
+
+def confirmed_column(
+    engagement_id: ColumnElement[UUID] | QueryableAttribute[UUID], user_id: UUID
+) -> ColumnElement[bool]:
+    """Whether the person has confirmed their independence for the row's engagement (SPEC-025,
+    TASK-045: identity's `visible()`)."""
+    return (
+        exists()
+        .where(
+            IndependenceConfirmation.engagement_id == engagement_id,
+            IndependenceConfirmation.user_id == user_id,
+            IndependenceConfirmation.status == "confirmed",
+        )
+        .correlate_except(IndependenceConfirmation)
+    )
+
+
+async def is_confirmed(session: AsyncSession, engagement_id: UUID, user_id: UUID) -> bool:
+    found = await session.scalar(
+        select(IndependenceConfirmation.status).where(
+            IndependenceConfirmation.engagement_id == engagement_id,
+            IndependenceConfirmation.user_id == user_id,
+        )
+    )
+    return found == "confirmed"
 
 
 async def confirmations_of(

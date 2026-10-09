@@ -16,7 +16,7 @@ from typing import Literal, cast, get_args
 
 import pytest
 import yaml
-from sqlalchemy import Uuid, column
+from sqlalchemy import ColumnElement, Uuid, column, true
 
 import abacus.modules.engagements.api as engagements_api
 import abacus.modules.identity.api as identity_api
@@ -73,9 +73,16 @@ class Fakes:
         self.wall_calls.append(user_id)
         return self.walls.get(user_id, frozenset())
 
+    async def confirmed_for(self, *args: object) -> bool:
+        return True
+
     async def lookup(self, tenant: TenantContext, engagement_id: uuid.UUID) -> uuid.UUID | None:
         self.lookups.append((tenant, engagement_id))
         return self.clients.get(engagement_id)
+
+
+def _always_confirmed(engagement_id: object, user_id: uuid.UUID) -> ColumnElement[bool]:
+    return true()
 
 
 @pytest.fixture
@@ -86,6 +93,8 @@ def fakes(monkeypatch: pytest.MonkeyPatch) -> Fakes:
     # Start unregistered (restored after the test), then register the fake lookup.
     monkeypatch.setattr(authz, "_engagement_client", None)
     register_engagement_client(client_subquery, made.lookup)
+    # SPEC-025 (TASK-045): everyone here has confirmed their independence; walls are under test.
+    monkeypatch.setattr(authz, "_independence", (_always_confirmed, made.confirmed_for))
     return made
 
 
