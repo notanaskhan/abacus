@@ -1701,6 +1701,9 @@ export const listTemplatesQueryKey = (options?: Options<ListTemplatesData>) => c
 
 /**
  * List Templates Route
+ *
+ * Every version of every template; `latest=true` keeps each template's newest version only
+ * (SPEC-025 AC-3: what a new engagement is offered).
  */
 export const listTemplatesOptions = (options?: Options<ListTemplatesData>) => queryOptions<ListTemplatesResponse, ListTemplatesError, ListTemplatesResponse, ReturnType<typeof listTemplatesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

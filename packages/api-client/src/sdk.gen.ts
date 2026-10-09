@@ -1006,6 +1006,9 @@ export const metering = <ThrowOnError extends boolean = false>(options?: Options
 
 /**
  * List Templates Route
+ *
+ * Every version of every template; `latest=true` keeps each template's newest version only
+ * (SPEC-025 AC-3: what a new engagement is offered).
  */
 export const listTemplates = <ThrowOnError extends boolean = false>(options?: Options<ListTemplatesData, ThrowOnError>): RequestResult<ListTemplatesResponses, ListTemplatesErrors, ThrowOnError> => (options?.client ?? client).get<ListTemplatesResponses, ListTemplatesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

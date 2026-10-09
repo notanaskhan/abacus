@@ -253,7 +253,7 @@ function GapRow({
 /** With no methodology pinned: pick a version and seed the request list (SPEC-008 AC-4). */
 export function ApplyMethodology({ engagementId }: { engagementId: string }): JSX.Element {
   const queryClient = useQueryClient();
-  const templates = useQuery(listTemplatesOptions());
+  const templates = useQuery(listTemplatesOptions({ query: { latest: true } }));
   const engagement = useQuery(getEngagementOptions({ path: { engagement_id: engagementId } }));
   const [version, setVersion] = useState("");
   const apply = useMutation({

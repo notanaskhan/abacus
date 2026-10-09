@@ -1,6 +1,8 @@
 import type { ClientChoiceOut } from "@abacus/api-client";
 import {
+  applyMethodologyMutation,
   createEngagementMutation,
+  listTemplatesOptions,
   searchClientsOptions,
   listEngagementsOptions,
   listEngagementsQueryKey,
@@ -19,7 +21,7 @@ import {
   Th,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { type SyntheticEvent, type JSX, useState } from "react";
 import { errorMessage } from "../api";
 import { MyConfirmations } from "./MyConfirmations";
@@ -123,11 +125,41 @@ function CreateEngagement({
   const [picked, setPicked] = useState<ClientChoiceOut | null>(null);
   const [entity, setEntity] = useState<string>("");
   const [confirmNew, setConfirmNew] = useState(false);
+  const [type, setType] = useState<EngagementType>("audit");
+  // SPEC-025 AC-3 (TASK-047): the request list to start from; null until the creator chooses.
+  const [choice, setChoice] = useState<string | null>(null);
+  const [created, setCreated] = useState<{ id: string; reason: string } | null>(null);
+  const navigate = useNavigate();
+  const templates = useQuery({
+    ...listTemplatesOptions({ query: { latest: true } }),
+    retry: false,
+  });
+  const offered = (templates.data ?? []).filter((t) => t.engagement_types?.includes(type));
+  const only = offered.length === 1 ? offered[0] : undefined;
+  const template = choice ?? only?.version_id ?? "";
+  const apply = useMutation(applyMethodologyMutation());
+  const openEngagement = (id: string): void => {
+    onOpenChange(false);
+    void navigate({ to: "/engagements/$engagementId", params: { engagementId: id } });
+  };
   const mutation = useMutation({
     ...createEngagementMutation(),
-    onSuccess: () => {
+    onSuccess: async (engagement) => {
       void queryClient.invalidateQueries({ queryKey: listEngagementsQueryKey() });
-      onOpenChange(false);
+      if (template === "" || template === "none") {
+        openEngagement(engagement.id);
+        return;
+      }
+      // TASK-047 D1: applied straight after creating, as Overview does.
+      try {
+        await apply.mutateAsync({
+          path: { engagement_id: engagement.id },
+          body: { version_id: template },
+        });
+        openEngagement(engagement.id);
+      } catch (error) {
+        setCreated({ id: engagement.id, reason: errorMessage(error) });
+      }
     },
   });
   const duplicate = mutation.isError && errorMessage(mutation.error) === "possible_duplicate";
@@ -199,7 +231,11 @@ function CreateEngagement({
           <select
             id="type"
             name="type"
-            defaultValue="audit"
+            value={type}
+            onChange={(event) => {
+              setType(event.target.value as EngagementType);
+              setChoice(null);
+            }}
             className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm"
           >
             {ENGAGEMENT_TYPES.map(([value, label]) => (
@@ -213,6 +249,17 @@ function CreateEngagement({
           <Field name="fiscal_period_start" label="Fiscal year start" type="date" />
           <Field name="fiscal_period_end" label="Fiscal year end" type="date" />
         </div>
+        <RequestListChoice
+          typeLabel={typeLabel(type)}
+          loading={templates.isPending}
+          failed={templates.isError}
+          offered={offered.map((t) => ({
+            id: t.version_id,
+            label: `${t.template_name} · v${String(t.version)} (latest)`,
+          }))}
+          value={template}
+          onChange={setChoice}
+        />
         {duplicate && !confirmNew ? (
           <Alert title="This client may already exist">
             Find it with the search above and pick it, so its walls and history carry over. If it
@@ -234,11 +281,80 @@ function CreateEngagement({
             <Alert title="Couldn't create the engagement">{errorMessage(mutation.error)}</Alert>
           )
         )}
-        <Button type="submit" disabled={mutation.isPending}>
-          {mutation.isPending ? "Creating…" : "Create engagement"}
-        </Button>
+        {created !== null ? (
+          <Alert title="Created, but the template wasn't applied">
+            {created.reason} You can apply it from the engagement&apos;s setup.{" "}
+            <button
+              type="button"
+              className="font-semibold text-accent hover:underline"
+              onClick={() => {
+                openEngagement(created.id);
+              }}
+            >
+              Open the engagement
+            </button>
+          </Alert>
+        ) : (
+          <Button type="submit" disabled={mutation.isPending || apply.isPending}>
+            {mutation.isPending || apply.isPending ? "Creating…" : "Create engagement"}
+          </Button>
+        )}
       </form>
     </Dialog>
+  );
+}
+
+/** SPEC-025 AC-3 (TASK-047): start from the firm's template for the type, at its latest version.
+ * One template is preselected; with several the creator picks; with none the list starts empty. */
+function RequestListChoice({
+  typeLabel: label,
+  loading,
+  failed,
+  offered,
+  value,
+  onChange,
+}: {
+  typeLabel: string;
+  loading: boolean;
+  failed: boolean;
+  offered: { id: string; label: string }[];
+  value: string;
+  onChange: (value: string) => void;
+}): JSX.Element {
+  if (loading) return <Skeleton className="h-9" />;
+  if (failed || offered.length === 0) {
+    return (
+      <p className="text-sm text-muted">
+        {failed
+          ? "Couldn't load your firm's templates; the request list starts empty."
+          : `Your firm has no template for ${label.toLowerCase()} engagements yet; the request list starts empty.`}{" "}
+        <Link to="/admin/methodology" className="text-accent hover:underline">
+          Methodology
+        </Link>
+      </p>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-1">
+      <Label htmlFor="template">Request list</Label>
+      <select
+        id="template"
+        required
+        value={value}
+        onChange={(event) => {
+          onChange(event.target.value);
+        }}
+        className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm"
+      >
+        {offered.length > 1 && <option value="">Choose a template…</option>}
+        {offered.map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.label}
+          </option>
+        ))}
+        <option value="none">Start with an empty list</option>
+      </select>
+    </div>
   );
 }
 

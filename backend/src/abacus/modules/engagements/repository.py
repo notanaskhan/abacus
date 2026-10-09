@@ -209,14 +209,26 @@ async def insert_version(
 
 
 async def list_templates(
-    session: AsyncSession,
+    session: AsyncSession, *, latest: bool = False
 ) -> Sequence[tuple[MethodologyTemplate, MethodologyVersion]]:
-    """Every template of the firm with each of its versions, newest first."""
-    rows = await session.execute(
+    """Every template of the firm with each of its versions, newest first; with `latest`, only
+    each template's newest version (SPEC-025 AC-3; TASK-047 D3)."""
+    query = (
         select(MethodologyTemplate, MethodologyVersion)
         .join(MethodologyVersion, MethodologyVersion.template_id == MethodologyTemplate.id)
         .order_by(MethodologyTemplate.name, MethodologyVersion.version.desc())
     )
+    if latest:
+        newer = aliased(MethodologyVersion)
+        query = query.where(
+            ~select(newer.id)
+            .where(
+                newer.template_id == MethodologyVersion.template_id,
+                newer.version > MethodologyVersion.version,
+            )
+            .exists()
+        )
+    rows = await session.execute(query)
     return [(t, v) for t, v in rows.all()]
 
 

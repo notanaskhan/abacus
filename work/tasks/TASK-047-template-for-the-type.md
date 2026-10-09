@@ -4,7 +4,7 @@ title: New engagement offers the firm's template for its type
 spec: SPEC-025
 acceptance_criteria: [AC-3, AC-9]
 risk_zone: amber
-status: planned
+status: done
 branch: task-047-type-template
 worktree:
 created: 2026-10-09
@@ -33,7 +33,7 @@ SPEC-025 AC-3 (the proposal for a new client is the firm's template for the type
   - `apps/web`: `Engagements.tsx` (the create dialog), `Overview.tsx` (`ApplyMethodology`).
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-09: D1–D3). Approved by founder: `backend/tests/unit/**`
 
 ### What the code shows
 - **Creating an engagement never offers a template.** The request list is applied afterwards, from Overview's "Start from your methodology" (`engagement.apply_methodology`, held by the engagement partner and manager).
@@ -81,12 +81,23 @@ SPEC-025 AC-3 (the proposal for a new client is the firm's template for the type
 - **D3. Offer only each template's latest version, in the dialog and on Overview?** *Recommendation: yes,* matching AC-2 and AC-3. Older versions stay visible on the Methodology screen.
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
-- [ ] Type check, lint, format, architecture and dependency rules pass
-- [ ] Every query is tenant-scoped; every endpoint checks authorisation
-- [ ] Module READMEs and the relevant docs are updated
+- [x] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
+- [x] Type check, lint, format, architecture and dependency rules pass
+- [x] Every query is tenant-scoped; every endpoint checks authorisation
+- [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-09` — Implemented:
+  - `GET /v1/methodology/templates?latest=true` (repository: versions with no newer version of the same template);
+  - "New engagement" gains the Request list choice: the only template for the type preselected at its latest version, several to choose from, none explained with a link to Methodology, or "Start with an empty list". It creates, then applies (D1), then opens the engagement (on Setup while it isn't open). A failed apply says "Created, but the template wasn't applied", with the reason and a link to the engagement;
+  - Overview's picker offers latest versions only.
+
+  Tests and checks:
+  - backend `test_latest_templates.py`; web `spec025template.test.tsx` (preselected and applied, several, empty list, none, failed apply);
+  - the existing create test now expects the new engagement to open (the approved behaviour), keeping its request-body and list-refresh checks;
+  - backend unit 9,353 passed, web 198 passed, gates pass;
+  - local smoke: the Dev firm's imported template was listed at its latest version, applied by the creator straight after creating (8 items), and the setup page's Request list step showed done.
+  - **Found, not fixed (out of scope):** importing a *second* version of an existing template fails locally with "permission denied for table methodology_templates". The import locks the template row (`SELECT … FOR UPDATE`), which needs UPDATE privilege that the app role doesn't hold on that table. It needs a small fix of its own (a migration grant or a different lock), reported to the founder.
 - `2026-10-09` — Design written for founder review after TASK-046 merged (#82).
 
 ## Decisions made during this task

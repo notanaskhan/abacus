@@ -7323,7 +7323,12 @@ export type ListTemplatesData = {
         'X-Abacus-Tenant'?: string | null;
     };
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Latest
+         */
+        latest?: boolean;
+    };
     url: '/v1/methodology/templates';
 };
 

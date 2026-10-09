@@ -86,7 +86,7 @@ describe("ac18 Engagements screen", () => {
     expect(screen.getAllByText("active").length).toBe(2);
   });
 
-  it("creates an engagement with the five fields and refreshes the list", async () => {
+  it("creates an engagement with the five fields, refreshes the list and opens it", async () => {
     let created = false;
     const { calls } = mockApi({
       "GET /v1/engagements": () => json(created ? [engagement("e9", "New audit")] : []),
@@ -115,7 +115,8 @@ describe("ac18 Engagements screen", () => {
     fill("Fiscal year end", "2025-12-31");
     fireEvent.click(screen.getByRole("button", { name: "Create engagement" }));
 
-    expect(await screen.findByRole("link", { name: "New audit" })).toBeTruthy();
+    // SPEC-025 (TASK-047): the new engagement opens (on Setup, until it's open for client data).
+    expect(await screen.findByText("Board page")).toBeTruthy();
     const post = calls.find((c) => c.method === "POST");
     expect(post?.path).toBe("/v1/engagements");
     expect(post?.body).toEqual({

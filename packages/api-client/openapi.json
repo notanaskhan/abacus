@@ -15261,8 +15261,19 @@
     },
     "/v1/methodology/templates": {
       "get": {
+        "description": "Every version of every template; `latest=true` keeps each template's newest version only\n(SPEC-025 AC-3: what a new engagement is offered).",
         "operationId": "list_templates",
         "parameters": [
+          {
+            "in": "query",
+            "name": "latest",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Latest",
+              "type": "boolean"
+            }
+          },
           {
             "in": "header",
             "name": "authorization",
