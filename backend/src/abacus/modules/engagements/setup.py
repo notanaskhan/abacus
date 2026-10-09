@@ -38,10 +38,22 @@ from abacus.modules.engagements.repository import (
     request_confirmation,
 )
 from abacus.modules.engagements.service import get_ref, lock_ref
+from abacus.modules.engagements.setup_steps import (
+    Confirmation,
+    Member,
+    SetupFacts,
+    Step,
+    has_partner,
+    steps,
+    summary,
+)
 from abacus.modules.identity.api import (
     AuthContext,
     authorise,
+    contacts,
     engagement_role_of,
+    engagement_team,
+    firm_admins,
     letter_policy,
     names_of,
 )
@@ -432,6 +444,8 @@ class SetupView:
     confirmations: list[ConfirmationView]
     letter_required: bool
     blocked: str | None  # the gate's reason code, None when open
+    steps: list[Step]  # SPEC-025 AC-10 (TASK-046)
+    summary: str
 
 
 async def setup(ctx: AuthContext, engagement_id: UUID) -> SetupView:
@@ -446,9 +460,41 @@ async def setup(ctx: AuthContext, engagement_id: UUID) -> SetupView:
         acceptance = await latest_acceptance(session, engagement_id)
         letter = await get_letter(session, engagement_id)
         rows = await confirmations_of(session, engagement_id)
+        client = (await client_names(session, [engagement.client_entity_id])).get(
+            engagement.client_entity_id
+        )
+        earlier = acceptance is None and bool(
+            await other_engagements_of_client(session, engagement.client_id, engagement_id)
+        )
     names = await names_of([r.user_id for r in rows])
     needs_letter = await letter_policy(ctx.tenant)
     blocked = _blocked(acceptance, letter, needs_letter)
+    team = [Member(m.display_name, m.role) for m in await engagement_team(ctx, engagement_id)]
+    admins: list[str] = []
+    if not has_partner(team):
+        admin_names = await names_of(await firm_admins(ctx.tenant_id))
+        admins = sorted(admin_names.values())
+    # Counts only (who the contacts are needs `client_contact.read`, on the People tab).
+    reached = await contacts(ctx, engagement_id)
+    facts = SetupFacts(
+        engagement_name=engagement.name,
+        client_name=client.client_name if client is not None else "",
+        kind=acceptance.kind if acceptance else ("continuance" if earlier else "new_client"),
+        period_start=engagement.fiscal_period_start,
+        period_end=engagement.fiscal_period_end,
+        team=team,
+        firm_admins=admins,
+        methodology_applied=engagement.methodology_version_id is not None,
+        acceptance_decision=acceptance.decision if acceptance else None,
+        acceptance_at=acceptance.created_at if acceptance else None,
+        concluded=acceptance is not None and acceptance.independence_concluded_at is not None,
+        letter_status=letter.status if letter else None,
+        letter_required=needs_letter,
+        confirmations=[Confirmation(names.get(r.user_id, ""), r.status) for r in rows],
+        contacts_joined=sum(1 for c in reached if c.kind == "member"),
+        contacts_invited=sum(1 for c in reached if c.kind == "invitation"),
+        blocked=blocked.code if blocked is not None else None,
+    )
     return SetupView(
         acceptance,
         letter,
@@ -465,6 +511,8 @@ async def setup(ctx: AuthContext, engagement_id: UUID) -> SetupView:
         ],
         needs_letter,
         blocked.code if blocked is not None else None,
+        steps(facts),
+        summary(facts),
     )
 
 

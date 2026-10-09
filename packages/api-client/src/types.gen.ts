@@ -1925,6 +1925,46 @@ export type SetupOut = {
      * Letter Required
      */
     letter_required: boolean;
+    /**
+     * Steps
+     */
+    steps: Array<SetupStepOut>;
+    /**
+     * Summary
+     */
+    summary: string;
+};
+
+/**
+ * SetupStepOut
+ *
+ * SPEC-025 AC-10: one checklist step, its state, who acts next, and why it's blocked.
+ */
+export type SetupStepOut = {
+    /**
+     * Detail
+     */
+    detail: string | null;
+    /**
+     * Key
+     */
+    key: 'client_and_period' | 'team' | 'request_list' | 'acceptance' | 'independence_conclusion' | 'independence' | 'letter' | 'client_contacts';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Next
+     */
+    next: string | null;
+    /**
+     * Reason
+     */
+    reason: string | null;
+    /**
+     * State
+     */
+    state: 'done' | 'waiting' | 'blocked' | 'warning' | 'not_needed';
 };
 
 /**

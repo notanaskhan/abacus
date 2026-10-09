@@ -3779,6 +3779,19 @@
             "cls": "internal",
             "title": "Letter Required",
             "type": "boolean"
+          },
+          "steps": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/SetupStepOut"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "summary": {
+            "cls": "confidential",
+            "title": "Summary",
+            "type": "string"
           }
         },
         "required": [
@@ -3786,9 +3799,94 @@
           "letter",
           "confirmations",
           "letter_required",
-          "blocked"
+          "blocked",
+          "steps",
+          "summary"
         ],
         "title": "SetupOut",
+        "type": "object"
+      },
+      "SetupStepOut": {
+        "description": "SPEC-025 AC-10: one checklist step, its state, who acts next, and why it's blocked.",
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Detail"
+          },
+          "key": {
+            "cls": "internal",
+            "enum": [
+              "client_and_period",
+              "team",
+              "request_list",
+              "acceptance",
+              "independence_conclusion",
+              "independence",
+              "letter",
+              "client_contacts"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          },
+          "next": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Next"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Reason"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "done",
+              "waiting",
+              "blocked",
+              "warning",
+              "not_needed"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "state",
+          "detail",
+          "next",
+          "reason"
+        ],
+        "title": "SetupStepOut",
         "type": "object"
       },
       "SheetPreviewOut": {

@@ -29,6 +29,7 @@ import { People } from "./screens/People";
 import { EngagementLayout } from "./screens/EngagementLayout";
 import { MapView } from "./screens/MapView";
 import { Overview } from "./screens/Overview";
+import { DefaultToSetup, Setup } from "./screens/Setup";
 import { Review } from "./screens/Review";
 import { SignInCallback } from "./screens/SignInCallback";
 import { Signup } from "./screens/Signup";
@@ -102,7 +103,19 @@ const overviewRoute = createRoute({
   path: "/",
   component: function OverviewPage(): JSX.Element {
     const { engagementId } = engagementRoute.useParams();
-    return <Overview engagementId={engagementId} />;
+    return (
+      <DefaultToSetup engagementId={engagementId}>
+        <Overview engagementId={engagementId} />
+      </DefaultToSetup>
+    );
+  },
+});
+const engagementSetupRoute = createRoute({
+  getParentRoute: () => engagementRoute,
+  path: "/setup",
+  component: function SetupPage(): JSX.Element {
+    const { engagementId } = engagementRoute.useParams();
+    return <Setup engagementId={engagementId} />;
   },
 });
 const itemRoute = createRoute({
@@ -286,6 +299,7 @@ const routeTree = rootRoute.addChildren([
       boardRoute,
       itemRoute,
       mapRoute,
+      engagementSetupRoute,
       peopleRoute,
       reviewRoute,
     ]),

@@ -53,6 +53,7 @@ from abacus.modules.engagements.setup import (
     record_letter,
     setup,
 )
+from abacus.modules.engagements.setup_steps import StepKey, StepState
 from abacus.modules.engagements.workbook import Problem, TemplateInvalid
 from abacus.modules.identity.api import (
     OWN,
@@ -660,6 +661,19 @@ class ConfirmationOut(BaseModel):
     answered_at: Annotated[datetime | None, classified("internal")]
 
 
+class SetupStepOut(BaseModel):
+    """SPEC-025 AC-10: one checklist step, its state, who acts next, and why it's blocked."""
+
+    model_config = ConfigDict(frozen=True)
+
+    key: Annotated[StepKey, classified("internal")]
+    label: Annotated[str, classified("internal")]
+    state: Annotated[StepState, classified("internal")]
+    detail: Annotated[str | None, classified("confidential")]
+    next: Annotated[str | None, classified("confidential")]
+    reason: Annotated[str | None, classified("confidential")]
+
+
 class SetupOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -668,6 +682,8 @@ class SetupOut(BaseModel):
     confirmations: Annotated[list[ConfirmationOut], classified("confidential")]
     letter_required: Annotated[bool, classified("internal")]
     blocked: Annotated[str | None, classified("internal")]
+    steps: Annotated[list[SetupStepOut], classified("confidential")]
+    summary: Annotated[str, classified("confidential")]
 
 
 class OpenConfirmationOut(BaseModel):
@@ -691,6 +707,8 @@ def _setup_out(view: SetupView) -> SetupOut:
         confirmations=[ConfirmationOut.model_validate(asdict(c)) for c in view.confirmations],
         letter_required=view.letter_required,
         blocked=view.blocked,
+        steps=[SetupStepOut.model_validate(asdict(step)) for step in view.steps],
+        summary=view.summary,
     )
 
 

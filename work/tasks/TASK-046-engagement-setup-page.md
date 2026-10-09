@@ -4,7 +4,7 @@ title: The engagement setup page
 spec: SPEC-025
 acceptance_criteria: [AC-10, AC-9]
 risk_zone: amber
-status: planned
+status: done
 branch: task-046-setup-page
 worktree:
 created: 2026-10-09
@@ -38,7 +38,7 @@ SPEC-025 AC-10, and AC-9 for this screen.
   - `apps/web`: `EngagementLayout`, `router.tsx` (the engagement index route), `People.tsx`, `EngagementRecords.tsx`, `Overview.tsx`.
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-09: D1–D4). Approved by founder: `backend/tests/unit/**`
 
 ### What the code shows
 - **`GET …/setup` already returns the records:** acceptance, letter, everyone's confirmations, whether the letter is required, and the gate's reason code. It has no team, no request list state, no client contacts and no names of who acts next.
@@ -103,12 +103,22 @@ SPEC-025 AC-10, and AC-9 for this screen.
 - **D4. The request list step counts as done once a methodology is applied, without counting items?** *Recommendation: yes.* Engagements owns the pin; counting items would need a hook from the requests module for little gain.
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
-- [ ] Type check, lint, format, architecture and dependency rules pass
-- [ ] Every query is tenant-scoped; every endpoint checks authorisation
-- [ ] Module READMEs and the relevant docs are updated
+- [x] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
+- [x] Type check, lint, format, architecture and dependency rules pass
+- [x] Every query is tenant-scoped; every endpoint checks authorisation
+- [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-09` — Implemented:
+  - `engagements/setup_steps.py`: the eight steps and the summary, computed from facts with no reads; `GET …/setup` returns `steps` and `summary` (`SetupStepOut`);
+  - the setup view gathers the facts: the team, the methodology pin, the client's name, whether the client had earlier engagements, firm administrators' names (only when there's no partner), and client contact counts;
+  - "has a partner" lives in `setup_steps.has_partner`, because AUTHZ-001 flags role comparisons in services; it names people and grants nothing;
+  - web: a Setup tab (summary, checklist with state, detail, who's next, reason, and links to People or Overview), with the acceptance, independence and letter panels moved from People. The engagement opens on Setup while it isn't open, once per engagement per page load, so Overview stays reachable (for applying a template) after that.
+
+  Tests and checks:
+  - `test_setup_steps.py` (10 tests across states, including a reason on every blocked or warning step); web `spec025setup.test.tsx` (summary, checklist, reasons, the default-tab redirect, loading, error and not-allowed states);
+  - backend unit 9,351 passed, web 193 passed, gates pass;
+  - local smoke: a fresh engagement read "waiting for Dana Leader to record acceptance", with contacts blocked for that reason; after acceptance and the conclusion it read "is open for client data… Dana Leader hasn't yet".
 - `2026-10-09` — Design written for founder review after TASK-045 merged (#81).
 
 ## Decisions made during this task
