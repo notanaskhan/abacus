@@ -15,6 +15,8 @@ export function AdminLayout(): JSX.Element {
     { label: "Methodology", to: "/admin/methodology", params: {} },
     { label: "Knowledge documents", to: "/admin/knowledge", params: {} },
     { label: "Budget", to: "/admin/budget", params: {} },
+    { label: "Autonomy", to: "/admin/autonomy", params: {} },
+    { label: "Setup", to: "/admin/setup", params: {} },
     ...(isAdmin
       ? ([
           { label: "People", to: "/admin/people", params: {} },

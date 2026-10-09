@@ -125,3 +125,14 @@ On removal, the hook that evidence registers (`register_member_removed`) release
   - Revocation applies on the next request; engagement roles stay as history.
 - **Listing:** `GET /v1/firm/staff`.
 - **SSO:** held until the identity vendor is confirmed (TASK-040 amendment 4).
+
+## Autonomy and onboarding facts (SPEC-024 AC-5, AC-7; TASK-042)
+`firm_settings.py`.
+- **Autonomy:** `firms.autonomy_level` (ADR-061; new firms at Routine, 1).
+  - `GET /v1/firm/autonomy` (`firm.read_settings`).
+  - `PUT /v1/firm/autonomy` (`autonomy_policy.update`, fresh MFA, audited); levels 2 and 3 are refused, 409 `level_not_available`.
+  - `autonomy_level(tenant_id)` is read fresh by the platform's automatic actions: at Advise (0), automatic retrieval and automatic screening start nothing.
+- **Onboarding facts:**
+  - `firm_facts(ctx)` gives the checklist identity's facts (staff, pending invitations, walls, acknowledgements);
+  - `acknowledge(ctx, step)` (`firm.manage_settings`) records "budget looks right", "no walls needed", "SSO skipped" or the dismissal;
+  - `note_budget_reviewed(tx)` marks the budget step when a budget is saved.

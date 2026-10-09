@@ -38,6 +38,7 @@ actions:
   knowledge.manage:         {firm_admin: allow, practice_leader: allow, mfa_recent: required}   # SPEC-009 Q4
   knowledge.read:           {firm_admin: allow, practice_leader: allow, quality_partner: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, platform_support_content: allow}   # SPEC-009 Q4
   autonomy_policy.update:   {firm_admin: allow, mfa_recent: required}
+  firm.read_settings:       {firm_admin: allow, practice_leader: allow}   # SPEC-024 (TASK-042 D1): autonomy and the checklist, read without fresh MFA
   wall.create:              {firm_admin: allow, mfa_recent: required}
   wall.remove:              {firm_admin: allow, mfa_recent: required}
   wall.list:                {firm_admin: allow, mfa_recent: required}   # SPEC-002 Q2 (named wall.read there)
@@ -158,6 +159,7 @@ actions:
 
   # --- Screening and suggestions ---
   screening.run:            {system: allow, agent: task_scope}
+  screening.request:        {engagement_partner: allow, manager: allow, senior: allow, staff: allow}   # SPEC-024 (TASK-042 D1): "Screen now" at Advise
   suggestion.create:        {agent: task_scope}
   suggestion.resolve:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny}
 

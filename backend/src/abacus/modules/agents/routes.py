@@ -25,6 +25,7 @@ from abacus.modules.agents.knowledge import (
     search_knowledge,
     withdraw_document,
 )
+from abacus.modules.agents.screenings import request_screening
 from abacus.modules.agents.service import ScreeningResultView, screening_results_for
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
@@ -68,6 +69,29 @@ Ctx = Annotated[AuthContext, Depends(current_context)]
 @router.get("", action="evidence.read", response_model=list[ScreeningResultOut])
 async def list_screening_results_route(engagement_id: UUID, ctx: Ctx) -> list[ScreeningResultOut]:
     return [_out(r) for r in await screening_results_for(ctx, engagement_id)]
+
+
+class ScreenRequestIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    evidence_version_id: Annotated[UUID, classified("internal")]
+
+
+class ScreenRequestedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    evidence_version_id: Annotated[UUID, classified("internal")]
+
+
+@router.post(
+    "/request", action="screening.request", response_model=ScreenRequestedOut, status_code=202
+)
+async def request_screening_route(
+    engagement_id: UUID, body: ScreenRequestIn, ctx: Ctx
+) -> ScreenRequestedOut:
+    """SPEC-024 (TASK-042 D1): "Screen now"; the result appears with the others when ready."""
+    await request_screening(ctx, engagement_id, body.evidence_version_id)
+    return ScreenRequestedOut(evidence_version_id=body.evidence_version_id)
 
 
 # --- The engagement graph (SPEC-008 §8; TASK-023 D1) --------------------------------------------

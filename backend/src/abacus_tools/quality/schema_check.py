@@ -225,6 +225,11 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "connection_states": frozenset({"used_at"}),  # SPEC-020: spent once
     "staff_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
+    # SPEC-024 (TASK-042): the firm's autonomy level and its onboarding acknowledgements.
+    "firms": frozenset(
+        {"autonomy_level", "autonomy_set_at", "budget_reviewed_at", "walls_none_needed_at"}
+        | {"sso_skipped_at", "onboarding_dismissed_at"}
+    ),
     "inbox_files": frozenset(  # SPEC-023: assigned or discarded, once
         {"status", "assigned_item_id", "assigned_version_id", "decided_by", "decided_at"}
     ),

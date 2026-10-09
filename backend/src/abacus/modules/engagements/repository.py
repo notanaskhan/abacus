@@ -270,3 +270,10 @@ async def set_methodology_version(
         .returning(Engagement.id)
     )
     return pinned.scalar_one_or_none() is not None
+
+
+async def setup_counts(session: AsyncSession) -> tuple[int, int]:
+    """How many methodology templates and engagements the session's firm has (SPEC-024 AC-7)."""
+    templates = await session.scalar(select(func.count()).select_from(MethodologyTemplate))
+    engagements = await session.scalar(select(func.count()).select_from(Engagement))
+    return int(templates or 0), int(engagements or 0)

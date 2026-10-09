@@ -90,3 +90,9 @@ The firm's methodology documents, recalled by vector search. Knowledge is firm-w
 **Searching:** `POST /v1/knowledge/search` (`knowledge.read`) is exact cosine over the caller's firm's `ready` chunks that were embedded with the current model, with the tenant filter explicit as well as under RLS. There is no ANN index, so no index is shared across tenants (Q1, ADR-053).
 
 **For agents:** `search_knowledge` and `knowledge_context` wrap hits as untrusted, delimited `internal` context (ADR-052).
+
+## Autonomy and "Screen now" (SPEC-024; TASK-042)
+- **At Advise:** `start_screening` does nothing when the firm is at Advise (logged `screening.skipped`).
+- **"Screen now":** `request_screening(ctx, engagement, version)` is `POST …/screening-results/request` (`screening.request`: engagement partner, manager, senior, staff; 202).
+  - It dispatches the same workflow with the same ID, so a running or finished screening is attached to, not repeated.
+  - The requester is who the agent acts for. Audited `screening.requested`.

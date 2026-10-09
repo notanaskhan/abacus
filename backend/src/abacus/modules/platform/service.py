@@ -15,7 +15,7 @@ from abacus.ai_gateway.budgets import (
 from abacus.kernel.config import settings
 from abacus.kernel.errors import DomainInvalid
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.identity.api import AuthContext, Resource, authorise
+from abacus.modules.identity.api import AuthContext, Resource, authorise, note_budget_reviewed
 
 
 class BudgetInvalid(DomainInvalid):
@@ -36,6 +36,7 @@ async def set_budget(ctx: AuthContext, soft: Decimal, hard: Decimal) -> FirmBudg
     async with uow(ctx.tenant) as tx:
         await authorise(ctx, "budget.manage", Resource.firm(ctx.tenant_id))
         await save_firm_budget(tx.session, ctx.tenant_id, ctx.user_id, soft, hard)
+        await note_budget_reviewed(tx)  # SPEC-024: the checklist's budget step
         tx.record(
             "budget.updated",
             target=Target("firm", ctx.tenant_id),
