@@ -1,7 +1,7 @@
 ---
 id: SPEC-021
 title: Request item detail
-status: draft
+status: approved
 owner: founder
 risk_zone: amber
 related_adrs: [ADR-004, ADR-005, ADR-016, ADR-039, ADR-052, ADR-104]
@@ -139,11 +139,12 @@ On narrow screens they stack.
 No migration and no flag.
 
 ## 20. Open questions
-- [ ] **Q1: viewing evidence.** *Recommendation:* download as an attachment only, with no in-browser preview. Rendering client files in the app is the riskiest path for hostile content (ADR-052) and waits for malware scanning (TASK-014).
-- [ ] **Q2: where the versions list lives.** *Recommendation:* a new evidence route that joins fulfilments (through the requests API) to versions and decisions, rather than the SPA stitching the engagement-wide lists together.
-- [ ] **Q3: item history.** *Recommendation:* deferred. The audit trail per item belongs with export (increment 7).
-- [ ] **Q4: clients.** *Recommendation:* firm-side only. Clients keep the SPEC-020 upload history and can't download evidence for now.
-- [ ] **Q5: protected path.** `evidence` is protected, so the task needs your approval file. *Recommendation:* yes, covering `evidence/**`, `backend/tests/unit/**`, and `banned_patterns.py` if the versions lookup needs a LIST-001 exemption.
+None. Answered by the founder on 2026-10-09 (all recommendations):
+- [x] **Q1: viewing evidence.** *Recommendation:* download as an attachment only, with no in-browser preview. Rendering client files in the app is the riskiest path for hostile content (ADR-052) and waits for malware scanning (TASK-014).
+- [x] **Q2: where the versions list lives.** *Recommendation:* a new evidence route that joins fulfilments (through the requests API) to versions and decisions, rather than the SPA stitching the engagement-wide lists together.
+- [x] **Q3: item history.** *Recommendation:* deferred. The audit trail per item belongs with export (increment 7).
+- [x] **Q4: clients.** *Recommendation:* firm-side only. Clients keep the SPEC-020 upload history and can't download evidence for now.
+- [x] **Q5: protected path.** `evidence` is protected, so the task needs your approval file. *Recommendation:* yes, covering `evidence/**`, `backend/tests/unit/**`, and `banned_patterns.py` if the versions lookup needs a LIST-001 exemption.
 
 ## 21. Future / explicitly deferred
 - In-browser preview after malware scanning.
