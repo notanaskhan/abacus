@@ -6,7 +6,7 @@ import type { JSX } from "react";
 import { Tabs } from "../shell/Tabs";
 import { IndependenceBanner } from "./MyConfirmations";
 
-/** An engagement's header and tabs (SPEC-016): Overview · Requests · Map · Contacts. */
+/** An engagement's header and tabs (SPEC-016): Setup · Overview · Requests · Map · People · Review. */
 export function EngagementLayout({ engagementId }: { engagementId: string }): JSX.Element {
   const graph = useQuery(engagementGraphOptions({ path: { engagement_id: engagementId } }));
   const e = graph.data?.engagement;
@@ -41,6 +41,7 @@ export function EngagementLayout({ engagementId }: { engagementId: string }): JS
       <Tabs
         label="Engagement"
         items={[
+          { label: "Setup", to: "/engagements/$engagementId/setup", params },
           { label: "Overview", to: "/engagements/$engagementId", params, exact: true },
           { label: "Requests", to: "/engagements/$engagementId/requests", params },
           { label: "Map", to: "/engagements/$engagementId/map", params },

@@ -40,6 +40,8 @@ function setup(over: Partial<SetupOut> = {}): SetupOut {
     ],
     letter_required: false,
     blocked: "acceptance_missing",
+    steps: [],
+    summary: "",
     ...over,
   };
 }
