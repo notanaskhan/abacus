@@ -50,3 +50,12 @@ class EngagementMemberAdded(DomainEvent):
 
     engagement_id: Annotated[UUID, classified("internal")]
     user_id: Annotated[UUID, classified("internal")]
+
+
+class StaffInvitationIssued(DomainEvent):
+    """A staff invitation needs its email (created or resent); the token is issued at delivery
+    and never stored (SPEC-024; TASK-041)."""
+
+    event_type: ClassVar[str] = "staff_invitation.issued"
+
+    invitation_id: Annotated[UUID, classified("internal")]

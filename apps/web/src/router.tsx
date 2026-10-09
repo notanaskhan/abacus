@@ -11,7 +11,9 @@ import { SupportAccess } from "./screens/SupportAccess";
 import { Walls } from "./screens/Walls";
 import { Engagements } from "./screens/Engagements";
 import { ImportRequestList } from "./screens/ImportRequestList";
+import { FirmPeople } from "./screens/FirmPeople";
 import { ItemDetail } from "./screens/ItemDetail";
+import { Join } from "./screens/Join";
 import { Layout } from "./screens/Layout";
 import { Methodology } from "./screens/Methodology";
 import { MethodologyVersion } from "./screens/MethodologyVersion";
@@ -192,6 +194,11 @@ const budgetRoute = createRoute({
   path: "/admin/budget",
   component: Budget,
 });
+const peopleAdminRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/admin/people",
+  component: FirmPeople,
+});
 const supportRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/admin/support",
@@ -217,6 +224,11 @@ const clientEngagementRoute = createRoute({
     return <ClientEngagement engagementId={engagementId} />;
   },
 });
+const joinRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/join",
+  component: Join,
+});
 const signupRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/signup",
@@ -239,6 +251,7 @@ const routeTree = rootRoute.addChildren([
   clientEngagementRoute,
   connectCallbackRoute,
   signupRoute,
+  joinRoute,
   acceptRoute,
   appRoute.addChildren([
     engagementsRoute,
@@ -256,6 +269,7 @@ const routeTree = rootRoute.addChildren([
       methodologyVersionRoute,
       knowledgeDocumentsRoute,
       budgetRoute,
+      peopleAdminRoute,
       supportRoute,
       wallsRoute,
     ]),

@@ -694,6 +694,16 @@ export type FirmRefIn = {
 };
 
 /**
+ * FirmRoleIn
+ */
+export type FirmRoleIn = {
+    /**
+     * Firm Role
+     */
+    firm_role: 'firm_admin' | 'practice_leader' | 'quality_partner' | null;
+};
+
+/**
  * GraphAccountOut
  */
 export type GraphAccountOut = {
@@ -988,6 +998,16 @@ export type ItemVersionOut = {
      * Version No
      */
     version_no: number;
+};
+
+/**
+ * JoinedOut
+ */
+export type JoinedOut = {
+    /**
+     * Tenant Id
+     */
+    tenant_id: string;
 };
 
 /**
@@ -1625,6 +1645,96 @@ export type SpendOut = {
      * Engagement Id
      */
     engagement_id: string | null;
+};
+
+/**
+ * StaffInvitationOut
+ */
+export type StaffInvitationOut = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Expires At
+     */
+    expires_at: string;
+    /**
+     * Firm Role
+     */
+    firm_role: 'firm_admin' | 'practice_leader' | 'quality_partner' | null;
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
+ * StaffInviteIn
+ */
+export type StaffInviteIn = {
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Firm Role
+     */
+    firm_role?: 'firm_admin' | 'practice_leader' | 'quality_partner' | null;
+};
+
+/**
+ * StaffInvitedOut
+ */
+export type StaffInvitedOut = {
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
+ * StaffListOut
+ */
+export type StaffListOut = {
+    /**
+     * Invitations
+     */
+    invitations: Array<StaffInvitationOut>;
+    /**
+     * Members
+     */
+    members: Array<StaffMemberOut>;
+};
+
+/**
+ * StaffMemberOut
+ */
+export type StaffMemberOut = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Firm Role
+     */
+    firm_role: 'firm_admin' | 'practice_leader' | 'quality_partner' | null;
+    /**
+     * Status
+     */
+    status: 'active' | 'revoked';
+    /**
+     * User Id
+     */
+    user_id: string;
 };
 
 /**
@@ -5143,6 +5253,316 @@ export type FirmMembersResponses = {
 
 export type FirmMembersResponse = FirmMembersResponses[keyof FirmMembersResponses];
 
+export type StaffData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/staff';
+};
+
+export type StaffErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type StaffError = StaffErrors[keyof StaffErrors];
+
+export type StaffResponses = {
+    /**
+     * Successful Response
+     */
+    200: StaffListOut;
+};
+
+export type StaffResponse = StaffResponses[keyof StaffResponses];
+
+export type InviteStaffData = {
+    body: StaffInviteIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/staff/invitations';
+};
+
+export type InviteStaffErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type InviteStaffError = InviteStaffErrors[keyof InviteStaffErrors];
+
+export type InviteStaffResponses = {
+    /**
+     * Successful Response
+     */
+    201: StaffInvitedOut;
+};
+
+export type InviteStaffResponse = InviteStaffResponses[keyof InviteStaffResponses];
+
+export type ResendStaffInvitationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Invitation Id
+         */
+        invitation_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/staff/invitations/{invitation_id}/resend';
+};
+
+export type ResendStaffInvitationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ResendStaffInvitationError = ResendStaffInvitationErrors[keyof ResendStaffInvitationErrors];
+
+export type ResendStaffInvitationResponses = {
+    /**
+     * Successful Response
+     */
+    200: StaffInvitedOut;
+};
+
+export type ResendStaffInvitationResponse = ResendStaffInvitationResponses[keyof ResendStaffInvitationResponses];
+
+export type RevokeStaffInvitationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Invitation Id
+         */
+        invitation_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/staff/invitations/{invitation_id}/revoke';
+};
+
+export type RevokeStaffInvitationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RevokeStaffInvitationError = RevokeStaffInvitationErrors[keyof RevokeStaffInvitationErrors];
+
+export type RevokeStaffInvitationResponses = {
+    /**
+     * Successful Response
+     */
+    200: StaffInvitedOut;
+};
+
+export type RevokeStaffInvitationResponse = RevokeStaffInvitationResponses[keyof RevokeStaffInvitationResponses];
+
+export type RevokeStaffData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/staff/{user_id}/revoke';
+};
+
+export type RevokeStaffErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RevokeStaffError = RevokeStaffErrors[keyof RevokeStaffErrors];
+
+export type RevokeStaffResponses = {
+    /**
+     * Successful Response
+     */
+    200: StaffInvitedOut;
+};
+
+export type RevokeStaffResponse = RevokeStaffResponses[keyof RevokeStaffResponses];
+
+export type ChangeFirmRoleData = {
+    body: FirmRoleIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/staff/{user_id}/role';
+};
+
+export type ChangeFirmRoleErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ChangeFirmRoleError = ChangeFirmRoleErrors[keyof ChangeFirmRoleErrors];
+
+export type ChangeFirmRoleResponses = {
+    /**
+     * Successful Response
+     */
+    200: StaffInvitedOut;
+};
+
+export type ChangeFirmRoleResponse = ChangeFirmRoleResponses[keyof ChangeFirmRoleResponses];
+
 export type AcceptInvitationData = {
     body: AcceptInvitationIn;
     headers?: {
@@ -5185,6 +5605,53 @@ export type AcceptInvitationResponses = {
 };
 
 export type AcceptInvitationResponse = AcceptInvitationResponses[keyof AcceptInvitationResponses];
+
+export type AcceptStaffInvitationData = {
+    body: AcceptInvitationIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/invitations/staff/accept';
+};
+
+export type AcceptStaffInvitationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AcceptStaffInvitationError = AcceptStaffInvitationErrors[keyof AcceptStaffInvitationErrors];
+
+export type AcceptStaffInvitationResponses = {
+    /**
+     * Successful Response
+     */
+    200: JoinedOut;
+};
+
+export type AcceptStaffInvitationResponse = AcceptStaffInvitationResponses[keyof AcceptStaffInvitationResponses];
 
 export type ListDocumentsData = {
     body?: never;

@@ -33,6 +33,15 @@ from abacus.modules.identity.service import (
     remove_wall_by_id,
 )
 from abacus.modules.identity.signup import sign_up
+from abacus.modules.identity.staff import (
+    accept_staff_invitation,
+    change_role,
+    invite,
+    resend,
+    staff,
+)
+from abacus.modules.identity.staff import revoke as revoke_staff
+from abacus.modules.identity.staff import revoke_invitation as revoke_staff_invitation
 from abacus.modules.identity.support import (
     Staff,
     SupportSessionView,
@@ -332,3 +341,133 @@ async def signup_route(
     address = request.client.host if request.client is not None else "unknown"
     tenant_id = await sign_up(identity, code=body.code, firm_name=body.firm_name, address=address)
     return SignupOut(tenant_id=tenant_id)
+
+
+# --- Staff: invitations, firm roles, revocation (SPEC-024 AC-3, AC-4; TASK-041) ---------------
+
+StaffRole = Literal["firm_admin", "practice_leader", "quality_partner"]
+
+
+class StaffMemberOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    user_id: Annotated[UUID, classified("internal")]
+    display_name: Annotated[str, classified("confidential")]
+    email: Annotated[str, classified("confidential")]
+    firm_role: Annotated[StaffRole | None, classified("internal")]
+    status: Annotated[Literal["active", "revoked"], classified("internal")]
+
+
+class StaffInvitationOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    email: Annotated[str, classified("confidential")]
+    firm_role: Annotated[StaffRole | None, classified("internal")]
+    expires_at: Annotated[datetime, classified("internal")]
+    created_at: Annotated[datetime, classified("internal")]
+
+
+class StaffListOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    members: Annotated[list[StaffMemberOut], classified("confidential")]
+    invitations: Annotated[list[StaffInvitationOut], classified("confidential")]
+
+
+class StaffInviteIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
+
+    email: Annotated[str, Field(min_length=3, max_length=320), classified("confidential")]
+    firm_role: Annotated[StaffRole | None, classified("internal")] = None
+
+
+class FirmRoleIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    firm_role: Annotated[StaffRole | None, classified("internal")]
+
+
+class StaffInvitedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+
+
+class JoinedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    tenant_id: Annotated[UUID, classified("internal")]
+
+
+@router.get("/firm/staff", action="firm.manage_users", response_model=StaffListOut)
+async def staff_route(ctx: Ctx) -> StaffListOut:
+    """SPEC-024: the firm's staff and pending invitations (firm administrators)."""
+    found = await staff(ctx)
+    return StaffListOut(
+        members=[StaffMemberOut.model_validate(asdict(m)) for m in found.members],
+        invitations=[StaffInvitationOut.model_validate(asdict(i)) for i in found.invitations],
+    )
+
+
+@router.post(
+    "/firm/staff/invitations",
+    action="firm.manage_users",
+    response_model=StaffInvitedOut,
+    status_code=201,
+)
+async def invite_staff_route(body: StaffInviteIn, ctx: Ctx) -> StaffInvitedOut:
+    """SPEC-024 AC-3: a single-use, expiring link by email."""
+    return StaffInvitedOut(id=await invite(ctx, body.email, body.firm_role))
+
+
+@router.post(
+    "/firm/staff/invitations/{invitation_id}/resend",
+    action="firm.manage_users",
+    response_model=StaffInvitedOut,
+)
+async def resend_staff_invitation_route(invitation_id: UUID, ctx: Ctx) -> StaffInvitedOut:
+    await resend(ctx, invitation_id)
+    return StaffInvitedOut(id=invitation_id)
+
+
+@router.post(
+    "/firm/staff/invitations/{invitation_id}/revoke",
+    action="firm.manage_users",
+    response_model=StaffInvitedOut,
+)
+async def revoke_staff_invitation_route(invitation_id: UUID, ctx: Ctx) -> StaffInvitedOut:
+    await revoke_staff_invitation(ctx, invitation_id)
+    return StaffInvitedOut(id=invitation_id)
+
+
+@router.put(
+    "/firm/staff/{user_id}/role",
+    action="firm.manage_users",
+    response_model=StaffInvitedOut,
+    errors=(409,),
+)
+async def change_firm_role_route(user_id: UUID, body: FirmRoleIn, ctx: Ctx) -> StaffInvitedOut:
+    """SPEC-024 AC-4: applies on their next request; never the last administrator."""
+    await change_role(ctx, user_id, body.firm_role)
+    return StaffInvitedOut(id=user_id)
+
+
+@router.post(
+    "/firm/staff/{user_id}/revoke",
+    action="firm.manage_users",
+    response_model=StaffInvitedOut,
+    errors=(409,),
+)
+async def revoke_staff_route(user_id: UUID, ctx: Ctx) -> StaffInvitedOut:
+    """SPEC-024 AC-4: their next request is refused; never the last administrator."""
+    await revoke_staff(ctx, user_id)
+    return StaffInvitedOut(id=user_id)
+
+
+@invitation_router.post("/staff/accept", action=IDENTITY, response_model=JoinedOut, errors=(409,))
+async def accept_staff_invitation_route(
+    body: AcceptInvitationIn, identity: Annotated[VerifiedIdentity, Depends(current_identity)]
+) -> JoinedOut:
+    """The invited person joins the firm's staff (they need no account yet)."""
+    return JoinedOut(tenant_id=await accept_staff_invitation(identity, body.token))

@@ -25,7 +25,7 @@ from abacus.modules.identity.context import (
     agent_context_for_run,
     system_context_for_run,
 )
-from abacus.modules.identity.events import ClientInvitationIssued
+from abacus.modules.identity.events import ClientInvitationIssued, StaffInvitationIssued
 from abacus.modules.identity.invitations import (
     ContactView,
     InvitationLimit,
@@ -75,6 +75,7 @@ from abacus.modules.identity.service import (
     names_of,
     team_of,
 )
+from abacus.modules.identity.staff import issue_staff_invitation_token
 from abacus.modules.identity.team import (
     Candidate,
     LastPartner,
@@ -123,6 +124,7 @@ __all__ = [
     "LastPartner",
     "NoActiveTenant",
     "Resource",
+    "StaffInvitationIssued",
     "StaffRole",
     "SystemContext",
     "TeamMember",
@@ -157,6 +159,7 @@ __all__ = [
     "invitation_router",
     "is_active_member",
     "issue_invitation_token",
+    "issue_staff_invitation_token",
     "member_context",
     "names_of",
     "register_active_engagements",

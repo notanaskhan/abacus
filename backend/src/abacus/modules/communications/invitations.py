@@ -17,7 +17,7 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import OutboxEvent, Target, uow
 from abacus.modules.communications.repository import insert_message
 from abacus.modules.communications.transport import transport
-from abacus.modules.identity.api import issue_invitation_token
+from abacus.modules.identity.api import issue_invitation_token, issue_staff_invitation_token
 
 SUBJECT: Final = "You're invited to an audit engagement"
 TEMPLATE: Final = (
@@ -58,3 +58,29 @@ async def deliver_invitation(event: OutboxEvent) -> None:
         )
         tx.record("message.sent", target=Target("message", message_id))
     _log.info("invitation.email_sent", invitation_id=invitation_id, message_id=message_id)
+
+
+STAFF_SUBJECT: Final = "You're invited to join your firm on Abacus"
+STAFF_TEMPLATE: Final = (
+    "You've been invited to join your firm's workspace on Abacus.\n\n"
+    "Open this link to accept: {link}\n\n"
+    "The link works once and expires on {expires}. If you weren't expecting this, ignore it."
+)
+
+
+async def deliver_staff_invitation(event: OutboxEvent) -> None:
+    """SPEC-024 (TASK-041): the staff invitation's email. The token is issued now and never
+    stored; the issue is audited by identity (`staff_invitation.token_issued`). Staff
+    invitations have no engagement, so no engagement message is recorded."""
+    invitation_id = UUID(str(event.payload["invitation_id"]))
+    issued = await issue_staff_invitation_token(event.tenant_id, invitation_id)
+    if issued is None:
+        return  # revoked, accepted or expired meanwhile: nothing to send
+    link = f"{settings().app_base_url}/join#token={issued.token}"
+    await asyncio.to_thread(
+        transport().send,
+        to=issued.email,
+        subject=STAFF_SUBJECT,
+        body=STAFF_TEMPLATE.format(link=link, expires=f"{issued.expires_at:%d %B %Y}"),
+    )
+    _log.info("staff_invitation.email_sent", invitation_id=invitation_id)
