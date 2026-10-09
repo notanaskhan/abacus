@@ -1,7 +1,7 @@
 ---
 id: SPEC-024
 title: "Act 0: the firm gets ready"
-status: draft
+status: approved
 owner: founder
 risk_zone: red
 related_adrs: [ADR-002, ADR-005, ADR-014, ADR-020, ADR-026, ADR-029, ADR-030, ADR-061, ADR-069]
@@ -195,13 +195,14 @@ The SPEC-016 shell:
 - SSO uses the fake provider until TASK-014 brings WorkOS keys.
 
 ## 20. Open questions
-- [ ] **Q1: who can sign up.** *Recommendation:* during the pilot phases, a sign-up code you issue (single-use, through tooling), so only design partners can create firms. Fully open sign-up comes later, behind a flag. *Alternative:* open now, with email verification and rate limits only.
-- [ ] **Q2: SSO before WorkOS exists.** *Recommendation:* build the whole flow against the local fake provider now. Domains, the portal link, verification, enforcement and the status screen all work locally. The real WorkOS organisation and portal plug in with TASK-014's keys. SSO stays optional per firm, as a "skip for now" step on the checklist, because small firms often have none (ADR-030 then requires password or passkey with MFA, through the vendor).
-- [ ] **Q3: autonomy levels shown to firms.** *Recommendation:* all four ADR-061 levels are shown. Levels 0 and 1 are selectable now. Levels 2 and 3 show "coming with the engagement agent" (increment 8) and can't be chosen yet.
-- [ ] **Q4: what the level controls today.** *Recommendation:* at Level 0 (Advise), the platform takes no automatic actions: no automatic retrieval, and no automatic screening (screening becomes a "Screen now" button). At Level 1 (Routine), today's behaviour. The `retrieval.auto` flag stays as an operator kill switch on top.
-- [ ] **Q5: engagement types.** *Recommendation:* `audit`, `review`, `compilation` and `agreed_upon_procedures` (the US engagement types under AICPA standards), and templates tagged by type. Everything already built treats them alike. Type-specific behaviour comes later.
-- [ ] **Q6: the agent column in your diagram.** Today "validate every row" and "areas mapped to accounts" are deterministic code (the firm's own rules), not a model. *Recommendation:* keep them as code (ADR-050: code computes) and label them "Abacus checks" in the UI. A model suggesting rules for unmapped accounts would be a later spec with its evaluation suite.
-- [ ] **Q7: protected paths.** *Recommendation:* an approval file covering:
+None. Answered by the founder on 2026-10-09 (all recommendations):
+- [x] **Q1: who can sign up.** *Recommendation:* during the pilot phases, a sign-up code you issue (single-use, through tooling), so only design partners can create firms. Fully open sign-up comes later, behind a flag. *Alternative:* open now, with email verification and rate limits only.
+- [x] **Q2: SSO before WorkOS exists.** *Recommendation:* build the whole flow against the local fake provider now. Domains, the portal link, verification, enforcement and the status screen all work locally. The real WorkOS organisation and portal plug in with TASK-014's keys. SSO stays optional per firm, as a "skip for now" step on the checklist, because small firms often have none (ADR-030 then requires password or passkey with MFA, through the vendor).
+- [x] **Q3: autonomy levels shown to firms.** *Recommendation:* all four ADR-061 levels are shown. Levels 0 and 1 are selectable now. Levels 2 and 3 show "coming with the engagement agent" (increment 8) and can't be chosen yet.
+- [x] **Q4: what the level controls today.** *Recommendation:* at Level 0 (Advise), the platform takes no automatic actions: no automatic retrieval, and no automatic screening (screening becomes a "Screen now" button). At Level 1 (Routine), today's behaviour. The `retrieval.auto` flag stays as an operator kill switch on top.
+- [x] **Q5: engagement types.** *Recommendation:* `audit`, `review`, `compilation` and `agreed_upon_procedures` (the US engagement types under AICPA standards), and templates tagged by type. Everything already built treats them alike. Type-specific behaviour comes later.
+- [x] **Q6: the agent column in your diagram.** Today "validate every row" and "areas mapped to accounts" are deterministic code (the firm's own rules), not a model. *Recommendation:* keep them as code (ADR-050: code computes) and label them "Abacus checks" in the UI. A model suggesting rules for unmapped accounts would be a later spec with its evaluation suite.
+- [x] **Q7: protected paths.** *Recommendation:* an approval file covering:
   - `identity/**` (sign-up, staff invitations, roles, SSO enforcement);
   - `organisations/**` if protected;
   - `api/app.py` (new routers);
