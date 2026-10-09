@@ -13,8 +13,11 @@ PROTECTED. TASK-007 design §5.
                     `notify` obligations are met by the action's own event (SPEC-013)
 An agent is also bounded by its initiator, checked live (ADR-025): the initiator must be allowed
 the same action, or `AGENT_ONLY_REACH` for actions no human role holds.
-Matrix conditions not modelled yet (`in_scope`, `firm_setting(...)`, `assigned_only`,
-`client_visible_only`, `task_scope`) are not grants: they deny until their task models them.
+Matrix conditions not modelled yet (`in_scope`, `firm_setting(...)`, `task_scope` for humans)
+are not grants: they deny until their task models them. The client conditions (SPEC-020, TASK-035
+D2) need the item's facts on the resource (`ItemFacts`): `client_visible_only` allows a
+client-visible item, `assigned_only` a client-visible item assigned to the person. Without the
+facts they deny. `visible_items` is their list-query twin.
 
 Ethical walls (ADR-026, SPEC-002) come before roles: a person walled off from a client is denied
 every engagement of it, whatever their roles, and agents and system runs with them. The walled
@@ -36,7 +39,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Literal
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, Select, and_, false, select, true
+from sqlalchemy import ColumnElement, Select, and_, false, or_, select, true
 from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.db import TenantContext
@@ -44,6 +47,7 @@ from abacus.kernel.logging import get_logger
 from abacus.modules.identity.authz.matrix import RULES, Rule
 from abacus.modules.identity.context import Actor, AgentContext, AuthContext, SystemContext
 from abacus.modules.identity.repository import (
+    CLIENT_ROLES,
     ENGAGEMENT_ROLES,
     engagement_members,
     engagement_role,
@@ -59,6 +63,9 @@ WALL_SAFE = True
 Layer = Literal["tenancy", "wall", "relationship", "role", "attribute", "delegation"]
 
 EngagementColumn = ColumnElement[UUID] | QueryableAttribute[UUID]
+BoolColumn = ColumnElement[bool] | QueryableAttribute[bool]
+UserColumn = ColumnElement[UUID] | ColumnElement[UUID | None] | QueryableAttribute[UUID | None]
+_CLIENT_CONDITIONS = frozenset({"client_visible_only", "assigned_only"})
 # The engagements module tells identity how to find an engagement's client (TASK-016 Q1):
 # identity owns walls, engagements owns the engagement-to-client fact, and identity never imports
 # engagements. `column` turns an engagement-ID column into its client-ID subquery (for
@@ -120,6 +127,14 @@ class UnknownAction(ValueError):
 
 
 @dataclass(frozen=True)
+class ItemFacts:
+    """A request item's client facts, for the client conditions (SPEC-020; TASK-035 D2)."""
+
+    client_visible: bool
+    client_assignee: UUID | None
+
+
+@dataclass(frozen=True)
 class Resource:
     """What an action is done to. Build it with `firm` or `engagement`: an engagement resource
     must state whether the engagement is archived (TASK-008 loads that from the database)."""
@@ -129,6 +144,8 @@ class Resource:
     archived: bool
     # The engagement's client, for the wall check (SPEC-002). Looked up when absent.
     client_id: UUID | None = None
+    # The request item acted on, for `client_visible_only` and `assigned_only`.
+    item: ItemFacts | None = None
 
     @classmethod
     def firm(cls, tenant_id: UUID) -> Resource:
@@ -142,8 +159,9 @@ class Resource:
         *,
         archived: bool,
         client_id: UUID | None = None,
+        item: ItemFacts | None = None,
     ) -> Resource:
-        return cls(tenant_id, engagement_id, archived, client_id)
+        return cls(tenant_id, engagement_id, archived, client_id, item)
 
 
 @contextmanager
@@ -267,7 +285,7 @@ async def authorise(
     if not roles:
         raise _deny(ctx, action, "relationship")
     # 3. Roles. For an agent, `task_scope` grants only what its run declared (ADR-025).
-    decisions = {rule.decisions.get(role) for role in roles}
+    decisions = {_on_item(rule.decisions.get(role), ctx, resource) for role in roles}
     if isinstance(ctx, AgentContext) and "task_scope" in decisions and action in ctx.task_scope:
         decisions = (decisions - {"task_scope"}) | {"allow"}
     if "deny" in decisions or "allow" not in decisions:
@@ -296,6 +314,18 @@ async def authorise(
         raise _deny(ctx, action, "attribute")
     _record(action)
     _log.info("authz.allowed", action=action, tenant_id=ctx.tenant_id, **_who(ctx))
+
+
+def _on_item(decision: str | None, ctx: Actor, resource: Resource) -> str | None:
+    """A client condition met by the item's facts is an allow; unmet, it grants nothing."""
+    if decision not in _CLIENT_CONDITIONS:
+        return decision
+    item = resource.item
+    if item is None or not item.client_visible or not isinstance(ctx, AuthContext):
+        return None
+    if decision == "assigned_only" and item.client_assignee != ctx.user_id:
+        return None
+    return "allow"
 
 
 def _person(ctx: Actor) -> UUID:
@@ -377,7 +407,7 @@ def _visible_by_role(
     roles = [
         role
         for role, decision in rule.decisions.items()
-        if decision == "allow" and role in ENGAGEMENT_ROLES
+        if decision == "allow" and (role in ENGAGEMENT_ROLES or role in CLIENT_ROLES)
     ]
     if not roles:
         return false()
@@ -389,16 +419,70 @@ def _visible_by_role(
     return engagement_id.in_(member_of)
 
 
+async def authorise_items(ctx: Actor, action: str, resource: Resource) -> None:
+    """For a list of an engagement's request items (a read): allowed outright, or by a client
+    condition, in which case `visible_items` then filters the rows (SPEC-020; TASK-035 D2)."""
+    rule = _rule(action)
+    if not rule.reads:
+        raise ValueError(f"authorise_items() is for reads; {action!r} is not one")
+    try:
+        await authorise(ctx, action, resource)
+    except Forbidden as denied:
+        if denied.layer != "role" or not isinstance(ctx, AuthContext):
+            raise
+        roles = await _roles(ctx, resource, rule)
+        if not any(rule.decisions.get(role) in _CLIENT_CONDITIONS for role in roles):
+            raise
+        _record(action)
+
+
+def visible_items(
+    ctx: Actor,
+    action: str,
+    engagement_id: EngagementColumn,
+    client_visible: BoolColumn,
+    client_assignee: UserColumn,
+) -> ColumnElement[bool]:
+    """`visible` for request-item rows: also the rows a client role reaches through
+    `client_visible_only` or `assigned_only` (SPEC-020; TASK-035 D2). Agrees with `authorise`
+    given each row's `ItemFacts`."""
+    base = visible(ctx, action, engagement_id)
+    if not isinstance(ctx, AuthContext):
+        return base
+    rule = _rule(action)
+    reach: list[ColumnElement[bool]] = []
+    for role, decision in rule.decisions.items():
+        if decision not in _CLIENT_CONDITIONS or role not in CLIENT_ROLES:
+            continue
+        member_of = select(engagement_members.c.engagement_id).where(
+            engagement_members.c.tenant_id == ctx.tenant_id,
+            engagement_members.c.user_id == ctx.user_id,
+            engagement_members.c.role == role,
+        )
+        rows = (
+            client_visible.is_(True)
+            if decision == "client_visible_only"
+            else and_(client_visible.is_(True), client_assignee == ctx.user_id)
+        )
+        reach.append(and_(engagement_id.in_(member_of), rows))
+    if not reach:
+        return base
+    return or_(base, and_(or_(*reach), _not_walled(ctx, engagement_id)))
+
+
 __all__ = [
     "MFA_RECENT",
     "WALL_SAFE",
     "Forbidden",
+    "ItemFacts",
     "Resource",
     "UnknownAction",
     "authorise",
+    "authorise_items",
     "recording_checks",
     "register_active_engagements",
     "register_engagement_client",
     "serving_request",
     "visible",
+    "visible_items",
 ]

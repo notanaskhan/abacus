@@ -28,3 +28,14 @@ class ReviewAssigned(DomainEvent):
     engagement_id: Annotated[UUID, classified("internal")]
     evidence_version_id: Annotated[UUID, classified("internal")]
     assignee_user_id: Annotated[UUID, classified("internal")]
+
+
+class EvidenceUploaded(DomainEvent):
+    """A client uploaded a file to a request item: the firm's team is notified (SPEC-020)."""
+
+    event_type: ClassVar[str] = "evidence.uploaded"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    request_item_id: Annotated[UUID, classified("internal")]
+    evidence_version_id: Annotated[UUID, classified("internal")]
+    uploaded_by: Annotated[UUID, classified("internal")]

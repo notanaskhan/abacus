@@ -53,6 +53,9 @@ ITEM_KEYS = {
     "status",
     "created_at",
     "evidence_version_id",
+    "retrievability_tier",  # SPEC-008
+    "client_visible",  # SPEC-020
+    "client_assignee_user_id",
 }
 ALL_ROLES = ["engagement_partner", "manager", "senior", "staff", "reviewer"]
 

@@ -15,6 +15,7 @@ import { Layout } from "./screens/Layout";
 import { Methodology } from "./screens/Methodology";
 import { MethodologyVersion } from "./screens/MethodologyVersion";
 import { Accept } from "./screens/ClientAccept";
+import { ClientEngagement } from "./screens/ClientEngagement";
 import { ClientHome } from "./screens/ClientHome";
 import { People } from "./screens/People";
 import { EngagementLayout } from "./screens/EngagementLayout";
@@ -197,6 +198,14 @@ const clientRoute = createRoute({
   path: "/client",
   component: ClientHome,
 });
+const clientEngagementRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/client/engagements/$engagementId",
+  component: function ClientEngagementPage(): JSX.Element {
+    const { engagementId } = clientEngagementRoute.useParams();
+    return <ClientEngagement engagementId={engagementId} />;
+  },
+});
 const acceptRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/client/accept",
@@ -206,6 +215,7 @@ const acceptRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   callbackRoute,
   clientRoute,
+  clientEngagementRoute,
   acceptRoute,
   appRoute.addChildren([
     engagementsRoute,

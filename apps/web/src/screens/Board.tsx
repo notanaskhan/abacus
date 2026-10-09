@@ -7,6 +7,7 @@ import {
   listEvidenceVersionsQueryKey,
   listRequestItemsOptions,
   listRequestItemsQueryKey,
+  setClientVisibilityMutation,
   listScreeningResultsOptions,
   listScreeningResultsQueryKey,
   startRetrievalMutation,
@@ -197,10 +198,48 @@ function RequestItemCard({
           )}
         </dd>
       </dl>
-      {(item.status === "open" || item.status === "received") && (
-        <Retrieve item={item} engagement={engagement} />
-      )}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {(item.status === "open" || item.status === "received") && (
+          <Retrieve item={item} engagement={engagement} />
+        )}
+        <HiddenFromClient item={item} />
+      </div>
     </Card>
+  );
+}
+
+/** SPEC-020 (TASK-035 D3): items are client-visible unless the team hides one. */
+function HiddenFromClient({ item }: { item: RequestItemOut }): JSX.Element {
+  const queryClient = useQueryClient();
+  const change = useMutation({
+    ...setClientVisibilityMutation(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: listRequestItemsQueryKey({ path: { engagement_id: item.engagement_id } }),
+      });
+    },
+  });
+  const hidden = item.client_visible === false;
+  return (
+    <label className="ml-auto flex items-center gap-2 text-sm text-muted">
+      <input
+        type="checkbox"
+        checked={hidden}
+        disabled={change.isPending}
+        onChange={(event) => {
+          change.mutate({
+            path: { engagement_id: item.engagement_id, item_id: item.id },
+            body: { client_visible: !event.target.checked },
+          });
+        }}
+      />
+      Hidden from client
+      {change.isError && (
+        <span role="alert" className="text-danger">
+          {errorMessage(change.error)}
+        </span>
+      )}
+    </label>
   );
 }
 

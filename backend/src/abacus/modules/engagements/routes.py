@@ -245,6 +245,7 @@ class ClientContactOut(BaseModel):
     role: Annotated[str, classified("internal")]
     email: Annotated[str | None, classified("confidential")]
     expires_at: Annotated[datetime | None, classified("internal")]
+    display_name: Annotated[str | None, classified("confidential")] = None
 
 
 @router.post(

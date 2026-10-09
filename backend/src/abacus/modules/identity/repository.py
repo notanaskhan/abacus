@@ -40,6 +40,7 @@ EngagementRole = Literal["engagement_partner", "manager", "senior", "staff", "re
 # SPEC-015: client users' roles on an engagement (client memberships only, a database trigger).
 ClientRole = Literal["client_admin", "client_contributor"]
 ENGAGEMENT_ROLES: frozenset[str] = frozenset(get_args(EngagementRole))
+CLIENT_ROLES: frozenset[str] = frozenset(get_args(ClientRole))
 
 _metadata = MetaData()
 # For `visible()` subqueries; the table is created by migration 0004.

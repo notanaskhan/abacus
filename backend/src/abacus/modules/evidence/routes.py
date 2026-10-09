@@ -8,7 +8,7 @@ from decimal import Decimal
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import Depends
+from fastapi import Depends, Query, Request
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from abacus.kernel.classification import classified
@@ -25,6 +25,14 @@ from abacus.modules.evidence.service import (
     release,
     review_queue,
     take,
+)
+from abacus.modules.evidence.uploads import (
+    MAX_UPLOAD_BYTES,
+    UploadTooLarge,
+    UploadView,
+    check_upload,
+    upload,
+    uploads_for,
 )
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
@@ -318,3 +326,63 @@ async def reason_codes_route(
         ReasonCodeOut.model_validate(c, from_attributes=True)
         for c in await reason_codes_for(ctx, engagement_id, applies_to)
     ]
+
+
+# --- Client uploads (SPEC-020; TASK-035) -------------------------------------------------------
+
+
+class UploadOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    evidence_version_id: Annotated[UUID, classified("internal")]
+    # The client's file name: untrusted text, shown as plain text only (ADR-052).
+    file_name: Annotated[str, classified("confidential")]
+    media_type: Annotated[str, classified("internal")]
+    size_bytes: Annotated[int, classified("internal")]
+    uploaded_by: Annotated[UUID | None, classified("internal")]
+    uploaded_by_name: Annotated[str, classified("confidential")]
+    uploaded_at: Annotated[datetime, classified("internal")]
+
+
+def _upload_out(view: UploadView) -> UploadOut:
+    return UploadOut.model_validate(view, from_attributes=True)
+
+
+async def _file(request: Request) -> bytes:
+    """The raw file body (SPEC-008 D3), refused past the limit before it is all read."""
+    data = bytearray()
+    async for chunk in request.stream():
+        data += chunk
+        if len(data) > MAX_UPLOAD_BYTES:
+            raise UploadTooLarge
+    return bytes(data)
+
+
+@router.post(
+    "/request-items/{item_id}/uploads",
+    action="evidence.upload",
+    response_model=UploadOut,
+    status_code=201,
+    errors=(409,),
+)
+async def upload_route(
+    engagement_id: UUID,
+    item_id: UUID,
+    request: Request,
+    ctx: Ctx,
+    filename: Annotated[str, Query(min_length=1, max_length=1000)],
+) -> UploadOut:
+    """SPEC-020 AC-8, AC-9: a client's file for a request item, stored as new evidence."""
+    await check_upload(ctx, engagement_id, item_id)
+    content = await _file(request)
+    return _upload_out(
+        await upload(ctx, engagement_id, item_id, file_name=filename, content=content)
+    )
+
+
+@router.get(
+    "/request-items/{item_id}/uploads", action="evidence.read", response_model=list[UploadOut]
+)
+async def list_uploads_route(engagement_id: UUID, item_id: UUID, ctx: Ctx) -> list[UploadOut]:
+    """SPEC-020: the item's uploads, newest first."""
+    return [_upload_out(v) for v in await uploads_for(ctx, engagement_id, item_id)]

@@ -31,3 +31,10 @@ Items added by hand are never changed.
 - **Audit:** each item is audited, and `request_list.imported` records the file's fingerprint and the counts.
 
 The parser (`workbook.py`) is read-only, bounded (5 MB, 2,000 rows), and reports problems without cell contents.
+
+## Client facts (SPEC-020; TASK-035)
+- **Columns:** `client_visible` (default true) and `client_assignee_user_id` (a member of the item's engagement; the service requires a client contributor).
+- **Routes:**
+  - `PUT …/request-items/{item_id}/client-visibility` (`request_item.update`);
+  - `PUT …/client-assignee` (`request_item.assign`, 409 `not_a_client_contributor`).
+- **Uploads:** `fulfil_by_upload` links an uploaded version to its item and marks it received, for a caller that authorised `evidence.upload` on the item.

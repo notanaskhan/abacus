@@ -118,6 +118,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "reviewer": "allow",
         "platform_support": "allow",
         "platform_support_content": "allow",
+        "client_admin": "allow",
+        "client_contributor": "allow",
     },
     "engagement.read": {
         "practice_leader": "in_scope",

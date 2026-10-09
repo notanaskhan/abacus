@@ -90,3 +90,9 @@ On removal, the hook that evidence registers (`register_member_removed`) release
 
 ## Firm members picker (SPEC-019 Q4; TASK-034)
 `GET /v1/firm/members` (`wall.create`) lists the firm's active **staff** members with names, never client users, for the walls screen's person picker. Engagements serves the matching client picker at `GET /v1/firm/clients`.
+
+## Client conditions on request items (SPEC-020; TASK-035)
+- **In `authorise`:** `Resource` may carry `ItemFacts` (`client_visible`, `client_assignee`). `client_visible_only` then allows a client-visible item; `assigned_only` allows a client-visible item assigned to the person. Without the facts both still deny.
+- **For lists:** `visible_items` is the list-query twin. `authorise_items` lets a client list an engagement's items, which are then filtered row by row.
+- **`visible()` counts client roles** the matrix allows (it agrees with `authorise`). Client roles read engagement metadata (their own engagements only).
+- **Client contacts** now carry members' display names.

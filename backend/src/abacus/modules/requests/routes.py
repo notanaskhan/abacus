@@ -19,9 +19,11 @@ from abacus.modules.requests.service import (
     RequestItemView,
     add_request_item,
     apply_methodology,
+    assign_to_client,
     import_request_list,
     preview_request_list,
     request_items_for,
+    set_client_visibility,
 )
 from abacus.modules.requests.workbook import MAX_BYTES, Problem, RequestListInvalid
 
@@ -52,6 +54,8 @@ class RequestItemOut(BaseModel):
     created_at: Annotated[datetime, classified("internal")]
     evidence_version_id: Annotated[UUID | None, classified("internal")] = None
     retrievability_tier: Annotated[Tier | None, classified("internal")] = None
+    client_visible: Annotated[bool, classified("internal")] = True
+    client_assignee_user_id: Annotated[UUID | None, classified("internal")] = None
 
 
 def _out(item: RequestItemView) -> RequestItemOut:
@@ -73,6 +77,44 @@ async def create_request_item_route(
 @router.get("", action="request_item.read", response_model=list[RequestItemOut])
 async def list_request_items_route(engagement_id: UUID, ctx: Ctx) -> list[RequestItemOut]:
     return [_out(item) for item in await request_items_for(ctx, engagement_id)]
+
+
+class ClientVisibilityIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    client_visible: Annotated[bool, classified("internal")]
+
+
+class ClientAssigneeIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    user_id: Annotated[UUID | None, classified("internal")]
+
+
+@router.put(
+    "/{item_id}/client-visibility", action="request_item.update", response_model=RequestItemOut
+)
+async def set_client_visibility_route(
+    engagement_id: UUID, item_id: UUID, body: ClientVisibilityIn, ctx: Ctx
+) -> RequestItemOut:
+    """SPEC-020 (TASK-035 D3): show or hide the item from client users."""
+    view = await set_client_visibility(
+        ctx, engagement_id, item_id, client_visible=body.client_visible
+    )
+    return _out(view)
+
+
+@router.put(
+    "/{item_id}/client-assignee",
+    action="request_item.assign",
+    response_model=RequestItemOut,
+    errors=(409,),
+)
+async def assign_to_client_route(
+    engagement_id: UUID, item_id: UUID, body: ClientAssigneeIn, ctx: Ctx
+) -> RequestItemOut:
+    """SPEC-020 (TASK-035 D4): assign the item to a client contributor, or clear it."""
+    return _out(await assign_to_client(ctx, engagement_id, item_id, user_id=body.user_id))
 
 
 # Applying a methodology version to the engagement (SPEC-008 §8; TASK-023 D2).

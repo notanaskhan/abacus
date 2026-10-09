@@ -163,9 +163,23 @@ export type CandidateOut = {
 };
 
 /**
+ * ClientAssigneeIn
+ */
+export type ClientAssigneeIn = {
+    /**
+     * User Id
+     */
+    user_id: string | null;
+};
+
+/**
  * ClientContactOut
  */
 export type ClientContactOut = {
+    /**
+     * Display Name
+     */
+    display_name?: string | null;
     /**
      * Email
      */
@@ -210,6 +224,16 @@ export type ClientInvitationOut = {
      * Invitation Id
      */
     invitation_id: string;
+};
+
+/**
+ * ClientVisibilityIn
+ */
+export type ClientVisibilityIn = {
+    /**
+     * Client Visible
+     */
+    client_visible: boolean;
 };
 
 /**
@@ -1041,6 +1065,14 @@ export type RequestItemOut = {
      */
     audit_area: string;
     /**
+     * Client Assignee User Id
+     */
+    client_assignee_user_id?: string | null;
+    /**
+     * Client Visible
+     */
+    client_visible?: boolean;
+    /**
      * Created At
      */
     created_at: string;
@@ -1408,6 +1440,40 @@ export type TemplateVersionOut = {
      * Version Id
      */
     version_id: string;
+};
+
+/**
+ * UploadOut
+ */
+export type UploadOut = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Media Type
+     */
+    media_type: string;
+    /**
+     * Size Bytes
+     */
+    size_bytes: number;
+    /**
+     * Uploaded At
+     */
+    uploaded_at: string;
+    /**
+     * Uploaded By
+     */
+    uploaded_by: string | null;
+    /**
+     * Uploaded By Name
+     */
+    uploaded_by_name: string;
 };
 
 /**
@@ -2641,6 +2707,245 @@ export type PreviewImportResponses = {
 };
 
 export type PreviewImportResponse = PreviewImportResponses[keyof PreviewImportResponses];
+
+export type AssignToClientData = {
+    body: ClientAssigneeIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/client-assignee';
+};
+
+export type AssignToClientErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AssignToClientError = AssignToClientErrors[keyof AssignToClientErrors];
+
+export type AssignToClientResponses = {
+    /**
+     * Successful Response
+     */
+    200: RequestItemOut;
+};
+
+export type AssignToClientResponse = AssignToClientResponses[keyof AssignToClientResponses];
+
+export type SetClientVisibilityData = {
+    body: ClientVisibilityIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/client-visibility';
+};
+
+export type SetClientVisibilityErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SetClientVisibilityError = SetClientVisibilityErrors[keyof SetClientVisibilityErrors];
+
+export type SetClientVisibilityResponses = {
+    /**
+     * Successful Response
+     */
+    200: RequestItemOut;
+};
+
+export type SetClientVisibilityResponse = SetClientVisibilityResponses[keyof SetClientVisibilityResponses];
+
+export type ListUploadsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/uploads';
+};
+
+export type ListUploadsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ListUploadsError = ListUploadsErrors[keyof ListUploadsErrors];
+
+export type ListUploadsResponses = {
+    /**
+     * Response List Uploads
+     *
+     * Successful Response
+     */
+    200: Array<UploadOut>;
+};
+
+export type ListUploadsResponse = ListUploadsResponses[keyof ListUploadsResponses];
+
+export type UploadData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query: {
+        /**
+         * Filename
+         */
+        filename: string;
+    };
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/uploads';
+};
+
+export type UploadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type UploadError = UploadErrors[keyof UploadErrors];
+
+export type UploadResponses = {
+    /**
+     * Successful Response
+     */
+    201: UploadOut;
+};
+
+export type UploadResponse = UploadResponses[keyof UploadResponses];
 
 export type StartRetrievalData = {
     body: RetrievalIn;

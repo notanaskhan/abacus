@@ -10,6 +10,7 @@ const TEXT: Record<string, string> = {
   "engagement.member_self_joined": "A firm admin joined an engagement to view its content.",
   "engagement_member.added": "You were added to an engagement's team.",
   "review.assigned": "Evidence was assigned to you for review.",
+  "evidence.uploaded": "The client uploaded a file to a request.",
 };
 
 export function notificationText(kind: string): string {
@@ -20,5 +21,6 @@ export function notificationText(kind: string): string {
 export function notificationHref(n: NotificationOut): string | null {
   if (n.engagement_id === null) return null;
   if (n.kind === "review.assigned") return `/engagements/${n.engagement_id}/review`;
+  if (n.kind === "evidence.uploaded") return `/engagements/${n.engagement_id}/board`;
   return `/engagements/${n.engagement_id}`;
 }

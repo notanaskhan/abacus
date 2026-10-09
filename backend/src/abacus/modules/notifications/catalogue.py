@@ -53,6 +53,18 @@ async def _assignee(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     return [assignee] if assignee is not None else []
 
 
+_STAFF_ROLES = frozenset({"engagement_partner", "manager", "senior", "staff", "reviewer"})
+
+
+async def _staff_team(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """The engagement's firm team, never its client users (SPEC-020: a client uploaded)."""
+    engagement_id = _uuid(payload, "engagement_id")
+    if engagement_id is None:
+        return []
+    team = await team_of(tenant_id, engagement_id)
+    return sorted({user for user, role in team if role in _STAFF_ROLES})
+
+
 @dataclass(frozen=True)
 class Kind:
     kind: str
@@ -82,6 +94,9 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "review.assigned": Kind(
         "review.assigned", _assignee, "evidence_version", "evidence_version_id"
     ),
+    "evidence.uploaded": Kind(
+        "evidence.uploaded", _staff_team, "evidence_version", "evidence_version_id"
+    ),
 }
 
 # AC-7: fixed English text per kind; placeholders are names the reader can already see.
@@ -95,4 +110,5 @@ TEMPLATES: Final[dict[str, str]] = {
     "engagement.member_self_joined": "A firm admin joined {engagement} to view its content.",
     "engagement_member.added": "You were added to {engagement}.",
     "review.assigned": "Evidence on {engagement} was assigned to you for review.",
+    "evidence.uploaded": "The client uploaded a file on {engagement}.",
 }

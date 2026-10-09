@@ -820,6 +820,10 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/organisations/repository.py", "names_of"),
         ("src/abacus/modules/ledger/repository.py", "lines_of"),
         ("src/abacus/modules/requests/repository.py", "items_fulfilled_by"),
+        # SPEC-020: one request item's versions and its uploads, read after `authorise` on that
+        # item with its client facts (`evidence.upload` / `evidence.read`).
+        ("src/abacus/modules/requests/repository.py", "fulfilling_versions"),
+        ("src/abacus/modules/evidence/repository.py", "uploaded_versions"),
         # Ethical walls are firm-level, not engagement-scoped (SPEC-002): authz reads a person's
         # own walls; listing every wall needs `wall.list`, authorised by the service first.
         ("src/abacus/modules/identity/repository.py", "walled_clients"),
@@ -847,7 +851,8 @@ def _visible_in_where(function: ast.AST) -> list[ast.Call]:
                 found += [
                     inner
                     for inner in ast.walk(arg)
-                    if isinstance(inner, ast.Call) and _terminal_name(inner.func) == "visible"
+                    if isinstance(inner, ast.Call)
+                    and _terminal_name(inner.func) in ("visible", "visible_items")
                 ]
     return found
 
@@ -863,7 +868,8 @@ def _returns_many(function: ast.AST) -> bool:
 
 def _check_list_visible(src: SourceFile) -> Iterator[Finding]:
     """ADR-027, ADR-102: repository functions that list rows filter them with `visible(ctx,
-    "<read action>", <column>)` inside `.where(...)`."""
+    "<read action>", <column>)` (or, for request items, `visible_items`, SPEC-020) inside
+    `.where(...)`."""
     reads = _read_actions()
     for node in ast.walk(src.tree):
         if not isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):

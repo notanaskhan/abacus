@@ -45,3 +45,12 @@ Evidence items and their immutable versions (glossary; ADR-004). Owns `evidence_
   - reads pin the recorded `VersionId` and re-verify the fingerprint.
 - **Downloads** go through the API, never presigned URLs: objects are ciphertext (ADR-104).
 - **Account names** in rendered files are always written as strings, never as formulas.
+
+## Client uploads (SPEC-020; TASK-035)
+`uploads.py`; routes `POST`/`GET /v1/engagements/{id}/request-items/{item_id}/uploads`.
+- **Upload:**
+  - takes the raw body and the query `filename`;
+  - authorises `evidence.upload` with the item's facts before reading the body;
+  - limits: 25 MB; types judged by the leading bytes (PDF, PNG, JPEG, OOXML xlsx/docx, OLE xls/doc, UTF-8 CSV); the same SHA-256 on the item twice is refused;
+  - stores a new evidence item titled with the cleaned file name, whose first version has provenance `uploaded` / `client_upload`, links it, audits `evidence.uploaded` and emits `EvidenceUploaded` (which notifies the firm team).
+- **Never opened:** no file is opened, parsed or rendered; file names are plain text only.

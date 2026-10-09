@@ -192,7 +192,7 @@ IMMUTABLE_TABLES: dict[str, str] = {
 APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),
     "engagements": frozenset({"status", "methodology_version_id"}),  # SPEC-008: pinned once
-    "request_items": frozenset({"status"}),
+    "request_items": frozenset({"status", "client_visible", "client_assignee_user_id"}),
     "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
     "connections": frozenset({"status"}),
     # SPEC-007 AC-7: a firm admin replaces the firm's budget (upsert).

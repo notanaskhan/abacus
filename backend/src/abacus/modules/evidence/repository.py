@@ -338,3 +338,33 @@ async def snapshots_of_engagement(session: AsyncSession, engagement_id: UUID) ->
         .distinct()
     )
     return [r for r in rows.scalars().all() if r is not None]
+
+
+async def uploaded_versions(
+    session: AsyncSession, version_ids: Sequence[UUID]
+) -> Sequence[tuple[EvidenceVersion, EvidenceItem]]:
+    """The uploaded ones among a request item's versions, newest first, for a caller that
+    authorised `evidence.read` on that item (SPEC-020; LIST_EXEMPT)."""
+    if not version_ids:
+        return []
+    rows = await session.execute(
+        select(EvidenceVersion, EvidenceItem)
+        .join(EvidenceItem, EvidenceItem.id == EvidenceVersion.evidence_item_id)
+        .where(EvidenceVersion.id.in_(version_ids), EvidenceVersion.method == "uploaded")
+        .order_by(EvidenceVersion.created_at.desc(), EvidenceVersion.id)
+    )
+    return [(version, item) for version, item in rows.tuples().all()]
+
+
+async def fingerprint_among(
+    session: AsyncSession, version_ids: Sequence[UUID], fingerprint: str
+) -> bool:
+    """Whether any of these versions has this content (SPEC-020: duplicate uploads)."""
+    if not version_ids:
+        return False
+    found = await session.execute(
+        select(EvidenceVersion.id)
+        .where(EvidenceVersion.id.in_(version_ids), EvidenceVersion.fingerprint == fingerprint)
+        .limit(1)
+    )
+    return found.scalar_one_or_none() is not None

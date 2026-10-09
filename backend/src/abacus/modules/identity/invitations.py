@@ -26,6 +26,7 @@ from abacus.modules.identity.events import ClientInvitationIssued
 from abacus.modules.identity.repository import (
     add_client_membership,
     client_contacts,
+    display_names,
     engagement_role,
     extend_invitation,
     find_token,
@@ -79,6 +80,7 @@ class ContactView:
     role: str
     email: str | None
     expires_at: datetime | None
+    display_name: str | None = None  # members only (SPEC-020: the assignee picker)
 
 
 @dataclass(frozen=True)
@@ -183,7 +185,18 @@ async def contacts(ctx: AuthContext, engagement_id: UUID) -> list[ContactView]:
     """After `authorise(client_contact.read)` (AC-9)."""
     async with tenant_session(ctx.tenant) as session:
         rows = await client_contacts(session, engagement_id)
-    return [ContactView(r["kind"], r["id"], r["role"], r["email"], r["expires_at"]) for r in rows]
+    names = await display_names([r["id"] for r in rows if r["kind"] == "member"])
+    return [
+        ContactView(
+            r["kind"],
+            r["id"],
+            r["role"],
+            r["email"],
+            r["expires_at"],
+            names.get(r["id"]) if r["kind"] == "member" else None,
+        )
+        for r in rows
+    ]
 
 
 async def issue_invitation_token(tenant_id: UUID, invitation_id: UUID) -> IssuedInvitation | None:

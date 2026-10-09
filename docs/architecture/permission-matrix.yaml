@@ -58,6 +58,8 @@ actions:
     reviewer: allow
     platform_support: allow   # SPEC-012
     platform_support_content: allow   # SPEC-012
+    client_admin: allow       # SPEC-020: their own engagement's name, firm and period
+    client_contributor: allow
   engagement.read:          # content, not just metadata — ADR-024
     practice_leader: in_scope
     quality_partner: in_scope

@@ -12,10 +12,19 @@ from abacus.kernel.db import TenantContext, tenant_session, transaction_context
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import get_ref, lock_ref, pin_methodology, version_detail
-from abacus.modules.identity.api import Actor, AuthContext, SystemContext, authorise
+from abacus.modules.identity.api import (
+    Actor,
+    AuthContext,
+    ItemFacts,
+    SystemContext,
+    authorise,
+    authorise_items,
+    engagement_role_of,
+)
 from abacus.modules.requests.events import RequestItemCreated
 from abacus.modules.requests.models import RequestItem
 from abacus.modules.requests.repository import (
+    fulfilling_versions,
     get_request_item,
     insert_fulfilment,
     insert_request_item,
@@ -26,6 +35,7 @@ from abacus.modules.requests.repository import (
     mark_received,
     newest_fulfilment,
     request_list_for,
+    set_client_fields,
     set_status,
 )
 from abacus.modules.requests.workbook import SheetPreview, normalise, preview, read_rows
@@ -44,6 +54,9 @@ class RequestItemView:
     evidence_version_id: UUID | None = None
     # From the methodology template that seeded it (SPEC-008); None for items added by hand.
     retrievability_tier: str | None = None
+    # SPEC-020: whether client users see it, and the client contributor it's assigned to.
+    client_visible: bool = True
+    client_assignee_user_id: UUID | None = None
 
 
 def _view(item: RequestItem, evidence_version_id: UUID | None = None) -> RequestItemView:
@@ -56,6 +69,8 @@ def _view(item: RequestItem, evidence_version_id: UUID | None = None) -> Request
         item.created_at,
         evidence_version_id,
         item.retrievability_tier,
+        item.client_visible,
+        item.client_assignee_user_id,
     )
 
 
@@ -101,7 +116,7 @@ async def add_request_item(
 
 async def request_items_for(ctx: AuthContext, engagement_id: UUID) -> Sequence[RequestItemView]:
     ref = await get_ref(ctx, engagement_id)
-    await authorise(ctx, "request_item.read", ref.resource())
+    await authorise_items(ctx, "request_item.read", ref.resource())
     async with tenant_session(ctx.tenant) as session:
         rows = await list_request_items(session, ctx, engagement_id)
     return [_view(item, version_id) for item, version_id in rows]
@@ -168,6 +183,13 @@ class RequestItemRef:
     id: UUID
     engagement_id: UUID
     status: str
+    client_visible: bool = True
+    client_assignee_user_id: UUID | None = None
+
+    @property
+    def facts(self) -> ItemFacts:
+        """For the client conditions in `authorise` (SPEC-020)."""
+        return ItemFacts(self.client_visible, self.client_assignee_user_id)
 
 
 async def item_ref(tx: UnitOfWork, request_item_id: UUID, *, lock: bool = False) -> RequestItemRef:
@@ -176,7 +198,13 @@ async def item_ref(tx: UnitOfWork, request_item_id: UUID, *, lock: bool = False)
     item = await get_request_item(tx.session, request_item_id, lock=lock)
     if item is None:
         raise NotFound("request_item")
-    return RequestItemRef(item.id, item.engagement_id, item.status)
+    return RequestItemRef(
+        item.id,
+        item.engagement_id,
+        item.status,
+        item.client_visible,
+        item.client_assignee_user_id,
+    )
 
 
 @dataclass(frozen=True)
@@ -403,3 +431,125 @@ async def import_request_list(
             ),
         )
     return ImportCounts(created, duplicates, empty, unmatched)
+
+
+# --- Client facts and uploads (SPEC-020; TASK-035) ---------------------------------------------
+
+
+class NotAClientContributor(DomainConflict):
+    """Items are assigned to the engagement's client contributors only (TASK-035 D4)."""
+
+    code = "not_a_client_contributor"
+
+
+async def _locked_item(tx: UnitOfWork, engagement_id: UUID, item_id: UUID) -> RequestItemRef:
+    item = await item_ref(tx, item_id, lock=True)
+    if item.engagement_id != engagement_id:
+        raise NotFound("request_item")
+    return item
+
+
+async def set_client_visibility(
+    ctx: AuthContext, engagement_id: UUID, item_id: UUID, *, client_visible: bool
+) -> RequestItemView:
+    """Show or hide the item from client users (`request_item.update`; TASK-035 D3)."""
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        item = await _locked_item(tx, engagement_id, item_id)
+        await authorise(ctx, "request_item.update", ref.resource())
+        await set_client_fields(tx.session, item_id, client_visible=client_visible)
+        tx.record(
+            "request_item.client_visibility_changed",
+            target=Target("request_item", item_id),
+            before=Ref(client_visible=int(item.client_visible)),
+            after=Ref(client_visible=int(client_visible)),
+        )
+        return await _item_view(tx, item_id)
+
+
+async def assign_to_client(
+    ctx: AuthContext, engagement_id: UUID, item_id: UUID, *, user_id: UUID | None
+) -> RequestItemView:
+    """Assign the item to one of the engagement's client contributors, or clear it
+    (`request_item.assign`; TASK-035 D4)."""
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        item = await _locked_item(tx, engagement_id, item_id)
+        await authorise(ctx, "request_item.assign", ref.resource())
+        if user_id is not None:
+            role = await engagement_role_of(ctx.tenant, engagement_id, user_id)
+            if role != "client_contributor":
+                raise NotAClientContributor
+        await set_client_fields(tx.session, item_id, client_assignee=user_id)
+        tx.record(
+            "request_item.client_assigned",
+            target=Target("request_item", item_id),
+            before=Ref(user_id=item.client_assignee_user_id)
+            if item.client_assignee_user_id is not None
+            else None,
+            after=Ref(user_id=user_id) if user_id is not None else None,
+        )
+        return await _item_view(tx, item_id)
+
+
+async def _item_view(tx: UnitOfWork, item_id: UUID) -> RequestItemView:
+    item = await get_request_item(tx.session, item_id)
+    if item is None:
+        raise NotFound("request_item")
+    return _view(item, await newest_fulfilment(tx.session, item_id))
+
+
+async def item_versions(tx: UnitOfWork, item_id: UUID) -> list[UUID]:
+    """Every version fulfilling the item, oldest first, for a caller that authorised on it."""
+    return list(await fulfilling_versions(tx.session, item_id))
+
+
+async def fulfil_by_upload(
+    tx: UnitOfWork, *, request_item_id: UUID, evidence_version_id: UUID
+) -> FulfilmentRef:
+    """Link an uploaded version to its item and move the item to `received` (TASK-035 D5). The
+    caller authorised `evidence.upload` on this item, with its facts, and holds its lock."""
+    tenant = await transaction_context(tx.session)
+    item = await item_ref(tx, request_item_id)
+    if item.status not in ("open", "received", "needs_revision"):
+        raise ItemNotFulfillable(item.status)
+    fulfilment_id = await insert_fulfilment(
+        tx.session,
+        tenant_id=tenant.tenant_id,
+        engagement_id=item.engagement_id,
+        request_item_id=request_item_id,
+        evidence_version_id=evidence_version_id,
+        created_by_kind="human",
+        created_by_id=tenant.actor_id,
+    )
+    if fulfilment_id is not None:
+        tx.record(
+            "fulfilment.created",
+            target=Target("fulfilment", fulfilment_id),
+            after=Ref(request_item_id=request_item_id, evidence_version_id=evidence_version_id),
+        )
+    received = await mark_received(tx.session, request_item_id)
+    if received:
+        tx.record(
+            "request_item.received",
+            target=Target("request_item", request_item_id),
+            after=Ref(evidence_version_id=evidence_version_id),
+        )
+    return FulfilmentRef(fulfilment_id, received)
+
+
+async def read_item(tenant: TenantContext, engagement_id: UUID, item_id: UUID) -> RequestItemRef:
+    """The item outside a unit of work, for a caller about to authorise on its facts."""
+    async with tenant_session(tenant) as session:
+        item = await get_request_item(session, item_id)
+    if item is None or item.engagement_id != engagement_id:
+        raise NotFound("request_item")
+    return RequestItemRef(
+        item.id, item.engagement_id, item.status, item.client_visible, item.client_assignee_user_id
+    )
+
+
+async def read_item_versions(tenant: TenantContext, item_id: UUID) -> list[UUID]:
+    """Every version fulfilling the item, oldest first, for a caller that authorised on it."""
+    async with tenant_session(tenant) as session:
+        return list(await fulfilling_versions(session, item_id))
