@@ -1,7 +1,7 @@
 ---
 id: SPEC-022
 title: Classification and evidence board
-status: draft
+status: approved
 owner: founder
 risk_zone: amber
 related_adrs: [ADR-005, ADR-037, ADR-040, ADR-047, ADR-050, ADR-069, ADR-071]
@@ -141,13 +141,14 @@ The SPEC-016 Board, with a filter bar above the list and a summary strip (counts
 One requests migration. Auto-retrieval sits behind a feature flag (`auto_retrieval`, default on locally, off elsewhere until staging is proven) (Q6).
 
 ## 20. Open questions
-- [ ] **Q1: what the tiers mean.** *Recommendation:* the table in §4 (A: a standard report from the connected system; B: derivable by code; C: an attachment in the system; D: held by the client; E: third parties or physical), added to the glossary. This is a product definition, so it's yours to confirm or change.
-- [ ] **Q2: precedence.** *Recommendation:* override > methodology tier > rules > unclassified. The firm's own template beats generic rules.
-- [ ] **Q3: model fallback.** *Recommendation:* defer it to its own spec, with a classifier agent and its evaluation suite (the Phase 2 exit needs a classifier suite at agreed thresholds). Until then, unclassified items show "Unclassified" and staff can set the tier.
-- [ ] **Q4: automatic retrieval and on whose behalf.** *Recommendation:* start retrievals automatically for available A items, on behalf of the client admin who connected (their consent is the authority, ADR-040), paced by the existing caps.
-- [ ] **Q5: "retrieved, never asked".** *Recommendation:* items whose first evidence was retrieved, with no client upload before it. Follow-ups don't exist yet (increment 8); once they do, this gains "and never followed up".
-- [ ] **Q6: rollout.** *Recommendation:* a feature flag `auto_retrieval`, on in local and test, off in staging and production until you switch it on.
-- [ ] **Q7: protected paths.** *Recommendation:* an approval file covering:
+None. Answered by the founder on 2026-10-09 (all recommendations, including the tier meanings in Q1):
+- [x] **Q1: what the tiers mean.** *Recommendation:* the table in §4 (A: a standard report from the connected system; B: derivable by code; C: an attachment in the system; D: held by the client; E: third parties or physical), added to the glossary. This is a product definition, so it's yours to confirm or change.
+- [x] **Q2: precedence.** *Recommendation:* override > methodology tier > rules > unclassified. The firm's own template beats generic rules.
+- [x] **Q3: model fallback.** *Recommendation:* defer it to its own spec, with a classifier agent and its evaluation suite (the Phase 2 exit needs a classifier suite at agreed thresholds). Until then, unclassified items show "Unclassified" and staff can set the tier.
+- [x] **Q4: automatic retrieval and on whose behalf.** *Recommendation:* start retrievals automatically for available A items, on behalf of the client admin who connected (their consent is the authority, ADR-040), paced by the existing caps.
+- [x] **Q5: "retrieved, never asked".** *Recommendation:* items whose first evidence was retrieved, with no client upload before it. Follow-ups don't exist yet (increment 8); once they do, this gains "and never followed up".
+- [x] **Q6: rollout.** *Recommendation:* a feature flag `auto_retrieval`, on in local and test, off in staging and production until you switch it on.
+- [x] **Q7: protected paths.** *Recommendation:* an approval file covering:
   - `connections/**` (the auto-retrieval subscriber and capabilities);
   - `backend/tests/unit/**`;
   - `schema_check.py` (the new update columns);
