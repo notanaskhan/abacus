@@ -390,10 +390,12 @@ async def import_template(
     return found.summary
 
 
-async def methodology_templates(ctx: AuthContext) -> list[TemplateVersionSummary]:
+async def methodology_templates(
+    ctx: AuthContext, *, latest: bool = False
+) -> list[TemplateVersionSummary]:
     await authorise(ctx, "methodology.read", Resource.firm(ctx.tenant_id))
     async with tenant_session(ctx.tenant) as session:
-        return [_summary(t, v) for t, v in await list_templates(session)]
+        return [_summary(t, v) for t, v in await list_templates(session, latest=latest)]
 
 
 async def methodology_version(ctx: AuthContext, version_id: UUID) -> MethodologyVersionView:

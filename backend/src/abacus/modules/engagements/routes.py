@@ -458,8 +458,10 @@ async def import_template_route(
 @methodology_router.get(
     "/templates", action="methodology.read", response_model=list[TemplateVersionOut]
 )
-async def list_templates_route(ctx: Ctx) -> list[TemplateVersionOut]:
-    return [_version_out(s) for s in await methodology_templates(ctx)]
+async def list_templates_route(ctx: Ctx, latest: bool = False) -> list[TemplateVersionOut]:
+    """Every version of every template; `latest=true` keeps each template's newest version only
+    (SPEC-025 AC-3: what a new engagement is offered)."""
+    return [_version_out(s) for s in await methodology_templates(ctx, latest=latest)]
 
 
 @methodology_router.get(

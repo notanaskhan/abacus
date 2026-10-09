@@ -15,7 +15,7 @@ One job for one client and one fiscal period (glossary). Owns `engagements` (ADR
 A firm imports its methodology as numbered versions of a named template. Each version is immutable.
 
 - **Import:** `POST /v1/methodology/templates/{name}/versions` takes the raw `.xlsx` workbook as the request body.
-- **Read:** `GET /v1/methodology/templates` and `GET /v1/methodology/versions/{id}`.
+- **Read:** `GET /v1/methodology/templates` and `GET /v1/methodology/versions/{id}`. `?latest=true` keeps each template's newest version only: what "New engagement" and Overview offer (SPEC-025 AC-3; TASK-047). "New engagement" preselects the only template for the type (or asks, with several), creates the engagement, then applies it as its new partner.
 
 The workbook has three sheets, each with exact headers in row 1. Blank rows are ignored. `docs/product/methodology-sample.xlsx` is a sample.
 
