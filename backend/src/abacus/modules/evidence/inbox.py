@@ -19,7 +19,7 @@ from sqlalchemy.exc import IntegrityError
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.engagements.api import get_ref
+from abacus.modules.engagements.api import gate_client_data, get_ref
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.matching import Suggestion, suggest
 from abacus.modules.evidence.models import InboxFile
@@ -107,6 +107,7 @@ async def add_to_inbox(
 ) -> InboxEntry:
     """AC-2: store the file and list it as waiting."""
     role = await _role(ctx, engagement_id)
+    await gate_client_data(ctx, engagement_id, "evidence.upload")  # SPEC-025 AC-7
     media_type, digest = checked(content)
     async with tenant_session(ctx.tenant) as session:
         if await waiting_with_fingerprint(session, engagement_id, digest):
@@ -180,6 +181,7 @@ async def assign(
 ) -> UUID:
     """AC-4: the file becomes evidence on the item (as a per-item upload), once."""
     role = await _role(ctx, engagement_id)
+    await gate_client_data(ctx, engagement_id, "evidence.upload")  # SPEC-025 AC-7
     async with uow(ctx.tenant) as tx:
         row = await lock_inbox_file(tx.session, file_id)
         if row is None or row.engagement_id != engagement_id or not _sees(role, ctx, row):

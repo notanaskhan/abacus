@@ -795,3 +795,12 @@ async def firm_name_of(tenant_id: UUID) -> str | None:
             text("SELECT name FROM firms WHERE tenant_id = :t"), {"t": tenant_id}
         )
     return str(found) if found is not None else None
+
+
+async def letter_required(session: AsyncSession) -> bool:
+    """Whether the session's firm requires the engagement letter before client data."""
+    return bool(await session.scalar(text("SELECT require_letter FROM firms")))
+
+
+async def set_letter_required(session: AsyncSession, required: bool) -> None:
+    await session.execute(text("UPDATE firms SET require_letter = :r"), {"r": required})

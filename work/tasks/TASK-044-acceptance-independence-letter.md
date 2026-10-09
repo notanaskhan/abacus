@@ -4,7 +4,7 @@ title: Acceptance, independence, the engagement letter and the engagement gate
 spec: SPEC-025
 acceptance_criteria: [AC-4, AC-5, AC-6, AC-7, AC-9]
 risk_zone: red
-status: awaiting-plan-approval
+status: done
 branch: task-044-acceptance-independence
 worktree:
 created: 2026-10-09
@@ -37,7 +37,7 @@ SPEC-025 AC-4, AC-5, AC-6, the engagement-level half of AC-7, and AC-9 for these
   - the notifications catalogue.
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-09: D1–D4; D1 splits per-person gating into TASK-045 with the design above). Approved by founder: paths listed under *Protected paths*
 
 ### What the code shows
 - **Nothing records acceptance, independence or the letter.** The matrix has no actions for them.
@@ -52,10 +52,10 @@ SPEC-025 AC-4, AC-5, AC-6, the engagement-level half of AC-7, and AC-9 for these
    - **`engagement_letters`:** engagement, status (`not_started`, `sent`, `signed` or `not_required_this_year`), date, reason (required for "not required"), link (an https URL) or file reference.
    - **`firms.require_letter_before_client_data`** (default false), with a toggle on the Autonomy page (`firm.manage_settings`).
 2. **Matrix actions (with the generated `_matrix.py`):**
-   - `engagement.acceptance.record` (engagement partner, fresh MFA): decision, kind, documented at, file, predecessor fields, and the independence conclusion;
+   - `acceptance.record` (engagement partner, fresh MFA): decision, kind, documented at, file, predecessor fields, and the independence conclusion;
    - `independence.confirm` (every staff engagement role, for oneself only; the service refuses acting for someone else);
-   - `engagement.letter.record` (engagement partner, manager);
-   - `engagement.setup.read` (every staff engagement role, plus firm administrators and practice leaders): the records and everyone's confirmation state (decline notes only to the partner and manager).
+   - `letter.record` (engagement partner, manager);
+   - `setup.read` (every staff engagement role, plus firm administrators and practice leaders): the records and everyone's confirmation state (decline notes only to the partner and manager).
 3. **Requests to confirm:**
    - a person joining an engagement's team (creator as partner, added member, self-joined administrator) gets a `requested` confirmation and a notification (`independence.requested`, to that person), in the same unit of work;
    - this hooks into identity's add-member paths through a new registration slot, `register_member_added`, beside the existing removal slot (ADR-106).
@@ -104,12 +104,24 @@ Not needed:
 - **D4. Write the approval file for the paths above?** *Recommendation: yes.*
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
-- [ ] Type check, lint, format, architecture and dependency rules pass
-- [ ] Every query is tenant-scoped; every endpoint checks authorisation
-- [ ] Module READMEs and the relevant docs are updated
+- [x] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
+- [x] Type check, lint, format, architecture and dependency rules pass
+- [x] Every query is tenant-scoped; every endpoint checks authorisation
+- [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-09` — Implemented:
+  - migration 0036 (acceptance, independence confirmations, letters, `firms.require_letter`; existing engagements backfilled "before Act 1");
+  - the matrix actions `acceptance.record`, `independence.confirm`, `letter.record` and `setup.read`. They were renamed from three-part names, because the matrix requires `entity.verb`;
+  - identity's member-added hook and the letter policy;
+  - engagements' setup service and routes, the gate on the six client-data entry points and automatic retrieval, and the `independence.requested` notification;
+  - evidence's file upload and download;
+  - web: the acceptance, independence and letter panels on the People tab, the "Your independence confirmations" card, the letter toggle under Autonomy, and plain-words gate reasons everywhere through `errorMessage`.
+
+  Tests and checks:
+  - backend unit and web 185 passed; the gates pass; migration 0036 applies, rolls back and reapplies;
+  - a local smoke passed: a new engagement started closed with the creator asked to confirm; the invitation was refused for missing acceptance, then for the missing conclusion, then allowed; with the letter required it was refused until the letter was signed; declining closed it again; 4 refusals were audited; a signed-letter PDF round-tripped verified;
+  - predecessor fields now carry forward when acceptance is recorded again.
 - `2026-10-09` — Design written for founder review after TASK-043 merged (#79).
 
 ## Decisions made during this task

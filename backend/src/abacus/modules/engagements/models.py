@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from uuid import UUID
 
-from sqlalchemy import ARRAY, String
+from sqlalchemy import ARRAY, FetchedValue, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from abacus.kernel.db import Base
@@ -83,3 +83,66 @@ class MethodologyAccountRule(Base):
     area_code: Mapped[str]
     account_from: Mapped[str]
     account_to: Mapped[str]
+
+
+# --- Acceptance, independence and the letter (SPEC-025; TASK-044) ------------------------------
+
+
+class EngagementAcceptance(Base):
+    """One decision record; the newest row is the live one (rows are never changed)."""
+
+    __tablename__ = "engagement_acceptance"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    kind: Mapped[str]
+    decision: Mapped[str]
+    decided_by: Mapped[str]
+    documented_at: Mapped[str]
+    predecessor_auditor: Mapped[str | None]
+    predecessor_communicated_on: Mapped[date | None]
+    independence_concluded_by: Mapped[str | None]
+    independence_concluded_at: Mapped[datetime | None]
+    independence_documented_at: Mapped[str | None]
+    file_key: Mapped[str | None]
+    file_version_id: Mapped[str | None]
+    file_fingerprint: Mapped[str | None]
+    file_size: Mapped[int | None]
+    file_media_type: Mapped[str | None]
+    file_name: Mapped[str | None]
+    before_act_1: Mapped[bool] = mapped_column(server_default=FetchedValue())
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class IndependenceConfirmation(Base):
+    __tablename__ = "independence_confirmations"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    engagement_id: Mapped[UUID] = mapped_column(primary_key=True)
+    user_id: Mapped[UUID] = mapped_column(primary_key=True)
+    status: Mapped[str] = mapped_column(server_default=FetchedValue())
+    statement_version: Mapped[str | None]
+    note: Mapped[str | None]
+    before_act_1: Mapped[bool] = mapped_column(server_default=FetchedValue())
+    requested_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    answered_at: Mapped[datetime | None]
+
+
+class EngagementLetter(Base):
+    __tablename__ = "engagement_letters"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    engagement_id: Mapped[UUID] = mapped_column(primary_key=True)
+    status: Mapped[str]
+    letter_date: Mapped[date | None]
+    reason: Mapped[str | None]
+    link: Mapped[str | None]
+    file_key: Mapped[str | None]
+    file_version_id: Mapped[str | None]
+    file_fingerprint: Mapped[str | None]
+    file_size: Mapped[int | None]
+    file_media_type: Mapped[str | None]
+    file_name: Mapped[str | None]
+    recorded_by: Mapped[str]
+    recorded_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

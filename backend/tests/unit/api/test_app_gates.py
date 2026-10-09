@@ -111,6 +111,7 @@ NOT_CREATING = {
     # SPEC-024 (TASK-042): the checklist's state comes back.
     "/v1/firm/onboarding/{step}/acknowledge",
     "/v1/firm/onboarding/dismiss",
+    "/v1/engagements/{engagement_id}/independence",  # SPEC-025: returns the setup state
 }
 
 
@@ -136,6 +137,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/inbox",  # SPEC-023: an inbox file
         "/v1/signup",  # SPEC-024: a firm
         "/v1/firm/staff/invitations",  # SPEC-024: a staff invitation
+        "/v1/engagements/{engagement_id}/acceptance/file",  # SPEC-025: a stored file
+        "/v1/engagements/{engagement_id}/letter/file",
         "/v1/engagements/{engagement_id}/inbox/{file_id}/assign",  # SPEC-023: evidence
         decisions + "accept",  # TASK-019: a review decision is created
         decisions + "reject",

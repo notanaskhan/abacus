@@ -19,6 +19,7 @@ from abacus.kernel.uow import Ref, Target, UnitOfWork
 from abacus.modules.identity.authz import Forbidden
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.events import EngagementMemberAdded
+from abacus.modules.identity.member_hooks import member_added
 from abacus.modules.identity.repository import (
     display_names,
     engagement_role,
@@ -91,6 +92,7 @@ async def add_member(
         after=Ref(user_id=user_id),
     )
     tx.emit(EngagementMemberAdded(engagement_id=engagement_id, user_id=user_id))
+    await member_added(tx, engagement_id, user_id)  # SPEC-025: asked to confirm independence
 
 
 async def change_role(

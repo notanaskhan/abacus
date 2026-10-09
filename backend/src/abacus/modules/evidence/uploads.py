@@ -19,7 +19,7 @@ from uuid import UUID
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
-from abacus.modules.engagements.api import get_ref, lock_ref
+from abacus.modules.engagements.api import gate_client_data, get_ref, lock_ref
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.events import EvidenceUploaded
 from abacus.modules.evidence.repository import fingerprint_among, uploaded_versions
@@ -266,6 +266,7 @@ async def upload(
     """Store a file as new evidence on the item (SPEC-020 AC-8, AC-9). On the client's behalf
     (SPEC-023 AC-1), only the firm's team may, with an optional note."""
     await authorise_upload(ctx, engagement_id, item_id)
+    await gate_client_data(ctx, engagement_id, "evidence.upload")  # SPEC-025 AC-7
     if on_behalf and not await is_staff_on(ctx, engagement_id):
         raise NotStaff
     media_type, digest = checked(content)

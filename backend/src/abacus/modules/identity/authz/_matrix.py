@@ -107,6 +107,30 @@ ACTIONS: dict[str, dict[str, str]] = {
         "firm_admin": "allow",
         "practice_leader": "allow",
     },
+    "acceptance.record": {
+        "engagement_partner": "allow",
+        "mfa_recent": "required",
+    },
+    "independence.confirm": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "reviewer": "allow",
+    },
+    "letter.record": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+    },
+    "setup.read": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "reviewer": "allow",
+    },
     "client.read": {
         "firm_admin": "allow",
         "practice_leader": "allow",

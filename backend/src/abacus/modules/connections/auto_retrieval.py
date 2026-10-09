@@ -21,7 +21,12 @@ from abacus.modules.connections.models import Connection
 from abacus.modules.connections.repository import live_connection_for
 from abacus.modules.connections.retrievals import trigger_retrieval
 from abacus.modules.connections.service import connector_for
-from abacus.modules.engagements.api import engagement_metadata, entity_of
+from abacus.modules.engagements.api import (
+    EngagementNotOpen,
+    engagement_metadata,
+    entity_of,
+    require_open,
+)
 from abacus.modules.identity.api import AuthContext, Forbidden, autonomy_level, member_context
 from abacus.modules.requests.api import RequestItemView, request_items_for
 
@@ -87,6 +92,11 @@ async def _run(tenant_id: UUID, engagement_id: UUID, only: UUID | None) -> None:
     async with tenant_session(system) as session:
         connection = await live_connection_for(session, entity)
     if connection is None or connection.status != "active":
+        return
+    try:
+        await require_open(system, engagement_id)  # SPEC-025 AC-7: not before it's open
+    except EngagementNotOpen:
+        _log.info("auto_retrieval.skipped", engagement_id=str(engagement_id), reason="not_open")
         return
     ctx = await _consenting(tenant_id, connection)
     if ctx is None:

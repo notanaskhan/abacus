@@ -47,6 +47,11 @@ actions:
 
   # --- Engagements ---
   engagement.create:        {firm_admin: allow, practice_leader: allow}
+  # --- Acceptance, independence and the letter (SPEC-025; TASK-044) ---
+  acceptance.record:        {engagement_partner: allow, mfa_recent: required}   # decision, documentation, the independence conclusion
+  independence.confirm:     {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow}   # for oneself only (the service refuses others)
+  letter.record:            {engagement_partner: allow, manager: allow}
+  setup.read:               {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow}
   client.read:              {firm_admin: allow, practice_leader: allow}   # SPEC-025 (TASK-043 D1): the client picker, as engagement.create
   engagement.apply_methodology: {engagement_partner: allow, manager: allow}   # SPEC-008 AC-4
   engagement.read_metadata:

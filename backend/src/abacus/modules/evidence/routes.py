@@ -38,6 +38,7 @@ from abacus.modules.evidence.service import (
     review_queue,
     take,
 )
+from abacus.modules.evidence.setup_files import download_setup_file, upload_setup_file
 from abacus.modules.evidence.uploads import (
     MAX_UPLOAD_BYTES,
     UploadTooLarge,
@@ -628,3 +629,69 @@ async def discard_route(engagement_id: UUID, file_id: UUID, ctx: Ctx) -> Discard
     """SPEC-023 AC-5: take it out of the inbox; nothing becomes evidence."""
     await discard(ctx, engagement_id, file_id)
     return DiscardedOut(id=file_id)
+
+
+# --- Acceptance files and signed letters (SPEC-025 AC-4, AC-6; TASK-044 D2) -------------------
+
+
+class SetupFileOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    stored: Annotated[bool, classified("internal")]
+
+
+@router.post(
+    "/acceptance/file",
+    action="acceptance.record",
+    response_model=SetupFileOut,
+    status_code=201,
+    errors=(409,),
+)
+async def acceptance_file_route(
+    engagement_id: UUID,
+    request: Request,
+    ctx: Ctx,
+    filename: Annotated[str, Query(min_length=1, max_length=1000)],
+) -> SetupFileOut:
+    """The acceptance or continuance documentation, attached to the latest record."""
+    await upload_setup_file(
+        ctx, engagement_id, "acceptance", file_name=filename, content=await _file(request)
+    )
+    return SetupFileOut(stored=True)
+
+
+@router.post(
+    "/letter/file",
+    action="letter.record",
+    response_model=SetupFileOut,
+    status_code=201,
+    errors=(409,),
+)
+async def letter_file_route(
+    engagement_id: UUID,
+    request: Request,
+    ctx: Ctx,
+    filename: Annotated[str, Query(min_length=1, max_length=1000)],
+) -> SetupFileOut:
+    """The signed engagement letter."""
+    await upload_setup_file(
+        ctx, engagement_id, "letter", file_name=filename, content=await _file(request)
+    )
+    return SetupFileOut(stored=True)
+
+
+@router.get("/{which}/file", action="setup.read", response_model=bytes, errors=(409,))
+async def setup_file_route(
+    engagement_id: UUID, which: Literal["acceptance", "letter"], ctx: Ctx
+) -> Response:
+    """The file as an attachment, never inline; audited and verified."""
+    content, media_type, name = await download_setup_file(ctx, engagement_id, which)
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{name}"',
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "no-store",
+        },
+    )

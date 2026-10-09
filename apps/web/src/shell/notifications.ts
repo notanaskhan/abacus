@@ -13,6 +13,7 @@ const TEXT: Record<string, string> = {
   "evidence.uploaded": "The client uploaded a file to a request.",
   "connection.created": "The client connected their accounting system.",
   "connection.revoked": "An accounting system connection was ended.",
+  "independence.requested": "Confirm your independence for an engagement.",
 };
 
 export function notificationText(kind: string): string {

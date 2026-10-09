@@ -11,6 +11,7 @@ import { Alert, Button, Dialog, Label, Skeleton, Table, Td, Th } from "@abacus/u
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, type SyntheticEvent, useState } from "react";
 import { errorMessage } from "../api";
+import { EngagementRecords } from "./EngagementRecords";
 import { Contacts } from "./Contacts";
 
 type StaffRole = "engagement_partner" | "manager" | "senior" | "staff" | "reviewer";
@@ -30,6 +31,7 @@ const MANAGER_MAY: ReadonlySet<string> = new Set(["senior", "staff", "reviewer"]
 export function People({ engagementId }: { engagementId: string }): JSX.Element {
   return (
     <div className="flex flex-col gap-8">
+      <EngagementRecordsForMe engagementId={engagementId} />
       <Team engagementId={engagementId} />
       <Contacts engagementId={engagementId} />
     </div>
@@ -307,4 +309,12 @@ function AddPerson({
       </form>
     </Dialog>
   );
+}
+
+/** SPEC-025: acceptance, independence and the letter, with the viewer's engagement role. */
+function EngagementRecordsForMe({ engagementId }: { engagementId: string }): JSX.Element {
+  const team = useQuery(teamOptions({ path: { engagement_id: engagementId } }));
+  const me = useQuery(meOptions());
+  const role = team.data?.find((m) => m.user_id === me.data?.user_id)?.role ?? null;
+  return <EngagementRecords engagementId={engagementId} role={role} />;
 }

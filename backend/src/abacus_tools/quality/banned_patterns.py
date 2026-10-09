@@ -786,6 +786,10 @@ LIST_EXEMPT = frozenset(
         # SPEC-025 (TASK-043): the client picker, firm-level after `authorise(client.read)`; the
         # service drops clients the person is walled off from.
         ("src/abacus/modules/organisations/repository.py", "clients_matching"),
+        # SPEC-025 (TASK-044): one engagement's confirmations after `authorise(setup.read)`, and
+        # the person's own open requests (their own rows only).
+        ("src/abacus/modules/engagements/repository.py", "confirmations_of"),
+        ("src/abacus/modules/engagements/repository.py", "my_open_confirmations"),
         # SPEC-019 Q4: the firm's staff for the wall picker, after `authorise(wall.create)`.
         ("src/abacus/modules/identity/repository.py", "active_staff_ids"),
         # SPEC-017: team candidates (after `authorise(engagement.member_add)`; walls applied in the

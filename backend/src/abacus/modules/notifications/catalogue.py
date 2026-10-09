@@ -105,6 +105,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
     ),
     "connection.created": Kind("connection.created", _leads, "connection", "connection_id"),
     "connection.revoked": Kind("connection.revoked", _leads, "connection", "connection_id"),
+    # SPEC-025 (TASK-044): the person who joined is asked to confirm their independence.
+    "independence.requested": Kind(
+        "independence.requested", _added_member, "engagement", "engagement_id"
+    ),
 }
 
 # AC-7: fixed English text per kind; placeholders are names the reader can already see.
@@ -121,4 +125,5 @@ TEMPLATES: Final[dict[str, str]] = {
     "evidence.uploaded": "The client uploaded a file on {engagement}.",
     "connection.created": "The client connected their accounting system on {engagement}.",
     "connection.revoked": "The accounting system connection on {engagement} was ended.",
+    "independence.requested": "Confirm your independence for {engagement}.",
 }

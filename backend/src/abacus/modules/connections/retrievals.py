@@ -24,6 +24,7 @@ from abacus.modules.connections.service import (
 )
 from abacus.modules.connections.workflow_types import RetrievalInput
 from abacus.modules.connections.workflows import RetrievalWorkflow
+from abacus.modules.engagements.api import gate_client_data
 from abacus.modules.identity.api import AuthContext
 
 EXECUTION_TIMEOUT_HOURS = 6
@@ -57,6 +58,7 @@ async def trigger_retrieval(
     ctx: AuthContext, *, engagement_id: UUID, request_item_id: UUID, period: Period
 ) -> RetrievalView:
     """Record the run (`start_retrieval`) and make sure its workflow is running."""
+    await gate_client_data(ctx, engagement_id, "evidence.upload")  # SPEC-025 AC-7
     started = await start_retrieval(
         ctx, engagement_id=engagement_id, request_item_id=request_item_id, period=period
     )

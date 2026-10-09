@@ -5,7 +5,7 @@ import { Link, createRootRoute, createRoute, createRouter } from "@tanstack/reac
 import type { JSX } from "react";
 import { CALLBACK_PATH } from "./auth/session";
 import { AdminLayout } from "./screens/AdminLayout";
-import { Autonomy } from "./screens/Autonomy";
+import { Autonomy, LetterPolicy } from "./screens/Autonomy";
 import { Onboarding } from "./screens/Onboarding";
 import { Board } from "./screens/Board";
 import { Budget } from "./screens/Budget";
@@ -205,7 +205,12 @@ const autonomyRoute = createRoute({
     const me = useQuery(meOptions());
     const tenant = me.data?.active_tenant_id ?? null;
     const role = me.data?.memberships.find((m) => m.tenant_id === tenant)?.firm_role;
-    return <Autonomy canSet={role === "firm_admin"} />;
+    return (
+      <div className="flex flex-col gap-4">
+        <Autonomy canSet={role === "firm_admin"} />
+        <LetterPolicy canSet={role === "firm_admin"} />
+      </div>
+    );
   },
 });
 const setupRoute = createRoute({

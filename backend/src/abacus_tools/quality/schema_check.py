@@ -229,6 +229,16 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "firms": frozenset(
         {"autonomy_level", "autonomy_set_at", "budget_reviewed_at", "walls_none_needed_at"}
         | {"sso_skipped_at", "onboarding_dismissed_at"}
+        | {"require_letter"}  # SPEC-025 (TASK-044)
+    ),
+    # SPEC-025 (TASK-044): a person answers once; the letter's record is replaced in place.
+    "independence_confirmations": frozenset(
+        {"status", "statement_version", "note", "answered_at"}
+    ),
+    "engagement_letters": frozenset(
+        {"status", "letter_date", "reason", "link", "recorded_by", "recorded_at"}
+        | {"file_key", "file_version_id", "file_fingerprint", "file_size", "file_media_type"}
+        | {"file_name"}
     ),
     "inbox_files": frozenset(  # SPEC-023: assigned or discarded, once
         {"status", "assigned_item_id", "assigned_version_id", "decided_by", "decided_at"}
@@ -279,6 +289,10 @@ TABLE_OWNERS: dict[str, str] = {
     "evidence_items": "evidence",
     "evidence_versions": "evidence",
     "inbox_files": "evidence",
+    # SPEC-025 (TASK-044): acceptance, independence and the letter, recorded per engagement.
+    "engagement_acceptance": "engagements",
+    "independence_confirmations": "engagements",
+    "engagement_letters": "engagements",
     "connections": "connections",
     "sync_runs": "connections",
     "connection_states": "connections",
