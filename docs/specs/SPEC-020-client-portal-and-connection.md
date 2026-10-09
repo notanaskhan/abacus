@@ -1,10 +1,10 @@
 ---
 id: SPEC-020
-title: Client portal and connection
+title: Client portal, connection and uploads
 status: draft
 owner: founder
 risk_zone: red
-related_adrs: [ADR-011, ADR-030, ADR-035, ADR-037, ADR-040, ADR-052]
+related_adrs: [ADR-004, ADR-011, ADR-016, ADR-030, ADR-035, ADR-037, ADR-040, ADR-052]
 related_specs: [SPEC-000, SPEC-015, SPEC-016]
 created: 2026-10-09
 updated: 2026-10-09
@@ -23,6 +23,7 @@ This is Phase 2 increment 2, built on the connector contract (ADR-037) so that i
 - **Access log:** every pull (sync run) is visible to the client admin and to the engagement partner and manager.
 - **Connection health:** status, last successful pull, and an on-demand health check, shown to both sides.
 - **Revoke:** a client admin, engagement partner or manager ends a connection; pulls stop at once.
+- **Manual upload (founder, 2026-10-09):** a client can upload files for a request item instead of, or as well as, a pull. Each upload becomes a new evidence version (ADR-004) with upload provenance. This brings forward the upload part of increment 6; matching and screening stay there.
 
 ## 2. Problem and context
 - **The pieces exist but nothing joins them:** retrieval runs end to end (SPEC-000) through `connections`, but a connection can only be created by seed scripts. Client users can sign in (SPEC-015), but the portal only lists their firms (SPEC-016).
@@ -32,8 +33,8 @@ This is Phase 2 increment 2, built on the connector contract (ADR-037) so that i
 ## 3. Actors
 | Actor | Role in this feature |
 |---|---|
-| Client admins | View items; connect, check and revoke the ledger connection; read the access log |
-| Client contributors | View their assigned items |
+| Client admins | View items; upload to any client-visible item; connect, check and revoke the ledger connection; read the access log |
+| Client contributors | View their assigned items; upload to them |
 | Engagement partners and managers | See connection health and the access log; revoke |
 
 ## 4. Goals and non-goals
@@ -52,11 +53,19 @@ This is Phase 2 increment 2, built on the connector contract (ADR-037) so that i
 - **Access log:** `GET /v1/engagements/{id}/connection/log` (`connection.read_log`) lists sync runs newest first (dataset, period, status, when, who started it), paginated.
 - **Revoke:** `POST /v1/engagements/{id}/connection/revoke` (`connection.revoke`, confirmed in the UI) sets the connection `revoked`, deletes its sealed tokens, audits `connection.revoked`, and notifies the other side (`connection.revoked` kind).
 - **Firm side:** the engagement Overview gains a Connection card (health, last pull, revoke, a link to the access log).
+- **Manual upload:**
+  - `POST /v1/engagements/{id}/request-items/{item_id}/uploads` (`evidence.upload`; contributors only on assigned items) takes the raw file body with its file name and media type (no multipart, as SPEC-008 D3);
+  - checks: size up to 25 MB; type from an allowlist (PDF, Excel, Word, CSV, PNG, JPEG) checked by the file's leading bytes, not the name or header; the item is open or received and client-visible (Q6);
+  - stores the bytes in the evidence store (Object Lock, ADR-016) and adds an evidence version with provenance `client_upload` (uploader, file name as untrusted text, size, SHA-256); the item becomes `received`; audit `evidence.uploaded`; the firm's assignees are notified (`evidence.uploaded` kind);
+  - the same file (same hash) on the same item twice is refused as a duplicate;
+  - on each item in the portal: "Upload files" (several files, one request each, with progress), and the item's upload history (file name, who, when) visible to the client;
+  - firm side: uploaded versions appear on the Board and in the review queue as other evidence does.
 
 **Non-goals**
 - A real ledger connector (increment 3 and the Phase 0 choice).
 - Retrieval scheduling or change detection (increment 9).
-- Client uploads (increment 6).
+- Matching uploads to items automatically, email reply matching and screening (increment 6).
+- Previewing or rendering uploaded files in the browser.
 - Firm branding beyond the firm's name (Q4).
 
 ## 5. User stories and acceptance criteria
@@ -66,6 +75,8 @@ This is Phase 2 increment 2, built on the connector contract (ADR-037) so that i
 - **AC-4** Given a connection, then the client admin, engagement partner and manager see its health and last successful pull, and a health check updates it; a failed check shows "needs attention".
 - **AC-5** Given pulls have run, then the access log lists every sync run with dataset, period, status and time, to the client admin, engagement partner and manager only.
 - **AC-6** Given a revoke, then the connection stops at once (a new retrieval fails `no_connection`), its tokens are destroyed, the action is audited, and the other side is notified.
+- **AC-8** Given a client admin, or a contributor on an assigned item, when they upload an allowed file, then a new evidence version is stored with upload provenance, the item shows received, the firm is notified, and the upload is audited. A contributor uploading to an unassigned item is refused (403).
+- **AC-9** Given a file over 25 MB, of a type not on the allowlist (judged by its contents), or already uploaded to that item, then it is refused with a plain message and nothing is stored.
 - **AC-7** Given every new screen, then loading, empty, error and not-allowed states exist, and colours come only from tokens.
 
 ## 6. Behaviour and flows
@@ -81,7 +92,7 @@ One migration in `connections` (protected):
 - `connection_secrets` (connection id, sealed token bytes, key version), deleted on revoke;
 - `connections.status` gains `needs_attention` and `revoked`; columns `last_checked_at` and `last_check_ok`.
 
-All tenant-scoped with forced RLS.
+All tenant-scoped with forced RLS. Uploads need no schema change if evidence versions already carry a provenance kind; otherwise one evidence migration adds `client_upload` (protected).
 
 ## 8. Interfaces
 The routes in §4. The callback is the only route without a tenant header; it resolves the tenant from the state row through a definer function.
@@ -125,7 +136,8 @@ The SPEC-016 client portal shell. The consent step is a dialog with the provider
 | AC-1, AC-3, AC-5 | integration | Visibility and refusals by role, across engagements and tenants |
 | AC-2 | integration | Full flow with the fake connector; reused, expired and mismatched states refused |
 | AC-4, AC-6 | integration | Health check and revoke; retrieval after revoke fails `no_connection` |
-| AC-1 to AC-7 | component (vitest) | Portal page, consent dialog, connection panel, firm card |
+| AC-8, AC-9 | integration | Upload by role and assignment; size, type-by-content and duplicate refusals; nothing stored on refusal |
+| AC-1 to AC-9 | component (vitest) | Portal page, consent dialog, connection panel, firm card |
 
 ## 19. Rollout
 One migration. No flag: there's no provider in production until increment 3.
@@ -137,7 +149,12 @@ One migration. No flag: there's no provider in production until increment 3.
 - [ ] **Q4: branding.** *Recommendation:* firm name only for now; logos need file upload and are deferred.
 - [ ] **Q5: protected path.** `connections` is protected, so the task needs your approval file. *Recommendation:* yes, covering `backend/src/abacus/modules/connections/**`, its migration and `backend/tests/unit/**`.
 
+- [ ] **Q6: who can upload.** *Recommendation:* clients only in this spec, as the matrix allows (admins on any client-visible item, contributors on assigned items). Firm staff uploading on a client's behalf comes with increment 6.
+- [ ] **Q7: malware scanning.** No scanner is in the dependency allowlist. *Recommendation:* the type allowlist by content and size limit now; files are stored and never rendered or opened by the platform. Scanning (S3 malware protection) is added with the staging deploy (TASK-014), before any real client data.
+- [ ] **Q8: protected paths for uploads.** *Recommendation:* the approval file also covers `backend/src/abacus/modules/evidence/**`.
+
 ## 21. Future / explicitly deferred
 - Real ledger connectors and their consent copy.
 - Firm logos on the portal and invitations.
 - Scheduled syncs (increment 9).
+- Malware scanning (with TASK-014) and in-browser previews.
