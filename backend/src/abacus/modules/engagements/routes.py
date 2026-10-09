@@ -15,6 +15,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from abacus.kernel.classification import classified
 from abacus.kernel.config import settings
 from abacus.kernel.text import SingleLineText
+from abacus.modules.engagements.onboarding import Onboarding, StepId, acknowledge_step, onboarding
+from abacus.modules.engagements.onboarding import dismiss as dismiss_onboarding
 from abacus.modules.engagements.service import (
     EngagementMetadata,
     EngagementType,
@@ -467,3 +469,53 @@ class FirmClientOut(BaseModel):
 @firm_router.get("/clients", action="wall.create", response_model=list[FirmClientOut])
 async def firm_clients_route(ctx: Ctx) -> list[FirmClientOut]:
     return [FirmClientOut(client_id=c.client_id, name=c.name) for c in await firm_clients(ctx)]
+
+
+# --- The onboarding checklist (SPEC-024 AC-7; TASK-042) ----------------------------------------
+
+
+class StepOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[StepId, classified("internal")]
+    done: Annotated[bool, classified("internal")]
+    how: Annotated[str | None, classified("internal")] = None
+
+
+class OnboardingOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    steps: Annotated[list[StepOut], classified("internal")]
+    dismissed: Annotated[bool, classified("internal")]
+    complete: Annotated[bool, classified("internal")]
+
+
+def _onboarding_out(o: Onboarding) -> OnboardingOut:
+    return OnboardingOut(
+        steps=[StepOut(id=s.id, done=s.done, how=s.how if s.done else None) for s in o.steps],
+        dismissed=o.dismissed,
+        complete=o.complete,
+    )
+
+
+@firm_router.get("/onboarding", action="firm.read_settings", response_model=OnboardingOut)
+async def onboarding_route(ctx: Ctx) -> OnboardingOut:
+    """SPEC-024 AC-7: each step's state, computed from the firm's data."""
+    return _onboarding_out(await onboarding(ctx))
+
+
+@firm_router.post(
+    "/onboarding/{step}/acknowledge", action="firm.manage_settings", response_model=OnboardingOut
+)
+async def acknowledge_step_route(
+    step: Literal["sso", "budget", "walls"], ctx: Ctx
+) -> OnboardingOut:
+    """Skip SSO for now, the budget looks right, or no walls are needed."""
+    return _onboarding_out(await acknowledge_step(ctx, step))
+
+
+@firm_router.post(
+    "/onboarding/dismiss", action="firm.manage_settings", response_model=OnboardingOut
+)
+async def dismiss_onboarding_route(ctx: Ctx) -> OnboardingOut:
+    return _onboarding_out(await dismiss_onboarding(ctx))

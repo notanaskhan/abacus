@@ -24,6 +24,7 @@ from temporalio.exceptions import WorkflowAlreadyStartedError
 from abacus.kernel.dispatch import work_class_of
 from abacus.kernel.temporal import configure_temporal_client
 from abacus.kernel.uow.relay import OutboxEvent
+from abacus.modules.agents import screenings as screenings_module
 from abacus.modules.agents import spec as spec_module
 from abacus.modules.agents.api import (
     SCREENER,
@@ -173,6 +174,30 @@ class Recorder:
         self.calls.append((args, kwargs))
         if self.failure is not None:
             raise self.failure
+
+
+@pytest.fixture(autouse=True)
+def routine(monkeypatch: pytest.MonkeyPatch) -> Callable[[int], None]:
+    """The firm's autonomy level as `start_screening` reads it (SPEC-024): Routine by default."""
+    level = {"now": 1}
+
+    async def autonomy_level(tenant_id: uuid.UUID) -> int:
+        return level["now"]
+
+    monkeypatch.setattr(screenings_module, "autonomy_level", autonomy_level)
+
+    def set_level(value: int) -> None:
+        level["now"] = value
+
+    return set_level
+
+
+async def test_spec024_ac5_at_advise_nothing_is_screened_on_its_own(
+    recorder: Recorder, routine: Callable[[int], None]
+) -> None:
+    routine(0)
+    await start_screening(_event())
+    assert recorder.calls == []
 
 
 @pytest.fixture

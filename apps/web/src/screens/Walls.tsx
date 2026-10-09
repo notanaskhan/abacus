@@ -12,6 +12,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, type SyntheticEvent, useEffect, useState } from "react";
 import { errorMessage } from "../api";
 import { ConfirmItsYou, isForbidden } from "../shell/mfa";
+import { AcknowledgeStep } from "./AcknowledgeStep";
 
 const REFUSALS: Record<string, string> = {
   wall_exists: "That person is already walled off from this client.",
@@ -173,7 +174,12 @@ function WallList({
           </p>
         )}
       </Panel>
-      <Panel title="Walls in place">
+      <Panel
+        title="Walls in place"
+        action={
+          active.length === 0 ? <AcknowledgeStep step="walls" label="None needed" /> : undefined
+        }
+      >
         {active.length === 0 ? (
           <p className="text-sm text-muted">No walls. Everyone can be staffed on any client.</p>
         ) : (

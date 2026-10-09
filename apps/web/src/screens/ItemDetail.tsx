@@ -7,7 +7,9 @@ import {
   listRequestItemsOptions,
   listRequestItemsQueryKey,
   listScreeningResultsOptions,
+  listScreeningResultsQueryKey,
   meOptions,
+  requestScreeningMutation,
   reviewQueueQueryKey,
 } from "@abacus/api-client/query";
 import {
@@ -24,7 +26,7 @@ import {
   Skeleton,
   StatusPill,
 } from "@abacus/ui";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
 import { confidencePercent } from "../board/join";
@@ -170,7 +172,15 @@ export function ItemDetail({
         </Panel>
         {shown !== undefined && (
           <div className="flex flex-col gap-4">
-            <Screening result={resultFor(shown.id)} loading={screening.isPending} />
+            <Screening
+              result={resultFor(shown.id)}
+              loading={screening.isPending}
+              screenNow={
+                shown.method === "retrieved" && myRole !== undefined ? (
+                  <ScreenNow engagementId={engagementId} versionId={shown.id} />
+                ) : null
+              }
+            />
             <Panel title="Decision">
               {shown.decision !== null ? (
                 <p className="text-sm">
@@ -283,16 +293,21 @@ function VersionCard({
 function Screening({
   result,
   loading,
+  screenNow,
 }: {
   result: ScreeningResultOut | undefined;
   loading: boolean;
+  screenNow: JSX.Element | null;
 }): JSX.Element {
   return (
     <Panel title="Screening" action={result !== undefined ? <AiTag /> : undefined}>
       {loading ? (
         <Skeleton className="h-16" />
       ) : result === undefined ? (
-        <p className="text-sm text-muted">Not screened yet.</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-sm text-muted">Not screened yet.</p>
+          {screenNow}
+        </div>
       ) : (
         <div className="flex flex-col gap-2 text-sm">
           <p>
@@ -449,5 +464,46 @@ function UploadForClient({
         </div>
       </Dialog>
     </>
+  );
+}
+
+/** SPEC-024 (TASK-042 D1): a person starts screening; at Advise nothing starts on its own. */
+function ScreenNow({
+  engagementId,
+  versionId,
+}: {
+  engagementId: string;
+  versionId: string;
+}): JSX.Element {
+  const queryClient = useQueryClient();
+  const screen = useMutation({
+    ...requestScreeningMutation(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: listScreeningResultsQueryKey({ path: { engagement_id: engagementId } }),
+      });
+    },
+  });
+  return (
+    <span className="flex items-center gap-2">
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={screen.isPending || screen.isSuccess}
+        onClick={() => {
+          screen.mutate({
+            path: { engagement_id: engagementId },
+            body: { evidence_version_id: versionId },
+          });
+        }}
+      >
+        {screen.isSuccess ? "Screening started" : "Screen now"}
+      </Button>
+      {screen.isError && (
+        <span role="alert" className="text-sm text-danger">
+          {errorMessage(screen.error)}
+        </span>
+      )}
+    </span>
   );
 }

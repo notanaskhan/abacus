@@ -22,7 +22,7 @@ from abacus.modules.connections.repository import live_connection_for
 from abacus.modules.connections.retrievals import trigger_retrieval
 from abacus.modules.connections.service import connector_for
 from abacus.modules.engagements.api import engagement_metadata, entity_of
-from abacus.modules.identity.api import AuthContext, Forbidden, member_context
+from abacus.modules.identity.api import AuthContext, Forbidden, autonomy_level, member_context
 from abacus.modules.requests.api import RequestItemView, request_items_for
 
 _log = get_logger(__name__)
@@ -75,6 +75,10 @@ async def _retrieve(ctx: AuthContext, engagement_id: UUID, items: list[RequestIt
 
 async def _run(tenant_id: UUID, engagement_id: UUID, only: UUID | None) -> None:
     if not await _enabled(tenant_id):
+        return
+    # SPEC-024 Q4: at Advise (autonomy level 0) the platform starts nothing on its own.
+    if await autonomy_level(tenant_id) < 1:
+        _log.info("auto_retrieval.skipped", engagement_id=str(engagement_id), reason="advise")
         return
     system = TenantContext(tenant_id, "system", _SYSTEM)
     entity = await entity_of(system, engagement_id)

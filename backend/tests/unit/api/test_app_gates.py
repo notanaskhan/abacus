@@ -38,6 +38,8 @@ class _Included(Protocol):
 
 
 RETRIEVALS = "/v1/engagements/{engagement_id}/retrievals"
+# SPEC-024 (TASK-042): "Screen now" starts work and answers 202, as retrievals do.
+SCREEN_REQUEST = "/v1/engagements/{engagement_id}/screening-results/request"
 
 
 def _routes() -> list[APIRoute]:
@@ -106,12 +108,17 @@ NOT_CREATING = {
     "/v1/firm/staff/invitations/{invitation_id}/revoke",
     "/v1/firm/staff/{user_id}/revoke",
     "/v1/invitations/staff/accept",
+    # SPEC-024 (TASK-042): the checklist's state comes back.
+    "/v1/firm/onboarding/{step}/acknowledge",
+    "/v1/firm/onboarding/dismiss",
 }
 
 
 def test_ac20_creating_routes_answer_201() -> None:
     posts = [r for r in _routes() if "POST" in _methods(r)]
-    created = {r.path for r in posts if r.path != RETRIEVALS and r.path not in NOT_CREATING}
+    accepted = {RETRIEVALS, SCREEN_REQUEST}
+    created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
+    assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
     decisions = "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/"
     assert created == {
         "/v1/engagements",

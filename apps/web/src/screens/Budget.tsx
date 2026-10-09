@@ -11,6 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, type SyntheticEvent, useState } from "react";
 import { errorMessage } from "../api";
 import { ConfirmItsYou, isForbidden } from "../shell/mfa";
+import { AcknowledgeStep } from "./AcknowledgeStep";
 
 function usd(value: string | number): string {
   const n = Number(value);
@@ -90,15 +91,18 @@ function BudgetPanel({
       title="This month's model spend"
       action={
         canSet && !editing ? (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setEditing(true);
-            }}
-          >
-            Set budget
-          </Button>
+          <span className="flex gap-2">
+            <AcknowledgeStep step="budget" label="Looks right" />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setEditing(true);
+              }}
+            >
+              Set budget
+            </Button>
+          </span>
         ) : undefined
       }
     >

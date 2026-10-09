@@ -20,6 +20,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { type SyntheticEvent, type JSX, useState } from "react";
 import { errorMessage } from "../api";
+import { Onboarding } from "./Onboarding";
 import { type EngagementType, ENGAGEMENT_TYPES, typeLabel } from "./engagementTypes";
 
 export function Engagements(): JSX.Element {
@@ -37,6 +38,7 @@ export function Engagements(): JSX.Element {
 
   return (
     <section aria-labelledby="engagements-heading" className="flex flex-col gap-4">
+      <Onboarding />
       <div className="flex items-center justify-between">
         <h1 id="engagements-heading" className="text-xl font-semibold">
           Engagements

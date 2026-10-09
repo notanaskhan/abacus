@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
 from abacus.modules.identity.context import AuthContext
+from abacus.modules.identity.firm_settings import autonomy, set_autonomy
 from abacus.modules.identity.invitations import accept_invitation
 from abacus.modules.identity.repository import FirmRole
 from abacus.modules.identity.routing import (
@@ -471,3 +472,34 @@ async def accept_staff_invitation_route(
 ) -> JoinedOut:
     """The invited person joins the firm's staff (they need no account yet)."""
     return JoinedOut(tenant_id=await accept_staff_invitation(identity, body.token))
+
+
+# --- Autonomy (SPEC-024 AC-5; TASK-042) --------------------------------------------------------
+
+
+class AutonomyOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    level: Annotated[int, Field(ge=0, le=3), classified("internal")]
+    set_at: Annotated[datetime | None, classified("internal")]
+
+
+class AutonomyIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    level: Annotated[int, Field(ge=0, le=3), classified("internal")]
+
+
+@router.get("/firm/autonomy", action="firm.read_settings", response_model=AutonomyOut)
+async def autonomy_route(ctx: Ctx) -> AutonomyOut:
+    view = await autonomy(ctx)
+    return AutonomyOut(level=view.level, set_at=view.set_at)
+
+
+@router.put(
+    "/firm/autonomy", action="autonomy_policy.update", response_model=AutonomyOut, errors=(409,)
+)
+async def set_autonomy_route(body: AutonomyIn, ctx: Ctx) -> AutonomyOut:
+    """ADR-061: Advise (0) or Routine (1) for now; Manage and Portfolio come later."""
+    view = await set_autonomy(ctx, body.level)
+    return AutonomyOut(level=view.level, set_at=view.set_at)

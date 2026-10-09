@@ -79,6 +79,10 @@ ACTIONS: dict[str, dict[str, str]] = {
         "firm_admin": "allow",
         "mfa_recent": "required",
     },
+    "firm.read_settings": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
+    },
     "wall.create": {
         "firm_admin": "allow",
         "mfa_recent": "required",
@@ -288,6 +292,12 @@ ACTIONS: dict[str, dict[str, str]] = {
     "screening.run": {
         "system": "allow",
         "agent": "task_scope",
+    },
+    "screening.request": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
     },
     "suggestion.create": {
         "agent": "task_scope",

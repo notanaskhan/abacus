@@ -119,6 +119,30 @@ export type AssignedOut = {
 };
 
 /**
+ * AutonomyIn
+ */
+export type AutonomyIn = {
+    /**
+     * Level
+     */
+    level: number;
+};
+
+/**
+ * AutonomyOut
+ */
+export type AutonomyOut = {
+    /**
+     * Level
+     */
+    level: number;
+    /**
+     * Set At
+     */
+    set_at: string | null;
+};
+
+/**
  * BoardSummaryOut
  */
 export type BoardSummaryOut = {
@@ -1268,6 +1292,24 @@ export type NotificationPageOut = {
 };
 
 /**
+ * OnboardingOut
+ */
+export type OnboardingOut = {
+    /**
+     * Complete
+     */
+    complete: boolean;
+    /**
+     * Dismissed
+     */
+    dismissed: boolean;
+    /**
+     * Steps
+     */
+    steps: Array<StepOut>;
+};
+
+/**
  * ProposalOut
  *
  * The agent's proposal. Rationale and quotes are model text: shown as plain text (ADR-065).
@@ -1536,6 +1578,26 @@ export type RetrievalOut = {
 };
 
 /**
+ * ScreenRequestIn
+ */
+export type ScreenRequestIn = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+};
+
+/**
+ * ScreenRequestedOut
+ */
+export type ScreenRequestedOut = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+};
+
+/**
  * ScreeningResultOut
  *
  * Model text (`rationale`, `quote`, `unverified`) is untrusted: render as plain text.
@@ -1755,6 +1817,24 @@ export type StartOut = {
      * Authorise Url
      */
     authorise_url: string;
+};
+
+/**
+ * StepOut
+ */
+export type StepOut = {
+    /**
+     * Done
+     */
+    done: boolean;
+    /**
+     * How
+     */
+    how?: string | null;
+    /**
+     * Id
+     */
+    id: 'sso' | 'team' | 'methodology' | 'autonomy' | 'budget' | 'walls' | 'engagement';
 };
 
 /**
@@ -4813,6 +4893,58 @@ export type ListScreeningResultsResponses = {
 
 export type ListScreeningResultsResponse = ListScreeningResultsResponses[keyof ListScreeningResultsResponses];
 
+export type RequestScreeningData = {
+    body: ScreenRequestIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/screening-results/request';
+};
+
+export type RequestScreeningErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RequestScreeningError = RequestScreeningErrors[keyof RequestScreeningErrors];
+
+export type RequestScreeningResponses = {
+    /**
+     * Successful Response
+     */
+    202: ScreenRequestedOut;
+};
+
+export type RequestScreeningResponse = RequestScreeningResponses[keyof RequestScreeningResponses];
+
 export type SelfJoinData = {
     body?: never;
     headers?: {
@@ -5155,6 +5287,104 @@ export type ChangeTeamRoleResponses = {
 
 export type ChangeTeamRoleResponse = ChangeTeamRoleResponses[keyof ChangeTeamRoleResponses];
 
+export type AutonomyData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/autonomy';
+};
+
+export type AutonomyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AutonomyError = AutonomyErrors[keyof AutonomyErrors];
+
+export type AutonomyResponses = {
+    /**
+     * Successful Response
+     */
+    200: AutonomyOut;
+};
+
+export type AutonomyResponse = AutonomyResponses[keyof AutonomyResponses];
+
+export type SetAutonomyData = {
+    body: AutonomyIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/autonomy';
+};
+
+export type SetAutonomyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SetAutonomyError = SetAutonomyErrors[keyof SetAutonomyErrors];
+
+export type SetAutonomyResponses = {
+    /**
+     * Successful Response
+     */
+    200: AutonomyOut;
+};
+
+export type SetAutonomyResponse = SetAutonomyResponses[keyof SetAutonomyResponses];
+
 export type FirmClientsData = {
     body?: never;
     headers?: {
@@ -5252,6 +5482,152 @@ export type FirmMembersResponses = {
 };
 
 export type FirmMembersResponse = FirmMembersResponses[keyof FirmMembersResponses];
+
+export type OnboardingData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/onboarding';
+};
+
+export type OnboardingErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type OnboardingError = OnboardingErrors[keyof OnboardingErrors];
+
+export type OnboardingResponses = {
+    /**
+     * Successful Response
+     */
+    200: OnboardingOut;
+};
+
+export type OnboardingResponse = OnboardingResponses[keyof OnboardingResponses];
+
+export type DismissOnboardingData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/onboarding/dismiss';
+};
+
+export type DismissOnboardingErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DismissOnboardingError = DismissOnboardingErrors[keyof DismissOnboardingErrors];
+
+export type DismissOnboardingResponses = {
+    /**
+     * Successful Response
+     */
+    200: OnboardingOut;
+};
+
+export type DismissOnboardingResponse = DismissOnboardingResponses[keyof DismissOnboardingResponses];
+
+export type AcknowledgeStepData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Step
+         */
+        step: 'sso' | 'budget' | 'walls';
+    };
+    query?: never;
+    url: '/v1/firm/onboarding/{step}/acknowledge';
+};
+
+export type AcknowledgeStepErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AcknowledgeStepError = AcknowledgeStepErrors[keyof AcknowledgeStepErrors];
+
+export type AcknowledgeStepResponses = {
+    /**
+     * Successful Response
+     */
+    200: OnboardingOut;
+};
+
+export type AcknowledgeStepResponse = AcknowledgeStepResponses[keyof AcknowledgeStepResponses];
 
 export type StaffData = {
     body?: never;

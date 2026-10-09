@@ -1,8 +1,12 @@
+import { meOptions } from "@abacus/api-client/query";
+import { useQuery } from "@tanstack/react-query";
 import { Alert, Button, EmptyState } from "@abacus/ui";
 import { Link, createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
 import type { JSX } from "react";
 import { CALLBACK_PATH } from "./auth/session";
 import { AdminLayout } from "./screens/AdminLayout";
+import { Autonomy } from "./screens/Autonomy";
+import { Onboarding } from "./screens/Onboarding";
 import { Board } from "./screens/Board";
 import { Budget } from "./screens/Budget";
 import { Knowledge } from "./screens/Knowledge";
@@ -194,6 +198,23 @@ const budgetRoute = createRoute({
   path: "/admin/budget",
   component: Budget,
 });
+const autonomyRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/admin/autonomy",
+  component: function AutonomyPage(): JSX.Element {
+    const me = useQuery(meOptions());
+    const tenant = me.data?.active_tenant_id ?? null;
+    const role = me.data?.memberships.find((m) => m.tenant_id === tenant)?.firm_role;
+    return <Autonomy canSet={role === "firm_admin"} />;
+  },
+});
+const setupRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/admin/setup",
+  component: function SetupPage(): JSX.Element {
+    return <Onboarding always />;
+  },
+});
 const peopleAdminRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/admin/people",
@@ -269,6 +290,8 @@ const routeTree = rootRoute.addChildren([
       methodologyVersionRoute,
       knowledgeDocumentsRoute,
       budgetRoute,
+      autonomyRoute,
+      setupRoute,
       peopleAdminRoute,
       supportRoute,
       wallsRoute,

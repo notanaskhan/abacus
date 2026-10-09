@@ -38,3 +38,10 @@ The workbook has three sheets, each with exact headers in row 1. Blank rows are 
 - **Types:** engagements are `audit`, `review`, `compilation` or `agreed_upon_procedures`.
 - **Templates:** a methodology template is tagged when created with the types it serves (`engagement_type`, repeatable, on the upload route). Templates stay insert-only, so a new set of types means a new template.
 - **Applying:** `pin_methodology` refuses a template that doesn't serve the engagement's type (409 `template_type_mismatch`).
+
+## Onboarding checklist (SPEC-024 AC-7; TASK-042)
+`onboarding.py`, routes on `firm_router`:
+- `GET /v1/firm/onboarding` (`firm.read_settings`);
+- `POST /v1/firm/onboarding/{sso|budget|walls}/acknowledge` and `/dismiss` (`firm.manage_settings`).
+
+Seven steps, each computed from data (identity's `firm_facts` plus this module's template and engagement counts), never stored as done. SSO can only be skipped while it's held.

@@ -217,3 +217,22 @@ describe("ac5 ac6 states", () => {
     expect(await screen.findByText("No evidence yet")).toBeTruthy();
   });
 });
+
+describe("SPEC-024 Screen now", () => {
+  it("lets a team member start screening on an unscreened retrieved version", async () => {
+    const { calls } = mockApi({
+      ...routes("staff"),
+      [`GET /v1/engagements/${E}/screening-results`]: () => json([]),
+      [`POST /v1/engagements/${E}/screening-results/request`]: () =>
+        json({ evidence_version_id: "v2" }, 202),
+    });
+    page();
+    fireEvent.click(await screen.findByRole("button", { name: "Screen now" }));
+    await waitFor(() => {
+      expect(calls.find((c) => c.path.endsWith("/screening-results/request"))?.body).toEqual({
+        evidence_version_id: "v2",
+      });
+    });
+    expect(await screen.findByRole("button", { name: "Screening started" })).toBeTruthy();
+  });
+});

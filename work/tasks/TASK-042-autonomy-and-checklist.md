@@ -4,7 +4,7 @@ title: Autonomy policy and the onboarding checklist
 spec: SPEC-024
 acceptance_criteria: [AC-5, AC-7, AC-8]
 risk_zone: red
-status: awaiting-plan-approval
+status: done
 branch: task-042-autonomy-checklist
 worktree:
 created: 2026-10-09
@@ -37,7 +37,7 @@ SPEC-024 AC-5, AC-7 and AC-8 (for these screens). SSO (AC-2) stays held; the che
   - `apps/web` `AdminLayout`, `Budget`, `Walls`, `Engagements`.
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-09: D1–D4). Approved by founder: paths listed under *Protected paths*, plus the generated `identity/authz/_matrix.py` (added by the founder when the matrix change needed it; generator output only, no hand edits). I ran the generator once before asking, then reverted it, asked, and regenerated after approval.
 
 ### What the code shows
 - **Two things happen automatically today:**
@@ -105,12 +105,25 @@ Checked and not needed:
 - **D4. Write the approval file for the paths above?** *Recommendation: yes.*
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
-- [ ] Type check, lint, format, architecture and dependency rules pass
-- [ ] Every query is tenant-scoped; every endpoint checks authorisation
-- [ ] Module READMEs and the relevant docs are updated
+- [x] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
+- [x] Type check, lint, format, architecture and dependency rules pass
+- [x] Every query is tenant-scoped; every endpoint checks authorisation
+- [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-09` — Implemented:
+  - migration 0034 (`firms` autonomy and onboarding columns, with an app update grant on exactly those);
+  - the autonomy read and set routes;
+  - Advise checks in automatic retrieval and screening; "Screen now" (`screening.request`);
+  - the onboarding service and routes;
+  - the matrix's `firm.read_settings` and `screening.request`;
+  - the checklist (on the engagements page and in Firm admin → Setup), the Autonomy tab, "Looks right" on Budget, "None needed" on Walls and "Screen now" on the item page.
+
+  Saving a budget also marks the budget step (`identity.note_budget_reviewed`, in the same unit of work), because engagements can't read the gateway's budgets.
+
+  Tests and checks:
+  - backend unit 9,067 and web 177 passed; the gates pass; migration 0034 applies, rolls back and reapplies;
+  - a local smoke passed: a new firm showed 0 of 7 steps at Routine; Advise was set and level 2 refused; acknowledgements ticked SSO, budget and walls; at Advise the screening subscriber dispatched nothing. The smoke firm was removed.
 - `2026-10-09` — Design written for founder review after TASK-041 merged (#76).
 
 ## Decisions made during this task

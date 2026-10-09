@@ -734,3 +734,55 @@ async def set_firm_role(session: AsyncSession, user_id: UUID, role: str | None) 
 
 async def revoke_membership(session: AsyncSession, user_id: UUID) -> str:
     return str(await session.scalar(text("SELECT membership_revoke(:u)"), {"u": user_id}))
+
+
+# --- Firm settings: autonomy and onboarding (SPEC-024 AC-5, AC-7; TASK-042) -------------------
+
+_FIRM_SETTINGS = text(
+    "SELECT autonomy_level, autonomy_set_at, budget_reviewed_at, walls_none_needed_at, "
+    "sso_skipped_at, onboarding_dismissed_at FROM firms"
+)
+
+
+async def firm_settings(session: AsyncSession) -> RowMapping | None:
+    """The session's firm's settings (row-level security leaves one row)."""
+    return (await session.execute(_FIRM_SETTINGS)).mappings().first()
+
+
+async def set_autonomy_level(session: AsyncSession, level: int) -> None:
+    await session.execute(
+        text("UPDATE firms SET autonomy_level = :level, autonomy_set_at = clock_timestamp()"),
+        {"level": level},
+    )
+
+
+_ACKNOWLEDGE = {
+    "budget": text("UPDATE firms SET budget_reviewed_at = clock_timestamp()"),
+    "walls": text("UPDATE firms SET walls_none_needed_at = clock_timestamp()"),
+    "sso": text("UPDATE firms SET sso_skipped_at = clock_timestamp()"),
+    "dismiss": text("UPDATE firms SET onboarding_dismissed_at = clock_timestamp()"),
+}
+
+
+async def acknowledge_onboarding(session: AsyncSession, step: str) -> None:
+    await session.execute(_ACKNOWLEDGE[step])
+
+
+async def onboarding_counts(session: AsyncSession) -> RowMapping:
+    """Counts for the checklist, in the session's firm."""
+    return (
+        (
+            await session.execute(
+                text(
+                    "SELECT "
+                    "(SELECT count(*) FROM memberships WHERE kind = 'staff' AND status = 'active')"
+                    " AS staff, "
+                    "(SELECT count(*) FROM staff_invitations WHERE status = 'pending' "
+                    "AND expires_at > clock_timestamp()) AS invitations, "
+                    "(SELECT count(*) FROM ethical_walls WHERE status = 'active') AS walls"
+                )
+            )
+        )
+        .mappings()
+        .one()
+    )
