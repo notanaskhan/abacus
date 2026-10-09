@@ -1,7 +1,7 @@
 ---
 id: SPEC-025
 title: "Act 1: the engagement opens"
-status: draft
+status: approved
 owner: founder
 risk_zone: red
 related_adrs: [ADR-004, ADR-005, ADR-007, ADR-026, ADR-050, ADR-052]
@@ -23,7 +23,7 @@ updated: 2026-10-09
 1. Maya creates the fiscal 2026 engagement for an existing client.
 2. Abacus proposes the team, the template and a request list rolled forward from what was actually used last year. A new client starts from the firm's template for that engagement type.
 3. Before anyone touches client data, acceptance is recorded, each team member confirms their independence, and the client is checked against ethical walls.
-4. The engagement letter is in place.
+4. The signed engagement letter is recorded (signed in the firm's own tool; Q2).
 5. Maya invites Rachel, and the invitation goes out in the firm's name.
 
 **What the standards require:**
@@ -70,13 +70,15 @@ updated: 2026-10-09
 - **Roll-forward proposals (code, Q3).** When the client and entity had an engagement of the same type for the prior period, Abacus proposes:
   - **team:** last year's staff team with the same roles, minus anyone no longer active or now walled from the client;
   - **template:** the methodology template last year used, at its latest version;
-  - **request list:** last year's items that were actually used (received evidence, accepted, or retrieved), carried over with their area, tier and client visibility. Items never used (still open, or waived) are listed separately, unticked. Items the latest template adds are flagged "new in the template".
+  - **request list:** last year's items that were **actually used**, carried over with their area, tier and client visibility. *Actually used* means **the item has accepted evidence**. Every other item, including those marked not applicable or waived, is listed separately and not ticked. Items the latest template adds are flagged "new in the template".
 
   Maya reviews each part (tick, untick, change roles) and confirms. Nothing is created until she does. A new client gets the firm's template for that type, as today.
 - **Acceptance and continuance record:**
   - per engagement: new client or continuance (pre-filled), decision (`accepted` or `declined`), decided by (must be the engagement partner), when, and where it's documented (a binder reference, plus an optional uploaded file);
+  - for a new client, optionally the **predecessor auditor** (firm name) and the **date communicated** with them;
   - recorded, not performed: Abacus doesn't hold the acceptance forms;
   - `engagement.acceptance.record`, partner only (Q5); audited.
+- **The engagement partner's independence conclusion:** the partner records their conclusion on compliance with independence requirements for the engagement (with the date and where it's documented). It's audited, and needs fresh MFA.
 - **Independence confirmations:**
   - when the team is confirmed (and when anyone joins later), each staff member gets a task: "Confirm your independence for Halvorsen, FY2026";
   - they confirm with a fixed statement, or decline with a note that goes to the partner;
@@ -86,13 +88,16 @@ updated: 2026-10-09
 - **Engagement letter (Q2):**
   - record the status (`not_started`, `sent`, `signed`, or `not_required_this_year` with a reason), the date, and the signed copy uploaded (stored as evidence-grade, write-once) or a link to where it lives (Ignition, Karbon, the DMS);
   - `engagement.letter.record` (partner, manager); audited.
-- **The gate before client data (Q4).** Until acceptance is `accepted` and every team member has confirmed independence:
-  - client invitations, connections, retrievals and client uploads are refused, with the reason;
-  - the engagement shows a setup checklist instead of a "ready" state.
-
-  The letter warns if missing but doesn't block, since the standards say "preferably". The firm can make it blocking (Q4).
+- **The gates before client data (Q4, as amended):**
+  - **The engagement opens** when acceptance is `accepted` and the engagement partner has concluded on independence. Until then, client invitations, connections, retrievals and client uploads are refused for everyone, with the reason.
+  - **Each person opens individually:** a team member's own access to client data (evidence content, client uploads, retrievals, the client's request items) opens only when they confirm their independence. Until then, that person sees the engagement's setup but not client data.
+  - **Adding someone later restricts that person, not the engagement.**
+  - **The letter warns** if missing but doesn't block, since the standards say "preferably". The firm can make it blocking.
 - **Invitations in the firm's name (Q6):** the subject and body name the firm ("Whitfield & Lane invites you to their audit of Halvorsen"), the sender's display name is the firm's, and the portal shows the firm's name. Logos stay deferred.
-- **Engagement setup screen:** one page per engagement with the steps (client and period, team, request list, acceptance, independence, letter, client contacts), each showing its state and who acts next. It's the default tab until the gate opens.
+- **Engagement setup screen**, one page per engagement, made of three parts. It's the default tab until the engagement opens.
+  - **A narrative summary:** for example, Halvorsen FY2026 audit (continuance): waiting for Dana to record continuance; 3 of 5 have confirmed independence.
+  - **A status checklist:** client and period, team, request list, acceptance, the partner's independence conclusion, each member's independence, letter, client contacts. Each step shows its state and who acts next.
+  - **A plain reason on every blocked item:** for example, client invitations open once the engagement partner records acceptance.
 
 **Non-goals**
 - Performing acceptance, independence or conflicts procedures inside Abacus (recorded only).
@@ -109,11 +114,12 @@ updated: 2026-10-09
 
   Nothing is created until a person confirms, and what they confirm is exactly what's created.
 - **AC-3** Given a new client, then the proposal is the firm's template for the engagement type, and no team beyond the creator.
-- **AC-4** Given an engagement, then only its engagement partner can record acceptance or continuance (decision, where documented, and an optional file). The record is audited. A declined engagement stays closed to client data.
+- **AC-4** Given an engagement, then only its engagement partner can record acceptance or continuance (decision, where documented, an optional file, and for a new client an optional predecessor auditor and date communicated), and their independence conclusion. Both are audited. A declined engagement stays closed to client data.
 - **AC-5** Given a confirmed team, then each member is asked to confirm independence, can confirm or decline (with a note to the partner), and the engagement shows each person's state. Anyone who joins later is asked too.
 - **AC-6** Given an engagement letter, then its status, date and signed copy or link are recorded and audited, and "not required this year" needs a reason.
-- **AC-7** Given acceptance isn't `accepted`, or any member hasn't confirmed independence, then client invitations, connections, retrievals and client uploads are refused with a plain reason. Once both are done, they work.
+- **AC-7** Given acceptance isn't `accepted` or the partner hasn't concluded on independence, then client invitations, connections, retrievals and client uploads are refused for everyone with a plain reason. Given the engagement is open, a team member who hasn't confirmed independence is refused client data, while confirmed members are not. Adding someone later restricts only them.
 - **AC-8** Given a client invitation, then its email and the portal name the firm and the engagement, never "Abacus" alone.
+- **AC-10** Given the setup page, then it shows a narrative summary, the status checklist, and a plain reason on every blocked item.
 - **AC-9** Given every new screen, then loading, empty, error and not-allowed states exist, and colours come only from tokens.
 
 ## 6. Behaviour and flows
@@ -125,7 +131,7 @@ updated: 2026-10-09
 
 ## 7. Domain and data changes
 - **`engagements.prior_engagement_id`** (nullable, same client entity).
-- **`engagement_acceptance`:** engagement, kind (`new_client` or `continuance`), decision, decided by, decided at, documented at (text), file (evidence-grade object, optional). One per engagement; a new decision supersedes the old.
+- **`engagement_acceptance`:** engagement, kind (`new_client` or `continuance`), decision, decided by, decided at, documented at (text), file (evidence-grade object, optional), predecessor auditor (optional), date communicated (optional), and the partner's independence conclusion (concluded by, at, documented at). One per engagement; a new decision supersedes the old.
 - **`independence_confirmations`:** engagement, user, status (`requested`, `confirmed` or `declined`), statement version, note, at.
 - **`engagement_letters`:** engagement, status, date, reason, file or link.
 - **`firms.require_letter_before_client_data`:** boolean, default false (Q4).
@@ -158,7 +164,7 @@ None now. Letters link out to Ignition, Karbon or a DMS by URL. Integrations com
 - **Last year's engagement had a different type:** no roll-forward; the template proposal is offered instead.
 - **Two prior engagements match:** the latest by period end is proposed, with a choice.
 - **A team member leaves after confirming:** their confirmation stays as history.
-- **Someone joins later:** a new request, and the gate closes again until they confirm (Q4).
+- **Someone joins later:** a new request; only that person is restricted until they confirm (Q4).
 - **Acceptance is declined:** the engagement shows "Declined" and stays closed to client data; it can be archived.
 - **A continuance with no letter this year:** `not_required_this_year` with a reason.
 
@@ -195,22 +201,30 @@ A proposal reads one prior engagement (up to 2,000 items) in one request.
 - **Existing engagements:** treated as accepted, with independence confirmed by migration (recorded as "before Act 1"), so nothing in use is suddenly blocked (Q7).
 
 ## 20. Open questions
-- [ ] **Q1: duplicate clients already created.** *Recommendation:* from now on, new engagements pick an existing client. Existing duplicates aren't merged automatically: a "possible duplicate" note shows on the client, and merging comes later.
-- [ ] **Q2: e-signature. Your story and your table disagree.** The story has Rachel "sign it electronically"; the table says "don't build e-signature; record status and signed copy; integrate with Ignition or Karbon later". *Recommendation:* follow the table. Record the letter's status, date and signed copy or link, and treat "Rachel signs online" as happening in the firm's existing tool. The story's wording would become "the signed letter is recorded". Building e-signature is a regulated product of its own, and firms already have it.
-- [ ] **Q3: what the "agent" proposes in Act 1.** *Recommendation:* the proposals (team, template, used items) are deterministic code and labelled "Abacus proposes". The AI parts named in your table (continuance brief; add items for known changes; re-tier) come later, each with an evaluation suite. This matches ADR-050 and your own "copy, not a judgement" note.
-- [ ] **Q4: how hard the gate is.** *Recommendation:*
+None. Answered by the founder on 2026-10-09: all recommendations, with these amendments:
+- **Q4:** independence is gated per person (see §4).
+- **Q8:** the order is a, c, d, then b, and b is narrowed.
+- **"Actually used":** defined as an item with accepted evidence.
+- **Acceptance record:** gains the predecessor auditor fields.
+- **Setup page:** a narrative summary, a status checklist and a reason on every blocked item.
+- **Q2:** follow the table; no e-signature.
+
+- [x] **Q1: duplicate clients already created.** *Recommendation:* from now on, new engagements pick an existing client. Existing duplicates aren't merged automatically: a "possible duplicate" note shows on the client, and merging comes later.
+- [x] **Q2: e-signature. Your story and your table disagree.** The story has Rachel "sign it electronically"; the table says "don't build e-signature; record status and signed copy; integrate with Ignition or Karbon later". *Recommendation:* follow the table. Record the letter's status, date and signed copy or link, and treat "Rachel signs online" as happening in the firm's existing tool. The story's wording would become "the signed letter is recorded". Building e-signature is a regulated product of its own, and firms already have it.
+- [x] **Q3: what the "agent" proposes in Act 1.** *Recommendation:* the proposals (team, template, used items) are deterministic code and labelled "Abacus proposes". The AI parts named in your table (continuance brief; add items for known changes; re-tier) come later, each with an evaluation suite. This matches ADR-050 and your own "copy, not a judgement" note.
+- [x] **Q4: how hard the gate is.** *Recommendation:*
   - acceptance and every member's independence block client invitations, connections, retrievals and client uploads;
   - the letter only warns (the standards say "preferably"), with a firm setting to make it blocking;
   - a person added later closes the gate for client-data actions until they confirm.
-- [ ] **Q5: who records acceptance.** *Recommendation:* the engagement partner only (the standards put overall responsibility on them), with fresh MFA. Managers can prepare the record (documented at, file), but only the partner sets the decision.
-- [ ] **Q6: invitations in the firm's name.** *Recommendation:* the firm's name in the subject, body and sender display name; the sending address stays Abacus's until custom email domains exist (with SES, TASK-014).
-- [ ] **Q7: engagements created before Act 1.** *Recommendation:* the migration marks them "accepted, before Act 1" and their current team's independence "confirmed, before Act 1", visibly labelled, so live work isn't blocked. New engagements follow the gate.
-- [ ] **Q8: build order.** *Recommendation:* four tasks:
-  1. clients you already have, plus invitations in the firm's name (the walls gap first);
-  2. the roll-forward proposal and the wizard;
-  3. acceptance, independence, the letter and the gate;
-  4. the setup screen.
-- [ ] **Q9: protected paths.** Each task's approval file will be listed up front, including the generated `identity/authz/_matrix.py` for the new matrix actions.
+- [x] **Q5: who records acceptance.** *Recommendation:* the engagement partner only (the standards put overall responsibility on them), with fresh MFA. Managers can prepare the record (documented at, file), but only the partner sets the decision.
+- [x] **Q6: invitations in the firm's name.** *Recommendation:* the firm's name in the subject, body and sender display name; the sending address stays Abacus's until custom email domains exist (with SES, TASK-014).
+- [x] **Q7: engagements created before Act 1.** *Recommendation:* the migration marks them "accepted, before Act 1" and their current team's independence "confirmed, before Act 1", visibly labelled, so live work isn't blocked. New engagements follow the gate.
+- [x] **Q8: build order (as amended).** Four tasks, in this order:
+  - **(a)** clients you already have, plus invitations in the firm's name (the walls gap first);
+  - **(c)** acceptance, the partner's independence conclusion, per-person independence, the letter and the gates;
+  - **(d)** the setup screen;
+  - **(b)** narrowed to "New engagement offers the firm's template for its type". **Rolling forward from last year's engagement comes after the setup page**, as its own task.
+- [x] **Q9: protected paths.** Each task's approval file will be listed up front, including the generated `identity/authz/_matrix.py` for the new matrix actions.
 
 ## 21. Future / explicitly deferred
 - AI continuance brief; AI request-list changes (with evaluation suites).
