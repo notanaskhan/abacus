@@ -16,6 +16,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, Outlet } from "@tanstack/react-router";
 import { type JSX, useEffect, useState } from "react";
 import { App } from "../App";
+import { isForbidden } from "../shell/mfa";
+import { NoFirm } from "./Signup";
 import { errorMessage } from "../api";
 import { accessToken, chooseTenant, chosenTenant, signIn, signOut } from "../auth/session";
 import { NotificationPanel, useUnreadCount } from "../shell/NotificationPanel";
@@ -50,6 +52,8 @@ function SignedIn(): JSX.Element {
       </main>
     );
   }
+  // SPEC-024: a verified sign-in that belongs to no firm at all.
+  if (me.isError && isForbidden(me.error)) return <NoFirm />;
   if (me.isError) {
     return (
       <main className="mx-auto max-w-md p-8">
@@ -67,15 +71,19 @@ function SignedIn(): JSX.Element {
     );
   }
 
+  const staff = me.data.memberships.filter((m) => m.kind !== "client");
+  if (me.data.memberships.length === 0) return <NoFirm />;
+  // Amendment 3 (TASK-040): someone who is only a client contact goes to their client home.
+  if (staff.length === 0) return <Navigate to="/client" />;
   const tenant = me.data.active_tenant_id ?? picked;
-  const firm = me.data.memberships.find((m) => m.tenant_id === tenant);
+  const firm = staff.find((m) => m.tenant_id === tenant);
   if (firm === undefined) {
     return (
       <main className="mx-auto max-w-md p-8">
         <Card>
           <h1 className="mb-3 text-xl">Choose a firm</h1>
           <ul className="flex flex-col gap-2">
-            {me.data.memberships.map((m) => (
+            {staff.map((m) => (
               <li key={m.tenant_id}>
                 <Button
                   variant="outline"
@@ -95,8 +103,6 @@ function SignedIn(): JSX.Element {
       </main>
     );
   }
-  // SPEC-016 AC-8: client users have their own route tree.
-  if (firm.kind === "client") return <Navigate to="/client" />;
 
   const isAdmin = firm.firm_role === "firm_admin" || firm.firm_role === "practice_leader";
   return (

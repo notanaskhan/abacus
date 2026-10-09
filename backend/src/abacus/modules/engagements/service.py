@@ -74,6 +74,14 @@ from abacus.modules.organisations.api import (
 )
 
 ClientRole = Literal["client_admin", "client_contributor"]
+# SPEC-024 Q5: the US engagement types under AICPA standards.
+EngagementType = Literal["audit", "review", "compilation", "agreed_upon_procedures"]
+
+
+class TemplateTypeMismatch(DomainConflict):
+    """The template doesn't serve this engagement's type (SPEC-024 AC-6)."""
+
+    code = "template_type_mismatch"
 
 
 @dataclass(frozen=True)
@@ -104,6 +112,7 @@ class NewEngagement:
     client_entity_name: str
     fiscal_period_start: date
     fiscal_period_end: date
+    type: EngagementType = "audit"
 
 
 @dataclass(frozen=True)
@@ -186,6 +195,7 @@ async def create_engagement(ctx: AuthContext, new: NewEngagement) -> EngagementM
             fiscal_period_start=new.fiscal_period_start,
             fiscal_period_end=new.fiscal_period_end,
             created_by=ctx.user_id,
+            type=new.type,
         )
         tx.record("engagement.created", target=Target("engagement", engagement_id))
         await add_creator_as_partner(tx, ctx, engagement_id)
@@ -271,6 +281,7 @@ class TemplateVersionSummary:
     version_id: UUID
     version: int
     created_at: datetime
+    engagement_types: tuple[str, ...] = ("audit",)
 
 
 @dataclass(frozen=True)
@@ -283,11 +294,21 @@ class MethodologyVersionView:
 
 def _summary(template: MethodologyTemplate, version: MethodologyVersion) -> TemplateVersionSummary:
     return TemplateVersionSummary(
-        template.id, template.name, version.id, version.version, version.created_at
+        template.id,
+        template.name,
+        version.id,
+        version.version,
+        version.created_at,
+        tuple(template.engagement_types),
     )
 
 
-async def import_template(ctx: AuthContext, name: str, data: bytes) -> TemplateVersionSummary:
+async def import_template(
+    ctx: AuthContext,
+    name: str,
+    data: bytes,
+    engagement_types: Sequence[EngagementType] = ("audit",),
+) -> TemplateVersionSummary:
     """Parse and store the workbook as the template's next version (AC-1 to AC-3). Raises
     `TemplateInvalid` with every problem, storing nothing."""
     await authorise(ctx, "methodology.manage", Resource.firm(ctx.tenant_id))
@@ -298,7 +319,11 @@ async def import_template(ctx: AuthContext, name: str, data: bytes) -> TemplateV
     fingerprint = hashlib.sha256(data).hexdigest()
     async with uow(ctx.tenant) as tx:
         template_id, _ = await lock_or_insert_template(
-            tx.session, tenant_id=ctx.tenant_id, name=name, created_by=ctx.user_id
+            tx.session,
+            tenant_id=ctx.tenant_id,
+            name=name,
+            created_by=ctx.user_id,
+            engagement_types=sorted(set(engagement_types)) or ["audit"],
         )
         version_id, number = await insert_version(
             tx.session,
@@ -364,6 +389,9 @@ async def pin_methodology(
     """Inside the caller's unit of work, after `lock_ref` and its `authorise`: pin the version
     (`MethodologyAlreadyApplied` if one is pinned) and return its rows."""
     detail = await _detail(tx.session, version_id)
+    engagement = await lock_engagement(tx.session, engagement_id)
+    if engagement is not None and engagement.type not in detail.summary.engagement_types:
+        raise TemplateTypeMismatch(engagement.type)
     if not await set_methodology_version(tx.session, engagement_id, version_id):
         raise MethodologyAlreadyApplied(str(engagement_id))
     return detail

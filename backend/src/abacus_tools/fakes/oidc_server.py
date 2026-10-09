@@ -46,6 +46,8 @@ REDIRECT_URIS = frozenset(
 DEV_USERS = (
     ("dev-leader", "Dana Leader (practice leader)"),
     ("dev-staff", "Sam Staff (staff)"),
+    # SPEC-024 (TASK-040): no firm yet, to try self-serve sign-up locally.
+    ("dev-new", "Nina New (no firm yet)"),
 )
 TOKEN_SECONDS = 600
 CODE_SECONDS = 60
@@ -192,7 +194,13 @@ def create_app(idp: FakeIdentityProvider | None = None) -> FastAPI:
             or _s256(verifier) != grant.challenge
         ):
             return _error(400, "invalid_grant")
-        access = signer.token(grant.subject, expires_in=TOKEN_SECONDS)
+        # A provider-verified email, as WorkOS sends (SPEC-015, SPEC-024 sign-up).
+        access = signer.token(
+            grant.subject,
+            expires_in=TOKEN_SECONDS,
+            email=f"{grant.subject}@dev.abacus.local",
+            email_verified=True,
+        )
         return JSONResponse(
             {"access_token": access, "token_type": "Bearer", "expires_in": TOKEN_SECONDS},
             headers={"Cache-Control": "no-store"},

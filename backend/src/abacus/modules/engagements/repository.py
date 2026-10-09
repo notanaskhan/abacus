@@ -34,9 +34,11 @@ async def insert_engagement(
     fiscal_period_start: date,
     fiscal_period_end: date,
     created_by: UUID,
+    type: str = "audit",
 ) -> None:
     await session.execute(
         insert(Engagement).values(
+            type=type,
             id=engagement_id,
             tenant_id=tenant_id,
             client_id=client_id,
@@ -103,13 +105,24 @@ async def template_id_for(session: AsyncSession, name: str) -> UUID | None:
 
 
 async def lock_or_insert_template(
-    session: AsyncSession, *, tenant_id: UUID, name: str, created_by: UUID
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    name: str,
+    created_by: UUID,
+    engagement_types: Sequence[str] = ("audit",),
 ) -> tuple[UUID, bool]:
     """The template's ID, created if new; locked, so concurrent imports number versions in turn."""
     created = (
         await session.execute(
             pg_insert(MethodologyTemplate)
-            .values(id=uuid4(), tenant_id=tenant_id, name=name, created_by=created_by)
+            .values(
+                id=uuid4(),
+                tenant_id=tenant_id,
+                name=name,
+                created_by=created_by,
+                engagement_types=list(engagement_types),
+            )
             .on_conflict_do_nothing(index_elements=["tenant_id", "name"])
             .returning(MethodologyTemplate.id)
         )

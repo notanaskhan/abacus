@@ -933,6 +933,18 @@
             "minLength": 1,
             "title": "Name",
             "type": "string"
+          },
+          "type": {
+            "cls": "internal",
+            "default": "audit",
+            "enum": [
+              "audit",
+              "review",
+              "compilation",
+              "agreed_upon_procedures"
+            ],
+            "title": "Type",
+            "type": "string"
           }
         },
         "required": [
@@ -1011,7 +1023,12 @@
           },
           "type": {
             "cls": "internal",
-            "const": "audit",
+            "enum": [
+              "audit",
+              "review",
+              "compilation",
+              "agreed_upon_procedures"
+            ],
             "title": "Type",
             "type": "string"
           }
@@ -1089,7 +1106,12 @@
           },
           "type": {
             "cls": "internal",
-            "const": "audit",
+            "enum": [
+              "audit",
+              "review",
+              "compilation",
+              "agreed_upon_procedures"
+            ],
             "title": "Type",
             "type": "string"
           }
@@ -3045,6 +3067,46 @@
         "title": "SheetPreviewOut",
         "type": "object"
       },
+      "SignupIn": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "cls": "restricted",
+            "maxLength": 200,
+            "minLength": 8,
+            "title": "Code",
+            "type": "string"
+          },
+          "firm_name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Firm Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "firm_name"
+        ],
+        "title": "SignupIn",
+        "type": "object"
+      },
+      "SignupOut": {
+        "properties": {
+          "tenant_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Tenant Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tenant_id"
+        ],
+        "title": "SignupOut",
+        "type": "object"
+      },
       "SpendOut": {
         "properties": {
           "agent_id": {
@@ -3486,6 +3548,23 @@
             "format": "date-time",
             "title": "Created At",
             "type": "string"
+          },
+          "engagement_types": {
+            "cls": "internal",
+            "default": [
+              "audit"
+            ],
+            "items": {
+              "enum": [
+                "audit",
+                "review",
+                "compilation",
+                "agreed_upon_procedures"
+              ],
+              "type": "string"
+            },
+            "title": "Engagement Types",
+            "type": "array"
           },
           "template_id": {
             "cls": "internal",
@@ -11490,7 +11569,7 @@
     },
     "/v1/methodology/templates/{name}/versions": {
       "post": {
-        "description": "The raw `.xlsx` workbook is the request body (TASK-023 D3: no multipart dependency).",
+        "description": "The raw `.xlsx` workbook is the request body (TASK-023 D3: no multipart dependency).\n`engagement_type` (repeatable) tags a new template with the types it serves (SPEC-024);\nan existing template keeps its own.",
         "operationId": "import_template",
         "parameters": [
           {
@@ -11502,6 +11581,31 @@
               "minLength": 1,
               "title": "Name",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "engagement_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "audit",
+                      "review",
+                      "compilation",
+                      "agreed_upon_procedures"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Engagement Type"
             }
           },
           {
@@ -12037,6 +12141,107 @@
           "notifications"
         ],
         "x-abacus-action": "own"
+      }
+    },
+    "/v1/signup": {
+      "post": {
+        "description": "A signed-in person with a founder-issued code creates their firm (no membership yet).",
+        "operationId": "signup",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignupOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Signup Route",
+        "tags": [
+          "signup"
+        ],
+        "x-abacus-action": "identity"
       }
     },
     "/v1/support-sessions": {

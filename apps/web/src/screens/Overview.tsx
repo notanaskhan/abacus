@@ -1,6 +1,7 @@
 import type { GraphAreaOut } from "@abacus/api-client";
 import {
   applyMethodologyMutation,
+  getEngagementOptions,
   engagementGraphOptions,
   engagementGraphQueryKey,
   listTemplatesOptions,
@@ -250,9 +251,10 @@ function GapRow({
 }
 
 /** With no methodology pinned: pick a version and seed the request list (SPEC-008 AC-4). */
-function ApplyMethodology({ engagementId }: { engagementId: string }): JSX.Element {
+export function ApplyMethodology({ engagementId }: { engagementId: string }): JSX.Element {
   const queryClient = useQueryClient();
   const templates = useQuery(listTemplatesOptions());
+  const engagement = useQuery(getEngagementOptions({ path: { engagement_id: engagementId } }));
   const [version, setVersion] = useState("");
   const apply = useMutation({
     ...applyMethodologyMutation(),
@@ -262,7 +264,10 @@ function ApplyMethodology({ engagementId }: { engagementId: string }): JSX.Eleme
       });
     },
   });
-  if (templates.isError || templates.data?.length === 0) return <></>;
+  // SPEC-024 AC-6: only templates for this engagement's type.
+  const type = engagement.data?.type ?? "audit";
+  const offered = (templates.data ?? []).filter((t) => t.engagement_types?.includes(type));
+  if (templates.isError || offered.length === 0) return <></>;
   return (
     <Panel title="Start from your methodology">
       <form
@@ -283,7 +288,7 @@ function ApplyMethodology({ engagementId }: { engagementId: string }): JSX.Eleme
             className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 font-normal"
           >
             <option value="">Choose a version…</option>
-            {(templates.data ?? []).map((t) => (
+            {offered.map((t) => (
               <option key={t.version_id} value={t.version_id}>
                 {t.template_name} · v{t.version}
               </option>

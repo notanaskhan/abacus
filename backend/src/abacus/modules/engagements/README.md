@@ -33,3 +33,8 @@ The workbook has three sheets, each with exact headers in row 1. Blank rows are 
 - `too_many_rows`.
 
 **Pinning:** `pin_methodology` pins an engagement to one version, once (`MethodologyAlreadyApplied`). Callers use it inside their unit of work, as `requests.apply_methodology` does. `area_for` maps an account code to its area: the first rule in rule order wins.
+
+## Engagement types (SPEC-024 AC-6; TASK-040)
+- **Types:** engagements are `audit`, `review`, `compilation` or `agreed_upon_procedures`.
+- **Templates:** a methodology template is tagged when created with the types it serves (`engagement_type`, repeatable, on the upload route). Templates stay insert-only, so a new set of types means a new template.
+- **Applying:** `pin_methodology` refuses a template that doesn't serve the engagement's type (409 `template_type_mismatch`).

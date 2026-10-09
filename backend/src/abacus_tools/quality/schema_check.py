@@ -54,6 +54,7 @@ NON_TENANT_TABLES = frozenset(
     {"alembic_version", "work_slots", "work_waiters", "work_grants", "provider_capacity"}
     | {"review_reason_codes", "eval_runs", "eval_case_results"}
     | {"invitation_tokens", "invitation_failures"}  # SPEC-015: definer functions only
+    | {"signup_codes", "signup_attempts"}  # SPEC-024 (TASK-040): `firm_signup` only
 )
 # Tables the app may insert into and read, never update or delete (ADR-004); TASK-009/010 add.
 INSERT_ONLY_TABLES: frozenset[str] = frozenset(
@@ -76,6 +77,7 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "engagements": frozenset(
         {"id", "tenant_id", "client_id", "client_entity_id", "name", "created_by"}
         | {"fiscal_period_start", "fiscal_period_end"}
+        | {"type"}  # SPEC-024: the engagement's type
     ),
     "request_lists": frozenset({"id", "tenant_id", "engagement_id"}),
     "request_items": frozenset(
@@ -84,7 +86,9 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"dataset", "tier_source", "tier_rule"}  # SPEC-022
     ),
     # Methodology templates (SPEC-008): insert-only, immutable versions.
-    "methodology_templates": frozenset({"id", "tenant_id", "name", "created_by"}),
+    "methodology_templates": frozenset(
+        {"id", "tenant_id", "name", "created_by", "engagement_types"}  # SPEC-024: types served
+    ),
     "methodology_versions": frozenset(
         {"id", "tenant_id", "template_id", "version", "source_fingerprint", "imported_by"}
     ),
@@ -291,6 +295,9 @@ TABLE_OWNERS: dict[str, str] = {
     "client_invitations": "identity",
     "invitation_tokens": "identity",
     "invitation_failures": "identity",
+    # SPEC-024 (TASK-040): sign-up codes and attempts, reached only through `firm_signup`.
+    "signup_codes": "identity",
+    "signup_attempts": "identity",
     "knowledge_documents": "agents",  # SPEC-009 Q5
     "knowledge_chunks": "agents",
     # The work slot ledger (TASK-018 D3): reached only through SECURITY DEFINER functions.
@@ -306,6 +313,7 @@ GLOBAL_TABLES = frozenset(
     {"users", "work_slots", "work_waiters", "work_grants", "provider_capacity"}
     | {"review_reason_codes", "eval_runs", "eval_case_results"}
     | {"invitation_tokens", "invitation_failures"}
+    | {"signup_codes", "signup_attempts"}  # SPEC-024: founder-issued codes, attempts
 )
 # SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
 DEFINER_FUNCTIONS = frozenset(
@@ -322,6 +330,8 @@ DEFINER_FUNCTIONS = frozenset(
     # 0025 (TASK-030 D3, D5): invitation tokens and failures, client users and memberships.
     | {"invitation_token_set", "invitation_token_find", "provision_client_user"}
     | {"add_client_membership", "remove_client_member"}
+    # 0032 (TASK-040 D2): self-serve sign-up, the one way the app creates a firm.
+    | {"firm_signup"}
     # 0027 (TASK-032 D1): staff role changes and removals, keeping a partner.
     | {"team_member_set_role", "team_member_remove"}
 )

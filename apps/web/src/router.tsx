@@ -25,6 +25,7 @@ import { MapView } from "./screens/MapView";
 import { Overview } from "./screens/Overview";
 import { Review } from "./screens/Review";
 import { SignInCallback } from "./screens/SignInCallback";
+import { Signup } from "./screens/Signup";
 
 // Code-based routes (no file-router plugin): the firm workspace and the client portal (ADR-011).
 const rootRoute = createRootRoute({
@@ -216,6 +217,11 @@ const clientEngagementRoute = createRoute({
     return <ClientEngagement engagementId={engagementId} />;
   },
 });
+const signupRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/signup",
+  component: Signup,
+});
 const connectCallbackRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/client/connect/callback",
@@ -232,6 +238,7 @@ const routeTree = rootRoute.addChildren([
   clientRoute,
   clientEngagementRoute,
   connectCallbackRoute,
+  signupRoute,
   acceptRoute,
   appRoute.addChildren([
     engagementsRoute,

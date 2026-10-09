@@ -52,6 +52,8 @@ async def _seed_people(conn: asyncpg.Connection) -> None:
         "INSERT INTO firms (tenant_id, name) VALUES ($1, 'Dev firm') ON CONFLICT DO NOTHING", FIRM
     )
     for subject, label in DEV_USERS:
+        if subject not in FIRM_ROLES:
+            continue  # a dev identity with no firm (sign-up is tried with it)
         name = label.split(" (", 1)[0]
         user = await conn.fetchval(
             "INSERT INTO users (idp_issuer, idp_subject, email, display_name) "

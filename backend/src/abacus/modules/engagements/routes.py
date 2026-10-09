@@ -8,7 +8,7 @@ from datetime import date, datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import Depends, Request
+from fastapi import Depends, Query, Request
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -17,6 +17,7 @@ from abacus.kernel.config import settings
 from abacus.kernel.text import SingleLineText
 from abacus.modules.engagements.service import (
     EngagementMetadata,
+    EngagementType,
     EngagementView,
     NewEngagement,
     TemplateVersionSummary,
@@ -54,6 +55,8 @@ class EngagementIn(BaseModel):
     client_entity_name: Name
     fiscal_period_start: Annotated[date, classified("confidential")]
     fiscal_period_end: Annotated[date, classified("confidential")]
+    # SPEC-024 AC-6: the engagement's type.
+    type: Annotated[EngagementType, classified("internal")] = "audit"
 
     @model_validator(mode="after")
     def _period(self) -> EngagementIn:
@@ -75,7 +78,7 @@ class EngagementSummaryOut(BaseModel):
 
     id: Annotated[UUID, classified("internal")]
     name: Name
-    type: Annotated[Literal["audit"], classified("internal")]
+    type: Annotated[EngagementType, classified("internal")]
     status: Annotated[Literal["active", "archived"], classified("internal")]
     client_name: Name
     client_entity_name: Name
@@ -112,6 +115,7 @@ async def create_engagement_route(body: EngagementIn, ctx: Ctx) -> EngagementOut
         client_entity_name=body.client_entity_name,
         fiscal_period_start=body.fiscal_period_start,
         fiscal_period_end=body.fiscal_period_end,
+        type=body.type,
     )
     return _out(await create_engagement(ctx, new))
 
@@ -329,6 +333,7 @@ class TemplateVersionOut(BaseModel):
     version_id: Annotated[UUID, classified("internal")]
     version: Annotated[int, classified("internal")]
     created_at: Annotated[datetime, classified("internal")]
+    engagement_types: Annotated[list[EngagementType], classified("internal")] = ["audit"]
 
 
 class AreaOut(BaseModel):
@@ -364,7 +369,9 @@ class MethodologyVersionOut(BaseModel):
 
 
 def _version_out(summary: TemplateVersionSummary) -> TemplateVersionOut:
-    return TemplateVersionOut.model_validate(asdict(summary))
+    return TemplateVersionOut.model_validate(
+        {**asdict(summary), "engagement_types": list(summary.engagement_types)}
+    )
 
 
 def _loc(problem: Problem) -> tuple[str | int, ...]:
@@ -390,11 +397,18 @@ async def _body(request: Request) -> bytes:
     status_code=201,
 )
 async def import_template_route(
-    name: TemplateName, request: Request, ctx: Ctx
+    name: TemplateName,
+    request: Request,
+    ctx: Ctx,
+    engagement_type: Annotated[list[EngagementType] | None, Query()] = None,
 ) -> TemplateVersionOut:
-    """The raw `.xlsx` workbook is the request body (TASK-023 D3: no multipart dependency)."""
+    """The raw `.xlsx` workbook is the request body (TASK-023 D3: no multipart dependency).
+    `engagement_type` (repeatable) tags a new template with the types it serves (SPEC-024);
+    an existing template keeps its own."""
     try:
-        summary = await import_template(ctx, name, await _body(request))
+        summary = await import_template(
+            ctx, name, await _body(request), tuple(engagement_type or ("audit",))
+        )
     except TemplateInvalid as invalid:
         # Where and what, never the cell (ADR-052), in the validation error shape.
         raise RequestValidationError(
