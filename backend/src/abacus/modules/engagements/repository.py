@@ -134,11 +134,14 @@ async def lock_or_insert_template(
         return created, True
     existing = (
         await session.execute(
-            select(MethodologyTemplate.id)
-            .where(MethodologyTemplate.name == name)
-            .with_for_update()
+            select(MethodologyTemplate.id).where(MethodologyTemplate.name == name)
         )
     ).scalar_one()
+    # Serialise version numbering per template until commit. Not `FOR UPDATE`: that needs UPDATE
+    # privilege, and templates are insert-only for the app (ADR-004).
+    await session.execute(
+        select(func.pg_advisory_xact_lock(func.hashtextextended(str(existing), 0)))
+    )
     return existing, False
 
 
