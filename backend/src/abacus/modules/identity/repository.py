@@ -786,3 +786,12 @@ async def onboarding_counts(session: AsyncSession) -> RowMapping:
         .mappings()
         .one()
     )
+
+
+async def firm_name_of(tenant_id: UUID) -> str | None:
+    """The firm's name, read through the identity role (SPEC-025: invitations)."""
+    async with identity_engine().connect() as conn:
+        found = await conn.scalar(
+            text("SELECT name FROM firms WHERE tenant_id = :t"), {"t": tenant_id}
+        )
+    return str(found) if found is not None else None

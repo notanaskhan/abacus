@@ -81,10 +81,12 @@ from abacus.modules.identity.service import (
     engagement_role_of,
     engagement_team,
     firm_admins,
+    firm_name,
     is_active_member,
     member_context,
     names_of,
     team_of,
+    walled_from,
 )
 from abacus.modules.identity.staff import issue_staff_invitation_token
 from abacus.modules.identity.team import (
@@ -173,6 +175,7 @@ __all__ = [
     "engagement_team",
     "firm_admins",
     "firm_facts",
+    "firm_name",
     "firm_support_router",
     "invitation_router",
     "is_active_member",
@@ -199,4 +202,5 @@ __all__ = [
     "token_verifier",
     "visible",
     "visible_items",
+    "walled_from",
 ]

@@ -84,8 +84,8 @@ export function ClientEngagement({ engagementId }: { engagementId: string }): JS
           <div>
             <h1 className="text-3xl">{engagement.data.name}</h1>
             <p className="text-sm text-muted tabular-nums">
-              {engagement.data.client_name} · {engagement.data.fiscal_period_start} to{" "}
-              {engagement.data.fiscal_period_end}
+              With {firmName} · {engagement.data.client_name} ·{" "}
+              {engagement.data.fiscal_period_start} to {engagement.data.fiscal_period_end}
             </p>
           </div>
         )}

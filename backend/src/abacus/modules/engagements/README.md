@@ -45,3 +45,10 @@ The workbook has three sheets, each with exact headers in row 1. Blank rows are 
 - `POST /v1/firm/onboarding/{sso|budget|walls}/acknowledge` and `/dismiss` (`firm.manage_settings`).
 
 Seven steps, each computed from data (identity's `firm_facts` plus this module's template and engagement counts), never stored as done. SSO can only be skipped while it's held.
+
+## Clients you already have (SPEC-025 AC-1; TASK-043)
+- **Picker:** `GET /v1/firm/clients/search?q=` (`client.read`) lists matching clients with their entities, minus any the person is walled off from.
+- **Creating:** `POST /v1/engagements` takes an existing `client_id` (and `client_entity_id`, or a new entity name).
+  - A walled creator is refused before anything is written, and again by `authorise` on the engagement inside the unit of work.
+  - A new client whose normalised name matches an existing one is refused (409 `possible_duplicate`) unless `confirm_new`.
+- **Labels:** `engagement_label` gives communications the engagement, client and fiscal year for invitations in the firm's name.

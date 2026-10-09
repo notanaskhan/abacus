@@ -1,5 +1,7 @@
+import type { ClientChoiceOut } from "@abacus/api-client";
 import {
   createEngagementMutation,
+  searchClientsOptions,
   listEngagementsOptions,
   listEngagementsQueryKey,
 } from "@abacus/api-client/query";
@@ -116,6 +118,9 @@ function CreateEngagement({
   onOpenChange: (open: boolean) => void;
 }): JSX.Element {
   const queryClient = useQueryClient();
+  const [picked, setPicked] = useState<ClientChoiceOut | null>(null);
+  const [entity, setEntity] = useState<string>("");
+  const [confirmNew, setConfirmNew] = useState(false);
   const mutation = useMutation({
     ...createEngagementMutation(),
     onSuccess: () => {
@@ -123,6 +128,7 @@ function CreateEngagement({
       onOpenChange(false);
     },
   });
+  const duplicate = mutation.isError && errorMessage(mutation.error) === "possible_duplicate";
 
   function submit(event: SyntheticEvent<HTMLFormElement>): void {
     event.preventDefault();
@@ -131,14 +137,19 @@ function CreateEngagement({
       const value = form.get(name);
       return typeof value === "string" ? value : "";
     };
+    const chosenEntity = picked?.entities.find((e) => e.id === entity);
     mutation.mutate({
       body: {
         name: field("name"),
-        client_name: field("client_name"),
-        client_entity_name: field("client_entity_name"),
+        client_name: picked?.name ?? field("client_name"),
+        client_entity_name: chosenEntity?.name ?? field("client_entity_name"),
         fiscal_period_start: field("fiscal_period_start"),
         fiscal_period_end: field("fiscal_period_end"),
         type: (field("type") || "audit") as EngagementType,
+        // SPEC-025 AC-1: a client the firm already has, picked rather than typed again.
+        ...(picked !== null ? { client_id: picked.id } : {}),
+        ...(chosenEntity !== undefined ? { client_entity_id: chosenEntity.id } : {}),
+        ...(confirmNew ? { confirm_new: true } : {}),
       },
     });
   }
@@ -146,9 +157,41 @@ function CreateEngagement({
   return (
     <Dialog open={open} onOpenChange={onOpenChange} title="New engagement">
       <form onSubmit={submit} className="flex flex-col gap-3">
+        <ClientPicker
+          picked={picked}
+          onPick={(client) => {
+            setPicked(client);
+            setEntity(client?.entities[0]?.id ?? "");
+            setConfirmNew(false);
+          }}
+        />
+        {picked === null ? (
+          <>
+            <Field name="client_name" label="Client" />
+            <Field name="client_entity_name" label="Client entity" />
+          </>
+        ) : (
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="entity">Client entity</Label>
+            <select
+              id="entity"
+              value={entity}
+              onChange={(event) => {
+                setEntity(event.target.value);
+              }}
+              className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm"
+            >
+              {picked.entities.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.name}
+                </option>
+              ))}
+              <option value="">Add an entity…</option>
+            </select>
+            {entity === "" && <Field name="client_entity_name" label="New entity name" />}
+          </div>
+        )}
         <Field name="name" label="Engagement name" />
-        <Field name="client_name" label="Client" />
-        <Field name="client_entity_name" label="Client entity" />
         <div className="flex flex-col gap-1">
           <Label htmlFor="type">Engagement type</Label>
           <select
@@ -168,8 +211,26 @@ function CreateEngagement({
           <Field name="fiscal_period_start" label="Fiscal year start" type="date" />
           <Field name="fiscal_period_end" label="Fiscal year end" type="date" />
         </div>
-        {mutation.isError && (
-          <Alert title="Couldn't create the engagement">{errorMessage(mutation.error)}</Alert>
+        {duplicate && !confirmNew ? (
+          <Alert title="This client may already exist">
+            Find it with the search above and pick it, so its walls and history carry over. If it
+            really is a different client,{" "}
+            <button
+              type="button"
+              className="font-semibold text-accent hover:underline"
+              onClick={() => {
+                setConfirmNew(true);
+              }}
+            >
+              create a new client anyway
+            </button>
+            .
+          </Alert>
+        ) : (
+          mutation.isError &&
+          !duplicate && (
+            <Alert title="Couldn't create the engagement">{errorMessage(mutation.error)}</Alert>
+          )
         )}
         <Button type="submit" disabled={mutation.isPending}>
           {mutation.isPending ? "Creating…" : "Create engagement"}
@@ -192,6 +253,79 @@ function Field({
     <div className="flex flex-col gap-1">
       <Label htmlFor={name}>{label}</Label>
       <Input id={name} name={name} type={type} required />
+    </div>
+  );
+}
+
+/** SPEC-025 AC-1: find a client the firm already has (walled clients are never listed). */
+function ClientPicker({
+  picked,
+  onPick,
+}: {
+  picked: ClientChoiceOut | null;
+  onPick: (client: ClientChoiceOut | null) => void;
+}): JSX.Element {
+  const [text, setText] = useState("");
+  const found = useQuery({
+    ...searchClientsOptions({ query: { q: text.trim() } }),
+    enabled: text.trim().length >= 2 && picked === null,
+    retry: false,
+  });
+  if (picked !== null) {
+    return (
+      <div className="flex items-center justify-between rounded-[var(--radius-control)] border border-line bg-sunken px-3 py-2 text-sm">
+        <span>
+          Client: <span className="font-semibold">{picked.name}</span>
+        </span>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            onPick(null);
+            setText("");
+          }}
+        >
+          Change
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-1">
+      <Label htmlFor="client-search">Find an existing client</Label>
+      <Input
+        id="client-search"
+        type="search"
+        placeholder="Start typing a client's name"
+        value={text}
+        onChange={(event) => {
+          setText(event.target.value);
+        }}
+      />
+      {found.data !== undefined && found.data.length > 0 && (
+        <ul aria-label="Matching clients" className="flex flex-col gap-1">
+          {found.data.map((c) => (
+            <li key={c.id}>
+              <button
+                type="button"
+                className="w-full rounded-[var(--radius-control)] border border-line px-3 py-1.5 text-left text-sm hover:bg-sunken"
+                onClick={() => {
+                  onPick(c);
+                }}
+              >
+                {c.name}
+                <span className="text-muted">
+                  {" "}
+                  · {c.entities.length} {c.entities.length === 1 ? "entity" : "entities"}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {found.data !== undefined && found.data.length === 0 && (
+        <p className="text-xs text-muted">No match. Enter a new client below.</p>
+      )}
     </div>
   );
 }

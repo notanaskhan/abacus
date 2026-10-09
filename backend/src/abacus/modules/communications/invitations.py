@@ -17,15 +17,33 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import OutboxEvent, Target, uow
 from abacus.modules.communications.repository import insert_message
 from abacus.modules.communications.transport import transport
-from abacus.modules.identity.api import issue_invitation_token, issue_staff_invitation_token
+from abacus.modules.engagements.api import engagement_label
+from abacus.modules.identity.api import (
+    firm_name,
+    issue_invitation_token,
+    issue_staff_invitation_token,
+)
 
-SUBJECT: Final = "You're invited to an audit engagement"
+# SPEC-025 AC-8: in the firm's name, naming the client and the engagement's year.
+SUBJECT: Final = "{firm} invites you to their FY{year} audit of {client}"
 TEMPLATE: Final = (
-    "You've been invited to share documents for an audit engagement.\n\n"
+    "{firm} has invited you to share documents for their FY{year} audit of {client}.\n\n"
     "Open this link to accept: {link}\n\n"
     "The link works once and expires on {expires}. If you weren't expecting this, ignore it."
 )
 _log = get_logger(__name__)
+
+
+async def _names(tenant_id: UUID, engagement_id: UUID) -> dict[str, str]:
+    """The firm, client and fiscal year, for the invitation's wording (plain text)."""
+    label = await engagement_label(
+        TenantContext(tenant_id, "system", "invitations"), engagement_id
+    )
+    return {
+        "firm": await firm_name(tenant_id),
+        "client": label.client_name if label is not None else "your company",
+        "year": str(label.fiscal_year) if label is not None else "",
+    }
 
 
 async def deliver_invitation(event: OutboxEvent) -> None:
@@ -35,11 +53,13 @@ async def deliver_invitation(event: OutboxEvent) -> None:
         return  # revoked, accepted or expired meanwhile: nothing to send
     expires = f"{issued.expires_at:%d %B %Y}"
     link = f"{settings().app_base_url}/client/accept#token={issued.token}"
+    names = await _names(event.tenant_id, issued.engagement_id)
     await asyncio.to_thread(
         transport().send,
         to=issued.email,
-        subject=SUBJECT,
-        body=TEMPLATE.format(link=link, expires=expires),
+        subject=SUBJECT.format(**names),
+        body=TEMPLATE.format(link=link, expires=expires, **names),
+        sender_name=names["firm"],
     )
     message_id = uuid4()
     ctx = TenantContext(event.tenant_id, "system", f"invitation:{invitation_id}")
@@ -51,7 +71,7 @@ async def deliver_invitation(event: OutboxEvent) -> None:
             engagement_id=issued.engagement_id,
             channel="email",
             recipient_ref=f"invitation:{invitation_id}",
-            body=TEMPLATE.format(link="[link removed]", expires=expires),
+            body=TEMPLATE.format(link="[link removed]", expires=expires, **names),
             status="sent",
             violations=[],
             created_by=issued.invited_by,
@@ -60,9 +80,9 @@ async def deliver_invitation(event: OutboxEvent) -> None:
     _log.info("invitation.email_sent", invitation_id=invitation_id, message_id=message_id)
 
 
-STAFF_SUBJECT: Final = "You're invited to join your firm on Abacus"
+STAFF_SUBJECT: Final = "{firm} invites you to join their workspace"
 STAFF_TEMPLATE: Final = (
-    "You've been invited to join your firm's workspace on Abacus.\n\n"
+    "{firm} has invited you to join their workspace on Abacus.\n\n"
     "Open this link to accept: {link}\n\n"
     "The link works once and expires on {expires}. If you weren't expecting this, ignore it."
 )
@@ -77,10 +97,12 @@ async def deliver_staff_invitation(event: OutboxEvent) -> None:
     if issued is None:
         return  # revoked, accepted or expired meanwhile: nothing to send
     link = f"{settings().app_base_url}/join#token={issued.token}"
+    firm = await firm_name(event.tenant_id)
     await asyncio.to_thread(
         transport().send,
         to=issued.email,
-        subject=STAFF_SUBJECT,
-        body=STAFF_TEMPLATE.format(link=link, expires=f"{issued.expires_at:%d %B %Y}"),
+        subject=STAFF_SUBJECT.format(firm=firm),
+        body=STAFF_TEMPLATE.format(firm=firm, link=link, expires=f"{issued.expires_at:%d %B %Y}"),
+        sender_name=firm,
     )
     _log.info("staff_invitation.email_sent", invitation_id=invitation_id)

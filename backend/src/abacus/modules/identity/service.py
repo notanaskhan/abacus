@@ -34,10 +34,12 @@ from abacus.modules.identity.repository import (
     engagement_members_of,
     engagement_role,
     find_user,
+    firm_name_of,
     get_wall,
     insert_engagement_member,
     insert_wall,
     remove_wall,
+    walled_clients,
 )
 from abacus.modules.identity.tokens import InvalidToken, VerifiedIdentity, token_verifier
 
@@ -359,3 +361,13 @@ async def member_context(tenant_id: UUID, user_id: UUID) -> AuthContext | None:
         firm_role=membership.firm_role,
         mfa_at=None,
     )
+
+
+async def walled_from(tenant: TenantContext, user_id: UUID) -> frozenset[UUID]:
+    """The clients a person is walled off from now (SPEC-025: the picker leaves them out)."""
+    return await walled_clients(tenant, user_id)
+
+
+async def firm_name(tenant_id: UUID) -> str:
+    """The firm's name, for what goes out in its name (SPEC-025 AC-8: invitations)."""
+    return await firm_name_of(tenant_id) or "Your auditor"

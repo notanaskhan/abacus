@@ -241,6 +241,24 @@ export type ClientAssigneeIn = {
 };
 
 /**
+ * ClientChoiceOut
+ */
+export type ClientChoiceOut = {
+    /**
+     * Entities
+     */
+    entities: Array<EntityChoiceOut>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
  * ClientContactOut
  */
 export type ClientContactOut = {
@@ -496,13 +514,25 @@ export type EngagementGraphOut = {
  */
 export type EngagementIn = {
     /**
+     * Client Entity Id
+     */
+    client_entity_id?: string | null;
+    /**
      * Client Entity Name
      */
     client_entity_name: string;
     /**
+     * Client Id
+     */
+    client_id?: string | null;
+    /**
      * Client Name
      */
     client_name: string;
+    /**
+     * Confirm New
+     */
+    confirm_new?: boolean;
     /**
      * Fiscal Period End
      */
@@ -607,6 +637,20 @@ export type EngagementSummaryOut = {
      * Type
      */
     type: 'audit' | 'review' | 'compilation' | 'agreed_upon_procedures';
+};
+
+/**
+ * EntityChoiceOut
+ */
+export type EntityChoiceOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
 };
 
 /**
@@ -2447,6 +2491,10 @@ export type CreateEngagementErrors = {
      * Not found
      */
     404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
     /**
      * Invalid request
      */
@@ -5433,6 +5481,60 @@ export type FirmClientsResponses = {
 };
 
 export type FirmClientsResponse = FirmClientsResponses[keyof FirmClientsResponses];
+
+export type SearchClientsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Q
+         */
+        q: string;
+    };
+    url: '/v1/firm/clients/search';
+};
+
+export type SearchClientsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SearchClientsError = SearchClientsErrors[keyof SearchClientsErrors];
+
+export type SearchClientsResponses = {
+    /**
+     * Response Search Clients
+     *
+     * Successful Response
+     */
+    200: Array<ClientChoiceOut>;
+};
+
+export type SearchClientsResponse = SearchClientsResponses[keyof SearchClientsResponses];
 
 export type FirmMembersData = {
     body?: never;

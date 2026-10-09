@@ -48,6 +48,7 @@ from abacus.modules.identity.api import (
     AuthContext,
     Candidate,
     ContactView,
+    Forbidden,
     Resource,
     StaffRole,
     TeamMember,
@@ -64,12 +65,16 @@ from abacus.modules.identity.api import (
     remove_member,
     resend_invitation,
     revoke_invitation,
+    walled_from,
 )
 from abacus.modules.organisations.api import (
+    ClientChoice,
     ClientNames,
     FirmName,
     client_names,
+    client_with_entity,
     create_client,
+    find_clients,
     firm_names,
 )
 
@@ -113,6 +118,11 @@ class NewEngagement:
     fiscal_period_start: date
     fiscal_period_end: date
     type: EngagementType = "audit"
+    # SPEC-025 AC-1: an existing client (and entity, or a new entity under it); else a new client.
+    client_id: UUID | None = None
+    client_entity_id: UUID | None = None
+    # A new client whose name matches an existing one needs this (`PossibleDuplicate`).
+    confirm_new: bool = False
 
 
 @dataclass(frozen=True)
@@ -180,11 +190,36 @@ async def lock_ref(tx: UnitOfWork, engagement_id: UUID) -> EngagementRef:
     return _ref(engagement)
 
 
+class PossibleDuplicate(DomainConflict):
+    """A client with this name (normalised) already exists: pick it, or confirm a new one."""
+
+    code = "possible_duplicate"
+
+
 async def create_engagement(ctx: AuthContext, new: NewEngagement) -> EngagementMetadata:
     await authorise(ctx, "engagement.create", Resource.firm(ctx.tenant_id))
     engagement_id = uuid4()
+    if new.client_id is not None and new.client_id in await walled_from(ctx.tenant, ctx.user_id):
+        # Refused before anything is written; `authorise` below is the authoritative check.
+        raise Forbidden("engagement.create", "wall")
+    if new.client_id is None and not new.confirm_new:
+        walled = await walled_from(ctx.tenant, ctx.user_id)
+        matches = [
+            c
+            for c in await find_clients(ctx.tenant, new.client_name, exact=True)
+            if c.id not in walled
+        ]
+        if matches:
+            raise PossibleDuplicate(new.client_name)
     async with uow(ctx.tenant) as tx:
-        client = await create_client(tx, ctx.tenant_id, new.client_name, new.client_entity_name)
+        if new.client_id is not None:
+            client = await client_with_entity(
+                tx, ctx.tenant_id, new.client_id, new.client_entity_id, new.client_entity_name
+            )
+        else:
+            client = await create_client(
+                tx, ctx.tenant_id, new.client_name, new.client_entity_name
+            )
         await insert_engagement(
             tx.session,
             engagement_id=engagement_id,
@@ -197,6 +232,11 @@ async def create_engagement(ctx: AuthContext, new: NewEngagement) -> EngagementM
             created_by=ctx.user_id,
             type=new.type,
         )
+        if new.client_id is not None:
+            # SPEC-025 AC-1: an existing client. The engagement just written is checked against
+            # the creator's walls (ADR-026); a walled creator is refused and nothing is kept.
+            ref = await lock_ref(tx, engagement_id)
+            await authorise(ctx, "engagement.create", ref.resource())
         tx.record("engagement.created", target=Target("engagement", engagement_id))
         await add_creator_as_partner(tx, ctx, engagement_id)
         tx.emit(EngagementCreated(engagement_id=engagement_id))
@@ -490,3 +530,35 @@ async def firm_clients(ctx: AuthContext) -> list[FirmName]:
     await authorise(ctx, "wall.create", Resource.firm(ctx.tenant_id))
     names = await firm_names(ctx.tenant)
     return sorted((n for n in names if n.id == n.client_id), key=lambda n: n.name.casefold())
+
+
+# --- Clients you already have (SPEC-025 AC-1; TASK-043) ----------------------------------------
+
+
+async def search_clients(ctx: AuthContext, text_: str) -> list[ClientChoice]:
+    """The firm's clients matching a name, minus any the person is walled off from."""
+    await authorise(ctx, "client.read", Resource.firm(ctx.tenant_id))
+    walled = await walled_from(ctx.tenant, ctx.user_id)
+    return [c for c in await find_clients(ctx.tenant, text_) if c.id not in walled]
+
+
+@dataclass(frozen=True)
+class EngagementLabel:
+    name: str
+    client_name: str
+    fiscal_year: int
+
+
+async def engagement_label(tenant: TenantContext, engagement_id: UUID) -> EngagementLabel | None:
+    """What goes out in the firm's name about an engagement (SPEC-025 AC-8: invitations)."""
+    async with tenant_session(tenant) as session:
+        engagement = await get_engagement(session, engagement_id)
+        if engagement is None:
+            return None
+        names = await client_names(session, [engagement.client_entity_id])
+    found = names.get(engagement.client_entity_id)
+    return EngagementLabel(
+        engagement.name,
+        found.client_name if found is not None else "your company",
+        engagement.fiscal_period_end.year,
+    )

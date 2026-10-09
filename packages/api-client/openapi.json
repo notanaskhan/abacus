@@ -417,6 +417,36 @@
         "title": "ClientAssigneeIn",
         "type": "object"
       },
+      "ClientChoiceOut": {
+        "properties": {
+          "entities": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/EntityChoiceOut"
+            },
+            "title": "Entities",
+            "type": "array"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "entities"
+        ],
+        "title": "ClientChoiceOut",
+        "type": "object"
+      },
       "ClientContactOut": {
         "properties": {
           "display_name": {
@@ -948,6 +978,19 @@
       "EngagementIn": {
         "additionalProperties": false,
         "properties": {
+          "client_entity_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Entity Id"
+          },
           "client_entity_name": {
             "cls": "confidential",
             "maxLength": 200,
@@ -955,12 +998,31 @@
             "title": "Client Entity Name",
             "type": "string"
           },
+          "client_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Id"
+          },
           "client_name": {
             "cls": "confidential",
             "maxLength": 200,
             "minLength": 1,
             "title": "Client Name",
             "type": "string"
+          },
+          "confirm_new": {
+            "cls": "internal",
+            "default": false,
+            "title": "Confirm New",
+            "type": "boolean"
           },
           "fiscal_period_end": {
             "cls": "confidential",
@@ -1175,6 +1237,27 @@
           "created_at"
         ],
         "title": "EngagementSummaryOut",
+        "type": "object"
+      },
+      "EntityChoiceOut": {
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "EntityChoiceOut",
         "type": "object"
       },
       "ErrorOut": {
@@ -4847,6 +4930,16 @@
               }
             },
             "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
           },
           "422": {
             "content": {
@@ -11234,6 +11327,118 @@
           "firm"
         ],
         "x-abacus-action": "wall.create"
+      }
+    },
+    "/v1/firm/clients/search": {
+      "get": {
+        "description": "The firm's clients by name (normalised), minus any the person is walled off from.",
+        "operationId": "search_clients",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ClientChoiceOut"
+                  },
+                  "title": "Response Search Clients",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Search Clients Route",
+        "tags": [
+          "firm"
+        ],
+        "x-abacus-action": "client.read"
       }
     },
     "/v1/firm/members": {
