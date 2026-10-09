@@ -686,6 +686,60 @@
         "title": "DecisionOut",
         "type": "object"
       },
+      "DecisionSummaryOut": {
+        "properties": {
+          "decided_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Decided At",
+            "type": "string"
+          },
+          "decided_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decided By"
+          },
+          "decided_by_name": {
+            "cls": "confidential",
+            "title": "Decided By Name",
+            "type": "string"
+          },
+          "decision": {
+            "cls": "internal",
+            "title": "Decision",
+            "type": "string"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason Code"
+          }
+        },
+        "required": [
+          "decision",
+          "reason_code",
+          "decided_by",
+          "decided_by_name",
+          "decided_at"
+        ],
+        "title": "DecisionSummaryOut",
+        "type": "object"
+      },
       "EngagementGraphOut": {
         "properties": {
           "areas": {
@@ -1451,6 +1505,155 @@
           "unmatched_areas"
         ],
         "title": "ImportCountsOut",
+        "type": "object"
+      },
+      "ItemVersionOut": {
+        "properties": {
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionSummaryOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "File Name"
+          },
+          "fingerprint": {
+            "cls": "internal",
+            "title": "Fingerprint",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "media_type": {
+            "cls": "internal",
+            "title": "Media Type",
+            "type": "string"
+          },
+          "method": {
+            "cls": "internal",
+            "enum": [
+              "retrieved",
+              "uploaded"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Period End"
+          },
+          "period_start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Period Start"
+          },
+          "pulled_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Pulled At"
+          },
+          "size_bytes": {
+            "cls": "internal",
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "source": {
+            "cls": "internal",
+            "title": "Source",
+            "type": "string"
+          },
+          "uploaded_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Uploaded By"
+          },
+          "uploaded_by_name": {
+            "cls": "confidential",
+            "title": "Uploaded By Name",
+            "type": "string"
+          },
+          "version_no": {
+            "cls": "internal",
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version_no",
+          "method",
+          "source",
+          "period_start",
+          "period_end",
+          "pulled_at",
+          "created_at",
+          "size_bytes",
+          "media_type",
+          "fingerprint",
+          "file_name",
+          "uploaded_by",
+          "uploaded_by_name",
+          "decision"
+        ],
+        "title": "ItemVersionOut",
         "type": "object"
       },
       "KnowledgeDocumentIn": {
@@ -5392,6 +5595,135 @@
         "x-abacus-action": "evidence.read"
       }
     },
+    "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/content": {
+      "get": {
+        "description": "SPEC-021 AC-2: the file as an attachment, never inline (ADR-052); audited and verified.",
+        "operationId": "content",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Content",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Content Route",
+        "tags": [
+          "evidence"
+        ],
+        "x-abacus-action": "evidence.read"
+      }
+    },
     "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/accept": {
       "post": {
         "operationId": "accept",
@@ -7096,6 +7428,127 @@
           "evidence"
         ],
         "x-abacus-action": "evidence.upload"
+      }
+    },
+    "/v1/engagements/{engagement_id}/request-items/{item_id}/versions": {
+      "get": {
+        "description": "SPEC-021 AC-1: the item's versions, newest first, with provenance and decisions.",
+        "operationId": "item_versions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ItemVersionOut"
+                  },
+                  "title": "Response Item Versions",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Item Versions Route",
+        "tags": [
+          "evidence"
+        ],
+        "x-abacus-action": "evidence.read"
       }
     },
     "/v1/engagements/{engagement_id}/retrievals": {

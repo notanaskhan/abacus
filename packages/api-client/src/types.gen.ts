@@ -363,6 +363,32 @@ export type DecisionOut = {
 };
 
 /**
+ * DecisionSummaryOut
+ */
+export type DecisionSummaryOut = {
+    /**
+     * Decided At
+     */
+    decided_at: string;
+    /**
+     * Decided By
+     */
+    decided_by: string | null;
+    /**
+     * Decided By Name
+     */
+    decided_by_name: string;
+    /**
+     * Decision
+     */
+    decision: string;
+    /**
+     * Reason Code
+     */
+    reason_code: string | null;
+};
+
+/**
  * EngagementGraphOut
  */
 export type EngagementGraphOut = {
@@ -773,6 +799,69 @@ export type ImportCountsOut = {
      * Unmatched Areas
      */
     unmatched_areas: number;
+};
+
+/**
+ * ItemVersionOut
+ */
+export type ItemVersionOut = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    decision: DecisionSummaryOut | null;
+    /**
+     * File Name
+     */
+    file_name: string | null;
+    /**
+     * Fingerprint
+     */
+    fingerprint: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Media Type
+     */
+    media_type: string;
+    /**
+     * Method
+     */
+    method: 'retrieved' | 'uploaded';
+    /**
+     * Period End
+     */
+    period_end: string | null;
+    /**
+     * Period Start
+     */
+    period_start: string | null;
+    /**
+     * Pulled At
+     */
+    pulled_at: string | null;
+    /**
+     * Size Bytes
+     */
+    size_bytes: number;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Uploaded By
+     */
+    uploaded_by: string | null;
+    /**
+     * Uploaded By Name
+     */
+    uploaded_by_name: string;
+    /**
+     * Version No
+     */
+    version_no: number;
 };
 
 /**
@@ -2698,6 +2787,68 @@ export type ListEvidenceVersionsResponses = {
 
 export type ListEvidenceVersionsResponse = ListEvidenceVersionsResponses[keyof ListEvidenceVersionsResponses];
 
+export type ContentData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/evidence-versions/{version_id}/content';
+};
+
+export type ContentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ContentError = ContentErrors[keyof ContentErrors];
+
+export type ContentResponses = {
+    /**
+     * Response Content
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type ContentResponse = ContentResponses[keyof ContentResponses];
+
 export type AcceptData = {
     body: AcceptIn;
     headers?: {
@@ -3474,6 +3625,64 @@ export type UploadResponses = {
 };
 
 export type UploadResponse = UploadResponses[keyof UploadResponses];
+
+export type ItemVersionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/versions';
+};
+
+export type ItemVersionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ItemVersionsError = ItemVersionsErrors[keyof ItemVersionsErrors];
+
+export type ItemVersionsResponses = {
+    /**
+     * Response Item Versions
+     *
+     * Successful Response
+     */
+    200: Array<ItemVersionOut>;
+};
+
+export type ItemVersionsResponse = ItemVersionsResponses[keyof ItemVersionsResponses];
 
 export type StartRetrievalData = {
     body: RetrievalIn;

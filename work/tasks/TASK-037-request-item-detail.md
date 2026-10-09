@@ -4,7 +4,7 @@ title: Request item detail
 spec: SPEC-021
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6]
 risk_zone: amber
-status: awaiting-plan-approval
+status: done
 branch: task-037-request-item-detail
 worktree:
 created: 2026-10-09
@@ -30,7 +30,7 @@ All of SPEC-021.
 - Code: `evidence` (`read_version`, `uploads.py`, repository `decision_for`, models), `requests.api` (`read_item`, `read_item_versions`), `apps/web` `Board`, `Review` (decision actions), `screening-results`
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-09: D1–D4). Approved by founder: paths listed under *Protected paths*
 
 ### Design (for founder review)
 1. **Versions route** (`evidence/item_detail.py`): `item_versions(ctx, engagement, item)`.
@@ -73,12 +73,25 @@ All of SPEC-021.
 - **D4. Write the approval file for the protected paths above?** *Recommendation: yes.*
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
-- [ ] Type check, lint, format, architecture and dependency rules pass
-- [ ] Every query is tenant-scoped; every endpoint checks authorisation
-- [ ] Module READMEs and the relevant docs are updated
+- [x] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
+- [x] Type check, lint, format, architecture and dependency rules pass
+- [x] Every query is tenant-scoped; every endpoint checks authorisation
+- [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-09` — Implemented:
+  - the item versions route (provenance, uploader and file name, the decision on this item) and the audited, verified attachment download;
+  - the item page (header, versions timeline, screening with verified citations through `AgentText`, decision panel by role, blob download);
+  - the shared `DecisionActions`, now used by the review queue too;
+  - "Open" links from Board cards and queue entries.
+
+  Fixes along the way:
+  - the `evidence.uploaded` notification link pointed at `/board`; the route is `/requests`;
+  - the Board tests now render inside a router (the card links need one).
+
+  Tests and checks:
+  - backend unit 8,968 and web 153 passed; the gates pass;
+  - a local smoke on seeded evidence passed (versions listed, a 6 KB trial balance downloaded and verified).
 - `2026-10-09` — SPEC-021 approved and merged (#68). Design written for founder review.
 
 ## Decisions made during this task

@@ -368,3 +368,24 @@ async def fingerprint_among(
         .limit(1)
     )
     return found.scalar_one_or_none() is not None
+
+
+async def item_versions_with_decisions(
+    session: AsyncSession, request_item_id: UUID, version_ids: Sequence[UUID]
+) -> Sequence[tuple[EvidenceVersion, EvidenceItem, ReviewDecision | None]]:
+    """A request item's versions, newest first, each with its evidence item and its decision on
+    this item, for a caller that authorised `evidence.read` on it (SPEC-021; LIST_EXEMPT)."""
+    if not version_ids:
+        return []
+    rows = await session.execute(
+        select(EvidenceVersion, EvidenceItem, ReviewDecision)
+        .join(EvidenceItem, EvidenceItem.id == EvidenceVersion.evidence_item_id)
+        .outerjoin(
+            ReviewDecision,
+            (ReviewDecision.evidence_version_id == EvidenceVersion.id)
+            & (ReviewDecision.request_item_id == request_item_id),
+        )
+        .where(EvidenceVersion.id.in_(version_ids))
+        .order_by(EvidenceVersion.created_at.desc(), EvidenceVersion.id)
+    )
+    return list(rows.tuples().all())

@@ -25,6 +25,7 @@ import {
   Spinner,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { type JSX, type ReactNode, type SyntheticEvent, useEffect, useState } from "react";
 import { errorMessage } from "../api";
 import {
@@ -164,7 +165,13 @@ function RequestItemCard({
     <Card className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="font-medium">{item.description}</p>
+          <Link
+            to="/engagements/$engagementId/items/$itemId"
+            params={{ engagementId: item.engagement_id, itemId: item.id }}
+            className="font-medium hover:underline"
+          >
+            {item.description}
+          </Link>
           <p className="text-sm text-muted">{item.audit_area}</p>
         </div>
         <Badge tone={statusTone(item.status)} aria-label={`Status: ${statusLabel(item.status)}`}>

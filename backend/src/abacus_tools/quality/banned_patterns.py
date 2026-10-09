@@ -824,6 +824,8 @@ LIST_EXEMPT = frozenset(
         # item with its client facts (`evidence.upload` / `evidence.read`).
         ("src/abacus/modules/requests/repository.py", "fulfilling_versions"),
         ("src/abacus/modules/evidence/repository.py", "uploaded_versions"),
+        # SPEC-021: one item's versions with their decisions, after `authorise(evidence.read)`.
+        ("src/abacus/modules/evidence/repository.py", "item_versions_with_decisions"),
         # Ethical walls are firm-level, not engagement-scoped (SPEC-002): authz reads a person's
         # own walls; listing every wall needs `wall.list`, authorised by the service first.
         ("src/abacus/modules/identity/repository.py", "walled_clients"),
