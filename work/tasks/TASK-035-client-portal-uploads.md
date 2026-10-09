@@ -4,7 +4,7 @@ title: Client portal, item visibility and client uploads
 spec: SPEC-020
 acceptance_criteria: [AC-1, AC-7, AC-8, AC-9]
 risk_zone: red
-status: planned
+status: awaiting-plan-approval
 branch: task-035-client-portal-uploads
 worktree:
 created: 2026-10-09
