@@ -20,6 +20,7 @@ from abacus.modules.connections.connector import (
     Capabilities,
     Connector,
     ConnectorError,
+    Credentials,
     Dataset,
     NotSupported,
     Period,
@@ -29,6 +30,10 @@ from abacus.modules.connections.connector import (
 
 MEDIA_TYPE = "application/json"
 SOURCE = "fake"
+# The demo sign-in (SPEC-020 TASK-036 D2): the "provider" approves at once and hands back this
+# code, and the exchange yields a fixed credential so sealing and deletion are exercised.
+DEMO_CODE = "demo"
+DEMO_CREDENTIALS: Credentials = b"fake-demo-credentials"
 
 
 def fixture_path(directory: Path, connection_id: UUID, dataset: str, period: Period) -> Path:
@@ -39,23 +44,32 @@ def fixture_path(directory: Path, connection_id: UUID, dataset: str, period: Per
 class FakeConnector(Connector):
     provider: ClassVar[str] = "fake"
 
-    def __init__(self, connection_id: UUID, directory: Path) -> None:
+    def __init__(
+        self, connection_id: UUID, directory: Path, credentials: Credentials | None = None
+    ) -> None:
         self._connection_id = connection_id
         self._directory = directory
+        self._credentials = credentials
 
     def capabilities(self) -> Capabilities:
         return Capabilities(
             datasets=frozenset({"trial_balance"}),
-            oauth=False,
+            oauth=True,
             incremental=False,
             attachments=False,
         )
 
     async def authorise_url(self, state: str, redirect_uri: str) -> str:
-        raise NotSupported("oauth")
+        # No URL library here (CONN-001): the state is URL-safe by construction
+        # (`secrets.token_urlsafe`), and anything else is refused rather than escaped.
+        if not state.replace("-", "").replace("_", "").isalnum():
+            raise ConnectorError("invalid_state")
+        return f"{redirect_uri}?state={state}&code={DEMO_CODE}"
 
-    async def exchange_code(self, code: str, redirect_uri: str) -> None:
-        raise NotSupported("oauth")
+    async def exchange_code(self, code: str, redirect_uri: str) -> Credentials | None:
+        if code != DEMO_CODE:
+            raise ConnectorError("access_denied")
+        return DEMO_CREDENTIALS
 
     async def refresh(self) -> None:
         return None  # nothing to refresh: no credentials

@@ -165,7 +165,8 @@ actions:
   message.send:             {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny}
 
   # --- Connections ---
-  connection.create:        {client_admin: allow}                       # only the client grants access
+  connection.create:        {client_admin: allow, mfa_recent: required}   # only the client grants access; fresh MFA (SPEC-020 AC-3)
+  connection.check:         {client_admin: allow, engagement_partner: allow, manager: allow}   # SPEC-020 AC-4 (TASK-036 D4)
   connection.revoke:        {client_admin: allow, engagement_partner: allow, manager: allow}
   connection.pull:          {system: allow}
   connection.read_log:      {client_admin: allow, engagement_partner: allow, manager: allow, platform_support: allow, platform_support_content: allow}

@@ -21,4 +21,6 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "review.assigned",
         "engagement_member.added",  # SPEC-017 Q4
         "evidence.uploaded",  # SPEC-020: a client uploaded a file
+        "connection.created",  # SPEC-020 (TASK-036 D5)
+        "connection.revoked",
     }

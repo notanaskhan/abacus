@@ -23,6 +23,7 @@ import { Link } from "@tanstack/react-router";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
 import { SCREENING, statusOf } from "./engagementLabels";
+import { ConnectionPanel } from "./ConnectionPanel";
 
 /** SPEC-016 AC-3: areas with progress, the selected area's requests, gaps and screening. */
 export function Overview({ engagementId }: { engagementId: string }): JSX.Element {
@@ -65,6 +66,7 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
   return (
     <div className="flex flex-col gap-4">
       {g.methodology === null && <ApplyMethodology engagementId={engagementId} />}
+      <ConnectionPanel engagementId={engagementId} firmName="" canConnect={false} />
       <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
         <Panel
           title="Audit areas"

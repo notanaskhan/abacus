@@ -16,6 +16,7 @@ import { Methodology } from "./screens/Methodology";
 import { MethodologyVersion } from "./screens/MethodologyVersion";
 import { Accept } from "./screens/ClientAccept";
 import { ClientEngagement } from "./screens/ClientEngagement";
+import { ConnectCallback } from "./screens/ConnectCallback";
 import { ClientHome } from "./screens/ClientHome";
 import { People } from "./screens/People";
 import { EngagementLayout } from "./screens/EngagementLayout";
@@ -206,6 +207,11 @@ const clientEngagementRoute = createRoute({
     return <ClientEngagement engagementId={engagementId} />;
   },
 });
+const connectCallbackRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/client/connect/callback",
+  component: ConnectCallback,
+});
 const acceptRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/client/accept",
@@ -216,6 +222,7 @@ const routeTree = rootRoute.addChildren([
   callbackRoute,
   clientRoute,
   clientEngagementRoute,
+  connectCallbackRoute,
   acceptRoute,
   appRoute.addChildren([
     engagementsRoute,

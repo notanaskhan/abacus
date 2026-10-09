@@ -8,6 +8,7 @@ import {
   listRequestItemsQueryKey,
   listUploadsOptions,
   listUploadsQueryKey,
+  meOptions,
 } from "@abacus/api-client/query";
 import { Alert, Button, EmptyState, Label, Panel, Skeleton, StatusPill } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,6 +16,7 @@ import { Link } from "@tanstack/react-router";
 import { type JSX, useEffect, useState } from "react";
 import { errorMessage } from "../api";
 import { accessToken, signIn } from "../auth/session";
+import { ConnectionPanel } from "./ConnectionPanel";
 import { statusOf } from "./engagementLabels";
 
 // SPEC-020 AC-9: refusals in plain words (the API returns fixed codes).
@@ -54,6 +56,10 @@ export function ClientEngagement({ engagementId }: { engagementId: string }): JS
     (c) => c.kind === "member" && c.role === "client_contributor",
   );
   const isAdmin = contacts.isSuccess;
+  const me = useQuery({ ...meOptions(), enabled: signedIn });
+  const active = me.data?.active_tenant_id;
+  const firmName =
+    me.data?.memberships.find((m) => m.tenant_id === active)?.firm_name ?? "your audit firm";
 
   const areas = new Map<string, RequestItemOut[]>();
   for (const item of items.data ?? []) {
@@ -82,6 +88,7 @@ export function ClientEngagement({ engagementId }: { engagementId: string }): JS
             </p>
           </div>
         )}
+        {isAdmin && <ConnectionPanel engagementId={engagementId} firmName={firmName} canConnect />}
         {items.isPending ? (
           <Skeleton className="h-40" />
         ) : items.isError ? (

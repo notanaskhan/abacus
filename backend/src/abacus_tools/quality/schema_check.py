@@ -148,7 +148,15 @@ APP_INSERT_COLUMNS.update(
             {"id", "tenant_id", "request_item_id", "evidence_version_id", "created_by_kind"}
             | {"created_by_id", "engagement_id"}
         ),
-        "connections": frozenset(),
+        # SPEC-020 (TASK-036): a client admin connects; states and sealed secrets are the flow's.
+        "connections": frozenset(
+            {"id", "tenant_id", "client_entity_id", "provider", "scopes", "created_by"}
+        ),
+        "connection_states": frozenset(
+            {"tenant_id", "engagement_id", "client_entity_id", "user_id", "provider"}
+            | {"state_hash", "expires_at"}
+        ),
+        "connection_secrets": frozenset({"connection_id", "tenant_id", "sealed"}),
         "agent_runs": frozenset(
             {"id", "tenant_id", "agent_id", "spec_version", "engagement_id", "task_scope"}
             | {"evidence_version_id", "initiator_user_id", "source_event_id"}
@@ -194,7 +202,10 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "engagements": frozenset({"status", "methodology_version_id"}),  # SPEC-008: pinned once
     "request_items": frozenset({"status", "client_visible", "client_assignee_user_id"}),
     "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
-    "connections": frozenset({"status"}),
+    "connections": frozenset(
+        {"status", "last_checked_at", "last_check_ok", "revoked_at", "revoked_by"}
+    ),
+    "connection_states": frozenset({"used_at"}),  # SPEC-020: spent once
     # SPEC-007 AC-7: a firm admin replaces the firm's budget (upsert).
     "budgets": frozenset({"monthly_soft_usd", "monthly_hard_usd", "updated_by", "updated_at"}),
     "feature_flag_states": frozenset({"value", "set_by", "reason", "set_at"}),  # SPEC-011
@@ -242,6 +253,8 @@ TABLE_OWNERS: dict[str, str] = {
     "evidence_versions": "evidence",
     "connections": "connections",
     "sync_runs": "connections",
+    "connection_states": "connections",
+    "connection_secrets": "connections",
     "ledger_snapshots": "ledger",
     "trial_balance_lines": "ledger",
     "fulfilments": "requests",

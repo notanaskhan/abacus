@@ -12,6 +12,7 @@ from abacus.modules.connections.connector import (
     RawPayload,
     Unavailable,
 )
+from abacus.modules.connections.events import ConnectionCreated, ConnectionRevoked
 from abacus.modules.connections.fake import FakeConnector, fixture_path
 from abacus.modules.connections.fake_format import parse_trial_balance
 from abacus.modules.connections.pipeline import (
@@ -32,7 +33,7 @@ from abacus.modules.connections.retrievals import (
     trigger_retrieval,
     workflow_id,
 )
-from abacus.modules.connections.routes import router
+from abacus.modules.connections.routes import complete_router, connection_router, router
 from abacus.modules.connections.service import (
     CONNECTORS,
     ActionCapReached,
@@ -58,6 +59,8 @@ __all__ = [
     "WORKFLOWS",
     "ActionCapReached",
     "Capabilities",
+    "ConnectionCreated",
+    "ConnectionRevoked",
     "Connector",
     "ConnectorError",
     "Dataset",
@@ -77,6 +80,8 @@ __all__ = [
     "StartedRun",
     "Unavailable",
     "WorkflowUnavailable",
+    "complete_router",
+    "connection_router",
     "connector_for",
     "fail_run",
     "fixture_path",

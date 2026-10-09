@@ -24,6 +24,7 @@ from abacus.modules.connections.api import (
     fixture_path,
     is_retryable,
 )
+from abacus.modules.connections.fake import DEMO_CREDENTIALS
 from abacus.modules.connections.models import Connection
 from abacus.modules.identity.api import Forbidden
 from abacus.modules.ledger.api import NormaliseError, Unvalidated
@@ -154,7 +155,8 @@ async def test_ac20_health_is_true_only_when_the_directory_exists(tmp_path: Path
 def test_ac20_the_fake_declares_a_trial_balance_only_read_connector() -> None:
     capabilities = FakeConnector(uuid.uuid4(), Path("unused")).capabilities()
     assert capabilities.datasets == frozenset({"trial_balance"})
-    assert capabilities.oauth is False
+    # SPEC-020 (TASK-036 D2): the demo sign-in.
+    assert capabilities.oauth is True
 
 
 @pytest.mark.parametrize(
@@ -241,3 +243,22 @@ def test_ac20_the_fake_connector_without_a_directory_is_unavailable(
         assert raised.value.code == "connector_unavailable"
     finally:
         settings.cache_clear()
+
+
+async def test_spec020_ac2_the_fake_demo_sign_in_returns_to_the_redirect_with_the_state() -> None:
+    fake = FakeConnector(uuid.uuid4(), Path("unused"))
+    url = await fake.authorise_url("s-1_x", "https://app.example.test/client/connect/callback")
+    assert url == "https://app.example.test/client/connect/callback?state=s-1_x&code=demo"
+    assert await fake.exchange_code("demo", "https://app.example.test/cb") == DEMO_CREDENTIALS
+
+
+@pytest.mark.parametrize("code", ["", "Demo", "demo2"])
+async def test_spec020_ac2_the_fake_refuses_any_other_code(code: str) -> None:
+    with pytest.raises(ConnectorError) as raised:
+        await FakeConnector(uuid.uuid4(), Path("unused")).exchange_code(code, "https://x.test/cb")
+    assert raised.value.code == "access_denied"
+
+
+async def test_spec020_ac2_the_fake_refuses_a_state_it_would_have_to_escape() -> None:
+    with pytest.raises(ConnectorError):
+        await FakeConnector(uuid.uuid4(), Path("unused")).authorise_url("a&b=c", "https://x.test")

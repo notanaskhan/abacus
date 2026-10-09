@@ -16,6 +16,9 @@ from datetime import date, datetime
 from typing import ClassVar, Literal
 
 Dataset = Literal["trial_balance"]
+# A provider's credentials as the connector serialises them: opaque to everything else, sealed
+# with the tenant's key at rest (ADR-035; SPEC-020 TASK-036 D2).
+Credentials = bytes
 
 
 _CODE = re.compile(r"[a-z][a-z_]{0,49}")
@@ -80,7 +83,7 @@ class Connector(ABC):
     async def authorise_url(self, state: str, redirect_uri: str) -> str: ...
 
     @abstractmethod
-    async def exchange_code(self, code: str, redirect_uri: str) -> None: ...
+    async def exchange_code(self, code: str, redirect_uri: str) -> Credentials | None: ...
 
     @abstractmethod
     async def refresh(self) -> None: ...

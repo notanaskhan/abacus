@@ -3,8 +3,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, acceptInvitation, acknowledgeSupportSession, addDocument, addTeamMember, applyMethodology, approveSupportSession, assign, assignToClient, changeTeamRole, clientContacts, createEngagement, createRequestItem, createWall, emergencyApprove, endSupportSession, engagementGraph, firmClients, firmMembers, getBudget, getDocument, getEngagement, getRetrieval, getVersion, import_, importTemplate, inviteClient, listDocuments, listEngagements, listEvidenceVersions, listNotifications, listRequestItems, listScreeningResults, listSupportSessions, listTemplates, listUploads, listWalls, me, metering, type Options, previewImport, putBudget, readAll, readNotification, reasonCodes, reject, release, removeClientContact, removeTeamMember, removeWall, requestSupportSession, resendClientInvitation, reviewQueue, revokeClientInvitation, revokeSupportSession, search, selfJoin, sendBack, setClientVisibility, startRetrieval, take, team, teamCandidates, upload, withdrawDocument } from '../sdk.gen';
-import type { AcceptData, AcceptError, AcceptInvitationData, AcceptInvitationError, AcceptInvitationResponse, AcceptResponse, AcknowledgeSupportSessionData, AcknowledgeSupportSessionError, AcknowledgeSupportSessionResponse, AddDocumentData, AddDocumentError, AddDocumentResponse, AddTeamMemberData, AddTeamMemberError, AddTeamMemberResponse, ApplyMethodologyData, ApplyMethodologyError, ApplyMethodologyResponse, ApproveSupportSessionData, ApproveSupportSessionError, ApproveSupportSessionResponse, AssignData, AssignError, AssignResponse, AssignToClientData, AssignToClientError, AssignToClientResponse, ChangeTeamRoleData, ChangeTeamRoleError, ChangeTeamRoleResponse, ClientContactsData, ClientContactsError, ClientContactsResponse, CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, EmergencyApproveData, EmergencyApproveError, EmergencyApproveResponse, EndSupportSessionData, EndSupportSessionError, EndSupportSessionResponse, EngagementGraphData, EngagementGraphError, EngagementGraphResponse, FirmClientsData, FirmClientsError, FirmClientsResponse, FirmMembersData, FirmMembersError, FirmMembersResponse, GetBudgetData, GetBudgetError, GetBudgetResponse, GetDocumentData, GetDocumentError, GetDocumentResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, GetVersionData, GetVersionError, GetVersionResponse, ImportData, ImportError, ImportResponse, ImportTemplateData, ImportTemplateError, ImportTemplateResponse, InviteClientData, InviteClientError, InviteClientResponse, ListDocumentsData, ListDocumentsError, ListDocumentsResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListNotificationsData, ListNotificationsError, ListNotificationsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListSupportSessionsData, ListSupportSessionsError, ListSupportSessionsResponse, ListTemplatesData, ListTemplatesError, ListTemplatesResponse, ListUploadsData, ListUploadsError, ListUploadsResponse, ListWallsData, ListWallsError, ListWallsResponse, MeData, MeError, MeResponse, MeteringData, MeteringError, MeteringResponse, PreviewImportData, PreviewImportError, PreviewImportResponse, PutBudgetData, PutBudgetError, PutBudgetResponse, ReadAllData, ReadAllError, ReadAllResponse, ReadNotificationData, ReadNotificationError, ReadNotificationResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseResponse, RemoveClientContactData, RemoveClientContactError, RemoveClientContactResponse, RemoveTeamMemberData, RemoveTeamMemberError, RemoveTeamMemberResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, RequestSupportSessionData, RequestSupportSessionError, RequestSupportSessionResponse, ResendClientInvitationData, ResendClientInvitationError, ResendClientInvitationResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, RevokeClientInvitationData, RevokeClientInvitationError, RevokeClientInvitationResponse, RevokeSupportSessionData, RevokeSupportSessionError, RevokeSupportSessionResponse, SearchData, SearchError, SearchResponse, SelfJoinData, SelfJoinError, SelfJoinResponse, SendBackData, SendBackError, SendBackResponse, SetClientVisibilityData, SetClientVisibilityError, SetClientVisibilityResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, TakeData, TakeError, TakeResponse, TeamCandidatesData, TeamCandidatesError, TeamCandidatesResponse, TeamData, TeamError, TeamResponse, UploadData, UploadError, UploadResponse, WithdrawDocumentData, WithdrawDocumentError, WithdrawDocumentResponse } from '../types.gen';
+import { accept, acceptInvitation, acknowledgeSupportSession, addDocument, addTeamMember, applyMethodology, approveSupportSession, assign, assignToClient, changeTeamRole, check, clientContacts, complete, connection, createEngagement, createRequestItem, createWall, emergencyApprove, endSupportSession, engagementGraph, firmClients, firmMembers, getBudget, getDocument, getEngagement, getRetrieval, getVersion, import_, importTemplate, inviteClient, listDocuments, listEngagements, listEvidenceVersions, listNotifications, listRequestItems, listScreeningResults, listSupportSessions, listTemplates, listUploads, listWalls, log, me, metering, type Options, previewImport, providers, putBudget, readAll, readNotification, reasonCodes, reject, release, removeClientContact, removeTeamMember, removeWall, requestSupportSession, resendClientInvitation, reviewQueue, revoke, revokeClientInvitation, revokeSupportSession, search, selfJoin, sendBack, setClientVisibility, start, startRetrieval, take, team, teamCandidates, upload, withdrawDocument } from '../sdk.gen';
+import type { AcceptData, AcceptError, AcceptInvitationData, AcceptInvitationError, AcceptInvitationResponse, AcceptResponse, AcknowledgeSupportSessionData, AcknowledgeSupportSessionError, AcknowledgeSupportSessionResponse, AddDocumentData, AddDocumentError, AddDocumentResponse, AddTeamMemberData, AddTeamMemberError, AddTeamMemberResponse, ApplyMethodologyData, ApplyMethodologyError, ApplyMethodologyResponse, ApproveSupportSessionData, ApproveSupportSessionError, ApproveSupportSessionResponse, AssignData, AssignError, AssignResponse, AssignToClientData, AssignToClientError, AssignToClientResponse, ChangeTeamRoleData, ChangeTeamRoleError, ChangeTeamRoleResponse, CheckData, CheckError, CheckResponse, ClientContactsData, ClientContactsError, ClientContactsResponse, CompleteData, CompleteError, CompleteResponse, ConnectionData, ConnectionError, ConnectionResponse, CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, EmergencyApproveData, EmergencyApproveError, EmergencyApproveResponse, EndSupportSessionData, EndSupportSessionError, EndSupportSessionResponse, EngagementGraphData, EngagementGraphError, EngagementGraphResponse, FirmClientsData, FirmClientsError, FirmClientsResponse, FirmMembersData, FirmMembersError, FirmMembersResponse, GetBudgetData, GetBudgetError, GetBudgetResponse, GetDocumentData, GetDocumentError, GetDocumentResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, GetVersionData, GetVersionError, GetVersionResponse, ImportData, ImportError, ImportResponse, ImportTemplateData, ImportTemplateError, ImportTemplateResponse, InviteClientData, InviteClientError, InviteClientResponse, ListDocumentsData, ListDocumentsError, ListDocumentsResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListNotificationsData, ListNotificationsError, ListNotificationsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListSupportSessionsData, ListSupportSessionsError, ListSupportSessionsResponse, ListTemplatesData, ListTemplatesError, ListTemplatesResponse, ListUploadsData, ListUploadsError, ListUploadsResponse, ListWallsData, ListWallsError, ListWallsResponse, LogData, LogError, LogResponse, MeData, MeError, MeResponse, MeteringData, MeteringError, MeteringResponse, PreviewImportData, PreviewImportError, PreviewImportResponse, ProvidersData, ProvidersError, ProvidersResponse, PutBudgetData, PutBudgetError, PutBudgetResponse, ReadAllData, ReadAllError, ReadAllResponse, ReadNotificationData, ReadNotificationError, ReadNotificationResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseResponse, RemoveClientContactData, RemoveClientContactError, RemoveClientContactResponse, RemoveTeamMemberData, RemoveTeamMemberError, RemoveTeamMemberResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, RequestSupportSessionData, RequestSupportSessionError, RequestSupportSessionResponse, ResendClientInvitationData, ResendClientInvitationError, ResendClientInvitationResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, RevokeClientInvitationData, RevokeClientInvitationError, RevokeClientInvitationResponse, RevokeData, RevokeError, RevokeResponse, RevokeSupportSessionData, RevokeSupportSessionError, RevokeSupportSessionResponse, SearchData, SearchError, SearchResponse, SelfJoinData, SelfJoinError, SelfJoinResponse, SendBackData, SendBackError, SendBackResponse, SetClientVisibilityData, SetClientVisibilityError, SetClientVisibilityResponse, StartData, StartError, StartResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, TakeData, TakeError, TakeResponse, TeamCandidatesData, TeamCandidatesError, TeamCandidatesResponse, TeamData, TeamError, TeamResponse, UploadData, UploadError, UploadResponse, WithdrawDocumentData, WithdrawDocumentError, WithdrawDocumentResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -64,6 +64,25 @@ export const putBudgetMutation = (options?: Partial<Options<PutBudgetData>>): Us
     const mutationOptions: UseMutationOptions<PutBudgetResponse, PutBudgetError, Options<PutBudgetData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await putBudget({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Complete Route
+ *
+ * SPEC-020 AC-2 (TASK-036 D1): the SPA hands back the provider's state and code.
+ */
+export const completeMutation = (options?: Partial<Options<CompleteData>>): UseMutationOptions<CompleteResponse, CompleteError, Options<CompleteData>> => {
+    const mutationOptions: UseMutationOptions<CompleteResponse, CompleteError, Options<CompleteData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await complete({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -205,6 +224,184 @@ export const revokeClientInvitationMutation = (options?: Partial<Options<RevokeC
     const mutationOptions: UseMutationOptions<RevokeClientInvitationResponse, RevokeClientInvitationError, Options<RevokeClientInvitationData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await revokeClientInvitation({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const connectionQueryKey = (options: Options<ConnectionData>) => createQueryKey('connection', options);
+
+/**
+ * Connection Route
+ *
+ * SPEC-020 AC-4: the live connection and its health, or null.
+ */
+export const connectionOptions = (options: Options<ConnectionData>) => queryOptions<ConnectionResponse, ConnectionError, ConnectionResponse, ReturnType<typeof connectionQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await connection({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: connectionQueryKey(options)
+});
+
+/**
+ * Check Route
+ *
+ * SPEC-020 AC-4: ask the provider now.
+ */
+export const checkMutation = (options?: Partial<Options<CheckData>>): UseMutationOptions<CheckResponse, CheckError, Options<CheckData>> => {
+    const mutationOptions: UseMutationOptions<CheckResponse, CheckError, Options<CheckData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await check({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const logQueryKey = (options: Options<LogData>) => createQueryKey('log', options);
+
+/**
+ * Log Route
+ *
+ * SPEC-020 AC-5: every pull, newest first.
+ */
+export const logOptions = (options: Options<LogData>) => queryOptions<LogResponse, LogError, LogResponse, ReturnType<typeof logQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await log({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: logQueryKey(options)
+});
+
+const createInfiniteParams = <K extends Pick<QueryKey<Options>[0], 'body' | 'headers' | 'path' | 'query'>>(queryKey: QueryKey<Options>, page: K) => {
+    const params = { ...queryKey[0] };
+    if (page.body) {
+        params.body = {
+            ...queryKey[0].body as any,
+            ...page.body as any
+        };
+    }
+    if (page.headers) {
+        params.headers = {
+            ...queryKey[0].headers,
+            ...page.headers
+        };
+    }
+    if (page.path) {
+        params.path = {
+            ...queryKey[0].path as any,
+            ...page.path as any
+        };
+    }
+    if (page.query) {
+        params.query = {
+            ...queryKey[0].query as any,
+            ...page.query as any
+        };
+    }
+    return params as unknown as typeof page;
+};
+
+export const logInfiniteQueryKey = (options: Options<LogData>): QueryKey<Options<LogData>> => createQueryKey('log', options, true);
+
+/**
+ * Log Route
+ *
+ * SPEC-020 AC-5: every pull, newest first.
+ */
+export const logInfiniteOptions = (options: Options<LogData>) => {
+    const opts = infiniteQueryOptions<LogResponse, LogError, InfiniteData<LogResponse>, QueryKey<Options<LogData>>, number | Pick<QueryKey<Options<LogData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<LogData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await log({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: logInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+export const providersQueryKey = (options: Options<ProvidersData>) => createQueryKey('providers', options);
+
+/**
+ * Providers Route
+ *
+ * SPEC-020 Q1: what can be connected here (the demo ledger only outside production).
+ */
+export const providersOptions = (options: Options<ProvidersData>) => queryOptions<ProvidersResponse, ProvidersError, ProvidersResponse, ReturnType<typeof providersQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await providers({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: providersQueryKey(options)
+});
+
+/**
+ * Revoke Route
+ *
+ * SPEC-020 AC-6: end the connection; pulls stop at once.
+ */
+export const revokeMutation = (options?: Partial<Options<RevokeData>>): UseMutationOptions<RevokeResponse, RevokeError, Options<RevokeData>> => {
+    const mutationOptions: UseMutationOptions<RevokeResponse, RevokeError, Options<RevokeData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await revoke({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Start Route
+ *
+ * SPEC-020 AC-2, AC-3: a client admin, signed in recently, starts connecting.
+ */
+export const startMutation = (options?: Partial<Options<StartData>>): UseMutationOptions<StartResponse, StartError, Options<StartData>> => {
+    const mutationOptions: UseMutationOptions<StartResponse, StartError, Options<StartData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await start({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -963,35 +1160,6 @@ export const listNotificationsOptions = (options?: Options<ListNotificationsData
     },
     queryKey: listNotificationsQueryKey(options)
 });
-
-const createInfiniteParams = <K extends Pick<QueryKey<Options>[0], 'body' | 'headers' | 'path' | 'query'>>(queryKey: QueryKey<Options>, page: K) => {
-    const params = { ...queryKey[0] };
-    if (page.body) {
-        params.body = {
-            ...queryKey[0].body as any,
-            ...page.body as any
-        };
-    }
-    if (page.headers) {
-        params.headers = {
-            ...queryKey[0].headers,
-            ...page.headers
-        };
-    }
-    if (page.path) {
-        params.path = {
-            ...queryKey[0].path as any,
-            ...page.path as any
-        };
-    }
-    if (page.query) {
-        params.query = {
-            ...queryKey[0].query as any,
-            ...page.query as any
-        };
-    }
-    return params as unknown as typeof page;
-};
 
 export const listNotificationsInfiniteQueryKey = (options?: Options<ListNotificationsData>): QueryKey<Options<ListNotificationsData>> => createQueryKey('listNotifications', options, true);
 

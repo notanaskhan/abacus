@@ -13,7 +13,7 @@ from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.connections.connector import Connector, ConnectorError, Period
+from abacus.modules.connections.connector import Connector, ConnectorError, Credentials, Period
 from abacus.modules.connections.fake import FakeConnector
 from abacus.modules.connections.models import Connection, SyncRun
 from abacus.modules.connections.repository import (
@@ -84,21 +84,22 @@ class RetrievalView:
         return "queued" if self.status == "running" and self.queued_reason else self.status
 
 
-def _fake(connection: Connection) -> Connector:
+def _fake(connection: Connection, credentials: Credentials | None) -> Connector:
     directory = settings().fake_connector_dir
     if directory is None:  # refused outside local/test by settings validation
         raise ConnectorError("connector_unavailable")
-    return FakeConnector(connection.id, Path(directory))
+    return FakeConnector(connection.id, Path(directory), credentials)
 
 
-CONNECTORS: dict[str, Callable[[Connection], Connector]] = {"fake": _fake}
+CONNECTORS: dict[str, Callable[[Connection, Credentials | None], Connector]] = {"fake": _fake}
 
 
-def connector_for(connection: Connection) -> Connector:
+def connector_for(connection: Connection, credentials: Credentials | None = None) -> Connector:
+    """The provider's connector, given the connection's opened credentials (if it has any)."""
     factory = CONNECTORS.get(connection.provider)
     if factory is None:
         raise ConnectorError("unknown_provider")
-    return factory(connection)
+    return factory(connection, credentials)
 
 
 async def start_retrieval(

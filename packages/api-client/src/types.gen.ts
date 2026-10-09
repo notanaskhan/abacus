@@ -237,6 +237,76 @@ export type ClientVisibilityIn = {
 };
 
 /**
+ * CompleteIn
+ */
+export type CompleteIn = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * State
+     */
+    state: string;
+};
+
+/**
+ * CompleteOut
+ */
+export type CompleteOut = {
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+};
+
+/**
+ * ConnectionOut
+ */
+export type ConnectionOut = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Created By
+     */
+    created_by: string;
+    /**
+     * Expires At
+     */
+    expires_at: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Last Check Ok
+     */
+    last_check_ok: boolean | null;
+    /**
+     * Last Checked At
+     */
+    last_checked_at: string | null;
+    /**
+     * Last Pull At
+     */
+    last_pull_at: string | null;
+    /**
+     * Provider
+     */
+    provider: string;
+    /**
+     * Scopes
+     */
+    scopes: Array<string>;
+    /**
+     * Status
+     */
+    status: 'active' | 'needs_attention';
+};
+
+/**
  * CoverageGapsOut
  */
 export type CoverageGapsOut = {
@@ -810,6 +880,44 @@ export type KnowledgeSearchIn = {
 };
 
 /**
+ * LogEntryOut
+ */
+export type LogEntryOut = {
+    /**
+     * Dataset
+     */
+    dataset: string;
+    /**
+     * Finished At
+     */
+    finished_at: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Period End
+     */
+    period_end: string;
+    /**
+     * Period Start
+     */
+    period_start: string;
+    /**
+     * Started At
+     */
+    started_at: string;
+    /**
+     * Started By
+     */
+    started_by: string;
+    /**
+     * Status
+     */
+    status: 'running' | 'succeeded' | 'failed_validation' | 'failed';
+};
+
+/**
  * MeOut
  */
 export type MeOut = {
@@ -954,6 +1062,24 @@ export type ProposalOut = {
      * Unverified
      */
     unverified: Array<string>;
+};
+
+/**
+ * ProviderOut
+ */
+export type ProviderOut = {
+    /**
+     * Datasets
+     */
+    datasets: Array<string>;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Provider
+     */
+    provider: string;
 };
 
 /**
@@ -1248,6 +1374,26 @@ export type SpendOut = {
      * Engagement Id
      */
     engagement_id: string | null;
+};
+
+/**
+ * StartIn
+ */
+export type StartIn = {
+    /**
+     * Provider
+     */
+    provider: string;
+};
+
+/**
+ * StartOut
+ */
+export type StartOut = {
+    /**
+     * Authorise Url
+     */
+    authorise_url: string;
 };
 
 /**
@@ -1690,6 +1836,57 @@ export type PutBudgetResponses = {
 
 export type PutBudgetResponse = PutBudgetResponses[keyof PutBudgetResponses];
 
+export type CompleteData = {
+    body: CompleteIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/connections/complete';
+};
+
+export type CompleteErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type CompleteError = CompleteErrors[keyof CompleteErrors];
+
+export type CompleteResponses = {
+    /**
+     * Successful Response
+     */
+    201: CompleteOut;
+};
+
+export type CompleteResponse = CompleteResponses[keyof CompleteResponses];
+
 export type ListEngagementsData = {
     body?: never;
     headers?: {
@@ -2115,6 +2312,337 @@ export type RevokeClientInvitationResponses = {
 };
 
 export type RevokeClientInvitationResponse = RevokeClientInvitationResponses[keyof RevokeClientInvitationResponses];
+
+export type ConnectionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/connection';
+};
+
+export type ConnectionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ConnectionError = ConnectionErrors[keyof ConnectionErrors];
+
+export type ConnectionResponses = {
+    /**
+     * Response Connection
+     *
+     * Successful Response
+     */
+    200: ConnectionOut | null;
+};
+
+export type ConnectionResponse = ConnectionResponses[keyof ConnectionResponses];
+
+export type CheckData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/connection/check';
+};
+
+export type CheckErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type CheckError = CheckErrors[keyof CheckErrors];
+
+export type CheckResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConnectionOut;
+};
+
+export type CheckResponse = CheckResponses[keyof CheckResponses];
+
+export type LogData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: {
+        /**
+         * Page
+         */
+        page?: number;
+    };
+    url: '/v1/engagements/{engagement_id}/connection/log';
+};
+
+export type LogErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type LogError = LogErrors[keyof LogErrors];
+
+export type LogResponses = {
+    /**
+     * Response Log
+     *
+     * Successful Response
+     */
+    200: Array<LogEntryOut>;
+};
+
+export type LogResponse = LogResponses[keyof LogResponses];
+
+export type ProvidersData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/connection/providers';
+};
+
+export type ProvidersErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ProvidersError = ProvidersErrors[keyof ProvidersErrors];
+
+export type ProvidersResponses = {
+    /**
+     * Response Providers
+     *
+     * Successful Response
+     */
+    200: Array<ProviderOut>;
+};
+
+export type ProvidersResponse = ProvidersResponses[keyof ProvidersResponses];
+
+export type RevokeData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/connection/revoke';
+};
+
+export type RevokeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RevokeError = RevokeErrors[keyof RevokeErrors];
+
+export type RevokeResponses = {
+    /**
+     * Successful Response
+     */
+    200: CompleteOut;
+};
+
+export type RevokeResponse = RevokeResponses[keyof RevokeResponses];
+
+export type StartData = {
+    body: StartIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/connection/start';
+};
+
+export type StartErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type StartError = StartErrors[keyof StartErrors];
+
+export type StartResponses = {
+    /**
+     * Successful Response
+     */
+    200: StartOut;
+};
+
+export type StartResponse = StartResponses[keyof StartResponses];
 
 export type ListEvidenceVersionsData = {
     body?: never;

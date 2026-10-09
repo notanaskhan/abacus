@@ -5,11 +5,17 @@ from __future__ import annotations
 from datetime import UTC, date, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import func, select, text, update
+from sqlalchemy import delete, func, insert, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from abacus.modules.connections.models import Connection, SyncRun
+from abacus.modules.connections.models import (
+    Connection,
+    ConnectionSecret,
+    ConnectionState,
+    SyncRun,
+)
+from abacus.modules.identity.api import AuthContext, visible
 
 
 async def active_connection_for(
@@ -182,3 +188,154 @@ async def finish(
         .returning(SyncRun.id)
     )
     return result.scalar_one_or_none() is not None
+
+
+# --- The connection flow (SPEC-020; TASK-036) --------------------------------------------------
+
+LIVE = ("active", "needs_attention")
+
+
+async def live_connection_for(
+    session: AsyncSession, client_entity_id: UUID, *, lock: bool = False
+) -> Connection | None:
+    """The entity's live connection (active or needing attention), if any; at most one exists."""
+    query = select(Connection).where(
+        Connection.client_entity_id == client_entity_id, Connection.status.in_(LIVE)
+    )
+    if lock:
+        query = query.with_for_update()
+    return (await session.execute(query)).scalar_one_or_none()
+
+
+async def insert_connection(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    client_entity_id: UUID,
+    provider: str,
+    created_by: str,
+) -> Connection:
+    return (
+        await session.execute(
+            insert(Connection)
+            .values(
+                id=uuid4(),
+                tenant_id=tenant_id,
+                client_entity_id=client_entity_id,
+                provider=provider,
+                scopes=[],
+                created_by=created_by,
+            )
+            .returning(Connection)
+        )
+    ).scalar_one()
+
+
+async def set_connection(session: AsyncSession, connection_id: UUID, **values: object) -> None:
+    await session.execute(
+        update(Connection).where(Connection.id == connection_id).values(**values)
+    )
+
+
+async def insert_secret(
+    session: AsyncSession, *, tenant_id: UUID, connection_id: UUID, sealed: bytes
+) -> None:
+    await session.execute(
+        insert(ConnectionSecret).values(
+            connection_id=connection_id, tenant_id=tenant_id, sealed=sealed
+        )
+    )
+
+
+async def secret_of(session: AsyncSession, connection_id: UUID) -> bytes | None:
+    return (
+        await session.execute(
+            select(ConnectionSecret.sealed).where(ConnectionSecret.connection_id == connection_id)
+        )
+    ).scalar_one_or_none()
+
+
+async def destroy_secret(session: AsyncSession, connection_id: UUID) -> bool:
+    deleted = await session.execute(
+        delete(ConnectionSecret)
+        .where(ConnectionSecret.connection_id == connection_id)
+        .returning(ConnectionSecret.connection_id)
+    )
+    return deleted.scalar_one_or_none() is not None
+
+
+async def insert_state(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    engagement_id: UUID,
+    client_entity_id: UUID,
+    user_id: UUID,
+    provider: str,
+    state_hash: str,
+    expires_at: datetime,
+) -> UUID:
+    return (
+        await session.execute(
+            insert(ConnectionState)
+            .values(
+                tenant_id=tenant_id,
+                engagement_id=engagement_id,
+                client_entity_id=client_entity_id,
+                user_id=user_id,
+                provider=provider,
+                state_hash=state_hash,
+                expires_at=expires_at,
+            )
+            .returning(ConnectionState.id)
+        )
+    ).scalar_one()
+
+
+async def lock_state(session: AsyncSession, state_hash: str) -> ConnectionState | None:
+    return (
+        await session.execute(
+            select(ConnectionState)
+            .where(ConnectionState.state_hash == state_hash)
+            .with_for_update()
+        )
+    ).scalar_one_or_none()
+
+
+async def spend_state(session: AsyncSession, state_id: UUID) -> None:
+    await session.execute(
+        update(ConnectionState)
+        .where(ConnectionState.id == state_id)
+        .values(used_at=func.clock_timestamp())
+    )
+
+
+async def last_success(session: AsyncSession, connection_id: UUID) -> datetime | None:
+    """When the connection last delivered a successful pull."""
+    return await session.scalar(
+        select(func.max(SyncRun.finished_at)).where(
+            SyncRun.connection_id == connection_id, SyncRun.status == "succeeded"
+        )
+    )
+
+
+async def list_access_log(
+    session: AsyncSession, ctx: AuthContext, engagement_id: UUID, *, limit: int, offset: int
+) -> list[SyncRun]:
+    """The engagement's pulls, newest first (the client-visible access log, ADR-040)."""
+    return list(
+        (
+            await session.execute(
+                select(SyncRun)
+                .where(
+                    SyncRun.engagement_id == engagement_id,
+                    visible(ctx, "connection.read_log", SyncRun.engagement_id),
+                )
+                .order_by(SyncRun.started_at.desc(), SyncRun.id)
+                .limit(limit)
+                .offset(offset)
+            )
+        )
+        .scalars()
+        .all()
+    )

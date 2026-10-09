@@ -45,6 +45,8 @@ ROUTERS = (
     requests.router,
     requests.methodology_router,
     connections.router,
+    connections.connection_router,  # SPEC-020 (TASK-036)
+    connections.complete_router,
     evidence.router,
     agents.router,
     agents.graph_router,
