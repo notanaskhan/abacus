@@ -34,7 +34,7 @@
 |---|---|---|---|
 | Request list | The full set of items requested for an engagement. UI may label it "PBC list". | `request_list` | pbc_list, checklist |
 | Request item | One thing asked for. UI may label it "PBC request". | `request_item` | pbc_item, ask, task, request (alone) |
-| Retrievability tier | Classification of a request item, A to E, by whether it can be retrieved or must be requested. | `retrievability_tier` | type, source_type |
+| Retrievability tier | Classification of a request item, A to E, by whether it can be retrieved or must be requested (SPEC-022): **A** a standard report the connected system produces as is; **B** derivable by code from retrieved ledger data; **C** a document attached to records in the connected system; **D** held by the client, not in the connected system; **E** from third parties or physical records. A to C are *retrievable*. | `retrievability_tier` | type, source_type |
 | Fulfilment | The link between a request item and an evidence item that satisfies it. | `fulfilment` | match, link, mapping |
 | Evidence item | The stable concept of a piece of evidence, e.g. "AR aging at 31 Dec". | `evidence_item` | document, file, artifact, attachment |
 | Evidence version | One immutable snapshot of an evidence item. | `evidence_version` | revision, copy, upload |

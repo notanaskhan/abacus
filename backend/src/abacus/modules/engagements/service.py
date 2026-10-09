@@ -241,6 +241,14 @@ async def client_of(tenant: TenantContext, engagement_id: UUID) -> UUID | None:
     return engagement.client_id if engagement is not None else None
 
 
+async def entity_of(tenant: TenantContext, engagement_id: UUID) -> UUID | None:
+    """The engagement's client entity, or None outside the tenant (SPEC-022: whose connection
+    serves it, for the platform's automatic retrievals)."""
+    async with tenant_session(tenant) as session:
+        engagement = await get_engagement(session, engagement_id)
+    return engagement.client_entity_id if engagement is not None else None
+
+
 # --- Methodology templates (SPEC-008) ---------------------------------------------------------
 
 

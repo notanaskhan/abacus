@@ -38,3 +38,11 @@ The parser (`workbook.py`) is read-only, bounded (5 MB, 2,000 rows), and reports
   - `PUT …/request-items/{item_id}/client-visibility` (`request_item.update`);
   - `PUT …/client-assignee` (`request_item.assign`, 409 `not_a_client_contributor`).
 - **Uploads:** `fulfil_by_upload` links an uploaded version to its item and marks it received, for a caller that authorised `evidence.upload` on the item.
+
+## Classification (SPEC-022; TASK-038)
+- **`classification.py`:** ordered keyword rules (stable IDs, audited).
+  - Precedence: override > the firm's own tier (methodology or imported list) > rule > unclassified.
+  - A items name their `dataset`.
+- **When items are classified:** on insert (add, import, methodology), audited `request_item.classified`. `RequestItemClassified` is emitted for A items with a dataset.
+- **Overrides:** `PUT …/request-items/{item_id}/tier` (`request_item.update`), audited `request_item.tier_overridden`. Clearing the override reapplies the rules.
+- **Availability:** `available` on each item comes from the live connection's capabilities, through `register_available_datasets` (connections registers it, ADR-106). Unregistered means nothing is available.

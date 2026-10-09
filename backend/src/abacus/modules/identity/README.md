@@ -96,3 +96,9 @@ On removal, the hook that evidence registers (`register_member_removed`) release
 - **For lists:** `visible_items` is the list-query twin. `authorise_items` lets a client list an engagement's items, which are then filtered row by row.
 - **`visible()` counts client roles** the matrix allows (it agrees with `authorise`). Client roles read engagement metadata (their own engagements only).
 - **Client contacts** now carry members' display names.
+
+## Standing consent (SPEC-022 TASK-038 D3)
+`member_context(tenant_id, user_id)` is an `AuthContext` for a live membership, with no MFA time.
+- **Its use:** background work the platform starts on a person's standing consent (today only automatic retrieval, for the client admin who connected).
+- **Fails closed:** it returns None once the membership is no longer active.
+- **New callers need the founder's approval.**

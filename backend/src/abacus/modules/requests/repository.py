@@ -56,6 +56,9 @@ async def insert_request_item(
     audit_area: str,
     created_by: UUID,
     retrievability_tier: str | None = None,
+    dataset: str | None = None,
+    tier_source: str | None = None,
+    tier_rule: str | None = None,
 ) -> RequestItem:
     return (
         await session.execute(
@@ -69,6 +72,9 @@ async def insert_request_item(
                 audit_area=audit_area,
                 created_by=created_by,
                 retrievability_tier=retrievability_tier,
+                dataset=dataset,
+                tier_source=tier_source,
+                tier_rule=tier_rule,
             )
             .returning(RequestItem)
         )
@@ -262,3 +268,19 @@ async def item_keys(
         )
     )
     return [(area, description) for area, description in rows.all()]
+
+
+async def set_classification(
+    session: AsyncSession,
+    item_id: UUID,
+    *,
+    tier: str | None,
+    dataset: str | None,
+    source: str | None,
+    rule: str | None,
+) -> None:
+    await session.execute(
+        update(RequestItem)
+        .where(RequestItem.id == item_id)
+        .values(retrievability_tier=tier, dataset=dataset, tier_source=source, tier_rule=rule)
+    )

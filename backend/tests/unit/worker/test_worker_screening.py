@@ -46,7 +46,11 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
         worker_main.communications,  # SPEC-015: invitation emails
     ) == worker_main.MODULES
     assert tuple(m.SUBSCRIPTIONS for m in worker_main.MODULES) == worker_main.SUBSCRIBERS
-    assert worker_main.connections.SUBSCRIPTIONS == {}
+    # SPEC-022 (TASK-038): automatic retrieval when a client connects or an item is classified.
+    assert set(worker_main.connections.SUBSCRIPTIONS) == {
+        "connection.created",
+        "request_item.classified",
+    }
     assert worker_main.agents.SUBSCRIPTIONS in worker_main.SUBSCRIBERS
 
 
@@ -54,10 +58,14 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
     built = worker_main.publisher()
     assert isinstance(built, RoutingPublisher)
     # SPEC-009 adds knowledge embedding beside screening.
-    assert list(built.handlers)[:2] == [EVIDENCE_VERSION_CREATED, "knowledge_document.added"]
-    assert set(list(built.handlers)[2:]) == set(worker_main.notifications.CATALOGUE) | {
-        "client_invitation.issued"  # SPEC-015
+    assert set(built.handlers) == set(worker_main.notifications.CATALOGUE) | {
+        EVIDENCE_VERSION_CREATED,
+        "knowledge_document.added",
+        "client_invitation.issued",  # SPEC-015
+        "request_item.classified",  # SPEC-022: automatic retrieval
     }
+    # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
+    assert worker_main.connections.on_connection_created in built.handlers["connection.created"]
     assert list(built.handlers[EVIDENCE_VERSION_CREATED]) == [worker_main.agents.start_screening]
 
 

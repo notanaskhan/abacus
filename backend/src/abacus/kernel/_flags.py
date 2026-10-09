@@ -14,7 +14,13 @@ PROMPT_EVIDENCE_SCREENER = Flag(
         "evidence.screen@v0",
     ),
 )
+RETRIEVAL_AUTO = Flag(
+    name="retrieval.auto",
+    kind="boolean",
+    default="false",
+)
 
 FLAGS: dict[str, Flag] = {
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
+    "retrieval.auto": RETRIEVAL_AUTO,
 }

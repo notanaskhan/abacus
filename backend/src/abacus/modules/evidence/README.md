@@ -61,3 +61,9 @@ Evidence items and their immutable versions (glossary; ADR-004). Owns `evidence_
 - **`GET …/evidence-versions/{version_id}/content`** (`evidence.read`): the bytes, through `read_version` (authorised, audited `evidence_version.read`, fingerprint-verified).
   - Served as an attachment with an ASCII-safe name, `nosniff` and `no-store`; never inline.
   - A verification failure is a 409 `integrity_failed`, logged.
+
+## Board summary (SPEC-022 AC-5; TASK-038)
+`GET …/board-summary` (`request_item.read`):
+- counts by status and tier, and how many are unclassified;
+- "retrieved, never asked": items whose first fulfilling version was retrieved;
+- the retrievable share (A to C over classified items).

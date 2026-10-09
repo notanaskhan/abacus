@@ -33,10 +33,34 @@ def upgrade() -> None:
             ADD COLUMN last_checked_at timestamptz NULL,
             ADD COLUMN last_check_ok boolean NULL,
             ADD COLUMN revoked_at timestamptz NULL,
-            ADD COLUMN revoked_by text NULL CHECK (length(revoked_by) BETWEEN 1 AND 200),
-            ADD CONSTRAINT connections_revoked_has_when
-                CHECK ((status = 'revoked') = (revoked_at IS NOT NULL))
+            ADD COLUMN revoked_by text NULL CHECK (length(revoked_by) BETWEEN 1 AND 200)
         """
+    )
+    # Connections revoked before this migration (by tooling) have no time or person: record the
+    # migration as both, and keep only the newest live connection per entity, so the constraints
+    # below hold on any existing database.
+    # The owner is subject to forced row-level security; the backfill spans every firm.
+    op.execute("ALTER TABLE connections NO FORCE ROW LEVEL SECURITY")
+    op.execute(
+        "UPDATE connections SET revoked_at = created_at, revoked_by = 'migration-0029' "
+        "WHERE status = 'revoked'"
+    )
+    op.execute(
+        """
+        UPDATE connections c SET status = 'revoked', revoked_at = clock_timestamp(),
+            revoked_by = 'migration-0029'
+        WHERE c.status <> 'revoked' AND EXISTS (
+            SELECT 1 FROM connections newer
+            WHERE newer.tenant_id = c.tenant_id AND newer.client_entity_id = c.client_entity_id
+              AND newer.status <> 'revoked'
+              AND (newer.created_at, newer.id) > (c.created_at, c.id)
+        )
+        """
+    )
+    op.execute("ALTER TABLE connections FORCE ROW LEVEL SECURITY")
+    op.execute(
+        "ALTER TABLE connections ADD CONSTRAINT connections_revoked_has_when "
+        "CHECK ((status = 'revoked') = (revoked_at IS NOT NULL))"
     )
     op.execute(
         "CREATE UNIQUE INDEX connections_one_live ON connections (tenant_id, client_entity_id) "

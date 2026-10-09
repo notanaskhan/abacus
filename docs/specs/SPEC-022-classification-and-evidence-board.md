@@ -138,7 +138,7 @@ The SPEC-016 Board, with a filter bar above the list and a summary strip (counts
 | AC-5, AC-6 | component (vitest) | Filters, URL state, summary strip, states |
 
 ## 19. Rollout
-One requests migration. Auto-retrieval sits behind a feature flag (`auto_retrieval`, default on locally, off elsewhere until staging is proven) (Q6).
+One requests migration. Auto-retrieval sits behind a feature flag (`retrieval.auto`, default off; the local seed turns it on) (Q6).
 
 ## 20. Open questions
 None. Answered by the founder on 2026-10-09 (all recommendations, including the tier meanings in Q1):

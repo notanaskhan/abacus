@@ -7,7 +7,9 @@ import {
   listEvidenceVersionsQueryKey,
   listRequestItemsOptions,
   listRequestItemsQueryKey,
+  boardSummaryOptions,
   setClientVisibilityMutation,
+  setTierMutation,
   listScreeningResultsOptions,
   listScreeningResultsQueryKey,
   startRetrievalMutation,
@@ -25,9 +27,10 @@ import {
   Spinner,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { type JSX, type ReactNode, type SyntheticEvent, useEffect, useState } from "react";
 import { errorMessage } from "../api";
+import { type BoardFilters, TIER_MEANING, applyFilters, readFilters } from "../board/filters";
 import {
   type BoardRow,
   awaitingScreening,
@@ -55,6 +58,19 @@ export function Board({
   const engagement = useQuery(getEngagementOptions(path));
   const items = useQuery(listRequestItemsOptions(path));
   const versions = useQuery(listEvidenceVersionsOptions(path));
+  const search = useRouterState({ select: (state) => state.location.search });
+  const filters = readFilters(search);
+  const navigate = useNavigate();
+  const setFilter = (key: keyof BoardFilters, value: string): void => {
+    void navigate({
+      to: ".",
+      search: (previous: Record<string, unknown>) => ({
+        ...previous,
+        [key]: value === "" ? undefined : value,
+      }),
+      replace: true,
+    });
+  };
   const [pollingSince] = useState(() => Date.now());
   // A timer, not a clock read in render: when the cap passes, re-render to offer Check again.
   const [pollingExpired, setPollingExpired] = useState(false);
@@ -113,6 +129,7 @@ export function Board({
     return <Spinner label="Loading…" />;
   }
   const rows = boardRows(items.data, versions.data, results.data);
+  const shown = applyFilters(rows, filters);
 
   return (
     <section aria-labelledby="board-heading" className="flex flex-col gap-4">
@@ -127,13 +144,25 @@ export function Board({
         </p>
       </div>
       <AddRequestItem engagementId={engagementId} />
+      <SummaryStrip engagementId={engagementId} />
+      {rows.length > 0 && (
+        <FilterBar
+          filters={filters}
+          areas={[...new Set(rows.map((r) => r.item.audit_area))].sort()}
+          onChange={setFilter}
+        />
+      )}
       {rows.length === 0 ? (
         <EmptyState title="No request items yet">
           Add one to request evidence from the client.
         </EmptyState>
+      ) : shown.length === 0 ? (
+        <EmptyState title="No items match these filters">
+          Clear a filter to see more requests.
+        </EmptyState>
       ) : (
         <ul className="flex flex-col gap-3" aria-label="Request items">
-          {rows.map((row) => (
+          {shown.map((row) => (
             <li key={row.item.id}>
               <RequestItemCard
                 row={row}
@@ -172,7 +201,10 @@ function RequestItemCard({
           >
             {item.description}
           </Link>
-          <p className="text-sm text-muted">{item.audit_area}</p>
+          <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
+            {item.audit_area}
+            <TierChip item={item} />
+          </p>
         </div>
         <Badge tone={statusTone(item.status)} aria-label={`Status: ${statusLabel(item.status)}`}>
           {statusLabel(item.status)}
@@ -209,6 +241,7 @@ function RequestItemCard({
         {(item.status === "open" || item.status === "received") && (
           <Retrieve item={item} engagement={engagement} />
         )}
+        <TierOverride item={item} />
         <HiddenFromClient item={item} />
       </div>
     </Card>
@@ -449,4 +482,181 @@ function statusTone(status: RequestItemOut["status"]): "neutral" | "success" | "
     : status === "needs_revision"
       ? "warning"
       : "neutral";
+}
+
+const STATUS_FILTERS: [string, string][] = [
+  ["open", "Open"],
+  ["received", "Received"],
+  ["ready_for_review", "Ready for review"],
+  ["needs_revision", "Needs revision"],
+  ["accepted", "Accepted"],
+];
+const SELECT_CLASS =
+  "h-8 rounded-[var(--radius-control)] border border-line bg-surface px-2 text-sm";
+
+/** SPEC-022 AC-5: narrow the list; every choice lives in the URL. */
+function FilterBar({
+  filters,
+  areas,
+  onChange,
+}: {
+  filters: BoardFilters;
+  areas: string[];
+  onChange: (key: keyof BoardFilters, value: string) => void;
+}): JSX.Element {
+  const select = (
+    key: keyof BoardFilters,
+    label: string,
+    options: [string, string][],
+  ): JSX.Element => (
+    <label className="flex flex-col gap-1 text-xs text-muted">
+      {label}
+      <select
+        className={SELECT_CLASS}
+        value={filters[key] ?? ""}
+        onChange={(event) => {
+          onChange(key, event.target.value);
+        }}
+      >
+        <option value="">All</option>
+        {options.map(([value, text]) => (
+          <option key={value} value={value}>
+            {text}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+  return (
+    <div role="search" aria-label="Filter requests" className="flex flex-wrap items-end gap-3">
+      {select("status", "Status", STATUS_FILTERS)}
+      {select(
+        "area",
+        "Audit area",
+        areas.map((a) => [a, a]),
+      )}
+      {select("tier", "Tier", [
+        ...Object.keys(TIER_MEANING).map((t): [string, string] => [t, `Tier ${t}`]),
+        ["none", "Unclassified"],
+      ])}
+      {select("source", "Evidence", [
+        ["retrieved", "Retrieved"],
+        ["uploaded", "Uploaded"],
+        ["none", "None yet"],
+      ])}
+      {select("assignee", "Client assignee", [
+        ["assigned", "Assigned"],
+        ["unassigned", "Unassigned"],
+      ])}
+      <label className="flex flex-col gap-1 text-xs text-muted">
+        Search
+        <input
+          type="search"
+          className={SELECT_CLASS}
+          value={filters.q ?? ""}
+          onChange={(event) => {
+            onChange("q", event.target.value);
+          }}
+        />
+      </label>
+    </div>
+  );
+}
+
+/** SPEC-022 AC-5: counts, "retrieved, never asked" and the retrievable share. */
+function SummaryStrip({ engagementId }: { engagementId: string }): JSX.Element | null {
+  const summary = useQuery({
+    ...boardSummaryOptions({ path: { engagement_id: engagementId } }),
+    retry: false,
+  });
+  if (summary.data === undefined) return null;
+  const s = summary.data;
+  const share = s.retrievable_share;
+  return (
+    <dl
+      aria-label="Board summary"
+      className="grid grid-cols-2 gap-3 rounded-[var(--radius-panel)] border border-line bg-surface p-3 text-sm sm:grid-cols-4"
+    >
+      <div>
+        <dt className="text-muted">Requests</dt>
+        <dd className="text-lg font-semibold tabular-nums">{s.total}</dd>
+      </div>
+      <div>
+        <dt className="text-muted">Retrieved, never asked</dt>
+        <dd className="text-lg font-semibold tabular-nums">{s.retrieved_never_asked}</dd>
+      </div>
+      <div>
+        <dt className="text-muted">Retrievable share</dt>
+        <dd className="text-lg font-semibold tabular-nums">
+          {share === null ? "—" : `${String(Math.round(share * 100))}%`}
+        </dd>
+      </div>
+      <div>
+        <dt className="text-muted">Unclassified</dt>
+        <dd className="text-lg font-semibold tabular-nums">{s.unclassified}</dd>
+      </div>
+    </dl>
+  );
+}
+
+function TierChip({ item }: { item: RequestItemOut }): JSX.Element {
+  const tier = item.retrievability_tier;
+  if (tier == null) return <span className="text-xs">Unclassified</span>;
+  const unavailable = tier === "A" && item.dataset != null && item.available !== true;
+  return (
+    <span className="inline-flex items-center gap-1 text-xs">
+      <span
+        title={TIER_MEANING[tier]}
+        className="rounded border border-line px-1.5 font-semibold text-ink"
+      >
+        Tier {tier}
+      </span>
+      {item.tier_source === "override" && <span>(set by the team)</span>}
+      {unavailable && <span>· not available from the connected system</span>}
+    </span>
+  );
+}
+
+/** SPEC-022 AC-2: the team can set a tier, or let the rules decide again. */
+function TierOverride({ item }: { item: RequestItemOut }): JSX.Element {
+  const queryClient = useQueryClient();
+  const change = useMutation({
+    ...setTierMutation(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: listRequestItemsQueryKey({ path: { engagement_id: item.engagement_id } }),
+      });
+    },
+  });
+  const value = item.tier_source === "override" ? (item.retrievability_tier ?? "") : "";
+  return (
+    <label className="flex items-center gap-2 text-sm text-muted">
+      Tier
+      <select
+        aria-label={`Tier for ${item.description}`}
+        className={SELECT_CLASS}
+        value={value}
+        disabled={change.isPending}
+        onChange={(event) => {
+          const next = event.target.value;
+          change.mutate({
+            path: { engagement_id: item.engagement_id, item_id: item.id },
+            body: { tier: next === "" ? null : (next as "A" | "B" | "C" | "D" | "E") },
+          });
+        }}
+      >
+        <option value="">Automatic</option>
+        {Object.keys(TIER_MEANING).map((t) => (
+          <option key={t} value={t}>
+            {t}
+          </option>
+        ))}
+      </select>
+      {change.isError && (
+        <span role="alert" className="text-danger">
+          {errorMessage(change.error)}
+        </span>
+      )}
+    </label>
+  );
 }
