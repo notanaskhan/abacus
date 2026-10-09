@@ -109,6 +109,40 @@ export type AssignIn = {
 };
 
 /**
+ * BoardSummaryOut
+ */
+export type BoardSummaryOut = {
+    /**
+     * By Status
+     */
+    by_status: {
+        [key: string]: number;
+    };
+    /**
+     * By Tier
+     */
+    by_tier: {
+        [key: string]: number;
+    };
+    /**
+     * Retrievable Share
+     */
+    retrievable_share: number | null;
+    /**
+     * Retrieved Never Asked
+     */
+    retrieved_never_asked: number;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Unclassified
+     */
+    unclassified: number;
+};
+
+/**
  * BudgetIn
  */
 export type BudgetIn = {
@@ -1280,6 +1314,10 @@ export type RequestItemOut = {
      */
     audit_area: string;
     /**
+     * Available
+     */
+    available?: boolean;
+    /**
      * Client Assignee User Id
      */
     client_assignee_user_id?: string | null;
@@ -1291,6 +1329,10 @@ export type RequestItemOut = {
      * Created At
      */
     created_at: string;
+    /**
+     * Dataset
+     */
+    dataset?: string | null;
     /**
      * Description
      */
@@ -1315,6 +1357,10 @@ export type RequestItemOut = {
      * Status
      */
     status: 'open' | 'received' | 'ready_for_review' | 'needs_revision';
+    /**
+     * Tier Source
+     */
+    tier_source?: 'override' | 'methodology' | 'rule' | null;
 };
 
 /**
@@ -1675,6 +1721,16 @@ export type TemplateVersionOut = {
      * Version Id
      */
     version_id: string;
+};
+
+/**
+ * TierIn
+ */
+export type TierIn = {
+    /**
+     * Tier
+     */
+    tier: 'A' | 'B' | 'C' | 'D' | 'E' | null;
 };
 
 /**
@@ -2123,6 +2179,58 @@ export type GetEngagementResponses = {
 };
 
 export type GetEngagementResponse = GetEngagementResponses[keyof GetEngagementResponses];
+
+export type BoardSummaryData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/board-summary';
+};
+
+export type BoardSummaryErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type BoardSummaryError = BoardSummaryErrors[keyof BoardSummaryErrors];
+
+export type BoardSummaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: BoardSummaryOut;
+};
+
+export type BoardSummaryResponse = BoardSummaryResponses[keyof BoardSummaryResponses];
 
 export type ClientContactsData = {
     body?: never;
@@ -3502,6 +3610,62 @@ export type SetClientVisibilityResponses = {
 };
 
 export type SetClientVisibilityResponse = SetClientVisibilityResponses[keyof SetClientVisibilityResponses];
+
+export type SetTierData = {
+    body: TierIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/tier';
+};
+
+export type SetTierErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SetTierError = SetTierErrors[keyof SetTierErrors];
+
+export type SetTierResponses = {
+    /**
+     * Successful Response
+     */
+    200: RequestItemOut;
+};
+
+export type SetTierResponse = SetTierResponses[keyof SetTierResponses];
 
 export type ListUploadsData = {
     body?: never;

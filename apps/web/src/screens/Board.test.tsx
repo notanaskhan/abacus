@@ -112,11 +112,17 @@ describe("ac18 Board screen", () => {
     renderRoutes([{ path: "/", component: () => <Board engagementId={E} /> }]);
     expect(await screen.findByRole("heading", { name: "FY25 audit" })).toBeTruthy();
     expect(screen.getByText("Trial balance")).toBeTruthy();
-    expect(screen.getByText("Financial reporting")).toBeTruthy();
-    expect(screen.getByText("Received")).toBeTruthy();
+    expect(
+      within(screen.getByRole("list", { name: "Request items" })).getByText("Financial reporting"),
+    ).toBeTruthy();
+    expect(
+      within(screen.getByRole("list", { name: "Request items" })).getByText("Received"),
+    ).toBeTruthy();
     expect(screen.getByText("Retrieved · version 1")).toBeTruthy();
     expect(screen.getByText(/Agent proposes/)).toBeTruthy();
-    expect(screen.getByText("Ready for review")).toBeTruthy();
+    expect(
+      within(screen.getByRole("list", { name: "Request items" })).getByText("Ready for review"),
+    ).toBeTruthy();
     expect(screen.getByText(/90%/)).toBeTruthy();
     expect(screen.getByText("Totals agree with the ledger.")).toBeTruthy();
   });
@@ -181,7 +187,9 @@ describe("ac18 Board screen", () => {
     renderRoutes([{ path: "/", component: () => <Board engagementId={E} /> }]);
     expect(await screen.findByText("No evidence yet")).toBeTruthy();
     expect(screen.queryByText("Screening…")).toBeNull();
-    expect(screen.getByText("Open")).toBeTruthy();
+    expect(
+      within(screen.getByRole("list", { name: "Request items" })).getByText("Open"),
+    ).toBeTruthy();
   });
 
   it("shows a busy skeleton while loading", async () => {
@@ -232,7 +240,11 @@ describe("ac18 Board screen", () => {
       target: { value: "Financial reporting" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Add request item" }));
-    expect(await screen.findByText("Financial reporting")).toBeTruthy();
+    expect(
+      await within(await screen.findByRole("list", { name: "Request items" })).findByText(
+        "Financial reporting",
+      ),
+    ).toBeTruthy();
     const post = calls.find((c) => c.method === "POST");
     expect(post?.body).toEqual({
       description: "Trial balance",

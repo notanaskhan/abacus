@@ -14,3 +14,13 @@ class RequestItemCreated(DomainEvent):
 
     request_item_id: Annotated[UUID, classified("internal")]
     engagement_id: Annotated[UUID, classified("internal")]
+
+
+class RequestItemClassified(DomainEvent):
+    """An item became retrievable tier A with a dataset (SPEC-022): connections may retrieve it
+    automatically when the live connection delivers that dataset."""
+
+    event_type: ClassVar[str] = "request_item.classified"
+
+    request_item_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]

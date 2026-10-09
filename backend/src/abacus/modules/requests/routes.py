@@ -24,12 +24,14 @@ from abacus.modules.requests.service import (
     preview_request_list,
     request_items_for,
     set_client_visibility,
+    set_tier,
 )
 from abacus.modules.requests.workbook import MAX_BYTES, Problem, RequestListInvalid
 
 router = AbacusRouter(prefix="/v1/engagements/{engagement_id}/request-items", tags=["requests"])
 Status = Literal["open", "received", "ready_for_review", "needs_revision"]
 Tier = Literal["A", "B", "C", "D", "E"]
+TierSource = Literal["override", "methodology", "rule"]
 
 
 class RequestItemIn(BaseModel):
@@ -56,6 +58,11 @@ class RequestItemOut(BaseModel):
     retrievability_tier: Annotated[Tier | None, classified("internal")] = None
     client_visible: Annotated[bool, classified("internal")] = True
     client_assignee_user_id: Annotated[UUID | None, classified("internal")] = None
+    dataset: Annotated[str | None, classified("internal")] = None
+    tier_source: Annotated[
+        Literal["override", "methodology", "rule"] | None, classified("internal")
+    ] = None
+    available: Annotated[bool, classified("internal")] = False
 
 
 def _out(item: RequestItemView) -> RequestItemOut:
@@ -115,6 +122,21 @@ async def assign_to_client_route(
 ) -> RequestItemOut:
     """SPEC-020 (TASK-035 D4): assign the item to a client contributor, or clear it."""
     return _out(await assign_to_client(ctx, engagement_id, item_id, user_id=body.user_id))
+
+
+class TierIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    # None clears the override: the firm's rules classify the item again.
+    tier: Annotated[Tier | None, classified("internal")]
+
+
+@router.put("/{item_id}/tier", action="request_item.update", response_model=RequestItemOut)
+async def set_tier_route(
+    engagement_id: UUID, item_id: UUID, body: TierIn, ctx: Ctx
+) -> RequestItemOut:
+    """SPEC-022 AC-2: override the item's tier, or clear the override."""
+    return _out(await set_tier(ctx, engagement_id, item_id, tier=body.tier))
 
 
 # Applying a methodology version to the engagement (SPEC-008 §8; TASK-023 D2).

@@ -61,3 +61,9 @@ Connections to clients' systems, sync runs, and the retrieval pipeline (ADR-037,
 - **Notifications:** `ConnectionCreated` and `ConnectionRevoked` notify the engagement's partner and managers.
 - **Access log** (`connection.read_log`): the engagement's sync runs, newest first, 50 a page.
 - **Providers:** `fake` ("Demo ledger") only where `fake_connector_dir` is set. Its demo sign-in returns `code=demo` and a fixed credential.
+
+## Automatic retrieval (SPEC-022; TASK-038)
+- **Triggers:** `auto_retrieval.py` subscribes to `connection.created` (every open, available A item of that engagement) and to `request_item.classified` (one item).
+- **Guards:** it runs only with the firm's `retrieval.auto` flag on. It acts as the connection's creator, through `identity.member_context` (their standing consent); a connection made by tooling has no consenting person, so nothing is retrieved.
+- **Pacing:** `trigger_retrieval`'s caps, slots and idempotency apply. Refusals are logged by class name.
+- **Registration:** it registers `available_datasets` (the active connection's `capabilities().datasets`) into requests.

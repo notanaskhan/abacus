@@ -173,6 +173,63 @@
         "title": "AssignIn",
         "type": "object"
       },
+      "BoardSummaryOut": {
+        "properties": {
+          "by_status": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "By Status",
+            "type": "object"
+          },
+          "by_tier": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "By Tier",
+            "type": "object"
+          },
+          "retrievable_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Retrievable Share"
+          },
+          "retrieved_never_asked": {
+            "cls": "internal",
+            "title": "Retrieved Never Asked",
+            "type": "integer"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "unclassified": {
+            "cls": "internal",
+            "title": "Unclassified",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "by_status",
+          "by_tier",
+          "unclassified",
+          "retrieved_never_asked",
+          "retrievable_share"
+        ],
+        "title": "BoardSummaryOut",
+        "type": "object"
+      },
       "BudgetIn": {
         "additionalProperties": false,
         "properties": {
@@ -2420,6 +2477,12 @@
             "title": "Audit Area",
             "type": "string"
           },
+          "available": {
+            "cls": "internal",
+            "default": false,
+            "title": "Available",
+            "type": "boolean"
+          },
           "client_assignee_user_id": {
             "anyOf": [
               {
@@ -2444,6 +2507,18 @@
             "format": "date-time",
             "title": "Created At",
             "type": "string"
+          },
+          "dataset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Dataset"
           },
           "description": {
             "cls": "confidential",
@@ -2504,6 +2579,23 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "tier_source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "override",
+                  "methodology",
+                  "rule"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Tier Source"
           }
         },
         "required": [
@@ -3245,6 +3337,35 @@
           "created_at"
         ],
         "title": "TemplateVersionOut",
+        "type": "object"
+      },
+      "TierIn": {
+        "additionalProperties": false,
+        "properties": {
+          "tier": {
+            "anyOf": [
+              {
+                "enum": [
+                  "A",
+                  "B",
+                  "C",
+                  "D",
+                  "E"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Tier"
+          }
+        },
+        "required": [
+          "tier"
+        ],
+        "title": "TierIn",
         "type": "object"
       },
       "UploadOut": {
@@ -4198,6 +4319,113 @@
           "engagements"
         ],
         "x-abacus-action": "engagement.read_metadata"
+      }
+    },
+    "/v1/engagements/{engagement_id}/board-summary": {
+      "get": {
+        "description": "Counts by status and tier, \"retrieved, never asked\" and the retrievable share.",
+        "operationId": "board_summary",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardSummaryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Board Summary Route",
+        "tags": [
+          "evidence"
+        ],
+        "x-abacus-action": "request_item.read"
       }
     },
     "/v1/engagements/{engagement_id}/client-contacts": {
@@ -7167,6 +7395,133 @@
           }
         },
         "summary": "Set Client Visibility Route",
+        "tags": [
+          "requests"
+        ],
+        "x-abacus-action": "request_item.update"
+      }
+    },
+    "/v1/engagements/{engagement_id}/request-items/{item_id}/tier": {
+      "put": {
+        "description": "SPEC-022 AC-2: override the item's tier, or clear the override.",
+        "operationId": "set_tier",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TierIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Set Tier Route",
         "tags": [
           "requests"
         ],

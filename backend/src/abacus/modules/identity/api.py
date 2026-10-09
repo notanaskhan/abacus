@@ -70,6 +70,7 @@ from abacus.modules.identity.service import (
     engagement_team,
     firm_admins,
     is_active_member,
+    member_context,
     names_of,
     team_of,
 )
@@ -155,6 +156,7 @@ __all__ = [
     "invitation_router",
     "is_active_member",
     "issue_invitation_token",
+    "member_context",
     "names_of",
     "register_active_engagements",
     "register_engagement_client",

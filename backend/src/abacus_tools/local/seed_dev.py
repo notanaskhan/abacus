@@ -29,6 +29,7 @@ import asyncpg
 from abacus.kernel.config import settings
 from abacus_tools.fakes.identity import ISSUER
 from abacus_tools.fakes.oidc_server import DEV_USERS
+from abacus_tools.flags import set_flag
 from abacus_tools.synthetic import generate
 from abacus_tools.synthetic.connector_fixtures import write_trial_balance
 
@@ -132,7 +133,9 @@ def main() -> int:
     fixtures = _local_only()
     dsn = _loopback(os.environ.get(SUPERUSER_ENV, DEFAULT_SUPERUSER))
     connected = asyncio.run(seed(dsn, fixtures))
-    print(f"seeded Dev firm; {connected} new fake connection(s)")
+    # SPEC-022 (TASK-038 D4): automatic retrieval is off by default; on for the local firm.
+    asyncio.run(set_flag(FIRM, "retrieval.auto", "true", "seed", "local development"))
+    print(f"seeded Dev firm; {connected} new fake connection(s); automatic retrieval on")
     return 0
 
 

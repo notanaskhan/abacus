@@ -21,7 +21,9 @@ from abacus.modules.identity.api import (
     authorise_items,
     engagement_role_of,
 )
-from abacus.modules.requests.events import RequestItemCreated
+from abacus.modules.requests.availability import available_datasets
+from abacus.modules.requests.classification import TIER_INDEX, Classification, classify
+from abacus.modules.requests.events import RequestItemClassified, RequestItemCreated
 from abacus.modules.requests.models import RequestItem
 from abacus.modules.requests.repository import (
     fulfilling_versions,
@@ -35,6 +37,7 @@ from abacus.modules.requests.repository import (
     mark_received,
     newest_fulfilment,
     request_list_for,
+    set_classification,
     set_client_fields,
     set_status,
 )
@@ -57,9 +60,18 @@ class RequestItemView:
     # SPEC-020: whether client users see it, and the client contributor it's assigned to.
     client_visible: bool = True
     client_assignee_user_id: UUID | None = None
+    # SPEC-022: what an A item needs, where its tier came from, and whether the live connection
+    # can deliver it now.
+    dataset: str | None = None
+    tier_source: str | None = None
+    available: bool = False
 
 
-def _view(item: RequestItem, evidence_version_id: UUID | None = None) -> RequestItemView:
+def _view(
+    item: RequestItem,
+    evidence_version_id: UUID | None = None,
+    available: frozenset[str] = frozenset(),
+) -> RequestItemView:
     return RequestItemView(
         item.id,
         item.engagement_id,
@@ -71,6 +83,9 @@ def _view(item: RequestItem, evidence_version_id: UUID | None = None) -> Request
         item.retrievability_tier,
         item.client_visible,
         item.client_assignee_user_id,
+        item.dataset,
+        item.tier_source,
+        item.dataset is not None and item.dataset in available,
     )
 
 
@@ -94,8 +109,8 @@ async def add_request_item(
                 target=Target("request_list", list_id),
                 after=Ref(engagement_id=engagement_id),
             )
-        item = await insert_request_item(
-            tx.session,
+        item = await _insert_item(
+            tx,
             item_id=item_id,
             tenant_id=ctx.tenant_id,
             engagement_id=engagement_id,
@@ -119,7 +134,8 @@ async def request_items_for(ctx: AuthContext, engagement_id: UUID) -> Sequence[R
     await authorise_items(ctx, "request_item.read", ref.resource())
     async with tenant_session(ctx.tenant) as session:
         rows = await list_request_items(session, ctx, engagement_id)
-    return [_view(item, version_id) for item, version_id in rows]
+    datasets = await available_datasets(ctx.tenant, ref.client_entity_id)
+    return [_view(item, version_id, datasets) for item, version_id in rows]
 
 
 @dataclass(frozen=True)
@@ -147,8 +163,8 @@ async def apply_methodology(
             )
         for template_item in methodology.items:
             item_id = uuid4()
-            await insert_request_item(
-                tx.session,
+            await _insert_item(
+                tx,
                 item_id=item_id,
                 tenant_id=ctx.tenant_id,
                 engagement_id=engagement_id,
@@ -156,7 +172,7 @@ async def apply_methodology(
                 description=template_item.description,
                 audit_area=names[template_item.area_code],
                 created_by=ctx.user_id,
-                retrievability_tier=template_item.tier,
+                firm_tier=template_item.tier,
             )
             tx.record(
                 "request_item.created",
@@ -402,8 +418,8 @@ async def import_request_list(
             if matched is None and row.area:
                 unmatched += 1
             item_id = uuid4()
-            await insert_request_item(
-                tx.session,
+            await _insert_item(
+                tx,
                 item_id=item_id,
                 tenant_id=ctx.tenant_id,
                 engagement_id=engagement_id,
@@ -411,7 +427,7 @@ async def import_request_list(
                 description=row.description,
                 audit_area=area_name,
                 created_by=ctx.user_id,
-                retrievability_tier=row.tier,
+                firm_tier=row.tier,
             )
             tx.record(
                 "request_item.created",
@@ -553,3 +569,79 @@ async def read_item_versions(tenant: TenantContext, item_id: UUID) -> list[UUID]
     """Every version fulfilling the item, oldest first, for a caller that authorised on it."""
     async with tenant_session(tenant) as session:
         return list(await fulfilling_versions(session, item_id))
+
+
+# --- Classification (SPEC-022; TASK-038) -------------------------------------------------------
+
+
+async def _insert_item(
+    tx: UnitOfWork,
+    *,
+    item_id: UUID,
+    tenant_id: UUID,
+    engagement_id: UUID,
+    request_list_id: UUID,
+    description: str,
+    audit_area: str,
+    created_by: UUID,
+    firm_tier: str | None = None,
+) -> RequestItem:
+    """Insert an item classified by `classify` (AC-1), recording how."""
+    found = classify(description, audit_area, firm_tier=firm_tier)
+    item = await insert_request_item(
+        tx.session,
+        item_id=item_id,
+        tenant_id=tenant_id,
+        engagement_id=engagement_id,
+        request_list_id=request_list_id,
+        description=description,
+        audit_area=audit_area,
+        created_by=created_by,
+        retrievability_tier=found.tier,
+        dataset=found.dataset,
+        tier_source=found.source,
+        tier_rule=found.rule_id,
+    )
+    _record_classified(tx, item_id, engagement_id, found, "request_item.classified")
+    return item
+
+
+def _record_classified(
+    tx: UnitOfWork, item_id: UUID, engagement_id: UUID, found: Classification, action: str
+) -> None:
+    if found.tier is None and action == "request_item.classified":
+        return
+    tx.record(
+        action,
+        target=Target("request_item", item_id),
+        after=Ref(
+            tier=TIER_INDEX.get(found.tier or "", 0),
+            rule=hashlib.sha256((found.rule_id or "").encode()).hexdigest(),
+        ),
+    )
+    if found.tier == "A" and found.dataset is not None:
+        tx.emit(RequestItemClassified(request_item_id=item_id, engagement_id=engagement_id))
+
+
+async def set_tier(
+    ctx: AuthContext, engagement_id: UUID, item_id: UUID, *, tier: str | None
+) -> RequestItemView:
+    """AC-2: override the item's tier, or clear the override (the rules then apply again)."""
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await _locked_item(tx, engagement_id, item_id)
+        await authorise(ctx, "request_item.update", ref.resource())
+        row = await get_request_item(tx.session, item_id)
+        if row is None:
+            raise NotFound("request_item")
+        found = classify(row.description, row.audit_area, override=tier)
+        await set_classification(
+            tx.session,
+            item_id,
+            tier=found.tier,
+            dataset=found.dataset,
+            source=found.source,
+            rule=found.rule_id,
+        )
+        _record_classified(tx, item_id, engagement_id, found, "request_item.tier_overridden")
+        return await _item_view(tx, item_id)

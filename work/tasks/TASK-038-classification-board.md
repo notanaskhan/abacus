@@ -4,7 +4,7 @@ title: Classification, automatic retrieval and the evidence board
 spec: SPEC-022
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6]
 risk_zone: amber
-status: awaiting-plan-approval
+status: done
 branch: task-038-classification-board
 worktree:
 created: 2026-10-09
@@ -34,7 +34,7 @@ All of SPEC-022.
   - `apps/web` `Board`.
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-09: D1–D5). Approved by founder: paths listed under *Protected paths*
 
 ### Design (for founder review)
 1. **Glossary:** the A to E table from SPEC-022 §4 goes in "Retrievability tier", with "retrievable = A to C".
@@ -89,12 +89,27 @@ Not needed:
 - **D5. Write the approval file for the paths above?** *Recommendation: yes.*
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
-- [ ] Type check, lint, format, architecture and dependency rules pass
-- [ ] Every query is tenant-scoped; every endpoint checks authorisation
-- [ ] Module READMEs and the relevant docs are updated
+- [x] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
+- [x] Type check, lint, format, architecture and dependency rules pass
+- [x] Every query is tenant-scoped; every endpoint checks authorisation
+- [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-09` — Implemented:
+  - the glossary's tier meanings;
+  - rule-based classification on every insert, with overrides (migration 0030);
+  - availability from the live connection through a registration slot;
+  - automatic retrieval as the connecting client admin (`identity.member_context`), behind the `retrieval.auto` flag (dotted names are required; on for Dev firm through the seed);
+  - the board summary route;
+  - the Board's URL filters, summary strip, tier chips and override.
+
+  Fixed migration 0029 (merged in TASK-036, not deployed anywhere but local databases). On a database that already had revoked connections it failed. It now backfills `revoked_at` and keeps one live connection per entity before adding its constraints, with forced RLS lifted around the backfill, as 0012 does. Migration 0030 backfills the same way.
+
+  Tests and checks:
+  - backend unit 8,980 and web 157 passed; the gates pass;
+  - migrations 0029 and 0030 apply, roll back and reapply on a database with data;
+  - a local smoke passed: a "trial balance" item was classified A `trial_balance`; after a client admin connected, the subscriber started its retrieval as that admin; the item shows available. The smoke data was removed and the seed rerun.
+  - Worker subscription pins and three Board test queries (now scoped to the items list, because the filter options repeat their text) were updated.
 - `2026-10-09` — SPEC-022 approved and merged (#70). Design written for founder review.
 
 ## Decisions made during this task

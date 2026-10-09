@@ -12,6 +12,7 @@ from fastapi import Depends, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from abacus.kernel.classification import classified
+from abacus.modules.evidence.board_summary import board_summary
 from abacus.modules.evidence.item_detail import ItemVersion, download, item_versions
 from abacus.modules.evidence.service import (
     Decision,
@@ -456,4 +457,26 @@ async def content_route(engagement_id: UUID, version_id: UUID, ctx: Ctx) -> Resp
             "X-Content-Type-Options": "nosniff",
             "Cache-Control": "no-store",
         },
+    )
+
+
+# --- The evidence board's summary (SPEC-022 AC-5; TASK-038) ------------------------------------
+
+
+class BoardSummaryOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    total: Annotated[int, classified("internal")]
+    by_status: Annotated[dict[str, int], classified("internal")]
+    by_tier: Annotated[dict[str, int], classified("internal")]
+    unclassified: Annotated[int, classified("internal")]
+    retrieved_never_asked: Annotated[int, classified("internal")]
+    retrievable_share: Annotated[float | None, classified("internal")]
+
+
+@router.get("/board-summary", action="request_item.read", response_model=BoardSummaryOut)
+async def board_summary_route(engagement_id: UUID, ctx: Ctx) -> BoardSummaryOut:
+    """Counts by status and tier, "retrieved, never asked" and the retrievable share."""
+    return BoardSummaryOut.model_validate(
+        await board_summary(ctx, engagement_id), from_attributes=True
     )

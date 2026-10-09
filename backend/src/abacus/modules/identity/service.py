@@ -340,3 +340,22 @@ async def engagement_role_of(
 async def names_of(user_ids: list[UUID]) -> dict[UUID, str]:
     """Display names for people the caller already read under RLS (SPEC-020: upload history)."""
     return await display_names(user_ids)
+
+
+async def member_context(tenant_id: UUID, user_id: UUID) -> AuthContext | None:
+    """A person's context for background work the platform starts on their standing consent
+    (SPEC-022 TASK-038 D3: retrievals for the client admin who connected). Read fresh: None when
+    the person no longer holds an active membership in the firm. Never carries an MFA time, so
+    no fresh-MFA action passes; every caller acts only on behalf of the person whose consent
+    applies, and each new caller needs the founder's approval."""
+    found = [m for m in await active_memberships(user_id) if m.tenant_id == tenant_id]
+    if not found:
+        return None
+    membership = found[0]
+    return AuthContext(
+        tenant=TenantContext(tenant_id, "human", str(user_id)),
+        user_id=user_id,
+        membership_id=membership.membership_id,
+        firm_role=membership.firm_role,
+        mfa_at=None,
+    )

@@ -81,6 +81,7 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "request_items": frozenset(
         {"id", "tenant_id", "engagement_id", "request_list_id", "description", "audit_area"}
         | {"created_by", "retrievability_tier"}
+        | {"dataset", "tier_source", "tier_rule"}  # SPEC-022
     ),
     # Methodology templates (SPEC-008): insert-only, immutable versions.
     "methodology_templates": frozenset({"id", "tenant_id", "name", "created_by"}),
@@ -200,7 +201,10 @@ IMMUTABLE_TABLES: dict[str, str] = {
 APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),
     "engagements": frozenset({"status", "methodology_version_id"}),  # SPEC-008: pinned once
-    "request_items": frozenset({"status", "client_visible", "client_assignee_user_id"}),
+    "request_items": frozenset(
+        {"status", "client_visible", "client_assignee_user_id"}
+        | {"retrievability_tier", "dataset", "tier_source", "tier_rule"}  # SPEC-022
+    ),
     "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
     "connections": frozenset(
         {"status", "last_checked_at", "last_check_ok", "revoked_at", "revoked_by"}

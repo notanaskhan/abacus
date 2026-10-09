@@ -2,6 +2,11 @@
 
 from abacus.kernel.uow import Handler
 from abacus.modules.connections.activities import ACTIVITIES
+from abacus.modules.connections.auto_retrieval import (
+    available_datasets,
+    on_connection_created,
+    on_item_classified,
+)
 from abacus.modules.connections.connector import (
     Capabilities,
     Connector,
@@ -48,9 +53,16 @@ from abacus.modules.connections.service import (
 )
 from abacus.modules.connections.workflow_types import FailInput, RetrievalInput, RetrievalOutcome
 from abacus.modules.connections.workflows import RetrievalWorkflow
+from abacus.modules.requests.api import register_available_datasets
 
-# Outbox events this module handles (the worker's relay routes them): none yet.
-SUBSCRIPTIONS: dict[str, Handler] = {}
+# Outbox events this module handles (the worker's relay routes them): automatic retrieval when a
+# client connects or an item becomes retrievable (SPEC-022 AC-4).
+SUBSCRIPTIONS: dict[str, Handler] = {
+    "connection.created": on_connection_created,
+    "request_item.classified": on_item_classified,
+}
+# SPEC-022 D2: requests learns what the live connection can deliver from here.
+register_available_datasets(available_datasets)
 
 __all__ = [
     "ACTIVITIES",

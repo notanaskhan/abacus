@@ -36,6 +36,10 @@ class RequestItem(Base):
     # SPEC-020: whether client users see the item, and the client contributor it's assigned to.
     client_visible: Mapped[bool]
     client_assignee_user_id: Mapped[UUID | None]
+    # SPEC-022: what an A item needs, and where the tier came from (override, methodology, rule).
+    dataset: Mapped[str | None]
+    tier_source: Mapped[str | None]
+    tier_rule: Mapped[str | None]
 
 
 class Fulfilment(Base):

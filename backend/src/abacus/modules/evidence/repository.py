@@ -389,3 +389,19 @@ async def item_versions_with_decisions(
         .order_by(EvidenceVersion.created_at.desc(), EvidenceVersion.id)
     )
     return list(rows.tuples().all())
+
+
+async def methods_of(
+    session: AsyncSession, ctx: AuthContext, engagement_id: UUID, version_ids: Sequence[UUID]
+) -> dict[UUID, str]:
+    """How each of these versions arrived (retrieved or uploaded), for the board summary."""
+    if not version_ids:
+        return {}
+    rows = await session.execute(
+        select(EvidenceVersion.id, EvidenceVersion.method).where(
+            EvidenceVersion.id.in_(version_ids),
+            EvidenceVersion.engagement_id == engagement_id,
+            visible(ctx, "evidence.read", EvidenceVersion.engagement_id),
+        )
+    )
+    return {version_id: method for version_id, method in rows.tuples().all()}

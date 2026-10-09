@@ -14,3 +14,10 @@ flags:
     kind: variant
     values: [evidence.screen@v0]
     default: evidence.screen@v0
+  - name: retrieval.auto
+    description: Start retrievals automatically for available tier A items (SPEC-022 AC-4). Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
+    owner: founder
+    created: 2026-10-09
+    expires: 2027-01-07
+    kind: boolean
+    default: false

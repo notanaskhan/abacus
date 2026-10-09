@@ -1,6 +1,7 @@
 """Public interface of the requests module; other modules import only this (ADR-008)."""
 
-from abacus.modules.requests.events import RequestItemCreated
+from abacus.modules.requests.availability import register_available_datasets
+from abacus.modules.requests.events import RequestItemClassified, RequestItemCreated
 from abacus.modules.requests.routes import methodology_router, router
 from abacus.modules.requests.service import (
     FulfilledVersion,
@@ -27,6 +28,7 @@ __all__ = [
     "FulfilledVersion",
     "FulfilmentRef",
     "ItemNotFulfillable",
+    "RequestItemClassified",
     "RequestItemCreated",
     "RequestItemRef",
     "RequestItemSummary",
@@ -42,6 +44,7 @@ __all__ = [
     "move_after_review",
     "read_item",
     "read_item_versions",
+    "register_available_datasets",
     "request_items_for",
     "review_targets",
     "router",
