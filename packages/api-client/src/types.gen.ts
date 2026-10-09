@@ -659,6 +659,7 @@ export type EngagementIn = {
      * Name
      */
     name: string;
+    roll_forward?: RollForwardIn | null;
     /**
      * Type
      */
@@ -1570,6 +1571,28 @@ export type OpenConfirmationOut = {
 };
 
 /**
+ * PriorChoiceOut
+ */
+export type PriorChoiceOut = {
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Fiscal Period End
+     */
+    fiscal_period_end: string;
+    /**
+     * Fiscal Period Start
+     */
+    fiscal_period_start: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
  * ProposalOut
  *
  * The agent's proposal. Rationale and quotes are model text: shown as plain text (ADR-065).
@@ -1599,6 +1622,92 @@ export type ProposalOut = {
      * Unverified
      */
     unverified: Array<string>;
+};
+
+/**
+ * ProposedItemOut
+ */
+export type ProposedItemOut = {
+    /**
+     * Audit Area
+     */
+    audit_area: string;
+    /**
+     * Client Visible
+     */
+    client_visible: boolean;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Kind
+     */
+    kind: 'used' | 'not_used' | 'new_in_template';
+    /**
+     * Prior Item Id
+     */
+    prior_item_id: string | null;
+    /**
+     * Template Key
+     */
+    template_key: number | null;
+    /**
+     * Ticked
+     */
+    ticked: boolean;
+    /**
+     * Tier
+     */
+    tier: string | null;
+};
+
+/**
+ * ProposedMemberOut
+ */
+export type ProposedMemberOut = {
+    /**
+     * Available
+     */
+    available: boolean;
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Role
+     */
+    role: 'engagement_partner' | 'manager' | 'senior' | 'staff' | 'reviewer';
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * ProposedTemplateOut
+ */
+export type ProposedTemplateOut = {
+    /**
+     * Latest Version
+     */
+    latest_version: number;
+    /**
+     * Latest Version Id
+     */
+    latest_version_id: string;
+    /**
+     * Template Id
+     */
+    template_id: string;
+    /**
+     * Template Name
+     */
+    template_name: string;
+    /**
+     * Version Last Year
+     */
+    version_last_year: number;
 };
 
 /**
@@ -1835,6 +1944,92 @@ export type RetrievalOut = {
      * Sync Run Id
      */
     sync_run_id: string;
+};
+
+/**
+ * RollForwardIn
+ *
+ * SPEC-025 AC-2 (TASK-048): exactly what the person confirmed from the proposal.
+ */
+export type RollForwardIn = {
+    /**
+     * Prior Engagement Id
+     */
+    prior_engagement_id: string;
+    /**
+     * Prior Item Ids
+     */
+    prior_item_ids: Array<string>;
+    /**
+     * Team
+     */
+    team: Array<RollForwardMemberIn>;
+    /**
+     * Template Keys
+     */
+    template_keys?: Array<number>;
+    /**
+     * Version Id
+     */
+    version_id: string | null;
+};
+
+/**
+ * RollForwardMemberIn
+ */
+export type RollForwardMemberIn = {
+    /**
+     * Role
+     */
+    role: 'engagement_partner' | 'manager' | 'senior' | 'staff' | 'reviewer';
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * RollForwardProposalIn
+ */
+export type RollForwardProposalIn = {
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Fiscal Period Start
+     */
+    fiscal_period_start: string;
+    /**
+     * Prior Engagement Id
+     */
+    prior_engagement_id?: string | null;
+    /**
+     * Type
+     */
+    type?: 'audit' | 'review' | 'compilation' | 'agreed_upon_procedures';
+};
+
+/**
+ * RollForwardProposalOut
+ *
+ * SPEC-025 AC-2: nothing is stored; `prior` is None when there's nothing to roll forward.
+ */
+export type RollForwardProposalOut = {
+    /**
+     * Items
+     */
+    items: Array<ProposedItemOut>;
+    /**
+     * Others
+     */
+    others: Array<PriorChoiceOut>;
+    prior: PriorChoiceOut | null;
+    /**
+     * Team
+     */
+    team: Array<ProposedMemberOut>;
+    template: ProposedTemplateOut | null;
 };
 
 /**
@@ -2797,6 +2992,57 @@ export type CreateEngagementResponses = {
 };
 
 export type CreateEngagementResponse = CreateEngagementResponses[keyof CreateEngagementResponses];
+
+export type ProposalData = {
+    body: RollForwardProposalIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/engagements/proposal';
+};
+
+export type ProposalErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ProposalError = ProposalErrors[keyof ProposalErrors];
+
+export type ProposalResponses = {
+    /**
+     * Successful Response
+     */
+    200: RollForwardProposalOut;
+};
+
+export type ProposalResponse = ProposalResponses[keyof ProposalResponses];
 
 export type GetEngagementData = {
     body?: never;

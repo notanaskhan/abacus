@@ -35,6 +35,12 @@ const GATE_REASONS: Record<string, string> = {
   independence_conclusion_missing:
     "This opens once the engagement partner records their independence conclusion.",
   letter_missing: "Your firm requires the engagement letter to be recorded first.",
+  // SPEC-025 AC-2 (TASK-048): roll-forward refusals.
+  team_member_unavailable:
+    "Someone on the proposed team has left the firm or been walled from this client. Go back and review the team.",
+  proposal_changed: "The firm's template changed since this proposal. Go back and look again.",
+  prior_mismatch: "That earlier engagement isn't for this client entity and type.",
+  roll_forward_unavailable: "Rolling forward isn't available right now.",
 };
 
 /** A readable message for an API error body (`{"detail": ...}`), never raw server text. */

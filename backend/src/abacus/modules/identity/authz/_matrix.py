@@ -107,6 +107,10 @@ ACTIONS: dict[str, dict[str, str]] = {
         "firm_admin": "allow",
         "practice_leader": "allow",
     },
+    "roll_forward.read": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
+    },
     "acceptance.record": {
         "engagement_partner": "allow",
         "mfa_recent": "required",

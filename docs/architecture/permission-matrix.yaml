@@ -47,6 +47,7 @@ actions:
 
   # --- Engagements ---
   engagement.create:        {firm_admin: allow, practice_leader: allow}
+  roll_forward.read:        {firm_admin: allow, practice_leader: allow}   # SPEC-025 (TASK-048 D3): last year's team, template and items, checked on that engagement
   # --- Acceptance, independence and the letter (SPEC-025; TASK-044) ---
   acceptance.record:        {engagement_partner: allow, mfa_recent: required}   # decision, documentation, the independence conclusion
   independence.confirm:     {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow}   # for oneself only (the service refuses others)

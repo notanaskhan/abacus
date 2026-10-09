@@ -12,6 +12,7 @@ Who someone is, which firm they act in, and what they may do. PROTECTED (red zon
 | `visible(ctx, action, engagement_id_column)` | Filter for list queries over engagement-scoped rows (ADR-102). |
 | `Resource.firm(tenant_id)`, `Resource.engagement(tenant_id, id, archived=..., client_id=...)` | What an action is done to; `archived` and `client_id` come from the engagement row (`EngagementRef.resource()`), never a literal (AUTHZ-003). |
 | `register_engagement_client(column, lookup)` | Called once by `engagements.api`: how to find an engagement's client, for walls. Identity never imports engagements (TASK-016 Q1). |
+| `add_rolled_forward_member(tx, ctx, engagement, client, user, role)` / `available_staff(tenant, client)` | SPEC-025 AC-2 (TASK-048): last year's team joins inside the creating unit of work (re-checked active, staff, not walled); `add_member` can't, as its caller-role check reads outside the transaction. |
 | `register_independence(column, lookup)` | Called once by `engagements.api`: whether a person has confirmed their independence for an engagement (SPEC-025, TASK-045). Unregistered means refused. |
 | `ctx.tenant` | The `TenantContext` for `tenant_session` and `uow`. |
 

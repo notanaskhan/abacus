@@ -79,6 +79,7 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"id", "tenant_id", "client_id", "client_entity_id", "name", "created_by"}
         | {"fiscal_period_start", "fiscal_period_end"}
         | {"type"}  # SPEC-024: the engagement's type
+        | {"prior_engagement_id"}  # SPEC-025 (TASK-048): roll-forward, set at creation only
     ),
     "request_lists": frozenset({"id", "tenant_id", "engagement_id"}),
     "request_items": frozenset(

@@ -27,6 +27,8 @@ class Engagement(Base):
     created_at: Mapped[datetime]
     # The pinned methodology version (SPEC-008): set once, null until then.
     methodology_version_id: Mapped[UUID | None]
+    # SPEC-025 (TASK-048): the engagement this one was rolled forward from, set at creation.
+    prior_engagement_id: Mapped[UUID | None]
 
 
 class MethodologyTemplate(Base):
