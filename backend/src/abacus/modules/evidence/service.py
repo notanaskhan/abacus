@@ -141,6 +141,7 @@ async def add_version(
     provenance: Provenance,
     idempotency_key: str | None = None,
     requested_by: UUID | None = None,
+    upload_note: str | None = None,
 ) -> EvidenceVersionRef:
     """Add the next version inside the caller's unit of work. The tenant and actor are the
     transaction's own. The caller has authorised `evidence.upload` for its actor.
@@ -207,6 +208,7 @@ async def add_version(
         client_entity_id=provenance.client_entity_id,
         snapshot_id=provenance.snapshot_id,
         idempotency_key=idempotency_key,
+        upload_note=upload_note,
     )
     tx.record(
         "evidence_version.created",

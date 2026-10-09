@@ -17,14 +17,20 @@ from typing import Final
 from uuid import UUID
 
 from abacus.kernel.db import tenant_session
-from abacus.kernel.errors import DomainConflict, DomainInvalid
-from abacus.kernel.uow import Ref, Target, uow
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.events import EvidenceUploaded
 from abacus.modules.evidence.repository import fingerprint_among, uploaded_versions
 from abacus.modules.evidence.service import NewItem, Provenance, add_version
-from abacus.modules.identity.api import AuthContext, Resource, authorise, names_of
+from abacus.modules.identity.api import (
+    AuthContext,
+    Resource,
+    authorise,
+    engagement_role_of,
+    names_of,
+)
 from abacus.modules.requests.api import (
     ItemNotFulfillable,
     RequestItemRef,
@@ -131,6 +137,32 @@ class UploadView:
     uploaded_by: UUID | None
     uploaded_by_name: str
     uploaded_at: datetime
+    # SPEC-023: added by the firm for the client, and where it came from.
+    on_behalf: bool = False
+    note: str | None = None
+
+
+ON_BEHALF_SOURCE: Final = "firm_upload_for_client"
+MAX_NOTE: Final = 500
+_STAFF_ROLES: Final = frozenset({"engagement_partner", "manager", "senior", "staff", "reviewer"})
+
+
+class NotStaff(DomainConflict):
+    """Only the firm's team can add files on the client's behalf (SPEC-023 AC-1)."""
+
+    code = "not_staff"
+
+
+def clean_note(note: str | None) -> str | None:
+    """Plain text, control characters removed, at most 500 characters; empty means none."""
+    if note is None:
+        return None
+    kept = "".join(ch for ch in note if unicodedata.category(ch)[0] != "C" or ch == " ").strip()
+    return kept[:MAX_NOTE] or None
+
+
+async def is_staff_on(ctx: AuthContext, engagement_id: UUID) -> bool:
+    return await engagement_role_of(ctx.tenant, engagement_id, ctx.user_id) in _STAFF_ROLES
 
 
 def _resource(item: RequestItemRef, base: Resource) -> Resource:
@@ -143,20 +175,20 @@ def _resource(item: RequestItemRef, base: Resource) -> Resource:
     )
 
 
+async def authorise_upload(ctx: AuthContext, engagement_id: UUID, item_id: UUID) -> None:
+    """`evidence.upload` with the item's facts (SPEC-020)."""
+    engagement = await get_ref(ctx, engagement_id)
+    item = await read_item(ctx.tenant, engagement_id, item_id)
+    await authorise(ctx, "evidence.upload", _resource(item, engagement.resource()))
+
+
 async def check_upload(ctx: AuthContext, engagement_id: UUID, item_id: UUID) -> None:
     """Authorise before the body is read, so a stranger can't make the server take 25 MB."""
-    engagement = await get_ref(ctx, engagement_id)
-    item = await read_item(ctx.tenant, engagement_id, item_id)
-    await authorise(ctx, "evidence.upload", _resource(item, engagement.resource()))
+    await authorise_upload(ctx, engagement_id, item_id)
 
 
-async def upload(
-    ctx: AuthContext, engagement_id: UUID, item_id: UUID, *, file_name: str, content: bytes
-) -> UploadView:
-    """Store a client's file as new evidence on the item (AC-8), or refuse it (AC-9)."""
-    engagement = await get_ref(ctx, engagement_id)
-    item = await read_item(ctx.tenant, engagement_id, item_id)
-    await authorise(ctx, "evidence.upload", _resource(item, engagement.resource()))
+def checked(content: bytes) -> tuple[str, str]:
+    """The content's allowed media type and fingerprint, or the AC-9 refusal."""
     if not content:
         raise UploadEmpty
     if len(content) > MAX_UPLOAD_BYTES:
@@ -164,56 +196,108 @@ async def upload(
     media_type = sniff(content)
     if media_type is None:
         raise UploadTypeNotAllowed
-    digest = storage.fingerprint(content)
+    return media_type, storage.fingerprint(content)
+
+
+async def attach(
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    *,
+    engagement_id: UUID,
+    item_id: UUID,
+    stored: storage.StoredObject,
+    name: str,
+    media_type: str,
+    source: str,
+    note: str | None,
+) -> UUID:
+    """Inside the caller's unit of work: re-check the item (its facts may have changed), refuse
+    a closed item or a duplicate, add the version, link it and announce it. Shared by uploads
+    and inbox assignment (SPEC-023)."""
+    locked_engagement = await lock_ref(tx, engagement_id)
+    locked = await item_ref(tx, item_id, lock=True)
+    if locked.engagement_id != engagement_id:
+        raise NotFound("request_item")
+    await authorise(ctx, "evidence.upload", _resource(locked, locked_engagement.resource()))
+    if locked.status not in ("open", "received", "needs_revision"):
+        raise ItemClosed
+    if await fingerprint_among(tx.session, await item_versions(tx, item_id), stored.fingerprint):
+        raise DuplicateUpload
+    version = await add_version(
+        tx,
+        engagement_id=engagement_id,
+        item=NewItem(title=name),
+        stored=stored,
+        media_type=media_type,
+        provenance=Provenance(source=source, method="uploaded"),
+        requested_by=ctx.user_id,
+        upload_note=note,
+    )
+    try:
+        await fulfil_by_upload(tx, request_item_id=item_id, evidence_version_id=version.id)
+    except ItemNotFulfillable:
+        raise ItemClosed from None
+    tx.record(
+        "evidence.uploaded",
+        target=Target("evidence_version", version.id),
+        after=Ref(request_item_id=item_id, fingerprint=stored.fingerprint, size=stored.size),
+    )
+    tx.emit(
+        EvidenceUploaded(
+            engagement_id=engagement_id,
+            request_item_id=item_id,
+            evidence_version_id=version.id,
+            uploaded_by=ctx.user_id,
+        )
+    )
+    return version.id
+
+
+async def upload(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    item_id: UUID,
+    *,
+    file_name: str,
+    content: bytes,
+    on_behalf: bool = False,
+    note: str | None = None,
+) -> UploadView:
+    """Store a file as new evidence on the item (SPEC-020 AC-8, AC-9). On the client's behalf
+    (SPEC-023 AC-1), only the firm's team may, with an optional note."""
+    await authorise_upload(ctx, engagement_id, item_id)
+    if on_behalf and not await is_staff_on(ctx, engagement_id):
+        raise NotStaff
+    media_type, digest = checked(content)
     async with tenant_session(ctx.tenant) as session:
         if await fingerprint_among(session, await read_item_versions(ctx.tenant, item_id), digest):
             raise DuplicateUpload
     stored = await storage.put(ctx.tenant_id, content)
     name = clean_name(file_name)
+    kept_note = clean_note(note) if on_behalf else None
     async with uow(ctx.tenant) as tx:
-        locked_engagement = await lock_ref(tx, engagement_id)
-        locked = await item_ref(tx, item_id, lock=True)
-        # Facts may have changed since the first check (hidden, reassigned): check again.
-        await authorise(ctx, "evidence.upload", _resource(locked, locked_engagement.resource()))
-        if locked.status not in ("open", "received", "needs_revision"):
-            raise ItemClosed
-        if await fingerprint_among(tx.session, await item_versions(tx, item_id), digest):
-            raise DuplicateUpload
-        version = await add_version(
+        version_id = await attach(
             tx,
+            ctx,
             engagement_id=engagement_id,
-            item=NewItem(title=name),
+            item_id=item_id,
             stored=stored,
+            name=name,
             media_type=media_type,
-            provenance=Provenance(source=SOURCE, method="uploaded"),
-            requested_by=ctx.user_id,
-        )
-        try:
-            await fulfil_by_upload(tx, request_item_id=item_id, evidence_version_id=version.id)
-        except ItemNotFulfillable:
-            raise ItemClosed from None
-        tx.record(
-            "evidence.uploaded",
-            target=Target("evidence_version", version.id),
-            after=Ref(request_item_id=item_id, fingerprint=digest, size=len(content)),
-        )
-        tx.emit(
-            EvidenceUploaded(
-                engagement_id=engagement_id,
-                request_item_id=item_id,
-                evidence_version_id=version.id,
-                uploaded_by=ctx.user_id,
-            )
+            source=ON_BEHALF_SOURCE if on_behalf else SOURCE,
+            note=kept_note,
         )
     names = await names_of([ctx.user_id])
     return UploadView(
-        version.id,
+        version_id,
         name,
         media_type,
         len(content),
         ctx.user_id,
         names.get(ctx.user_id, ""),
         datetime.now(UTC),
+        on_behalf,
+        kept_note,
     )
 
 
@@ -235,6 +319,8 @@ async def uploads_for(ctx: AuthContext, engagement_id: UUID, item_id: UUID) -> l
             uploader,
             names.get(uploader, "") if uploader is not None else "",
             version.created_at,
+            version.source == ON_BEHALF_SOURCE,
+            version.upload_note,
         )
         for (version, evidence_item), uploader in zip(rows, uploaders, strict=True)
     ]

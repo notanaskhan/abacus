@@ -129,6 +129,12 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"storage_key", "storage_version_id", "size_bytes", "media_type", "source", "method"}
         | {"pulled_at", "period_start", "period_end", "client_entity_id", "snapshot_id"}
         | {"idempotency_key"}
+        | {"upload_note"}  # SPEC-023: written once, at insert
+    ),
+    # SPEC-023 (TASK-039): files dropped at the engagement level, waiting to be matched.
+    "inbox_files": frozenset(
+        {"tenant_id", "engagement_id", "file_name", "media_type", "size_bytes", "fingerprint"}
+        | {"storage_key", "storage_version_id", "uploaded_by", "uploaded_by_staff", "note"}
     ),
 }
 APP_INSERT_COLUMNS.update(
@@ -210,6 +216,9 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"status", "last_checked_at", "last_check_ok", "revoked_at", "revoked_by"}
     ),
     "connection_states": frozenset({"used_at"}),  # SPEC-020: spent once
+    "inbox_files": frozenset(  # SPEC-023: assigned or discarded, once
+        {"status", "assigned_item_id", "assigned_version_id", "decided_by", "decided_at"}
+    ),
     # SPEC-007 AC-7: a firm admin replaces the firm's budget (upsert).
     "budgets": frozenset({"monthly_soft_usd", "monthly_hard_usd", "updated_by", "updated_at"}),
     "feature_flag_states": frozenset({"value", "set_by", "reason", "set_at"}),  # SPEC-011
@@ -255,6 +264,7 @@ TABLE_OWNERS: dict[str, str] = {
     "request_items": "requests",
     "evidence_items": "evidence",
     "evidence_versions": "evidence",
+    "inbox_files": "evidence",
     "connections": "connections",
     "sync_runs": "connections",
     "connection_states": "connections",

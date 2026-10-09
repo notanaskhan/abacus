@@ -16,6 +16,7 @@ from abacus.modules.evidence.uploads import (
     PNG,
     XLSX,
     clean_name,
+    clean_note,
     sniff,
 )
 
@@ -72,3 +73,17 @@ def test_ac9_anything_else_is_refused_whatever_its_name(content: bytes) -> None:
 )
 def test_ac9_file_names_are_plain_bounded_text(raw: str, kept: str) -> None:
     assert clean_name(raw) == kept
+
+
+@pytest.mark.parametrize(
+    ("raw", "kept"),
+    [
+        ("Emailed by the controller on 3 Oct", "Emailed by the controller on 3 Oct"),
+        ("line\nbreak\tand\x00nul", "linebreakandnul"),
+        ("   ", None),
+        (None, None),
+        ("x" * 600, "x" * 500),
+    ],
+)
+def test_spec023_ac1_notes_are_plain_bounded_text(raw: str | None, kept: str | None) -> None:
+    assert clean_note(raw) == kept

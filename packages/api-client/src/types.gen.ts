@@ -109,6 +109,16 @@ export type AssignIn = {
 };
 
 /**
+ * AssignedOut
+ */
+export type AssignedOut = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+};
+
+/**
  * BoardSummaryOut
  */
 export type BoardSummaryOut = {
@@ -420,6 +430,16 @@ export type DecisionSummaryOut = {
      * Reason Code
      */
     reason_code: string | null;
+};
+
+/**
+ * DiscardedOut
+ */
+export type DiscardedOut = {
+    /**
+     * Id
+     */
+    id: string;
 };
 
 /**
@@ -836,6 +856,66 @@ export type ImportCountsOut = {
 };
 
 /**
+ * InboxAssignIn
+ */
+export type InboxAssignIn = {
+    /**
+     * Followed Suggestion
+     */
+    followed_suggestion?: boolean;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+};
+
+/**
+ * InboxFileOut
+ */
+export type InboxFileOut = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Media Type
+     */
+    media_type: string;
+    /**
+     * Note
+     */
+    note: string | null;
+    /**
+     * Size Bytes
+     */
+    size_bytes: number;
+    /**
+     * Suggestions
+     */
+    suggestions: Array<SuggestionOut>;
+    /**
+     * Uploaded By
+     */
+    uploaded_by: string;
+    /**
+     * Uploaded By Name
+     */
+    uploaded_by_name: string;
+    /**
+     * Uploaded By Staff
+     */
+    uploaded_by_staff: boolean;
+};
+
+/**
  * ItemVersionOut
  */
 export type ItemVersionOut = {
@@ -864,6 +944,14 @@ export type ItemVersionOut = {
      * Method
      */
     method: 'retrieved' | 'uploaded';
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * On Behalf
+     */
+    on_behalf?: boolean;
     /**
      * Period End
      */
@@ -1532,6 +1620,24 @@ export type StartOut = {
 };
 
 /**
+ * SuggestionOut
+ */
+export type SuggestionOut = {
+    /**
+     * Matched
+     */
+    matched: Array<string>;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+    /**
+     * Score
+     */
+    score: number;
+};
+
+/**
  * SupportSessionIn
  */
 export type SupportSessionIn = {
@@ -1749,6 +1855,14 @@ export type UploadOut = {
      * Media Type
      */
     media_type: string;
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * On Behalf
+     */
+    on_behalf?: boolean;
     /**
      * Size Bytes
      */
@@ -3201,6 +3315,245 @@ export type EngagementGraphResponses = {
 
 export type EngagementGraphResponse = EngagementGraphResponses[keyof EngagementGraphResponses];
 
+export type InboxData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/inbox';
+};
+
+export type InboxErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type InboxError = InboxErrors[keyof InboxErrors];
+
+export type InboxResponses = {
+    /**
+     * Response Inbox
+     *
+     * Successful Response
+     */
+    200: Array<InboxFileOut>;
+};
+
+export type InboxResponse = InboxResponses[keyof InboxResponses];
+
+export type AddToInboxData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query: {
+        /**
+         * Filename
+         */
+        filename: string;
+        /**
+         * Note
+         */
+        note?: string | null;
+    };
+    url: '/v1/engagements/{engagement_id}/inbox';
+};
+
+export type AddToInboxErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AddToInboxError = AddToInboxErrors[keyof AddToInboxErrors];
+
+export type AddToInboxResponses = {
+    /**
+     * Successful Response
+     */
+    201: InboxFileOut;
+};
+
+export type AddToInboxResponse = AddToInboxResponses[keyof AddToInboxResponses];
+
+export type AssignInboxFileData = {
+    body: InboxAssignIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * File Id
+         */
+        file_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/inbox/{file_id}/assign';
+};
+
+export type AssignInboxFileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AssignInboxFileError = AssignInboxFileErrors[keyof AssignInboxFileErrors];
+
+export type AssignInboxFileResponses = {
+    /**
+     * Successful Response
+     */
+    201: AssignedOut;
+};
+
+export type AssignInboxFileResponse = AssignInboxFileResponses[keyof AssignInboxFileResponses];
+
+export type DiscardData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * File Id
+         */
+        file_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/inbox/{file_id}/discard';
+};
+
+export type DiscardErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DiscardError = DiscardErrors[keyof DiscardErrors];
+
+export type DiscardResponses = {
+    /**
+     * Successful Response
+     */
+    200: DiscardedOut;
+};
+
+export type DiscardResponse = DiscardResponses[keyof DiscardResponses];
+
 export type ApplyMethodologyData = {
     body: ApplyMethodologyIn;
     headers?: {
@@ -3752,6 +4105,14 @@ export type UploadData = {
          * Filename
          */
         filename: string;
+        /**
+         * On Behalf
+         */
+        on_behalf?: boolean;
+        /**
+         * Note
+         */
+        note?: string | null;
     };
     url: '/v1/engagements/{engagement_id}/request-items/{item_id}/uploads';
 };

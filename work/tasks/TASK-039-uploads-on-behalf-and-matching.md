@@ -4,7 +4,7 @@ title: Uploads on the client's behalf, the inbox and matching
 spec: SPEC-023
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6]
 risk_zone: amber
-status: awaiting-plan-approval
+status: done
 branch: task-039-uploads-matching
 worktree:
 created: 2026-10-09
@@ -30,7 +30,7 @@ All of SPEC-023.
 - Code: `evidence/uploads.py` (checks, storage, `add_version`, `fulfil_by_upload`), `evidence/item_detail.py`, `requests.api` (`read_item`, `request_items_for`, `classify`), `apps/web` `ClientEngagement`, `ItemDetail`, `Board`
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-09: D1–D3). Approved by founder: paths listed under *Protected paths*
 
 ### Design (for founder review)
 1. **On behalf (`uploads.py`):**
@@ -80,12 +80,25 @@ All of SPEC-023.
 - **D3. Write the approval file for the paths above?** *Recommendation: yes.*
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
-- [ ] Type check, lint, format, architecture and dependency rules pass
-- [ ] Every query is tenant-scoped; every endpoint checks authorisation
-- [ ] Module READMEs and the relevant docs are updated
+- [x] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
+- [x] Type check, lint, format, architecture and dependency rules pass
+- [x] Every query is tenant-scoped; every endpoint checks authorisation
+- [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-09` — Implemented:
+  - migration 0031 (`upload_note`, `inbox_files`);
+  - on-behalf uploads (staff only, with a note, shown as "Added by your auditor" to the client and with the note on the item page);
+  - the inbox (add, list by role, assign through the shared `uploads.attach`, discard);
+  - the rule matcher (file-name words, rule bonus, version markers dropped);
+  - the Inbox panel on the client page and the Board, and "Upload for the client" on the item page.
+
+  Tests and checks:
+  - backend unit and web 162 passed; the gates pass;
+  - migration 0031 applies, rolls back and reapplies;
+  - a local smoke passed: a suggestion scored 100 with its matched words; the duplicate refused; assign and discard worked; the on-behalf version kept its note.
+
+  The smoke's request item and its two evidence versions stay in the local database (evidence can't be deleted).
 - `2026-10-09` — SPEC-023 approved and merged (#72). Design written for founder review.
 
 ## Decisions made during this task

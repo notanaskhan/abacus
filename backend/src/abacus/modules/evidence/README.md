@@ -67,3 +67,13 @@ Evidence items and their immutable versions (glossary; ADR-004). Owns `evidence_
 - counts by status and tier, and how many are unclassified;
 - "retrieved, never asked": items whose first fulfilling version was retrieved;
 - the retrievable share (A to C over classified items).
+
+## Uploads on behalf and the inbox (SPEC-023; TASK-039)
+- **On behalf:**
+  - the upload route's `on_behalf` (the firm's team only, 409 `not_staff` otherwise) records source `firm_upload_for_client` and an optional note in `evidence_versions.upload_note`, written once;
+  - clients see it as added by their auditor.
+- **Inbox** (`inbox.py`, table `inbox_files`): files dropped at the engagement level, stored once with the SPEC-020 checks. One waiting copy per fingerprint.
+  - **Who sees what:** staff see every file, client admins see the clients' files, contributors see their own.
+  - **Assign:** `uploads.attach` (the per-item path: re-authorise with the item's facts, refuse closed items and duplicates, add the version, link it, emit `EvidenceUploaded`), then the row becomes `assigned`, audited with `followed_suggestion`.
+  - **Discard:** the uploader or staff.
+- **Matching** (`matching.py`): file-name words against item descriptions, plus a bonus when both match the same classification rule; at most three suggestions scoring at least 35. Computed on read from the items the reader can see. The file itself is never opened.
