@@ -107,6 +107,10 @@ ACTIONS: dict[str, dict[str, str]] = {
         "firm_admin": "allow",
         "practice_leader": "allow",
     },
+    "client.read": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
+    },
     "engagement.apply_methodology": {
         "engagement_partner": "allow",
         "manager": "allow",

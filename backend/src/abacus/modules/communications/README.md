@@ -16,3 +16,8 @@ Messages that leave the platform (ADR-065; SPEC-006). PROTECTED.
 - COMM-001: nothing outside this module imports a mail or messaging library or emits `message.ready`.
 - No transport yet: delivery comes with Phase 2 increments 2 and 8.
 - The body is confidential and never logged. Violations are kinds and identifiers only.
+
+## In the firm's name (SPEC-025 AC-8; TASK-043)
+- **Client invitations:** "{firm} invites you to their FY{year} audit of {client}".
+- **Staff invitations:** "{firm} invites you to join their workspace".
+- **Sender:** the transport's `sender_name` is the firm's; the sending address stays ours until custom domains exist.

@@ -53,3 +53,54 @@ async def names_in_firm(session: AsyncSession) -> list[tuple[UUID, UUID, str]]:
         await session.execute(select(ClientEntity.client_id, ClientEntity.id, ClientEntity.name))
     ).all()
     return [(c, c, n) for c, n in clients] + [(c, e, n) for c, e, n in entities]
+
+
+async def clients_matching(
+    session: AsyncSession, normalised: str, *, exact: bool = False, limit: int = 20
+) -> list[tuple[Client, list[ClientEntity]]]:
+    """The firm's clients whose normalised name starts with (or, `exact`, equals) the text, with
+    their entities; for a caller that authorised `client.read` (SPEC-025; LIST_EXEMPT: clients
+    are firm-level, and the caller removes walled ones)."""
+    where = (
+        Client.normalised_name == normalised
+        if exact
+        else Client.normalised_name.like(normalised.replace("%", "").replace("_", "") + "%")
+    )
+    clients = list(
+        (
+            await session.execute(
+                select(Client).where(where).order_by(Client.name, Client.id).limit(limit)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    if not clients:
+        return []
+    entities = (
+        (
+            await session.execute(
+                select(ClientEntity)
+                .where(ClientEntity.client_id.in_([c.id for c in clients]))
+                .order_by(ClientEntity.name, ClientEntity.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    by_client: dict[UUID, list[ClientEntity]] = {}
+    for entity in entities:
+        by_client.setdefault(entity.client_id, []).append(entity)
+    return [(c, by_client.get(c.id, [])) for c in clients]
+
+
+async def get_client(session: AsyncSession, client_id: UUID) -> Client | None:
+    return (
+        await session.execute(select(Client).where(Client.id == client_id))
+    ).scalar_one_or_none()
+
+
+async def get_entity(session: AsyncSession, entity_id: UUID) -> ClientEntity | None:
+    return (
+        await session.execute(select(ClientEntity).where(ClientEntity.id == entity_id))
+    ).scalar_one_or_none()

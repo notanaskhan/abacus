@@ -17,7 +17,10 @@ from abacus.kernel.config import SYNTHETIC_ENVIRONMENTS, settings
 
 
 class Transport(Protocol):
-    def send(self, *, to: str, subject: str, body: str) -> None: ...
+    # `sender_name` is the display name (SPEC-025 AC-8: the firm's); the address stays ours.
+    def send(
+        self, *, to: str, subject: str, body: str, sender_name: str | None = None
+    ) -> None: ...
 
 
 class LocalMailbox:
@@ -26,12 +29,20 @@ class LocalMailbox:
             raise RuntimeError("the local mailbox is for synthetic environments only")
         self._dir = directory or Path(settings().local_mailbox_dir)
 
-    def send(self, *, to: str, subject: str, body: str) -> None:
+    def send(self, *, to: str, subject: str, body: str, sender_name: str | None = None) -> None:
         self._dir.mkdir(parents=True, exist_ok=True)
         sent = datetime.now(UTC)
         path = self._dir / f"{sent:%Y%m%dT%H%M%S}-{uuid4().hex[:8]}.json"
         path.write_text(
-            json.dumps({"to": to, "subject": subject, "body": body, "sent_at": sent.isoformat()}),
+            json.dumps(
+                {
+                    "to": to,
+                    "sender_name": sender_name,
+                    "subject": subject,
+                    "body": body,
+                    "sent_at": sent.isoformat(),
+                }
+            ),
             encoding="utf-8",
         )
 

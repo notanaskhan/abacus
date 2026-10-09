@@ -4,7 +4,7 @@ title: Clients you already have, and invitations in the firm's name
 spec: SPEC-025
 acceptance_criteria: [AC-1, AC-8, AC-9]
 risk_zone: amber
-status: awaiting-plan-approval
+status: done
 branch: task-043-existing-clients
 worktree:
 created: 2026-10-09
@@ -37,7 +37,7 @@ SPEC-025 AC-1, AC-8 and AC-9 (for these screens).
   - `apps/web` `Engagements` (the create dialog), `ClientEngagement`.
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-09: D1–D4; D3 keeps engagement creation with firm administrators and practice leaders). Approved by founder: paths listed under *Protected paths*
 
 ### What the code shows
 - **Every engagement creates a new client and entity:** `create_client` always inserts. A wall is on a client ID, so a second "Halvorsen" record isn't covered by a wall on the first.
@@ -86,12 +86,24 @@ Not needed:
 - **D4. Write the approval file for the paths above?** *Recommendation: yes.*
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
-- [ ] Type check, lint, format, architecture and dependency rules pass
-- [ ] Every query is tenant-scoped; every endpoint checks authorisation
-- [ ] Module READMEs and the relevant docs are updated
+- [x] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
+- [x] Type check, lint, format, architecture and dependency rules pass
+- [x] Every query is tenant-scoped; every endpoint checks authorisation
+- [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-09` — Implemented:
+  - migration 0035 (normalised client and entity names, generated; one entity name per client);
+  - the client search (`client.read`, walled clients left out);
+  - creating against an existing client (walls refused before anything is written, then checked again by `authorise` on the written engagement; a likely duplicate refused unless confirmed; a repeated entity name refused);
+  - invitations in the firm's name (subject, body, sender name), staff invitations too;
+  - the client picker in "New engagement"; "With {firm}" in the client portal.
+
+  Tests and checks:
+  - backend unit and web 179 passed; the gates pass; migration 0035 applies, rolls back and reapplies;
+  - the database's normalisation was checked against Python's on the test cases;
+  - a local smoke passed: the existing "Acme" was found and kept for a new engagement; "ACME, Inc." refused as a likely duplicate; with a wall on Acme, it was left out of the search and the creator refused; the invitation email came from "Dev firm", naming FY2027 and Acme.
+  - The local database already held three "Acme" clients, which shows the gap this closes. Existing duplicates are flagged, not merged (SPEC-025 Q1).
 - `2026-10-09` — SPEC-025 approved and merged (#78). Design written for founder review.
 
 ## Decisions made during this task

@@ -38,6 +38,7 @@ from abacus.modules.engagements.service import (
     remove_from_team,
     resend_client_invitation,
     revoke_client_invitation,
+    search_clients,
     self_join,
     team_candidates,
     team_of_engagement,
@@ -59,6 +60,11 @@ class EngagementIn(BaseModel):
     fiscal_period_end: Annotated[date, classified("confidential")]
     # SPEC-024 AC-6: the engagement's type.
     type: Annotated[EngagementType, classified("internal")] = "audit"
+    # SPEC-025 AC-1: an existing client (and entity), picked rather than typed; the names above
+    # are then the chosen ones (or, with no entity id, the new entity's name).
+    client_id: Annotated[UUID | None, classified("internal")] = None
+    client_entity_id: Annotated[UUID | None, classified("internal")] = None
+    confirm_new: Annotated[bool, classified("internal")] = False
 
     @model_validator(mode="after")
     def _period(self) -> EngagementIn:
@@ -109,7 +115,9 @@ def _out(metadata: EngagementMetadata) -> EngagementOut:
 Ctx = Annotated[AuthContext, Depends(current_context)]
 
 
-@router.post("", action="engagement.create", response_model=EngagementOut, status_code=201)
+@router.post(
+    "", action="engagement.create", response_model=EngagementOut, status_code=201, errors=(409,)
+)
 async def create_engagement_route(body: EngagementIn, ctx: Ctx) -> EngagementOut:
     new = NewEngagement(
         name=body.name,
@@ -118,6 +126,9 @@ async def create_engagement_route(body: EngagementIn, ctx: Ctx) -> EngagementOut
         fiscal_period_start=body.fiscal_period_start,
         fiscal_period_end=body.fiscal_period_end,
         type=body.type,
+        client_id=body.client_id,
+        client_entity_id=body.client_entity_id,
+        confirm_new=body.confirm_new,
     )
     return _out(await create_engagement(ctx, new))
 
@@ -519,3 +530,36 @@ async def acknowledge_step_route(
 )
 async def dismiss_onboarding_route(ctx: Ctx) -> OnboardingOut:
     return _onboarding_out(await dismiss_onboarding(ctx))
+
+
+# --- The client picker (SPEC-025 AC-1; TASK-043) -----------------------------------------------
+
+
+class EntityChoiceOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    name: Annotated[str, classified("confidential")]
+
+
+class ClientChoiceOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    name: Annotated[str, classified("confidential")]
+    entities: Annotated[list[EntityChoiceOut], classified("confidential")]
+
+
+@firm_router.get("/clients/search", action="client.read", response_model=list[ClientChoiceOut])
+async def search_clients_route(
+    ctx: Ctx, q: Annotated[str, Query(min_length=1, max_length=200)]
+) -> list[ClientChoiceOut]:
+    """The firm's clients by name (normalised), minus any the person is walled off from."""
+    return [
+        ClientChoiceOut(
+            id=c.id,
+            name=c.name,
+            entities=[EntityChoiceOut(id=e.id, name=e.name) for e in c.entities],
+        )
+        for c in await search_clients(ctx, q)
+    ]
