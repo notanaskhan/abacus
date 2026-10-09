@@ -20,7 +20,7 @@ from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.identity.authz import Forbidden, Resource, authorise
 from abacus.modules.identity.context import AuthContext, NoActiveTenant
-from abacus.modules.identity.events import EngagementMemberSelfJoined
+from abacus.modules.identity.events import EngagementMemberAdded, EngagementMemberSelfJoined
 from abacus.modules.identity.member_hooks import member_added
 from abacus.modules.identity.repository import (
     EngagementRole,
@@ -40,6 +40,7 @@ from abacus.modules.identity.repository import (
     insert_engagement_member,
     insert_wall,
     remove_wall,
+    team_candidate_ids,
     walled_clients,
 )
 from abacus.modules.identity.tokens import InvalidToken, VerifiedIdentity, token_verifier
@@ -130,6 +131,39 @@ async def add_creator_as_partner(tx: UnitOfWork, ctx: AuthContext, engagement_id
         after=Ref(user_id=ctx.user_id),
     )
     await member_added(tx, engagement_id, ctx.user_id)  # SPEC-025: confirm independence
+
+
+async def available_staff(tenant: TenantContext, client_id: UUID) -> frozenset[UUID]:
+    """Active staff of the firm not walled from the client (SPEC-025, TASK-048: who of last year's
+    team can be proposed), for a caller that authorised `roll_forward.read`. A fresh engagement ID
+    has no members, so `team_candidate_ids` excludes nobody for being on a team."""
+    async with tenant_session(tenant) as session:
+        return frozenset(await team_candidate_ids(session, uuid4(), client_id))
+
+
+async def add_rolled_forward_member(
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    engagement_id: UUID,
+    client_id: UUID,
+    user_id: UUID,
+    role: EngagementRole,
+) -> None:
+    """SPEC-025 AC-2 (TASK-048 D2): a confirmed member of last year's team joins the engagement
+    being created, inside the creating unit of work, after `engagement.create` and
+    `roll_forward.read` were authorised. `team.add_member` can't run here: its check of the
+    caller's own role reads outside this transaction, where the creator isn't partner yet. The
+    person is re-checked: active staff, not walled from the client, not already on the team."""
+    if user_id not in await team_candidate_ids(tx.session, engagement_id, client_id):
+        raise NotFound("person")  # left, walled, a client user, or already a member
+    await insert_engagement_member(tx.session, ctx.tenant_id, engagement_id, user_id, role)
+    tx.record(
+        "engagement_member.added",
+        target=Target("engagement", engagement_id),
+        after=Ref(user_id=user_id),
+    )
+    tx.emit(EngagementMemberAdded(engagement_id=engagement_id, user_id=user_id))
+    await member_added(tx, engagement_id, user_id)  # SPEC-025: asked to confirm independence
 
 
 class AlreadyMember(DomainConflict):

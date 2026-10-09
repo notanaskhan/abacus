@@ -1,8 +1,9 @@
-import type { ClientChoiceOut } from "@abacus/api-client";
+import type { ClientChoiceOut, EngagementIn, RollForwardProposalOut } from "@abacus/api-client";
 import {
   applyMethodologyMutation,
   createEngagementMutation,
   listTemplatesOptions,
+  proposalMutation,
   searchClientsOptions,
   listEngagementsOptions,
   listEngagementsQueryKey,
@@ -26,6 +27,7 @@ import { type SyntheticEvent, type JSX, useState } from "react";
 import { errorMessage } from "../api";
 import { MyConfirmations } from "./MyConfirmations";
 import { Onboarding } from "./Onboarding";
+import { RollForwardReview } from "./RollForward";
 import { type EngagementType, ENGAGEMENT_TYPES, typeLabel } from "./engagementTypes";
 
 export function Engagements(): JSX.Element {
@@ -138,6 +140,12 @@ function CreateEngagement({
   const only = offered.length === 1 ? offered[0] : undefined;
   const template = choice ?? only?.version_id ?? "";
   const apply = useMutation(applyMethodologyMutation());
+  // SPEC-025 AC-2 (TASK-048): last year's engagement for this entity and type, to review first.
+  const [review, setReview] = useState<{
+    body: EngagementIn;
+    proposal: RollForwardProposalOut;
+  } | null>(null);
+  const propose = useMutation(proposalMutation());
   const openEngagement = (id: string): void => {
     onOpenChange(false);
     void navigate({ to: "/engagements/$engagementId", params: { engagementId: id } });
@@ -172,134 +180,187 @@ function CreateEngagement({
       return typeof value === "string" ? value : "";
     };
     const chosenEntity = picked?.entities.find((e) => e.id === entity);
-    mutation.mutate({
-      body: {
-        name: field("name"),
-        client_name: picked?.name ?? field("client_name"),
-        client_entity_name: chosenEntity?.name ?? field("client_entity_name"),
-        fiscal_period_start: field("fiscal_period_start"),
-        fiscal_period_end: field("fiscal_period_end"),
-        type: (field("type") || "audit") as EngagementType,
-        // SPEC-025 AC-1: a client the firm already has, picked rather than typed again.
-        ...(picked !== null ? { client_id: picked.id } : {}),
-        ...(chosenEntity !== undefined ? { client_entity_id: chosenEntity.id } : {}),
-        ...(confirmNew ? { confirm_new: true } : {}),
+    const body: EngagementIn = {
+      name: field("name"),
+      client_name: picked?.name ?? field("client_name"),
+      client_entity_name: chosenEntity?.name ?? field("client_entity_name"),
+      fiscal_period_start: field("fiscal_period_start"),
+      fiscal_period_end: field("fiscal_period_end"),
+      type: (field("type") || "audit") as EngagementType,
+      // SPEC-025 AC-1: a client the firm already has, picked rather than typed again.
+      ...(picked !== null ? { client_id: picked.id } : {}),
+      ...(chosenEntity !== undefined ? { client_entity_id: chosenEntity.id } : {}),
+      ...(confirmNew ? { confirm_new: true } : {}),
+    };
+    if (chosenEntity === undefined) {
+      mutation.mutate({ body });
+      return;
+    }
+    askProposal(body, chosenEntity.id);
+  }
+
+  function askProposal(body: EngagementIn, entityId: string, prior?: string): void {
+    propose.mutate(
+      {
+        body: {
+          client_entity_id: entityId,
+          type: body.type ?? "audit",
+          fiscal_period_start: body.fiscal_period_start,
+          ...(prior !== undefined ? { prior_engagement_id: prior } : {}),
+        },
       },
-    });
+      {
+        onSuccess: (proposal) => {
+          if (proposal.prior == null) mutation.mutate({ body });
+          else setReview({ body, proposal });
+        },
+      },
+    );
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange} title="New engagement">
-      <form onSubmit={submit} className="flex flex-col gap-3">
-        <ClientPicker
-          picked={picked}
-          onPick={(client) => {
-            setPicked(client);
-            setEntity(client?.entities[0]?.id ?? "");
-            setConfirmNew(false);
+      {review !== null ? (
+        <RollForwardReview
+          proposal={review.proposal}
+          body={review.body}
+          onBack={() => {
+            setReview(null);
+          }}
+          onChoosePrior={(prior) => {
+            if (review.body.client_entity_id != null)
+              askProposal(review.body, review.body.client_entity_id, prior);
+          }}
+          onCreated={(id) => {
+            void queryClient.invalidateQueries({ queryKey: listEngagementsQueryKey() });
+            setReview(null);
+            openEngagement(id);
           }}
         />
-        {picked === null ? (
-          <>
-            <Field name="client_name" label="Client" />
-            <Field name="client_entity_name" label="Client entity" />
-          </>
-        ) : (
+      ) : (
+        <form onSubmit={submit} className="flex flex-col gap-3">
+          <ClientPicker
+            picked={picked}
+            onPick={(client) => {
+              setPicked(client);
+              setEntity(client?.entities[0]?.id ?? "");
+              setConfirmNew(false);
+            }}
+          />
+          {picked === null ? (
+            <>
+              <Field name="client_name" label="Client" />
+              <Field name="client_entity_name" label="Client entity" />
+            </>
+          ) : (
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="entity">Client entity</Label>
+              <select
+                id="entity"
+                value={entity}
+                onChange={(event) => {
+                  setEntity(event.target.value);
+                }}
+                className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm"
+              >
+                {picked.entities.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.name}
+                  </option>
+                ))}
+                <option value="">Add an entity…</option>
+              </select>
+              {entity === "" && <Field name="client_entity_name" label="New entity name" />}
+            </div>
+          )}
+          <Field name="name" label="Engagement name" />
           <div className="flex flex-col gap-1">
-            <Label htmlFor="entity">Client entity</Label>
+            <Label htmlFor="type">Engagement type</Label>
             <select
-              id="entity"
-              value={entity}
+              id="type"
+              name="type"
+              value={type}
               onChange={(event) => {
-                setEntity(event.target.value);
+                setType(event.target.value as EngagementType);
+                setChoice(null);
               }}
               className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm"
             >
-              {picked.entities.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name}
+              {ENGAGEMENT_TYPES.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
                 </option>
               ))}
-              <option value="">Add an entity…</option>
             </select>
-            {entity === "" && <Field name="client_entity_name" label="New entity name" />}
           </div>
-        )}
-        <Field name="name" label="Engagement name" />
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="type">Engagement type</Label>
-          <select
-            id="type"
-            name="type"
-            value={type}
-            onChange={(event) => {
-              setType(event.target.value as EngagementType);
-              setChoice(null);
-            }}
-            className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm"
-          >
-            {ENGAGEMENT_TYPES.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Field name="fiscal_period_start" label="Fiscal year start" type="date" />
-          <Field name="fiscal_period_end" label="Fiscal year end" type="date" />
-        </div>
-        <RequestListChoice
-          typeLabel={typeLabel(type)}
-          loading={templates.isPending}
-          failed={templates.isError}
-          offered={offered.map((t) => ({
-            id: t.version_id,
-            label: `${t.template_name} · v${String(t.version)} (latest)`,
-          }))}
-          value={template}
-          onChange={setChoice}
-        />
-        {duplicate && !confirmNew ? (
-          <Alert title="This client may already exist">
-            Find it with the search above and pick it, so its walls and history carry over. If it
-            really is a different client,{" "}
-            <button
-              type="button"
-              className="font-semibold text-accent hover:underline"
-              onClick={() => {
-                setConfirmNew(true);
-              }}
-            >
-              create a new client anyway
-            </button>
-            .
-          </Alert>
-        ) : (
-          mutation.isError &&
-          !duplicate && (
-            <Alert title="Couldn't create the engagement">{errorMessage(mutation.error)}</Alert>
-          )
-        )}
-        {created !== null ? (
-          <Alert title="Created, but the template wasn't applied">
-            {created.reason} You can apply it from the engagement&apos;s setup.{" "}
-            <button
-              type="button"
-              className="font-semibold text-accent hover:underline"
-              onClick={() => {
-                openEngagement(created.id);
-              }}
-            >
-              Open the engagement
-            </button>
-          </Alert>
-        ) : (
-          <Button type="submit" disabled={mutation.isPending || apply.isPending}>
-            {mutation.isPending || apply.isPending ? "Creating…" : "Create engagement"}
-          </Button>
-        )}
-      </form>
+          <div className="grid grid-cols-2 gap-3">
+            <Field name="fiscal_period_start" label="Fiscal year start" type="date" />
+            <Field name="fiscal_period_end" label="Fiscal year end" type="date" />
+          </div>
+          <RequestListChoice
+            typeLabel={typeLabel(type)}
+            loading={templates.isPending}
+            failed={templates.isError}
+            offered={offered.map((t) => ({
+              id: t.version_id,
+              label: `${t.template_name} · v${String(t.version)} (latest)`,
+            }))}
+            value={template}
+            onChange={setChoice}
+          />
+          {duplicate && !confirmNew ? (
+            <Alert title="This client may already exist">
+              Find it with the search above and pick it, so its walls and history carry over. If it
+              really is a different client,{" "}
+              <button
+                type="button"
+                className="font-semibold text-accent hover:underline"
+                onClick={() => {
+                  setConfirmNew(true);
+                }}
+              >
+                create a new client anyway
+              </button>
+              .
+            </Alert>
+          ) : (
+            mutation.isError &&
+            !duplicate && (
+              <Alert title="Couldn't create the engagement">{errorMessage(mutation.error)}</Alert>
+            )
+          )}
+          {created !== null ? (
+            <Alert title="Created, but the template wasn't applied">
+              {created.reason} You can apply it from the engagement&apos;s setup.{" "}
+              <button
+                type="button"
+                className="font-semibold text-accent hover:underline"
+                onClick={() => {
+                  openEngagement(created.id);
+                }}
+              >
+                Open the engagement
+              </button>
+            </Alert>
+          ) : (
+            <>
+              {propose.isError && (
+                <Alert title="Couldn't look for last year's engagement">
+                  {errorMessage(propose.error)}
+                </Alert>
+              )}
+              <Button
+                type="submit"
+                disabled={mutation.isPending || apply.isPending || propose.isPending}
+              >
+                {mutation.isPending || apply.isPending || propose.isPending
+                  ? "Creating…"
+                  : "Create engagement"}
+              </Button>
+            </>
+          )}
+        </form>
+      )}
     </Dialog>
   );
 }

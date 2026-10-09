@@ -38,10 +38,12 @@ async def insert_engagement(
     fiscal_period_end: date,
     created_by: UUID,
     type: str = "audit",
+    prior_engagement_id: UUID | None = None,
 ) -> None:
     await session.execute(
         insert(Engagement).values(
             type=type,
+            prior_engagement_id=prior_engagement_id,
             id=engagement_id,
             tenant_id=tenant_id,
             client_id=client_id,
@@ -51,6 +53,30 @@ async def insert_engagement(
             fiscal_period_end=fiscal_period_end,
             created_by=created_by,
         )
+    )
+
+
+async def prior_candidates(
+    session: AsyncSession, ctx: AuthContext, client_entity_id: UUID, type: str, before: date
+) -> Sequence[Engagement]:
+    """SPEC-025 AC-2 (TASK-048): the entity's engagements of this type whose period ended before
+    `before`, latest first, that the caller may roll forward from (walls excluded)."""
+    return (
+        (
+            await session.execute(
+                select(Engagement)
+                .where(
+                    visible(ctx, "roll_forward.read", Engagement.id),
+                    Engagement.client_entity_id == client_entity_id,
+                    Engagement.type == type,
+                    Engagement.fiscal_period_end < before,
+                )
+                .order_by(Engagement.fiscal_period_end.desc(), Engagement.created_at.desc())
+                .limit(10)
+            )
+        )
+        .scalars()
+        .all()
     )
 
 

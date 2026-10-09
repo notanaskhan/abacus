@@ -9,7 +9,7 @@ import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Literal, cast
+from typing import TYPE_CHECKING, Literal, cast
 from uuid import UUID, uuid4
 
 from sqlalchemy import ColumnElement, Select, select
@@ -37,6 +37,9 @@ from abacus.modules.engagements.repository import (
     set_methodology_version,
     version_rows,
 )
+
+if TYPE_CHECKING:
+    from abacus.modules.engagements.roll_forward import RollForward
 from abacus.modules.engagements.workbook import (
     AccountRule,
     Area,
@@ -124,6 +127,8 @@ class NewEngagement:
     client_entity_id: UUID | None = None
     # A new client whose name matches an existing one needs this (`PossibleDuplicate`).
     confirm_new: bool = False
+    # SPEC-025 AC-2 (TASK-048): created from a confirmed roll-forward proposal.
+    roll_forward: RollForward | None = None
 
 
 @dataclass(frozen=True)
@@ -198,8 +203,18 @@ class PossibleDuplicate(DomainConflict):
 
 
 async def create_engagement(ctx: AuthContext, new: NewEngagement) -> EngagementMetadata:
+    from abacus.modules.engagements.roll_forward import (  # roll_forward imports this module
+        apply_roll_forward,
+        check_prior,
+    )
+
     await authorise(ctx, "engagement.create", Resource.firm(ctx.tenant_id))
     engagement_id = uuid4()
+    roll = new.roll_forward
+    if roll is not None:
+        if new.client_id is None or new.client_entity_id is None:
+            raise DomainInvalid("a roll-forward is for an existing client entity")
+        await check_prior(ctx, roll, new.client_entity_id, new.type)
     if new.client_id is not None and new.client_id in await walled_from(ctx.tenant, ctx.user_id):
         # Refused before anything is written; `authorise` below is the authoritative check.
         raise Forbidden("engagement.create", "wall")
@@ -232,6 +247,7 @@ async def create_engagement(ctx: AuthContext, new: NewEngagement) -> EngagementM
             fiscal_period_end=new.fiscal_period_end,
             created_by=ctx.user_id,
             type=new.type,
+            prior_engagement_id=roll.prior_engagement_id if roll is not None else None,
         )
         if new.client_id is not None:
             # SPEC-025 AC-1: an existing client. The engagement just written is checked against
@@ -240,6 +256,8 @@ async def create_engagement(ctx: AuthContext, new: NewEngagement) -> EngagementM
             await authorise(ctx, "engagement.create", ref.resource())
         tx.record("engagement.created", target=Target("engagement", engagement_id))
         await add_creator_as_partner(tx, ctx, engagement_id)
+        if roll is not None:
+            await apply_roll_forward(tx, ctx, engagement_id, client.client_id, roll)
         tx.emit(EngagementCreated(engagement_id=engagement_id))
     return await _metadata(ctx, engagement_id)
 

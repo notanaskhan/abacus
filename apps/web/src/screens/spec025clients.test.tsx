@@ -48,6 +48,9 @@ describe("ac1 clients you already have", () => {
       "GET /v1/firm/onboarding": () => json({ detail: "forbidden" }, 403),
       "GET /v1/firm/clients/search": () => json([HALVORSEN]),
       "POST /v1/engagements": () => json({ id: "new", name: "FY2026 audit", team: [] }, 201),
+      // SPEC-025 AC-2 (TASK-048): no earlier engagement for this entity, so no roll-forward.
+      "POST /v1/engagements/proposal": () =>
+        json({ prior: null, others: [], team: [], template: null, items: [] }),
     });
     page();
     fireEvent.click(
@@ -62,7 +65,8 @@ describe("ac1 clients you already have", () => {
     fillRest();
     fireEvent.click(screen.getByRole("button", { name: "Create engagement" }));
     await waitFor(() => {
-      expect(calls.find((c) => c.method === "POST")?.body).toMatchObject({
+      const create = calls.find((c) => c.method === "POST" && c.path === "/v1/engagements");
+      expect(create?.body).toMatchObject({
         client_id: "c1",
         client_entity_id: "e2",
         client_name: "Halvorsen Inc.",

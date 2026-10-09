@@ -4,7 +4,7 @@ title: Roll forward from last year's engagement
 spec: SPEC-025
 acceptance_criteria: [AC-2, AC-9]
 risk_zone: red
-status: planned
+status: done
 branch: task-048-roll-forward
 worktree:
 created: 2026-10-09
@@ -39,7 +39,7 @@ SPEC-025 AC-2, and AC-9 for the wizard. AC-3 (new clients) shipped in TASK-047.
   - `apps/web` `Engagements.tsx` (the create dialog).
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-09: D1–D7). Approved by founder: the paths named under *Protected paths*, including `identity/service.py`, `identity/api.py` and the generated `_matrix.py`
 
 ### What the code shows
 - **"Actually used" is already recorded:** accepting evidence sets the request item's status to `accepted`, so the requests module can tell used items apart without reading evidence. Waived and not-applicable items aren't `accepted`, so they come over unticked, as the founder specified.
@@ -123,12 +123,26 @@ Not touched: `api/app.py` (existing routers), `identity/authz/__init__.py`, evid
 - **D7. Write the approval file for the paths above?** *Recommendation: yes.*
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
-- [ ] Type check, lint, format, architecture and dependency rules pass
-- [ ] Every query is tenant-scoped; every endpoint checks authorisation
-- [ ] Module READMEs and the relevant docs are updated
+- [x] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
+- [x] Type check, lint, format, architecture and dependency rules pass
+- [x] Every query is tenant-scoped; every endpoint checks authorisation
+- [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-10` — Implemented:
+  - migration 0037 (`engagements.prior_engagement_id`, same-firm foreign key, never itself; insert grant), with its schema-check entry;
+  - the matrix action `roll_forward.read` (firm administrators, practice leaders; regenerated `_matrix.py`);
+  - identity: `add_rolled_forward_member` and `available_staff` in `service.py`, exported from `api.py`;
+  - engagements: `roll_forward.py` (prior candidates under `visible(roll_forward.read)`, the proposal, `classify_items`, `check_prior`, `apply_roll_forward`); `create_engagement` takes `roll_forward`; `POST /v1/engagements/proposal`;
+  - requests: `roll_forward.py` (last year's items under the same `visible`, so no LIST-001 exemption was needed; copying keeps description, area, tier, dataset and client visibility, never the assignee) and `insert_classified` for template additions, registered from `requests.api`;
+  - web: "New engagement" asks for a proposal whenever an existing entity is picked; with a prior engagement it shows the review (team with roles, template line, Used, Not used and New groups with counts, a choice of other earlier engagements), and creates exactly what's ticked. Without one, the TASK-047 flow is unchanged. Plain words for the new refusal codes.
+  - The response model was named `RollForwardProposalOut`, because `ProposalOut` already exists (agent proposals), and the generated client would otherwise have renamed both.
+
+  Tests and checks:
+  - backend `test_roll_forward.py` (used/unused, waived unticked, matching, area-sensitive matching, creator not re-added, an unavailable person refusing everything, template items without a template refused); web `spec025rollforward.test.tsx`;
+  - two existing tests adjusted for the new step: the route-status pin lists `/v1/engagements/proposal` as non-creating, and the existing-client create test mocks the (empty) proposal and looks for the create call;
+  - backend unit 9,398 passed, web 200 passed, gates pass; migration 0037 applies and rolls back;
+  - local smoke: on a prior engagement with 3 of 8 items accepted (set directly in the local database, test data only) and Sam Staff as senior, the proposal listed 3 used, 5 not used and the template at v5 (v1 last year). Creating made the engagement with Dana as partner and Sam as senior (asked to confirm independence), 3 items, the prior linked, and `engagement.rolled_forward` audited.
 - `2026-10-09` — Design written for founder review after TASK-047 (#83) and the template-version fix (#84) merged.
 
 ## Decisions made during this task

@@ -17,6 +17,7 @@ from abacus.kernel.config import settings
 from abacus.kernel.text import SingleLineText
 from abacus.modules.engagements.onboarding import Onboarding, StepId, acknowledge_step, onboarding
 from abacus.modules.engagements.onboarding import dismiss as dismiss_onboarding
+from abacus.modules.engagements.roll_forward import ItemKind, RollForward, propose
 from abacus.modules.engagements.service import (
     EngagementMetadata,
     EngagementType,
@@ -68,6 +69,28 @@ router = AbacusRouter(prefix="/v1/engagements", tags=["engagements"])
 Name = Annotated[SingleLineText, Field(min_length=1, max_length=200), classified("confidential")]
 
 
+StaffRole = Literal["engagement_partner", "manager", "senior", "staff", "reviewer"]
+
+
+class RollForwardMemberIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    user_id: Annotated[UUID, classified("internal")]
+    role: Annotated[StaffRole, classified("internal")]
+
+
+class RollForwardIn(BaseModel):
+    """SPEC-025 AC-2 (TASK-048): exactly what the person confirmed from the proposal."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    prior_engagement_id: Annotated[UUID, classified("internal")]
+    team: Annotated[list[RollForwardMemberIn], Field(max_length=200), classified("internal")]
+    version_id: Annotated[UUID | None, classified("internal")]
+    prior_item_ids: Annotated[list[UUID], Field(max_length=2000), classified("internal")]
+    template_keys: Annotated[list[int], Field(max_length=2000), classified("internal")] = []
+
+
 class EngagementIn(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
 
@@ -83,6 +106,7 @@ class EngagementIn(BaseModel):
     client_id: Annotated[UUID | None, classified("internal")] = None
     client_entity_id: Annotated[UUID | None, classified("internal")] = None
     confirm_new: Annotated[bool, classified("internal")] = False
+    roll_forward: Annotated[RollForwardIn | None, classified("internal")] = None
 
     @model_validator(mode="after")
     def _period(self) -> EngagementIn:
@@ -147,8 +171,98 @@ async def create_engagement_route(body: EngagementIn, ctx: Ctx) -> EngagementOut
         client_id=body.client_id,
         client_entity_id=body.client_entity_id,
         confirm_new=body.confirm_new,
+        roll_forward=_roll(body.roll_forward),
     )
     return _out(await create_engagement(ctx, new))
+
+
+def _roll(body: RollForwardIn | None) -> RollForward | None:
+    if body is None:
+        return None
+    return RollForward(
+        body.prior_engagement_id,
+        [(m.user_id, m.role) for m in body.team],
+        body.version_id,
+        body.prior_item_ids,
+        body.template_keys,
+    )
+
+
+class RollForwardProposalIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    client_entity_id: Annotated[UUID, classified("internal")]
+    type: Annotated[EngagementType, classified("internal")] = "audit"
+    fiscal_period_start: Annotated[date, classified("confidential")]
+    prior_engagement_id: Annotated[UUID | None, classified("internal")] = None
+
+
+class PriorChoiceOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    name: Annotated[str, classified("confidential")]
+    fiscal_period_start: Annotated[date, classified("confidential")]
+    fiscal_period_end: Annotated[date, classified("confidential")]
+
+
+class ProposedMemberOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    user_id: Annotated[UUID, classified("internal")]
+    display_name: Annotated[str, classified("confidential")]
+    role: Annotated[StaffRole, classified("internal")]
+    available: Annotated[bool, classified("internal")]
+
+
+class ProposedTemplateOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    template_id: Annotated[UUID, classified("internal")]
+    template_name: Annotated[str, classified("internal")]
+    version_last_year: Annotated[int, classified("internal")]
+    latest_version_id: Annotated[UUID, classified("internal")]
+    latest_version: Annotated[int, classified("internal")]
+
+
+class ProposedItemOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    kind: Annotated[ItemKind, classified("internal")]
+    description: Annotated[str, classified("confidential")]
+    audit_area: Annotated[str, classified("confidential")]
+    tier: Annotated[str | None, classified("internal")]
+    client_visible: Annotated[bool, classified("internal")]
+    ticked: Annotated[bool, classified("internal")]
+    prior_item_id: Annotated[UUID | None, classified("internal")]
+    template_key: Annotated[int | None, classified("internal")]
+
+
+class RollForwardProposalOut(BaseModel):
+    """SPEC-025 AC-2: nothing is stored; `prior` is None when there's nothing to roll forward."""
+
+    model_config = ConfigDict(frozen=True)
+
+    prior: Annotated[PriorChoiceOut | None, classified("confidential")]
+    others: Annotated[list[PriorChoiceOut], classified("confidential")]
+    team: Annotated[list[ProposedMemberOut], classified("confidential")]
+    template: Annotated[ProposedTemplateOut | None, classified("internal")]
+    items: Annotated[list[ProposedItemOut], classified("confidential")]
+
+
+@router.post(
+    "/proposal", action="engagement.create", response_model=RollForwardProposalOut, errors=(409,)
+)
+async def proposal_route(body: RollForwardProposalIn, ctx: Ctx) -> RollForwardProposalOut:
+    """SPEC-025 AC-2: last year's team, template and items to confirm; nothing is stored."""
+    found = await propose(
+        ctx,
+        client_entity_id=body.client_entity_id,
+        type=body.type,
+        fiscal_period_start=body.fiscal_period_start,
+        prior_engagement_id=body.prior_engagement_id,
+    )
+    return RollForwardProposalOut.model_validate(asdict(found))
 
 
 @router.get("", action="engagement.read_metadata", response_model=list[EngagementSummaryOut])

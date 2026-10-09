@@ -112,6 +112,7 @@ NOT_CREATING = {
     "/v1/firm/onboarding/{step}/acknowledge",
     "/v1/firm/onboarding/dismiss",
     "/v1/engagements/{engagement_id}/independence",  # SPEC-025: returns the setup state
+    "/v1/engagements/proposal",  # SPEC-025 (TASK-048): a proposal, nothing stored
 }
 
 

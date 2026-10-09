@@ -110,6 +110,27 @@ async def list_request_items(
     return [(item, version_id) for item, version_id in rows.all()]
 
 
+async def items_to_roll_forward(
+    session: AsyncSession, ctx: AuthContext, engagement_id: UUID, limit: int = 2000
+) -> Sequence[RequestItem]:
+    """Last year's items, for a roll-forward proposal or copy (SPEC-025 AC-2; TASK-048)."""
+    return (
+        (
+            await session.execute(
+                select(RequestItem)
+                .where(
+                    visible(ctx, "roll_forward.read", RequestItem.engagement_id),
+                    RequestItem.engagement_id == engagement_id,
+                )
+                .order_by(RequestItem.created_at, RequestItem.id)
+                .limit(limit)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
 async def set_client_fields(
     session: AsyncSession,
     item_id: UUID,

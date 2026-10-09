@@ -144,6 +144,38 @@ class AppliedMethodology:
     items_created: int
 
 
+async def insert_classified(
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    engagement_id: UUID,
+    request_list_id: UUID,
+    description: str,
+    audit_area: str,
+    firm_tier: str | None,
+) -> UUID:
+    """A template item seeded as a request item, inside the caller's unit of work (SPEC-025
+    TASK-048: the template's additions in a roll-forward)."""
+    item_id = uuid4()
+    await _insert_item(
+        tx,
+        item_id=item_id,
+        tenant_id=ctx.tenant_id,
+        engagement_id=engagement_id,
+        request_list_id=request_list_id,
+        description=description,
+        audit_area=audit_area,
+        created_by=ctx.user_id,
+        firm_tier=firm_tier,
+    )
+    tx.record(
+        "request_item.created",
+        target=Target("request_item", item_id),
+        after=Ref(engagement_id=engagement_id),
+    )
+    tx.emit(RequestItemCreated(request_item_id=item_id, engagement_id=engagement_id))
+    return item_id
+
+
 async def apply_methodology(
     ctx: AuthContext, engagement_id: UUID, version_id: UUID
 ) -> AppliedMethodology:

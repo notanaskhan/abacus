@@ -1,6 +1,11 @@
 """Public interface of the engagements module; other modules import only this (ADR-008)."""
 
 from abacus.modules.engagements.events import EngagementCreated, IndependenceRequested
+from abacus.modules.engagements.roll_forward import (
+    PriorItem,
+    TemplateSeed,
+    register_roll_forward_items,
+)
 from abacus.modules.engagements.routes import firm_router, methodology_router, router
 from abacus.modules.engagements.service import (
     EngagementMetadata,
@@ -58,8 +63,10 @@ __all__ = [
     "IndependenceRequested",
     "MethodologyAlreadyApplied",
     "MethodologyVersionView",
+    "PriorItem",
     "StoredFile",
     "TemplateItem",
+    "TemplateSeed",
     "TemplateVersionSummary",
     "area_for",
     "attach_acceptance_file",
@@ -73,6 +80,7 @@ __all__ = [
     "lock_ref",
     "methodology_router",
     "pin_methodology",
+    "register_roll_forward_items",
     "require_open",
     "router",
     "stored_file",
