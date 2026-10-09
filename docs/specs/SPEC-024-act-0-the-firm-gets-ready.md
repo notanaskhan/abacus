@@ -19,7 +19,7 @@ updated: 2026-10-09
 ## 1. Summary
 **Act 0 promise:** a firm goes from sign-up to its first engagement in an afternoon, and nothing about its setup needs a call with us.
 
-**Story:** Sam Patel, firm administrator at Whitfield & Lane:
+**Story** (Sam Patel and Whitfield & Lane are an illustrative persona and firm, not data; every requirement below is written by role). The firm administrator:
 1. signs the firm up and connects its single sign-on;
 2. invites the audit team, each person with a role;
 3. uploads the methodology, which Abacus checks row by row;
@@ -31,7 +31,7 @@ This spec fills the gaps between that story and what exists:
 - inviting staff and managing their roles;
 - the autonomy policy;
 - engagement types with a template each;
-- the onboarding checklist that walks Sam through all of it.
+- the onboarding checklist that walks the firm administrator through all of it.
 
 ## 2. Problem and context
 **What exists:**
@@ -51,7 +51,7 @@ This spec fills the gaps between that story and what exists:
 ## 3. Actors
 | Actor | Role in this feature |
 |---|---|
-| Firm administrator (Sam) | Signs up; connects SSO; invites and manages people; uploads the methodology; sets autonomy, budget and walls |
+| Firm administrator | Signs up; connects SSO; invites and manages people; uploads the methodology; sets autonomy, budget and walls |
 | Invited staff | Accept an invitation and sign in (through the firm's SSO once connected) |
 | Abacus (code, not a model) | Validates the methodology row by row; maps accounts to areas by the firm's rules |
 
@@ -110,6 +110,7 @@ This spec fills the gaps between that story and what exists:
 - **AC-8** Given every new screen, then loading, empty, error and not-allowed states exist, and colours come only from tokens.
 
 ## 6. Behaviour and flows
+An example run, with the story's persona (Sam, at the illustrative firm Whitfield & Lane):
 1. Sam opens `/signup`, signs in with the identity provider, enters "Whitfield & Lane" (and a code, Q1), and lands on the checklist.
 2. SSO: Sam enters `whitfieldlane.com` and follows the vendor's portal link back to Abacus, which shows "Connected".
 3. People: Sam invites 12 people with roles. Each accepts by signing in through SSO.
