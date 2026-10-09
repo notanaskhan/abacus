@@ -9,6 +9,10 @@ PROTECTED. TASK-007 design §5.
   2. relationships  the roles the actor holds here: firm role, plus engagement role on the
                     resource's engagement (no relationship at all: deny)
   3. roles          the matrix decision for those roles; an explicit `deny` beats any `allow`
+  3b. independence for an action marked `independence: required` (SPEC-025 AC-7), a staff
+                    engagement role grants it only once that person has confirmed their
+                    independence for the engagement (firm and client roles, support and system
+                    runs aren't bound; agents are, through their initiator)
   4. attributes     archived engagements are read-only; `mfa_recent`; `requires: reason`;
                     `notify` obligations are met by the action's own event (SPEC-013)
 An agent is also bounded by its initiator, checked live (ADR-025): the initiator must be allowed
@@ -60,7 +64,9 @@ MFA_RECENT = timedelta(minutes=15)
 # Ethical walls (ADR-026; SPEC-002) are enforced below, before roles: the API may start in
 # production (founder decision 2026-10-06: walls gate the first real firm).
 WALL_SAFE = True
-Layer = Literal["tenancy", "wall", "relationship", "role", "attribute", "delegation"]
+Layer = Literal[
+    "tenancy", "wall", "relationship", "role", "independence", "attribute", "delegation"
+]
 
 EngagementColumn = ColumnElement[UUID] | QueryableAttribute[UUID]
 BoolColumn = ColumnElement[bool] | QueryableAttribute[bool]
@@ -81,6 +87,23 @@ def register_engagement_client(column: ClientColumn, lookup: ClientLookup) -> No
     if _engagement_client is not None and _engagement_client != (column, lookup):
         raise RuntimeError("the engagement-to-client lookup is already registered")
     _engagement_client = (column, lookup)
+
+
+# SPEC-025 (TASK-045 D2): whether a person has confirmed their independence for an engagement,
+# registered by the engagements module (which owns the confirmations). `column` turns an
+# engagement-ID column and a user into an EXISTS (for `visible()`); `lookup` answers for one
+# engagement (for `authorise`). Unregistered, a staff engagement role never grants an action
+# marked `independence: required` (fail closed).
+IndependenceColumn = Callable[[EngagementColumn, UUID], ColumnElement[bool]]
+IndependenceLookup = Callable[[TenantContext, UUID, UUID], Awaitable[bool]]
+_independence: tuple[IndependenceColumn, IndependenceLookup] | None = None
+
+
+def register_independence(column: IndependenceColumn, lookup: IndependenceLookup) -> None:
+    global _independence
+    if _independence is not None and _independence != (column, lookup):
+        raise RuntimeError("the independence lookup is already registered")
+    _independence = (column, lookup)
 
 
 # SPEC-014 (ADR-106): the firm's non-archived engagements, registered by the engagements module;
@@ -106,6 +129,10 @@ _checked: ContextVar[set[str] | None] = ContextVar("abacus_authz_checked", defau
 # Each person's walled clients, read once per request (SPEC-002 §16); None outside a request.
 _walls: ContextVar[dict[UUID, frozenset[UUID]] | None] = ContextVar(
     "abacus_authz_walls", default=None
+)
+# Each person's confirmed engagements, answered once per request (SPEC-025).
+_confirmed: ContextVar[dict[tuple[UUID, UUID], bool] | None] = ContextVar(
+    "abacus_authz_confirmed", default=None
 )
 # Each person's engagement roles in the firm, read once per request (SPEC-014).
 _firm_engagement_roles: ContextVar[dict[UUID, frozenset[str]] | None] = ContextVar(
@@ -170,11 +197,13 @@ def recording_checks() -> Generator[set[str]]:
     checked: set[str] = set()
     token = _checked.set(checked)
     walls_token = _walls.set({})
+    confirmed_token = _confirmed.set({})
     roles_token = _firm_engagement_roles.set({})
     try:
         yield checked
     finally:
         _firm_engagement_roles.reset(roles_token)
+        _confirmed.reset(confirmed_token)
         _walls.reset(walls_token)
         _checked.reset(token)
 
@@ -285,11 +314,27 @@ async def authorise(
     if not roles:
         raise _deny(ctx, action, "relationship")
     # 3. Roles. For an agent, `task_scope` grants only what its run declared (ADR-025).
-    decisions = {_on_item(rule.decisions.get(role), ctx, resource) for role in roles}
+    by_role = {role: _on_item(rule.decisions.get(role), ctx, resource) for role in roles}
+    decisions = set(by_role.values())
     if isinstance(ctx, AgentContext) and "task_scope" in decisions and action in ctx.task_scope:
         decisions = (decisions - {"task_scope"}) | {"allow"}
     if "deny" in decisions or "allow" not in decisions:
         raise _deny(ctx, action, "role")
+    # 3b. Independence (SPEC-025 AC-7, per person): when only a staff engagement role grants a
+    # client-data action, it counts once that person has confirmed for this engagement. Firm and
+    # client roles, break-glass support and system runs aren't bound by it; an agent is, through
+    # its initiator below. A firm-level read (no engagement) lists rows that `visible()` filters
+    # by the same rule, engagement by engagement.
+    granting = {role for role, decision in by_role.items() if decision == "allow"}
+    if (
+        rule.independence
+        and resource.engagement_id is not None
+        and isinstance(ctx, AuthContext)
+        and not ctx.is_support
+        and granting <= ENGAGEMENT_ROLES
+        and not await _confirmed_for(ctx, resource)
+    ):
+        raise _deny(ctx, action, "independence")
     # An agent never exceeds the person it acts for (ADR-025 intersection), checked live.
     if isinstance(ctx, AgentContext):
         delegated = action if _human_held(rule) else AGENT_ONLY_REACH
@@ -357,6 +402,19 @@ async def _walled(ctx: Actor, resource: Resource) -> bool:
     return client is None or client in walls
 
 
+async def _confirmed_for(ctx: AuthContext, resource: Resource) -> bool:
+    if resource.engagement_id is None or _independence is None:
+        return False  # unregistered: fail closed
+    key = (ctx.user_id, resource.engagement_id)
+    cache = _confirmed.get()
+    if cache is not None and key in cache:
+        return cache[key]
+    confirmed = await _independence[1](ctx.tenant, resource.engagement_id, ctx.user_id)
+    if cache is not None:
+        cache[key] = confirmed
+    return confirmed
+
+
 def _not_walled(ctx: Actor, engagement_id: EngagementColumn) -> ColumnElement[bool]:
     """Rows whose engagement's client the acting person isn't walled off from (ADR-026)."""
     walls = select(ethical_walls.c.id).where(
@@ -404,13 +462,24 @@ def _visible_by_role(
         return true()
     if firm == "deny":
         return false()
-    roles = [
-        role
-        for role, decision in rule.decisions.items()
-        if decision == "allow" and (role in ENGAGEMENT_ROLES or role in CLIENT_ROLES)
-    ]
-    if not roles:
+    allowed = [role for role, decision in rule.decisions.items() if decision == "allow"]
+    staff = [role for role in allowed if role in ENGAGEMENT_ROLES]
+    client = [role for role in allowed if role in CLIENT_ROLES]
+    if rule.independence and not ctx.is_support:
+        # SPEC-025 (TASK-045): a staff engagement role counts once the person has confirmed.
+        reach = [_member_of(ctx, engagement_id, client)] if client else []
+        if staff and _independence is not None:
+            confirmed = _independence[0](engagement_id, ctx.user_id)
+            reach.append(and_(_member_of(ctx, engagement_id, staff), confirmed))
+        return or_(*reach) if reach else false()
+    if not staff and not client:
         return false()
+    return _member_of(ctx, engagement_id, staff + client)
+
+
+def _member_of(
+    ctx: AuthContext, engagement_id: EngagementColumn, roles: list[str]
+) -> ColumnElement[bool]:
     member_of = select(engagement_members.c.engagement_id).where(
         engagement_members.c.tenant_id == ctx.tenant_id,
         engagement_members.c.user_id == ctx.user_id,
@@ -482,6 +551,7 @@ __all__ = [
     "recording_checks",
     "register_active_engagements",
     "register_engagement_client",
+    "register_independence",
     "serving_request",
     "visible",
     "visible_items",

@@ -25,6 +25,8 @@ from abacus.modules.engagements.setup import (
     StoredFile,
     attach_acceptance_file,
     attach_letter_file,
+    confirmed_for,
+    confirmed_subquery,
     request_independence,
     require_open,
     stored_file,
@@ -33,6 +35,7 @@ from abacus.modules.engagements.workbook import AccountRule, Area, TemplateItem,
 from abacus.modules.identity.api import (
     register_active_engagements,
     register_engagement_client,
+    register_independence,
     register_member_added,
 )
 
@@ -42,6 +45,8 @@ register_engagement_client(client_subquery, client_of)
 register_active_engagements(active_engagements)
 # SPEC-025 (TASK-044): whoever joins a team is asked to confirm their independence.
 register_member_added(request_independence)
+# SPEC-025 (TASK-045): a staff engagement role reaches client data once its holder confirms.
+register_independence(confirmed_subquery, confirmed_for)
 
 __all__ = [
     "AccountRule",

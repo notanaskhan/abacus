@@ -17,7 +17,7 @@ from typing import cast
 
 import pytest
 import yaml
-from sqlalchemy import Uuid, column
+from sqlalchemy import ColumnElement, Uuid, column, true
 
 from abacus.kernel.db import ActorKind, TenantContext
 from abacus.modules.identity import api as identity_api
@@ -84,12 +84,21 @@ class EngagementRoles:
     async def walled(self, tenant: TenantContext, user_id: uuid.UUID) -> frozenset[uuid.UUID]:
         return self.walls
 
+    async def confirmed_for(self, *args: object) -> bool:
+        return True
+
+
+def _always_confirmed(engagement_id: object, user_id: uuid.UUID) -> ColumnElement[bool]:
+    return true()
+
 
 @pytest.fixture
 def engagement(monkeypatch: pytest.MonkeyPatch) -> EngagementRoles:
     fake = EngagementRoles()
     monkeypatch.setattr(authz, "engagement_role", fake)
     monkeypatch.setattr(authz, "walled_clients", fake.walled)
+    # SPEC-025 (TASK-045): the people here have confirmed their independence.
+    monkeypatch.setattr(authz, "_independence", (_always_confirmed, fake.confirmed_for))
     return fake
 
 

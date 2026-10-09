@@ -61,5 +61,6 @@ Seven steps, each computed from data (identity's `firm_facts` plus this module's
   - `independence.confirm` is for oneself only; a decline needs a note, which only the partner and manager see.
 - **Letter** (`letter.record`, partner and manager): status, date, a reason (when not required this year), and a link or signed copy.
 - **The gate:** `gate_client_data` / `require_open` refuse client invitations, connections, retrievals, client uploads and inbox actions until acceptance is `accepted` and the partner has concluded (and the letter is recorded, if the firm requires it). Each refusal is audited `client_data.gate_refused`, with codes `acceptance_missing`, `acceptance_declined`, `independence_conclusion_missing` and `letter_missing`. Automatic retrieval waits too.
+- **Per person (TASK-045):** engagements registers `confirmed_subquery` / `confirmed_for` with identity (`register_independence`), so a team member reaches the engagement's client data only once their own confirmation is `confirmed`. Someone added later is restricted alone; declining closes it to them again. The web shows "Confirm your independence to see client data" on the engagement until they do.
 - **Existing engagements:** marked "accepted, before Act 1", with their staff confirmed, by migration 0036.
 - **Still to come:** per-person access to client data is TASK-045, in `authorise`.

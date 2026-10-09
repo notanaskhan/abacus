@@ -242,6 +242,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "staff": "allow",
     },
     "evidence.read": {
+        "independence": "required",
         "practice_leader": "in_scope",
         "quality_partner": "in_scope",
         "engagement_partner": "allow",
@@ -255,6 +256,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "platform_support_content": "allow",
     },
     "evidence.upload": {
+        "independence": "required",
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
@@ -264,12 +266,14 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "allow",
     },
     "evidence.accept": {
+        "independence": "required",
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "firm_setting(seniors_can_accept)",
         "agent": "deny",
     },
     "evidence.reject": {
+        "independence": "required",
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "firm_setting(seniors_can_accept)",
@@ -295,6 +299,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
     },
     "review.read": {
+        "independence": "required",
         "practice_leader": "in_scope",
         "quality_partner": "in_scope",
         "engagement_partner": "allow",
@@ -307,6 +312,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "platform_support_content": "allow",
     },
     "review.take": {
+        "independence": "required",
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "firm_setting(seniors_can_accept)",
@@ -316,6 +322,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "engagement_partner": "allow",
         "manager": "allow",
         "agent": "deny",
+        "independence": "required",
     },
     "screening.run": {
         "system": "allow",
@@ -326,6 +333,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "manager": "allow",
         "senior": "allow",
         "staff": "allow",
+        "independence": "required",
     },
     "suggestion.create": {
         "agent": "task_scope",
@@ -366,6 +374,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "manager": "allow",
         "platform_support": "allow",
         "platform_support_content": "allow",
+        "independence": "required",
     },
     "follow_up.draft": {
         "engagement_partner": "allow",

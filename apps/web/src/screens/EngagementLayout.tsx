@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, Outlet } from "@tanstack/react-router";
 import type { JSX } from "react";
 import { Tabs } from "../shell/Tabs";
+import { IndependenceBanner } from "./MyConfirmations";
 
 /** An engagement's header and tabs (SPEC-016): Overview · Requests · Map · Contacts. */
 export function EngagementLayout({ engagementId }: { engagementId: string }): JSX.Element {
@@ -36,6 +37,7 @@ export function EngagementLayout({ engagementId }: { engagementId: string }): JS
           </>
         )}
       </div>
+      <IndependenceBanner engagementId={engagementId} />
       <Tabs
         label="Engagement"
         items={[

@@ -3,7 +3,7 @@ import {
   myConfirmationsOptions,
   myConfirmationsQueryKey,
 } from "@abacus/api-client/query";
-import { Button, Input, Panel } from "@abacus/ui";
+import { Button, Input, Panel, StatusPill } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
@@ -29,6 +29,34 @@ export function MyConfirmations(): JSX.Element | null {
   );
 }
 
+/** SPEC-025 AC-7 (TASK-045): on an engagement, until the person confirms, client data stays
+ * closed to them; say so and let them answer here. */
+export function IndependenceBanner({
+  engagementId,
+}: {
+  engagementId: string;
+}): JSX.Element | null {
+  const open = useQuery({ ...myConfirmationsOptions(), retry: false });
+  const mine = open.data?.find((c) => c.engagement_id === engagementId);
+  if (mine === undefined) return null;
+  return (
+    <Panel
+      role="status"
+      title="Confirm your independence to see client data"
+      action={<StatusPill tone="warning">Client data closed to you</StatusPill>}
+    >
+      <ul>
+        <ConfirmationRow
+          engagementId={engagementId}
+          label={`${mine.client_name} · ${mine.engagement_name}`}
+          statement={mine.statement}
+          declined={mine.status === "declined"}
+        />
+      </ul>
+    </Panel>
+  );
+}
+
 function ConfirmationRow({
   engagementId,
   label,
@@ -47,6 +75,8 @@ function ConfirmationRow({
     ...independenceMutation(),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: myConfirmationsQueryKey() });
+      // Client data may have opened (TASK-045): refetch what this engagement's tabs show.
+      void queryClient.invalidateQueries();
     },
   });
   const send = (confirm: boolean): void => {
