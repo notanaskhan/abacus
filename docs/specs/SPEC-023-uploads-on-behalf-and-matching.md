@@ -1,7 +1,7 @@
 ---
 id: SPEC-023
 title: Uploads on the client's behalf, bulk upload and matching
-status: draft
+status: approved
 owner: founder
 risk_zone: amber
 related_adrs: [ADR-004, ADR-005, ADR-047, ADR-052, ADR-104]
@@ -135,11 +135,12 @@ Batches of up to 50 files. Suggestions are computed on upload, against up to 2,0
 One evidence migration. No flag.
 
 ## 20. Open questions
-- [ ] **Q1: on-behalf provenance.** *Recommendation:* source `firm_upload_for_client`, the team member as uploader, and an optional note. The client sees it as "Added by your auditor".
-- [ ] **Q2: matching method.** *Recommendation:* rules over the cleaned file name (word overlap with description and area, plus tier and dataset keywords), with at most three suggestions and always a person's confirmation.
-- [ ] **Q3: model matcher.** *Recommendation:* deferred to its own spec with the matcher evaluation suite (a Phase 2 exit item), measured against this rule baseline.
-- [ ] **Q4: what waits for staging.** *Recommendation:* email reply matching (inbound email) and screening uploaded files (malware scanning, SPEC-020 Q7) stay in increment 6 but are built after TASK-014.
-- [ ] **Q5: protected paths.** *Recommendation:* an approval file covering:
+None. Answered by the founder on 2026-10-09 (all recommendations):
+- [x] **Q1: on-behalf provenance.** *Recommendation:* source `firm_upload_for_client`, the team member as uploader, and an optional note. The client sees it as "Added by your auditor".
+- [x] **Q2: matching method.** *Recommendation:* rules over the cleaned file name (word overlap with description and area, plus tier and dataset keywords), with at most three suggestions and always a person's confirmation.
+- [x] **Q3: model matcher.** *Recommendation:* deferred to its own spec with the matcher evaluation suite (a Phase 2 exit item), measured against this rule baseline.
+- [x] **Q4: what waits for staging.** *Recommendation:* email reply matching (inbound email) and screening uploaded files (malware scanning, SPEC-020 Q7) stay in increment 6 but are built after TASK-014.
+- [x] **Q5: protected paths.** *Recommendation:* an approval file covering:
   - `evidence/**`;
   - `backend/tests/unit/**`;
   - `schema_check.py` (the new table);
