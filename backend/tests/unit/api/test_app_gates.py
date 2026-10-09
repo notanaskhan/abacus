@@ -101,6 +101,11 @@ NOT_CREATING = {
     "/v1/engagements/{engagement_id}/connection/check",
     "/v1/engagements/{engagement_id}/connection/revoke",
     "/v1/engagements/{engagement_id}/inbox/{file_id}/discard",  # SPEC-023: returns the id
+    # SPEC-024 (TASK-041): lifecycle changes return the id; acceptance returns the firm.
+    "/v1/firm/staff/invitations/{invitation_id}/resend",
+    "/v1/firm/staff/invitations/{invitation_id}/revoke",
+    "/v1/firm/staff/{user_id}/revoke",
+    "/v1/invitations/staff/accept",
 }
 
 
@@ -123,6 +128,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/connections/complete",  # SPEC-020: a connection
         "/v1/engagements/{engagement_id}/inbox",  # SPEC-023: an inbox file
         "/v1/signup",  # SPEC-024: a firm
+        "/v1/firm/staff/invitations",  # SPEC-024: a staff invitation
         "/v1/engagements/{engagement_id}/inbox/{file_id}/assign",  # SPEC-023: evidence
         decisions + "accept",  # TASK-019: a review decision is created
         decisions + "reject",

@@ -112,3 +112,16 @@ On removal, the hook that evidence registers (`register_member_removed`) release
 - **Refusals:** `signup_code_invalid` and `signup_rate_limited` are logged; `firm.created` is audited in the new firm.
 - **Codes:** issued by the founder with `python -m abacus_tools.signup_codes issue --note … [--days 30]` (shown once, stored as SHA-256), and listed with `list`.
 - **The SPA:** a signed-in identity with no firm sees the no-firm page, with "Set up your firm"; a client-only person goes to their client home.
+
+## People and firm roles (SPEC-024 AC-3, AC-4; TASK-041)
+`staff.py`, all `firm.manage_users` (fresh MFA), listing included.
+- **Invitations:** `/v1/firm/staff/invitations` (create, `/{id}/resend`, `/{id}/revoke`) with an email and a firm role or none.
+  - 14 days, single-use; the token is issued at delivery (`StaffInvitationIssued`, emailed by communications with a `/join` link) and kept only as a hash in `staff_invitation_tokens`.
+  - The client lockout (`invitation_failures`) is shared.
+- **Accepting:** `POST /v1/invitations/staff/accept` (`IDENTITY`).
+  - The verified email must match.
+  - `add_staff_membership` refuses a client contact of the firm (409 `client_contact`) and reactivates a revoked member with the new role.
+- **Roles and access:** `PUT /v1/firm/staff/{user_id}/role` and `POST …/{user_id}/revoke`, through definer functions that keep at least one active firm administrator (409 `last_admin`).
+  - Revocation applies on the next request; engagement roles stay as history.
+- **Listing:** `GET /v1/firm/staff`.
+- **SSO:** held until the identity vendor is confirmed (TASK-040 amendment 4).

@@ -17,6 +17,7 @@ export function AdminLayout(): JSX.Element {
     { label: "Budget", to: "/admin/budget", params: {} },
     ...(isAdmin
       ? ([
+          { label: "People", to: "/admin/people", params: {} },
           { label: "Support access", to: "/admin/support", params: {} },
           { label: "Walls", to: "/admin/walls", params: {} },
         ] satisfies TabItem[])

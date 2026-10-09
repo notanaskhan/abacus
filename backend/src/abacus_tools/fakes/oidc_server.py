@@ -195,8 +195,11 @@ def create_app(idp: FakeIdentityProvider | None = None) -> FastAPI:
         ):
             return _error(400, "invalid_grant")
         # A provider-verified email, as WorkOS sends (SPEC-015, SPEC-024 sign-up).
+        # Signed in with MFA just now (TASK-041 D3): fresh-MFA screens work locally, and still
+        # ask again once the token is older than 15 minutes.
         access = signer.token(
             grant.subject,
+            mfa=True,
             expires_in=TOKEN_SECONDS,
             email=f"{grant.subject}@dev.abacus.local",
             email_verified=True,

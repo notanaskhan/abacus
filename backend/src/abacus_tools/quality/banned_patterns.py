@@ -791,6 +791,10 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/evidence/repository.py", "release_assignments_of"),
         # SPEC-015: one engagement's contacts, read after `authorise(client_contact.read)` on it.
         ("src/abacus/modules/identity/repository.py", "client_contacts"),
+        # SPEC-024 (TASK-041): the firm's staff and pending staff invitations, firm-level, read
+        # after `authorise(firm.manage_users)`.
+        ("src/abacus/modules/identity/repository.py", "staff_memberships"),
+        ("src/abacus/modules/identity/repository.py", "pending_staff_invitations"),
         # SPEC-014: authorisation's own lookup (the caller's roles; visible() can't apply to it).
         ("src/abacus/modules/identity/repository.py", "engagement_roles_in_firm"),
         # SPEC-013: notification recipients (the platform resolving who to tell, never returned
@@ -817,6 +821,8 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/identity/repository.py", "active_memberships"),
         ("src/abacus/modules/identity/repository.py", "engagement_members_of"),
         ("src/abacus/modules/identity/repository.py", "display_names"),
+        # SPEC-024 (TASK-041): names and emails for staff the caller already read under RLS.
+        ("src/abacus/modules/identity/repository.py", "user_contacts"),
         ("src/abacus/modules/organisations/repository.py", "names_of"),
         ("src/abacus/modules/ledger/repository.py", "lines_of"),
         ("src/abacus/modules/requests/repository.py", "items_fulfilled_by"),

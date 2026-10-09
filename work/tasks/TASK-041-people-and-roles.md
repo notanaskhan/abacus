@@ -4,7 +4,7 @@ title: People and firm roles (SSO held)
 spec: SPEC-024
 acceptance_criteria: [AC-3, AC-4, AC-8]
 risk_zone: red
-status: awaiting-plan-approval
+status: done
 branch: task-041-people-and-roles
 worktree:
 created: 2026-10-09
@@ -36,7 +36,7 @@ SPEC-024 AC-3, AC-4 and AC-8 (for these screens).
   - `AdminLayout`, `mfa`.
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-09: D1–D5). Approved by founder: paths listed under *Protected paths*
 
 ### What the code shows
 - **The client invitation path is complete:** single-use expiring tokens issued at delivery and stored only as hashes, a lockout after failed acceptances, email delivery through communications, and the SPA's accept page.
@@ -96,12 +96,23 @@ Checked and not needed:
 - **D5. Write the approval file for the paths above?** *Recommendation: yes.*
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
-- [ ] Type check, lint, format, architecture and dependency rules pass
-- [ ] Every query is tenant-scoped; every endpoint checks authorisation
-- [ ] Module READMEs and the relevant docs are updated
+- [x] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
+- [x] Type check, lint, format, architecture and dependency rules pass
+- [x] Every query is tenant-scoped; every endpoint checks authorisation
+- [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-09` — Implemented:
+  - migration 0033 (staff invitations and tokens; definer functions for tokens, staff membership, firm role and revocation, with last-admin protection);
+  - the staff service and routes; the staff accept route; the invitation email (`/join` link);
+  - the People tab in Firm admin; the `/join` page;
+  - the local provider issues MFA-marked tokens (D3).
+
+  Deviation: the plan let firm admins open the list without a fresh sign-in. That would have needed a role check outside `authorise` (AUTHZ-001), so the list is `firm.manage_users` like every other action and asks for a recent sign-in, as Walls does. `identity/authz` was not touched.
+
+  Tests and checks:
+  - backend unit and web 172 passed; the gates pass; migration 0033 applies, rolls back and reapplies;
+  - a local smoke passed: a founder signed up and invited a practice leader; the invitation was accepted (email matched regardless of case) and its reuse refused; demoting the last admin was refused; admin was handed over and the founder's access revoked. The smoke data was removed.
 - `2026-10-09` — Design written for founder review; SSO held for the vendor decision.
 
 ## Decisions made during this task

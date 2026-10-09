@@ -597,3 +597,140 @@ async def firm_signup(
     ).one()
     outcome, tenant_id = cast(tuple[str, UUID | None], tuple(row.result))
     return outcome, tenant_id
+
+
+# --- Staff invitations, firm roles and revocation (SPEC-024 AC-3, AC-4; TASK-041) --------------
+
+_USER_CONTACTS = text("SELECT id, display_name, email FROM users WHERE id IN :ids").bindparams(
+    bindparam("ids", expanding=True)
+)
+
+
+async def user_contacts(user_ids: list[UUID]) -> dict[UUID, tuple[str, str]]:
+    """Names and emails for users the caller already read under RLS (the staff list)."""
+    if not user_ids:
+        return {}
+    async with identity_engine().connect() as conn:
+        rows = (await conn.execute(_USER_CONTACTS, {"ids": user_ids})).all()
+    return {cast(UUID, r.id): (str(r.display_name), str(r.email)) for r in rows}
+
+
+async def staff_memberships(session: AsyncSession) -> Sequence[RowMapping]:
+    """The session's firm's staff memberships, for a caller that authorised `firm.manage_users`
+    (LIST_EXEMPT: firm-level, no engagement rows)."""
+    result = await session.execute(
+        text(
+            "SELECT user_id, firm_role, status FROM memberships WHERE kind = 'staff' "
+            "ORDER BY status, created_at, user_id"
+        )
+    )
+    return result.mappings().all()
+
+
+async def pending_staff_invitations(session: AsyncSession) -> Sequence[RowMapping]:
+    """The session's firm's live staff invitations (LIST_EXEMPT, as `staff_memberships`)."""
+    result = await session.execute(
+        text(
+            "SELECT id, email, firm_role, expires_at, created_at FROM staff_invitations "
+            "WHERE status = 'pending' AND expires_at > clock_timestamp() ORDER BY created_at, id"
+        )
+    )
+    return result.mappings().all()
+
+
+async def insert_staff_invitation(session: AsyncSession, values: dict[str, object]) -> None:
+    await session.execute(
+        text(
+            "INSERT INTO staff_invitations (id, tenant_id, email, firm_role, invited_by, "
+            "expires_at) VALUES (:id, :tenant_id, :email, :firm_role, :invited_by, "
+            "clock_timestamp() + make_interval(days => :days))"
+        ),
+        values,
+    )
+
+
+async def pending_staff_invitation_for(session: AsyncSession, email: str) -> UUID | None:
+    return await session.scalar(
+        text(
+            "SELECT id FROM staff_invitations WHERE lower(email) = lower(:email) "
+            "AND status = 'pending' FOR UPDATE"
+        ),
+        {"email": email},
+    )
+
+
+async def get_staff_invitation(
+    session: AsyncSession, invitation_id: UUID, *, lock: bool = False
+) -> RowMapping | None:
+    plain = text(
+        "SELECT id, email, firm_role, invited_by, status, expires_at, "
+        "(status = 'pending' AND expires_at > clock_timestamp()) AS live "
+        "FROM staff_invitations WHERE id = :id"
+    )
+    locked = text(
+        "SELECT id, email, firm_role, invited_by, status, expires_at, "
+        "(status = 'pending' AND expires_at > clock_timestamp()) AS live "
+        "FROM staff_invitations WHERE id = :id FOR UPDATE"
+    )
+    result = await session.execute(locked if lock else plain, {"id": invitation_id})
+    return result.mappings().first()
+
+
+async def set_staff_invitation_status(
+    session: AsyncSession, invitation_id: UUID, status: str, accepted_by: UUID | None = None
+) -> None:
+    await session.execute(
+        text(
+            "UPDATE staff_invitations SET status = :status, accepted_by = :by, "
+            "accepted_at = CASE WHEN :status = 'accepted' THEN clock_timestamp() END "
+            "WHERE id = :id"
+        ),
+        {"id": invitation_id, "status": status, "by": accepted_by},
+    )
+
+
+async def extend_staff_invitation(session: AsyncSession, invitation_id: UUID, days: int) -> None:
+    await session.execute(
+        text(
+            "UPDATE staff_invitations SET expires_at = clock_timestamp() + "
+            "make_interval(days => :days) WHERE id = :id AND status = 'pending'"
+        ),
+        {"id": invitation_id, "days": days},
+    )
+
+
+async def set_staff_token_hash(
+    session: AsyncSession, invitation_id: UUID, digest: str | None
+) -> None:
+    await session.execute(
+        text("SELECT staff_invitation_token_set(:id, :hash)"),
+        {"id": invitation_id, "hash": digest},
+    )
+
+
+async def find_staff_token(session: AsyncSession, digest: str, identity: str) -> RowMapping | None:
+    result = await session.execute(
+        text("SELECT (staff_invitation_token_find(:hash, :identity)).*"),
+        {"hash": digest, "identity": identity},
+    )
+    return result.mappings().first()
+
+
+async def add_staff_membership(session: AsyncSession, user_id: UUID, role: str | None) -> str:
+    return str(
+        await session.scalar(
+            text("SELECT add_staff_membership(:u, :r)"), {"u": user_id, "r": role}
+        )
+    )
+
+
+async def set_firm_role(session: AsyncSession, user_id: UUID, role: str | None) -> str:
+    return str(
+        await session.scalar(
+            text("SELECT membership_set_firm_role(:u, :r)"), {"u": user_id, "r": role}
+        )
+    )
+
+
+async def revoke_membership(session: AsyncSession, user_id: UUID) -> str:
+    return str(await session.scalar(text("SELECT membership_revoke(:u)"), {"u": user_id}))

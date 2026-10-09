@@ -55,6 +55,7 @@ NON_TENANT_TABLES = frozenset(
     | {"review_reason_codes", "eval_runs", "eval_case_results"}
     | {"invitation_tokens", "invitation_failures"}  # SPEC-015: definer functions only
     | {"signup_codes", "signup_attempts"}  # SPEC-024 (TASK-040): `firm_signup` only
+    | {"staff_invitation_tokens"}  # SPEC-024 (TASK-041): definer functions only
 )
 # Tables the app may insert into and read, never update or delete (ADR-004); TASK-009/010 add.
 INSERT_ONLY_TABLES: frozenset[str] = frozenset(
@@ -134,6 +135,9 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"pulled_at", "period_start", "period_end", "client_entity_id", "snapshot_id"}
         | {"idempotency_key"}
         | {"upload_note"}  # SPEC-023: written once, at insert
+    ),
+    "staff_invitations": frozenset(  # SPEC-024 (TASK-041)
+        {"id", "tenant_id", "email", "firm_role", "invited_by", "expires_at"}
     ),
     # SPEC-023 (TASK-039): files dropped at the engagement level, waiting to be matched.
     "inbox_files": frozenset(
@@ -220,6 +224,7 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"status", "last_checked_at", "last_check_ok", "revoked_at", "revoked_by"}
     ),
     "connection_states": frozenset({"used_at"}),  # SPEC-020: spent once
+    "staff_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
     "inbox_files": frozenset(  # SPEC-023: assigned or discarded, once
         {"status", "assigned_item_id", "assigned_version_id", "decided_by", "decided_at"}
     ),
@@ -298,6 +303,9 @@ TABLE_OWNERS: dict[str, str] = {
     # SPEC-024 (TASK-040): sign-up codes and attempts, reached only through `firm_signup`.
     "signup_codes": "identity",
     "signup_attempts": "identity",
+    # SPEC-024 (TASK-041): staff invitations, and their tokens behind definer functions.
+    "staff_invitations": "identity",
+    "staff_invitation_tokens": "identity",
     "knowledge_documents": "agents",  # SPEC-009 Q5
     "knowledge_chunks": "agents",
     # The work slot ledger (TASK-018 D3): reached only through SECURITY DEFINER functions.
@@ -314,6 +322,7 @@ GLOBAL_TABLES = frozenset(
     | {"review_reason_codes", "eval_runs", "eval_case_results"}
     | {"invitation_tokens", "invitation_failures"}
     | {"signup_codes", "signup_attempts"}  # SPEC-024: founder-issued codes, attempts
+    | {"staff_invitation_tokens"}  # SPEC-024 (TASK-041)
 )
 # SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
 DEFINER_FUNCTIONS = frozenset(
@@ -332,6 +341,9 @@ DEFINER_FUNCTIONS = frozenset(
     | {"add_client_membership", "remove_client_member"}
     # 0032 (TASK-040 D2): self-serve sign-up, the one way the app creates a firm.
     | {"firm_signup"}
+    # 0033 (TASK-041 D1, D2): staff invitations, staff memberships, firm roles and revocation.
+    | {"staff_invitation_token_set", "staff_invitation_token_find", "add_staff_membership"}
+    | {"membership_set_firm_role", "membership_revoke"}
     # 0027 (TASK-032 D1): staff role changes and removals, keeping a partner.
     | {"team_member_set_role", "team_member_remove"}
 )
