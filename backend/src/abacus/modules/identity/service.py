@@ -328,3 +328,15 @@ async def firm_members(ctx: AuthContext) -> list[FirmMember]:
     names = await display_names(ids)
     members = [FirmMember(user_id, names.get(user_id, "")) for user_id in ids]
     return sorted(members, key=lambda m: (m.display_name.casefold(), str(m.user_id)))
+
+
+async def engagement_role_of(
+    tenant: TenantContext, engagement_id: UUID, user_id: UUID
+) -> str | None:
+    """A person's role on an engagement (staff or client), or None (SPEC-020: client assignees)."""
+    return await engagement_role(tenant, user_id, engagement_id)
+
+
+async def names_of(user_ids: list[UUID]) -> dict[UUID, str]:
+    """Display names for people the caller already read under RLS (SPEC-020: upload history)."""
+    return await display_names(user_ids)

@@ -4,7 +4,7 @@ title: Client portal, item visibility and client uploads
 spec: SPEC-020
 acceptance_criteria: [AC-1, AC-7, AC-8, AC-9]
 risk_zone: red
-status: awaiting-plan-approval
+status: done
 branch: task-035-client-portal-uploads
 worktree:
 created: 2026-10-09
@@ -30,7 +30,7 @@ SPEC-020 §4 "Client engagement page" and "Manual upload"; AC-1, AC-7 (for these
 - Code: `identity.authz` (`authorise`, `visible`, `Resource`, the matrix conditions), `requests` (models, repository, `fulfil_by_rule`, routes), `evidence` (`add_version`, `Provenance`, `storage.put`), `notifications` catalogue, `apps/web` client portal (`ClientHome`) and `Board`
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-09: D1–D7). Approved by founder: paths listed under *Protected paths*
 
 ### What the code shows
 - **Clients see nothing yet.** The matrix conditions `client_visible_only` and `assigned_only` are not modelled; `authorise` treats them as denials. Clients can't read items or upload.
@@ -57,7 +57,7 @@ SPEC-020 §4 "Client engagement page" and "Manual upload"; AC-1, AC-7 (for these
    - client admins get an assignee picker per item (contributors from the engagement's client contacts);
    - the Board gets the "Hidden from client" switch.
 
-**Protected paths (approval file):** `backend/src/abacus/modules/identity/**`, `backend/src/abacus/modules/evidence/**`, `backend/tests/unit/**`. Requests, notifications and `apps/web` aren't protected; the matrix file is unchanged.
+**Protected paths (approval file):** `backend/src/abacus/modules/identity/**`, `backend/src/abacus/modules/evidence/**`, `backend/tests/unit/**`; extended by the founder on 2026-10-09 to `docs/architecture/permission-matrix.yaml` (client roles read engagement metadata), `banned_patterns.py` (LIST-001 accepts `visible_items`; two exemptions) and `schema_check.py` (the two new update columns). Requests, notifications and `apps/web` aren't protected; the matrix file is unchanged.
 
 ### Questions for approval
 - **D1. Split SPEC-020 into TASK-035 (this: visibility, assignment, portal, uploads) and TASK-036 (connection flow, health, access log, revoke)?** *Recommendation: yes.* Each is red-zone and large; uploads don't depend on connections.
@@ -69,12 +69,28 @@ SPEC-020 §4 "Client engagement page" and "Manual upload"; AC-1, AC-7 (for these
 - **D7. Write the approval file for the protected paths above?** *Recommendation: yes.*
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
-- [ ] Type check, lint, format, architecture and dependency rules pass
-- [ ] Every query is tenant-scoped; every endpoint checks authorisation
-- [ ] Module READMEs and the relevant docs are updated
+- [x] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
+- [x] Type check, lint, format, architecture and dependency rules pass
+- [x] Every query is tenant-scoped; every endpoint checks authorisation
+- [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-09` — Implemented:
+  - client conditions in `authorise` (item facts) with `visible_items` and `authorise_items`; `visible()` now counts client roles;
+  - client roles read engagement metadata (matrix, founder-approved extension);
+  - request items' `client_visible` and `client_assignee_user_id` (migration 0028), with the Board's "Hidden from client" switch and the client admin's assignee picker;
+  - client uploads (type by content, 25 MB, duplicates refused) as new evidence, linked to the item, audited and notified;
+  - the client engagement page with per-item upload and history.
+
+  Tests and checks:
+  - unit tests for the conditions, file types and names: backend unit 8,928 passed;
+  - component tests for AC-1, AC-7, AC-8 and AC-9: web 141 passed;
+  - the gates pass, and migration 0028 applied locally, with the schema check passing.
+
+  The integration subset (engagements and evidence) passes after updating the stale request-item key pin. These integration pins were already stale from earlier tasks and are left for the deferred test session:
+  - `memberships.kind`;
+  - the definer functions from 0027;
+  - the newer update columns.
 - `2026-10-09` — SPEC-020 approved and merged (#65). Design written for founder review.
 
 ## Decisions made during this task

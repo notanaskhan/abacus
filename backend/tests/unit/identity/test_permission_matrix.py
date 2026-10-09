@@ -35,6 +35,10 @@ from abacus_tools.codegen import permission_matrix as pm
 FirmRole = Literal["firm_admin", "practice_leader", "quality_partner"]
 FIRM_ROLES: tuple[FirmRole, ...] = get_args(FirmRole)
 ENGAGEMENT_ROLES = ("engagement_partner", "manager", "senior", "staff", "reviewer")
+# SPEC-020: client users hold an engagement relationship too; `visible` counts them as `authorise`
+# does.
+CLIENT_ROLES = ("client_admin", "client_contributor")
+MEMBER_ROLES = (*ENGAGEMENT_ROLES, *CLIENT_ROLES)
 HUMAN_ROLES = (*FIRM_ROLES, *ENGAGEMENT_ROLES)
 READ_VERBS = {"read", "read_metadata", "read_log"}
 MODIFIERS = {"mfa_recent", "requires", "notify"}
@@ -633,7 +637,7 @@ def test_ac20_visible_for_a_firm_role_allow_compiles_to_true(action: str) -> Non
 
 # Firm-level reads (e.g. `budget.read`, SPEC-007) grant no engagement role: nothing to filter on.
 ENGAGEMENT_READS = [
-    a for a in READ_ACTIONS if any(YAML_ACTIONS[a].get(r) == "allow" for r in ENGAGEMENT_ROLES)
+    a for a in READ_ACTIONS if any(YAML_ACTIONS[a].get(r) == "allow" for r in MEMBER_ROLES)
 ]
 
 
@@ -646,7 +650,7 @@ def test_ac20_visible_for_a_firm_level_read_without_a_firm_role_is_false(action:
 def test_ac20_visible_without_a_firm_allow_filters_on_engagement_membership(action: str) -> None:
     ctx = _ctx()
     expression = visible(ctx, action, column("engagement_id", Uuid()))
-    roles = sorted(r for r in ENGAGEMENT_ROLES if YAML_ACTIONS[action].get(r) == "allow")
+    roles = sorted(r for r in MEMBER_ROLES if YAML_ACTIONS[action].get(r) == "allow")
     compiled = expression.compile()
     assert _sql(expression).startswith(
         "engagement_id IN (SELECT engagement_members.engagement_id FROM engagement_members WHERE "
@@ -662,9 +666,20 @@ def test_ac20_visible_without_a_firm_allow_filters_on_engagement_membership(acti
 def test_ac20_visible_with_no_engagement_role_allowed_is_false(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setitem(RULES, "probe.read", make_rule("probe.read", {"client_admin": "allow"}))
+    monkeypatch.setitem(
+        RULES, "probe.read", make_rule("probe.read", {"platform_support": "allow"})
+    )
     expression = visible(_ctx(), "probe.read", column("engagement_id", Uuid()))
     assert _sql(expression) == "false"
+
+
+def test_spec020_visible_counts_a_client_role_allowed_by_the_matrix(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setitem(RULES, "probe.read", make_rule("probe.read", {"client_admin": "allow"}))
+    expression = visible(_ctx(), "probe.read", column("engagement_id", Uuid()))
+    assert "engagement_members.role IN" in _sql(expression)
+    assert list(expression.compile().params["role_1"]) == ["client_admin"]
 
 
 @pytest.mark.parametrize(
@@ -948,3 +963,87 @@ async def test_ac7_support_contexts_never_hold_engagement_roles(
     firm_roles[user_id] = frozenset({"senior"})  # would grant knowledge.read if counted
     with pytest.raises(Forbidden):
         await authorise(ctx, "knowledge.read", Resource.firm(ctx.tenant_id))
+
+
+# --- SPEC-020: client conditions on request items (TASK-035 D2) --------------------------------
+
+
+def _item_resource(
+    ctx: AuthContext, *, visible_to_client: bool, assignee: uuid.UUID | None
+) -> Resource:
+    return Resource.engagement(
+        ctx.tenant_id,
+        uuid.uuid4(),
+        archived=False,
+        client_id=uuid.uuid4(),
+        item=authz.ItemFacts(visible_to_client, assignee),
+    )
+
+
+async def test_spec020_ac1_client_admin_reads_a_client_visible_item_only(
+    engagement: EngagementRoles,
+) -> None:
+    ctx = _ctx()
+    engagement.role = "client_admin"
+    await authorise(
+        ctx, "request_item.read", _item_resource(ctx, visible_to_client=True, assignee=None)
+    )
+    hidden = _item_resource(ctx, visible_to_client=False, assignee=None)
+    assert await _denied_layer(ctx, "request_item.read", hidden) == "role"
+
+
+async def test_spec020_ac8_contributor_uploads_only_to_an_assigned_visible_item(
+    engagement: EngagementRoles,
+) -> None:
+    ctx = _ctx()
+    engagement.role = "client_contributor"
+    mine = _item_resource(ctx, visible_to_client=True, assignee=ctx.user_id)
+    await authorise(ctx, "evidence.upload", mine)
+    others = _item_resource(ctx, visible_to_client=True, assignee=uuid.uuid4())
+    assert await _denied_layer(ctx, "evidence.upload", others) == "role"
+    hidden = _item_resource(ctx, visible_to_client=False, assignee=ctx.user_id)
+    assert await _denied_layer(ctx, "evidence.upload", hidden) == "role"
+
+
+async def test_spec020_client_conditions_without_item_facts_still_deny(
+    engagement: EngagementRoles,
+) -> None:
+    ctx = _ctx()
+    engagement.role = "client_admin"
+    assert (
+        await _denied_layer(ctx, "request_item.read", _resource(ctx.tenant_id, uuid.uuid4()))
+        == "role"
+    )
+
+
+async def test_spec020_ac1_authorise_items_lets_a_client_list_and_refuses_a_stranger(
+    engagement: EngagementRoles,
+) -> None:
+    ctx = _ctx()
+    engagement.role = "client_contributor"
+    await authz.authorise_items(ctx, "request_item.read", _resource(ctx.tenant_id, uuid.uuid4()))
+    engagement.role = None
+    with pytest.raises(Forbidden):
+        await authz.authorise_items(
+            ctx, "request_item.read", _resource(ctx.tenant_id, uuid.uuid4())
+        )
+
+
+def test_spec020_ac1_visible_items_adds_client_reach_by_role() -> None:
+    ctx = _ctx()
+    expression = authz.visible_items(
+        ctx,
+        "request_item.read",
+        column("engagement_id", Uuid()),
+        column("client_visible"),
+        column("client_assignee_user_id", Uuid()),
+    )
+    sql = _sql(expression)
+    assert "client_visible IS true" in sql
+    assert "client_assignee_user_id = " in sql
+    params = expression.compile().params
+    roles = {v for k, v in params.items() if k.startswith("role_") and isinstance(v, str)}
+    assert roles >= {
+        "client_admin",
+        "client_contributor",
+    }

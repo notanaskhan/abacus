@@ -33,6 +33,9 @@ class RequestItem(Base):
     status: Mapped[str]
     created_by: Mapped[UUID]
     created_at: Mapped[datetime]
+    # SPEC-020: whether client users see the item, and the client contributor it's assigned to.
+    client_visible: Mapped[bool]
+    client_assignee_user_id: Mapped[UUID | None]
 
 
 class Fulfilment(Base):

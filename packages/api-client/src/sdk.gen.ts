@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptData, AcceptErrors, AcceptInvitationData, AcceptInvitationErrors, AcceptInvitationResponses, AcceptResponses, AcknowledgeSupportSessionData, AcknowledgeSupportSessionErrors, AcknowledgeSupportSessionResponses, AddDocumentData, AddDocumentErrors, AddDocumentResponses, AddTeamMemberData, AddTeamMemberErrors, AddTeamMemberResponses, ApplyMethodologyData, ApplyMethodologyErrors, ApplyMethodologyResponses, ApproveSupportSessionData, ApproveSupportSessionErrors, ApproveSupportSessionResponses, AssignData, AssignErrors, AssignResponses, ChangeTeamRoleData, ChangeTeamRoleErrors, ChangeTeamRoleResponses, ClientContactsData, ClientContactsErrors, ClientContactsResponses, CreateEngagementData, CreateEngagementErrors, CreateEngagementResponses, CreateRequestItemData, CreateRequestItemErrors, CreateRequestItemResponses, CreateWallData, CreateWallErrors, CreateWallResponses, EmergencyApproveData, EmergencyApproveErrors, EmergencyApproveResponses, EndSupportSessionData, EndSupportSessionErrors, EndSupportSessionResponses, EngagementGraphData, EngagementGraphErrors, EngagementGraphResponses, FirmClientsData, FirmClientsErrors, FirmClientsResponses, FirmMembersData, FirmMembersErrors, FirmMembersResponses, GetBudgetData, GetBudgetErrors, GetBudgetResponses, GetDocumentData, GetDocumentErrors, GetDocumentResponses, GetEngagementData, GetEngagementErrors, GetEngagementResponses, GetRetrievalData, GetRetrievalErrors, GetRetrievalResponses, GetVersionData, GetVersionErrors, GetVersionResponses, ImportData, ImportErrors, ImportResponses, ImportTemplateData, ImportTemplateErrors, ImportTemplateResponses, InviteClientData, InviteClientErrors, InviteClientResponses, ListDocumentsData, ListDocumentsErrors, ListDocumentsResponses, ListEngagementsData, ListEngagementsErrors, ListEngagementsResponses, ListEvidenceVersionsData, ListEvidenceVersionsErrors, ListEvidenceVersionsResponses, ListNotificationsData, ListNotificationsErrors, ListNotificationsResponses, ListRequestItemsData, ListRequestItemsErrors, ListRequestItemsResponses, ListScreeningResultsData, ListScreeningResultsErrors, ListScreeningResultsResponses, ListSupportSessionsData, ListSupportSessionsErrors, ListSupportSessionsResponses, ListTemplatesData, ListTemplatesErrors, ListTemplatesResponses, ListWallsData, ListWallsErrors, ListWallsResponses, MeData, MeErrors, MeResponses, MeteringData, MeteringErrors, MeteringResponses, PreviewImportData, PreviewImportErrors, PreviewImportResponses, PutBudgetData, PutBudgetErrors, PutBudgetResponses, ReadAllData, ReadAllErrors, ReadAllResponses, ReadNotificationData, ReadNotificationErrors, ReadNotificationResponses, ReasonCodesData, ReasonCodesErrors, ReasonCodesResponses, RejectData, RejectErrors, RejectResponses, ReleaseData, ReleaseErrors, ReleaseResponses, RemoveClientContactData, RemoveClientContactErrors, RemoveClientContactResponses, RemoveTeamMemberData, RemoveTeamMemberErrors, RemoveTeamMemberResponses, RemoveWallData, RemoveWallErrors, RemoveWallResponses, RequestSupportSessionData, RequestSupportSessionErrors, RequestSupportSessionResponses, ResendClientInvitationData, ResendClientInvitationErrors, ResendClientInvitationResponses, ReviewQueueData, ReviewQueueErrors, ReviewQueueResponses, RevokeClientInvitationData, RevokeClientInvitationErrors, RevokeClientInvitationResponses, RevokeSupportSessionData, RevokeSupportSessionErrors, RevokeSupportSessionResponses, SearchData, SearchErrors, SearchResponses, SelfJoinData, SelfJoinErrors, SelfJoinResponses, SendBackData, SendBackErrors, SendBackResponses, StartRetrievalData, StartRetrievalErrors, StartRetrievalResponses, TakeData, TakeErrors, TakeResponses, TeamCandidatesData, TeamCandidatesErrors, TeamCandidatesResponses, TeamData, TeamErrors, TeamResponses, WithdrawDocumentData, WithdrawDocumentErrors, WithdrawDocumentResponses } from './types.gen';
+import type { AcceptData, AcceptErrors, AcceptInvitationData, AcceptInvitationErrors, AcceptInvitationResponses, AcceptResponses, AcknowledgeSupportSessionData, AcknowledgeSupportSessionErrors, AcknowledgeSupportSessionResponses, AddDocumentData, AddDocumentErrors, AddDocumentResponses, AddTeamMemberData, AddTeamMemberErrors, AddTeamMemberResponses, ApplyMethodologyData, ApplyMethodologyErrors, ApplyMethodologyResponses, ApproveSupportSessionData, ApproveSupportSessionErrors, ApproveSupportSessionResponses, AssignData, AssignErrors, AssignResponses, AssignToClientData, AssignToClientErrors, AssignToClientResponses, ChangeTeamRoleData, ChangeTeamRoleErrors, ChangeTeamRoleResponses, ClientContactsData, ClientContactsErrors, ClientContactsResponses, CreateEngagementData, CreateEngagementErrors, CreateEngagementResponses, CreateRequestItemData, CreateRequestItemErrors, CreateRequestItemResponses, CreateWallData, CreateWallErrors, CreateWallResponses, EmergencyApproveData, EmergencyApproveErrors, EmergencyApproveResponses, EndSupportSessionData, EndSupportSessionErrors, EndSupportSessionResponses, EngagementGraphData, EngagementGraphErrors, EngagementGraphResponses, FirmClientsData, FirmClientsErrors, FirmClientsResponses, FirmMembersData, FirmMembersErrors, FirmMembersResponses, GetBudgetData, GetBudgetErrors, GetBudgetResponses, GetDocumentData, GetDocumentErrors, GetDocumentResponses, GetEngagementData, GetEngagementErrors, GetEngagementResponses, GetRetrievalData, GetRetrievalErrors, GetRetrievalResponses, GetVersionData, GetVersionErrors, GetVersionResponses, ImportData, ImportErrors, ImportResponses, ImportTemplateData, ImportTemplateErrors, ImportTemplateResponses, InviteClientData, InviteClientErrors, InviteClientResponses, ListDocumentsData, ListDocumentsErrors, ListDocumentsResponses, ListEngagementsData, ListEngagementsErrors, ListEngagementsResponses, ListEvidenceVersionsData, ListEvidenceVersionsErrors, ListEvidenceVersionsResponses, ListNotificationsData, ListNotificationsErrors, ListNotificationsResponses, ListRequestItemsData, ListRequestItemsErrors, ListRequestItemsResponses, ListScreeningResultsData, ListScreeningResultsErrors, ListScreeningResultsResponses, ListSupportSessionsData, ListSupportSessionsErrors, ListSupportSessionsResponses, ListTemplatesData, ListTemplatesErrors, ListTemplatesResponses, ListUploadsData, ListUploadsErrors, ListUploadsResponses, ListWallsData, ListWallsErrors, ListWallsResponses, MeData, MeErrors, MeResponses, MeteringData, MeteringErrors, MeteringResponses, PreviewImportData, PreviewImportErrors, PreviewImportResponses, PutBudgetData, PutBudgetErrors, PutBudgetResponses, ReadAllData, ReadAllErrors, ReadAllResponses, ReadNotificationData, ReadNotificationErrors, ReadNotificationResponses, ReasonCodesData, ReasonCodesErrors, ReasonCodesResponses, RejectData, RejectErrors, RejectResponses, ReleaseData, ReleaseErrors, ReleaseResponses, RemoveClientContactData, RemoveClientContactErrors, RemoveClientContactResponses, RemoveTeamMemberData, RemoveTeamMemberErrors, RemoveTeamMemberResponses, RemoveWallData, RemoveWallErrors, RemoveWallResponses, RequestSupportSessionData, RequestSupportSessionErrors, RequestSupportSessionResponses, ResendClientInvitationData, ResendClientInvitationErrors, ResendClientInvitationResponses, ReviewQueueData, ReviewQueueErrors, ReviewQueueResponses, RevokeClientInvitationData, RevokeClientInvitationErrors, RevokeClientInvitationResponses, RevokeSupportSessionData, RevokeSupportSessionErrors, RevokeSupportSessionResponses, SearchData, SearchErrors, SearchResponses, SelfJoinData, SelfJoinErrors, SelfJoinResponses, SendBackData, SendBackErrors, SendBackResponses, SetClientVisibilityData, SetClientVisibilityErrors, SetClientVisibilityResponses, StartRetrievalData, StartRetrievalErrors, StartRetrievalResponses, TakeData, TakeErrors, TakeResponses, TeamCandidatesData, TeamCandidatesErrors, TeamCandidatesResponses, TeamData, TeamErrors, TeamResponses, UploadData, UploadErrors, UploadResponses, WithdrawDocumentData, WithdrawDocumentErrors, WithdrawDocumentResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -229,6 +229,58 @@ export const import_ = <ThrowOnError extends boolean = false>(options: Options<I
 export const previewImport = <ThrowOnError extends boolean = false>(options: Options<PreviewImportData, ThrowOnError>): RequestResult<PreviewImportResponses, PreviewImportErrors, ThrowOnError> => (options.client ?? client).post<PreviewImportResponses, PreviewImportErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/engagements/{engagement_id}/request-items/import/preview',
+    ...options
+});
+
+/**
+ * Assign To Client Route
+ *
+ * SPEC-020 (TASK-035 D4): assign the item to a client contributor, or clear it.
+ */
+export const assignToClient = <ThrowOnError extends boolean = false>(options: Options<AssignToClientData, ThrowOnError>): RequestResult<AssignToClientResponses, AssignToClientErrors, ThrowOnError> => (options.client ?? client).put<AssignToClientResponses, AssignToClientErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/client-assignee',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Set Client Visibility Route
+ *
+ * SPEC-020 (TASK-035 D3): show or hide the item from client users.
+ */
+export const setClientVisibility = <ThrowOnError extends boolean = false>(options: Options<SetClientVisibilityData, ThrowOnError>): RequestResult<SetClientVisibilityResponses, SetClientVisibilityErrors, ThrowOnError> => (options.client ?? client).put<SetClientVisibilityResponses, SetClientVisibilityErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/client-visibility',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List Uploads Route
+ *
+ * SPEC-020: the item's uploads, newest first.
+ */
+export const listUploads = <ThrowOnError extends boolean = false>(options: Options<ListUploadsData, ThrowOnError>): RequestResult<ListUploadsResponses, ListUploadsErrors, ThrowOnError> => (options.client ?? client).get<ListUploadsResponses, ListUploadsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/uploads',
+    ...options
+});
+
+/**
+ * Upload Route
+ *
+ * SPEC-020 AC-8, AC-9: a client's file for a request item, stored as new evidence.
+ */
+export const upload = <ThrowOnError extends boolean = false>(options: Options<UploadData, ThrowOnError>): RequestResult<UploadResponses, UploadErrors, ThrowOnError> => (options.client ?? client).post<UploadResponses, UploadErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/uploads',
     ...options
 });
 

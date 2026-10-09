@@ -114,6 +114,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/client-invitations",  # SPEC-015: an invitation
         "/v1/engagements/{engagement_id}/team",  # SPEC-017: a team member
         "/v1/engagements/{engagement_id}/request-items/import",  # SPEC-018: items created
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/uploads",  # SPEC-020: evidence
         decisions + "accept",  # TASK-019: a review decision is created
         decisions + "reject",
         decisions + "send-back",

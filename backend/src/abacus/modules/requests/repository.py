@@ -4,13 +4,14 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import datetime
+from typing import Literal
 from uuid import UUID, uuid4
 
 from sqlalchemy import insert, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from abacus.modules.identity.api import AuthContext, visible
+from abacus.modules.identity.api import AuthContext, visible, visible_items
 from abacus.modules.requests.models import Fulfilment, RequestItem, RequestList
 
 
@@ -90,11 +91,52 @@ async def list_request_items(
         select(RequestItem, latest)
         .where(
             RequestItem.engagement_id == engagement_id,
-            visible(ctx, "request_item.read", RequestItem.engagement_id),
+            visible_items(
+                ctx,
+                "request_item.read",
+                RequestItem.engagement_id,
+                RequestItem.client_visible,
+                RequestItem.client_assignee_user_id,
+            ),
         )
         .order_by(RequestItem.created_at, RequestItem.id)
     )
     return [(item, version_id) for item, version_id in rows.all()]
+
+
+async def set_client_fields(
+    session: AsyncSession,
+    item_id: UUID,
+    *,
+    client_visible: bool | None = None,
+    client_assignee: UUID | Literal["unchanged"] | None = "unchanged",
+) -> None:
+    """Change the item's client facts (SPEC-020); the caller holds the item's lock."""
+    values: dict[str, object] = {}
+    if client_visible is not None:
+        values["client_visible"] = client_visible
+    if client_assignee != "unchanged":
+        values["client_assignee_user_id"] = client_assignee
+    if values:
+        await session.execute(
+            update(RequestItem).where(RequestItem.id == item_id).values(**values)
+        )
+
+
+async def fulfilling_versions(session: AsyncSession, item_id: UUID) -> Sequence[UUID]:
+    """Every version that fulfils the item, oldest first, for a caller that authorised on the
+    item (LIST_EXEMPT)."""
+    return (
+        (
+            await session.execute(
+                select(Fulfilment.evidence_version_id)
+                .where(Fulfilment.request_item_id == item_id)
+                .order_by(Fulfilment.created_at, Fulfilment.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
 
 
 async def get_request_item(
