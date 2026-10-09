@@ -4,7 +4,7 @@ title: Self-serve sign-up and engagement types
 spec: SPEC-024
 acceptance_criteria: [AC-1, AC-6, AC-8]
 risk_zone: red
-status: awaiting-plan-approval
+status: done
 branch: task-040-signup
 worktree:
 created: 2026-10-09
@@ -39,7 +39,13 @@ SPEC-024 AC-1, AC-6 and AC-8 (for these screens). The split (D1):
   - `apps/web` `Layout`, `Engagements`, `Methodology`.
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-09: D1–D4, with four amendments):
+  1. D4 narrowed: `identity/authz/**` is outside the approval; if the build needs it, name the file and why first.
+  2. Rate-limit `/signup` and code checks, and log failed attempts.
+  3. A signed-in user who is only a client contact goes to their client home, not the no-firm page.
+  4. TASK-041's SSO work waits for the founder to confirm the identity vendor (ADR-029).
+
+  Approved by founder: the paths in the approval file (identity top-level files, `api/app.py`, `schema_check.py`, `banned_patterns.py`, `backend/tests/unit/**`).
 
 ### What the code shows
 - **`firms` belongs to identity and is protected.** The app role can't insert firms. Firms exist only through the seed script.
@@ -99,12 +105,26 @@ Checked and not needed:
 - **D4. Write the approval file for the paths above?** *Recommendation: yes.*
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
-- [ ] Type check, lint, format, architecture and dependency rules pass
-- [ ] Every query is tenant-scoped; every endpoint checks authorisation
-- [ ] Module READMEs and the relevant docs are updated
+- [x] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
+- [x] Type check, lint, format, architecture and dependency rules pass
+- [x] Every query is tenant-scoped; every endpoint checks authorisation
+- [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-09` — Implemented:
+  - migration 0032 (sign-up codes and attempts, the `firm_signup` definer, `firms.created_by`, engagement types, template types);
+  - the sign-up service and route (amendment 2: failures rate-limited in the definer and logged), and the founder's code tool;
+  - the no-firm page and the client-only redirect (amendment 3);
+  - the `/signup` page; engagement types in creation, lists, uploads and applying (with a server-side refusal);
+  - the local provider now sends verified emails, and a "Nina New" dev user has no firm.
+
+  Deviations, both reported to the founder:
+  - **Template types are fixed at creation.** Templates are insert-only, so the plan's "changed later" became "set on first upload".
+  - **The "already staff" check moved into the service.** The definer couldn't see memberships across firms under forced row-level security; the service reads them through the identity role. `identity/authz` was not touched (amendment 1).
+
+  Tests and checks:
+  - backend unit and web 169 passed; the gates pass; migration 0032 applies, rolls back and reapplies;
+  - a local smoke passed: a firm created with its founder as firm admin; a reused and a wrong code refused; the 6th bad try rate-limited; a second sign-up by the same founder refused with the second code left unspent; a review engagement created. The smoke firms and users were removed.
 - `2026-10-09` — SPEC-024 approved and merged (#74). Design written for founder review.
 
 ## Decisions made during this task

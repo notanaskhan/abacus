@@ -124,6 +124,7 @@ describe("ac18 Engagements screen", () => {
       client_entity_name: "Acme Holdings",
       fiscal_period_start: "2025-01-01",
       fiscal_period_end: "2025-12-31",
+      type: "audit", // SPEC-024: the default engagement type
     });
     expect(calls.filter((c) => c.method === "GET" && c.path === "/v1/engagements")).toHaveLength(
       2,

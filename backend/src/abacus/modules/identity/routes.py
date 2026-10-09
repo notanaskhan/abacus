@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
@@ -32,6 +32,7 @@ from abacus.modules.identity.service import (
     list_walls,
     remove_wall_by_id,
 )
+from abacus.modules.identity.signup import sign_up
 from abacus.modules.identity.support import (
     Staff,
     SupportSessionView,
@@ -301,3 +302,33 @@ async def accept_invitation_route(
     return AcceptedInvitationOut(
         tenant_id=accepted.tenant_id, engagement_id=accepted.engagement_id
     )
+
+
+# --- Self-serve sign-up (SPEC-024 AC-1; TASK-040) ----------------------------------------------
+
+signup_router = AbacusRouter(prefix="/v1/signup", tags=["signup"])
+
+
+class SignupIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    code: Annotated[str, Field(min_length=8, max_length=200), classified("restricted")]
+    firm_name: Annotated[str, Field(min_length=1, max_length=200), classified("confidential")]
+
+
+class SignupOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    tenant_id: Annotated[UUID, classified("internal")]
+
+
+@signup_router.post("", action=IDENTITY, response_model=SignupOut, status_code=201, errors=(409,))
+async def signup_route(
+    body: SignupIn,
+    request: Request,
+    identity: Annotated[VerifiedIdentity, Depends(current_identity)],
+) -> SignupOut:
+    """A signed-in person with a founder-issued code creates their firm (no membership yet)."""
+    address = request.client.host if request.client is not None else "unknown"
+    tenant_id = await sign_up(identity, code=body.code, firm_name=body.firm_name, address=address)
+    return SignupOut(tenant_id=tenant_id)

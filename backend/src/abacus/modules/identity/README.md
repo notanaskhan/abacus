@@ -102,3 +102,13 @@ On removal, the hook that evidence registers (`register_member_removed`) release
 - **Its use:** background work the platform starts on a person's standing consent (today only automatic retrieval, for the client admin who connected).
 - **Fails closed:** it returns None once the membership is no longer active.
 - **New callers need the founder's approval.**
+
+## Self-serve sign-up (SPEC-024 AC-1; TASK-040)
+- **Route:** `POST /v1/signup` (`IDENTITY`: a verified token with a provider-verified email, no membership) with `{code, firm_name}`.
+- **Who:** someone already on a firm's staff is refused (`signup_already_staff`); that's read across firms through the identity role.
+- **The reviewed definer `firm_signup`:**
+  - rate-limits failures (5 an hour per identity, 20 per address), spends the founder-issued code, finds or creates the user, creates the firm and its first `firm_admin`;
+  - records every attempt as fingerprints in `signup_attempts`.
+- **Refusals:** `signup_code_invalid` and `signup_rate_limited` are logged; `firm.created` is audited in the new firm.
+- **Codes:** issued by the founder with `python -m abacus_tools.signup_codes issue --note … [--days 30]` (shown once, stored as SHA-256), and listed with `list`.
+- **The SPA:** a signed-in identity with no firm sees the no-firm page, with "Set up your firm"; a client-only person goes to their client home.

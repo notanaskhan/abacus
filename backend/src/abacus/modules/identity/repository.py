@@ -558,3 +558,42 @@ async def active_staff_ids(session: AsyncSession) -> list[UUID]:
         )
     )
     return [cast(UUID, row[0]) for row in rows.all()]
+
+
+# --- Self-serve sign-up (SPEC-024; TASK-040) ---------------------------------------------------
+
+
+async def firm_signup(
+    session: AsyncSession,
+    *,
+    code_hash: str,
+    identity_hash: str,
+    address_hash: str,
+    issuer: str,
+    subject: str,
+    email: str,
+    display_name: str,
+    firm_name: str,
+) -> tuple[str, UUID | None]:
+    """The reviewed `firm_signup` definer function: (outcome, new tenant or None)."""
+    # One call returns one (outcome, tenant_id) record.
+    row = (
+        await session.execute(
+            text(
+                "SELECT firm_signup("
+                ":code, :identity, :address, :issuer, :subject, :email, :name, :firm) AS result"
+            ),
+            {
+                "code": code_hash,
+                "identity": identity_hash,
+                "address": address_hash,
+                "issuer": issuer,
+                "subject": subject,
+                "email": email,
+                "name": display_name,
+                "firm": firm_name,
+            },
+        )
+    ).one()
+    outcome, tenant_id = cast(tuple[str, UUID | None], tuple(row.result))
+    return outcome, tenant_id

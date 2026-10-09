@@ -15,6 +15,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { type JSX, type SyntheticEvent, useState } from "react";
 import { errorMessage } from "../api";
+import { type EngagementType, ENGAGEMENT_TYPES } from "./engagementTypes";
 import { ConfirmItsYou, isForbidden } from "../shell/mfa";
 import { type Problem, XLSX, uploadWorkbook, workbookProblems } from "./methodologyUpload";
 
@@ -86,11 +87,12 @@ function UploadPanel(): JSX.Element {
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [types, setTypes] = useState<EngagementType[]>(["audit"]);
   const [problems, setProblems] = useState<Problem[] | null>(null);
   const [confirm, setConfirm] = useState(false);
   const upload = useMutation({
     mutationFn: async ({ n, f }: { n: string; f: File }) => {
-      await uploadWorkbook(n, f);
+      await uploadWorkbook(n, f, types);
     },
     onMutate: () => {
       setProblems(null);
@@ -135,7 +137,28 @@ function UploadPanel(): JSX.Element {
             className="text-sm file:mr-3 file:rounded-[var(--radius-control)] file:border file:border-line file:bg-surface file:px-3 file:py-1.5 file:text-sm"
           />
         </div>
-        <Button type="submit" disabled={upload.isPending || file === null}>
+        <fieldset className="flex flex-col gap-1">
+          <legend className="text-sm font-semibold">Used for (new templates)</legend>
+          <div className="flex flex-wrap gap-3 text-sm">
+            {ENGAGEMENT_TYPES.map(([value, label]) => (
+              <label key={value} className="flex items-center gap-1">
+                <input
+                  type="checkbox"
+                  checked={types.includes(value)}
+                  onChange={(event) => {
+                    setTypes((current) =>
+                      event.target.checked
+                        ? [...current, value]
+                        : current.filter((t) => t !== value),
+                    );
+                  }}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <Button type="submit" disabled={upload.isPending || file === null || types.length === 0}>
           {upload.isPending ? "Uploading…" : "Upload"}
         </Button>
       </form>

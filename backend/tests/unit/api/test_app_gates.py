@@ -122,6 +122,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/request-items/{item_id}/uploads",  # SPEC-020: evidence
         "/v1/connections/complete",  # SPEC-020: a connection
         "/v1/engagements/{engagement_id}/inbox",  # SPEC-023: an inbox file
+        "/v1/signup",  # SPEC-024: a firm
         "/v1/engagements/{engagement_id}/inbox/{file_id}/assign",  # SPEC-023: evidence
         decisions + "accept",  # TASK-019: a review decision is created
         decisions + "reject",

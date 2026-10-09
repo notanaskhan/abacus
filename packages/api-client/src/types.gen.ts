@@ -491,6 +491,10 @@ export type EngagementIn = {
      * Name
      */
     name: string;
+    /**
+     * Type
+     */
+    type?: 'audit' | 'review' | 'compilation' | 'agreed_upon_procedures';
 };
 
 /**
@@ -536,7 +540,7 @@ export type EngagementOut = {
     /**
      * Type
      */
-    type: 'audit';
+    type: 'audit' | 'review' | 'compilation' | 'agreed_upon_procedures';
 };
 
 /**
@@ -578,7 +582,7 @@ export type EngagementSummaryOut = {
     /**
      * Type
      */
-    type: 'audit';
+    type: 'audit' | 'review' | 'compilation' | 'agreed_upon_procedures';
 };
 
 /**
@@ -1582,6 +1586,30 @@ export type SheetPreviewOut = {
 };
 
 /**
+ * SignupIn
+ */
+export type SignupIn = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Firm Name
+     */
+    firm_name: string;
+};
+
+/**
+ * SignupOut
+ */
+export type SignupOut = {
+    /**
+     * Tenant Id
+     */
+    tenant_id: string;
+};
+
+/**
  * SpendOut
  */
 export type SpendOut = {
@@ -1811,6 +1839,10 @@ export type TemplateVersionOut = {
      * Created At
      */
     created_at: string;
+    /**
+     * Engagement Types
+     */
+    engagement_types?: Array<'audit' | 'review' | 'compilation' | 'agreed_upon_procedures'>;
     /**
      * Template Id
      */
@@ -5575,7 +5607,12 @@ export type ImportTemplateData = {
          */
         name: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Engagement Type
+         */
+        engagement_type?: Array<'audit' | 'review' | 'compilation' | 'agreed_upon_procedures'> | null;
+    };
     url: '/v1/methodology/templates/{name}/versions';
 };
 
@@ -5819,6 +5856,53 @@ export type ReadNotificationResponses = {
 };
 
 export type ReadNotificationResponse = ReadNotificationResponses[keyof ReadNotificationResponses];
+
+export type SignupData = {
+    body: SignupIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/signup';
+};
+
+export type SignupErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SignupError = SignupErrors[keyof SignupErrors];
+
+export type SignupResponses = {
+    /**
+     * Successful Response
+     */
+    201: SignupOut;
+};
+
+export type SignupResponse = SignupResponses[keyof SignupResponses];
 
 export type ListSupportSessionsData = {
     body?: never;

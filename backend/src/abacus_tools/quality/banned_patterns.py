@@ -1292,6 +1292,8 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus_tools/quality/schema_check.py",
             # SPEC-012: the access review runs as the owner role (the only one that may read it).
             "src/abacus_tools/access_review.py",
+            # SPEC-024 (TASK-040): sign-up codes are the owner's; the app role can't reach them.
+            "src/abacus_tools/signup_codes.py",
             "tests/integration/conftest.py",
             "tests/integration/test_local_stack.py",
             "tests/integration/test_tenancy.py",

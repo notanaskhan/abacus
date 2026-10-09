@@ -39,6 +39,7 @@ ROUTERS = (
     identity.staff_router,
     identity.firm_support_router,
     identity.invitation_router,
+    identity.signup_router,  # SPEC-024 (TASK-040)
     engagements.router,
     engagements.methodology_router,
     engagements.firm_router,

@@ -20,6 +20,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { type SyntheticEvent, type JSX, useState } from "react";
 import { errorMessage } from "../api";
+import { type EngagementType, ENGAGEMENT_TYPES, typeLabel } from "./engagementTypes";
 
 export function Engagements(): JSX.Element {
   const engagements = useQuery(listEngagementsOptions());
@@ -87,6 +88,7 @@ export function Engagements(): JSX.Element {
                 </Td>
                 <Td>
                   {e.client_name} — {e.client_entity_name}
+                  <span className="block text-xs text-muted">{typeLabel(e.type)}</span>
                 </Td>
                 <Td>
                   {e.fiscal_period_start} to {e.fiscal_period_end}
@@ -134,6 +136,7 @@ function CreateEngagement({
         client_entity_name: field("client_entity_name"),
         fiscal_period_start: field("fiscal_period_start"),
         fiscal_period_end: field("fiscal_period_end"),
+        type: (field("type") || "audit") as EngagementType,
       },
     });
   }
@@ -144,6 +147,21 @@ function CreateEngagement({
         <Field name="name" label="Engagement name" />
         <Field name="client_name" label="Client" />
         <Field name="client_entity_name" label="Client entity" />
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="type">Engagement type</Label>
+          <select
+            id="type"
+            name="type"
+            defaultValue="audit"
+            className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm"
+          >
+            {ENGAGEMENT_TYPES.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <Field name="fiscal_period_start" label="Fiscal year start" type="date" />
           <Field name="fiscal_period_end" label="Fiscal year end" type="date" />

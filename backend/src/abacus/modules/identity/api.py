@@ -42,6 +42,7 @@ from abacus.modules.identity.routes import (
     firm_support_router,
     invitation_router,
     router,
+    signup_router,
     staff_router,
 )
 from abacus.modules.identity.routing import (
@@ -168,6 +169,7 @@ __all__ = [
     "revoke_invitation",
     "router",
     "serving_request",
+    "signup_router",
     "staff_router",
     "system_context_for_run",
     "team_of",

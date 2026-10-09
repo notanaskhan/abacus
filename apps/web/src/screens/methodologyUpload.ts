@@ -1,3 +1,4 @@
+import type { EngagementType } from "./engagementTypes";
 import { importTemplate } from "@abacus/api-client";
 
 export const XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -45,9 +46,14 @@ export function workbookProblems(error: unknown): Problem[] | null {
 }
 
 /** The workbook is the raw request body (SPEC-008 D3); the generated client sends it as is. */
-export async function uploadWorkbook(name: string, file: File): Promise<void> {
+export async function uploadWorkbook(
+  name: string,
+  file: File,
+  types: EngagementType[] = ["audit"],
+): Promise<void> {
   await importTemplate({
     path: { name },
+    query: { engagement_type: types },
     body: file as never,
     bodySerializer: null,
     headers: { "Content-Type": XLSX },

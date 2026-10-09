@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from uuid import UUID
 
+from sqlalchemy import ARRAY, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from abacus.kernel.db import Base
@@ -36,6 +37,8 @@ class MethodologyTemplate(Base):
     name: Mapped[str]
     created_by: Mapped[UUID]
     created_at: Mapped[datetime]
+    # SPEC-024: the engagement types it serves, fixed when the template is created.
+    engagement_types: Mapped[list[str]] = mapped_column(ARRAY(String))
 
 
 class MethodologyVersion(Base):
