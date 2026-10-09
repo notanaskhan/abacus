@@ -20,6 +20,7 @@ from abacus.kernel.crypto import DecryptionError
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
+from abacus.modules.connections.connect import credentials_of
 from abacus.modules.connections.connector import ConnectorError, Period, Unavailable
 from abacus.modules.connections.fake_format import parse_trial_balance
 from abacus.modules.connections.models import SyncRun
@@ -179,7 +180,8 @@ async def pull_raw(sys: SystemContext) -> StoredObject:
     ):
         raise await fail_run(sys, "failed", "connection_inactive")
     try:
-        raw = await connector_for(connection).pull(
+        credentials = await credentials_of(sys.tenant, connection)
+        raw = await connector_for(connection, credentials).pull(
             "trial_balance", Period(run.period_start, run.period_end), None
         )
     except Unavailable:

@@ -44,3 +44,20 @@ Connections to clients' systems, sync runs, and the retrieval pipeline (ADR-037,
 - **Validation failure** marks the run `failed_validation` and stops: no snapshot, no evidence (AC-11).
 - **Sync runs are the pull log** (ADR-040). The database keeps them forward-only, with write-once results. Composite keys tie connection, engagement, snapshot and evidence to one client entity, and `succeeded` requires all of them.
 - **Dependencies:** identity, engagements, organisations, ledger, evidence and requests (BOUND-002).
+
+## The connection flow (SPEC-020; TASK-036)
+`connect.py`; routes under `/v1/engagements/{id}/connection` plus `POST /v1/connections/complete`.
+
+**Connecting:**
+- A client admin starts a flow (`connection.create`, fresh MFA). The state is kept only as its SHA-256 in `connection_states`, bound to that user, the engagement and its client entity, for 10 minutes.
+- The provider redirects to the SPA (`/client/connect/callback`), which completes the flow with the same person's token (D1), so no route is unauthenticated.
+- The state is spent in its own unit of work whatever happens, and a reused, expired or someone else's state is refused (`invalid_state`).
+- The contract's `exchange_code` returns opaque `Credentials`, sealed with the tenant's key into `connection_secrets` (`seal`, with the connection's ID as associated data).
+- Connecting again revokes the entity's live connection. A partial unique index allows one live connection (`active` or `needs_attention`) per entity.
+
+**After connecting:**
+- **Check** (`connection.check`): `refresh` then `health`. A failure sets `needs_attention`, which also stops pulls, because `pull_raw` needs `active`.
+- **Revoke** (`connection.revoke`): deletes the secret; a running retrieval then fails `connection_inactive`.
+- **Notifications:** `ConnectionCreated` and `ConnectionRevoked` notify the engagement's partner and managers.
+- **Access log** (`connection.read_log`): the engagement's sync runs, newest first, 50 a page.
+- **Providers:** `fake` ("Demo ledger") only where `fake_connector_dir` is set. Its demo sign-in returns `code=demo` and a fixed credential.

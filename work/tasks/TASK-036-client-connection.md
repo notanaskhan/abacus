@@ -4,7 +4,7 @@ title: Client connection flow, health, access log and revoke
 spec: SPEC-020
 acceptance_criteria: [AC-2, AC-3, AC-4, AC-5, AC-6, AC-7]
 risk_zone: red
-status: awaiting-plan-approval
+status: done
 branch: task-036-client-connection
 worktree:
 created: 2026-10-09
@@ -30,7 +30,7 @@ SPEC-020 §4 "Connecting", "Consent copy", "Health", "Access log", "Revoke", "Fi
 - Code: `connections` (connector contract, fake connector, repository, pipeline `pull_raw`), `kernel.crypto` (`seal`, `open_sealed`), `kernel.config` (`fake_connector_dir`, environment), migration 0009, the notifications catalogue, `apps/web` `ClientEngagement` and `Overview`
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-09: D1–D7). Approved by founder: paths listed under *Protected paths*
 
 ### What the code shows
 - **Connections can't be created by the app:** the provider is limited to `'fake'`, status to `active` or `revoked`, and the app may only update `status`.
@@ -113,7 +113,8 @@ SPEC-020 §4 "Connecting", "Consent copy", "Health", "Access log", "Revoke", "Fi
 - `backend/tests/unit/**`;
 - `docs/architecture/permission-matrix.yaml` (D3, D4);
 - `backend/src/abacus_tools/quality/schema_check.py` (new tables, grants and update columns);
-- `backend/src/abacus_tools/quality/banned_patterns.py` (only if a lookup needs a LIST-001 exemption).
+- `backend/src/abacus_tools/quality/banned_patterns.py` (only if a lookup needs a LIST-001 exemption);
+- `backend/src/abacus/api/app.py` (registering the two new routers; added by the founder on 2026-10-09).
 
 ### Questions for approval
 - **D1. The provider redirects to the SPA, which completes the flow with the user's own token, rather than an unauthenticated API callback with a definer function?** *Recommendation: yes.* There's less attack surface and the flow stays bound to the user. This replaces SPEC-020 §8's callback wording.
@@ -125,12 +126,26 @@ SPEC-020 §4 "Connecting", "Consent copy", "Health", "Access log", "Revoke", "Fi
 - **D7. Write the approval file for the protected paths above?** *Recommendation: yes.*
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
-- [ ] Type check, lint, format, architecture and dependency rules pass
-- [ ] Every query is tenant-scoped; every endpoint checks authorisation
-- [ ] Module READMEs and the relevant docs are updated
+- [x] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
+- [x] Type check, lint, format, architecture and dependency rules pass
+- [x] Every query is tenant-scoped; every endpoint checks authorisation
+- [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-09` — Implemented:
+  - migration 0029 (connection states, sealed secrets, health and revocation columns, one live connection per entity);
+  - the contract change (`Credentials`) and the fake connector's demo sign-in;
+  - start, complete, check, revoke, the connection and the access log, with routes;
+  - the matrix's fresh MFA on `connection.create` and the new `connection.check`;
+  - leads notified of connections and revocations;
+  - the portal's Connection panel (consent, MFA prompt, health, log, disconnect), the SPA callback page and the firm Overview's card.
+
+  Tests and checks:
+  - backend unit 8,963 and web 146 passed; the gates pass; migration 0029 applies, rolls back and reapplies; the schema check passes;
+  - a local end-to-end smoke against Postgres passed: providers, MFA refusal, start, complete, state reuse refused, credentials sealed and opened, check, reconnect replacing, revoke deleting the secrets, second revoke refused. The smoke data was removed afterwards.
+  - The secrets table has no `key_id` column: the sealed envelope already carries its key ID.
+
+  `api/app.py` was added to the approval by the founder (registering the routers). The TASK-034 slip on the same file is recorded there.
 - `2026-10-09` — Design written for founder review after TASK-035 merged (#66).
 
 ## Decisions made during this task

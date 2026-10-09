@@ -65,6 +65,12 @@ async def _staff_team(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]
     return sorted({user for user, role in team if role in _STAFF_ROLES})
 
 
+async def _leads(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """The engagement's partner and managers (SPEC-020: a client connected or disconnected)."""
+    engagement_id = _uuid(payload, "engagement_id")
+    return [] if engagement_id is None else await engagement_leads(tenant_id, engagement_id)
+
+
 @dataclass(frozen=True)
 class Kind:
     kind: str
@@ -97,6 +103,8 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "evidence.uploaded": Kind(
         "evidence.uploaded", _staff_team, "evidence_version", "evidence_version_id"
     ),
+    "connection.created": Kind("connection.created", _leads, "connection", "connection_id"),
+    "connection.revoked": Kind("connection.revoked", _leads, "connection", "connection_id"),
 }
 
 # AC-7: fixed English text per kind; placeholders are names the reader can already see.
@@ -111,4 +119,6 @@ TEMPLATES: Final[dict[str, str]] = {
     "engagement_member.added": "You were added to {engagement}.",
     "review.assigned": "Evidence on {engagement} was assigned to you for review.",
     "evidence.uploaded": "The client uploaded a file on {engagement}.",
+    "connection.created": "The client connected their accounting system on {engagement}.",
+    "connection.revoked": "The accounting system connection on {engagement} was ended.",
 }

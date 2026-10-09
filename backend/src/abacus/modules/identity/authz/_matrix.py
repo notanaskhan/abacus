@@ -307,6 +307,12 @@ ACTIONS: dict[str, dict[str, str]] = {
     },
     "connection.create": {
         "client_admin": "allow",
+        "mfa_recent": "required",
+    },
+    "connection.check": {
+        "client_admin": "allow",
+        "engagement_partner": "allow",
+        "manager": "allow",
     },
     "connection.revoke": {
         "client_admin": "allow",

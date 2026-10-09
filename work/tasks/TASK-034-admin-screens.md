@@ -64,6 +64,7 @@ All of SPEC-019.
 - [x] Docs updated
 
 ## Progress log
+- `2026-10-09` — **Process slip, found during TASK-036:** this task added `engagements.firm_router` to `backend/src/abacus/api/app.py` (a protected path, `abacus.api`), although app.py wasn't in the approval file. The change only registered the router. The founder was told and acknowledged it on 2026-10-09.
 - `2026-10-08` — Implemented:
   - the picker routes `GET /v1/firm/members` (identity) and `GET /v1/firm/clients` (engagements), both authorised by `wall.create`;
   - Knowledge on the rail; the Firm admin section with role-filtered tabs and the emergency banner;

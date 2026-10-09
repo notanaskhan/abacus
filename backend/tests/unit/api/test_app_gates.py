@@ -96,6 +96,10 @@ NOT_CREATING = {
     "/v1/support-sessions/{session_id}/approve",
     "/v1/support-sessions/{session_id}/revoke",
     "/v1/support-sessions/{session_id}/acknowledge",
+    # SPEC-020 (TASK-036): starting returns the provider's URL; check and revoke return state.
+    "/v1/engagements/{engagement_id}/connection/start",
+    "/v1/engagements/{engagement_id}/connection/check",
+    "/v1/engagements/{engagement_id}/connection/revoke",
 }
 
 
@@ -115,6 +119,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/team",  # SPEC-017: a team member
         "/v1/engagements/{engagement_id}/request-items/import",  # SPEC-018: items created
         "/v1/engagements/{engagement_id}/request-items/{item_id}/uploads",  # SPEC-020: evidence
+        "/v1/connections/complete",  # SPEC-020: a connection
         decisions + "accept",  # TASK-019: a review decision is created
         decisions + "reject",
         decisions + "send-back",
