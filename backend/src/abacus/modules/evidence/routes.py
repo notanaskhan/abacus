@@ -8,10 +8,11 @@ from decimal import Decimal
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import Depends, Query, Request
+from fastapi import Depends, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from abacus.kernel.classification import classified
+from abacus.modules.evidence.item_detail import ItemVersion, download, item_versions
 from abacus.modules.evidence.service import (
     Decision,
     DecisionView,
@@ -386,3 +387,73 @@ async def upload_route(
 async def list_uploads_route(engagement_id: UUID, item_id: UUID, ctx: Ctx) -> list[UploadOut]:
     """SPEC-020: the item's uploads, newest first."""
     return [_upload_out(v) for v in await uploads_for(ctx, engagement_id, item_id)]
+
+
+# --- Request item detail (SPEC-021; TASK-037) --------------------------------------------------
+
+
+class DecisionSummaryOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    decision: Annotated[str, classified("internal")]
+    reason_code: Annotated[str | None, classified("internal")]
+    decided_by: Annotated[UUID | None, classified("internal")]
+    decided_by_name: Annotated[str, classified("confidential")]
+    decided_at: Annotated[datetime, classified("internal")]
+
+
+class ItemVersionOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    version_no: Annotated[int, classified("internal")]
+    method: Annotated[Method, classified("internal")]
+    source: Annotated[str, classified("internal")]
+    period_start: Annotated[date | None, classified("internal")]
+    period_end: Annotated[date | None, classified("internal")]
+    pulled_at: Annotated[datetime | None, classified("internal")]
+    created_at: Annotated[datetime, classified("internal")]
+    size_bytes: Annotated[int, classified("internal")]
+    media_type: Annotated[str, classified("internal")]
+    fingerprint: Annotated[str, classified("internal")]
+    # The client's file name for uploads: untrusted text, shown as plain text only (ADR-052).
+    file_name: Annotated[str | None, classified("confidential")]
+    uploaded_by: Annotated[UUID | None, classified("internal")]
+    uploaded_by_name: Annotated[str, classified("confidential")]
+    decision: Annotated[DecisionSummaryOut | None, classified("internal")]
+
+
+def _version_out(v: ItemVersion) -> ItemVersionOut:
+    return ItemVersionOut.model_validate(v, from_attributes=True)
+
+
+@router.get(
+    "/request-items/{item_id}/versions",
+    action="evidence.read",
+    response_model=list[ItemVersionOut],
+)
+async def item_versions_route(
+    engagement_id: UUID, item_id: UUID, ctx: Ctx
+) -> list[ItemVersionOut]:
+    """SPEC-021 AC-1: the item's versions, newest first, with provenance and decisions."""
+    return [_version_out(v) for v in await item_versions(ctx, engagement_id, item_id)]
+
+
+@router.get(
+    "/evidence-versions/{version_id}/content",
+    action="evidence.read",
+    response_model=bytes,
+    errors=(409,),
+)
+async def content_route(engagement_id: UUID, version_id: UUID, ctx: Ctx) -> Response:
+    """SPEC-021 AC-2: the file as an attachment, never inline (ADR-052); audited and verified."""
+    file = await download(ctx, engagement_id, version_id)
+    return Response(
+        content=file.content,
+        media_type=file.media_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{file.file_name}"',
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "no-store",
+        },
+    )

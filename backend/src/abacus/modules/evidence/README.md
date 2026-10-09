@@ -54,3 +54,10 @@ Evidence items and their immutable versions (glossary; ADR-004). Owns `evidence_
   - limits: 25 MB; types judged by the leading bytes (PDF, PNG, JPEG, OOXML xlsx/docx, OLE xls/doc, UTF-8 CSV); the same SHA-256 on the item twice is refused;
   - stores a new evidence item titled with the cleaned file name, whose first version has provenance `uploaded` / `client_upload`, links it, audits `evidence.uploaded` and emits `EvidenceUploaded` (which notifies the firm team).
 - **Never opened:** no file is opened, parsed or rendered; file names are plain text only.
+
+## Request item detail (SPEC-021; TASK-037)
+`item_detail.py`, firm-side only (client roles are refused here, Q4).
+- **`GET …/request-items/{item_id}/versions`** (`evidence.read`): the item's versions, newest first. Each has its provenance; for uploads, the file name and uploader; and its decision on this item.
+- **`GET …/evidence-versions/{version_id}/content`** (`evidence.read`): the bytes, through `read_version` (authorised, audited `evidence_version.read`, fingerprint-verified).
+  - Served as an attachment with an ASCII-safe name, `nosniff` and `no-store`; never inline.
+  - A verification failure is a 409 `integrity_failed`, logged.

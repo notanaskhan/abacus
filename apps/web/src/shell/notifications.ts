@@ -23,6 +23,6 @@ export function notificationText(kind: string): string {
 export function notificationHref(n: NotificationOut): string | null {
   if (n.engagement_id === null) return null;
   if (n.kind === "review.assigned") return `/engagements/${n.engagement_id}/review`;
-  if (n.kind === "evidence.uploaded") return `/engagements/${n.engagement_id}/board`;
+  if (n.kind === "evidence.uploaded") return `/engagements/${n.engagement_id}/requests`;
   return `/engagements/${n.engagement_id}`;
 }

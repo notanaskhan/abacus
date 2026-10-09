@@ -12,7 +12,7 @@ import {
   mockApi,
   never,
   signInForTest,
-  withQueries,
+  renderRoutes,
   type Handler,
 } from "../testing/support";
 import { Board } from "./Board";
@@ -109,7 +109,7 @@ afterEach(() => {
 describe("ac18 Board screen", () => {
   it("shows the engagement and the item with status, source and screening result", async () => {
     api();
-    withQueries(<Board engagementId={E} />);
+    renderRoutes([{ path: "/", component: () => <Board engagementId={E} /> }]);
     expect(await screen.findByRole("heading", { name: "FY25 audit" })).toBeTruthy();
     expect(screen.getByText("Trial balance")).toBeTruthy();
     expect(screen.getByText("Financial reporting")).toBeTruthy();
@@ -123,7 +123,7 @@ describe("ac18 Board screen", () => {
 
   it("marks citations Verified or Unverified and lists the unverified notes", async () => {
     api();
-    withQueries(<Board engagementId={E} />);
+    renderRoutes([{ path: "/", component: () => <Board engagementId={E} /> }]);
     const citations = await screen.findByRole("list", { name: "Citations" });
     const rows = within(citations).getAllByRole("listitem");
     expect(rows).toHaveLength(2);
@@ -151,7 +151,9 @@ describe("ac18 Board screen", () => {
         }),
       ],
     });
-    const { container } = withQueries(<Board engagementId={E} />);
+    const { container } = renderRoutes([
+      { path: "/", component: () => <Board engagementId={E} /> },
+    ]);
     await screen.findByText(/reversed https:\/\/evil.test\/pay/);
     expect(container.querySelector("img")).toBeNull();
     expect(container.querySelector("script")).toBeNull();
@@ -164,7 +166,7 @@ describe("ac18 Board screen", () => {
 
   it("shows Screening… when evidence has no result yet", async () => {
     api({ results: [] });
-    withQueries(<Board engagementId={E} />);
+    renderRoutes([{ path: "/", component: () => <Board engagementId={E} /> }]);
     await screen.findByText("Retrieved · version 1");
     expect(screen.getByRole("status").textContent).toContain("Screening…");
     expect(screen.queryByText(/Agent proposes/)).toBeNull();
@@ -176,7 +178,7 @@ describe("ac18 Board screen", () => {
       versions: [],
       results: [],
     });
-    withQueries(<Board engagementId={E} />);
+    renderRoutes([{ path: "/", component: () => <Board engagementId={E} /> }]);
     expect(await screen.findByText("No evidence yet")).toBeTruthy();
     expect(screen.queryByText("Screening…")).toBeNull();
     expect(screen.getByText("Open")).toBeTruthy();
@@ -184,7 +186,9 @@ describe("ac18 Board screen", () => {
 
   it("shows a busy skeleton while loading", async () => {
     api({ [`GET ${BASE}/request-items`]: never });
-    const { container } = withQueries(<Board engagementId={E} />);
+    const { container } = renderRoutes([
+      { path: "/", component: () => <Board engagementId={E} /> },
+    ]);
     await waitFor(() => {
       expect(container.querySelector('[aria-busy="true"]')).not.toBeNull();
     });
@@ -198,7 +202,7 @@ describe("ac18 Board screen", () => {
         return attempts === 1 ? json({ detail: "Down" }, 500) : json([screening()]);
       },
     });
-    withQueries(<Board engagementId={E} />);
+    renderRoutes([{ path: "/", component: () => <Board engagementId={E} /> }]);
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("Couldn't load the evidence board");
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
@@ -207,7 +211,7 @@ describe("ac18 Board screen", () => {
 
   it("shows the empty state when there are no request items", async () => {
     api({ items: [], versions: [], results: [] });
-    withQueries(<Board engagementId={E} />);
+    renderRoutes([{ path: "/", component: () => <Board engagementId={E} /> }]);
     expect(await screen.findByText("No request items yet")).toBeTruthy();
   });
 
@@ -221,7 +225,7 @@ describe("ac18 Board screen", () => {
         return json(item({ evidence_version_id: null }), 201);
       },
     });
-    withQueries(<Board engagementId={E} />);
+    renderRoutes([{ path: "/", component: () => <Board engagementId={E} /> }]);
     await screen.findByText("No request items yet");
     fireEvent.change(screen.getByLabelText("Request"), { target: { value: "Trial balance" } });
     fireEvent.change(screen.getByLabelText("Audit area"), {
@@ -255,7 +259,7 @@ describe("ac18 Board screen", () => {
       [`POST ${BASE}/retrievals`]: () => json(run, 202),
       [`GET ${BASE}/retrievals/r1`]: () => json(run),
     });
-    withQueries(<Board engagementId={E} />);
+    renderRoutes([{ path: "/", component: () => <Board engagementId={E} /> }]);
     const button = await screen.findByRole("button", { name: "Retrieve trial balance" });
     expect(button.hasAttribute("disabled")).toBe(false);
     fireEvent.click(button);
@@ -302,7 +306,7 @@ describe("ac18 Board screen", () => {
     }
 
     async function startRetrieval(): Promise<void> {
-      withQueries(<Board engagementId={E} />);
+      renderRoutes([{ path: "/", component: () => <Board engagementId={E} /> }]);
       fireEvent.click(await screen.findByRole("button", { name: "Retrieve trial balance" }));
     }
 
@@ -333,7 +337,7 @@ describe("ac18 Board screen", () => {
     it("never names the reason or another firm", async () => {
       const { container } = (() => {
         openItemApi(() => json(queuedRun({ queued_reason: "firm_cap" })));
-        return withQueries(<Board engagementId={E} />);
+        return renderRoutes([{ path: "/", component: () => <Board engagementId={E} /> }]);
       })();
       fireEvent.click(await screen.findByRole("button", { name: "Retrieve trial balance" }));
       await screen.findByText(/^Queued:/);
@@ -416,7 +420,9 @@ describe("ac18 Board screen", () => {
         }),
       ],
     });
-    const { container } = withQueries(<Board engagementId={E} />);
+    const { container } = renderRoutes([
+      { path: "/", component: () => <Board engagementId={E} /> },
+    ]);
     await screen.findByText(/<b>1,000<\/b>/);
     expect(container.querySelector("img")).toBeNull();
     expect(container.querySelector("b")).toBeNull();
@@ -431,7 +437,7 @@ describe("ac18 Board screen", () => {
       results: [],
       [`POST ${BASE}/retrievals`]: never,
     });
-    withQueries(<Board engagementId={E} />);
+    renderRoutes([{ path: "/", component: () => <Board engagementId={E} /> }]);
     const button = await screen.findByRole("button", { name: "Retrieve trial balance" });
     fireEvent.click(button);
     await waitFor(() => {
@@ -446,7 +452,7 @@ describe("ac18 Board screen", () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     try {
       const { calls } = api({ results: [] });
-      withQueries(<Board engagementId={E} />);
+      renderRoutes([{ path: "/", component: () => <Board engagementId={E} /> }]);
       await screen.findByText("Retrieved · version 1");
       expect(screen.queryByText("Screening hasn't finished.")).toBeNull();
       await vi.advanceTimersByTimeAsync(125_000);
@@ -469,7 +475,7 @@ describe("ac18 Board screen", () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     try {
       const { calls } = api({ results: [] });
-      withQueries(<Board engagementId={E} />);
+      renderRoutes([{ path: "/", component: () => <Board engagementId={E} /> }]);
       await screen.findByText("Retrieved · version 1");
       const reads = (): number =>
         calls.filter((c) => c.path === `${BASE}/screening-results`).length;
@@ -486,7 +492,7 @@ describe("ac18 Board screen", () => {
 
   it("offers nothing that accepts, approves, rejects or waives an agent proposal", async () => {
     api();
-    withQueries(<Board engagementId={E} />);
+    renderRoutes([{ path: "/", component: () => <Board engagementId={E} /> }]);
     await screen.findByText(/Agent proposes/);
     expect(
       screen.queryAllByRole("button", { name: /accept|approve|reject|waive|confirm|sign.?off/i }),

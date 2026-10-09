@@ -11,6 +11,7 @@ import { SupportAccess } from "./screens/SupportAccess";
 import { Walls } from "./screens/Walls";
 import { Engagements } from "./screens/Engagements";
 import { ImportRequestList } from "./screens/ImportRequestList";
+import { ItemDetail } from "./screens/ItemDetail";
 import { Layout } from "./screens/Layout";
 import { Methodology } from "./screens/Methodology";
 import { MethodologyVersion } from "./screens/MethodologyVersion";
@@ -95,6 +96,14 @@ const overviewRoute = createRoute({
   component: function OverviewPage(): JSX.Element {
     const { engagementId } = engagementRoute.useParams();
     return <Overview engagementId={engagementId} />;
+  },
+});
+const itemRoute = createRoute({
+  getParentRoute: () => engagementRoute,
+  path: "/items/$itemId",
+  component: function ItemPage(): JSX.Element {
+    const { engagementId, itemId } = itemRoute.useParams();
+    return <ItemDetail engagementId={engagementId} itemId={itemId} />;
   },
 });
 const boardRoute = createRoute({
@@ -226,7 +235,14 @@ const routeTree = rootRoute.addChildren([
   acceptRoute,
   appRoute.addChildren([
     engagementsRoute,
-    engagementRoute.addChildren([overviewRoute, boardRoute, mapRoute, peopleRoute, reviewRoute]),
+    engagementRoute.addChildren([
+      overviewRoute,
+      boardRoute,
+      itemRoute,
+      mapRoute,
+      peopleRoute,
+      reviewRoute,
+    ]),
     knowledgeRoute,
     adminRoute.addChildren([
       methodologyRoute,
