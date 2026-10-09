@@ -87,6 +87,7 @@ SPEC-025 AC-3 (the proposal for a new client is the firm's template for the type
 - [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-09` — The template-version bug found below is fixed on its own branch (founder: "fix the template bug first"). Version numbering now takes a transaction-scoped advisory lock keyed on the template (`pg_advisory_xact_lock`), not `FOR UPDATE`, so no grant or migration is needed and the table stays insert-only. Local check: version 2 imported, then three concurrent imports numbered 3, 4 and 5. A unit test pins the lock.
 - `2026-10-09` — Implemented:
   - `GET /v1/methodology/templates?latest=true` (repository: versions with no newer version of the same template);
   - "New engagement" gains the Request list choice: the only template for the type preselected at its latest version, several to choose from, none explained with a link to Methodology, or "Start with an empty list". It creates, then applies (D1), then opens the engagement (on Setup while it isn't open). A failed apply says "Created, but the template wasn't applied", with the reason and a link to the engagement;
