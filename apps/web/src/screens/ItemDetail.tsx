@@ -1,5 +1,5 @@
 import type { ItemVersionOut, ScreeningResultOut } from "@abacus/api-client";
-import { content } from "@abacus/api-client";
+import { content, upload } from "@abacus/api-client";
 import {
   getEngagementOptions,
   itemVersionsOptions,
@@ -16,6 +16,9 @@ import {
   Alert,
   Badge,
   Button,
+  Dialog,
+  Input,
+  Label,
   EmptyState,
   Panel,
   Skeleton,
@@ -125,7 +128,20 @@ export function ItemDetail({
         <StatusPill tone={status.tone}>{status.label}</StatusPill>
       </div>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <Panel title="Evidence">
+        <Panel
+          title="Evidence"
+          action={
+            myRole !== undefined &&
+            ["open", "received", "needs_revision"].includes(item.status) ? (
+              <UploadForClient
+                engagementId={engagementId}
+                itemId={itemId}
+                itemLabel={item.description}
+                onDone={refresh}
+              />
+            ) : undefined
+          }
+        >
           {versions.isPending ? (
             <Skeleton className="h-24" />
           ) : versions.isError ? (
@@ -242,8 +258,11 @@ function VersionCard({
           ? `Retrieved from ${v.source}${
               v.period_start !== null ? ` · ${v.period_start} to ${v.period_end ?? ""}` : ""
             } · pulled ${when(v.pulled_at)}`
-          : `Uploaded by ${v.uploaded_by_name || "the client"}`}
+          : v.on_behalf === true
+            ? `Added for the client by ${v.uploaded_by_name || "the audit team"}`
+            : `Uploaded by ${v.uploaded_by_name || "the client"}`}
       </p>
+      {v.note != null && <p className="text-xs text-muted">{v.note}</p>}
       {v.file_name !== null && <p className="break-all">{v.file_name}</p>}
       <p className="text-xs text-muted tabular-nums">
         {when(v.created_at)} · {size(v.size_bytes)} · {v.media_type} ·{" "}
@@ -320,5 +339,115 @@ function Screening({
         </div>
       )}
     </Panel>
+  );
+}
+
+/** SPEC-023 AC-1: the team adds a file the client sent another way, with where it came from. */
+function UploadForClient({
+  engagementId,
+  itemId,
+  itemLabel,
+  onDone,
+}: {
+  engagementId: string;
+  itemId: string;
+  itemLabel: string;
+  onDone: () => void;
+}): JSX.Element {
+  const [open, setOpen] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+  const send = async (): Promise<void> => {
+    if (file === null) return;
+    setBusy(true);
+    setFailure(null);
+    try {
+      await upload({
+        path: { engagement_id: engagementId, item_id: itemId },
+        query: {
+          filename: file.name,
+          on_behalf: true,
+          ...(note.trim() === "" ? {} : { note: note.trim() }),
+        },
+        body: file as never,
+        bodySerializer: null,
+        headers: { "Content-Type": file.type || "application/octet-stream" },
+        throwOnError: true,
+      });
+      setOpen(false);
+      setFile(null);
+      setNote("");
+      onDone();
+    } catch (error) {
+      setFailure(errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => {
+          setOpen(true);
+        }}
+      >
+        Upload for the client
+      </Button>
+      <Dialog
+        open={open}
+        onOpenChange={setOpen}
+        title="Upload for the client"
+        description={`A file the client sent another way, for "${itemLabel}". The client sees it as added by their auditor.`}
+      >
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="on-behalf-file">File</Label>
+            <input
+              id="on-behalf-file"
+              type="file"
+              accept=".pdf,.xlsx,.xls,.docx,.doc,.csv,.png,.jpg,.jpeg"
+              className="text-sm"
+              onChange={(event) => {
+                setFile(event.target.files?.[0] ?? null);
+              }}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="on-behalf-note">Where it came from (optional)</Label>
+            <Input
+              id="on-behalf-note"
+              maxLength={500}
+              placeholder="e.g. emailed by the controller on 3 Oct"
+              value={note}
+              onChange={(event) => {
+                setNote(event.target.value);
+              }}
+            />
+          </div>
+          {failure !== null && (
+            <p role="alert" className="text-sm text-danger">
+              {failure}
+            </p>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setOpen(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button disabled={file === null || busy} onClick={() => void send()}>
+              {busy ? "Uploading…" : "Upload"}
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+    </>
   );
 }

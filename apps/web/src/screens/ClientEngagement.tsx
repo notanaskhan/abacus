@@ -17,6 +17,7 @@ import { type JSX, useEffect, useState } from "react";
 import { errorMessage } from "../api";
 import { accessToken, signIn } from "../auth/session";
 import { ConnectionPanel } from "./ConnectionPanel";
+import { InboxPanel } from "./InboxPanel";
 import { statusOf } from "./engagementLabels";
 
 // SPEC-020 AC-9: refusals in plain words (the API returns fixed codes).
@@ -89,6 +90,7 @@ export function ClientEngagement({ engagementId }: { engagementId: string }): JS
           </div>
         )}
         {isAdmin && <ConnectionPanel engagementId={engagementId} firmName={firmName} canConnect />}
+        {items.data !== undefined && <InboxPanel engagementId={engagementId} items={items.data} />}
         {items.isPending ? (
           <Skeleton className="h-40" />
         ) : items.isError ? (
@@ -269,7 +271,10 @@ function ClientItem({
                 <span className="text-ink">{u.file_name}</span>
                 <span className="tabular-nums">{size(u.size_bytes)}</span>
                 <span>
-                  {u.uploaded_by_name || "Someone"} · {new Date(u.uploaded_at).toLocaleString()}
+                  {u.on_behalf === true
+                    ? "Added by your auditor"
+                    : u.uploaded_by_name || "Someone"}{" "}
+                  · {new Date(u.uploaded_at).toLocaleString()}
                 </span>
               </li>
             ))}

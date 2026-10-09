@@ -13,6 +13,16 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from abacus.kernel.classification import classified
 from abacus.modules.evidence.board_summary import board_summary
+from abacus.modules.evidence.inbox import (
+    InboxEntry,
+    add_to_inbox,
+    check_inbox,
+    discard,
+    inbox,
+)
+from abacus.modules.evidence.inbox import (
+    assign as assign_inbox_file,
+)
 from abacus.modules.evidence.item_detail import ItemVersion, download, item_versions
 from abacus.modules.evidence.service import (
     Decision,
@@ -344,6 +354,9 @@ class UploadOut(BaseModel):
     uploaded_by: Annotated[UUID | None, classified("internal")]
     uploaded_by_name: Annotated[str, classified("confidential")]
     uploaded_at: Annotated[datetime, classified("internal")]
+    # SPEC-023: added by the firm for the client, and where it came from (plain text).
+    on_behalf: Annotated[bool, classified("internal")] = False
+    note: Annotated[str | None, classified("confidential")] = None
 
 
 def _upload_out(view: UploadView) -> UploadOut:
@@ -373,12 +386,23 @@ async def upload_route(
     request: Request,
     ctx: Ctx,
     filename: Annotated[str, Query(min_length=1, max_length=1000)],
+    on_behalf: bool = False,
+    note: Annotated[str | None, Query(max_length=2000)] = None,
 ) -> UploadOut:
-    """SPEC-020 AC-8, AC-9: a client's file for a request item, stored as new evidence."""
+    """SPEC-020 AC-8, AC-9: a file for a request item, stored as new evidence. With
+    `on_behalf`, the firm's team adds it for the client (SPEC-023 AC-1)."""
     await check_upload(ctx, engagement_id, item_id)
     content = await _file(request)
     return _upload_out(
-        await upload(ctx, engagement_id, item_id, file_name=filename, content=content)
+        await upload(
+            ctx,
+            engagement_id,
+            item_id,
+            file_name=filename,
+            content=content,
+            on_behalf=on_behalf,
+            note=note,
+        )
     )
 
 
@@ -422,6 +446,8 @@ class ItemVersionOut(BaseModel):
     uploaded_by: Annotated[UUID | None, classified("internal")]
     uploaded_by_name: Annotated[str, classified("confidential")]
     decision: Annotated[DecisionSummaryOut | None, classified("internal")]
+    on_behalf: Annotated[bool, classified("internal")] = False
+    note: Annotated[str | None, classified("confidential")] = None
 
 
 def _version_out(v: ItemVersion) -> ItemVersionOut:
@@ -480,3 +506,125 @@ async def board_summary_route(engagement_id: UUID, ctx: Ctx) -> BoardSummaryOut:
     return BoardSummaryOut.model_validate(
         await board_summary(ctx, engagement_id), from_attributes=True
     )
+
+
+# --- The engagement inbox (SPEC-023; TASK-039) -------------------------------------------------
+
+
+class SuggestionOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    request_item_id: Annotated[UUID, classified("internal")]
+    score: Annotated[int, classified("internal")]
+    matched: Annotated[list[str], classified("confidential")]
+
+
+class InboxFileOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    file_name: Annotated[str, classified("confidential")]
+    media_type: Annotated[str, classified("internal")]
+    size_bytes: Annotated[int, classified("internal")]
+    uploaded_by: Annotated[UUID, classified("internal")]
+    uploaded_by_name: Annotated[str, classified("confidential")]
+    uploaded_by_staff: Annotated[bool, classified("internal")]
+    note: Annotated[str | None, classified("confidential")]
+    created_at: Annotated[datetime, classified("internal")]
+    suggestions: Annotated[list[SuggestionOut], classified("internal")]
+
+
+def _inbox_out(entry: InboxEntry) -> InboxFileOut:
+    return InboxFileOut(
+        id=entry.id,
+        file_name=entry.file_name,
+        media_type=entry.media_type,
+        size_bytes=entry.size_bytes,
+        uploaded_by=entry.uploaded_by,
+        uploaded_by_name=entry.uploaded_by_name,
+        uploaded_by_staff=entry.uploaded_by_staff,
+        note=entry.note,
+        created_at=entry.created_at,
+        suggestions=[
+            SuggestionOut(
+                request_item_id=s.request_item_id, score=s.score, matched=list(s.matched)
+            )
+            for s in entry.suggestions
+        ],
+    )
+
+
+class InboxAssignIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    request_item_id: Annotated[UUID, classified("internal")]
+    followed_suggestion: Annotated[bool, classified("internal")] = False
+
+
+class AssignedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    evidence_version_id: Annotated[UUID, classified("internal")]
+
+
+class DiscardedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+
+
+@router.post(
+    "/inbox", action="evidence.upload", response_model=InboxFileOut, status_code=201, errors=(409,)
+)
+async def add_to_inbox_route(
+    engagement_id: UUID,
+    request: Request,
+    ctx: Ctx,
+    filename: Annotated[str, Query(min_length=1, max_length=1000)],
+    note: Annotated[str | None, Query(max_length=2000)] = None,
+) -> InboxFileOut:
+    """SPEC-023 AC-2: a file dropped at the engagement level, waiting to be matched."""
+    await check_inbox(ctx, engagement_id)
+    content = await _file(request)
+    return _inbox_out(
+        await add_to_inbox(ctx, engagement_id, file_name=filename, content=content, note=note)
+    )
+
+
+@router.get("/inbox", action="evidence.upload", response_model=list[InboxFileOut])
+async def inbox_route(engagement_id: UUID, ctx: Ctx) -> list[InboxFileOut]:
+    """SPEC-023 AC-2, AC-3: waiting files with their suggestions."""
+    return [_inbox_out(e) for e in await inbox(ctx, engagement_id)]
+
+
+@router.post(
+    "/inbox/{file_id}/assign",
+    action="evidence.upload",
+    response_model=AssignedOut,
+    status_code=201,
+    errors=(409,),
+)
+async def assign_inbox_file_route(
+    engagement_id: UUID, file_id: UUID, body: InboxAssignIn, ctx: Ctx
+) -> AssignedOut:
+    """SPEC-023 AC-4: the file becomes evidence on the chosen item."""
+    version_id = await assign_inbox_file(
+        ctx,
+        engagement_id,
+        file_id,
+        request_item_id=body.request_item_id,
+        followed_suggestion=body.followed_suggestion,
+    )
+    return AssignedOut(evidence_version_id=version_id)
+
+
+@router.post(
+    "/inbox/{file_id}/discard",
+    action="evidence.upload",
+    response_model=DiscardedOut,
+    errors=(409,),
+)
+async def discard_route(engagement_id: UUID, file_id: UUID, ctx: Ctx) -> DiscardedOut:
+    """SPEC-023 AC-5: take it out of the inbox; nothing becomes evidence."""
+    await discard(ctx, engagement_id, file_id)
+    return DiscardedOut(id=file_id)

@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from abacus.modules.evidence.models import (
     EvidenceItem,
     EvidenceVersion,
+    InboxFile,
     ReviewAssignment,
     ReviewDecision,
 )
@@ -83,6 +84,7 @@ async def insert_version(
     client_entity_id: UUID | None,
     snapshot_id: UUID | None,
     idempotency_key: str | None,
+    upload_note: str | None = None,
 ) -> EvidenceVersion:
     return (
         await session.execute(
@@ -106,6 +108,7 @@ async def insert_version(
                 client_entity_id=client_entity_id,
                 snapshot_id=snapshot_id,
                 idempotency_key=idempotency_key,
+                upload_note=upload_note,
             )
             .returning(EvidenceVersion)
         )
@@ -405,3 +408,55 @@ async def methods_of(
         )
     )
     return {version_id: method for version_id, method in rows.tuples().all()}
+
+
+# --- The engagement inbox (SPEC-023; TASK-039) -------------------------------------------------
+
+
+async def insert_inbox_file(session: AsyncSession, **values: object) -> InboxFile:
+    return (
+        await session.execute(insert(InboxFile).values(**values).returning(InboxFile))
+    ).scalar_one()
+
+
+async def waiting_with_fingerprint(
+    session: AsyncSession, engagement_id: UUID, fingerprint: str
+) -> bool:
+    found = await session.execute(
+        select(InboxFile.id).where(
+            InboxFile.engagement_id == engagement_id,
+            InboxFile.fingerprint == fingerprint,
+            InboxFile.status == "waiting",
+        )
+    )
+    return found.scalar_one_or_none() is not None
+
+
+async def waiting_inbox(session: AsyncSession, engagement_id: UUID) -> Sequence[InboxFile]:
+    """The engagement's waiting files, oldest first, for a caller that authorised on the
+    engagement; the service narrows them by role (SPEC-023; LIST_EXEMPT)."""
+    return (
+        (
+            await session.execute(
+                select(InboxFile)
+                .where(InboxFile.engagement_id == engagement_id, InboxFile.status == "waiting")
+                .order_by(InboxFile.created_at, InboxFile.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def lock_inbox_file(session: AsyncSession, file_id: UUID) -> InboxFile | None:
+    return (
+        await session.execute(select(InboxFile).where(InboxFile.id == file_id).with_for_update())
+    ).scalar_one_or_none()
+
+
+async def decide_inbox_file(session: AsyncSession, file_id: UUID, **values: object) -> None:
+    await session.execute(
+        update(InboxFile)
+        .where(InboxFile.id == file_id, InboxFile.status == "waiting")
+        .values(decided_at=func.clock_timestamp(), **values)
+    )

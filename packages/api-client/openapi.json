@@ -173,6 +173,21 @@
         "title": "AssignIn",
         "type": "object"
       },
+      "AssignedOut": {
+        "properties": {
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_version_id"
+        ],
+        "title": "AssignedOut",
+        "type": "object"
+      },
       "BoardSummaryOut": {
         "properties": {
           "by_status": {
@@ -795,6 +810,21 @@
           "decided_at"
         ],
         "title": "DecisionSummaryOut",
+        "type": "object"
+      },
+      "DiscardedOut": {
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DiscardedOut",
         "type": "object"
       },
       "EngagementGraphOut": {
@@ -1564,6 +1594,109 @@
         "title": "ImportCountsOut",
         "type": "object"
       },
+      "InboxAssignIn": {
+        "additionalProperties": false,
+        "properties": {
+          "followed_suggestion": {
+            "cls": "internal",
+            "default": false,
+            "title": "Followed Suggestion",
+            "type": "boolean"
+          },
+          "request_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Request Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_item_id"
+        ],
+        "title": "InboxAssignIn",
+        "type": "object"
+      },
+      "InboxFileOut": {
+        "properties": {
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "media_type": {
+            "cls": "internal",
+            "title": "Media Type",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
+          "size_bytes": {
+            "cls": "internal",
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "suggestions": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/SuggestionOut"
+            },
+            "title": "Suggestions",
+            "type": "array"
+          },
+          "uploaded_by": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Uploaded By",
+            "type": "string"
+          },
+          "uploaded_by_name": {
+            "cls": "confidential",
+            "title": "Uploaded By Name",
+            "type": "string"
+          },
+          "uploaded_by_staff": {
+            "cls": "internal",
+            "title": "Uploaded By Staff",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "file_name",
+          "media_type",
+          "size_bytes",
+          "uploaded_by",
+          "uploaded_by_name",
+          "uploaded_by_staff",
+          "note",
+          "created_at",
+          "suggestions"
+        ],
+        "title": "InboxFileOut",
+        "type": "object"
+      },
       "ItemVersionOut": {
         "properties": {
           "created_at": {
@@ -1619,6 +1752,24 @@
             ],
             "title": "Method",
             "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
+          "on_behalf": {
+            "cls": "internal",
+            "default": false,
+            "title": "On Behalf",
+            "type": "boolean"
           },
           "period_end": {
             "anyOf": [
@@ -2967,6 +3118,36 @@
         "title": "StartOut",
         "type": "object"
       },
+      "SuggestionOut": {
+        "properties": {
+          "matched": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Matched",
+            "type": "array"
+          },
+          "request_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Request Item Id",
+            "type": "string"
+          },
+          "score": {
+            "cls": "internal",
+            "title": "Score",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "request_item_id",
+          "score",
+          "matched"
+        ],
+        "title": "SuggestionOut",
+        "type": "object"
+      },
       "SupportSessionIn": {
         "additionalProperties": false,
         "properties": {
@@ -3385,6 +3566,24 @@
             "cls": "internal",
             "title": "Media Type",
             "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
+          "on_behalf": {
+            "cls": "internal",
+            "default": false,
+            "title": "On Behalf",
+            "type": "boolean"
           },
           "size_bytes": {
             "cls": "internal",
@@ -6496,6 +6695,524 @@
         "x-abacus-action": "engagement.read"
       }
     },
+    "/v1/engagements/{engagement_id}/inbox": {
+      "get": {
+        "description": "SPEC-023 AC-2, AC-3: waiting files with their suggestions.",
+        "operationId": "inbox",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InboxFileOut"
+                  },
+                  "title": "Response Inbox",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Inbox Route",
+        "tags": [
+          "evidence"
+        ],
+        "x-abacus-action": "evidence.upload"
+      },
+      "post": {
+        "description": "SPEC-023 AC-2: a file dropped at the engagement level, waiting to be matched.",
+        "operationId": "add_to_inbox",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "maxLength": 1000,
+              "minLength": 1,
+              "title": "Filename",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "note",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Note"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxFileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Add To Inbox Route",
+        "tags": [
+          "evidence"
+        ],
+        "x-abacus-action": "evidence.upload"
+      }
+    },
+    "/v1/engagements/{engagement_id}/inbox/{file_id}/assign": {
+      "post": {
+        "description": "SPEC-023 AC-4: the file becomes evidence on the chosen item.",
+        "operationId": "assign_inbox_file",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "file_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "File Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InboxAssignIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Assign Inbox File Route",
+        "tags": [
+          "evidence"
+        ],
+        "x-abacus-action": "evidence.upload"
+      }
+    },
+    "/v1/engagements/{engagement_id}/inbox/{file_id}/discard": {
+      "post": {
+        "description": "SPEC-023 AC-5: take it out of the inbox; nothing becomes evidence.",
+        "operationId": "discard",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "file_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "File Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscardedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Discard Route",
+        "tags": [
+          "evidence"
+        ],
+        "x-abacus-action": "evidence.upload"
+      }
+    },
     "/v1/engagements/{engagement_id}/methodology": {
       "post": {
         "operationId": "apply_methodology",
@@ -7649,7 +8366,7 @@
         "x-abacus-action": "evidence.read"
       },
       "post": {
-        "description": "SPEC-020 AC-8, AC-9: a client's file for a request item, stored as new evidence.",
+        "description": "SPEC-020 AC-8, AC-9: a file for a request item, stored as new evidence. With\n`on_behalf`, the firm's team adds it for the client (SPEC-023 AC-1).",
         "operationId": "upload",
         "parameters": [
           {
@@ -7681,6 +8398,33 @@
               "minLength": 1,
               "title": "Filename",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "on_behalf",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "On Behalf",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "note",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Note"
             }
           },
           {

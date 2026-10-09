@@ -30,6 +30,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { type JSX, type ReactNode, type SyntheticEvent, useEffect, useState } from "react";
 import { errorMessage } from "../api";
+import { InboxPanel } from "./InboxPanel";
 import { type BoardFilters, TIER_MEANING, applyFilters, readFilters } from "../board/filters";
 import {
   type BoardRow,
@@ -144,6 +145,7 @@ export function Board({
         </p>
       </div>
       <AddRequestItem engagementId={engagementId} />
+      <InboxPanel engagementId={engagementId} items={items.data} />
       <SummaryStrip engagementId={engagementId} />
       {rows.length > 0 && (
         <FilterBar

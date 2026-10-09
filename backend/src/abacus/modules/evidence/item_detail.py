@@ -74,6 +74,9 @@ class ItemVersion:
     uploaded_by: UUID | None
     uploaded_by_name: str
     decision: DecisionSummary | None
+    # SPEC-023: added by the firm for the client, and where it came from.
+    on_behalf: bool = False
+    note: str | None = None
 
 
 def _user(actor_id: str) -> UUID | None:
@@ -138,6 +141,8 @@ async def item_versions(ctx: AuthContext, engagement_id: UUID, item_id: UUID) ->
                     names.get(decider, "") if decider is not None else "",
                     decision.created_at,
                 ),
+                version.source == "firm_upload_for_client",
+                version.upload_note,
             )
         )
     return result

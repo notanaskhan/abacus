@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from uuid import UUID
 
+from sqlalchemy import FetchedValue
 from sqlalchemy.orm import Mapped, mapped_column
 
 from abacus.kernel.db import Base
@@ -44,6 +45,8 @@ class EvidenceVersion(Base):
     snapshot_id: Mapped[UUID | None]
     idempotency_key: Mapped[str | None]
     created_at: Mapped[datetime]
+    # SPEC-023: where a file the firm added for the client came from (written once).
+    upload_note: Mapped[str | None]
 
 
 class ReviewDecision(Base):
@@ -78,3 +81,28 @@ class ReviewAssignment(Base):
     assignee_user_id: Mapped[UUID | None]
     assigned_by: Mapped[UUID]
     assigned_at: Mapped[datetime]
+
+
+class InboxFile(Base):
+    """A file dropped at the engagement level, waiting to be assigned to an item (SPEC-023)."""
+
+    __tablename__ = "inbox_files"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    file_name: Mapped[str]
+    media_type: Mapped[str]
+    size_bytes: Mapped[int]
+    fingerprint: Mapped[str]
+    storage_key: Mapped[str]
+    storage_version_id: Mapped[str]
+    uploaded_by: Mapped[UUID]
+    uploaded_by_staff: Mapped[bool]
+    note: Mapped[str | None]
+    status: Mapped[str]
+    assigned_item_id: Mapped[UUID | None]
+    assigned_version_id: Mapped[UUID | None]
+    decided_by: Mapped[UUID | None]
+    decided_at: Mapped[datetime | None]
+    created_at: Mapped[datetime]

@@ -100,6 +100,7 @@ NOT_CREATING = {
     "/v1/engagements/{engagement_id}/connection/start",
     "/v1/engagements/{engagement_id}/connection/check",
     "/v1/engagements/{engagement_id}/connection/revoke",
+    "/v1/engagements/{engagement_id}/inbox/{file_id}/discard",  # SPEC-023: returns the id
 }
 
 
@@ -120,6 +121,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/request-items/import",  # SPEC-018: items created
         "/v1/engagements/{engagement_id}/request-items/{item_id}/uploads",  # SPEC-020: evidence
         "/v1/connections/complete",  # SPEC-020: a connection
+        "/v1/engagements/{engagement_id}/inbox",  # SPEC-023: an inbox file
+        "/v1/engagements/{engagement_id}/inbox/{file_id}/assign",  # SPEC-023: evidence
         decisions + "accept",  # TASK-019: a review decision is created
         decisions + "reject",
         decisions + "send-back",
