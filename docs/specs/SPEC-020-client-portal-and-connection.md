@@ -1,7 +1,7 @@
 ---
 id: SPEC-020
 title: Client portal, connection and uploads
-status: draft
+status: approved
 owner: founder
 risk_zone: red
 related_adrs: [ADR-004, ADR-011, ADR-016, ADR-030, ADR-035, ADR-037, ADR-040, ADR-052]
@@ -143,15 +143,16 @@ The SPEC-016 client portal shell. The consent step is a dialog with the provider
 One migration. No flag: there's no provider in production until increment 3.
 
 ## 20. Open questions
-- [ ] **Q1: providers before the ledger is chosen.** *Recommendation:* list only the fake connector ("Demo ledger"), and only in local and test; production shows "No ledger available yet". The first real connector is increment 3.
-- [ ] **Q2: consent copy.** *Recommendation:* a fixed generic text now, reviewed by you; per-provider text added with each real connector (ADR-040 requires review per provider).
-- [ ] **Q3: reconnecting.** *Recommendation:* one active connection per client entity; a new connection revokes the old one in the same unit of work.
-- [ ] **Q4: branding.** *Recommendation:* firm name only for now; logos need file upload and are deferred.
-- [ ] **Q5: protected path.** `connections` is protected, so the task needs your approval file. *Recommendation:* yes, covering `backend/src/abacus/modules/connections/**`, its migration and `backend/tests/unit/**`.
+None. Answered by the founder on 2026-10-09 (all recommendations):
+- [x] **Q1: providers before the ledger is chosen.** *Recommendation:* list only the fake connector ("Demo ledger"), and only in local and test; production shows "No ledger available yet". The first real connector is increment 3.
+- [x] **Q2: consent copy.** *Recommendation:* a fixed generic text now, reviewed by you; per-provider text added with each real connector (ADR-040 requires review per provider).
+- [x] **Q3: reconnecting.** *Recommendation:* one active connection per client entity; a new connection revokes the old one in the same unit of work.
+- [x] **Q4: branding.** *Recommendation:* firm name only for now; logos need file upload and are deferred.
+- [x] **Q5: protected path.** `connections` is protected, so the task needs your approval file. *Recommendation:* yes, covering `backend/src/abacus/modules/connections/**`, its migration and `backend/tests/unit/**`.
 
-- [ ] **Q6: who can upload.** *Recommendation:* clients only in this spec, as the matrix allows (admins on any client-visible item, contributors on assigned items). Firm staff uploading on a client's behalf comes with increment 6.
-- [ ] **Q7: malware scanning.** No scanner is in the dependency allowlist. *Recommendation:* the type allowlist by content and size limit now; files are stored and never rendered or opened by the platform. Scanning (S3 malware protection) is added with the staging deploy (TASK-014), before any real client data.
-- [ ] **Q8: protected paths for uploads.** *Recommendation:* the approval file also covers `backend/src/abacus/modules/evidence/**`.
+- [x] **Q6: who can upload.** *Recommendation:* clients only in this spec, as the matrix allows (admins on any client-visible item, contributors on assigned items). Firm staff uploading on a client's behalf comes with increment 6.
+- [x] **Q7: malware scanning.** No scanner is in the dependency allowlist. *Recommendation:* the type allowlist by content and size limit now; files are stored and never rendered or opened by the platform. Scanning (S3 malware protection) is added with the staging deploy (TASK-014), before any real client data.
+- [x] **Q8: protected paths for uploads.** *Recommendation:* the approval file also covers `backend/src/abacus/modules/evidence/**`.
 
 ## 21. Future / explicitly deferred
 - Real ledger connectors and their consent copy.
