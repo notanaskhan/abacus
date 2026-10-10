@@ -30,6 +30,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { type JSX, type ReactNode, type SyntheticEvent, useEffect, useState } from "react";
 import { errorMessage } from "../api";
+import { DueDatesBar, ItemDue, useDefaultDue } from "./DueDates";
 import { InboxPanel } from "./InboxPanel";
 import { type BoardFilters, TIER_MEANING, applyFilters, readFilters } from "../board/filters";
 import {
@@ -59,6 +60,7 @@ export function Board({
   const engagement = useQuery(getEngagementOptions(path));
   const items = useQuery(listRequestItemsOptions(path));
   const versions = useQuery(listEvidenceVersionsOptions(path));
+  const defaultDue = useDefaultDue(engagementId);
   const search = useRouterState({ select: (state) => state.location.search });
   const filters = readFilters(search);
   const navigate = useNavigate();
@@ -145,6 +147,9 @@ export function Board({
         </p>
       </div>
       <AddRequestItem engagementId={engagementId} />
+      {rows.length > 0 && (
+        <DueDatesBar engagementId={engagementId} items={rows.map((r) => r.item)} />
+      )}
       <InboxPanel engagementId={engagementId} items={items.data} />
       <SummaryStrip engagementId={engagementId} />
       {rows.length > 0 && (
@@ -168,6 +173,7 @@ export function Board({
             <li key={row.item.id}>
               <RequestItemCard
                 row={row}
+                fallbackDue={defaultDue}
                 engagement={engagement.data}
                 pollingExpired={pollingExpired}
                 onRefresh={() => void results.refetch()}
@@ -182,11 +188,13 @@ export function Board({
 
 function RequestItemCard({
   row,
+  fallbackDue,
   engagement,
   pollingExpired,
   onRefresh,
 }: {
   row: BoardRow;
+  fallbackDue: string | null | undefined;
   engagement: EngagementOut;
   pollingExpired: boolean;
   onRefresh: () => void;
@@ -218,6 +226,10 @@ function RequestItemCard({
           {evidence === null
             ? "No evidence yet"
             : `${sourceLabel(evidence)} · version ${String(evidence.version_no)}`}
+        </dd>
+        <dt className="text-muted">Due</dt>
+        <dd>
+          <ItemDue item={item} fallback={fallbackDue} />
         </dd>
         <dt className="text-muted">Screening</dt>
         <dd>

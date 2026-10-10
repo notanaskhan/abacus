@@ -24,3 +24,12 @@ class RequestItemClassified(DomainEvent):
 
     request_item_id: Annotated[UUID, classified("internal")]
     engagement_id: Annotated[UUID, classified("internal")]
+
+
+class DueDatesChanged(DomainEvent):
+    """Items' due dates (or the request list's default) changed (SPEC-027; TASK-051): the
+    engagement agent hears it, starting if needed, and those items' reminders start again."""
+
+    event_type: ClassVar[str] = "due_dates.changed"
+
+    engagement_id: Annotated[UUID, classified("internal")]

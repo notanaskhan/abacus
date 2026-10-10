@@ -13,9 +13,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Final, Literal
 from uuid import UUID
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import DomainConflict
+from abacus.kernel.errors import DomainConflict, DomainInvalid
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.identity.authz import Resource, authorise
 from abacus.modules.identity.context import AuthContext
@@ -30,6 +31,8 @@ from abacus.modules.identity.repository import (
     set_agents_paused,
     set_autonomy_level,
     set_letter_required,
+    set_time_zone,
+    time_zone_of,
 )
 
 ROUTINE: Final = 1
@@ -134,6 +137,36 @@ async def note_budget_reviewed(tx: UnitOfWork) -> None:
 
 
 # --- The engagement letter before client data (SPEC-025 Q4; TASK-044) --------------------------
+
+
+DEFAULT_TIME_ZONE: Final = "America/New_York"
+
+
+async def firm_time_zone(tenant: TenantContext) -> str:
+    """SPEC-027 (TASK-051): the zone of the engagement agent's 09:00 business-day tick."""
+    async with tenant_session(tenant) as session:
+        return await time_zone_of(session)
+
+
+async def read_time_zone(ctx: AuthContext) -> str:
+    await authorise(ctx, "firm.read_settings", Resource.firm(ctx.tenant_id))
+    return await firm_time_zone(ctx.tenant)
+
+
+class UnknownTimeZone(DomainInvalid):
+    code = "unknown_time_zone"
+
+
+async def set_firm_time_zone(ctx: AuthContext, zone: str) -> str:
+    await authorise(ctx, "firm.manage_settings", Resource.firm(ctx.tenant_id))
+    try:
+        ZoneInfo(zone)
+    except (ZoneInfoNotFoundError, ValueError):
+        raise UnknownTimeZone(zone) from None
+    async with uow(ctx.tenant) as tx:
+        await set_time_zone(tx.session, zone)
+        tx.record("firm.time_zone_changed", target=Target("firm", ctx.tenant_id))
+    return zone
 
 
 async def is_synthetic_firm(tenant: TenantContext) -> bool:

@@ -3,13 +3,18 @@
 from abacus.modules.engagements.api import register_roll_forward_items
 from abacus.modules.requests.availability import register_available_datasets
 from abacus.modules.requests.classification import classify
-from abacus.modules.requests.events import RequestItemClassified, RequestItemCreated
+from abacus.modules.requests.events import (
+    DueDatesChanged,
+    RequestItemClassified,
+    RequestItemCreated,
+)
 from abacus.modules.requests.roll_forward import copy_items, proposed_items
 from abacus.modules.requests.routes import methodology_router, router
 from abacus.modules.requests.service import (
     FulfilledVersion,
     FulfilmentRef,
     ItemNotFulfillable,
+    OverdueItem,
     RequestItemRef,
     RequestItemSummary,
     RequestItemView,
@@ -21,6 +26,7 @@ from abacus.modules.requests.service import (
     item_ref,
     item_versions,
     move_after_review,
+    overdue_for,
     read_item,
     read_item_versions,
     request_items_for,
@@ -31,9 +37,11 @@ from abacus.modules.requests.service import (
 register_roll_forward_items(proposed_items, copy_items)
 
 __all__ = [
+    "DueDatesChanged",
     "FulfilledVersion",
     "FulfilmentRef",
     "ItemNotFulfillable",
+    "OverdueItem",
     "RequestItemClassified",
     "RequestItemCreated",
     "RequestItemRef",
@@ -49,6 +57,7 @@ __all__ = [
     "item_versions",
     "methodology_router",
     "move_after_review",
+    "overdue_for",
     "read_item",
     "read_item_versions",
     "register_available_datasets",

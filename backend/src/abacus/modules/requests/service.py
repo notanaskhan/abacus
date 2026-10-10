@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID, uuid4
 
 from abacus.kernel.db import TenantContext, tenant_session, transaction_context
@@ -23,9 +23,14 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.requests.availability import available_datasets
 from abacus.modules.requests.classification import TIER_INDEX, Classification, classify
-from abacus.modules.requests.events import RequestItemClassified, RequestItemCreated
+from abacus.modules.requests.events import (
+    DueDatesChanged,
+    RequestItemClassified,
+    RequestItemCreated,
+)
 from abacus.modules.requests.models import RequestItem
 from abacus.modules.requests.repository import (
+    default_due_on,
     fulfilling_versions,
     get_request_item,
     insert_fulfilment,
@@ -36,9 +41,12 @@ from abacus.modules.requests.repository import (
     list_request_items,
     mark_received,
     newest_fulfilment,
+    overdue_items,
     request_list_for,
     set_classification,
     set_client_fields,
+    set_default_due_on,
+    set_due_dates,
     set_status,
 )
 from abacus.modules.requests.workbook import SheetPreview, normalise, preview, read_rows
@@ -65,6 +73,8 @@ class RequestItemView:
     dataset: str | None = None
     tier_source: str | None = None
     available: bool = False
+    # SPEC-027 (TASK-051): the item's own due date (None: the request list's default applies).
+    due_on: date | None = None
 
 
 def _view(
@@ -86,6 +96,7 @@ def _view(
         item.dataset,
         item.tier_source,
         item.dataset is not None and item.dataset in available,
+        item.due_on,
     )
 
 
@@ -677,3 +688,55 @@ async def set_tier(
         )
         _record_classified(tx, item_id, engagement_id, found, "request_item.tier_overridden")
         return await _item_view(tx, item_id)
+
+
+# --- Due dates (SPEC-027 AC-9; TASK-051) ---------------------------------------------------------
+
+
+async def set_item_due_dates(
+    ctx: AuthContext, engagement_id: UUID, item_ids: Sequence[UUID], due_on: date | None
+) -> Sequence[RequestItemView]:
+    """Set (or clear) several items' due date; a cleared item follows the list's default."""
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, "request_item.update", ref.resource())
+        changed = await set_due_dates(tx.session, engagement_id, item_ids, due_on)
+        if changed != len(set(item_ids)):
+            raise NotFound("request_item")
+        for item_id in set(item_ids):
+            tx.record("request_item.due_date_set", target=Target("request_item", item_id))
+        tx.emit(DueDatesChanged(engagement_id=engagement_id))
+    return [i for i in await request_items_for(ctx, engagement_id) if i.id in set(item_ids)]
+
+
+async def list_due_date(ctx: AuthContext, engagement_id: UUID) -> date | None:
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "request_item.read", ref.resource())
+    async with tenant_session(ctx.tenant) as session:
+        return await default_due_on(session, engagement_id)
+
+
+async def set_list_due_date(ctx: AuthContext, engagement_id: UUID, due_on: date | None) -> None:
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, "request_item.update", ref.resource())
+        list_id = await set_default_due_on(tx.session, ctx.tenant_id, engagement_id, due_on)
+        tx.record("request_list.default_due_date_set", target=Target("request_list", list_id))
+        tx.emit(DueDatesChanged(engagement_id=engagement_id))
+
+
+@dataclass(frozen=True)
+class OverdueItem:
+    id: UUID
+    description: str
+    due_on: date
+    client_assignee_user_id: UUID | None
+
+
+async def overdue_for(
+    tenant: TenantContext, engagement_id: UUID, today: date
+) -> list[OverdueItem]:
+    """For the engagement agent's reminders (SPEC-027 P-4): open or sent-back items past due."""
+    async with tenant_session(tenant) as session:
+        rows = await overdue_items(session, engagement_id, today)
+    return [OverdueItem(i.id, i.description, due, i.client_assignee_user_id) for i, due in rows]

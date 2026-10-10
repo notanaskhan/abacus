@@ -31,7 +31,10 @@ from abacus.modules.identity.repository import (
     active_memberships,
     active_staff_ids,
     all_walls,
+    client_admin_ids,
     display_names,
+    earliest_partner_of,
+    emails_of,
     engagement_members_of,
     engagement_role,
     find_user,
@@ -211,6 +214,22 @@ LEAD_ROLES: frozenset[EngagementRole] = frozenset({"engagement_partner", "manage
 async def engagement_leads(tenant_id: UUID, engagement_id: UUID) -> list[UUID]:
     """The engagement's partner and managers (SPEC-013 recipients)."""
     return [user for user, role in await team_of(tenant_id, engagement_id) if role in LEAD_ROLES]
+
+
+async def earliest_partner(tenant: TenantContext, engagement_id: UUID) -> UUID | None:
+    """SPEC-027 (TASK-051): whom the engagement agent acts for (ADR-025)."""
+    async with tenant_session(tenant) as session:
+        return await earliest_partner_of(session, engagement_id)
+
+
+async def client_admins(tenant: TenantContext, engagement_id: UUID) -> list[UUID]:
+    async with tenant_session(tenant) as session:
+        return await client_admin_ids(session, engagement_id)
+
+
+async def contact_emails(user_ids: list[UUID]) -> dict[UUID, str]:
+    """For communications' reminders, after the caller authorised `follow_up.send`."""
+    return await emails_of(user_ids)
 
 
 async def engagement_team(ctx: AuthContext, engagement_id: UUID) -> list[TeamMember]:

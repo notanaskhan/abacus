@@ -48,6 +48,18 @@ Deterministic policies, no model: the platform retrieves and suggests by rule; a
 - **Feed and switches:** `agent_activity` (insert-only, references only). `GET /v1/engagements/{id}/agent` and `/activity` (`activity.read`); `POST …/agent/pause` and `/resume` (`agent.pause`: partner, manager). The firm switch is identity's (`/v1/firm/agents/pause`, `firm_agents.pause`, fresh MFA).
 - In TASK-050 the agent starts work that already runs under a person; its own `AgentContext` under the partner arrives with reminders (TASK-051).
 
+## Engagement agent v1, part 2 (SPEC-027; TASK-051)
+- **The daily tick** (workflow v2, `patched("daily-tick")`): the agent waits for an event or 09:00 on the next business day in the firm's time zone (`engagement_agent.next_tick`, recorded). The tick runs P-2's daily retrieval, P-4 and P-5. Replay histories `engagement-agent-v2-*.json` sit beside v1's.
+- **Its own authority:** `engagement.agent` is a `PolicySpec` (no prompt, tier, schema or evaluation suite; `spec.declared`). Each sending tick gets an `agent_runs` row with the engagement's earliest active partner as initiator. With no active partner the agent pauses itself (`self_paused_reason: no_partner`) and resumes when there's one.
+- **P-4 reminders** (`reminders.py`):
+  - items past their due date and still open or sent back are reminded on the first business-day tick after it, then every 3 business days, at most 3 per due date; a changed due date starts again;
+  - one email per contact per tick: the assignee, else the client admins;
+  - Routine sends as the agent through `communications.send_reminder` (recorded first as a draft, so a failed send waits for a person instead of being emailed again); Advise drafts (`reminders.drafted`);
+  - nothing client-facing before the engagement is open.
+- **P-5 digest:** `agent.digest` (in the app) with the overdue count in the feed.
+- **Drafts:** `GET /v1/engagements/{id}/reminders` (`follow_up.draft`); `POST …/reminders/{id}/send` (optional note) and `/dismiss` (`follow_up.send`).
+- **Starting every agent:** `python -m abacus_tools.engagement_agents start <tenant-id>` (idempotent).
+
 ## Temporal (TASK-011b)
 - `SUBSCRIPTIONS`: `evidence_version.created` → `start_screening`, which starts `screening:<tenant_id>:<evidence_version_id>` (tenant-qualified: the Temporal namespace is shared).
   - The worker's outbox relay delivers each event at least once. A redelivery attaches to the running workflow or finds it finished; a failed workflow may be started again.

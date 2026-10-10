@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -98,6 +98,8 @@ class EngagementAgentState(Base):
     paused_by: Mapped[UUID | None]
     reason: Mapped[str | None]
     updated_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    # SPEC-027 AC-8 (TASK-051): set when the agent pauses itself (no active partner).
+    self_paused_reason: Mapped[str | None]
 
 
 class AgentActivity(Base):
@@ -120,3 +122,32 @@ class AgentActivity(Base):
     for_user: Mapped[UUID | None]
     source_event_id: Mapped[UUID | None]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class Reminder(Base):
+    """SPEC-027 P-4 (TASK-051): one reminder sent or drafted to one client contact."""
+
+    __tablename__ = "reminders"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    recipient_user_id: Mapped[UUID]
+    status: Mapped[str]
+    note: Mapped[str | None]
+    agent_run_id: Mapped[UUID | None]
+    decided_by: Mapped[UUID | None]
+    decided_at: Mapped[datetime | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class ReminderItem(Base):
+    """An item a reminder named, with its due date then and its place in the sequence (1-3)."""
+
+    __tablename__ = "reminder_items"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    reminder_id: Mapped[UUID] = mapped_column(primary_key=True)
+    request_item_id: Mapped[UUID] = mapped_column(primary_key=True)
+    due_on: Mapped[date]
+    sequence: Mapped[int]

@@ -46,3 +46,4 @@ The parser (`workbook.py`) is read-only, bounded (5 MB, 2,000 rows), and reports
 - **When items are classified:** on insert (add, import, methodology), audited `request_item.classified`. `RequestItemClassified` is emitted for A items with a dataset.
 - **Overrides:** `PUT …/request-items/{item_id}/tier` (`request_item.update`), audited `request_item.tier_overridden`. Clearing the override reapplies the rules.
 - **Availability:** `available` on each item comes from the live connection's capabilities, through `register_available_datasets` (connections registers it, ADR-106). Unregistered means nothing is available.
+- **SPEC-027 (TASK-051):** due dates: `request_items.due_on` and the list's `default_due_on` (`PUT …/request-items/due-dates`, `GET/PUT …/request-items/default-due-date`, `request_item.update`); `due_dates.changed` tells the engagement agent; `overdue_for` lists open or sent-back items past due for its reminders.

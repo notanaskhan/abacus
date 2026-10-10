@@ -3,7 +3,11 @@
 from abacus.modules.agents.activities import ACTIVITIES
 from abacus.modules.agents.citations import SheetLayoutError
 from abacus.modules.agents.citations import verify as verify_citations
+from abacus.modules.agents.engagement_agent import start_agents
 from abacus.modules.agents.engagement_agent_workflow import HANDLE as ENGAGEMENT_AGENT_HANDLE
+from abacus.modules.agents.engagement_agent_workflow import (
+    NEXT_TICK as ENGAGEMENT_AGENT_NEXT_TICK,
+)
 from abacus.modules.agents.engagement_agent_workflow import EngagementAgent
 from abacus.modules.agents.fake_responses import SCREEN_PROMPT, screening_responder
 from abacus.modules.agents.fake_responses import install as install_fake_responses
@@ -39,6 +43,7 @@ from abacus.modules.agents.workflow_types import (
     AgentInput,
     HandleInput,
     HandleResult,
+    NextTickInput,
     ScreeningInput,
 )
 from abacus.modules.agents.workflows import ScreeningWorkflow
@@ -51,6 +56,7 @@ __all__ = [
     "ACTIVITIES",
     "AGENTS",
     "ENGAGEMENT_AGENT_HANDLE",
+    "ENGAGEMENT_AGENT_NEXT_TICK",
     "SCREENER",
     "SCREEN_PROMPT",
     "SUBSCRIPTIONS",
@@ -67,6 +73,7 @@ __all__ = [
     "HandleResult",
     "Handoff",
     "KnowledgeHit",
+    "NextTickInput",
     "RunOutcome",
     "ScreeningInput",
     "ScreeningOutcome",
@@ -90,6 +97,7 @@ __all__ = [
     "screening_results_for",
     "search_knowledge",
     "spec",
+    "start_agents",
     "start_screening",
     "verify_citations",
     "workflow_id",

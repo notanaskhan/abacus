@@ -3,8 +3,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, acceptance, acceptanceFile, acceptInvitation, acceptStaffInvitation, acknowledgeStep, acknowledgeSupportSession, activity, addDocument, addTeamMember, addToInbox, agent, applyMethodology, approveSupportSession, assign, assignInboxFile, assignToClient, autonomy, boardSummary, changeFirmRole, changeTeamRole, check, clientContacts, complete, connection, content, createEngagement, createRequestItem, createWall, discard, dismissOnboarding, emergencyApprove, endSupportSession, engagementGraph, firmAgents, firmClients, firmMembers, getBudget, getDocument, getEngagement, getRetrieval, getVersion, import_, importTemplate, inbox, independence, inviteClient, inviteStaff, itemVersions, letter, letterFile, letterPolicy, listDocuments, listEngagements, listEvidenceVersions, listNotifications, listRequestItems, listScreeningResults, listSupportSessions, listTemplates, listUploads, listWalls, log, me, metering, myConfirmations, onboarding, type Options, pauseAgent, pauseFirmAgents, previewImport, proposal, providers, putBudget, readAll, readNotification, reasonCodes, reject, release, removeClientContact, removeTeamMember, removeWall, requestScreening, requestSupportSession, resendClientInvitation, resendStaffInvitation, resumeAgent, resumeFirmAgents, reviewQueue, revoke, revokeClientInvitation, revokeStaff, revokeStaffInvitation, revokeSupportSession, search, searchClients, selfJoin, sendBack, setAutonomy, setClientVisibility, setLetterPolicy, setTier, setup, setupFile, signup, staff, start, startRetrieval, take, team, teamCandidates, upload, withdrawDocument } from '../sdk.gen';
-import type { AcceptanceData, AcceptanceError, AcceptanceFileData, AcceptanceFileError, AcceptanceFileResponse, AcceptanceResponse, AcceptData, AcceptError, AcceptInvitationData, AcceptInvitationError, AcceptInvitationResponse, AcceptResponse, AcceptStaffInvitationData, AcceptStaffInvitationError, AcceptStaffInvitationResponse, AcknowledgeStepData, AcknowledgeStepError, AcknowledgeStepResponse, AcknowledgeSupportSessionData, AcknowledgeSupportSessionError, AcknowledgeSupportSessionResponse, ActivityData, ActivityError, ActivityResponse, AddDocumentData, AddDocumentError, AddDocumentResponse, AddTeamMemberData, AddTeamMemberError, AddTeamMemberResponse, AddToInboxData, AddToInboxError, AddToInboxResponse, AgentData, AgentError, AgentResponse, ApplyMethodologyData, ApplyMethodologyError, ApplyMethodologyResponse, ApproveSupportSessionData, ApproveSupportSessionError, ApproveSupportSessionResponse, AssignData, AssignError, AssignInboxFileData, AssignInboxFileError, AssignInboxFileResponse, AssignResponse, AssignToClientData, AssignToClientError, AssignToClientResponse, AutonomyData, AutonomyError, AutonomyResponse, BoardSummaryData, BoardSummaryError, BoardSummaryResponse, ChangeFirmRoleData, ChangeFirmRoleError, ChangeFirmRoleResponse, ChangeTeamRoleData, ChangeTeamRoleError, ChangeTeamRoleResponse, CheckData, CheckError, CheckResponse, ClientContactsData, ClientContactsError, ClientContactsResponse, CompleteData, CompleteError, CompleteResponse, ConnectionData, ConnectionError, ConnectionResponse, ContentData, ContentError, ContentResponse, CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, DiscardData, DiscardError, DiscardResponse, DismissOnboardingData, DismissOnboardingError, DismissOnboardingResponse, EmergencyApproveData, EmergencyApproveError, EmergencyApproveResponse, EndSupportSessionData, EndSupportSessionError, EndSupportSessionResponse, EngagementGraphData, EngagementGraphError, EngagementGraphResponse, FirmAgentsData, FirmAgentsError, FirmAgentsResponse, FirmClientsData, FirmClientsError, FirmClientsResponse, FirmMembersData, FirmMembersError, FirmMembersResponse, GetBudgetData, GetBudgetError, GetBudgetResponse, GetDocumentData, GetDocumentError, GetDocumentResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, GetVersionData, GetVersionError, GetVersionResponse, ImportData, ImportError, ImportResponse, ImportTemplateData, ImportTemplateError, ImportTemplateResponse, InboxData, InboxError, InboxResponse, IndependenceData, IndependenceError, IndependenceResponse, InviteClientData, InviteClientError, InviteClientResponse, InviteStaffData, InviteStaffError, InviteStaffResponse, ItemVersionsData, ItemVersionsError, ItemVersionsResponse, LetterData, LetterError, LetterFileData, LetterFileError, LetterFileResponse, LetterPolicyData, LetterPolicyError, LetterPolicyResponse, LetterResponse, ListDocumentsData, ListDocumentsError, ListDocumentsResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListNotificationsData, ListNotificationsError, ListNotificationsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListSupportSessionsData, ListSupportSessionsError, ListSupportSessionsResponse, ListTemplatesData, ListTemplatesError, ListTemplatesResponse, ListUploadsData, ListUploadsError, ListUploadsResponse, ListWallsData, ListWallsError, ListWallsResponse, LogData, LogError, LogResponse, MeData, MeError, MeResponse, MeteringData, MeteringError, MeteringResponse, MyConfirmationsData, MyConfirmationsError, MyConfirmationsResponse, OnboardingData, OnboardingError, OnboardingResponse, PauseAgentData, PauseAgentError, PauseAgentResponse, PauseFirmAgentsData, PauseFirmAgentsError, PauseFirmAgentsResponse, PreviewImportData, PreviewImportError, PreviewImportResponse, ProposalData, ProposalError, ProposalResponse, ProvidersData, ProvidersError, ProvidersResponse, PutBudgetData, PutBudgetError, PutBudgetResponse, ReadAllData, ReadAllError, ReadAllResponse, ReadNotificationData, ReadNotificationError, ReadNotificationResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseResponse, RemoveClientContactData, RemoveClientContactError, RemoveClientContactResponse, RemoveTeamMemberData, RemoveTeamMemberError, RemoveTeamMemberResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, RequestScreeningData, RequestScreeningError, RequestScreeningResponse, RequestSupportSessionData, RequestSupportSessionError, RequestSupportSessionResponse, ResendClientInvitationData, ResendClientInvitationError, ResendClientInvitationResponse, ResendStaffInvitationData, ResendStaffInvitationError, ResendStaffInvitationResponse, ResumeAgentData, ResumeAgentError, ResumeAgentResponse, ResumeFirmAgentsData, ResumeFirmAgentsError, ResumeFirmAgentsResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, RevokeClientInvitationData, RevokeClientInvitationError, RevokeClientInvitationResponse, RevokeData, RevokeError, RevokeResponse, RevokeStaffData, RevokeStaffError, RevokeStaffInvitationData, RevokeStaffInvitationError, RevokeStaffInvitationResponse, RevokeStaffResponse, RevokeSupportSessionData, RevokeSupportSessionError, RevokeSupportSessionResponse, SearchClientsData, SearchClientsError, SearchClientsResponse, SearchData, SearchError, SearchResponse, SelfJoinData, SelfJoinError, SelfJoinResponse, SendBackData, SendBackError, SendBackResponse, SetAutonomyData, SetAutonomyError, SetAutonomyResponse, SetClientVisibilityData, SetClientVisibilityError, SetClientVisibilityResponse, SetLetterPolicyData, SetLetterPolicyError, SetLetterPolicyResponse, SetTierData, SetTierError, SetTierResponse, SetupData, SetupError, SetupFileData, SetupFileError, SetupFileResponse, SetupResponse, SignupData, SignupError, SignupResponse, StaffData, StaffError, StaffResponse, StartData, StartError, StartResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, TakeData, TakeError, TakeResponse, TeamCandidatesData, TeamCandidatesError, TeamCandidatesResponse, TeamData, TeamError, TeamResponse, UploadData, UploadError, UploadResponse, WithdrawDocumentData, WithdrawDocumentError, WithdrawDocumentResponse } from '../types.gen';
+import { accept, acceptance, acceptanceFile, acceptInvitation, acceptStaffInvitation, acknowledgeStep, acknowledgeSupportSession, activity, addDocument, addTeamMember, addToInbox, agent, applyMethodology, approveSupportSession, assign, assignInboxFile, assignToClient, autonomy, boardSummary, changeFirmRole, changeTeamRole, check, clientContacts, complete, connection, content, createEngagement, createRequestItem, createWall, defaultDueDate, discard, dismissDraft, dismissOnboarding, drafts, dueDates, emergencyApprove, endSupportSession, engagementGraph, firmAgents, firmClients, firmMembers, getBudget, getDocument, getEngagement, getRetrieval, getVersion, import_, importTemplate, inbox, independence, inviteClient, inviteStaff, itemVersions, letter, letterFile, letterPolicy, listDocuments, listEngagements, listEvidenceVersions, listNotifications, listRequestItems, listScreeningResults, listSupportSessions, listTemplates, listUploads, listWalls, log, me, metering, myConfirmations, onboarding, type Options, pauseAgent, pauseFirmAgents, previewImport, proposal, providers, putBudget, readAll, readNotification, reasonCodes, reject, release, removeClientContact, removeTeamMember, removeWall, requestScreening, requestSupportSession, resendClientInvitation, resendStaffInvitation, resumeAgent, resumeFirmAgents, reviewQueue, revoke, revokeClientInvitation, revokeStaff, revokeStaffInvitation, revokeSupportSession, search, searchClients, selfJoin, sendBack, sendDraft, setAutonomy, setClientVisibility, setDefaultDueDate, setLetterPolicy, setTier, setTimeZone, setup, setupFile, signup, staff, start, startRetrieval, take, team, teamCandidates, timeZone, upload, withdrawDocument } from '../sdk.gen';
+import type { AcceptanceData, AcceptanceError, AcceptanceFileData, AcceptanceFileError, AcceptanceFileResponse, AcceptanceResponse, AcceptData, AcceptError, AcceptInvitationData, AcceptInvitationError, AcceptInvitationResponse, AcceptResponse, AcceptStaffInvitationData, AcceptStaffInvitationError, AcceptStaffInvitationResponse, AcknowledgeStepData, AcknowledgeStepError, AcknowledgeStepResponse, AcknowledgeSupportSessionData, AcknowledgeSupportSessionError, AcknowledgeSupportSessionResponse, ActivityData, ActivityError, ActivityResponse, AddDocumentData, AddDocumentError, AddDocumentResponse, AddTeamMemberData, AddTeamMemberError, AddTeamMemberResponse, AddToInboxData, AddToInboxError, AddToInboxResponse, AgentData, AgentError, AgentResponse, ApplyMethodologyData, ApplyMethodologyError, ApplyMethodologyResponse, ApproveSupportSessionData, ApproveSupportSessionError, ApproveSupportSessionResponse, AssignData, AssignError, AssignInboxFileData, AssignInboxFileError, AssignInboxFileResponse, AssignResponse, AssignToClientData, AssignToClientError, AssignToClientResponse, AutonomyData, AutonomyError, AutonomyResponse, BoardSummaryData, BoardSummaryError, BoardSummaryResponse, ChangeFirmRoleData, ChangeFirmRoleError, ChangeFirmRoleResponse, ChangeTeamRoleData, ChangeTeamRoleError, ChangeTeamRoleResponse, CheckData, CheckError, CheckResponse, ClientContactsData, ClientContactsError, ClientContactsResponse, CompleteData, CompleteError, CompleteResponse, ConnectionData, ConnectionError, ConnectionResponse, ContentData, ContentError, ContentResponse, CreateEngagementData, CreateEngagementError, CreateEngagementResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateWallData, CreateWallError, CreateWallResponse, DefaultDueDateData, DefaultDueDateError, DefaultDueDateResponse, DiscardData, DiscardError, DiscardResponse, DismissDraftData, DismissDraftError, DismissDraftResponse, DismissOnboardingData, DismissOnboardingError, DismissOnboardingResponse, DraftsData, DraftsError, DraftsResponse, DueDatesData, DueDatesError, DueDatesResponse, EmergencyApproveData, EmergencyApproveError, EmergencyApproveResponse, EndSupportSessionData, EndSupportSessionError, EndSupportSessionResponse, EngagementGraphData, EngagementGraphError, EngagementGraphResponse, FirmAgentsData, FirmAgentsError, FirmAgentsResponse, FirmClientsData, FirmClientsError, FirmClientsResponse, FirmMembersData, FirmMembersError, FirmMembersResponse, GetBudgetData, GetBudgetError, GetBudgetResponse, GetDocumentData, GetDocumentError, GetDocumentResponse, GetEngagementData, GetEngagementError, GetEngagementResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, GetVersionData, GetVersionError, GetVersionResponse, ImportData, ImportError, ImportResponse, ImportTemplateData, ImportTemplateError, ImportTemplateResponse, InboxData, InboxError, InboxResponse, IndependenceData, IndependenceError, IndependenceResponse, InviteClientData, InviteClientError, InviteClientResponse, InviteStaffData, InviteStaffError, InviteStaffResponse, ItemVersionsData, ItemVersionsError, ItemVersionsResponse, LetterData, LetterError, LetterFileData, LetterFileError, LetterFileResponse, LetterPolicyData, LetterPolicyError, LetterPolicyResponse, LetterResponse, ListDocumentsData, ListDocumentsError, ListDocumentsResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListNotificationsData, ListNotificationsError, ListNotificationsResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListSupportSessionsData, ListSupportSessionsError, ListSupportSessionsResponse, ListTemplatesData, ListTemplatesError, ListTemplatesResponse, ListUploadsData, ListUploadsError, ListUploadsResponse, ListWallsData, ListWallsError, ListWallsResponse, LogData, LogError, LogResponse, MeData, MeError, MeResponse, MeteringData, MeteringError, MeteringResponse, MyConfirmationsData, MyConfirmationsError, MyConfirmationsResponse, OnboardingData, OnboardingError, OnboardingResponse, PauseAgentData, PauseAgentError, PauseAgentResponse, PauseFirmAgentsData, PauseFirmAgentsError, PauseFirmAgentsResponse, PreviewImportData, PreviewImportError, PreviewImportResponse, ProposalData, ProposalError, ProposalResponse, ProvidersData, ProvidersError, ProvidersResponse, PutBudgetData, PutBudgetError, PutBudgetResponse, ReadAllData, ReadAllError, ReadAllResponse, ReadNotificationData, ReadNotificationError, ReadNotificationResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseResponse, RemoveClientContactData, RemoveClientContactError, RemoveClientContactResponse, RemoveTeamMemberData, RemoveTeamMemberError, RemoveTeamMemberResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, RequestScreeningData, RequestScreeningError, RequestScreeningResponse, RequestSupportSessionData, RequestSupportSessionError, RequestSupportSessionResponse, ResendClientInvitationData, ResendClientInvitationError, ResendClientInvitationResponse, ResendStaffInvitationData, ResendStaffInvitationError, ResendStaffInvitationResponse, ResumeAgentData, ResumeAgentError, ResumeAgentResponse, ResumeFirmAgentsData, ResumeFirmAgentsError, ResumeFirmAgentsResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, RevokeClientInvitationData, RevokeClientInvitationError, RevokeClientInvitationResponse, RevokeData, RevokeError, RevokeResponse, RevokeStaffData, RevokeStaffError, RevokeStaffInvitationData, RevokeStaffInvitationError, RevokeStaffInvitationResponse, RevokeStaffResponse, RevokeSupportSessionData, RevokeSupportSessionError, RevokeSupportSessionResponse, SearchClientsData, SearchClientsError, SearchClientsResponse, SearchData, SearchError, SearchResponse, SelfJoinData, SelfJoinError, SelfJoinResponse, SendBackData, SendBackError, SendBackResponse, SendDraftData, SendDraftError, SendDraftResponse, SetAutonomyData, SetAutonomyError, SetAutonomyResponse, SetClientVisibilityData, SetClientVisibilityError, SetClientVisibilityResponse, SetDefaultDueDateData, SetDefaultDueDateError, SetDefaultDueDateResponse, SetLetterPolicyData, SetLetterPolicyError, SetLetterPolicyResponse, SetTierData, SetTierError, SetTierResponse, SetTimeZoneData, SetTimeZoneError, SetTimeZoneResponse, SetupData, SetupError, SetupFileData, SetupFileError, SetupFileResponse, SetupResponse, SignupData, SignupError, SignupResponse, StaffData, StaffError, StaffResponse, StartData, StartError, StartResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, TakeData, TakeError, TakeResponse, TeamCandidatesData, TeamCandidatesError, TeamCandidatesResponse, TeamData, TeamError, TeamResponse, TimeZoneData, TimeZoneError, TimeZoneResponse, UploadData, UploadError, UploadResponse, WithdrawDocumentData, WithdrawDocumentError, WithdrawDocumentResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -857,6 +857,58 @@ export const applyMethodologyMutation = (options?: Partial<Options<ApplyMethodol
     return mutationOptions;
 };
 
+export const draftsQueryKey = (options: Options<DraftsData>) => createQueryKey('drafts', options);
+
+/**
+ * Drafts Route
+ */
+export const draftsOptions = (options: Options<DraftsData>) => queryOptions<DraftsResponse, DraftsError, DraftsResponse, ReturnType<typeof draftsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await drafts({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: draftsQueryKey(options)
+});
+
+/**
+ * Dismiss Draft Route
+ */
+export const dismissDraftMutation = (options?: Partial<Options<DismissDraftData>>): UseMutationOptions<DismissDraftResponse, DismissDraftError, Options<DismissDraftData>> => {
+    const mutationOptions: UseMutationOptions<DismissDraftResponse, DismissDraftError, Options<DismissDraftData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await dismissDraft({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Send Draft Route
+ */
+export const sendDraftMutation = (options?: Partial<Options<SendDraftData>>): UseMutationOptions<SendDraftResponse, SendDraftError, Options<SendDraftData>> => {
+    const mutationOptions: UseMutationOptions<SendDraftResponse, SendDraftError, Options<SendDraftData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await sendDraft({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
 export const listRequestItemsQueryKey = (options: Options<ListRequestItemsData>) => createQueryKey('listRequestItems', options);
 
 /**
@@ -882,6 +934,60 @@ export const createRequestItemMutation = (options?: Partial<Options<CreateReques
     const mutationOptions: UseMutationOptions<CreateRequestItemResponse, CreateRequestItemError, Options<CreateRequestItemData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await createRequestItem({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const defaultDueDateQueryKey = (options: Options<DefaultDueDateData>) => createQueryKey('defaultDueDate', options);
+
+/**
+ * Default Due Date Route
+ *
+ * The date an item without its own is due.
+ */
+export const defaultDueDateOptions = (options: Options<DefaultDueDateData>) => queryOptions<DefaultDueDateResponse, DefaultDueDateError, DefaultDueDateResponse, ReturnType<typeof defaultDueDateQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await defaultDueDate({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: defaultDueDateQueryKey(options)
+});
+
+/**
+ * Set Default Due Date Route
+ */
+export const setDefaultDueDateMutation = (options?: Partial<Options<SetDefaultDueDateData>>): UseMutationOptions<SetDefaultDueDateResponse, SetDefaultDueDateError, Options<SetDefaultDueDateData>> => {
+    const mutationOptions: UseMutationOptions<SetDefaultDueDateResponse, SetDefaultDueDateError, Options<SetDefaultDueDateData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await setDefaultDueDate({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Due Dates Route
+ */
+export const dueDatesMutation = (options?: Partial<Options<DueDatesData>>): UseMutationOptions<DueDatesResponse, DueDatesError, Options<DueDatesData>> => {
+    const mutationOptions: UseMutationOptions<DueDatesResponse, DueDatesError, Options<DueDatesData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await dueDates({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -1707,6 +1813,41 @@ export const changeFirmRoleMutation = (options?: Partial<Options<ChangeFirmRoleD
     const mutationOptions: UseMutationOptions<ChangeFirmRoleResponse, ChangeFirmRoleError, Options<ChangeFirmRoleData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await changeFirmRole({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const timeZoneQueryKey = (options?: Options<TimeZoneData>) => createQueryKey('timeZone', options);
+
+/**
+ * Time Zone Route
+ */
+export const timeZoneOptions = (options?: Options<TimeZoneData>) => queryOptions<TimeZoneResponse, TimeZoneError, TimeZoneResponse, ReturnType<typeof timeZoneQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await timeZone({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: timeZoneQueryKey(options)
+});
+
+/**
+ * Set Time Zone Route
+ */
+export const setTimeZoneMutation = (options?: Partial<Options<SetTimeZoneData>>): UseMutationOptions<SetTimeZoneResponse, SetTimeZoneError, Options<SetTimeZoneData>> => {
+    const mutationOptions: UseMutationOptions<SetTimeZoneResponse, SetTimeZoneError, Options<SetTimeZoneData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await setTimeZone({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

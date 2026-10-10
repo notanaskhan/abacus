@@ -4,7 +4,7 @@ title: "Engagement agent v1, part 2: due dates, overdue reminders, the team dige
 spec: SPEC-027
 acceptance_criteria: [AC-3, AC-4, AC-5, AC-8, AC-9, AC-10]
 risk_zone: red
-status: planned
+status: done
 branch: task-051-reminders
 worktree:
 created: 2026-10-10
@@ -41,7 +41,7 @@ SPEC-027 AC-3, AC-4, AC-5 (client-facing), AC-8, AC-9, and AC-10 for the new scr
   - `apps/web`: Board (due dates), Setup, `AgentActivity.tsx`.
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-10: D1–D4). Approved by founder: the paths named under *Protected paths*, including `identity/authz/__init__.py`
 
 ### What the code shows
 - **The matrix already says agents may send routine reminders** (`follow_up.send`, `agent: firm_setting(autonomy_policy)`), but `authorise` doesn't model `firm_setting(...)`, so it denies.
@@ -124,12 +124,40 @@ Not protected but changed: requests, communications, notifications, `abacus_tool
 - **D4. Write the approval file for the paths above?** *Recommendation: yes.*
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
-- [ ] Type check, lint, format, architecture and dependency rules pass
-- [ ] Every query is tenant-scoped; every endpoint checks authorisation
-- [ ] Module READMEs and the relevant docs are updated
+- [x] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
+- [x] Type check, lint, format, architecture and dependency rules pass
+- [x] Every query is tenant-scoped; every endpoint checks authorisation
+- [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-10` — Implemented:
+  - migration 0040: `request_items.due_on`, `request_lists.default_due_on`, `firms.time_zone`, `engagement_agents.self_paused_reason`, `reminders` and `reminder_items`; schema-check entries;
+  - requests: due-date routes and `overdue_for`; `due_dates.changed` tells the agent;
+  - identity: the time zone (service and routes), the earliest active partner, client admins, recipient emails;
+  - `authorise` models the agent's `firm_setting(autonomy_policy)` (Routine or higher, within scope, bounded by the initiator);
+  - agents: the `engagement.agent` policy spec, workflow v2 with the daily tick, P-4 and P-5 (`reminders.py`), self-pause, drafts routes, `start_agents` and `python -m abacus_tools.engagement_agents start`;
+  - communications: `send_reminder`;
+  - notifications: `reminders.drafted` and `agent.digest`;
+  - web: due dates on the Board (the list default, per-item dates, "Overdue"), "Reminders waiting for you" on Setup, the time zone on the Autonomy page, plain words for the new feed rows.
+  - **Deviations, recorded:**
+    - **The parsed matrix keeps `firm_setting`, not the setting's name**, and changing that parser (`authz/matrix.py`) wasn't in the approval. So an agent's `firm_setting` is read as the autonomy policy, the matrix's only agent firm setting, and a test reading the YAML fails if another appears.
+    - **Model agents still can't declare `follow_up.send`.** A separate `policy_agent_may_hold` allows it for deterministic agents only, so the existing spec test stands unchanged.
+    - **The in-app digest can't carry counts** (notifications store a kind and a subject only), so the counts go in the feed.
+    - **Not written:** the planned integration test for reminder records and caps. The cadence and caps are unit-tested, and the records were exercised against the real database in the live smoke. Listed for the joint test session.
+
+  Tests and checks:
+  - unit: the cadence, batching, recipients and tick time (19); a tick's send, draft, gate and no-partner paths; the autonomy condition (7, including the matrix invariant); tick rows in the policy table (25); workflow v2 offline (8); v1 and v2 replay histories plus non-determinism (8); web `spec027reminders.test.tsx` (6);
+  - pinned lists updated: subscriptions, activities, the catalogue, non-creating routes, and the agents→communications edge (D3);
+  - backend unit and workflow tests 9,760, web 211, gates pass; migration 0040 applies and rolls back;
+  - **live smoke (real stack):**
+    - at Routine, a tick emailed the client admin once, in the firm's name ("Dev firm is still waiting for 1 item for their FY2025 audit of Acme"), and a second tick that day sent nothing;
+    - at Advise, the tick drafted the reminder, and a person sent it with a note;
+    - `start` signalled 20 agents.
+  - **Found and fixed in the smoke:**
+    - recording a reminder inserted the `id` column, which the app may not insert; it failed after the email had gone, so a retry could email again. Reminders are now recorded first (as a draft), sent, then marked sent, so a failed send waits for a person;
+    - that first record's unit of work had no audit event and couldn't commit.
+
+    Unit tests didn't catch either, because they stub the database.
 - `2026-10-10` — Design written for founder review after TASK-050 merged (#89).
 
 ## Decisions made during this task

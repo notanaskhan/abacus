@@ -6,6 +6,9 @@ import {
   setAutonomyMutation,
   setLetterPolicyMutation,
   firmAgentsOptions,
+  setTimeZoneMutation,
+  timeZoneOptions,
+  timeZoneQueryKey,
   firmAgentsQueryKey,
   pauseFirmAgentsMutation,
   resumeFirmAgentsMutation,
@@ -176,6 +179,62 @@ export function FirmAgents({ canSet }: { canSet: boolean }): JSX.Element | null 
           </Button>
         )}
       </div>
+      <ConfirmItsYou open={confirm} onOpenChange={setConfirm} />
+    </Panel>
+  );
+}
+
+const ZONES: [string, string][] = [
+  ["America/New_York", "Eastern"],
+  ["America/Chicago", "Central"],
+  ["America/Denver", "Mountain"],
+  ["America/Phoenix", "Arizona"],
+  ["America/Los_Angeles", "Pacific"],
+  ["America/Anchorage", "Alaska"],
+  ["Pacific/Honolulu", "Hawaii"],
+  ["Europe/London", "London"],
+  ["UTC", "UTC"],
+];
+
+/** SPEC-027 (TASK-051): the engagement agent's daily check runs at 09:00 here, on weekdays. */
+export function FirmTimeZone({ canSet }: { canSet: boolean }): JSX.Element | null {
+  const queryClient = useQueryClient();
+  const zone = useQuery({ ...timeZoneOptions(), retry: false });
+  const [confirm, setConfirm] = useState(false);
+  const save = useMutation({
+    ...setTimeZoneMutation(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: timeZoneQueryKey() });
+    },
+    onError: (error) => {
+      if (isForbidden(error)) setConfirm(true);
+    },
+  });
+  if (zone.data === undefined) return null;
+  const known = ZONES.some(([value]) => value === zone.data.time_zone);
+  return (
+    <Panel title="Time zone">
+      <label className="flex flex-wrap items-center gap-3 text-sm">
+        Your firm&apos;s time zone
+        <select
+          className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3"
+          value={zone.data.time_zone}
+          disabled={!canSet || save.isPending}
+          onChange={(e) => {
+            save.mutate({ body: { time_zone: e.target.value } });
+          }}
+        >
+          {!known && <option value={zone.data.time_zone}>{zone.data.time_zone}</option>}
+          {ZONES.map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+        <span className="text-muted">
+          Engagement agents check for overdue items at 9:00 here, on weekdays.
+        </span>
+      </label>
       <ConfirmItsYou open={confirm} onOpenChange={setConfirm} />
     </Panel>
   );

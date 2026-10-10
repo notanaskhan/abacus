@@ -118,6 +118,9 @@ NOT_CREATING = {
     "/v1/engagements/{engagement_id}/agent/resume",
     "/v1/firm/agents/pause",
     "/v1/firm/agents/resume",
+    # SPEC-027 (TASK-051): sending or dismissing a draft returns its id.
+    "/v1/engagements/{engagement_id}/reminders/{reminder_id}/send",
+    "/v1/engagements/{engagement_id}/reminders/{reminder_id}/dismiss",
 }
 
 

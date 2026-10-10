@@ -24,4 +24,6 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "connection.created",  # SPEC-020 (TASK-036 D5)
         "connection.revoked",
         "independence.requested",  # SPEC-025 (TASK-044)
+        "reminders.drafted",  # SPEC-027 (TASK-051)
+        "agent.digest",
     }

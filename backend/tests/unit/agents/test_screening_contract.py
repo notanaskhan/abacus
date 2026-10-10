@@ -72,11 +72,12 @@ def test_ac14_screening_starts_from_evidence_version_created() -> None:
         "request_item.classified",
         "inbox_file.added",
         "firm.agents_resumed",
+        "due_dates.changed",  # SPEC-027 (TASK-051)
     }
     assert len(WORKFLOWS) == 3
     # TASK-018b: acquire_slot and release_slot join the three; SPEC-009 adds two knowledge steps;
-    # SPEC-027 adds the engagement agent's one.
-    assert len(ACTIVITIES) == 8
+    # SPEC-027 adds the engagement agent's two (handle; TASK-051's next tick).
+    assert len(ACTIVITIES) == 9
 
 
 def test_ac14_the_workflow_id_is_tenant_qualified() -> None:

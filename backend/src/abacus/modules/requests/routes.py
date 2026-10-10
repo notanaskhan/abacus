@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -21,9 +21,12 @@ from abacus.modules.requests.service import (
     apply_methodology,
     assign_to_client,
     import_request_list,
+    list_due_date,
     preview_request_list,
     request_items_for,
     set_client_visibility,
+    set_item_due_dates,
+    set_list_due_date,
     set_tier,
 )
 from abacus.modules.requests.workbook import MAX_BYTES, Problem, RequestListInvalid
@@ -63,6 +66,7 @@ class RequestItemOut(BaseModel):
         Literal["override", "methodology", "rule"] | None, classified("internal")
     ] = None
     available: Annotated[bool, classified("internal")] = False
+    due_on: Annotated[date | None, classified("internal")] = None  # SPEC-027: its own
 
 
 def _out(item: RequestItemView) -> RequestItemOut:
@@ -122,6 +126,42 @@ async def assign_to_client_route(
 ) -> RequestItemOut:
     """SPEC-020 (TASK-035 D4): assign the item to a client contributor, or clear it."""
     return _out(await assign_to_client(ctx, engagement_id, item_id, user_id=body.user_id))
+
+
+class DueDatesIn(BaseModel):
+    """SPEC-027 AC-9 (TASK-051): set or clear (`null`) several items' due date."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    item_ids: Annotated[list[UUID], Field(min_length=1, max_length=2000), classified("internal")]
+    due_on: Annotated[date | None, classified("internal")]
+
+
+class DefaultDueDate(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    due_on: Annotated[date | None, classified("internal")]
+
+
+@router.put("/due-dates", action="request_item.update", response_model=list[RequestItemOut])
+async def due_dates_route(engagement_id: UUID, body: DueDatesIn, ctx: Ctx) -> list[RequestItemOut]:
+    return [
+        _out(i) for i in await set_item_due_dates(ctx, engagement_id, body.item_ids, body.due_on)
+    ]
+
+
+@router.get("/default-due-date", action="request_item.read", response_model=DefaultDueDate)
+async def default_due_date_route(engagement_id: UUID, ctx: Ctx) -> DefaultDueDate:
+    """The date an item without its own is due."""
+    return DefaultDueDate(due_on=await list_due_date(ctx, engagement_id))
+
+
+@router.put("/default-due-date", action="request_item.update", response_model=DefaultDueDate)
+async def set_default_due_date_route(
+    engagement_id: UUID, body: DefaultDueDate, ctx: Ctx
+) -> DefaultDueDate:
+    await set_list_due_date(ctx, engagement_id, body.due_on)
+    return DefaultDueDate(due_on=body.due_on)
 
 
 class TierIn(BaseModel):

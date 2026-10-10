@@ -121,3 +121,10 @@ class HandleResult:
     """`end`: the engagement is archived (or gone), so the agent's work is over."""
 
     end: bool
+
+
+@dataclass(frozen=True)
+class NextTickInput:
+    """SPEC-027 (TASK-051): whose time zone sets the agent's daily tick."""
+
+    tenant_id: str

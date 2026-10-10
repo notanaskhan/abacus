@@ -25,6 +25,14 @@ const ACTION: Record<string, string> = {
   "screening.replayed": "Screened evidence that arrived while paused",
   "retrieval.start": "Retrieve from the client's system",
   "match.suggested": "Suggested request items for a file in the inbox",
+  "agent.tick": "Daily check",
+  "agent.self_paused": "The agent paused itself: the engagement has no active partner",
+  "agent.self_resumed": "The agent resumed: the engagement has a partner again",
+  "reminders.sent": "Sent overdue reminders",
+  "reminders.drafted": "Drafted overdue reminders for you to send",
+  "reminders.check": "Remind about overdue items",
+  "reminders.restarted": "Due dates changed: reminders start again",
+  "digest.sent": "Told the team about overdue items",
 };
 const REASON: Record<string, string> = {
   paused: "the agent is paused on this engagement",
@@ -38,6 +46,8 @@ const REASON: Record<string, string> = {
   nothing: "nothing was waiting for data",
   unavailable: "retrieval isn't available",
   malformed_event: "the event couldn't be read",
+  self_paused: "the engagement has no active partner",
+  no_partner: "the engagement has no active partner",
 };
 
 function describe(row: ActivityOut): string {
@@ -48,6 +58,9 @@ function describe(row: ActivityOut): string {
       return `${what}: ${String(n)} ${n === 1 ? "suggestion" : "suggestions"}`;
     }
     if (row.action === "screening.replayed") return `${what} (${String(row.item_count ?? 0)})`;
+    if (row.action === "reminders.sent" || row.action === "reminders.drafted")
+      return `${what}: ${String(row.item_count ?? 0)} ${row.item_count === 1 ? "contact" : "contacts"}`;
+    if (row.action === "digest.sent") return `${what}: ${String(row.item_count ?? 0)} overdue`;
     return what;
   }
   const why = row.reason != null ? (REASON[row.reason] ?? row.reason) : "";
