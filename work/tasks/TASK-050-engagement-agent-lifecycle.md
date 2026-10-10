@@ -4,7 +4,7 @@ title: "Engagement agent v1, part 1: lifecycle, triggering policies, activity fe
 spec: SPEC-027
 acceptance_criteria: [AC-1, AC-2, AC-5, AC-6, AC-7, AC-10]
 risk_zone: red
-status: planned
+status: in-progress
 branch: task-050-engagement-agent
 worktree:
 created: 2026-10-10
@@ -39,7 +39,7 @@ SPEC-027 AC-1, AC-2, AC-5, AC-6, AC-7, AC-10 (for the feed and pause screens), a
   - `kernel/flags.py` and `docs/architecture/feature-flags.yaml`.
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-10: all D-questions, recommendations accepted). Approved by founder: the paths named under *Protected paths*
 
 ### What the code shows
 - **No long-lived workflows, signals, `continue_as_new` or schedules exist yet.** Every workflow today runs once (screening, embedding, retrieval). This task introduces the pattern.
