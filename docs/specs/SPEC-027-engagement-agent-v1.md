@@ -1,7 +1,7 @@
 ---
 id: SPEC-027
 title: "Engagement agent v1: deterministic policies"
-status: draft
+status: approved
 owner: founder
 risk_zone: red
 related_adrs: [ADR-005, ADR-025, ADR-040, ADR-058, ADR-059, ADR-060, ADR-061, ADR-062, ADR-063, ADR-090]
@@ -203,6 +203,7 @@ Email through the existing transport, sent in the firm's name.
 - Existing engagements start with no due dates, so no reminders fire until someone sets one.
 
 ## 20. Open questions
+All resolved: the founder approved every recommendation below on 2026-10-10.
 - **Q1. Whose authority does the agent act under?** *Recommendation: the engagement's earliest-added active partner, as the `AgentContext` initiator,* so walls, independence and the matrix apply as for a person (ADR-025). The alternative, a system run, would bypass the per-person checks.
 - **Q2. Due dates: per item with a request-list default?** *Recommendation: yes.* It's the smallest model that supports reminders; fieldwork dates and milestones come with the planner.
 - **Q3. Reminder cadence and time zone?** *Recommendation:*

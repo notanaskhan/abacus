@@ -1,7 +1,7 @@
 ---
 id: SPEC-026
 title: "A real model in evaluation: the screener's first measured run"
-status: draft
+status: approved
 owner: founder
 risk_zone: red
 related_adrs: [ADR-005, ADR-019, ADR-031, ADR-050, ADR-052, ADR-055, ADR-070, ADR-073, ADR-074, ADR-079]
@@ -161,6 +161,7 @@ None. This is a command-line milestone.
 Local and `evaluation` only. Nothing deploys.
 
 ## 20. Open questions
+All resolved: the founder approved every recommendation below on 2026-10-10.
 - **Q1. Which exact model per tier, and their prices?** *Recommendation:*
   - `small` (the screener): Claude Haiku 4.5, `claude-haiku-4-5-20251001`;
   - `medium` (escalation): Claude Sonnet 5.5;
