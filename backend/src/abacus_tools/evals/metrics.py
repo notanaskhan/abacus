@@ -27,6 +27,11 @@ def _caught(seen: Observation) -> bool:
     return seen.stage in ("failed_validation", "failed") or seen.action == "needs_revision"
 
 
+# SPEC-026 (TASK-049): the milestone report applies the same two rules.
+needs_revision = _needs_revision
+caught = _caught
+
+
 def needs_revision_recall(attempts: Sequence[Attempt]) -> float:
     relevant = [seen for case, seen in attempts if _needs_revision(case)]
     return _fraction(sum(_caught(s) for s in relevant), len(relevant))

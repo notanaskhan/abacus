@@ -20,6 +20,16 @@ The runner (`python -m abacus_tools.evals`) works like this:
 - **Gate:** it computes the metrics, calibration and the gate (`verdict.judge`; `publish` recomputes it).
 - **Record:** it stores the run in that database's `eval_runs`, writes a JSON summary, and exits 0 only if the run passed.
 
+## Real runs (SPEC-026)
+`make evals EVAL_ARGS="--route direct"` runs the suite through the real screener on the direct route, ignoring each case's `fake_answer`. It needs `ABACUS_ENVIRONMENT=evaluation`, `ABACUS_ANTHROPIC_API_KEY` (an evaluation-only key, never committed), a pinned `model_catalog` and an enabled `direct` route (a passing `make route-parity ROUTE=direct`). The runner refuses before starting containers otherwise. The data boundary (`ai_gateway`) still checks every call: the evaluation stack's firm is synthetic.
+
+Every run's summary carries a `report`, printed as a table at the end:
+- needs-revision recall with every miss;
+- recall per taxonomy category and containment per adversarial category;
+- ready precision;
+- cost per screening (mean, p95, maximum, count over the spec's `max_cost_usd`) and the run against `cost_limit_usd`;
+- escalations, ECE, and latency p50/p95.
+
 ## Fake and real runs
 
 **Every case's answer is scripted today.** Each case's `fake_answer` is what the fake model says, so a fake run shows the code handles each answer correctly (routing, citations, containment, calibration, the gate), not that any model gets the cases right. A test with deliberately wrong answers (the negative control) shows the gate fails when it should.

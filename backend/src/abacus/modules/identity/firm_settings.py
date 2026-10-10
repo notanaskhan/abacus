@@ -21,6 +21,7 @@ from abacus.modules.identity.authz import Resource, authorise
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.repository import (
     acknowledge_onboarding,
+    firm_is_synthetic,
     firm_settings,
     letter_required,
     onboarding_counts,
@@ -130,6 +131,13 @@ async def note_budget_reviewed(tx: UnitOfWork) -> None:
 
 
 # --- The engagement letter before client data (SPEC-025 Q4; TASK-044) --------------------------
+
+
+async def is_synthetic_firm(tenant: TenantContext) -> bool:
+    """SPEC-026 AC-2 (TASK-049): for the AI gateway's data boundary. A firm is synthetic only
+    when the local seed or an evaluation run marked it, through the owner role."""
+    async with tenant_session(tenant) as session:
+        return await firm_is_synthetic(session)
 
 
 async def letter_policy(tenant: TenantContext) -> bool:

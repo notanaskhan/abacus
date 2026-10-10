@@ -1,5 +1,6 @@
 """Public interface of the identity module; other modules import only this (ADR-008)."""
 
+from abacus.ai_gateway import register_synthetic_tenants
 from abacus.modules.identity.authz import (
     MFA_RECENT,
     WALL_SAFE,
@@ -35,6 +36,7 @@ from abacus.modules.identity.firm_settings import (
     autonomy,
     autonomy_level,
     firm_facts,
+    is_synthetic_firm,
     letter_policy,
     note_budget_reviewed,
     set_autonomy,
@@ -116,6 +118,10 @@ from abacus.modules.identity.tokens import (
     token_verifier,
 )
 
+# SPEC-026 (TASK-049): the AI gateway's per-call data boundary asks identity which firms are
+# synthetic.
+register_synthetic_tenants(is_synthetic_firm)
+
 __all__ = [
     "ACTION_KEY",
     "IDENTITY",
@@ -187,6 +193,7 @@ __all__ = [
     "firm_support_router",
     "invitation_router",
     "is_active_member",
+    "is_synthetic_firm",
     "issue_invitation_token",
     "issue_staff_invitation_token",
     "letter_policy",

@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 import uuid
 from collections.abc import Awaitable, Callable, Sequence
 from datetime import UTC, datetime
@@ -31,12 +32,15 @@ import yaml
 from abacus.ai_gateway import (
     MODELS,
     FakeModel,
+    ModelProvider,
     ModelRequest,
+    ModelResponse,
     Tier,
     configure_provider,
     evaluation,
     model_id,
 )
+from abacus.ai_gateway.routes import configure_route, route_enabled, route_provider
 from abacus.kernel.config import SYNTHETIC_ENVIRONMENTS, settings
 from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import meter
@@ -59,6 +63,7 @@ from abacus_tools.evals.cases import MUTATION_CATEGORIES, MUTATIONS
 from abacus_tools.evals.graders import GRADERS
 from abacus_tools.evals.metrics import METRICS, Attempt
 from abacus_tools.evals.observation import Observation
+from abacus_tools.evals.report import ESCALATED, Report, milestone
 from abacus_tools.evals.suite import Case, Suite, load, validate
 from abacus_tools.evals.summary import Summary, sign
 from abacus_tools.evals.verdict import Verdict, judge
@@ -81,6 +86,7 @@ REPO = Path(__file__).resolve().parents[4]
 BASELINES = REPO / "evals" / "baselines.yaml"
 UNTRUSTED_NAMES = '<untrusted name="account_names">'
 Subset = Literal["fast", "full"]
+EvalRoute = Literal["fake", "direct"]  # SPEC-026: Bedrock waits for AWS (TASK-014)
 # Settings that point the platform somewhere: each must be this machine, or the configured
 # evaluation database (AC-16).
 _DESTINATIONS = (
@@ -114,6 +120,18 @@ def guard() -> None:
         value = os.environ.get(name)
         if value and not is_loopback(value) and value != allowed:
             raise RefusedEnvironment(f"{name} points away from this machine")
+
+
+def guard_real(route: EvalRoute) -> None:
+    """SPEC-026 AC-5: a real run only in the evaluation environment, with its key and an enabled
+    route (a passing parity report), checked before any container starts."""
+    s = settings()
+    if s.environment != "evaluation":
+        raise RefusedEnvironment("real-model runs need ABACUS_ENVIRONMENT=evaluation")
+    if s.anthropic_api_key is None:
+        raise RefusedEnvironment("real-model runs need ABACUS_ANTHROPIC_API_KEY")
+    if not route_enabled(route):
+        raise RefusedEnvironment(f"route {route!r} isn't enabled (model_routes and parity)")
 
 
 def suite_for(agent: str) -> Suite:
@@ -197,8 +215,35 @@ def _contained(request: ModelRequest) -> bool:
     return "</untrusted>" not in before and inside.count("</untrusted>") == 1
 
 
+class _Recording:
+    """SPEC-026 (TASK-049): the real route's provider, recording what was asked and answered so a
+    real attempt is graded exactly as a fake one (containment, the model's action, confidence)."""
+
+    def __init__(
+        self, inner: ModelProvider, seen: list[ModelRequest], answers: list[dict[str, object]]
+    ) -> None:
+        self.inner, self.seen, self.answers = inner, seen, answers
+
+    async def complete(self, request: ModelRequest) -> ModelResponse:
+        self.seen.append(request)
+        response = await self.inner.complete(request)
+        try:
+            parsed = json.loads(response.text)
+        except ValueError:
+            parsed = None
+        if isinstance(parsed, dict):
+            self.answers.append(cast(dict[str, object], parsed))
+        return response
+
+
 async def _attempt(
-    case: Case, attempt: int, world: Seeded, stack: Stack, directory: Path, tier: Tier
+    case: Case,
+    attempt: int,
+    world: Seeded,
+    stack: Stack,
+    directory: Path,
+    tier: Tier,
+    route: EvalRoute = "fake",
 ) -> Observation:
     budget = spec(SCREENER).limits.max_cost_usd
     seen: list[ModelRequest] = []
@@ -214,7 +259,10 @@ async def _attempt(
         return json.dumps(answer)
 
     run_id: uuid.UUID | None = None
-    configure_provider(FakeModel({SCREEN_PROMPT: responder}))
+    if route == "fake":
+        configure_provider(FakeModel({SCREEN_PROMPT: responder}))
+    else:  # the real model; each case's scripted answer is ignored
+        configure_route(route, _Recording(route_provider(route), seen, answers))
     try:
         tb = trial_balance()
         period = period_of(tb)
@@ -240,13 +288,20 @@ async def _attempt(
         )
         if run_id is None:
             raise RuntimeError("no screening run was created")
-        with evaluation(tier, "fake"):
+        started_at = time.monotonic()
+        with evaluation(tier, route):
             outcome = await screen(await load_agent_context(world.tenant, run_id))
+        latency = round((time.monotonic() - started_at) * 1000)
+        if outcome.status == "escalated":
+            cost, _ = await _spent(stack.superuser, run_id)
+            return Observation(
+                case.id, attempt, "errored", cost_usd=cost, budget_usd=budget, error=ESCALATED
+            )
         action, kind, citations = await _result(stack.superuser, run_id)
         cost, models = await _spent(stack.superuser, run_id)
         if outcome.status != "completed" or kind != "agent":
             raise RuntimeError(f"screening ended {outcome.status} by {kind}")
-        if models != {model_id(tier, "fake")}:
+        if models != {model_id(tier, route)}:
             raise RuntimeError("the screener ran on a model other than the pinned tier's")
         answer = answers[-1] if answers else {}
         return Observation(
@@ -263,6 +318,7 @@ async def _attempt(
             contained=bool(seen) and all(_contained(r) for r in seen),
             cost_usd=cost,
             budget_usd=budget,
+            latency_ms=latency,
         )
     except Exception as exc:
         # What a failed attempt spent still counts; unreadable, it counts as its whole budget.
@@ -282,6 +338,8 @@ async def _attempt(
         )
     finally:
         configure_provider(None)
+        if route != "fake":
+            configure_route(route, None)
 
 
 AttemptFn = Callable[[Case, int], Awaitable[Observation]]
@@ -349,7 +407,7 @@ async def store_finish(conn: asyncpg.Connection, summary: Summary) -> None:
     )
 
 
-def summarise(run: Summary, verdict: Verdict) -> Summary:
+def summarise(run: Summary, verdict: Verdict, report: Report | None = None) -> Summary:
     return sign(
         Summary.model_validate(
             {
@@ -362,6 +420,7 @@ def summarise(run: Summary, verdict: Verdict) -> Summary:
                 "median_case_cost_usd": verdict.median_case_cost_usd,
                 "finished_at": datetime.now(UTC),
                 "cases": verdict.case_rows,
+                "report": report.model_dump() if report is not None else None,
             }
         )
     )
@@ -390,7 +449,13 @@ async def prepare(stack: Stack) -> Seeded:
 
 
 async def evaluate_on(
-    stack: Stack, world: Seeded, suite: Suite, subset: Subset, tier: Tier, out: Path
+    stack: Stack,
+    world: Seeded,
+    suite: Suite,
+    subset: Subset,
+    tier: Tier,
+    out: Path,
+    route: EvalRoute = "fake",
 ) -> Summary:
     """Run `suite` on a prepared stack; store and write its summary."""
     directory = Path(os.environ["ABACUS_FAKE_CONNECTOR_DIR"])
@@ -399,13 +464,12 @@ async def evaluate_on(
         agent=suite.agent,
         suite_version=suite.version,
         prompt_version=spec(suite.agent).prompt,
-        model=model_id(tier, "fake") or MODELS[tier][0],
+        model=model_id(tier, route) or MODELS[tier][0],
         tier=tier,
         subset=subset,
-        # Fake runs only until real routes have credentials (TASK-014); then a run is per route
-        # (SPEC-010 AC-6) and records the route it pinned.
-        fake=True,
-        route="fake",
+        # SPEC-026: a real run is per route (SPEC-010 AC-6) and records the route it pinned.
+        fake=route == "fake",
+        route=route,
         seeds={"trial_balance": TRIAL_BALANCE_SEED},
         sampling=suite.sampling,
         status="errored",  # until finished
@@ -429,7 +493,7 @@ async def evaluate_on(
     try:
 
         async def attempt(case: Case, n: int) -> Observation:
-            return await _attempt(case, n, world, stack, directory, tier)
+            return await _attempt(case, n, world, stack, directory, tier, route)
 
         attempts, aborted = await collect(suite, subset, budget, attempt)
         verdict = judge(
@@ -441,7 +505,14 @@ async def evaluate_on(
             current_below=float(routing.below),
             route=routing.route,
         )
-        summary = summarise(run, verdict)
+        ece = verdict.calibration.get("ece")
+        report = milestone(
+            attempts,
+            budget_per_screening=budget,
+            cost_limit=suite.cost_limit_usd,
+            ece=float(ece) if isinstance(ece, (int, float)) else None,
+        )
+        summary = summarise(run, verdict, report)
     except Exception as exc:
         summary = _errored(run, exc)
     conn = await connect_db(stack.superuser)
@@ -486,10 +557,13 @@ def run(
     out: Path,
     *,
     suites: Sequence[Suite] | None = None,
+    route: EvalRoute = "fake",
 ) -> list[Summary]:
     """Run `agent`'s suite (validated before any model call), or each of `suites` (tests), on one
     throwaway stack, and return the summaries."""
     guard()
+    if route != "fake":
+        guard_real(route)
     chosen: Tier = tier or spec(agent).tier
     todo = list(suites) if suites is not None else [suite_for(agent)]
     results: list[Summary] = []
@@ -497,7 +571,7 @@ def run(
     async def record(stack: Stack) -> None:
         world = await prepare(stack)
         for suite in todo:
-            results.append(await evaluate_on(stack, world, suite, subset, chosen, out))
+            results.append(await evaluate_on(stack, world, suite, subset, chosen, out, route))
 
     run_with_stack(record)
     return results
@@ -509,6 +583,7 @@ __all__ = [
     "collect",
     "evaluate_on",
     "guard",
+    "guard_real",
     "judge",
     "prepare",
     "run",

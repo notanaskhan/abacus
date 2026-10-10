@@ -797,6 +797,11 @@ async def firm_name_of(tenant_id: UUID) -> str | None:
     return str(found) if found is not None else None
 
 
+async def firm_is_synthetic(session: AsyncSession) -> bool:
+    """SPEC-026: whether the session's firm is synthetic (set only by seeding and evaluations)."""
+    return bool(await session.scalar(text("SELECT synthetic FROM firms")))
+
+
 async def letter_required(session: AsyncSession) -> bool:
     """Whether the session's firm requires the engagement letter before client data."""
     return bool(await session.scalar(text("SELECT require_letter FROM firms")))

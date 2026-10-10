@@ -23,3 +23,4 @@ class Observation:
     cost_usd: Decimal = Decimal(0)
     budget_usd: Decimal = Decimal(0)
     error: str | None = None
+    latency_ms: int | None = None  # SPEC-026: the screening call, for the milestone report

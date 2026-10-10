@@ -86,7 +86,11 @@ async def seed(superuser: str) -> Seeded:
     tenant = uuid.UUID(int=1)
     conn = await asyncpg.connect(superuser)
     try:
-        await conn.execute("INSERT INTO firms VALUES ($1, 'Recorder firm')", tenant)
+        # SPEC-026: synthetic, so an evaluation's real model may see it (the data boundary).
+        await conn.execute(
+            "INSERT INTO firms (tenant_id, name, synthetic) VALUES ($1, 'Recorder firm', true)",
+            tenant,
+        )
         user = await conn.fetchval(
             "INSERT INTO users (idp_issuer, idp_subject, email, display_name) "
             "VALUES ('recorder', 'recorder', 'recorder@example.com', 'Recorder') RETURNING id"
@@ -117,6 +121,24 @@ async def seed(superuser: str) -> Seeded:
         )
         await conn.execute(
             "INSERT INTO engagement_members VALUES ($1, $2, $3, 'senior')",
+            tenant,
+            engagement,
+            user,
+        )
+        # SPEC-025: the engagement is open to client data (acceptance and the partner's
+        # conclusion recorded), and the recorder has confirmed independence (TASK-045), as in
+        # any engagement past setup.
+        await conn.execute(
+            "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
+            "decided_by, documented_at, independence_concluded_by, independence_concluded_at) "
+            "VALUES ($1, $2, 'new_client', 'accepted', $3, 'synthetic', $3, now())",
+            tenant,
+            engagement,
+            str(user),
+        )
+        await conn.execute(
+            "INSERT INTO independence_confirmations (tenant_id, engagement_id, user_id, status, "
+            "statement_version, answered_at) VALUES ($1, $2, $3, 'confirmed', 'v1', now())",
             tenant,
             engagement,
             user,

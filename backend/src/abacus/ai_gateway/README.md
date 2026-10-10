@@ -53,6 +53,12 @@ Each provider call writes a usage record (`prompt_id` `embed`, tier `small`).
 
 The provider sits behind `EmbeddingProvider`. `FakeEmbedder` (deterministic, hashed word features, 1,024 dimensions) is used in synthetic environments when none is configured. The real provider comes with ADR-073.
 
+## The data boundary (SPEC-026; TASK-049; ADR-031)
+A real model sees synthetic data only, until provider terms (zero retention, no training) are recorded and staging exists.
+- **Settings:** `model_data_boundary` has one value, `synthetic_only`. A real route (or the real embedding provider) is refused in `staging`, `production` and `test`, and in `local` unless `allow_real_model_locally`. Every real-route model ID must be pinned (no `latest`).
+- **Per call:** `enforce_boundary` runs before both provider calls (`_call`, `embed`). Any route other than `fake` needs the call's firm to be synthetic, answered by identity through `register_synthetic_tenants` (unregistered means refused, cached 60 s). A refusal raises `DataBoundaryRefused` (never retried or rerouted), audits `ai.boundary_refused` and counts `abacus.ai.boundary_refused`.
+- **Who's synthetic:** `firms.synthetic`, set only by the local seed and the evaluation stack as the owner; the app can't write it.
+
 ## Model routes (SPEC-010; ADR-073; TASK-025)
 The same model family is reachable through two routes, `direct` (the provider's API) and `bedrock` (Amazon Bedrock in our AWS account). `fake` serves synthetic environments only.
 
