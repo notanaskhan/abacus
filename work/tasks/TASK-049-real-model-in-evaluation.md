@@ -4,7 +4,7 @@ title: A real model in evaluation, behind a data boundary in code
 spec: SPEC-026
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8]
 risk_zone: red
-status: planned
+status: in-progress
 branch: task-049-real-model-eval
 worktree:
 created: 2026-10-10
@@ -41,7 +41,7 @@ SPEC-026 AC-1 to AC-8.
   - `abacus_tools/stack.py` and `local/seed_dev.py` (where firms are inserted).
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-10: all D-questions, recommendations accepted). Approved by founder: the paths named under *Protected paths*
 
 ### What the code shows
 - **The direct route already works** (`AnthropicDirect`, behind admission and parity). The catalog is fake by default; the runner installs the fake model and records `route="fake"`.
