@@ -7,6 +7,7 @@ import type { JSX } from "react";
 import { errorMessage } from "../api";
 import { isForbidden } from "../shell/mfa";
 import { EngagementRecords } from "./EngagementRecords";
+import { ReminderDrafts } from "./ReminderDrafts";
 
 type Tone = "success" | "info" | "warning" | "danger" | "neutral";
 const STATE: Record<SetupStepOut["state"], { tone: Tone; label: string }> = {
@@ -50,6 +51,7 @@ export function Setup({ engagementId }: { engagementId: string }): JSX.Element {
           ))}
         </ol>
       </Panel>
+      <ReminderDrafts engagementId={engagementId} />
       <RecordsForMe engagementId={engagementId} />
     </div>
   );

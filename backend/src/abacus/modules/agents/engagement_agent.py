@@ -20,7 +20,7 @@ under the engagement partner arrives with reminders (TASK-051).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Final
 from uuid import UUID, uuid4, uuid5
 
@@ -29,26 +29,34 @@ from temporalio import activity
 from abacus.kernel import _flags
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import signal_with_start
+from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import OutboxEvent, Target, uow
-from abacus.modules.agents.engagement_agent_workflow import HANDLE, EngagementAgent
+from abacus.modules.agents.engagement_agent_workflow import HANDLE, NEXT_TICK, EngagementAgent
 from abacus.modules.agents.models import AgentActivity
+from abacus.modules.agents.reminders import remind, seconds_to_next_tick
 from abacus.modules.agents.repository import (
     activity_page,
     agent_state,
+    drafted_reminders,
     last_resume_check,
+    lock_reminder,
     record_activity,
     screenings_skipped_while_paused,
     set_agent_paused,
+    set_self_paused,
+    settle_reminder,
 )
 from abacus.modules.agents.workflow_types import (
     AgentEvent,
     AgentInput,
     HandleInput,
     HandleResult,
+    NextTickInput,
     ScreeningInput,
 )
+from abacus.modules.communications.api import send_reminder
 from abacus.modules.engagements.api import (
     get_ref,
     is_archived,
@@ -61,11 +69,16 @@ from abacus.modules.identity.api import (
     agents_paused,
     authorise,
     autonomy_level,
+    earliest_partner,
+    firm_time_zone,
     names_of,
 )
+from abacus.modules.requests.api import overdue_for
 
 VERSION: Final = 1
 RESUMED: Final = "agent.resumed"
+TICK: Final = "agent.tick"
+STARTED: Final = "agent.started"  # started by the platform (existing engagements, Q7)
 FIRM_RESUMED: Final = "firm.agents_resumed"
 REPLAY_WINDOW: Final = timedelta(days=30)
 _SYSTEM: Final = "agents.engagement_agent"
@@ -112,6 +125,17 @@ async def to_agent(event: OutboxEvent) -> None:
     await signal_agent(
         event.tenant_id, UUID(str(engagement)), event.event_type, event.event_id, payload
     )
+
+
+async def start_agents(tenant_id: UUID) -> int:
+    """SPEC-027 Q7 (TASK-051): every open engagement of a firm with the agent on gets its agent
+    (idempotent: a running agent just records it). Returns how many were signalled."""
+    if not await agent_on(tenant_id):
+        return 0
+    engagements = await open_engagements(_system(tenant_id))
+    for engagement_id in engagements:
+        await signal_agent(tenant_id, engagement_id, STARTED, uuid5(engagement_id, STARTED), {})
+    return len(engagements)
 
 
 async def firm_resumed(event: OutboxEvent) -> None:
@@ -171,7 +195,55 @@ async def _paused(tenant: TenantContext, engagement_id: UUID) -> str | None:
         return "firm_paused"
     async with tenant_session(tenant) as session:
         state = await agent_state(session, engagement_id)
-    return "paused" if state is not None and state.paused_at is not None else None
+    if state is not None and state.paused_at is not None:
+        return "paused"
+    return "self_paused" if state is not None and state.self_paused_reason else None
+
+
+async def _self_pause(tenant: TenantContext, engagement_id: UUID) -> _Row | None:
+    """SPEC-027 AC-8: with no active partner to act for, the agent pauses itself; it resumes on
+    its own when there's one again. The row to record when that changes, else None."""
+    partner = await earliest_partner(tenant, engagement_id)
+    async with tenant_session(tenant) as session:
+        state = await agent_state(session, engagement_id)
+    paused = state is not None and state.self_paused_reason is not None
+    if (partner is None) == paused:
+        return None
+    async with uow(tenant) as tx:
+        await set_self_paused(
+            tx.session, tenant.tenant_id, engagement_id, "no_partner" if partner is None else None
+        )
+        tx.record(
+            "engagement_agent.self_paused" if partner is None else "engagement_agent.self_resumed",
+            target=Target("engagement", engagement_id),
+        )
+    if partner is None:
+        return _Row("P-0", "agent.self_paused", "done", "no_partner")
+    return _Row("P-0", "agent.self_resumed", "done")
+
+
+async def _tick(tenant: TenantContext, engagement_id: UUID, tick_id: UUID) -> list[_Row]:
+    """The daily tick: P-2's daily retrieval, P-4 reminders, P-5 digest (SPEC-027)."""
+    rows: list[_Row] = []
+    changed = await _self_pause(tenant, engagement_id)
+    if changed is not None:
+        rows.append(changed)
+    paused = await _paused(tenant, engagement_id)
+    if paused is not None:
+        return [*rows, _Row("P-0", "agent.tick", "skipped", paused)]
+    found = await run_auto_retrieval(tenant.tenant_id, engagement_id, None)
+    if found == "done":
+        rows.append(_Row("P-2", "retrieval.start", "done"))
+    outcome = await remind(tenant, engagement_id, await firm_time_zone(tenant), tick_id)
+    if outcome.sent:
+        rows.append(_Row("P-4", "reminders.sent", "done", None, None, None, outcome.sent))
+    elif outcome.drafted:
+        rows.append(_Row("P-4", "reminders.drafted", "done", None, None, None, outcome.drafted))
+    elif outcome.reason in ("not_open", "no_partner"):
+        rows.append(_Row("P-4", "reminders.check", "skipped", outcome.reason))
+    if outcome.overdue and outcome.reason != "no_partner":
+        rows.append(_Row("P-5", "digest.sent", "done", None, None, None, outcome.overdue))
+    return rows
 
 
 async def _screen(
@@ -201,8 +273,12 @@ async def apply_policy(given: HandleInput) -> tuple[list[_Row], bool]:
     if archived is None or archived:
         return [], True
     kind = given.event_type
-    if kind == "engagement.created":
+    if kind in ("engagement.created", STARTED):
         return [_Row("P-0", "agent.started", "done")], False
+    if kind == TICK:
+        return await _tick(tenant, engagement_id, UUID(given.event_id)), False
+    if kind == "due_dates.changed":
+        return [_Row("P-4", "reminders.restarted", "done")], False
     paused = await _paused(tenant, engagement_id)
     if kind in (RESUMED, FIRM_RESUMED):
         if paused is not None:
@@ -281,6 +357,13 @@ async def _resume(tenant: TenantContext, engagement_id: UUID) -> list[_Row]:
         )
     )
     return rows
+
+
+@activity.defn(name=NEXT_TICK)
+async def next_tick(given: NextTickInput) -> int:
+    """Seconds until the next 09:00 business day in the firm's time zone (SPEC-027 Q3)."""
+    zone = await firm_time_zone(_system(UUID(given.tenant_id)))
+    return seconds_to_next_tick(datetime.now(UTC), zone)
 
 
 @activity.defn(name=HANDLE)
@@ -369,3 +452,71 @@ async def activity_feed(
     await authorise(ctx, "activity.read", ref.resource())
     async with tenant_session(ctx.tenant) as session:
         return list(await activity_page(session, ctx, engagement_id, before, limit))
+
+
+# --- Drafted reminders (SPEC-027 AC-4: Advise) ---------------------------------------------------
+
+
+@dataclass(frozen=True)
+class DraftView:
+    id: UUID
+    recipient_user_id: UUID
+    recipient_name: str
+    items: list[tuple[UUID, str]]
+    created_at: datetime
+
+
+async def drafts(ctx: AuthContext, engagement_id: UUID) -> list[DraftView]:
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "follow_up.draft", ref.resource())
+    async with tenant_session(ctx.tenant) as session:
+        rows = await drafted_reminders(session, engagement_id)
+    names = await names_of(sorted({r.recipient_user_id for r, _ in rows}, key=str))
+    overdue = {
+        i.id: i.description
+        for i in await overdue_for(_system(ctx.tenant_id), engagement_id, date.max)
+    }
+    return [
+        DraftView(
+            r.id,
+            r.recipient_user_id,
+            names.get(r.recipient_user_id, ""),
+            [(i, overdue[i]) for i in items if i in overdue],
+            r.created_at,
+        )
+        for r, items in rows
+    ]
+
+
+class DraftGone(DomainConflict):
+    code = "draft_not_waiting"
+
+
+async def settle_draft(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    reminder_id: UUID,
+    *,
+    send: bool,
+    note: str | None = None,
+) -> None:
+    """A person sends (optionally with a note) or dismisses a drafted reminder. Items no longer
+    overdue are left out; with none left it's dismissed."""
+    kept = (note or "").strip()[:500] or None
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, "follow_up.send", ref.resource())
+        draft = await lock_reminder(tx.session, engagement_id, reminder_id)
+        if draft is None:
+            raise NotFound("reminder")
+        if draft.status != "drafted":
+            raise DraftGone(str(reminder_id))
+        found = [d for d in await drafts(ctx, engagement_id) if d.id == reminder_id]
+        items = found[0].items if found else []
+        outcome = "sent" if send and items else "dismissed"
+        await settle_reminder(tx.session, reminder_id, status=outcome, by=ctx.user_id, note=kept)
+        tx.record(f"reminder.{outcome}", target=Target("reminder", reminder_id))
+    if outcome == "sent":
+        await send_reminder(
+            ctx, engagement_id, draft.recipient_user_id, [d for _, d in items], kept
+        )

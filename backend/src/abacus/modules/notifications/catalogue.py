@@ -109,6 +109,9 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "independence.requested": Kind(
         "independence.requested", _added_member, "engagement", "engagement_id"
     ),
+    # SPEC-027 (TASK-051): the engagement agent's drafted reminders (Advise) and daily digest.
+    "reminders.drafted": Kind("reminders.drafted", _leads, "engagement", "engagement_id"),
+    "agent.digest": Kind("agent.digest", _leads, "engagement", "engagement_id"),
 }
 
 # AC-7: fixed English text per kind; placeholders are names the reader can already see.
@@ -126,4 +129,6 @@ TEMPLATES: Final[dict[str, str]] = {
     "connection.created": "The client connected their accounting system on {engagement}.",
     "connection.revoked": "The accounting system connection on {engagement} was ended.",
     "independence.requested": "Confirm your independence for {engagement}.",
+    "reminders.drafted": "Overdue reminders on {engagement} are waiting for you to send.",
+    "agent.digest": "Items are overdue on {engagement}: see its activity for today's reminders.",
 }

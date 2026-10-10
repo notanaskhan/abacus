@@ -34,7 +34,7 @@ TEMPLATE: Final = (
 _log = get_logger(__name__)
 
 
-async def _names(tenant_id: UUID, engagement_id: UUID) -> dict[str, str]:
+async def firm_wording(tenant_id: UUID, engagement_id: UUID) -> dict[str, str]:
     """The firm, client and fiscal year, for the invitation's wording (plain text)."""
     label = await engagement_label(
         TenantContext(tenant_id, "system", "invitations"), engagement_id
@@ -53,7 +53,7 @@ async def deliver_invitation(event: OutboxEvent) -> None:
         return  # revoked, accepted or expired meanwhile: nothing to send
     expires = f"{issued.expires_at:%d %B %Y}"
     link = f"{settings().app_base_url}/client/accept#token={issued.token}"
-    names = await _names(event.tenant_id, issued.engagement_id)
+    names = await firm_wording(event.tenant_id, issued.engagement_id)
     await asyncio.to_thread(
         transport().send,
         to=issued.email,

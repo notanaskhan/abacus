@@ -155,6 +155,54 @@ _USER_NAMES = text("SELECT id, display_name FROM users WHERE id IN :ids").bindpa
 )
 
 
+_USER_EMAILS = text("SELECT id, email FROM users WHERE id IN :ids").bindparams(
+    bindparam("ids", expanding=True)
+)
+
+
+async def emails_of(user_ids: list[UUID]) -> dict[UUID, str]:
+    """SPEC-027 (TASK-051): where a reminder goes, for users the caller already read under RLS."""
+    if not user_ids:
+        return {}
+    async with identity_engine().connect() as conn:
+        rows = (await conn.execute(_USER_EMAILS, {"ids": user_ids})).all()
+    return {cast(UUID, row.id): str(row.email) for row in rows}
+
+
+async def earliest_partner_of(session: AsyncSession, engagement_id: UUID) -> UUID | None:
+    """The engagement's earliest-added partner whose membership is active (SPEC-027 Q1)."""
+    found = await session.scalar(
+        text(
+            "SELECT em.user_id FROM engagement_members em JOIN memberships m "
+            "ON m.tenant_id = em.tenant_id AND m.user_id = em.user_id "
+            "WHERE em.engagement_id = :e AND em.role = 'engagement_partner' "
+            "AND m.status = 'active' ORDER BY em.created_at, em.user_id LIMIT 1"
+        ),
+        {"e": engagement_id},
+    )
+    return cast(UUID, found) if found is not None else None
+
+
+async def client_admin_ids(session: AsyncSession, engagement_id: UUID) -> list[UUID]:
+    """The engagement's client admins (SPEC-027 P-4: who is reminded when no one is assigned)."""
+    rows = await session.execute(
+        text(
+            "SELECT user_id FROM engagement_members WHERE engagement_id = :e "
+            "AND role = 'client_admin' ORDER BY created_at, user_id"
+        ),
+        {"e": engagement_id},
+    )
+    return [cast(UUID, r[0]) for r in rows.all()]
+
+
+async def time_zone_of(session: AsyncSession) -> str:
+    return str(await session.scalar(text("SELECT time_zone FROM firms")))
+
+
+async def set_time_zone(session: AsyncSession, zone: str) -> None:
+    await session.execute(text("UPDATE firms SET time_zone = :z"), {"z": zone})
+
+
 async def insert_engagement_member(
     session: AsyncSession,
     tenant_id: UUID,

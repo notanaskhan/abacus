@@ -7,6 +7,7 @@ the prompt, tier, limits, task scope and untrusted inputs from here, not from co
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from decimal import Decimal
 from typing import Annotated, Literal
 
@@ -16,7 +17,7 @@ from abacus.ai_gateway import Tier, prompt
 from abacus.kernel.classification import classified
 from abacus.kernel.dispatch import WorkClass
 from abacus.modules.agents.specs._specs import SPECS
-from abacus.modules.identity.api import agent_may_hold
+from abacus.modules.identity.api import agent_may_hold, policy_agent_may_hold
 
 
 class Limits(BaseModel):
@@ -104,3 +105,53 @@ def spec(agent_id: str) -> AgentSpec:
     if found is None:
         raise LookupError(f"no agent spec {agent_id!r}: agents run only from a spec")
     return found
+
+
+# --- Deterministic agents (SPEC-027; TASK-051 D1) ----------------------------------------------
+
+ENGAGEMENT_AGENT = "engagement.agent"
+
+
+@dataclass(frozen=True)
+class PolicySpec:
+    """An agent that makes no model call: deterministic policies only (ADR-060's routine half).
+    It still runs from a declared spec with a version and a task scope, so it gets an `agent_runs`
+    row and an `AgentContext` bounded by its initiator (ADR-025, ADR-047); no prompt, tier,
+    schema or evaluation suite applies."""
+
+    id: str
+    version: int
+    purpose: str
+    task_scope: frozenset[str]
+
+
+def _policy_specs() -> dict[str, PolicySpec]:
+    declared = [
+        PolicySpec(
+            ENGAGEMENT_AGENT,
+            1,
+            "Chase overdue request items with routine reminders in the firm's name (SPEC-027 P-4)",
+            frozenset({"follow_up.draft", "follow_up.send"}),
+        )
+    ]
+    for policy in declared:
+        refused = sorted(a for a in policy.task_scope if not policy_agent_may_hold(a))
+        if refused:
+            raise ValueError(f"agent {policy.id}: task scope may not include {refused}")
+        if policy.id in AGENTS:
+            raise ValueError(f"agent {policy.id} is declared twice")
+    return {p.id: p for p in declared}
+
+
+POLICY_AGENTS: dict[str, PolicySpec] = _policy_specs()
+
+
+def declared(agent_id: str) -> tuple[int, frozenset[str]]:
+    """Any agent's current spec version and task scope (model or policy)."""
+    found = AGENTS.get(agent_id)
+    if found is not None:
+        return found.version, found.task_scope
+    policy = POLICY_AGENTS.get(agent_id)
+    if policy is None:
+        raise LookupError(f"no agent spec {agent_id!r}: agents run only from a spec")
+    return policy.version, policy.task_scope

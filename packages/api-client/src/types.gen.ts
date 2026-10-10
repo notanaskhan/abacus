@@ -675,6 +675,16 @@ export type DecisionSummaryOut = {
 };
 
 /**
+ * DefaultDueDate
+ */
+export type DefaultDueDate = {
+    /**
+     * Due On
+     */
+    due_on: string | null;
+};
+
+/**
  * DiscardedOut
  */
 export type DiscardedOut = {
@@ -682,6 +692,64 @@ export type DiscardedOut = {
      * Id
      */
     id: string;
+};
+
+/**
+ * DraftItemOut
+ */
+export type DraftItemOut = {
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+};
+
+/**
+ * DraftOut
+ *
+ * SPEC-027 AC-4: a reminder the agent drafted at Advise, for a person to send or dismiss.
+ */
+export type DraftOut = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Items
+     */
+    items: Array<DraftItemOut>;
+    /**
+     * Recipient Name
+     */
+    recipient_name: string;
+    /**
+     * Recipient User Id
+     */
+    recipient_user_id: string;
+};
+
+/**
+ * DueDatesIn
+ *
+ * SPEC-027 AC-9 (TASK-051): set or clear (`null`) several items' due date.
+ */
+export type DueDatesIn = {
+    /**
+     * Due On
+     */
+    due_on: string | null;
+    /**
+     * Item Ids
+     */
+    item_ids: Array<string>;
 };
 
 /**
@@ -1957,6 +2025,10 @@ export type RequestItemOut = {
      */
     description: string;
     /**
+     * Due On
+     */
+    due_on?: string | null;
+    /**
      * Engagement Id
      */
     engagement_id: string;
@@ -2186,6 +2258,26 @@ export type ScreeningResultOut = {
      * Unverified
      */
     unverified: Array<string>;
+};
+
+/**
+ * SendDraftIn
+ */
+export type SendDraftIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+};
+
+/**
+ * SettledOut
+ */
+export type SettledOut = {
+    /**
+     * Id
+     */
+    id: string;
 };
 
 /**
@@ -2680,6 +2772,18 @@ export type TierIn = {
      * Tier
      */
     tier: 'A' | 'B' | 'C' | 'D' | 'E' | null;
+};
+
+/**
+ * TimeZoneIO
+ *
+ * SPEC-027 (TASK-051): the firm's time zone (IANA name), for the agent's daily tick.
+ */
+export type TimeZoneIo = {
+    /**
+     * Time Zone
+     */
+    time_zone: string;
 };
 
 /**
@@ -5009,6 +5113,172 @@ export type ApplyMethodologyResponses = {
 
 export type ApplyMethodologyResponse = ApplyMethodologyResponses[keyof ApplyMethodologyResponses];
 
+export type DraftsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/reminders';
+};
+
+export type DraftsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DraftsError = DraftsErrors[keyof DraftsErrors];
+
+export type DraftsResponses = {
+    /**
+     * Response Drafts
+     *
+     * Successful Response
+     */
+    200: Array<DraftOut>;
+};
+
+export type DraftsResponse = DraftsResponses[keyof DraftsResponses];
+
+export type DismissDraftData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Reminder Id
+         */
+        reminder_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/reminders/{reminder_id}/dismiss';
+};
+
+export type DismissDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DismissDraftError = DismissDraftErrors[keyof DismissDraftErrors];
+
+export type DismissDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: SettledOut;
+};
+
+export type DismissDraftResponse = DismissDraftResponses[keyof DismissDraftResponses];
+
+export type SendDraftData = {
+    body: SendDraftIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Reminder Id
+         */
+        reminder_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/reminders/{reminder_id}/send';
+};
+
+export type SendDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SendDraftError = SendDraftErrors[keyof SendDraftErrors];
+
+export type SendDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: SettledOut;
+};
+
+export type SendDraftResponse = SendDraftResponses[keyof SendDraftResponses];
+
 export type ListRequestItemsData = {
     body?: never;
     headers?: {
@@ -5114,6 +5384,164 @@ export type CreateRequestItemResponses = {
 };
 
 export type CreateRequestItemResponse = CreateRequestItemResponses[keyof CreateRequestItemResponses];
+
+export type DefaultDueDateData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/default-due-date';
+};
+
+export type DefaultDueDateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DefaultDueDateError = DefaultDueDateErrors[keyof DefaultDueDateErrors];
+
+export type DefaultDueDateResponses = {
+    /**
+     * Successful Response
+     */
+    200: DefaultDueDate;
+};
+
+export type DefaultDueDateResponse = DefaultDueDateResponses[keyof DefaultDueDateResponses];
+
+export type SetDefaultDueDateData = {
+    body: DefaultDueDate;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/default-due-date';
+};
+
+export type SetDefaultDueDateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SetDefaultDueDateError = SetDefaultDueDateErrors[keyof SetDefaultDueDateErrors];
+
+export type SetDefaultDueDateResponses = {
+    /**
+     * Successful Response
+     */
+    200: DefaultDueDate;
+};
+
+export type SetDefaultDueDateResponse = SetDefaultDueDateResponses[keyof SetDefaultDueDateResponses];
+
+export type DueDatesData = {
+    body: DueDatesIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/due-dates';
+};
+
+export type DueDatesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DueDatesError = DueDatesErrors[keyof DueDatesErrors];
+
+export type DueDatesResponses = {
+    /**
+     * Response Due Dates
+     *
+     * Successful Response
+     */
+    200: Array<RequestItemOut>;
+};
+
+export type DueDatesResponse = DueDatesResponses[keyof DueDatesResponses];
 
 export type ImportData = {
     body?: never;
@@ -7567,6 +7995,100 @@ export type ChangeFirmRoleResponses = {
 };
 
 export type ChangeFirmRoleResponse = ChangeFirmRoleResponses[keyof ChangeFirmRoleResponses];
+
+export type TimeZoneData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/time-zone';
+};
+
+export type TimeZoneErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type TimeZoneError = TimeZoneErrors[keyof TimeZoneErrors];
+
+export type TimeZoneResponses = {
+    /**
+     * Successful Response
+     */
+    200: TimeZoneIo;
+};
+
+export type TimeZoneResponse = TimeZoneResponses[keyof TimeZoneResponses];
+
+export type SetTimeZoneData = {
+    body: TimeZoneIo;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/time-zone';
+};
+
+export type SetTimeZoneErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SetTimeZoneError = SetTimeZoneErrors[keyof SetTimeZoneErrors];
+
+export type SetTimeZoneResponses = {
+    /**
+     * Successful Response
+     */
+    200: TimeZoneIo;
+};
+
+export type SetTimeZoneResponse = SetTimeZoneResponses[keyof SetTimeZoneResponses];
 
 export type AcceptInvitationData = {
     body: AcceptInvitationIn;

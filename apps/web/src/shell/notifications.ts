@@ -14,6 +14,8 @@ const TEXT: Record<string, string> = {
   "connection.created": "The client connected their accounting system.",
   "connection.revoked": "An accounting system connection was ended.",
   "independence.requested": "Confirm your independence for an engagement.",
+  "reminders.drafted": "Overdue reminders are waiting for you to send.",
+  "agent.digest": "Items are overdue on an engagement: see its activity.",
 };
 
 export function notificationText(kind: string): string {

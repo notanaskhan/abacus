@@ -21,3 +21,4 @@ Messages that leave the platform (ADR-065; SPEC-006). PROTECTED.
 - **Client invitations:** "{firm} invites you to their FY{year} audit of {client}".
 - **Staff invitations:** "{firm} invites you to join their workspace".
 - **Sender:** the transport's `sender_name` is the firm's; the sending address stays ours until custom domains exist.
+- **SPEC-027 (TASK-051):** `send_reminder` sends an overdue reminder in the firm's name (fixed template; item descriptions and a portal link) for a person or the engagement agent allowed `follow_up.send`, and records the message.

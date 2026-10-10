@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID
 
 from sqlalchemy.orm import Mapped, mapped_column
@@ -17,6 +17,8 @@ class RequestList(Base):
     tenant_id: Mapped[UUID]
     engagement_id: Mapped[UUID]
     created_at: Mapped[datetime]
+    # SPEC-027 (TASK-051): the date an item without its own is due.
+    default_due_on: Mapped[date | None]
 
 
 class RequestItem(Base):
@@ -40,6 +42,8 @@ class RequestItem(Base):
     dataset: Mapped[str | None]
     tier_source: Mapped[str | None]
     tier_rule: Mapped[str | None]
+    # SPEC-027 (TASK-051): its own due date; None means the request list's default.
+    due_on: Mapped[date | None]
 
 
 class Fulfilment(Base):

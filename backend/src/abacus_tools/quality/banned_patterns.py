@@ -794,6 +794,16 @@ LIST_EXEMPT = frozenset(
         # pause replays), and the firm's open engagements when the firm resumes every agent.
         ("src/abacus/modules/agents/repository.py", "screenings_skipped_while_paused"),
         ("src/abacus/modules/engagements/repository.py", "open_engagement_ids"),
+        # SPEC-027 (TASK-051): the items the engagement agent reminds about, and its own
+        # reminder records (caps and drafts).
+        ("src/abacus/modules/requests/repository.py", "overdue_items"),
+        ("src/abacus/modules/agents/repository.py", "reminder_history"),
+        ("src/abacus/modules/agents/repository.py", "drafted_reminders"),
+        # Recipients' addresses and the engagement's client admins (one engagement, read for a
+        # reminder after `follow_up.send` or by the agent); the items whose due date was set.
+        ("src/abacus/modules/identity/repository.py", "emails_of"),
+        ("src/abacus/modules/identity/repository.py", "client_admin_ids"),
+        ("src/abacus/modules/requests/repository.py", "set_due_dates"),
         # SPEC-019 Q4: the firm's staff for the wall picker, after `authorise(wall.create)`.
         ("src/abacus/modules/identity/repository.py", "active_staff_ids"),
         # SPEC-017: team candidates (after `authorise(engagement.member_add)`; walls applied in the
@@ -924,8 +934,11 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
         {"identity", "engagements", "organisations", "ledger", "evidence", "requests"}
     ),
     # The engagement graph reads the latest snapshot's accounts (SPEC-008, TASK-023 D1).
+    # SPEC-027 (TASK-051 D3): the engagement agent works out overdue reminders; communications
+    # sends them (the only sender, COMM-001).
     "agents": frozenset(
         {"identity", "engagements", "organisations", "evidence", "requests", "ledger"}
+        | {"communications"}
     ),
     # The outbound scope checker reads each owner's facts through its API (SPEC-006, TASK-021 D2).
     "communications": frozenset(

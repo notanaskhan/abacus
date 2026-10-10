@@ -59,7 +59,7 @@ from abacus.modules.agents.repository import (
     set_queued,
     try_lock_run,
 )
-from abacus.modules.agents.spec import spec
+from abacus.modules.agents.spec import declared, spec
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.evidence.api import Proposal, read_content, version_view
 from abacus.modules.identity.api import (
@@ -221,8 +221,8 @@ async def load_agent_context(tenant_id: UUID, run_id: UUID) -> AgentContext:
         raise NotFound("agent_run")
     if run.status != "running":
         raise AgentRunNotRunning(run.status)
-    current = spec(run.agent_id)
-    if run.spec_version != current.version:
+    version, scope = declared(run.agent_id)  # SPEC-027: model or policy agents alike
+    if run.spec_version != version:
         await fail_run(tenant_id, run.id, "spec_version_changed")
         raise AgentRunNotRunning("failed")
     return await agent_context_for_run(
@@ -230,7 +230,7 @@ async def load_agent_context(tenant_id: UUID, run_id: UUID) -> AgentContext:
         run_id=run.id,
         agent_id=run.agent_id,
         engagement_id=run.engagement_id,
-        task_scope=frozenset(run.task_scope) & current.task_scope,
+        task_scope=frozenset(run.task_scope) & scope,
         initiator_user_id=run.initiator_user_id,
     )
 

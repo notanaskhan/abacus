@@ -16,8 +16,10 @@ from abacus.modules.identity.firm_settings import (
     autonomy,
     read_agents_state,
     read_letter_policy,
+    read_time_zone,
     set_autonomy,
     set_firm_agents_paused,
+    set_firm_time_zone,
     set_letter_policy,
 )
 from abacus.modules.identity.invitations import accept_invitation
@@ -524,6 +526,24 @@ class LetterPolicyOut(BaseModel):
 @router.get("/firm/letter-policy", action="firm.read_settings", response_model=LetterPolicyOut)
 async def letter_policy_route(ctx: Ctx) -> LetterPolicyOut:
     return LetterPolicyOut(required=await read_letter_policy(ctx))
+
+
+class TimeZoneIO(BaseModel):
+    """SPEC-027 (TASK-051): the firm's time zone (IANA name), for the agent's daily tick."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    time_zone: Annotated[str, Field(min_length=1, max_length=64), classified("internal")]
+
+
+@router.get("/firm/time-zone", action="firm.read_settings", response_model=TimeZoneIO)
+async def time_zone_route(ctx: Ctx) -> TimeZoneIO:
+    return TimeZoneIO(time_zone=await read_time_zone(ctx))
+
+
+@router.put("/firm/time-zone", action="firm.manage_settings", response_model=TimeZoneIO)
+async def set_time_zone_route(body: TimeZoneIO, ctx: Ctx) -> TimeZoneIO:
+    return TimeZoneIO(time_zone=await set_firm_time_zone(ctx, body.time_zone))
 
 
 class AgentsStateOut(BaseModel):

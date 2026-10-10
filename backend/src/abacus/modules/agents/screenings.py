@@ -37,7 +37,7 @@ from abacus.modules.identity.api import (
     authorise,
     autonomy_level,
 )
-from abacus.modules.requests.api import RequestItemClassified
+from abacus.modules.requests.api import DueDatesChanged, RequestItemClassified
 
 EVIDENCE_VERSION_CREATED = EvidenceVersionCreated.event_type
 # Each workflow's work class (ADR-071): screening runs in the screener's class (its spec).
@@ -115,6 +115,7 @@ SUBSCRIPTIONS = {
     "connection.created": to_agent,  # by name: nothing imports connections (BOUND-002)
     RequestItemClassified.event_type: to_agent,
     InboxFileAdded.event_type: to_agent,
+    DueDatesChanged.event_type: to_agent,  # SPEC-027 (TASK-051): reminders start again
     FirmAgentsResumed.event_type: firm_resumed,
 }
 

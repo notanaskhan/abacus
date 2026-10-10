@@ -17,11 +17,13 @@ PROTECTED. TASK-007 design §5.
                     `notify` obligations are met by the action's own event (SPEC-013)
 An agent is also bounded by its initiator, checked live (ADR-025): the initiator must be allowed
 the same action, or `AGENT_ONLY_REACH` for actions no human role holds.
-Matrix conditions not modelled yet (`in_scope`, `firm_setting(...)`, `task_scope` for humans)
-are not grants: they deny until their task models them. The client conditions (SPEC-020, TASK-035
-D2) need the item's facts on the resource (`ItemFacts`): `client_visible_only` allows a
-client-visible item, `assigned_only` a client-visible item assigned to the person. Without the
-facts they deny. `visible_items` is their list-query twin.
+Matrix conditions not modelled yet (`in_scope`, other `firm_setting(...)`s, `task_scope` for
+humans) are not grants: they deny until their task models them. `firm_setting(autonomy_policy)`
+is modelled for agents only (SPEC-027, TASK-051): allowed at the firm's Routine autonomy or
+higher, within the agent's scope (an agent's only firm setting in the matrix). The client
+conditions (SPEC-020, TASK-035 D2) need the item's facts on the resource (`ItemFacts`):
+`client_visible_only` allows a client-visible item, `assigned_only` a client-visible item
+assigned to the person. Without the facts they deny. `visible_items` is their list-query twin.
 
 Ethical walls (ADR-026, SPEC-002) come before roles: a person walled off from a client is denied
 every engagement of it, whatever their roles, and agents and system runs with them. The walled
@@ -232,6 +234,12 @@ def agent_may_hold(action: str) -> bool:
     return _rule(action).decisions.get("agent") == "task_scope"
 
 
+def policy_agent_may_hold(action: str) -> bool:
+    """SPEC-027 (TASK-051): a deterministic agent (no model call) may also declare routine
+    actions the firm's autonomy policy allows (`agent: firm_setting(autonomy_policy)`)."""
+    return agent_may_hold(action) or _rule(action).decisions.get("agent") == AUTONOMY_POLICY
+
+
 def _human_held(rule: Rule) -> bool:
     return any(
         role not in _NON_HUMAN_ROLES and decision != "deny"
@@ -318,6 +326,16 @@ async def authorise(
     decisions = set(by_role.values())
     if isinstance(ctx, AgentContext) and "task_scope" in decisions and action in ctx.task_scope:
         decisions = (decisions - {"task_scope"}) | {"allow"}
+    # SPEC-027 (TASK-051 D2): an agent's routine action allowed by the firm's autonomy policy
+    # (`follow_up.send`): Routine (level 1) or higher, read fresh; denied at Advise. Only in the
+    # agent's declared scope, and the initiator intersection below still applies.
+    if (
+        isinstance(ctx, AgentContext)
+        and AUTONOMY_POLICY in decisions
+        and action in ctx.task_scope
+        and await _autonomy_allows(ctx)
+    ):
+        decisions = (decisions - {AUTONOMY_POLICY}) | {"allow"}
     if "deny" in decisions or "allow" not in decisions:
         raise _deny(ctx, action, "role")
     # 3b. Independence (SPEC-025 AC-7, per person): when only a staff engagement role grants a
@@ -359,6 +377,20 @@ async def authorise(
         raise _deny(ctx, action, "attribute")
     _record(action)
     _log.info("authz.allowed", action=action, tenant_id=ctx.tenant_id, **_who(ctx))
+
+
+# The parsed matrix keeps a condition's kind, not its setting's name. The only agent
+# `firm_setting(...)` in the matrix is `autonomy_policy` (`follow_up.send`); a test reading the
+# YAML fails if another appears.
+AUTONOMY_POLICY = "firm_setting"
+
+
+async def _autonomy_allows(ctx: AgentContext) -> bool:
+    from abacus.modules.identity.firm_settings import (  # firm_settings imports authz
+        autonomy_level,
+    )
+
+    return await autonomy_level(ctx.tenant_id) >= 1
 
 
 def _on_item(decision: str | None, ctx: Actor, resource: Resource) -> str | None:
@@ -548,6 +580,7 @@ __all__ = [
     "UnknownAction",
     "authorise",
     "authorise_items",
+    "policy_agent_may_hold",
     "recording_checks",
     "register_active_engagements",
     "register_engagement_client",

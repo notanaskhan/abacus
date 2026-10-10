@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 from uuid import UUID, uuid4
 
-from sqlalchemy import insert, select, update
+from sqlalchemy import func, insert, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -305,3 +305,53 @@ async def set_classification(
         .where(RequestItem.id == item_id)
         .values(retrievability_tier=tier, dataset=dataset, tier_source=source, tier_rule=rule)
     )
+
+
+# --- Due dates (SPEC-027; TASK-051) ------------------------------------------------------------
+
+
+async def set_due_dates(
+    session: AsyncSession, engagement_id: UUID, item_ids: Sequence[UUID], due_on: date | None
+) -> int:
+    found = await session.execute(
+        update(RequestItem)
+        .where(RequestItem.engagement_id == engagement_id, RequestItem.id.in_(item_ids))
+        .values(due_on=due_on)
+        .returning(RequestItem.id)
+    )
+    return len(found.all())
+
+
+async def default_due_on(session: AsyncSession, engagement_id: UUID) -> date | None:
+    return await session.scalar(
+        select(RequestList.default_due_on).where(RequestList.engagement_id == engagement_id)
+    )
+
+
+async def set_default_due_on(
+    session: AsyncSession, tenant_id: UUID, engagement_id: UUID, due_on: date | None
+) -> UUID:
+    list_id, _ = await request_list_for(session, tenant_id, engagement_id)
+    await session.execute(
+        update(RequestList).where(RequestList.id == list_id).values(default_due_on=due_on)
+    )
+    return list_id
+
+
+async def overdue_items(
+    session: AsyncSession, engagement_id: UUID, today: date
+) -> Sequence[tuple[RequestItem, date]]:
+    """Open or sent-back items past their due date (their own, else the list's), for the
+    engagement agent's reminders (LIST_EXEMPT: the platform, not a person, reads them)."""
+    due = func.coalesce(RequestItem.due_on, RequestList.default_due_on)
+    rows = await session.execute(
+        select(RequestItem, due)
+        .join(RequestList, RequestList.id == RequestItem.request_list_id)
+        .where(
+            RequestItem.engagement_id == engagement_id,
+            RequestItem.status.in_(("open", "needs_revision")),
+            due < today,
+        )
+        .order_by(due, RequestItem.created_at, RequestItem.id)
+    )
+    return [(item, d) for item, d in rows.all()]

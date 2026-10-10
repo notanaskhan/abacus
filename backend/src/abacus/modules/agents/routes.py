@@ -17,7 +17,9 @@ from abacus.modules.agents.engagement_agent import (
     AgentView,
     activity_feed,
     agent_view,
+    drafts,
     set_paused,
+    settle_draft,
 )
 from abacus.modules.agents.graph import EngagementGraph, engagement_graph
 from abacus.modules.agents.knowledge import (
@@ -172,6 +174,67 @@ async def activity_route(
     """SPEC-027 AC-7: the activity feed, newest first."""
     rows = await activity_feed(ctx, engagement_id, before, limit)
     return [ActivityOut.model_validate(r, from_attributes=True) for r in rows]
+
+
+class DraftItemOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    request_item_id: Annotated[UUID, classified("internal")]
+    description: Annotated[str, classified("confidential")]
+
+
+class DraftOut(BaseModel):
+    """SPEC-027 AC-4: a reminder the agent drafted at Advise, for a person to send or dismiss."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    recipient_user_id: Annotated[UUID, classified("internal")]
+    recipient_name: Annotated[str, classified("confidential")]
+    items: Annotated[list[DraftItemOut], classified("confidential")]
+    created_at: Annotated[datetime, classified("internal")]
+
+
+class SendDraftIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
+
+    note: Annotated[str | None, Field(max_length=500), classified("confidential")] = None
+
+
+class SettledOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+
+
+@router.get("/reminders", action="follow_up.draft", response_model=list[DraftOut])
+async def drafts_route(engagement_id: UUID, ctx: Ctx) -> list[DraftOut]:
+    return [
+        DraftOut(
+            id=d.id,
+            recipient_user_id=d.recipient_user_id,
+            recipient_name=d.recipient_name,
+            items=[DraftItemOut(request_item_id=i, description=t) for i, t in d.items],
+            created_at=d.created_at,
+        )
+        for d in await drafts(ctx, engagement_id)
+    ]
+
+
+@router.post("/reminders/{reminder_id}/send", action="follow_up.send", response_model=SettledOut)
+async def send_draft_route(
+    engagement_id: UUID, reminder_id: UUID, body: SendDraftIn, ctx: Ctx
+) -> SettledOut:
+    await settle_draft(ctx, engagement_id, reminder_id, send=True, note=body.note)
+    return SettledOut(id=reminder_id)
+
+
+@router.post(
+    "/reminders/{reminder_id}/dismiss", action="follow_up.send", response_model=SettledOut
+)
+async def dismiss_draft_route(engagement_id: UUID, reminder_id: UUID, ctx: Ctx) -> SettledOut:
+    await settle_draft(ctx, engagement_id, reminder_id, send=False)
+    return SettledOut(id=reminder_id)
 
 
 # --- The engagement graph (SPEC-008 §8; TASK-023 D1) --------------------------------------------

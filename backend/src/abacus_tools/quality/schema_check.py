@@ -65,6 +65,7 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"methodology_templates", "methodology_versions", "methodology_areas"}
     | {"methodology_request_items", "methodology_account_rules"}
     | {"agent_activity"}  # SPEC-027 (TASK-050): the feed is never rewritten
+    | {"reminder_items"}  # SPEC-027 (TASK-051)
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -220,6 +221,7 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "request_items": frozenset(
         {"status", "client_visible", "client_assignee_user_id"}
         | {"retrievability_tier", "dataset", "tier_source", "tier_rule"}  # SPEC-022
+        | {"due_on"}  # SPEC-027 (TASK-051)
     ),
     "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
     "connections": frozenset(
@@ -233,9 +235,14 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"sso_skipped_at", "onboarding_dismissed_at"}
         | {"require_letter"}  # SPEC-025 (TASK-044)
         | {"agents_paused_at", "agents_paused_by"}  # SPEC-027 (TASK-050): the firm switch
+        | {"time_zone"}  # SPEC-027 (TASK-051): the agent's daily tick
     ),
     # SPEC-027 (TASK-050): an engagement's agent paused or resumed.
-    "engagement_agents": frozenset({"paused_at", "paused_by", "reason", "updated_at"}),
+    "engagement_agents": frozenset(
+        {"paused_at", "paused_by", "reason", "updated_at", "self_paused_reason"}
+    ),
+    # SPEC-027 (TASK-051): a drafted reminder is sent or dismissed by a person.
+    "reminders": frozenset({"status", "note", "decided_by", "decided_at"}),
     # SPEC-025 (TASK-044): a person answers once; the letter's record is replaced in place.
     "independence_confirmations": frozenset(
         {"status", "statement_version", "note", "answered_at"}
@@ -299,6 +306,8 @@ TABLE_OWNERS: dict[str, str] = {
     "independence_confirmations": "engagements",
     "engagement_agents": "agents",  # SPEC-027 (TASK-050)
     "agent_activity": "agents",
+    "reminders": "agents",  # SPEC-027 (TASK-051)
+    "reminder_items": "agents",
     "engagement_letters": "engagements",
     "connections": "connections",
     "sync_runs": "connections",

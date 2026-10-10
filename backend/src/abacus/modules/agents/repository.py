@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import func, insert, select, update
@@ -17,6 +17,8 @@ from abacus.modules.agents.models import (
     EngagementAgentState,
     KnowledgeChunk,
     KnowledgeDocument,
+    Reminder,
+    ReminderItem,
     ScreeningResult,
 )
 from abacus.modules.identity.api import AuthContext, visible
@@ -478,4 +480,128 @@ async def screenings_skipped_while_paused(
         )
         .scalars()
         .all()
+    )
+
+
+# --- Reminders (SPEC-027 P-4; TASK-051) ----------------------------------------------------------
+
+
+async def reminder_history(
+    session: AsyncSession, item_ids: Sequence[UUID]
+) -> Sequence[tuple[UUID, date, int, datetime]]:
+    """Each item's reminders that weren't dismissed: (item, due date then, sequence, when), for the
+    agent's cadence on the engagement it serves (LIST_EXEMPT)."""
+    if not item_ids:
+        return []
+    rows = await session.execute(
+        select(
+            ReminderItem.request_item_id,
+            ReminderItem.due_on,
+            ReminderItem.sequence,
+            Reminder.created_at,
+        )
+        .join(Reminder, Reminder.id == ReminderItem.reminder_id)
+        .where(ReminderItem.request_item_id.in_(item_ids), Reminder.status != "dismissed")
+    )
+    return [(i, d, n, at) for i, d, n, at in rows.all()]
+
+
+async def insert_reminder(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    engagement_id: UUID,
+    recipient_user_id: UUID,
+    status: str,
+    agent_run_id: UUID | None,
+    items: Sequence[tuple[UUID, date, int]],
+) -> UUID:
+    reminder_id = (
+        await session.execute(
+            insert(Reminder)
+            .values(
+                tenant_id=tenant_id,
+                engagement_id=engagement_id,
+                recipient_user_id=recipient_user_id,
+                status=status,
+                agent_run_id=agent_run_id,
+            )
+            .returning(Reminder.id)
+        )
+    ).scalar_one()
+    for item_id, due_on, sequence in items:
+        await session.execute(
+            insert(ReminderItem).values(
+                tenant_id=tenant_id,
+                reminder_id=reminder_id,
+                request_item_id=item_id,
+                due_on=due_on,
+                sequence=sequence,
+            )
+        )
+    return reminder_id
+
+
+async def drafted_reminders(
+    session: AsyncSession, engagement_id: UUID
+) -> Sequence[tuple[Reminder, Sequence[UUID]]]:
+    """One engagement's drafts, after `authorise(follow_up.draft)` on it (LIST_EXEMPT)."""
+    rows = (
+        (
+            await session.execute(
+                select(Reminder)
+                .where(Reminder.engagement_id == engagement_id, Reminder.status == "drafted")
+                .order_by(Reminder.created_at, Reminder.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    found: list[tuple[Reminder, Sequence[UUID]]] = []
+    for row in rows:
+        items = (
+            (
+                await session.execute(
+                    select(ReminderItem.request_item_id).where(ReminderItem.reminder_id == row.id)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        found.append((row, items))
+    return found
+
+
+async def lock_reminder(
+    session: AsyncSession, engagement_id: UUID, reminder_id: UUID
+) -> Reminder | None:
+    return (
+        await session.execute(
+            select(Reminder)
+            .where(Reminder.id == reminder_id, Reminder.engagement_id == engagement_id)
+            .with_for_update()
+        )
+    ).scalar_one_or_none()
+
+
+async def settle_reminder(
+    session: AsyncSession, reminder_id: UUID, *, status: str, by: UUID | None, note: str | None
+) -> None:
+    await session.execute(
+        update(Reminder)
+        .where(Reminder.id == reminder_id)
+        .values(status=status, decided_by=by, decided_at=datetime.now(UTC), note=note)
+    )
+
+
+async def set_self_paused(
+    session: AsyncSession, tenant_id: UUID, engagement_id: UUID, reason: str | None
+) -> None:
+    await session.execute(
+        pg_insert(EngagementAgentState)
+        .values(tenant_id=tenant_id, engagement_id=engagement_id, self_paused_reason=reason)
+        .on_conflict_do_update(
+            index_elements=["tenant_id", "engagement_id"],
+            set_={"self_paused_reason": reason, "updated_at": func.now()},
+        )
     )
