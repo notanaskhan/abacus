@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptanceData, AcceptanceErrors, AcceptanceFileData, AcceptanceFileErrors, AcceptanceFileResponses, AcceptanceResponses, AcceptData, AcceptErrors, AcceptInvitationData, AcceptInvitationErrors, AcceptInvitationResponses, AcceptResponses, AcceptStaffInvitationData, AcceptStaffInvitationErrors, AcceptStaffInvitationResponses, AcknowledgeStepData, AcknowledgeStepErrors, AcknowledgeStepResponses, AcknowledgeSupportSessionData, AcknowledgeSupportSessionErrors, AcknowledgeSupportSessionResponses, AddDocumentData, AddDocumentErrors, AddDocumentResponses, AddTeamMemberData, AddTeamMemberErrors, AddTeamMemberResponses, AddToInboxData, AddToInboxErrors, AddToInboxResponses, ApplyMethodologyData, ApplyMethodologyErrors, ApplyMethodologyResponses, ApproveSupportSessionData, ApproveSupportSessionErrors, ApproveSupportSessionResponses, AssignData, AssignErrors, AssignInboxFileData, AssignInboxFileErrors, AssignInboxFileResponses, AssignResponses, AssignToClientData, AssignToClientErrors, AssignToClientResponses, AutonomyData, AutonomyErrors, AutonomyResponses, BoardSummaryData, BoardSummaryErrors, BoardSummaryResponses, ChangeFirmRoleData, ChangeFirmRoleErrors, ChangeFirmRoleResponses, ChangeTeamRoleData, ChangeTeamRoleErrors, ChangeTeamRoleResponses, CheckData, CheckErrors, CheckResponses, ClientContactsData, ClientContactsErrors, ClientContactsResponses, CompleteData, CompleteErrors, CompleteResponses, ConnectionData, ConnectionErrors, ConnectionResponses, ContentData, ContentErrors, ContentResponses, CreateEngagementData, CreateEngagementErrors, CreateEngagementResponses, CreateRequestItemData, CreateRequestItemErrors, CreateRequestItemResponses, CreateWallData, CreateWallErrors, CreateWallResponses, DiscardData, DiscardErrors, DiscardResponses, DismissOnboardingData, DismissOnboardingErrors, DismissOnboardingResponses, EmergencyApproveData, EmergencyApproveErrors, EmergencyApproveResponses, EndSupportSessionData, EndSupportSessionErrors, EndSupportSessionResponses, EngagementGraphData, EngagementGraphErrors, EngagementGraphResponses, FirmClientsData, FirmClientsErrors, FirmClientsResponses, FirmMembersData, FirmMembersErrors, FirmMembersResponses, GetBudgetData, GetBudgetErrors, GetBudgetResponses, GetDocumentData, GetDocumentErrors, GetDocumentResponses, GetEngagementData, GetEngagementErrors, GetEngagementResponses, GetRetrievalData, GetRetrievalErrors, GetRetrievalResponses, GetVersionData, GetVersionErrors, GetVersionResponses, ImportData, ImportErrors, ImportResponses, ImportTemplateData, ImportTemplateErrors, ImportTemplateResponses, InboxData, InboxErrors, InboxResponses, IndependenceData, IndependenceErrors, IndependenceResponses, InviteClientData, InviteClientErrors, InviteClientResponses, InviteStaffData, InviteStaffErrors, InviteStaffResponses, ItemVersionsData, ItemVersionsErrors, ItemVersionsResponses, LetterData, LetterErrors, LetterFileData, LetterFileErrors, LetterFileResponses, LetterPolicyData, LetterPolicyErrors, LetterPolicyResponses, LetterResponses, ListDocumentsData, ListDocumentsErrors, ListDocumentsResponses, ListEngagementsData, ListEngagementsErrors, ListEngagementsResponses, ListEvidenceVersionsData, ListEvidenceVersionsErrors, ListEvidenceVersionsResponses, ListNotificationsData, ListNotificationsErrors, ListNotificationsResponses, ListRequestItemsData, ListRequestItemsErrors, ListRequestItemsResponses, ListScreeningResultsData, ListScreeningResultsErrors, ListScreeningResultsResponses, ListSupportSessionsData, ListSupportSessionsErrors, ListSupportSessionsResponses, ListTemplatesData, ListTemplatesErrors, ListTemplatesResponses, ListUploadsData, ListUploadsErrors, ListUploadsResponses, ListWallsData, ListWallsErrors, ListWallsResponses, LogData, LogErrors, LogResponses, MeData, MeErrors, MeResponses, MeteringData, MeteringErrors, MeteringResponses, MyConfirmationsData, MyConfirmationsErrors, MyConfirmationsResponses, OnboardingData, OnboardingErrors, OnboardingResponses, PreviewImportData, PreviewImportErrors, PreviewImportResponses, ProposalData, ProposalErrors, ProposalResponses, ProvidersData, ProvidersErrors, ProvidersResponses, PutBudgetData, PutBudgetErrors, PutBudgetResponses, ReadAllData, ReadAllErrors, ReadAllResponses, ReadNotificationData, ReadNotificationErrors, ReadNotificationResponses, ReasonCodesData, ReasonCodesErrors, ReasonCodesResponses, RejectData, RejectErrors, RejectResponses, ReleaseData, ReleaseErrors, ReleaseResponses, RemoveClientContactData, RemoveClientContactErrors, RemoveClientContactResponses, RemoveTeamMemberData, RemoveTeamMemberErrors, RemoveTeamMemberResponses, RemoveWallData, RemoveWallErrors, RemoveWallResponses, RequestScreeningData, RequestScreeningErrors, RequestScreeningResponses, RequestSupportSessionData, RequestSupportSessionErrors, RequestSupportSessionResponses, ResendClientInvitationData, ResendClientInvitationErrors, ResendClientInvitationResponses, ResendStaffInvitationData, ResendStaffInvitationErrors, ResendStaffInvitationResponses, ReviewQueueData, ReviewQueueErrors, ReviewQueueResponses, RevokeClientInvitationData, RevokeClientInvitationErrors, RevokeClientInvitationResponses, RevokeData, RevokeErrors, RevokeResponses, RevokeStaffData, RevokeStaffErrors, RevokeStaffInvitationData, RevokeStaffInvitationErrors, RevokeStaffInvitationResponses, RevokeStaffResponses, RevokeSupportSessionData, RevokeSupportSessionErrors, RevokeSupportSessionResponses, SearchClientsData, SearchClientsErrors, SearchClientsResponses, SearchData, SearchErrors, SearchResponses, SelfJoinData, SelfJoinErrors, SelfJoinResponses, SendBackData, SendBackErrors, SendBackResponses, SetAutonomyData, SetAutonomyErrors, SetAutonomyResponses, SetClientVisibilityData, SetClientVisibilityErrors, SetClientVisibilityResponses, SetLetterPolicyData, SetLetterPolicyErrors, SetLetterPolicyResponses, SetTierData, SetTierErrors, SetTierResponses, SetupData, SetupErrors, SetupFileData, SetupFileErrors, SetupFileResponses, SetupResponses, SignupData, SignupErrors, SignupResponses, StaffData, StaffErrors, StaffResponses, StartData, StartErrors, StartResponses, StartRetrievalData, StartRetrievalErrors, StartRetrievalResponses, TakeData, TakeErrors, TakeResponses, TeamCandidatesData, TeamCandidatesErrors, TeamCandidatesResponses, TeamData, TeamErrors, TeamResponses, UploadData, UploadErrors, UploadResponses, WithdrawDocumentData, WithdrawDocumentErrors, WithdrawDocumentResponses } from './types.gen';
+import type { AcceptanceData, AcceptanceErrors, AcceptanceFileData, AcceptanceFileErrors, AcceptanceFileResponses, AcceptanceResponses, AcceptData, AcceptErrors, AcceptInvitationData, AcceptInvitationErrors, AcceptInvitationResponses, AcceptResponses, AcceptStaffInvitationData, AcceptStaffInvitationErrors, AcceptStaffInvitationResponses, AcknowledgeStepData, AcknowledgeStepErrors, AcknowledgeStepResponses, AcknowledgeSupportSessionData, AcknowledgeSupportSessionErrors, AcknowledgeSupportSessionResponses, ActivityData, ActivityErrors, ActivityResponses, AddDocumentData, AddDocumentErrors, AddDocumentResponses, AddTeamMemberData, AddTeamMemberErrors, AddTeamMemberResponses, AddToInboxData, AddToInboxErrors, AddToInboxResponses, AgentData, AgentErrors, AgentResponses, ApplyMethodologyData, ApplyMethodologyErrors, ApplyMethodologyResponses, ApproveSupportSessionData, ApproveSupportSessionErrors, ApproveSupportSessionResponses, AssignData, AssignErrors, AssignInboxFileData, AssignInboxFileErrors, AssignInboxFileResponses, AssignResponses, AssignToClientData, AssignToClientErrors, AssignToClientResponses, AutonomyData, AutonomyErrors, AutonomyResponses, BoardSummaryData, BoardSummaryErrors, BoardSummaryResponses, ChangeFirmRoleData, ChangeFirmRoleErrors, ChangeFirmRoleResponses, ChangeTeamRoleData, ChangeTeamRoleErrors, ChangeTeamRoleResponses, CheckData, CheckErrors, CheckResponses, ClientContactsData, ClientContactsErrors, ClientContactsResponses, CompleteData, CompleteErrors, CompleteResponses, ConnectionData, ConnectionErrors, ConnectionResponses, ContentData, ContentErrors, ContentResponses, CreateEngagementData, CreateEngagementErrors, CreateEngagementResponses, CreateRequestItemData, CreateRequestItemErrors, CreateRequestItemResponses, CreateWallData, CreateWallErrors, CreateWallResponses, DiscardData, DiscardErrors, DiscardResponses, DismissOnboardingData, DismissOnboardingErrors, DismissOnboardingResponses, EmergencyApproveData, EmergencyApproveErrors, EmergencyApproveResponses, EndSupportSessionData, EndSupportSessionErrors, EndSupportSessionResponses, EngagementGraphData, EngagementGraphErrors, EngagementGraphResponses, FirmAgentsData, FirmAgentsErrors, FirmAgentsResponses, FirmClientsData, FirmClientsErrors, FirmClientsResponses, FirmMembersData, FirmMembersErrors, FirmMembersResponses, GetBudgetData, GetBudgetErrors, GetBudgetResponses, GetDocumentData, GetDocumentErrors, GetDocumentResponses, GetEngagementData, GetEngagementErrors, GetEngagementResponses, GetRetrievalData, GetRetrievalErrors, GetRetrievalResponses, GetVersionData, GetVersionErrors, GetVersionResponses, ImportData, ImportErrors, ImportResponses, ImportTemplateData, ImportTemplateErrors, ImportTemplateResponses, InboxData, InboxErrors, InboxResponses, IndependenceData, IndependenceErrors, IndependenceResponses, InviteClientData, InviteClientErrors, InviteClientResponses, InviteStaffData, InviteStaffErrors, InviteStaffResponses, ItemVersionsData, ItemVersionsErrors, ItemVersionsResponses, LetterData, LetterErrors, LetterFileData, LetterFileErrors, LetterFileResponses, LetterPolicyData, LetterPolicyErrors, LetterPolicyResponses, LetterResponses, ListDocumentsData, ListDocumentsErrors, ListDocumentsResponses, ListEngagementsData, ListEngagementsErrors, ListEngagementsResponses, ListEvidenceVersionsData, ListEvidenceVersionsErrors, ListEvidenceVersionsResponses, ListNotificationsData, ListNotificationsErrors, ListNotificationsResponses, ListRequestItemsData, ListRequestItemsErrors, ListRequestItemsResponses, ListScreeningResultsData, ListScreeningResultsErrors, ListScreeningResultsResponses, ListSupportSessionsData, ListSupportSessionsErrors, ListSupportSessionsResponses, ListTemplatesData, ListTemplatesErrors, ListTemplatesResponses, ListUploadsData, ListUploadsErrors, ListUploadsResponses, ListWallsData, ListWallsErrors, ListWallsResponses, LogData, LogErrors, LogResponses, MeData, MeErrors, MeResponses, MeteringData, MeteringErrors, MeteringResponses, MyConfirmationsData, MyConfirmationsErrors, MyConfirmationsResponses, OnboardingData, OnboardingErrors, OnboardingResponses, PauseAgentData, PauseAgentErrors, PauseAgentResponses, PauseFirmAgentsData, PauseFirmAgentsErrors, PauseFirmAgentsResponses, PreviewImportData, PreviewImportErrors, PreviewImportResponses, ProposalData, ProposalErrors, ProposalResponses, ProvidersData, ProvidersErrors, ProvidersResponses, PutBudgetData, PutBudgetErrors, PutBudgetResponses, ReadAllData, ReadAllErrors, ReadAllResponses, ReadNotificationData, ReadNotificationErrors, ReadNotificationResponses, ReasonCodesData, ReasonCodesErrors, ReasonCodesResponses, RejectData, RejectErrors, RejectResponses, ReleaseData, ReleaseErrors, ReleaseResponses, RemoveClientContactData, RemoveClientContactErrors, RemoveClientContactResponses, RemoveTeamMemberData, RemoveTeamMemberErrors, RemoveTeamMemberResponses, RemoveWallData, RemoveWallErrors, RemoveWallResponses, RequestScreeningData, RequestScreeningErrors, RequestScreeningResponses, RequestSupportSessionData, RequestSupportSessionErrors, RequestSupportSessionResponses, ResendClientInvitationData, ResendClientInvitationErrors, ResendClientInvitationResponses, ResendStaffInvitationData, ResendStaffInvitationErrors, ResendStaffInvitationResponses, ResumeAgentData, ResumeAgentErrors, ResumeAgentResponses, ResumeFirmAgentsData, ResumeFirmAgentsErrors, ResumeFirmAgentsResponses, ReviewQueueData, ReviewQueueErrors, ReviewQueueResponses, RevokeClientInvitationData, RevokeClientInvitationErrors, RevokeClientInvitationResponses, RevokeData, RevokeErrors, RevokeResponses, RevokeStaffData, RevokeStaffErrors, RevokeStaffInvitationData, RevokeStaffInvitationErrors, RevokeStaffInvitationResponses, RevokeStaffResponses, RevokeSupportSessionData, RevokeSupportSessionErrors, RevokeSupportSessionResponses, SearchClientsData, SearchClientsErrors, SearchClientsResponses, SearchData, SearchErrors, SearchResponses, SelfJoinData, SelfJoinErrors, SelfJoinResponses, SendBackData, SendBackErrors, SendBackResponses, SetAutonomyData, SetAutonomyErrors, SetAutonomyResponses, SetClientVisibilityData, SetClientVisibilityErrors, SetClientVisibilityResponses, SetLetterPolicyData, SetLetterPolicyErrors, SetLetterPolicyResponses, SetTierData, SetTierErrors, SetTierResponses, SetupData, SetupErrors, SetupFileData, SetupFileErrors, SetupFileResponses, SetupResponses, SignupData, SignupErrors, SignupResponses, StaffData, StaffErrors, StaffResponses, StartData, StartErrors, StartResponses, StartRetrievalData, StartRetrievalErrors, StartRetrievalResponses, TakeData, TakeErrors, TakeResponses, TeamCandidatesData, TeamCandidatesErrors, TeamCandidatesResponses, TeamData, TeamErrors, TeamResponses, UploadData, UploadErrors, UploadResponses, WithdrawDocumentData, WithdrawDocumentErrors, WithdrawDocumentResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -124,6 +124,54 @@ export const acceptance = <ThrowOnError extends boolean = false>(options: Option
 export const acceptanceFile = <ThrowOnError extends boolean = false>(options: Options<AcceptanceFileData, ThrowOnError>): RequestResult<AcceptanceFileResponses, AcceptanceFileErrors, ThrowOnError> => (options.client ?? client).post<AcceptanceFileResponses, AcceptanceFileErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/engagements/{engagement_id}/acceptance/file',
+    ...options
+});
+
+/**
+ * Activity Route
+ *
+ * SPEC-027 AC-7: the activity feed, newest first.
+ */
+export const activity = <ThrowOnError extends boolean = false>(options: Options<ActivityData, ThrowOnError>): RequestResult<ActivityResponses, ActivityErrors, ThrowOnError> => (options.client ?? client).get<ActivityResponses, ActivityErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/activity',
+    ...options
+});
+
+/**
+ * Agent Route
+ *
+ * SPEC-027: whether the agent is on, and the engagement's and the firm's pause.
+ */
+export const agent = <ThrowOnError extends boolean = false>(options: Options<AgentData, ThrowOnError>): RequestResult<AgentResponses, AgentErrors, ThrowOnError> => (options.client ?? client).get<AgentResponses, AgentErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/agent',
+    ...options
+});
+
+/**
+ * Pause Agent Route
+ *
+ * SPEC-027 AC-6: nothing automatic happens on this engagement until resumed.
+ */
+export const pauseAgent = <ThrowOnError extends boolean = false>(options: Options<PauseAgentData, ThrowOnError>): RequestResult<PauseAgentResponses, PauseAgentErrors, ThrowOnError> => (options.client ?? client).post<PauseAgentResponses, PauseAgentErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/agent/pause',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Resume Agent Route
+ *
+ * SPEC-027 AC-6: the agent looks once: what arrived while paused is screened.
+ */
+export const resumeAgent = <ThrowOnError extends boolean = false>(options: Options<ResumeAgentData, ThrowOnError>): RequestResult<ResumeAgentResponses, ResumeAgentErrors, ThrowOnError> => (options.client ?? client).post<ResumeAgentResponses, ResumeAgentErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/agent/resume',
     ...options
 });
 
@@ -726,6 +774,33 @@ export const changeTeamRole = <ThrowOnError extends boolean = false>(options: Op
 export const setupFile = <ThrowOnError extends boolean = false>(options: Options<SetupFileData, ThrowOnError>): RequestResult<SetupFileResponses, SetupFileErrors, ThrowOnError> => (options.client ?? client).get<SetupFileResponses, SetupFileErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/engagements/{engagement_id}/{which}/file',
+    ...options
+});
+
+/**
+ * Firm Agents Route
+ */
+export const firmAgents = <ThrowOnError extends boolean = false>(options?: Options<FirmAgentsData, ThrowOnError>): RequestResult<FirmAgentsResponses, FirmAgentsErrors, ThrowOnError> => (options?.client ?? client).get<FirmAgentsResponses, FirmAgentsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/firm/agents',
+    ...options
+});
+
+/**
+ * Pause Firm Agents Route
+ */
+export const pauseFirmAgents = <ThrowOnError extends boolean = false>(options?: Options<PauseFirmAgentsData, ThrowOnError>): RequestResult<PauseFirmAgentsResponses, PauseFirmAgentsErrors, ThrowOnError> => (options?.client ?? client).post<PauseFirmAgentsResponses, PauseFirmAgentsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/firm/agents/pause',
+    ...options
+});
+
+/**
+ * Resume Firm Agents Route
+ */
+export const resumeFirmAgents = <ThrowOnError extends boolean = false>(options?: Options<ResumeFirmAgentsData, ThrowOnError>): RequestResult<ResumeFirmAgentsResponses, ResumeFirmAgentsErrors, ThrowOnError> => (options?.client ?? client).post<ResumeFirmAgentsResponses, ResumeFirmAgentsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/firm/agents/resume',
     ...options
 });
 

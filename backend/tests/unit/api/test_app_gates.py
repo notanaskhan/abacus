@@ -113,6 +113,11 @@ NOT_CREATING = {
     "/v1/firm/onboarding/dismiss",
     "/v1/engagements/{engagement_id}/independence",  # SPEC-025: returns the setup state
     "/v1/engagements/proposal",  # SPEC-025 (TASK-048): a proposal, nothing stored
+    # SPEC-027 (TASK-050): pausing and resuming return the agent's state.
+    "/v1/engagements/{engagement_id}/agent/pause",
+    "/v1/engagements/{engagement_id}/agent/resume",
+    "/v1/firm/agents/pause",
+    "/v1/firm/agents/resume",
 }
 
 

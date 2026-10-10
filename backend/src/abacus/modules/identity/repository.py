@@ -802,6 +802,22 @@ async def firm_is_synthetic(session: AsyncSession) -> bool:
     return bool(await session.scalar(text("SELECT synthetic FROM firms")))
 
 
+async def agents_paused_since(session: AsyncSession) -> datetime | None:
+    """SPEC-027: when the session's firm paused every engagement agent, or None."""
+    found = await session.scalar(text("SELECT agents_paused_at FROM firms"))
+    return cast(datetime, found) if found is not None else None
+
+
+async def set_agents_paused(session: AsyncSession, by: UUID | None) -> None:
+    await session.execute(
+        text(
+            "UPDATE firms SET agents_paused_at = CASE WHEN CAST(:by AS uuid) IS NULL THEN NULL "
+            "ELSE now() END, agents_paused_by = CAST(:by AS uuid)"
+        ),
+        {"by": by},
+    )
+
+
 async def letter_required(session: AsyncSession) -> bool:
     """Whether the session's firm requires the engagement letter before client data."""
     return bool(await session.scalar(text("SELECT require_letter FROM firms")))

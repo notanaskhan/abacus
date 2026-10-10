@@ -3,6 +3,7 @@
 from abacus.kernel.uow import Handler
 from abacus.modules.connections.activities import ACTIVITIES
 from abacus.modules.connections.auto_retrieval import (
+    auto_retrieve,
     available_datasets,
     on_connection_created,
     on_item_classified,
@@ -53,6 +54,7 @@ from abacus.modules.connections.service import (
 )
 from abacus.modules.connections.workflow_types import FailInput, RetrievalInput, RetrievalOutcome
 from abacus.modules.connections.workflows import RetrievalWorkflow
+from abacus.modules.engagements.api import register_auto_retrieval
 from abacus.modules.requests.api import register_available_datasets
 
 # Outbox events this module handles (the worker's relay routes them): automatic retrieval when a
@@ -63,6 +65,9 @@ SUBSCRIPTIONS: dict[str, Handler] = {
 }
 # SPEC-022 D2: requests learns what the live connection can deliver from here.
 register_available_datasets(available_datasets)
+
+# SPEC-027 (TASK-050): the engagement agent starts this rule through engagements (ADR-106).
+register_auto_retrieval(auto_retrieve)
 
 __all__ = [
     "ACTIVITIES",
@@ -92,6 +97,7 @@ __all__ = [
     "StartedRun",
     "Unavailable",
     "WorkflowUnavailable",
+    "auto_retrieve",
     "complete_router",
     "connection_router",
     "connector_for",

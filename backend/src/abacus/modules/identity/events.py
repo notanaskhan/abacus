@@ -9,6 +9,13 @@ from abacus.kernel.classification import classified
 from abacus.kernel.uow import DomainEvent
 
 
+class FirmAgentsResumed(DomainEvent):
+    """A firm administrator resumed every engagement agent in the firm (SPEC-027; TASK-050): the
+    agents look at their engagements' state once."""
+
+    event_type: ClassVar[str] = "firm.agents_resumed"
+
+
 class SupportSessionRequested(DomainEvent):
     """A staff member asked for break-glass access to this firm (SPEC-012, SPEC-013)."""
 

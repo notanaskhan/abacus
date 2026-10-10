@@ -13,6 +13,12 @@ from fastapi import Depends
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
+from abacus.modules.agents.engagement_agent import (
+    AgentView,
+    activity_feed,
+    agent_view,
+    set_paused,
+)
 from abacus.modules.agents.graph import EngagementGraph, engagement_graph
 from abacus.modules.agents.knowledge import (
     DocumentView,
@@ -29,7 +35,8 @@ from abacus.modules.agents.screenings import request_screening
 from abacus.modules.agents.service import ScreeningResultView, screening_results_for
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
-router = AbacusRouter(prefix="/v1/engagements/{engagement_id}/screening-results", tags=["agents"])
+# One router for the engagement's agent surfaces (screening results; SPEC-027's agent and feed).
+router = AbacusRouter(prefix="/v1/engagements/{engagement_id}", tags=["agents"])
 Action = Literal["ready_for_review", "needs_revision"]
 Reason = Literal["cell_not_found", "quote_mismatch", "value_mismatch"]
 
@@ -66,7 +73,7 @@ def _out(result: ScreeningResultView) -> ScreeningResultOut:
 Ctx = Annotated[AuthContext, Depends(current_context)]
 
 
-@router.get("", action="evidence.read", response_model=list[ScreeningResultOut])
+@router.get("/screening-results", action="evidence.read", response_model=list[ScreeningResultOut])
 async def list_screening_results_route(engagement_id: UUID, ctx: Ctx) -> list[ScreeningResultOut]:
     return [_out(r) for r in await screening_results_for(ctx, engagement_id)]
 
@@ -84,7 +91,10 @@ class ScreenRequestedOut(BaseModel):
 
 
 @router.post(
-    "/request", action="screening.request", response_model=ScreenRequestedOut, status_code=202
+    "/screening-results/request",
+    action="screening.request",
+    response_model=ScreenRequestedOut,
+    status_code=202,
 )
 async def request_screening_route(
     engagement_id: UUID, body: ScreenRequestIn, ctx: Ctx
@@ -92,6 +102,76 @@ async def request_screening_route(
     """SPEC-024 (TASK-042 D1): "Screen now"; the result appears with the others when ready."""
     await request_screening(ctx, engagement_id, body.evidence_version_id)
     return ScreenRequestedOut(evidence_version_id=body.evidence_version_id)
+
+
+# --- The engagement agent (SPEC-027; TASK-050) ---------------------------------------------------
+
+
+class AgentOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    enabled: Annotated[bool, classified("internal")]
+    paused_at: Annotated[datetime | None, classified("internal")]
+    paused_by: Annotated[str | None, classified("confidential")]
+    reason: Annotated[str | None, classified("confidential")]
+    firm_paused_at: Annotated[datetime | None, classified("internal")]
+
+
+class PauseIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
+
+    reason: Annotated[str | None, Field(max_length=300), classified("confidential")] = None
+
+
+class ActivityOut(BaseModel):
+    """One automatic action: references only, never client content (AC-7)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    policy: Annotated[str, classified("internal")]
+    policy_version: Annotated[int, classified("internal")]
+    action: Annotated[str, classified("internal")]
+    outcome: Annotated[Literal["done", "skipped", "failed"], classified("internal")]
+    reason: Annotated[str | None, classified("internal")]
+    record_type: Annotated[str | None, classified("internal")]
+    record_id: Annotated[UUID | None, classified("internal")]
+    item_count: Annotated[int | None, classified("internal")]
+    created_at: Annotated[datetime, classified("internal")]
+
+
+def _agent_out(view: AgentView) -> AgentOut:
+    return AgentOut.model_validate(asdict(view))
+
+
+@router.get("/agent", action="activity.read", response_model=AgentOut)
+async def agent_route(engagement_id: UUID, ctx: Ctx) -> AgentOut:
+    """SPEC-027: whether the agent is on, and the engagement's and the firm's pause."""
+    return _agent_out(await agent_view(ctx, engagement_id))
+
+
+@router.post("/agent/pause", action="agent.pause", response_model=AgentOut)
+async def pause_agent_route(engagement_id: UUID, body: PauseIn, ctx: Ctx) -> AgentOut:
+    """SPEC-027 AC-6: nothing automatic happens on this engagement until resumed."""
+    return _agent_out(await set_paused(ctx, engagement_id, paused=True, reason=body.reason))
+
+
+@router.post("/agent/resume", action="agent.pause", response_model=AgentOut)
+async def resume_agent_route(engagement_id: UUID, ctx: Ctx) -> AgentOut:
+    """SPEC-027 AC-6: the agent looks once: what arrived while paused is screened."""
+    return _agent_out(await set_paused(ctx, engagement_id, paused=False))
+
+
+@router.get("/activity", action="activity.read", response_model=list[ActivityOut])
+async def activity_route(
+    engagement_id: UUID,
+    ctx: Ctx,
+    before: datetime | None = None,
+    limit: Annotated[int, Field(ge=1, le=200)] = 50,
+) -> list[ActivityOut]:
+    """SPEC-027 AC-7: the activity feed, newest first."""
+    rows = await activity_feed(ctx, engagement_id, before, limit)
+    return [ActivityOut.model_validate(r, from_attributes=True) for r in rows]
 
 
 # --- The engagement graph (SPEC-008 §8; TASK-023 D1) --------------------------------------------

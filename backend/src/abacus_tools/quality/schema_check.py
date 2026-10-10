@@ -64,6 +64,7 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"eval_case_results"}
     | {"methodology_templates", "methodology_versions", "methodology_areas"}
     | {"methodology_request_items", "methodology_account_rules"}
+    | {"agent_activity"}  # SPEC-027 (TASK-050): the feed is never rewritten
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -231,7 +232,10 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"autonomy_level", "autonomy_set_at", "budget_reviewed_at", "walls_none_needed_at"}
         | {"sso_skipped_at", "onboarding_dismissed_at"}
         | {"require_letter"}  # SPEC-025 (TASK-044)
+        | {"agents_paused_at", "agents_paused_by"}  # SPEC-027 (TASK-050): the firm switch
     ),
+    # SPEC-027 (TASK-050): an engagement's agent paused or resumed.
+    "engagement_agents": frozenset({"paused_at", "paused_by", "reason", "updated_at"}),
     # SPEC-025 (TASK-044): a person answers once; the letter's record is replaced in place.
     "independence_confirmations": frozenset(
         {"status", "statement_version", "note", "answered_at"}
@@ -293,6 +297,8 @@ TABLE_OWNERS: dict[str, str] = {
     # SPEC-025 (TASK-044): acceptance, independence and the letter, recorded per engagement.
     "engagement_acceptance": "engagements",
     "independence_confirmations": "engagements",
+    "engagement_agents": "agents",  # SPEC-027 (TASK-050)
+    "agent_activity": "agents",
     "engagement_letters": "engagements",
     "connections": "connections",
     "sync_runs": "connections",

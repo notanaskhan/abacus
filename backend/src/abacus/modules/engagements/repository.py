@@ -80,6 +80,16 @@ async def prior_candidates(
     )
 
 
+async def open_engagement_ids(session: AsyncSession) -> Sequence[UUID]:
+    """SPEC-027 (TASK-050): the session firm's non-archived engagements, for resuming every
+    agent in the firm (LIST_EXEMPT: the platform, not a person, reads them)."""
+    return (
+        (await session.execute(select(Engagement.id).where(Engagement.status != "archived")))
+        .scalars()
+        .all()
+    )
+
+
 async def get_engagement(session: AsyncSession, engagement_id: UUID) -> Engagement | None:
     """Row-level security returns None for another firm's engagement, as for a missing one."""
     return (

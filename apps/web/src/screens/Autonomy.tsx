@@ -5,6 +5,10 @@ import {
   letterPolicyQueryKey,
   setAutonomyMutation,
   setLetterPolicyMutation,
+  firmAgentsOptions,
+  firmAgentsQueryKey,
+  pauseFirmAgentsMutation,
+  resumeFirmAgentsMutation,
 } from "@abacus/api-client/query";
 import { Alert, Button, Panel, Skeleton, StatusPill } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -131,6 +135,52 @@ export function Autonomy({ canSet }: { canSet: boolean }): JSX.Element {
 }
 
 /** SPEC-025 Q4: whether the engagement letter must be recorded before client data. */
+/** SPEC-027 AC-6 (TASK-050): pause every engagement agent in the firm (firm administrator,
+ * fresh MFA). Resuming has each agent look at its engagement once. */
+export function FirmAgents({ canSet }: { canSet: boolean }): JSX.Element | null {
+  const queryClient = useQueryClient();
+  const state = useQuery({ ...firmAgentsOptions(), retry: false });
+  const [confirm, setConfirm] = useState(false);
+  const options = {
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: firmAgentsQueryKey() });
+    },
+    onError: (error: unknown) => {
+      if (isForbidden(error)) setConfirm(true);
+    },
+  };
+  const pause = useMutation({ ...pauseFirmAgentsMutation(), ...options });
+  const resume = useMutation({ ...resumeFirmAgentsMutation(), ...options });
+  if (state.data === undefined) return null;
+  const paused = state.data.paused_at != null;
+  return (
+    <Panel title="Engagement agents">
+      <div className="flex flex-wrap items-center gap-3 text-sm">
+        <StatusPill tone={paused ? "warning" : "success"}>
+          {paused ? "Paused for the whole firm" : "Running"}
+        </StatusPill>
+        <span className="text-muted">
+          Paused, no engagement agent screens, retrieves or suggests anything until resumed.
+        </span>
+        {canSet && (
+          <Button
+            size="sm"
+            variant={paused ? "default" : "ghost"}
+            disabled={pause.isPending || resume.isPending}
+            onClick={() => {
+              if (paused) resume.mutate({});
+              else pause.mutate({});
+            }}
+          >
+            {paused ? "Resume every agent" : "Pause every agent"}
+          </Button>
+        )}
+      </div>
+      <ConfirmItsYou open={confirm} onOpenChange={setConfirm} />
+    </Panel>
+  );
+}
+
 export function LetterPolicy({ canSet }: { canSet: boolean }): JSX.Element | null {
   const queryClient = useQueryClient();
   const policy = useQuery({ ...letterPolicyOptions(), retry: false });

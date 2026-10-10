@@ -27,12 +27,17 @@ from abacus.modules.identity.context import (
     agent_context_for_run,
     system_context_for_run,
 )
-from abacus.modules.identity.events import ClientInvitationIssued, StaffInvitationIssued
+from abacus.modules.identity.events import (
+    ClientInvitationIssued,
+    FirmAgentsResumed,
+    StaffInvitationIssued,
+)
 from abacus.modules.identity.firm_settings import (
     AutonomyView,
     FirmFacts,
     LevelNotAvailable,
     acknowledge,
+    agents_paused,
     autonomy,
     autonomy_level,
     firm_facts,
@@ -141,6 +146,7 @@ __all__ = [
     "ClientInvitationIssued",
     "ContactView",
     "EngagementRole",
+    "FirmAgentsResumed",
     "FirmFacts",
     "Forbidden",
     "InvalidToken",
@@ -166,6 +172,7 @@ __all__ = [
     "add_self_joined_admin",
     "agent_context_for_run",
     "agent_may_hold",
+    "agents_paused",
     "authorise",
     "authorise_items",
     "autonomy",

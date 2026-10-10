@@ -85,3 +85,39 @@ class FailKnowledgeInput:
     tenant_id: str
     document_id: str
     code: str
+
+
+# --- The engagement agent (SPEC-027; TASK-050) ---------------------------------------------------
+
+
+@dataclass(frozen=True)
+class AgentInput:
+    """One engagement's agent: `engagement-agent:<tenant_id>:<engagement_id>`."""
+
+    tenant_id: str
+    engagement_id: str
+
+
+@dataclass(frozen=True)
+class AgentEvent:
+    """A relayed domain event (or a resume) for the agent: its type, id and identifiers only."""
+
+    event_type: str
+    event_id: str
+    payload: dict[str, str]
+
+
+@dataclass(frozen=True)
+class HandleInput:
+    tenant_id: str
+    engagement_id: str
+    event_type: str
+    event_id: str
+    payload: dict[str, str]
+
+
+@dataclass(frozen=True)
+class HandleResult:
+    """`end`: the engagement is archived (or gone), so the agent's work is over."""
+
+    end: bool

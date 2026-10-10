@@ -14,8 +14,10 @@ from abacus.kernel.classification import classified
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.firm_settings import (
     autonomy,
+    read_agents_state,
     read_letter_policy,
     set_autonomy,
+    set_firm_agents_paused,
     set_letter_policy,
 )
 from abacus.modules.identity.invitations import accept_invitation
@@ -522,6 +524,29 @@ class LetterPolicyOut(BaseModel):
 @router.get("/firm/letter-policy", action="firm.read_settings", response_model=LetterPolicyOut)
 async def letter_policy_route(ctx: Ctx) -> LetterPolicyOut:
     return LetterPolicyOut(required=await read_letter_policy(ctx))
+
+
+class AgentsStateOut(BaseModel):
+    """SPEC-027 (TASK-050): the firm-wide switch for every engagement agent."""
+
+    model_config = ConfigDict(frozen=True)
+
+    paused_at: Annotated[datetime | None, classified("internal")]
+
+
+@router.get("/firm/agents", action="firm.read_settings", response_model=AgentsStateOut)
+async def firm_agents_route(ctx: Ctx) -> AgentsStateOut:
+    return AgentsStateOut(paused_at=(await read_agents_state(ctx)).paused_at)
+
+
+@router.post("/firm/agents/pause", action="firm_agents.pause", response_model=AgentsStateOut)
+async def pause_firm_agents_route(ctx: Ctx) -> AgentsStateOut:
+    return AgentsStateOut(paused_at=(await set_firm_agents_paused(ctx, True)).paused_at)
+
+
+@router.post("/firm/agents/resume", action="firm_agents.pause", response_model=AgentsStateOut)
+async def resume_firm_agents_route(ctx: Ctx) -> AgentsStateOut:
+    return AgentsStateOut(paused_at=(await set_firm_agents_paused(ctx, False)).paused_at)
 
 
 @router.put("/firm/letter-policy", action="firm.manage_settings", response_model=LetterPolicyOut)

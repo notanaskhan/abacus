@@ -111,6 +111,23 @@ ACTIONS: dict[str, dict[str, str]] = {
         "firm_admin": "allow",
         "practice_leader": "allow",
     },
+    "activity.read": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "reviewer": "allow",
+    },
+    "agent.pause": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+    },
+    "firm_agents.pause": {
+        "firm_admin": "allow",
+        "mfa_recent": "required",
+    },
     "acceptance.record": {
         "engagement_partner": "allow",
         "mfa_recent": "required",

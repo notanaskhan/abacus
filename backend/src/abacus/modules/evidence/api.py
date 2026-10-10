@@ -1,6 +1,6 @@
 """Public interface of the evidence module; other modules import only this (ADR-008)."""
 
-from abacus.modules.evidence.events import EvidenceVersionCreated
+from abacus.modules.evidence.events import EvidenceVersionCreated, InboxFileAdded
 from abacus.modules.evidence.render import (
     CODE_COLUMN,
     CREDIT_COLUMN,
@@ -52,6 +52,7 @@ __all__ = [
     "EvidenceVersionRef",
     "EvidenceVersionSummary",
     "EvidenceVersionView",
+    "InboxFileAdded",
     "IntegrityError",
     "NewItem",
     "Proposal",

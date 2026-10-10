@@ -12,7 +12,9 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.modules.agents.models import (
+    AgentActivity,
     AgentRun,
+    EngagementAgentState,
     KnowledgeChunk,
     KnowledgeDocument,
     ScreeningResult,
@@ -344,3 +346,136 @@ async def nearest_chunks(
         .limit(k)
     )
     return [(chunk, title, float(d)) for chunk, title, d in rows.all()]
+
+
+# --- The engagement agent (SPEC-027; TASK-050) ---------------------------------------------------
+
+
+async def agent_state(session: AsyncSession, engagement_id: UUID) -> EngagementAgentState | None:
+    return (
+        await session.execute(
+            select(EngagementAgentState).where(EngagementAgentState.engagement_id == engagement_id)
+        )
+    ).scalar_one_or_none()
+
+
+async def set_agent_paused(
+    session: AsyncSession,
+    tenant_id: UUID,
+    engagement_id: UUID,
+    by: UUID | None,
+    reason: str | None,
+) -> None:
+    paused_at = datetime.now(UTC) if by is not None else None
+    await session.execute(
+        pg_insert(EngagementAgentState)
+        .values(
+            tenant_id=tenant_id,
+            engagement_id=engagement_id,
+            paused_at=paused_at,
+            paused_by=by,
+            reason=reason,
+        )
+        .on_conflict_do_update(
+            index_elements=["tenant_id", "engagement_id"],
+            set_={
+                "paused_at": paused_at,
+                "paused_by": by,
+                "reason": reason,
+                "updated_at": func.now(),
+            },
+        )
+    )
+
+
+async def record_activity(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    engagement_id: UUID,
+    policy: str,
+    policy_version: int,
+    action: str,
+    outcome: str,
+    reason: str | None = None,
+    record_type: str | None = None,
+    record_id: UUID | None = None,
+    item_count: int | None = None,
+    for_user: UUID | None = None,
+    source_event_id: UUID | None = None,
+) -> bool:
+    """One feed row; False when this policy already recorded this event (a redelivery)."""
+    found = await session.execute(
+        pg_insert(AgentActivity)
+        .values(
+            tenant_id=tenant_id,
+            engagement_id=engagement_id,
+            policy=policy,
+            policy_version=policy_version,
+            action=action,
+            outcome=outcome,
+            reason=reason,
+            record_type=record_type,
+            record_id=record_id,
+            item_count=item_count,
+            for_user=for_user,
+            source_event_id=source_event_id,
+        )
+        .on_conflict_do_nothing()
+        .returning(AgentActivity.id)
+    )
+    return found.scalar_one_or_none() is not None
+
+
+async def activity_page(
+    session: AsyncSession,
+    ctx: AuthContext,
+    engagement_id: UUID,
+    before: datetime | None,
+    limit: int,
+) -> Sequence[AgentActivity]:
+    query = (
+        select(AgentActivity)
+        .where(
+            visible(ctx, "activity.read", AgentActivity.engagement_id),
+            AgentActivity.engagement_id == engagement_id,
+        )
+        .order_by(AgentActivity.created_at.desc(), AgentActivity.id.desc())
+        .limit(limit)
+    )
+    if before is not None:
+        query = query.where(AgentActivity.created_at < before)
+    return (await session.execute(query)).scalars().all()
+
+
+async def last_resume_check(session: AsyncSession, engagement_id: UUID) -> datetime | None:
+    """When the agent last looked after a resume: earlier skips were replayed then."""
+    return await session.scalar(
+        select(func.max(AgentActivity.created_at)).where(
+            AgentActivity.engagement_id == engagement_id,
+            AgentActivity.action == "agent.resume_checked",
+            AgentActivity.outcome == "done",
+        )
+    )
+
+
+async def screenings_skipped_while_paused(
+    session: AsyncSession, engagement_id: UUID, since: datetime
+) -> Sequence[AgentActivity]:
+    """P-1 rows skipped because the agent was paused, to screen once on resume (AC-6). For the
+    agent itself, which acts on the engagement it serves (LIST_EXEMPT)."""
+    return (
+        (
+            await session.execute(
+                select(AgentActivity).where(
+                    AgentActivity.engagement_id == engagement_id,
+                    AgentActivity.policy == "P-1",
+                    AgentActivity.outcome == "skipped",
+                    AgentActivity.reason.in_(("paused", "firm_paused")),
+                    AgentActivity.created_at >= since,
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )

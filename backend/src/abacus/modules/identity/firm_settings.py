@@ -19,12 +19,15 @@ from abacus.kernel.errors import DomainConflict
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.identity.authz import Resource, authorise
 from abacus.modules.identity.context import AuthContext
+from abacus.modules.identity.events import FirmAgentsResumed
 from abacus.modules.identity.repository import (
     acknowledge_onboarding,
+    agents_paused_since,
     firm_is_synthetic,
     firm_settings,
     letter_required,
     onboarding_counts,
+    set_agents_paused,
     set_autonomy_level,
     set_letter_required,
 )
@@ -149,6 +152,38 @@ async def letter_policy(tenant: TenantContext) -> bool:
 async def read_letter_policy(ctx: AuthContext) -> bool:
     await authorise(ctx, "firm.read_settings", Resource.firm(ctx.tenant_id))
     return await letter_policy(ctx.tenant)
+
+
+@dataclass(frozen=True)
+class AgentsState:
+    paused_at: datetime | None
+
+
+async def agents_paused(tenant: TenantContext) -> datetime | None:
+    """SPEC-027 (TASK-050): whether the firm has paused every engagement agent (read fresh by
+    each of the agent's policies)."""
+    async with tenant_session(tenant) as session:
+        return await agents_paused_since(session)
+
+
+async def read_agents_state(ctx: AuthContext) -> AgentsState:
+    await authorise(ctx, "firm.read_settings", Resource.firm(ctx.tenant_id))
+    return AgentsState(await agents_paused(ctx.tenant))
+
+
+async def set_firm_agents_paused(ctx: AuthContext, paused: bool) -> AgentsState:
+    """SPEC-027 AC-6: the firm-wide switch (firm administrator, fresh MFA). Resuming tells every
+    agent to look at its engagement once (`firm.agents_resumed`)."""
+    await authorise(ctx, "firm_agents.pause", Resource.firm(ctx.tenant_id))
+    async with uow(ctx.tenant) as tx:
+        await set_agents_paused(tx.session, ctx.user_id if paused else None)
+        tx.record(
+            "firm.agents_paused" if paused else "firm.agents_resumed",
+            target=Target("firm", ctx.tenant_id),
+        )
+        if not paused:
+            tx.emit(FirmAgentsResumed())
+    return AgentsState(await agents_paused(ctx.tenant))
 
 
 async def set_letter_policy(ctx: AuthContext, required: bool) -> bool:

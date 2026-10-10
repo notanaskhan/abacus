@@ -134,13 +134,23 @@ def _loopback(dsn: str) -> str:
     return dsn
 
 
+async def _flags_on() -> None:
+    """One event loop for both (a second `asyncio.run` can't reuse the first's connections)."""
+    await set_flag(FIRM, "retrieval.auto", "true", "seed", "local development")
+    # SPEC-027 (TASK-050 D3): the engagement agent is off by default; on for the local firm.
+    await set_flag(FIRM, "engagement_agent.enabled", "true", "seed", "local development")
+
+
 def main() -> int:
     fixtures = _local_only()
     dsn = _loopback(os.environ.get(SUPERUSER_ENV, DEFAULT_SUPERUSER))
     connected = asyncio.run(seed(dsn, fixtures))
     # SPEC-022 (TASK-038 D4): automatic retrieval is off by default; on for the local firm.
-    asyncio.run(set_flag(FIRM, "retrieval.auto", "true", "seed", "local development"))
-    print(f"seeded Dev firm; {connected} new fake connection(s); automatic retrieval on")
+    asyncio.run(_flags_on())
+    print(
+        f"seeded Dev firm; {connected} new fake connection(s); automatic retrieval and the "
+        "engagement agent on"
+    )
     return 0
 
 

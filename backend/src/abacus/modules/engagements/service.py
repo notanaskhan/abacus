@@ -6,7 +6,7 @@ Authorise before any write: the route guard can hide a response but can't undo a
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import TYPE_CHECKING, Literal, cast
@@ -34,6 +34,7 @@ from abacus.modules.engagements.repository import (
     list_templates,
     lock_engagement,
     lock_or_insert_template,
+    open_engagement_ids,
     set_methodology_version,
     version_rows,
 )
@@ -308,6 +309,40 @@ async def client_of(tenant: TenantContext, engagement_id: UUID) -> UUID | None:
     async with tenant_session(tenant) as session:
         engagement = await get_engagement(session, engagement_id)
     return engagement.client_id if engagement is not None else None
+
+
+# SPEC-027 (TASK-050; ADR-106): the platform's rule-based retrieval, registered by connections
+# (a leaf: nothing imports it) so the engagement agent can start it and record why it did or
+# didn't run. Unregistered, nothing is retrieved ("unavailable").
+AutoRetrieve = Callable[[UUID, UUID, UUID | None], Awaitable[str]]
+_auto_retrieve: AutoRetrieve | None = None
+
+
+def register_auto_retrieval(run: AutoRetrieve) -> None:
+    global _auto_retrieve
+    if _auto_retrieve is not None and _auto_retrieve is not run:
+        raise RuntimeError("automatic retrieval is already registered")
+    _auto_retrieve = run
+
+
+async def run_auto_retrieval(tenant_id: UUID, engagement_id: UUID, only: UUID | None) -> str:
+    if _auto_retrieve is None:
+        return "unavailable"
+    return await _auto_retrieve(tenant_id, engagement_id, only)
+
+
+async def open_engagements(tenant: TenantContext) -> list[UUID]:
+    """SPEC-027 (TASK-050): the firm's non-archived engagements (the agents to resume)."""
+    async with tenant_session(tenant) as session:
+        return list(await open_engagement_ids(session))
+
+
+async def is_archived(tenant: TenantContext, engagement_id: UUID) -> bool | None:
+    """SPEC-027 (TASK-050): whether the engagement is archived, or None outside the tenant (the
+    engagement agent ends with it)."""
+    async with tenant_session(tenant) as session:
+        engagement = await get_engagement(session, engagement_id)
+    return engagement.status == "archived" if engagement is not None else None
 
 
 async def entity_of(tenant: TenantContext, engagement_id: UUID) -> UUID | None:

@@ -790,6 +790,10 @@ LIST_EXEMPT = frozenset(
         # the person's own open requests (their own rows only).
         ("src/abacus/modules/engagements/repository.py", "confirmations_of"),
         ("src/abacus/modules/engagements/repository.py", "my_open_confirmations"),
+        # SPEC-027 (TASK-050): the engagement agent's own reads, for the engagement it serves (its
+        # pause replays), and the firm's open engagements when the firm resumes every agent.
+        ("src/abacus/modules/agents/repository.py", "screenings_skipped_while_paused"),
+        ("src/abacus/modules/engagements/repository.py", "open_engagement_ids"),
         # SPEC-019 Q4: the firm's staff for the wall picker, after `authorise(wall.create)`.
         ("src/abacus/modules/identity/repository.py", "active_staff_ids"),
         # SPEC-017: team candidates (after `authorise(engagement.member_add)`; walls applied in the

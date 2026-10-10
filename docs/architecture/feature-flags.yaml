@@ -14,6 +14,13 @@ flags:
     kind: variant
     values: [evidence.screen@v0]
     default: evidence.screen@v0
+  - name: engagement_agent.enabled
+    description: Route automatic screening, retrieval and inbox matching through each engagement's agent, with its activity feed and pause switches (SPEC-027; TASK-050). Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
+    owner: founder
+    created: 2026-10-10
+    expires: 2027-01-07
+    kind: boolean
+    default: false
   - name: retrieval.auto
     description: Start retrievals automatically for available tier A items (SPEC-022 AC-4). Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
     owner: founder

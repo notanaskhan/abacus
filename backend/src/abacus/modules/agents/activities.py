@@ -24,6 +24,7 @@ from abacus.ai_gateway import NotAdmitted
 from abacus.kernel import slots
 from abacus.kernel.config import settings
 from abacus.kernel.errors import NotFound
+from abacus.modules.agents.engagement_agent import handle as engagement_agent_handle
 from abacus.modules.agents.knowledge import embed_next_batch, fail_document
 from abacus.modules.agents.service import (
     TERMINAL,
@@ -234,4 +235,5 @@ ACTIVITIES = (
     fail_run_activity,
     embed_batch_activity,
     fail_knowledge_activity,
+    engagement_agent_handle,  # SPEC-027 (TASK-050)
 )

@@ -86,12 +86,36 @@ async def dispatch(
     _log.info("dispatch.started", workflow=workflow.__name__, work_class=work_class)
 
 
+async def signal_with_start(
+    workflow: type,
+    arg: object,
+    *,
+    id: str,
+    signal: str,
+    payload: object,
+) -> None:
+    """Signal the long-lived workflow running with `id`, starting it first if none is (SPEC-027,
+    ADR-062: an engagement's agent). The only way to signal a workflow (DISPATCH-001)."""
+    work_class = work_class_of(workflow)
+    client = await temporal_client()
+    await client.start_workflow(
+        workflow.run,  # pyright: ignore[reportUnknownArgumentType,reportUnknownMemberType] -- a @workflow.defn class
+        arg,
+        id=id,
+        task_queue=queue_for(work_class),
+        start_signal=signal,
+        start_signal_args=[payload],
+    )
+    _log.info("dispatch.signalled", workflow=workflow.__name__, signal=signal)
+
+
 __all__ = [
     "WORK_CLASSES",
     "WorkClass",
     "dispatch",
     "queue_for",
     "register_work_classes",
+    "signal_with_start",
     "work_class_of",
     "work_class_of_queue",
 ]

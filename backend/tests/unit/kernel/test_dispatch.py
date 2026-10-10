@@ -167,9 +167,10 @@ def test_ac2_retrieval_is_interactive() -> None:
 
 def test_ac2_screening_is_time_sensitive_as_its_spec_says() -> None:
     assert agents.WORKFLOWS[agents.ScreeningWorkflow] == "time_sensitive"
-    # SPEC-009: knowledge embedding is batch work.
+    # SPEC-009: knowledge embedding is batch work; SPEC-027: the engagement agent is background.
     assert [c for w, c in agents.WORKFLOWS.items() if w is not agents.ScreeningWorkflow] == [
-        "batch"
+        "batch",
+        "background",
     ]
     assert agents.spec(agents.SCREENER).work_class == "time_sensitive"
     assert work_class_of(agents.ScreeningWorkflow) == "time_sensitive"
