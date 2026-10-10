@@ -145,6 +145,92 @@ export type AccountRuleOut = {
 };
 
 /**
+ * ActivityOut
+ *
+ * One automatic action: references only, never client content (AC-7).
+ */
+export type ActivityOut = {
+    /**
+     * Action
+     */
+    action: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Item Count
+     */
+    item_count: number | null;
+    /**
+     * Outcome
+     */
+    outcome: 'done' | 'skipped' | 'failed';
+    /**
+     * Policy
+     */
+    policy: string;
+    /**
+     * Policy Version
+     */
+    policy_version: number;
+    /**
+     * Reason
+     */
+    reason: string | null;
+    /**
+     * Record Id
+     */
+    record_id: string | null;
+    /**
+     * Record Type
+     */
+    record_type: string | null;
+};
+
+/**
+ * AgentOut
+ */
+export type AgentOut = {
+    /**
+     * Enabled
+     */
+    enabled: boolean;
+    /**
+     * Firm Paused At
+     */
+    firm_paused_at: string | null;
+    /**
+     * Paused At
+     */
+    paused_at: string | null;
+    /**
+     * Paused By
+     */
+    paused_by: string | null;
+    /**
+     * Reason
+     */
+    reason: string | null;
+};
+
+/**
+ * AgentsStateOut
+ *
+ * SPEC-027 (TASK-050): the firm-wide switch for every engagement agent.
+ */
+export type AgentsStateOut = {
+    /**
+     * Paused At
+     */
+    paused_at: string | null;
+};
+
+/**
  * AppliedMethodologyOut
  */
 export type AppliedMethodologyOut = {
@@ -1568,6 +1654,16 @@ export type OpenConfirmationOut = {
      * Status
      */
     status: 'requested' | 'declined';
+};
+
+/**
+ * PauseIn
+ */
+export type PauseIn = {
+    /**
+     * Reason
+     */
+    reason?: string | null;
 };
 
 /**
@@ -3208,6 +3304,225 @@ export type AcceptanceFileResponses = {
 };
 
 export type AcceptanceFileResponse = AcceptanceFileResponses[keyof AcceptanceFileResponses];
+
+export type ActivityData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: {
+        /**
+         * Before
+         */
+        before?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/engagements/{engagement_id}/activity';
+};
+
+export type ActivityErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ActivityError = ActivityErrors[keyof ActivityErrors];
+
+export type ActivityResponses = {
+    /**
+     * Response Activity
+     *
+     * Successful Response
+     */
+    200: Array<ActivityOut>;
+};
+
+export type ActivityResponse = ActivityResponses[keyof ActivityResponses];
+
+export type AgentData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/agent';
+};
+
+export type AgentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AgentError = AgentErrors[keyof AgentErrors];
+
+export type AgentResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentOut;
+};
+
+export type AgentResponse = AgentResponses[keyof AgentResponses];
+
+export type PauseAgentData = {
+    body: PauseIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/agent/pause';
+};
+
+export type PauseAgentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PauseAgentError = PauseAgentErrors[keyof PauseAgentErrors];
+
+export type PauseAgentResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentOut;
+};
+
+export type PauseAgentResponse = PauseAgentResponses[keyof PauseAgentResponses];
+
+export type ResumeAgentData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/agent/resume';
+};
+
+export type ResumeAgentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ResumeAgentError = ResumeAgentErrors[keyof ResumeAgentErrors];
+
+export type ResumeAgentResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentOut;
+};
+
+export type ResumeAgentResponse = ResumeAgentResponses[keyof ResumeAgentResponses];
 
 export type BoardSummaryData = {
     body?: never;
@@ -6262,6 +6577,147 @@ export type SetupFileResponses = {
 };
 
 export type SetupFileResponse = SetupFileResponses[keyof SetupFileResponses];
+
+export type FirmAgentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/agents';
+};
+
+export type FirmAgentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type FirmAgentsError = FirmAgentsErrors[keyof FirmAgentsErrors];
+
+export type FirmAgentsResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentsStateOut;
+};
+
+export type FirmAgentsResponse = FirmAgentsResponses[keyof FirmAgentsResponses];
+
+export type PauseFirmAgentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/agents/pause';
+};
+
+export type PauseFirmAgentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PauseFirmAgentsError = PauseFirmAgentsErrors[keyof PauseFirmAgentsErrors];
+
+export type PauseFirmAgentsResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentsStateOut;
+};
+
+export type PauseFirmAgentsResponse = PauseFirmAgentsResponses[keyof PauseFirmAgentsResponses];
+
+export type ResumeFirmAgentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/agents/resume';
+};
+
+export type ResumeFirmAgentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ResumeFirmAgentsError = ResumeFirmAgentsErrors[keyof ResumeFirmAgentsErrors];
+
+export type ResumeFirmAgentsResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentsStateOut;
+};
+
+export type ResumeFirmAgentsResponse = ResumeFirmAgentsResponses[keyof ResumeFirmAgentsResponses];
 
 export type AutonomyData = {
     body?: never;

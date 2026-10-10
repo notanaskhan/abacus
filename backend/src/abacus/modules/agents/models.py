@@ -7,7 +7,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import ARRAY, Numeric, String
+from sqlalchemy import ARRAY, FetchedValue, Numeric, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -85,3 +85,38 @@ class KnowledgeChunk(Base):
     embedding: Mapped[list[float] | None] = mapped_column(Vector(1024))
     embedding_model: Mapped[str | None]
     embedded_at: Mapped[datetime | None]
+
+
+class EngagementAgentState(Base):
+    """SPEC-027 (TASK-050): an engagement's agent paused or resumed (partner or manager)."""
+
+    __tablename__ = "engagement_agents"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    engagement_id: Mapped[UUID] = mapped_column(primary_key=True)
+    paused_at: Mapped[datetime | None]
+    paused_by: Mapped[UUID | None]
+    reason: Mapped[str | None]
+    updated_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class AgentActivity(Base):
+    """SPEC-027 AC-7: one automatic action, by which policy and why. Insert-only; references
+    only, never client content."""
+
+    __tablename__ = "agent_activity"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    policy: Mapped[str]
+    policy_version: Mapped[int]
+    action: Mapped[str]
+    outcome: Mapped[str]
+    reason: Mapped[str | None]
+    record_type: Mapped[str | None]
+    record_id: Mapped[UUID | None]
+    item_count: Mapped[int | None]
+    for_user: Mapped[UUID | None]
+    source_event_id: Mapped[UUID | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

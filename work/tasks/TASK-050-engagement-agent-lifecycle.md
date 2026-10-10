@@ -4,7 +4,7 @@ title: "Engagement agent v1, part 1: lifecycle, triggering policies, activity fe
 spec: SPEC-027
 acceptance_criteria: [AC-1, AC-2, AC-5, AC-6, AC-7, AC-10]
 risk_zone: red
-status: in-progress
+status: done
 branch: task-050-engagement-agent
 worktree:
 created: 2026-10-10
@@ -113,12 +113,33 @@ Not touched: `identity/authz/__init__.py` (the autonomy condition is TASK-051), 
 - **D4. Write the approval file for the paths above?** *Recommendation: yes.*
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
-- [ ] Type check, lint, format, architecture and dependency rules pass
-- [ ] Every query is tenant-scoped; every endpoint checks authorisation
-- [ ] Module READMEs and the relevant docs are updated
+- [x] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
+- [x] Type check, lint, format, architecture and dependency rules pass
+- [x] Every query is tenant-scoped; every endpoint checks authorisation
+- [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-10` — Implemented:
+  - migration 0039: `engagement_agents`, `agent_activity` (insert-only; a count and the person an action was for, so a resume can screen for the same initiator; one row per policy per event), and `firms.agents_paused_*`; schema-check entries;
+  - the matrix actions `activity.read`, `agent.pause`, `firm_agents.pause` (regenerated `_matrix.py`) and the flag `engagement_agent.enabled` (seeded on for Dev firm);
+  - `kernel.dispatch.signal_with_start`. The module isn't on the protected list (hook or code owners), but its docstring says PROTECTED; flagged to the founder;
+  - agents: the `EngagementAgent` workflow, `engagement_agent.py` (P-0 to P-3, routing, pause, the feed), repository and routes. The routes sit on the existing agents router, whose prefix widened to `/v1/engagements/{engagement_id}` with the screening-results URLs unchanged, so `api/app.py` wasn't touched;
+  - **connections stays a leaf:** the architecture tests forbid anything depending on connections. So the retrieval rule is registered into engagements (`register_auto_retrieval` / `run_auto_retrieval`, ADR-106), and the agent calls it there. `auto_retrieve` now returns why it didn't run;
+  - evidence emits `inbox_file.added` with the suggestion count; engagements gained `is_archived` and `open_engagements` (LIST-001 exemption, with the agent's replay read);
+  - identity: the firm switch (service, routes, `firm.agents_resumed`);
+  - web: an Activity tab in plain words, the pause control in the engagement header (partner and manager; others see the state), the firm switch on the Autonomy page.
+
+  Tests and checks:
+  - unit: the policy decision table (19), the workflow loop offline with a fake `workflow` module (5); the replay of two recorded histories plus a non-determinism check (4); web `spec027agent.test.tsx` (5);
+  - pinned lists updated for the new subscriptions, workflow class, activity and non-creating routes;
+  - backend unit and workflow tests 9,721, web 205, gates pass; migration 0039 applies and rolls back;
+  - live smoke with the real stack:
+    - creating an engagement started its agent through the relay;
+    - pausing skipped a screening and a match with the reason;
+    - resuming screened the skipped evidence once and ran retrieval once ("no connection");
+    - the practice leader was refused the firm switch; the firm administrator's pause skipped an event as "firm_paused", and resuming had the agent look again;
+    - found in the smoke and fixed: a resume replayed skips an earlier resume had already handled (the screening itself ran once, but the count overstated); now only skips since the last resume.
+  - Also fixed: the local seed's two `asyncio.run` calls for flags failed on a shared connection; it now sets both in one run.
 - `2026-10-10` — Design written for founder review after SPEC-027 merged (#86).
 
 ## Decisions made during this task

@@ -3,6 +3,8 @@
 from abacus.modules.agents.activities import ACTIVITIES
 from abacus.modules.agents.citations import SheetLayoutError
 from abacus.modules.agents.citations import verify as verify_citations
+from abacus.modules.agents.engagement_agent_workflow import HANDLE as ENGAGEMENT_AGENT_HANDLE
+from abacus.modules.agents.engagement_agent_workflow import EngagementAgent
 from abacus.modules.agents.fake_responses import SCREEN_PROMPT, screening_responder
 from abacus.modules.agents.fake_responses import install as install_fake_responses
 from abacus.modules.agents.graph import EngagementGraph, engagement_graph
@@ -32,7 +34,13 @@ from abacus.modules.agents.service import (
     screening_results_for,
 )
 from abacus.modules.agents.spec import AGENTS, AgentSpec, spec
-from abacus.modules.agents.workflow_types import ScreeningInput
+from abacus.modules.agents.workflow_types import (
+    AgentEvent,
+    AgentInput,
+    HandleInput,
+    HandleResult,
+    ScreeningInput,
+)
 from abacus.modules.agents.workflows import ScreeningWorkflow
 from abacus.modules.evidence.api import register_proposal_source
 
@@ -42,15 +50,21 @@ register_proposal_source(proposals_for, proposal_of)
 __all__ = [
     "ACTIVITIES",
     "AGENTS",
+    "ENGAGEMENT_AGENT_HANDLE",
     "SCREENER",
     "SCREEN_PROMPT",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
+    "AgentEvent",
+    "AgentInput",
     "AgentRunBusy",
     "AgentRunNotRunning",
     "AgentSpec",
     "Citation",
+    "EngagementAgent",
     "EngagementGraph",
+    "HandleInput",
+    "HandleResult",
     "Handoff",
     "KnowledgeHit",
     "RunOutcome",

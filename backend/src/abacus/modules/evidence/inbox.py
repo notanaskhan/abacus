@@ -21,6 +21,7 @@ from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import gate_client_data, get_ref
 from abacus.modules.evidence import storage
+from abacus.modules.evidence.events import InboxFileAdded
 from abacus.modules.evidence.matching import Suggestion, suggest
 from abacus.modules.evidence.models import InboxFile
 from abacus.modules.evidence.repository import (
@@ -114,6 +115,8 @@ async def add_to_inbox(
             raise DuplicateUpload
     stored = await storage.put(ctx.tenant_id, content)
     staff = role in _STAFF
+    # SPEC-027 (TASK-050): how many items the matching rule suggests, for the agent's feed.
+    suggested = len(suggest(clean_name(file_name), await request_items_for(ctx, engagement_id)))
     try:
         async with uow(ctx.tenant) as tx:
             row = await insert_inbox_file(
@@ -134,6 +137,11 @@ async def add_to_inbox(
                 "inbox_file.added",
                 target=Target("inbox_file", row.id),
                 after=Ref(engagement_id=engagement_id, fingerprint=digest, size=len(content)),
+            )
+            tx.emit(
+                InboxFileAdded(
+                    engagement_id=engagement_id, inbox_file_id=row.id, suggestions=suggested
+                )
             )
     except IntegrityError:
         raise DuplicateUpload from None  # the same file, added at the same moment

@@ -21,15 +21,23 @@ from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.errors import NotFound
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import OutboxEvent, Ref, Target, uow
+from abacus.modules.agents.engagement_agent import agent_on, firm_resumed, to_agent
+from abacus.modules.agents.engagement_agent_workflow import EngagementAgent
 from abacus.modules.agents.events import KnowledgeDocumentAdded
 from abacus.modules.agents.knowledge_workflow import KnowledgeEmbeddingWorkflow
 from abacus.modules.agents.service import SCREENER
 from abacus.modules.agents.spec import spec
 from abacus.modules.agents.workflow_types import KnowledgeInput, ScreeningInput
 from abacus.modules.agents.workflows import ScreeningWorkflow
-from abacus.modules.engagements.api import get_ref
-from abacus.modules.evidence.api import EvidenceVersionCreated, version_view
-from abacus.modules.identity.api import AuthContext, authorise, autonomy_level
+from abacus.modules.engagements.api import EngagementCreated, get_ref
+from abacus.modules.evidence.api import EvidenceVersionCreated, InboxFileAdded, version_view
+from abacus.modules.identity.api import (
+    AuthContext,
+    FirmAgentsResumed,
+    authorise,
+    autonomy_level,
+)
+from abacus.modules.requests.api import RequestItemClassified
 
 EVIDENCE_VERSION_CREATED = EvidenceVersionCreated.event_type
 # Each workflow's work class (ADR-071): screening runs in the screener's class (its spec).
@@ -38,6 +46,7 @@ EVIDENCE_VERSION_CREATED = EvidenceVersionCreated.event_type
 WORKFLOWS: dict[type, WorkClass] = {
     ScreeningWorkflow: spec(SCREENER).work_class,
     KnowledgeEmbeddingWorkflow: "batch",
+    EngagementAgent: "background",  # SPEC-027 (TASK-050): one per engagement, long-lived
 }
 register_work_classes(WORKFLOWS)
 
@@ -60,15 +69,19 @@ def screening_input(event: OutboxEvent) -> ScreeningInput:
 
 
 async def start_screening(event: OutboxEvent) -> None:
+    # SPEC-027 (TASK-050): with the engagement agent on, its P-1 decides (paused, Advise).
+    if await agent_on(event.tenant_id):
+        await to_agent(event)
+        return
     # SPEC-024 Q4: at Advise (autonomy level 0) nothing is screened on its own; a person starts
     # it ("Screen now", `request_screening`).
     if await autonomy_level(event.tenant_id) < 1:
         _log.info("screening.skipped", tenant_id=event.tenant_id, reason="advise")
         return
-    await _dispatch(screening_input(event))
+    await dispatch_screening(screening_input(event))
 
 
-async def _dispatch(input: ScreeningInput) -> None:
+async def dispatch_screening(input: ScreeningInput) -> None:
     # Already screened (or screening): the event counts as delivered.
     with suppress(WorkflowAlreadyStartedError):
         await dispatch(
@@ -97,6 +110,12 @@ async def start_knowledge_embedding(event: OutboxEvent) -> None:
 SUBSCRIPTIONS = {
     EVIDENCE_VERSION_CREATED: start_screening,
     KnowledgeDocumentAdded.event_type: start_knowledge_embedding,
+    # SPEC-027 (TASK-050): the engagement agent hears its engagement's events (when on).
+    EngagementCreated.event_type: to_agent,
+    "connection.created": to_agent,  # by name: nothing imports connections (BOUND-002)
+    RequestItemClassified.event_type: to_agent,
+    InboxFileAdded.event_type: to_agent,
+    FirmAgentsResumed.event_type: firm_resumed,
 }
 
 
@@ -119,6 +138,6 @@ async def request_screening(ctx: AuthContext, engagement_id: UUID, version_id: U
             after=Ref(user_id=ctx.user_id),
         )
     source = uuid5(NAMESPACE_URL, f"abacus:screen-now:{ctx.tenant_id}:{version_id}")
-    await _dispatch(
+    await dispatch_screening(
         ScreeningInput(str(ctx.tenant_id), str(version_id), str(source), str(ctx.user_id))
     )

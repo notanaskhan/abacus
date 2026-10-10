@@ -64,6 +64,9 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "client_invitation.issued",  # SPEC-015
         "staff_invitation.issued",  # SPEC-024 (TASK-041)
         "request_item.classified",  # SPEC-022: automatic retrieval
+        "inbox_file.added",  # SPEC-027 (TASK-050): the engagement agent
+        "firm.agents_resumed",
+        "engagement.created",
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert worker_main.connections.on_connection_created in built.handlers["connection.created"]

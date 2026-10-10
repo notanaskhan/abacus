@@ -36,6 +36,18 @@ Agent specs, agent runs and screening (ADR-005, ADR-025, ADR-047, ADR-050, ADR-0
   - `screening_results_for(ctx, engagement_id)` is the service behind it.
 - `run_outcome(tenant_id, run_id)`: what a run recorded (status, failure code, screening result).
 
+## The engagement agent v1 (SPEC-027; TASK-050)
+Deterministic policies, no model: the platform retrieves and suggests by rule; agents screen and propose.
+- **Workflow:** `EngagementAgent` (`engagement_agent_workflow.py`), one per engagement (`engagement-agent:<tenant>:<engagement>`), on the background class. Events arrive as `event` signals through `kernel.dispatch.signal_with_start`. Each runs `engagement_agent.handle`, which reads the current state and applies one policy. A failing event is skipped. It continues as new every 500 events (or when Temporal suggests it), and ends when the engagement is archived. Replay histories: `tests/workflows/histories/engagement-agent-v1-*.json` (`abacus_tools.workflows.record_engagement_agent`).
+- **Routing:** with `engagement_agent.enabled` on for the firm, the relay sends `engagement.created`, `evidence_version.created`, `connection.created`, `request_item.classified` and `inbox_file.added` to the engagement's agent, and the direct handlers (screening, automatic retrieval) step aside. `firm.agents_resumed` signals every open engagement's agent. Off, nothing changes.
+- **Policies** (`engagement_agent.py`): every policy checks the firm pause, the engagement pause, archived and the flag before its own rule, and writes one feed row per event.
+  - P-0: started, paused, resumed. A resume screens what was skipped while paused since the last resume (with its original initiator), and runs the retrieval rule once.
+  - P-1: screen new evidence (same workflow ID and initiator as before; not at Advise).
+  - P-2: the platform's retrieval rule, started through engagements (`run_auto_retrieval`, registered by connections, which nothing imports), recording why it didn't run.
+  - P-3: records how many items the matching rule suggested for a waiting inbox file; never assigns.
+- **Feed and switches:** `agent_activity` (insert-only, references only). `GET /v1/engagements/{id}/agent` and `/activity` (`activity.read`); `POST …/agent/pause` and `/resume` (`agent.pause`: partner, manager). The firm switch is identity's (`/v1/firm/agents/pause`, `firm_agents.pause`, fresh MFA).
+- In TASK-050 the agent starts work that already runs under a person; its own `AgentContext` under the partner arrives with reminders (TASK-051).
+
 ## Temporal (TASK-011b)
 - `SUBSCRIPTIONS`: `evidence_version.created` → `start_screening`, which starts `screening:<tenant_id>:<evidence_version_id>` (tenant-qualified: the Temporal namespace is shared).
   - The worker's outbox relay delivers each event at least once. A redelivery attaches to the running workflow or finds it finished; a failed workflow may be started again.

@@ -14,6 +14,11 @@ PROMPT_EVIDENCE_SCREENER = Flag(
         "evidence.screen@v0",
     ),
 )
+ENGAGEMENT_AGENT_ENABLED = Flag(
+    name="engagement_agent.enabled",
+    kind="boolean",
+    default="false",
+)
 RETRIEVAL_AUTO = Flag(
     name="retrieval.auto",
     kind="boolean",
@@ -22,5 +27,6 @@ RETRIEVAL_AUTO = Flag(
 
 FLAGS: dict[str, Flag] = {
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
+    "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
     "retrieval.auto": RETRIEVAL_AUTO,
 }

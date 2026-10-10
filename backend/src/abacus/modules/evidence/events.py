@@ -30,6 +30,17 @@ class ReviewAssigned(DomainEvent):
     assignee_user_id: Annotated[UUID, classified("internal")]
 
 
+class InboxFileAdded(DomainEvent):
+    """A file waits in the engagement's inbox (SPEC-023): the engagement agent's P-3 records how
+    many request items the matching rule suggested for it (SPEC-027; TASK-050)."""
+
+    event_type: ClassVar[str] = "inbox_file.added"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    inbox_file_id: Annotated[UUID, classified("internal")]
+    suggestions: Annotated[int, classified("internal")]
+
+
 class EvidenceUploaded(DomainEvent):
     """A client uploaded a file to a request item: the firm's team is notified (SPEC-020)."""
 

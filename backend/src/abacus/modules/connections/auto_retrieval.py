@@ -8,6 +8,7 @@ idempotency are `trigger_retrieval`'s own: nothing here bypasses them.
 
 from __future__ import annotations
 
+from typing import Literal
 from uuid import UUID
 
 from abacus.kernel import _flags
@@ -78,30 +79,39 @@ async def _retrieve(ctx: AuthContext, engagement_id: UUID, items: list[RequestIt
             )
 
 
-async def _run(tenant_id: UUID, engagement_id: UUID, only: UUID | None) -> None:
+AutoRetrieval = Literal[
+    "done", "flag_off", "advise", "no_connection", "not_open", "no_consenting_member", "nothing"
+]
+
+
+async def auto_retrieve(
+    tenant_id: UUID, engagement_id: UUID, only: UUID | None = None
+) -> AutoRetrieval:
+    """The platform's rule-based retrieval for an engagement (SPEC-022 AC-4), and why it did or
+    didn't run. SPEC-027 (TASK-050): the engagement agent's P-2 calls it and records the reason."""
     if not await _enabled(tenant_id):
-        return
+        return "flag_off"
     # SPEC-024 Q4: at Advise (autonomy level 0) the platform starts nothing on its own.
     if await autonomy_level(tenant_id) < 1:
         _log.info("auto_retrieval.skipped", engagement_id=str(engagement_id), reason="advise")
-        return
+        return "advise"
     system = TenantContext(tenant_id, "system", _SYSTEM)
     entity = await entity_of(system, engagement_id)
     if entity is None:
-        return
+        return "no_connection"
     async with tenant_session(system) as session:
         connection = await live_connection_for(session, entity)
     if connection is None or connection.status != "active":
-        return
+        return "no_connection"
     try:
         await require_open(system, engagement_id)  # SPEC-025 AC-7: not before it's open
     except EngagementNotOpen:
         _log.info("auto_retrieval.skipped", engagement_id=str(engagement_id), reason="not_open")
-        return
+        return "not_open"
     ctx = await _consenting(tenant_id, connection)
     if ctx is None:
         _log.info("auto_retrieval.no_consenting_member", engagement_id=str(engagement_id))
-        return
+        return "no_consenting_member"
     datasets = frozenset(connector_for(connection).capabilities().datasets)
     items = [
         i
@@ -111,18 +121,31 @@ async def _run(tenant_id: UUID, engagement_id: UUID, only: UUID | None) -> None:
         and i.dataset in datasets
         and (only is None or i.id == only)
     ]
-    if items:
-        await _retrieve(ctx, engagement_id, items)
+    if not items:
+        return "nothing"
+    await _retrieve(ctx, engagement_id, items)
+    return "done"
+
+
+async def _agent_on(tenant_id: UUID) -> bool:
+    """SPEC-027 (TASK-050): with the engagement agent on, it runs this policy (P-2) instead."""
+    return await flag_enabled(
+        TenantContext(tenant_id, "system", _SYSTEM), _flags.ENGAGEMENT_AGENT_ENABLED
+    )
 
 
 async def on_connection_created(event: OutboxEvent) -> None:
     """Every open, available A item of the engagement the client connected from."""
-    await _run(event.tenant_id, UUID(str(event.payload["engagement_id"])), None)
+    if await _agent_on(event.tenant_id):
+        return
+    await auto_retrieve(event.tenant_id, UUID(str(event.payload["engagement_id"])), None)
 
 
 async def on_item_classified(event: OutboxEvent) -> None:
     """One item that became A with a dataset."""
-    await _run(
+    if await _agent_on(event.tenant_id):
+        return
+    await auto_retrieve(
         event.tenant_id,
         UUID(str(event.payload["engagement_id"])),
         UUID(str(event.payload["request_item_id"])),

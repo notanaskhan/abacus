@@ -62,11 +62,21 @@ def test_ac14_screening_starts_from_evidence_version_created() -> None:
     assert EVIDENCE_VERSION_CREATED == "evidence_version.created"
     assert SUBSCRIPTIONS["evidence_version.created"] is start_screening
     assert WORKFLOWS[ScreeningWorkflow] == "time_sensitive"
-    # SPEC-009: knowledge embedding is the agents module's only other started workflow.
-    assert set(SUBSCRIPTIONS) == {"evidence_version.created", "knowledge_document.added"}
-    assert len(WORKFLOWS) == 2
-    # TASK-018b: acquire_slot and release_slot join the three; SPEC-009 adds two knowledge steps.
-    assert len(ACTIVITIES) == 7
+    # SPEC-009: knowledge embedding is the agents module's other started workflow; SPEC-027
+    # (TASK-050) adds the engagement agent, which hears its engagement's events.
+    assert set(SUBSCRIPTIONS) == {
+        "evidence_version.created",
+        "knowledge_document.added",
+        "engagement.created",
+        "connection.created",
+        "request_item.classified",
+        "inbox_file.added",
+        "firm.agents_resumed",
+    }
+    assert len(WORKFLOWS) == 3
+    # TASK-018b: acquire_slot and release_slot join the three; SPEC-009 adds two knowledge steps;
+    # SPEC-027 adds the engagement agent's one.
+    assert len(ACTIVITIES) == 8
 
 
 def test_ac14_the_workflow_id_is_tenant_qualified() -> None:
