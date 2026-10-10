@@ -49,7 +49,10 @@ def _local_only() -> Path:
 
 async def _seed_people(conn: asyncpg.Connection) -> None:
     await conn.execute(
-        "INSERT INTO firms (tenant_id, name) VALUES ($1, 'Dev firm') ON CONFLICT DO NOTHING", FIRM
+        # SPEC-026: synthetic, so a local real model (when allowed) may see it.
+        "INSERT INTO firms (tenant_id, name, synthetic) VALUES ($1, 'Dev firm', true) "
+        "ON CONFLICT (tenant_id) DO UPDATE SET synthetic = true",
+        FIRM,
     )
     for subject, label in DEV_USERS:
         if subject not in FIRM_ROLES:

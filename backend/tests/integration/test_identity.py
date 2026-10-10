@@ -47,6 +47,7 @@ from abacus.modules.identity.api import (
     authorise,
     configure_verifier,
     current_context,
+    is_synthetic_firm,
     reset_verifier,
     visible,
 )
@@ -1549,3 +1550,42 @@ async def test_ac20_visible_agrees_with_authorise_for_every_role_combination(
             )
             shown = rows.scalars().all() != []
         assert shown == allowed, (action, firm_role, engagement_role)
+
+
+# --- SPEC-026 AC-3 (TASK-049): synthetic firms -------------------------------------------------
+
+
+async def _synthetic_firm(migrated_db: Migrated, *, synthetic: bool) -> TenantContext:
+    tenant = uuid.uuid4()
+    conn = await asyncpg.connect(migrated_db.superuser_dsn)
+    try:
+        await conn.execute(
+            "INSERT INTO firms (tenant_id, name, synthetic) VALUES ($1, 'F', $2)",
+            tenant,
+            synthetic,
+        )
+    finally:
+        await conn.close()
+    return TenantContext(tenant, "system", "test")
+
+
+async def test_ac3_spec026_the_app_reads_the_synthetic_flag(migrated_db: Migrated) -> None:
+    assert await is_synthetic_firm(await _synthetic_firm(migrated_db, synthetic=True))
+    assert not await is_synthetic_firm(await _synthetic_firm(migrated_db, synthetic=False))
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "UPDATE firms SET synthetic = true",
+        "INSERT INTO firms (tenant_id, name, synthetic) VALUES (gen_random_uuid(), 'X', true)",
+    ],
+)
+async def test_ac3_spec026_the_app_can_never_set_the_synthetic_flag(
+    migrated_db: Migrated, sql: str
+) -> None:
+    ctx = await _synthetic_firm(migrated_db, synthetic=False)
+    with pytest.raises(DBAPIError, match="permission denied"):
+        async with tenant_session(ctx) as session:
+            await session.execute(text(sql))
+    assert not await is_synthetic_firm(ctx)

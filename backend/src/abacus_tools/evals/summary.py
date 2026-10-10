@@ -16,6 +16,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus_tools.evals.observation import Observation
+from abacus_tools.evals.report import Report
 
 SIGNING_KEY_ENV = "ABACUS_EVAL_SIGNING_KEY"
 
@@ -44,6 +45,7 @@ class CaseRow(BaseModel):
     cost_usd: Annotated[Decimal, Field(ge=0)]
     budget_usd: Annotated[Decimal, Field(ge=0)]
     error: str | None = None
+    latency_ms: int | None = None
     passed: bool
     grades: tuple[GradeRow, ...]
 
@@ -60,6 +62,7 @@ class CaseRow(BaseModel):
             self.cost_usd,
             self.budget_usd,
             self.error,
+            self.latency_ms,
         )
 
 
@@ -86,6 +89,7 @@ class Summary(BaseModel):
     started_at: datetime
     finished_at: datetime
     cases: tuple[CaseRow, ...]
+    report: Report | None = None  # SPEC-026 AC-6
     signature: str | None = None
 
 

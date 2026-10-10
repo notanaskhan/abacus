@@ -6,6 +6,7 @@ must be set explicitly, or startup fails: production can never run on a local de
 
 from __future__ import annotations
 
+import re
 from datetime import date
 from decimal import Decimal
 from functools import lru_cache
@@ -83,6 +84,12 @@ class WorkClassLimits(BaseModel):
 
 Route = Literal["fake", "direct", "bedrock"]
 ModelTier = Literal["small", "medium", "large"]
+# ADR-074: an exact model version, e.g. `claude-haiku-4-5-20251001`; Bedrock IDs carry a provider
+# prefix and a revision. Never an alias such as `-latest`.
+_PINNED = re.compile(
+    r"^(?:[a-z]{2}\.)?(?:anthropic\.)?claude-[a-z]+-\d+-\d+"
+    r"(?:-\d{8})?(?:-v\d+:\d+)?$"
+)
 
 
 class CatalogModel(BaseModel):
@@ -275,6 +282,13 @@ class Settings(BaseSettings):
     )
     route_parity: Annotated[dict[Route, ParityRecord], classified("internal")] = {}
     anthropic_api_key: Annotated[SecretStr | None, classified("restricted")] = None
+    # SPEC-026 (TASK-049): what a real model may see. Only synthetic data until zero-retention and
+    # no-training terms are recorded and staging exists (ADR-031); lifting it is a later spec.
+    model_data_boundary: Annotated[Literal["synthetic_only"], classified("internal")] = (
+        "synthetic_only"
+    )
+    # SPEC-026 Q3: a real model on a developer's machine (prompt work), synthetic firms only.
+    allow_real_model_locally: Annotated[bool, classified("internal")] = False
     bedrock_region: Annotated[str, classified("internal")] = "us-east-1"
     # Q3: an outage (5xx, timeout, connection) blocks that route's model this long.
     outage_block_seconds: Annotated[int, Field(ge=1, le=600), classified("internal")] = 30
@@ -341,6 +355,29 @@ class Settings(BaseSettings):
             raise ValueError(
                 f"evidence_retention_days must be at least {MIN_EVIDENCE_RETENTION_DAYS}"
             )
+        return self
+
+    @model_validator(mode="after")
+    def _real_models_synthetic_only(self) -> Self:
+        """SPEC-026 AC-1, AC-4: a real model only where data is synthetic, and pinned."""
+        real: list[Route] = [r for r in self.model_routes if r != "fake"]
+        if real or self.embedding_provider != "fake":
+            allowed = self.environment == "evaluation" or (
+                self.environment == "local" and self.allow_real_model_locally
+            )
+            if not allowed:
+                raise ValueError(
+                    f"real model routes are for the evaluation environment only (or local with "
+                    f"allow_real_model_locally); not {self.environment!r} (SPEC-026: client data "
+                    f"needs a later spec, recorded provider terms and staging)"
+                )
+        for tier, model in self.model_catalog.items():
+            for route in real:
+                found = model.ids.get(route)
+                if found is None:
+                    raise ValueError(f"model_catalog[{tier!r}] has no model for route {route!r}")
+                if not _PINNED.fullmatch(found) or "latest" in found:
+                    raise ValueError(f"model_catalog[{tier!r}][{route!r}] must be a pinned ID")
         return self
 
     @model_validator(mode="after")

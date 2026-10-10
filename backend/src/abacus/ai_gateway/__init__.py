@@ -43,6 +43,11 @@ from abacus.ai_gateway.admission import (
     block,
     refusal_reason,
 )
+from abacus.ai_gateway.boundary import (
+    DataBoundaryRefused,
+    enforce_boundary,
+    register_synthetic_tenants,
+)
 from abacus.ai_gateway.budgets import BudgetExhausted, check_budget, forget_spend
 from abacus.ai_gateway.context import (
     MAX_ROWS,
@@ -345,6 +350,7 @@ async def embed(c: EmbedCall) -> EmbedResult:
             if not admitted:
                 raise NotAdmitted(refusal_reason(c.work_class), wait)
             try:
+                await enforce_boundary(c.attribution.tenant, embedding_route(), "embed")
                 response = await embedder().embed(model, c.texts)
             except ProviderError:
                 await _record_embed(
@@ -641,6 +647,7 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
             request = replace(request, model=model)
             try:
                 async with asyncio.timeout(c.timeout_seconds):
+                    await enforce_boundary(c.attribution.tenant, route, found.ref)  # SPEC-026
                     response = await route_provider(route).complete(request)
                 break
             except (ProviderError, TimeoutError) as exc:
@@ -750,6 +757,7 @@ __all__ = [
     "CallTooLarge",
     "ContextBuilder",
     "ContextTooLarge",
+    "DataBoundaryRefused",
     "DatasetTooLarge",
     "EmbedCall",
     "EmbedResult",
@@ -782,6 +790,7 @@ __all__ = [
     "evaluation",
     "model_id",
     "prompt",
+    "register_synthetic_tenants",
     "registry",
     "sanitise_text",
 ]

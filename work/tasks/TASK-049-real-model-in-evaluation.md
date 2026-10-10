@@ -121,13 +121,30 @@ Not touched: `evals/screening/suite.yaml` (thresholds unchanged), the agents mod
 - **D3. Write the approval file for the paths above?** *Recommendation: yes.*
 
 ## Definition of done
-- [ ] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
-- [ ] Type check, lint, format, architecture and dependency rules pass
-- [ ] Every query is tenant-scoped; every endpoint checks authorisation
-- [ ] Module READMEs and the relevant docs are updated
+- [x] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
+- [x] Type check, lint, format, architecture and dependency rules pass
+- [x] Every query is tenant-scoped; every endpoint checks authorisation
+- [x] Module READMEs and the relevant docs are updated
 - [ ] The milestone real run's report is in the progress log (after D1 and D2)
 
 ## Progress log
+- `2026-10-10` — Code shipped; the milestone run waits for D1 (model IDs and prices) and D2 (the key).
+  - **Settings:**
+    - `model_data_boundary` (`synthetic_only` only) and `allow_real_model_locally`;
+    - a validator refuses real routes (and real embeddings) outside `evaluation`, or `local` with the flag;
+    - every real-route catalog ID must be pinned (pattern; no `latest`); a real route with no model for a tier is refused.
+  - **Gateway:** `ai_gateway/boundary.py` (`enforce_boundary` before both provider calls, `register_synthetic_tenants`, `DataBoundaryRefused`, audit `ai.boundary_refused`, a counter, a 60 s cache). Identity registers `is_synthetic_firm`.
+  - **Migration 0038:** `firms.synthetic`, with no app grant. The evaluation stack and the local seed set it.
+  - **Runner:**
+    - `--route direct` records requests and answers through a wrapper on the real provider, so real attempts are graded exactly as fake ones;
+    - `guard_real` refuses before containers start without the evaluation environment, the key, or an enabled route;
+    - the summary gains `report` (`abacus_tools/evals/report.py`), printed as a table; attempts now record latency and escalations.
+  - **Found and fixed:** every evaluation run had been erroring (`Forbidden` on all attempts) since TASK-045. The evaluation stack's synthetic firm had no acceptance and no independence confirmation, so the screener's initiator was refused. The stack now seeds both, as for an engagement past setup. That gap was caused by TASK-045.
+  - **Tests:**
+    - unit: settings (14), the boundary (7, including an AST check that both provider calls follow `enforce_boundary`), runner guards and the report (5);
+    - integration: the app reads but can never set `firms.synthetic` (3, in `test_identity.py`, which DB-001 already exempts);
+    - backend unit 9,424, gates pass, migration 0038 applies and rolls back;
+    - a fake fast-subset run passed with the report printed (needs-revision recall 1.0, cost per screening $0.0006 against $0.03; fake answers, so it proves the code, not a model).
 - `2026-10-10` — Design written for founder review after SPEC-026 merged (#86).
 
 ## Decisions made during this task
