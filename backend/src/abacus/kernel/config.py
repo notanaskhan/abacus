@@ -22,6 +22,10 @@ Environment = Literal["local", "test", "evaluation", "staging", "production"]
 # Where synthetic data may stand in for clients' systems: the fake connector and the fake model.
 # `evaluation` (SPEC-005 Q4) runs evaluation suites on synthetic firms only, never client data.
 SYNTHETIC_ENVIRONMENTS: tuple[str, ...] = ("local", "test", "evaluation")
+# Environments that run on the local compose stack, with its defaults and no TLS to Temporal.
+# `evaluation` is one (SPEC-026, TASK-049): its runs use throwaway local containers, and the
+# runner refuses any destination off this machine (`abacus_tools.evals.runner.guard`).
+LOCAL_STACK: tuple[str, ...] = ("local", "test", "evaluation")
 _LOCAL_DB = "postgresql+asyncpg://abacus_app:abacusapp@127.0.0.1:55432/abacus"
 _LOCAL_MIGRATIONS_DB = "postgresql+asyncpg://abacus_owner:abacusowner@127.0.0.1:55432/abacus"
 _LOCAL_RELAY_DB = "postgresql+asyncpg://abacus_relay:abacusrelay@127.0.0.1:55432/abacus"
@@ -242,11 +246,12 @@ class Settings(BaseSettings):
     @model_validator(mode="before")
     @classmethod
     def _local_defaults(cls, data: object) -> object:
-        """Local and test only: fill unset connection settings with the compose stack's values."""
+        """Local, test and evaluation only: fill unset connection settings with the compose
+        stack's values (evaluations use throwaway local containers; the runner refuses more)."""
         if not isinstance(data, dict):
             return data
         values = dict(cast(dict[str, object], data))
-        if values.get("environment", "local") in ("local", "test"):
+        if values.get("environment", "local") in LOCAL_STACK:
             for name, value in _LOCAL_DEFAULTS.items():
                 values.setdefault(name, value)
         return values
@@ -264,9 +269,9 @@ class Settings(BaseSettings):
             value = key.get_secret_value()
             if len(value) < 32 or len(set(value)) < 8:
                 raise ValueError("temporal_payload_key must be at least 32 varied characters")
-            if self.environment not in ("local", "test") and value.startswith("example-"):
+            if self.environment not in LOCAL_STACK and value.startswith("example-"):
                 raise ValueError("temporal_payload_key must be a real secret outside local/test")
-        if self.environment not in ("local", "test") and (
+        if self.environment not in LOCAL_STACK and (
             not self.temporal_tls or self.temporal_api_key is None
         ):
             raise ValueError("Temporal needs TLS and an API key outside local and test")

@@ -130,3 +130,14 @@ def test_ac8_the_key_never_shows(monkeypatch: pytest.MonkeyPatch) -> None:
     with pytest.raises(ValidationError) as raised:
         Settings()
     assert secret not in str(raised.value)
+
+
+def test_ac5_the_evaluation_environment_runs_on_the_local_stack(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A real-model run happens on a laptop against throwaway containers: `evaluation` takes the
+    local stack's defaults, like `local` and `test` (TASK-049 follow-up)."""
+    monkeypatch.setenv("ABACUS_ENVIRONMENT", "evaluation")
+    found = Settings()
+    assert found.environment == "evaluation"
+    assert found.temporal_tls is False
