@@ -18,10 +18,12 @@ import boto3
 from anthropic.lib.bedrock import AsyncAnthropicBedrock
 from anthropic.types import Message, TextBlock
 
+from abacus.ai_gateway import unfenced
 from abacus.kernel.config import Route, settings
 
 _SYSTEM = 'You are a parity probe. Reply with the JSON object {"ok": true} only. ' + (
-    "This sentence pads the system prompt so it is long enough to be cached. " * 120
+    # Past every model's minimum cacheable prompt (Haiku models need 2,048 tokens or more).
+    "This sentence pads the system prompt so it is long enough to be cached. " * 320
 )
 
 
@@ -69,7 +71,8 @@ async def _ask(client: anthropic.AsyncAnthropic | AsyncAnthropicBedrock, model: 
 def _structured(message: Message) -> bool:
     text = "".join(b.text for b in message.content if isinstance(b, TextBlock)).strip()
     try:
-        return cast(dict[str, object], json.loads(text)).get("ok") is True
+        # As the gateway reads answers: one surrounding code fence is allowed.
+        return cast(dict[str, object], json.loads(unfenced(text))).get("ok") is True
     except ValueError:
         return False
 

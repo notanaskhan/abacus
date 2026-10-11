@@ -4,7 +4,7 @@ title: A real model in evaluation, behind a data boundary in code
 spec: SPEC-026
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8]
 risk_zone: red
-status: in-progress
+status: done
 branch: task-049-real-model-eval
 worktree:
 created: 2026-10-10
@@ -125,9 +125,32 @@ Not touched: `evals/screening/suite.yaml` (thresholds unchanged), the agents mod
 - [x] Type check, lint, format, architecture and dependency rules pass
 - [x] Every query is tenant-scoped; every endpoint checks authorisation
 - [x] Module READMEs and the relevant docs are updated
-- [ ] The milestone real run's report is in the progress log (after D1 and D2)
+- [x] The milestone real run's report is in the progress log (after D1 and D2)
 
 ## Progress log
+- `2026-10-11` — **Milestone run done** (real model, direct route, synthetic data only).
+  - **Models pinned:** `claude-haiku-4-5-20251001` (screener), `claude-sonnet-5-5`, `claude-opus-5-5`. Checked against Anthropic's models overview: Haiku 4.5 is legacy; Haiku 5.5 is current and cheaper.
+  - **Parity first failed on Haiku 4.5,** for two real reasons, both fixed:
+    - it wraps JSON in a code fence, which the gateway's strict parsing would also have rejected (every screener answer would have failed validation). The gateway and the check now read the JSON inside one surrounding fence (`ai_gateway.unfenced`), and nothing else changes;
+    - the cache probe was below Haiku's minimum cacheable prompt, so it was lengthened.
+
+    Parity then passed for all three models (`docs/operations/route-parity/direct-2026-10-11.json`).
+  - **`evaluation` still can't run on a laptop:** the encryption key service and other local-only checks (some in protected kernel and identity code) assume production. Real runs therefore use `local` with the explicit real-model flag, which SPEC-026 Q3 approved; the gateway's per-call synthetic-firm check still applies. The guard accepts either. Settings live in the git-ignored `backend/.env.evaluation`.
+  - **Results** (49 attempts, `evidence.screen@v0`, Haiku 4.5): the run **failed** the suite's thresholds, which are unchanged (SPEC-026 Q6):
+
+    | Metric | Result | Threshold |
+    |---|---|---|
+    | Needs-revision recall (the dangerous error) | 0.808 (5 misses: 2 low-confidence, 1 wrong entity, 2 incomplete, all proposed ready) | ≥ 0.97 |
+    | Ready precision | 0.50 | ≥ 0.85 |
+    | Citation verification | 0.289 | 1.0 |
+    | Adversarial containment | 1.00 (prompt injection, addressed instructions, formula injection, look-alike names) | 1.0 |
+    | Recall per category | 1.00 for altered, does not tie, duplicate, irrelevant, stale, unbalanced, unreadable, wrong currency, wrong period; 0.80 wrong entity; 0.60 incomplete | — |
+    | Cost per screening | mean $0.0028, p95 $0.0047, max $0.0050; none over the spec's $0.03 | ≤ $0.03 |
+    | Run cost | $0.11 of the $5 limit | — |
+    | Latency | p50 3.9 s, p95 8.4 s | — |
+
+  - **What it shows:** containment and cost are well inside limits, and most failure categories are caught. The prompt (`evidence.screen@v0`, written against scripted answers) loses on citations, incomplete trial balances and wrong entity, and over-proposes ready.
+  - **Next (SPEC-026 Q6):** a follow-up task iterates the prompt (`evidence.screen@v1`) under ADR-074, starting with the citation format. The baselines file waits for the first passing run.
 - `2026-10-10` — Code shipped; the milestone run waits for D1 (model IDs and prices) and D2 (the key).
   - **Settings:**
     - `model_data_boundary` (`synthetic_only` only) and `allow_real_model_locally`;

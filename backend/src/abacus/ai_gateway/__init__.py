@@ -20,6 +20,7 @@ import asyncio
 import hashlib
 import json
 import math
+import re
 from collections.abc import Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -375,9 +376,19 @@ async def embed(c: EmbedCall) -> EmbedResult:
         return EmbedResult(response.vectors, model, spent)
 
 
+_FENCE = re.compile(r"\A\s*```(?:json)?\s*\n(?P<body>.*?)\n\s*```\s*\Z", re.DOTALL)
+
+
+def unfenced(body: str) -> str:
+    """The answer without one surrounding Markdown code fence (```json ... ```), which some
+    models add around JSON (SPEC-026: Claude Haiku 4.5 does). Nothing else is changed."""
+    found = _FENCE.match(body)
+    return found.group("body") if found else body
+
+
 def _parse[T: BaseModel](schema: type[T], body: str) -> tuple[T | None, str | None]:
     try:
-        return schema.model_validate_json(body), None
+        return schema.model_validate_json(unfenced(body)), None
     except ValidationError as exc:
         # Only where and what kind: never the model's text (it may echo client content).
         errors = [{"loc": e["loc"], "type": e["type"], "msg": e["msg"]} for e in exc.errors()]
