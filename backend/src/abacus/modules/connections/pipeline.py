@@ -12,8 +12,10 @@ finished run refuses further work (`RunFailed`), and only a running run is marke
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any, cast
 from uuid import UUID
 
 from abacus.kernel.crypto import DecryptionError
@@ -21,13 +23,16 @@ from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
 from abacus.modules.connections.connect import credentials_of
-from abacus.modules.connections.connector import ConnectorError, Period, Unavailable
+from abacus.modules.connections.connector import ConnectorError, Dataset, Period, Unavailable
 from abacus.modules.connections.fake_format import parse_trial_balance
+from abacus.modules.connections.import_formats import source_format
+from abacus.modules.connections.import_parse import parse_isolated
 from abacus.modules.connections.models import SyncRun
 from abacus.modules.connections.repository import (
     finish,
     get_connection,
     get_run,
+    import_by_fingerprint,
     lock_run,
     set_evidence,
     set_queued,
@@ -49,7 +54,7 @@ from abacus.modules.evidence.api import (
     render_trial_balance,
     stage_content,
 )
-from abacus.modules.identity.api import Forbidden, SystemContext, authorise
+from abacus.modules.identity.api import Forbidden, SystemContext, authorise, names_of
 from abacus.modules.ledger.api import (
     NormalisedTrialBalance,
     NormaliseError,
@@ -182,7 +187,7 @@ async def pull_raw(sys: SystemContext) -> StoredObject:
     try:
         credentials = await credentials_of(sys.tenant, connection)
         raw = await connector_for(connection, credentials).pull(
-            "trial_balance", Period(run.period_start, run.period_end), None
+            cast(Dataset, run.dataset), Period(run.period_start, run.period_end), None
         )
     except Unavailable:
         raise  # retryable: the workflow retries, then calls fail_run (TASK-010b)
@@ -225,8 +230,16 @@ async def _normalised(sys: SystemContext, run: SyncRun) -> NormalisedTrialBalanc
         content = await read_content(sys.tenant, _stored(run))
     except (IntegrityError, DecryptionError):
         raise await fail_run(sys, "failed", "unprocessable") from None
+    fmt = source_format(run.source or "")
     try:
-        return parse_trial_balance(content)
+        if fmt is None:
+            return parse_trial_balance(content)
+        # SPEC-028 (TASK-052): an uploaded export, parsed by its format in an isolated child
+        # process with limits (ADR-110).
+        parsed = await asyncio.to_thread(
+            parse_isolated, content, fmt.id, run.period_start, run.period_end
+        )
+        return parsed.trial_balance
     except NormaliseError as exc:
         raise await fail_run(sys, "failed", exc.code) from None
 
@@ -299,6 +312,29 @@ async def snapshot(sys: SystemContext) -> UUID:
     return result
 
 
+async def _import_details(
+    sys: SystemContext, entity_id: UUID, source: str, fingerprint: str
+) -> dict[str, Any]:  # TrialBalance keyword arguments of mixed types
+    """SPEC-028 (TASK-052): for an uploaded export, the workbook says so: the method, the system,
+    who uploaded it and when, and where the control totals came from. Deterministic (ADR-042)."""
+    fmt = source_format(source)
+    if fmt is None:
+        return {}
+    async with tenant_session(sys.tenant) as session:
+        found = await import_by_fingerprint(session, entity_id, fingerprint)
+    if found is None:
+        return {"method": "imported"}
+    names = await names_of([found.uploaded_by])
+    notes = [
+        ("Imported from", f"{fmt.system} export"),
+        ("Uploaded by", names.get(found.uploaded_by, "") or str(found.uploaded_by)),
+        ("Uploaded at", found.created_at.isoformat()),
+    ]
+    if found.totals_from_lines:
+        notes.append(("Control totals", "From the lines (the export has no total row)"))
+    return {"method": "imported", "notes": tuple(notes)}
+
+
 # 6. render (+ fulfilment) ----------------------------------------------------------------------
 async def render(sys: SystemContext) -> UUID:
     """Render the snapshot, add it as an evidence version, fulfil the request item by rule, and
@@ -327,6 +363,11 @@ async def render(sys: SystemContext) -> UUID:
             TrialBalanceLine(line.account_code, line.account_name, line.debit, line.credit)
             for line in view.lines
         ),
+        **(
+            await _import_details(
+                sys, engagement.client_entity_id, view.source, view.raw_fingerprint
+            )
+        ),
     )
     stored = await stage_content(sys.tenant_id, render_trial_balance(tb))
     result: UUID | None = None
@@ -352,7 +393,7 @@ async def render(sys: SystemContext) -> UUID:
                     media_type=XLSX_MEDIA_TYPE,
                     provenance=Provenance(
                         source=view.source,
-                        method="retrieved",
+                        method="imported" if source_format(view.source) else "retrieved",
                         pulled_at=view.pulled_at,
                         period_start=view.period_start,
                         period_end=view.period_end,

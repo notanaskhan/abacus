@@ -14,6 +14,11 @@ PROMPT_EVIDENCE_SCREENER = Flag(
         "evidence.screen@v0",
     ),
 )
+LEDGER_IMPORT = Flag(
+    name="ledger.import",
+    kind="boolean",
+    default="false",
+)
 ENGAGEMENT_AGENT_ENABLED = Flag(
     name="engagement_agent.enabled",
     kind="boolean",
@@ -27,6 +32,7 @@ RETRIEVAL_AUTO = Flag(
 
 FLAGS: dict[str, Flag] = {
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
+    "ledger.import": LEDGER_IMPORT,
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
     "retrieval.auto": RETRIEVAL_AUTO,
 }

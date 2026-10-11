@@ -67,3 +67,11 @@ Connections to clients' systems, sync runs, and the retrieval pipeline (ADR-037,
 - **Guards:** it runs only with the firm's `retrieval.auto` flag on. It acts as the connection's creator, through `identity.member_context` (their standing consent); a connection made by tooling has no consenting person, so nothing is retrieved.
 - **Pacing:** `trigger_retrieval`'s caps, slots and idempotency apply. Refusals are logged by class name.
 - **Registration:** it registers `available_datasets` (the active connection's `capabilities().datasets`) into requests.
+
+## Ledger file import (SPEC-028; TASK-052)
+- **Upload** (`ledger_import.py`; `POST /v1/engagements/{id}/connection/import?format=`, raw body, `ledger_import.upload`, independence required, flag `ledger.import`): flag, permission and client data gate before the body is read; then the malware scan (`kernel.scanning`) before anything parses it. A refused file is audited and never stored.
+- **Check at once:** a clean file is stored write-once and parsed in a child process with limits (`import_parse.parse_isolated`); a failure is recorded with a fixed code (`looks_like_<system>`, `unbalanced`, ...) and returned as `status: failed`.
+- **Records:** `ledger_imports` is insert-only. One good import per entity and fingerprint; the same file again is `duplicate`.
+- **Retrieval:** a good import makes the entity's `import` connection (unless one is live) and starts retrieval for the open tier A trial balance items as the uploader. A live connection of another provider refuses an upload (`already_connected`).
+- **Connector:** `connectors/import_file.py` — trial balance only, no OAuth, no change feed, no attachments; `pull` returns the latest clean import for the period. Formats are configuration (`import_formats.py`); the run's source is `import_<format>`.
+- **Evidence:** method `imported`; the footer names the system, the uploader, the upload time and where the control totals came from.

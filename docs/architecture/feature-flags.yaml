@@ -14,6 +14,13 @@ flags:
     kind: variant
     values: [evidence.screen@v0]
     default: evidence.screen@v0
+  - name: ledger.import
+    description: Clients (or the firm on their behalf) upload an exported trial balance instead of connecting (SPEC-028; TASK-052). Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
+    owner: founder
+    created: 2026-10-11
+    expires: 2027-01-08
+    kind: boolean
+    default: false
   - name: engagement_agent.enabled
     description: Route automatic screening, retrieval and inbox matching through each engagement's agent, with its activity feed and pause switches (SPEC-027; TASK-050). Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
     owner: founder

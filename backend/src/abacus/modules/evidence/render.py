@@ -53,6 +53,9 @@ class TrialBalance:
     source: str
     source_fingerprint: str
     lines: tuple[TrialBalanceLine, ...]
+    # SPEC-028 (TASK-052): `imported` for an uploaded export, with its details in the footer.
+    method: str = "retrieved"
+    notes: tuple[tuple[str, str], ...] = ()
 
 
 _MAX_CELL = 32_767  # Excel's limit; longer values would corrupt the file
@@ -114,13 +117,14 @@ def _workbook(tb: TrialBalance) -> Workbook:
     row += 2
     footer = (
         ("Source", tb.source),
-        ("Method", "retrieved"),
+        ("Method", tb.method),
         ("Pulled at", pulled_at.isoformat()),
         ("Period", f"{tb.period_start.isoformat()} to {tb.period_end.isoformat()}"),
         ("Entity", tb.entity_name),
         ("Entity ID", str(tb.client_entity_id)),
         ("Snapshot ID", str(tb.snapshot_id)),
         ("Source fingerprint", tb.source_fingerprint),
+        *tb.notes,
     )
     for label, value in footer:
         _text(sheet, row, 1, label)

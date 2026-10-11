@@ -397,6 +397,13 @@ ACTIONS: dict[str, dict[str, str]] = {
         "platform_support_content": "allow",
         "independence": "required",
     },
+    "ledger_import.upload": {
+        "client_admin": "allow",
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "independence": "required",
+    },
     "follow_up.draft": {
         "engagement_partner": "allow",
         "manager": "allow",

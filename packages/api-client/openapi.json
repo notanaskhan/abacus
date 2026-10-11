@@ -1903,7 +1903,8 @@
             "cls": "internal",
             "enum": [
               "retrieved",
-              "uploaded"
+              "uploaded",
+              "imported"
             ],
             "title": "Method",
             "type": "string"
@@ -2091,6 +2092,41 @@
           "firm_role"
         ],
         "title": "FirmRoleIn",
+        "type": "object"
+      },
+      "FormatOut": {
+        "properties": {
+          "file_type": {
+            "cls": "internal",
+            "title": "File Type",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "title": "Id",
+            "type": "string"
+          },
+          "steps": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "system": {
+            "cls": "internal",
+            "title": "System",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "system",
+          "file_type",
+          "steps"
+        ],
+        "title": "FormatOut",
         "type": "object"
       },
       "GraphAccountOut": {
@@ -2378,6 +2414,95 @@
         "title": "ImportCountsOut",
         "type": "object"
       },
+      "ImportOut": {
+        "properties": {
+          "duplicate": {
+            "cls": "internal",
+            "title": "Duplicate",
+            "type": "boolean"
+          },
+          "failure_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Failure Code"
+          },
+          "format": {
+            "cls": "internal",
+            "title": "Format",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "on_behalf": {
+            "cls": "internal",
+            "title": "On Behalf",
+            "type": "boolean"
+          },
+          "period_end": {
+            "cls": "confidential",
+            "format": "date",
+            "title": "Period End",
+            "type": "string"
+          },
+          "period_start": {
+            "cls": "confidential",
+            "format": "date",
+            "title": "Period Start",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "received",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "system": {
+            "cls": "internal",
+            "title": "System",
+            "type": "string"
+          },
+          "totals_from_lines": {
+            "cls": "internal",
+            "title": "Totals From Lines",
+            "type": "boolean"
+          },
+          "uploaded_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Uploaded At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "format",
+          "system",
+          "period_start",
+          "period_end",
+          "status",
+          "failure_code",
+          "totals_from_lines",
+          "on_behalf",
+          "uploaded_at",
+          "duplicate"
+        ],
+        "title": "ImportOut",
+        "type": "object"
+      },
       "InboxAssignIn": {
         "additionalProperties": false,
         "properties": {
@@ -2560,7 +2685,8 @@
             "cls": "internal",
             "enum": [
               "retrieved",
-              "uploaded"
+              "uploaded",
+              "imported"
             ],
             "title": "Method",
             "type": "string"
@@ -8299,6 +8425,358 @@
           "connection"
         ],
         "x-abacus-action": "connection.check"
+      }
+    },
+    "/v1/engagements/{engagement_id}/connection/import": {
+      "get": {
+        "description": "SPEC-028 AC-6: the latest upload for the client entity, or null.",
+        "operationId": "latest_ledger_import",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ImportOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Latest Ledger Import"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Latest Ledger Import Route",
+        "tags": [
+          "connection"
+        ],
+        "x-abacus-action": "connection.read_log"
+      },
+      "post": {
+        "description": "SPEC-028 AC-1..AC-8: an exported trial balance, scanned, stored and checked at once.\nA failed check is a 201 with `status: failed` and a fixed `failure_code`.",
+        "operationId": "ledger_import",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": true,
+            "schema": {
+              "maxLength": 50,
+              "minLength": 1,
+              "title": "Format",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ledger Import Route",
+        "tags": [
+          "connection"
+        ],
+        "x-abacus-action": "ledger_import.upload"
+      }
+    },
+    "/v1/engagements/{engagement_id}/connection/import/formats": {
+      "get": {
+        "description": "SPEC-028 \u00a74.6: the systems whose exports can be uploaded, with guided steps.",
+        "operationId": "ledger_import_formats",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FormatOut"
+                  },
+                  "title": "Response Ledger Import Formats",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ledger Import Formats Route",
+        "tags": [
+          "connection"
+        ],
+        "x-abacus-action": "ledger_import.upload"
       }
     },
     "/v1/engagements/{engagement_id}/connection/log": {
