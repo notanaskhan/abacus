@@ -110,3 +110,10 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-104](ADR-104-client-side-envelope-encryption.md) | Client-side envelope encryption under per-tenant keys | red | accepted |
 | [ADR-105](ADR-105-essential-flag-name.md) | An agent's essential or deferrable flag is named `essential` (amends ADR-069's guidance) | amber | accepted |
 | [ADR-106](ADR-106-module-registrations.md) | Modules hand facts to each other by registration, and evidence may depend on requests | amber | accepted |
+| [ADR-107](ADR-107-ledger-file-import.md) | A file-based ledger import is a connector with reduced capabilities | red | accepted |
+| [ADR-108](ADR-108-client-access-ladder.md) | Clients choose to connect or to export; connecting is never required | amber | accepted |
+| [ADR-109](ADR-109-comments.md) | Comments are append-only, pinned to a version, and internal unless shared | red | accepted |
+| [ADR-110](ADR-110-upload-processing.md) | Uploads are scanned, then parsed in isolation; extraction never alters evidence | red | accepted |
+| [ADR-111](ADR-111-client-prechecks.md) | Client-facing pre-checks are mechanical, with fixed wording | amber | accepted |
+| [ADR-112](ADR-112-data-boundary.md) | AI runs only on synthetic tenants, enforced in the AI gateway | red | accepted |
+| [ADR-113](ADR-113-client-data-route.md) | Client data uses Bedrock in-region only; the direct API is for synthetic data | red | accepted |
