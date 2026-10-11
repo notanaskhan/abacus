@@ -1,0 +1,28 @@
+{
+  "checked_on": "2026-10-11",
+  "models": [
+    {
+      "batch": true,
+      "cache": true,
+      "model_id": "claude-opus-5-5",
+      "structured": true,
+      "tier": "large"
+    },
+    {
+      "batch": true,
+      "cache": true,
+      "model_id": "claude-sonnet-5-5",
+      "structured": true,
+      "tier": "medium"
+    },
+    {
+      "batch": true,
+      "cache": true,
+      "model_id": "claude-haiku-4-5-20251001",
+      "structured": true,
+      "tier": "small"
+    }
+  ],
+  "passed": true,
+  "route": "direct"
+}

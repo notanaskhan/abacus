@@ -16,9 +16,10 @@ from abacus_tools.evals.suite import Action, Case, Expected
 
 
 class _Settings:
-    def __init__(self, environment: str, key: str | None) -> None:
+    def __init__(self, environment: str, key: str | None, local_flag: bool = False) -> None:
         self.environment = environment
         self.anthropic_api_key = SecretStr(key) if key else None
+        self.allow_real_model_locally = local_flag
 
 
 def _enabled(answer: bool) -> Callable[[str], bool]:
@@ -31,7 +32,7 @@ def _enabled(answer: bool) -> Callable[[str], bool]:
 @pytest.mark.parametrize(
     ("environment", "key", "enabled", "message"),
     [
-        ("local", "k", True, "ABACUS_ENVIRONMENT=evaluation"),
+        ("staging", "k", True, "ABACUS_ENVIRONMENT=evaluation"),
         ("evaluation", None, True, "ABACUS_ANTHROPIC_API_KEY"),
         ("evaluation", "k", False, "isn't enabled"),
     ],
@@ -105,3 +106,12 @@ def test_ac6_the_report_lists_misses_by_category_and_costs_against_the_budget() 
     table = render(report)
     assert "missed stale #1 [stale] -> ready_for_review" in table
     assert "1 over" in table
+
+
+def test_ac5_a_laptop_with_the_real_model_flag_may_run(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(runner, "settings", lambda: _Settings("local", "k", local_flag=True))
+    monkeypatch.setattr(runner, "route_enabled", _enabled(True))
+    guard_real("direct")
+    monkeypatch.setattr(runner, "settings", lambda: _Settings("local", "k"))
+    with pytest.raises(RefusedEnvironment):
+        guard_real("direct")

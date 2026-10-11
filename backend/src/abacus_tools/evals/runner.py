@@ -126,8 +126,15 @@ def guard_real(route: EvalRoute) -> None:
     """SPEC-026 AC-5: a real run only in the evaluation environment, with its key and an enabled
     route (a passing parity report), checked before any container starts."""
     s = settings()
-    if s.environment != "evaluation":
-        raise RefusedEnvironment("real-model runs need ABACUS_ENVIRONMENT=evaluation")
+    # The evaluation environment, or a laptop with the explicit real-model flag (SPEC-026 Q3).
+    # Either way the gateway's per-call boundary allows synthetic firms only (ADR-112).
+    if not (
+        s.environment == "evaluation" or (s.environment == "local" and s.allow_real_model_locally)
+    ):
+        raise RefusedEnvironment(
+            "real-model runs need ABACUS_ENVIRONMENT=evaluation, or local with "
+            "ABACUS_ALLOW_REAL_MODEL_LOCALLY=true"
+        )
     if s.anthropic_api_key is None or not s.anthropic_api_key.get_secret_value().strip():
         raise RefusedEnvironment("real-model runs need ABACUS_ANTHROPIC_API_KEY")
     if not route_enabled(route):
