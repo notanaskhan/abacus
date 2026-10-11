@@ -128,7 +128,7 @@ def guard_real(route: EvalRoute) -> None:
     s = settings()
     if s.environment != "evaluation":
         raise RefusedEnvironment("real-model runs need ABACUS_ENVIRONMENT=evaluation")
-    if s.anthropic_api_key is None:
+    if s.anthropic_api_key is None or not s.anthropic_api_key.get_secret_value().strip():
         raise RefusedEnvironment("real-model runs need ABACUS_ANTHROPIC_API_KEY")
     if not route_enabled(route):
         raise RefusedEnvironment(f"route {route!r} isn't enabled (model_routes and parity)")
