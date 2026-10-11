@@ -1,7 +1,7 @@
 ---
 id: SPEC-028
 title: "Ledger file import, and connect or export"
-status: draft
+status: approved
 owner: founder
 risk_zone: red
 related_adrs: [ADR-004, ADR-016, ADR-037, ADR-038, ADR-040, ADR-042, ADR-045, ADR-052, ADR-107, ADR-108, ADR-110]
@@ -173,6 +173,7 @@ Up to 50,000 lines in one import (the pipeline's existing limit).
 Behind the per-firm flag `ledger.import`, on for Dev firm locally. Synthetic export fixtures for both formats live in `abacus_tools.synthetic`.
 
 ## 20. Open questions
+All resolved: the founder approved every recommendation below on 2026-10-11.
 - **Q1. Start with QuickBooks Online and Xero only, then NetSuite, Sage Intacct and QuickBooks Desktop in a follow-up task?** *Recommendation: yes* (agreed in principle; confirm). Each format needs real sample exports, so please share anonymised samples if you have them.
 - **Q2. Control totals with no total row in the file: use the sum of the lines (so the check is "balanced" only), or ask the client to type the totals from their system?** *Recommendation: use the file's total row when present; otherwise sum the lines and label the evidence "control totals from the lines".* Typing totals adds friction for little assurance.
 - **Q3. Currency: assume USD when the export has none (US firms), refusing anything marked otherwise?** *Recommendation: yes.*
