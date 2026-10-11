@@ -66,7 +66,7 @@ from abacus.modules.requests.api import (
     review_targets,
 )
 
-Method = Literal["retrieved", "uploaded"]
+Method = Literal["retrieved", "uploaded", "imported"]
 StoredObject = storage.StoredObject
 
 

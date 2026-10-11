@@ -951,7 +951,7 @@ export type EvidenceVersionOut = {
     /**
      * Method
      */
-    method: 'retrieved' | 'uploaded';
+    method: 'retrieved' | 'uploaded' | 'imported';
     /**
      * Period End
      */
@@ -1038,6 +1038,28 @@ export type FirmRoleIn = {
      * Firm Role
      */
     firm_role: 'firm_admin' | 'practice_leader' | 'quality_partner' | null;
+};
+
+/**
+ * FormatOut
+ */
+export type FormatOut = {
+    /**
+     * File Type
+     */
+    file_type: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Steps
+     */
+    steps: Array<string>;
+    /**
+     * System
+     */
+    system: string;
 };
 
 /**
@@ -1207,6 +1229,56 @@ export type ImportCountsOut = {
 };
 
 /**
+ * ImportOut
+ */
+export type ImportOut = {
+    /**
+     * Duplicate
+     */
+    duplicate: boolean;
+    /**
+     * Failure Code
+     */
+    failure_code: string | null;
+    /**
+     * Format
+     */
+    format: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * On Behalf
+     */
+    on_behalf: boolean;
+    /**
+     * Period End
+     */
+    period_end: string;
+    /**
+     * Period Start
+     */
+    period_start: string;
+    /**
+     * Status
+     */
+    status: 'received' | 'failed';
+    /**
+     * System
+     */
+    system: string;
+    /**
+     * Totals From Lines
+     */
+    totals_from_lines: boolean;
+    /**
+     * Uploaded At
+     */
+    uploaded_at: string;
+};
+
+/**
  * InboxAssignIn
  */
 export type InboxAssignIn = {
@@ -1308,7 +1380,7 @@ export type ItemVersionOut = {
     /**
      * Method
      */
-    method: 'retrieved' | 'uploaded';
+    method: 'retrieved' | 'uploaded' | 'imported';
     /**
      * Note
      */
@@ -4067,6 +4139,175 @@ export type CheckResponses = {
 };
 
 export type CheckResponse = CheckResponses[keyof CheckResponses];
+
+export type LatestLedgerImportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/connection/import';
+};
+
+export type LatestLedgerImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type LatestLedgerImportError = LatestLedgerImportErrors[keyof LatestLedgerImportErrors];
+
+export type LatestLedgerImportResponses = {
+    /**
+     * Response Latest Ledger Import
+     *
+     * Successful Response
+     */
+    200: ImportOut | null;
+};
+
+export type LatestLedgerImportResponse = LatestLedgerImportResponses[keyof LatestLedgerImportResponses];
+
+export type LedgerImportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query: {
+        /**
+         * Format
+         */
+        format: string;
+    };
+    url: '/v1/engagements/{engagement_id}/connection/import';
+};
+
+export type LedgerImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type LedgerImportError = LedgerImportErrors[keyof LedgerImportErrors];
+
+export type LedgerImportResponses = {
+    /**
+     * Successful Response
+     */
+    201: ImportOut;
+};
+
+export type LedgerImportResponse = LedgerImportResponses[keyof LedgerImportResponses];
+
+export type LedgerImportFormatsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/connection/import/formats';
+};
+
+export type LedgerImportFormatsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type LedgerImportFormatsError = LedgerImportFormatsErrors[keyof LedgerImportFormatsErrors];
+
+export type LedgerImportFormatsResponses = {
+    /**
+     * Response Ledger Import Formats
+     *
+     * Successful Response
+     */
+    200: Array<FormatOut>;
+};
+
+export type LedgerImportFormatsResponse = LedgerImportFormatsResponses[keyof LedgerImportFormatsResponses];
 
 export type LogData = {
     body?: never;

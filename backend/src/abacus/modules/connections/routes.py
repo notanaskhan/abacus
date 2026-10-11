@@ -7,7 +7,7 @@ from datetime import date, datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import Depends, Query
+from fastapi import Depends, Query, Request
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from abacus.kernel.classification import classified
@@ -22,6 +22,15 @@ from abacus.modules.connections.connect import (
     start,
 )
 from abacus.modules.connections.connector import Period
+from abacus.modules.connections.import_parse import MAX_BYTES
+from abacus.modules.connections.ledger_import import (
+    FileTooLarge,
+    ImportView,
+    check_receive,
+    formats,
+    latest,
+    receive_export,
+)
 from abacus.modules.connections.retrievals import trigger_retrieval
 from abacus.modules.connections.service import RetrievalView, retrieval_status
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
@@ -231,3 +240,85 @@ async def log_route(
         LogEntryOut.model_validate(asdict(entry))
         for entry in await access_log(ctx, engagement_id, page)
     ]
+
+
+# --- Uploading a ledger export (SPEC-028; TASK-052) ----------------------------------------------
+
+ImportStatus = Literal["received", "failed"]
+
+
+class FormatOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[str, classified("internal")]
+    system: Annotated[str, classified("internal")]
+    file_type: Annotated[str, classified("internal")]
+    steps: Annotated[list[str], classified("internal")]
+
+
+class ImportOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    format: Annotated[str, classified("internal")]
+    system: Annotated[str, classified("internal")]
+    period_start: Annotated[date, classified("confidential")]
+    period_end: Annotated[date, classified("confidential")]
+    status: Annotated[ImportStatus, classified("internal")]
+    failure_code: Annotated[str | None, classified("internal")]
+    totals_from_lines: Annotated[bool, classified("internal")]
+    on_behalf: Annotated[bool, classified("internal")]
+    uploaded_at: Annotated[datetime, classified("internal")]
+    duplicate: Annotated[bool, classified("internal")]
+
+
+def _import_out(view: ImportView) -> ImportOut:
+    return ImportOut.model_validate(asdict(view))
+
+
+async def _export_file(request: Request) -> bytes:
+    """The raw file body, refused past the limit before it is all read."""
+    data = bytearray()
+    async for chunk in request.stream():
+        data += chunk
+        if len(data) > MAX_BYTES:
+            raise FileTooLarge("body")
+    return bytes(data)
+
+
+@connection_router.get(
+    "/import/formats", action="ledger_import.upload", response_model=list[FormatOut]
+)
+async def ledger_import_formats_route(engagement_id: UUID, ctx: Ctx) -> list[FormatOut]:
+    """SPEC-028 §4.6: the systems whose exports can be uploaded, with guided steps."""
+    return [
+        FormatOut(id=f.id, system=f.system, file_type=f.file_type, steps=list(f.steps))
+        for f in await formats(ctx, engagement_id)
+    ]
+
+
+@connection_router.post(
+    "/import",
+    action="ledger_import.upload",
+    response_model=ImportOut,
+    status_code=201,
+    errors=(409,),
+)
+async def ledger_import_route(
+    engagement_id: UUID,
+    request: Request,
+    ctx: Ctx,
+    format: Annotated[str, Query(min_length=1, max_length=50)],
+) -> ImportOut:
+    """SPEC-028 AC-1..AC-8: an exported trial balance, scanned, stored and checked at once.
+    A failed check is a 201 with `status: failed` and a fixed `failure_code`."""
+    await check_receive(ctx, engagement_id)
+    content = await _export_file(request)
+    return _import_out(await receive_export(ctx, engagement_id, format_id=format, content=content))
+
+
+@connection_router.get("/import", action="connection.read_log", response_model=ImportOut | None)
+async def latest_ledger_import_route(engagement_id: UUID, ctx: Ctx) -> ImportOut | None:
+    """SPEC-028 AC-6: the latest upload for the client entity, or null."""
+    view = await latest(ctx, engagement_id)
+    return None if view is None else _import_out(view)

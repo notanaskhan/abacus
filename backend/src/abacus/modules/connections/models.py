@@ -86,3 +86,28 @@ class SyncRun(Base):
     started_by: Mapped[str]
     started_at: Mapped[datetime]
     finished_at: Mapped[datetime | None]
+
+
+class LedgerImport(Base):
+    """SPEC-028 (TASK-052): one uploaded ledger export, its scan result and what became of it."""
+
+    __tablename__ = "ledger_imports"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    client_entity_id: Mapped[UUID]
+    format: Mapped[str]
+    period_start: Mapped[date]
+    period_end: Mapped[date]
+    storage_key: Mapped[str]
+    storage_version_id: Mapped[str]
+    fingerprint: Mapped[str]
+    size_bytes: Mapped[int]
+    scan_status: Mapped[str] = mapped_column(server_default=FetchedValue())
+    status: Mapped[str] = mapped_column(server_default=FetchedValue())
+    failure_code: Mapped[str | None]
+    totals_from_lines: Mapped[bool] = mapped_column(server_default=FetchedValue())
+    uploaded_by: Mapped[UUID]
+    on_behalf: Mapped[bool] = mapped_column(server_default=FetchedValue())
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

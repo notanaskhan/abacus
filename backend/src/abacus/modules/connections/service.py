@@ -14,6 +14,7 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.connections.connector import Connector, ConnectorError, Credentials, Period
+from abacus.modules.connections.connectors.import_file import ImportConnector
 from abacus.modules.connections.fake import FakeConnector
 from abacus.modules.connections.models import Connection, SyncRun
 from abacus.modules.connections.repository import (
@@ -91,7 +92,15 @@ def _fake(connection: Connection, credentials: Credentials | None) -> Connector:
     return FakeConnector(connection.id, Path(directory), credentials)
 
 
-CONNECTORS: dict[str, Callable[[Connection, Credentials | None], Connector]] = {"fake": _fake}
+def _import(connection: Connection, credentials: Credentials | None) -> Connector:
+    """SPEC-028 (TASK-052): the entity's uploaded exports (ADR-107)."""
+    return ImportConnector(connection.tenant_id, connection.client_entity_id)
+
+
+CONNECTORS: dict[str, Callable[[Connection, Credentials | None], Connector]] = {
+    "fake": _fake,
+    "import": _import,
+}
 
 
 def connector_for(connection: Connection, credentials: Credentials | None = None) -> Connector:

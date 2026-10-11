@@ -4,7 +4,7 @@ title: "Ledger file import, part 1: the import connector, formats and pipeline"
 spec: SPEC-028
 acceptance_criteria: [AC-3, AC-4, AC-5, AC-6, AC-7, AC-8]
 risk_zone: red
-status: planned
+status: done
 branch: task-052-ledger-import
 worktree:
 created: 2026-10-11
@@ -37,7 +37,7 @@ SPEC-028 AC-3 to AC-8 (backend). AC-1, AC-2 and AC-9 are TASK-053.
   - `tests/unit/connections/conformance.py`.
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-11: D1–D5). Approved by founder: the paths named under *Protected paths*
 
 ### What the code shows
 - **Five things are hardwired to the fake connector:**
@@ -129,9 +129,17 @@ Not protected but changed: `abacus.kernel.scanning` (new; the kernel's protected
 
 ## Progress log
 - `2026-10-11` — Design written for founder review after SPEC-028 merged (#93).
+- `2026-10-11` — Built: migration 0041, `kernel.scanning`, formats, isolated parser, import connector, upload service and routes, matrix action, flag, seed. Gates and unit tests pass (9,684). Local smoke passes for both formats: EICAR refused, wrong format reported as `looks_like_*`, the same file accepted under the right format, a duplicate recognised, the item fulfilled with `imported` evidence and the footer notes.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| `ledger_imports` is insert-only; only files that scan clean are recorded; a refused file is an audit event only | An upload and its check are facts; nothing is stored or parsed for a refused file (AC-3) | No |
+| One good import per entity and fingerprint (partial unique index); failed checks don't count | Found in the smoke: after a wrong-format pick, the same file must be accepted under the right format | No |
+| `ledger_import.upload` needs independence, like `evidence.upload` | It's client data (SPEC-025 AC-7) | No |
+| The import period is the engagement's fiscal period; the API takes no period | Fulfilment is for the fiscal period; the web shows it read-only (TASK-053). An interim period can be added later | No |
+| Upload starts retrieval for open tier A trial balance items directly, as the uploader; it emits no `ConnectionCreated` | Every good upload should retrieve, not only the first; a client upload notification belongs with SPEC-029 | No |
+| `pulled_at` is when the import was read; the upload time is in the footer | The conformance suite requires the time of the pull | No |
 
 ## Handoff
+Backend done. Next: TASK-053 (web): connect or export, guided steps, upload, plain-words failure messages for the codes in `import_parse` and `ledger_import`, the "Imported" label. A corrected re-upload after an item is received doesn't replace the evidence yet (only open items are retrieved); decide in SPEC-029. An integration test for AC-3/AC-4 waits for the joint test session.

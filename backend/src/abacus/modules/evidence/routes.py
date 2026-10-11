@@ -50,7 +50,7 @@ from abacus.modules.evidence.uploads import (
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
 router = AbacusRouter(prefix="/v1/engagements/{engagement_id}", tags=["evidence"])
-Method = Literal["retrieved", "uploaded"]
+Method = Literal["retrieved", "uploaded", "imported"]
 
 
 class EvidenceVersionOut(BaseModel):

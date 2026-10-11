@@ -65,6 +65,7 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"methodology_templates", "methodology_versions", "methodology_areas"}
     | {"methodology_request_items", "methodology_account_rules"}
     | {"agent_activity"}  # SPEC-027 (TASK-050): the feed is never rewritten
+    | {"ledger_imports"}  # SPEC-028 (TASK-052): an upload and its check are facts
     | {"reminder_items"}  # SPEC-027 (TASK-051)
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
@@ -241,6 +242,7 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "engagement_agents": frozenset(
         {"paused_at", "paused_by", "reason", "updated_at", "self_paused_reason"}
     ),
+    # SPEC-028 (TASK-052): an import's scan result and what became of it.
     # SPEC-027 (TASK-051): a drafted reminder is sent or dismissed by a person.
     "reminders": frozenset({"status", "note", "decided_by", "decided_at"}),
     # SPEC-025 (TASK-044): a person answers once; the letter's record is replaced in place.
@@ -306,6 +308,7 @@ TABLE_OWNERS: dict[str, str] = {
     "independence_confirmations": "engagements",
     "engagement_agents": "agents",  # SPEC-027 (TASK-050)
     "agent_activity": "agents",
+    "ledger_imports": "connections",  # SPEC-028 (TASK-052)
     "reminders": "agents",  # SPEC-027 (TASK-051)
     "reminder_items": "agents",
     "engagement_letters": "engagements",

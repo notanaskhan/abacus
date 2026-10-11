@@ -115,6 +115,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "evidence.read",
         "evidence.reject",
         "evidence.upload",
+        "ledger_import.upload",  # SPEC-028 (TASK-052)
         "review.assign",
         "review.read",
         "review.take",

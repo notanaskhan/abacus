@@ -189,6 +189,7 @@ actions:
   connection.revoke:        {client_admin: allow, engagement_partner: allow, manager: allow}
   connection.pull:          {system: allow}
   connection.read_log:     {client_admin: allow, engagement_partner: allow, manager: allow, platform_support: allow, platform_support_content: allow, independence: required}
+  ledger_import.upload:     {client_admin: allow, engagement_partner: allow, manager: allow, senior: allow, independence: required}   # SPEC-028 (TASK-052): an exported trial balance (staff: on behalf, Q4)
 
   # --- Follow-ups ---
   follow_up.draft:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: task_scope}

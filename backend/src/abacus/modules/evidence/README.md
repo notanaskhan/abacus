@@ -82,3 +82,6 @@ Evidence items and their immutable versions (glossary; ADR-004). Owns `evidence_
 `setup_files.py`:
 - **Upload:** `POST …/acceptance/file` and `…/letter/file`, with the SPEC-020 checks; stored write-once, and the reference attached to engagements' records.
 - **Download:** `GET …/{acceptance|letter}/file` (`setup.read`) as an attachment, audited and verified.
+
+## Imported evidence (SPEC-028; TASK-052)
+- Provenance method `imported` (an uploaded ledger export run through the pipeline); it needs a pull time. `TrialBalance` takes `method` and footer `notes`.

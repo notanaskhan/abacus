@@ -13,6 +13,7 @@ from abacus.modules.connections.models import (
     Connection,
     ConnectionSecret,
     ConnectionState,
+    LedgerImport,
     SyncRun,
 )
 from abacus.modules.identity.api import AuthContext, visible
@@ -339,3 +340,89 @@ async def list_access_log(
         .scalars()
         .all()
     )
+
+
+# --- Ledger imports (SPEC-028; TASK-052) ---------------------------------------------------------
+
+
+async def insert_import(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    engagement_id: UUID,
+    client_entity_id: UUID,
+    format: str,
+    period_start: date,
+    period_end: date,
+    storage_key: str,
+    storage_version_id: str,
+    fingerprint: str,
+    size_bytes: int,
+    failure_code: str | None,
+    totals_from_lines: bool,
+    uploaded_by: UUID,
+    on_behalf: bool,
+) -> LedgerImport | None:
+    """The new import (scanned clean; failed when `failure_code`), or None when this entity
+    already has this exact file as a good import."""
+    return (
+        await session.execute(
+            pg_insert(LedgerImport)
+            .values(
+                tenant_id=tenant_id,
+                engagement_id=engagement_id,
+                client_entity_id=client_entity_id,
+                format=format,
+                period_start=period_start,
+                period_end=period_end,
+                storage_key=storage_key,
+                storage_version_id=storage_version_id,
+                fingerprint=fingerprint,
+                size_bytes=size_bytes,
+                scan_status="clean",
+                status="failed" if failure_code else "received",
+                failure_code=failure_code,
+                totals_from_lines=totals_from_lines,
+                uploaded_by=uploaded_by,
+                on_behalf=on_behalf,
+            )
+            .on_conflict_do_nothing(
+                index_elements=["tenant_id", "client_entity_id", "fingerprint"],
+                index_where=LedgerImport.status != "failed",
+            )
+            .returning(LedgerImport)
+        )
+    ).scalar_one_or_none()
+
+
+async def import_by_fingerprint(
+    session: AsyncSession, client_entity_id: UUID, fingerprint: str
+) -> LedgerImport | None:
+    return (
+        await session.execute(
+            select(LedgerImport).where(
+                LedgerImport.client_entity_id == client_entity_id,
+                LedgerImport.fingerprint == fingerprint,
+                LedgerImport.status != "failed",
+            )
+        )
+    ).scalar_one_or_none()
+
+
+async def latest_import(
+    session: AsyncSession,
+    client_entity_id: UUID,
+    *,
+    period_end: date | None = None,
+    clean_only: bool = False,
+) -> LedgerImport | None:
+    query = select(LedgerImport).where(LedgerImport.client_entity_id == client_entity_id)
+    if period_end is not None:
+        query = query.where(LedgerImport.period_end == period_end)
+    if clean_only:
+        query = query.where(LedgerImport.scan_status == "clean", LedgerImport.status != "failed")
+    return (
+        await session.execute(
+            query.order_by(LedgerImport.created_at.desc(), LedgerImport.id.desc()).limit(1)
+        )
+    ).scalar_one_or_none()
