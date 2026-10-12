@@ -621,6 +621,31 @@ async def engagement_label(tenant: TenantContext, engagement_id: UUID) -> Engage
     )
 
 
+@dataclass(frozen=True)
+class CheckFacts:
+    """What upload checks compare a document with (SPEC-029; TASK-055)."""
+
+    fiscal_period_end: date
+    client_entity_name: str
+    methodology_version_id: UUID | None
+
+
+async def check_facts(tenant: TenantContext, engagement_id: UUID) -> CheckFacts | None:
+    """For a caller acting as the system on the engagement's own uploads (None outside the
+    tenant)."""
+    async with tenant_session(tenant) as session:
+        engagement = await get_engagement(session, engagement_id)
+        if engagement is None:
+            return None
+        names = await client_names(session, [engagement.client_entity_id])
+    found = names.get(engagement.client_entity_id)
+    return CheckFacts(
+        engagement.fiscal_period_end,
+        found.client_entity_name if found is not None else "",
+        engagement.methodology_version_id,
+    )
+
+
 async def gate_client_data(ctx: AuthContext, engagement_id: UUID, action: str) -> None:
     """SPEC-025 AC-7: client-data actions wait until the engagement is open (audited refusal)."""
     from abacus.modules.engagements.setup import (  # setup imports this module

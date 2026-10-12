@@ -17,6 +17,7 @@ from abacus.modules.evidence.models import (
     InboxFile,
     ReviewAssignment,
     ReviewDecision,
+    UploadCheck,
     UploadExtraction,
 )
 from abacus.modules.identity.api import AuthContext, visible
@@ -511,3 +512,93 @@ async def insert_extraction(session: AsyncSession, **values: object) -> UploadEx
             .returning(UploadExtraction)
         )
     ).scalar_one_or_none()
+
+
+async def other_version_with_fingerprint(
+    session: AsyncSession, engagement_id: UUID, fingerprint: str, version_id: UUID
+) -> UUID | None:
+    """SPEC-029 AC-8: the earliest other version of this engagement with the same file."""
+    return (
+        await session.execute(
+            select(EvidenceVersion.id)
+            .where(
+                EvidenceVersion.engagement_id == engagement_id,
+                EvidenceVersion.fingerprint == fingerprint,
+                EvidenceVersion.id != version_id,
+            )
+            .order_by(EvidenceVersion.created_at, EvidenceVersion.id)
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
+async def checks_exist(
+    session: AsyncSession, version_id: UUID, checker_version: str, document_kind: str | None
+) -> bool:
+    kind = (
+        UploadCheck.document_kind == document_kind
+        if document_kind is not None
+        else UploadCheck.document_kind.is_(None)
+    )
+    found = await session.execute(
+        select(UploadCheck.id)
+        .where(
+            UploadCheck.evidence_version_id == version_id,
+            UploadCheck.checker_version == checker_version,
+            kind,
+        )
+        .limit(1)
+    )
+    return found.scalar_one_or_none() is not None
+
+
+async def insert_checks(session: AsyncSession, rows: Sequence[dict[str, object]]) -> int:
+    """Each check once per version, checker version and kind; returns how many were new."""
+    if not rows:
+        return 0
+    result = await session.execute(
+        pg_insert(UploadCheck)
+        .values(list(rows))
+        .on_conflict_do_nothing()
+        .returning(UploadCheck.id)
+    )
+    return len(result.scalars().all())
+
+
+async def latest_checks(session: AsyncSession, version_id: UUID) -> Sequence[UploadCheck]:
+    """The version's checks from its most recent run (the latest checker version and kind)."""
+    newest = (
+        select(UploadCheck.created_at)
+        .where(UploadCheck.evidence_version_id == version_id)
+        .order_by(UploadCheck.created_at.desc())
+        .limit(1)
+        .scalar_subquery()
+    )
+    latest = (
+        select(UploadCheck.checker_version, UploadCheck.document_kind)
+        .where(UploadCheck.evidence_version_id == version_id, UploadCheck.created_at == newest)
+        .limit(1)
+    )
+    run = (await session.execute(latest)).first()
+    if run is None:
+        return []
+    kind = (
+        UploadCheck.document_kind == run.document_kind
+        if run.document_kind is not None
+        else UploadCheck.document_kind.is_(None)
+    )
+    return (
+        (
+            await session.execute(
+                select(UploadCheck)
+                .where(
+                    UploadCheck.evidence_version_id == version_id,
+                    UploadCheck.checker_version == run.checker_version,
+                    kind,
+                )
+                .order_by(UploadCheck.audience, UploadCheck.check_code)
+            )
+        )
+        .scalars()
+        .all()
+    )

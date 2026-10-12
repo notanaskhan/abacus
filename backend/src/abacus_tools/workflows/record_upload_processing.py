@@ -4,8 +4,9 @@
 Run: python -m abacus_tools.workflows.record_upload_processing <output-directory> [version]
 
 Records one run of the real `UploadProcessing` workflow against throwaway containers, with its
-activity replaced by a stub (replay never runs activities):
-`upload-processing-<version>-extracted.json`. Refuses to overwrite an existing file.
+activities replaced by stubs (replay never runs activities):
+`upload-processing-<version>-extracted.json`. v2 (TASK-055) adds the `checks` step. Refuses to
+overwrite an existing file.
 """
 
 from __future__ import annotations
@@ -32,10 +33,18 @@ async def _stub(given: UploadInput) -> str:
     return "extracted"
 
 
+@activity.defn(name="upload.check")
+async def _check_stub(given: UploadInput) -> int:
+    return 3
+
+
 async def _record(out: Path, version: str, stack: Stack) -> None:
     client = await connect(stack)
     async with Worker(
-        client, task_queue=_TASK_QUEUE, workflows=[UploadProcessing], activities=[_stub]
+        client,
+        task_queue=_TASK_QUEUE,
+        workflows=[UploadProcessing],
+        activities=[_stub, _check_stub],
     ):
         handle = await client.start_workflow(
             UploadProcessing.run,

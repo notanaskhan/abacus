@@ -59,6 +59,8 @@ async def insert_request_item(
     dataset: str | None = None,
     tier_source: str | None = None,
     tier_rule: str | None = None,
+    document_kind: str | None = None,
+    document_kind_source: str | None = None,
 ) -> RequestItem:
     return (
         await session.execute(
@@ -75,6 +77,8 @@ async def insert_request_item(
                 dataset=dataset,
                 tier_source=tier_source,
                 tier_rule=tier_rule,
+                document_kind=document_kind,
+                document_kind_source=document_kind_source,
             )
             .returning(RequestItem)
         )
@@ -304,6 +308,18 @@ async def set_classification(
         update(RequestItem)
         .where(RequestItem.id == item_id)
         .values(retrievability_tier=tier, dataset=dataset, tier_source=source, tier_rule=rule)
+    )
+
+
+async def set_document_kind(
+    session: AsyncSession, item_id: UUID, *, kind: str | None, source: str | None
+) -> None:
+    """SPEC-029 (TASK-055): the document the item expects, and whether a rule or the team set
+    it."""
+    await session.execute(
+        update(RequestItem)
+        .where(RequestItem.id == item_id)
+        .values(document_kind=kind, document_kind_source=source)
     )
 
 

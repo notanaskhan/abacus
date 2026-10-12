@@ -856,6 +856,11 @@ LIST_EXEMPT = frozenset(
         # SPEC-023: an engagement's waiting inbox files, after authorising on the engagement; the
         # service narrows them by role (staff, client admin, the contributor's own).
         ("src/abacus/modules/evidence/repository.py", "waiting_inbox"),
+        # SPEC-029 (TASK-055): one evidence version's checks, written by the system's own
+        # processing, and read after `authorise` on that version's item (client audience only
+        # for client roles, in the service).
+        ("src/abacus/modules/evidence/repository.py", "insert_checks"),
+        ("src/abacus/modules/evidence/repository.py", "latest_checks"),
         # Ethical walls are firm-level, not engagement-scoped (SPEC-002): authz reads a person's
         # own walls; listing every wall needs `wall.list`, authorised by the service first.
         ("src/abacus/modules/identity/repository.py", "walled_clients"),
@@ -927,8 +932,9 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "engagements": frozenset({"identity", "organisations"}),
     "requests": frozenset({"identity", "engagements"}),
     # evidence reads which versions fulfil which items, and moves items after a review decision
-    # (SPEC-004 Q4, TASK-019); requests never imports evidence.
-    "evidence": frozenset({"identity", "engagements", "requests"}),
+    # (SPEC-004 Q4, TASK-019); requests never imports evidence. SPEC-029 (TASK-055 D2): upload
+    # cross-checks read the year end's trial balance snapshot (ledger imports nothing).
+    "evidence": frozenset({"identity", "engagements", "requests", "ledger"}),
     "ledger": frozenset(),
     "connections": frozenset(
         {"identity", "engagements", "organisations", "ledger", "evidence", "requests"}

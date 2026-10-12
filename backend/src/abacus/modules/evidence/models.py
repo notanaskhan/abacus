@@ -139,3 +139,27 @@ class UploadExtraction(Base):
     debits: Mapped[Decimal | None] = mapped_column(Numeric(20, 2))
     grand_total: Mapped[Decimal | None] = mapped_column(Numeric(20, 2))
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class UploadCheck(Base):
+    """One mechanical check or ledger cross-check of an upload (SPEC-029; TASK-055)."""
+
+    __tablename__ = "upload_checks"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    evidence_version_id: Mapped[UUID]
+    checker_version: Mapped[str]
+    document_kind: Mapped[str | None]
+    check_code: Mapped[str]
+    outcome: Mapped[str]
+    audience: Mapped[str]
+    reason: Mapped[str | None]
+    expected_date: Mapped[date | None]
+    found_date: Mapped[date | None]
+    amount: Mapped[Decimal | None] = mapped_column(Numeric(20, 2))
+    difference: Mapped[Decimal | None] = mapped_column(Numeric(20, 2))
+    account_code: Mapped[str | None]
+    ref_item_id: Mapped[UUID | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

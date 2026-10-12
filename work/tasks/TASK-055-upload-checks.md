@@ -4,7 +4,7 @@ title: "Upload processing, part 2: document kinds, mechanical checks and ledger 
 spec: SPEC-029
 acceptance_criteria: [AC-5, AC-6, AC-7, AC-8, AC-9]
 risk_zone: red
-status: awaiting-approval
+status: done
 branch: task-055-upload-checks
 worktree:
 created: 2026-10-12
@@ -30,7 +30,7 @@ SPEC-029 AC-5 to AC-9; goals 4, 5 and 6; the checks API from §6.
 - Code: `requests/classification.py` (tier rules), `requests/service.py` (create, classify, the tier override); `engagements/workbook.py` (`AccountRule`, `area_for`), `engagements/service.py` (`version_detail`, `engagement_metadata`); `evidence/processing.py`, `extraction.py`, `document_fields.py`, `workflows.py` (TASK-054); `evidence/service.py` (`engagement_snapshots`); `ledger/api.py` (`snapshot_view`); `agents/graph.py` (how snapshot accounts map to areas)
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-12: D1–D6 as recommended). Approved by founder: the paths named in D6
 
 ### What the code shows
 - **Classification** (`requests/classification.py`) is a fixed keyword table run on create and on reclassification. AR and AP agings are already told apart there (`ar_aging`, `ap_aging` datasets).
@@ -75,9 +75,14 @@ SPEC-029 AC-5 to AC-9; goals 4, 5 and 6; the checks API from §6.
 
 ## Progress log
 - `2026-10-12` — Design written for founder review, stacked on TASK-054 (#100).
+- `2026-10-12` — Built (D1–D6): migration 0044 (document kinds, backfilled by rule; `upload_checks`); kind rules, override and event; `checks.py`, `cross_checks.py`; workflow v2 (`patched("checks")`) and history; re-check on kind change; the checks API with the client filter; evidence → ledger. Unit tests (evidence 130, workflows 166) and gates pass. Local smoke: a December statement passes every check; a November statement for another company shows wrong period, wrong entity and totals; an aging with a total off by $10 shows the problem and a firm-only cross-check against receivables; changing the kind re-checks.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| Accounts named for a bank but holding no cash (fees, loans, interest, overdraft) aren't cash accounts | Found in the smoke: "Bank fees" would have counted | No |
+| `upload_checks` unique with NULLS NOT DISTINCT | A version with no kind is still checked once | No |
+| Item checks API under the item (`…/request-items/{item}/uploads/{version}/checks`) | Authorises with the item's client facts, as uploads do | No |
 
 ## Handoff
+Done (stacked on #100). Next: TASK-056 (previews), then TASK-057 (screens: client messages from the check codes, firm view, Board marker).

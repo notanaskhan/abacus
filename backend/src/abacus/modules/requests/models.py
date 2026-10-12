@@ -44,6 +44,9 @@ class RequestItem(Base):
     tier_rule: Mapped[str | None]
     # SPEC-027 (TASK-051): its own due date; None means the request list's default.
     due_on: Mapped[date | None]
+    # SPEC-029 (TASK-055): the document the item expects, set by rule or by the team.
+    document_kind: Mapped[str | None]
+    document_kind_source: Mapped[str | None]
 
 
 class Fulfilment(Base):

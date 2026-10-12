@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from temporalio import activity
 
-from abacus.modules.evidence.processing import process_upload
+from abacus.modules.evidence.processing import check_upload, process_upload
 from abacus.modules.evidence.workflow_types import UploadInput
 
 
@@ -17,4 +17,10 @@ async def extract_activity(given: UploadInput) -> str:
     return await process_upload(given)
 
 
-ACTIVITIES = (extract_activity,)
+@activity.defn(name="upload.check")
+async def check_activity(given: UploadInput) -> int:
+    """SPEC-029 (TASK-055): the mechanical checks and ledger cross-checks."""
+    return await check_upload(given)
+
+
+ACTIVITIES = (extract_activity, check_activity)

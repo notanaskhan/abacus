@@ -401,6 +401,56 @@ export type CandidateOut = {
 };
 
 /**
+ * CheckOut
+ */
+export type CheckOut = {
+    /**
+     * Account Code
+     */
+    account_code: string | null;
+    /**
+     * Amount
+     */
+    amount: string | null;
+    /**
+     * Audience
+     */
+    audience: 'client' | 'firm';
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Difference
+     */
+    difference: string | null;
+    /**
+     * Document Kind
+     */
+    document_kind: string | null;
+    /**
+     * Expected Date
+     */
+    expected_date: string | null;
+    /**
+     * Found Date
+     */
+    found_date: string | null;
+    /**
+     * Outcome
+     */
+    outcome: 'passed' | 'problem' | 'not_applicable';
+    /**
+     * Reason
+     */
+    reason: string | null;
+    /**
+     * Ref Item Id
+     */
+    ref_item_id: string | null;
+};
+
+/**
  * ClientAssigneeIn
  */
 export type ClientAssigneeIn = {
@@ -692,6 +742,20 @@ export type DiscardedOut = {
      * Id
      */
     id: string;
+};
+
+/**
+ * DocumentKindIn
+ */
+export type DocumentKindIn = {
+    /**
+     * Clear
+     */
+    clear?: boolean;
+    /**
+     * Document Kind
+     */
+    document_kind?: 'bank_statement' | 'ar_aging' | 'ap_aging' | 'schedule' | null;
 };
 
 /**
@@ -2104,6 +2168,14 @@ export type RequestItemOut = {
      * Description
      */
     description: string;
+    /**
+     * Document Kind
+     */
+    document_kind?: 'bank_statement' | 'ar_aging' | 'ap_aging' | 'schedule' | null;
+    /**
+     * Document Kind Source
+     */
+    document_kind_source?: 'rule' | 'override' | null;
     /**
      * Due On
      */
@@ -6040,6 +6112,62 @@ export type SetClientVisibilityResponses = {
 
 export type SetClientVisibilityResponse = SetClientVisibilityResponses[keyof SetClientVisibilityResponses];
 
+export type SetDocumentKindData = {
+    body: DocumentKindIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/document-kind';
+};
+
+export type SetDocumentKindErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SetDocumentKindError = SetDocumentKindErrors[keyof SetDocumentKindErrors];
+
+export type SetDocumentKindResponses = {
+    /**
+     * Successful Response
+     */
+    200: RequestItemOut;
+};
+
+export type SetDocumentKindResponse = SetDocumentKindResponses[keyof SetDocumentKindResponses];
+
 export type SetTierData = {
     body: TierIn;
     headers?: {
@@ -6226,6 +6354,68 @@ export type UploadResponses = {
 };
 
 export type UploadResponse = UploadResponses[keyof UploadResponses];
+
+export type UploadChecksData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/checks';
+};
+
+export type UploadChecksErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type UploadChecksError = UploadChecksErrors[keyof UploadChecksErrors];
+
+export type UploadChecksResponses = {
+    /**
+     * Response Upload Checks
+     *
+     * Successful Response
+     */
+    200: Array<CheckOut>;
+};
+
+export type UploadChecksResponse = UploadChecksResponses[keyof UploadChecksResponses];
 
 export type ItemVersionsData = {
     body?: never;

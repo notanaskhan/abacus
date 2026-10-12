@@ -798,6 +798,150 @@
         "title": "CandidateOut",
         "type": "object"
       },
+      "CheckOut": {
+        "properties": {
+          "account_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Account Code"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Amount"
+          },
+          "audience": {
+            "cls": "internal",
+            "enum": [
+              "client",
+              "firm"
+            ],
+            "title": "Audience",
+            "type": "string"
+          },
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "difference": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Difference"
+          },
+          "document_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Document Kind"
+          },
+          "expected_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Expected Date"
+          },
+          "found_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Found Date"
+          },
+          "outcome": {
+            "cls": "internal",
+            "enum": [
+              "passed",
+              "problem",
+              "not_applicable"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason"
+          },
+          "ref_item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Ref Item Id"
+          }
+        },
+        "required": [
+          "code",
+          "outcome",
+          "audience",
+          "document_kind",
+          "reason",
+          "expected_date",
+          "found_date",
+          "amount",
+          "difference",
+          "account_code",
+          "ref_item_id"
+        ],
+        "title": "CheckOut",
+        "type": "object"
+      },
       "ClientAssigneeIn": {
         "additionalProperties": false,
         "properties": {
@@ -1394,6 +1538,37 @@
           "id"
         ],
         "title": "DiscardedOut",
+        "type": "object"
+      },
+      "DocumentKindIn": {
+        "additionalProperties": false,
+        "properties": {
+          "clear": {
+            "cls": "internal",
+            "default": false,
+            "title": "Clear",
+            "type": "boolean"
+          },
+          "document_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "bank_statement",
+                  "ar_aging",
+                  "ap_aging",
+                  "schedule"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Document Kind"
+          }
+        },
+        "title": "DocumentKindIn",
         "type": "object"
       },
       "DraftItemOut": {
@@ -4094,6 +4269,40 @@
             "cls": "confidential",
             "title": "Description",
             "type": "string"
+          },
+          "document_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "bank_statement",
+                  "ar_aging",
+                  "ap_aging",
+                  "schedule"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Document Kind"
+          },
+          "document_kind_source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "rule",
+                  "override"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Document Kind Source"
           },
           "due_on": {
             "anyOf": [
@@ -12546,6 +12755,133 @@
         "x-abacus-action": "request_item.update"
       }
     },
+    "/v1/engagements/{engagement_id}/request-items/{item_id}/document-kind": {
+      "put": {
+        "description": "SPEC-029 AC-5: set the document the item expects, or return it to the rules.",
+        "operationId": "set_document_kind",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentKindIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Set Document Kind Route",
+        "tags": [
+          "requests"
+        ],
+        "x-abacus-action": "request_item.update"
+      }
+    },
     "/v1/engagements/{engagement_id}/request-items/{item_id}/tier": {
       "put": {
         "description": "SPEC-022 AC-2: override the item's tier, or clear the override.",
@@ -12955,6 +13291,137 @@
           "evidence"
         ],
         "x-abacus-action": "evidence.upload"
+      }
+    },
+    "/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/checks": {
+      "get": {
+        "description": "SPEC-029 AC-6 to AC-11: what code found in an upload; client roles see only theirs.",
+        "operationId": "upload_checks",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CheckOut"
+                  },
+                  "title": "Response Upload Checks",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Upload Checks Route",
+        "tags": [
+          "evidence"
+        ],
+        "x-abacus-action": "evidence.read"
       }
     },
     "/v1/engagements/{engagement_id}/request-items/{item_id}/versions": {

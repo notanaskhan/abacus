@@ -67,6 +67,7 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"agent_activity"}  # SPEC-027 (TASK-050): the feed is never rewritten
     | {"ledger_imports"}  # SPEC-028 (TASK-052): an upload and its check are facts
     | {"upload_extractions"}  # SPEC-029 (TASK-054): a derived record, rebuilt, never edited
+    | {"upload_checks"}  # SPEC-029 (TASK-055): what code found, as found
     | {"reminder_items"}  # SPEC-027 (TASK-051)
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
@@ -90,6 +91,7 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"id", "tenant_id", "engagement_id", "request_list_id", "description", "audit_area"}
         | {"created_by", "retrievability_tier"}
         | {"dataset", "tier_source", "tier_rule"}  # SPEC-022
+        | {"document_kind", "document_kind_source"}  # SPEC-029 (TASK-055)
     ),
     # Methodology templates (SPEC-008): insert-only, immutable versions.
     "methodology_templates": frozenset(
@@ -224,6 +226,7 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"status", "client_visible", "client_assignee_user_id"}
         | {"retrievability_tier", "dataset", "tier_source", "tier_rule"}  # SPEC-022
         | {"due_on"}  # SPEC-027 (TASK-051)
+        | {"document_kind", "document_kind_source"}  # SPEC-029 (TASK-055)
     ),
     "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
     "connections": frozenset(
@@ -311,6 +314,7 @@ TABLE_OWNERS: dict[str, str] = {
     "agent_activity": "agents",
     "ledger_imports": "connections",  # SPEC-028 (TASK-052)
     "upload_extractions": "evidence",  # SPEC-029 (TASK-054)
+    "upload_checks": "evidence",  # SPEC-029 (TASK-055)
     "reminders": "agents",  # SPEC-027 (TASK-051)
     "reminder_items": "agents",
     "engagement_letters": "engagements",

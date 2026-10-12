@@ -13,7 +13,8 @@ import io
 import unicodedata
 import zipfile
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
+from decimal import Decimal
 from typing import Final
 from uuid import UUID
 
@@ -24,7 +25,7 @@ from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import gate_client_data, get_ref, lock_ref
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.events import EvidenceUploaded
-from abacus.modules.evidence.repository import fingerprint_among, uploaded_versions
+from abacus.modules.evidence.repository import fingerprint_among, latest_checks, uploaded_versions
 from abacus.modules.evidence.service import NewItem, Provenance, add_version
 from abacus.modules.identity.api import (
     AuthContext,
@@ -357,3 +358,56 @@ def _user(actor_id: str) -> UUID | None:
         return UUID(actor_id)
     except ValueError:
         return None
+
+
+# --- Checks (SPEC-029; TASK-055) -----------------------------------------------------------------
+
+_CLIENT_ROLES: Final = frozenset({"client_admin", "client_contributor"})
+
+
+@dataclass(frozen=True)
+class CheckView:
+    code: str
+    outcome: str
+    audience: str
+    document_kind: str | None
+    reason: str | None
+    expected_date: date | None
+    found_date: date | None
+    amount: Decimal | None
+    difference: Decimal | None
+    account_code: str | None
+    ref_item_id: UUID | None
+
+
+async def upload_checks(
+    ctx: AuthContext, engagement_id: UUID, item_id: UUID, version_id: UUID
+) -> list[CheckView]:
+    """The latest checks of one of the item's uploads, for anyone allowed `evidence.read` on the
+    item. Client roles get only client-audience checks (SPEC-029 AC-10, Q3): enforced here, so
+    no screen can show a client a firm check."""
+    engagement = await get_ref(ctx, engagement_id)
+    item = await read_item(ctx.tenant, engagement_id, item_id)
+    await authorise(ctx, "evidence.read", _resource(item, engagement.resource()))
+    if version_id not in await read_item_versions(ctx.tenant, item_id):
+        raise NotFound("evidence_version")
+    client = await engagement_role_of(ctx.tenant, engagement_id, ctx.user_id) in _CLIENT_ROLES
+    async with tenant_session(ctx.tenant) as session:
+        rows = await latest_checks(session, version_id)
+    return [
+        CheckView(
+            r.check_code,
+            r.outcome,
+            r.audience,
+            r.document_kind,
+            r.reason,
+            r.expected_date,
+            r.found_date,
+            r.amount,
+            r.difference,
+            r.account_code,
+            r.ref_item_id,
+        )
+        for r in rows
+        if not client or r.audience == "client"
+    ]

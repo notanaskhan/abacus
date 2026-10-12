@@ -77,6 +77,8 @@ async def copy_items(
             dataset=old.dataset,
             tier_source=old.tier_source,
             tier_rule=old.tier_rule,
+            document_kind=old.document_kind,  # SPEC-029 (TASK-055)
+            document_kind_source=old.document_kind_source,
         )
         if old.client_visible:
             await set_client_fields(tx.session, item_id, client_visible=True)
