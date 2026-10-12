@@ -19,6 +19,8 @@ from abacus.modules.evidence.models import (
     ReviewDecision,
     UploadCheck,
     UploadExtraction,
+    UploadPreview,
+    UploadPreviewPage,
 )
 from abacus.modules.identity.api import AuthContext, visible
 
@@ -602,3 +604,61 @@ async def latest_checks(session: AsyncSession, version_id: UUID) -> Sequence[Upl
         .scalars()
         .all()
     )
+
+
+async def preview_for(
+    session: AsyncSession,
+    *,
+    evidence_version_id: UUID | None = None,
+    inbox_file_id: UUID | None = None,
+    renderer_version: str,
+) -> UploadPreview | None:
+    """SPEC-029 (TASK-056): the upload's preview by this renderer version, if made."""
+    source = (
+        UploadPreview.evidence_version_id == evidence_version_id
+        if evidence_version_id is not None
+        else UploadPreview.inbox_file_id == inbox_file_id
+    )
+    return (
+        await session.execute(
+            select(UploadPreview).where(source, UploadPreview.renderer_version == renderer_version)
+        )
+    ).scalar_one_or_none()
+
+
+async def insert_preview(session: AsyncSession, **values: object) -> UploadPreview | None:
+    """The new preview, or None when this source already has one by this renderer version."""
+    by_version = values.get("evidence_version_id") is not None
+    where = "evidence_version_id" if by_version else "inbox_file_id"
+    present = (
+        UploadPreview.evidence_version_id.is_not(None)
+        if by_version
+        else UploadPreview.inbox_file_id.is_not(None)
+    )
+    return (
+        await session.execute(
+            pg_insert(UploadPreview)
+            .values(**values)
+            .on_conflict_do_nothing(
+                index_elements=["tenant_id", where, "renderer_version"], index_where=present
+            )
+            .returning(UploadPreview)
+        )
+    ).scalar_one_or_none()
+
+
+async def insert_preview_pages(session: AsyncSession, rows: Sequence[dict[str, object]]) -> None:
+    if rows:
+        await session.execute(insert(UploadPreviewPage).values(list(rows)))
+
+
+async def preview_page(
+    session: AsyncSession, preview_id: UUID, page_no: int
+) -> UploadPreviewPage | None:
+    return (
+        await session.execute(
+            select(UploadPreviewPage).where(
+                UploadPreviewPage.preview_id == preview_id, UploadPreviewPage.page_no == page_no
+            )
+        )
+    ).scalar_one_or_none()

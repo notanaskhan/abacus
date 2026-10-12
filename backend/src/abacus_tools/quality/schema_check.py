@@ -68,6 +68,7 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"ledger_imports"}  # SPEC-028 (TASK-052): an upload and its check are facts
     | {"upload_extractions"}  # SPEC-029 (TASK-054): a derived record, rebuilt, never edited
     | {"upload_checks"}  # SPEC-029 (TASK-055): what code found, as found
+    | {"upload_previews", "upload_preview_pages"}  # SPEC-029 (TASK-056): server-made, kept
     | {"reminder_items"}  # SPEC-027 (TASK-051)
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
@@ -315,6 +316,8 @@ TABLE_OWNERS: dict[str, str] = {
     "ledger_imports": "connections",  # SPEC-028 (TASK-052)
     "upload_extractions": "evidence",  # SPEC-029 (TASK-054)
     "upload_checks": "evidence",  # SPEC-029 (TASK-055)
+    "upload_previews": "evidence",  # SPEC-029 (TASK-056)
+    "upload_preview_pages": "evidence",
     "reminders": "agents",  # SPEC-027 (TASK-051)
     "reminder_items": "agents",
     "engagement_letters": "engagements",

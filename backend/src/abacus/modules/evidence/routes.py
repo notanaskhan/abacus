@@ -5,10 +5,10 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
-from fastapi import Depends, Query, Request, Response
+from fastapi import Depends, Path, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from abacus.kernel.classification import classified
@@ -19,6 +19,8 @@ from abacus.modules.evidence.inbox import (
     check_inbox,
     discard,
     inbox,
+    inbox_preview,
+    inbox_preview_page,
 )
 from abacus.modules.evidence.inbox import (
     assign as assign_inbox_file,
@@ -41,17 +43,21 @@ from abacus.modules.evidence.service import (
 from abacus.modules.evidence.setup_files import download_setup_file, upload_setup_file
 from abacus.modules.evidence.uploads import (
     MAX_UPLOAD_BYTES,
+    PreviewView,
     UploadTooLarge,
     UploadView,
     check_upload,
     upload,
     upload_checks,
+    upload_preview,
+    upload_preview_page,
     uploads_for,
 )
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
 router = AbacusRouter(prefix="/v1/engagements/{engagement_id}", tags=["evidence"])
 Method = Literal["retrieved", "uploaded", "imported"]
+PreviewKind = Literal["pages", "image", "table", "none", "pending"]
 
 
 class EvidenceVersionOut(BaseModel):
@@ -389,6 +395,93 @@ class CheckOut(BaseModel):
     difference: Annotated[Decimal | None, classified("confidential")]
     account_code: Annotated[str | None, classified("confidential")]
     ref_item_id: Annotated[UUID | None, classified("internal")]
+
+
+class SheetOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    name: Annotated[str, classified("confidential")]
+    rows: Annotated[list[list[str]], classified("restricted")]
+
+
+class PreviewOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    kind: Annotated[PreviewKind, classified("internal")]
+    reason: Annotated[str | None, classified("internal")]
+    page_count: Annotated[int, classified("internal")]
+    truncated: Annotated[bool, classified("internal")]
+    sheets: Annotated[list[SheetOut], classified("restricted")]
+
+
+def _preview_out(view: PreviewView) -> PreviewOut:
+    return PreviewOut(
+        kind=cast(PreviewKind, view.kind),  # the service returns only these
+        reason=view.reason,
+        page_count=view.page_count,
+        truncated=view.truncated,
+        sheets=[SheetOut(name=n, rows=[list(r) for r in rows]) for n, rows in view.sheets],
+    )
+
+
+def _png_response(content: bytes) -> Response:
+    """A server-made PNG (ADR-110): never the raw upload, never cached, never sniffed."""
+    return Response(
+        content=content,
+        media_type="image/png",
+        headers={
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "private, no-store",
+            "Content-Security-Policy": "default-src 'none'",
+        },
+    )
+
+
+@router.get(
+    "/request-items/{item_id}/uploads/{version_id}/preview",
+    action="evidence.read",
+    response_model=PreviewOut,
+)
+async def upload_preview_route(
+    engagement_id: UUID, item_id: UUID, version_id: UUID, ctx: Ctx
+) -> PreviewOut:
+    """SPEC-029 AC-12: what the viewer shows ("pending" until the workflow has made it)."""
+    return _preview_out(await upload_preview(ctx, engagement_id, item_id, version_id))
+
+
+@router.get(
+    "/request-items/{item_id}/uploads/{version_id}/preview/pages/{page_no}",
+    action="evidence.read",
+    response_model=bytes,
+)
+async def upload_preview_page_route(
+    engagement_id: UUID,
+    item_id: UUID,
+    version_id: UUID,
+    page_no: Annotated[int, Path(ge=1, le=50)],
+    ctx: Ctx,
+) -> Response:
+    return _png_response(
+        await upload_preview_page(ctx, engagement_id, item_id, version_id, page_no)
+    )
+
+
+@router.get("/inbox/{file_id}/preview", action="evidence.upload", response_model=PreviewOut)
+async def inbox_preview_route(engagement_id: UUID, file_id: UUID, ctx: Ctx) -> PreviewOut:
+    """SPEC-029 AC-12, Q8: an inbox file's preview, for whoever may see the file."""
+    return _preview_out(await inbox_preview(ctx, engagement_id, file_id))
+
+
+@router.get(
+    "/inbox/{file_id}/preview/pages/{page_no}", action="evidence.upload", response_model=bytes
+)
+async def inbox_preview_page_route(
+    engagement_id: UUID,
+    file_id: UUID,
+    page_no: Annotated[int, Path(ge=1, le=50)],
+    ctx: Ctx,
+) -> Response:
+    return _png_response(await inbox_preview_page(ctx, engagement_id, file_id, page_no))
 
 
 @router.get(

@@ -163,3 +163,37 @@ class UploadCheck(Base):
     account_code: Mapped[str | None]
     ref_item_id: Mapped[UUID | None]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class UploadPreview(Base):
+    """What the viewer shows for an upload (SPEC-029 goal 8; TASK-056). Insert-only."""
+
+    __tablename__ = "upload_previews"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    evidence_version_id: Mapped[UUID | None]
+    inbox_file_id: Mapped[UUID | None]
+    renderer_version: Mapped[str]
+    kind: Mapped[str]
+    reason: Mapped[str | None]
+    page_count: Mapped[int] = mapped_column(server_default=FetchedValue())
+    truncated: Mapped[bool] = mapped_column(server_default=FetchedValue())
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class UploadPreviewPage(Base):
+    """One server-made PNG of a preview (TASK-056). Insert-only."""
+
+    __tablename__ = "upload_preview_pages"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    preview_id: Mapped[UUID] = mapped_column(primary_key=True)
+    page_no: Mapped[int] = mapped_column(primary_key=True)
+    storage_key: Mapped[str]
+    storage_version_id: Mapped[str]
+    fingerprint: Mapped[str]
+    size_bytes: Mapped[int]
+    width: Mapped[int]
+    height: Mapped[int]

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from temporalio import activity
 
-from abacus.modules.evidence.processing import check_upload, process_upload
+from abacus.modules.evidence.processing import check_upload, preview_upload, process_upload
 from abacus.modules.evidence.workflow_types import UploadInput
 
 
@@ -23,4 +23,10 @@ async def check_activity(given: UploadInput) -> int:
     return await check_upload(given)
 
 
-ACTIVITIES = (extract_activity, check_activity)
+@activity.defn(name="upload.preview")
+async def preview_activity(given: UploadInput) -> str:
+    """SPEC-029 (TASK-056): server-made previews."""
+    return await preview_upload(given)
+
+
+ACTIVITIES = (extract_activity, check_activity, preview_activity)

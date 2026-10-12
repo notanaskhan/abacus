@@ -1879,6 +1879,32 @@ export type PauseIn = {
 };
 
 /**
+ * PreviewOut
+ */
+export type PreviewOut = {
+    /**
+     * Kind
+     */
+    kind: 'pages' | 'image' | 'table' | 'none' | 'pending';
+    /**
+     * Page Count
+     */
+    page_count: number;
+    /**
+     * Reason
+     */
+    reason: string | null;
+    /**
+     * Sheets
+     */
+    sheets: Array<SheetOut>;
+    /**
+     * Truncated
+     */
+    truncated: boolean;
+};
+
+/**
  * PriorChoiceOut
  */
 export type PriorChoiceOut = {
@@ -2500,6 +2526,20 @@ export type SetupStepOut = {
      * State
      */
     state: 'done' | 'waiting' | 'blocked' | 'warning' | 'not_needed';
+};
+
+/**
+ * SheetOut
+ */
+export type SheetOut = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Rows
+     */
+    rows: Array<Array<string>>;
 };
 
 /**
@@ -5213,6 +5253,124 @@ export type DiscardResponses = {
 
 export type DiscardResponse = DiscardResponses[keyof DiscardResponses];
 
+export type InboxPreviewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * File Id
+         */
+        file_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/inbox/{file_id}/preview';
+};
+
+export type InboxPreviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type InboxPreviewError = InboxPreviewErrors[keyof InboxPreviewErrors];
+
+export type InboxPreviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: PreviewOut;
+};
+
+export type InboxPreviewResponse = InboxPreviewResponses[keyof InboxPreviewResponses];
+
+export type InboxPreviewPageData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * File Id
+         */
+        file_id: string;
+        /**
+         * Page No
+         */
+        page_no: number;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/inbox/{file_id}/preview/pages/{page_no}';
+};
+
+export type InboxPreviewPageErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type InboxPreviewPageError = InboxPreviewPageErrors[keyof InboxPreviewPageErrors];
+
+export type InboxPreviewPageResponses = {
+    /**
+     * Response Inbox Preview Page
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type InboxPreviewPageResponse = InboxPreviewPageResponses[keyof InboxPreviewPageResponses];
+
 export type IndependenceData = {
     body: IndependenceIn;
     headers?: {
@@ -6416,6 +6574,132 @@ export type UploadChecksResponses = {
 };
 
 export type UploadChecksResponse = UploadChecksResponses[keyof UploadChecksResponses];
+
+export type UploadPreviewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/preview';
+};
+
+export type UploadPreviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type UploadPreviewError = UploadPreviewErrors[keyof UploadPreviewErrors];
+
+export type UploadPreviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: PreviewOut;
+};
+
+export type UploadPreviewResponse = UploadPreviewResponses[keyof UploadPreviewResponses];
+
+export type UploadPreviewPageData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+        /**
+         * Page No
+         */
+        page_no: number;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/preview/pages/{page_no}';
+};
+
+export type UploadPreviewPageErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type UploadPreviewPageError = UploadPreviewPageErrors[keyof UploadPreviewPageErrors];
+
+export type UploadPreviewPageResponses = {
+    /**
+     * Response Upload Preview Page
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type UploadPreviewPageResponse = UploadPreviewPageResponses[keyof UploadPreviewPageResponses];
 
 export type ItemVersionsData = {
     body?: never;

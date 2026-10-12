@@ -10,22 +10,32 @@ from __future__ import annotations
 
 import asyncio
 import io
+import json
 import unicodedata
 import zipfile
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from decimal import Decimal
-from typing import Final
+from typing import Final, cast
 from uuid import UUID
 
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.scanning import scan
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import gate_client_data, get_ref, lock_ref
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.events import EvidenceUploaded
-from abacus.modules.evidence.repository import fingerprint_among, latest_checks, uploaded_versions
+from abacus.modules.evidence.extraction import EXTRACTOR_VERSION
+from abacus.modules.evidence.previews import RENDERER_VERSION, TABLE_ROWS
+from abacus.modules.evidence.repository import (
+    extraction_for,
+    fingerprint_among,
+    latest_checks,
+    preview_for,
+    preview_page,
+    uploaded_versions,
+)
 from abacus.modules.evidence.service import NewItem, Provenance, add_version
 from abacus.modules.identity.api import (
     AuthContext,
@@ -411,3 +421,111 @@ async def upload_checks(
         for r in rows
         if not client or r.audience == "client"
     ]
+
+
+# --- Previews (SPEC-029 goal 8; TASK-056) --------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class PreviewView:
+    kind: str  # pages | image | table | none; "pending" while the workflow hasn't made it yet
+    reason: str | None
+    page_count: int
+    truncated: bool
+    sheets: tuple[tuple[str, tuple[tuple[str, ...], ...]], ...] = ()
+
+
+async def _authorised_version(
+    ctx: AuthContext, engagement_id: UUID, item_id: UUID, version_id: UUID
+) -> None:
+    """`evidence.read` on the item with its client facts, and the version fulfils it."""
+    engagement = await get_ref(ctx, engagement_id)
+    item = await read_item(ctx.tenant, engagement_id, item_id)
+    await authorise(ctx, "evidence.read", _resource(item, engagement.resource()))
+    if version_id not in await read_item_versions(ctx.tenant, item_id):
+        raise NotFound("evidence_version")
+
+
+async def preview_of(
+    tenant: TenantContext, *, evidence_version_id: UUID | None, inbox_file_id: UUID | None
+) -> PreviewView:
+    """For a caller that has authorised on the upload: the viewer's description, with a
+    spreadsheet's first rows as plain text (from the extraction, TASK-054)."""
+    async with tenant_session(tenant) as session:
+        found = await preview_for(
+            session,
+            evidence_version_id=evidence_version_id,
+            inbox_file_id=inbox_file_id,
+            renderer_version=RENDERER_VERSION,
+        )
+        extracted = await extraction_for(
+            session,
+            evidence_version_id=evidence_version_id,
+            inbox_file_id=inbox_file_id,
+            extractor_version=EXTRACTOR_VERSION,
+        )
+    if found is None:
+        return PreviewView("pending", None, 0, False)
+    sheets: tuple[tuple[str, tuple[tuple[str, ...], ...]], ...] = ()
+    truncated = found.truncated
+    if found.kind == "table" and extracted is not None and extracted.storage_key is not None:
+        stored = storage.StoredObject(
+            extracted.storage_key,
+            extracted.storage_version_id or "",
+            extracted.fingerprint or "",
+            extracted.size_bytes or 0,
+        )
+        document = json.loads(await storage.get(tenant.tenant_id, stored))
+        tables = cast(list[dict[str, object]], document.get("tables") or [])
+        built: list[tuple[str, tuple[tuple[str, ...], ...]]] = []
+        for table in tables:
+            rows = cast(list[list[object]], table.get("rows") or [])
+            truncated = truncated or len(rows) > TABLE_ROWS
+            built.append(
+                (
+                    str(table.get("sheet") or ""),
+                    tuple(tuple(str(c) for c in row) for row in rows[:TABLE_ROWS]),
+                )
+            )
+        sheets = tuple(built)
+    return PreviewView(found.kind, found.reason, found.page_count, truncated, sheets)
+
+
+async def preview_page_of(
+    tenant: TenantContext,
+    *,
+    evidence_version_id: UUID | None,
+    inbox_file_id: UUID | None,
+    page_no: int,
+) -> bytes:
+    """One server-made PNG, verified against its fingerprint by storage."""
+    async with tenant_session(tenant) as session:
+        found = await preview_for(
+            session,
+            evidence_version_id=evidence_version_id,
+            inbox_file_id=inbox_file_id,
+            renderer_version=RENDERER_VERSION,
+        )
+        page = await preview_page(session, found.id, page_no) if found is not None else None
+    if page is None:
+        raise NotFound("preview_page")
+    stored = storage.StoredObject(
+        page.storage_key, page.storage_version_id, page.fingerprint, page.size_bytes
+    )
+    return await storage.get(tenant.tenant_id, stored)
+
+
+async def upload_preview(
+    ctx: AuthContext, engagement_id: UUID, item_id: UUID, version_id: UUID
+) -> PreviewView:
+    await _authorised_version(ctx, engagement_id, item_id, version_id)
+    return await preview_of(ctx.tenant, evidence_version_id=version_id, inbox_file_id=None)
+
+
+async def upload_preview_page(
+    ctx: AuthContext, engagement_id: UUID, item_id: UUID, version_id: UUID, page_no: int
+) -> bytes:
+    await _authorised_version(ctx, engagement_id, item_id, version_id)
+    return await preview_page_of(
+        ctx.tenant, evidence_version_id=version_id, inbox_file_id=None, page_no=page_no
+    )

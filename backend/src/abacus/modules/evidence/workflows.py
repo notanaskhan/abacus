@@ -46,4 +46,13 @@ class UploadProcessing:
                 start_to_close_timeout=_TIMEOUT,
                 retry_policy=_RETRY,
             )
+        # v3 (TASK-056): previews, for versions and inbox files alike.
+        if workflow.patched("previews"):
+            await workflow.execute_activity(
+                "upload.preview",
+                given,
+                result_type=str,
+                start_to_close_timeout=_TIMEOUT,
+                retry_policy=_RETRY,
+            )
         return status

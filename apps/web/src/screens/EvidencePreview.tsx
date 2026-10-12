@@ -1,0 +1,222 @@
+import { inboxPreviewPage, type PreviewOut, uploadPreviewPage } from "@abacus/api-client";
+import { inboxPreviewOptions, uploadPreviewOptions } from "@abacus/api-client/query";
+import { Alert, Button, Skeleton, Table, Td, Th } from "@abacus/ui";
+import { useQuery } from "@tanstack/react-query";
+import { type JSX, useEffect, useState } from "react";
+import { isForbidden } from "../shell/mfa";
+
+export type PreviewSource =
+  | { kind: "upload"; engagementId: string; itemId: string; versionId: string }
+  | { kind: "inbox"; engagementId: string; fileId: string };
+
+const REASONS: Record<string, string> = {
+  encrypted: "This file is password-protected, so it can't be previewed.",
+  damaged: "This file couldn't be opened for a preview.",
+  too_large: "This image is too large to preview.",
+  not_previewable: "Preview isn't available for this kind of file.",
+  crashed: "This file couldn't be opened for a preview.",
+  empty: "This file has no pages.",
+};
+
+function usePreview(source: PreviewSource) {
+  const pending = (data: PreviewOut | undefined): number | false =>
+    data?.kind === "pending" ? 3000 : false;
+  const upload = useQuery({
+    ...uploadPreviewOptions({
+      path: {
+        engagement_id: source.engagementId,
+        item_id: source.kind === "upload" ? source.itemId : "",
+        version_id: source.kind === "upload" ? source.versionId : "",
+      },
+    }),
+    enabled: source.kind === "upload",
+    retry: false,
+    refetchInterval: (query) => pending(query.state.data),
+  });
+  const inbox = useQuery({
+    ...inboxPreviewOptions({
+      path: {
+        engagement_id: source.engagementId,
+        file_id: source.kind === "inbox" ? source.fileId : "",
+      },
+    }),
+    enabled: source.kind === "inbox",
+    retry: false,
+    refetchInterval: (query) => pending(query.state.data),
+  });
+  return source.kind === "upload" ? upload : inbox;
+}
+
+async function pageBlob(source: PreviewSource, page: number): Promise<Blob> {
+  if (source.kind === "upload") {
+    const { data } = await uploadPreviewPage({
+      path: {
+        engagement_id: source.engagementId,
+        item_id: source.itemId,
+        version_id: source.versionId,
+        page_no: page,
+      },
+      parseAs: "blob",
+      throwOnError: true,
+    });
+    return data;
+  }
+  const { data } = await inboxPreviewPage({
+    path: { engagement_id: source.engagementId, file_id: source.fileId, page_no: page },
+    parseAs: "blob",
+    throwOnError: true,
+  });
+  return data;
+}
+
+function PageImage({ source, page }: { source: PreviewSource; page: number }): JSX.Element {
+  const [url, setUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let current: string | null = null;
+    let live = true;
+    setUrl(null);
+    setFailed(false);
+    pageBlob(source, page)
+      .then((blob) => {
+        if (!live) return;
+        current = URL.createObjectURL(blob);
+        setUrl(current);
+      })
+      .catch(() => {
+        if (live) setFailed(true);
+      });
+    return () => {
+      live = false;
+      if (current !== null) URL.revokeObjectURL(current);
+    };
+  }, [source, page]);
+  if (failed) return <p className="text-sm text-danger">This page couldn&apos;t be loaded.</p>;
+  if (url === null) return <Skeleton className="h-96" />;
+  return (
+    <img
+      src={url}
+      alt={`Page ${String(page)}`}
+      className="w-full rounded-[var(--radius-control)] border border-line bg-surface"
+    />
+  );
+}
+
+/** SPEC-029 AC-12 (TASK-056): evidence in the browser, from server-made pages and extracted
+ * values; the raw file is never rendered here. */
+export function EvidencePreview({ source }: { source: PreviewSource }): JSX.Element {
+  const preview = usePreview(source);
+  const [page, setPage] = useState(1);
+  const [sheet, setSheet] = useState(0);
+
+  if (preview.isPending) return <Skeleton className="h-64" />;
+  if (preview.isError) {
+    return isForbidden(preview.error) ? (
+      <p className="text-sm text-muted">You can&apos;t preview this file.</p>
+    ) : (
+      <Alert title="Couldn't load the preview">Try again, or download the file instead.</Alert>
+    );
+  }
+  const data = preview.data;
+  if (data.kind === "pending") {
+    return <p className="text-sm text-muted">Preparing the preview…</p>;
+  }
+  if (data.kind === "none") {
+    return (
+      <p className="text-sm text-muted">
+        {REASONS[data.reason ?? ""] ?? "Preview isn't available."} Download it instead.
+      </p>
+    );
+  }
+  if (data.kind === "table") {
+    if (data.sheets.length === 0) {
+      return <p className="text-sm text-muted">This spreadsheet is empty.</p>;
+    }
+    const shown = data.sheets[Math.min(sheet, data.sheets.length - 1)];
+    const rows = shown?.rows ?? [];
+    return (
+      <div className="flex flex-col gap-2">
+        {data.sheets.length > 1 && (
+          <div role="tablist" aria-label="Sheets" className="flex flex-wrap gap-1">
+            {data.sheets.map((s, n) => (
+              <Button
+                key={`${s.name}-${String(n)}`}
+                size="sm"
+                role="tab"
+                aria-selected={n === sheet}
+                variant={n === sheet ? "default" : "ghost"}
+                onClick={() => {
+                  setSheet(n);
+                }}
+              >
+                {s.name || `Sheet ${String(n + 1)}`}
+              </Button>
+            ))}
+          </div>
+        )}
+        <div className="max-h-[32rem] overflow-auto">
+          {/* Cells are React text: a leading = + - @ is shown as typed, never evaluated. */}
+          <Table aria-label="Spreadsheet preview">
+            <thead className="sticky top-0 bg-surface">
+              <tr>
+                {(rows[0] ?? []).map((cell, n) => (
+                  <Th key={n}>{cell}</Th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.slice(1).map((row, r) => (
+                <tr key={r}>
+                  {row.map((cell, n) => (
+                    <Td key={n} className="whitespace-pre-wrap">
+                      {cell}
+                    </Td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </div>
+        {data.truncated && (
+          <p className="text-xs text-muted">Showing the first rows only. Download for the rest.</p>
+        )}
+      </div>
+    );
+  }
+  const count = Math.max(data.page_count, 1);
+  return (
+    <div className="flex flex-col gap-2">
+      <PageImage source={source} page={Math.min(page, count)} />
+      {count > 1 && (
+        <div className="flex items-center gap-2 text-sm">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={page <= 1}
+            onClick={() => {
+              setPage((p) => p - 1);
+            }}
+          >
+            Previous page
+          </Button>
+          <span className="tabular-nums">
+            Page {page} of {count}
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={page >= count}
+            onClick={() => {
+              setPage((p) => p + 1);
+            }}
+          >
+            Next page
+          </Button>
+        </div>
+      )}
+      {data.truncated && (
+        <p className="text-xs text-muted">Showing the first pages only. Download for the rest.</p>
+      )}
+    </div>
+  );
+}

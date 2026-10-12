@@ -73,7 +73,11 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert worker_main.connections.on_connection_created in built.handlers["connection.created"]
-    assert list(built.handlers[EVIDENCE_VERSION_CREATED]) == [worker_main.agents.start_screening]
+    assert list(built.handlers[EVIDENCE_VERSION_CREATED]) == [
+        worker_main.agents.start_screening,
+        # SPEC-029 (TASK-056 D1): every new version is processed, for previews.
+        worker_main.evidence.SUBSCRIPTIONS[EVIDENCE_VERSION_CREATED],
+    ]
 
 
 async def test_ac14_the_publisher_runs_every_subscribed_handler_and_ignores_other_events(
