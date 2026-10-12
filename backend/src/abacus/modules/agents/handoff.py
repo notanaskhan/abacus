@@ -104,6 +104,40 @@ class UploadReviewOutput(BaseModel):
     flags: Annotated[list[ReviewFlag], Field(max_length=5), classified("confidential")]
 
 
+# --- The matcher (SPEC-033; TASK-065) ---------------------------------------------------------
+
+# D1: candidates are given to the model as R1..R60; code maps them back to request items.
+CandidateRef = Annotated[str, Field(pattern=r"^R([1-9]|[1-5][0-9]|60)$")]
+
+
+class MatchProposal(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    request: Annotated[CandidateRef, classified("internal")]
+    confidence: Annotated[float, Field(ge=0, le=1), classified("internal")]
+    rationale: Annotated[str, Field(min_length=1, max_length=300), classified("confidential")]
+    citations: Annotated[
+        list[DocumentCitation], Field(min_length=1, max_length=3), classified("confidential")
+    ]
+
+
+class MatchOutput(BaseModel):
+    """The matcher's proposal: requests an inbox file may belong to, or none; a person assigns
+    (ADR-005)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    none_fit: Annotated[bool, classified("internal")]
+    rationale: Annotated[str | None, Field(max_length=300), classified("confidential")] = None
+    proposals: Annotated[list[MatchProposal], Field(max_length=3), classified("confidential")]
+
+    @model_validator(mode="after")
+    def _one_answer(self) -> MatchOutput:
+        if self.none_fit == bool(self.proposals):
+            raise ValueError("either proposals, or none_fit with no proposals")
+        return self
+
+
 @dataclass(frozen=True)
 class VerifiedDocumentCitation:
     page: int | None

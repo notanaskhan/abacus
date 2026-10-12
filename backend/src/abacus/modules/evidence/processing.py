@@ -514,20 +514,7 @@ async def review_material(tenant: TenantContext, version_id: UUID) -> ReviewMate
         return None
     items = await items_of_version(tenant, version_id)
     item = next((i for i in items), None)
-    document = await _document(tenant.tenant_id, row) if row.status == "extracted" else None
-    pages: dict[int, str] = {}
-    sheets: dict[str, tuple[tuple[str, ...], ...]] = {}
-    if document is not None:
-        for number, text in enumerate(_strings(document.get("pages")), start=1):
-            pages[number] = text
-        for table in cast(list[dict[str, object]], document.get("tables") or []):
-            if table.get("page") is not None:
-                continue  # a PDF's tables are already in its page text
-            rows = tuple(
-                tuple(str(c) for c in cast(list[object], r))
-                for r in cast(list[object], table.get("rows") or [])
-            )
-            sheets[str(table.get("sheet") or "")] = rows
+    pages, sheets = await document_text(tenant.tenant_id, row)
     excerpt_pages, excerpt_tables, truncated = _excerpt(pages, sheets)
     return ReviewMaterial(
         row.engagement_id,
@@ -542,6 +529,33 @@ async def review_material(tenant: TenantContext, version_id: UUID) -> ReviewMate
         pages,
         sheets,
     )
+
+
+async def document_text(
+    tenant_id: UUID, row: UploadExtraction
+) -> tuple[dict[int, str], dict[str, tuple[tuple[str, ...], ...]]]:
+    """The extraction's page text by number and table rows by sheet (empty unless extracted)."""
+    document = await _document(tenant_id, row) if row.status == "extracted" else None
+    pages: dict[int, str] = {}
+    sheets: dict[str, tuple[tuple[str, ...], ...]] = {}
+    if document is not None:
+        for number, text in enumerate(_strings(document.get("pages")), start=1):
+            pages[number] = text
+        for table in cast(list[dict[str, object]], document.get("tables") or []):
+            if table.get("page") is not None:
+                continue  # a PDF's tables are already in its page text
+            rows = tuple(
+                tuple(str(c) for c in cast(list[object], r))
+                for r in cast(list[object], table.get("rows") or [])
+            )
+            sheets[str(table.get("sheet") or "")] = rows
+    return pages, sheets
+
+
+def excerpt_of(
+    pages: dict[int, str], sheets: dict[str, tuple[tuple[str, ...], ...]]
+) -> tuple[tuple[tuple[int, str], ...], tuple[tuple[str, tuple[tuple[str, ...], ...]], ...], bool]:
+    return _excerpt(pages, sheets)
 
 
 def _strings(value: object) -> list[str]:

@@ -13,6 +13,7 @@ from abacus.modules.agents.fake_responses import SCREEN_PROMPT, screening_respon
 from abacus.modules.agents.fake_responses import install as install_fake_responses
 from abacus.modules.agents.graph import EngagementGraph, engagement_graph
 from abacus.modules.agents.handoff import Citation, Handoff, ScreeningOutput, VerifiedCitation
+from abacus.modules.agents.inbox_match import MATCHER, MatchOutcome, create_match_run, match
 from abacus.modules.agents.knowledge import KnowledgeHit, knowledge_context, search_knowledge
 from abacus.modules.agents.routes import graph_router, knowledge_router, router
 from abacus.modules.agents.screenings import (
@@ -65,6 +66,7 @@ __all__ = [
     "AGENTS",
     "ENGAGEMENT_AGENT_HANDLE",
     "ENGAGEMENT_AGENT_NEXT_TICK",
+    "MATCHER",
     "REVIEWER",
     "SCREENER",
     "SCREEN_PROMPT",
@@ -82,6 +84,7 @@ __all__ = [
     "HandleResult",
     "Handoff",
     "KnowledgeHit",
+    "MatchOutcome",
     "NextTickInput",
     "ReviewOutcome",
     "RunInput",
@@ -95,6 +98,7 @@ __all__ = [
     "SlotGrant",
     "UploadReviewWorkflow",
     "VerifiedCitation",
+    "create_match_run",
     "create_review_run",
     "create_screening_run",
     "engagement_graph",
@@ -104,6 +108,7 @@ __all__ = [
     "knowledge_context",
     "knowledge_router",
     "load_agent_context",
+    "match",
     "review",
     "router",
     "run_outcome",

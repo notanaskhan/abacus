@@ -15,6 +15,8 @@ from abacus.modules.agents.models import (
     AgentActivity,
     AgentRun,
     EngagementAgentState,
+    InboxMatchProposal,
+    InboxMatchRun,
     KnowledgeChunk,
     KnowledgeDocument,
     Reminder,
@@ -621,6 +623,18 @@ async def insert_upload_review(session: AsyncSession, *, values: dict[str, objec
 async def insert_review_flags(session: AsyncSession, rows: list[dict[str, object]]) -> None:
     if rows:
         await session.execute(insert(UploadReviewFlag).values(rows))
+
+
+async def insert_inbox_match(session: AsyncSession, *, values: dict[str, object]) -> UUID:
+    """SPEC-033 (TASK-065): a matcher run's result; its proposals follow."""
+    match_id = uuid4()
+    await session.execute(insert(InboxMatchRun).values(id=match_id, **values))
+    return match_id
+
+
+async def insert_match_proposals(session: AsyncSession, rows: list[dict[str, object]]) -> None:
+    if rows:
+        await session.execute(insert(InboxMatchProposal).values(rows))
 
 
 async def review_for_run(session: AsyncSession, run_id: UUID) -> UploadReview | None:

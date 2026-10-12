@@ -10,7 +10,8 @@ from pathlib import Path
 from typing import cast
 
 from abacus.ai_gateway import Tier
-from abacus.modules.agents.api import REVIEWER, spec
+from abacus.modules.agents.api import MATCHER, REVIEWER, spec
+from abacus_tools.evals import matching
 from abacus_tools.evals.report import render
 from abacus_tools.evals.runner import EvalRoute, Subset, guard, guard_real, prepare, run
 from abacus_tools.evals.upload_review import evaluate, load_suite, validate
@@ -30,6 +31,10 @@ def main(argv: list[str]) -> int:
     args = parser.parse_args(argv)
     if args.agent == "evidence.upload_reviewer":  # SPEC-030 (TASK-058 D4): its own runner
         return review_main(
+            cast(Tier | None, args.tier), cast(str, args.route), cast(Path, args.out)
+        )
+    if args.agent == MATCHER:  # SPEC-033 (TASK-065): its own runner
+        return match_main(
             cast(Tier | None, args.tier), cast(str, args.route), cast(Path, args.out)
         )
     [summary] = run(
@@ -60,6 +65,26 @@ def review_main(tier: Tier | None, route: str, out: Path) -> int:
     async def record(stack: Stack) -> None:
         world = await prepare(stack)
         results.append(await evaluate(stack, world, suite, chosen, route, out))
+
+    run_with_stack(record)
+    return 0 if results and results[0]["status"] == "passed" else 1
+
+
+def match_main(tier: Tier | None, route: str, out: Path) -> int:
+    """The matcher's suite, on a throwaway stack; real routes only (no fake answers)."""
+    if route == "fake":
+        print("the matcher has no fake answers: run it with --route direct")
+        return 2
+    guard()
+    guard_real(cast(EvalRoute, route))
+    chosen: Tier = tier or spec(MATCHER).tier
+    suite = matching.load_suite()
+    matching.validate(suite)
+    results: list[dict[str, object]] = []
+
+    async def record(stack: Stack) -> None:
+        world = await prepare(stack)
+        results.append(await matching.evaluate(stack, world, suite, chosen, route, out))
 
     run_with_stack(record)
     return 0 if results and results[0]["status"] == "passed" else 1

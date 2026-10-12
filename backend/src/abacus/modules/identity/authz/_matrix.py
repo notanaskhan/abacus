@@ -394,6 +394,10 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "allow",
         "agent": "task_scope",
     },
+    "inbox_match.run": {
+        "system": "allow",
+        "agent": "task_scope",
+    },
     "upload_review.read": {
         "engagement_partner": "allow",
         "manager": "allow",
