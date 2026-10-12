@@ -164,7 +164,7 @@ async def add_to_inbox(
     return entries[0]
 
 
-async def _context(
+async def inbox_context(
     ctx: AuthContext, engagement_id: UUID, items: Sequence[RequestItemView]
 ) -> EngagementFacts | None:
     """SPEC-033 (TASK-064): the year end, the client entity, and per bank statement item the
@@ -192,7 +192,7 @@ async def _entries(
 ) -> list[InboxEntry]:
     items: Sequence[RequestItemView] = await request_items_for(ctx, engagement_id) if rows else ()
     names = await names_of(sorted({r.uploaded_by for r in rows}, key=str))
-    context = await _context(ctx, engagement_id, items) if rows else None
+    context = await inbox_context(ctx, engagement_id, items) if rows else None
     content: dict[UUID, ContentFacts | None] = {}
     async with tenant_session(ctx.tenant) as session:
         for r in rows:

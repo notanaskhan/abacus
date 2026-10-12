@@ -183,14 +183,13 @@ def _content(
     return points, reasons
 
 
-def suggest(
+def score_all(
     file_name: str,
     items: Sequence[RequestItemView],
     facts: ContentFacts | None = None,
     context: EngagementFacts | None = None,
 ) -> list[Suggestion]:
-    """Up to three items that take evidence, best first, each scoring at least 35. Without
-    content facts, the file name decides alone (SPEC-023)."""
+    """Every item that takes evidence, scored, best first (the matcher's candidates, SPEC-033)."""
     file_words = {_stem(w) for w in words(file_name)}
     file_rule = classify(file_name, "").rule_id
     found: list[Suggestion] = []
@@ -206,16 +205,35 @@ def suggest(
             score = name
         if matched:
             reasons.append(Reason("file_name", ", ".join(matched)))
-        if score >= MIN_SCORE:
-            content = any(r.code != "file_name" for r in reasons)
-            found.append(
-                Suggestion(
-                    item.id,
-                    score,
-                    matched,
-                    "content" if content else "file_name",
-                    tuple(reasons),
-                )
+        content = any(r.code != "file_name" for r in reasons)
+        found.append(
+            Suggestion(
+                item.id, score, matched, "content" if content else "file_name", tuple(reasons)
             )
+        )
     found.sort(key=lambda s: (-s.score, str(s.request_item_id)))
-    return found[:MAX_SUGGESTIONS]
+    return found
+
+
+def suggest(
+    file_name: str,
+    items: Sequence[RequestItemView],
+    facts: ContentFacts | None = None,
+    context: EngagementFacts | None = None,
+) -> list[Suggestion]:
+    """Up to three items that take evidence, best first, each scoring at least 35. Without
+    content facts, the file name decides alone (SPEC-023)."""
+    scored = score_all(file_name, items, facts, context)
+    return [s for s in scored if s.score >= MIN_SCORE][:MAX_SUGGESTIONS]
+
+
+def should_match(scored: Sequence[Suggestion]) -> bool:
+    """SPEC-033 Q3: the matcher is skipped when code's top request scores at least twice the
+    next and matched on kind plus the date or an account."""
+    if not scored:
+        return True
+    top = scored[0]
+    second = scored[1].score if len(scored) > 1 else 0
+    codes = {r.code for r in top.reasons}
+    decisive = "kind" in codes and bool(codes & {"date", "account"})
+    return not (decisive and top.score >= 2 * second)

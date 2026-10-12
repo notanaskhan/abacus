@@ -6,6 +6,10 @@ from abacus.modules.evidence.events import (
     InboxFileAdded,
     UploadChecksRecorded,
 )
+from abacus.modules.evidence.inbox import add_to_inbox
+from abacus.modules.evidence.match_material import Candidate, MatchMaterial, match_material
+from abacus.modules.evidence.matching import MIN_SCORE as SUGGESTION_MIN_SCORE
+from abacus.modules.evidence.matching import suggest as suggest_by_name
 from abacus.modules.evidence.processing import (
     SUBSCRIPTIONS,
     WORKFLOWS,
@@ -50,6 +54,7 @@ from abacus.modules.evidence.service import (
 )
 from abacus.modules.evidence.storage import ContentTooLarge, IntegrityError, check_ready
 from abacus.modules.evidence.uploads import upload
+from abacus.modules.evidence.workflow_types import INBOX as UPLOAD_INBOX
 from abacus.modules.evidence.workflow_types import VERSION as UPLOAD_VERSION
 from abacus.modules.evidence.workflow_types import UploadInput
 from abacus.modules.evidence.workflows import UploadProcessing
@@ -63,10 +68,13 @@ __all__ = [
     "FIRST_LINE_ROW",
     "NAME_COLUMN",
     "SUBSCRIPTIONS",
+    "SUGGESTION_MIN_SCORE",
     "TOTAL_LABEL",
+    "UPLOAD_INBOX",
     "UPLOAD_VERSION",
     "WORKFLOWS",
     "XLSX_MEDIA_TYPE",
+    "Candidate",
     "ContentTooLarge",
     "EngagementArchived",
     "EvidenceVersionCreated",
@@ -75,6 +83,7 @@ __all__ = [
     "EvidenceVersionView",
     "InboxFileAdded",
     "IntegrityError",
+    "MatchMaterial",
     "NewItem",
     "Proposal",
     "Provenance",
@@ -85,11 +94,13 @@ __all__ = [
     "UploadChecksRecorded",
     "UploadInput",
     "UploadProcessing",
+    "add_to_inbox",
     "add_version",
     "check_ready",
     "check_upload_content",
     "engagement_snapshots",
     "evidence_versions_for",
+    "match_material",
     "process_upload",
     "read_content",
     "read_version",
@@ -98,6 +109,7 @@ __all__ = [
     "review_material",
     "router",
     "stage_content",
+    "suggest_by_name",
     "upload",
     "version_view",
 ]

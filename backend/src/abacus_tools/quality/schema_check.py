@@ -72,6 +72,7 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"upload_reviews", "upload_review_flags"}  # SPEC-030 (TASK-058): proposals, as made
     | {"reminder_items"}  # SPEC-027 (TASK-051)
     | {"comments", "comment_mentions", "comment_redactions"}  # SPEC-032 (TASK-062): ADR-109
+    | {"inbox_match_runs", "inbox_match_proposals"}  # SPEC-033 (TASK-065): proposals, as made
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -116,6 +117,15 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     # Client invitations (SPEC-015): never the token (only its hash, elsewhere).
     "client_invitations": frozenset(
         {"id", "tenant_id", "engagement_id", "email", "role", "invited_by", "expires_at"}
+    ),
+    # Inbox match proposals (SPEC-033; TASK-065): the matcher's, as made.
+    "inbox_match_runs": frozenset(
+        {"id", "tenant_id", "engagement_id", "inbox_file_id", "agent_run_id", "prompt_ref"}
+        | {"none_fit", "truncated"}
+    ),
+    "inbox_match_proposals": frozenset(
+        {"tenant_id", "match_id", "rank", "request_item_id", "confidence", "rationale"}
+        | {"citations", "shown"}
     ),
     # Comments (SPEC-032; TASK-062): the text sealed; mentions, redactions, last reads.
     "comments": frozenset(
@@ -338,6 +348,8 @@ TABLE_OWNERS: dict[str, str] = {
     "upload_preview_pages": "evidence",
     "upload_reviews": "agents",  # SPEC-030 (TASK-058)
     "upload_review_flags": "agents",
+    "inbox_match_runs": "agents",  # SPEC-033 (TASK-065)
+    "inbox_match_proposals": "agents",
     "reminders": "agents",  # SPEC-027 (TASK-051)
     "reminder_items": "agents",
     "engagement_letters": "engagements",

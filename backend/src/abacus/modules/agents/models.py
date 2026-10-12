@@ -184,3 +184,34 @@ class UploadReviewFlag(Base):
     rationale: Mapped[str]
     citations: Mapped[list[dict[str, object]]] = mapped_column(JSONB)
     shown: Mapped[bool]
+
+
+class InboxMatchRun(Base):
+    """One matcher run's proposals for an inbox file (SPEC-033; TASK-065). Insert-only."""
+
+    __tablename__ = "inbox_match_runs"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    inbox_file_id: Mapped[UUID]
+    agent_run_id: Mapped[UUID]
+    prompt_ref: Mapped[str]
+    none_fit: Mapped[bool]
+    truncated: Mapped[bool] = mapped_column(server_default=FetchedValue())
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class InboxMatchProposal(Base):
+    """A proposed request for an inbox file, with code-verified citations. Insert-only."""
+
+    __tablename__ = "inbox_match_proposals"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    match_id: Mapped[UUID] = mapped_column(primary_key=True)
+    rank: Mapped[int] = mapped_column(primary_key=True)
+    request_item_id: Mapped[UUID]
+    confidence: Mapped[Decimal] = mapped_column(Numeric(4, 3))
+    rationale: Mapped[str]
+    citations: Mapped[list[dict[str, object]]] = mapped_column(JSONB)
+    shown: Mapped[bool]

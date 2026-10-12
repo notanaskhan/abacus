@@ -1,0 +1,30 @@
+# The matcher (ADR-047; SPEC-033). Source of truth: compiled into _specs.py by
+# `python -m abacus_tools.codegen.agent_specs`; a test fails if they drift.
+id: evidence.matcher
+version: 1
+purpose: Propose which open request an inbox file belongs to, from its extracted contents.
+shape: single_call
+prompt: evidence.inbox_match@v1
+tier: small
+escalation_tier: medium
+input_schema: MatchInput
+output_schema: MatchOutput
+task_scope: [evidence.read, inbox_match.run]
+tools: []
+limits:
+  max_output_tokens: 800
+  max_cost_usd: "0.01"
+  max_steps: 1
+  max_seconds: 45
+autonomy: propose
+# A proposal below this confidence is recorded but not shown (SPEC-033 §4.6).
+confidence_routing:
+  below: "0.5"
+  route: hidden
+untrusted_inputs: [document]
+evaluation_suite: evals/matching
+# SPEC-033: firm-side proposals, deferrable under pressure (ADR-069/105).
+work_class: background
+essential: false
+cheaper_tiers: []
+routes: [bedrock, direct]

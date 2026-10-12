@@ -153,18 +153,21 @@ def aging_schedule_xlsx(
     as_of: date = date(2026, 12, 31),
     formulas: bool = False,
     total_off_by: Decimal = Decimal(0),
+    payables: bool = False,
 ) -> bytes:
-    """Each row: a customer and its five bucket amounts. With `formulas`, totals are written as
-    formulas with no cached value (as a script, not Excel, would save them)."""
+    """Each row: a customer (or, with `payables`, a vendor) and its five bucket amounts. With
+    `formulas`, totals are written as formulas with no cached value (as a script, not Excel,
+    would save them)."""
     workbook = Workbook()
     sheet = workbook.active
     if sheet is None:
         raise RuntimeError("openpyxl made a workbook without a sheet")
-    sheet.title = "AR Aging"
-    sheet.append([f"{company} - Accounts receivable aging"])
+    sheet.title = "AP Aging" if payables else "AR Aging"
+    side = "Accounts payable" if payables else "Accounts receivable"
+    sheet.append([f"{company} - {side} aging"])
     sheet.append([f"As of {as_of:%B} {as_of.day}, {as_of.year}"])
     sheet.append([])
-    sheet.append(list(AGING_HEADER))
+    sheet.append(["Vendor", *AGING_HEADER[1:]] if payables else list(AGING_HEADER))
     first = sheet.max_row + 1
     for name, buckets in rows:
         n = sheet.max_row + 1
@@ -314,4 +317,166 @@ def receipt_pdf(dated: date = date(2026, 12, 18)) -> bytes:
                 ]
             )
         ]
+    )
+
+
+# --- Content matching cases (SPEC-033; TASK-065 D2) ---------------------------------------------
+
+
+def _long_date(day: date) -> str:
+    return f"{day:%B} {day.day}, {day.year}"
+
+
+def loan_agreement_pdf(
+    *,
+    borrower: str = "Example Company Inc",
+    dated: date = date(2026, 3, 1),
+    title: str = "TERM LOAN AGREEMENT",
+    notes: tuple[str, ...] = (),
+) -> bytes:
+    return _pdf(
+        [
+            _text_page(
+                [
+                    *notes,
+                    title,
+                    f"This Term Loan Agreement is dated {_long_date(dated)}",
+                    f"between {borrower} (the Borrower) and First Harbor Bank, N.A. (the Lender).",
+                    "1. The Loan. The Lender agrees to lend the Borrower $2,500,000.00.",
+                    "2. Interest. Interest accrues at SOFR plus 2.25% per annum.",
+                    "3. Repayment. Quarterly installments of principal beginning June 30.",
+                    "4. Covenants. The Borrower shall maintain a debt service coverage ratio",
+                    "of not less than 1.25 to 1.00, tested at each fiscal year end.",
+                    "IN WITNESS WHEREOF the parties have executed this Agreement.",
+                ]
+            )
+        ]
+    )
+
+
+def lease_pdf(
+    *,
+    tenant: str = "Example Company Inc",
+    dated: date = date(2025, 7, 1),
+    notes: tuple[str, ...] = (),
+) -> bytes:
+    return _pdf(
+        [
+            _text_page(
+                [
+                    *notes,
+                    "COMMERCIAL LEASE AGREEMENT",
+                    f"Commencement date: {_long_date(dated)}",
+                    "Landlord: Riverside Properties LLC",
+                    f"Tenant: {tenant}",
+                    "Premises: Suite 400, 1200 Market Street",
+                    "Term: Sixty (60) months from the commencement date",
+                    "Base rent: $18,500.00 per month, increasing 3% annually",
+                    "Security deposit: $37,000.00",
+                ]
+            )
+        ]
+    )
+
+
+def insurance_certificate_pdf(
+    *, insured: str = "Example Company Inc", dated: date = date(2026, 1, 1)
+) -> bytes:
+    return _pdf(
+        [
+            _text_page(
+                [
+                    "CERTIFICATE OF LIABILITY INSURANCE",
+                    f"Date issued: {_long_date(dated)}",
+                    f"Insured: {insured}",
+                    "Insurer A: Granite Mutual Insurance Company",
+                    "Commercial general liability - each occurrence $1,000,000",
+                    "Policy number: CGL-8830-2026",
+                    f"Policy period: {_long_date(dated)} to "
+                    f"{_long_date(dated.replace(year=dated.year + 1))}",
+                ]
+            )
+        ]
+    )
+
+
+def board_minutes_pdf(
+    *,
+    company: str = "Example Company Inc",
+    dated: date = date(2026, 11, 18),
+    notes: tuple[str, ...] = (),
+) -> bytes:
+    return _pdf(
+        [
+            _text_page(
+                [
+                    f"MINUTES OF A MEETING OF THE BOARD OF DIRECTORS OF {company.upper()}",
+                    f"Held on {_long_date(dated)} at the company's offices",
+                    "Present: J. Alvarez (Chair), M. Chen, R. Okafor",
+                    "1. The minutes of the previous meeting were approved.",
+                    "2. The board approved the fiscal year budget.",
+                    "3. The board authorised the CFO to renew the revolving credit facility.",
+                    "There being no further business, the meeting was adjourned.",
+                    *notes,
+                ]
+            )
+        ]
+    )
+
+
+def flyer_pdf() -> bytes:
+    """A marketing flyer: fits no audit request."""
+    return _pdf(
+        [
+            _text_page(
+                [
+                    "SPRING OPEN HOUSE",
+                    "Join us for coffee and pastries!",
+                    "Saturday 10am - 2pm at our new showroom",
+                    "Free parking - bring a friend",
+                    "RSVP to events@example.test",
+                ]
+            )
+        ]
+    )
+
+
+def _sheet(title: str, rows: Sequence[Sequence[object]]) -> bytes:
+    workbook = Workbook()
+    sheet = workbook.active
+    if sheet is None:
+        raise RuntimeError("openpyxl made a workbook without a sheet")
+    sheet.title = title
+    for row in rows:
+        sheet.append(list(row))
+    out = io.BytesIO()
+    workbook.save(out)
+    return out.getvalue()
+
+
+def fixed_asset_schedule_xlsx(*, as_of: date = date(2026, 12, 31)) -> bytes:
+    return _sheet(
+        "Fixed assets",
+        [
+            [f"Fixed asset rollforward for the year ended {_long_date(as_of)}"],
+            [],
+            ["Asset class", "Opening cost", "Additions", "Disposals", "Closing cost"],
+            ["Machinery", 410000.0, 52000.0, 0.0, 462000.0],
+            ["Vehicles", 96000.0, 0.0, 18000.0, 78000.0],
+            ["Furniture", 34000.0, 4500.0, 0.0, 38500.0],
+        ],
+    )
+
+
+def payroll_register_xlsx(*, period_end: date = date(2026, 12, 31)) -> bytes:
+    return _sheet(
+        "Payroll register",
+        [
+            [f"Payroll register - pay period ending {_long_date(period_end)}"],
+            [],
+            ["Employee", "Gross pay", "Federal tax", "FICA", "Net pay"],
+            ["A. Rivera", 5200.0, 780.0, 397.8, 4022.2],
+            ["B. Nguyen", 4800.0, 690.0, 367.2, 3742.8],
+            ["C. Patel", 6100.0, 950.0, 466.65, 4683.35],
+        ],
     )
