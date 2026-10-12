@@ -45,6 +45,7 @@ class ModelRequest:
     user: str
     max_output_tokens: int
     prompt_ref: str
+    temperature: float | None = None  # pinned per model where accepted (the model catalog)
 
 
 @dataclass(frozen=True)

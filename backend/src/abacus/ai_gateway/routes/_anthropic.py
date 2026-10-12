@@ -14,7 +14,7 @@ from abacus.ai_gateway.providers import ModelRequest, ModelResponse, ProviderErr
 
 
 def message_args(request: ModelRequest) -> dict[str, Any]:  # SDK keyword arguments, mixed types
-    return {
+    args: dict[str, Any] = {  # SDK keyword arguments, mixed types
         "model": request.model,
         "max_tokens": request.max_output_tokens,
         "system": [
@@ -22,6 +22,11 @@ def message_args(request: ModelRequest) -> dict[str, Any]:  # SDK keyword argume
         ],
         "messages": [{"role": "user", "content": request.user}],
     }
+    if request.temperature is not None:
+        # The SDK no longer names sampling parameters; models that still accept one take it in
+        # the request body (the catalog pins it only for those).
+        args["extra_body"] = {"temperature": request.temperature}
+    return args
 
 
 def to_response(message: Message, model: str) -> ModelResponse:
