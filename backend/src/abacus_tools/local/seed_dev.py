@@ -4,7 +4,8 @@ Run: python -m abacus_tools.local.seed_dev   (`make seed`; run it again after cr
                                               engagement to connect its client entity)
 
 1. A firm, "Dev firm", with the sign-in server's dev users (`abacus_tools.fakes.oidc_server`):
-   `dev-leader` (practice leader: may create engagements) and `dev-staff`.
+   `dev-leader` (practice leader: may create engagements), `dev-staff`, and `dev-client`, a client
+   admin on every engagement of the firm (run `make seed` again after creating one).
 2. Every client entity of the firm without an active connection gets a fake one (there is no
    connections UI in SPEC-000), and every engagement gets a balanced synthetic trial balance for
    its fiscal period in `fake_connector_dir`, so *Retrieve trial balance* works.
@@ -35,6 +36,7 @@ from abacus_tools.synthetic.connector_fixtures import write_trial_balance
 
 FIRM = UUID("00000000-0000-4000-8000-00000000d0e5")
 FIRM_ROLES = {"dev-leader": "practice_leader", "dev-staff": None}
+CLIENT_ADMIN = "dev-client"
 # The compose stack's superuser (docker-compose.yml); local only.
 SUPERUSER_ENV = "ABACUS_LOCAL_SUPERUSER_DSN"
 DEFAULT_SUPERUSER = "postgresql://postgres:postgres@127.0.0.1:55432/abacus"
@@ -55,7 +57,7 @@ async def _seed_people(conn: asyncpg.Connection) -> None:
         FIRM,
     )
     for subject, label in DEV_USERS:
-        if subject not in FIRM_ROLES:
+        if subject not in FIRM_ROLES and subject != CLIENT_ADMIN:
             continue  # a dev identity with no firm (sign-up is tried with it)
         name = label.split(" (", 1)[0]
         user = await conn.fetchval(
@@ -72,10 +74,21 @@ async def _seed_people(conn: asyncpg.Connection) -> None:
         )
         if not exists:
             await conn.execute(
-                "INSERT INTO memberships (tenant_id, user_id, firm_role) VALUES ($1, $2, $3)",
+                "INSERT INTO memberships (tenant_id, user_id, firm_role, kind) "
+                "VALUES ($1, $2, $3, $4)",
                 FIRM,
                 user,
-                FIRM_ROLES[subject],
+                FIRM_ROLES.get(subject),
+                "client" if subject == CLIENT_ADMIN else "staff",
+            )
+        if subject == CLIENT_ADMIN:
+            # SPEC-015: a client membership; client admin on every engagement of the firm.
+            await conn.execute(
+                "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+                "SELECT tenant_id, id, $2, 'client_admin' FROM engagements WHERE tenant_id = $1 "
+                "ON CONFLICT DO NOTHING",
+                FIRM,
+                user,
             )
 
 

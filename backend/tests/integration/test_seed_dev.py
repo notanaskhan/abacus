@@ -108,7 +108,19 @@ async def test_ac1_seed_creates_the_dev_firm_and_users(
         seed_dev.ISSUER,
     )
     roles = {row["idp_subject"]: row["firm_role"] for row in rows}
-    assert roles == {"dev-leader": "practice_leader", "dev-staff": None}
+    assert roles == {"dev-leader": "practice_leader", "dev-staff": None, "dev-client": None}
+    kinds = await _rows(
+        dsn,
+        "SELECT u.idp_subject, m.kind FROM memberships m JOIN users u ON u.id = m.user_id "
+        "WHERE m.tenant_id = $1 AND u.idp_issuer = $2",
+        seed_dev.FIRM,
+        seed_dev.ISSUER,
+    )
+    assert {row["idp_subject"]: row["kind"] for row in kinds} == {
+        "dev-leader": "staff",
+        "dev-staff": "staff",
+        "dev-client": "client",
+    }
 
 
 async def test_ac1_seed_is_idempotent(migrated_db: MigratedDatabase, tmp_path: Path) -> None:
@@ -123,10 +135,10 @@ async def test_ac1_seed_is_idempotent(migrated_db: MigratedDatabase, tmp_path: P
     users = await _run(
         dsn,
         "SELECT count(*) FROM users WHERE idp_issuer = $1 AND idp_subject IN "
-        "('dev-leader', 'dev-staff')",
+        "('dev-leader', 'dev-staff', 'dev-client')",
         seed_dev.ISSUER,
     )
-    assert (firms, members, users) == (1, 2, 2)
+    assert (firms, members, users) == (1, 3, 3)
 
 
 async def test_ac1_seed_connects_an_engagement_and_writes_a_balanced_fixture(
