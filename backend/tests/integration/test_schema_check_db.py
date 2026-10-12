@@ -697,6 +697,9 @@ IDENTITY_OK = [
     "GRANT SELECT (tenant_id, id, user_id, firm_role, status) ON memberships TO abacus_identity",
     FIRMS_DDL,
     *[stmt.format(t="firms") for stmt in (ENABLE, FORCE, POLICY)],
+    # As migration 0004 does; since SPEC-024 (TASK-042) the app's firm UPDATE columns are
+    # declared, so any other UPDATE on firms is reported.
+    "REVOKE INSERT, UPDATE, DELETE ON firms FROM abacus_app",
     "GRANT SELECT (tenant_id, name) ON firms TO abacus_identity",
 ]
 
@@ -1078,24 +1081,74 @@ def test_ac20_update_limited_to_the_declared_column_passes(
 
 def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     assert {
-        "engagements": frozenset({"status"}),
-        "request_items": frozenset({"status"}),
-        "connections": frozenset({"status"}),
+        "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),  # TASK-016
+        "engagements": frozenset({"status", "methodology_version_id"}),  # SPEC-008: pinned once
+        "request_items": frozenset(
+            {"status", "client_visible", "client_assignee_user_id"}  # SPEC-015, SPEC-016
+            | {"retrievability_tier", "dataset", "tier_source", "tier_rule"}  # SPEC-022
+            | {"due_on"}  # SPEC-027 (TASK-051)
+        ),
+        # TASK-019: who has taken a queued version (take, release, reassign).
+        "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
+        # SPEC-020 (TASK-036): checking and revoking a connection; a state is spent once.
+        "connections": frozenset(
+            {"status", "last_checked_at", "last_check_ok", "revoked_at", "revoked_by"}
+        ),
+        "connection_states": frozenset({"used_at"}),
+        # SPEC-024 (TASK-041): staff invitations.
+        "staff_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
+        "firms": frozenset(
+            {"autonomy_level", "autonomy_set_at", "budget_reviewed_at", "walls_none_needed_at"}
+            | {"sso_skipped_at", "onboarding_dismissed_at"}  # SPEC-024 (TASK-042)
+            | {"require_letter"}  # SPEC-025 (TASK-044)
+            | {"agents_paused_at", "agents_paused_by"}  # SPEC-027 (TASK-050)
+            | {"time_zone"}  # SPEC-027 (TASK-051)
+        ),
+        "engagement_agents": frozenset(  # SPEC-027 (TASK-050, TASK-051)
+            {"paused_at", "paused_by", "reason", "updated_at", "self_paused_reason"}
+        ),
+        "reminders": frozenset({"status", "note", "decided_by", "decided_at"}),  # TASK-051
+        # SPEC-025 (TASK-044): a person answers once; the letter's record is replaced in place.
+        "independence_confirmations": frozenset(
+            {"status", "statement_version", "note", "answered_at"}
+        ),
+        "engagement_letters": frozenset(
+            {"status", "letter_date", "reason", "link", "recorded_by", "recorded_at"}
+            | {"file_key", "file_version_id", "file_fingerprint", "file_size", "file_media_type"}
+            | {"file_name"}
+        ),
+        "inbox_files": frozenset(  # SPEC-023
+            {"status", "assigned_item_id", "assigned_version_id", "decided_by", "decided_at"}
+        ),
+        "budgets": frozenset(  # SPEC-007
+            {"monthly_soft_usd", "monthly_hard_usd", "updated_by", "updated_at"}
+        ),
+        "feature_flag_states": frozenset({"value", "set_by", "reason", "set_at"}),  # SPEC-011
+        "notifications": frozenset({"read_at"}),  # SPEC-013
+        "client_invitations": frozenset(  # SPEC-015
+            {"status", "accepted_by", "accepted_at", "expires_at"}
+        ),
+        "support_sessions": frozenset(  # SPEC-012
+            {"status", "approved_by_kind", "approved_by", "starts_at", "expires_at", "ended_at"}
+            | {"acknowledged_at"}
+        ),
+        "knowledge_documents": frozenset({"status", "failure_code", "withdrawn_at"}),  # SPEC-009
+        "knowledge_chunks": frozenset({"embedding", "embedding_model", "embedded_at"}),
+        "agent_runs": frozenset(
+            {"status", "context_hash", "output", "failure_code", "finished_at"}
+            | {"queued_reason", "estimated_start_at"}  # TASK-018b
+        ),
         "sync_runs": frozenset(
             {"status", "raw_storage_key", "raw_version_id", "raw_fingerprint", "raw_size_bytes"}
             | {"raw_pulled_at", "source", "snapshot_id", "evidence_version_id"}
             | {"failure_code", "finished_at"}
             | {"queued_reason", "estimated_start_at"}  # TASK-018b
         ),
-        "agent_runs": frozenset(
-            {"status", "context_hash", "output", "failure_code", "finished_at"}
-            | {"queued_reason", "estimated_start_at"}  # TASK-018b
-        ),
-        "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),  # TASK-016
-        # TASK-019: who has taken a queued version (take, release, reassign).
-        "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
     } == sc.APP_UPDATE_COLUMNS
-    assert sc.APP_INSERT_COLUMNS["connections"] == frozenset()
+    # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
+    assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
+        {"id", "tenant_id", "client_entity_id", "provider", "scopes", "created_by"}
+    )
     assert sc.APP_INSERT_COLUMNS["ethical_walls"] == frozenset(  # TASK-016
         {"id", "tenant_id", "user_id", "client_id", "created_by"}
     )
@@ -1127,6 +1180,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         {"id", "tenant_id", "engagement_id", "agent_id", "agent_run_id", "prompt_id"}
         | {"prompt_version", "model", "tier", "input_tokens", "output_tokens", "cost_usd"}
         | {"outcome", "inputs_hash"}
+        | {"route"}  # SPEC-010 (TASK-025, migration 0021): the model route used
     )
     assert {"ledger_snapshots", "trial_balance_lines", "fulfilments"} <= sc.INSERT_ONLY_TABLES
     assert {"screening_results", "usage_records"} <= sc.INSERT_ONLY_TABLES
@@ -1134,11 +1188,14 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     assert sc.APP_INSERT_COLUMNS["engagements"] == frozenset(
         {"id", "tenant_id", "client_id", "client_entity_id", "name"}
         | {"fiscal_period_start", "fiscal_period_end", "created_by"}
+        | {"type"}  # SPEC-024: the engagement's type
+        | {"prior_engagement_id"}  # SPEC-025 (TASK-048): roll-forward, set at creation only
     )
     assert sc.APP_INSERT_COLUMNS["clients"] == frozenset({"id", "tenant_id", "name"})
     assert sc.APP_INSERT_COLUMNS["request_items"] == frozenset(
         {"id", "tenant_id", "engagement_id", "request_list_id", "description", "audit_area"}
         | {"created_by"}
+        | {"retrievability_tier", "dataset", "tier_source", "tier_rule"}  # SPEC-022
     )
     assert sc.APP_INSERT_COLUMNS["engagement_members"] == frozenset(
         {"tenant_id", "engagement_id", "user_id", "role"}
@@ -1410,13 +1467,14 @@ def test_ac20_a_wider_update_grant_on_sync_runs_is_reported(ledger: sc.Database)
         _sql(ledger.superuser_dsn, "REVOKE UPDATE (period_start) ON sync_runs FROM abacus_app")
 
 
-def test_ac20_an_insert_grant_on_connections_is_reported(ledger: sc.Database) -> None:
-    _sql(ledger.superuser_dsn, "GRANT INSERT (provider) ON connections TO abacus_app")
+def test_ac20_an_undeclared_insert_grant_on_connections_is_reported(ledger: sc.Database) -> None:
+    # SPEC-020 (TASK-036): the app inserts the declared columns; never the status.
+    _sql(ledger.superuser_dsn, "GRANT INSERT (status) ON connections TO abacus_app")
     try:
         problems = [m for m in sc.check(ledger.owner_url, ledger.app_url) if "connections" in m]
         assert problems
     finally:
-        _sql(ledger.superuser_dsn, "REVOKE INSERT (provider) ON connections FROM abacus_app")
+        _sql(ledger.superuser_dsn, "REVOKE INSERT (status) ON connections FROM abacus_app")
 
 
 # --- SECURITY DEFINER functions (TASK-018 018b, contract revision 1) -----------------------------
@@ -1559,5 +1617,16 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"capacity_admit", "capacity_block"}
         | {"review_decision_reason_check", "review_reason_codes_list"}  # 0015 (TASK-019)
         | {"eval_eligible"}  # 0016 (TASK-020)
+        | {"platform_spend_today", "engagement_spend_anomalies"}  # 0018 (TASK-022)
+        | {"support_sessions_review"}  # 0023 (TASK-027)
+        | {"notifications_purge"}  # 0024 (TASK-028)
+        # 0025 (TASK-030): invitation tokens, client users and memberships.
+        | {"invitation_token_set", "invitation_token_find", "provision_client_user"}
+        | {"add_client_membership", "remove_client_member"}
+        | {"team_member_set_role", "team_member_remove"}  # 0027 (TASK-032)
+        | {"firm_signup"}  # 0032 (TASK-040)
+        # 0033 (TASK-041): staff invitations, memberships, firm roles and revocation.
+        | {"staff_invitation_token_set", "staff_invitation_token_find", "add_staff_membership"}
+        | {"membership_set_firm_role", "membership_revoke"}
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []

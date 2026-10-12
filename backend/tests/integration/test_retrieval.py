@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
-from typing import Literal, Protocol, cast
+from typing import Final, Literal, Protocol, cast
 
 import asyncpg
 import pytest
@@ -135,6 +135,10 @@ class Event:
     after: dict[str, object]
 
 
+# Staff engagement roles bound by independence (SPEC-025 AC-7); firm and client roles aren't.
+STAFF_ROLES: Final = frozenset({"engagement_partner", "manager", "senior", "staff", "reviewer"})
+
+
 class Seeder:
     def __init__(self, dsn: str) -> None:
         self._dsn = dsn
@@ -216,7 +220,7 @@ class Seeder:
         client_id = await self.value(
             "SELECT client_id FROM client_entities WHERE id = $1", entity_id
         )
-        return cast(
+        engagement_id = cast(
             uuid.UUID,
             await self.value(
                 "INSERT INTO engagements (tenant_id, client_id, client_entity_id, name, "
@@ -229,6 +233,8 @@ class Seeder:
                 created_by,
             ),
         )
+        await self.open(tenant_id, engagement_id)
+        return engagement_id
 
     async def member(self, engagement_id: uuid.UUID, who: Person, role: Role) -> None:
         await self.run(
@@ -238,6 +244,31 @@ class Seeder:
             engagement_id,
             who.user_id,
             role,
+        )
+        if role in STAFF_ROLES:
+            await self.confirm(engagement_id, who)
+
+    async def open(self, tenant_id: uuid.UUID, engagement_id: uuid.UUID) -> None:
+        """SPEC-025 AC-7: the engagement is open to client data (accepted, independence
+        concluded), as migration 0036 recorded engagements made before Act 1."""
+        await self.run(
+            "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
+            "decided_by, documented_at, independence_concluded_by, independence_concluded_at, "
+            "independence_documented_at) VALUES ($1, $2, 'continuance', 'accepted', 'test-seed', "
+            "'Seeded', 'test-seed', clock_timestamp(), 'Seeded')",
+            tenant_id,
+            engagement_id,
+        )
+
+    async def confirm(self, engagement_id: uuid.UUID, who: Person) -> None:
+        """SPEC-025 AC-5: this staff member has confirmed their independence."""
+        await self.run(
+            "INSERT INTO independence_confirmations (tenant_id, engagement_id, user_id, status, "
+            "statement_version, answered_at) VALUES ($1, $2, $3, 'confirmed', 'v1', "
+            "clock_timestamp()) ON CONFLICT DO NOTHING",
+            who.tenant_id,
+            engagement_id,
+            who.user_id,
         )
 
     async def item(
@@ -649,7 +680,8 @@ async def test_ac20_without_an_active_unexpired_connection_for_the_entity_there_
 ) -> None:
     if state == "revoked":
         await seed.run(
-            "UPDATE connections SET status = 'revoked' WHERE id = $1", world.connection_id
+            "UPDATE connections SET status = 'revoked', revoked_at = now() WHERE id = $1",
+            world.connection_id,
         )
     elif state == "expired":
         await seed.run(
@@ -658,12 +690,14 @@ async def test_ac20_without_an_active_unexpired_connection_for_the_entity_there_
         )
     elif state == "other_entity":
         await seed.run(
-            "UPDATE connections SET status = 'revoked' WHERE id = $1", world.connection_id
+            "UPDATE connections SET status = 'revoked', revoked_at = now() WHERE id = $1",
+            world.connection_id,
         )
         await seed.connection(world.tenant_id, await seed.entity(world.tenant_id))
     else:
         await seed.run(
-            "UPDATE connections SET status = 'revoked' WHERE id = $1", world.connection_id
+            "UPDATE connections SET status = 'revoked', revoked_at = now() WHERE id = $1",
+            world.connection_id,
         )
     with pytest.raises(NoConnection):
         await _start(world)
@@ -1245,7 +1279,10 @@ async def test_ac11_a_revoked_connection_fails_the_run_as_connection_inactive(
     seed: Seeder, world: World
 ) -> None:
     run_id, system = await _started(world)
-    await seed.run("UPDATE connections SET status = 'revoked' WHERE id = $1", world.connection_id)
+    await seed.run(
+        "UPDATE connections SET status = 'revoked', revoked_at = now() WHERE id = $1",
+        world.connection_id,
+    )
     failed = await _failure(run_pipeline(system))
     assert (failed.status, failed.code) == ("failed", "connection_inactive")
     row = await seed.run_row(run_id)
