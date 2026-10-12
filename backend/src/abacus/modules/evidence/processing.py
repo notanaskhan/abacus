@@ -37,8 +37,10 @@ from abacus.modules.evidence.checks import (
     CHECKER_VERSION,
     ExtractedFields,
     aging_checks,
+    closing_consistent,
     duplicate,
     readable,
+    running_balance,
     schedule_checks,
     statement_checks,
 )
@@ -310,10 +312,11 @@ async def check_upload(given: UploadInput) -> int:
         duplicate(other_items[0].id if other_items else None, other is not None),
     ]
     if row.status == "extracted" and kind is not None:
-        document = await _document(tenant_id, row) if kind != "bank_statement" else None
+        document = await _document(tenant_id, row)
         fields = _fields(row, document)
         if kind == "bank_statement":
             results += statement_checks(fields, facts.fiscal_period_end, facts.client_entity_name)
+            results += [running_balance(fields), closing_consistent(fields)]  # TASK-058 (A)
         elif kind in ("ar_aging", "ap_aging"):
             results += aging_checks(fields, facts.fiscal_period_end)
         else:
@@ -452,7 +455,7 @@ class ReviewMaterial:
     extraction_status: str
     document_kind: str | None
     item_description: str
-    checks: tuple[tuple[str, str, str | None], ...]  # (code, outcome, reason), client-facing
+    checks: tuple[tuple[str, str, str | None], ...]  # (code, outcome, reason), every audience
     excerpt_pages: tuple[tuple[int, str], ...]
     excerpt_tables: tuple[tuple[str, tuple[tuple[str, ...], ...]], ...]
     truncated: bool
@@ -524,7 +527,8 @@ async def review_material(tenant: TenantContext, version_id: UUID) -> ReviewMate
         row.status,
         item.document_kind if item is not None else None,
         item.description if item is not None else "",
-        tuple((c.check_code, c.outcome, c.reason) for c in checks if c.audience == "client"),
+        # Every code finding, firm-only ones included: the model is told not to repeat them.
+        tuple((c.check_code, c.outcome, c.reason) for c in checks),
         excerpt_pages,
         excerpt_tables,
         truncated,

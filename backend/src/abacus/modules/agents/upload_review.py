@@ -57,6 +57,9 @@ from abacus.modules.evidence.api import ReviewMaterial, review_material
 from abacus.modules.identity.api import AgentContext, Forbidden, authorise, is_active_member
 
 REVIEWER = "evidence.upload_reviewer"
+NUMERIC_CHECKS = frozenset(
+    {"running_balance_breaks", "closing_balance_differs", "totals_dont_add_up"}
+)
 TERMINAL: dict[type[Exception], str] = {
     DataBoundaryRefused: "data_boundary",  # SPEC-030 AC-5: not run, never retried
     DatasetTooLarge: "context_too_large",
@@ -220,10 +223,19 @@ async def _review(agent: AgentContext) -> ReviewOutcome:
         return ReviewOutcome(run.id, "escalated", 0, 0)
     output = result.output
     threshold = reviewer.confidence_routing.below
+    # Code has the last word on numbers (ADR-050, SPEC-030 amendment): when it already found a
+    # balance or totals problem, an "altered" flag would only repeat it, so it's kept hidden.
+    numbers_flagged = any(
+        code in NUMERIC_CHECKS and outcome == "problem" for code, outcome, _ in material.checks
+    )
     rows: list[dict[str, object]] = []
     for position, flag in enumerate(output.flags, start=1):
         checked = verify(flag.citations, material.pages, material.sheets)
-        shown = any(c.verified for c in checked) and Decimal(str(flag.confidence)) >= threshold
+        shown = (
+            any(c.verified for c in checked)
+            and Decimal(str(flag.confidence)) >= threshold
+            and not (flag.category == "altered" and numbers_flagged)
+        )
         rows.append(
             {
                 "tenant_id": agent.tenant_id,

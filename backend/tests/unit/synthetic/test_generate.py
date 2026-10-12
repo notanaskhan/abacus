@@ -194,8 +194,9 @@ def test_ac3_golden_constants_are_keyed_by_version() -> None:
 
 def test_failure_categories_match_the_taxonomy_document() -> None:
     expected = taxonomy_code_names("Categories")
-    assert len(expected) == 11
-    assert expected == FAILURE_CATEGORIES
+    assert len(expected) == 12
+    # `draft` (SPEC-030) is a document's flaw, made by `synthetic.documents`, not a dataset flaw.
+    assert set(expected) - {"draft"} == set(FAILURE_CATEGORIES)
 
 
 def test_adversarial_categories_match_the_taxonomy_document() -> None:

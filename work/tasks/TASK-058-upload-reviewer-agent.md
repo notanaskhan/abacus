@@ -4,7 +4,7 @@ title: "Upload reviewer, part 1: the agent and its evaluation (synthetic data, e
 spec: SPEC-030
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-5, AC-7, AC-8, AC-9]
 risk_zone: red
-status: in-progress
+status: done
 branch: task-058-upload-reviewer
 worktree:
 created: 2026-10-12
@@ -73,9 +73,16 @@ SPEC-030 AC-1, AC-2, AC-3, AC-5, AC-7, AC-8, AC-9 (as they apply to a run starte
 - `2026-10-12` — Design written for founder review after SPEC-030 merged (#104).
 - `2026-10-12` — Built: spec, prompt v1, output schema, citation verifier, review material reader, context, runs and results (migration 0046), matrix actions, taxonomy `draft`, the reviewer's own evaluation module and suite, eligibility codegen reading suite versions. Unit tests and gates pass.
 - `2026-10-12` — Milestone (real model, synthetic, ~$0.07 a run, three runs): fixed two save bugs (a non-boolean `truncated`; the `id` insert grant) and a fixture bug (documents dated a year after the stack's year end). Final run (`docs/operations/upload-review/direct-2026-10-12.json`): irrelevant and draft recall and precision 1.0; containment 0.83; altered recall 0.40, precision 0.29. Nearly every altered error is the model doing balance arithmetic wrongly, which ADR-050 says code should do. Two answers failed the schema with quotes over 200 characters; the limit is now 1,000. Waiting on the founder for the altered decision.
+- `2026-10-12` — Founder chose option A. Added code checks `running_balance_breaks` and `closing_balance_differs` (firm audience, checker v2); prompt v2 (no arithmetic; altered narrowed); the model sees every code finding; an altered flag is hidden when code found a balance or totals problem; quotes joining lines of one page verify line by line; suite v2 with non-numeric altered cases. Fixed evaluation artefacts (repeated uploads were duplicates; provider capacity waits). Two consecutive real-model runs passed every threshold: irrelevant 1.0/1.0, draft recall 0.89 precision 1.0, altered 1.0/1.0, quotes 1.0, containment 1.0, about $0.003 a review (`docs/operations/upload-review/direct-2026-10-12-prompt-v2-passed.json`).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| The reviewer has its own evaluation module | The screener's runner, calibration and report assume ready/needs-revision outcomes | No |
+| Shown flags display only verified quotes; `quote_accuracy` reported without a threshold | SPEC-030 Q3 shows a flag with any verified quote; the model's raw quote accuracy is informative | No |
+| Quotes up to 1,000 characters; multi-line quotes verified line by line | Real answers quoted several lines; each line must still be on that page | No |
+| Balance continuity checks are firm audience | An editing sign is the firm's to raise, not a client message | No |
+| The gateway doesn't pin sampling temperature yet, so runs vary | Noted for the gateway (suite `sampling` isn't applied) | No |
 
 ## Handoff
+Done. Next: TASK-059 (trigger through the engagement agent, the API, the firm's AI review panel, Board marker). Consider pinning temperature in the gateway so evaluations are repeatable.

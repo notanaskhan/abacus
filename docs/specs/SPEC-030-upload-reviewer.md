@@ -10,6 +10,8 @@ created: 2026-10-12
 updated: 2026-10-12
 ---
 
+> **Amendment (founder, 2026-10-12, TASK-058 milestone):** numeric signs of editing are code's, not the model's (ADR-050). SPEC-029's checks gain `running_balance_breaks` and `closing_balance_differs` (firm audience). The reviewer's `altered` covers only signs that need no arithmetic, its prompt is `evidence.upload_review@v2`, and an `altered` flag is kept hidden when code already found a balance or totals problem. The evaluation suite is version 2.
+
 > **Instructions for coding agents**
 > - Implement only what this spec describes. Anything not listed here is out of scope.
 > - If anything is ambiguous or contradicts an ADR, **stop** and add it to *Open questions*. Do not guess.
@@ -42,7 +44,7 @@ This is Track B4 of the Act 2 plan.
 2. **Flags** in three categories:
    - `irrelevant`: not the kind of document the request asks for (an invoice for a bank statement request);
    - `draft`: marked or worded as preliminary, unsigned where a signature is expected, a watermark or "subject to change" (Q1: added to the failure taxonomy);
-   - `altered`: signs of editing code didn't already catch, for example a running balance that doesn't follow from the lines, or figures that contradict each other on different pages.
+   - `altered`: signs of editing that need no arithmetic, for example a transaction dated outside the statement's period, a check number used twice for different payments, or a name or account number stated differently in two places. Running and closing balances are checked by code (amendment above).
    Each flag has a confidence and a short rationale, and at least one citation: a page (or sheet and cell) and an exact quote.
 3. **A context builder** (ADR-051), code only, in fixed layers: instructions; the engagement's year end and client entity name; the request item's description and document kind; SPEC-029's check results (so the agent doesn't repeat them); and the document excerpt (page text and table rows, truncated to a budget), delimited and declared untrusted (ADR-052, ADR-064).
 4. **Citation verification by code** (ADR-066): a quote must appear in the extracted text of the page or cell it names, after whitespace normalisation. A flag with no verified citation isn't shown (Q3); it's recorded for evaluation.
