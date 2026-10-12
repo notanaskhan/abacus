@@ -6,7 +6,7 @@ export interface BoardFilters {
   status?: string;
   area?: string;
   tier?: string; // A to E, or "none" for unclassified
-  source?: string; // retrieved | imported | uploaded | none
+  source?: string; // retrieved | imported | uploaded | none | problems (SPEC-029)
   assignee?: string; // "assigned" | "unassigned"
   q?: string;
 }
@@ -40,7 +40,10 @@ export function applyFilters(rows: BoardRow[], f: BoardFilters): BoardRow[] {
         (f.tier === "none"
           ? row.item.retrievability_tier == null
           : row.item.retrievability_tier === f.tier)) &&
-      (f.source === undefined || source(row) === f.source) &&
+      (f.source === undefined ||
+        (f.source === "problems"
+          ? (row.evidence?.problems ?? 0) > 0
+          : source(row) === f.source)) &&
       (f.assignee === undefined || assigned(row.item) === f.assignee) &&
       (text === undefined || row.item.description.toLocaleLowerCase().includes(text)),
   );

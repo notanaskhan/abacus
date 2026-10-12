@@ -226,6 +226,12 @@ function RequestItemCard({
           {evidence === null
             ? "No evidence yet"
             : `${sourceLabel(evidence)} · version ${String(evidence.version_no)}`}
+          {/* SPEC-029 AC-11 (TASK-057): code found something in the latest version. */}
+          {evidence !== null && (evidence.problems ?? 0) > 0 && (
+            <Badge tone="warning" className="ml-2">
+              Problems found
+            </Badge>
+          )}
         </dd>
         <dt className="text-muted">Due</dt>
         <dd>
@@ -558,6 +564,7 @@ function FilterBar({
         ["imported", "Imported"],
         ["uploaded", "Uploaded"],
         ["none", "None yet"],
+        ["problems", "Problems found"],
       ])}
       {select("assignee", "Client assignee", [
         ["assigned", "Assigned"],

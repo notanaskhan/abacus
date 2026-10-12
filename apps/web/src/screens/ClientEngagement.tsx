@@ -17,6 +17,7 @@ import { Link } from "@tanstack/react-router";
 import { type JSX, useEffect, useState } from "react";
 import { errorMessage } from "../api";
 import { accessToken, signIn } from "../auth/session";
+import { ClientUploadChecks } from "./CheckResults";
 import { ConnectionPanel } from "./ConnectionPanel";
 import { EvidencePreview } from "./EvidencePreview";
 import { InboxPanel } from "./InboxPanel";
@@ -307,6 +308,21 @@ function ClientItem({
                 >
                   Preview
                 </button>
+                <ClientUploadChecks
+                  ids={{
+                    engagementId: item.engagement_id,
+                    itemId: item.id,
+                    versionId: u.evidence_version_id,
+                  }}
+                  uploadedAt={u.uploaded_at}
+                  replace={
+                    takesFiles ? (
+                      <Label htmlFor={inputId} className="cursor-pointer text-xs text-accent">
+                        Replace file
+                      </Label>
+                    ) : null
+                  }
+                />
               </li>
             ))}
           </ul>

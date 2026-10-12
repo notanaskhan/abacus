@@ -1025,6 +1025,10 @@ export type EvidenceVersionOut = {
      */
     period_start: string | null;
     /**
+     * Problems
+     */
+    problems?: number;
+    /**
      * Pulled At
      */
     pulled_at: string | null;

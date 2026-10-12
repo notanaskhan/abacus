@@ -17,7 +17,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Literal
+from typing import Final, Literal
 from uuid import UUID, uuid4
 
 from sqlalchemy.exc import IntegrityError
@@ -44,6 +44,7 @@ from abacus.modules.evidence.repository import (
     list_review_state,
     list_versions,
     next_version_no,
+    problem_counts,
     put_assignment,
     reason_codes,
     release_assignments_of,
@@ -56,6 +57,7 @@ from abacus.modules.identity.api import (
     Forbidden,
     authorise,
     could,
+    engagement_role_of,
     serving_request,
 )
 from abacus.modules.requests.api import (
@@ -284,6 +286,9 @@ async def version_view(tenant: TenantContext, version_id: UUID) -> EvidenceVersi
     )
 
 
+_CLIENT_ROLES: Final = frozenset({"client_admin", "client_contributor"})
+
+
 @dataclass(frozen=True)
 class EvidenceVersionSummary:
     """What the evidence board shows of a version (TASK-012 Q1): provenance, never content."""
@@ -297,6 +302,9 @@ class EvidenceVersionSummary:
     period_start: date | None
     period_end: date | None
     created_at: datetime
+    # SPEC-029 (TASK-057 D1): problem checks on the version's latest check run (client roles
+    # count only client-audience ones).
+    problems: int = 0
 
 
 async def evidence_versions_for(
@@ -304,8 +312,10 @@ async def evidence_versions_for(
 ) -> list[EvidenceVersionSummary]:
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, "evidence.read", ref.resource())
+    client = await engagement_role_of(ctx.tenant, engagement_id, ctx.user_id) in _CLIENT_ROLES
     async with tenant_session(ctx.tenant) as session:
         versions = await list_versions(session, ctx, engagement_id)
+        problems = await problem_counts(session, ctx, [v.id for v in versions], client_only=client)
     return [
         EvidenceVersionSummary(
             v.id,
@@ -317,6 +327,7 @@ async def evidence_versions_for(
             v.period_start,
             v.period_end,
             v.created_at,
+            problems.get(v.id, 0),
         )
         for v in versions
     ]
