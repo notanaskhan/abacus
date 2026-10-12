@@ -628,3 +628,82 @@ async def review_for_run(session: AsyncSession, run_id: UUID) -> UploadReview | 
     return (
         await session.execute(select(UploadReview).where(UploadReview.agent_run_id == run_id))
     ).scalar_one_or_none()
+
+
+async def latest_review_run(
+    session: AsyncSession, ctx: AuthContext, agent_id: str, version_id: UUID
+) -> AgentRun | None:
+    """SPEC-030 (TASK-059): the newest upload reviewer run on a version the caller may read."""
+    return (
+        await session.execute(
+            select(AgentRun)
+            .where(
+                AgentRun.agent_id == agent_id,
+                AgentRun.evidence_version_id == version_id,
+                visible(ctx, "upload_review.read", AgentRun.engagement_id),
+            )
+            .order_by(AgentRun.started_at.desc(), AgentRun.id.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
+async def shown_flags(
+    session: AsyncSession, ctx: AuthContext, run_id: UUID
+) -> list[UploadReviewFlag]:
+    """A run's shown flags, in order (hidden ones stay for evaluation and audit)."""
+    return list(
+        (
+            await session.execute(
+                select(UploadReviewFlag)
+                .join(
+                    UploadReview,
+                    (UploadReview.id == UploadReviewFlag.review_id)
+                    & (UploadReview.tenant_id == UploadReviewFlag.tenant_id),
+                )
+                .where(
+                    UploadReview.agent_run_id == run_id,
+                    UploadReviewFlag.shown.is_(True),
+                    visible(ctx, "upload_review.read", UploadReview.engagement_id),
+                )
+                .order_by(UploadReviewFlag.position)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def shown_flag_counts(
+    session: AsyncSession, ctx: AuthContext, engagement_id: UUID
+) -> dict[UUID, int]:
+    """Per evidence version of the engagement, the shown flags of its latest review."""
+    rows = (
+        await session.execute(
+            select(
+                UploadReview.evidence_version_id,
+                UploadReview.created_at,
+                UploadReview.id,
+                UploadReviewFlag.shown,
+            )
+            .outerjoin(
+                UploadReviewFlag,
+                (UploadReviewFlag.review_id == UploadReview.id)
+                & (UploadReviewFlag.tenant_id == UploadReview.tenant_id),
+            )
+            .where(
+                UploadReview.engagement_id == engagement_id,
+                visible(ctx, "upload_review.read", UploadReview.engagement_id),
+            )
+        )
+    ).all()
+    newest: dict[UUID, tuple[datetime, UUID]] = {}
+    for row in rows:
+        seen = newest.get(row.evidence_version_id)
+        if seen is None or (row.created_at, row.id) > seen:
+            newest[row.evidence_version_id] = (row.created_at, row.id)
+    counts: dict[UUID, int] = {}
+    for row in rows:
+        if newest[row.evidence_version_id][1] == row.id and row.shown:
+            counts[row.evidence_version_id] = counts.get(row.evidence_version_id, 0) + 1
+    return counts

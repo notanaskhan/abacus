@@ -4,6 +4,7 @@ import {
   getEngagementOptions,
   getRetrievalOptions,
   listEvidenceVersionsOptions,
+  reviewFlagsOptions,
   listEvidenceVersionsQueryKey,
   listRequestItemsOptions,
   listRequestItemsQueryKey,
@@ -60,6 +61,7 @@ export function Board({
   const engagement = useQuery(getEngagementOptions(path));
   const items = useQuery(listRequestItemsOptions(path));
   const versions = useQuery(listEvidenceVersionsOptions(path));
+  const reviewFlags = useQuery({ ...reviewFlagsOptions(path), retry: false });
   const defaultDue = useDefaultDue(engagementId);
   const search = useRouterState({ select: (state) => state.location.search });
   const filters = readFilters(search);
@@ -132,7 +134,9 @@ export function Board({
     return <Spinner label="Loading…" />;
   }
   const rows = boardRows(items.data, versions.data, results.data);
-  const shown = applyFilters(rows, filters);
+  // SPEC-030 (TASK-059): shown AI flags per version (firm roles only; a refusal shows none).
+  const aiFlags = new Map((reviewFlags.data ?? []).map((f) => [f.evidence_version_id, f.flags]));
+  const shown = applyFilters(rows, filters, aiFlags);
 
   return (
     <section aria-labelledby="board-heading" className="flex flex-col gap-4">
@@ -173,6 +177,7 @@ export function Board({
             <li key={row.item.id}>
               <RequestItemCard
                 row={row}
+                aiFlags={aiFlags.get(row.evidence?.id ?? "") ?? 0}
                 fallbackDue={defaultDue}
                 engagement={engagement.data}
                 pollingExpired={pollingExpired}
@@ -188,12 +193,14 @@ export function Board({
 
 function RequestItemCard({
   row,
+  aiFlags,
   fallbackDue,
   engagement,
   pollingExpired,
   onRefresh,
 }: {
   row: BoardRow;
+  aiFlags: number;
   fallbackDue: string | null | undefined;
   engagement: EngagementOut;
   pollingExpired: boolean;
@@ -230,6 +237,11 @@ function RequestItemCard({
           {evidence !== null && (evidence.problems ?? 0) > 0 && (
             <Badge tone="warning" className="ml-2">
               Problems found
+            </Badge>
+          )}
+          {evidence !== null && aiFlags > 0 && (
+            <Badge tone="warning" className="ml-2">
+              AI flags
             </Badge>
           )}
         </dd>
@@ -565,6 +577,7 @@ function FilterBar({
         ["uploaded", "Uploaded"],
         ["none", "None yet"],
         ["problems", "Problems found"],
+        ["ai_flags", "AI flags"],
       ])}
       {select("assignee", "Client assignee", [
         ["assigned", "Assigned"],

@@ -30,6 +30,7 @@ from abacus.ai_gateway import (
     call,
     sanitise_text,
 )
+from abacus.ai_gateway.routes import route_enabled
 from abacus.kernel.config import settings
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
@@ -57,8 +58,11 @@ from abacus.modules.evidence.api import ReviewMaterial, review_material
 from abacus.modules.identity.api import AgentContext, Forbidden, authorise, is_active_member
 
 REVIEWER = "evidence.upload_reviewer"
-NUMERIC_CHECKS = frozenset(
+# Problems code already found (balances, totals, period, company): an "altered" flag about the
+# same document would only repeat them, so it's kept hidden (TASK-058/059).
+CODE_FINDINGS = frozenset(
     {"running_balance_breaks", "closing_balance_differs", "totals_dont_add_up"}
+    | {"wrong_entity", "wrong_period", "stale_as_of"}
 )
 TERMINAL: dict[type[Exception], str] = {
     DataBoundaryRefused: "data_boundary",  # SPEC-030 AC-5: not run, never retried
@@ -81,12 +85,21 @@ class ReviewOutcome:
     hidden: int
 
 
+def model_available() -> bool:
+    """A real route the reviewer may use is enabled (TASK-059 D3): the fake model has no
+    reviewer answers, so without one nothing is started (the local stack, unless a developer
+    turns on the real model for the synthetic Dev firm)."""
+    return any(route_enabled(r) for r in spec(REVIEWER).routes)  # real routes only
+
+
 async def create_review_run(
     tenant_id: UUID, evidence_version_id: UUID, source_event_id: UUID, requested_by: UUID | None
 ) -> UUID | None:
     """The reviewer's run for this version, once per event, on behalf of `requested_by`. None
     without a person to act for, without an extraction, or over the daily cap (audited)."""
     if requested_by is None or not await is_active_member(tenant_id, requested_by):
+        return None
+    if not model_available():
         return None
     reviewer = spec(REVIEWER)
     reader = _reader(tenant_id, f"agents:{reviewer.id}")
@@ -223,10 +236,10 @@ async def _review(agent: AgentContext) -> ReviewOutcome:
         return ReviewOutcome(run.id, "escalated", 0, 0)
     output = result.output
     threshold = reviewer.confidence_routing.below
-    # Code has the last word on numbers (ADR-050, SPEC-030 amendment): when it already found a
-    # balance or totals problem, an "altered" flag would only repeat it, so it's kept hidden.
-    numbers_flagged = any(
-        code in NUMERIC_CHECKS and outcome == "problem" for code, outcome, _ in material.checks
+    # Code has the last word on what it checks (ADR-050, SPEC-030 amendment): when it already
+    # found such a problem, an "altered" flag would only repeat it, so it's kept hidden.
+    code_found = any(
+        code in CODE_FINDINGS and outcome == "problem" for code, outcome, _ in material.checks
     )
     rows: list[dict[str, object]] = []
     for position, flag in enumerate(output.flags, start=1):
@@ -234,7 +247,7 @@ async def _review(agent: AgentContext) -> ReviewOutcome:
         shown = (
             any(c.verified for c in checked)
             and Decimal(str(flag.confidence)) >= threshold
-            and not (flag.category == "altered" and numbers_flagged)
+            and not (flag.category == "altered" and code_found)
         )
         rows.append(
             {

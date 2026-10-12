@@ -4,7 +4,7 @@ title: "Upload reviewer, part 2: running it in the product and the firm's AI rev
 spec: SPEC-030
 acceptance_criteria: [AC-4, AC-5, AC-6, AC-7, AC-9, AC-10]
 risk_zone: red
-status: awaiting-approval
+status: done
 branch: task-059-upload-review-product
 worktree:
 created: 2026-10-12
@@ -30,7 +30,7 @@ SPEC-030 AC-4, AC-5, AC-6, AC-7, AC-9, AC-10.
 - Code: `agents/upload_review.py`, `agents/screenings.py` (`start_screening`, `request_screening`, workflow IDs), `agents/workflows.py` (`ScreeningWorkflow`), `agents/activities.py`, `agents/engagement_agent.py` (`apply_policy`, `agent_on`, `to_agent`, P-1), `evidence/processing.py` (`check_upload`), `evidence/events.py`; `apps/web/src/screens/ItemDetail.tsx`, `CheckResults.tsx`, `EvidencePreview.tsx`, `Board.tsx`
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-12: D1–D4 as recommended). Approved by founder: the paths named in D4
 
 ### What the code shows
 - **The screener's start is the pattern:** `evidence_version.created` goes to the engagement agent when it's on (its P-1 decides: paused, agent off, autonomy level), or straight to `start_screening` otherwise; "Screen now" (`request_screening`, `screening.request`) starts it at Advise. Its workflow creates the run, takes a work slot, calls the agent, retries when not admitted, and always ends a failed run.
@@ -64,9 +64,15 @@ SPEC-030 AC-4, AC-5, AC-6, AC-7, AC-9, AC-10.
 
 ## Progress log
 - `2026-10-12` — Design written for founder review after TASK-058 (#105) and the gateway temperature pin (#106) merged.
+- `2026-10-12` — Built (D1–D4): `upload_checks.recorded`; P-6; `review_start` (starter, "Review now", reads); `UploadReviewWorkflow` and activities (reusing the screener's slot and fail steps) with replay histories; `upload_review.read`; flag `upload_review.enabled`; the firm's AI review panel (verified quotes, preview page links), the Board's AI flags marker and filter. Unit (agents 386), workflow (171) and web (256) tests and gates pass. Local smoke: P-6 starts the reviewer; with no real model route it records `no_real_model` (a first run on the fake model retried as a provider outage until cancelled, which led to the guard). The product path with the real model on the synthetic Dev firm flagged a DRAFT statement with a verified quote. Evaluation still passes every threshold.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| No reviewer run without a real model route (`model_available`) | The fake model has no reviewer answers; it retried as an outage indefinitely | No |
+| Board flag counts come from an agents endpoint, not the evidence-version list | Evidence can't depend on agents (agents depends on evidence) | No |
+| An altered flag is hidden when code found a period, company, balance or totals problem | The real-model smoke repeated code's wrong-company finding as altered | No |
+| Reviewer runs reuse the screener's slot and fail activities | They work on any agent run | No |
 
 ## Handoff
+Done. SPEC-030 is complete. To try the reviewer locally: run the stack with the real model allowed for the synthetic Dev firm (`.env.evaluation` values). Next per the Act 2 plan: SPEC-031 client hub, then comments; B3 matching builds on the same extraction.

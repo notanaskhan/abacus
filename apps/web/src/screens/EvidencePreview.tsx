@@ -104,9 +104,19 @@ function PageImage({ source, page }: { source: PreviewSource; page: number }): J
 
 /** SPEC-029 AC-12 (TASK-056): evidence in the browser, from server-made pages and extracted
  * values; the raw file is never rendered here. */
-export function EvidencePreview({ source }: { source: PreviewSource }): JSX.Element {
+export function EvidencePreview({
+  source,
+  openAtPage,
+}: {
+  source: PreviewSource;
+  // SPEC-030 (TASK-059): an AI flag's quote opens the preview at its page.
+  openAtPage?: number | undefined;
+}): JSX.Element {
   const preview = usePreview(source);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(openAtPage ?? 1);
+  useEffect(() => {
+    if (openAtPage !== undefined) setPage(openAtPage);
+  }, [openAtPage]);
   const [sheet, setSheet] = useState(0);
 
   if (preview.isPending) return <Skeleton className="h-64" />;

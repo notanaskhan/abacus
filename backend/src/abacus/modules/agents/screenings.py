@@ -25,12 +25,19 @@ from abacus.modules.agents.engagement_agent import agent_on, firm_resumed, to_ag
 from abacus.modules.agents.engagement_agent_workflow import EngagementAgent
 from abacus.modules.agents.events import KnowledgeDocumentAdded
 from abacus.modules.agents.knowledge_workflow import KnowledgeEmbeddingWorkflow
+from abacus.modules.agents.review_start import WORKFLOWS as REVIEW_WORKFLOWS
+from abacus.modules.agents.review_start import start_upload_review
 from abacus.modules.agents.service import SCREENER
 from abacus.modules.agents.spec import spec
 from abacus.modules.agents.workflow_types import KnowledgeInput, ScreeningInput
 from abacus.modules.agents.workflows import ScreeningWorkflow
 from abacus.modules.engagements.api import EngagementCreated, get_ref
-from abacus.modules.evidence.api import EvidenceVersionCreated, InboxFileAdded, version_view
+from abacus.modules.evidence.api import (
+    EvidenceVersionCreated,
+    InboxFileAdded,
+    UploadChecksRecorded,
+    version_view,
+)
 from abacus.modules.identity.api import (
     AuthContext,
     FirmAgentsResumed,
@@ -48,6 +55,7 @@ WORKFLOWS: dict[type, WorkClass] = {
     KnowledgeEmbeddingWorkflow: "batch",
     EngagementAgent: "background",  # SPEC-027 (TASK-050): one per engagement, long-lived
 }
+WORKFLOWS.update(REVIEW_WORKFLOWS)  # SPEC-030 (TASK-059): the worker hosts it with these
 register_work_classes(WORKFLOWS)
 
 
@@ -117,6 +125,8 @@ SUBSCRIPTIONS = {
     InboxFileAdded.event_type: to_agent,
     DueDatesChanged.event_type: to_agent,  # SPEC-027 (TASK-051): reminders start again
     FirmAgentsResumed.event_type: firm_resumed,
+    # SPEC-030 (TASK-059): checks recorded for an upload; the reviewer may follow (P-6).
+    UploadChecksRecorded.event_type: start_upload_review,
 }
 
 

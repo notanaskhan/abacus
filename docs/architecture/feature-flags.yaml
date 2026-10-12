@@ -14,6 +14,13 @@ flags:
     kind: variant
     values: [evidence.screen@v0]
     default: evidence.screen@v0
+  - name: upload_review.enabled
+    description: The upload reviewer (AI) runs on uploads after their checks, at Routine or above, for the engagement partner (SPEC-030; TASK-059). Synthetic firms only while the data boundary holds. Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
+    owner: founder
+    created: 2026-10-12
+    expires: 2027-01-09
+    kind: boolean
+    default: false
   - name: uploads.processing
     description: Each upload is read in isolation (text, tables, fields) by a background workflow (SPEC-029; TASK-054). Scanning applies whatever this says. Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
     owner: founder

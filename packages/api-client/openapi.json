@@ -4602,6 +4602,172 @@
         "title": "RetrievalOut",
         "type": "object"
       },
+      "ReviewFlagCountOut": {
+        "properties": {
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "flags": {
+            "cls": "internal",
+            "title": "Flags",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "evidence_version_id",
+          "flags"
+        ],
+        "title": "ReviewFlagCountOut",
+        "type": "object"
+      },
+      "ReviewFlagOut": {
+        "properties": {
+          "category": {
+            "cls": "internal",
+            "enum": [
+              "irrelevant",
+              "draft",
+              "altered"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "confidence": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Confidence",
+            "type": "string"
+          },
+          "quotes": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ReviewQuoteOut"
+            },
+            "title": "Quotes",
+            "type": "array"
+          },
+          "rationale": {
+            "cls": "confidential",
+            "title": "Rationale",
+            "type": "string"
+          }
+        },
+        "required": [
+          "category",
+          "confidence",
+          "rationale",
+          "quotes"
+        ],
+        "title": "ReviewFlagOut",
+        "type": "object"
+      },
+      "ReviewOut": {
+        "properties": {
+          "flags": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ReviewFlagOut"
+            },
+            "title": "Flags",
+            "type": "array"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason"
+          },
+          "status": {
+            "cls": "internal",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "reason",
+          "flags"
+        ],
+        "title": "ReviewOut",
+        "type": "object"
+      },
+      "ReviewQuoteOut": {
+        "properties": {
+          "cell": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Cell"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Page"
+          },
+          "quote": {
+            "cls": "confidential",
+            "title": "Quote",
+            "type": "string"
+          },
+          "sheet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Sheet"
+          }
+        },
+        "required": [
+          "page",
+          "sheet",
+          "cell",
+          "quote"
+        ],
+        "title": "ReviewQuoteOut",
+        "type": "object"
+      },
+      "ReviewRequestedOut": {
+        "properties": {
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_version_id"
+        ],
+        "title": "ReviewRequestedOut",
+        "type": "object"
+      },
       "RollForwardIn": {
         "additionalProperties": false,
         "description": "SPEC-025 AC-2 (TASK-048): exactly what the person confirmed from the proposal.",
@@ -10258,6 +10424,248 @@
         "x-abacus-action": "evidence.reject"
       }
     },
+    "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/review": {
+      "get": {
+        "description": "SPEC-030 AC-6: the latest AI review of an upload, firm roles only, verified quotes only.",
+        "operationId": "upload_review",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Upload Review Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "upload_review.read"
+      },
+      "post": {
+        "description": "SPEC-030 \u00a76.4: \"Review now\" (at Advise, or after a document kind change).",
+        "operationId": "request_review",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewRequestedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Request Review Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "upload_review.request"
+      }
+    },
     "/v1/engagements/{engagement_id}/graph": {
       "get": {
         "operationId": "engagement_graph",
@@ -14394,6 +14802,117 @@
           "retrievals"
         ],
         "x-abacus-action": "request_item.read"
+      }
+    },
+    "/v1/engagements/{engagement_id}/review-flags": {
+      "get": {
+        "description": "For the Board's \"AI flags\" marker: shown flags per version's latest review.",
+        "operationId": "review_flags",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReviewFlagCountOut"
+                  },
+                  "title": "Response Review Flags",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Review Flags Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "upload_review.read"
       }
     },
     "/v1/engagements/{engagement_id}/review-queue": {

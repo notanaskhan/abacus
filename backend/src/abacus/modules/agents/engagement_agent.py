@@ -10,6 +10,8 @@ feature flag, then its own rule. Each writes one feed row (`agent_activity`), on
 - P-1 screen: new evidence starts the screener, as before (same workflow ID and initiator); not at
   Advise.
 - P-2 retrieve: the platform's rule-based retrieval (`connections.auto_retrieve`), with its reason.
+- P-6 review (SPEC-030; TASK-059): checks recorded for an upload start the upload reviewer, at
+  Routine or above with the firm's `upload_review.enabled` flag on, for the engagement partner.
 - P-3 match: records how many items the matching rule suggested for a waiting inbox file; it never
   assigns.
 
@@ -246,6 +248,25 @@ async def _tick(tenant: TenantContext, engagement_id: UUID, tick_id: UUID) -> li
     return rows
 
 
+def _model_available() -> bool:
+    from abacus.modules.agents.upload_review import model_available
+
+    return model_available()
+
+
+async def _review_on(tenant_id: UUID) -> bool:
+    from abacus.modules.agents.review_start import review_enabled  # it routes events here
+
+    return await review_enabled(tenant_id)
+
+
+async def _review(tenant: TenantContext, engagement_id: UUID, version: UUID, source: UUID) -> bool:
+    """SPEC-030 P-6 (TASK-059): the reviewer, on behalf of the engagement partner."""
+    from abacus.modules.agents.review_start import review_for  # it routes events here
+
+    return await review_for(tenant, engagement_id, version, source)
+
+
 async def _screen(
     tenant: TenantContext, version: UUID, source: UUID, requested_by: UUID | None
 ) -> None:
@@ -299,6 +320,22 @@ async def apply_policy(given: HandleInput) -> tuple[list[_Row], bool]:
         if version is None:
             return [_replace(base, outcome="failed", reason="malformed_event")], False
         await _screen(tenant, version, UUID(given.event_id), who)
+        return [_replace(base, outcome="done")], False
+    if kind == "upload_checks.recorded":
+        version = _uuid(payload, "evidence_version_id")
+        base = _Row("P-6", "upload_review.start", "skipped", None, "evidence_version", version)
+        if paused is not None:
+            return [_replace(base, reason=paused)], False
+        if not await _review_on(tenant.tenant_id):
+            return [_replace(base, reason="upload_review_off")], False
+        if not _model_available():
+            return [_replace(base, reason="no_real_model")], False
+        if await autonomy_level(tenant.tenant_id) < 1:
+            return [_replace(base, reason="advise")], False
+        if version is None:
+            return [_replace(base, outcome="failed", reason="malformed_event")], False
+        if not await _review(tenant, engagement_id, version, UUID(given.event_id)):
+            return [_replace(base, reason="no_partner")], False
         return [_replace(base, outcome="done")], False
     if kind in ("connection.created", "request_item.classified"):
         item = _uuid(payload, "request_item_id") if kind == "request_item.classified" else None

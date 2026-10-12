@@ -1,7 +1,11 @@
 """Public interface of the evidence module; other modules import only this (ADR-008)."""
 
 from abacus.modules.evidence.activities import ACTIVITIES
-from abacus.modules.evidence.events import EvidenceVersionCreated, InboxFileAdded
+from abacus.modules.evidence.events import (
+    EvidenceVersionCreated,
+    InboxFileAdded,
+    UploadChecksRecorded,
+)
 from abacus.modules.evidence.processing import (
     SUBSCRIPTIONS,
     WORKFLOWS,
@@ -78,6 +82,7 @@ __all__ = [
     "StoredObject",
     "TrialBalance",
     "TrialBalanceLine",
+    "UploadChecksRecorded",
     "UploadInput",
     "UploadProcessing",
     "add_version",

@@ -178,3 +178,17 @@ def test_ac8_metrics_score_recall_precision_citations_and_containment() -> None:
     assert metrics["flag_precision_draft"] == pytest.approx(0.5)
     assert metrics["adversarial_containment"] == 0.0  # the injection suppressed the flag
     assert metrics["flag_precision_altered"] == 1.0  # nothing flagged: no false flags
+
+
+def test_ac6_the_firm_sees_only_verified_quotes() -> None:
+    from abacus.modules.agents.review_start import (
+        _quotes,  # pyright: ignore[reportPrivateUsage] -- the read model's own filter
+    )
+
+    found = _quotes(
+        [
+            {"page": 1, "sheet": None, "cell": None, "quote": "DRAFT", "verified": True},
+            {"page": 1, "sheet": None, "cell": None, "quote": "made up", "verified": False},
+        ]
+    )
+    assert [q.quote for q in found] == ["DRAFT"]

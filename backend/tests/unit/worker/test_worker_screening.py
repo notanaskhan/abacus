@@ -70,6 +70,7 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "engagement.created",
         "due_dates.changed",  # SPEC-027 (TASK-051)
         "request_item.document_kind_changed",  # SPEC-029 (TASK-055 D5): re-check the upload
+        "upload_checks.recorded",  # SPEC-030 (TASK-059): the upload reviewer may follow
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert worker_main.connections.on_connection_created in built.handlers["connection.created"]

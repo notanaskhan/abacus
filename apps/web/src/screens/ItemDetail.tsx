@@ -29,6 +29,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
+import { AIReviewPanel } from "./AIReviewPanel";
 import { FirmChecksPanel } from "./CheckResults";
 import { DocumentKindSelect } from "./DocumentKindSelect";
 import { EvidencePreview } from "./EvidencePreview";
@@ -83,6 +84,7 @@ export function ItemDetail({
   const engagement = useQuery(getEngagementOptions(path));
   const me = useQuery(meOptions());
   const [selected, setSelected] = useState<string | null>(null);
+  const [previewPage, setPreviewPage] = useState<number | undefined>(undefined);
 
   const item = items.data?.find((i) => i.id === itemId);
   const team = engagement.data?.team ?? [];
@@ -186,6 +188,15 @@ export function ItemDetail({
             >
               <FirmChecksPanel ids={{ engagementId, itemId, versionId: shown.id }} />
             </Panel>
+            {/* SPEC-030 AC-6 (TASK-059): the upload reviewer's flags, firm only. */}
+            <Panel title="AI review">
+              <AIReviewPanel
+                engagementId={engagementId}
+                versionId={shown.id}
+                canRequest={myRole !== undefined && DECIDERS.has(myRole)}
+                onOpenPage={setPreviewPage}
+              />
+            </Panel>
             {/* SPEC-029 AC-12 (TASK-056): look without downloading. */}
             <Panel title="Preview">
               <EvidencePreview
@@ -195,6 +206,7 @@ export function ItemDetail({
                   itemId,
                   versionId: shown.id,
                 }}
+                openAtPage={previewPage}
               />
             </Panel>
             <Screening
