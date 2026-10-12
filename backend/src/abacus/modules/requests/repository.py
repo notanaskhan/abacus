@@ -7,13 +7,22 @@ from datetime import date, datetime
 from typing import Literal
 from uuid import UUID, uuid4
 
-from sqlalchemy import func, insert, select, update
+from sqlalchemy import and_, func, insert, or_, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.elements import ColumnElement
 
 from abacus.modules.identity.api import AuthContext, visible, visible_items
 from abacus.modules.requests.guidance import Guidance
-from abacus.modules.requests.models import Fulfilment, RequestItem, RequestList
+from abacus.modules.requests.models import (
+    Comment,
+    CommentMention,
+    CommentRead,
+    CommentRedaction,
+    Fulfilment,
+    RequestItem,
+    RequestList,
+)
 
 
 async def request_list_for(
@@ -395,3 +404,173 @@ async def overdue_items(
         .order_by(due, RequestItem.created_at, RequestItem.id)
     )
     return [(item, d) for item, d in rows.all()]
+
+
+# --- Comments (SPEC-032; TASK-062; ADR-109) ------------------------------------------------------
+
+
+def _thread(item_id: UUID, version_id: UUID | None) -> ColumnElement[bool]:
+    return and_(
+        Comment.request_item_id == item_id,
+        Comment.evidence_version_id.is_not_distinct_from(version_id),
+    )
+
+
+async def insert_comment(session: AsyncSession, **values: object) -> Comment:
+    return (
+        await session.execute(insert(Comment).values(**values).returning(Comment))
+    ).scalar_one()
+
+
+async def insert_mentions(
+    session: AsyncSession, tenant_id: UUID, comment_id: UUID, user_ids: Sequence[UUID]
+) -> None:
+    if user_ids:
+        await session.execute(
+            insert(CommentMention).values(
+                [
+                    {"tenant_id": tenant_id, "comment_id": comment_id, "user_id": u}
+                    for u in user_ids
+                ]
+            )
+        )
+
+
+async def get_comment(session: AsyncSession, comment_id: UUID) -> Comment | None:
+    return (
+        await session.execute(select(Comment).where(Comment.id == comment_id))
+    ).scalar_one_or_none()
+
+
+async def redaction_of(session: AsyncSession, comment_id: UUID) -> CommentRedaction | None:
+    return (
+        await session.execute(
+            select(CommentRedaction).where(CommentRedaction.comment_id == comment_id)
+        )
+    ).scalar_one_or_none()
+
+
+async def insert_redaction(session: AsyncSession, **values: object) -> bool:
+    """False when the comment was already redacted (once per comment)."""
+    made = await session.execute(
+        pg_insert(CommentRedaction)
+        .values(**values)
+        .on_conflict_do_nothing()
+        .returning(CommentRedaction.comment_id)
+    )
+    return made.scalar_one_or_none() is not None
+
+
+async def list_thread(
+    session: AsyncSession,
+    ctx: AuthContext,
+    item_id: UUID,
+    version_id: UUID | None,
+    *,
+    shared_only: bool,
+) -> Sequence[tuple[Comment, CommentRedaction | None]]:
+    """A thread's comments the actor may read, oldest first, each with its redaction."""
+    query = (
+        select(Comment, CommentRedaction)
+        .join(RequestItem, RequestItem.id == Comment.request_item_id)
+        .outerjoin(CommentRedaction, CommentRedaction.comment_id == Comment.id)
+        .where(
+            _thread(item_id, version_id),
+            visible_items(
+                ctx,
+                "comment.read",
+                RequestItem.engagement_id,
+                RequestItem.client_visible,
+                RequestItem.client_assignee_user_id,
+            ),
+        )
+        .order_by(Comment.created_at, Comment.id)
+    )
+    if shared_only:
+        query = query.where(Comment.visibility == "shared")
+    return list((await session.execute(query)).tuples().all())
+
+
+async def list_mentions(
+    session: AsyncSession, ctx: AuthContext, comment_ids: Sequence[UUID]
+) -> dict[UUID, list[UUID]]:
+    if not comment_ids:
+        return {}
+    rows = await session.execute(
+        select(CommentMention.comment_id, CommentMention.user_id)
+        .join(Comment, Comment.id == CommentMention.comment_id)
+        .join(RequestItem, RequestItem.id == Comment.request_item_id)
+        .where(
+            CommentMention.comment_id.in_(comment_ids),
+            visible_items(
+                ctx,
+                "comment.read",
+                RequestItem.engagement_id,
+                RequestItem.client_visible,
+                RequestItem.client_assignee_user_id,
+            ),
+        )
+    )
+    found: dict[UUID, list[UUID]] = {}
+    for comment_id, user_id in rows.tuples().all():
+        found.setdefault(comment_id, []).append(user_id)
+    return found
+
+
+async def mark_thread_read(
+    session: AsyncSession, tenant_id: UUID, user_id: UUID, item_id: UUID, version_id: UUID | None
+) -> None:
+    now = func.clock_timestamp()
+    await session.execute(
+        pg_insert(CommentRead)
+        .values(
+            tenant_id=tenant_id,
+            user_id=user_id,
+            request_item_id=item_id,
+            evidence_version_id=version_id,
+            last_read_at=now,
+        )
+        .on_conflict_do_update(constraint="comment_reads_once", set_={"last_read_at": now})
+    )
+
+
+async def list_comment_counts(
+    session: AsyncSession, ctx: AuthContext, engagement_id: UUID, *, shared_only: bool
+) -> dict[UUID, tuple[int, bool]]:
+    """Per item: the comments the actor may read (its own thread and its versions'), and whether
+    any written by someone else is newer than the actor's last read of that thread (Q6)."""
+    newer = and_(
+        Comment.author_user_id != ctx.user_id,
+        or_(CommentRead.last_read_at.is_(None), Comment.created_at > CommentRead.last_read_at),
+    )
+    query = (
+        select(
+            Comment.request_item_id,
+            func.count(),
+            func.bool_or(newer),
+        )
+        .join(RequestItem, RequestItem.id == Comment.request_item_id)
+        .outerjoin(
+            CommentRead,
+            and_(
+                CommentRead.user_id == ctx.user_id,
+                CommentRead.request_item_id == Comment.request_item_id,
+                CommentRead.evidence_version_id.is_not_distinct_from(Comment.evidence_version_id),
+            ),
+        )
+        .where(
+            Comment.engagement_id == engagement_id,
+            visible_items(
+                ctx,
+                "comment.read",
+                RequestItem.engagement_id,
+                RequestItem.client_visible,
+                RequestItem.client_assignee_user_id,
+            ),
+        )
+        .group_by(Comment.request_item_id)
+    )
+    if shared_only:
+        query = query.where(Comment.visibility == "shared")
+    rows = await session.execute(query)
+    return {item: (int(count), bool(unread)) for item, count, unread in rows.tuples().all()}

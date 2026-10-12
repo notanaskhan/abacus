@@ -123,6 +123,7 @@ NOT_CREATING = {
     # SPEC-027 (TASK-051): sending or dismissing a draft returns its id.
     "/v1/engagements/{engagement_id}/reminders/{reminder_id}/send",
     "/v1/engagements/{engagement_id}/reminders/{reminder_id}/dismiss",
+    "/v1/engagements/{engagement_id}/request-items/{item_id}/comments/read",  # SPEC-032: a mark
 }
 
 
@@ -155,6 +156,10 @@ def test_ac20_creating_routes_answer_201() -> None:
         decisions + "accept",  # TASK-019: a review decision is created
         decisions + "reject",
         decisions + "send-back",
+        # SPEC-032 (TASK-062): a comment, or a redaction, is created.
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/comments",
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/versions/{version_id}/comments",
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/comments/{comment_id}/redact",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

@@ -947,8 +947,9 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
         | {"communications"}
     ),
     # The outbound scope checker reads each owner's facts through its API (SPEC-006, TASK-021 D2).
+    # SPEC-032 (TASK-062 D1): it registers itself as the check on comments shared with a client.
     "communications": frozenset(
-        {"identity", "engagements", "organisations", "ledger", "evidence"}
+        {"identity", "engagements", "organisations", "ledger", "evidence", "requests"}
     ),
     # Notifications subscribes to events and resolves recipients through identity (SPEC-013);
     # nothing imports it.

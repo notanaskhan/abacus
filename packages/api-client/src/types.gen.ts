@@ -555,6 +555,83 @@ export type ClientVisibilityIn = {
 };
 
 /**
+ * CommentIn
+ */
+export type CommentIn = {
+    /**
+     * Corrects
+     */
+    corrects?: string | null;
+    /**
+     * Mentions
+     */
+    mentions?: Array<string>;
+    /**
+     * Share
+     */
+    share?: boolean;
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * CommentOut
+ */
+export type CommentOut = {
+    /**
+     * Author Name
+     */
+    author_name: string;
+    /**
+     * Author Side
+     */
+    author_side: 'firm' | 'client';
+    /**
+     * Author User Id
+     */
+    author_user_id: string;
+    /**
+     * Corrected By
+     */
+    corrected_by?: Array<string>;
+    /**
+     * Corrects
+     */
+    corrects?: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Mentions
+     */
+    mentions?: Array<string>;
+    redaction?: RedactionOut | null;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+    /**
+     * Text
+     */
+    text?: string | null;
+    /**
+     * Visibility
+     */
+    visibility: 'internal' | 'shared';
+};
+
+/**
  * CompleteIn
  */
 export type CompleteIn = {
@@ -1848,6 +1925,24 @@ export type MembershipOut = {
 };
 
 /**
+ * MentionCandidateOut
+ */
+export type MentionCandidateOut = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Side
+     */
+    side: 'firm' | 'client';
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
  * MethodologyVersionOut
  */
 export type MethodologyVersionOut = {
@@ -2223,6 +2318,34 @@ export type ReasonCodeOut = {
 };
 
 /**
+ * RedactIn
+ */
+export type RedactIn = {
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * RedactionOut
+ */
+export type RedactionOut = {
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Redacted At
+     */
+    redacted_at: string;
+    /**
+     * Redacted By Name
+     */
+    redacted_by_name: string;
+};
+
+/**
  * RejectIn
  *
  * Reject or send back: a reason code from the catalogue is required (AC-7, AC-8).
@@ -2291,6 +2414,10 @@ export type RequestItemOut = {
      */
     client_visible?: boolean;
     /**
+     * Comment Count
+     */
+    comment_count?: number;
+    /**
      * Created At
      */
     created_at: string;
@@ -2354,6 +2481,10 @@ export type RequestItemOut = {
      * Tier Source
      */
     tier_source?: 'override' | 'methodology' | 'rule' | null;
+    /**
+     * Unread Comments
+     */
+    unread_comments?: boolean;
     /**
      * Why
      */
@@ -3168,6 +3299,26 @@ export type TemplateVersionOut = {
      * Version Id
      */
     version_id: string;
+};
+
+/**
+ * ThreadReadIn
+ */
+export type ThreadReadIn = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id?: string | null;
+};
+
+/**
+ * ThreadReadOut
+ */
+export type ThreadReadOut = {
+    /**
+     * Read
+     */
+    read?: boolean;
 };
 
 /**
@@ -6726,6 +6877,299 @@ export type SetClientVisibilityResponses = {
 
 export type SetClientVisibilityResponse = SetClientVisibilityResponses[keyof SetClientVisibilityResponses];
 
+export type ItemCommentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/comments';
+};
+
+export type ItemCommentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ItemCommentsError = ItemCommentsErrors[keyof ItemCommentsErrors];
+
+export type ItemCommentsResponses = {
+    /**
+     * Response Item Comments
+     *
+     * Successful Response
+     */
+    200: Array<CommentOut>;
+};
+
+export type ItemCommentsResponse = ItemCommentsResponses[keyof ItemCommentsResponses];
+
+export type PostItemCommentData = {
+    body: CommentIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/comments';
+};
+
+export type PostItemCommentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PostItemCommentError = PostItemCommentErrors[keyof PostItemCommentErrors];
+
+export type PostItemCommentResponses = {
+    /**
+     * Successful Response
+     */
+    201: CommentOut;
+};
+
+export type PostItemCommentResponse = PostItemCommentResponses[keyof PostItemCommentResponses];
+
+export type MentionCandidatesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: {
+        /**
+         * Visibility
+         */
+        visibility?: 'internal' | 'shared';
+    };
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/comments/mention-candidates';
+};
+
+export type MentionCandidatesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type MentionCandidatesError = MentionCandidatesErrors[keyof MentionCandidatesErrors];
+
+export type MentionCandidatesResponses = {
+    /**
+     * Response Mention Candidates
+     *
+     * Successful Response
+     */
+    200: Array<MentionCandidateOut>;
+};
+
+export type MentionCandidatesResponse = MentionCandidatesResponses[keyof MentionCandidatesResponses];
+
+export type ReadCommentsData = {
+    body: ThreadReadIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/comments/read';
+};
+
+export type ReadCommentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ReadCommentsError = ReadCommentsErrors[keyof ReadCommentsErrors];
+
+export type ReadCommentsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ThreadReadOut;
+};
+
+export type ReadCommentsResponse = ReadCommentsResponses[keyof ReadCommentsResponses];
+
+export type RedactCommentData = {
+    body: RedactIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+        /**
+         * Comment Id
+         */
+        comment_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/comments/{comment_id}/redact';
+};
+
+export type RedactCommentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RedactCommentError = RedactCommentErrors[keyof RedactCommentErrors];
+
+export type RedactCommentResponses = {
+    /**
+     * Successful Response
+     */
+    201: ThreadReadOut;
+};
+
+export type RedactCommentResponse = RedactCommentResponses[keyof RedactCommentResponses];
+
 export type SetDocumentKindData = {
     body: DocumentKindIn;
     headers?: {
@@ -7270,6 +7714,128 @@ export type ItemVersionsResponses = {
 };
 
 export type ItemVersionsResponse = ItemVersionsResponses[keyof ItemVersionsResponses];
+
+export type VersionCommentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/versions/{version_id}/comments';
+};
+
+export type VersionCommentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type VersionCommentsError = VersionCommentsErrors[keyof VersionCommentsErrors];
+
+export type VersionCommentsResponses = {
+    /**
+     * Response Version Comments
+     *
+     * Successful Response
+     */
+    200: Array<CommentOut>;
+};
+
+export type VersionCommentsResponse = VersionCommentsResponses[keyof VersionCommentsResponses];
+
+export type PostVersionCommentData = {
+    body: CommentIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/versions/{version_id}/comments';
+};
+
+export type PostVersionCommentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PostVersionCommentError = PostVersionCommentErrors[keyof PostVersionCommentErrors];
+
+export type PostVersionCommentResponses = {
+    /**
+     * Successful Response
+     */
+    201: CommentOut;
+};
+
+export type PostVersionCommentResponse = PostVersionCommentResponses[keyof PostVersionCommentResponses];
 
 export type StartRetrievalData = {
     body: RetrievalIn;

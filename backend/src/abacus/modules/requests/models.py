@@ -68,3 +68,53 @@ class Fulfilment(Base):
     created_by_kind: Mapped[str]
     created_by_id: Mapped[str]
     created_at: Mapped[datetime]
+
+
+# --- Comments (SPEC-032; TASK-062; ADR-109) ------------------------------------------------------
+
+
+class Comment(Base):
+    """Insert-only. The text is sealed per tenant (Restricted); `body_fingerprint` binds it."""
+
+    __tablename__ = "comments"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    request_item_id: Mapped[UUID]
+    evidence_version_id: Mapped[UUID | None]
+    author_user_id: Mapped[UUID]
+    author_side: Mapped[str]
+    visibility: Mapped[str]
+    body_sealed: Mapped[bytes]
+    body_fingerprint: Mapped[str]
+    corrects_comment_id: Mapped[UUID | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class CommentMention(Base):
+    __tablename__ = "comment_mentions"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    comment_id: Mapped[UUID] = mapped_column(primary_key=True)
+    user_id: Mapped[UUID] = mapped_column(primary_key=True)
+
+
+class CommentRedaction(Base):
+    __tablename__ = "comment_redactions"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    comment_id: Mapped[UUID] = mapped_column(primary_key=True)
+    redacted_by: Mapped[UUID]
+    reason: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class CommentRead(Base):
+    __tablename__ = "comment_reads"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    user_id: Mapped[UUID] = mapped_column(primary_key=True)
+    request_item_id: Mapped[UUID] = mapped_column(primary_key=True)
+    evidence_version_id: Mapped[UUID | None]
+    last_read_at: Mapped[datetime]

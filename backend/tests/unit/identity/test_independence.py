@@ -110,6 +110,9 @@ def _sql(expression: ColumnElement[bool]) -> str:
 
 def test_ac7_the_client_data_actions_are_marked() -> None:
     assert MARKED == [
+        "comment.create",  # SPEC-032 (TASK-062)
+        "comment.read",
+        "comment.share",
         "connection.read_log",
         "evidence.accept",
         "evidence.read",

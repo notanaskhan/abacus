@@ -13,6 +13,7 @@ import re
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 
+from abacus.kernel.logging import get_logger
 from abacus.modules.engagements.api import EngagementRef
 from abacus.modules.evidence.api import engagement_snapshots
 from abacus.modules.identity.api import AuthContext
@@ -92,3 +93,16 @@ async def check_scope(ctx: AuthContext, ref: EngagementRef, text: str) -> list[V
         if not _in_scope(cents, rounding, facts.amounts_cents):
             violations.append(Violation("amount", str(cents)))
     return list(dict.fromkeys(violations))
+
+
+_log = get_logger(__name__)
+
+
+async def comment_scope_kinds(ctx: AuthContext, ref: EngagementRef, text: str) -> list[str]:
+    """SPEC-032 AC-7 (TASK-062 D1): the kinds of violation in a comment to be shared; a checker
+    error blocks it too, as it blocks a message."""
+    try:
+        return sorted({v.kind for v in await check_scope(ctx, ref, text)})
+    except Exception:  # any failure must block sharing, never let it through
+        _log.warning("comment.scope_check_failed")
+        return ["checker_error"]
