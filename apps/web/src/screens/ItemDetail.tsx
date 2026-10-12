@@ -30,6 +30,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
 import { AIReviewPanel } from "./AIReviewPanel";
+import { ClientGuidance } from "./ClientGuidance";
 import { FirmChecksPanel } from "./CheckResults";
 import { DocumentKindSelect } from "./DocumentKindSelect";
 import { EvidencePreview } from "./EvidencePreview";
@@ -134,6 +135,14 @@ export function ItemDetail({
         </div>
         <StatusPill tone={status.tone}>{status.label}</StatusPill>
       </div>
+      {/* SPEC-031 AC-3 (TASK-061): what the client reads about this request. */}
+      <Panel title="Client guidance">
+        <ClientGuidance
+          engagementId={engagementId}
+          item={item}
+          canEdit={myRole !== undefined && DECIDERS.has(myRole)}
+        />
+      </Panel>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <Panel
           title="Evidence"
