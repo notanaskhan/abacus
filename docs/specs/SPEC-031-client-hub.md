@@ -1,7 +1,7 @@
 ---
 id: SPEC-031
 title: "The client hub: what's needed and why, your part, and the history of every send-back"
-status: draft
+status: approved
 owner: founder
 risk_zone: amber
 related_adrs: [ADR-004, ADR-005, ADR-027, ADR-050, ADR-052, ADR-111]
@@ -91,6 +91,7 @@ This is Track A3 of the Act 2 plan. No AI writes anything a client reads (ADR-11
 | AC-9 | vitest | New screens' states |
 
 ## 9. Open questions
+All resolved: the founder approved every recommendation below on 2026-10-12.
 - **Q1 — default copy.** *Recommendation:* fixed why and what good looks like per document kind in code (four kinds), which I'll draft for your review in TASK-060; templates override them; firms edit per engagement.
 - **Q2 — partial requests beyond bank statements.** *Recommendation:* code computes the gap for bank statements only (it has the data); for anything else the firm writes a still-needed note the client sees.
 - **Q3 — effort.** *Recommendation:* small, medium, large, counted as 15, 45 and 120 minutes for the estimate, shown rounded ("about 1½ hours"); defaults per document kind, firm-editable.
