@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from uuid import UUID
 
+from sqlalchemy import FetchedValue
 from sqlalchemy.orm import Mapped, mapped_column
 
 from abacus.kernel.db import Base
@@ -47,6 +48,13 @@ class RequestItem(Base):
     # SPEC-029 (TASK-055): the document the item expects, set by rule or by the team.
     document_kind: Mapped[str | None]
     document_kind_source: Mapped[str | None]
+    # SPEC-031 (TASK-060): what the client reads about the request, and how the firm plans it.
+    why: Mapped[str | None]
+    good_looks_like: Mapped[str | None]
+    still_needed: Mapped[str | None]
+    blocks_fieldwork: Mapped[bool] = mapped_column(server_default=FetchedValue())
+    effort: Mapped[str | None]
+    guidance_source: Mapped[str | None]
 
 
 class Fulfilment(Base):

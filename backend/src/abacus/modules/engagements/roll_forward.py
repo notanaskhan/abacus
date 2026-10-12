@@ -25,6 +25,7 @@ from abacus.modules.engagements.models import Engagement
 from abacus.modules.engagements.repository import get_engagement, list_templates, prior_candidates
 from abacus.modules.engagements.service import (
     MethodologyVersionView,
+    TemplateItem,
     get_ref,
     pin_methodology,
     version_detail,
@@ -61,6 +62,7 @@ class TemplateSeed:
     description: str
     audit_area: str
     tier: str | None
+    template: TemplateItem | None = None  # SPEC-031: its guidance, carried
 
 
 # (who reads, last year's engagement) -> its items, read under `visible(roll_forward.read)`.
@@ -158,7 +160,9 @@ def _key(audit_area: str, description: str) -> tuple[str, str]:
 def template_seeds(latest: MethodologyVersionView) -> list[TemplateSeed]:
     names = {area.code: area.name for area in latest.areas}
     return [
-        TemplateSeed(i, item.description, names.get(item.area_code, item.area_code), item.tier)
+        TemplateSeed(
+            i, item.description, names.get(item.area_code, item.area_code), item.tier, item
+        )
         for i, item in enumerate(latest.items)
     ]
 

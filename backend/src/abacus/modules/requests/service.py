@@ -9,7 +9,7 @@ from datetime import date, datetime
 from uuid import UUID, uuid4
 
 from abacus.kernel.db import TenantContext, tenant_session, transaction_context
-from abacus.kernel.errors import DomainConflict, NotFound
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import get_ref, lock_ref, pin_methodology, version_detail
 from abacus.modules.identity.api import (
@@ -35,6 +35,13 @@ from abacus.modules.requests.events import (
     RequestItemCreated,
     RequestItemDocumentKindChanged,
 )
+from abacus.modules.requests.guidance import (
+    MAX_LENGTH,
+    Guidance,
+    after_kind_change,
+    estimate_minutes,
+    for_new_item,
+)
 from abacus.modules.requests.models import RequestItem
 from abacus.modules.requests.repository import (
     default_due_on,
@@ -55,6 +62,7 @@ from abacus.modules.requests.repository import (
     set_default_due_on,
     set_document_kind,
     set_due_dates,
+    set_guidance,
     set_status,
 )
 from abacus.modules.requests.workbook import SheetPreview, normalise, preview, read_rows
@@ -86,6 +94,13 @@ class RequestItemView:
     # SPEC-029 (TASK-055): the document it expects, and whether a rule or the team set it.
     document_kind: str | None = None
     document_kind_source: str | None = None
+    # SPEC-031 (TASK-060): what the client reads, and how the firm plans the item.
+    why: str | None = None
+    good_looks_like: str | None = None
+    still_needed: str | None = None
+    blocks_fieldwork: bool = False
+    effort: str | None = None
+    guidance_source: str | None = None
 
 
 def _view(
@@ -110,6 +125,18 @@ def _view(
         item.due_on,
         item.document_kind,
         item.document_kind_source,
+        item.why,
+        item.good_looks_like,
+        item.still_needed,
+        item.blocks_fieldwork,
+        item.effort,
+        item.guidance_source,
+    )
+
+
+def _guidance(item: RequestItem) -> Guidance:
+    return Guidance(
+        item.why, item.good_looks_like, item.blocks_fieldwork, item.effort, item.guidance_source
     )
 
 
@@ -176,6 +203,7 @@ async def insert_classified(
     description: str,
     audit_area: str,
     firm_tier: str | None,
+    template: Guidance | None = None,
 ) -> UUID:
     """A template item seeded as a request item, inside the caller's unit of work (SPEC-025
     TASK-048: the template's additions in a roll-forward)."""
@@ -190,6 +218,7 @@ async def insert_classified(
         audit_area=audit_area,
         created_by=ctx.user_id,
         firm_tier=firm_tier,
+        template=template,
     )
     tx.record(
         "request_item.created",
@@ -229,6 +258,12 @@ async def apply_methodology(
                 audit_area=names[template_item.area_code],
                 created_by=ctx.user_id,
                 firm_tier=template_item.tier,
+                template=Guidance(
+                    template_item.why,
+                    template_item.good_looks_like,
+                    template_item.blocks_fieldwork,
+                    template_item.effort,
+                ),
             )
             tx.record(
                 "request_item.created",
@@ -257,6 +292,7 @@ class RequestItemRef:
     status: str
     client_visible: bool = True
     client_assignee_user_id: UUID | None = None
+    document_kind: str | None = None  # SPEC-031: the bank statement gap
 
     @property
     def facts(self) -> ItemFacts:
@@ -617,7 +653,12 @@ async def read_item(tenant: TenantContext, engagement_id: UUID, item_id: UUID) -
     if item is None or item.engagement_id != engagement_id:
         raise NotFound("request_item")
     return RequestItemRef(
-        item.id, item.engagement_id, item.status, item.client_visible, item.client_assignee_user_id
+        item.id,
+        item.engagement_id,
+        item.status,
+        item.client_visible,
+        item.client_assignee_user_id,
+        item.document_kind,
     )
 
 
@@ -662,8 +703,10 @@ async def _insert_item(
     audit_area: str,
     created_by: UUID,
     firm_tier: str | None = None,
+    template: Guidance | None = None,
 ) -> RequestItem:
-    """Insert an item classified by `classify` (AC-1), recording how."""
+    """Insert an item classified by `classify` (AC-1), recording how, with its guidance from the
+    template or its document kind (SPEC-031 AC-2)."""
     found = classify(description, audit_area, firm_tier=firm_tier)
     kind = document_kind(description, audit_area)  # SPEC-029 (TASK-055)
     item = await insert_request_item(
@@ -681,6 +724,7 @@ async def _insert_item(
         tier_rule=found.rule_id,
         document_kind=kind,
         document_kind_source="rule" if kind is not None else None,
+        guidance=for_new_item(template, kind),
     )
     _record_classified(tx, item_id, engagement_id, found, "request_item.classified")
     return item
@@ -751,6 +795,9 @@ async def set_item_document_kind(
         else:
             new_kind, source = kind, "override"
         await set_document_kind(tx.session, item_id, kind=new_kind, source=source)
+        followed = after_kind_change(_guidance(row), new_kind)  # SPEC-031: the kind's copy
+        if followed is not None:
+            await set_guidance(tx.session, item_id, followed)
         tx.record(
             "request_item.document_kind_set",
             target=Target("request_item", item_id),
@@ -762,6 +809,89 @@ async def set_item_document_kind(
             RequestItemDocumentKindChanged(request_item_id=item_id, engagement_id=engagement_id)
         )
         return await _item_view(tx, item_id)
+
+
+# --- Guidance (SPEC-031; TASK-060) --------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class GuidanceEdit:
+    why: str | None
+    good_looks_like: str | None
+    still_needed: str | None
+    blocks_fieldwork: bool
+    effort: str | None
+
+
+def _cleaned(text: str | None) -> str | None:
+    stripped = (text or "").strip()
+    if len(stripped) > MAX_LENGTH:
+        raise DomainInvalid("guidance text is too long")
+    return stripped or None
+
+
+async def set_item_guidance(
+    ctx: AuthContext, engagement_id: UUID, item_id: UUID, edit: GuidanceEdit
+) -> RequestItemView:
+    """AC-3: partner, manager and senior write the item's guidance; it's the firm's from then on
+    (kind changes no longer replace it)."""
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await _locked_item(tx, engagement_id, item_id)
+        await authorise(ctx, "request_item.update", ref.resource())
+        guidance = Guidance(
+            _cleaned(edit.why),
+            _cleaned(edit.good_looks_like),
+            edit.blocks_fieldwork,
+            edit.effort,
+            "firm",
+        )
+        await set_guidance(tx.session, item_id, guidance, still_needed=_cleaned(edit.still_needed))
+        tx.record(
+            "request_item.guidance_set",
+            target=Target("request_item", item_id),
+            after=Ref(
+                blocks_fieldwork=int(edit.blocks_fieldwork),
+                effort=EFFORT_INDEX.get(edit.effort or "", 0),
+            ),
+        )
+        return await _item_view(tx, item_id)
+
+
+EFFORT_INDEX = {"small": 1, "medium": 2, "large": 3}
+OPEN_FOR_CLIENT = frozenset({"open", "needs_revision"})
+
+
+@dataclass(frozen=True)
+class YourPart:
+    items_left: int
+    blocks_fieldwork: int
+    minutes: int
+
+
+async def your_part(ctx: AuthContext, engagement_id: UUID) -> YourPart:
+    """AC-6: the items left for this client user (open or needing revision, assigned to them, or
+    unassigned for client admins), how many block fieldwork, and the estimated minutes. Firm
+    roles have no part here."""
+    role = await engagement_role_of(ctx.tenant, engagement_id, ctx.user_id)
+    if role not in ("client_admin", "client_contributor"):
+        return YourPart(0, 0, 0)
+    items = await request_items_for(ctx, engagement_id)
+    mine = [
+        i
+        for i in items
+        if i.client_visible
+        and i.status in OPEN_FOR_CLIENT
+        and (
+            i.client_assignee_user_id == ctx.user_id
+            or (role == "client_admin" and i.client_assignee_user_id is None)
+        )
+    ]
+    return YourPart(
+        len(mine),
+        sum(1 for i in mine if i.blocks_fieldwork),
+        estimate_minutes([i.effort for i in mine]),
+    )
 
 
 # --- Due dates (SPEC-027 AC-9; TASK-051) ---------------------------------------------------------

@@ -228,7 +228,7 @@ async def process_upload(given: UploadInput) -> str:
 # --- Checks (SPEC-029 goals 5 and 6; TASK-055) ---------------------------------------------------
 
 
-async def _accounts(
+async def year_end_accounts(
     tenant: TenantContext, engagement_id: UUID, year_end: date, methodology: UUID | None
 ) -> list[Account] | None:
     """The year end's trial balance accounts with their methodology area names, from the
@@ -323,7 +323,7 @@ async def check_upload(given: UploadInput) -> int:
         else:
             results += schedule_checks(fields)
         if kind != "schedule":
-            accounts = await _accounts(
+            accounts = await year_end_accounts(
                 tenant,
                 version.engagement_id,
                 facts.fiscal_period_end,

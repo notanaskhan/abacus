@@ -1107,6 +1107,45 @@
         "title": "ClientInvitationOut",
         "type": "object"
       },
+      "ClientViewOut": {
+        "properties": {
+          "gap": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GapOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
+          "history": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/HistoryEntryOut"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "provided": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProvidedOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "history"
+        ],
+        "title": "ClientViewOut",
+        "type": "object"
+      },
       "ClientVisibilityIn": {
         "additionalProperties": false,
         "properties": {
@@ -2310,6 +2349,32 @@
         "title": "FormatOut",
         "type": "object"
       },
+      "GapOut": {
+        "properties": {
+          "covered": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Covered",
+            "type": "array"
+          },
+          "needed": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Needed",
+            "type": "array"
+          }
+        },
+        "required": [
+          "covered",
+          "needed"
+        ],
+        "title": "GapOut",
+        "type": "object"
+      },
       "GraphAccountOut": {
         "properties": {
           "balance": {
@@ -2561,6 +2626,150 @@
           "role"
         ],
         "title": "GraphTeamMemberOut",
+        "type": "object"
+      },
+      "GuidanceIn": {
+        "additionalProperties": false,
+        "properties": {
+          "blocks_fieldwork": {
+            "cls": "internal",
+            "default": false,
+            "title": "Blocks Fieldwork",
+            "type": "boolean"
+          },
+          "effort": {
+            "anyOf": [
+              {
+                "enum": [
+                  "small",
+                  "medium",
+                  "large"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Effort"
+          },
+          "good_looks_like": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Good Looks Like"
+          },
+          "still_needed": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Still Needed"
+          },
+          "why": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Why"
+          }
+        },
+        "title": "GuidanceIn",
+        "type": "object"
+      },
+      "HistoryEntryOut": {
+        "properties": {
+          "added_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Added At",
+            "type": "string"
+          },
+          "added_by": {
+            "cls": "internal",
+            "enum": [
+              "firm",
+              "client"
+            ],
+            "title": "Added By",
+            "type": "string"
+          },
+          "added_by_name": {
+            "cls": "confidential",
+            "title": "Added By Name",
+            "type": "string"
+          },
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
+          "outcome": {
+            "cls": "internal",
+            "enum": [
+              "in_review",
+              "replaced",
+              "accepted",
+              "sent_back",
+              "not_accepted"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "reason_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason Label"
+          }
+        },
+        "required": [
+          "evidence_version_id",
+          "added_by",
+          "added_by_name",
+          "added_at",
+          "outcome"
+        ],
+        "title": "HistoryEntryOut",
         "type": "object"
       },
       "ImportCountsOut": {
@@ -4059,6 +4268,31 @@
         "title": "ProposedTemplateOut",
         "type": "object"
       },
+      "ProvidedOut": {
+        "properties": {
+          "on": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "On",
+            "type": "string"
+          },
+          "source": {
+            "cls": "internal",
+            "enum": [
+              "connection",
+              "export"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "on"
+        ],
+        "title": "ProvidedOut",
+        "type": "object"
+      },
       "ProviderOut": {
         "properties": {
           "datasets": {
@@ -4289,6 +4523,12 @@
             "title": "Available",
             "type": "boolean"
           },
+          "blocks_fieldwork": {
+            "cls": "internal",
+            "default": false,
+            "title": "Blocks Fieldwork",
+            "type": "boolean"
+          },
           "client_assignee_user_id": {
             "anyOf": [
               {
@@ -4378,6 +4618,23 @@
             "cls": "internal",
             "title": "Due On"
           },
+          "effort": {
+            "anyOf": [
+              {
+                "enum": [
+                  "small",
+                  "medium",
+                  "large"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Effort"
+          },
           "engagement_id": {
             "cls": "internal",
             "format": "uuid",
@@ -4396,6 +4653,35 @@
             ],
             "cls": "internal",
             "title": "Evidence Version Id"
+          },
+          "good_looks_like": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Good Looks Like"
+          },
+          "guidance_source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "template",
+                  "kind_default",
+                  "firm"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Guidance Source"
           },
           "id": {
             "cls": "internal",
@@ -4433,6 +4719,18 @@
             "title": "Status",
             "type": "string"
           },
+          "still_needed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Still Needed"
+          },
           "tier_source": {
             "anyOf": [
               {
@@ -4449,6 +4747,18 @@
             ],
             "cls": "internal",
             "title": "Tier Source"
+          },
+          "why": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Why"
           }
         },
         "required": [
@@ -6378,6 +6688,32 @@
           "removed_at"
         ],
         "title": "WallOut",
+        "type": "object"
+      },
+      "YourPartOut": {
+        "properties": {
+          "blocks_fieldwork": {
+            "cls": "internal",
+            "title": "Blocks Fieldwork",
+            "type": "integer"
+          },
+          "items_left": {
+            "cls": "internal",
+            "title": "Items Left",
+            "type": "integer"
+          },
+          "minutes": {
+            "cls": "internal",
+            "title": "Minutes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items_left",
+          "blocks_fieldwork",
+          "minutes"
+        ],
+        "title": "YourPartOut",
         "type": "object"
       },
       "abacus__modules__agents__routes__CitationOut": {
@@ -13232,6 +13568,113 @@
         "x-abacus-action": "request_item.create"
       }
     },
+    "/v1/engagements/{engagement_id}/request-items/your-part": {
+      "get": {
+        "description": "SPEC-031 AC-6: what's left for this client user on the engagement.",
+        "operationId": "your_part",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/YourPartOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Your Part Route",
+        "tags": [
+          "requests"
+        ],
+        "x-abacus-action": "request_item.read"
+      }
+    },
     "/v1/engagements/{engagement_id}/request-items/{item_id}/client-assignee": {
       "put": {
         "description": "SPEC-020 (TASK-035 D4): assign the item to a client contributor, or clear it.",
@@ -13367,6 +13810,123 @@
           "requests"
         ],
         "x-abacus-action": "request_item.assign"
+      }
+    },
+    "/v1/engagements/{engagement_id}/request-items/{item_id}/client-view": {
+      "get": {
+        "description": "SPEC-031 AC-4, AC-5, AC-7: provided, the bank statement gap, and the item's history.",
+        "operationId": "client_view",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientViewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Client View Route",
+        "tags": [
+          "evidence"
+        ],
+        "x-abacus-action": "evidence.read"
       }
     },
     "/v1/engagements/{engagement_id}/request-items/{item_id}/client-visibility": {
@@ -13617,6 +14177,133 @@
           }
         },
         "summary": "Set Document Kind Route",
+        "tags": [
+          "requests"
+        ],
+        "x-abacus-action": "request_item.update"
+      }
+    },
+    "/v1/engagements/{engagement_id}/request-items/{item_id}/guidance": {
+      "put": {
+        "description": "SPEC-031 AC-3: the firm writes why, what good looks like and the still-needed note, and\nplans the item (blocks fieldwork, effort).",
+        "operationId": "set_guidance",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuidanceIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Set Guidance Route",
         "tags": [
           "requests"
         ],

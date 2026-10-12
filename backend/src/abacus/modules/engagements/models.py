@@ -74,6 +74,11 @@ class MethodologyRequestItem(Base):
     area_code: Mapped[str]
     description: Mapped[str]
     retrievability_tier: Mapped[str]
+    # SPEC-031 (TASK-060): guidance carried to engagements.
+    why: Mapped[str | None]
+    good_looks_like: Mapped[str | None]
+    blocks_fieldwork: Mapped[bool] = mapped_column(server_default=FetchedValue())
+    effort: Mapped[str | None]
 
 
 class MethodologyAccountRule(Base):

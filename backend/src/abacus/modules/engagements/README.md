@@ -22,12 +22,12 @@ The workbook has three sheets, each with exact headers in row 1. Blank rows are 
 | Sheet | Columns |
 |---|---|
 | `Areas` | `code` (up to 20 characters), `name` (up to 100) |
-| `Requests` | `area_code`, `description` (up to 2,000), `tier` (A to E) |
+| `Requests` | `area_code`, `description` (up to 2,000), `tier` (A to E); optional after them (SPEC-031): `why`, `good_looks_like` (up to 1,000 each), `blocks_fieldwork` (yes or no), `effort` (small, medium, large) |
 | `Account rules` | `area_code`, `account_from`, `account_to` (an inclusive range compared as text) |
 
 **Rejected workbooks:** a rejected workbook stores nothing and gets 422. Each problem is reported as `loc` (sheet, row, column) and `msg` (a fixed code), never cell contents. The codes:
 - `not_a_workbook`, `too_large`, `missing_sheet`, `missing_header`;
-- `empty_value`, `too_long`;
+- `empty_value`, `too_long`, `invalid_effort`, `invalid_yes_no`;
 - `duplicate_area`, `unknown_area`, `no_areas`;
 - `invalid_tier`, `invalid_range`, `overlapping_range`;
 - `too_many_rows`.

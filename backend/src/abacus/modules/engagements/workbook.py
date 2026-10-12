@@ -62,11 +62,22 @@ class Area:
     name: str
 
 
+Effort = Literal["small", "medium", "large"]
+EFFORTS: Final = frozenset({"small", "medium", "large"})
+# SPEC-031 (TASK-060): optional request columns after the required ones.
+OPTIONAL_REQUEST_COLUMNS: Final = ("why", "good_looks_like", "blocks_fieldwork", "effort")
+_GUIDANCE_LENGTH: Final = 1000
+
+
 @dataclass(frozen=True)
 class TemplateItem:
     area_code: str
     description: str
     tier: Tier
+    why: str | None = None
+    good_looks_like: str | None = None
+    blocks_fieldwork: bool = False
+    effort: Effort | None = None
 
 
 @dataclass(frozen=True)
@@ -123,6 +134,29 @@ def _rows(
             yield number, row
 
 
+def _optional(
+    rows: Iterator[tuple[object, ...]], problems: list[Problem]
+) -> dict[int, dict[str, str]]:
+    """SPEC-031: the requests sheet's optional guidance columns, by row number, validated."""
+    header = [_text(v).casefold() for v in next(rows, ())]
+    where = {c: header.index(c) for c in OPTIONAL_REQUEST_COLUMNS if c in header}
+    found: dict[int, dict[str, str]] = {}
+    if not where:
+        return found
+    for number, values in enumerate(rows, start=2):
+        cells = {c: _text(values[i]) if i < len(values) else "" for c, i in where.items()}
+        for column in ("why", "good_looks_like"):
+            if len(cells.get(column, "")) > _GUIDANCE_LENGTH:
+                problems.append(Problem(REQUESTS, number, column, "too_long"))
+        if cells.get("effort") and cells["effort"].casefold() not in EFFORTS:
+            problems.append(Problem(REQUESTS, number, "effort", "invalid_effort"))
+        blocks = cells.get("blocks_fieldwork", "").casefold()
+        if blocks and blocks not in ("yes", "no", "y", "n", "true", "false"):
+            problems.append(Problem(REQUESTS, number, "blocks_fieldwork", "invalid_yes_no"))
+        found[number] = cells
+    return found
+
+
 def parse_workbook(data: bytes) -> Methodology:
     """The workbook's areas, request items and account rules, or `TemplateInvalid`."""
     s = settings()
@@ -146,14 +180,26 @@ def parse_workbook(data: bytes) -> Methodology:
             codes.add(row["code"])
             areas.append(Area(row["code"], row["name"]))
         items: list[TemplateItem] = []
+        extras = _optional(_sheet(workbook, REQUESTS), problems)
         for number, row in _rows(_sheet(workbook, REQUESTS), REQUESTS, problems):
+            extra = extras.get(number, {})
             if row["area_code"] not in codes:
                 problems.append(Problem(REQUESTS, number, "area_code", "unknown_area"))
             elif row["tier"].upper() not in TIERS:
                 problems.append(Problem(REQUESTS, number, "tier", "invalid_tier"))
             else:
                 tier = cast(Tier, row["tier"].upper())
-                items.append(TemplateItem(row["area_code"], row["description"], tier))
+                items.append(
+                    TemplateItem(
+                        row["area_code"],
+                        row["description"],
+                        tier,
+                        extra.get("why") or None,
+                        extra.get("good_looks_like") or None,
+                        extra.get("blocks_fieldwork", "").casefold() in ("yes", "y", "true"),
+                        cast(Effort, extra["effort"].casefold()) if extra.get("effort") else None,
+                    )
+                )
         rules: list[tuple[int, AccountRule]] = []
         for number, row in _rows(_sheet(workbook, RULES), RULES, problems):
             if row["area_code"] not in codes:

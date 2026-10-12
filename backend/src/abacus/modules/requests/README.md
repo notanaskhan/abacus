@@ -50,3 +50,9 @@ The parser (`workbook.py`) is read-only, bounded (5 MB, 2,000 rows), and reports
 
 ## Document kinds (SPEC-029; TASK-055)
 - `document_kind` (`bank_statement`, `ar_aging`, `ap_aging`, `schedule`) by fixed keywords (`classification.KIND_RULES`) on create, carried on roll-forward; the team sets or clears it (`PUT …/request-items/{id}/document-kind`, `request_item.update`), which emits `request_item.document_kind_changed`.
+
+## Guidance and your part (SPEC-031; TASK-060)
+- `request_items` carry `why`, `good_looks_like`, `still_needed` (up to 1,000 characters), `blocks_fieldwork`, `effort` (`small`, `medium`, `large`) and `guidance_source` (`template`, `kind_default`, `firm`).
+- **Defaults (`guidance.py`):** on insert, the template's text, else the fixed copy for the document kind (`KIND_DEFAULTS`, founder-approved), else empty. A kind change replaces only kind-default copy. Roll-forward copies guidance, not the still-needed note.
+- **Firm editing:** `PUT …/request-items/{id}/guidance` (`request_item.update`), audited `request_item.guidance_set`; the source becomes `firm`.
+- **Your part:** `GET …/request-items/your-part` (client roles; others get zeros): open or sent-back client-visible items assigned to the person, or unassigned for client admins; minutes 15/45/120, unestimated counted as medium.

@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from abacus.kernel.classification import classified
 from abacus.modules.evidence.board_summary import board_summary
+from abacus.modules.evidence.client_view import client_view
 from abacus.modules.evidence.inbox import (
     InboxEntry,
     add_to_inbox,
@@ -540,6 +541,55 @@ async def upload_route(
 async def list_uploads_route(engagement_id: UUID, item_id: UUID, ctx: Ctx) -> list[UploadOut]:
     """SPEC-020: the item's uploads, newest first."""
     return [_upload_out(v) for v in await uploads_for(ctx, engagement_id, item_id)]
+
+
+# --- The client's view of a request (SPEC-031; TASK-060) --------------------------------------
+
+
+class ProvidedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    source: Annotated[Literal["connection", "export"], classified("internal")]
+    on: Annotated[datetime, classified("internal")]
+
+
+class GapOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    covered: Annotated[list[str], classified("confidential")]
+    needed: Annotated[list[str], classified("confidential")]
+
+
+class HistoryEntryOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    evidence_version_id: Annotated[UUID, classified("internal")]
+    added_by: Annotated[Literal["firm", "client"], classified("internal")]
+    added_by_name: Annotated[str, classified("confidential")]
+    added_at: Annotated[datetime, classified("internal")]
+    outcome: Annotated[
+        Literal["in_review", "replaced", "accepted", "sent_back", "not_accepted"],
+        classified("internal"),
+    ]
+    reason_label: Annotated[str | None, classified("internal")] = None
+    note: Annotated[str | None, classified("confidential")] = None
+
+
+class ClientViewOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    provided: Annotated[ProvidedOut | None, classified("internal")] = None
+    gap: Annotated[GapOut | None, classified("confidential")] = None
+    history: Annotated[list[HistoryEntryOut], classified("confidential")]
+
+
+@router.get(
+    "/request-items/{item_id}/client-view", action="evidence.read", response_model=ClientViewOut
+)
+async def client_view_route(engagement_id: UUID, item_id: UUID, ctx: Ctx) -> ClientViewOut:
+    """SPEC-031 AC-4, AC-5, AC-7: provided, the bank statement gap, and the item's history."""
+    view = await client_view(ctx, engagement_id, item_id)
+    return ClientViewOut.model_validate(view, from_attributes=True)
 
 
 # --- Request item detail (SPEC-021; TASK-037) --------------------------------------------------
