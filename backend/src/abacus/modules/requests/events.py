@@ -33,3 +33,13 @@ class DueDatesChanged(DomainEvent):
     event_type: ClassVar[str] = "due_dates.changed"
 
     engagement_id: Annotated[UUID, classified("internal")]
+
+
+class RequestItemDocumentKindChanged(DomainEvent):
+    """The team set (or cleared) the document an item expects (SPEC-029; TASK-055 D5): evidence
+    checks the item's latest upload again."""
+
+    event_type: ClassVar[str] = "request_item.document_kind_changed"
+
+    request_item_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]

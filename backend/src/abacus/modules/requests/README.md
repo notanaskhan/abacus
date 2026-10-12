@@ -47,3 +47,6 @@ The parser (`workbook.py`) is read-only, bounded (5 MB, 2,000 rows), and reports
 - **Overrides:** `PUT …/request-items/{item_id}/tier` (`request_item.update`), audited `request_item.tier_overridden`. Clearing the override reapplies the rules.
 - **Availability:** `available` on each item comes from the live connection's capabilities, through `register_available_datasets` (connections registers it, ADR-106). Unregistered means nothing is available.
 - **SPEC-027 (TASK-051):** due dates: `request_items.due_on` and the list's `default_due_on` (`PUT …/request-items/due-dates`, `GET/PUT …/request-items/default-due-date`, `request_item.update`); `due_dates.changed` tells the engagement agent; `overdue_for` lists open or sent-back items past due for its reminders.
+
+## Document kinds (SPEC-029; TASK-055)
+- `document_kind` (`bank_statement`, `ar_aging`, `ap_aging`, `schedule`) by fixed keywords (`classification.KIND_RULES`) on create, carried on roll-forward; the team sets or clears it (`PUT …/request-items/{id}/document-kind`, `request_item.update`), which emits `request_item.document_kind_changed`.

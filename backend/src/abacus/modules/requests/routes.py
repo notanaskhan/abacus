@@ -25,6 +25,7 @@ from abacus.modules.requests.service import (
     preview_request_list,
     request_items_for,
     set_client_visibility,
+    set_item_document_kind,
     set_item_due_dates,
     set_list_due_date,
     set_tier,
@@ -34,6 +35,7 @@ from abacus.modules.requests.workbook import MAX_BYTES, Problem, RequestListInva
 router = AbacusRouter(prefix="/v1/engagements/{engagement_id}/request-items", tags=["requests"])
 Status = Literal["open", "received", "ready_for_review", "needs_revision"]
 Tier = Literal["A", "B", "C", "D", "E"]
+DocumentKind = Literal["bank_statement", "ar_aging", "ap_aging", "schedule"]
 TierSource = Literal["override", "methodology", "rule"]
 
 
@@ -67,6 +69,11 @@ class RequestItemOut(BaseModel):
     ] = None
     available: Annotated[bool, classified("internal")] = False
     due_on: Annotated[date | None, classified("internal")] = None  # SPEC-027: its own
+    # SPEC-029 (TASK-055): the document it expects, and who set it.
+    document_kind: Annotated[DocumentKind | None, classified("internal")] = None
+    document_kind_source: Annotated[Literal["rule", "override"] | None, classified("internal")] = (
+        None
+    )
 
 
 def _out(item: RequestItemView) -> RequestItemOut:
@@ -169,6 +176,28 @@ class TierIn(BaseModel):
 
     # None clears the override: the firm's rules classify the item again.
     tier: Annotated[Tier | None, classified("internal")]
+
+
+class DocumentKindIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    # None with `clear` false: "no particular document". `clear`: the rules apply again.
+    document_kind: Annotated[DocumentKind | None, classified("internal")] = None
+    clear: Annotated[bool, classified("internal")] = False
+
+
+@router.put(
+    "/{item_id}/document-kind", action="request_item.update", response_model=RequestItemOut
+)
+async def set_document_kind_route(
+    engagement_id: UUID, item_id: UUID, body: DocumentKindIn, ctx: Ctx
+) -> RequestItemOut:
+    """SPEC-029 AC-5: set the document the item expects, or return it to the rules."""
+    return _out(
+        await set_item_document_kind(
+            ctx, engagement_id, item_id, kind=body.document_kind, clear=body.clear
+        )
+    )
 
 
 @router.put("/{item_id}/tier", action="request_item.update", response_model=RequestItemOut)

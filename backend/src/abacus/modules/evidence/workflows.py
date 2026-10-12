@@ -14,7 +14,7 @@ from temporalio import workflow
 from temporalio.common import RetryPolicy
 
 with workflow.unsafe.imports_passed_through():
-    from abacus.modules.evidence.workflow_types import UploadInput
+    from abacus.modules.evidence.workflow_types import VERSION, UploadInput
 
 _TIMEOUT = timedelta(minutes=3)
 _RETRY = RetryPolicy(
@@ -29,10 +29,21 @@ _RETRY = RetryPolicy(
 class UploadProcessing:
     @workflow.run
     async def run(self, given: UploadInput) -> str:
-        return await workflow.execute_activity(
+        status = await workflow.execute_activity(
             "upload.extract",
             given,
             result_type=str,
             start_to_close_timeout=_TIMEOUT,
             retry_policy=_RETRY,
         )
+        # v2 (TASK-055): an evidence version is then checked; an inbox file waits until it's
+        # assigned to an item (SPEC-029 Q8).
+        if workflow.patched("checks") and given.kind == VERSION:
+            await workflow.execute_activity(
+                "upload.check",
+                given,
+                result_type=int,
+                start_to_close_timeout=_TIMEOUT,
+                retry_policy=_RETRY,
+            )
+        return status

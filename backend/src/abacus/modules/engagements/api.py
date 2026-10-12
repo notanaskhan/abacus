@@ -8,12 +8,14 @@ from abacus.modules.engagements.roll_forward import (
 )
 from abacus.modules.engagements.routes import firm_router, methodology_router, router
 from abacus.modules.engagements.service import (
+    CheckFacts,
     EngagementMetadata,
     EngagementRef,
     MethodologyAlreadyApplied,
     MethodologyVersionView,
     TemplateVersionSummary,
     active_engagements,
+    check_facts,
     client_of,
     client_subquery,
     engagement_label,
@@ -60,6 +62,7 @@ register_independence(confirmed_subquery, confirmed_for)
 __all__ = [
     "AccountRule",
     "Area",
+    "CheckFacts",
     "EngagementCreated",
     "EngagementMetadata",
     "EngagementNotOpen",
@@ -75,6 +78,7 @@ __all__ = [
     "area_for",
     "attach_acceptance_file",
     "attach_letter_file",
+    "check_facts",
     "engagement_label",
     "engagement_metadata",
     "entity_of",

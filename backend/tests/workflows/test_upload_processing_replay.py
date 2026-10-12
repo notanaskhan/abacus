@@ -28,7 +28,17 @@ def _history(path: Path) -> WorkflowHistory:
 
 
 def test_ac2_the_histories_are_committed() -> None:
-    assert IDS == ["upload-processing-v1-extracted"]
+    assert IDS == [
+        "upload-processing-v1-extracted",
+        # v2 (TASK-055): `patched("checks")`; v1 still replays against the same code.
+        "upload-processing-v2-extracted",
+    ]
+
+
+def test_ac2_v2_checks_after_extracting() -> None:
+    text = (HISTORIES / "upload-processing-v2-extracted.json").read_text(encoding="utf-8")
+    assert "upload.check" in text
+    assert "EVENT_TYPE_MARKER_RECORDED" in text  # the `patched("checks")` version marker
 
 
 @pytest.mark.parametrize("path", ALL, ids=IDS)

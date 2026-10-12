@@ -103,3 +103,30 @@ def _tier(value: str) -> Tier:
 
 def rule(rule_id: str) -> Rule | None:
     return _BY_ID.get(rule_id)
+
+
+# --- Document kinds (SPEC-029 goal 4; TASK-055) -----------------------------------------------
+
+DocumentKind = Literal["bank_statement", "ar_aging", "ap_aging", "schedule"]
+DOCUMENT_KINDS: Final[tuple[DocumentKind, ...]] = (
+    "bank_statement",
+    "ar_aging",
+    "ap_aging",
+    "schedule",
+)
+# For audit references (integers only, never text); 0 is "none".
+KIND_INDEX: Final = {kind: n for n, kind in enumerate(DOCUMENT_KINDS, start=1)}
+# Ordered, first match wins; the AR and AP phrases are the tier rules' (D1). Migration 0044
+# applied these once to existing items.
+KIND_RULES: Final[tuple[tuple[DocumentKind, re.Pattern[str]], ...]] = (
+    ("bank_statement", _words(r"bank statements?")),
+    ("ar_aging", _BY_ID["ar-1"].pattern),
+    ("ap_aging", _BY_ID["ap-1"].pattern),
+    ("schedule", _words(r"schedules?", r"reconciliations?", r"roll-?forwards?")),
+)
+
+
+def document_kind(description: str, area: str) -> DocumentKind | None:
+    """The document a request expects, by fixed keywords (never from client text)."""
+    text = f"{description}\n{area}"
+    return next((kind for kind, pattern in KIND_RULES if pattern.search(text)), None)

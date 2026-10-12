@@ -22,11 +22,18 @@ from abacus.modules.identity.api import (
     engagement_role_of,
 )
 from abacus.modules.requests.availability import available_datasets
-from abacus.modules.requests.classification import TIER_INDEX, Classification, classify
+from abacus.modules.requests.classification import (
+    KIND_INDEX,
+    TIER_INDEX,
+    Classification,
+    classify,
+    document_kind,
+)
 from abacus.modules.requests.events import (
     DueDatesChanged,
     RequestItemClassified,
     RequestItemCreated,
+    RequestItemDocumentKindChanged,
 )
 from abacus.modules.requests.models import RequestItem
 from abacus.modules.requests.repository import (
@@ -46,6 +53,7 @@ from abacus.modules.requests.repository import (
     set_classification,
     set_client_fields,
     set_default_due_on,
+    set_document_kind,
     set_due_dates,
     set_status,
 )
@@ -75,6 +83,9 @@ class RequestItemView:
     available: bool = False
     # SPEC-027 (TASK-051): the item's own due date (None: the request list's default applies).
     due_on: date | None = None
+    # SPEC-029 (TASK-055): the document it expects, and whether a rule or the team set it.
+    document_kind: str | None = None
+    document_kind_source: str | None = None
 
 
 def _view(
@@ -97,6 +108,8 @@ def _view(
         item.tier_source,
         item.dataset is not None and item.dataset in available,
         item.due_on,
+        item.document_kind,
+        item.document_kind_source,
     )
 
 
@@ -608,6 +621,26 @@ async def read_item(tenant: TenantContext, engagement_id: UUID, item_id: UUID) -
     )
 
 
+@dataclass(frozen=True)
+class ItemKind:
+    id: UUID
+    document_kind: str | None
+
+
+async def items_of_version(tenant: TenantContext, evidence_version_id: UUID) -> list[ItemKind]:
+    """The items a version fulfils and the document each expects (SPEC-029; TASK-055), for a
+    caller acting as the system on the engagement's own uploads."""
+    async with tenant_session(tenant) as session:
+        items = await items_fulfilled_by(session, evidence_version_id)
+    return [ItemKind(i.id, i.document_kind) for i in items]
+
+
+async def latest_version_of(tenant: TenantContext, item_id: UUID) -> UUID | None:
+    """The version that last fulfilled the item (TASK-055 D5), for a system caller."""
+    async with tenant_session(tenant) as session:
+        return await newest_fulfilment(session, item_id)
+
+
 async def read_item_versions(tenant: TenantContext, item_id: UUID) -> list[UUID]:
     """Every version fulfilling the item, oldest first, for a caller that authorised on it."""
     async with tenant_session(tenant) as session:
@@ -631,6 +664,7 @@ async def _insert_item(
 ) -> RequestItem:
     """Insert an item classified by `classify` (AC-1), recording how."""
     found = classify(description, audit_area, firm_tier=firm_tier)
+    kind = document_kind(description, audit_area)  # SPEC-029 (TASK-055)
     item = await insert_request_item(
         tx.session,
         item_id=item_id,
@@ -644,6 +678,8 @@ async def _insert_item(
         dataset=found.dataset,
         tier_source=found.source,
         tier_rule=found.rule_id,
+        document_kind=kind,
+        document_kind_source="rule" if kind is not None else None,
     )
     _record_classified(tx, item_id, engagement_id, found, "request_item.classified")
     return item
@@ -687,6 +723,43 @@ async def set_tier(
             rule=found.rule_id,
         )
         _record_classified(tx, item_id, engagement_id, found, "request_item.tier_overridden")
+        return await _item_view(tx, item_id)
+
+
+async def set_item_document_kind(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    item_id: UUID,
+    *,
+    kind: str | None,
+    clear: bool = False,
+) -> RequestItemView:
+    """SPEC-029 AC-5 (TASK-055): the team sets the document the item expects (`kind`, or None for
+    "no particular document"); `clear` removes the override, and the rules apply again. Evidence
+    checks the latest upload again (D5)."""
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await _locked_item(tx, engagement_id, item_id)
+        await authorise(ctx, "request_item.update", ref.resource())
+        row = await get_request_item(tx.session, item_id)
+        if row is None:
+            raise NotFound("request_item")
+        if clear:
+            ruled = document_kind(row.description, row.audit_area)
+            new_kind, source = ruled, ("rule" if ruled is not None else None)
+        else:
+            new_kind, source = kind, "override"
+        await set_document_kind(tx.session, item_id, kind=new_kind, source=source)
+        tx.record(
+            "request_item.document_kind_set",
+            target=Target("request_item", item_id),
+            after=Ref(
+                kind=KIND_INDEX.get(new_kind or "", 0), overridden=int(source == "override")
+            ),
+        )
+        tx.emit(
+            RequestItemDocumentKindChanged(request_item_id=item_id, engagement_id=engagement_id)
+        )
         return await _item_view(tx, item_id)
 
 

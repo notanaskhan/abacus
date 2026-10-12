@@ -45,6 +45,7 @@ from abacus.modules.evidence.uploads import (
     UploadView,
     check_upload,
     upload,
+    upload_checks,
     uploads_for,
 )
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
@@ -372,6 +373,37 @@ async def _file(request: Request) -> bytes:
         if len(data) > MAX_UPLOAD_BYTES:
             raise UploadTooLarge
     return bytes(data)
+
+
+class CheckOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    code: Annotated[str, classified("internal")]
+    outcome: Annotated[Literal["passed", "problem", "not_applicable"], classified("internal")]
+    audience: Annotated[Literal["client", "firm"], classified("internal")]
+    document_kind: Annotated[str | None, classified("internal")]
+    reason: Annotated[str | None, classified("internal")]
+    expected_date: Annotated[date | None, classified("confidential")]
+    found_date: Annotated[date | None, classified("confidential")]
+    amount: Annotated[Decimal | None, classified("confidential")]
+    difference: Annotated[Decimal | None, classified("confidential")]
+    account_code: Annotated[str | None, classified("confidential")]
+    ref_item_id: Annotated[UUID | None, classified("internal")]
+
+
+@router.get(
+    "/request-items/{item_id}/uploads/{version_id}/checks",
+    action="evidence.read",
+    response_model=list[CheckOut],
+)
+async def upload_checks_route(
+    engagement_id: UUID, item_id: UUID, version_id: UUID, ctx: Ctx
+) -> list[CheckOut]:
+    """SPEC-029 AC-6 to AC-11: what code found in an upload; client roles see only theirs."""
+    return [
+        CheckOut.model_validate(c, from_attributes=True)
+        for c in await upload_checks(ctx, engagement_id, item_id, version_id)
+    ]
 
 
 @router.post(

@@ -1746,7 +1746,6 @@ def test_ac20_crypto_001_output_names_the_rule_and_adr(tmp_path: Path) -> None:
 
 EVIDENCE_VIOLATING = [
     "from abacus.modules.organisations.api import create_client\n",
-    "from abacus.modules.ledger.api import x\n",
     "from abacus.modules.sampling.api import x\n",
     "from abacus.modules.agents.api import spec\n",
 ]
@@ -1759,6 +1758,8 @@ EVIDENCE_CLEAN = [
     # Review queues read fulfilments and move items through requests (SPEC-004 Q4, TASK-019).
     "from abacus.modules.requests.api import router\n",
     "import abacus.modules.requests.api\n",
+    # SPEC-029 (TASK-055 D2): upload cross-checks read the year end's snapshot.
+    "from abacus.modules.ledger.api import snapshot_view\n",
 ]
 
 
@@ -1775,8 +1776,14 @@ def test_ac20_bound_002_allows_evidence_to_use_identity_engagements_and_requests
 
 
 def test_ac20_bound_002_evidence_may_depend_on_identity_engagements_and_requests_only() -> None:
-    # requests added by TASK-019 (review queues, SPEC-004 Q4; ADR-106).
-    assert set(bp.MODULE_DEPENDENCIES["evidence"]) == {"identity", "engagements", "requests"}
+    # requests added by TASK-019 (review queues, SPEC-004 Q4; ADR-106); ledger by TASK-055 D2
+    # (upload cross-checks, SPEC-029).
+    assert set(bp.MODULE_DEPENDENCIES["evidence"]) == {
+        "identity",
+        "engagements",
+        "requests",
+        "ledger",
+    }
 
 
 @pytest.mark.parametrize("module", ["identity", "organisations", "engagements", "requests"])
@@ -2136,7 +2143,6 @@ BOUND2_REV1_VIOLATING = [
     ("evidence", "from abacus.modules.connections.api import x\n"),
     ("engagements", "from abacus.modules.ledger.api import x\n"),
     ("requests", "from abacus.modules.ledger.api import x\n"),
-    ("evidence", "from abacus.modules.ledger.api import x\n"),
     ("identity", "from abacus.modules.ledger.api import x\n"),
 ]
 BOUND2_REV1_CLEAN = [
@@ -2152,6 +2158,7 @@ BOUND2_REV1_CLEAN = [
     ("ledger", "from abacus.kernel.uow import UnitOfWork\n"),
     ("ledger", "from abacus.kernel.db import tenant_session\n"),
     ("ledger", "from abacus.modules.ledger.api import validate\n"),
+    ("evidence", "from abacus.modules.ledger.api import snapshot_view\n"),  # TASK-055 D2
 ]
 
 
@@ -2175,11 +2182,13 @@ def test_ac20_bound_002_ledger_depends_on_no_module() -> None:
 
 def test_ac20_bound_002_only_named_modules_may_depend_on_ledger() -> None:
     # communications reads scope facts through the ledger API (SPEC-006, TASK-021 D2); agents
-    # reads the engagement graph's accounts (SPEC-008, TASK-023 D1).
+    # reads the engagement graph's accounts (SPEC-008, TASK-023 D1); evidence cross-checks
+    # uploads against the year end's snapshot (SPEC-029, TASK-055 D2).
     assert sorted(m for m, deps in bp.MODULE_DEPENDENCIES.items() if "ledger" in deps) == [
         "agents",
         "communications",
         "connections",
+        "evidence",
     ]
 
 
