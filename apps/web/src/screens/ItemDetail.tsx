@@ -268,9 +268,13 @@ function VersionCard({
           ? `Retrieved from ${v.source}${
               v.period_start !== null ? ` · ${v.period_start} to ${v.period_end ?? ""}` : ""
             } · pulled ${when(v.pulled_at)}`
-          : v.on_behalf === true
-            ? `Added for the client by ${v.uploaded_by_name || "the audit team"}`
-            : `Uploaded by ${v.uploaded_by_name || "the client"}`}
+          : v.method === "imported"
+            ? `Imported from ${importedSystem(v.source)} export${
+                v.period_start !== null ? ` · ${v.period_start} to ${v.period_end ?? ""}` : ""
+              }`
+            : v.on_behalf === true
+              ? `Added for the client by ${v.uploaded_by_name || "the audit team"}`
+              : `Uploaded by ${v.uploaded_by_name || "the client"}`}
       </p>
       {v.note != null && <p className="text-xs text-muted">{v.note}</p>}
       {v.file_name !== null && <p className="break-all">{v.file_name}</p>}
@@ -506,4 +510,14 @@ function ScreenNow({
       )}
     </span>
   );
+}
+
+// SPEC-028 (TASK-053): an import's source is `import_<format>`; the system is named for people.
+const IMPORT_SYSTEMS: Record<string, string> = {
+  import_qbo_tb_csv: "a QuickBooks Online",
+  import_xero_tb_xlsx: "a Xero",
+};
+
+function importedSystem(source: string): string {
+  return IMPORT_SYSTEMS[source] ?? "an accounting system";
 }

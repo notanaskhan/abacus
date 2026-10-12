@@ -74,4 +74,5 @@ Connections to clients' systems, sync runs, and the retrieval pipeline (ADR-037,
 - **Records:** `ledger_imports` is insert-only. One good import per entity and fingerprint; the same file again is `duplicate`.
 - **Retrieval:** a good import makes the entity's `import` connection (unless one is live) and starts retrieval for the open tier A trial balance items as the uploader. A live connection of another provider refuses an upload (`already_connected`).
 - **Connector:** `connectors/import_file.py` — trial balance only, no OAuth, no change feed, no attachments; `pull` returns the latest clean import for the period. Formats are configuration (`import_formats.py`); the run's source is `import_<format>`.
+- **Failure details (TASK-053 D1):** a failed check also records `difference` (debits minus credits, when unbalanced) and `found_period_end` (when it's another period), for the web's fixed messages.
 - **Evidence:** method `imported`; the footer names the system, the uploader, the upload time and where the control totals came from.

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -269,6 +270,9 @@ class ImportOut(BaseModel):
     totals_from_lines: Annotated[bool, classified("internal")]
     on_behalf: Annotated[bool, classified("internal")]
     uploaded_at: Annotated[datetime, classified("internal")]
+    # TASK-053 D1: for the fixed messages; debits minus credits, and the period the file covers.
+    difference: Annotated[Decimal | None, classified("confidential")]
+    found_period_end: Annotated[date | None, classified("confidential")]
     duplicate: Annotated[bool, classified("internal")]
 
 

@@ -555,6 +555,7 @@ function FilterBar({
       ])}
       {select("source", "Evidence", [
         ["retrieved", "Retrieved"],
+        ["imported", "Imported"],
         ["uploaded", "Uploaded"],
         ["none", "None yet"],
       ])}
