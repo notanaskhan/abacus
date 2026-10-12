@@ -12,6 +12,8 @@ Messages that leave the platform (ADR-065; SPEC-006). PROTECTED.
   - **Violations:** recorded `blocked`, audited `message.blocked`, and `OutOfScope` raised (409 `out_of_scope`). A checker error blocks too.
 - `check_scope(ctx, EngagementRef, text) -> list[Violation]`: deterministic. It flags the firm's other clients and entities (names of 4 characters or more, case-insensitive, whole words, with a stoplist); other ledgers' accounts (non-numeric codes, and names of 8 characters or more); and amounts not in the engagement's snapshots. Amounts are compared in cents; rounded amounts (whole units, `k`, `m`) match within their rounding; amounts under 100 and bare years are ignored.
 
+- `comment_scope_kinds`: registered into requests as the check on firm comments shared with a client (SPEC-032 TASK-062 D1); a checker error returns `checker_error`, which blocks.
+
 ## Rules
 - COMM-001: nothing outside this module imports a mail or messaging library or emits `message.ready`.
 - No transport yet: delivery comes with Phase 2 increments 2 and 8.

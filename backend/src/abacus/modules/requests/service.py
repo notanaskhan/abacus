@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime
 from uuid import UUID, uuid4
 
@@ -51,6 +51,7 @@ from abacus.modules.requests.repository import (
     insert_request_item,
     item_keys,
     items_fulfilled_by,
+    list_comment_counts,
     list_fulfilled_versions,
     list_request_items,
     mark_received,
@@ -101,6 +102,9 @@ class RequestItemView:
     blocks_fieldwork: bool = False
     effort: str | None = None
     guidance_source: str | None = None
+    # SPEC-032 (TASK-062): comments the reader may see on it and its versions; any unread.
+    comment_count: int = 0
+    unread_comments: bool = False
 
 
 def _view(
@@ -183,10 +187,20 @@ async def add_request_item(
 async def request_items_for(ctx: AuthContext, engagement_id: UUID) -> Sequence[RequestItemView]:
     ref = await get_ref(ctx, engagement_id)
     await authorise_items(ctx, "request_item.read", ref.resource())
+    client = await engagement_role_of(ctx.tenant, engagement_id, ctx.user_id) in (
+        "client_admin",
+        "client_contributor",
+    )
     async with tenant_session(ctx.tenant) as session:
         rows = await list_request_items(session, ctx, engagement_id)
+        counts = await list_comment_counts(session, ctx, engagement_id, shared_only=client)
     datasets = await available_datasets(ctx.tenant, ref.client_entity_id)
-    return [_view(item, version_id, datasets) for item, version_id in rows]
+    return [
+        replace(_view(item, version_id, datasets), comment_count=c[0], unread_comments=c[1])
+        if (c := counts.get(item.id)) is not None
+        else _view(item, version_id, datasets)
+        for item, version_id in rows
+    ]
 
 
 @dataclass(frozen=True)

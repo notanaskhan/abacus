@@ -71,6 +71,7 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"upload_previews", "upload_preview_pages"}  # SPEC-029 (TASK-056): server-made, kept
     | {"upload_reviews", "upload_review_flags"}  # SPEC-030 (TASK-058): proposals, as made
     | {"reminder_items"}  # SPEC-027 (TASK-051)
+    | {"comments", "comment_mentions", "comment_redactions"}  # SPEC-032 (TASK-062): ADR-109
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -115,6 +116,17 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     # Client invitations (SPEC-015): never the token (only its hash, elsewhere).
     "client_invitations": frozenset(
         {"id", "tenant_id", "engagement_id", "email", "role", "invited_by", "expires_at"}
+    ),
+    # Comments (SPEC-032; TASK-062): the text sealed; mentions, redactions, last reads.
+    "comments": frozenset(
+        {"id", "tenant_id", "engagement_id", "request_item_id", "evidence_version_id"}
+        | {"author_user_id", "author_side", "visibility", "body_sealed", "body_fingerprint"}
+        | {"corrects_comment_id"}
+    ),
+    "comment_mentions": frozenset({"tenant_id", "comment_id", "user_id"}),
+    "comment_redactions": frozenset({"tenant_id", "comment_id", "redacted_by", "reason"}),
+    "comment_reads": frozenset(
+        {"tenant_id", "user_id", "request_item_id", "evidence_version_id", "last_read_at"}
     ),
     # Notifications (SPEC-013): identifiers only; one per recipient per event.
     "notifications": frozenset(
@@ -271,6 +283,7 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "budgets": frozenset({"monthly_soft_usd", "monthly_hard_usd", "updated_by", "updated_at"}),
     "feature_flag_states": frozenset({"value", "set_by", "reason", "set_at"}),  # SPEC-011
     "notifications": frozenset({"read_at"}),  # SPEC-013
+    "comment_reads": frozenset({"last_read_at"}),  # SPEC-032 (TASK-062)
     "client_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
     "support_sessions": frozenset(  # SPEC-012: lifecycle only
         {"status", "approved_by_kind", "approved_by", "starts_at", "expires_at", "ended_at"}
@@ -350,6 +363,11 @@ TABLE_OWNERS: dict[str, str] = {
     "feature_flag_states": "kernel.flags",  # SPEC-011
     "support_sessions": "identity",  # SPEC-012
     "notifications": "notifications",  # SPEC-013
+    # SPEC-032 (TASK-062 Q1): comments live with the request items they discuss.
+    "comments": "requests",
+    "comment_mentions": "requests",
+    "comment_redactions": "requests",
+    "comment_reads": "requests",
     # SPEC-015: invitations, and the token and failure tables reached only by definer functions.
     "client_invitations": "identity",
     "invitation_tokens": "identity",

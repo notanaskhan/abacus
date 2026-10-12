@@ -897,7 +897,8 @@ def test_ac4_content_actions_need_the_content_scope() -> None:
         for a, decisions in YAML_ACTIONS.items()
         if decisions.get("platform_support_content") and not decisions.get("platform_support")
     }
-    assert content_only == {"engagement.read", "evidence.read", "knowledge.read"}
+    # SPEC-032 (TASK-062 D4): comments are content, as evidence is.
+    assert content_only == {"engagement.read", "evidence.read", "knowledge.read", "comment.read"}
 
 
 # --- SPEC-014: firm-level reads count engagement roles on active engagements ---------------------

@@ -3,14 +3,15 @@
 Each kind maps one domain event to its recipients, the engagement it concerns (for walls at read
 time) and its subject. Text comes from `TEMPLATES` (identifiers filled in by the SPA, AC-7);
 notifications never store text. Recipients are resolved from current memberships and engagement
-roles; never a client user, an agent or the platform.
+roles; never an agent or the platform, and a client user only when mentioned in a comment they
+may read (SPEC-032; TASK-062 D2: checked by requests when the comment was posted).
 """
 
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Final
+from typing import Final, cast
 from uuid import UUID
 
 from abacus.modules.identity.api import engagement_leads, firm_admins, team_of
@@ -71,6 +72,14 @@ async def _leads(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     return [] if engagement_id is None else await engagement_leads(tenant_id, engagement_id)
 
 
+async def _mentioned(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """SPEC-032 AC-5: the people mentioned in a comment, firm or client."""
+    raw = payload.get("mentioned_user_ids")
+    if not isinstance(raw, list):
+        return []
+    return sorted({UUID(str(u)) for u in cast(list[object], raw)})
+
+
 @dataclass(frozen=True)
 class Kind:
     kind: str
@@ -112,6 +121,8 @@ CATALOGUE: Final[dict[str, Kind]] = {
     # SPEC-027 (TASK-051): the engagement agent's drafted reminders (Advise) and daily digest.
     "reminders.drafted": Kind("reminders.drafted", _leads, "engagement", "engagement_id"),
     "agent.digest": Kind("agent.digest", _leads, "engagement", "engagement_id"),
+    # SPEC-032 (TASK-062): a person mentioned in a comment, on the request it's about.
+    "comment.mentioned": Kind("comment.mentioned", _mentioned, "request_item", "request_item_id"),
 }
 
 # AC-7: fixed English text per kind; placeholders are names the reader can already see.
@@ -131,4 +142,5 @@ TEMPLATES: Final[dict[str, str]] = {
     "independence.requested": "Confirm your independence for {engagement}.",
     "reminders.drafted": "Overdue reminders on {engagement} are waiting for you to send.",
     "agent.digest": "Items are overdue on {engagement}: see its activity for today's reminders.",
+    "comment.mentioned": "You were mentioned in a comment on {engagement}.",
 }

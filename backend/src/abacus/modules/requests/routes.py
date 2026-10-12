@@ -13,6 +13,16 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel.classification import classified
 from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.requests.comments import (
+    MAX_BODY,
+    MAX_REASON,
+    CommentView,
+    mark_read,
+    mention_candidates,
+    post_comment,
+    redact,
+    thread,
+)
 from abacus.modules.requests.service import (
     AppliedMethodology,
     GuidanceEdit,
@@ -84,6 +94,8 @@ class RequestItemOut(BaseModel):
     still_needed: Annotated[str | None, classified("confidential")] = None
     blocks_fieldwork: Annotated[bool, classified("internal")] = False
     effort: Annotated[Effort | None, classified("internal")] = None
+    comment_count: Annotated[int, classified("internal")] = 0  # SPEC-032 (TASK-062)
+    unread_comments: Annotated[bool, classified("internal")] = False
     guidance_source: Annotated[
         Literal["template", "kind_default", "firm"] | None, classified("internal")
     ] = None
@@ -404,3 +416,172 @@ async def import_route(
         empty=counts.empty,
         unmatched_areas=counts.unmatched_areas,
     )
+
+
+# --- Comments (SPEC-032; TASK-062; ADR-109) ------------------------------------------------------
+
+
+class CommentIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    text: Annotated[str, Field(min_length=1, max_length=MAX_BODY), classified("restricted")]
+    share: Annotated[bool, classified("internal")] = False  # firm only; a client's is shared
+    corrects: Annotated[UUID | None, classified("internal")] = None
+    mentions: Annotated[list[UUID], Field(max_length=20), classified("internal")] = []
+
+
+class RedactionOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    redacted_by_name: Annotated[str, classified("confidential")]
+    redacted_at: Annotated[datetime, classified("internal")]
+    reason: Annotated[str, classified("confidential")]
+
+
+class CommentOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    request_item_id: Annotated[UUID, classified("internal")]
+    evidence_version_id: Annotated[UUID | None, classified("internal")] = None
+    author_user_id: Annotated[UUID, classified("internal")]
+    author_name: Annotated[str, classified("confidential")]
+    author_side: Annotated[Literal["firm", "client"], classified("internal")]
+    visibility: Annotated[Literal["internal", "shared"], classified("internal")]
+    text: Annotated[str | None, classified("restricted")] = None
+    created_at: Annotated[datetime, classified("internal")]
+    corrects: Annotated[UUID | None, classified("internal")] = None
+    corrected_by: Annotated[list[UUID], classified("internal")] = []
+    mentions: Annotated[list[UUID], classified("internal")] = []
+    redaction: Annotated[RedactionOut | None, classified("confidential")] = None
+
+
+def _comment_out(view: CommentView) -> CommentOut:
+    return CommentOut.model_validate(view, from_attributes=True)
+
+
+class MentionCandidateOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    user_id: Annotated[UUID, classified("internal")]
+    display_name: Annotated[str, classified("confidential")]
+    side: Annotated[Literal["firm", "client"], classified("internal")]
+
+
+class ThreadReadIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    evidence_version_id: Annotated[UUID | None, classified("internal")] = None
+
+
+class RedactIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    reason: Annotated[str, Field(min_length=1, max_length=MAX_REASON), classified("confidential")]
+
+
+class ThreadReadOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    read: Annotated[bool, classified("internal")] = True
+
+
+@router.get(
+    "/{item_id}/comments/mention-candidates",
+    action="comment.create",
+    response_model=list[MentionCandidateOut],
+)
+async def mention_candidates_route(
+    engagement_id: UUID,
+    item_id: UUID,
+    ctx: Ctx,
+    visibility: Annotated[Literal["internal", "shared"], Query()] = "internal",
+) -> list[MentionCandidateOut]:
+    """SPEC-032 AC-5: who may be mentioned, as they may read the comment."""
+    found = await mention_candidates(ctx, engagement_id, item_id, visibility)
+    return [MentionCandidateOut.model_validate(c, from_attributes=True) for c in found]
+
+
+@router.get("/{item_id}/comments", action="comment.read", response_model=list[CommentOut])
+async def item_comments_route(engagement_id: UUID, item_id: UUID, ctx: Ctx) -> list[CommentOut]:
+    """SPEC-032 AC-1, AC-3: the item's own thread."""
+    return [_comment_out(c) for c in await thread(ctx, engagement_id, item_id, None)]
+
+
+@router.post(
+    "/{item_id}/comments", action="comment.create", response_model=CommentOut, status_code=201
+)
+async def post_item_comment_route(
+    engagement_id: UUID, item_id: UUID, body: CommentIn, ctx: Ctx
+) -> CommentOut:
+    """SPEC-032 AC-2, AC-4, AC-5, AC-7."""
+    return _comment_out(
+        await post_comment(
+            ctx,
+            engagement_id,
+            item_id,
+            None,
+            text=body.text,
+            share=body.share,
+            corrects=body.corrects,
+            mentions=body.mentions,
+        )
+    )
+
+
+@router.get(
+    "/{item_id}/versions/{version_id}/comments",
+    action="comment.read",
+    response_model=list[CommentOut],
+)
+async def version_comments_route(
+    engagement_id: UUID, item_id: UUID, version_id: UUID, ctx: Ctx
+) -> list[CommentOut]:
+    """SPEC-032 AC-1: one evidence version's thread."""
+    return [_comment_out(c) for c in await thread(ctx, engagement_id, item_id, version_id)]
+
+
+@router.post(
+    "/{item_id}/versions/{version_id}/comments",
+    action="comment.create",
+    response_model=CommentOut,
+    status_code=201,
+)
+async def post_version_comment_route(
+    engagement_id: UUID, item_id: UUID, version_id: UUID, body: CommentIn, ctx: Ctx
+) -> CommentOut:
+    return _comment_out(
+        await post_comment(
+            ctx,
+            engagement_id,
+            item_id,
+            version_id,
+            text=body.text,
+            share=body.share,
+            corrects=body.corrects,
+            mentions=body.mentions,
+        )
+    )
+
+
+@router.post("/{item_id}/comments/read", action="comment.read", response_model=ThreadReadOut)
+async def read_comments_route(
+    engagement_id: UUID, item_id: UUID, body: ThreadReadIn, ctx: Ctx
+) -> ThreadReadOut:
+    """SPEC-032 Q6: the caller has read the thread (the item's, or a version's) up to now."""
+    await mark_read(ctx, engagement_id, item_id, body.evidence_version_id)
+    return ThreadReadOut()
+
+
+@router.post(
+    "/{item_id}/comments/{comment_id}/redact",
+    action="comment.redact",
+    response_model=ThreadReadOut,
+    status_code=201,
+)
+async def redact_comment_route(
+    engagement_id: UUID, item_id: UUID, comment_id: UUID, body: RedactIn, ctx: Ctx
+) -> ThreadReadOut:
+    """SPEC-032 AC-6: a firm administrator hides a comment posted in error."""
+    await redact(ctx, engagement_id, item_id, comment_id, body.reason)
+    return ThreadReadOut()

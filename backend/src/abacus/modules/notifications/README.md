@@ -10,6 +10,7 @@ In-app notifications (SPEC-013). Modules publish domain events. This module subs
 | `budget.soft_crossed`, `budget.anomaly` | firm admins, plus the engagement's partner and managers |
 | `engagement.member_self_joined` | the engagement team, except the admin who joined |
 | `review.assigned` | the assignee |
+| `comment.mentioned` | the people mentioned, firm or client (SPEC-032) |
 
 **Delivery:** at least once through the relay, idempotent on (event, recipient).
 

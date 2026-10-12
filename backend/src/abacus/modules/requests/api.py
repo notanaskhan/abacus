@@ -3,6 +3,7 @@
 from abacus.modules.engagements.api import register_roll_forward_items
 from abacus.modules.requests.availability import register_available_datasets
 from abacus.modules.requests.classification import classify
+from abacus.modules.requests.comments import register_comment_scope_check
 from abacus.modules.requests.events import (
     DueDatesChanged,
     RequestItemClassified,
@@ -73,6 +74,7 @@ __all__ = [
     "read_item",
     "read_item_versions",
     "register_available_datasets",
+    "register_comment_scope_check",
     "request_items_for",
     "review_targets",
     "router",

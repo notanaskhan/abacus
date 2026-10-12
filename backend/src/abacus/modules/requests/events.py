@@ -43,3 +43,15 @@ class RequestItemDocumentKindChanged(DomainEvent):
 
     request_item_id: Annotated[UUID, classified("internal")]
     engagement_id: Annotated[UUID, classified("internal")]
+
+
+class CommentMentioned(DomainEvent):
+    """People were mentioned in a comment (SPEC-032 AC-5): notifications tells each of them. They
+    were checked, when it was posted, to be able to read it."""
+
+    event_type: ClassVar[str] = "comment.mentioned"
+
+    comment_id: Annotated[UUID, classified("internal")]
+    request_item_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    mentioned_user_ids: Annotated[list[UUID], classified("internal")]

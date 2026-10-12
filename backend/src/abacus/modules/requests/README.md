@@ -56,3 +56,13 @@ The parser (`workbook.py`) is read-only, bounded (5 MB, 2,000 rows), and reports
 - **Defaults (`guidance.py`):** on insert, the template's text, else the fixed copy for the document kind (`KIND_DEFAULTS`, founder-approved), else empty. A kind change replaces only kind-default copy. Roll-forward copies guidance, not the still-needed note.
 - **Firm editing:** `PUT …/request-items/{id}/guidance` (`request_item.update`), audited `request_item.guidance_set`; the source becomes `firm`.
 - **Your part:** `GET …/request-items/your-part` (client roles; others get zeros): open or sent-back client-visible items assigned to the person, or unassigned for client admins; minutes 15/45/120, unestimated counted as medium.
+
+## Comments (SPEC-032; TASK-062; ADR-109)
+- **Threads (`comments.py`):** one per request item and one per evidence version that fulfils it. `comments`, `comment_mentions` and `comment_redactions` are insert-only; `comment_reads` keeps each person's last read per thread.
+- **Visibility:** a firm member's comment is internal unless shared (`comment.share`); a client's is always shared. Client roles only ever receive shared comments, on items they may read (`visible_items` with `comment.read`).
+- **Sharing:** a firm comment is checked by the scope check communications registers (`register_comment_scope_check`); a violation or checker error refuses it (409 `out_of_scope`), and nothing registered refuses sharing (409 `sharing_unavailable`).
+- **Corrections:** same author, same thread, not redacted; the correction keeps the original's visibility.
+- **Mentions:** only people who may read the comment (the firm team; for shared comments also the item's client admins and assigned contributor); `comment.mentioned` notifies each.
+- **Redaction:** `comment.redact` (firm admin, recent MFA), once, with a reason; the sealed text stays and is never returned again.
+- **Text:** Restricted, sealed with `kernel.crypto` (bound to its SHA-256), never logged; audit events carry identifiers and the fingerprint only.
+- **Routes:** `GET/POST …/request-items/{id}/comments`, `GET/POST …/{id}/versions/{version}/comments`, `GET …/{id}/comments/mention-candidates`, `POST …/{id}/comments/read`, `POST …/{id}/comments/{comment}/redact`. The request list carries `comment_count` and `unread_comments`.

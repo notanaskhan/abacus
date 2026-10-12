@@ -26,4 +26,5 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "independence.requested",  # SPEC-025 (TASK-044)
         "reminders.drafted",  # SPEC-027 (TASK-051)
         "agent.digest",
+        "comment.mentioned",  # SPEC-032 (TASK-062)
     }

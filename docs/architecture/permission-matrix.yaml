@@ -135,6 +135,30 @@ actions:
     client_admin: allow
     client_contributor: assigned_only
     system: allow             # retrieval via connections
+  # --- Comments (SPEC-032; TASK-062; ADR-109): client roles see shared comments only (service) ---
+  comment.read:
+    independence: required   # client data, per person
+    practice_leader: in_scope
+    quality_partner: in_scope
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    staff: allow
+    reviewer: allow
+    client_admin: client_visible_only
+    client_contributor: assigned_only
+    platform_support_content: allow   # TASK-062 D4: break-glass content, read-only
+  comment.create:
+    independence: required
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    staff: allow
+    reviewer: allow
+    client_admin: client_visible_only
+    client_contributor: assigned_only
+  comment.share:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}
+  comment.redact:           {firm_admin: allow, mfa_recent: required}   # ADR-109: a comment posted in error
   evidence.accept:
     independence: required   # SPEC-025 (TASK-045): client data, per person
     engagement_partner: allow
