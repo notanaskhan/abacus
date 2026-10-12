@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import FetchedValue
+from sqlalchemy import FetchedValue, Numeric
 from sqlalchemy.orm import Mapped, mapped_column
 
 from abacus.kernel.db import Base
@@ -106,3 +107,35 @@ class InboxFile(Base):
     decided_by: Mapped[UUID | None]
     decided_at: Mapped[datetime | None]
     created_at: Mapped[datetime]
+
+
+class UploadExtraction(Base):
+    """What code read from an upload (SPEC-029; TASK-054): a derived record, insert-only."""
+
+    __tablename__ = "upload_extractions"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    evidence_version_id: Mapped[UUID | None]
+    inbox_file_id: Mapped[UUID | None]
+    extractor_version: Mapped[str]
+    status: Mapped[str]
+    reason: Mapped[str | None]
+    page_count: Mapped[int | None]
+    truncated: Mapped[bool] = mapped_column(server_default=FetchedValue())
+    storage_key: Mapped[str | None]
+    storage_version_id: Mapped[str | None]
+    fingerprint: Mapped[str | None]
+    size_bytes: Mapped[int | None]
+    period_start: Mapped[date | None]
+    period_end: Mapped[date | None]
+    as_of: Mapped[date | None]
+    entity_name: Mapped[str | None]
+    account_last4: Mapped[str | None]
+    opening: Mapped[Decimal | None] = mapped_column(Numeric(20, 2))
+    closing: Mapped[Decimal | None] = mapped_column(Numeric(20, 2))
+    credits: Mapped[Decimal | None] = mapped_column(Numeric(20, 2))
+    debits: Mapped[Decimal | None] = mapped_column(Numeric(20, 2))
+    grand_total: Mapped[Decimal | None] = mapped_column(Numeric(20, 2))
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

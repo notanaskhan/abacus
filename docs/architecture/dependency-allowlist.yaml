@@ -26,7 +26,9 @@ python:
     structlog: approved         # structured logging helper (ADR-022)
     anthropic: approved         # ai_gateway only (ADR-019)
     workos: pending             # identity vendor pending commercial check (ADR-029)
-    pdfplumber: pending         # document parsing — decide when scanned evidence arrives
+    pdfplumber: approved        # upload extraction: PDF text and tables, in an isolated child (SPEC-029 Q1, TASK-054; brings pdfminer.six)
+    pypdfium2: approved         # upload previews: PDF page images, server-side (SPEC-029 Q1, ADR-110)
+    pillow: approved            # upload previews: images re-encoded server-side, metadata stripped (SPEC-029, ADR-110)
   dev:
     pytest: approved
     pytest-asyncio: approved

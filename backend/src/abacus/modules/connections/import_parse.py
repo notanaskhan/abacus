@@ -18,16 +18,12 @@ import csv
 import io
 import re
 import unicodedata
-from concurrent.futures import ProcessPoolExecutor
-from concurrent.futures import TimeoutError as FuturesTimeout
-from concurrent.futures.process import BrokenProcessPool
-from contextlib import suppress
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
-from multiprocessing import get_context
 from typing import Final, cast
 
+from abacus.kernel.isolation import IsolationFailed, run_isolated
 from abacus.modules.connections.import_formats import FORMATS, Format
 from abacus.modules.ledger.api import LedgerLine, NormalisedTrialBalance, NormaliseError
 
@@ -36,9 +32,6 @@ MAX_ROWS: Final = 60_000
 MAX_LINES: Final = 50_000
 MAX_TEXT: Final = 200
 CURRENCY: Final = "USD"  # SPEC-028 Q3: US exports rarely say; anything else is refused
-TIMEOUT_SECONDS: Final = 30
-CPU_SECONDS: Final = 20
-MEMORY_BYTES: Final = 1024 * 1024 * 1024
 _CENT: Final = Decimal("0.01")
 _AMOUNT: Final = re.compile(r"-?[0-9]{1,15}(?:\.[0-9]{1,2})?")
 _REFUSED: Final = frozenset({"Cc", "Cf", "Cs", "Co", "Zl", "Zp"})
@@ -251,29 +244,11 @@ def _mismatch(content: bytes, chosen: Format, rows: list[list[Cell]] | None = No
     return "unrecognised_format"
 
 
-def _limit() -> None:
-    """In the child: CPU and memory limits (best effort where the platform ignores one)."""
-    import resource
-
-    resource.setrlimit(resource.RLIMIT_CPU, (CPU_SECONDS, CPU_SECONDS))
-    # macOS doesn't enforce RLIMIT_AS; the wall-clock timeout still applies there.
-    with suppress(ValueError, OSError):
-        resource.setrlimit(resource.RLIMIT_AS, (MEMORY_BYTES, MEMORY_BYTES))
-
-
 def parse_isolated(
     content: bytes, format_id: str, period_start: date, period_end: date
 ) -> ParsedImport:
     """`parse_export` in a short-lived child process with limits (ADR-110; TASK-052 D2)."""
-    with ProcessPoolExecutor(
-        max_workers=1, mp_context=get_context("spawn"), initializer=_limit
-    ) as pool:
-        future = pool.submit(parse_export, content, format_id, period_start, period_end)
-        try:
-            return future.result(timeout=TIMEOUT_SECONDS)
-        except NormaliseError:
-            raise
-        except (FuturesTimeout, BrokenProcessPool, MemoryError):
-            for process in list(pool._processes.values()):  # stop a runaway child now
-                process.kill()
-            raise NormaliseError("unreadable") from None
+    try:
+        return run_isolated(parse_export, content, format_id, period_start, period_end)
+    except IsolationFailed:
+        raise NormaliseError("unreadable") from None

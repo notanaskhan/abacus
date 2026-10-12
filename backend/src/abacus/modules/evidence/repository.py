@@ -17,6 +17,7 @@ from abacus.modules.evidence.models import (
     InboxFile,
     ReviewAssignment,
     ReviewDecision,
+    UploadExtraction,
 )
 from abacus.modules.identity.api import AuthContext, visible
 
@@ -460,3 +461,53 @@ async def decide_inbox_file(session: AsyncSession, file_id: UUID, **values: obje
         .where(InboxFile.id == file_id, InboxFile.status == "waiting")
         .values(decided_at=func.clock_timestamp(), **values)
     )
+
+
+async def get_inbox_file(session: AsyncSession, file_id: UUID) -> InboxFile | None:
+    return (
+        await session.execute(select(InboxFile).where(InboxFile.id == file_id))
+    ).scalar_one_or_none()
+
+
+async def extraction_for(
+    session: AsyncSession,
+    *,
+    evidence_version_id: UUID | None = None,
+    inbox_file_id: UUID | None = None,
+    extractor_version: str,
+) -> UploadExtraction | None:
+    """SPEC-029 (TASK-054): the upload's extraction by this extractor version, if made."""
+    source = (
+        UploadExtraction.evidence_version_id == evidence_version_id
+        if evidence_version_id is not None
+        else UploadExtraction.inbox_file_id == inbox_file_id
+    )
+    return (
+        await session.execute(
+            select(UploadExtraction).where(
+                source, UploadExtraction.extractor_version == extractor_version
+            )
+        )
+    ).scalar_one_or_none()
+
+
+async def insert_extraction(session: AsyncSession, **values: object) -> UploadExtraction | None:
+    """The new extraction, or None when this source already has one by this version."""
+    by_version = values.get("evidence_version_id") is not None
+    where = "evidence_version_id" if by_version else "inbox_file_id"
+    present = (
+        UploadExtraction.evidence_version_id.is_not(None)
+        if by_version
+        else UploadExtraction.inbox_file_id.is_not(None)
+    )
+    return (
+        await session.execute(
+            pg_insert(UploadExtraction)
+            .values(**values)
+            .on_conflict_do_nothing(
+                index_elements=["tenant_id", where, "extractor_version"],
+                index_where=present,
+            )
+            .returning(UploadExtraction)
+        )
+    ).scalar_one_or_none()

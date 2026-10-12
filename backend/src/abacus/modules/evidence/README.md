@@ -85,3 +85,10 @@ Evidence items and their immutable versions (glossary; ADR-004). Owns `evidence_
 
 ## Imported evidence (SPEC-028; TASK-052)
 - Provenance method `imported` (an uploaded ledger export run through the pipeline); it needs a pull time. `TrialBalance` takes `method` and footer `notes`.
+
+## Upload processing (SPEC-029; TASK-054)
+- **Scanning (AC-1):** `uploads.checked` scans every upload with `kernel.scanning` (item uploads, inbox files, setup files). `screened` audits a refusal (`upload.refused`, size only); nothing is stored.
+- **Workflow:** `processing.py` subscribes to `evidence.uploaded` and `inbox_file.added` and, with the firm's `uploads.processing` flag on, starts `upload_processing` (`upload:<tenant>:<kind>:<id>`, interactive). Its activity `upload.extract` runs `process_upload`.
+- **Extraction (`extraction.py`, `document_fields.py`):** in a child process (`kernel.isolation`); PDFs via pdfplumber (scanned and encrypted are `unreadable`), XLSX cached values only, CSV in UTF-8 or Windows-1252; bank statement and aging fields by general labels. Never alters the evidence.
+- **Record:** `upload_extractions` (insert-only), one per upload and extractor version; the full extraction is a JSON object in storage, the fields checks need are columns (TASK-055).
+- **Dependencies:** identity, engagements, requests (unchanged). The worker hosts evidence (`worker.MODULES`).

@@ -16,6 +16,9 @@ const ACCEPT = ".pdf,.xlsx,.xls,.docx,.doc,.csv,.png,.jpg,.jpeg";
 const MESSAGES: Record<string, string> = {
   upload_too_large: "The file is over 25 MB.",
   upload_type_not_allowed: "Only PDF, Excel, Word, CSV, PNG and JPEG files can be uploaded.",
+  // SPEC-029 AC-1: the malware scan refused it; nothing was stored.
+  file_refused:
+    "We couldn't accept this file. Please save it again from where it came from and upload the new copy.",
   upload_empty: "The file is empty.",
   duplicate_upload: "This file is already waiting here, or already on that request.",
   item_closed: "That request no longer takes files.",

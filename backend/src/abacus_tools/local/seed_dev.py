@@ -154,6 +154,8 @@ async def _flags_on() -> None:
     await set_flag(FIRM, "engagement_agent.enabled", "true", "seed", "local development")
     # SPEC-028 (TASK-052): uploading a ledger export is off by default; on for the local firm.
     await set_flag(FIRM, "ledger.import", "true", "seed", "local development")
+    # SPEC-029 (TASK-054): upload processing is off by default; on for the local firm.
+    await set_flag(FIRM, "uploads.processing", "true", "seed", "local development")
 
 
 def main() -> int:
@@ -164,7 +166,7 @@ def main() -> int:
     asyncio.run(_flags_on())
     print(
         f"seeded Dev firm; {connected} new fake connection(s); automatic retrieval and the "
-        "engagement agent and ledger import on"
+        "engagement agent, ledger import and upload processing on"
     )
     return 0
 

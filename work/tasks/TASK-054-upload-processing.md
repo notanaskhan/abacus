@@ -4,7 +4,7 @@ title: "Upload processing, part 1: scanning every upload, the processing workflo
 spec: SPEC-029
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4]
 risk_zone: red
-status: awaiting-approval
+status: done
 branch: task-054-upload-processing
 worktree:
 created: 2026-10-12
@@ -30,7 +30,7 @@ SPEC-029 AC-1 to AC-4; goals 1, 2, 3 and 9.
 - Code: `evidence/uploads.py` (`checked`, `upload`, `attach`), `evidence/inbox.py` (`add_to_inbox`), `evidence/setup_files.py`, `evidence/storage.py`, `evidence/api.py`; `kernel/scanning.py`; `connections/import_parse.py` (`parse_isolated`); `connections/workflows.py`, `activities.py`, `auto_retrieval.py` (workflow and subscriber patterns); `worker/__main__.py` (`MODULES`)
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-12: D1–D5 as recommended). Approved by founder: the paths named in D5
 
 ### What the code shows
 - **All three upload paths share `checked()`** (item uploads, inbox files, the firm's setup files), which checks size, type by leading bytes, and fingerprint. None scans.
@@ -70,9 +70,14 @@ SPEC-029 AC-1 to AC-4; goals 1, 2, 3 and 9.
 
 ## Progress log
 - `2026-10-12` — Design written for founder review after SPEC-029 merged (#99).
+- `2026-10-12` — Built (D1–D5): scanning in `checked()` with audited refusals; `kernel.isolation` (ledger import moved onto it); extraction and document fields; migration 0043 `upload_extractions`; `UploadProcessing` workflow, activity and subscribers; evidence in the worker; flag `uploads.processing`; synthetic statements (three layouts), scanned and encrypted PDFs, aging schedules; replay history v1. Unit tests (evidence 97, workflows 164) and gates pass. Local smoke: EICAR refused and audited; statement, scanned PDF, aging schedule and inbox file extracted as expected.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| One activity (`upload.extract`) extracts and records | Fewer histories; TASK-055/056 add steps behind `patched` | No |
+| Formula cells without a saved result read as empty (None), never computed | AC-4; checks treat missing values as "can't tell" | No |
+| Workflow work class `interactive` | A client is waiting for the result (story 1) | No |
 
 ## Handoff
+Done. Next: TASK-055 (document kinds, checks, cross-checks), adding a `patched` step to `UploadProcessing` and a v2 history.
