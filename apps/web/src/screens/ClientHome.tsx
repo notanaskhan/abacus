@@ -1,10 +1,11 @@
-import { listEngagementsOptions, meOptions } from "@abacus/api-client/query";
-import { Alert, Button, Card, EmptyState, Spinner } from "@abacus/ui";
+import { listEngagementsOptions, meOptions, yourPartOptions } from "@abacus/api-client/query";
+import { Alert, Button, Card, EmptyState, Skeleton, Spinner } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { type JSX, useEffect } from "react";
 import { errorMessage } from "../api";
 import { accessToken, chooseTenant, signIn, signOut } from "../auth/session";
+import { yourPartMessage } from "./clientHubMessages";
 
 /** The client portal (ADR-011's separate tree; SPEC-016): the firms the client works with. */
 export function ClientHome(): JSX.Element {
@@ -80,6 +81,21 @@ export function ClientHome(): JSX.Element {
 }
 
 /** SPEC-020 AC-1: the engagements this client works on with the chosen firm. */
+/** SPEC-031 AC-6: what's left for this person; nothing on error (the link still works). */
+function YourPart({ engagementId }: { engagementId: string }): JSX.Element | null {
+  const part = useQuery({
+    ...yourPartOptions({ path: { engagement_id: engagementId } }),
+    retry: false,
+  });
+  if (part.isPending) return <Skeleton className="mt-1 h-4 w-48" />;
+  if (part.isError) return null;
+  return (
+    <p className="text-sm tabular-nums" aria-label="Your part">
+      {yourPartMessage(part.data)}
+    </p>
+  );
+}
+
 function ClientEngagements(): JSX.Element {
   const engagements = useQuery(listEngagementsOptions());
   if (engagements.isPending) return <Spinner label="Loading engagements…" />;
@@ -105,6 +121,7 @@ function ClientEngagements(): JSX.Element {
           <span className="text-sm text-muted tabular-nums">
             {e.fiscal_period_start} to {e.fiscal_period_end}
           </span>
+          <YourPart engagementId={e.id} />
         </li>
       ))}
     </ul>

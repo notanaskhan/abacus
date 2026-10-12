@@ -112,6 +112,13 @@ export function DecisionActions({
               setNote(e.target.value);
             }}
           />
+          {/* SPEC-031 Q4: a send-back's note goes to the client; a rejection's stays here. */}
+          {kind === "send_back" && (
+            <span className="text-xs text-muted">The client will see this note.</span>
+          )}
+          {kind === "reject" && (
+            <span className="text-xs text-muted">Only your team sees this note.</span>
+          )}
         </Label>
         <Button
           size="sm"
