@@ -184,7 +184,7 @@ async def is_staff_on(ctx: AuthContext, engagement_id: UUID) -> bool:
     return await engagement_role_of(ctx.tenant, engagement_id, ctx.user_id) in _STAFF_ROLES
 
 
-def _resource(item: RequestItemRef, base: Resource) -> Resource:
+def item_resource(item: RequestItemRef, base: Resource) -> Resource:
     return Resource.engagement(
         base.tenant_id,
         item.engagement_id,
@@ -198,7 +198,7 @@ async def authorise_upload(ctx: AuthContext, engagement_id: UUID, item_id: UUID)
     """`evidence.upload` with the item's facts (SPEC-020)."""
     engagement = await get_ref(ctx, engagement_id)
     item = await read_item(ctx.tenant, engagement_id, item_id)
-    await authorise(ctx, "evidence.upload", _resource(item, engagement.resource()))
+    await authorise(ctx, "evidence.upload", item_resource(item, engagement.resource()))
 
 
 async def check_upload(ctx: AuthContext, engagement_id: UUID, item_id: UUID) -> None:
@@ -254,7 +254,7 @@ async def attach(
     locked = await item_ref(tx, item_id, lock=True)
     if locked.engagement_id != engagement_id:
         raise NotFound("request_item")
-    await authorise(ctx, "evidence.upload", _resource(locked, locked_engagement.resource()))
+    await authorise(ctx, "evidence.upload", item_resource(locked, locked_engagement.resource()))
     if locked.status not in ("open", "received", "needs_revision"):
         raise ItemClosed
     if await fingerprint_among(tx.session, await item_versions(tx, item_id), stored.fingerprint):
@@ -342,7 +342,7 @@ async def uploads_for(ctx: AuthContext, engagement_id: UUID, item_id: UUID) -> l
     """The item's uploads, newest first, for anyone allowed `evidence.read` on it."""
     engagement = await get_ref(ctx, engagement_id)
     item = await read_item(ctx.tenant, engagement_id, item_id)
-    await authorise(ctx, "evidence.read", _resource(item, engagement.resource()))
+    await authorise(ctx, "evidence.read", item_resource(item, engagement.resource()))
     async with tenant_session(ctx.tenant) as session:
         rows = await uploaded_versions(session, await read_item_versions(ctx.tenant, item_id))
     uploaders = [_user(evidence_item.created_by_id) for _, evidence_item in rows]
@@ -398,7 +398,7 @@ async def upload_checks(
     no screen can show a client a firm check."""
     engagement = await get_ref(ctx, engagement_id)
     item = await read_item(ctx.tenant, engagement_id, item_id)
-    await authorise(ctx, "evidence.read", _resource(item, engagement.resource()))
+    await authorise(ctx, "evidence.read", item_resource(item, engagement.resource()))
     if version_id not in await read_item_versions(ctx.tenant, item_id):
         raise NotFound("evidence_version")
     client = await engagement_role_of(ctx.tenant, engagement_id, ctx.user_id) in _CLIENT_ROLES
@@ -441,7 +441,7 @@ async def _authorised_version(
     """`evidence.read` on the item with its client facts, and the version fulfils it."""
     engagement = await get_ref(ctx, engagement_id)
     item = await read_item(ctx.tenant, engagement_id, item_id)
-    await authorise(ctx, "evidence.read", _resource(item, engagement.resource()))
+    await authorise(ctx, "evidence.read", item_resource(item, engagement.resource()))
     if version_id not in await read_item_versions(ctx.tenant, item_id):
         raise NotFound("evidence_version")
 

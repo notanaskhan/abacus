@@ -4,7 +4,7 @@ title: "Client hub, part 1: guidance, provided, the bank statement gap, history 
 spec: SPEC-031
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8]
 risk_zone: amber
-status: awaiting-approval
+status: done
 branch: task-060-client-hub-backend
 worktree:
 created: 2026-10-12
@@ -30,7 +30,7 @@ SPEC-031 AC-1 to AC-8.
 - Code: `engagements/workbook.py` (`HEADERS`, `TemplateItem`, `parse_workbook`), `engagements/repository.py` (template rows), `requests/service.py` (`insert_classified`, `_insert_item`, `RequestItemView`), `requests/roll_forward.py`, `requests/classification.py` (document kinds), `requests/routes.py`; `evidence/item_detail.py` (`item_versions`), `evidence/repository.py` (`item_versions_with_decisions`), `evidence/service.py` (`reason_codes`), `evidence/cross_checks.py` (`cash_accounts`), `evidence/processing.py` (`_accounts`)
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-12: D1–D5 as recommended; D3 copy as drafted). Approved by founder: the paths named in D5
 
 ### What the code shows
 - **The workbook header is checked as a prefix** (`header[:len(expected)] == expected`), so extra columns after "area_code, description, tier" can be added without breaking existing templates.
@@ -72,9 +72,14 @@ SPEC-031 AC-1 to AC-8.
 
 ## Progress log
 - `2026-10-12` — Design written for founder review after SPEC-031 merged (#108).
+- `2026-10-12` — Built (D1–D5): migration 0047; template columns (validated, stored, carried on apply and roll-forward); `requests/guidance.py` with the D3 copy; `PUT …/guidance` (audited); `GET …/request-items/your-part`; evidence `GET …/client-view` (provided, bank statement gap, history). Unit tests (9,913) and gates pass. Local smoke on the Dev firm: kind default applied, firm edit audited, your part counted the blocking item, gap named the payroll account, history showed the client's upload in review.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| Your part is `GET …/request-items/your-part`, not `/v1/me/your-part` | Stays on the requests router; a new router would need the protected `app.py` | No |
+| History adds `replaced` for an undecided older version | "In review" would be wrong for a superseded upload | No |
+| Accounts without digits take statements that match no account | A statement can't name an account the trial balance doesn't number (D2) | No |
 
 ## Handoff
+Done. Next: TASK-061 (web): client request detail, your part on the client home, firm guidance editing, the send-back notice.

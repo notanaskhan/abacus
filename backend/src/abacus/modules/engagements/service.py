@@ -44,6 +44,7 @@ if TYPE_CHECKING:
 from abacus.modules.engagements.workbook import (
     AccountRule,
     Area,
+    Effort,
     TemplateItem,
     Tier,
     parse_workbook,
@@ -472,7 +473,15 @@ async def _detail(session: AsyncSession, version_id: UUID) -> MethodologyVersion
         _summary(*found),
         tuple(Area(a.code, a.name) for a in areas),
         tuple(
-            TemplateItem(i.area_code, i.description, cast(Tier, i.retrievability_tier))
+            TemplateItem(
+                i.area_code,
+                i.description,
+                cast(Tier, i.retrievability_tier),
+                i.why,
+                i.good_looks_like,
+                i.blocks_fieldwork,
+                cast(Effort | None, i.effort),
+            )
             for i in items
         ),
         tuple(AccountRule(r.area_code, r.account_from, r.account_to) for r in rules),

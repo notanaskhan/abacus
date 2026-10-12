@@ -226,6 +226,10 @@ async def insert_version(
                     "description": t.description,
                     "retrievability_tier": t.tier,
                     "position": i,
+                    "why": t.why,
+                    "good_looks_like": t.good_looks_like,
+                    "blocks_fieldwork": t.blocks_fieldwork,
+                    "effort": t.effort,
                 }
                 for i, t in enumerate(methodology.items)
             ],

@@ -12,6 +12,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.modules.identity.api import AuthContext, visible, visible_items
+from abacus.modules.requests.guidance import Guidance
 from abacus.modules.requests.models import Fulfilment, RequestItem, RequestList
 
 
@@ -61,7 +62,9 @@ async def insert_request_item(
     tier_rule: str | None = None,
     document_kind: str | None = None,
     document_kind_source: str | None = None,
+    guidance: Guidance | None = None,
 ) -> RequestItem:
+    g = guidance or Guidance()
     return (
         await session.execute(
             insert(RequestItem)
@@ -79,6 +82,11 @@ async def insert_request_item(
                 tier_rule=tier_rule,
                 document_kind=document_kind,
                 document_kind_source=document_kind_source,
+                why=g.why,
+                good_looks_like=g.good_looks_like,
+                blocks_fieldwork=g.blocks_fieldwork,
+                effort=g.effort,
+                guidance_source=g.source,
             )
             .returning(RequestItem)
         )
@@ -321,6 +329,22 @@ async def set_document_kind(
         .where(RequestItem.id == item_id)
         .values(document_kind=kind, document_kind_source=source)
     )
+
+
+async def set_guidance(
+    session: AsyncSession, item_id: UUID, guidance: Guidance, *, still_needed: str | None = None
+) -> None:
+    """SPEC-031 (TASK-060): the guidance; `still_needed` only changes when the firm edits."""
+    values: dict[str, object] = {
+        "why": guidance.why,
+        "good_looks_like": guidance.good_looks_like,
+        "blocks_fieldwork": guidance.blocks_fieldwork,
+        "effort": guidance.effort,
+        "guidance_source": guidance.source,
+    }
+    if guidance.source == "firm":
+        values["still_needed"] = still_needed
+    await session.execute(update(RequestItem).where(RequestItem.id == item_id).values(**values))
 
 
 # --- Due dates (SPEC-027; TASK-051) ------------------------------------------------------------

@@ -94,6 +94,7 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"created_by", "retrievability_tier"}
         | {"dataset", "tier_source", "tier_rule"}  # SPEC-022
         | {"document_kind", "document_kind_source"}  # SPEC-029 (TASK-055)
+        | {"why", "good_looks_like", "blocks_fieldwork", "effort", "guidance_source"}  # SPEC-031
     ),
     # Methodology templates (SPEC-008): insert-only, immutable versions.
     "methodology_templates": frozenset(
@@ -106,6 +107,7 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "methodology_request_items": frozenset(
         {"tenant_id", "version_id", "area_code", "description", "retrievability_tier"}
         | {"position"}
+        | {"why", "good_looks_like", "blocks_fieldwork", "effort"}  # SPEC-031 (TASK-060)
     ),
     "methodology_account_rules": frozenset(
         {"tenant_id", "version_id", "area_code", "account_from", "account_to", "position"}
@@ -229,6 +231,8 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"retrievability_tier", "dataset", "tier_source", "tier_rule"}  # SPEC-022
         | {"due_on"}  # SPEC-027 (TASK-051)
         | {"document_kind", "document_kind_source"}  # SPEC-029 (TASK-055)
+        | {"why", "good_looks_like", "still_needed", "blocks_fieldwork", "effort"}  # SPEC-031
+        | {"guidance_source"}
     ),
     "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
     "connections": frozenset(

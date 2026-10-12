@@ -533,6 +533,18 @@ export type ClientInvitationOut = {
 };
 
 /**
+ * ClientViewOut
+ */
+export type ClientViewOut = {
+    gap?: GapOut | null;
+    /**
+     * History
+     */
+    history: Array<HistoryEntryOut>;
+    provided?: ProvidedOut | null;
+};
+
+/**
  * ClientVisibilityIn
  */
 export type ClientVisibilityIn = {
@@ -1131,6 +1143,20 @@ export type FormatOut = {
 };
 
 /**
+ * GapOut
+ */
+export type GapOut = {
+    /**
+     * Covered
+     */
+    covered: Array<string>;
+    /**
+     * Needed
+     */
+    needed: Array<string>;
+};
+
+/**
  * GraphAccountOut
  */
 export type GraphAccountOut = {
@@ -1272,6 +1298,66 @@ export type GraphTeamMemberOut = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * GuidanceIn
+ */
+export type GuidanceIn = {
+    /**
+     * Blocks Fieldwork
+     */
+    blocks_fieldwork?: boolean;
+    /**
+     * Effort
+     */
+    effort?: 'small' | 'medium' | 'large' | null;
+    /**
+     * Good Looks Like
+     */
+    good_looks_like?: string | null;
+    /**
+     * Still Needed
+     */
+    still_needed?: string | null;
+    /**
+     * Why
+     */
+    why?: string | null;
+};
+
+/**
+ * HistoryEntryOut
+ */
+export type HistoryEntryOut = {
+    /**
+     * Added At
+     */
+    added_at: string;
+    /**
+     * Added By
+     */
+    added_by: 'firm' | 'client';
+    /**
+     * Added By Name
+     */
+    added_by_name: string;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Outcome
+     */
+    outcome: 'in_review' | 'replaced' | 'accepted' | 'sent_back' | 'not_accepted';
+    /**
+     * Reason Label
+     */
+    reason_label?: string | null;
 };
 
 /**
@@ -2049,6 +2135,20 @@ export type ProposedTemplateOut = {
 };
 
 /**
+ * ProvidedOut
+ */
+export type ProvidedOut = {
+    /**
+     * On
+     */
+    on: string;
+    /**
+     * Source
+     */
+    source: 'connection' | 'export';
+};
+
+/**
  * ProviderOut
  */
 export type ProviderOut = {
@@ -2179,6 +2279,10 @@ export type RequestItemOut = {
      */
     available?: boolean;
     /**
+     * Blocks Fieldwork
+     */
+    blocks_fieldwork?: boolean;
+    /**
      * Client Assignee User Id
      */
     client_assignee_user_id?: string | null;
@@ -2211,6 +2315,10 @@ export type RequestItemOut = {
      */
     due_on?: string | null;
     /**
+     * Effort
+     */
+    effort?: 'small' | 'medium' | 'large' | null;
+    /**
      * Engagement Id
      */
     engagement_id: string;
@@ -2218,6 +2326,14 @@ export type RequestItemOut = {
      * Evidence Version Id
      */
     evidence_version_id?: string | null;
+    /**
+     * Good Looks Like
+     */
+    good_looks_like?: string | null;
+    /**
+     * Guidance Source
+     */
+    guidance_source?: 'template' | 'kind_default' | 'firm' | null;
     /**
      * Id
      */
@@ -2231,9 +2347,17 @@ export type RequestItemOut = {
      */
     status: 'open' | 'received' | 'ready_for_review' | 'needs_revision';
     /**
+     * Still Needed
+     */
+    still_needed?: string | null;
+    /**
      * Tier Source
      */
     tier_source?: 'override' | 'methodology' | 'rule' | null;
+    /**
+     * Why
+     */
+    why?: string | null;
 };
 
 /**
@@ -3174,6 +3298,24 @@ export type WallOut = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * YourPartOut
+ */
+export type YourPartOut = {
+    /**
+     * Blocks Fieldwork
+     */
+    blocks_fieldwork: number;
+    /**
+     * Items Left
+     */
+    items_left: number;
+    /**
+     * Minutes
+     */
+    minutes: number;
 };
 
 /**
@@ -6360,6 +6502,58 @@ export type PreviewImportResponses = {
 
 export type PreviewImportResponse = PreviewImportResponses[keyof PreviewImportResponses];
 
+export type YourPartData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/your-part';
+};
+
+export type YourPartErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type YourPartError = YourPartErrors[keyof YourPartErrors];
+
+export type YourPartResponses = {
+    /**
+     * Successful Response
+     */
+    200: YourPartOut;
+};
+
+export type YourPartResponse = YourPartResponses[keyof YourPartResponses];
+
 export type AssignToClientData = {
     body: ClientAssigneeIn;
     headers?: {
@@ -6419,6 +6613,62 @@ export type AssignToClientResponses = {
 };
 
 export type AssignToClientResponse = AssignToClientResponses[keyof AssignToClientResponses];
+
+export type ClientViewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/client-view';
+};
+
+export type ClientViewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ClientViewError = ClientViewErrors[keyof ClientViewErrors];
+
+export type ClientViewResponses = {
+    /**
+     * Successful Response
+     */
+    200: ClientViewOut;
+};
+
+export type ClientViewResponse = ClientViewResponses[keyof ClientViewResponses];
 
 export type SetClientVisibilityData = {
     body: ClientVisibilityIn;
@@ -6531,6 +6781,62 @@ export type SetDocumentKindResponses = {
 };
 
 export type SetDocumentKindResponse = SetDocumentKindResponses[keyof SetDocumentKindResponses];
+
+export type SetGuidanceData = {
+    body: GuidanceIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/guidance';
+};
+
+export type SetGuidanceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SetGuidanceError = SetGuidanceErrors[keyof SetGuidanceErrors];
+
+export type SetGuidanceResponses = {
+    /**
+     * Successful Response
+     */
+    200: RequestItemOut;
+};
+
+export type SetGuidanceResponse = SetGuidanceResponses[keyof SetGuidanceResponses];
 
 export type SetTierData = {
     body: TierIn;

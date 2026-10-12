@@ -15,6 +15,7 @@ from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 from abacus.modules.requests.service import (
     AppliedMethodology,
+    GuidanceEdit,
     NewRequestItem,
     RequestItemView,
     add_request_item,
@@ -27,12 +28,15 @@ from abacus.modules.requests.service import (
     set_client_visibility,
     set_item_document_kind,
     set_item_due_dates,
+    set_item_guidance,
     set_list_due_date,
     set_tier,
+    your_part,
 )
 from abacus.modules.requests.workbook import MAX_BYTES, Problem, RequestListInvalid
 
 router = AbacusRouter(prefix="/v1/engagements/{engagement_id}/request-items", tags=["requests"])
+Effort = Literal["small", "medium", "large"]
 Status = Literal["open", "received", "ready_for_review", "needs_revision"]
 Tier = Literal["A", "B", "C", "D", "E"]
 DocumentKind = Literal["bank_statement", "ar_aging", "ap_aging", "schedule"]
@@ -74,6 +78,15 @@ class RequestItemOut(BaseModel):
     document_kind_source: Annotated[Literal["rule", "override"] | None, classified("internal")] = (
         None
     )
+    # SPEC-031 (TASK-060): the firm's, the template's or fixed copy; never a model's (ADR-111).
+    why: Annotated[str | None, classified("confidential")] = None
+    good_looks_like: Annotated[str | None, classified("confidential")] = None
+    still_needed: Annotated[str | None, classified("confidential")] = None
+    blocks_fieldwork: Annotated[bool, classified("internal")] = False
+    effort: Annotated[Effort | None, classified("internal")] = None
+    guidance_source: Annotated[
+        Literal["template", "kind_default", "firm"] | None, classified("internal")
+    ] = None
 
 
 def _out(item: RequestItemView) -> RequestItemOut:
@@ -197,6 +210,49 @@ async def set_document_kind_route(
         await set_item_document_kind(
             ctx, engagement_id, item_id, kind=body.document_kind, clear=body.clear
         )
+    )
+
+
+class GuidanceIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    why: Annotated[MultiLineText | None, Field(max_length=1000), classified("confidential")] = None
+    good_looks_like: Annotated[
+        MultiLineText | None, Field(max_length=1000), classified("confidential")
+    ] = None
+    still_needed: Annotated[
+        MultiLineText | None, Field(max_length=1000), classified("confidential")
+    ] = None
+    blocks_fieldwork: Annotated[bool, classified("internal")] = False
+    effort: Annotated[Effort | None, classified("internal")] = None
+
+
+@router.put("/{item_id}/guidance", action="request_item.update", response_model=RequestItemOut)
+async def set_guidance_route(
+    engagement_id: UUID, item_id: UUID, body: GuidanceIn, ctx: Ctx
+) -> RequestItemOut:
+    """SPEC-031 AC-3: the firm writes why, what good looks like and the still-needed note, and
+    plans the item (blocks fieldwork, effort)."""
+    edit = GuidanceEdit(
+        body.why, body.good_looks_like, body.still_needed, body.blocks_fieldwork, body.effort
+    )
+    return _out(await set_item_guidance(ctx, engagement_id, item_id, edit))
+
+
+class YourPartOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    items_left: Annotated[int, classified("internal")]
+    blocks_fieldwork: Annotated[int, classified("internal")]
+    minutes: Annotated[int, classified("internal")]
+
+
+@router.get("/your-part", action="request_item.read", response_model=YourPartOut)
+async def your_part_route(engagement_id: UUID, ctx: Ctx) -> YourPartOut:
+    """SPEC-031 AC-6: what's left for this client user on the engagement."""
+    part = await your_part(ctx, engagement_id)
+    return YourPartOut(
+        items_left=part.items_left, blocks_fieldwork=part.blocks_fieldwork, minutes=part.minutes
     )
 
 

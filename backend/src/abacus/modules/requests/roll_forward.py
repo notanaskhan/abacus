@@ -12,6 +12,7 @@ from abacus.kernel.uow import Ref, Target, UnitOfWork
 from abacus.modules.engagements.api import PriorItem, TemplateSeed
 from abacus.modules.identity.api import Actor, AuthContext
 from abacus.modules.requests.events import RequestItemCreated
+from abacus.modules.requests.guidance import Guidance
 from abacus.modules.requests.repository import (
     insert_request_item,
     items_to_roll_forward,
@@ -79,6 +80,9 @@ async def copy_items(
             tier_rule=old.tier_rule,
             document_kind=old.document_kind,  # SPEC-029 (TASK-055)
             document_kind_source=old.document_kind_source,
+            guidance=Guidance(  # SPEC-031 AC-8; the still-needed note is last year's, not copied
+                old.why, old.good_looks_like, old.blocks_fieldwork, old.effort, old.guidance_source
+            ),
         )
         if old.client_visible:
             await set_client_fields(tx.session, item_id, client_visible=True)
@@ -89,7 +93,15 @@ async def copy_items(
         )
         tx.emit(RequestItemCreated(request_item_id=item_id, engagement_id=engagement_id))
     for seed in seeds:
+        t = seed.template
         await insert_classified(
-            tx, ctx, engagement_id, list_id, seed.description, seed.audit_area, seed.tier
+            tx,
+            ctx,
+            engagement_id,
+            list_id,
+            seed.description,
+            seed.audit_area,
+            seed.tier,
+            Guidance(t.why, t.good_looks_like, t.blocks_fieldwork, t.effort) if t else None,
         )
     return len(prior) + len(seeds)
