@@ -50,9 +50,11 @@ from abacus.modules.agents.workflow_types import (
     HandleInput,
     HandleResult,
     NextTickInput,
+    RunInput,
     ScreeningInput,
+    SlotGrant,
 )
-from abacus.modules.agents.workflows import ScreeningWorkflow
+from abacus.modules.agents.workflows import ScreeningWorkflow, UploadReviewWorkflow
 from abacus.modules.evidence.api import register_proposal_source
 
 # Evidence owns review decisions; agents owns what was proposed (TASK-019 D1).
@@ -82,6 +84,7 @@ __all__ = [
     "KnowledgeHit",
     "NextTickInput",
     "ReviewOutcome",
+    "RunInput",
     "RunOutcome",
     "ScreeningInput",
     "ScreeningOutcome",
@@ -89,6 +92,8 @@ __all__ = [
     "ScreeningResultView",
     "ScreeningWorkflow",
     "SheetLayoutError",
+    "SlotGrant",
+    "UploadReviewWorkflow",
     "VerifiedCitation",
     "create_review_run",
     "create_screening_run",

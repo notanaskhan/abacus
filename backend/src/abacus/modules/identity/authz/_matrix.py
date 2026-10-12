@@ -360,6 +360,14 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "allow",
         "agent": "task_scope",
     },
+    "upload_review.read": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "reviewer": "allow",
+        "independence": "required",
+    },
     "upload_review.request": {
         "engagement_partner": "allow",
         "manager": "allow",

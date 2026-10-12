@@ -49,6 +49,7 @@ from abacus.modules.evidence.events import (
     EvidenceUploaded,
     EvidenceVersionCreated,
     InboxFileAdded,
+    UploadChecksRecorded,
 )
 from abacus.modules.evidence.extraction import EXTRACTOR_VERSION, Extraction, extract_isolated
 from abacus.modules.evidence.models import UploadExtraction
@@ -365,6 +366,12 @@ async def check_upload(given: UploadInput) -> int:
             target=Target("evidence_version", version_id),
             after=Ref(checks=added, problems=sum(r.outcome == "problem" for r in results)),
         )
+        if added and items:  # SPEC-030 (TASK-059): the reviewer may follow
+            tx.emit(
+                UploadChecksRecorded(
+                    engagement_id=version.engagement_id, evidence_version_id=version_id
+                )
+            )
     _log.info("upload.checked", kind=kind, checks=added)
     return added
 

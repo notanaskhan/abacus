@@ -33,6 +33,7 @@ from abacus.modules.agents.knowledge import (
     search_knowledge,
     withdraw_document,
 )
+from abacus.modules.agents.review_start import request_review, review_flag_counts, review_of
 from abacus.modules.agents.screenings import request_screening
 from abacus.modules.agents.service import ScreeningResultView, screening_results_for
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
@@ -144,6 +145,81 @@ class ActivityOut(BaseModel):
 
 def _agent_out(view: AgentView) -> AgentOut:
     return AgentOut.model_validate(asdict(view))
+
+
+# --- The upload reviewer (SPEC-030; TASK-059) ----------------------------------------------------
+
+
+class ReviewQuoteOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    page: Annotated[int | None, classified("internal")]
+    sheet: Annotated[str | None, classified("confidential")]
+    cell: Annotated[str | None, classified("internal")]
+    quote: Annotated[str, classified("confidential")]
+
+
+class ReviewFlagOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    category: Annotated[Literal["irrelevant", "draft", "altered"], classified("internal")]
+    confidence: Annotated[Decimal, classified("internal")]
+    rationale: Annotated[str, classified("confidential")]
+    quotes: Annotated[list[ReviewQuoteOut], classified("confidential")]
+
+
+class ReviewOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    status: Annotated[str, classified("internal")]
+    reason: Annotated[str | None, classified("internal")]
+    flags: Annotated[list[ReviewFlagOut], classified("confidential")]
+
+
+class ReviewFlagCountOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    evidence_version_id: Annotated[UUID, classified("internal")]
+    flags: Annotated[int, classified("internal")]
+
+
+@router.get(
+    "/evidence-versions/{version_id}/review",
+    action="upload_review.read",
+    response_model=ReviewOut,
+)
+async def upload_review_route(engagement_id: UUID, version_id: UUID, ctx: Ctx) -> ReviewOut:
+    """SPEC-030 AC-6: the latest AI review of an upload, firm roles only, verified quotes only."""
+    view = await review_of(ctx, engagement_id, version_id)
+    return ReviewOut.model_validate(asdict(view))
+
+
+class ReviewRequestedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    evidence_version_id: Annotated[UUID, classified("internal")]
+
+
+@router.post(
+    "/evidence-versions/{version_id}/review",
+    action="upload_review.request",
+    status_code=202,
+    response_model=ReviewRequestedOut,
+    errors=(409,),
+)
+async def request_review_route(
+    engagement_id: UUID, version_id: UUID, ctx: Ctx
+) -> ReviewRequestedOut:
+    """SPEC-030 §6.4: "Review now" (at Advise, or after a document kind change)."""
+    await request_review(ctx, engagement_id, version_id)
+    return ReviewRequestedOut(evidence_version_id=version_id)
+
+
+@router.get("/review-flags", action="upload_review.read", response_model=list[ReviewFlagCountOut])
+async def review_flags_route(engagement_id: UUID, ctx: Ctx) -> list[ReviewFlagCountOut]:
+    """For the Board's "AI flags" marker: shown flags per version's latest review."""
+    counts = await review_flag_counts(ctx, engagement_id)
+    return [ReviewFlagCountOut(evidence_version_id=v, flags=n) for v, n in counts.items()]
 
 
 @router.get("/agent", action="activity.read", response_model=AgentOut)

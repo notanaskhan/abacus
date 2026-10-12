@@ -50,3 +50,13 @@ class EvidenceUploaded(DomainEvent):
     request_item_id: Annotated[UUID, classified("internal")]
     evidence_version_id: Annotated[UUID, classified("internal")]
     uploaded_by: Annotated[UUID, classified("internal")]
+
+
+class UploadChecksRecorded(DomainEvent):
+    """SPEC-029's checks are recorded for an evidence version on a request item (SPEC-030;
+    TASK-059): the engagement agent's P-6 may start the upload reviewer."""
+
+    event_type: ClassVar[str] = "upload_checks.recorded"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    evidence_version_id: Annotated[UUID, classified("internal")]

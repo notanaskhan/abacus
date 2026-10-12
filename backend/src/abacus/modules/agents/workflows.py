@@ -190,3 +190,58 @@ async def _release(activity: str, arg: object) -> None:
         )
     except ActivityError:
         return  # the lease reclaims the slot
+
+
+@workflow.defn(name="upload_review")
+class UploadReviewWorkflow:
+    """SPEC-030 (TASK-059): one upload reviewer run: create it, hold a work slot, review (waiting
+    when not admitted), and always end a failed run. The slot and fail activities are the
+    screener's: they work on any agent run."""
+
+    @workflow.run
+    async def run(self, input: ScreeningInput) -> ScreeningOutcome:
+        run_id = await workflow.execute_activity(
+            "upload_review.create_run",
+            input,
+            result_type=str,
+            start_to_close_timeout=_TIMEOUT,
+            retry_policy=_RETRY,
+        )
+        if not run_id:
+            return ScreeningOutcome("skipped")
+        run = RunInput(input.tenant_id, run_id)
+        waiting_from = workflow.now()
+        try:
+            if not await wait_for_slot("screening.acquire_slot", run):
+                return await _fail(run, CAPACITY_TIMEOUT)
+            backoff = _MIN_ADMISSION_ASK
+            while True:
+                try:
+                    return await workflow.execute_activity(
+                        "upload_review.review",
+                        run,
+                        result_type=ScreeningOutcome,
+                        start_to_close_timeout=_SCREEN_TIMEOUT,
+                        heartbeat_timeout=_SCREEN_HEARTBEAT,
+                        retry_policy=_RETRY,
+                    )
+                except ActivityError as err:
+                    refused = _not_admitted(err)
+                    if refused is None:
+                        raise
+                    retry_after, max_wait = refused
+                    if (workflow.now() - waiting_from).total_seconds() >= max_wait:
+                        return await _fail(run, CAPACITY_TIMEOUT)
+                    delay = max(retry_after, backoff) * (0.5 + workflow.random().random())
+                    await workflow.sleep(timedelta(seconds=min(delay, _MAX_ASK_INTERVAL)))
+                    backoff = min(backoff * 2, _MAX_ASK_INTERVAL)
+        except ActivityError as err:
+            if is_cancelled_exception(err):
+                await _fail(run, CANCELLED)
+                raise asyncio.CancelledError from err
+            return await _fail(run, _code(err))
+        except asyncio.CancelledError:
+            await _fail(run, CANCELLED)
+            raise
+        finally:
+            await _release("screening.release_slot", run)

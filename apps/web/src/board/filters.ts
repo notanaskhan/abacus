@@ -6,7 +6,7 @@ export interface BoardFilters {
   status?: string;
   area?: string;
   tier?: string; // A to E, or "none" for unclassified
-  source?: string; // retrieved | imported | uploaded | none | problems (SPEC-029)
+  source?: string; // retrieved | imported | uploaded | none | problems | ai_flags (SPEC-029/030)
   assignee?: string; // "assigned" | "unassigned"
   q?: string;
 }
@@ -30,7 +30,11 @@ function assigned(item: RequestItemOut): string {
   return item.client_assignee_user_id === null ? "unassigned" : "assigned";
 }
 
-export function applyFilters(rows: BoardRow[], f: BoardFilters): BoardRow[] {
+export function applyFilters(
+  rows: BoardRow[],
+  f: BoardFilters,
+  aiFlags: ReadonlyMap<string, number> = new Map(),
+): BoardRow[] {
   const text = f.q?.toLocaleLowerCase();
   return rows.filter(
     (row) =>
@@ -43,7 +47,9 @@ export function applyFilters(rows: BoardRow[], f: BoardFilters): BoardRow[] {
       (f.source === undefined ||
         (f.source === "problems"
           ? (row.evidence?.problems ?? 0) > 0
-          : source(row) === f.source)) &&
+          : f.source === "ai_flags"
+            ? (aiFlags.get(row.evidence?.id ?? "") ?? 0) > 0
+            : source(row) === f.source)) &&
       (f.assignee === undefined || assigned(row.item) === f.assignee) &&
       (text === undefined || row.item.description.toLocaleLowerCase().includes(text)),
   );

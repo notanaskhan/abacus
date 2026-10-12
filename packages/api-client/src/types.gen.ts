@@ -2297,6 +2297,92 @@ export type RetrievalOut = {
 };
 
 /**
+ * ReviewFlagCountOut
+ */
+export type ReviewFlagCountOut = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Flags
+     */
+    flags: number;
+};
+
+/**
+ * ReviewFlagOut
+ */
+export type ReviewFlagOut = {
+    /**
+     * Category
+     */
+    category: 'irrelevant' | 'draft' | 'altered';
+    /**
+     * Confidence
+     */
+    confidence: string;
+    /**
+     * Quotes
+     */
+    quotes: Array<ReviewQuoteOut>;
+    /**
+     * Rationale
+     */
+    rationale: string;
+};
+
+/**
+ * ReviewOut
+ */
+export type ReviewOut = {
+    /**
+     * Flags
+     */
+    flags: Array<ReviewFlagOut>;
+    /**
+     * Reason
+     */
+    reason: string | null;
+    /**
+     * Status
+     */
+    status: string;
+};
+
+/**
+ * ReviewQuoteOut
+ */
+export type ReviewQuoteOut = {
+    /**
+     * Cell
+     */
+    cell: string | null;
+    /**
+     * Page
+     */
+    page: number | null;
+    /**
+     * Quote
+     */
+    quote: string;
+    /**
+     * Sheet
+     */
+    sheet: string | null;
+};
+
+/**
+ * ReviewRequestedOut
+ */
+export type ReviewRequestedOut = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+};
+
+/**
  * RollForwardIn
  *
  * SPEC-025 AC-2 (TASK-048): exactly what the person confirmed from the proposal.
@@ -4966,6 +5052,122 @@ export type SendBackResponses = {
 
 export type SendBackResponse = SendBackResponses[keyof SendBackResponses];
 
+export type UploadReviewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/evidence-versions/{version_id}/review';
+};
+
+export type UploadReviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type UploadReviewError = UploadReviewErrors[keyof UploadReviewErrors];
+
+export type UploadReviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: ReviewOut;
+};
+
+export type UploadReviewResponse = UploadReviewResponses[keyof UploadReviewResponses];
+
+export type RequestReviewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/evidence-versions/{version_id}/review';
+};
+
+export type RequestReviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RequestReviewError = RequestReviewErrors[keyof RequestReviewErrors];
+
+export type RequestReviewResponses = {
+    /**
+     * Successful Response
+     */
+    202: ReviewRequestedOut;
+};
+
+export type RequestReviewResponse = RequestReviewResponses[keyof RequestReviewResponses];
+
 export type EngagementGraphData = {
     body?: never;
     headers?: {
@@ -6878,6 +7080,60 @@ export type GetRetrievalResponses = {
 };
 
 export type GetRetrievalResponse = GetRetrievalResponses[keyof GetRetrievalResponses];
+
+export type ReviewFlagsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/review-flags';
+};
+
+export type ReviewFlagsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ReviewFlagsError = ReviewFlagsErrors[keyof ReviewFlagsErrors];
+
+export type ReviewFlagsResponses = {
+    /**
+     * Response Review Flags
+     *
+     * Successful Response
+     */
+    200: Array<ReviewFlagCountOut>;
+};
+
+export type ReviewFlagsResponse = ReviewFlagsResponses[keyof ReviewFlagsResponses];
 
 export type ReviewQueueData = {
     body?: never;

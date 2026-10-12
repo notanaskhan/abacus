@@ -40,6 +40,8 @@ class _Included(Protocol):
 RETRIEVALS = "/v1/engagements/{engagement_id}/retrievals"
 # SPEC-024 (TASK-042): "Screen now" starts work and answers 202, as retrievals do.
 SCREEN_REQUEST = "/v1/engagements/{engagement_id}/screening-results/request"
+# SPEC-030 (TASK-059): "Review now" starts a run and answers 202, as screening does.
+REVIEW_REQUEST = "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/review"
 
 
 def _routes() -> list[APIRoute]:
@@ -126,7 +128,7 @@ NOT_CREATING = {
 
 def test_ac20_creating_routes_answer_201() -> None:
     posts = [r for r in _routes() if "POST" in _methods(r)]
-    accepted = {RETRIEVALS, SCREEN_REQUEST}
+    accepted = {RETRIEVALS, SCREEN_REQUEST, REVIEW_REQUEST}
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
     decisions = "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/"
