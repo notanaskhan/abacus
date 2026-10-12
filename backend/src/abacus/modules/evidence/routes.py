@@ -689,12 +689,24 @@ async def board_summary_route(engagement_id: UUID, ctx: Ctx) -> BoardSummaryOut:
 # --- The engagement inbox (SPEC-023; TASK-039) -------------------------------------------------
 
 
+class ReasonOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    code: Annotated[
+        Literal["kind", "date", "account", "holder", "file_name"], classified("internal")
+    ]
+    value: Annotated[str | None, classified("confidential")] = None
+
+
 class SuggestionOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     request_item_id: Annotated[UUID, classified("internal")]
     score: Annotated[int, classified("internal")]
     matched: Annotated[list[str], classified("confidential")]
+    # SPEC-033 (TASK-064): where it came from, and why (fixed codes; values computed by code).
+    source: Annotated[Literal["content", "file_name"], classified("internal")] = "file_name"
+    reasons: Annotated[list[ReasonOut], classified("confidential")] = []
 
 
 class InboxFileOut(BaseModel):
@@ -724,8 +736,14 @@ def _inbox_out(entry: InboxEntry) -> InboxFileOut:
         note=entry.note,
         created_at=entry.created_at,
         suggestions=[
-            SuggestionOut(
-                request_item_id=s.request_item_id, score=s.score, matched=list(s.matched)
+            SuggestionOut.model_validate(
+                {
+                    "request_item_id": s.request_item_id,
+                    "score": s.score,
+                    "matched": list(s.matched),
+                    "source": s.source,
+                    "reasons": [{"code": r.code, "value": r.value} for r in s.reasons],
+                }
             )
             for s in entry.suggestions
         ],
@@ -737,6 +755,11 @@ class InboxAssignIn(BaseModel):
 
     request_item_id: Annotated[UUID, classified("internal")]
     followed_suggestion: Annotated[bool, classified("internal")] = False
+    # SPEC-033 AC-6 (TASK-064): which suggestion was followed, and its rank.
+    suggestion_source: Annotated[
+        Literal["file_name", "content"] | None, classified("internal")
+    ] = None
+    suggestion_rank: Annotated[int | None, Field(ge=1, le=3), classified("internal")] = None
 
 
 class AssignedOut(BaseModel):
@@ -792,6 +815,8 @@ async def assign_inbox_file_route(
         file_id,
         request_item_id=body.request_item_id,
         followed_suggestion=body.followed_suggestion,
+        suggestion_source=body.suggestion_source,
+        suggestion_rank=body.suggestion_rank,
     )
     return AssignedOut(evidence_version_id=version_id)
 
