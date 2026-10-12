@@ -380,6 +380,11 @@ async def test_ac14_a_provider_error_leaves_the_run_running_so_it_can_be_retried
         "SELECT outcome FROM usage_records WHERE tenant_id = $1", world.tenant_id
     )
     assert usage["outcome"] == "provider_error"
+    # SPEC-010 Q3 (TASK-025): an outage blocks the route's model for `outage_block_seconds`, so
+    # the retry comes after the block; the shared bucket is cleared to stand for that wait.
+    [blocked] = await seed.rows("SELECT blocked_until > now() AS active FROM provider_capacity")
+    assert blocked["active"] is True
+    await seed.run("DELETE FROM provider_capacity")
     configure_provider(fake_model)
     outcome = await screen(await _agent(world, run_id))
     assert outcome.status == "completed"

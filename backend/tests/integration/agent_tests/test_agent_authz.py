@@ -240,9 +240,21 @@ async def test_ac17_an_action_the_matrix_never_gives_agents_is_denied_at_role(
     assert await _denied(agent, action, _resource(world)) == "role"
 
 
-async def test_ac17_a_firm_setting_grant_is_not_a_grant_for_an_agent(world: World) -> None:
+async def test_ac17_a_firm_setting_grant_is_not_a_grant_for_an_agent_at_advise(
+    seed: Seeder, world: World
+) -> None:
+    # SPEC-027 (TASK-051 D2): an agent's `firm_setting` is the firm's autonomy policy; at Advise
+    # (level 0) it grants nothing.
+    await seed.run("UPDATE firms SET autonomy_level = 0 WHERE tenant_id = $1", world.tenant_id)
     agent = await _agent(world, scope=frozenset({"follow_up.send"}))
     assert await _denied(agent, "follow_up.send", _resource(world)) == "role"
+
+
+async def test_ac17_at_routine_the_policy_still_cannot_exceed_the_initiator(world: World) -> None:
+    # SPEC-027 (TASK-051 D2): at Routine (the default) the policy passes the role layer, and the
+    # initiator intersection (ADR-025) still applies: the world's staff requester can't send.
+    agent = await _agent(world, scope=frozenset({"follow_up.send"}))
+    assert await _denied(agent, "follow_up.send", _resource(world)) == "delegation"
 
 
 async def test_ac17_an_unknown_action_is_a_programming_error(world: World) -> None:

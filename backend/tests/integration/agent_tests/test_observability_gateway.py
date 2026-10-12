@@ -43,7 +43,15 @@ from abacus.kernel.db import TenantContext
 from abacus.kernel.telemetry import current_trace_id, tracer
 
 from . import tracing_support
-from .support import World
+from .support import Seeder, World
+
+
+@pytest.fixture(autouse=True)
+async def _unblocked_models(seed: Seeder) -> None:
+    """SPEC-010 Q3 (TASK-025): a provider failure blocks the route's model in the shared
+    capacity bucket; each test starts from an unblocked bucket."""
+    await seed.run("DELETE FROM provider_capacity")
+
 
 REF = "evidence.screen@v0"
 AGENT_ID = "evidence.screener"

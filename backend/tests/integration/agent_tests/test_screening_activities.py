@@ -9,7 +9,7 @@ done reports what was recorded. Expectations come from the contract, not the imp
 from __future__ import annotations
 
 import uuid
-from collections.abc import Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from typing import cast
 
 import pytest
@@ -83,6 +83,14 @@ def model() -> Model:
 def _reset_provider() -> Iterator[None]:
     yield
     configure_provider(None)
+
+
+@pytest.fixture(autouse=True)
+async def _unblock_models(seed: Seeder) -> AsyncIterator[None]:
+    """SPEC-010 Q3 (TASK-025): a provider error blocks the model's shared bucket for
+    `outage_block_seconds`; clear it after each test so the block doesn't leak into the next."""
+    yield
+    await seed.run("DELETE FROM provider_capacity")
 
 
 async def _run(
@@ -388,6 +396,11 @@ async def test_ac14_a_real_provider_error_is_retryable_and_leaves_the_run_runnin
         "SELECT outcome FROM usage_records WHERE tenant_id = $1", world.tenant_id
     )
     assert usage["outcome"] == "provider_error"
+    # SPEC-010 Q3 (TASK-025): the outage blocked the route's model, so the retry comes after
+    # `outage_block_seconds`; clearing the shared bucket stands for that wait.
+    [blocked] = await seed.rows("SELECT blocked_until > now() AS active FROM provider_capacity")
+    assert blocked["active"] is True
+    await seed.run("DELETE FROM provider_capacity")
     # The provider recovers: the retry completes the same run.
     model.reply = screening_responder
     outcome = await _run(screen_activity, run)

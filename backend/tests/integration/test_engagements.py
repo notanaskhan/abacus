@@ -56,6 +56,10 @@ ITEM_KEYS = {
     "retrievability_tier",  # SPEC-008
     "client_visible",  # SPEC-020
     "client_assignee_user_id",
+    "dataset",  # SPEC-022 (TASK-038): classified by rule at creation
+    "tier_source",
+    "available",
+    "due_on",  # SPEC-027 (TASK-051)
 }
 ALL_ROLES = ["engagement_partner", "manager", "senior", "staff", "reviewer"]
 
@@ -273,6 +277,8 @@ class Api:
             "client_name": "Acme Corp",
             "client_entity_name": "Acme Holdings LLC",
             **PERIOD,
+            # SPEC-024: creating a second "Acme Corp" asks to confirm it's a new client.
+            "confirm_new": True,
         }
         body.update(overrides)
         return await self.post_engagement(who, body)
@@ -436,6 +442,7 @@ async def test_ac4_one_transaction_writes_the_rows_audit_events_and_outbox_event
         "client_entity.created",
         "engagement.created",
         "engagement_member.added",
+        "independence.requested",  # SPEC-025 (TASK-044): the partner is asked to confirm
     ]
     for row in audit:
         assert row["actor_kind"] == "human"
@@ -444,7 +451,10 @@ async def test_ac4_one_transaction_writes_the_rows_audit_events_and_outbox_event
     payloads = await _outbox(seed, firm.tenant_id, "engagement.created")
     [payload] = payloads
     assert payload["engagement_id"] == str(engagement_id)
-    assert (await seed.counts(firm.tenant_id))["outbox"] == 1
+    # SPEC-025 (TASK-044): the partner's independence request is the other event.
+    [requested] = await _outbox(seed, firm.tenant_id, "independence.requested")
+    assert requested["engagement_id"] == str(engagement_id)
+    assert (await seed.counts(firm.tenant_id))["outbox"] == 2
 
 
 @pytest.mark.parametrize(
@@ -493,8 +503,8 @@ async def test_ac4_none_of_it_happens_when_any_step_fails(
     after = await seed.counts(firm.tenant_id)
     assert (after["engagements"], after["clients"], after["client_entities"]) == (1, 1, 1)
     assert after["engagement_members"] == 1
-    assert after["audit_events"] == 4
-    assert after["outbox"] == 1
+    assert after["audit_events"] == 5  # SPEC-025 (TASK-044): with independence.requested
+    assert after["outbox"] == 2
 
 
 @pytest.mark.parametrize("firm_role", ["quality_partner", None])
@@ -940,6 +950,7 @@ async def test_ac7_creating_the_first_item_writes_list_and_item_audit_events_and
 
     new_events = (await _audit_full(seed, firm.tenant_id))[len(before) :]
     assert sorted(cast(str, e["action"]) for e in new_events) == [
+        "request_item.classified",  # SPEC-022 (TASK-038): the tier, by rule, at creation
         "request_item.created",
         "request_list.created",
     ]

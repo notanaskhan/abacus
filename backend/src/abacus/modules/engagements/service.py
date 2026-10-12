@@ -628,6 +628,7 @@ async def gate_client_data(ctx: AuthContext, engagement_id: UUID, action: str) -
         require_open,
     )
 
+    await get_ref(ctx, engagement_id)  # an unknown or another firm's engagement is 404, not 409
     try:
         await require_open(ctx.tenant, engagement_id)
     except EngagementNotOpen:

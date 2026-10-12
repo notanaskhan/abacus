@@ -14,7 +14,7 @@ import uuid
 from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Annotated, Literal, Protocol, cast
+from typing import Annotated, Final, Literal, Protocol, cast
 
 import asyncpg
 import httpx
@@ -72,6 +72,10 @@ def _plain(url: str) -> str:
 
 
 # --- seeding (superuser) -------------------------------------------------------------------------
+
+
+# Staff engagement roles bound by independence (SPEC-025 AC-7); firm and client roles aren't.
+STAFF_ROLES: Final = frozenset({"engagement_partner", "manager", "senior", "staff", "reviewer"})
 
 
 class Seeder:
@@ -209,6 +213,15 @@ class Seeder:
             user_id,
             role,
         )
+        if role in STAFF_ROLES:  # SPEC-025 AC-5: this staff member has confirmed independence
+            await self.run(
+                "INSERT INTO independence_confirmations (tenant_id, engagement_id, user_id, "
+                "status, statement_version, answered_at) VALUES ($1, $2, $3, 'confirmed', 'v1', "
+                "clock_timestamp()) ON CONFLICT DO NOTHING",
+                tenant_id,
+                engagement_id,
+                user_id,
+            )
 
 
 @dataclass(frozen=True)
@@ -623,7 +636,9 @@ async def test_ac1_me_with_one_membership_names_the_active_tenant(
     assert body["display_name"] == f"User {who.subject[-6:]}"
     assert body["active_tenant_id"] == str(who.tenant_id)
     [membership] = body["memberships"]
-    assert set(membership) == {"tenant_id", "firm_name", "firm_role"}
+    # SPEC-015 (TASK-030): staff or client membership.
+    assert set(membership) == {"tenant_id", "firm_name", "firm_role", "kind"}
+    assert membership["kind"] == "staff"
     assert membership["tenant_id"] == str(who.tenant_id)
     assert membership["firm_role"] == "firm_admin"
     firm_name = await seed.value("SELECT name FROM firms WHERE tenant_id = $1", who.tenant_id)
@@ -1258,6 +1273,7 @@ IDENTITY_SELECT = (
         for name in ("id", "idp_issuer", "idp_subject", "email", "display_name", "created_at")
     }
     | {("memberships", name) for name in ("tenant_id", "id", "user_id", "firm_role", "status")}
+    | {("memberships", "kind")}  # SPEC-015 (migration 0026): staff or client
     | {("firms", "tenant_id"), ("firms", "name")}
 )
 

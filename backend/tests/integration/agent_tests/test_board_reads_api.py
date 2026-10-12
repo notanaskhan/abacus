@@ -65,6 +65,15 @@ ITEM_KEYS = {
     "status",
     "created_at",
     "evidence_version_id",
+    # Added by later specs: SPEC-008 (tier), SPEC-020 (client visibility and assignee),
+    # SPEC-022 (dataset, tier source, availability), SPEC-027 (due date).
+    "retrievability_tier",
+    "client_visible",
+    "client_assignee_user_id",
+    "dataset",
+    "tier_source",
+    "available",
+    "due_on",
 }
 FORBIDDEN_WORDS = ("content", "storage", "key", "fingerprint", "sha256", "size_bytes", "tenant")
 READS = ["request-items", "evidence-versions", "screening-results"]
@@ -189,6 +198,7 @@ async def _member(seed: Seeder, world: World, role: str) -> Person:
         who.user_id,
         role,
     )
+    await seed.confirm(world.engagement_id, who)  # SPEC-025 AC-7: client-data reads need it
     return who
 
 

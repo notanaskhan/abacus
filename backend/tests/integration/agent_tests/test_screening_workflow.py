@@ -536,8 +536,13 @@ async def test_ac17_a_lost_initiator_ends_the_run_as_initiator_inactive(
 
 @pytest.mark.usefixtures("worker")
 async def test_ac14_a_provider_error_is_retried_then_the_run_ends_provider_unavailable(
-    seed: Seeder, world: World, temporal: Client, model: Model
+    seed: Seeder, world: World, temporal: Client, model: Model, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    # SPEC-010 Q3 (TASK-025): each outage blocks the model for `outage_block_seconds` and the
+    # next attempt waits for admission; the shortest block keeps the four attempts quick.
+    monkeypatch.setenv("ABACUS_OUTAGE_BLOCK_SECONDS", "1")
+    settings.cache_clear()
+
     def down(request: ModelRequest) -> str:
         raise ProviderError(LEAKED)
 

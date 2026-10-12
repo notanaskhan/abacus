@@ -445,7 +445,10 @@ def test_ac20_ledger_tables_are_declared_immutable(table: str) -> None:
 
 
 def test_ac20_the_app_may_update_only_the_declared_connection_and_run_columns() -> None:
-    assert sc.APP_UPDATE_COLUMNS["connections"] == frozenset({"status"})
+    # SPEC-020 (TASK-036, migration 0029): checking and revoking record when and by whom.
+    assert sc.APP_UPDATE_COLUMNS["connections"] == frozenset(
+        {"status", "last_checked_at", "last_check_ok", "revoked_at", "revoked_by"}
+    )
     assert sc.APP_UPDATE_COLUMNS["sync_runs"] == frozenset(
         {
             "status",
@@ -465,8 +468,12 @@ def test_ac20_the_app_may_update_only_the_declared_connection_and_run_columns() 
     )
 
 
-def test_ac20_the_app_inserts_no_connection_columns() -> None:
-    assert sc.APP_INSERT_COLUMNS["connections"] == frozenset()
+def test_ac20_the_app_inserts_only_the_declared_connection_columns() -> None:
+    # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections; the status
+    # and the revocation columns are never set on insert.
+    assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
+        {"id", "tenant_id", "client_entity_id", "provider", "scopes", "created_by"}
+    )
 
 
 @pytest.mark.parametrize("table", ["ledger_snapshots", "sync_runs", "connections"])
@@ -506,11 +513,15 @@ async def _app_write(world: World, statement: str, **params: object) -> None:
         tx.record("probe.written", target=Target("probe", world.tenant_id))
 
 
-async def test_ac20_the_app_cannot_insert_a_connection(world: World) -> None:
+async def test_ac20_the_app_cannot_insert_a_connection_with_undeclared_columns(
+    world: World,
+) -> None:
+    """SPEC-020 (TASK-036): the app may create a connection, but never sets its status or
+    revocation on insert."""
     message = await _app_error(
         world.system,
-        "INSERT INTO connections (tenant_id, client_entity_id, provider, created_by) "
-        "VALUES (:t, :e, 'fake', 'test-app')",
+        "INSERT INTO connections (tenant_id, client_entity_id, provider, created_by, status, "
+        "revoked_at) VALUES (:t, :e, 'fake', 'test-app', 'revoked', now())",
         t=world.tenant_id,
         e=world.entity_id,
     )
@@ -538,7 +549,9 @@ async def test_ac20_the_app_may_revoke_a_connection_but_change_nothing_else_of_i
             world.system, statement, id=world.connection_id
         )
     await _app_write(
-        world, "UPDATE connections SET status = 'revoked' WHERE id = :id", id=world.connection_id
+        world,
+        "UPDATE connections SET status = 'revoked', revoked_at = now() WHERE id = :id",
+        id=world.connection_id,
     )
     assert (
         await seed.value("SELECT status FROM connections WHERE id = $1", world.connection_id)
@@ -1297,11 +1310,17 @@ async def test_ac20_a_runs_snapshot_and_evidence_links_are_write_once(
 async def test_ac20_a_revoked_connection_stays_revoked_even_for_the_superuser(
     seed: Seeder, world: World
 ) -> None:
-    await seed.run("UPDATE connections SET status = 'revoked' WHERE id = $1", world.connection_id)
+    await seed.run(
+        "UPDATE connections SET status = 'revoked', revoked_at = now() WHERE id = $1",
+        world.connection_id,
+    )
     await _run_error(
         seed, "UPDATE connections SET status = 'active' WHERE id = $1", world.connection_id
     )
-    await seed.run("UPDATE connections SET status = 'revoked' WHERE id = $1", world.connection_id)
+    await seed.run(
+        "UPDATE connections SET status = 'revoked', revoked_at = now() WHERE id = $1",
+        world.connection_id,
+    )
     assert (
         await seed.value("SELECT status FROM connections WHERE id = $1", world.connection_id)
         == "revoked"
@@ -1312,7 +1331,9 @@ async def test_ac20_an_active_connection_may_be_revoked_by_the_app(
     seed: Seeder, world: World
 ) -> None:
     await _app_write(
-        world, "UPDATE connections SET status = 'revoked' WHERE id = :id", id=world.connection_id
+        world,
+        "UPDATE connections SET status = 'revoked', revoked_at = now() WHERE id = :id",
+        id=world.connection_id,
     )
     assert (
         await seed.value("SELECT status FROM connections WHERE id = $1", world.connection_id)

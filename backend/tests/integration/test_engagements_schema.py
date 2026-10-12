@@ -475,7 +475,8 @@ SUPERUSER_ENGAGEMENT = (
 )
 
 
-@pytest.mark.parametrize(("status", "kind"), [("paused", "audit"), ("active", "review")])
+# SPEC-024: review, compilation and agreed-upon procedures are engagement types; tax isn't.
+@pytest.mark.parametrize(("status", "kind"), [("paused", "audit"), ("active", "tax")])
 async def test_ac20_engagement_status_and_type_outside_the_allowed_values_are_check_errors(
     db: Db, firm: Firm, status: str, kind: str
 ) -> None:
@@ -719,10 +720,12 @@ SERVER_SET_INSERTS = {
         "fiscal_period_start, fiscal_period_end, created_by, status) "
         "VALUES (:t, :c, :e, 'n', '2025-01-01', '2025-12-31', :u, 'archived')"
     ),
-    "engagements_type": (
+    # SPEC-024 made `type` an insert column (chosen at creation); the methodology version is
+    # pinned later by an update (SPEC-008), never on insert.
+    "engagements_methodology_version_id": (
         "INSERT INTO engagements (tenant_id, client_id, client_entity_id, name, "
-        "fiscal_period_start, fiscal_period_end, created_by, type) "
-        "VALUES (:t, :c, :e, 'n', '2025-01-01', '2025-12-31', :u, 'audit')"
+        "fiscal_period_start, fiscal_period_end, created_by, methodology_version_id) "
+        "VALUES (:t, :c, :e, 'n', '2025-01-01', '2025-12-31', :u, :g)"
     ),
     "engagements_created_at": (
         "INSERT INTO engagements (tenant_id, client_id, client_entity_id, name, "
