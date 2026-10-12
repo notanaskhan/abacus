@@ -27,8 +27,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { type JSX, useEffect, useState } from "react";
 import { errorMessage } from "../api";
+import { ClientBell } from "../shell/ClientBell";
 import { accessToken, signIn } from "../auth/session";
 import { ClientUploadChecks } from "./CheckResults";
+import { CommentThread } from "./CommentThread";
 import { ConnectionPanel } from "./ConnectionPanel";
 import { EvidencePreview } from "./EvidencePreview";
 import { InboxPanel } from "./InboxPanel";
@@ -94,9 +96,12 @@ export function ClientEngagement({ engagementId }: { engagementId: string }): JS
     <div className="min-h-screen bg-ground">
       <header className="flex items-center justify-between border-b border-line bg-surface px-6 py-3">
         <span className="font-display text-lg font-semibold">Abacus</span>
-        <Link to="/client" className="text-sm text-accent hover:underline">
-          Your engagements
-        </Link>
+        <span className="flex items-center gap-3">
+          <ClientBell />
+          <Link to="/client" className="text-sm text-accent hover:underline">
+            Your engagements
+          </Link>
+        </span>
       </header>
       <main className="mx-auto flex max-w-4xl flex-col gap-4 p-6">
         {engagement.isPending ? (
@@ -133,6 +138,7 @@ export function ClientEngagement({ engagementId }: { engagementId: string }): JS
                     key={item.id}
                     item={item}
                     contributors={isAdmin ? contributors : null}
+                    me={me.data?.user_id}
                   />
                 ))}
               </ul>
@@ -185,14 +191,19 @@ function Outcome({ entry }: { entry: HistoryEntryOut | undefined }): JSX.Element
 function ClientItem({
   item,
   contributors,
+  me,
 }: {
   item: RequestItemOut;
   contributors: ClientContactOut[] | null;
+  me: string | undefined;
 }): JSX.Element {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [files, setFiles] = useState<FileState[]>([]);
   const [previewing, setPreviewing] = useState<string | null>(null);
+  // SPEC-032 (TASK-063): the request's thread, and one version's.
+  const [talking, setTalking] = useState(false);
+  const [versionThread, setVersionThread] = useState<string | null>(null);
   const status = statusOf(item.status);
   const ids = { engagement_id: item.engagement_id, item_id: item.id };
   // SPEC-031 AC-4, AC-5, AC-7: provided, the bank statement gap and the history. Without it the
@@ -246,7 +257,7 @@ function ClientItem({
 
   const inputId = `upload-${item.id}`;
   return (
-    <li className="flex flex-col gap-2 py-3">
+    <li id={`request-${item.id}`} className="flex flex-col gap-2 py-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <p className="font-medium whitespace-pre-line">{item.description}</p>
         <span className="flex items-center gap-2">
@@ -288,6 +299,22 @@ function ClientItem({
         >
           {open ? "Hide history" : "Show history"}
         </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          aria-expanded={talking}
+          onClick={() => {
+            setTalking((t) => !t);
+          }}
+        >
+          Comments ({item.comment_count ?? 0})
+          {item.unread_comments === true && (
+            <span
+              aria-label="Unread comments"
+              className="ml-1 inline-block size-2 rounded-full bg-accent"
+            />
+          )}
+        </Button>
         {contributors !== null && (
           <span className="ml-auto flex items-center gap-2 text-sm">
             <Label htmlFor={`assignee-${item.id}`}>Assigned to</Label>
@@ -313,6 +340,15 @@ function ClientItem({
           </span>
         )}
       </div>
+      {talking && (
+        <CommentThread
+          ids={{ engagementId: item.engagement_id, itemId: item.id }}
+          me={me}
+          side="client"
+          canShare={false}
+          label={`Comments on ${item.description}`}
+        />
+      )}
       {assign.isError && (
         <p role="alert" className="text-sm text-danger">
           {errorMessage(assign.error)}
@@ -363,6 +399,32 @@ function ClientItem({
                   · {new Date(u.uploaded_at).toLocaleString()}
                 </span>
                 <Outcome entry={history.get(u.evidence_version_id)} />
+                <button
+                  type="button"
+                  className="text-accent hover:underline"
+                  onClick={() => {
+                    setVersionThread(
+                      versionThread === u.evidence_version_id ? null : u.evidence_version_id,
+                    );
+                  }}
+                >
+                  Comments
+                </button>
+                {versionThread === u.evidence_version_id && (
+                  <div className="w-full">
+                    <CommentThread
+                      ids={{
+                        engagementId: item.engagement_id,
+                        itemId: item.id,
+                        versionId: u.evidence_version_id,
+                      }}
+                      me={me}
+                      side="client"
+                      canShare={false}
+                      label={`Comments on ${u.file_name}`}
+                    />
+                  </div>
+                )}
                 <button
                   type="button"
                   className="text-accent hover:underline"

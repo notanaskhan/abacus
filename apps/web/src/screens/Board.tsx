@@ -244,6 +244,17 @@ function RequestItemCard({
               AI flags
             </Badge>
           )}
+          {/* SPEC-032 AC-8 (TASK-063): comments on the request and its versions. */}
+          {(item.comment_count ?? 0) > 0 && (
+            <Badge
+              tone={item.unread_comments === true ? "info" : "neutral"}
+              className="ml-2"
+              aria-label={`${String(item.comment_count)} comments${item.unread_comments === true ? ", unread" : ""}`}
+            >
+              Comments {item.comment_count}
+              {item.unread_comments === true && " •"}
+            </Badge>
+          )}
         </dd>
         <dt className="text-muted">Due</dt>
         <dd>
@@ -578,6 +589,7 @@ function FilterBar({
         ["none", "None yet"],
         ["problems", "Problems found"],
         ["ai_flags", "AI flags"],
+        ["unread_comments", "Unread comments"],
       ])}
       {select("assignee", "Client assignee", [
         ["assigned", "Assigned"],
