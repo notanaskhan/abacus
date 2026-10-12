@@ -4,7 +4,7 @@ title: "Upload processing, part 3: in-browser previews"
 spec: SPEC-029
 acceptance_criteria: [AC-12, AC-13]
 risk_zone: red
-status: awaiting-approval
+status: done
 branch: task-056-previews
 worktree:
 created: 2026-10-12
@@ -30,7 +30,7 @@ SPEC-029 AC-12, AC-13 (for the viewer); goal 8.
 - Code: `evidence/workflows.py`, `processing.py`, `activities.py`, `extraction.py` (TASK-054/055); `kernel/isolation.py`; `evidence/storage.py`; `evidence/item_detail.py` and `routes.py` (download, version access); `apps/web/src/screens/ItemDetail.tsx`, `ClientEngagement.tsx`
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-12: D1–D4 as recommended). Approved by founder: the paths named in D4
 
 ### What the code shows
 - Item detail offers "Download" only. Client uploads are listed per item with no way to look at one.
@@ -69,9 +69,14 @@ SPEC-029 AC-12, AC-13 (for the viewer); goal 8.
 
 ## Progress log
 - `2026-10-12` — Design written for founder review after TASK-054 (#100) and TASK-055 (#101) merged.
+- `2026-10-12` — Built (D1–D4): migration 0045; `previews.py` (isolated); workflow v3 and history; previews for every new version; preview APIs for uploads and inbox files; `EvidencePreview` in item detail (firm) and on client uploads. Backend unit tests, workflow replay (v1–v3), web 241 tests and gates pass. Local smoke: statement and scanned PDF as page images (1,240 px), a 3,000 px photo re-encoded to 2,400 px PNG, an aging as a table, an inbox file as pages. Pipeline workbook previews (D1) are covered by the subscription and unit pins, not by the smoke.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| Scanned PDFs get page images even though extraction calls them unreadable | They have no text, but the reviewer can still see them | No |
+| Pages are fetched with the user's token as blobs, one page at a time | The API uses bearer tokens, so `<img src>` can't authenticate | No |
+| A local stub for pypdfium2 (`backend/typings/`) | It ships no type information; strict typing needs one | No |
 
 ## Handoff
+Done. Next: TASK-057 (screens: plain-words client messages from the check codes with Replace file; the firm's checks in item detail; the Board marker).

@@ -43,9 +43,14 @@ from abacus.modules.evidence.checks import (
     statement_checks,
 )
 from abacus.modules.evidence.cross_checks import Account, aging_cross_check, bank_cross_check
-from abacus.modules.evidence.events import EvidenceUploaded, InboxFileAdded
+from abacus.modules.evidence.events import (
+    EvidenceUploaded,
+    EvidenceVersionCreated,
+    InboxFileAdded,
+)
 from abacus.modules.evidence.extraction import EXTRACTOR_VERSION, Extraction, extract_isolated
 from abacus.modules.evidence.models import UploadExtraction
+from abacus.modules.evidence.previews import RENDERER_VERSION, render_isolated
 from abacus.modules.evidence.repository import (
     checks_exist,
     extraction_for,
@@ -53,7 +58,10 @@ from abacus.modules.evidence.repository import (
     get_version,
     insert_checks,
     insert_extraction,
+    insert_preview,
+    insert_preview_pages,
     other_version_with_fingerprint,
+    preview_for,
 )
 from abacus.modules.evidence.service import engagement_snapshots
 from abacus.modules.evidence.workflow_types import INBOX, VERSION, UploadInput
@@ -116,7 +124,14 @@ async def on_document_kind_changed(event: OutboxEvent) -> None:
     )
 
 
+async def on_evidence_version_created(event: OutboxEvent) -> None:
+    """TASK-056 D1: every new version is processed (pipeline workbooks too, for previews); an
+    upload's own event starts the same run (same workflow ID), so it runs once."""
+    await _start(event.tenant_id, VERSION, UUID(str(event.payload["evidence_version_id"])))
+
+
 SUBSCRIPTIONS: dict[str, Handler] = {
+    EvidenceVersionCreated.event_type: on_evidence_version_created,
     EvidenceUploaded.event_type: on_evidence_uploaded,
     InboxFileAdded.event_type: on_inbox_file_added,
     RequestItemDocumentKindChanged.event_type: on_document_kind_changed,
@@ -348,3 +363,74 @@ async def check_upload(given: UploadInput) -> int:
         )
     _log.info("upload.checked", kind=kind, checks=added)
     return added
+
+
+# --- Previews (SPEC-029 goal 8; TASK-056) --------------------------------------------------------
+
+
+async def preview_upload(given: UploadInput) -> str:
+    """Render one upload's preview and record it; returns its kind. Idempotent."""
+    tenant_id, source_id = UUID(given.tenant_id), UUID(given.source_id)
+    tenant = _system(tenant_id)
+    version_id = source_id if given.kind == VERSION else None
+    inbox_id = source_id if given.kind == INBOX else None
+    async with tenant_session(tenant) as session:
+        done = await preview_for(
+            session,
+            evidence_version_id=version_id,
+            inbox_file_id=inbox_id,
+            renderer_version=RENDERER_VERSION,
+        )
+        if done is not None:
+            return done.kind
+        source = (
+            await get_version(session, source_id)
+            if version_id is not None
+            else await get_inbox_file(session, source_id)
+        )
+    if source is None:
+        raise NotFound("upload")
+    stored = storage.StoredObject(
+        source.storage_key, source.storage_version_id, source.fingerprint, source.size_bytes
+    )
+    rendered = await asyncio.to_thread(
+        render_isolated, await storage.get(tenant_id, stored), source.media_type
+    )
+    pages = [await storage.put(tenant_id, page.png) for page in rendered.pages]
+    async with uow(tenant) as tx:
+        row = await insert_preview(
+            tx.session,
+            tenant_id=tenant_id,
+            engagement_id=source.engagement_id,
+            evidence_version_id=version_id,
+            inbox_file_id=inbox_id,
+            renderer_version=RENDERER_VERSION,
+            kind=rendered.kind,
+            reason=rendered.reason,
+            page_count=len(pages),
+            truncated=rendered.truncated,
+        )
+        if row is not None:
+            await insert_preview_pages(
+                tx.session,
+                [
+                    {
+                        "tenant_id": tenant_id,
+                        "preview_id": row.id,
+                        "page_no": n,
+                        "storage_key": put.key,
+                        "storage_version_id": put.version_id,
+                        "fingerprint": put.fingerprint,
+                        "size_bytes": put.size,
+                        "width": page.width,
+                        "height": page.height,
+                    }
+                    for n, (put, page) in enumerate(zip(pages, rendered.pages, strict=True), 1)
+                ],
+            )
+        tx.record(
+            "upload.previewed" if row is not None else "upload.preview_exists",
+            target=Target("evidence_version" if version_id else "inbox_file", source_id),
+            after=Ref(pages=len(pages)),
+        )
+    return rendered.kind

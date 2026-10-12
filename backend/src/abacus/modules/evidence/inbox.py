@@ -26,6 +26,7 @@ from abacus.modules.evidence.matching import Suggestion, suggest
 from abacus.modules.evidence.models import InboxFile
 from abacus.modules.evidence.repository import (
     decide_inbox_file,
+    get_inbox_file,
     insert_inbox_file,
     lock_inbox_file,
     waiting_inbox,
@@ -35,9 +36,12 @@ from abacus.modules.evidence.uploads import (
     ON_BEHALF_SOURCE,
     SOURCE,
     DuplicateUpload,
+    PreviewView,
     attach,
     clean_name,
     clean_note,
+    preview_of,
+    preview_page_of,
     screened,
 )
 from abacus.modules.identity.api import (
@@ -243,3 +247,27 @@ async def discard(ctx: AuthContext, engagement_id: UUID, file_id: UUID) -> None:
             raise Forbidden("evidence.upload", "role")
         await decide_inbox_file(tx.session, file_id, status="discarded", decided_by=ctx.user_id)
         tx.record("inbox_file.discarded", target=Target("inbox_file", file_id))
+
+
+async def _seen_file(ctx: AuthContext, engagement_id: UUID, file_id: UUID) -> None:
+    """The inbox's own rule (SPEC-023): whoever may see the waiting file may preview it."""
+    role = await _role(ctx, engagement_id)
+    async with tenant_session(ctx.tenant) as session:
+        row = await get_inbox_file(session, file_id)
+    if row is None or row.engagement_id != engagement_id or not _sees(role, ctx, row):
+        raise NotFound("inbox_file")
+
+
+async def inbox_preview(ctx: AuthContext, engagement_id: UUID, file_id: UUID) -> PreviewView:
+    """SPEC-029 goal 8 (TASK-056)."""
+    await _seen_file(ctx, engagement_id, file_id)
+    return await preview_of(ctx.tenant, evidence_version_id=None, inbox_file_id=file_id)
+
+
+async def inbox_preview_page(
+    ctx: AuthContext, engagement_id: UUID, file_id: UUID, page_no: int
+) -> bytes:
+    await _seen_file(ctx, engagement_id, file_id)
+    return await preview_page_of(
+        ctx.tenant, evidence_version_id=None, inbox_file_id=file_id, page_no=page_no
+    )

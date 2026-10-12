@@ -29,6 +29,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
+import { EvidencePreview } from "./EvidencePreview";
 import { confidencePercent } from "../board/join";
 import { isForbidden } from "../shell/mfa";
 import { DecisionActions } from "./DecisionActions";
@@ -172,6 +173,17 @@ export function ItemDetail({
         </Panel>
         {shown !== undefined && (
           <div className="flex flex-col gap-4">
+            {/* SPEC-029 AC-12 (TASK-056): look without downloading. */}
+            <Panel title="Preview">
+              <EvidencePreview
+                source={{
+                  kind: "upload",
+                  engagementId,
+                  itemId,
+                  versionId: shown.id,
+                }}
+              />
+            </Panel>
             <Screening
               result={resultFor(shown.id)}
               loading={screening.isPending}

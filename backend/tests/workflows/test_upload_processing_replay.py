@@ -32,7 +32,14 @@ def test_ac2_the_histories_are_committed() -> None:
         "upload-processing-v1-extracted",
         # v2 (TASK-055): `patched("checks")`; v1 still replays against the same code.
         "upload-processing-v2-extracted",
+        # v3 (TASK-056): `patched("previews")`.
+        "upload-processing-v3-extracted",
     ]
+
+
+def test_ac12_v3_previews_after_checking() -> None:
+    text = (HISTORIES / "upload-processing-v3-extracted.json").read_text(encoding="utf-8")
+    assert text.index("upload.check") < text.index("upload.preview")
 
 
 def test_ac2_v2_checks_after_extracting() -> None:

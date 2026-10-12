@@ -11,13 +11,14 @@ import {
   listUploadsQueryKey,
   meOptions,
 } from "@abacus/api-client/query";
-import { Alert, Button, EmptyState, Label, Panel, Skeleton, StatusPill } from "@abacus/ui";
+import { Alert, Button, Dialog, EmptyState, Label, Panel, Skeleton, StatusPill } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { type JSX, useEffect, useState } from "react";
 import { errorMessage } from "../api";
 import { accessToken, signIn } from "../auth/session";
 import { ConnectionPanel } from "./ConnectionPanel";
+import { EvidencePreview } from "./EvidencePreview";
 import { InboxPanel } from "./InboxPanel";
 import { statusOf } from "./engagementLabels";
 
@@ -148,6 +149,7 @@ function ClientItem({
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [files, setFiles] = useState<FileState[]>([]);
+  const [previewing, setPreviewing] = useState<string | null>(null);
   const status = statusOf(item.status);
   const takesFiles = ["open", "received", "needs_revision"].includes(item.status);
   const ids = { engagement_id: item.engagement_id, item_id: item.id };
@@ -296,10 +298,38 @@ function ClientItem({
                     : u.uploaded_by_name || "Someone"}{" "}
                   · {new Date(u.uploaded_at).toLocaleString()}
                 </span>
+                <button
+                  type="button"
+                  className="text-accent hover:underline"
+                  onClick={() => {
+                    setPreviewing(u.evidence_version_id);
+                  }}
+                >
+                  Preview
+                </button>
               </li>
             ))}
           </ul>
         ))}
+      {/* SPEC-029 AC-12 (TASK-056): the client looks at their own upload without downloading. */}
+      <Dialog
+        open={previewing !== null}
+        onOpenChange={(next) => {
+          if (!next) setPreviewing(null);
+        }}
+        title="Preview"
+      >
+        {previewing !== null && (
+          <EvidencePreview
+            source={{
+              kind: "upload",
+              engagementId: item.engagement_id,
+              itemId: item.id,
+              versionId: previewing,
+            }}
+          />
+        )}
+      </Dialog>
     </li>
   );
 }
