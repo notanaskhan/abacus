@@ -8,6 +8,7 @@ whose first version has provenance `uploaded` / `client_upload` (ADR-004).
 
 from __future__ import annotations
 
+import asyncio
 import io
 import unicodedata
 import zipfile
@@ -18,6 +19,7 @@ from uuid import UUID
 
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.scanning import scan
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import gate_client_data, get_ref, lock_ref
 from abacus.modules.evidence import storage
@@ -65,6 +67,12 @@ class UploadTypeNotAllowed(DomainInvalid):
 
 class UploadEmpty(DomainInvalid):
     code = "upload_empty"
+
+
+class UploadRefused(DomainInvalid):
+    """The malware scanner refused the file (SPEC-029 AC-1; ADR-110). Nothing is stored."""
+
+    code = "file_refused"
 
 
 class DuplicateUpload(DomainConflict):
@@ -196,7 +204,24 @@ def checked(content: bytes) -> tuple[str, str]:
     media_type = sniff(content)
     if media_type is None:
         raise UploadTypeNotAllowed
+    if not scan(content).clean:  # SPEC-029 AC-1: before anything stores or parses it
+        raise UploadRefused
     return media_type, storage.fingerprint(content)
+
+
+async def screened(ctx: AuthContext, engagement_id: UUID, content: bytes) -> tuple[str, str]:
+    """`checked`, off the event loop, auditing a refused file (SPEC-029 AC-1): nothing is
+    stored, and only the size is recorded."""
+    try:
+        return await asyncio.to_thread(checked, content)
+    except UploadRefused:
+        async with uow(ctx.tenant) as tx:
+            tx.record(
+                "upload.refused",
+                target=Target("engagement", engagement_id),
+                after=Ref(size=len(content)),
+            )
+        raise
 
 
 async def attach(
@@ -269,7 +294,7 @@ async def upload(
     await gate_client_data(ctx, engagement_id, "evidence.upload")  # SPEC-025 AC-7
     if on_behalf and not await is_staff_on(ctx, engagement_id):
         raise NotStaff
-    media_type, digest = checked(content)
+    media_type, digest = await screened(ctx, engagement_id, content)
     async with tenant_session(ctx.tenant) as session:
         if await fingerprint_among(session, await read_item_versions(ctx.tenant, item_id), digest):
             raise DuplicateUpload

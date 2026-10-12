@@ -18,7 +18,7 @@ from abacus.modules.engagements.api import (
 )
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.item_detail import IntegrityFailed, download_name
-from abacus.modules.evidence.uploads import checked, clean_name
+from abacus.modules.evidence.uploads import clean_name, screened
 from abacus.modules.identity.api import AuthContext
 
 Which = Literal["acceptance", "letter"]
@@ -27,7 +27,7 @@ Which = Literal["acceptance", "letter"]
 async def upload_setup_file(
     ctx: AuthContext, engagement_id: UUID, which: Which, *, file_name: str, content: bytes
 ) -> None:
-    media_type, _ = checked(content)
+    media_type, _ = await screened(ctx, engagement_id, content)  # SPEC-029 AC-1, TASK-054 D4
     stored = await storage.put(ctx.tenant_id, content)
     file = StoredFile(
         stored.key,

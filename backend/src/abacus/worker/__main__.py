@@ -56,11 +56,12 @@ from abacus.kernel.uow.relay import RoutingPublisher, run_relay
 from abacus.modules.agents import api as agents
 from abacus.modules.communications import api as communications
 from abacus.modules.connections import api as connections
+from abacus.modules.evidence import api as evidence
 from abacus.modules.evidence.api import check_ready
 from abacus.modules.notifications import api as notifications
 
 GRACEFUL_SHUTDOWN = timedelta(seconds=60)
-MODULES = (connections, agents, notifications, communications)
+MODULES = (connections, agents, notifications, communications, evidence)  # evidence: SPEC-029
 SUBSCRIBERS = tuple(module.SUBSCRIPTIONS for module in MODULES)
 
 

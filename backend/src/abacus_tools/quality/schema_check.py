@@ -66,6 +66,7 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"methodology_request_items", "methodology_account_rules"}
     | {"agent_activity"}  # SPEC-027 (TASK-050): the feed is never rewritten
     | {"ledger_imports"}  # SPEC-028 (TASK-052): an upload and its check are facts
+    | {"upload_extractions"}  # SPEC-029 (TASK-054): a derived record, rebuilt, never edited
     | {"reminder_items"}  # SPEC-027 (TASK-051)
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
@@ -309,6 +310,7 @@ TABLE_OWNERS: dict[str, str] = {
     "engagement_agents": "agents",  # SPEC-027 (TASK-050)
     "agent_activity": "agents",
     "ledger_imports": "connections",  # SPEC-028 (TASK-052)
+    "upload_extractions": "evidence",  # SPEC-029 (TASK-054)
     "reminders": "agents",  # SPEC-027 (TASK-051)
     "reminder_items": "agents",
     "engagement_letters": "engagements",

@@ -36,9 +36,9 @@ from abacus.modules.evidence.uploads import (
     SOURCE,
     DuplicateUpload,
     attach,
-    checked,
     clean_name,
     clean_note,
+    screened,
 )
 from abacus.modules.identity.api import (
     AuthContext,
@@ -109,7 +109,7 @@ async def add_to_inbox(
     """AC-2: store the file and list it as waiting."""
     role = await _role(ctx, engagement_id)
     await gate_client_data(ctx, engagement_id, "evidence.upload")  # SPEC-025 AC-7
-    media_type, digest = checked(content)
+    media_type, digest = await screened(ctx, engagement_id, content)
     async with tenant_session(ctx.tenant) as session:
         if await waiting_with_fingerprint(session, engagement_id, digest):
             raise DuplicateUpload
