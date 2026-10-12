@@ -51,6 +51,11 @@ export function problemMessage(check: CheckOut): string | null {
     }
     case "ledger_cross_check":
       return crossCheckMessage(check);
+    // Firm only (SPEC-030 amendment): numeric signs of editing, found by code.
+    case "running_balance_breaks":
+      return `A running balance doesn't follow from the line before it (off by ${usd(check.difference ?? "0")}).`;
+    case "closing_balance_differs":
+      return `The closing balance is stated differently on different pages (off by ${usd(check.difference ?? "0")}).`;
     default:
       return "Something in this file needs a look.";
   }
@@ -88,6 +93,8 @@ const CHECK_NAMES: Record<string, string> = {
   wrong_entity: "Right company",
   totals_dont_add_up: "Totals add up",
   ledger_cross_check: "Agrees with the trial balance",
+  running_balance_breaks: "Running balances follow",
+  closing_balance_differs: "One closing balance throughout",
 };
 
 export function checkName(code: string): string {
@@ -105,6 +112,8 @@ const NOT_CHECKED: Record<string, string> = {
   no_total_row: "no total row",
   not_extracted: "this kind of file isn't read",
   legacy_format: "older file format",
+  no_running_balance: "no running balance column",
+  stated_once: "closing balance stated once",
 };
 
 export function notCheckedReason(reason: string | null | undefined): string {

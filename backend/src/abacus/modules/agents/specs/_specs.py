@@ -41,7 +41,7 @@ SPECS: dict[str, dict[str, object]] = {   'evidence.screener': {   'autonomy': '
                                                   'max_seconds': 60,
                                                   'max_steps': 1},
                                     'output_schema': 'UploadReviewOutput',
-                                    'prompt': 'evidence.upload_review@v1',
+                                    'prompt': 'evidence.upload_review@v2',
                                     'purpose': "Review an uploaded document's extracted text and "
                                                "flag what code can't decide.",
                                     'routes': ['bedrock', 'direct'],
@@ -50,6 +50,6 @@ SPECS: dict[str, dict[str, object]] = {   'evidence.screener': {   'autonomy': '
                                     'tier': 'small',
                                     'tools': [],
                                     'untrusted_inputs': ['document'],
-                                    'version': 1,
+                                    'version': 2,
                                     'work_class': 'background'}}
 # fmt: on

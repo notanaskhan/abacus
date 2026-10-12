@@ -197,9 +197,13 @@ def detailed_statement_pdf(
     footer_lines: tuple[str, ...] = (),
     tamper_line: int | None = None,
     second_page_closing: Decimal | None = None,
+    outside_period_line: bool = False,
+    duplicate_check: bool = False,
 ) -> bytes:
     """A statement with transaction lines and running balances. `header_lines` and
-    `footer_lines` add text (a watermark, a signature line, an instruction); `tamper_line` makes
+    `footer_lines` add text (a watermark, a signature line, an instruction); `outside_period_line`
+    dates the third line in the month before the period and `duplicate_check` reuses check 1041
+    for the last payment (both editing signs that need no arithmetic); `tamper_line` makes
     that line's running balance not follow from the one before (opening, credits, debits and
     closing still agree, so code's totals check passes); `second_page_closing` adds a summary
     page stating a different closing balance."""
@@ -208,7 +212,7 @@ def detailed_statement_pdf(
         ("Check 1041", Decimal("-820.00")),
         ("ACH payroll", Decimal("-1405.50")),
         ("Customer deposit", Decimal("2750.00")),
-        ("Wire to supplier", Decimal("-900.00")),
+        ("Check 1041" if duplicate_check else "Wire to supplier", Decimal("-900.00")),
     )
     credits = sum((m for _, m in moves if m > 0), Decimal(0))
     debits = -sum((m for _, m in moves if m < 0), Decimal(0))
@@ -231,7 +235,8 @@ def detailed_statement_pdf(
         balance += amount
         shown = balance + Decimal("500.00") if tamper_line == n else balance
         day = min(start.day + 4 * n, 28)
-        lines.append(f"{end.month:02d}/{day:02d} {what} {_money(amount)} {_money(shown)}")
+        month = (end.month - 2) % 12 + 1 if outside_period_line and n == 3 else end.month
+        lines.append(f"{month:02d}/{day:02d} {what} {_money(amount)} {_money(shown)}")
     lines.extend(footer_lines)
     pages = [_text_page(lines)]
     if second_page_closing is not None:

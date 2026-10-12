@@ -3,8 +3,8 @@ PROTECTED.
 
 A quote counts only if it is really in the document where the model says: in the extracted text
 of that PDF page, or the text of that spreadsheet cell, after Unicode (NFKC), case-insensitive and
-whitespace normalisation. The extraction (SPEC-029) is the source of truth; the model's word
-never is.
+whitespace normalisation; a quote joining several lines of one page counts when every line is
+there. The extraction (SPEC-029) is the source of truth; the model's word never is.
 """
 
 from __future__ import annotations
@@ -43,6 +43,13 @@ def _cell_text(rows: Sequence[Sequence[str]], cell: str) -> str | None:
     return rows[row][column]
 
 
+def _found(quote: str, text: str) -> bool:
+    """Every line of the quote appears in the text (a quote may join lines from one page)."""
+    parts = [normalised(line) for line in quote.splitlines() if normalised(line)]
+    haystack = normalised(text)
+    return bool(parts) and all(part in haystack for part in parts)
+
+
 def verify(
     citations: Sequence[DocumentCitation],
     pages: Mapping[int, str],
@@ -52,14 +59,13 @@ def verify(
     a CSV's single table is named "")."""
     results: list[VerifiedDocumentCitation] = []
     for c in citations:
-        quote = normalised(c.quote)
         reason: str | None
         if c.page is not None:
             text = pages.get(c.page)
             reason = (
                 "page_not_found"
                 if text is None
-                else (None if quote and quote in normalised(text) else "quote_not_found")
+                else (None if _found(c.quote, text) else "quote_not_found")
             )
         else:
             rows = sheets.get(c.sheet or "")
@@ -69,7 +75,7 @@ def verify(
             reason = (
                 "cell_not_found"
                 if cell is None
-                else (None if quote and quote in normalised(cell) else "quote_not_found")
+                else (None if _found(c.quote, cell) else "quote_not_found")
             )
         results.append(
             VerifiedDocumentCitation(c.page, c.sheet, c.cell, c.quote, reason is None, reason)

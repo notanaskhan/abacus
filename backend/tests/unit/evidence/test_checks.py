@@ -17,9 +17,11 @@ from abacus.modules.evidence.checks import (
     CheckResult,
     ExtractedFields,
     aging_checks,
+    closing_consistent,
     duplicate,
     normalised_name,
     readable,
+    running_balance,
     schedule_checks,
     statement_checks,
 )
@@ -287,3 +289,46 @@ def test_ac9_ar_aging_against_receivables_excluding_the_allowance() -> None:
 def test_ac9_ap_aging_against_payables_as_a_credit_balance() -> None:
     found = aging_cross_check(D("800.00"), payables=True, accounts=CASH)
     assert (found.outcome, found.account_code, found.amount) == ("passed", "2000", D("800.00"))
+
+
+# --- SPEC-030 amendment (TASK-058): balance continuity, by code, firm only ----------------------
+
+
+def _detailed(**options: object) -> ExtractedFields:
+    from abacus.modules.evidence.extraction import PDF
+    from abacus_tools.synthetic.documents import detailed_statement_pdf
+
+    found = extract(detailed_statement_pdf(**options), PDF)  # pyright: ignore[reportArgumentType] -- generator options
+    statement = found.statement
+    assert statement is not None
+    document = json.loads(json.dumps(asdict(found), default=str))
+    return ExtractedFields(
+        "extracted",
+        None,
+        statement.period_start,
+        statement.period_end,
+        None,
+        statement.holder,
+        statement.opening,
+        statement.closing,
+        statement.credits,
+        statement.debits,
+        document,
+    )
+
+
+def test_amendment_running_balances_that_follow_pass_and_a_break_is_found() -> None:
+    assert running_balance(_detailed()).outcome == "passed"
+    broken = running_balance(_detailed(tamper_line=3))
+    assert (broken.outcome, broken.audience, broken.difference) == ("problem", "firm", D("500.00"))
+
+
+def test_amendment_a_closing_balance_stated_differently_on_another_page_is_found() -> None:
+    assert closing_consistent(_detailed()).outcome == "not_applicable"
+    assert closing_consistent(_detailed(second_page_closing=D("12124.50"))).outcome == "passed"
+    differs = closing_consistent(_detailed(second_page_closing=D("15874.50")))
+    assert (differs.outcome, differs.audience, differs.difference) == (
+        "problem",
+        "firm",
+        D("3750.00"),
+    )

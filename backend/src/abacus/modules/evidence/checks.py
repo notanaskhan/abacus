@@ -17,9 +17,9 @@ from decimal import Decimal
 from typing import Final, Literal, cast
 from uuid import UUID
 
-from abacus.modules.evidence.document_fields import parse_amount
+from abacus.modules.evidence.document_fields import AMOUNT, parse_amount
 
-CHECKER_VERSION: Final = "v1"
+CHECKER_VERSION: Final = "v2"  # v2 (TASK-058, SPEC-030 amendment): balance continuity checks
 STALE_DAYS: Final = 45  # SPEC-029 Q6
 STATEMENT_DAYS: Final = 31  # a statement with only its end date printed covers this many days
 
@@ -261,3 +261,62 @@ def schedule_checks(fields: ExtractedFields) -> list[CheckResult]:
         if checked
         else _na("totals_dont_add_up", "no_total_row")
     ]
+
+
+# --- Balance continuity (SPEC-030 amendment; TASK-058): numeric signs of editing, by code -------
+
+# A statement line: a date, a description, the amount, then the running balance.
+_LINE: Final = re.compile(
+    rf"^\s*\d{{1,2}}/\d{{1,2}}(?:/\d{{2,4}})?\s+.+?\s+({AMOUNT})\s+({AMOUNT})\s*$"
+)
+_CLOSING: Final = re.compile(
+    rf"(?:Ending|Closing|New) balance(?: as of [A-Za-z]+\.? \d{{1,2}}, \d{{4}})?"
+    rf"[^\n0-9$(\-]*?({AMOUNT})",
+    re.I,
+)
+
+
+def _pages(fields: ExtractedFields) -> list[str]:
+    return [str(p) for p in _seq(fields.document.get("pages"))] if fields.document else []
+
+
+def running_balance(fields: ExtractedFields) -> CheckResult:
+    """Each line's running balance follows from the one before (the first from the opening
+    balance). Firm only: a sign of editing is the firm's to raise."""
+    code = "running_balance_breaks"
+    lines: list[tuple[Decimal, Decimal]] = []
+    for page in _pages(fields):
+        for text in page.splitlines():
+            found = _LINE.match(text)
+            if found is None:
+                continue
+            amount, balance = parse_amount(found.group(1)), parse_amount(found.group(2))
+            if amount is not None and balance is not None:
+                lines.append((amount, balance))
+    if fields.opening is None or len(lines) < 2:
+        return _na(code, "no_running_balance", "firm")
+    previous = fields.opening
+    for amount, balance in lines:
+        difference = balance - (previous + amount)
+        if difference != 0:
+            return CheckResult(code, "problem", "firm", amount=balance, difference=difference)
+        previous = balance
+    return CheckResult(code, "passed", "firm")
+
+
+def closing_consistent(fields: ExtractedFields) -> CheckResult:
+    """Every closing (ending, new) balance the statement states is the same, on every page."""
+    code = "closing_balance_differs"
+    stated = [
+        value
+        for page in _pages(fields)
+        for match in _CLOSING.finditer(page)
+        if (value := parse_amount(match.group(1))) is not None
+    ]
+    if len(stated) < 2:
+        return _na(code, "stated_once", "firm")
+    first = stated[0]
+    other = next((v for v in stated[1:] if v != first), None)
+    if other is None:
+        return CheckResult(code, "passed", "firm")
+    return CheckResult(code, "problem", "firm", amount=other, difference=other - first)

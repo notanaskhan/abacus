@@ -49,7 +49,7 @@ def _material(**changes: object) -> ReviewMaterial:
 def test_ac1_the_reviewer_is_declared_to_propose_only() -> None:
     reviewer = spec(REVIEWER)
     assert reviewer.autonomy == "propose"
-    assert reviewer.prompt == "evidence.upload_review@v1"
+    assert reviewer.prompt == "evidence.upload_review@v2"
     assert reviewer.task_scope == frozenset({"evidence.read", "upload_review.run"})
     assert reviewer.limits.max_cost_usd == Decimal("0.02")
     assert reviewer.untrusted_inputs == ("document",) or list(reviewer.untrusted_inputs) == [
@@ -91,6 +91,17 @@ def test_ac3_a_quote_on_its_page_is_verified_and_a_made_up_one_is_not() -> None:
         (False, "quote_not_found"),
         (False, "page_not_found"),
     ]
+
+
+def test_ac3_a_quote_joining_lines_of_one_page_needs_every_line_there() -> None:
+    joined = "First Example Bank\nEnding balance $12,124.50"
+    invented = "First Example Bank\nEnding balance $99.00"
+    found = verify(
+        [DocumentCitation(page=1, quote=joined), DocumentCitation(page=1, quote=invented)],
+        PAGES,
+        SHEETS,
+    )
+    assert [c.verified for c in found] == [True, False]
 
 
 def test_ac3_a_cell_quote_is_checked_against_that_cell() -> None:
