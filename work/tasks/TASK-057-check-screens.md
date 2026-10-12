@@ -4,7 +4,7 @@ title: "Upload processing, part 4: the screens for checks"
 spec: SPEC-029
 acceptance_criteria: [AC-10, AC-11, AC-13]
 risk_zone: amber
-status: awaiting-approval
+status: done
 branch: task-057-check-screens
 worktree:
 created: 2026-10-12
@@ -30,7 +30,7 @@ SPEC-029 AC-10, AC-11, AC-13; the document kind control for AC-5 (API from TASK-
 - Code: `apps/web/src/screens/ClientEngagement.tsx` (`ClientItem`, uploads), `ItemDetail.tsx`, `Board.tsx`, `board/join.ts`, `board/filters.ts`; `evidence/uploads.py` (`upload_checks`), `evidence/routes.py` (`EvidenceVersionOut`, the checks route); `requests/routes.py` (document kind)
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-12: D1–D4 as recommended). Approved by founder: the paths named in D4
 
 ### What the code shows
 - The checks API (TASK-055) returns one upload's latest checks, client-audience only for client roles; it answers an empty list until the workflow has checked the file.
@@ -61,9 +61,13 @@ SPEC-029 AC-10, AC-11, AC-13; the document kind control for AC-5 (API from TASK-
 
 ## Progress log
 - `2026-10-12` — Design written for founder review after TASK-056 merged (#102).
+- `2026-10-12` — Built (D1–D4): `problems` on the evidence-version list (latest run; client roles count client checks only; filtered with `visible()`); `checkMessages.ts`; client results with polling and Replace file; the firm's Checks panel and document kind control; the Board marker and "Problems found" filter. Web 255 tests, backend unit tests and gates pass. Local check: the earlier smoke engagement's versions show 0, 3 and 1 problems as expected. The `problems` count has no database-level test yet (integration, deferred).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| `problem_counts` filters with `visible()` instead of a list exemption | The exemption list is protected and outside this task's approval; the filter is the proper fix anyway | No |
+| Client roles' problem counts include client-audience checks only | A firm-only cross-check must not leak to a client through the count | No |
 
 ## Handoff
+Done. SPEC-029 is complete (TASK-054 to TASK-057). Next per the Act 2 plan: B4 (upload reviewer, on synthetic data) building on the extraction, or SPEC-030 (client hub).

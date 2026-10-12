@@ -662,3 +662,45 @@ async def preview_page(
             )
         )
     ).scalar_one_or_none()
+
+
+async def problem_counts(
+    session: AsyncSession, ctx: AuthContext, version_ids: Sequence[UUID], *, client_only: bool
+) -> dict[UUID, int]:
+    """SPEC-029 (TASK-057 D1): per version, the problem checks of its latest run (the newest
+    checker version and kind), for a caller who has listed those versions."""
+    if not version_ids:
+        return {}
+    rows = (
+        await session.execute(
+            select(
+                UploadCheck.evidence_version_id,
+                UploadCheck.checker_version,
+                UploadCheck.document_kind,
+                UploadCheck.outcome,
+                UploadCheck.audience,
+                UploadCheck.created_at,
+            ).where(
+                UploadCheck.evidence_version_id.in_(version_ids),
+                visible(ctx, "evidence.read", UploadCheck.engagement_id),
+            )
+        )
+    ).all()
+    latest: dict[UUID, tuple[datetime, str, str | None]] = {}
+    for row in rows:
+        seen = latest.get(row.evidence_version_id)
+        if seen is None or row.created_at > seen[0]:
+            latest[row.evidence_version_id] = (
+                row.created_at,
+                row.checker_version,
+                row.document_kind,
+            )
+    counts: dict[UUID, int] = {}
+    for row in rows:
+        _, version, kind = latest[row.evidence_version_id]
+        if (row.checker_version, row.document_kind) != (version, kind) or row.outcome != "problem":
+            continue
+        if client_only and row.audience != "client":
+            continue
+        counts[row.evidence_version_id] = counts.get(row.evidence_version_id, 0) + 1
+    return counts

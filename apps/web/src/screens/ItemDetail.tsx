@@ -29,6 +29,8 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
+import { FirmChecksPanel } from "./CheckResults";
+import { DocumentKindSelect } from "./DocumentKindSelect";
 import { EvidencePreview } from "./EvidencePreview";
 import { confidencePercent } from "../board/join";
 import { isForbidden } from "../shell/mfa";
@@ -173,6 +175,17 @@ export function ItemDetail({
         </Panel>
         {shown !== undefined && (
           <div className="flex flex-col gap-4">
+            {/* SPEC-029 AC-11 (TASK-057): what code found, and what the request expects. */}
+            <Panel
+              title="Checks"
+              action={
+                myRole !== undefined && DECIDERS.has(myRole) ? (
+                  <DocumentKindSelect engagementId={engagementId} item={item} />
+                ) : undefined
+              }
+            >
+              <FirmChecksPanel ids={{ engagementId, itemId, versionId: shown.id }} />
+            </Panel>
             {/* SPEC-029 AC-12 (TASK-056): look without downloading. */}
             <Panel title="Preview">
               <EvidencePreview

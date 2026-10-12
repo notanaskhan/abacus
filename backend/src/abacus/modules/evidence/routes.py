@@ -72,6 +72,8 @@ class EvidenceVersionOut(BaseModel):
     period_start: Annotated[date | None, classified("internal")]
     period_end: Annotated[date | None, classified("internal")]
     created_at: Annotated[datetime, classified("internal")]
+    # SPEC-029 (TASK-057): problem checks on its latest check run (the Board's marker).
+    problems: Annotated[int, classified("internal")] = 0
 
 
 def _out(version: EvidenceVersionSummary) -> EvidenceVersionOut:

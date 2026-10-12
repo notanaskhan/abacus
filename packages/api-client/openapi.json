@@ -2110,6 +2110,12 @@
             "cls": "internal",
             "title": "Period Start"
           },
+          "problems": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Problems",
+            "type": "integer"
+          },
           "pulled_at": {
             "anyOf": [
               {
