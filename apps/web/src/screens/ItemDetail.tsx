@@ -31,6 +31,7 @@ import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
 import { AIReviewPanel } from "./AIReviewPanel";
 import { ClientGuidance } from "./ClientGuidance";
+import { CommentThread } from "./CommentThread";
 import { FirmChecksPanel } from "./CheckResults";
 import { DocumentKindSelect } from "./DocumentKindSelect";
 import { EvidencePreview } from "./EvidencePreview";
@@ -40,6 +41,7 @@ import { DecisionActions } from "./DecisionActions";
 import { statusOf } from "./engagementLabels";
 
 const DECIDERS = new Set(["engagement_partner", "manager", "senior"]);
+const SHARERS = new Set(["engagement_partner", "manager", "senior", "staff"]);
 const DECISION_LABEL: Record<string, string> = {
   accept: "Accepted",
   reject: "Rejected",
@@ -90,6 +92,11 @@ export function ItemDetail({
   const item = items.data?.find((i) => i.id === itemId);
   const team = engagement.data?.team ?? [];
   const myRole = team.find((m) => m.user_id === me.data?.user_id)?.role;
+  const tenant = me.data?.active_tenant_id;
+  const firmRole = me.data?.memberships.find((m) => m.tenant_id === tenant)?.firm_role;
+  // SPEC-032 (TASK-063): who may share with the client, and who may redact.
+  const canShare = myRole !== undefined && SHARERS.has(myRole);
+  const canRedact = firmRole === "firm_admin";
   const assignee = item?.client_assignee_user_id ?? null;
 
   if (versions.isError && isForbidden(versions.error)) {
@@ -141,6 +148,17 @@ export function ItemDetail({
           engagementId={engagementId}
           item={item}
           canEdit={myRole !== undefined && DECIDERS.has(myRole)}
+        />
+      </Panel>
+      {/* SPEC-032 (TASK-063 D1): the request's own thread. */}
+      <Panel title="Comments">
+        <CommentThread
+          ids={{ engagementId, itemId }}
+          me={me.data?.user_id}
+          side="firm"
+          canShare={canShare}
+          canRedact={canRedact}
+          label="Comments on this request"
         />
       </Panel>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -196,6 +214,18 @@ export function ItemDetail({
               }
             >
               <FirmChecksPanel ids={{ engagementId, itemId, versionId: shown.id }} />
+            </Panel>
+            {/* SPEC-032 AC-1 (TASK-063): a thread per version, beside its other panels. */}
+            <Panel title="Comments on this version">
+              <CommentThread
+                key={shown.id}
+                ids={{ engagementId, itemId, versionId: shown.id }}
+                me={me.data?.user_id}
+                side="firm"
+                canShare={canShare}
+                canRedact={canRedact}
+                label="Comments on this version"
+              />
             </Panel>
             {/* SPEC-030 AC-6 (TASK-059): the upload reviewer's flags, firm only. */}
             <Panel title="AI review">

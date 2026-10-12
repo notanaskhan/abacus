@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { type JSX, useEffect } from "react";
 import { errorMessage } from "../api";
+import { ClientBell } from "../shell/ClientBell";
 import { accessToken, chooseTenant, signIn, signOut } from "../auth/session";
 import { yourPartMessage } from "./clientHubMessages";
 
@@ -18,16 +19,19 @@ export function ClientHome(): JSX.Element {
     <div className="min-h-screen bg-ground">
       <header className="flex items-center justify-between border-b border-line bg-surface px-6 py-3">
         <span className="font-display text-lg font-semibold">Abacus</span>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => {
-            signOut();
-            void signIn("/client");
-          }}
-        >
-          Sign out
-        </Button>
+        <span className="flex items-center gap-2">
+          <ClientBell />
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              signOut();
+              void signIn("/client");
+            }}
+          >
+            Sign out
+          </Button>
+        </span>
       </header>
       <main className="mx-auto flex max-w-3xl flex-col gap-4 p-6">
         {!signedIn || me.isPending ? (

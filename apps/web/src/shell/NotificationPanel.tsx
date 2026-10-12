@@ -22,7 +22,13 @@ export function useUnreadCount(): number {
   return page.data?.unread_count ?? 0;
 }
 
-export function NotificationPanel({ onClose }: { onClose: () => void }): JSX.Element {
+export function NotificationPanel({
+  onClose,
+  portal = "firm",
+}: {
+  onClose: () => void;
+  portal?: "firm" | "client";
+}): JSX.Element {
   const queryClient = useQueryClient();
   const page = useQuery(listNotificationsOptions({ query: { limit: 50 } }));
   const refresh = (): void => {
@@ -63,7 +69,7 @@ export function NotificationPanel({ onClose }: { onClose: () => void }): JSX.Ele
       ) : (
         <ul className="flex flex-col divide-y divide-line">
           {page.data.items.map((n) => {
-            const href = notificationHref(n);
+            const href = notificationHref(n, portal);
             const text = notificationText(n.kind);
             return (
               <li key={n.id} className="flex items-start gap-3 py-3">
@@ -76,7 +82,8 @@ export function NotificationPanel({ onClose }: { onClose: () => void }): JSX.Ele
                     <span className={n.read ? "text-muted" : "font-semibold"}>{text}</span>
                   ) : (
                     <Link
-                      to={href}
+                      to={href.to}
+                      {...(href.hash !== undefined ? { hash: href.hash } : {})}
                       onClick={onClose}
                       className={
                         n.read ? "text-muted hover:underline" : "font-semibold hover:underline"

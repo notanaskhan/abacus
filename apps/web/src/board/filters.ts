@@ -6,7 +6,7 @@ export interface BoardFilters {
   status?: string;
   area?: string;
   tier?: string; // A to E, or "none" for unclassified
-  source?: string; // retrieved | imported | uploaded | none | problems | ai_flags (SPEC-029/030)
+  source?: string; // retrieved | imported | uploaded | none | problems | ai_flags (SPEC-029/030) | unread_comments (SPEC-032)
   assignee?: string; // "assigned" | "unassigned"
   q?: string;
 }
@@ -49,7 +49,9 @@ export function applyFilters(
           ? (row.evidence?.problems ?? 0) > 0
           : f.source === "ai_flags"
             ? (aiFlags.get(row.evidence?.id ?? "") ?? 0) > 0
-            : source(row) === f.source)) &&
+            : f.source === "unread_comments"
+              ? row.item.unread_comments === true
+              : source(row) === f.source)) &&
       (f.assignee === undefined || assigned(row.item) === f.assignee) &&
       (text === undefined || row.item.description.toLocaleLowerCase().includes(text)),
   );

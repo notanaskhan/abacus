@@ -16,14 +16,36 @@ const TEXT: Record<string, string> = {
   "independence.requested": "Confirm your independence for an engagement.",
   "reminders.drafted": "Overdue reminders are waiting for you to send.",
   "agent.digest": "Items are overdue on an engagement: see its activity.",
+  "comment.mentioned": "You were mentioned in a comment.", // SPEC-032 (TASK-063)
 };
 
 export function notificationText(kind: string): string {
   return TEXT[kind] ?? "You have a new notification.";
 }
 
-/** Where a notification leads, when it concerns something with its own page. */
-export function notificationHref(n: NotificationOut): string | null {
+export type Destination = { to: string; hash?: string };
+
+/** Where a notification leads, when it concerns something with its own page. Client users go
+ * to their engagement page, at the request (SPEC-032 Q2). */
+export function notificationHref(
+  n: NotificationOut,
+  portal: "firm" | "client" = "firm",
+): Destination | null {
+  if (n.engagement_id === null) return null;
+  if (portal === "client") {
+    return {
+      to: `/client/engagements/${n.engagement_id}`,
+      ...(n.subject_type === "request_item" ? { hash: `request-${n.subject_id}` } : {}),
+    };
+  }
+  if (n.kind === "comment.mentioned") {
+    return { to: `/engagements/${n.engagement_id}/items/${n.subject_id}` };
+  }
+  const to = firmHref(n);
+  return to === null ? null : { to };
+}
+
+function firmHref(n: NotificationOut): string | null {
   if (n.engagement_id === null) return null;
   if (n.kind === "review.assigned") return `/engagements/${n.engagement_id}/review`;
   if (n.kind === "evidence.uploaded") return `/engagements/${n.engagement_id}/requests`;
