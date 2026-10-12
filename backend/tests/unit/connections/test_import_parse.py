@@ -10,7 +10,10 @@ from decimal import Decimal
 import pytest
 from openpyxl import Workbook
 
+from abacus.modules.connections.connector import Period
+from abacus.modules.connections.import_formats import FORMATS
 from abacus.modules.connections.import_parse import ParsedImport, parse_export, parse_isolated
+from abacus.modules.connections.ledger_import import check_export
 from abacus.modules.ledger.api import NormaliseError, validate
 from abacus_tools.synthetic.ledger_exports import qbo_trial_balance_csv, xero_trial_balance_xlsx
 from abacus_tools.synthetic.model import TrialBalance, TrialBalanceLine
@@ -132,3 +135,31 @@ def test_d2_the_isolated_parse_returns_the_same_result() -> None:
     assert parse_isolated(content, "qbo_tb_csv", START, END) == parse_export(
         content, "qbo_tb_csv", START, END
     )
+
+
+def test_ac6_an_unbalanced_export_reports_the_difference_computed_by_code() -> None:
+    """TASK-053 D1: "Debits and credits differ by …" shows a value code computed."""
+    lopsided = TrialBalance(
+        END, (*TB.lines[:3], TrialBalanceLine("4000", "Sales", Decimal(0), Decimal("12750.00")))
+    )
+    fmt = FORMATS["qbo_tb_csv"]
+    checked = check_export(fmt, qbo_trial_balance_csv(lopsided), Period(START, END))
+    debits = sum((line.debit for line in lopsided.lines[:3]), Decimal(0))
+    credits = sum((line.credit for line in lopsided.lines), Decimal(0))
+    assert checked.failure == "unbalanced"
+    assert checked.difference == debits - credits
+    assert checked.found_period_end is None
+
+
+def test_ac6_a_different_period_reports_the_period_the_export_covers() -> None:
+    """TASK-053 D1: "This export covers … we need …" shows the period end found."""
+    content = qbo_trial_balance_csv(TB, as_of=date(2026, 11, 30))
+    checked = check_export(FORMATS["qbo_tb_csv"], content, Period(START, END))
+    assert checked.failure == "period_mismatch"
+    assert checked.found_period_end == date(2026, 11, 30)
+    assert checked.difference is None
+
+
+def test_ac6_a_good_export_reports_no_failure_values() -> None:
+    checked = check_export(FORMATS["qbo_tb_csv"], qbo_trial_balance_csv(TB), Period(START, END))
+    assert (checked.failure, checked.difference, checked.found_period_end) == (None, None, None)

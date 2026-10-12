@@ -15,6 +15,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Final
 from uuid import UUID
 
@@ -95,6 +96,8 @@ class ImportView:
     totals_from_lines: bool
     on_behalf: bool
     uploaded_at: datetime
+    difference: Decimal | None = None
+    found_period_end: date | None = None
     duplicate: bool = False
 
 
@@ -111,6 +114,8 @@ def _view(row: LedgerImport, *, duplicate: bool = False) -> ImportView:
         row.totals_from_lines,
         row.on_behalf,
         row.created_at,
+        row.difference,
+        row.found_period_end,
         duplicate,
     )
 
@@ -133,14 +138,29 @@ async def latest(ctx: AuthContext, engagement_id: UUID) -> ImportView | None:
     return _view(found) if found is not None else None
 
 
-def _check(fmt: Format, content: bytes, period: Period) -> tuple[str | None, bool]:
-    """(failure code or None, control totals from the lines?), parsed in isolation."""
+@dataclass(frozen=True)
+class Checked:
+    failure: str | None
+    totals_from_lines: bool = False
+    difference: Decimal | None = None  # debits minus credits, when unbalanced
+    found_period_end: date | None = None  # what the export covers, when it's another period
+
+
+def check_export(fmt: Format, content: bytes, period: Period) -> Checked:
+    """Parsed in isolation, then validated. Code computes the values the messages show
+    (ADR-050; TASK-053 D1)."""
     try:
         parsed = parse_isolated(content, fmt.id, period.start, period.end)
     except NormaliseError as exc:
-        return exc.code, False
-    failure = validate(parsed.trial_balance, period_start=period.start, period_end=period.end)
-    return failure, parsed.totals_from_lines
+        return Checked(exc.code)
+    tb = parsed.trial_balance
+    failure = validate(tb, period_start=period.start, period_end=period.end)
+    return Checked(
+        failure,
+        parsed.totals_from_lines,
+        tb.total_debit - tb.total_credit if failure == "unbalanced" else None,
+        tb.period_end if failure == "period_mismatch" else None,
+    )
 
 
 async def check_receive(ctx: AuthContext, engagement_id: UUID) -> None:
@@ -185,7 +205,8 @@ async def receive_export(
         existing = await import_by_fingerprint(session, ref.client_entity_id, stored.fingerprint)
     if existing is not None:
         return _view(existing, duplicate=True)  # AC-8: the same file again
-    failure, from_lines = await asyncio.to_thread(_check, fmt, content, period)
+    checked = await asyncio.to_thread(check_export, fmt, content, period)
+    failure = checked.failure
     role = await engagement_role_of(ctx.tenant, engagement_id, ctx.user_id)
     async with uow(ctx.tenant) as tx:
         row = await insert_import(
@@ -201,7 +222,9 @@ async def receive_export(
             fingerprint=stored.fingerprint,
             size_bytes=stored.size,
             failure_code=failure,
-            totals_from_lines=from_lines,
+            difference=checked.difference,
+            found_period_end=checked.found_period_end,
+            totals_from_lines=checked.totals_from_lines,
             uploaded_by=ctx.user_id,
             on_behalf=role not in _CLIENT_ROLES,  # SPEC-028 Q4: the firm uploaded it
         )

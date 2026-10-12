@@ -4,7 +4,7 @@ title: "Ledger file import, part 2: connect or export, guided steps and upload (
 spec: SPEC-028
 acceptance_criteria: [AC-1, AC-2, AC-6, AC-9]
 risk_zone: amber
-status: awaiting-approval
+status: done
 branch: task-053-ledger-import-web
 worktree:
 created: 2026-10-11
@@ -30,7 +30,7 @@ SPEC-028 AC-1, AC-2, AC-6 (the messages), AC-9; goals 5 (labels), 7, 8 and 9.
 - Code: `apps/web/src/screens/ConnectionPanel.tsx`, `ClientEngagement.tsx`, `Overview.tsx`, `ItemDetail.tsx` (method labels), `Board.tsx` (method filter); `connections/routes.py` (import routes); `connections/import_parse.py`, `ledger/normalise.py` (failure codes)
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-12: D1–D4 as recommended). Approved by founder: the paths named under *Questions for the human* D4
 
 ### What the code shows
 - `ConnectionPanel` serves the client admin (connect) and the firm (check, revoke, log). With no connection it shows only "Connect".
@@ -67,9 +67,14 @@ SPEC-028 AC-1, AC-2, AC-6 (the messages), AC-9; goals 5 (labels), 7, 8 and 9.
 
 ## Progress log
 - `2026-10-11` — Design written for founder review after TASK-052 merged (#95).
+- `2026-10-12` — Built (D1–D4 as recommended): migration 0042 (`difference`, `found_period_end`), `check_export`, `importMessages.ts`, `LedgerExport.tsx`, connect or export in `ConnectionPanel`, the firm's read-only summary with "Upload an export for the client", "Imported" in item detail and the Board filter, "Provided by your export of …" on the client's trial balance item. Web 233 tests and backend unit tests pass; gates pass.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| The period line reads "as of {date}", not "covers {start}–{end}" | Exports name only the period end | No |
+| `mockApi` keeps a non-JSON request body as text | The upload test checks the raw file is sent | No |
+| "Screen now" stays for retrieved evidence only | Unchanged scope; imported evidence is screened by the agent as before | No |
 
 ## Handoff
+Done. Next under SPEC-028: NetSuite, Sage Intacct and QuickBooks Desktop formats (Q1); a corrected re-upload after an item is received (SPEC-029).

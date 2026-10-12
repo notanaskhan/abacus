@@ -2416,6 +2416,19 @@
       },
       "ImportOut": {
         "properties": {
+          "difference": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Difference"
+          },
           "duplicate": {
             "cls": "internal",
             "title": "Duplicate",
@@ -2437,6 +2450,19 @@
             "cls": "internal",
             "title": "Format",
             "type": "string"
+          },
+          "found_period_end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Found Period End"
           },
           "id": {
             "cls": "internal",
@@ -2498,6 +2524,8 @@
           "totals_from_lines",
           "on_behalf",
           "uploaded_at",
+          "difference",
+          "found_period_end",
           "duplicate"
         ],
         "title": "ImportOut",

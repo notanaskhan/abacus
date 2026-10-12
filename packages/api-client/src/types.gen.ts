@@ -1233,6 +1233,10 @@ export type ImportCountsOut = {
  */
 export type ImportOut = {
     /**
+     * Difference
+     */
+    difference: string | null;
+    /**
      * Duplicate
      */
     duplicate: boolean;
@@ -1244,6 +1248,10 @@ export type ImportOut = {
      * Format
      */
     format: string;
+    /**
+     * Found Period End
+     */
+    found_period_end: string | null;
     /**
      * Id
      */

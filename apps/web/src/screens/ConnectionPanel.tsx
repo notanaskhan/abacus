@@ -1,7 +1,10 @@
+import type { ImportOut } from "@abacus/api-client";
 import {
   checkMutation,
   connectionOptions,
   connectionQueryKey,
+  latestLedgerImportOptions,
+  ledgerImportFormatsOptions,
   logOptions,
   providersOptions,
   revokeMutation,
@@ -12,6 +15,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
 import { ConfirmItsYou, isForbidden } from "../shell/mfa";
+import { longDate } from "./importMessages";
+import { importOutcome, LedgerExport } from "./LedgerExport";
 
 const RUN_STATUS: Record<string, string> = {
   running: "Running",
@@ -25,7 +30,9 @@ function when(value: string | null | undefined): string {
 }
 
 /** SPEC-020 AC-2 to AC-6: the engagement's ledger connection, for the client admin (who may
- * connect) and for the firm's partner and managers (who may check and revoke). */
+ * connect) and for the firm's partner and managers (who may check and revoke). SPEC-028 AC-1
+ * (TASK-053): connecting is never required; an exported trial balance can be uploaded instead,
+ * by the client admin or by the firm for the client (D3). */
 export function ConnectionPanel({
   engagementId,
   firmName,
@@ -42,6 +49,11 @@ export function ConnectionPanel({
   const [confirmRevoke, setConfirmRevoke] = useState(false);
   const [mfa, setMfa] = useState(false);
   const [showLog, setShowLog] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  // Export is offered when the firm has it on and this person may upload (403/409 hide it).
+  const formats = useQuery({ ...ledgerImportFormatsOptions(path), retry: false });
+  const canExport = formats.isSuccess && formats.data.length > 0;
+  const latest = useQuery({ ...latestLedgerImportOptions(path), retry: false });
   const refresh = (): void => {
     void queryClient.invalidateQueries({ queryKey: connectionQueryKey(path) });
   };
@@ -80,15 +92,108 @@ export function ConnectionPanel({
 
   return (
     <Panel title="Accounting system">
-      {live === null ? (
+      {live?.provider === "import" ? (
         <>
-          <p className="text-sm text-muted">
-            Not connected.{" "}
-            {canConnect
-              ? "Connect your accounting system so your auditor can retrieve records directly."
-              : "The client's administrator can connect their accounting system."}
+          {latest.data != null && <LatestImport latest={latest.data} />}
+          {exporting ? (
+            <LedgerExport
+              engagementId={engagementId}
+              onBehalf={!canConnect}
+              onDone={() => {
+                setExporting(false);
+              }}
+            />
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {canExport && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setExporting(true);
+                  }}
+                >
+                  Upload a newer export
+                </Button>
+              )}
+              {canConnect && <Providers engagementId={engagementId} onPick={setConsent} />}
+              <Button
+                size="sm"
+                variant="outline"
+                aria-expanded={showLog}
+                onClick={() => {
+                  setShowLog((s) => !s);
+                }}
+              >
+                {showLog ? "Hide access log" : "Access log"}
+              </Button>
+            </div>
+          )}
+          <p className="text-xs text-muted">
+            An export isn't updated automatically. For a later date, upload a new export.
           </p>
-          {canConnect && <Providers engagementId={engagementId} onPick={setConsent} />}
+        </>
+      ) : live === null ? (
+        <>
+          {latest.data != null && <LatestImport latest={latest.data} />}
+          {exporting ? (
+            <LedgerExport
+              engagementId={engagementId}
+              onBehalf={!canConnect}
+              onDone={() => {
+                setExporting(false);
+              }}
+            />
+          ) : canConnect ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="flex flex-col gap-2 rounded-md border border-line p-3">
+                <h3 className="font-semibold">Connect (fastest)</h3>
+                <p className="text-sm text-muted">
+                  Connect your accounting system so your auditor can retrieve records directly.
+                </p>
+                <Providers engagementId={engagementId} onPick={setConsent} />
+              </div>
+              {canExport && (
+                <div className="flex flex-col gap-2 rounded-md border border-line p-3">
+                  <h3 className="font-semibold">Export instead</h3>
+                  <p className="text-sm text-muted">
+                    Export your trial balance from your accounting system and upload the file. No
+                    connection needed.
+                  </p>
+                  <div>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setExporting(true);
+                      }}
+                    >
+                      Export instead
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-muted">
+                Not connected. The client&apos;s administrator can connect their accounting system
+                or upload an export.
+              </p>
+              {canExport && (
+                <div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setExporting(true);
+                    }}
+                  >
+                    Upload an export for the client
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
         </>
       ) : (
         <>
@@ -309,5 +414,31 @@ function AccessLog({ engagementId }: { engagementId: string }): JSX.Element {
         </Button>
       </div>
     </div>
+  );
+}
+
+/** SPEC-028 §4.7, AC-6: the latest export, with the same plain-words reason the client saw. */
+function LatestImport({ latest }: { latest: ImportOut }): JSX.Element {
+  const outcome = importOutcome({ ...latest, duplicate: false }, latest.system);
+  return (
+    <dl className="grid grid-cols-[10rem_1fr] gap-x-3 gap-y-1 text-sm">
+      <dt className="text-muted">Latest export</dt>
+      <dd>
+        {latest.system} · year ending {longDate(latest.period_end)}
+        {latest.on_behalf && " · uploaded by the audit team"}
+      </dd>
+      <dt className="text-muted">Uploaded</dt>
+      <dd className="tabular-nums">{when(latest.uploaded_at)}</dd>
+      <dt className="text-muted">Result</dt>
+      <dd>
+        {latest.status === "received" ? (
+          <StatusPill tone="success">Received</StatusPill>
+        ) : (
+          <span role="alert" className="text-danger">
+            {outcome.text}
+          </span>
+        )}
+      </dd>
+    </dl>
   );
 }

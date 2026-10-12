@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, date, datetime
+from decimal import Decimal
 from uuid import UUID, uuid4
 
 from sqlalchemy import delete, func, insert, select, text, update
@@ -359,6 +360,8 @@ async def insert_import(
     fingerprint: str,
     size_bytes: int,
     failure_code: str | None,
+    difference: Decimal | None,
+    found_period_end: date | None,
     totals_from_lines: bool,
     uploaded_by: UUID,
     on_behalf: bool,
@@ -382,6 +385,8 @@ async def insert_import(
                 scan_status="clean",
                 status="failed" if failure_code else "received",
                 failure_code=failure_code,
+                difference=difference,
+                found_period_end=found_period_end,
                 totals_from_lines=totals_from_lines,
                 uploaded_by=uploaded_by,
                 on_behalf=on_behalf,

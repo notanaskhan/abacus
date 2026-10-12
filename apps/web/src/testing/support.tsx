@@ -35,6 +35,15 @@ export function json(body: unknown, status = 200): Response {
 }
 
 /** Routes are keyed "METHOD /path" (path without query). Unknown routes answer 404. */
+/** JSON bodies are parsed; a raw file upload (SPEC-028) is kept as text. */
+function parsed(text: string): unknown {
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return text;
+  }
+}
+
 export function mockApi(routes: Record<string, Handler>): { calls: Call[] } {
   const calls: Call[] = [];
   const fetchMock = async (input: Request): Promise<Response> => {
@@ -43,7 +52,7 @@ export function mockApi(routes: Record<string, Handler>): { calls: Call[] } {
       method: input.method,
       path: new URL(input.url).pathname,
       headers: input.headers,
-      body: text === "" ? null : (JSON.parse(text) as unknown),
+      body: text === "" ? null : parsed(text),
     };
     calls.push(call);
     const handler = routes[`${call.method} ${call.path}`];

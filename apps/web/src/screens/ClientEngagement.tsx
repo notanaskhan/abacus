@@ -4,6 +4,7 @@ import {
   assignToClientMutation,
   clientContactsOptions,
   getEngagementOptions,
+  latestLedgerImportOptions,
   listRequestItemsOptions,
   listRequestItemsQueryKey,
   listUploadsOptions,
@@ -57,6 +58,14 @@ export function ClientEngagement({ engagementId }: { engagementId: string }): JS
     (c) => c.kind === "member" && c.role === "client_contributor",
   );
   const isAdmin = contacts.isSuccess;
+  // SPEC-028 goal 9: a trial balance met by an export says so (client admins may read it).
+  const latestImport = useQuery({
+    ...latestLedgerImportOptions(path),
+    retry: false,
+    enabled: signedIn && isAdmin,
+  });
+  const importedOn =
+    latestImport.data?.status === "received" ? latestImport.data.uploaded_at : null;
   const me = useQuery({ ...meOptions(), enabled: signedIn });
   const active = me.data?.active_tenant_id;
   const firmName =
@@ -110,6 +119,7 @@ export function ClientEngagement({ engagementId }: { engagementId: string }): JS
                     key={item.id}
                     item={item}
                     contributors={isAdmin ? contributors : null}
+                    importedOn={importedOn}
                   />
                 ))}
               </ul>
@@ -126,9 +136,11 @@ type FileState = { name: string; state: "uploading" | "done" | "failed"; message
 function ClientItem({
   item,
   contributors,
+  importedOn,
 }: {
   item: RequestItemOut;
   contributors: ClientContactOut[] | null;
+  importedOn: string | null;
 }): JSX.Element {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -179,6 +191,11 @@ function ClientItem({
         <p className="font-medium whitespace-pre-line">{item.description}</p>
         <StatusPill tone={status.tone}>{status.label}</StatusPill>
       </div>
+      {importedOn !== null && item.dataset === "trial_balance" && item.status !== "open" && (
+        <p className="text-sm text-muted">
+          Provided by your export of {new Date(importedOn).toLocaleDateString("en-US")}
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-3">
         {takesFiles && (
           <>

@@ -6,7 +6,7 @@ export interface BoardFilters {
   status?: string;
   area?: string;
   tier?: string; // A to E, or "none" for unclassified
-  source?: string; // retrieved | uploaded | none
+  source?: string; // retrieved | imported | uploaded | none
   assignee?: string; // "assigned" | "unassigned"
   q?: string;
 }

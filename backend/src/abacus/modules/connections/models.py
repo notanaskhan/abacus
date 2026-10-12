@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import ARRAY, FetchedValue, LargeBinary, String
+from sqlalchemy import ARRAY, FetchedValue, LargeBinary, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from abacus.kernel.db import Base
@@ -107,6 +108,9 @@ class LedgerImport(Base):
     scan_status: Mapped[str] = mapped_column(server_default=FetchedValue())
     status: Mapped[str] = mapped_column(server_default=FetchedValue())
     failure_code: Mapped[str | None]
+    # TASK-053 D1: what a failed check found, for the fixed message templates.
+    difference: Mapped[Decimal | None] = mapped_column(Numeric(20, 2))
+    found_period_end: Mapped[date | None]
     totals_from_lines: Mapped[bool] = mapped_column(server_default=FetchedValue())
     uploaded_by: Mapped[UUID]
     on_behalf: Mapped[bool] = mapped_column(server_default=FetchedValue())
