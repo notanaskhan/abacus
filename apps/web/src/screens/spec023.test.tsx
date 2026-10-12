@@ -94,6 +94,8 @@ describe("ac3 ac4 matching", () => {
       expect(calls.find((c) => c.path.endsWith("/assign"))?.body).toEqual({
         request_item_id: "i1",
         followed_suggestion: true,
+        suggestion_source: "file_name", // SPEC-033 AC-6 (TASK-064)
+        suggestion_rank: 1,
       });
     });
   });

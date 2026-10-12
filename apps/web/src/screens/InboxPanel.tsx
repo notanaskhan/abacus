@@ -11,6 +11,7 @@ import { Button, Label, Panel, Skeleton, StatusPill } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
+import { reasonLabel } from "./matchingMessages";
 
 const ACCEPT = ".pdf,.xlsx,.xls,.docx,.doc,.csv,.png,.jpg,.jpeg";
 const MESSAGES: Record<string, string> = {
@@ -157,8 +158,20 @@ function InboxRow({
   const ids = { engagement_id: engagementId, file_id: file.id };
   const failed = assign.error ?? discard.error;
   const busy = assign.isPending || discard.isPending;
-  const to = (itemId: string, followed: boolean): void => {
-    assign.mutate({ path: ids, body: { request_item_id: itemId, followed_suggestion: followed } });
+  const to = (itemId: string): void => {
+    // SPEC-033 AC-6: which suggestion was followed, and its rank.
+    const rank = file.suggestions.findIndex((s) => s.request_item_id === itemId);
+    const followed = file.suggestions[rank];
+    assign.mutate({
+      path: ids,
+      body: {
+        request_item_id: itemId,
+        followed_suggestion: followed !== undefined,
+        ...(followed !== undefined
+          ? { suggestion_source: followed.source ?? "file_name", suggestion_rank: rank + 1 }
+          : {}),
+      },
+    });
   };
   return (
     <li className="flex flex-col gap-2 py-3 text-sm">
@@ -172,22 +185,37 @@ function InboxRow({
       </div>
       {file.note !== null && <p className="text-xs text-muted">{file.note}</p>}
       {file.suggestions.length > 0 ? (
-        <div className="flex flex-wrap gap-2" aria-label={`Suggestions for ${file.file_name}`}>
+        <ul className="flex flex-col gap-2" aria-label={`Suggestions for ${file.file_name}`}>
           {file.suggestions.map((s) => (
-            <Button
-              key={s.request_item_id}
-              size="sm"
-              variant="outline"
-              disabled={busy}
-              title={`Matched: ${s.matched.join(", ") || "a known document type"}`}
-              onClick={() => {
-                to(s.request_item_id, true);
-              }}
-            >
-              {`${describe.get(s.request_item_id) ?? "Request"} · ${String(s.score)}%`}
-            </Button>
+            <li key={s.request_item_id} className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={busy}
+                title={`Matched: ${s.matched.join(", ") || "a known document type"}`}
+                onClick={() => {
+                  to(s.request_item_id);
+                }}
+              >
+                {`${describe.get(s.request_item_id) ?? "Request"} · ${String(s.score)}%`}
+              </Button>
+              {/* SPEC-033 (TASK-064): why, in fixed words. */}
+              {s.source === "content" && (
+                <span className="text-xs text-info">From the file&apos;s contents</span>
+              )}
+              {(s.reasons ?? [])
+                .filter((r) => r.code !== "file_name" || s.source === "content")
+                .map((r) => (
+                  <span
+                    key={`${r.code}-${r.value ?? ""}`}
+                    className="rounded-full bg-sunken px-2 py-0.5 text-xs text-muted"
+                  >
+                    {reasonLabel(r)}
+                  </span>
+                ))}
+            </li>
           ))}
-        </div>
+        </ul>
       ) : (
         <p className="text-xs text-muted">No suggestion: choose the request below.</p>
       )}
@@ -211,10 +239,7 @@ function InboxRow({
           size="sm"
           disabled={chosen === "" || busy}
           onClick={() => {
-            to(
-              chosen,
-              file.suggestions.some((s) => s.request_item_id === chosen),
-            );
+            to(chosen);
           }}
         >
           Match

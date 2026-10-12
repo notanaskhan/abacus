@@ -3113,6 +3113,36 @@
             "format": "uuid",
             "title": "Request Item Id",
             "type": "string"
+          },
+          "suggestion_rank": {
+            "anyOf": [
+              {
+                "maximum": 3.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Suggestion Rank"
+          },
+          "suggestion_source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "file_name",
+                  "content"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Suggestion Source"
           }
         },
         "required": [
@@ -4633,6 +4663,39 @@
           "requires_note"
         ],
         "title": "ReasonCodeOut",
+        "type": "object"
+      },
+      "ReasonOut": {
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "enum": [
+              "kind",
+              "date",
+              "account",
+              "holder",
+              "file_name"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Value"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "ReasonOut",
         "type": "object"
       },
       "RedactIn": {
@@ -6298,6 +6361,15 @@
             "title": "Matched",
             "type": "array"
           },
+          "reasons": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ReasonOut"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
           "request_item_id": {
             "cls": "internal",
             "format": "uuid",
@@ -6308,6 +6380,16 @@
             "cls": "internal",
             "title": "Score",
             "type": "integer"
+          },
+          "source": {
+            "cls": "internal",
+            "default": "file_name",
+            "enum": [
+              "content",
+              "file_name"
+            ],
+            "title": "Source",
+            "type": "string"
           }
         },
         "required": [

@@ -1529,6 +1529,14 @@ export type InboxAssignIn = {
      * Request Item Id
      */
     request_item_id: string;
+    /**
+     * Suggestion Rank
+     */
+    suggestion_rank?: number | null;
+    /**
+     * Suggestion Source
+     */
+    suggestion_source?: 'file_name' | 'content' | null;
 };
 
 /**
@@ -2318,6 +2326,20 @@ export type ReasonCodeOut = {
 };
 
 /**
+ * ReasonOut
+ */
+export type ReasonOut = {
+    /**
+     * Code
+     */
+    code: 'kind' | 'date' | 'account' | 'holder' | 'file_name';
+    /**
+     * Value
+     */
+    value?: string | null;
+};
+
+/**
  * RedactIn
  */
 export type RedactIn = {
@@ -3096,6 +3118,10 @@ export type SuggestionOut = {
      */
     matched: Array<string>;
     /**
+     * Reasons
+     */
+    reasons?: Array<ReasonOut>;
+    /**
      * Request Item Id
      */
     request_item_id: string;
@@ -3103,6 +3129,10 @@ export type SuggestionOut = {
      * Score
      */
     score: number;
+    /**
+     * Source
+     */
+    source?: 'content' | 'file_name';
 };
 
 /**

@@ -19,15 +19,25 @@ from sqlalchemy.exc import IntegrityError
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.engagements.api import gate_client_data, get_ref
+from abacus.modules.engagements.api import check_facts, gate_client_data, get_ref
 from abacus.modules.evidence import storage
+from abacus.modules.evidence.client_view import covered_digits, statement_gap, year_end_cash
 from abacus.modules.evidence.events import InboxFileAdded
-from abacus.modules.evidence.matching import Suggestion, suggest
+from abacus.modules.evidence.extraction import EXTRACTOR_VERSION
+from abacus.modules.evidence.matching import (
+    ContentFacts,
+    EngagementFacts,
+    Suggestion,
+    facts_of,
+    suggest,
+)
 from abacus.modules.evidence.models import InboxFile
 from abacus.modules.evidence.repository import (
     decide_inbox_file,
+    extraction_for,
     get_inbox_file,
     insert_inbox_file,
+    item_versions_with_decisions,
     lock_inbox_file,
     waiting_inbox,
     waiting_with_fingerprint,
@@ -51,9 +61,10 @@ from abacus.modules.identity.api import (
     engagement_role_of,
     names_of,
 )
-from abacus.modules.requests.api import RequestItemView, request_items_for
+from abacus.modules.requests.api import RequestItemView, read_item_versions, request_items_for
 
 _STAFF: Final = frozenset({"engagement_partner", "manager", "senior", "staff", "reviewer"})
+SUGGESTION_SOURCES: Final = {"file_name": 1, "content": 2, "matcher": 3}
 
 
 class InboxFileGone(DomainConflict):
@@ -153,11 +164,43 @@ async def add_to_inbox(
     return entries[0]
 
 
+async def _context(
+    ctx: AuthContext, engagement_id: UUID, items: Sequence[RequestItemView]
+) -> EngagementFacts | None:
+    """SPEC-033 (TASK-064): the year end, the client entity, and per bank statement item the
+    account digits still needed (SPEC-031's gap), computed once per listing."""
+    facts = await check_facts(ctx.tenant, engagement_id)
+    if facts is None:
+        return None
+    needed: dict[UUID, frozenset[str]] = {}
+    statements = [i for i in items if i.document_kind == "bank_statement"]
+    cash = await year_end_cash(ctx, engagement_id) if statements else None
+    if cash:
+        async with tenant_session(ctx.tenant) as session:
+            for item in statements:
+                rows = await item_versions_with_decisions(
+                    session, item.id, await read_item_versions(ctx.tenant, item.id)
+                )
+                gap = statement_gap(cash, await covered_digits(session, rows))
+                if gap is not None:
+                    needed[item.id] = frozenset(d for d in gap.needed if d.isdigit())
+    return EngagementFacts(facts.fiscal_period_end, facts.client_entity_name, needed)
+
+
 async def _entries(
     ctx: AuthContext, engagement_id: UUID, rows: list[InboxFile]
 ) -> list[InboxEntry]:
     items: Sequence[RequestItemView] = await request_items_for(ctx, engagement_id) if rows else ()
     names = await names_of(sorted({r.uploaded_by for r in rows}, key=str))
+    context = await _context(ctx, engagement_id, items) if rows else None
+    content: dict[UUID, ContentFacts | None] = {}
+    async with tenant_session(ctx.tenant) as session:
+        for r in rows:
+            content[r.id] = facts_of(
+                await extraction_for(
+                    session, inbox_file_id=r.id, extractor_version=EXTRACTOR_VERSION
+                )
+            )
     return [
         InboxEntry(
             r.id,
@@ -169,7 +212,7 @@ async def _entries(
             r.uploaded_by_staff,
             r.note,
             r.created_at,
-            tuple(suggest(r.file_name, items)),
+            tuple(suggest(r.file_name, items, content.get(r.id), context)),
         )
         for r in rows
     ]
@@ -190,6 +233,8 @@ async def assign(
     *,
     request_item_id: UUID,
     followed_suggestion: bool,
+    suggestion_source: str | None = None,
+    suggestion_rank: int | None = None,
 ) -> UUID:
     """AC-4: the file becomes evidence on the item (as a per-item upload), once."""
     role = await _role(ctx, engagement_id)
@@ -229,6 +274,9 @@ async def assign(
                 request_item_id=request_item_id,
                 evidence_version_id=version_id,
                 followed_suggestion=int(followed_suggestion),
+                # SPEC-033 AC-6: which suggestion was followed (0: none), and its rank (0: none).
+                suggestion_source=SUGGESTION_SOURCES.get(suggestion_source or "", 0),
+                suggestion_rank=suggestion_rank or 0,
             ),
         )
     return version_id

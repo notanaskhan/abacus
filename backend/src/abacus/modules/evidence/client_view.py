@@ -14,10 +14,13 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from abacus.kernel.db import tenant_session
 from abacus.modules.engagements.api import check_facts, get_ref
 from abacus.modules.evidence.cross_checks import Account, cash_accounts
 from abacus.modules.evidence.extraction import EXTRACTOR_VERSION
+from abacus.modules.evidence.models import EvidenceItem, EvidenceVersion, ReviewDecision
 from abacus.modules.evidence.processing import year_end_accounts
 from abacus.modules.evidence.repository import (
     extraction_for,
@@ -91,6 +94,38 @@ def statement_gap(cash: Sequence[Account], last4s: Sequence[str | None]) -> Gap 
     return Gap(covered, needed)
 
 
+async def covered_digits(
+    session: AsyncSession,
+    rows: Sequence[tuple[EvidenceVersion, EvidenceItem, ReviewDecision | None]],
+) -> list[str | None]:
+    """The last four digits of each uploaded statement on an item that wasn't sent back or
+    rejected (None where none was read), from its versions with their decisions."""
+    found: list[str | None] = []
+    for version, _, decision in rows:
+        if version.method != "uploaded":
+            continue
+        if decision is not None and decision.decision in _NOT_COVERING:
+            continue
+        extraction = await extraction_for(
+            session, evidence_version_id=version.id, extractor_version=EXTRACTOR_VERSION
+        )
+        found.append(extraction.account_last4 if extraction is not None else None)
+    return found
+
+
+async def year_end_cash(ctx: AuthContext, engagement_id: UUID) -> list[Account] | None:
+    """The cash accounts in the engagement's year-end trial balance; None without one."""
+    facts = await check_facts(ctx.tenant, engagement_id)
+    if facts is None:
+        return None
+    accounts = await year_end_accounts(
+        ctx.tenant, engagement_id, facts.fiscal_period_end, facts.methodology_version_id
+    )
+    if accounts is None:
+        return None
+    return cash_accounts(accounts, facts.methodology_version_id is not None)
+
+
 def _user(actor_id: str) -> UUID | None:
     try:
         return UUID(actor_id)
@@ -110,17 +145,9 @@ async def client_view(ctx: AuthContext, engagement_id: UUID, item_id: UUID) -> C
         labels = dict(
             (code, label) for code, label, _, _ in await reason_codes(session, "send_back")
         )
-        last4s: list[str | None] = []
-        if item.document_kind == "bank_statement":
-            for version, _, decision in rows:
-                if version.method != "uploaded":
-                    continue
-                if decision is not None and decision.decision in _NOT_COVERING:
-                    continue
-                found = await extraction_for(
-                    session, evidence_version_id=version.id, extractor_version=EXTRACTOR_VERSION
-                )
-                last4s.append(found.account_last4 if found is not None else None)
+        last4s = (
+            await covered_digits(session, rows) if item.document_kind == "bank_statement" else []
+        )
 
     provided = None
     if rows and rows[0][0].method in _PROVIDED:
@@ -129,17 +156,8 @@ async def client_view(ctx: AuthContext, engagement_id: UUID, item_id: UUID) -> C
 
     gap = None
     if item.document_kind == "bank_statement":
-        facts = await check_facts(ctx.tenant, engagement_id)
-        accounts = (
-            None
-            if facts is None
-            else await year_end_accounts(
-                ctx.tenant, engagement_id, facts.fiscal_period_end, facts.methodology_version_id
-            )
-        )
-        if facts is not None and accounts is not None:
-            cash = cash_accounts(accounts, facts.methodology_version_id is not None)
-            gap = statement_gap(cash, last4s)
+        cash = await year_end_cash(ctx, engagement_id)
+        gap = statement_gap(cash, last4s) if cash is not None else None
 
     uploaders = {
         u
