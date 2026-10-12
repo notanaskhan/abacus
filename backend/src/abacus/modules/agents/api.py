@@ -38,6 +38,12 @@ from abacus.modules.agents.service import (
     screening_results_for,
 )
 from abacus.modules.agents.spec import AGENTS, AgentSpec, spec
+from abacus.modules.agents.upload_review import (
+    REVIEWER,
+    ReviewOutcome,
+    create_review_run,
+    review,
+)
 from abacus.modules.agents.workflow_types import (
     AgentEvent,
     AgentInput,
@@ -57,6 +63,7 @@ __all__ = [
     "AGENTS",
     "ENGAGEMENT_AGENT_HANDLE",
     "ENGAGEMENT_AGENT_NEXT_TICK",
+    "REVIEWER",
     "SCREENER",
     "SCREEN_PROMPT",
     "SUBSCRIPTIONS",
@@ -74,6 +81,7 @@ __all__ = [
     "Handoff",
     "KnowledgeHit",
     "NextTickInput",
+    "ReviewOutcome",
     "RunOutcome",
     "ScreeningInput",
     "ScreeningOutcome",
@@ -82,6 +90,7 @@ __all__ = [
     "ScreeningWorkflow",
     "SheetLayoutError",
     "VerifiedCitation",
+    "create_review_run",
     "create_screening_run",
     "engagement_graph",
     "fail_run",
@@ -90,6 +99,7 @@ __all__ = [
     "knowledge_context",
     "knowledge_router",
     "load_agent_context",
+    "review",
     "router",
     "run_outcome",
     "screen",

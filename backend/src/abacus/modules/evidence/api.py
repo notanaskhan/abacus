@@ -2,7 +2,14 @@
 
 from abacus.modules.evidence.activities import ACTIVITIES
 from abacus.modules.evidence.events import EvidenceVersionCreated, InboxFileAdded
-from abacus.modules.evidence.processing import SUBSCRIPTIONS, WORKFLOWS
+from abacus.modules.evidence.processing import (
+    SUBSCRIPTIONS,
+    WORKFLOWS,
+    ReviewMaterial,
+    process_upload,
+    review_material,
+)
+from abacus.modules.evidence.processing import check_upload as check_upload_content
 from abacus.modules.evidence.render import (
     CODE_COLUMN,
     CREDIT_COLUMN,
@@ -38,6 +45,7 @@ from abacus.modules.evidence.service import (
     version_view,
 )
 from abacus.modules.evidence.storage import ContentTooLarge, IntegrityError, check_ready
+from abacus.modules.evidence.uploads import upload
 from abacus.modules.evidence.workflow_types import VERSION as UPLOAD_VERSION
 from abacus.modules.evidence.workflow_types import UploadInput
 from abacus.modules.evidence.workflows import UploadProcessing
@@ -66,6 +74,7 @@ __all__ = [
     "NewItem",
     "Proposal",
     "Provenance",
+    "ReviewMaterial",
     "StoredObject",
     "TrialBalance",
     "TrialBalanceLine",
@@ -73,14 +82,18 @@ __all__ = [
     "UploadProcessing",
     "add_version",
     "check_ready",
+    "check_upload_content",
     "engagement_snapshots",
     "evidence_versions_for",
+    "process_upload",
     "read_content",
     "read_version",
     "register_proposal_source",
     "render_trial_balance",
+    "review_material",
     "router",
     "stage_content",
+    "upload",
     "version_view",
 ]
 

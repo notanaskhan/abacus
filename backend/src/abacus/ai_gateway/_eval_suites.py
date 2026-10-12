@@ -4,5 +4,6 @@ Regenerate: python -m abacus_tools.codegen.eval_suites
 """
 
 # fmt: off
-EVAL_SUITES: dict[str, tuple[str, int]] = {'evidence.screener': ('evidence.screen@v0', 1)}
+EVAL_SUITES: dict[str, tuple[str, int]] = {   'evidence.screener': ('evidence.screen@v0', 1),
+    'evidence.upload_reviewer': ('evidence.upload_review@v1', 1)}
 # fmt: on

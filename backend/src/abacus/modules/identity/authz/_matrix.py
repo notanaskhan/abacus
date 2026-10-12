@@ -356,6 +356,16 @@ ACTIONS: dict[str, dict[str, str]] = {
         "staff": "allow",
         "independence": "required",
     },
+    "upload_review.run": {
+        "system": "allow",
+        "agent": "task_scope",
+    },
+    "upload_review.request": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "independence": "required",
+    },
     "suggestion.create": {
         "agent": "task_scope",
     },

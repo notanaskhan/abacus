@@ -120,3 +120,9 @@ The firm's methodology documents, recalled by vector search. Knowledge is firm-w
 - **"Screen now":** `request_screening(ctx, engagement, version)` is `POST …/screening-results/request` (`screening.request`: engagement partner, manager, senior, staff; 202).
   - It dispatches the same workflow with the same ID, so a running or finished screening is attached to, not repeated.
   - The requester is who the agent acts for. Audited `screening.requested`.
+
+## The upload reviewer (SPEC-030; TASK-058)
+- **Spec** `specs/evidence.upload_reviewer.yaml`: prompt `evidence.upload_review@v1`, small tier, $0.02 and 60 s a review, `propose` only, scope `evidence.read` + `upload_review.run`, `document` the one untrusted input; a low-confidence flag routes to `hidden`.
+- **Run** (`upload_review.py`): `create_review_run` (an extracted evidence version, a person to act for, the daily cap) and `review` (context by code: engagement facts, the request and its kind, SPEC-029's client checks, then the document excerpt from `evidence.review_material`; the gateway enforces the data boundary; `DataBoundaryRefused` fails the run as `data_boundary`).
+- **Quotes** (`document_citations.py`): verified against the extraction's page text or cell, after NFKC, case and whitespace normalisation and dropping invisible formatting characters. A flag is shown only with a verified quote and confidence at or above 0.5.
+- **Results:** `upload_reviews` and `upload_review_flags` (insert-only). Nothing triggers a review in the product yet (TASK-059); the evaluation runs it (`python -m abacus_tools.evals --agent evidence.upload_reviewer --route direct`, real routes only).

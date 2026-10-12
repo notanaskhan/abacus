@@ -20,6 +20,8 @@ from abacus.modules.agents.models import (
     Reminder,
     ReminderItem,
     ScreeningResult,
+    UploadReview,
+    UploadReviewFlag,
 )
 from abacus.modules.identity.api import AuthContext, visible
 
@@ -605,3 +607,24 @@ async def set_self_paused(
             set_={"self_paused_reason": reason, "updated_at": func.now()},
         )
     )
+
+
+# --- The upload reviewer (SPEC-030; TASK-058) ----------------------------------------------------
+
+
+async def insert_upload_review(session: AsyncSession, *, values: dict[str, object]) -> UUID:
+    review_id = uuid4()
+    await session.execute(insert(UploadReview).values(id=review_id, **values))
+    return review_id
+
+
+async def insert_review_flags(session: AsyncSession, rows: list[dict[str, object]]) -> None:
+    if rows:
+        await session.execute(insert(UploadReviewFlag).values(rows))
+
+
+async def review_for_run(session: AsyncSession, run_id: UUID) -> UploadReview | None:
+    """The review an upload reviewer run recorded (the caller authorised on its engagement)."""
+    return (
+        await session.execute(select(UploadReview).where(UploadReview.agent_run_id == run_id))
+    ).scalar_one_or_none()

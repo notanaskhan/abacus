@@ -17,6 +17,7 @@ FAILURE_CATEGORIES: Final = frozenset(
         "wrong_currency",
         "altered",
         "irrelevant",
+        "draft",  # SPEC-030 (TASK-058)
         "unreadable",
     }
 )
@@ -34,5 +35,8 @@ ADVERSARIAL_CATEGORIES: Final = frozenset(
 # What each agent's suite must cover (SPEC-005 AC-4): the categories its purpose involves. The
 # screener reads whole trial balances from clients' systems, so it meets all of them.
 REQUIRED_COVERAGE: Final[dict[str, frozenset[str]]] = {
-    "evidence.screener": FAILURE_CATEGORIES | ADVERSARIAL_CATEGORIES,
+    "evidence.screener": (FAILURE_CATEGORIES - {"draft"}) | ADVERSARIAL_CATEGORIES,
+    # SPEC-030: what code can't decide, and the adversarial content a document can carry.
+    "evidence.upload_reviewer": frozenset({"irrelevant", "draft", "altered"})
+    | (ADVERSARIAL_CATEGORIES - {"oversized_field", "lookalike_name"}),
 }

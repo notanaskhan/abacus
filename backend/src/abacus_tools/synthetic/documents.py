@@ -181,3 +181,132 @@ def aging_schedule_xlsx(
     out = io.BytesIO()
     workbook.save(out)
     return out.getvalue()
+
+
+# --- Upload reviewer cases (SPEC-030; TASK-058) -------------------------------------------------
+
+
+def detailed_statement_pdf(
+    *,
+    holder: str = "Example Company Inc",
+    last4: str = "1234",
+    start: date = date(2026, 12, 1),
+    end: date = date(2026, 12, 31),
+    opening: Decimal = Decimal("10000.00"),
+    header_lines: tuple[str, ...] = (),
+    footer_lines: tuple[str, ...] = (),
+    tamper_line: int | None = None,
+    second_page_closing: Decimal | None = None,
+) -> bytes:
+    """A statement with transaction lines and running balances. `header_lines` and
+    `footer_lines` add text (a watermark, a signature line, an instruction); `tamper_line` makes
+    that line's running balance not follow from the one before (opening, credits, debits and
+    closing still agree, so code's totals check passes); `second_page_closing` adds a summary
+    page stating a different closing balance."""
+    moves = (
+        ("Customer deposit", Decimal("2500.00")),
+        ("Check 1041", Decimal("-820.00")),
+        ("ACH payroll", Decimal("-1405.50")),
+        ("Customer deposit", Decimal("2750.00")),
+        ("Wire to supplier", Decimal("-900.00")),
+    )
+    credits = sum((m for _, m in moves if m > 0), Decimal(0))
+    debits = -sum((m for _, m in moves if m < 0), Decimal(0))
+    closing = opening + credits - debits
+    lines = [
+        *header_lines,
+        "First Example Bank",
+        f"Account holder: {holder}",
+        f"Account number: ****{last4}",
+        f"Statement period: {start:%B} {start.day}, {start.year} to "
+        f"{end:%B} {end.day}, {end.year}",
+        f"Beginning balance {_money(opening)}",
+        f"Total deposits and other credits {_money(credits)}",
+        f"Total withdrawals and other debits {_money(debits)}",
+        f"Ending balance {_money(closing)}",
+        "Date Description Amount Balance",
+    ]
+    balance = opening
+    for n, (what, amount) in enumerate(moves, start=1):
+        balance += amount
+        shown = balance + Decimal("500.00") if tamper_line == n else balance
+        day = min(start.day + 4 * n, 28)
+        lines.append(f"{end.month:02d}/{day:02d} {what} {_money(amount)} {_money(shown)}")
+    lines.extend(footer_lines)
+    pages = [_text_page(lines)]
+    if second_page_closing is not None:
+        pages.append(
+            _text_page(
+                [
+                    "Account summary",
+                    f"Account number: ****{last4}",
+                    f"Closing balance as of {end:%B} {end.day}, {end.year} "
+                    f"{_money(second_page_closing)}",
+                ]
+            )
+        )
+    return _pdf(pages)
+
+
+def invoice_pdf(
+    *,
+    vendor: str = "Northwind Supplies LLC",
+    total: Decimal = Decimal("4210.00"),
+    dated: date = date(2026, 12, 15),
+) -> bytes:
+    """An invoice: the wrong kind of document for a bank statement request."""
+    return _pdf(
+        [
+            _text_page(
+                [
+                    "INVOICE",
+                    vendor,
+                    "Invoice number: INV-20931",
+                    f"Invoice date: {dated:%B} {dated.day}, {dated.year}",
+                    "Bill to: Example Company Inc",
+                    "Description Qty Unit price Amount",
+                    f"Office chairs 10 $421.00 {_money(total)}",
+                    f"Amount due {_money(total)}",
+                    "Payment terms: Net 30",
+                ]
+            )
+        ]
+    )
+
+
+def letter_pdf(dated: date = date(2027, 1, 10)) -> bytes:
+    """A cover letter: the wrong kind of document for a statement or an aging."""
+    return _pdf(
+        [
+            _text_page(
+                [
+                    "Example Company Inc",
+                    f"{dated:%B} {dated.day}, {dated.year}",
+                    "Dear audit team,",
+                    "Please find our documents for the year-end audit attached separately.",
+                    "We will send the bank statements once we receive them from the bank.",
+                    "Kind regards,",
+                    "Rachel, Controller",
+                ]
+            )
+        ]
+    )
+
+
+def receipt_pdf(dated: date = date(2026, 12, 18)) -> bytes:
+    """A store receipt: the wrong kind of document for a bank statement request."""
+    return _pdf(
+        [
+            _text_page(
+                [
+                    "OFFICE DEPOT STORE 2231",
+                    f"{dated:%m/%d/%Y} 14:32",
+                    "Printer paper 5 x $8.99 $44.95",
+                    "Sales tax $3.71",
+                    "TOTAL $48.66",
+                    "VISA ****9921 APPROVED",
+                    "Thank you for shopping with us",
+                ]
+            )
+        ]
+    )
