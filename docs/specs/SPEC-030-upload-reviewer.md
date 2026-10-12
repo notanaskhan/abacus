@@ -1,7 +1,7 @@
 ---
 id: SPEC-030
 title: "The upload reviewer: AI flags for what code can't decide (synthetic data)"
-status: draft
+status: approved
 owner: founder
 risk_zone: red
 related_adrs: [ADR-005, ADR-019, ADR-047, ADR-050, ADR-051, ADR-052, ADR-054, ADR-057, ADR-064, ADR-065, ADR-066, ADR-069, ADR-081, ADR-110, ADR-111, ADR-112]
@@ -145,6 +145,7 @@ An "AI review" panel in item detail under the checks: "No concerns" or one card 
 Flag `upload_review.enabled` (off; on for Dev firm). Milestone: the first real-model evaluation report, kept with the screener's under `docs/operations/`.
 
 ## 20. Open questions
+All resolved: the founder approved every recommendation below on 2026-10-12.
 - **Q1 — categories.** *Recommendation:* `irrelevant`, `draft`, `altered`, and add `draft` to the failure taxonomy (a protected file), defined as "marked or worded as preliminary, unsigned where a signature is expected".
 - **Q2 — when it runs.** *Recommendation:* automatically at Routine or above, on "Review now" at Advise, as the screener does.
 - **Q3 — unverified citations.** *Recommendation:* a flag with no verified quote isn't shown to the firm; it's recorded and counted in evaluation.
