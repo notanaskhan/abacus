@@ -1,7 +1,7 @@
 ---
 id: SPEC-029
 title: "Upload processing: scanning, extraction, mechanical checks and preview"
-status: draft
+status: approved
 owner: founder
 risk_zone: red
 related_adrs: [ADR-004, ADR-016, ADR-017, ADR-031, ADR-042, ADR-050, ADR-052, ADR-064, ADR-090, ADR-110, ADR-111]
@@ -129,6 +129,7 @@ Both sides can **preview** evidence in the browser from server-made page images 
 | AC-12 | integration, vitest | Preview objects; access by role; viewer |
 
 ## 10. Open questions
+All resolved: the founder approved every recommendation below on 2026-10-12.
 - **Q1 — PDF library.** Recommended: approve `pdfplumber` (MIT) for text and tables, with its dependency `pypdfium2` (Apache-2.0/BSD) for page images. Not PyMuPDF (AGPL).
 - **Q2 — when "before submission" happens.** Recommended: an upload is stored as a version at once (nothing lost, ADR-004) and checked within seconds; the client sees problems on the item and can replace the file. The item still moves to "received" as today. Alternative: a two-step "check, then submit", which holds files outside the evidence record until submitted.
 - **Q3 — who sees ledger cross-checks.** Recommended: firm only. A bank-to-books difference is often legitimate (outstanding checks, deposits in transit), so showing it to clients as a problem would mislead.
