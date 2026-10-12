@@ -106,6 +106,9 @@ class CatalogModel(BaseModel):
     ids: Annotated[dict[Route, str], classified("internal")]
     usd_in: Annotated[Decimal, Field(ge=0), classified("internal")]  # per million tokens
     usd_out: Annotated[Decimal, Field(ge=0), classified("internal")]
+    # The sampling temperature pinned for this model, so evaluations repeat. Only where the model
+    # accepts one: Claude 5 models reject `temperature` as deprecated, so theirs stays None.
+    temperature: Annotated[float | None, Field(ge=0, le=1), classified("internal")] = None
 
 
 class ParityRecord(BaseModel):

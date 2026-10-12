@@ -622,7 +622,8 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
     inputs_hash = hashlib.sha256(f"{found.ref}\n{user}".encode()).hexdigest()
     spent = Decimal(0)
     earlier = await _spent_by_run(c.attribution)
-    request = ModelRequest(model, found.text, user, c.max_output_tokens, found.ref)
+    temperature = settings().model_catalog[tier].temperature
+    request = ModelRequest(model, found.text, user, c.max_output_tokens, found.ref, temperature)
     for attempt in (1, 2):
         estimate = cost(tier, estimate_tokens(request.system + request.user), c.max_output_tokens)
         if earlier + spent + estimate > c.budget_usd:
@@ -729,6 +730,7 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
             f"Errors: {errors}\nReply again with one valid JSON object only.",
             c.max_output_tokens,
             found.ref,
+            temperature,
         )
     return GatewayResult("escalated", None, 2, spent, inputs_hash, model, found, route)
 

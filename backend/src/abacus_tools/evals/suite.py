@@ -87,8 +87,9 @@ class Suite(BaseModel):
     required_pass_rate: Annotated[float, Field(gt=0, le=1)]
     calibration_tolerance: Annotated[float, Field(gt=0, le=1)]
     cost_limit_usd: Annotated[Decimal, Field(gt=0, le=100)]
-    # Pinned per suite (ADR-081); recorded with every run. The gateway applies none yet: the fake
-    # model ignores it, and real providers arrive with TASK-014.
+    # Pinned per suite (ADR-081); recorded with every run. The gateway applies the model catalog's
+    # per-model temperature (only models that accept one: Claude 5 models don't); the fake model
+    # ignores it.
     sampling: dict[str, float] = Field(default_factory=lambda: {"temperature": 0.0})
 
     def subset(self, which: Literal["fast", "full"]) -> tuple[Case, ...]:
