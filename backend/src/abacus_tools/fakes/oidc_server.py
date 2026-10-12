@@ -46,6 +46,8 @@ REDIRECT_URIS = frozenset(
 DEV_USERS = (
     ("dev-leader", "Dana Leader (practice leader)"),
     ("dev-staff", "Sam Staff (staff)"),
+    # A client admin on every Dev firm engagement, to see the client side (`/client`).
+    ("dev-client", "Casey Client (client admin)"),
     # SPEC-024 (TASK-040): no firm yet, to try self-serve sign-up locally.
     ("dev-new", "Nina New (no firm yet)"),
 )
