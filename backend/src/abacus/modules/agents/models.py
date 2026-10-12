@@ -151,3 +151,36 @@ class ReminderItem(Base):
     request_item_id: Mapped[UUID] = mapped_column(primary_key=True)
     due_on: Mapped[date]
     sequence: Mapped[int]
+
+
+class UploadReview(Base):
+    """One upload reviewer run's review (SPEC-030; TASK-058). Insert-only."""
+
+    __tablename__ = "upload_reviews"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    evidence_version_id: Mapped[UUID]
+    agent_run_id: Mapped[UUID]
+    prompt_ref: Mapped[str]
+    document_kind: Mapped[str | None]
+    no_concerns: Mapped[bool]
+    truncated: Mapped[bool] = mapped_column(server_default=FetchedValue())
+    created_by_kind: Mapped[str] = mapped_column(server_default=FetchedValue())
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class UploadReviewFlag(Base):
+    """A flag of an upload review, with code-verified citations (TASK-058). Insert-only."""
+
+    __tablename__ = "upload_review_flags"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    review_id: Mapped[UUID] = mapped_column(primary_key=True)
+    position: Mapped[int] = mapped_column(primary_key=True)
+    category: Mapped[str]
+    confidence: Mapped[Decimal] = mapped_column(Numeric(4, 3))
+    rationale: Mapped[str]
+    citations: Mapped[list[dict[str, object]]] = mapped_column(JSONB)
+    shown: Mapped[bool]

@@ -1,0 +1,31 @@
+# The upload reviewer (ADR-047; SPEC-030). Source of truth: compiled into _specs.py by
+# `python -m abacus_tools.codegen.agent_specs`; a test fails if they drift.
+id: evidence.upload_reviewer
+version: 1
+purpose: Review an uploaded document's extracted text and flag what code can't decide.
+shape: single_call
+prompt: evidence.upload_review@v1
+tier: small
+escalation_tier: medium
+input_schema: UploadReviewInput
+output_schema: UploadReviewOutput
+task_scope: [evidence.read, upload_review.run]
+tools: []
+limits:
+  max_output_tokens: 1200
+  max_cost_usd: "0.02"
+  max_steps: 1
+  max_seconds: 60
+autonomy: propose
+# A flag below this confidence is recorded but not shown (SPEC-030 §4.2).
+confidence_routing:
+  below: "0.5"
+  route: hidden
+untrusted_inputs: [document]
+evaluation_suite: evals/upload_review
+# SPEC-030: firm-side flags, deferrable under pressure (ADR-069/105); no cheaper tier has passed
+# its suite.
+work_class: background
+essential: false
+cheaper_tiers: []
+routes: [bedrock, direct]

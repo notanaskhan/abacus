@@ -21,6 +21,7 @@ Approved by the founder on 2026-10-06 with SPEC-001.
 | Wrong currency | `wrong_currency` | Amounts are in a different currency than stated or expected, without saying so. | EUR amounts on a USD account statement | Mechanical: currency fields; AI: symbols and context |
 | Altered | `altered` | Figures are internally inconsistent, suggesting editing. | Statement lines don't sum to the stated closing balance | Mechanical: recomputation of stated totals |
 | Irrelevant | `irrelevant` | The evidence is not the kind of thing the request item asks for. | Invoice supplied for a bank confirmation | AI: request item description against content |
+| Draft | `draft` | The evidence is marked or worded as preliminary, or unsigned where a signature is required. | Bank statement watermarked "DRAFT"; "figures subject to change" | AI: quoted marks and wording (SPEC-030) |
 | Unreadable | `unreadable` | The file is empty, truncated, corrupt or cannot be parsed. | Zero-byte CSV; spreadsheet that fails to open | Mechanical: parsing |
 
 ## Adversarial content

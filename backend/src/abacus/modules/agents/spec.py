@@ -33,7 +33,10 @@ class ConfidenceRouting(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     below: Annotated[Decimal, Field(ge=0, le=1), classified("internal")]
-    route: Annotated[Literal["ready_for_review", "needs_revision"], classified("internal")]
+    # `hidden` (SPEC-030): the upload reviewer keeps a low-confidence flag but doesn't show it.
+    route: Annotated[
+        Literal["ready_for_review", "needs_revision", "hidden"], classified("internal")
+    ]
 
 
 class AgentSpec(BaseModel):
@@ -51,9 +54,11 @@ class AgentSpec(BaseModel):
     # run goes to a person (ADR-005).
     escalation_tier: Annotated[Tier, classified("internal")]
     # What the agent is started with (`workflow_types.ScreeningInput`).
-    input_schema: Annotated[Literal["ScreeningInput"], classified("internal")]
+    input_schema: Annotated[Literal["ScreeningInput", "UploadReviewInput"], classified("internal")]
     # The handoff model the agent's output must validate against (`handoff.ScreeningOutput`).
-    output_schema: Annotated[Literal["ScreeningOutput"], classified("internal")]
+    output_schema: Annotated[
+        Literal["ScreeningOutput", "UploadReviewOutput"], classified("internal")
+    ]
     task_scope: Annotated[frozenset[str], classified("internal")]
     tools: Annotated[tuple[str, ...], classified("internal")]
     limits: Annotated[Limits, classified("internal")]

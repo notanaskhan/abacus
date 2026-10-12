@@ -177,6 +177,8 @@ actions:
   # --- Screening and suggestions ---
   screening.run:            {system: allow, agent: task_scope}
   screening.request:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # SPEC-024 (TASK-042 D1): "Screen now" at Advise
+  upload_review.run:        {system: allow, agent: task_scope}   # SPEC-030 (TASK-058): the upload reviewer records its review
+  upload_review.request:    {engagement_partner: allow, manager: allow, senior: allow, independence: required}   # SPEC-030: "Review now" at Advise
   suggestion.create:        {agent: task_scope}
   suggestion.resolve:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny}
 

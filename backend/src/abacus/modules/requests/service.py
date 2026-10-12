@@ -625,6 +625,7 @@ async def read_item(tenant: TenantContext, engagement_id: UUID, item_id: UUID) -
 class ItemKind:
     id: UUID
     document_kind: str | None
+    description: str = ""  # SPEC-030 (TASK-058): what the upload reviewer is told was asked for
 
 
 async def items_of_version(tenant: TenantContext, evidence_version_id: UUID) -> list[ItemKind]:
@@ -632,7 +633,7 @@ async def items_of_version(tenant: TenantContext, evidence_version_id: UUID) -> 
     caller acting as the system on the engagement's own uploads."""
     async with tenant_session(tenant) as session:
         items = await items_fulfilled_by(session, evidence_version_id)
-    return [ItemKind(i.id, i.document_kind) for i in items]
+    return [ItemKind(i.id, i.document_kind, i.description) for i in items]
 
 
 async def latest_version_of(tenant: TenantContext, item_id: UUID) -> UUID | None:

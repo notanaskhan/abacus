@@ -12,9 +12,11 @@ import argparse
 import pprint
 import sys
 from pathlib import Path
+from typing import cast
+
+import yaml
 
 from abacus.modules.agents.api import AGENTS
-from abacus_tools.evals.suite import load
 
 BACKEND = Path(__file__).resolve().parents[3]
 REPO = BACKEND.parent
@@ -31,8 +33,9 @@ def render() -> str:
     suites: dict[str, tuple[str, int]] = {}
     for agent_id, spec in sorted(AGENTS.items()):
         path = REPO / spec.evaluation_suite / "suite.yaml"
-        if path.exists():
-            suites[agent_id] = (spec.prompt, load(path).version)
+        if path.exists():  # only the version is read: each agent's suite has its own shape
+            raw = cast(dict[str, object], yaml.safe_load(path.read_text(encoding="utf-8")))
+            suites[agent_id] = (spec.prompt, int(cast(int, raw["version"])))
     body = pprint.pformat(suites, indent=4, width=99, sort_dicts=True)
     return f"{_HEADER}# fmt: off\nEVAL_SUITES: dict[str, tuple[str, int]] = {body}\n# fmt: on\n"
 

@@ -4,7 +4,7 @@ title: "Upload reviewer, part 1: the agent and its evaluation (synthetic data, e
 spec: SPEC-030
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-5, AC-7, AC-8, AC-9]
 risk_zone: red
-status: awaiting-approval
+status: in-progress
 branch: task-058-upload-reviewer
 worktree:
 created: 2026-10-12
@@ -30,7 +30,7 @@ SPEC-030 AC-1, AC-2, AC-3, AC-5, AC-7, AC-8, AC-9 (as they apply to a run starte
 - Code (the screener, to copy): `agents/specs/evidence.screener.yaml`, `agents/spec.py`, `abacus_tools/codegen/agent_specs.py`; `ai_gateway/prompts.py` and `prompts/evidence.screen/v0.txt`; `ai_gateway/context.py`; `ai_gateway/__init__.py` (`call`, `GatewayCall`); `agents/handoff.py`, `agents/citations.py`; `agents/service.py` (`create_screening_run`, `screen`, `_screen`); `agents/fake_responses.py`; `evals/screening/suite.yaml`; `abacus_tools/evals/` (`runner.py`, `suite.py`, `cases.py`, `metrics.py`, `graders.py`); `abacus_tools/codegen/eval_suites.py`; `evidence/extraction.py`, `processing.py`, `checks.py` (SPEC-029); `abacus_tools/synthetic/documents.py`
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-12: D1–D4, D6, D7 as recommended; D5 declined: no marker-based fake responder, since extensive CI isn't wanted at this stage). Approved by founder: the paths named in D7
 
 ### What the code shows
 - **The spec model hard-codes the screener's schemas:** `AgentSpec.input_schema` is `Literal["ScreeningInput"]` and `output_schema` is `Literal["ScreeningOutput"]` (`agents/spec.py`, protected).
@@ -66,11 +66,13 @@ SPEC-030 AC-1, AC-2, AC-3, AC-5, AC-7, AC-8, AC-9 (as they apply to a run starte
 ## Definition of done
 - [ ] All listed ACs have passing tests that reference them (independent tests deferred by the founder)
 - [ ] Type check, lint, format, architecture and dependency rules pass
-- [ ] The fake-route evaluation passes its suite; the milestone report is filed (D6)
+- [ ] The suite validates; the real-model milestone report is filed (D6)
 - [ ] Module READMEs and the relevant docs are updated
 
 ## Progress log
 - `2026-10-12` — Design written for founder review after SPEC-030 merged (#104).
+- `2026-10-12` — Built: spec, prompt v1, output schema, citation verifier, review material reader, context, runs and results (migration 0046), matrix actions, taxonomy `draft`, the reviewer's own evaluation module and suite, eligibility codegen reading suite versions. Unit tests and gates pass.
+- `2026-10-12` — Milestone (real model, synthetic, ~$0.07 a run, three runs): fixed two save bugs (a non-boolean `truncated`; the `id` insert grant) and a fixture bug (documents dated a year after the stack's year end). Final run (`docs/operations/upload-review/direct-2026-10-12.json`): irrelevant and draft recall and precision 1.0; containment 0.83; altered recall 0.40, precision 0.29. Nearly every altered error is the model doing balance arithmetic wrongly, which ADR-050 says code should do. Two answers failed the schema with quotes over 200 characters; the limit is now 1,000. Waiting on the founder for the altered decision.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

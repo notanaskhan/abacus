@@ -47,6 +47,7 @@ CONTRACT_ALLOWED = {
     "fulfilment.propose",
     "screening.run",
     "support_match.run",
+    "upload_review.run",  # SPEC-030 (TASK-058): the reviewer records its review
 }
 REASON = "documented in the working paper"
 

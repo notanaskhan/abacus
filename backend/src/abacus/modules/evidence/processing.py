@@ -16,10 +16,10 @@ from __future__ import annotations
 
 import asyncio
 import json
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from datetime import date
 from decimal import Decimal
-from typing import cast
+from typing import Final, cast
 from uuid import UUID
 
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
@@ -60,6 +60,7 @@ from abacus.modules.evidence.repository import (
     insert_extraction,
     insert_preview,
     insert_preview_pages,
+    latest_checks,
     other_version_with_fingerprint,
     preview_for,
 )
@@ -434,3 +435,103 @@ async def preview_upload(given: UploadInput) -> str:
             after=Ref(pages=len(pages)),
         )
     return rendered.kind
+
+
+# --- Material for the upload reviewer (SPEC-030; TASK-058) ---------------------------------------
+
+EXCERPT_CHARS: Final = 14_000  # about 3,500 tokens: inside the context's task budget
+EXCERPT_ROWS: Final = 60
+
+
+@dataclass(frozen=True)
+class ReviewMaterial:
+    """What the upload reviewer may see of a version: identifiers, code's own findings, and an
+    excerpt of the extraction. Pages and sheets are the full extraction, for citation checks."""
+
+    engagement_id: UUID
+    extraction_status: str
+    document_kind: str | None
+    item_description: str
+    checks: tuple[tuple[str, str, str | None], ...]  # (code, outcome, reason), client-facing
+    excerpt_pages: tuple[tuple[int, str], ...]
+    excerpt_tables: tuple[tuple[str, tuple[tuple[str, ...], ...]], ...]
+    truncated: bool
+    pages: dict[int, str]
+    sheets: dict[str, tuple[tuple[str, ...], ...]]
+
+
+def _excerpt(
+    pages: dict[int, str], sheets: dict[str, tuple[tuple[str, ...], ...]]
+) -> tuple[tuple[tuple[int, str], ...], tuple[tuple[str, tuple[tuple[str, ...], ...]], ...], bool]:
+    """The first pages, then the first rows of each sheet, within `EXCERPT_CHARS`."""
+    budget, truncated = EXCERPT_CHARS, False
+    shown_pages: list[tuple[int, str]] = []
+    for number in sorted(pages):
+        text = pages[number]
+        if budget <= 0:
+            truncated = True
+            break
+        if len(text) > budget:
+            text, truncated = text[:budget], True
+        shown_pages.append((number, text))
+        budget -= len(text)
+    shown_sheets: list[tuple[str, tuple[tuple[str, ...], ...]]] = []
+    for name, rows in sheets.items():
+        if budget <= 0:
+            truncated = True
+            break
+        kept: list[tuple[str, ...]] = []
+        for row in rows[:EXCERPT_ROWS]:
+            size = sum(len(c) for c in row) + len(row)
+            if size > budget:
+                truncated = True
+                break
+            kept.append(row)
+            budget -= size
+        truncated = truncated or len(rows) > len(kept)
+        shown_sheets.append((name, tuple(kept)))
+    return tuple(shown_pages), tuple(shown_sheets), truncated
+
+
+async def review_material(tenant: TenantContext, version_id: UUID) -> ReviewMaterial | None:
+    """For an agent run authorised on the version's engagement; None without an extraction."""
+    async with tenant_session(tenant) as session:
+        row = await extraction_for(
+            session, evidence_version_id=version_id, extractor_version=EXTRACTOR_VERSION
+        )
+        checks = await latest_checks(session, version_id)
+    if row is None:
+        return None
+    items = await items_of_version(tenant, version_id)
+    item = next((i for i in items), None)
+    document = await _document(tenant.tenant_id, row) if row.status == "extracted" else None
+    pages: dict[int, str] = {}
+    sheets: dict[str, tuple[tuple[str, ...], ...]] = {}
+    if document is not None:
+        for number, text in enumerate(_strings(document.get("pages")), start=1):
+            pages[number] = text
+        for table in cast(list[dict[str, object]], document.get("tables") or []):
+            if table.get("page") is not None:
+                continue  # a PDF's tables are already in its page text
+            rows = tuple(
+                tuple(str(c) for c in cast(list[object], r))
+                for r in cast(list[object], table.get("rows") or [])
+            )
+            sheets[str(table.get("sheet") or "")] = rows
+    excerpt_pages, excerpt_tables, truncated = _excerpt(pages, sheets)
+    return ReviewMaterial(
+        row.engagement_id,
+        row.status,
+        item.document_kind if item is not None else None,
+        item.description if item is not None else "",
+        tuple((c.check_code, c.outcome, c.reason) for c in checks if c.audience == "client"),
+        excerpt_pages,
+        excerpt_tables,
+        truncated,
+        pages,
+        sheets,
+    )
+
+
+def _strings(value: object) -> list[str]:
+    return [str(v) for v in cast(list[object], value)] if isinstance(value, list) else []

@@ -55,7 +55,8 @@ def _validate(suite: Suite) -> None:
     )
 
 
-EVERYTHING = FAILURE_CATEGORIES | ADVERSARIAL_CATEGORIES
+# The screener's whole remit; `draft` (SPEC-030) belongs to the upload reviewer.
+EVERYTHING = (FAILURE_CATEGORIES - {"draft"}) | ADVERSARIAL_CATEGORIES
 
 
 def _case(
