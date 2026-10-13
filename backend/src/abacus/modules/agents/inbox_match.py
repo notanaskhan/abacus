@@ -27,7 +27,7 @@ from abacus.ai_gateway.routes import route_enabled
 from abacus.kernel.config import settings
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
-from abacus.modules.agents.document_citations import verify
+from abacus.modules.agents.document_citations import sheet_lines, verify
 from abacus.modules.agents.handoff import MatchOutput, VerifiedDocumentCitation
 from abacus.modules.agents.repository import (
     finish_run,
@@ -136,7 +136,7 @@ async def create_match_run(
 def document_blocks(material: MatchMaterial) -> list[str]:
     blocks = [f"Page {number}:\n{text}" for number, text in material.excerpt_pages]
     for name, rows in material.excerpt_tables:
-        lines = "\n".join(" | ".join(row) for row in rows)
+        lines = "\n".join(sheet_lines(rows))
         blocks.append(f"Sheet {name or '(only sheet)'}:\n{lines}")
     return blocks
 

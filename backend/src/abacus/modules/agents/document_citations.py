@@ -33,6 +33,27 @@ def _column_index(letters: str) -> int:
     return index - 1
 
 
+def column_letters(index: int) -> str:
+    """0 → A, 25 → Z, 26 → AA (the inverse of `_column_index`)."""
+    letters = ""
+    index += 1
+    while index:
+        index, rest = divmod(index - 1, 26)
+        letters = chr(ord("A") + rest) + letters
+    return letters
+
+
+def sheet_lines(rows: Sequence[Sequence[str]]) -> list[str]:
+    """TASK-067: each non-empty cell with its reference ("A1: Total | G1: 1,650.00"), row by row
+    from row 1, so a model cites the cells it was shown and code finds them where it says."""
+    lines: list[str] = []
+    for r, row in enumerate(rows, start=1):
+        cells = [f"{column_letters(c)}{r}: {v}" for c, v in enumerate(row) if v.strip()]
+        if cells:
+            lines.append(" | ".join(cells))
+    return lines
+
+
 def _cell_text(rows: Sequence[Sequence[str]], cell: str) -> str | None:
     found = _COLUMN.match(cell)
     if found is None:

@@ -53,7 +53,7 @@ def _material() -> MatchMaterial:
 def test_ac3_the_matcher_is_declared_to_propose_only() -> None:
     matcher = spec(MATCHER)
     assert matcher.autonomy == "propose"
-    assert matcher.prompt == "evidence.inbox_match@v1"
+    assert matcher.prompt == "evidence.inbox_match@v2"  # TASK-067: cell references
     assert matcher.task_scope == frozenset({"evidence.read", "inbox_match.run"})
     assert matcher.limits.max_cost_usd == Decimal("0.01")
     assert list(matcher.untrusted_inputs) == ["document"]

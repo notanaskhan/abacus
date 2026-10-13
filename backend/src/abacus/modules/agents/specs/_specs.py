@@ -17,7 +17,7 @@ SPECS: dict[str, dict[str, object]] = {   'evidence.matcher': {   'autonomy': 'p
                                           'max_seconds': 45,
                                           'max_steps': 1},
                             'output_schema': 'MatchOutput',
-                            'prompt': 'evidence.inbox_match@v1',
+                            'prompt': 'evidence.inbox_match@v2',
                             'purpose': 'Propose which open request an inbox file belongs to, from '
                                        'its extracted contents.',
                             'routes': ['bedrock', 'direct'],
@@ -26,7 +26,7 @@ SPECS: dict[str, dict[str, object]] = {   'evidence.matcher': {   'autonomy': 'p
                             'tier': 'small',
                             'tools': [],
                             'untrusted_inputs': ['document'],
-                            'version': 1,
+                            'version': 2,
                             'work_class': 'background'},
     'evidence.screener': {   'autonomy': 'propose',
                              'cheaper_tiers': [],
@@ -65,7 +65,7 @@ SPECS: dict[str, dict[str, object]] = {   'evidence.matcher': {   'autonomy': 'p
                                                   'max_seconds': 60,
                                                   'max_steps': 1},
                                     'output_schema': 'UploadReviewOutput',
-                                    'prompt': 'evidence.upload_review@v2',
+                                    'prompt': 'evidence.upload_review@v3',
                                     'purpose': "Review an uploaded document's extracted text and "
                                                "flag what code can't decide.",
                                     'routes': ['bedrock', 'direct'],
@@ -74,6 +74,6 @@ SPECS: dict[str, dict[str, object]] = {   'evidence.matcher': {   'autonomy': 'p
                                     'tier': 'small',
                                     'tools': [],
                                     'untrusted_inputs': ['document'],
-                                    'version': 2,
+                                    'version': 3,
                                     'work_class': 'background'}}
 # fmt: on
