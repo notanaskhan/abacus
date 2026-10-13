@@ -10,7 +10,12 @@ import pytest
 from pydantic import ValidationError
 
 from abacus.modules.agents.api import REVIEWER, spec
-from abacus.modules.agents.document_citations import normalised, verify
+from abacus.modules.agents.document_citations import (
+    column_letters,
+    normalised,
+    sheet_lines,
+    verify,
+)
 from abacus.modules.agents.handoff import DocumentCitation, UploadReviewOutput
 from abacus.modules.agents.upload_review import build_context, document_blocks
 from abacus.modules.evidence.api import ReviewMaterial
@@ -49,7 +54,7 @@ def _material(**changes: object) -> ReviewMaterial:
 def test_ac1_the_reviewer_is_declared_to_propose_only() -> None:
     reviewer = spec(REVIEWER)
     assert reviewer.autonomy == "propose"
-    assert reviewer.prompt == "evidence.upload_review@v2"
+    assert reviewer.prompt == "evidence.upload_review@v3"  # TASK-067: cell references
     assert reviewer.task_scope == frozenset({"evidence.read", "upload_review.run"})
     assert reviewer.limits.max_cost_usd == Decimal("0.02")
     assert reviewer.untrusted_inputs == ("document",) or list(reviewer.untrusted_inputs) == [
@@ -71,7 +76,8 @@ def test_ac2_the_document_is_the_only_untrusted_field_and_comes_last() -> None:
 def test_ac2_pages_and_sheets_become_ordered_blocks() -> None:
     blocks = document_blocks(_material())
     assert blocks[0].startswith("Page 1:\nDRAFT")
-    assert blocks[1].startswith("Sheet AR Aging:\nCustomer | Total")
+    # TASK-067: each cell with its reference, so a citation names a cell the model was shown.
+    assert blocks[1] == "Sheet AR Aging:\nA1: Customer | B1: Total\nA2: Acme | B2: 175.00"
 
 
 def test_ac3_a_quote_on_its_page_is_verified_and_a_made_up_one_is_not() -> None:
@@ -192,3 +198,16 @@ def test_ac6_the_firm_sees_only_verified_quotes() -> None:
         ]
     )
     assert [q.quote for q in found] == ["DRAFT"]
+
+
+def test_ac3_a_cell_shown_in_the_excerpt_verifies_by_its_reference() -> None:
+    rows = (("Payroll register",), (), ("Employee", "", "Net pay"), ("A. Rivera", "", "4022.2"))
+    assert sheet_lines(rows) == [
+        "A1: Payroll register",
+        "A3: Employee | C3: Net pay",
+        "A4: A. Rivera | C4: 4022.2",
+    ]
+    cited = DocumentCitation(sheet="Payroll", cell="C3", quote="Net pay")
+    (checked,) = verify([cited], {}, {"Payroll": rows})
+    assert checked.verified
+    assert column_letters(0) == "A" and column_letters(25) == "Z" and column_letters(26) == "AA"

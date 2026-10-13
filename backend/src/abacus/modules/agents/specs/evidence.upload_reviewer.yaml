@@ -1,10 +1,10 @@
 # The upload reviewer (ADR-047; SPEC-030). Source of truth: compiled into _specs.py by
 # `python -m abacus_tools.codegen.agent_specs`; a test fails if they drift.
 id: evidence.upload_reviewer
-version: 2
+version: 3
 purpose: Review an uploaded document's extracted text and flag what code can't decide.
 shape: single_call
-prompt: evidence.upload_review@v2
+prompt: evidence.upload_review@v3
 tier: small
 escalation_tier: medium
 input_schema: UploadReviewInput
