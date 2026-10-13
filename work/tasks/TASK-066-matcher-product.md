@@ -4,7 +4,7 @@ title: "Content matching, part 3: running the matcher in the product, \"Suggest 
 spec: SPEC-033
 acceptance_criteria: [AC-3, AC-4, AC-5, AC-6, AC-9]
 risk_zone: red
-status: awaiting-approval
+status: awaiting-plan-approval
 branch: task-066-matcher-product
 worktree:
 created: 2026-10-13
