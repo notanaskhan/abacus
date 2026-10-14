@@ -19,7 +19,7 @@ import io
 import re
 import unicodedata
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Final, cast
 
@@ -38,6 +38,9 @@ _REFUSED: Final = frozenset({"Cc", "Cf", "Cs", "Co", "Zl", "Zp"})
 _LEADING_CODE: Final = re.compile(r"^([0-9][0-9.\-]{0,19})\s+(.+)$")
 _TRAILING_CODE: Final = re.compile(r"^(.+?)\s*\(([0-9A-Za-z.\-]{1,20})\)$")
 _DATE_FORMATS: Final = ("%B %d, %Y", "%d %B %Y", "%m/%d/%Y", "%Y-%m-%d", "%b %d, %Y", "%d %b %Y")
+# TASK-068 D2: a period by month ("Dec 2026") ends on that month's last day.
+_MONTH_FORMATS: Final = ("%b %Y", "%B %Y")
+_SEPARATOR: Final = re.compile(r"^[\u00b7\-\u2013:]\s*")
 
 Cell = str | int | float | Decimal | datetime | date | None
 
@@ -137,7 +140,13 @@ def _header_index(rows: list[list[Cell]], fmt: Format) -> tuple[int, dict[str, i
             account = 0
             if row and _text(row[0]):
                 continue  # the account column's header is blank in this format
-        return n, {"account": account, "debit": debit, "credit": credit}
+        found = {"account": account, "debit": debit, "credit": credit}
+        if fmt.code_style == "column":
+            code = labels.get(fmt.code_header.casefold())
+            if code is None:
+                continue
+            found["code"] = code
+        return n, found
     return None
 
 
@@ -153,16 +162,27 @@ def _period_end(rows: list[list[Cell]], before: int, fmt: Format) -> date | None
                             return datetime.strptime(rest, pattern).date()
                         except ValueError:
                             continue
+                    for pattern in _MONTH_FORMATS:
+                        try:
+                            first = datetime.strptime(rest, pattern).date()
+                        except ValueError:
+                            continue
+                        following = first.replace(year=first.year + first.month // 12)
+                        following = following.replace(month=first.month % 12 + 1)
+                        return following - timedelta(days=1)
     return None
 
 
-def _account(name: str, fmt: Format) -> tuple[str, str]:
+def _account(name: str, fmt: Format, code: str = "") -> tuple[str, str]:
+    if fmt.code_style == "column":
+        return (code or name), name  # TASK-068: the code has its own column
     pattern = _LEADING_CODE if fmt.code_style == "leading" else _TRAILING_CODE
     found = pattern.match(name)
     if found is None:
         return name, name  # no account numbers: the name is the code
     if fmt.code_style == "leading":
-        return found.group(1), found.group(2).strip()
+        # "1000 · Checking", "1000 - Checking" (TASK-068): the separator isn't the name.
+        return found.group(1), _SEPARATOR.sub("", found.group(2).strip()) or found.group(2)
     return found.group(2), found.group(1).strip()
 
 
@@ -198,7 +218,9 @@ def parse_export(
         if debit == 0 and credit == 0 and all(_text(c) == "" for c in cells[1:]):
             continue  # a section heading ("Assets")
         net = debit - credit
-        code, account_name = _account(name, fmt)
+        code, account_name = _account(
+            name, fmt, _text(cells[columns["code"]]) if "code" in columns else ""
+        )
         lines.append(
             LedgerLine(
                 account_code=code,

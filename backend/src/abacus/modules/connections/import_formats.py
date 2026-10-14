@@ -13,9 +13,10 @@ from dataclasses import dataclass
 from typing import Final, Literal
 
 FileType = Literal["csv", "xlsx"]
-# Where the account code is: a leading number ("1000 Checking"), in parentheses at the end
-# ("Sales (200)"), or none (the name is the code).
-CodeStyle = Literal["leading", "parenthesised"]
+# Where the account code is: a leading number ("1000 Checking", "1000 · Checking"), in
+# parentheses at the end ("Sales (200)"), or its own column (TASK-068); none found: the name is
+# the code.
+CodeStyle = Literal["leading", "parenthesised", "column"]
 
 
 @dataclass(frozen=True)
@@ -31,6 +32,7 @@ class Format:
     total_labels: tuple[str, ...]
     period_prefixes: tuple[str, ...]  # "As of", "As at": the rest of that line is the date
     steps: tuple[str, ...]  # guided export steps (SPEC-028 §4.6)
+    code_header: str = ""  # the account code's own column (code style `column`)
 
     @property
     def source(self) -> str:
@@ -75,6 +77,65 @@ FORMATS: Final[dict[str, Format]] = {
                 "Set the date to the engagement's year end, then select Update.",
                 "Select Export, then Excel.",
                 "Upload the Excel file here.",
+            ),
+        ),
+        # TASK-068 (D1, D3): from each system's documented trial balance export; checked against
+        # synthetic fixtures until real anonymised samples are shared.
+        Format(
+            id="qbd_tb_xlsx",
+            system="QuickBooks Desktop",
+            system_key="qbd",
+            file_type="xlsx",
+            account_header="",
+            debit_headers=("Debit",),
+            credit_headers=("Credit",),
+            code_style="leading",
+            total_labels=("TOTAL", "Total"),
+            period_prefixes=("As of",),
+            steps=(
+                "In QuickBooks Desktop, go to Reports, then Accountant & Taxes, and open Trial "
+                "Balance.",
+                "Set the dates to the engagement's year end, then select Refresh.",
+                "Select Excel, then Create New Worksheet, and save it as an Excel workbook "
+                "(.xlsx).",
+                "Upload the Excel file here.",
+            ),
+        ),
+        Format(
+            id="netsuite_tb_csv",
+            system="NetSuite",
+            system_key="netsuite",
+            file_type="csv",
+            account_header="Account",
+            debit_headers=("Debit", "Amount (Debit)"),
+            credit_headers=("Credit", "Amount (Credit)"),
+            code_style="leading",
+            total_labels=("Total",),
+            period_prefixes=("End of", "As of", "Period:"),
+            steps=(
+                "In NetSuite, go to Reports, then Financial, and open Trial Balance.",
+                "Set the period to the engagement's year-end month, then select Refresh.",
+                "Select Export, then CSV.",
+                "Upload the CSV file here.",
+            ),
+        ),
+        Format(
+            id="intacct_tb_csv",
+            system="Sage Intacct",
+            system_key="intacct",
+            file_type="csv",
+            account_header="Account title",
+            debit_headers=("Debit",),
+            credit_headers=("Credit",),
+            code_style="column",
+            code_header="Account no.",
+            total_labels=("Total",),
+            period_prefixes=("As of",),
+            steps=(
+                "In Sage Intacct, go to General Ledger, then Reports, and open Trial balance.",
+                "Set the as-of date to the engagement's year end, then select Run.",
+                "Select Export, then CSV.",
+                "Upload the CSV file here.",
             ),
         ),
     )
