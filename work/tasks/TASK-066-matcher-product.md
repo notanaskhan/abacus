@@ -4,7 +4,7 @@ title: "Content matching, part 3: running the matcher in the product, \"Suggest 
 spec: SPEC-033
 acceptance_criteria: [AC-3, AC-4, AC-5, AC-6, AC-9]
 risk_zone: red
-status: awaiting-plan-approval
+status: done
 branch: task-066-matcher-product
 worktree:
 created: 2026-10-13
@@ -33,7 +33,7 @@ SPEC-033 AC-3, AC-4, AC-5, AC-6, AC-9.
   - `apps/web/src/screens/InboxPanel.tsx`, `AIReviewPanel.tsx`
 
 ## Plan
-- [ ] Plan approved by human
+- [x] Plan approved by human (founder, 2026-10-14: D1–D4 as recommended). Approved by founder: the paths named in D4
 
 ### What the code shows
 - **The reviewer's product path is the pattern:**
@@ -101,9 +101,14 @@ SPEC-033 AC-3, AC-4, AC-5, AC-6, AC-9.
 
 ## Progress log
 - `2026-10-13` — Design written for founder review after TASK-065 (#116); TASK-067 (cell references) in progress.
+- `2026-10-14` — Built (D1–D4): `inbox_file.extracted`; P-7; `match_start` (starter, "Suggest with AI", firm reads, picks lookup); `InboxMatchWorkflow` and activities with replay histories; `inbox_match.read` and `inbox_match.request`; flag `matching.enabled` (on for the Dev firm by the seed); migration 0050; the firm's AI suggestion block and "Suggest with AI" on the Board's inbox; matcher picks as "Suggested" for clients. Backend (10,436 with workflow replays), web (310) and gates pass. Local smoke on the Dev firm with the real model: a loan agreement named "scan0043.pdf" was proposed for the engagement's loan and debt requests (0.90–0.95, verified quote); the client saw the picks only as "Suggested"; the client was refused the firm's reads.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| `agent_runs.inbox_file_id` (migration 0050) | The firm's panel needs a run in progress or failed (`data_boundary`) beside its file, not only completed proposals | No |
+| Firm reads at `GET …/inbox-matches` (not `/inbox/matches`) | Keeps clear of evidence's `/inbox/{file_id}` routes | No |
+| The picks lookup is LIST_EXEMPT | It runs for evidence's listing, which already authorised the caller on those files; client roles can't hold `inbox_match.read` | No |
 
 ## Handoff
+Done. SPEC-033 is complete. Restart `make dev` for the worker to host the matcher; with the real model allowed locally (`.env.evaluation`), the Dev firm runs it.

@@ -21,6 +21,13 @@ flags:
     expires: 2027-01-09
     kind: boolean
     default: false
+  - name: matching.enabled
+    description: The matcher (AI) proposes which open request an extracted inbox file belongs to, at Routine or above, for the engagement partner, unless code's content rules were decisive (SPEC-033; TASK-066). Synthetic firms only while the data boundary holds. Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
+    owner: founder
+    created: 2026-10-14
+    expires: 2027-01-12
+    kind: boolean
+    default: false
   - name: uploads.processing
     description: Each upload is read in isolation (text, tables, fields) by a background workflow (SPEC-029; TASK-054). Scanning applies whatever this says. Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
     owner: founder

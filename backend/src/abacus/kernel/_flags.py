@@ -19,6 +19,11 @@ UPLOAD_REVIEW_ENABLED = Flag(
     kind="boolean",
     default="false",
 )
+MATCHING_ENABLED = Flag(
+    name="matching.enabled",
+    kind="boolean",
+    default="false",
+)
 UPLOADS_PROCESSING = Flag(
     name="uploads.processing",
     kind="boolean",
@@ -43,6 +48,7 @@ RETRIEVAL_AUTO = Flag(
 FLAGS: dict[str, Flag] = {
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
+    "matching.enabled": MATCHING_ENABLED,
     "uploads.processing": UPLOADS_PROCESSING,
     "ledger.import": LEDGER_IMPORT,
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,

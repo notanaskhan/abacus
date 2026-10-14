@@ -2,6 +2,7 @@ import type { EngagementOut, RequestItemOut, ScreeningResultOut } from "@abacus/
 import {
   createRequestItemMutation,
   getEngagementOptions,
+  meOptions,
   getRetrievalOptions,
   listEvidenceVersionsOptions,
   reviewFlagsOptions,
@@ -49,6 +50,8 @@ const SCREENING_POLL_LIMIT_MS = 2 * 60_000;
 const RETRIEVAL_POLL_MS = 2000;
 
 /** The evidence board for one engagement (SPEC-000 §17, AC-18). */
+const MATCH_REQUESTERS = new Set(["engagement_partner", "manager", "senior", "staff"]);
+
 export function Board({
   engagementId,
   reviewLink = null,
@@ -59,6 +62,9 @@ export function Board({
 }): JSX.Element {
   const path = { path: { engagement_id: engagementId } };
   const engagement = useQuery(getEngagementOptions(path));
+  const me = useQuery(meOptions());
+  // SPEC-033 (TASK-066): who may ask the matcher ("Suggest with AI").
+  const myRole = engagement.data?.team.find((m) => m.user_id === me.data?.user_id)?.role;
   const items = useQuery(listRequestItemsOptions(path));
   const versions = useQuery(listEvidenceVersionsOptions(path));
   const reviewFlags = useQuery({ ...reviewFlagsOptions(path), retry: false });
@@ -154,7 +160,11 @@ export function Board({
       {rows.length > 0 && (
         <DueDatesBar engagementId={engagementId} items={rows.map((r) => r.item)} />
       )}
-      <InboxPanel engagementId={engagementId} items={items.data} />
+      <InboxPanel
+        engagementId={engagementId}
+        items={items.data}
+        firm={{ canRequestMatch: myRole !== undefined && MATCH_REQUESTERS.has(myRole) }}
+      />
       <SummaryStrip engagementId={engagementId} />
       {rows.length > 0 && (
         <FilterBar

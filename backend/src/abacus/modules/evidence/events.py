@@ -60,3 +60,13 @@ class UploadChecksRecorded(DomainEvent):
 
     engagement_id: Annotated[UUID, classified("internal")]
     evidence_version_id: Annotated[UUID, classified("internal")]
+
+
+class InboxFileExtracted(DomainEvent):
+    """An inbox file's contents were read (SPEC-033; TASK-066): the engagement agent's P-7 may
+    start the matcher."""
+
+    event_type: ClassVar[str] = "inbox_file.extracted"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    inbox_file_id: Annotated[UUID, classified("internal")]

@@ -1150,6 +1150,36 @@ export type FieldErrorOut = {
 };
 
 /**
+ * FileMatchOut
+ */
+export type FileMatchOut = {
+    /**
+     * Inbox File Id
+     */
+    inbox_file_id: string;
+    /**
+     * None Fit
+     */
+    none_fit: boolean;
+    /**
+     * None Fit Rationale
+     */
+    none_fit_rationale: string | null;
+    /**
+     * Proposals
+     */
+    proposals: Array<MatchProposalOut>;
+    /**
+     * Reason
+     */
+    reason: string | null;
+    /**
+     * Status
+     */
+    status: string;
+};
+
+/**
  * FirmClientOut
  */
 export type FirmClientOut = {
@@ -1536,7 +1566,7 @@ export type InboxAssignIn = {
     /**
      * Suggestion Source
      */
-    suggestion_source?: 'file_name' | 'content' | null;
+    suggestion_source?: 'file_name' | 'content' | 'matcher' | null;
 };
 
 /**
@@ -1882,6 +1912,38 @@ export type LogEntryOut = {
      * Status
      */
     status: 'running' | 'succeeded' | 'failed_validation' | 'failed';
+};
+
+/**
+ * MatchProposalOut
+ */
+export type MatchProposalOut = {
+    /**
+     * Confidence
+     */
+    confidence: string;
+    /**
+     * Quotes
+     */
+    quotes: Array<ReviewQuoteOut>;
+    /**
+     * Rationale
+     */
+    rationale: string;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+};
+
+/**
+ * MatchRequestedOut
+ */
+export type MatchRequestedOut = {
+    /**
+     * Inbox File Id
+     */
+    inbox_file_id: string;
 };
 
 /**
@@ -3132,7 +3194,7 @@ export type SuggestionOut = {
     /**
      * Source
      */
-    source?: 'content' | 'file_name';
+    source?: 'matcher' | 'content' | 'file_name';
 };
 
 /**
@@ -5662,6 +5724,60 @@ export type AddToInboxResponses = {
 
 export type AddToInboxResponse = AddToInboxResponses[keyof AddToInboxResponses];
 
+export type InboxMatchesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/inbox-matches';
+};
+
+export type InboxMatchesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type InboxMatchesError = InboxMatchesErrors[keyof InboxMatchesErrors];
+
+export type InboxMatchesResponses = {
+    /**
+     * Response Inbox Matches
+     *
+     * Successful Response
+     */
+    200: Array<FileMatchOut>;
+};
+
+export type InboxMatchesResponse = InboxMatchesResponses[keyof InboxMatchesResponses];
+
 export type AssignInboxFileData = {
     body: InboxAssignIn;
     headers?: {
@@ -5781,6 +5897,66 @@ export type DiscardResponses = {
 };
 
 export type DiscardResponse = DiscardResponses[keyof DiscardResponses];
+
+export type RequestMatchData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * File Id
+         */
+        file_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/inbox/{file_id}/match';
+};
+
+export type RequestMatchErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RequestMatchError = RequestMatchErrors[keyof RequestMatchErrors];
+
+export type RequestMatchResponses = {
+    /**
+     * Successful Response
+     */
+    202: MatchRequestedOut;
+};
+
+export type RequestMatchResponse = RequestMatchResponses[keyof RequestMatchResponses];
 
 export type InboxPreviewData = {
     body?: never;
