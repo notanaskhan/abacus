@@ -73,6 +73,7 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"reminder_items"}  # SPEC-027 (TASK-051)
     | {"comments", "comment_mentions", "comment_redactions"}  # SPEC-032 (TASK-062): ADR-109
     | {"inbox_match_runs", "inbox_match_proposals"}  # SPEC-033 (TASK-065): proposals, as made
+    | {"gl_snapshots", "gl_account_balances", "gl_entries"}  # SPEC-034 (TASK-069): ADR-004
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -117,6 +118,24 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     # Client invitations (SPEC-015): never the token (only its hash, elsewhere).
     "client_invitations": frozenset(
         {"id", "tenant_id", "engagement_id", "email", "role", "invited_by", "expires_at"}
+    ),
+    # General ledger detail (SPEC-034; TASK-069): snapshots, balances, entries; imports.
+    "gl_snapshots": frozenset(
+        {"id", "tenant_id", "client_entity_id", "period_start", "period_end", "source"}
+        | {"raw_fingerprint", "tb_snapshot_id", "line_count", "total_debit", "total_credit"}
+    ),
+    "gl_account_balances": frozenset(
+        {"tenant_id", "snapshot_id", "account_code", "account_name", "opening", "debit"}
+        | {"credit", "closing", "tb_closing", "opening_derived"}
+    ),
+    "gl_entries": frozenset(
+        {"tenant_id", "snapshot_id", "line_no", "account_code", "posted_on", "reference"}
+        | {"kind", "counterparty", "description", "debit", "credit", "source_ref"}
+    ),
+    "gl_imports": frozenset(
+        {"id", "tenant_id", "engagement_id", "client_entity_id", "format", "period_start"}
+        | {"period_end", "storage_key", "storage_version_id", "fingerprint", "size_bytes"}
+        | {"uploaded_by", "on_behalf"}
     ),
     # Inbox match proposals (SPEC-033; TASK-065): the matcher's, as made.
     "inbox_match_runs": frozenset(
@@ -242,6 +261,9 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "review_decisions": "review_decisions_immutable",
     "eval_case_results": "eval_case_results_immutable",
     "ledger_snapshots": "ledger_immutable",
+    "gl_snapshots": "ledger_immutable",  # SPEC-034 (TASK-069)
+    "gl_account_balances": "ledger_immutable",
+    "gl_entries": "ledger_immutable",
     "trial_balance_lines": "ledger_immutable",
 }
 # Columns the app may update; any other UPDATE on these tables is reported (TASK-008). Tables not
@@ -295,6 +317,10 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "feature_flag_states": frozenset({"value", "set_by", "reason", "set_at"}),  # SPEC-011
     "notifications": frozenset({"read_at"}),  # SPEC-013
     "comment_reads": frozenset({"last_read_at"}),  # SPEC-032 (TASK-062)
+    "gl_imports": frozenset(  # SPEC-034 (TASK-069): where an upload stands
+        {"status", "failure_code", "failure_details", "gl_snapshot_id", "line_count"}
+        | {"updated_at"}
+    ),
     "client_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
     "support_sessions": frozenset(  # SPEC-012: lifecycle only
         {"status", "approved_by_kind", "approved_by", "starts_at", "expires_at", "ended_at"}
@@ -350,6 +376,10 @@ TABLE_OWNERS: dict[str, str] = {
     "upload_reviews": "agents",  # SPEC-030 (TASK-058)
     "upload_review_flags": "agents",
     "inbox_match_runs": "agents",  # SPEC-033 (TASK-065)
+    "gl_snapshots": "ledger",  # SPEC-034 (TASK-069)
+    "gl_account_balances": "ledger",
+    "gl_entries": "ledger",
+    "gl_imports": "connections",
     "inbox_match_proposals": "agents",
     "reminders": "agents",  # SPEC-027 (TASK-051)
     "reminder_items": "agents",

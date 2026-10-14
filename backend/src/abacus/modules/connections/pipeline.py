@@ -24,6 +24,7 @@ from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
 from abacus.modules.connections.connect import credentials_of
 from abacus.modules.connections.connector import ConnectorError, Dataset, Period, Unavailable
+from abacus.modules.connections.events import LedgerSnapshotRecorded
 from abacus.modules.connections.fake_format import parse_trial_balance
 from abacus.modules.connections.import_formats import source_format
 from abacus.modules.connections.import_parse import parse_isolated
@@ -299,6 +300,12 @@ async def snapshot(sys: SystemContext) -> UUID:
                     source=run.source,
                 )
                 await set_snapshot(tx.session, sys.run_id, recorded.id)
+                if recorded.created:  # SPEC-034 (TASK-069): a waiting general ledger may follow
+                    tx.emit(
+                        LedgerSnapshotRecorded(
+                            client_entity_id=run.client_entity_id, snapshot_id=recorded.id
+                        )
+                    )
                 tx.record(
                     "sync_run.snapshot_linked",
                     target=Target("sync_run", sys.run_id),

@@ -20,6 +20,7 @@ from temporalio.exceptions import ApplicationError
 from abacus.kernel import slots
 from abacus.kernel.config import settings
 from abacus.kernel.errors import NotFound
+from abacus.modules.connections.gl_import import process_gl_import
 from abacus.modules.connections.pipeline import (
     RunFailed,
     fail_run,
@@ -42,6 +43,7 @@ from abacus.modules.connections.workflow_types import (
     INTERNAL_ERROR,
     RUN_FAILED,
     FailInput,
+    GlImportInput,
     RetrievalInput,
     RetrievalOutcome,
     SlotGrant,
@@ -89,6 +91,12 @@ async def _stage[T](
         return await stage(system)
     except Exception as exc:
         raise _as_application_error(exc, retryable=is_retryable(exc)) from None
+
+
+@activity.defn(name="gl_import.process")
+async def gl_import_activity(input: GlImportInput) -> str:
+    """SPEC-034 (TASK-069): parse, check and snapshot one general ledger import."""
+    return await process_gl_import(UUID(input.tenant_id), UUID(input.import_id))
 
 
 @activity.defn(name="retrieval.acquire_slot")
@@ -186,4 +194,5 @@ ACTIVITIES = (
     snapshot_activity,
     render_activity,
     fail_run_activity,
+    gl_import_activity,  # SPEC-034 (TASK-069)
 )
