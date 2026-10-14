@@ -18,9 +18,15 @@ from abacus.modules.connections.connector import (
     RawPayload,
     Unavailable,
 )
-from abacus.modules.connections.events import ConnectionCreated, ConnectionRevoked
+from abacus.modules.connections.events import (
+    ConnectionCreated,
+    ConnectionRevoked,
+    LedgerSnapshotRecorded,
+)
 from abacus.modules.connections.fake import FakeConnector, fixture_path
 from abacus.modules.connections.fake_format import parse_trial_balance
+from abacus.modules.connections.gl_import import WORKFLOWS as GL_WORKFLOWS
+from abacus.modules.connections.gl_import import on_ledger_snapshot_recorded
 from abacus.modules.connections.pipeline import (
     RunFailed,
     RunResult,
@@ -52,8 +58,13 @@ from abacus.modules.connections.service import (
     retrieval_status,
     start_retrieval,
 )
-from abacus.modules.connections.workflow_types import FailInput, RetrievalInput, RetrievalOutcome
-from abacus.modules.connections.workflows import RetrievalWorkflow
+from abacus.modules.connections.workflow_types import (
+    FailInput,
+    GlImportInput,
+    RetrievalInput,
+    RetrievalOutcome,
+)
+from abacus.modules.connections.workflows import GlImportWorkflow, RetrievalWorkflow
 from abacus.modules.engagements.api import register_auto_retrieval
 from abacus.modules.requests.api import register_available_datasets
 
@@ -62,7 +73,10 @@ from abacus.modules.requests.api import register_available_datasets
 SUBSCRIPTIONS: dict[str, Handler] = {
     "connection.created": on_connection_created,
     "request_item.classified": on_item_classified,
+    # SPEC-034 (TASK-069): a trial balance arrived; general ledgers waiting for it follow.
+    LedgerSnapshotRecorded.event_type: on_ledger_snapshot_recorded,
 }
+WORKFLOWS.update(GL_WORKFLOWS)
 # SPEC-022 D2: requests learns what the live connection can deliver from here.
 register_available_datasets(available_datasets)
 
@@ -83,6 +97,9 @@ __all__ = [
     "Dataset",
     "FailInput",
     "FakeConnector",
+    "GlImportInput",
+    "GlImportWorkflow",
+    "LedgerSnapshotRecorded",
     "NoConnection",
     "NotSupported",
     "Period",

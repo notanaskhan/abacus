@@ -1264,6 +1264,88 @@ export type GapOut = {
 };
 
 /**
+ * GlAccountDifferenceOut
+ */
+export type GlAccountDifferenceOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Difference
+     */
+    difference: string;
+};
+
+/**
+ * GlFormatOut
+ */
+export type GlFormatOut = {
+    /**
+     * File Type
+     */
+    file_type: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Steps
+     */
+    steps: Array<string>;
+    /**
+     * System
+     */
+    system: string;
+};
+
+/**
+ * GlImportOut
+ */
+export type GlImportOut = {
+    /**
+     * Accounts
+     */
+    accounts?: Array<GlAccountDifferenceOut>;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Duplicate
+     */
+    duplicate?: boolean;
+    /**
+     * Failure Code
+     */
+    failure_code?: string | null;
+    /**
+     * Format
+     */
+    format: string;
+    /**
+     * Gl Snapshot Id
+     */
+    gl_snapshot_id?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Line Count
+     */
+    line_count?: number | null;
+    /**
+     * Months
+     */
+    months?: Array<string>;
+    /**
+     * Status
+     */
+    status: 'processing' | 'waiting_for_tb' | 'reconciled' | 'failed';
+};
+
+/**
  * GraphAccountOut
  */
 export type GraphAccountOut = {
@@ -4903,6 +4985,175 @@ export type LedgerImportFormatsResponses = {
 };
 
 export type LedgerImportFormatsResponse = LedgerImportFormatsResponses[keyof LedgerImportFormatsResponses];
+
+export type LatestGlImportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/connection/import/gl';
+};
+
+export type LatestGlImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type LatestGlImportError = LatestGlImportErrors[keyof LatestGlImportErrors];
+
+export type LatestGlImportResponses = {
+    /**
+     * Response Latest Gl Import
+     *
+     * Successful Response
+     */
+    200: GlImportOut | null;
+};
+
+export type LatestGlImportResponse = LatestGlImportResponses[keyof LatestGlImportResponses];
+
+export type GlImportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query: {
+        /**
+         * Format
+         */
+        format: string;
+    };
+    url: '/v1/engagements/{engagement_id}/connection/import/gl';
+};
+
+export type GlImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type GlImportError = GlImportErrors[keyof GlImportErrors];
+
+export type GlImportResponses = {
+    /**
+     * Successful Response
+     */
+    202: GlImportOut;
+};
+
+export type GlImportResponse = GlImportResponses[keyof GlImportResponses];
+
+export type GlImportFormatsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/connection/import/gl/formats';
+};
+
+export type GlImportFormatsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type GlImportFormatsError = GlImportFormatsErrors[keyof GlImportFormatsErrors];
+
+export type GlImportFormatsResponses = {
+    /**
+     * Response Gl Import Formats
+     *
+     * Successful Response
+     */
+    200: Array<GlFormatOut>;
+};
+
+export type GlImportFormatsResponse = GlImportFormatsResponses[keyof GlImportFormatsResponses];
 
 export type LogData = {
     body?: never;

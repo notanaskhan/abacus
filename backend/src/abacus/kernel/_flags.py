@@ -19,6 +19,11 @@ UPLOAD_REVIEW_ENABLED = Flag(
     kind="boolean",
     default="false",
 )
+LEDGER_GL_IMPORT = Flag(
+    name="ledger.gl_import",
+    kind="boolean",
+    default="false",
+)
 MATCHING_ENABLED = Flag(
     name="matching.enabled",
     kind="boolean",
@@ -48,6 +53,7 @@ RETRIEVAL_AUTO = Flag(
 FLAGS: dict[str, Flag] = {
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
+    "ledger.gl_import": LEDGER_GL_IMPORT,
     "matching.enabled": MATCHING_ENABLED,
     "uploads.processing": UPLOADS_PROCESSING,
     "ledger.import": LEDGER_IMPORT,

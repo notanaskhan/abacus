@@ -11,7 +11,13 @@ from sqlalchemy import insert, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from abacus.modules.ledger.models import LedgerSnapshot, TrialBalanceLineRow
+from abacus.modules.ledger.models import (
+    GlAccountBalance,
+    GlEntryRow,
+    GlSnapshot,
+    LedgerSnapshot,
+    TrialBalanceLineRow,
+)
 from abacus.modules.ledger.normalise import LedgerLine
 
 
@@ -152,3 +158,104 @@ async def accounts_in_firm(session: AsyncSession) -> Sequence[tuple[str, str]]:
         select(TrialBalanceLineRow.account_code, TrialBalanceLineRow.account_name).distinct()
     )
     return [(c, n) for c, n in rows.all()]
+
+
+# --- General ledger detail (SPEC-034; TASK-069) -------------------------------------------------
+
+
+async def insert_gl_snapshot(session: AsyncSession, **values: object) -> UUID | None:
+    """The new snapshot's ID, or None when this file's snapshot already exists."""
+    return (
+        await session.execute(
+            pg_insert(GlSnapshot)
+            .values(**values)
+            .on_conflict_do_nothing(constraint="gl_snapshots_file")
+            .returning(GlSnapshot.id)
+        )
+    ).scalar_one_or_none()
+
+
+async def find_gl_snapshot(
+    session: AsyncSession,
+    *,
+    client_entity_id: UUID,
+    period_start: date,
+    period_end: date,
+    raw_fingerprint: str,
+) -> GlSnapshot | None:
+    return (
+        await session.execute(
+            select(GlSnapshot).where(
+                GlSnapshot.client_entity_id == client_entity_id,
+                GlSnapshot.period_start == period_start,
+                GlSnapshot.period_end == period_end,
+                GlSnapshot.raw_fingerprint == raw_fingerprint,
+            )
+        )
+    ).scalar_one_or_none()
+
+
+async def insert_gl_rows(
+    session: AsyncSession,
+    table: type[GlAccountBalance] | type[GlEntryRow],
+    rows: list[dict[str, object]],
+) -> None:
+    if rows:
+        await session.execute(insert(table), rows)
+
+
+async def get_gl_snapshot(session: AsyncSession, snapshot_id: UUID) -> GlSnapshot | None:
+    return (
+        await session.execute(select(GlSnapshot).where(GlSnapshot.id == snapshot_id))
+    ).scalar_one_or_none()
+
+
+async def gl_balances_of(session: AsyncSession, snapshot_id: UUID) -> Sequence[GlAccountBalance]:
+    """A GL snapshot's reconciliation, by account (the caller authorised on it; LIST_EXEMPT)."""
+    return (
+        (
+            await session.execute(
+                select(GlAccountBalance)
+                .where(GlAccountBalance.snapshot_id == snapshot_id)
+                .order_by(GlAccountBalance.account_code)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def gl_entries_of(
+    session: AsyncSession, snapshot_id: UUID, *, after: int, limit: int
+) -> Sequence[GlEntryRow]:
+    """A page of a GL snapshot's entries in line order (the caller authorised; LIST_EXEMPT)."""
+    return (
+        (
+            await session.execute(
+                select(GlEntryRow)
+                .where(GlEntryRow.snapshot_id == snapshot_id, GlEntryRow.line_no > after)
+                .order_by(GlEntryRow.line_no)
+                .limit(limit)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def latest_snapshot_for(
+    session: AsyncSession, client_entity_id: UUID, period_start: date, period_end: date
+) -> LedgerSnapshot | None:
+    """The newest trial balance snapshot of an entity for a period (SPEC-034 AC-3)."""
+    return (
+        await session.execute(
+            select(LedgerSnapshot)
+            .where(
+                LedgerSnapshot.client_entity_id == client_entity_id,
+                LedgerSnapshot.period_start == period_start,
+                LedgerSnapshot.period_end == period_end,
+            )
+            .order_by(LedgerSnapshot.pulled_at.desc(), LedgerSnapshot.created_at.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()

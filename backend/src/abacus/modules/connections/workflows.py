@@ -31,6 +31,7 @@ with workflow.unsafe.imports_passed_through():
         RUN_FAILED,
         UNAVAILABLE,
         FailInput,
+        GlImportInput,
         RetrievalInput,
         RetrievalOutcome,
         SlotGrant,
@@ -175,3 +176,23 @@ async def _release(activity: str, arg: object) -> None:
         )
     except ActivityError:
         return  # the lease reclaims the slot
+
+
+_GL_TIMEOUT = timedelta(minutes=20)  # parse (5 minutes in the child), check, insert up to 1M rows
+
+
+@workflow.defn(name="gl_import")
+class GlImportWorkflow:
+    """SPEC-034 (TASK-069 D1): one general ledger import, processed by one activity on one worker
+    (its temporary file stays local). It ends `waiting_for_tb` without a trial balance; the
+    snapshot event starts it again."""
+
+    @workflow.run
+    async def run(self, input: GlImportInput) -> str:
+        return await workflow.execute_activity(
+            "gl_import.process",
+            input,
+            result_type=str,
+            start_to_close_timeout=_GL_TIMEOUT,
+            retry_policy=_RETRY,
+        )

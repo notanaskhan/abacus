@@ -14,12 +14,25 @@ from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeout
 from concurrent.futures.process import BrokenProcessPool
 from contextlib import suppress
+from dataclasses import dataclass
 from multiprocessing import get_context
 from typing import Final
 
 TIMEOUT_SECONDS: Final = 30
 CPU_SECONDS: Final = 20
 MEMORY_BYTES: Final = 1024 * 1024 * 1024
+
+
+@dataclass(frozen=True)
+class Limits:
+    """A child's limits (TASK-069 D3): general ledger parses get more than uploads do."""
+
+    timeout_seconds: int = TIMEOUT_SECONDS
+    cpu_seconds: int = CPU_SECONDS
+    memory_bytes: int = MEMORY_BYTES
+
+
+DEFAULT_LIMITS: Final = Limits()
 
 
 class IsolationFailed(Exception):
@@ -42,19 +55,38 @@ def run_isolated[**P, T](
     **kwargs: P.kwargs,
 ) -> T:
     """`fn(*args)` in a spawned child with the module's limits."""
+    return run_isolated_with(DEFAULT_LIMITS, fn, *args, **kwargs)
+
+
+def run_isolated_with[**P, T](
+    limits: Limits,
+    fn: Callable[P, T],
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> T:
+    """`fn(*args)` in a spawned child with these limits."""
     with ProcessPoolExecutor(
         max_workers=1,
         mp_context=get_context("spawn"),
         initializer=_limit,
-        initargs=(CPU_SECONDS, MEMORY_BYTES),
+        initargs=(limits.cpu_seconds, limits.memory_bytes),
     ) as pool:
         future = pool.submit(fn, *args, **kwargs)
         try:
-            return future.result(timeout=TIMEOUT_SECONDS)
+            return future.result(timeout=limits.timeout_seconds)
         except (FuturesTimeout, BrokenProcessPool, MemoryError):
             for process in list(pool._processes.values()):  # stop a runaway child now
                 process.kill()
             raise IsolationFailed from None
 
 
-__all__ = ["CPU_SECONDS", "MEMORY_BYTES", "TIMEOUT_SECONDS", "IsolationFailed", "run_isolated"]
+__all__ = [
+    "CPU_SECONDS",
+    "DEFAULT_LIMITS",
+    "MEMORY_BYTES",
+    "TIMEOUT_SECONDS",
+    "IsolationFailed",
+    "Limits",
+    "run_isolated",
+    "run_isolated_with",
+]

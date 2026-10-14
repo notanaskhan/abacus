@@ -849,6 +849,11 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/identity/repository.py", "user_contacts"),
         ("src/abacus/modules/organisations/repository.py", "names_of"),
         ("src/abacus/modules/ledger/repository.py", "lines_of"),
+        # SPEC-034 (TASK-069): a GL snapshot's reconciliation and entries, read for a caller
+        # authorised on its engagement (as a trial balance snapshot's lines are).
+        ("src/abacus/modules/ledger/repository.py", "gl_balances_of"),
+        ("src/abacus/modules/ledger/repository.py", "gl_entries_of"),
+        ("src/abacus/modules/connections/repository.py", "waiting_gl_imports"),
         ("src/abacus/modules/requests/repository.py", "items_fulfilled_by"),
         # SPEC-020: one request item's versions and its uploads, read after `authorise` on that
         # item with its client facts (`evidence.upload` / `evidence.read`).

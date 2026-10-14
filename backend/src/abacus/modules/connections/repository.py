@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from uuid import UUID, uuid4
@@ -14,6 +15,7 @@ from abacus.modules.connections.models import (
     Connection,
     ConnectionSecret,
     ConnectionState,
+    GlImport,
     LedgerImport,
     SyncRun,
 )
@@ -431,3 +433,68 @@ async def latest_import(
             query.order_by(LedgerImport.created_at.desc(), LedgerImport.id.desc()).limit(1)
         )
     ).scalar_one_or_none()
+
+
+# --- General ledger imports (SPEC-034; TASK-069) ------------------------------------------------
+
+
+async def insert_gl_import(session: AsyncSession, **values: object) -> GlImport | None:
+    """The new import, or None when this entity already has this file (AC-7)."""
+    return (
+        await session.execute(
+            pg_insert(GlImport)
+            .values(**values)
+            .on_conflict_do_nothing(constraint="gl_imports_once")
+            .returning(GlImport)
+        )
+    ).scalar_one_or_none()
+
+
+async def gl_import_by_fingerprint(
+    session: AsyncSession, client_entity_id: UUID, fingerprint: str
+) -> GlImport | None:
+    return (
+        await session.execute(
+            select(GlImport).where(
+                GlImport.client_entity_id == client_entity_id, GlImport.fingerprint == fingerprint
+            )
+        )
+    ).scalar_one_or_none()
+
+
+async def get_gl_import(session: AsyncSession, import_id: UUID) -> GlImport | None:
+    return (
+        await session.execute(select(GlImport).where(GlImport.id == import_id))
+    ).scalar_one_or_none()
+
+
+async def latest_gl_import(session: AsyncSession, client_entity_id: UUID) -> GlImport | None:
+    return (
+        await session.execute(
+            select(GlImport)
+            .where(GlImport.client_entity_id == client_entity_id)
+            .order_by(GlImport.created_at.desc(), GlImport.id.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
+async def waiting_gl_imports(session: AsyncSession, client_entity_id: UUID) -> Sequence[GlImport]:
+    """An entity's general ledgers waiting for a trial balance (the system's own read on a
+    snapshot event; LIST_EXEMPT)."""
+    return (
+        (
+            await session.execute(
+                select(GlImport).where(
+                    GlImport.client_entity_id == client_entity_id,
+                    GlImport.status == "waiting_for_tb",
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def set_gl_import(session: AsyncSession, import_id: UUID, **values: object) -> None:
+    await session.execute(update(GlImport).where(GlImport.id == import_id).values(**values))

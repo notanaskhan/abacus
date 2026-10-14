@@ -161,7 +161,10 @@ def test_ac4_an_empty_registration_does_nothing() -> None:
 
 
 def test_ac2_retrieval_is_interactive() -> None:
-    assert {connections.RetrievalWorkflow: "interactive"} == connections.WORKFLOWS
+    assert {
+        connections.RetrievalWorkflow: "interactive",
+        connections.GlImportWorkflow: "batch",  # SPEC-034 (TASK-069): large files, in the back
+    } == connections.WORKFLOWS
     assert work_class_of(connections.RetrievalWorkflow) == "interactive"
 
 

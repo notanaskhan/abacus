@@ -51,6 +51,7 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
     assert set(worker_main.connections.SUBSCRIPTIONS) == {
         "connection.created",
         "request_item.classified",
+        "ledger_snapshot.recorded",  # SPEC-034 (TASK-069): waiting general ledgers follow
     }
     assert worker_main.agents.SUBSCRIPTIONS in worker_main.SUBSCRIBERS
 
@@ -72,6 +73,7 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "request_item.document_kind_changed",  # SPEC-029 (TASK-055 D5): re-check the upload
         "upload_checks.recorded",  # SPEC-030 (TASK-059): the upload reviewer may follow
         "inbox_file.extracted",  # SPEC-033 (TASK-066): the matcher may follow
+        "ledger_snapshot.recorded",  # SPEC-034 (TASK-069): waiting general ledgers follow
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert worker_main.connections.on_connection_created in built.handlers["connection.created"]

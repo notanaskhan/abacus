@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Query, Request
@@ -23,6 +23,14 @@ from abacus.modules.connections.connect import (
     start,
 )
 from abacus.modules.connections.connector import Period
+from abacus.modules.connections.gl_formats import GL_FORMATS
+from abacus.modules.connections.gl_import import (
+    GlImportView,
+    check_gl_receive,
+    latest_gl,
+    receive_gl_export,
+)
+from abacus.modules.connections.gl_parse import MAX_GL_BYTES
 from abacus.modules.connections.import_parse import MAX_BYTES
 from abacus.modules.connections.ledger_import import (
     FileTooLarge,
@@ -326,3 +334,109 @@ async def latest_ledger_import_route(engagement_id: UUID, ctx: Ctx) -> ImportOut
     """SPEC-028 AC-6: the latest upload for the client entity, or null."""
     view = await latest(ctx, engagement_id)
     return None if view is None else _import_out(view)
+
+
+# --- General ledger detail (SPEC-034; TASK-069) -------------------------------------------------
+
+
+class GlFormatOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[str, classified("internal")]
+    system: Annotated[str, classified("internal")]
+    file_type: Annotated[str, classified("internal")]
+    steps: Annotated[list[str], classified("internal")]
+
+
+class GlAccountDifferenceOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    code: Annotated[str, classified("confidential")]
+    difference: Annotated[str, classified("confidential")]
+
+
+class GlImportOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    format: Annotated[str, classified("internal")]
+    status: Annotated[
+        Literal["processing", "waiting_for_tb", "reconciled", "failed"], classified("internal")
+    ]
+    failure_code: Annotated[str | None, classified("internal")] = None
+    accounts: Annotated[list[GlAccountDifferenceOut], classified("confidential")] = []
+    months: Annotated[list[str], classified("internal")] = []
+    line_count: Annotated[int | None, classified("internal")] = None
+    gl_snapshot_id: Annotated[UUID | None, classified("internal")] = None
+    created_at: Annotated[datetime, classified("internal")]
+    duplicate: Annotated[bool, classified("internal")] = False
+
+
+def _gl_out(view: GlImportView) -> GlImportOut:
+    details = view.failure_details or {}
+    accounts = cast(list[dict[str, str]], details.get("accounts") or [])
+    return GlImportOut(
+        id=view.id,
+        format=view.format,
+        status=cast(Literal["processing", "waiting_for_tb", "reconciled", "failed"], view.status),
+        failure_code=view.failure_code,
+        accounts=[
+            GlAccountDifferenceOut(code=a["code"], difference=a["difference"]) for a in accounts
+        ],
+        months=[str(m) for m in cast(list[object], details.get("months") or [])],
+        line_count=view.line_count,
+        gl_snapshot_id=view.gl_snapshot_id,
+        created_at=view.created_at,
+        duplicate=view.duplicate,
+    )
+
+
+async def _gl_file(request: Request) -> bytes:
+    """The raw file body, refused past the GL limit before it is all read."""
+    data = bytearray()
+    async for chunk in request.stream():
+        data += chunk
+        if len(data) > MAX_GL_BYTES:
+            raise FileTooLarge("body")
+    return bytes(data)
+
+
+@connection_router.get(
+    "/import/gl/formats", action="ledger_import.upload", response_model=list[GlFormatOut]
+)
+async def gl_import_formats_route(engagement_id: UUID, ctx: Ctx) -> list[GlFormatOut]:
+    """SPEC-034 §4.1: the systems whose general ledger exports can be uploaded, with steps."""
+    await check_gl_receive(ctx, engagement_id)
+    return [
+        GlFormatOut(id=f.id, system=f.system, file_type=f.file_type, steps=list(f.steps))
+        for f in GL_FORMATS.values()
+    ]
+
+
+@connection_router.post(
+    "/import/gl",
+    action="ledger_import.upload",
+    response_model=GlImportOut,
+    status_code=202,
+    errors=(409,),
+)
+async def gl_import_route(
+    engagement_id: UUID,
+    request: Request,
+    ctx: Ctx,
+    format: Annotated[str, Query(min_length=1, max_length=50)],
+) -> GlImportOut:
+    """SPEC-034 AC-1, AC-2: a general ledger export, scanned and stored; processed in the
+    background (`processing`, then `waiting_for_tb`, `reconciled` or `failed`)."""
+    await check_gl_receive(ctx, engagement_id)
+    content = await _gl_file(request)
+    return _gl_out(await receive_gl_export(ctx, engagement_id, format_id=format, content=content))
+
+
+@connection_router.get(
+    "/import/gl", action="connection.read_log", response_model=GlImportOut | None
+)
+async def latest_gl_import_route(engagement_id: UUID, ctx: Ctx) -> GlImportOut | None:
+    """SPEC-034 AC-5: the latest general ledger upload for the client entity, or null."""
+    view = await latest_gl(ctx, engagement_id)
+    return None if view is None else _gl_out(view)

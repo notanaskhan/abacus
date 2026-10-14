@@ -7,6 +7,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import ARRAY, FetchedValue, LargeBinary, Numeric, String
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from abacus.kernel.db import Base
@@ -115,3 +116,30 @@ class LedgerImport(Base):
     uploaded_by: Mapped[UUID]
     on_behalf: Mapped[bool] = mapped_column(server_default=FetchedValue())
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class GlImport(Base):
+    """SPEC-034 (TASK-069): one uploaded general ledger export and where it stands."""
+
+    __tablename__ = "gl_imports"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    client_entity_id: Mapped[UUID]
+    format: Mapped[str]
+    period_start: Mapped[date]
+    period_end: Mapped[date]
+    storage_key: Mapped[str]
+    storage_version_id: Mapped[str]
+    fingerprint: Mapped[str]
+    size_bytes: Mapped[int]
+    status: Mapped[str] = mapped_column(server_default=FetchedValue())
+    failure_code: Mapped[str | None]
+    failure_details: Mapped[dict[str, object] | None] = mapped_column(JSONB)
+    gl_snapshot_id: Mapped[UUID | None]
+    line_count: Mapped[int | None]
+    uploaded_by: Mapped[UUID]
+    on_behalf: Mapped[bool] = mapped_column(server_default=FetchedValue())
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    updated_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

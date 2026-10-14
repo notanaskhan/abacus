@@ -54,3 +54,11 @@ class SlotGrant:
 
     granted: bool
     max_wait_seconds: int
+
+
+@dataclass(frozen=True)
+class GlImportInput:
+    """SPEC-034 (TASK-069): one general ledger import to process."""
+
+    tenant_id: str
+    import_id: str

@@ -27,3 +27,13 @@ class ConnectionRevoked(DomainEvent):
     connection_id: Annotated[UUID, classified("internal")]
     engagement_id: Annotated[UUID, classified("internal")]
     by: Annotated[UUID, classified("internal")]
+
+
+class LedgerSnapshotRecorded(DomainEvent):
+    """A trial balance snapshot was recorded (SPEC-034; TASK-069): general ledgers waiting for
+    it are checked."""
+
+    event_type: ClassVar[str] = "ledger_snapshot.recorded"
+
+    client_entity_id: Annotated[UUID, classified("internal")]
+    snapshot_id: Annotated[UUID, classified("internal")]
