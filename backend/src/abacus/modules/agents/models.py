@@ -23,6 +23,7 @@ class AgentRun(Base):
     spec_version: Mapped[int]
     engagement_id: Mapped[UUID]
     evidence_version_id: Mapped[UUID | None]
+    inbox_file_id: Mapped[UUID | None]  # SPEC-033 (TASK-066): a matcher run's file
     initiator_user_id: Mapped[UUID]
     source_event_id: Mapped[UUID | None]
     task_scope: Mapped[list[str]] = mapped_column(ARRAY(String))

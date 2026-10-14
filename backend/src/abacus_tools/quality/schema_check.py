@@ -208,6 +208,7 @@ APP_INSERT_COLUMNS.update(
         "agent_runs": frozenset(
             {"id", "tenant_id", "agent_id", "spec_version", "engagement_id", "task_scope"}
             | {"evidence_version_id", "initiator_user_id", "source_event_id"}
+            | {"inbox_file_id"}  # SPEC-033 (TASK-066): the matcher's file
         ),
         "screening_results": frozenset(
             {"id", "tenant_id", "engagement_id", "evidence_version_id", "agent_run_id"}

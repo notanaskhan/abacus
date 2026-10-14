@@ -31,6 +31,24 @@ class ScreeningInput:
 
 
 @dataclass(frozen=True)
+class MatchInput:
+    """SPEC-033 (TASK-066): a matcher run for one inbox file, on behalf of `requested_by` (the
+    engagement partner, or the person who asked)."""
+
+    tenant_id: str
+    inbox_file_id: str
+    event_id: str
+    requested_by: str | None
+
+
+@dataclass(frozen=True)
+class MatchRunInput:
+    tenant_id: str
+    run_id: str
+    inbox_file_id: str
+
+
+@dataclass(frozen=True)
 class RunInput:
     tenant_id: str
     run_id: str

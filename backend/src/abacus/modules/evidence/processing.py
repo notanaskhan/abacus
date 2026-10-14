@@ -49,6 +49,7 @@ from abacus.modules.evidence.events import (
     EvidenceUploaded,
     EvidenceVersionCreated,
     InboxFileAdded,
+    InboxFileExtracted,
     UploadChecksRecorded,
 )
 from abacus.modules.evidence.extraction import EXTRACTOR_VERSION, Extraction, extract_isolated
@@ -221,6 +222,10 @@ async def process_upload(given: UploadInput) -> str:
             target=Target("evidence_version" if version_id else "inbox_file", source_id),
             after=Ref(fingerprint=source.fingerprint),
         )
+        if row is not None and inbox_id is not None and found.status == "extracted":
+            tx.emit(  # SPEC-033 (TASK-066): the matcher may follow (P-7)
+                InboxFileExtracted(engagement_id=source.engagement_id, inbox_file_id=inbox_id)
+            )
     _log.info("upload.extracted", kind=given.kind, status=found.status, reason=found.reason)
     return found.status
 

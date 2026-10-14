@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import UTC, date, datetime
+from decimal import Decimal
 from uuid import UUID, uuid4
 
 from sqlalchemy import func, insert, select, update
@@ -39,6 +40,7 @@ async def insert_run(
     initiator_user_id: UUID,
     source_event_id: UUID | None,
     task_scope: list[str],
+    inbox_file_id: UUID | None = None,
 ) -> UUID | None:
     """The new run's ID, or None if this agent already ran for this event."""
     return (
@@ -54,6 +56,7 @@ async def insert_run(
                 initiator_user_id=initiator_user_id,
                 source_event_id=source_event_id,
                 task_scope=task_scope,
+                inbox_file_id=inbox_file_id,
             )
             .on_conflict_do_nothing(constraint="agent_runs_once_per_event")
             .returning(AgentRun.id)
@@ -721,3 +724,84 @@ async def shown_flag_counts(
         if newest[row.evidence_version_id][1] == row.id and row.shown:
             counts[row.evidence_version_id] = counts.get(row.evidence_version_id, 0) + 1
     return counts
+
+
+# --- The matcher's reads (SPEC-033; TASK-066) ---------------------------------------------------
+
+
+async def latest_match_runs(
+    session: AsyncSession, ctx: AuthContext, agent_id: str, engagement_id: UUID
+) -> list[AgentRun]:
+    """The newest matcher run per inbox file of an engagement the caller may read matches on."""
+    return list(
+        (
+            await session.execute(
+                select(AgentRun)
+                .where(
+                    AgentRun.agent_id == agent_id,
+                    AgentRun.engagement_id == engagement_id,
+                    AgentRun.inbox_file_id.is_not(None),
+                    visible(ctx, "inbox_match.read", AgentRun.engagement_id),
+                )
+                .ext(distinct_on(AgentRun.inbox_file_id))
+                .order_by(AgentRun.inbox_file_id, AgentRun.started_at.desc(), AgentRun.id.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def list_match_results(
+    session: AsyncSession, ctx: AuthContext, run_ids: Sequence[UUID]
+) -> list[tuple[InboxMatchRun, InboxMatchProposal | None]]:
+    """Those runs' results with their shown proposals in rank order (hidden ones stay for
+    evaluation and audit)."""
+    if not run_ids:
+        return []
+    rows = await session.execute(
+        select(InboxMatchRun, InboxMatchProposal)
+        .outerjoin(
+            InboxMatchProposal,
+            (InboxMatchProposal.match_id == InboxMatchRun.id)
+            & (InboxMatchProposal.tenant_id == InboxMatchRun.tenant_id)
+            & InboxMatchProposal.shown.is_(True),
+        )
+        .where(
+            InboxMatchRun.agent_run_id.in_(run_ids),
+            visible(ctx, "inbox_match.read", InboxMatchRun.engagement_id),
+        )
+        .order_by(InboxMatchRun.agent_run_id, InboxMatchProposal.rank)
+    )
+    return list(rows.tuples().all())
+
+
+async def shown_picks(
+    session: AsyncSession, inbox_file_ids: Sequence[UUID]
+) -> dict[UUID, list[tuple[UUID, Decimal]]]:
+    """SPEC-033 (TASK-066 D1): per file, the latest completed matcher result's shown requests,
+    best first; for evidence's inbox listing, which already authorised the caller on these files
+    (request IDs only, never the matcher's words). LIST_EXEMPT."""
+    if not inbox_file_ids:
+        return {}
+    latest = (
+        select(InboxMatchRun.id)
+        .where(InboxMatchRun.inbox_file_id.in_(inbox_file_ids))
+        .ext(distinct_on(InboxMatchRun.inbox_file_id))
+        .order_by(InboxMatchRun.inbox_file_id, InboxMatchRun.created_at.desc())
+        .subquery()
+    )
+    rows = await session.execute(
+        select(
+            InboxMatchRun.inbox_file_id,
+            InboxMatchProposal.request_item_id,
+            InboxMatchProposal.confidence,
+        )
+        .join(InboxMatchProposal, InboxMatchProposal.match_id == InboxMatchRun.id)
+        .where(InboxMatchRun.id.in_(select(latest.c.id)), InboxMatchProposal.shown.is_(True))
+        .order_by(InboxMatchRun.inbox_file_id, InboxMatchProposal.rank)
+    )
+    found: dict[UUID, list[tuple[UUID, Decimal]]] = {}
+    for file_id, item_id, confidence in rows.tuples().all():
+        found.setdefault(file_id, []).append((item_id, confidence))
+    return found

@@ -14,6 +14,9 @@ feature flag, then its own rule. Each writes one feed row (`agent_activity`), on
   Routine or above with the firm's `upload_review.enabled` flag on, for the engagement partner.
 - P-3 match: records how many items the matching rule suggested for a waiting inbox file; it never
   assigns.
+- P-7 match (SPEC-033; TASK-066): an extracted inbox file starts the matcher, at Routine or above
+  with the firm's `matching.enabled` flag on, for the engagement partner, unless code's content
+  rules were decisive (no row then, D3). It proposes; a person assigns.
 
 In TASK-050 the agent starts work that already runs under a person (D2); its own `AgentContext`
 under the engagement partner arrives with reminders (TASK-051).
@@ -267,6 +270,33 @@ async def _review(tenant: TenantContext, engagement_id: UUID, version: UUID, sou
     return await review_for(tenant, engagement_id, version, source)
 
 
+async def _match_on(tenant_id: UUID) -> bool:
+    from abacus.modules.agents.match_start import matching_enabled  # it routes events here
+
+    return await matching_enabled(tenant_id)
+
+
+async def _match_worth(tenant: TenantContext, inbox_file_id: UUID) -> bool:
+    from abacus.modules.agents.match_start import worth_it  # it routes events here
+
+    return await worth_it(tenant, inbox_file_id)
+
+
+async def _match(
+    tenant: TenantContext, engagement_id: UUID, inbox_file_id: UUID, source: UUID
+) -> bool:
+    """SPEC-033 P-7 (TASK-066): the matcher, on behalf of the engagement partner."""
+    from abacus.modules.agents.match_start import match_for  # it routes events here
+
+    return await match_for(tenant, engagement_id, inbox_file_id, source)
+
+
+def _matcher_available() -> bool:
+    from abacus.modules.agents.inbox_match import model_available
+
+    return model_available()
+
+
 async def _screen(
     tenant: TenantContext, version: UUID, source: UUID, requested_by: UUID | None
 ) -> None:
@@ -335,6 +365,24 @@ async def apply_policy(given: HandleInput) -> tuple[list[_Row], bool]:
         if version is None:
             return [_replace(base, outcome="failed", reason="malformed_event")], False
         if not await _review(tenant, engagement_id, version, UUID(given.event_id)):
+            return [_replace(base, reason="no_partner")], False
+        return [_replace(base, outcome="done")], False
+    if kind == "inbox_file.extracted":
+        file_id = _uuid(payload, "inbox_file_id")
+        base = _Row("P-7", "inbox_match.start", "skipped", None, "inbox_file", file_id)
+        if paused is not None:
+            return [_replace(base, reason=paused)], False
+        if not await _match_on(tenant.tenant_id):
+            return [_replace(base, reason="matching_off")], False
+        if not _matcher_available():
+            return [_replace(base, reason="no_real_model")], False
+        if await autonomy_level(tenant.tenant_id) < 1:
+            return [_replace(base, reason="advise")], False
+        if file_id is None:
+            return [_replace(base, outcome="failed", reason="malformed_event")], False
+        if not await _match_worth(tenant, file_id):
+            return [], False  # D3: code was decisive, or nothing to choose from
+        if not await _match(tenant, engagement_id, file_id, UUID(given.event_id)):
             return [_replace(base, reason="no_partner")], False
         return [_replace(base, outcome="done")], False
     if kind in ("connection.created", "request_item.classified"):

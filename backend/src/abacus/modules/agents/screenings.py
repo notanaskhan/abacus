@@ -25,6 +25,8 @@ from abacus.modules.agents.engagement_agent import agent_on, firm_resumed, to_ag
 from abacus.modules.agents.engagement_agent_workflow import EngagementAgent
 from abacus.modules.agents.events import KnowledgeDocumentAdded
 from abacus.modules.agents.knowledge_workflow import KnowledgeEmbeddingWorkflow
+from abacus.modules.agents.match_start import WORKFLOWS as MATCH_WORKFLOWS
+from abacus.modules.agents.match_start import start_match
 from abacus.modules.agents.review_start import WORKFLOWS as REVIEW_WORKFLOWS
 from abacus.modules.agents.review_start import start_upload_review
 from abacus.modules.agents.service import SCREENER
@@ -35,6 +37,7 @@ from abacus.modules.engagements.api import EngagementCreated, get_ref
 from abacus.modules.evidence.api import (
     EvidenceVersionCreated,
     InboxFileAdded,
+    InboxFileExtracted,
     UploadChecksRecorded,
     version_view,
 )
@@ -56,6 +59,7 @@ WORKFLOWS: dict[type, WorkClass] = {
     EngagementAgent: "background",  # SPEC-027 (TASK-050): one per engagement, long-lived
 }
 WORKFLOWS.update(REVIEW_WORKFLOWS)  # SPEC-030 (TASK-059): the worker hosts it with these
+WORKFLOWS.update(MATCH_WORKFLOWS)  # SPEC-033 (TASK-066)
 register_work_classes(WORKFLOWS)
 
 
@@ -127,6 +131,8 @@ SUBSCRIPTIONS = {
     FirmAgentsResumed.event_type: firm_resumed,
     # SPEC-030 (TASK-059): checks recorded for an upload; the reviewer may follow (P-6).
     UploadChecksRecorded.event_type: start_upload_review,
+    # SPEC-033 (TASK-066): an inbox file was read; the matcher may follow (P-7).
+    InboxFileExtracted.event_type: start_match,
 }
 
 

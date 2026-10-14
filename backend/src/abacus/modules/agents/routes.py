@@ -33,6 +33,7 @@ from abacus.modules.agents.knowledge import (
     search_knowledge,
     withdraw_document,
 )
+from abacus.modules.agents.match_start import matches_of, request_match
 from abacus.modules.agents.review_start import request_review, review_flag_counts, review_of
 from abacus.modules.agents.screenings import request_screening
 from abacus.modules.agents.service import ScreeningResultView, screening_results_for
@@ -220,6 +221,55 @@ async def review_flags_route(engagement_id: UUID, ctx: Ctx) -> list[ReviewFlagCo
     """For the Board's "AI flags" marker: shown flags per version's latest review."""
     counts = await review_flag_counts(ctx, engagement_id)
     return [ReviewFlagCountOut(evidence_version_id=v, flags=n) for v, n in counts.items()]
+
+
+# --- The matcher (SPEC-033; TASK-066) ------------------------------------------------------------
+
+
+class MatchProposalOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    request_item_id: Annotated[UUID, classified("internal")]
+    confidence: Annotated[Decimal, classified("internal")]
+    rationale: Annotated[str, classified("confidential")]
+    quotes: Annotated[list[ReviewQuoteOut], classified("confidential")]
+
+
+class FileMatchOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    inbox_file_id: Annotated[UUID, classified("internal")]
+    status: Annotated[str, classified("internal")]
+    reason: Annotated[str | None, classified("internal")]
+    none_fit: Annotated[bool, classified("internal")]
+    none_fit_rationale: Annotated[str | None, classified("confidential")]
+    proposals: Annotated[list[MatchProposalOut], classified("confidential")]
+
+
+@router.get("/inbox-matches", action="inbox_match.read", response_model=list[FileMatchOut])
+async def inbox_matches_route(engagement_id: UUID, ctx: Ctx) -> list[FileMatchOut]:
+    """SPEC-033 AC-3, AC-5: each inbox file's latest matcher run, firm roles only, verified quotes
+    only."""
+    return [FileMatchOut.model_validate(asdict(v)) for v in await matches_of(ctx, engagement_id)]
+
+
+class MatchRequestedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    inbox_file_id: Annotated[UUID, classified("internal")]
+
+
+@router.post(
+    "/inbox/{file_id}/match",
+    action="inbox_match.request",
+    status_code=202,
+    response_model=MatchRequestedOut,
+    errors=(409,),
+)
+async def request_match_route(engagement_id: UUID, file_id: UUID, ctx: Ctx) -> MatchRequestedOut:
+    """SPEC-033 §4.5: "Suggest with AI" (at Advise, or again)."""
+    await request_match(ctx, engagement_id, file_id)
+    return MatchRequestedOut(inbox_file_id=file_id)
 
 
 @router.get("/agent", action="activity.read", response_model=AgentOut)

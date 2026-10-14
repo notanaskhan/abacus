@@ -17,6 +17,7 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.evidence.extraction import EXTRACTOR_VERSION
 from abacus.modules.evidence.inbox import inbox_context
 from abacus.modules.evidence.matching import Reason, facts_of, score_all, should_match
+from abacus.modules.evidence.models import InboxFile, UploadExtraction
 from abacus.modules.evidence.processing import document_text, excerpt_of
 from abacus.modules.evidence.repository import extraction_for, get_inbox_file
 from abacus.modules.identity.api import member_context
@@ -51,8 +52,37 @@ class MatchMaterial:
     sheets: dict[str, tuple[tuple[str, ...], ...]]
 
 
-async def match_material(tenant: TenantContext, inbox_file_id: UUID) -> MatchMaterial | None:
-    """None without the file or its extraction."""
+async def _candidates(
+    tenant: TenantContext, file: InboxFile, row: UploadExtraction
+) -> tuple[tuple[Candidate, ...], bool]:
+    """The uploader's assignable open requests, scored, and whether the matcher is worth running
+    (SPEC-033 Q3). None to choose from when the uploader is no longer a member."""
+    uploader = await member_context(tenant.tenant_id, file.uploaded_by)
+    if uploader is None:
+        return (), False
+    items = await request_items_for(uploader, file.engagement_id)
+    context = await inbox_context(uploader, file.engagement_id, items)
+    scored = score_all(file.file_name, items, facts_of(row), context)[:MAX_CANDIDATES]
+    described = {i.id: i for i in items}
+    needed: Mapping[UUID, frozenset[str]] = context.needed if context is not None else {}
+    candidates = tuple(
+        Candidate(
+            s.request_item_id,
+            described[s.request_item_id].description,
+            described[s.request_item_id].audit_area,
+            described[s.request_item_id].document_kind,
+            tuple(sorted(needed.get(s.request_item_id, frozenset()))),
+            s.score,
+            s.reasons,
+        )
+        for s in scored
+    )
+    return candidates, should_match(scored)
+
+
+async def _file_and_extraction(
+    tenant: TenantContext, inbox_file_id: UUID
+) -> tuple[InboxFile, UploadExtraction] | None:
     async with tenant_session(tenant) as session:
         file = await get_inbox_file(session, inbox_file_id)
         row = (
@@ -62,30 +92,26 @@ async def match_material(tenant: TenantContext, inbox_file_id: UUID) -> MatchMat
                 session, inbox_file_id=inbox_file_id, extractor_version=EXTRACTOR_VERSION
             )
         )
-    if file is None or row is None:
+    return None if file is None or row is None else (file, row)
+
+
+async def worth_matching(tenant: TenantContext, inbox_file_id: UUID) -> bool:
+    """SPEC-033 Q3 (TASK-066 D3): an extracted file with candidates where code wasn't decisive,
+    without reading the document itself (the engagement agent's P-7 asks before starting)."""
+    found = await _file_and_extraction(tenant, inbox_file_id)
+    if found is None or found[1].status != "extracted":
+        return False
+    candidates, worth = await _candidates(tenant, *found)
+    return bool(candidates) and worth
+
+
+async def match_material(tenant: TenantContext, inbox_file_id: UUID) -> MatchMaterial | None:
+    """None without the file or its extraction."""
+    found = await _file_and_extraction(tenant, inbox_file_id)
+    if found is None:
         return None
-    uploader = await member_context(tenant.tenant_id, file.uploaded_by)
-    candidates: tuple[Candidate, ...] = ()
-    worth = True
-    if uploader is not None:
-        items = await request_items_for(uploader, file.engagement_id)
-        context = await inbox_context(uploader, file.engagement_id, items)
-        scored = score_all(file.file_name, items, facts_of(row), context)[:MAX_CANDIDATES]
-        worth = should_match(scored)
-        described = {i.id: i for i in items}
-        needed: Mapping[UUID, frozenset[str]] = context.needed if context is not None else {}
-        candidates = tuple(
-            Candidate(
-                s.request_item_id,
-                described[s.request_item_id].description,
-                described[s.request_item_id].audit_area,
-                described[s.request_item_id].document_kind,
-                tuple(sorted(needed.get(s.request_item_id, frozenset()))),
-                s.score,
-                s.reasons,
-            )
-            for s in scored
-        )
+    file, row = found
+    candidates, worth = await _candidates(tenant, file, row)
     pages, sheets = await document_text(tenant.tenant_id, row)
     excerpt_pages, excerpt_tables, truncated = excerpt_of(pages, sheets)
     return MatchMaterial(

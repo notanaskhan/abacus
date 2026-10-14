@@ -705,7 +705,9 @@ class SuggestionOut(BaseModel):
     score: Annotated[int, classified("internal")]
     matched: Annotated[list[str], classified("confidential")]
     # SPEC-033 (TASK-064): where it came from, and why (fixed codes; values computed by code).
-    source: Annotated[Literal["content", "file_name"], classified("internal")] = "file_name"
+    source: Annotated[Literal["matcher", "content", "file_name"], classified("internal")] = (
+        "file_name"
+    )
     reasons: Annotated[list[ReasonOut], classified("confidential")] = []
 
 
@@ -757,7 +759,7 @@ class InboxAssignIn(BaseModel):
     followed_suggestion: Annotated[bool, classified("internal")] = False
     # SPEC-033 AC-6 (TASK-064): which suggestion was followed, and its rank.
     suggestion_source: Annotated[
-        Literal["file_name", "content"] | None, classified("internal")
+        Literal["file_name", "content", "matcher"] | None, classified("internal")
     ] = None
     suggestion_rank: Annotated[int | None, Field(ge=1, le=3), classified("internal")] = None
 

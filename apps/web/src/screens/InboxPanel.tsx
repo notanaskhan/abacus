@@ -1,16 +1,18 @@
-import type { InboxFileOut, RequestItemOut } from "@abacus/api-client";
+import type { FileMatchOut, InboxFileOut, RequestItemOut } from "@abacus/api-client";
 import { addToInbox } from "@abacus/api-client";
 import {
   assignInboxFileMutation,
   discardMutation,
+  inboxMatchesOptions,
   inboxOptions,
   inboxQueryKey,
   listRequestItemsQueryKey,
 } from "@abacus/api-client/query";
-import { Button, Label, Panel, Skeleton, StatusPill } from "@abacus/ui";
+import { AiTag, Button, Label, Panel, Skeleton, StatusPill } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
+import { InboxAIMatch } from "./InboxAIMatch";
 import { reasonLabel } from "./matchingMessages";
 
 const ACCEPT = ".pdf,.xlsx,.xls,.docx,.doc,.csv,.png,.jpg,.jpeg";
@@ -38,13 +40,24 @@ type Dropped = { name: string; state: "uploading" | "done" | "failed"; message?:
 export function InboxPanel({
   engagementId,
   items,
+  firm,
 }: {
   engagementId: string;
   items: RequestItemOut[];
+  // SPEC-033 (TASK-066): the firm's view, with the matcher's proposals; absent for clients.
+  firm?: { canRequestMatch: boolean };
 }): JSX.Element {
   const queryClient = useQueryClient();
   const path = { path: { engagement_id: engagementId } };
   const files = useQuery({ ...inboxOptions(path), retry: false });
+  const matches = useQuery({
+    ...inboxMatchesOptions(path),
+    retry: false,
+    enabled: firm !== undefined && (files.data?.length ?? 0) > 0,
+    refetchInterval: (query) =>
+      query.state.data?.some((m) => m.status === "running") === true ? 4000 : false,
+  });
+  const matchOf = new Map((matches.data ?? []).map((m) => [m.inbox_file_id, m]));
   const [dropped, setDropped] = useState<Dropped[]>([]);
   const refresh = (): void => {
     void queryClient.invalidateQueries({ queryKey: inboxQueryKey(path) });
@@ -130,6 +143,11 @@ export function InboxPanel({
               file={file}
               items={items}
               onDone={refresh}
+              firm={
+                firm === undefined
+                  ? undefined
+                  : { match: matchOf.get(file.id), canRequest: firm.canRequestMatch }
+              }
             />
           ))}
         </ul>
@@ -143,11 +161,13 @@ function InboxRow({
   file,
   items,
   onDone,
+  firm,
 }: {
   engagementId: string;
   file: InboxFileOut;
   items: RequestItemOut[];
   onDone: () => void;
+  firm: { match: FileMatchOut | undefined; canRequest: boolean } | undefined;
 }): JSX.Element {
   const [chosen, setChosen] = useState("");
   const after = { onSuccess: onDone, onError: onDone };
@@ -199,6 +219,13 @@ function InboxRow({
               >
                 {`${describe.get(s.request_item_id) ?? "Request"} · ${String(s.score)}%`}
               </Button>
+              {/* SPEC-033 (TASK-066): the matcher's pick; clients see "Suggested", no AI words. */}
+              {s.source === "matcher" &&
+                (firm !== undefined ? (
+                  <AiTag />
+                ) : (
+                  <span className="text-xs text-info">Suggested</span>
+                ))}
               {/* SPEC-033 (TASK-064): why, in fixed words. */}
               {s.source === "content" && (
                 <span className="text-xs text-info">From the file&apos;s contents</span>
@@ -218,6 +245,15 @@ function InboxRow({
         </ul>
       ) : (
         <p className="text-xs text-muted">No suggestion: choose the request below.</p>
+      )}
+      {firm !== undefined && (
+        <InboxAIMatch
+          engagementId={engagementId}
+          fileId={file.id}
+          match={firm.match}
+          items={items}
+          canRequest={firm.canRequest}
+        />
       )}
       <div className="flex flex-wrap items-end gap-2">
         <select

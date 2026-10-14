@@ -8,7 +8,7 @@ reader can see, so a contributor only ever sees their assigned items.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Final
@@ -16,7 +16,7 @@ from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError
 
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import check_facts, gate_client_data, get_ref
@@ -25,6 +25,8 @@ from abacus.modules.evidence.client_view import covered_digits, statement_gap, y
 from abacus.modules.evidence.events import InboxFileAdded
 from abacus.modules.evidence.extraction import EXTRACTOR_VERSION
 from abacus.modules.evidence.matching import (
+    MAX_SUGGESTIONS,
+    TAKES_EVIDENCE,
     ContentFacts,
     EngagementFacts,
     Suggestion,
@@ -65,6 +67,32 @@ from abacus.modules.requests.api import RequestItemView, read_item_versions, req
 
 _STAFF: Final = frozenset({"engagement_partner", "manager", "senior", "staff", "reviewer"})
 SUGGESTION_SOURCES: Final = {"file_name": 1, "content": 2, "matcher": 3}
+
+# SPEC-033 (TASK-066 D1): the matcher's shown picks per inbox file, best first, as
+# (request item, confidence 0-100). Agents registers it (agents depends on evidence); unregistered
+# means no picks. Request IDs only: clients never see the matcher's words (ADR-111).
+MatchPicks = Callable[
+    [TenantContext, Sequence[UUID]], Awaitable[dict[UUID, list[tuple[UUID, int]]]]
+]
+_picks: MatchPicks | None = None
+
+
+def register_match_picks(lookup: MatchPicks) -> None:
+    global _picks
+    if _picks is not None and _picks is not lookup:
+        raise RuntimeError("the match picks lookup is already registered")
+    _picks = lookup
+
+
+def merged(
+    picks: Sequence[tuple[UUID, int]], code: Sequence[Suggestion], takes: set[UUID]
+) -> tuple[Suggestion, ...]:
+    """The matcher's picks first (only requests this person may assign), then code's
+    suggestions not already picked; at most three."""
+    found = [Suggestion(i, score, (), "matcher") for i, score in picks if i in takes]
+    chosen = {s.request_item_id for s in found}
+    found += [s for s in code if s.request_item_id not in chosen]
+    return tuple(found[:MAX_SUGGESTIONS])
 
 
 class InboxFileGone(DomainConflict):
@@ -193,6 +221,8 @@ async def _entries(
     items: Sequence[RequestItemView] = await request_items_for(ctx, engagement_id) if rows else ()
     names = await names_of(sorted({r.uploaded_by for r in rows}, key=str))
     context = await inbox_context(ctx, engagement_id, items) if rows else None
+    picks = await _picks(ctx.tenant, [r.id for r in rows]) if _picks is not None and rows else {}
+    takes = {i.id for i in items if i.status in TAKES_EVIDENCE}
     content: dict[UUID, ContentFacts | None] = {}
     async with tenant_session(ctx.tenant) as session:
         for r in rows:
@@ -212,7 +242,11 @@ async def _entries(
             r.uploaded_by_staff,
             r.note,
             r.created_at,
-            tuple(suggest(r.file_name, items, content.get(r.id), context)),
+            merged(
+                picks.get(r.id, []),
+                suggest(r.file_name, items, content.get(r.id), context),
+                takes,
+            ),
         )
         for r in rows
     ]

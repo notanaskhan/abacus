@@ -798,6 +798,9 @@ LIST_EXEMPT = frozenset(
         # reminder records (caps and drafts).
         ("src/abacus/modules/requests/repository.py", "overdue_items"),
         ("src/abacus/modules/agents/repository.py", "reminder_history"),
+        # SPEC-033 (TASK-066 D1): the matcher's shown picks for inbox files evidence's listing
+        # already authorised (request IDs only); client roles can't read matches themselves.
+        ("src/abacus/modules/agents/repository.py", "shown_picks"),
         ("src/abacus/modules/agents/repository.py", "drafted_reminders"),
         # Recipients' addresses and the engagement's client admins (one engagement, read for a
         # reminder after `follow_up.send` or by the agent); the items whose due date was set.

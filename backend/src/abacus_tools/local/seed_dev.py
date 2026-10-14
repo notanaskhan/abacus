@@ -158,6 +158,7 @@ async def _flags_on() -> None:
     await set_flag(FIRM, "uploads.processing", "true", "seed", "local development")
     # SPEC-030 (TASK-059): the upload reviewer is off by default; on for the local firm.
     await set_flag(FIRM, "upload_review.enabled", "true", "seed", "local development")
+    await set_flag(FIRM, "matching.enabled", "true", "seed", "local development")  # SPEC-033
 
 
 def main() -> int:

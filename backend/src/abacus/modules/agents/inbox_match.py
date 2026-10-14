@@ -115,6 +115,7 @@ async def create_match_run(
                 spec_version=matcher.version,
                 engagement_id=material.engagement_id,
                 evidence_version_id=None,
+                inbox_file_id=inbox_file_id,
                 initiator_user_id=requested_by,
                 source_event_id=source_event_id,
                 task_scope=sorted(matcher.task_scope),

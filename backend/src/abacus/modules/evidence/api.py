@@ -4,10 +4,16 @@ from abacus.modules.evidence.activities import ACTIVITIES
 from abacus.modules.evidence.events import (
     EvidenceVersionCreated,
     InboxFileAdded,
+    InboxFileExtracted,
     UploadChecksRecorded,
 )
-from abacus.modules.evidence.inbox import add_to_inbox
-from abacus.modules.evidence.match_material import Candidate, MatchMaterial, match_material
+from abacus.modules.evidence.inbox import add_to_inbox, register_match_picks
+from abacus.modules.evidence.match_material import (
+    Candidate,
+    MatchMaterial,
+    match_material,
+    worth_matching,
+)
 from abacus.modules.evidence.matching import MIN_SCORE as SUGGESTION_MIN_SCORE
 from abacus.modules.evidence.matching import suggest as suggest_by_name
 from abacus.modules.evidence.processing import (
@@ -82,6 +88,7 @@ __all__ = [
     "EvidenceVersionSummary",
     "EvidenceVersionView",
     "InboxFileAdded",
+    "InboxFileExtracted",
     "IntegrityError",
     "MatchMaterial",
     "NewItem",
@@ -104,6 +111,7 @@ __all__ = [
     "process_upload",
     "read_content",
     "read_version",
+    "register_match_picks",
     "register_proposal_source",
     "render_trial_balance",
     "review_material",
@@ -112,6 +120,7 @@ __all__ = [
     "suggest_by_name",
     "upload",
     "version_view",
+    "worth_matching",
 ]
 
 # SPEC-017 (TASK-032 D2): a removed team member's review assignments go back to the queue.
