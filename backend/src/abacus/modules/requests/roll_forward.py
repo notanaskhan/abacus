@@ -81,7 +81,12 @@ async def copy_items(
             document_kind=old.document_kind,  # SPEC-029 (TASK-055)
             document_kind_source=old.document_kind_source,
             guidance=Guidance(  # SPEC-031 AC-8; the still-needed note is last year's, not copied
-                old.why, old.good_looks_like, old.blocks_fieldwork, old.effort, old.guidance_source
+                old.why,
+                old.good_looks_like,
+                old.blocks_fieldwork,
+                old.effort,
+                old.guidance_source,
+                old.guidance_approved_by,
             ),
         )
         if old.client_visible:
@@ -102,6 +107,15 @@ async def copy_items(
             seed.description,
             seed.audit_area,
             seed.tier,
-            Guidance(t.why, t.good_looks_like, t.blocks_fieldwork, t.effort) if t else None,
+            Guidance(
+                t.why,
+                t.good_looks_like,
+                t.blocks_fieldwork,
+                t.effort,
+                t.guidance_source,
+                t.guidance_approved_by,
+            )
+            if t
+            else None,
         )
     return len(prior) + len(seeds)

@@ -79,6 +79,9 @@ class MethodologyRequestItem(Base):
     good_looks_like: Mapped[str | None]
     blocks_fieldwork: Mapped[bool] = mapped_column(server_default=FetchedValue())
     effort: Mapped[str | None]
+    # SPEC-035 Q3 (TASK-074): approved drafted guidance and who approved it.
+    guidance_source: Mapped[str | None]
+    guidance_approved_by: Mapped[UUID | None]
 
 
 class MethodologyAccountRule(Base):

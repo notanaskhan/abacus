@@ -193,11 +193,11 @@ def _citation(c: VerifiedDocumentCitation) -> dict[str, object]:
 async def _match(agent: AgentContext, inbox_file_id: UUID) -> MatchOutcome:
     run = await _run(agent)
     matcher = spec(run.agent_id)
-    engagement = await get_ref(agent, agent.engagement_id)
+    engagement = await get_ref(agent, agent.engagement)
     await authorise(agent, "evidence.read", engagement.resource())
     material = await match_material(agent.tenant, inbox_file_id)
-    facts = await check_facts(agent.tenant, agent.engagement_id)
-    if material is None or facts is None or material.engagement_id != agent.engagement_id:
+    facts = await check_facts(agent.tenant, agent.engagement)
+    if material is None or facts is None or material.engagement_id != agent.engagement:
         raise NotFound("inbox_file")
     context = build_context(
         material,
@@ -212,7 +212,7 @@ async def _match(agent: AgentContext, inbox_file_id: UUID) -> MatchOutcome:
             tier=matcher.tier,
             output_schema=MatchOutput,
             budget_usd=matcher.limits.max_cost_usd,
-            attribution=Attribution(agent.tenant, agent.engagement_id, run.agent_id, run.id),
+            attribution=Attribution(agent.tenant, agent.engagement, run.agent_id, run.id),
             context=context,
             work_class=matcher.work_class,
             essential=matcher.essential,
@@ -256,13 +256,13 @@ async def _match(agent: AgentContext, inbox_file_id: UUID) -> MatchOutcome:
         locked = await lock_run(tx.session, run.id)
         if locked is None or locked.status != "running":
             raise AgentRunNotRunning(locked.status if locked else "missing")
-        locked_engagement = await lock_ref(tx, agent.engagement_id)
+        locked_engagement = await lock_ref(tx, agent.engagement)
         await authorise(agent, "inbox_match.run", locked_engagement.resource())
         match_id = await insert_inbox_match(
             tx.session,
             values={
                 "tenant_id": agent.tenant_id,
-                "engagement_id": agent.engagement_id,
+                "engagement_id": agent.engagement,
                 "inbox_file_id": inbox_file_id,
                 "agent_run_id": run.id,
                 "prompt_ref": matcher.prompt,

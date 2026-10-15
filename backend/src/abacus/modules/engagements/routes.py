@@ -494,6 +494,11 @@ class TemplateItemOut(BaseModel):
     area_code: Annotated[str, classified("internal")]
     description: Annotated[str, classified("internal")]
     tier: Annotated[str, classified("internal")]
+    # SPEC-031 guidance; SPEC-035 Q3 (TASK-074): `drafted` with who approved it.
+    why: Annotated[str | None, classified("internal")] = None
+    good_looks_like: Annotated[str | None, classified("internal")] = None
+    guidance_source: Annotated[Literal["drafted"] | None, classified("internal")] = None
+    guidance_approved_by: Annotated[UUID | None, classified("internal")] = None
 
 
 class AccountRuleOut(BaseModel):
@@ -587,7 +592,15 @@ async def get_version_route(version_id: UUID, ctx: Ctx) -> MethodologyVersionOut
         summary=_version_out(view.summary),
         areas=[AreaOut(code=a.code, name=a.name) for a in view.areas],
         items=[
-            TemplateItemOut(area_code=i.area_code, description=i.description, tier=i.tier)
+            TemplateItemOut(
+                area_code=i.area_code,
+                description=i.description,
+                tier=i.tier,
+                why=i.why,
+                good_looks_like=i.good_looks_like,
+                guidance_source="drafted" if i.guidance_source == "drafted" else None,
+                guidance_approved_by=i.guidance_approved_by,
+            )
             for i in view.items
         ],
         rules=[

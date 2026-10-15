@@ -17,8 +17,12 @@ from abacus.kernel.text import MultiLineText
 from abacus.modules.agents.draft_start import (
     Approval,
     decide_drafts,
+    decide_template_drafts,
     pending_drafts,
+    publish_template_drafts,
     request_drafts,
+    request_template_drafts,
+    template_drafts_for,
 )
 from abacus.modules.agents.engagement_agent import (
     AgentView,
@@ -699,3 +703,119 @@ async def withdraw_document_route(document_id: UUID, ctx: Ctx) -> KnowledgeDocum
 async def search_route(body: KnowledgeSearchIn, ctx: Ctx) -> list[KnowledgeHitOut]:
     hits = await search_knowledge(ctx, body.query, body.k)
     return [KnowledgeHitOut.model_validate(asdict(h)) for h in hits]
+
+
+# --- Drafted guidance on templates (SPEC-035 Q3; TASK-074) -------------------------------------
+
+template_drafts_router = AbacusRouter(
+    prefix="/v1/methodology/versions/{version_id}", tags=["methodology"]
+)
+
+
+class DraftTemplateGuidanceIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    positions: Annotated[
+        list[Annotated[int, Field(ge=0)]] | None, Field(max_length=500), classified("internal")
+    ] = None
+
+
+class TemplateDraftStartedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    positions: Annotated[list[int], classified("internal")]
+
+
+@template_drafts_router.post(
+    "/draft-guidance",
+    action="template_guidance.request",
+    status_code=202,
+    response_model=TemplateDraftStartedOut,
+    errors=(409,),
+)
+async def draft_template_guidance_route(
+    version_id: UUID, body: DraftTemplateGuidanceIn, ctx: Ctx
+) -> TemplateDraftStartedOut:
+    """SPEC-035 Q3: "Draft guidance" for the named template items, or every item without."""
+    started = await request_template_drafts(ctx, version_id, body.positions)
+    return TemplateDraftStartedOut(positions=list(started.positions))
+
+
+class TemplateDraftOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    position: Annotated[int, classified("internal")]
+    why: Annotated[str, classified("internal")]
+    good_looks_like: Annotated[str, classified("internal")]
+    effort: Annotated[Literal["small", "medium", "large"] | None, classified("internal")] = None
+    effort_reason: Annotated[str | None, classified("internal")] = None
+    blocks_fieldwork: Annotated[bool | None, classified("internal")] = None
+    blocks_reason: Annotated[str | None, classified("internal")] = None
+    created_at: Annotated[datetime, classified("internal")]
+    status: Annotated[Literal["pending", "approved"], classified("internal")]
+    approved_by: Annotated[UUID | None, classified("internal")] = None
+
+
+@template_drafts_router.get(
+    "/guidance-drafts", action="template_guidance.read", response_model=list[TemplateDraftOut]
+)
+async def template_drafts_route(version_id: UUID, ctx: Ctx) -> list[TemplateDraftOut]:
+    """SPEC-035 Q3: the version's drafts awaiting a decision or approved (to publish)."""
+    return [
+        TemplateDraftOut.model_validate(asdict(d))
+        for d in await template_drafts_for(ctx, version_id)
+    ]
+
+
+@template_drafts_router.post(
+    "/guidance-drafts/approve",
+    action="template_guidance.decide",
+    response_model=DecidedOut,
+    status_code=201,
+    errors=(409,),
+)
+async def approve_template_drafts_route(version_id: UUID, body: DecideIn, ctx: Ctx) -> DecidedOut:
+    """SPEC-035 AC-4 on a template: approve drafts (edits checked again); several at once need
+    `confirmed_read` (Q5). Nothing reaches engagements until a version is published."""
+    approvals = [
+        Approval(a.draft_id, a.why, a.good_looks_like, a.effort, a.blocks_fieldwork)
+        for a in body.approvals
+    ]
+    count = await decide_template_drafts(
+        ctx, version_id, approvals, confirmed_read=body.confirmed_read
+    )
+    return DecidedOut(decided=count)
+
+
+@template_drafts_router.post(
+    "/guidance-drafts/discard",
+    action="template_guidance.decide",
+    response_model=DecidedOut,
+    status_code=201,
+    errors=(409,),
+)
+async def discard_template_drafts_route(version_id: UUID, body: DecideIn, ctx: Ctx) -> DecidedOut:
+    approvals = [Approval(a.draft_id) for a in body.approvals]
+    count = await decide_template_drafts(ctx, version_id, approvals, discard=True)
+    return DecidedOut(decided=count)
+
+
+class PublishedVersionOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    version_id: Annotated[UUID, classified("internal")]
+    version: Annotated[int, classified("internal")]
+
+
+@template_drafts_router.post(
+    "/publish-drafted",
+    action="methodology.manage",
+    response_model=PublishedVersionOut,
+    status_code=201,
+    errors=(409,),
+)
+async def publish_drafted_route(version_id: UUID, ctx: Ctx) -> PublishedVersionOut:
+    """TASK-074 D2: the template's next version with the approved drafted guidance."""
+    summary = await publish_template_drafts(ctx, version_id)
+    return PublishedVersionOut(version_id=summary.version_id, version=summary.version)

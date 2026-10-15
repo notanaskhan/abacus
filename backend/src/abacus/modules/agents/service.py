@@ -287,7 +287,7 @@ async def _screen(agent: AgentContext) -> ScreeningOutcome:
     if run.evidence_version_id is None:
         raise NotFound("evidence_version")
     screener = spec(run.agent_id)
-    engagement = await get_ref(agent, agent.engagement_id)
+    engagement = await get_ref(agent, agent.engagement)
     await authorise(agent, "evidence.read", engagement.resource())
     version = await version_view(agent.tenant, run.evidence_version_id)
     if version.period_start is None or version.period_end is None:
@@ -333,7 +333,7 @@ async def _screen(agent: AgentContext) -> ScreeningOutcome:
             tier=screener.tier,
             output_schema=ScreeningOutput,
             budget_usd=screener.limits.max_cost_usd,
-            attribution=Attribution(agent.tenant, agent.engagement_id, run.agent_id, run.id),
+            attribution=Attribution(agent.tenant, agent.engagement, run.agent_id, run.id),
             context=context,
             work_class=screener.work_class,
             essential=screener.essential,
@@ -377,13 +377,13 @@ async def _screen(agent: AgentContext) -> ScreeningOutcome:
         locked = await lock_run(tx.session, run.id)
         if locked is None or locked.status != "running":
             raise AgentRunNotRunning(locked.status if locked else "missing")
-        locked_engagement = await lock_ref(tx, agent.engagement_id)
+        locked_engagement = await lock_ref(tx, agent.engagement)
         await authorise(agent, "screening.run", locked_engagement.resource())
         result_id = await insert_screening_result(
             tx.session,
             values={
                 "tenant_id": agent.tenant_id,
-                "engagement_id": agent.engagement_id,
+                "engagement_id": agent.engagement,
                 "evidence_version_id": version.id,
                 "agent_run_id": run.id,
                 "action": action,

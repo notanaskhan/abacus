@@ -52,6 +52,7 @@ ROUTERS = (
     agents.router,
     agents.graph_router,
     agents.knowledge_router,
+    agents.template_drafts_router,  # SPEC-035 Q3 (TASK-074)
     platform.router,
     notifications.router,
 )

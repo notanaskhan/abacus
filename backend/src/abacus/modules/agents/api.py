@@ -16,7 +16,12 @@ from abacus.modules.agents.guidance_draft import DRAFTER, DraftOutcome, create_d
 from abacus.modules.agents.handoff import Citation, Handoff, ScreeningOutput, VerifiedCitation
 from abacus.modules.agents.inbox_match import MATCHER, MatchOutcome, create_match_run, match
 from abacus.modules.agents.knowledge import KnowledgeHit, knowledge_context, search_knowledge
-from abacus.modules.agents.routes import graph_router, knowledge_router, router
+from abacus.modules.agents.routes import (
+    graph_router,
+    knowledge_router,
+    router,
+    template_drafts_router,
+)
 from abacus.modules.agents.screenings import (
     SUBSCRIPTIONS,
     WORKFLOWS,
@@ -139,6 +144,7 @@ __all__ = [
     "spec",
     "start_agents",
     "start_screening",
+    "template_drafts_router",
     "verify_citations",
     "workflow_id",
 ]

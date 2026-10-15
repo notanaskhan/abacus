@@ -181,6 +181,20 @@ async def lock_or_insert_template(
     return existing, False
 
 
+async def lock_template(session: AsyncSession, template_id: UUID) -> int:
+    """Lock an existing template's version numbering (as an import does) and return its latest
+    version number (TASK-074: drafted guidance publishes onto the latest only)."""
+    await session.execute(
+        select(func.pg_advisory_xact_lock(func.hashtextextended(str(template_id), 0)))
+    )
+    latest = await session.scalar(
+        select(func.max(MethodologyVersion.version)).where(
+            MethodologyVersion.template_id == template_id
+        )
+    )
+    return latest or 0
+
+
 async def insert_version(
     session: AsyncSession,
     *,
@@ -230,6 +244,8 @@ async def insert_version(
                     "good_looks_like": t.good_looks_like,
                     "blocks_fieldwork": t.blocks_fieldwork,
                     "effort": t.effort,
+                    "guidance_source": t.guidance_source,
+                    "guidance_approved_by": t.guidance_approved_by,
                 }
                 for i, t in enumerate(methodology.items)
             ],

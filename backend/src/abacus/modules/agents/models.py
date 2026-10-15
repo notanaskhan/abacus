@@ -21,7 +21,8 @@ class AgentRun(Base):
     tenant_id: Mapped[UUID]
     agent_id: Mapped[str]
     spec_version: Mapped[int]
-    engagement_id: Mapped[UUID]
+    engagement_id: Mapped[UUID | None]  # None: a firm-level run (TASK-074 D1)
+    methodology_version_id: Mapped[UUID | None]  # a firm-level run's template version
     evidence_version_id: Mapped[UUID | None]
     inbox_file_id: Mapped[UUID | None]  # SPEC-033 (TASK-066): a matcher run's file
     initiator_user_id: Mapped[UUID]
@@ -248,6 +249,47 @@ class GuidanceDraftDecision(Base):
     tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
     draft_id: Mapped[UUID] = mapped_column(primary_key=True)
     decision: Mapped[str]
+    edited: Mapped[bool]
+    confirmed_read: Mapped[bool]
+    decided_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class TemplateGuidanceDraft(Base):
+    """A guidance drafter run's draft for a template item (SPEC-035 Q3; TASK-074). Insert-only."""
+
+    __tablename__ = "template_guidance_drafts"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    methodology_version_id: Mapped[UUID]
+    position: Mapped[int]
+    agent_run_id: Mapped[UUID]
+    prompt_ref: Mapped[str]
+    why: Mapped[str]
+    good_looks_like: Mapped[str]
+    effort: Mapped[str | None]
+    effort_reason: Mapped[str | None]
+    blocks_fieldwork: Mapped[bool | None]
+    blocks_reason: Mapped[str | None]
+    passed_checks: Mapped[bool]
+    check_reasons: Mapped[list[str]] = mapped_column(ARRAY(String))
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class TemplateGuidanceDecision(Base):
+    """A person approved (with the final text) or discarded a template draft (TASK-074).
+    Insert-only; approved text reaches engagements through a new template version (D2)."""
+
+    __tablename__ = "template_guidance_decisions"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    draft_id: Mapped[UUID] = mapped_column(primary_key=True)
+    decision: Mapped[str]
+    why: Mapped[str | None]
+    good_looks_like: Mapped[str | None]
+    effort: Mapped[str | None]
+    blocks_fieldwork: Mapped[bool | None]
     edited: Mapped[bool]
     confirmed_read: Mapped[bool]
     decided_by: Mapped[UUID]

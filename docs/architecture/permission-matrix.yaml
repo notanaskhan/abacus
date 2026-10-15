@@ -34,7 +34,7 @@ actions:
   budget.read:              {firm_admin: allow, practice_leader: allow, platform_support: allow, platform_support_content: allow}   # SPEC-007
   budget.manage:            {firm_admin: allow, mfa_recent: required}     # SPEC-007 Q3
   methodology.manage:       {firm_admin: allow, practice_leader: allow, mfa_recent: required}   # SPEC-008 Q3
-  methodology.read:         {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow, platform_support: allow, platform_support_content: allow}   # SPEC-008
+  methodology.read:         {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow, platform_support: allow, platform_support_content: allow, agent: task_scope}   # SPEC-008; agent: the guidance drafter on a template, firm-level (TASK-074 D1)
   knowledge.manage:         {firm_admin: allow, practice_leader: allow, mfa_recent: required}   # SPEC-009 Q4
   knowledge.read:           {firm_admin: allow, practice_leader: allow, quality_partner: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, platform_support_content: allow}   # SPEC-009 Q4
   autonomy_policy.update:   {firm_admin: allow, mfa_recent: required}
@@ -206,6 +206,9 @@ actions:
   guidance_draft.request:   {engagement_partner: allow, manager: allow, senior: allow, independence: required}   # SPEC-035: "Draft guidance"
   guidance_draft.decide:    {engagement_partner: allow, manager: allow, senior: allow, independence: required}   # SPEC-035: approve or discard (ADR-005)
   guidance_draft.run:       {system: allow, agent: task_scope}   # SPEC-035 (TASK-072): the guidance drafter records its drafts
+  template_guidance.read:   {firm_admin: allow, practice_leader: allow}   # SPEC-035 Q3 (TASK-074 D3): drafts on a template version
+  template_guidance.request: {firm_admin: allow, practice_leader: allow}   # SPEC-035 Q3: "Draft guidance" on a template version
+  template_guidance.decide: {firm_admin: allow, practice_leader: allow}   # SPEC-035 Q3: approve or discard; publishing a version is methodology.manage
   inbox_match.run:          {system: allow, agent: task_scope}   # SPEC-033 (TASK-065): the matcher records its proposals
   inbox_match.read:         {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # SPEC-033 (TASK-066): firm roles only; clients get request IDs through the inbox
   inbox_match.request:      {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # SPEC-033: "Suggest with AI"

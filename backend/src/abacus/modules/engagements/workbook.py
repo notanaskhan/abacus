@@ -12,6 +12,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from itertools import pairwise
 from typing import Final, Literal, cast
+from uuid import UUID
 
 from openpyxl import Workbook, load_workbook
 from openpyxl.worksheet._read_only import ReadOnlyWorksheet
@@ -78,6 +79,9 @@ class TemplateItem:
     good_looks_like: str | None = None
     blocks_fieldwork: bool = False
     effort: Effort | None = None
+    # SPEC-035 Q3 (TASK-074): `drafted` when the text is approved drafter text, with who approved.
+    guidance_source: str | None = None
+    guidance_approved_by: UUID | None = None
 
 
 @dataclass(frozen=True)

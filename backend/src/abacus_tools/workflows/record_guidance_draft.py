@@ -6,7 +6,8 @@ Run: python -m abacus_tools.workflows.record_guidance_draft <output-directory> [
 Records the real `GuidanceDraftWorkflow` against throwaway containers with its activities replaced
 by stubs (replay never runs activities):
 - `guidance-draft-<version>-completed.json`: a run is created, a slot granted, the draft made;
-- `guidance-draft-<version>-skipped.json`: no run is created (nobody to act for, or no item).
+- `guidance-draft-<version>-skipped.json`: no run is created (nobody to act for, or no item);
+- `guidance-draft-<version>-template.json`: a template item's firm-level run (TASK-074, v2 on).
 Refuses to overwrite an existing file.
 """
 
@@ -35,7 +36,8 @@ _TASK_QUEUE = "abacus-recorder"
 _TENANT = "00000000-0000-0000-0000-000000000001"
 _RUN = "00000000-0000-0000-0000-0000000000a1"
 _FILE = "00000000-0000-0000-0000-0000000000f1"
-_NAMES = ("completed", "skipped")
+_NAMES = ("completed", "skipped", "template")
+_VERSION = "00000000-0000-0000-0000-0000000000c1"
 _ENGAGEMENT = "00000000-0000-0000-0000-0000000000d1"
 _NOBODY = "00000000-0000-0000-0000-000000000000"
 
@@ -66,9 +68,16 @@ async def _release(given: RunInput) -> None:
 
 
 async def _run(client: Client, name: str, requested_by: str) -> WorkflowHistory:
+    given = (
+        GuidanceDraftInput(
+            _TENANT, "", "", "e1", requested_by, methodology_version_id=_VERSION, position=2
+        )
+        if name == "template"
+        else GuidanceDraftInput(_TENANT, _ENGAGEMENT, _FILE, "e1", requested_by)
+    )
     handle = await client.start_workflow(
         GuidanceDraftWorkflow.run,
-        GuidanceDraftInput(_TENANT, _ENGAGEMENT, _FILE, "e1", requested_by),
+        given,
         id=f"recorder-guidance-draft-{name}",
         task_queue=_TASK_QUEUE,
     )
@@ -87,6 +96,7 @@ async def _record(out: Path, version: str, stack: Stack) -> None:
         for name, who in (
             ("completed", "00000000-0000-0000-0000-0000000000b1"),
             ("skipped", _NOBODY),
+            ("template", "00000000-0000-0000-0000-0000000000b1"),
         ):
             scrubbed = await decoded_and_scrubbed(await _run(client, name, who), payload_codec())
             path = out / f"guidance-draft-{version}-{name}.json"

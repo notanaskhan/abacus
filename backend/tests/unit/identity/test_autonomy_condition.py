@@ -71,7 +71,7 @@ def _agent(scope: frozenset[str], engagement_id: uuid.UUID) -> AgentContext:
 
 
 def _on(agent: AgentContext) -> Resource:
-    return Resource.engagement(agent.tenant_id, agent.engagement_id, archived=False)
+    return Resource.engagement(agent.tenant_id, agent.engagement, archived=False)
 
 
 SCOPE = frozenset({"follow_up.draft", "follow_up.send"})

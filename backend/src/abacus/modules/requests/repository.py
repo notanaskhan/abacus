@@ -96,6 +96,7 @@ async def insert_request_item(
                 blocks_fieldwork=g.blocks_fieldwork,
                 effort=g.effort,
                 guidance_source=g.source,
+                guidance_approved_by=g.approved_by,
             )
             .returning(RequestItem)
         )

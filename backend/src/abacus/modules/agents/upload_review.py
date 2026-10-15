@@ -198,10 +198,10 @@ async def _review(agent: AgentContext) -> ReviewOutcome:
     if run.evidence_version_id is None:
         raise NotFound("evidence_version")
     reviewer = spec(run.agent_id)
-    engagement = await get_ref(agent, agent.engagement_id)
+    engagement = await get_ref(agent, agent.engagement)
     await authorise(agent, "evidence.read", engagement.resource())
     material = await review_material(agent.tenant, run.evidence_version_id)
-    facts = await check_facts(agent.tenant, agent.engagement_id)
+    facts = await check_facts(agent.tenant, agent.engagement)
     if material is None or facts is None:
         raise NotFound("upload_extraction")
     context = build_context(
@@ -217,7 +217,7 @@ async def _review(agent: AgentContext) -> ReviewOutcome:
             tier=reviewer.tier,
             output_schema=UploadReviewOutput,
             budget_usd=reviewer.limits.max_cost_usd,
-            attribution=Attribution(agent.tenant, agent.engagement_id, run.agent_id, run.id),
+            attribution=Attribution(agent.tenant, agent.engagement, run.agent_id, run.id),
             context=context,
             work_class=reviewer.work_class,
             essential=reviewer.essential,
@@ -264,13 +264,13 @@ async def _review(agent: AgentContext) -> ReviewOutcome:
         locked = await lock_run(tx.session, run.id)
         if locked is None or locked.status != "running":
             raise AgentRunNotRunning(locked.status if locked else "missing")
-        locked_engagement = await lock_ref(tx, agent.engagement_id)
+        locked_engagement = await lock_ref(tx, agent.engagement)
         await authorise(agent, "upload_review.run", locked_engagement.resource())
         review_id = await insert_upload_review(
             tx.session,
             values={
                 "tenant_id": agent.tenant_id,
-                "engagement_id": agent.engagement_id,
+                "engagement_id": agent.engagement,
                 "evidence_version_id": run.evidence_version_id,
                 "agent_run_id": run.id,
                 "prompt_ref": reviewer.prompt,

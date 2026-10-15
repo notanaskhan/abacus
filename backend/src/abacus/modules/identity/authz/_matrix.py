@@ -58,6 +58,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "manager": "allow",
         "platform_support": "allow",
         "platform_support_content": "allow",
+        "agent": "task_scope",
     },
     "knowledge.manage": {
         "firm_admin": "allow",
@@ -417,6 +418,18 @@ ACTIONS: dict[str, dict[str, str]] = {
     "guidance_draft.run": {
         "system": "allow",
         "agent": "task_scope",
+    },
+    "template_guidance.read": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
+    },
+    "template_guidance.request": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
+    },
+    "template_guidance.decide": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
     },
     "inbox_match.run": {
         "system": "allow",

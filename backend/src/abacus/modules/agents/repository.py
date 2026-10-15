@@ -5,12 +5,14 @@ from __future__ import annotations
 from collections.abc import Sequence
 from datetime import UTC, date, datetime
 from decimal import Decimal
+from typing import cast
 from uuid import UUID, uuid4
 
 from sqlalchemy import func, insert, select, update
 from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import QueryableAttribute, aliased
 
 from abacus.modules.agents.models import (
     AgentActivity,
@@ -25,10 +27,16 @@ from abacus.modules.agents.models import (
     Reminder,
     ReminderItem,
     ScreeningResult,
+    TemplateGuidanceDecision,
+    TemplateGuidanceDraft,
     UploadReview,
     UploadReviewFlag,
 )
 from abacus.modules.identity.api import AuthContext, visible
+
+# Engagement runs only: these reads filter on an engagement (a firm-level run's is null, and
+# matches nothing).
+_RUN_ENGAGEMENT = cast("QueryableAttribute[UUID]", AgentRun.engagement_id)
 
 
 async def insert_run(
@@ -37,12 +45,13 @@ async def insert_run(
     tenant_id: UUID,
     agent_id: str,
     spec_version: int,
-    engagement_id: UUID,
+    engagement_id: UUID | None,
     evidence_version_id: UUID | None,
     initiator_user_id: UUID,
     source_event_id: UUID | None,
     task_scope: list[str],
     inbox_file_id: UUID | None = None,
+    methodology_version_id: UUID | None = None,
 ) -> UUID | None:
     """The new run's ID, or None if this agent already ran for this event."""
     return (
@@ -59,6 +68,7 @@ async def insert_run(
                 source_event_id=source_event_id,
                 task_scope=task_scope,
                 inbox_file_id=inbox_file_id,
+                methodology_version_id=methodology_version_id,
             )
             .on_conflict_do_nothing(constraint="agent_runs_once_per_event")
             .returning(AgentRun.id)
@@ -67,17 +77,19 @@ async def insert_run(
 
 
 async def runs_since(
-    session: AsyncSession, agent_id: str, engagement_id: UUID, since: datetime
+    session: AsyncSession, agent_id: str, engagement_id: UUID | None, since: datetime
 ) -> int:
-    """The agent's runs for the engagement since `since` (the action cap, SPEC-007)."""
+    """The agent's runs for the engagement since `since` (the action cap, SPEC-007); with no
+    engagement, its firm-level runs (TASK-074)."""
+    on = (
+        AgentRun.engagement_id.is_(None)
+        if engagement_id is None
+        else AgentRun.engagement_id == engagement_id
+    )
     count = await session.scalar(
         select(func.count())
         .select_from(AgentRun)
-        .where(
-            AgentRun.agent_id == agent_id,
-            AgentRun.engagement_id == engagement_id,
-            AgentRun.started_at >= since,
-        )
+        .where(AgentRun.agent_id == agent_id, on, AgentRun.started_at >= since)
     )
     return count or 0
 
@@ -664,7 +676,7 @@ async def latest_review_run(
             .where(
                 AgentRun.agent_id == agent_id,
                 AgentRun.evidence_version_id == version_id,
-                visible(ctx, "upload_review.read", AgentRun.engagement_id),
+                visible(ctx, "upload_review.read", _RUN_ENGAGEMENT),
             )
             .order_by(AgentRun.started_at.desc(), AgentRun.id.desc())
             .limit(1)
@@ -748,7 +760,7 @@ async def latest_match_runs(
                     AgentRun.agent_id == agent_id,
                     AgentRun.engagement_id == engagement_id,
                     AgentRun.inbox_file_id.is_not(None),
-                    visible(ctx, "inbox_match.read", AgentRun.engagement_id),
+                    visible(ctx, "inbox_match.read", _RUN_ENGAGEMENT),
                 )
                 .ext(distinct_on(AgentRun.inbox_file_id))
                 .order_by(AgentRun.inbox_file_id, AgentRun.started_at.desc(), AgentRun.id.desc())
@@ -854,5 +866,57 @@ async def insert_draft_decision(session: AsyncSession, **values: object) -> bool
         .values(**values)
         .on_conflict_do_nothing()
         .returning(GuidanceDraftDecision.draft_id)
+    )
+    return made.scalar_one_or_none() is not None
+
+
+# --- Drafted guidance on templates (SPEC-035 Q3; TASK-074) -------------------------------------
+
+
+async def insert_template_draft(session: AsyncSession, **values: object) -> None:
+    await session.execute(insert(TemplateGuidanceDraft).values(**values))
+
+
+async def template_drafts(
+    session: AsyncSession, version_id: UUID
+) -> list[tuple[TemplateGuidanceDraft, TemplateGuidanceDecision | None]]:
+    """Per template item, its newest draft that passed code's checks, with its decision if any.
+    Firm-level, after `authorise(template_guidance.read)` on the firm (LIST_EXEMPT)."""
+    newest = (
+        select(TemplateGuidanceDraft)
+        .where(
+            TemplateGuidanceDraft.methodology_version_id == version_id,
+            TemplateGuidanceDraft.passed_checks.is_(True),
+        )
+        .ext(distinct_on(TemplateGuidanceDraft.position))
+        .order_by(TemplateGuidanceDraft.position, TemplateGuidanceDraft.created_at.desc())
+        .subquery()
+    )
+    draft = aliased(TemplateGuidanceDraft, newest)
+    rows = await session.execute(
+        select(draft, TemplateGuidanceDecision)
+        .outerjoin(TemplateGuidanceDecision, TemplateGuidanceDecision.draft_id == draft.id)
+        .order_by(draft.position)
+    )
+    return [(d, c) for d, c in rows.tuples().all()]
+
+
+async def get_template_draft(
+    session: AsyncSession, draft_id: UUID
+) -> TemplateGuidanceDraft | None:
+    return (
+        await session.execute(
+            select(TemplateGuidanceDraft).where(TemplateGuidanceDraft.id == draft_id)
+        )
+    ).scalar_one_or_none()
+
+
+async def insert_template_decision(session: AsyncSession, **values: object) -> bool:
+    """False when the draft already has a decision."""
+    made = await session.execute(
+        pg_insert(TemplateGuidanceDecision)
+        .values(**values)
+        .on_conflict_do_nothing()
+        .returning(TemplateGuidanceDecision.draft_id)
     )
     return made.scalar_one_or_none() is not None

@@ -2,7 +2,7 @@
 
 from abacus.modules.engagements.api import register_roll_forward_items
 from abacus.modules.requests.availability import register_available_datasets
-from abacus.modules.requests.classification import classify
+from abacus.modules.requests.classification import classify, document_kind
 from abacus.modules.requests.comments import register_comment_scope_check
 from abacus.modules.requests.events import (
     DueDatesChanged,
@@ -62,6 +62,7 @@ __all__ = [
     "add_request_item",
     "apply_drafted_guidance",
     "classify",
+    "document_kind",
     "fulfil_by_rule",
     "fulfil_by_upload",
     "fulfilled_items",

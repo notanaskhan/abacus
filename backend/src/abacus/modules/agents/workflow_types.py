@@ -57,6 +57,9 @@ class GuidanceDraftInput:
     request_item_id: str
     event_id: str
     requested_by: str
+    # TASK-074: a template item instead (engagement and request item empty).
+    methodology_version_id: str = ""
+    position: int = -1
 
 
 @dataclass(frozen=True)
@@ -64,6 +67,7 @@ class GuidanceDraftRunInput:
     tenant_id: str
     run_id: str
     request_item_id: str
+    position: int = -1  # TASK-074: the template item, when `request_item_id` is empty
 
 
 @dataclass(frozen=True)

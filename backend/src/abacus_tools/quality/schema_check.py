@@ -76,6 +76,7 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"gl_snapshots", "gl_account_balances", "gl_entries"}  # SPEC-034 (TASK-069): ADR-004
     | {"guidance_drafts"}  # SPEC-035 (TASK-072): proposals, as made
     | {"guidance_draft_decisions"}  # SPEC-035 (TASK-073): people's decisions, as made
+    | {"template_guidance_drafts", "template_guidance_decisions"}  # SPEC-035 Q3 (TASK-074)
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -100,6 +101,7 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"dataset", "tier_source", "tier_rule"}  # SPEC-022
         | {"document_kind", "document_kind_source"}  # SPEC-029 (TASK-055)
         | {"why", "good_looks_like", "blocks_fieldwork", "effort", "guidance_source"}  # SPEC-031
+        | {"guidance_approved_by"}  # SPEC-035 (TASK-074): from a drafted template, or rolled
     ),
     # Methodology templates (SPEC-008): insert-only, immutable versions.
     "methodology_templates": frozenset(
@@ -113,6 +115,7 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "version_id", "area_code", "description", "retrievability_tier"}
         | {"position"}
         | {"why", "good_looks_like", "blocks_fieldwork", "effort"}  # SPEC-031 (TASK-060)
+        | {"guidance_source", "guidance_approved_by"}  # SPEC-035 Q3 (TASK-074)
     ),
     "methodology_account_rules": frozenset(
         {"tenant_id", "version_id", "area_code", "account_from", "account_to", "position"}
@@ -129,6 +132,16 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "engagement_id", "request_item_id", "agent_run_id", "prompt_ref", "why"}
         | {"good_looks_like", "effort", "effort_reason", "blocks_fieldwork", "blocks_reason"}
         | {"passed_checks", "check_reasons"}
+    ),
+    # Drafted guidance on templates (SPEC-035 Q3; TASK-074): drafts and decisions, as made.
+    "template_guidance_drafts": frozenset(
+        {"tenant_id", "methodology_version_id", "position", "agent_run_id", "prompt_ref", "why"}
+        | {"good_looks_like", "effort", "effort_reason", "blocks_fieldwork", "blocks_reason"}
+        | {"passed_checks", "check_reasons"}
+    ),
+    "template_guidance_decisions": frozenset(
+        {"tenant_id", "draft_id", "decision", "why", "good_looks_like", "effort"}
+        | {"blocks_fieldwork", "edited", "confirmed_read", "decided_by"}
     ),
     # General ledger detail (SPEC-034; TASK-069): snapshots, balances, entries; imports.
     "gl_snapshots": frozenset(
@@ -239,6 +252,7 @@ APP_INSERT_COLUMNS.update(
             {"id", "tenant_id", "agent_id", "spec_version", "engagement_id", "task_scope"}
             | {"evidence_version_id", "initiator_user_id", "source_event_id"}
             | {"inbox_file_id"}  # SPEC-033 (TASK-066): the matcher's file
+            | {"methodology_version_id"}  # SPEC-035 Q3 (TASK-074): a firm-level run's version
         ),
         "screening_results": frozenset(
             {"id", "tenant_id", "engagement_id", "evidence_version_id", "agent_run_id"}
@@ -392,6 +406,8 @@ TABLE_OWNERS: dict[str, str] = {
     "gl_snapshots": "ledger",  # SPEC-034 (TASK-069)
     "guidance_drafts": "agents",  # SPEC-035 (TASK-072)
     "guidance_draft_decisions": "agents",  # SPEC-035 (TASK-073)
+    "template_guidance_drafts": "agents",  # SPEC-035 Q3 (TASK-074)
+    "template_guidance_decisions": "agents",  # SPEC-035 Q3 (TASK-074)
     "gl_account_balances": "ledger",
     "gl_entries": "ledger",
     "gl_imports": "connections",

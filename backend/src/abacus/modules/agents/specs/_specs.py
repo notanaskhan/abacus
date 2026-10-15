@@ -94,10 +94,12 @@ SPECS: dict[str, dict[str, object]] = {   'evidence.matcher': {   'autonomy': 'p
                                                 'answer looks like, for a person to approve.',
                                      'routes': ['bedrock', 'direct'],
                                      'shape': 'single_call',
-                                     'task_scope': ['request_item.read', 'guidance_draft.run'],
+                                     'task_scope': [   'request_item.read',
+                                                       'methodology.read',
+                                                       'guidance_draft.run'],
                                      'tier': 'small',
                                      'tools': [],
                                      'untrusted_inputs': ['item', 'examples'],
-                                     'version': 1,
+                                     'version': 2,
                                      'work_class': 'batch'}}
 # fmt: on

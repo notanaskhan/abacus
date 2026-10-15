@@ -8,12 +8,14 @@ from abacus.modules.engagements.roll_forward import (
 )
 from abacus.modules.engagements.routes import firm_router, methodology_router, router
 from abacus.modules.engagements.service import (
+    ApprovedGuidance,
     CheckFacts,
     EngagementMetadata,
     EngagementRef,
     MethodologyAlreadyApplied,
     MethodologyVersionView,
     TemplateVersionSummary,
+    VersionNotLatest,
     active_engagements,
     check_facts,
     client_of,
@@ -25,8 +27,10 @@ from abacus.modules.engagements.service import (
     get_ref,
     is_archived,
     lock_ref,
+    methodology_version,
     open_engagements,
     pin_methodology,
+    publish_drafted_version,
     register_auto_retrieval,
     run_auto_retrieval,
     version_detail,
@@ -42,7 +46,13 @@ from abacus.modules.engagements.setup import (
     require_open,
     stored_file,
 )
-from abacus.modules.engagements.workbook import AccountRule, Area, TemplateItem, area_for
+from abacus.modules.engagements.workbook import (
+    AccountRule,
+    Area,
+    Effort,
+    TemplateItem,
+    area_for,
+)
 from abacus.modules.identity.api import (
     register_active_engagements,
     register_engagement_client,
@@ -61,8 +71,10 @@ register_independence(confirmed_subquery, confirmed_for)
 
 __all__ = [
     "AccountRule",
+    "ApprovedGuidance",
     "Area",
     "CheckFacts",
+    "Effort",
     "EngagementCreated",
     "EngagementMetadata",
     "EngagementNotOpen",
@@ -75,6 +87,7 @@ __all__ = [
     "TemplateItem",
     "TemplateSeed",
     "TemplateVersionSummary",
+    "VersionNotLatest",
     "area_for",
     "attach_acceptance_file",
     "attach_letter_file",
@@ -88,8 +101,10 @@ __all__ = [
     "is_archived",
     "lock_ref",
     "methodology_router",
+    "methodology_version",
     "open_engagements",
     "pin_methodology",
+    "publish_drafted_version",
     "register_auto_retrieval",
     "register_roll_forward_items",
     "require_open",
