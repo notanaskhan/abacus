@@ -74,6 +74,7 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"comments", "comment_mentions", "comment_redactions"}  # SPEC-032 (TASK-062): ADR-109
     | {"inbox_match_runs", "inbox_match_proposals"}  # SPEC-033 (TASK-065): proposals, as made
     | {"gl_snapshots", "gl_account_balances", "gl_entries"}  # SPEC-034 (TASK-069): ADR-004
+    | {"guidance_drafts"}  # SPEC-035 (TASK-072): proposals, as made
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -118,6 +119,12 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     # Client invitations (SPEC-015): never the token (only its hash, elsewhere).
     "client_invitations": frozenset(
         {"id", "tenant_id", "engagement_id", "email", "role", "invited_by", "expires_at"}
+    ),
+    # Guidance drafts (SPEC-035; TASK-072): the drafter's, as made.
+    "guidance_drafts": frozenset(
+        {"tenant_id", "engagement_id", "request_item_id", "agent_run_id", "prompt_ref", "why"}
+        | {"good_looks_like", "effort", "effort_reason", "blocks_fieldwork", "blocks_reason"}
+        | {"passed_checks", "check_reasons"}
     ),
     # General ledger detail (SPEC-034; TASK-069): snapshots, balances, entries; imports.
     "gl_snapshots": frozenset(
@@ -377,6 +384,7 @@ TABLE_OWNERS: dict[str, str] = {
     "upload_review_flags": "agents",
     "inbox_match_runs": "agents",  # SPEC-033 (TASK-065)
     "gl_snapshots": "ledger",  # SPEC-034 (TASK-069)
+    "guidance_drafts": "agents",  # SPEC-035 (TASK-072)
     "gl_account_balances": "ledger",
     "gl_entries": "ledger",
     "gl_imports": "connections",

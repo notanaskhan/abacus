@@ -16,6 +16,7 @@ from abacus.modules.agents.models import (
     AgentActivity,
     AgentRun,
     EngagementAgentState,
+    GuidanceDraftRow,
     InboxMatchProposal,
     InboxMatchRun,
     KnowledgeChunk,
@@ -638,6 +639,11 @@ async def insert_inbox_match(session: AsyncSession, *, values: dict[str, object]
 async def insert_match_proposals(session: AsyncSession, rows: list[dict[str, object]]) -> None:
     if rows:
         await session.execute(insert(InboxMatchProposal).values(rows))
+
+
+async def insert_guidance_draft(session: AsyncSession, **values: object) -> None:
+    """SPEC-035 (TASK-072): a drafter run's draft."""
+    await session.execute(insert(GuidanceDraftRow).values(**values))
 
 
 async def review_for_run(session: AsyncSession, run_id: UUID) -> UploadReview | None:
