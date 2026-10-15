@@ -12,6 +12,7 @@ from abacus.modules.agents.engagement_agent_workflow import EngagementAgent
 from abacus.modules.agents.fake_responses import SCREEN_PROMPT, screening_responder
 from abacus.modules.agents.fake_responses import install as install_fake_responses
 from abacus.modules.agents.graph import EngagementGraph, engagement_graph
+from abacus.modules.agents.guidance_draft import DRAFTER, DraftOutcome, create_draft_run, draft
 from abacus.modules.agents.handoff import Citation, Handoff, ScreeningOutput, VerifiedCitation
 from abacus.modules.agents.inbox_match import MATCHER, MatchOutcome, create_match_run, match
 from abacus.modules.agents.knowledge import KnowledgeHit, knowledge_context, search_knowledge
@@ -70,6 +71,7 @@ register_proposal_source(proposals_for, proposal_of)
 __all__ = [
     "ACTIVITIES",
     "AGENTS",
+    "DRAFTER",
     "ENGAGEMENT_AGENT_HANDLE",
     "ENGAGEMENT_AGENT_NEXT_TICK",
     "MATCHER",
@@ -84,6 +86,7 @@ __all__ = [
     "AgentRunNotRunning",
     "AgentSpec",
     "Citation",
+    "DraftOutcome",
     "EngagementAgent",
     "EngagementGraph",
     "HandleInput",
@@ -107,9 +110,11 @@ __all__ = [
     "SlotGrant",
     "UploadReviewWorkflow",
     "VerifiedCitation",
+    "create_draft_run",
     "create_match_run",
     "create_review_run",
     "create_screening_run",
+    "draft",
     "engagement_graph",
     "fail_run",
     "graph_router",

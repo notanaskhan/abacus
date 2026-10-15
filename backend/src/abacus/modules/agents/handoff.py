@@ -138,6 +138,24 @@ class MatchOutput(BaseModel):
         return self
 
 
+# --- The guidance drafter (SPEC-035; TASK-072) -------------------------------------------------
+
+
+class GuidanceDraft(BaseModel):
+    """A draft of what a client reads about a request; a person approves it (ADR-005, ADR-111)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    why: Annotated[str, Field(min_length=1, max_length=300), classified("confidential")]
+    good_looks_like: Annotated[
+        str, Field(min_length=1, max_length=600), classified("confidential")
+    ]
+    effort: Annotated[Literal["small", "medium", "large"] | None, classified("internal")] = None
+    effort_reason: Annotated[str | None, Field(max_length=160), classified("internal")] = None
+    blocks_fieldwork: Annotated[bool | None, classified("internal")] = None
+    blocks_reason: Annotated[str | None, Field(max_length=160), classified("internal")] = None
+
+
 @dataclass(frozen=True)
 class VerifiedDocumentCitation:
     page: int | None

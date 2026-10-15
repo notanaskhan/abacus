@@ -202,6 +202,7 @@ actions:
   screening.run:            {system: allow, agent: task_scope}
   screening.request:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # SPEC-024 (TASK-042 D1): "Screen now" at Advise
   upload_review.run:        {system: allow, agent: task_scope}   # SPEC-030 (TASK-058): the upload reviewer records its review
+  guidance_draft.run:       {system: allow, agent: task_scope}   # SPEC-035 (TASK-072): the guidance drafter records its drafts
   inbox_match.run:          {system: allow, agent: task_scope}   # SPEC-033 (TASK-065): the matcher records its proposals
   inbox_match.read:         {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # SPEC-033 (TASK-066): firm roles only; clients get request IDs through the inbox
   inbox_match.request:      {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # SPEC-033: "Suggest with AI"

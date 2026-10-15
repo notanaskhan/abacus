@@ -216,3 +216,25 @@ class InboxMatchProposal(Base):
     rationale: Mapped[str]
     citations: Mapped[list[dict[str, object]]] = mapped_column(JSONB)
     shown: Mapped[bool]
+
+
+class GuidanceDraftRow(Base):
+    """One guidance drafter run's draft for a request item (SPEC-035; TASK-072). Insert-only."""
+
+    __tablename__ = "guidance_drafts"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    request_item_id: Mapped[UUID]
+    agent_run_id: Mapped[UUID]
+    prompt_ref: Mapped[str]
+    why: Mapped[str]
+    good_looks_like: Mapped[str]
+    effort: Mapped[str | None]
+    effort_reason: Mapped[str | None]
+    blocks_fieldwork: Mapped[bool | None]
+    blocks_reason: Mapped[str | None]
+    passed_checks: Mapped[bool]
+    check_reasons: Mapped[list[str]] = mapped_column(ARRAY(String))
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

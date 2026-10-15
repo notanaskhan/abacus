@@ -394,6 +394,10 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "allow",
         "agent": "task_scope",
     },
+    "guidance_draft.run": {
+        "system": "allow",
+        "agent": "task_scope",
+    },
     "inbox_match.run": {
         "system": "allow",
         "agent": "task_scope",
