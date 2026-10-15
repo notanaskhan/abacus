@@ -29,7 +29,7 @@ from abacus.modules.connections.import_parse import (
 )
 from abacus.modules.ledger.api import GlAccount, GlEntry, GlSummary, NormaliseError
 
-MAX_GL_BYTES: Final = 100 * 1024 * 1024  # SPEC-034 Q2
+MAX_GL_BYTES: Final = 50 * 1024 * 1024  # SPEC-034 Q2 (amended): the storage cap, for now
 MAX_GL_LINES: Final = 1_000_000
 GL_LIMITS: Final = Limits(timeout_seconds=300, cpu_seconds=240, memory_bytes=2 * 1024**3)  # D3
 _REFUSED: Final = frozenset({"Cc", "Cf", "Cs", "Co", "Zl", "Zp"})

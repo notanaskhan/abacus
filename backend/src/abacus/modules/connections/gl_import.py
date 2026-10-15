@@ -155,7 +155,7 @@ async def receive_gl_export(
     end = metadata.engagement.fiscal_period_end
     try:
         stored = await stage_content(ctx.tenant_id, content)
-    except ContentTooLarge:  # storage's own cap (50 MB) is below SPEC-034's 100 MB for now
+    except ContentTooLarge:  # the storage cap, should the two limits ever differ
         raise FileTooLarge(str(engagement_id)) from None
     role = await engagement_role_of(ctx.tenant, engagement_id, ctx.user_id)
     import_id = uuid4()
