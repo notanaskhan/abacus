@@ -1,9 +1,12 @@
 import {
   autonomyOptions,
   autonomyQueryKey,
+  draftedGuidanceOptions,
+  draftedGuidanceQueryKey,
   letterPolicyOptions,
   letterPolicyQueryKey,
   setAutonomyMutation,
+  setDraftedGuidanceMutation,
   setLetterPolicyMutation,
   firmAgentsOptions,
   setTimeZoneMutation,
@@ -274,6 +277,53 @@ export function LetterPolicy({ canSet }: { canSet: boolean }): JSX.Element | nul
           </span>
         </span>
       </label>
+      <ConfirmItsYou open={confirm} onOpenChange={setConfirm} />
+    </Panel>
+  );
+}
+
+/** SPEC-035 Q2 (TASK-073 D2; ADR-111): whether approved drafted guidance reaches clients. Only a
+ * synthetic firm may turn it on while the data boundary holds. */
+export function DraftedGuidanceSetting({ canSet }: { canSet: boolean }): JSX.Element | null {
+  const queryClient = useQueryClient();
+  const setting = useQuery({ ...draftedGuidanceOptions(), retry: false });
+  const [confirm, setConfirm] = useState(false);
+  const save = useMutation({
+    ...setDraftedGuidanceMutation(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: draftedGuidanceQueryKey() });
+    },
+    onError: (error) => {
+      if (isForbidden(error)) setConfirm(true);
+    },
+  });
+  if (setting.data === undefined) return null;
+  const refused = save.isError && !isForbidden(save.error);
+  return (
+    <Panel title="Guidance drafted with AI">
+      <label className="flex items-start gap-3 text-sm">
+        <input
+          type="checkbox"
+          className="mt-1"
+          checked={setting.data.shown}
+          disabled={!canSet || save.isPending}
+          onChange={(event) => {
+            save.mutate({ body: { shown: event.target.checked } });
+          }}
+        />
+        <span>
+          Show guidance drafted with AI and approved by your team to clients
+          <span className="block text-muted">
+            Off: clients see the standard wording, or nothing, until your team writes its own. Your
+            team always sees the drafts it approved, labelled.
+          </span>
+        </span>
+      </label>
+      {refused && (
+        <p role="alert" className="text-sm text-danger">
+          This isn&apos;t available for firms with real client data yet.
+        </p>
+      )}
       <ConfirmItsYou open={confirm} onOpenChange={setConfirm} />
     </Panel>
   );

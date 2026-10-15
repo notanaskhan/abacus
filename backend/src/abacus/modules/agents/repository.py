@@ -16,6 +16,7 @@ from abacus.modules.agents.models import (
     AgentActivity,
     AgentRun,
     EngagementAgentState,
+    GuidanceDraftDecision,
     GuidanceDraftRow,
     InboxMatchProposal,
     InboxMatchRun,
@@ -811,3 +812,47 @@ async def shown_picks(
     for file_id, item_id, confidence in rows.tuples().all():
         found.setdefault(file_id, []).append((item_id, confidence))
     return found
+
+
+# --- Guidance drafts in the product (SPEC-035; TASK-073) ----------------------------------------
+
+
+async def pending_guidance_drafts(
+    session: AsyncSession, ctx: AuthContext, engagement_id: UUID
+) -> list[GuidanceDraftRow]:
+    """Per item, its newest draft that passed code's checks and has no decision yet."""
+    decided = select(GuidanceDraftDecision.draft_id)
+    return list(
+        (
+            await session.execute(
+                select(GuidanceDraftRow)
+                .where(
+                    GuidanceDraftRow.engagement_id == engagement_id,
+                    GuidanceDraftRow.passed_checks.is_(True),
+                    GuidanceDraftRow.id.not_in(decided),
+                    visible(ctx, "guidance_draft.read", GuidanceDraftRow.engagement_id),
+                )
+                .ext(distinct_on(GuidanceDraftRow.request_item_id))
+                .order_by(GuidanceDraftRow.request_item_id, GuidanceDraftRow.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def get_guidance_draft(session: AsyncSession, draft_id: UUID) -> GuidanceDraftRow | None:
+    return (
+        await session.execute(select(GuidanceDraftRow).where(GuidanceDraftRow.id == draft_id))
+    ).scalar_one_or_none()
+
+
+async def insert_draft_decision(session: AsyncSession, **values: object) -> bool:
+    """False when the draft already has a decision."""
+    made = await session.execute(
+        pg_insert(GuidanceDraftDecision)
+        .values(**values)
+        .on_conflict_do_nothing()
+        .returning(GuidanceDraftDecision.draft_id)
+    )
+    return made.scalar_one_or_none() is not None

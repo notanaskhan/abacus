@@ -19,6 +19,7 @@ from abacus.modules.identity.api import (
     SystemContext,
     authorise,
     authorise_items,
+    drafted_guidance_to_clients,
     engagement_role_of,
 )
 from abacus.modules.requests.availability import available_datasets
@@ -40,6 +41,7 @@ from abacus.modules.requests.guidance import (
     Guidance,
     after_kind_change,
     estimate_minutes,
+    for_client,
     for_new_item,
 )
 from abacus.modules.requests.models import RequestItem
@@ -102,6 +104,7 @@ class RequestItemView:
     blocks_fieldwork: bool = False
     effort: str | None = None
     guidance_source: str | None = None
+    guidance_approved_by: UUID | None = None  # SPEC-035: who approved drafted guidance
     # SPEC-032 (TASK-062): comments the reader may see on it and its versions; any unread.
     comment_count: int = 0
     unread_comments: bool = False
@@ -135,6 +138,7 @@ def _view(
         item.blocks_fieldwork,
         item.effort,
         item.guidance_source,
+        item.guidance_approved_by,
     )
 
 
@@ -195,12 +199,24 @@ async def request_items_for(ctx: AuthContext, engagement_id: UUID) -> Sequence[R
         rows = await list_request_items(session, ctx, engagement_id)
         counts = await list_comment_counts(session, ctx, engagement_id, shared_only=client)
     datasets = await available_datasets(ctx.tenant, ref.client_entity_id)
-    return [
-        replace(_view(item, version_id, datasets), comment_count=c[0], unread_comments=c[1])
-        if (c := counts.get(item.id)) is not None
-        else _view(item, version_id, datasets)
-        for item, version_id in rows
-    ]
+    shown = await drafted_guidance_to_clients(ctx.tenant) if client else True
+    views: list[RequestItemView] = []
+    for item, version_id in rows:
+        view = _view(item, version_id, datasets)
+        if (c := counts.get(item.id)) is not None:
+            view = replace(view, comment_count=c[0], unread_comments=c[1])
+        if client:
+            view = replace(view, guidance_approved_by=None)
+            swap = for_client(item.guidance_source, item.document_kind, shown)
+            if swap is not None:  # SPEC-035 AC-5 (ADR-111): not shown to clients
+                view = replace(
+                    view,
+                    why=swap.why,
+                    good_looks_like=swap.good_looks_like,
+                    guidance_source=swap.source,
+                )
+        views.append(view)
+    return views
 
 
 @dataclass(frozen=True)
@@ -905,6 +921,44 @@ async def your_part(ctx: AuthContext, engagement_id: UUID) -> YourPart:
         len(mine),
         sum(1 for i in mine if i.blocks_fieldwork),
         estimate_minutes([i.effort for i in mine]),
+    )
+
+
+async def apply_drafted_guidance(
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    engagement_id: UUID,
+    item_id: UUID,
+    *,
+    why: str,
+    good_looks_like: str,
+    effort: str | None,
+    blocks_fieldwork: bool | None,
+) -> None:
+    """SPEC-035 AC-4 (TASK-073): a person approved a drafted guidance text; inside the caller's
+    unit of work (agents records the decision there). The source is `drafted`, with who
+    approved it; the still-needed note is left as it is."""
+    ref = await lock_ref(tx, engagement_id)
+    item = await _locked_item(tx, engagement_id, item_id)
+    await authorise(ctx, "request_item.update", ref.resource())
+    row = await get_request_item(tx.session, item.id)
+    if row is None:
+        raise NotFound("request_item")
+    guidance = Guidance(
+        _cleaned(why),
+        _cleaned(good_looks_like),
+        row.blocks_fieldwork if blocks_fieldwork is None else blocks_fieldwork,
+        effort if effort is not None else row.effort,
+        "drafted",
+    )
+    await set_guidance(tx.session, item_id, guidance, approved_by=ctx.user_id)
+    tx.record(
+        "request_item.drafted_guidance_applied",
+        target=Target("request_item", item_id),
+        after=Ref(
+            blocks_fieldwork=int(guidance.blocks_fieldwork),
+            effort=EFFORT_INDEX.get(guidance.effort or "", 0),
+        ),
     )
 
 

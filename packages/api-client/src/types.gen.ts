@@ -255,6 +255,32 @@ export type ApplyMethodologyIn = {
 };
 
 /**
+ * ApprovalIn
+ */
+export type ApprovalIn = {
+    /**
+     * Blocks Fieldwork
+     */
+    blocks_fieldwork?: boolean | null;
+    /**
+     * Draft Id
+     */
+    draft_id: string;
+    /**
+     * Effort
+     */
+    effort?: 'small' | 'medium' | 'large' | null;
+    /**
+     * Good Looks Like
+     */
+    good_looks_like?: string | null;
+    /**
+     * Why
+     */
+    why?: string | null;
+};
+
+/**
  * AreaOut
  */
 export type AreaOut = {
@@ -754,6 +780,30 @@ export type CoverageGapsOut = {
 };
 
 /**
+ * DecideIn
+ */
+export type DecideIn = {
+    /**
+     * Approvals
+     */
+    approvals: Array<ApprovalIn>;
+    /**
+     * Confirmed Read
+     */
+    confirmed_read?: boolean;
+};
+
+/**
+ * DecidedOut
+ */
+export type DecidedOut = {
+    /**
+     * Decided
+     */
+    decided: number;
+};
+
+/**
  * DecisionOut
  */
 export type DecisionOut = {
@@ -848,6 +898,16 @@ export type DocumentKindIn = {
 };
 
 /**
+ * DraftGuidanceIn
+ */
+export type DraftGuidanceIn = {
+    /**
+     * Item Ids
+     */
+    item_ids?: Array<string> | null;
+};
+
+/**
  * DraftItemOut
  */
 export type DraftItemOut = {
@@ -887,6 +947,32 @@ export type DraftOut = {
      * Recipient User Id
      */
     recipient_user_id: string;
+};
+
+/**
+ * DraftStartedOut
+ */
+export type DraftStartedOut = {
+    /**
+     * Items
+     */
+    items: Array<string>;
+    /**
+     * Skipped
+     */
+    skipped: Array<string>;
+};
+
+/**
+ * DraftedGuidanceIO
+ *
+ * SPEC-035 (TASK-073): whether approved drafted guidance is shown to clients.
+ */
+export type DraftedGuidanceIo = {
+    /**
+     * Shown
+     */
+    shown: boolean;
 };
 
 /**
@@ -1487,6 +1573,48 @@ export type GraphTeamMemberOut = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * GuidanceDraftOut
+ */
+export type GuidanceDraftOut = {
+    /**
+     * Blocks Fieldwork
+     */
+    blocks_fieldwork?: boolean | null;
+    /**
+     * Blocks Reason
+     */
+    blocks_reason?: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Effort
+     */
+    effort?: 'small' | 'medium' | 'large' | null;
+    /**
+     * Effort Reason
+     */
+    effort_reason?: string | null;
+    /**
+     * Good Looks Like
+     */
+    good_looks_like: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+    /**
+     * Why
+     */
+    why: string;
 };
 
 /**
@@ -2624,9 +2752,13 @@ export type RequestItemOut = {
      */
     good_looks_like?: string | null;
     /**
+     * Guidance Approved By
+     */
+    guidance_approved_by?: string | null;
+    /**
      * Guidance Source
      */
-    guidance_source?: 'template' | 'kind_default' | 'firm' | null;
+    guidance_source?: 'template' | 'kind_default' | 'firm' | 'drafted' | null;
     /**
      * Id
      */
@@ -5856,6 +5988,172 @@ export type EngagementGraphResponses = {
 
 export type EngagementGraphResponse = EngagementGraphResponses[keyof EngagementGraphResponses];
 
+export type GuidanceDraftsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/guidance-drafts';
+};
+
+export type GuidanceDraftsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type GuidanceDraftsError = GuidanceDraftsErrors[keyof GuidanceDraftsErrors];
+
+export type GuidanceDraftsResponses = {
+    /**
+     * Response Guidance Drafts
+     *
+     * Successful Response
+     */
+    200: Array<GuidanceDraftOut>;
+};
+
+export type GuidanceDraftsResponse = GuidanceDraftsResponses[keyof GuidanceDraftsResponses];
+
+export type ApproveDraftsData = {
+    body: DecideIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/guidance-drafts/approve';
+};
+
+export type ApproveDraftsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ApproveDraftsError = ApproveDraftsErrors[keyof ApproveDraftsErrors];
+
+export type ApproveDraftsResponses = {
+    /**
+     * Successful Response
+     */
+    201: DecidedOut;
+};
+
+export type ApproveDraftsResponse = ApproveDraftsResponses[keyof ApproveDraftsResponses];
+
+export type DiscardDraftsData = {
+    body: DecideIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/guidance-drafts/discard';
+};
+
+export type DiscardDraftsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DiscardDraftsError = DiscardDraftsErrors[keyof DiscardDraftsErrors];
+
+export type DiscardDraftsResponses = {
+    /**
+     * Successful Response
+     */
+    201: DecidedOut;
+};
+
+export type DiscardDraftsResponse = DiscardDraftsResponses[keyof DiscardDraftsResponses];
+
 export type InboxData = {
     body?: never;
     headers?: {
@@ -6923,6 +7221,62 @@ export type SetDefaultDueDateResponses = {
 };
 
 export type SetDefaultDueDateResponse = SetDefaultDueDateResponses[keyof SetDefaultDueDateResponses];
+
+export type DraftGuidanceData = {
+    body: DraftGuidanceIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/draft-guidance';
+};
+
+export type DraftGuidanceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DraftGuidanceError = DraftGuidanceErrors[keyof DraftGuidanceErrors];
+
+export type DraftGuidanceResponses = {
+    /**
+     * Successful Response
+     */
+    202: DraftStartedOut;
+};
+
+export type DraftGuidanceResponse = DraftGuidanceResponses[keyof DraftGuidanceResponses];
 
 export type DueDatesData = {
     body: DueDatesIn;
@@ -9708,6 +10062,104 @@ export type MyConfirmationsResponses = {
 };
 
 export type MyConfirmationsResponse = MyConfirmationsResponses[keyof MyConfirmationsResponses];
+
+export type DraftedGuidanceData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/drafted-guidance';
+};
+
+export type DraftedGuidanceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DraftedGuidanceError = DraftedGuidanceErrors[keyof DraftedGuidanceErrors];
+
+export type DraftedGuidanceResponses = {
+    /**
+     * Successful Response
+     */
+    200: DraftedGuidanceIo;
+};
+
+export type DraftedGuidanceResponse = DraftedGuidanceResponses[keyof DraftedGuidanceResponses];
+
+export type SetDraftedGuidanceData = {
+    body: DraftedGuidanceIo;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/drafted-guidance';
+};
+
+export type SetDraftedGuidanceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SetDraftedGuidanceError = SetDraftedGuidanceErrors[keyof SetDraftedGuidanceErrors];
+
+export type SetDraftedGuidanceResponses = {
+    /**
+     * Successful Response
+     */
+    200: DraftedGuidanceIo;
+};
+
+export type SetDraftedGuidanceResponse = SetDraftedGuidanceResponses[keyof SetDraftedGuidanceResponses];
 
 export type LetterPolicyData = {
     body?: never;

@@ -21,8 +21,10 @@ const EFFORT: Record<string, string> = {
   large: "Large, about 2 hours",
 };
 
-export function sourceLabel(item: RequestItemOut): string | null {
+export function sourceLabel(item: RequestItemOut, approver?: string): string | null {
   switch (item.guidance_source) {
+    case "drafted": // SPEC-035 (TASK-073): approved drafter text, labelled for the firm
+      return `Drafted with AI, approved by ${approver ?? "your team"}`;
     case "kind_default":
       return `Default for ${KIND[item.document_kind ?? ""] ?? "this kind of document"}`;
     case "template":
@@ -87,10 +89,12 @@ export function ClientGuidance({
   engagementId,
   item,
   canEdit,
+  approver,
 }: {
   engagementId: string;
   item: RequestItemOut;
   canEdit: boolean;
+  approver?: string;
 }): JSX.Element {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -103,7 +107,7 @@ export function ClientGuidance({
       });
     },
   });
-  const source = sourceLabel(item);
+  const source = sourceLabel(item, approver);
 
   if (draft === null) {
     const rows: [string, string | null | undefined][] = [

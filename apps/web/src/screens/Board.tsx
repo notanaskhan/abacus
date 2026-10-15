@@ -33,6 +33,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { type JSX, type ReactNode, type SyntheticEvent, useEffect, useState } from "react";
 import { errorMessage } from "../api";
 import { DueDatesBar, ItemDue, useDefaultDue } from "./DueDates";
+import { GuidanceDrafts } from "./GuidanceDrafts";
 import { InboxPanel } from "./InboxPanel";
 import { type BoardFilters, TIER_MEANING, applyFilters, readFilters } from "../board/filters";
 import {
@@ -51,6 +52,7 @@ const RETRIEVAL_POLL_MS = 2000;
 
 /** The evidence board for one engagement (SPEC-000 §17, AC-18). */
 const MATCH_REQUESTERS = new Set(["engagement_partner", "manager", "senior", "staff"]);
+const DRAFTERS = new Set(["engagement_partner", "manager", "senior"]); // SPEC-035
 
 export function Board({
   engagementId,
@@ -164,6 +166,11 @@ export function Board({
         engagementId={engagementId}
         items={items.data}
         firm={{ canRequestMatch: myRole !== undefined && MATCH_REQUESTERS.has(myRole) }}
+      />
+      <GuidanceDrafts
+        engagementId={engagementId}
+        items={items.data}
+        canDraft={myRole !== undefined && DRAFTERS.has(myRole)}
       />
       <SummaryStrip engagementId={engagementId} />
       {rows.length > 0 && (

@@ -13,6 +13,13 @@ from fastapi import Depends
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
+from abacus.kernel.text import MultiLineText
+from abacus.modules.agents.draft_start import (
+    Approval,
+    decide_drafts,
+    pending_drafts,
+    request_drafts,
+)
 from abacus.modules.agents.engagement_agent import (
     AgentView,
     activity_feed,
@@ -270,6 +277,119 @@ async def request_match_route(engagement_id: UUID, file_id: UUID, ctx: Ctx) -> M
     """SPEC-033 §4.5: "Suggest with AI" (at Advise, or again)."""
     await request_match(ctx, engagement_id, file_id)
     return MatchRequestedOut(inbox_file_id=file_id)
+
+
+# --- Drafted guidance (SPEC-035; TASK-073) -------------------------------------------------------
+
+
+class DraftGuidanceIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    item_ids: Annotated[list[UUID] | None, Field(max_length=500), classified("internal")] = None
+
+
+class DraftStartedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    items: Annotated[list[UUID], classified("internal")]
+    skipped: Annotated[list[UUID], classified("internal")]
+
+
+@router.post(
+    "/request-items/draft-guidance",
+    action="guidance_draft.request",
+    status_code=202,
+    response_model=DraftStartedOut,
+    errors=(409,),
+)
+async def draft_guidance_route(
+    engagement_id: UUID, body: DraftGuidanceIn, ctx: Ctx
+) -> DraftStartedOut:
+    """SPEC-035 AC-1: "Draft guidance" for the named items, or every item without guidance."""
+    started = await request_drafts(ctx, engagement_id, body.item_ids)
+    return DraftStartedOut(items=list(started.items), skipped=list(started.skipped))
+
+
+class GuidanceDraftOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    request_item_id: Annotated[UUID, classified("internal")]
+    why: Annotated[str, classified("confidential")]
+    good_looks_like: Annotated[str, classified("confidential")]
+    effort: Annotated[Literal["small", "medium", "large"] | None, classified("internal")] = None
+    effort_reason: Annotated[str | None, classified("internal")] = None
+    blocks_fieldwork: Annotated[bool | None, classified("internal")] = None
+    blocks_reason: Annotated[str | None, classified("internal")] = None
+    created_at: Annotated[datetime, classified("internal")]
+
+
+@router.get(
+    "/guidance-drafts", action="guidance_draft.read", response_model=list[GuidanceDraftOut]
+)
+async def guidance_drafts_route(engagement_id: UUID, ctx: Ctx) -> list[GuidanceDraftOut]:
+    """SPEC-035 §4.5: drafts awaiting a decision (firm roles; never one that failed)."""
+    return [
+        GuidanceDraftOut.model_validate(asdict(d))
+        for d in await pending_drafts(ctx, engagement_id)
+    ]
+
+
+class ApprovalIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    draft_id: Annotated[UUID, classified("internal")]
+    why: Annotated[MultiLineText | None, Field(max_length=300), classified("confidential")] = None
+    good_looks_like: Annotated[
+        MultiLineText | None, Field(max_length=600), classified("confidential")
+    ] = None
+    effort: Annotated[Literal["small", "medium", "large"] | None, classified("internal")] = None
+    blocks_fieldwork: Annotated[bool | None, classified("internal")] = None
+
+
+class DecideIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    approvals: Annotated[
+        list[ApprovalIn], Field(min_length=1, max_length=500), classified("internal")
+    ]
+    confirmed_read: Annotated[bool, classified("internal")] = False
+
+
+class DecidedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    decided: Annotated[int, classified("internal")]
+
+
+@router.post(
+    "/guidance-drafts/approve",
+    action="guidance_draft.decide",
+    response_model=DecidedOut,
+    status_code=201,
+    errors=(409,),
+)
+async def approve_drafts_route(engagement_id: UUID, body: DecideIn, ctx: Ctx) -> DecidedOut:
+    """SPEC-035 AC-4: approve drafts (edits checked again); several at once need
+    `confirmed_read` (Q5)."""
+    approvals = [
+        Approval(a.draft_id, a.why, a.good_looks_like, a.effort, a.blocks_fieldwork)
+        for a in body.approvals
+    ]
+    count = await decide_drafts(ctx, engagement_id, approvals, confirmed_read=body.confirmed_read)
+    return DecidedOut(decided=count)
+
+
+@router.post(
+    "/guidance-drafts/discard",
+    action="guidance_draft.decide",
+    response_model=DecidedOut,
+    status_code=201,
+    errors=(409,),
+)
+async def discard_drafts_route(engagement_id: UUID, body: DecideIn, ctx: Ctx) -> DecidedOut:
+    approvals = [Approval(a.draft_id) for a in body.approvals]
+    return DecidedOut(decided=await decide_drafts(ctx, engagement_id, approvals, discard=True))
 
 
 @router.get("/agent", action="activity.read", response_model=AgentOut)

@@ -341,7 +341,12 @@ async def set_document_kind(
 
 
 async def set_guidance(
-    session: AsyncSession, item_id: UUID, guidance: Guidance, *, still_needed: str | None = None
+    session: AsyncSession,
+    item_id: UUID,
+    guidance: Guidance,
+    *,
+    still_needed: str | None = None,
+    approved_by: UUID | None = None,
 ) -> None:
     """SPEC-031 (TASK-060): the guidance; `still_needed` only changes when the firm edits."""
     values: dict[str, object] = {
@@ -350,6 +355,7 @@ async def set_guidance(
         "blocks_fieldwork": guidance.blocks_fieldwork,
         "effort": guidance.effort,
         "guidance_source": guidance.source,
+        "guidance_approved_by": approved_by,  # SPEC-035: drafted guidance only
     }
     if guidance.source == "firm":
         values["still_needed"] = still_needed

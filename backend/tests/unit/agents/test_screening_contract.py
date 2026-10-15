@@ -76,11 +76,12 @@ def test_ac14_screening_starts_from_evidence_version_created() -> None:
         "upload_checks.recorded",  # SPEC-030 (TASK-059): the upload reviewer
         "inbox_file.extracted",  # SPEC-033 (TASK-066): the matcher
     }
-    assert len(WORKFLOWS) == 5  # SPEC-030 adds the upload reviewer's; SPEC-033 the matcher's
+    assert len(WORKFLOWS) == 6  # the reviewer's (SPEC-030), matcher's (033), drafter's (035)
     # TASK-018b: acquire_slot and release_slot join the three; SPEC-009 adds two knowledge steps;
     # SPEC-027 adds the engagement agent's two (handle; TASK-051's next tick); SPEC-030 the
-    # reviewer's two (create_run, review); SPEC-033 (TASK-066) the matcher's two.
-    assert len(ACTIVITIES) == 13
+    # reviewer's two (create_run, review); SPEC-033 (TASK-066) the matcher's two; SPEC-035
+    # (TASK-073) the drafter's two.
+    assert len(ACTIVITIES) == 15
 
 
 def test_ac14_the_workflow_id_is_tenant_qualified() -> None:

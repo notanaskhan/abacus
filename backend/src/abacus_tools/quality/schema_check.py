@@ -75,6 +75,7 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"inbox_match_runs", "inbox_match_proposals"}  # SPEC-033 (TASK-065): proposals, as made
     | {"gl_snapshots", "gl_account_balances", "gl_entries"}  # SPEC-034 (TASK-069): ADR-004
     | {"guidance_drafts"}  # SPEC-035 (TASK-072): proposals, as made
+    | {"guidance_draft_decisions"}  # SPEC-035 (TASK-073): people's decisions, as made
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -119,6 +120,9 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     # Client invitations (SPEC-015): never the token (only its hash, elsewhere).
     "client_invitations": frozenset(
         {"id", "tenant_id", "engagement_id", "email", "role", "invited_by", "expires_at"}
+    ),
+    "guidance_draft_decisions": frozenset(  # SPEC-035 (TASK-073)
+        {"tenant_id", "draft_id", "decision", "edited", "confirmed_read", "decided_by"}
     ),
     # Guidance drafts (SPEC-035; TASK-072): the drafter's, as made.
     "guidance_drafts": frozenset(
@@ -285,6 +289,7 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"document_kind", "document_kind_source"}  # SPEC-029 (TASK-055)
         | {"why", "good_looks_like", "still_needed", "blocks_fieldwork", "effort"}  # SPEC-031
         | {"guidance_source"}
+        | {"guidance_approved_by"}  # SPEC-035 (TASK-073)
     ),
     "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
     "connections": frozenset(
@@ -297,6 +302,7 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"autonomy_level", "autonomy_set_at", "budget_reviewed_at", "walls_none_needed_at"}
         | {"sso_skipped_at", "onboarding_dismissed_at"}
         | {"require_letter"}  # SPEC-025 (TASK-044)
+        | {"drafted_guidance_to_clients"}  # SPEC-035 (TASK-073)
         | {"agents_paused_at", "agents_paused_by"}  # SPEC-027 (TASK-050): the firm switch
         | {"time_zone"}  # SPEC-027 (TASK-051): the agent's daily tick
     ),
@@ -385,6 +391,7 @@ TABLE_OWNERS: dict[str, str] = {
     "inbox_match_runs": "agents",  # SPEC-033 (TASK-065)
     "gl_snapshots": "ledger",  # SPEC-034 (TASK-069)
     "guidance_drafts": "agents",  # SPEC-035 (TASK-072)
+    "guidance_draft_decisions": "agents",  # SPEC-035 (TASK-073)
     "gl_account_balances": "ledger",
     "gl_entries": "ledger",
     "gl_imports": "connections",

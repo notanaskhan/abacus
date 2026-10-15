@@ -24,12 +24,14 @@ from abacus.modules.identity.events import FirmAgentsResumed
 from abacus.modules.identity.repository import (
     acknowledge_onboarding,
     agents_paused_since,
+    drafted_guidance_shown,
     firm_is_synthetic,
     firm_settings,
     letter_required,
     onboarding_counts,
     set_agents_paused,
     set_autonomy_level,
+    set_drafted_guidance_shown,
     set_letter_required,
     set_time_zone,
     time_zone_of,
@@ -229,3 +231,39 @@ async def set_letter_policy(ctx: AuthContext, required: bool) -> bool:
             after=Ref(required=int(required)),
         )
     return required
+
+
+# --- Drafted guidance for clients (SPEC-035 Q2; TASK-073 D2; ADR-111) --------------------------
+
+
+class DraftedGuidanceNotAllowed(DomainConflict):
+    """Only synthetic firms may show drafted guidance to clients while the data boundary holds
+    (ADR-112)."""
+
+    code = "drafted_guidance_not_allowed"
+
+
+async def drafted_guidance_to_clients(tenant: TenantContext) -> bool:
+    """Read fresh where the client's request list is built; never true for a real firm."""
+    async with tenant_session(tenant) as session:
+        return await drafted_guidance_shown(session) and await firm_is_synthetic(session)
+
+
+async def read_drafted_guidance_setting(ctx: AuthContext) -> bool:
+    await authorise(ctx, "firm.read_settings", Resource.firm(ctx.tenant_id))
+    return await drafted_guidance_to_clients(ctx.tenant)
+
+
+async def set_drafted_guidance_setting(ctx: AuthContext, shown: bool) -> bool:
+    """A firm administrator, with fresh MFA; refused for a real firm (ADR-111, ADR-112)."""
+    await authorise(ctx, "firm.manage_settings", Resource.firm(ctx.tenant_id))
+    if shown and not await is_synthetic_firm(ctx.tenant):
+        raise DraftedGuidanceNotAllowed(str(ctx.tenant_id))
+    async with uow(ctx.tenant) as tx:
+        await set_drafted_guidance_shown(tx.session, shown)
+        tx.record(
+            "firm.drafted_guidance_setting_changed",
+            target=Target("firm", ctx.tenant_id),
+            after=Ref(shown=int(shown)),
+        )
+    return shown

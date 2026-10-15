@@ -21,6 +21,13 @@ flags:
     expires: 2027-01-09
     kind: boolean
     default: false
+  - name: guidance.drafting
+    description: The guidance drafter (AI) drafts why a request is asked and what a good answer looks like, for a person to approve (SPEC-035; TASK-073). Synthetic firms only while the data boundary holds. Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
+    owner: founder
+    created: 2026-10-15
+    expires: 2027-01-13
+    kind: boolean
+    default: false
   - name: ledger.gl_import
     description: General ledger detail exports can be uploaded, checked against the year-end trial balance and kept as immutable snapshots (SPEC-034; TASK-069). Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
     owner: founder

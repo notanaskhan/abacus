@@ -94,10 +94,11 @@ class RequestItemOut(BaseModel):
     still_needed: Annotated[str | None, classified("confidential")] = None
     blocks_fieldwork: Annotated[bool, classified("internal")] = False
     effort: Annotated[Effort | None, classified("internal")] = None
+    guidance_approved_by: Annotated[UUID | None, classified("internal")] = None  # SPEC-035
     comment_count: Annotated[int, classified("internal")] = 0  # SPEC-032 (TASK-062)
     unread_comments: Annotated[bool, classified("internal")] = False
     guidance_source: Annotated[
-        Literal["template", "kind_default", "firm"] | None, classified("internal")
+        Literal["template", "kind_default", "firm", "drafted"] | None, classified("internal")
     ] = None
 
 
