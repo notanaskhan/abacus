@@ -780,6 +780,9 @@ _LIST_PREFIXES = ("list_", "all_", "search_")
 # lookups for rows the caller has already authorised, or sign-in before a tenant exists.
 LIST_EXEMPT = frozenset(
     {
+        # SPEC-035 Q3 (TASK-074): a template version's drafts are firm-wide, read after
+        # `authorise(template_guidance.read)` on the firm; no engagement rows.
+        ("src/abacus/modules/agents/repository.py", "template_drafts"),
         # Methodology templates are firm-wide (SPEC-008): read after `authorise` on the firm
         # (`methodology.read`) or by a caller authorised on the engagement; no engagement rows.
         ("src/abacus/modules/engagements/repository.py", "list_templates"),

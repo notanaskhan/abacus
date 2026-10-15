@@ -67,15 +67,17 @@ class SystemContext:
 @dataclass(frozen=True)
 class AgentContext:
     """An agent acting on one run, on one engagement, for one person (ADR-005, ADR-025; TASK-011
-    design §1). `authorise` grants it an action only if the matrix's `agent` value allows it
-    within `task_scope` AND `initiator` (the human whose action led here) is allowed it too.
+    design §1). A firm-level run (SPEC-035 Q3; TASK-074 D1: the guidance drafter on a template
+    version) has no engagement: it holds only firm-scoped actions, never an engagement's.
+    `authorise` grants it an action only if the matrix's `agent` value allows it within
+    `task_scope` AND `initiator` (the human whose action led here) is allowed it too.
     Built only by `identity.context.agent_context_for_run`, which the agents module calls after
     proving the run from the database (SYS-001)."""
 
     tenant: TenantContext
     agent_id: str
     agent_run_id: UUID
-    engagement_id: UUID
+    engagement_id: UUID | None
     task_scope: frozenset[str]
     initiator: AuthContext
     issued_by: object = field(repr=False, compare=False)
@@ -93,6 +95,15 @@ class AgentContext:
     @property
     def tenant_id(self) -> UUID:
         return self.tenant.tenant_id
+
+    @property
+    def engagement(self) -> UUID:
+        """The run's engagement, for engagement agents; a firm-level run has none (`Forbidden`)."""
+        if self.engagement_id is None:
+            from abacus.modules.identity.authz import Forbidden  # authz imports this module
+
+            raise Forbidden("agent.engagement", "relationship")
+        return self.engagement_id
 
 
 Actor = AuthContext | SystemContext | AgentContext
@@ -122,7 +133,7 @@ async def agent_context_for_run(
     tenant_id: UUID,
     run_id: UUID,
     agent_id: str,
-    engagement_id: UUID,
+    engagement_id: UUID | None,
     task_scope: frozenset[str],
     initiator_user_id: UUID,
 ) -> AgentContext:

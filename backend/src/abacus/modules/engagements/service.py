@@ -34,6 +34,7 @@ from abacus.modules.engagements.repository import (
     list_templates,
     lock_engagement,
     lock_or_insert_template,
+    lock_template,
     open_engagement_ids,
     set_methodology_version,
     version_rows,
@@ -45,6 +46,7 @@ from abacus.modules.engagements.workbook import (
     AccountRule,
     Area,
     Effort,
+    Methodology,
     TemplateItem,
     Tier,
     parse_workbook,
@@ -481,11 +483,84 @@ async def _detail(session: AsyncSession, version_id: UUID) -> MethodologyVersion
                 i.good_looks_like,
                 i.blocks_fieldwork,
                 cast(Effort | None, i.effort),
+                i.guidance_source,
+                i.guidance_approved_by,
             )
             for i in items
         ),
         tuple(AccountRule(r.area_code, r.account_from, r.account_to) for r in rules),
     )
+
+
+class VersionNotLatest(DomainConflict):
+    """Drafted guidance is published onto the template's latest version only (TASK-074 D2)."""
+
+    code = "version_not_latest"
+
+
+@dataclass(frozen=True)
+class ApprovedGuidance:
+    """A template item's approved drafted guidance (SPEC-035 Q3), by its position."""
+
+    position: int
+    why: str
+    good_looks_like: str
+    effort: Effort | None
+    blocks_fieldwork: bool
+    approved_by: UUID
+
+
+async def publish_drafted_version(
+    tx: UnitOfWork, ctx: AuthContext, version_id: UUID, approved: Sequence[ApprovedGuidance]
+) -> TemplateVersionSummary:
+    """TASK-074 D2: inside the caller's unit of work, the template's next version: a copy of
+    `version_id` (which must be the latest) with the approved guidance on its items, marked
+    `drafted` with who approved. Older versions, and engagements pinned to them, are unchanged."""
+    await authorise(ctx, "methodology.manage", Resource.firm(ctx.tenant_id))
+    detail = await _detail(tx.session, version_id)
+    if await lock_template(tx.session, detail.summary.template_id) != detail.summary.version:
+        raise VersionNotLatest(str(version_id))
+    by_position = {a.position: a for a in approved}
+    items = tuple(
+        TemplateItem(
+            t.area_code,
+            t.description,
+            t.tier,
+            a.why,
+            a.good_looks_like,
+            a.blocks_fieldwork,
+            a.effort,
+            "drafted",
+            a.approved_by,
+        )
+        if (a := by_position.get(i)) is not None
+        else t
+        for i, t in enumerate(detail.items)
+    )
+    fingerprint = hashlib.sha256(
+        repr(
+            (str(version_id), sorted((a.position, a.why, a.good_looks_like) for a in approved))
+        ).encode()
+    ).hexdigest()
+    new_id, number = await insert_version(
+        tx.session,
+        tenant_id=ctx.tenant_id,
+        template_id=detail.summary.template_id,
+        fingerprint=fingerprint,
+        imported_by=ctx.user_id,
+        methodology=Methodology(detail.areas, items, detail.rules),
+    )
+    tx.record(
+        "methodology.published",
+        target=Target("methodology_version", new_id),
+        after=Ref(
+            template_id=detail.summary.template_id,
+            version=number,
+            from_version_id=version_id,  # the event itself says it's drafted guidance
+            drafted_items=len(by_position),
+        ),
+    )
+    return (await _detail(tx.session, new_id)).summary
 
 
 async def pin_methodology(

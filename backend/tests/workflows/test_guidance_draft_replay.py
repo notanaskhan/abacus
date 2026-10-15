@@ -17,7 +17,13 @@ IDS = [p.stem for p in ALL]
 
 
 def test_ac3_the_histories_are_committed() -> None:
-    assert IDS == ["guidance-draft-v1-completed", "guidance-draft-v1-skipped"]
+    assert IDS == [
+        "guidance-draft-v1-completed",
+        "guidance-draft-v1-skipped",
+        "guidance-draft-v2-completed",  # TASK-074: the input names a template item, or not
+        "guidance-draft-v2-skipped",
+        "guidance-draft-v2-template",
+    ]
 
 
 @pytest.mark.parametrize("path", ALL, ids=IDS)

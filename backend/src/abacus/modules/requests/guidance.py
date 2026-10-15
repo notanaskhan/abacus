@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Final
+from uuid import UUID
 
 EFFORTS: Final = ("small", "medium", "large")
 # SPEC-031 Q3: minutes per effort for the client's estimate; no estimate counts as medium (D4).
@@ -21,6 +22,7 @@ class Guidance:
     blocks_fieldwork: bool = False
     effort: str | None = None
     source: str | None = None  # template, kind_default, firm or drafted; None for nothing
+    approved_by: UUID | None = None  # drafted only: who approved it (SPEC-035)
 
 
 # D3 (founder-approved copy, 2026-10-12), shown to clients verbatim.
@@ -61,9 +63,14 @@ KIND_DEFAULTS: Final[dict[str, Guidance]] = {
 
 def for_new_item(template: Guidance | None, kind: str | None) -> Guidance:
     """AC-2: the template's guidance when it has text; otherwise the fixed copy for the
-    document kind (keeping the template's fieldwork and effort settings); otherwise empty."""
+    document kind (keeping the template's fieldwork and effort settings); otherwise empty.
+    Approved drafted template guidance stays `drafted`, with its approver (SPEC-035 Q3)."""
     t = template or Guidance()
     if t.why or t.good_looks_like:
+        if t.source == "drafted":
+            return Guidance(
+                t.why, t.good_looks_like, t.blocks_fieldwork, t.effort, "drafted", t.approved_by
+            )
         return Guidance(t.why, t.good_looks_like, t.blocks_fieldwork, t.effort, "template")
     default = KIND_DEFAULTS.get(kind or "")
     if default is not None:

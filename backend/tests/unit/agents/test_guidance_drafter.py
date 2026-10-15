@@ -48,7 +48,9 @@ def test_ac7_the_drafter_proposes_only_within_its_limits() -> None:
     drafter = spec(DRAFTER)
     assert drafter.autonomy == "propose"
     assert drafter.prompt == "requests.guidance_draft@v1"
-    assert drafter.task_scope == frozenset({"request_item.read", "guidance_draft.run"})
+    assert drafter.task_scope == frozenset(
+        {"request_item.read", "methodology.read", "guidance_draft.run"}  # TASK-074: templates
+    )
     assert drafter.limits.max_cost_usd == Decimal("0.005")
     assert set(drafter.untrusted_inputs) == {"item", "examples"}
 

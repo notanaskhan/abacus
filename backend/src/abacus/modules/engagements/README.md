@@ -16,6 +16,7 @@ A firm imports its methodology as numbered versions of a named template. Each ve
 
 - **Import:** `POST /v1/methodology/templates/{name}/versions` takes the raw `.xlsx` workbook as the request body.
 - **Read:** `GET /v1/methodology/templates` and `GET /v1/methodology/versions/{id}`. `?latest=true` keeps each template's newest version only: what "New engagement" and Overview offer (SPEC-025 AC-3; TASK-047). "New engagement" preselects the only template for the type (or asks, with several), creates the engagement, then applies it as its new partner.
+- **Drafted guidance (SPEC-035 Q3; TASK-074):** `publish_drafted_version(tx, ctx, version, approved)` makes the next version from the latest, with approved drafted guidance on its items (`guidance_source` `drafted`, `guidance_approved_by`); audited `methodology.published`. Applying or rolling forward carries that provenance into request items, so the client display rule applies.
 
 The workbook has three sheets, each with exact headers in row 1. Blank rows are ignored. `docs/product/methodology-sample.xlsx` is a sample.
 

@@ -309,9 +309,9 @@ class InboxMatchWorkflow:
 
 @workflow.defn(name="guidance_draft")
 class GuidanceDraftWorkflow:
-    """SPEC-035 (TASK-073): one guidance drafter run on a request item: create it, hold a work
-    slot, draft (waiting when not admitted), and always end a failed run. Slot and fail
-    activities are the screener's."""
+    """SPEC-035 (TASK-073): one guidance drafter run on a request item, or a template item
+    (TASK-074: firm-level, no work slot): create it, hold a work slot, draft (waiting when not
+    admitted), and always end a failed run. Slot and fail activities are the screener's."""
 
     @workflow.run
     async def run(self, input: GuidanceDraftInput) -> ScreeningOutcome:
@@ -325,7 +325,9 @@ class GuidanceDraftWorkflow:
         if not run_id:
             return ScreeningOutcome("skipped")
         run = RunInput(input.tenant_id, run_id)
-        given = GuidanceDraftRunInput(input.tenant_id, run_id, input.request_item_id)
+        given = GuidanceDraftRunInput(
+            input.tenant_id, run_id, input.request_item_id, input.position
+        )
         waiting_from = workflow.now()
         try:
             if not await wait_for_slot("screening.acquire_slot", run):

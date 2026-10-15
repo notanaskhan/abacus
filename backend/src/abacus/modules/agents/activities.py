@@ -26,7 +26,12 @@ from abacus.kernel.config import settings
 from abacus.kernel.errors import NotFound
 from abacus.modules.agents.engagement_agent import handle as engagement_agent_handle
 from abacus.modules.agents.engagement_agent import next_tick as engagement_agent_next_tick
-from abacus.modules.agents.guidance_draft import create_draft_run, draft
+from abacus.modules.agents.guidance_draft import (
+    create_draft_run,
+    create_template_draft_run,
+    draft,
+    draft_template,
+)
 from abacus.modules.agents.inbox_match import create_match_run, match
 from abacus.modules.agents.knowledge import embed_next_batch, fail_document
 from abacus.modules.agents.service import (
@@ -128,7 +133,7 @@ async def _screen(tenant_id: UUID, run_id: UUID) -> ScreeningOutcome:
         return await _recorded(tenant_id, run_id)
     work_class = slots.current_class()
     if work_class is not None:
-        await slots.keep(agent.tenant, agent.engagement_id, work_class)
+        await slots.keep(agent.tenant, agent.engagement, work_class)
     try:
         outcome = await screen(agent)
         # Admitted and done: no longer waiting for the provider. Only here, so a repeated refusal
@@ -252,7 +257,7 @@ async def _review(tenant_id: UUID, run_id: UUID) -> ScreeningOutcome:
         return await _recorded(tenant_id, run_id)
     work_class = slots.current_class()
     if work_class is not None:
-        await slots.keep(agent.tenant, agent.engagement_id, work_class)
+        await slots.keep(agent.tenant, agent.engagement, work_class)
     try:
         outcome = await review(agent)
         await mark_queued(tenant_id, run_id, None, None)
@@ -317,7 +322,7 @@ async def _match(tenant_id: UUID, run_id: UUID, inbox_file_id: UUID) -> Screenin
         return await _recorded(tenant_id, run_id)
     work_class = slots.current_class()
     if work_class is not None:
-        await slots.keep(agent.tenant, agent.engagement_id, work_class)
+        await slots.keep(agent.tenant, agent.engagement, work_class)
     try:
         outcome = await match(agent, inbox_file_id)
         await mark_queued(tenant_id, run_id, None, None)
@@ -361,13 +366,22 @@ async def match_activity(input: MatchRunInput) -> ScreeningOutcome:
 @activity.defn(name="guidance_draft.create_run")
 async def create_draft_run_activity(input: GuidanceDraftInput) -> str | None:
     try:
-        run_id = await create_draft_run(
-            UUID(input.tenant_id),
-            UUID(input.engagement_id),
-            UUID(input.request_item_id),
-            UUID(input.event_id),
-            UUID(input.requested_by),
-        )
+        if input.methodology_version_id:  # TASK-074: a template item, firm-level
+            run_id = await create_template_draft_run(
+                UUID(input.tenant_id),
+                UUID(input.methodology_version_id),
+                input.position,
+                UUID(input.event_id),
+                UUID(input.requested_by),
+            )
+        else:
+            run_id = await create_draft_run(
+                UUID(input.tenant_id),
+                UUID(input.engagement_id),
+                UUID(input.request_item_id),
+                UUID(input.event_id),
+                UUID(input.requested_by),
+            )
     except NotFound as exc:
         raise _as_application_error(exc, retryable=False) from None
     except Exception as exc:
@@ -375,7 +389,9 @@ async def create_draft_run_activity(input: GuidanceDraftInput) -> str | None:
     return str(run_id) if run_id is not None else None
 
 
-async def _draft(tenant_id: UUID, run_id: UUID, item_id: UUID) -> ScreeningOutcome:
+async def _draft(
+    tenant_id: UUID, run_id: UUID, item_id: UUID | None, position: int
+) -> ScreeningOutcome:
     try:
         agent = await load_agent_context(tenant_id, run_id)
     except AgentRunNotRunning:
@@ -384,10 +400,14 @@ async def _draft(tenant_id: UUID, run_id: UUID, item_id: UUID) -> ScreeningOutco
         await fail_run(tenant_id, run_id, INITIATOR_INACTIVE)
         return await _recorded(tenant_id, run_id)
     work_class = slots.current_class()
-    if work_class is not None:
+    if work_class is not None and agent.engagement_id is not None:  # firm-level runs hold none
         await slots.keep(agent.tenant, agent.engagement_id, work_class)
     try:
-        outcome = await draft(agent, item_id)
+        outcome = (
+            await draft(agent, item_id)
+            if item_id is not None
+            else await draft_template(agent, position)
+        )
         await mark_queued(tenant_id, run_id, None, None)
     except NotAdmitted as refused:
         estimate = datetime.now(UTC) + timedelta(seconds=refused.retry_after)
@@ -411,7 +431,10 @@ async def draft_activity(input: GuidanceDraftRunInput) -> ScreeningOutcome:
     try:
         async with _heartbeating():
             return await _draft(
-                UUID(input.tenant_id), UUID(input.run_id), UUID(input.request_item_id)
+                UUID(input.tenant_id),
+                UUID(input.run_id),
+                UUID(input.request_item_id) if input.request_item_id else None,
+                input.position,
             )
     except ApplicationError as exc:
         if exc.type == NOT_ADMITTED:

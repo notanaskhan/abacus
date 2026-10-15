@@ -44,6 +44,7 @@ SCREEN_REQUEST = "/v1/engagements/{engagement_id}/screening-results/request"
 REVIEW_REQUEST = "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/review"
 MATCH_REQUEST = "/v1/engagements/{engagement_id}/inbox/{file_id}/match"  # SPEC-033: 202
 DRAFTS = "/v1/engagements/{engagement_id}/request-items/draft-guidance"  # SPEC-035: 202
+TEMPLATE_DRAFTS = "/v1/methodology/versions/{version_id}/draft-guidance"  # TASK-074: 202
 GL_IMPORT = (
     "/v1/engagements/{engagement_id}/connection/import/gl"  # SPEC-034: 202, processed later
 )
@@ -134,7 +135,15 @@ NOT_CREATING = {
 
 def test_ac20_creating_routes_answer_201() -> None:
     posts = [r for r in _routes() if "POST" in _methods(r)]
-    accepted = {RETRIEVALS, SCREEN_REQUEST, REVIEW_REQUEST, MATCH_REQUEST, GL_IMPORT, DRAFTS}
+    accepted = {
+        RETRIEVALS,
+        SCREEN_REQUEST,
+        REVIEW_REQUEST,
+        MATCH_REQUEST,
+        GL_IMPORT,
+        DRAFTS,
+        TEMPLATE_DRAFTS,
+    }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
     decisions = "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/"
@@ -168,6 +177,10 @@ def test_ac20_creating_routes_answer_201() -> None:
         # SPEC-035 (TASK-073): a decision on each draft is created.
         "/v1/engagements/{engagement_id}/guidance-drafts/approve",
         "/v1/engagements/{engagement_id}/guidance-drafts/discard",
+        # SPEC-035 Q3 (TASK-074): a decision on each template draft; a template version.
+        "/v1/methodology/versions/{version_id}/guidance-drafts/approve",
+        "/v1/methodology/versions/{version_id}/guidance-drafts/discard",
+        "/v1/methodology/versions/{version_id}/publish-drafted",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

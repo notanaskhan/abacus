@@ -1,7 +1,7 @@
 # The guidance drafter (ADR-047; SPEC-035). Source of truth: compiled into _specs.py by
 # `python -m abacus_tools.codegen.agent_specs`; a test fails if they drift.
 id: requests.guidance_drafter
-version: 1
+version: 2
 purpose: Draft why a request is asked and what a good answer looks like, for a person to approve.
 shape: single_call
 prompt: requests.guidance_draft@v1
@@ -9,7 +9,8 @@ tier: small
 escalation_tier: medium
 input_schema: GuidanceDraftInput
 output_schema: GuidanceDraft
-task_scope: [request_item.read, guidance_draft.run]
+# methodology.read: drafting on a template version, firm-level (TASK-074 D1).
+task_scope: [request_item.read, methodology.read, guidance_draft.run]
 tools: []
 limits:
   max_output_tokens: 400

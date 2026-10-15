@@ -964,6 +964,16 @@ export type DraftStartedOut = {
 };
 
 /**
+ * DraftTemplateGuidanceIn
+ */
+export type DraftTemplateGuidanceIn = {
+    /**
+     * Positions
+     */
+    positions?: Array<number> | null;
+};
+
+/**
  * DraftedGuidanceIO
  *
  * SPEC-035 (TASK-073): whether approved drafted guidance is shown to clients.
@@ -2542,6 +2552,20 @@ export type ProviderOut = {
 };
 
 /**
+ * PublishedVersionOut
+ */
+export type PublishedVersionOut = {
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Version Id
+     */
+    version_id: string;
+};
+
+/**
  * QueueEntryOut
  */
 export type QueueEntryOut = {
@@ -3560,6 +3584,66 @@ export type TeamRoleIn = {
 };
 
 /**
+ * TemplateDraftOut
+ */
+export type TemplateDraftOut = {
+    /**
+     * Approved By
+     */
+    approved_by?: string | null;
+    /**
+     * Blocks Fieldwork
+     */
+    blocks_fieldwork?: boolean | null;
+    /**
+     * Blocks Reason
+     */
+    blocks_reason?: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Effort
+     */
+    effort?: 'small' | 'medium' | 'large' | null;
+    /**
+     * Effort Reason
+     */
+    effort_reason?: string | null;
+    /**
+     * Good Looks Like
+     */
+    good_looks_like: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Status
+     */
+    status: 'pending' | 'approved';
+    /**
+     * Why
+     */
+    why: string;
+};
+
+/**
+ * TemplateDraftStartedOut
+ */
+export type TemplateDraftStartedOut = {
+    /**
+     * Positions
+     */
+    positions: Array<number>;
+};
+
+/**
  * TemplateItemOut
  */
 export type TemplateItemOut = {
@@ -3572,9 +3656,25 @@ export type TemplateItemOut = {
      */
     description: string;
     /**
+     * Good Looks Like
+     */
+    good_looks_like?: string | null;
+    /**
+     * Guidance Approved By
+     */
+    guidance_approved_by?: string | null;
+    /**
+     * Guidance Source
+     */
+    guidance_source?: 'drafted' | null;
+    /**
      * Tier
      */
     tier: string;
+    /**
+     * Why
+     */
+    why?: string | null;
 };
 
 /**
@@ -11460,6 +11560,284 @@ export type GetVersionResponses = {
 };
 
 export type GetVersionResponse = GetVersionResponses[keyof GetVersionResponses];
+
+export type DraftTemplateGuidanceData = {
+    body: DraftTemplateGuidanceIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/draft-guidance';
+};
+
+export type DraftTemplateGuidanceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DraftTemplateGuidanceError = DraftTemplateGuidanceErrors[keyof DraftTemplateGuidanceErrors];
+
+export type DraftTemplateGuidanceResponses = {
+    /**
+     * Successful Response
+     */
+    202: TemplateDraftStartedOut;
+};
+
+export type DraftTemplateGuidanceResponse = DraftTemplateGuidanceResponses[keyof DraftTemplateGuidanceResponses];
+
+export type TemplateDraftsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/guidance-drafts';
+};
+
+export type TemplateDraftsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type TemplateDraftsError = TemplateDraftsErrors[keyof TemplateDraftsErrors];
+
+export type TemplateDraftsResponses = {
+    /**
+     * Response Template Drafts
+     *
+     * Successful Response
+     */
+    200: Array<TemplateDraftOut>;
+};
+
+export type TemplateDraftsResponse = TemplateDraftsResponses[keyof TemplateDraftsResponses];
+
+export type ApproveTemplateDraftsData = {
+    body: DecideIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/guidance-drafts/approve';
+};
+
+export type ApproveTemplateDraftsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ApproveTemplateDraftsError = ApproveTemplateDraftsErrors[keyof ApproveTemplateDraftsErrors];
+
+export type ApproveTemplateDraftsResponses = {
+    /**
+     * Successful Response
+     */
+    201: DecidedOut;
+};
+
+export type ApproveTemplateDraftsResponse = ApproveTemplateDraftsResponses[keyof ApproveTemplateDraftsResponses];
+
+export type DiscardTemplateDraftsData = {
+    body: DecideIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/guidance-drafts/discard';
+};
+
+export type DiscardTemplateDraftsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DiscardTemplateDraftsError = DiscardTemplateDraftsErrors[keyof DiscardTemplateDraftsErrors];
+
+export type DiscardTemplateDraftsResponses = {
+    /**
+     * Successful Response
+     */
+    201: DecidedOut;
+};
+
+export type DiscardTemplateDraftsResponse = DiscardTemplateDraftsResponses[keyof DiscardTemplateDraftsResponses];
+
+export type PublishDraftedData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/publish-drafted';
+};
+
+export type PublishDraftedErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PublishDraftedError = PublishDraftedErrors[keyof PublishDraftedErrors];
+
+export type PublishDraftedResponses = {
+    /**
+     * Successful Response
+     */
+    201: PublishedVersionOut;
+};
+
+export type PublishDraftedResponse = PublishDraftedResponses[keyof PublishDraftedResponses];
 
 export type ListNotificationsData = {
     body?: never;

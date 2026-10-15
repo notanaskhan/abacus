@@ -293,6 +293,8 @@ async def apply_methodology(
                     template_item.good_looks_like,
                     template_item.blocks_fieldwork,
                     template_item.effort,
+                    template_item.guidance_source,
+                    template_item.guidance_approved_by,
                 ),
             )
             tx.record(

@@ -16,7 +16,9 @@ PROTECTED. TASK-007 design §5.
   4. attributes     archived engagements are read-only; `mfa_recent`; `requires: reason`;
                     `notify` obligations are met by the action's own event (SPEC-013)
 An agent is also bounded by its initiator, checked live (ADR-025): the initiator must be allowed
-the same action, or `AGENT_ONLY_REACH` for actions no human role holds.
+the same action, or `AGENT_ONLY_REACH` for actions no human role holds (`AGENT_FIRM_REACH` on
+the firm, for a firm-level agent: SPEC-035 Q3, TASK-074 D1). A firm-level agent (no engagement)
+relates only to the firm; an engagement agent never to the firm.
 Matrix conditions not modelled yet (`in_scope`, other `firm_setting(...)`s, `task_scope` for
 humans) are not grants: they deny until their task models them. `firm_setting(autonomy_policy)`
 is modelled for agents only (SPEC-027, TASK-051): allowed at the firm's Routine autonomy or
@@ -125,6 +127,9 @@ def register_active_engagements(active: ActiveEngagements) -> None:
 # with the initiator's own right to it; the agent then stays within the initiator's reach: they
 # must be allowed this action on the same engagement (founder decision 2026-10-06, ADR-025).
 AGENT_ONLY_REACH = "evidence.read"
+# A firm-level agent (TASK-074 D1: the guidance drafter on a template) acts on the firm's
+# methodology: its initiator must still be allowed to read it.
+AGENT_FIRM_REACH = "methodology.read"
 _NON_HUMAN_ROLES = frozenset({"agent", "system"})
 _log = get_logger(__name__)
 _checked: ContextVar[set[str] | None] = ContextVar("abacus_authz_checked", default=None)
@@ -282,6 +287,7 @@ async def _engagement_roles_in_firm(ctx: AuthContext) -> frozenset[str]:
 
 async def _roles(ctx: Actor, resource: Resource, rule: Rule) -> set[str]:
     if isinstance(ctx, AgentContext):
+        # The run's engagement only; a firm-level run (no engagement) the firm only.
         return {"agent"} if resource.engagement_id == ctx.engagement_id else set()
     if isinstance(ctx, SystemContext):
         # The platform acts on its run's engagement only: anything else (another engagement, a
@@ -355,7 +361,8 @@ async def authorise(
         raise _deny(ctx, action, "independence")
     # An agent never exceeds the person it acts for (ADR-025 intersection), checked live.
     if isinstance(ctx, AgentContext):
-        delegated = action if _human_held(rule) else AGENT_ONLY_REACH
+        reach = AGENT_ONLY_REACH if resource.engagement_id is not None else AGENT_FIRM_REACH
+        delegated = action if _human_held(rule) else reach
         try:
             await authorise(ctx.initiator, delegated, resource, reason=reason)
         except Forbidden as denied:
@@ -482,6 +489,8 @@ def _visible_by_role(
         agent = rule.decisions.get("agent")
         if not (agent == "allow" or (agent == "task_scope" and action in ctx.task_scope)):
             return false()
+        if ctx.engagement_id is None:
+            return false()  # a firm-level agent lists no engagement's rows
         return and_(
             engagement_id == ctx.engagement_id, visible(ctx.initiator, action, engagement_id)
         )
