@@ -17,7 +17,12 @@ IDS = [p.stem for p in ALL]
 
 
 def test_ac3_the_histories_are_committed() -> None:
-    assert IDS == ["gl-import-v1-reconciled", "gl-import-v1-waiting"]
+    assert IDS == [
+        "gl-import-v1-reconciled",
+        "gl-import-v1-waiting",
+        "gl-import-v2-reconciled",  # TASK-070: rendered as evidence after reconciling
+        "gl-import-v2-waiting",
+    ]
 
 
 @pytest.mark.parametrize("path", ALL, ids=IDS)

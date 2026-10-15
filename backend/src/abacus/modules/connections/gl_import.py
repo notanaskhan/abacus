@@ -18,6 +18,7 @@ from __future__ import annotations
 import asyncio
 import shutil
 import tempfile
+from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -54,18 +55,45 @@ from abacus.modules.connections.repository import (
     set_gl_import,
     waiting_gl_imports,
 )
+from abacus.modules.connections.service import load_gl_import_context
 from abacus.modules.connections.workflow_types import GlImportInput
 from abacus.modules.connections.workflows import GlImportWorkflow
-from abacus.modules.engagements.api import engagement_metadata, gate_client_data, get_ref
-from abacus.modules.evidence.api import ContentTooLarge, StoredObject, read_content, stage_content
-from abacus.modules.identity.api import AuthContext, authorise, engagement_role_of
+from abacus.modules.engagements.api import engagement_metadata, gate_client_data, get_ref, lock_ref
+from abacus.modules.evidence.api import MAX_CONTENT_BYTES as MAX_STORED_BYTES
+from abacus.modules.evidence.api import (
+    XLSX_MEDIA_TYPE,
+    ContentTooLarge,
+    GlBalanceRow,
+    GlHeader,
+    GlRenderEntry,
+    NewItem,
+    Provenance,
+    StoredObject,
+    add_version,
+    read_content,
+    render_general_ledger,
+    render_journal_listing,
+    stage_content,
+)
+from abacus.modules.identity.api import (
+    AuthContext,
+    SystemContext,
+    authorise,
+    engagement_role_of,
+    member_context,
+    names_of,
+)
 from abacus.modules.ledger.api import (
     NormaliseError,
     Unvalidated,
+    gl_entries,
+    gl_snapshot_view,
     record_gl_snapshot,
     validate_gl,
     year_end_trial_balance,
 )
+from abacus.modules.organisations.api import client_names
+from abacus.modules.requests.api import fulfil_by_rule, request_items_for
 
 _log = get_logger(__name__)
 _CLIENT_ROLES: Final = frozenset({"client_admin", "client_contributor"})
@@ -313,3 +341,175 @@ async def on_ledger_snapshot_recorded(event: OutboxEvent) -> None:
         waiting = await waiting_gl_imports(session, entity)
     for row in waiting:
         await dispatch_gl_import(event.tenant_id, row.id, again=str(event.event_id))
+
+
+# --- Evidence and fulfilment (SPEC-034 AC-6; TASK-070) ------------------------------------------
+
+GL_DATASETS: Final = {"general_ledger": "General ledger", "journals": "Journal listing"}
+_TAKES_EVIDENCE: Final = frozenset({"open", "received", "needs_revision"})
+_PAGE: Final = 5000
+
+
+async def _entries(tenant: TenantContext, snapshot_id: UUID) -> list[GlRenderEntry]:
+    found: list[GlRenderEntry] = []
+    after = 0
+    while True:
+        page = await gl_entries(tenant, snapshot_id, after=after, limit=_PAGE)
+        if not page:
+            return found
+        found.extend(
+            GlRenderEntry(
+                e.line_no,
+                e.account_code,
+                e.posted_on,
+                e.kind,
+                e.reference,
+                e.counterparty,
+                e.description,
+                e.debit,
+                e.credit,
+            )
+            for e in page
+        )
+        after = page[-1].line_no
+
+
+def _parts(content: bytes, render_again: Callable[[int], list[bytes]]) -> list[bytes]:
+    """D3: a workbook over the storage cap becomes numbered parts."""
+    if len(content) <= MAX_STORED_BYTES:
+        return [content]
+    parts = 2
+    while True:
+        rendered = render_again(parts)
+        if all(len(r) <= MAX_STORED_BYTES for r in rendered):
+            return rendered
+        parts += 1
+
+
+async def render_gl_evidence(tenant_id: UUID, import_id: UUID) -> list[str]:
+    """Render the reconciled ledger's two workbooks, add them as evidence, and fulfil the
+    engagement's general ledger and journal listing requests by rule. Idempotent: evidence is
+    keyed by snapshot, item and part."""
+    return await _render_as(await load_gl_import_context(tenant_id, import_id), import_id)
+
+
+async def _render_as(sys: SystemContext, import_id: UUID) -> list[str]:
+    """As the platform, on behalf of the uploader (D1); the context was proven by the row."""
+    tenant_id = sys.tenant_id
+    async with tenant_session(sys.tenant) as session:
+        row = await get_gl_import(session, import_id)
+    if row is None or row.gl_snapshot_id is None:
+        raise NotFound("gl_import")
+    engagement = await get_ref(sys, row.engagement_id)
+    await authorise(sys, "evidence.upload", engagement.resource())
+    uploader = await member_context(tenant_id, row.uploaded_by)
+    if uploader is None:
+        return []  # the uploader left: nobody to see which requests are theirs to fulfil
+    wanted = [
+        i
+        for i in await request_items_for(uploader, row.engagement_id)
+        if i.dataset in GL_DATASETS and i.status in _TAKES_EVIDENCE
+    ]
+    if not wanted:
+        return []
+    view = await gl_snapshot_view(sys.tenant, row.gl_snapshot_id)
+    async with tenant_session(sys.tenant) as session:
+        entity = await client_names(session, [view.client_entity_id])
+    names = await names_of([row.uploaded_by])
+    fmt = GL_FORMATS[row.format]
+    header = GlHeader(
+        view.client_entity_id,
+        entity[view.client_entity_id].client_entity_name,
+        view.period_start,
+        view.period_end,
+        row.created_at,
+        view.id,
+        view.source,
+        view.raw_fingerprint,
+        (
+            ("Imported from", f"{fmt.system} general ledger export"),
+            ("Uploaded by", names.get(row.uploaded_by, "") or str(row.uploaded_by)),
+            ("Transactions", str(view.line_count)),
+            ("Reconciled to trial balance", str(view.tb_snapshot_id)),
+        ),
+    )
+    balances = [
+        GlBalanceRow(
+            b.code,
+            b.name,
+            b.opening,
+            b.debit,
+            b.credit,
+            b.closing,
+            b.tb_closing,
+            b.opening_derived,
+        )
+        for b in view.balances
+    ]
+    account_names = {b.code: b.name for b in view.balances}
+    entries = await _entries(sys.tenant, view.id)
+
+    def split(count: int) -> list[list[GlRenderEntry]]:
+        size = -(-len(entries) // count)
+        return [entries[i : i + size] for i in range(0, len(entries), size)]
+
+    rendered: dict[str, list[bytes]] = {}
+    if any(i.dataset == "general_ledger" for i in wanted):
+        rendered["general_ledger"] = _parts(
+            await asyncio.to_thread(
+                render_general_ledger, header, balances, entries, account_names
+            ),
+            lambda n: [
+                render_general_ledger(header, balances if k == 0 else [], chunk, account_names)
+                for k, chunk in enumerate(split(n))
+            ],
+        )
+    if any(i.dataset == "journals" for i in wanted):
+        rendered["journals"] = _parts(
+            await asyncio.to_thread(render_journal_listing, header, entries, account_names),
+            lambda n: [render_journal_listing(header, chunk, account_names) for chunk in split(n)],
+        )
+    stored = {
+        dataset: [await stage_content(tenant_id, content) for content in contents]
+        for dataset, contents in rendered.items()
+    }
+    added: list[str] = []
+    async with uow(sys.tenant) as tx:
+        locked = await lock_ref(tx, row.engagement_id)
+        await authorise(sys, "evidence.upload", locked.resource())
+        for item in wanted:
+            files = stored.get(item.dataset or "", [])
+            for part, file in enumerate(files, start=1):
+                label = GL_DATASETS[item.dataset or ""]
+                suffix = f" (part {part} of {len(files)})" if len(files) > 1 else ""
+                version = await add_version(
+                    tx,
+                    engagement_id=row.engagement_id,
+                    item=NewItem(
+                        f"{label} {view.period_start.isoformat()} to "
+                        f"{view.period_end.isoformat()}{suffix}"
+                    ),
+                    stored=file,
+                    media_type=XLSX_MEDIA_TYPE,
+                    provenance=Provenance(
+                        source=view.source,
+                        method="imported",
+                        pulled_at=row.created_at,
+                        period_start=view.period_start,
+                        period_end=view.period_end,
+                        client_entity_id=view.client_entity_id,
+                        snapshot_id=view.tb_snapshot_id,  # the trial balance it reconciles to
+                    ),
+                    idempotency_key=f"gl:{view.id}:item:{item.id}:part:{part}",
+                    requested_by=row.uploaded_by,
+                )
+                await fulfil_by_rule(
+                    tx, sys, request_item_id=item.id, evidence_version_id=version.id
+                )
+                added.append(str(version.id))
+        tx.record(
+            "gl_import.rendered",
+            target=Target("gl_import", import_id),
+            after=Ref(gl_snapshot_id=view.id, versions=len(added)),
+        )
+    return added

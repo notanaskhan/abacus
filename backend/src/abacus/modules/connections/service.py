@@ -20,6 +20,7 @@ from abacus.modules.connections.models import Connection, SyncRun
 from abacus.modules.connections.repository import (
     active_connection_for,
     active_run,
+    get_gl_import,
     get_run,
     insert_run,
     runs_since,
@@ -197,6 +198,25 @@ async def load_system_context(tenant_id: UUID, run_id: UUID) -> SystemContext:
         run_id=run.id,
         engagement_id=run.engagement_id,
         on_behalf_of=UUID(run.started_by),
+    )
+
+
+async def load_gl_import_context(tenant_id: UUID, import_id: UUID) -> SystemContext:
+    """SPEC-034 (TASK-070 D1): the platform's context for rendering and fulfilling a reconciled
+    general ledger import, proven by its `gl_imports` row (never by the caller's input), acting on
+    behalf of whoever uploaded it, as a retrieval acts for the person who started it."""
+    reader = TenantContext(tenant_id, "system", f"gl_import:{import_id}")
+    async with tenant_session(reader) as session:
+        row = await get_gl_import(session, import_id)
+    if row is None:
+        raise NotFound("gl_import")
+    if row.status != "reconciled" or row.gl_snapshot_id is None:
+        raise RunNotRunning(row.status, row.failure_code)
+    return system_context_for_run(
+        tenant_id=tenant_id,
+        run_id=row.id,
+        engagement_id=row.engagement_id,
+        on_behalf_of=row.uploaded_by,
     )
 
 
