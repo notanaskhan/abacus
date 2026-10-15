@@ -869,8 +869,8 @@ async def _call[T](function: Callable[[T], Awaitable[object]], argument: T) -> o
 
 
 def test_ac20_there_are_eight_activities_the_six_plus_the_two_slot_ones() -> None:
-    # TASK-018b: acquire_slot and release_slot join the six; SPEC-034 (TASK-069) adds the GL's.
-    assert len(ACTIVITIES) == 9
+    # TASK-018b: acquire_slot and release_slot join the six; SPEC-034 adds the GL import steps.
+    assert len(ACTIVITIES) == 10  # TASK-070 adds the GL render
     names = {a.__name__ for a in ACTIVITIES}
     assert {"acquire_slot_activity", "release_slot_activity"} <= names
 

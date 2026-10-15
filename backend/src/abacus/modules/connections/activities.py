@@ -20,7 +20,7 @@ from temporalio.exceptions import ApplicationError
 from abacus.kernel import slots
 from abacus.kernel.config import settings
 from abacus.kernel.errors import NotFound
-from abacus.modules.connections.gl_import import process_gl_import
+from abacus.modules.connections.gl_import import process_gl_import, render_gl_evidence
 from abacus.modules.connections.pipeline import (
     RunFailed,
     fail_run,
@@ -97,6 +97,12 @@ async def _stage[T](
 async def gl_import_activity(input: GlImportInput) -> str:
     """SPEC-034 (TASK-069): parse, check and snapshot one general ledger import."""
     return await process_gl_import(UUID(input.tenant_id), UUID(input.import_id))
+
+
+@activity.defn(name="gl_import.render")
+async def gl_render_activity(input: GlImportInput) -> list[str]:
+    """SPEC-034 (TASK-070): the reconciled ledger's workbooks, as evidence on its requests."""
+    return await render_gl_evidence(UUID(input.tenant_id), UUID(input.import_id))
 
 
 @activity.defn(name="retrieval.acquire_slot")
@@ -195,4 +201,5 @@ ACTIVITIES = (
     render_activity,
     fail_run_activity,
     gl_import_activity,  # SPEC-034 (TASK-069)
+    gl_render_activity,  # SPEC-034 (TASK-070)
 )

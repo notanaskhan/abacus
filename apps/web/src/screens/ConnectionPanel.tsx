@@ -16,6 +16,7 @@ import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
 import { ConfirmItsYou, isForbidden } from "../shell/mfa";
 import { longDate } from "./importMessages";
+import { GlExport } from "./GlExport";
 import { importOutcome, LedgerExport } from "./LedgerExport";
 
 const RUN_STATUS: Record<string, string> = {
@@ -323,6 +324,8 @@ export function ConnectionPanel({
         </div>
       </Dialog>
       <ConfirmItsYou open={mfa} onOpenChange={setMfa} />
+      {/* SPEC-034 (TASK-070): the general ledger detail, when there's no live connector. */}
+      {(live === null || live.provider === "import") && <GlExport engagementId={engagementId} />}
     </Panel>
   );
 }

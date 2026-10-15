@@ -189,10 +189,20 @@ class GlImportWorkflow:
 
     @workflow.run
     async def run(self, input: GlImportInput) -> str:
-        return await workflow.execute_activity(
+        status = await workflow.execute_activity(
             "gl_import.process",
             input,
             result_type=str,
             start_to_close_timeout=_GL_TIMEOUT,
             retry_policy=_RETRY,
         )
+        # TASK-070 (ADR-090): a reconciled ledger becomes evidence and fulfils its requests.
+        if workflow.patched("render") and status == "reconciled":
+            await workflow.execute_activity(
+                "gl_import.render",
+                input,
+                result_type=list[str],
+                start_to_close_timeout=_GL_TIMEOUT,
+                retry_policy=_RETRY,
+            )
+        return status

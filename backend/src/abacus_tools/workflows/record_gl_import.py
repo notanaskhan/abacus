@@ -7,6 +7,7 @@ Records the real `GlImportWorkflow` against throwaway containers with its activi
 stub (replay never runs activities):
 - `gl-import-<version>-reconciled.json`: the import is processed and reconciled;
 - `gl-import-<version>-waiting.json`: there's no trial balance yet.
+From v2 (TASK-070) a reconciled import is then rendered as evidence (`gl_import.render`).
 Refuses to overwrite an existing file.
 """
 
@@ -36,6 +37,11 @@ async def _process(given: GlImportInput) -> str:
     return "waiting_for_tb" if given.import_id == _WAITING else "reconciled"
 
 
+@activity.defn(name="gl_import.render")  # v2 (TASK-070)
+async def _render(given: GlImportInput) -> list[str]:
+    return ["00000000-0000-0000-0000-0000000000e1"]
+
+
 async def _run(client: Client, name: str, import_id: str) -> WorkflowHistory:
     handle = await client.start_workflow(
         GlImportWorkflow.run,
@@ -50,7 +56,10 @@ async def _run(client: Client, name: str, import_id: str) -> WorkflowHistory:
 async def _record(out: Path, version: str, stack: Stack) -> None:
     client = await connect(stack)
     async with Worker(
-        client, task_queue=_TASK_QUEUE, workflows=[GlImportWorkflow], activities=[_process]
+        client,
+        task_queue=_TASK_QUEUE,
+        workflows=[GlImportWorkflow],
+        activities=[_process, _render],
     ):
         for name, import_id in (
             ("reconciled", "00000000-0000-0000-0000-0000000000c1"),
