@@ -7,7 +7,7 @@ risk_zone: red
 related_adrs: [ADR-004, ADR-016, ADR-038, ADR-050, ADR-052, ADR-085, ADR-103, ADR-107, ADR-110]
 related_specs: [SPEC-000, SPEC-006, SPEC-022, SPEC-028]
 created: 2026-10-14
-updated: 2026-10-14
+updated: 2026-10-15
 ---
 
 > **Instructions for coding agents**
@@ -48,7 +48,7 @@ This is the GL part of Act 2's A1 (SPEC-028 Q5).
    - each line gives: account (code and name), date, transaction type, reference number, name (customer or vendor), description, debit and credit (or signed amount);
    - per account, the opening balance line and the closing total where the export has them;
    - guided export steps per system.
-2. **Upload** on the same "Export instead" path as the trial balance. It's a second file for the same period: "General ledger detail", with a 100 MB limit (Q2; the trial balance's stays as it is). It goes through the same scan, isolation (with a longer time limit) and write-once storage.
+2. **Upload** on the same "Export instead" path as the trial balance. It's a second file for the same period: "General ledger detail", with a 50 MB limit (Q2, amended 2026-10-15; the trial balance's stays as it is). It goes through the same scan, isolation (with a longer time limit) and write-once storage.
 3. **Normalise** to a common model: `GlEntry` (account code, date, transaction reference, type, counterparty, description, debit, credit, source row) per line, plus each account's opening balance.
 4. **Completeness checks by code** (ADR-038), in order:
    - `period_mismatch`: lines outside the fiscal year, or no line in a month the TB shows activity for (Q3);
@@ -97,7 +97,7 @@ This is the GL part of Act 2's A1 (SPEC-028 Q5).
 - **Scale:**
   - rows are parsed and inserted in batches (COPY, or multi-row inserts of a few thousand);
   - the workbooks are written in streaming mode;
-  - limits are 1,000,000 lines and 100 MB (Q2).
+  - limits are 1,000,000 lines and 50 MB (Q2, amended).
   - Workbooks over Excel's row limit are split across sheets.
 - **Flag** `ledger.gl_import` (off; on for the Dev firm).
 
@@ -119,7 +119,7 @@ This is the GL part of Act 2's A1 (SPEC-028 Q5).
 ## 9. Open questions
 All resolved: the founder approved every recommendation below on 2026-10-14.
 - **Q1 — first formats.** *Recommendation:* QuickBooks Online (CSV) and Xero (XLSX), as for the trial balance. QuickBooks Desktop, NetSuite and Sage Intacct follow in one task once these work.
-- **Q2 — size limits.** *Recommendation:* 100 MB and 1,000,000 lines for a GL file, with a 5-minute isolation limit. Larger ledgers would need a connector or splitting by quarter, a later feature.
+- **Q2 — size limits.** *Recommendation:* 100 MB and 1,000,000 lines for a GL file, with a 5-minute isolation limit. Larger ledgers would need a connector or splitting by quarter, a later feature. *Amended 2026-10-15 (founder):* 50 MB for now, the platform's storage cap (about 750,000 lines in QuickBooks Online's layout); raising it is a later, separate change.
 - **Q3 — period coverage.** *Recommendation:* every line must fall within the fiscal year, and every month in which the trial balance shows activity on an income statement account must have at least one line. A month with none suggests a partial export. Balance sheet-only months aren't required.
 - **Q4 — order of uploads.** *Recommendation:* accept the GL before the trial balance, hold it as "waiting for the trial balance", and check it automatically when the trial balance arrives. Clients won't always upload in order.
 - **Q5 — the journal listing.** *Recommendation:* derive it from the same GL detail, grouping lines by transaction reference and date, rather than asking for a second export. One file then fulfils both requests, and the journal totals are proven by the same reconciliation.
