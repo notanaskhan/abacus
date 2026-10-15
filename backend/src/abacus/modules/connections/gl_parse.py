@@ -152,6 +152,8 @@ def _header(row: list[Cell], fmt: GlFormat) -> dict[str, int] | None:
         "debit": fmt.debit_header,
         "credit": fmt.credit_header,
         "balance": fmt.balance_header,
+        "account": fmt.account_header,  # flat layouts (TASK-071)
+        "code": fmt.code_header,
     }
     found: dict[str, int] = {}
     for role, label in wanted.items():
@@ -193,12 +195,34 @@ def parse_gl_to_file(
             first = _clean(row[0], 200)
             kind = _clean(_cell(row, columns, "kind"), 60)
             posted = _date(_cell(row, columns, "date"))
-            if first and any(first.startswith(p) for p in fmt.total_prefixes):
+            note = _clean(_cell(row, columns, "description"), 500)
+            if fmt.layout == "flat":  # TASK-071: each line names its account
+                named = _clean(_cell(row, columns, "account"), 200)
+                if fmt.code_style == "column":
+                    code = _clean(_cell(row, columns, "code"), 50)
+                    code, name = (code, named) if code else ("", "")
+                else:
+                    code, name = _account(named, fmt) if named else ("", "")
+                if code:
+                    current = state.accounts.setdefault(code, _Account(code, name[:200] or code))
+                elif first and any(first.startswith(p) for p in fmt.total_prefixes):
+                    continue
+                elif posted is not None:
+                    raise NormaliseError("malformed_payload")  # a line without an account
+                else:
+                    continue
+            if fmt.layout == "headings" and any(
+                first.startswith(p) for p in fmt.total_prefixes if first
+            ):
                 current = None
                 continue
             if first in fmt.skip_labels:
                 continue
-            if first in fmt.opening_labels or kind in fmt.opening_labels:
+            if (
+                first in fmt.opening_labels
+                or kind in fmt.opening_labels
+                or (fmt.layout == "flat" and note in fmt.opening_labels)
+            ):
                 if current is None:
                     raise NormaliseError("malformed_payload")
                 balance = _cell(row, columns, "balance")
@@ -249,7 +273,7 @@ def parse_gl_to_file(
                     _clean(_cell(row, columns, "reference"), 100),
                     kind,
                     _clean(_cell(row, columns, "counterparty"), 200),
-                    _clean(_cell(row, columns, "description"), 500),
+                    note,
                     str(debit),
                     str(credit),
                     f"row-{n}",
