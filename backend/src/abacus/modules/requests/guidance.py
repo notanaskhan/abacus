@@ -20,7 +20,7 @@ class Guidance:
     good_looks_like: str | None = None
     blocks_fieldwork: bool = False
     effort: str | None = None
-    source: str | None = None  # template, kind_default or firm; None when there's nothing
+    source: str | None = None  # template, kind_default, firm or drafted; None for nothing
 
 
 # D3 (founder-approved copy, 2026-10-12), shown to clients verbatim.
@@ -81,8 +81,9 @@ def for_new_item(template: Guidance | None, kind: str | None) -> Guidance:
 
 def after_kind_change(current: Guidance, kind: str | None) -> Guidance | None:
     """The guidance after the item's document kind changes, or None to keep it: the firm's own
-    and the template's stand; the kind's fixed copy follows the kind."""
-    if current.source in ("firm", "template"):
+    and the template's stand, as does approved drafted guidance (SPEC-035); the kind's fixed copy
+    follows the kind."""
+    if current.source in ("firm", "template", "drafted"):
         return None
     default = KIND_DEFAULTS.get(kind or "")
     if default is None:
@@ -94,6 +95,14 @@ def after_kind_change(current: Guidance, kind: str | None) -> Guidance | None:
         default.effort,
         "kind_default",
     )
+
+
+def for_client(source: str | None, kind: str | None, shown: bool) -> Guidance | None:
+    """SPEC-035 AC-5 (ADR-111): what replaces approved drafted guidance for a client when the
+    firm doesn't show it: the kind's fixed copy, or nothing. None: show the item's own."""
+    if source != "drafted" or shown:
+        return None
+    return KIND_DEFAULTS.get(kind or "") or Guidance()
 
 
 def estimate_minutes(efforts: list[str | None]) -> int:

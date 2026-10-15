@@ -47,3 +47,17 @@ def test_ac2_kind_copy_follows_the_kind_but_firm_and_template_text_stand() -> No
 def test_ac6_estimate_counts_an_unestimated_item_as_medium() -> None:
     assert estimate_minutes(["small", "large", None]) == 15 + 120 + 45
     assert estimate_minutes([]) == 0
+
+
+def test_ac5_drafted_guidance_reaches_clients_only_when_the_firm_allows() -> None:
+    """SPEC-035 AC-5 (TASK-073; ADR-111)."""
+    from abacus.modules.requests.guidance import for_client
+
+    assert for_client("drafted", "bank_statement", shown=True) is None  # the item's own
+    assert for_client("drafted", "bank_statement", shown=False) == KIND_DEFAULTS["bank_statement"]
+    assert for_client("drafted", None, shown=False) == Guidance()  # nothing
+    assert for_client("firm", None, shown=False) is None  # only drafted text is held back
+
+
+def test_ac6_approved_drafted_guidance_stands_when_the_kind_changes() -> None:
+    assert after_kind_change(Guidance("x", source="drafted"), "schedule") is None

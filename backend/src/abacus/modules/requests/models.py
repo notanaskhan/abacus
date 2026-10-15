@@ -55,6 +55,7 @@ class RequestItem(Base):
     blocks_fieldwork: Mapped[bool] = mapped_column(server_default=FetchedValue())
     effort: Mapped[str | None]
     guidance_source: Mapped[str | None]
+    guidance_approved_by: Mapped[UUID | None]  # SPEC-035 (TASK-073): drafted guidance
 
 
 class Fulfilment(Base):

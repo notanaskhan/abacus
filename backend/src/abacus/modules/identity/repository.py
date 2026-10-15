@@ -873,3 +873,13 @@ async def letter_required(session: AsyncSession) -> bool:
 
 async def set_letter_required(session: AsyncSession, required: bool) -> None:
     await session.execute(text("UPDATE firms SET require_letter = :r"), {"r": required})
+
+
+async def drafted_guidance_shown(session: AsyncSession) -> bool:
+    """SPEC-035 (TASK-073): whether the session's firm shows approved drafted guidance to
+    clients."""
+    return bool(await session.scalar(text("SELECT drafted_guidance_to_clients FROM firms")))
+
+
+async def set_drafted_guidance_shown(session: AsyncSession, shown: bool) -> None:
+    await session.execute(text("UPDATE firms SET drafted_guidance_to_clients = :s"), {"s": shown})

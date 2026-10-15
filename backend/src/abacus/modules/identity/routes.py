@@ -15,9 +15,11 @@ from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.firm_settings import (
     autonomy,
     read_agents_state,
+    read_drafted_guidance_setting,
     read_letter_policy,
     read_time_zone,
     set_autonomy,
+    set_drafted_guidance_setting,
     set_firm_agents_paused,
     set_firm_time_zone,
     set_letter_policy,
@@ -521,6 +523,31 @@ class LetterPolicyOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     required: Annotated[bool, classified("internal")]
+
+
+class DraftedGuidanceIO(BaseModel):
+    """SPEC-035 (TASK-073): whether approved drafted guidance is shown to clients."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    shown: Annotated[bool, classified("internal")]
+
+
+@router.get(
+    "/firm/drafted-guidance", action="firm.read_settings", response_model=DraftedGuidanceIO
+)
+async def drafted_guidance_route(ctx: Ctx) -> DraftedGuidanceIO:
+    return DraftedGuidanceIO(shown=await read_drafted_guidance_setting(ctx))
+
+
+@router.put(
+    "/firm/drafted-guidance",
+    action="firm.manage_settings",
+    response_model=DraftedGuidanceIO,
+    errors=(409,),
+)
+async def set_drafted_guidance_route(body: DraftedGuidanceIO, ctx: Ctx) -> DraftedGuidanceIO:
+    return DraftedGuidanceIO(shown=await set_drafted_guidance_setting(ctx, body.shown))
 
 
 @router.get("/firm/letter-policy", action="firm.read_settings", response_model=LetterPolicyOut)

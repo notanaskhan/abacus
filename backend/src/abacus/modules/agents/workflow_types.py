@@ -49,6 +49,24 @@ class MatchRunInput:
 
 
 @dataclass(frozen=True)
+class GuidanceDraftInput:
+    """SPEC-035 (TASK-073): one guidance drafter run for one request item, for `requested_by`."""
+
+    tenant_id: str
+    engagement_id: str
+    request_item_id: str
+    event_id: str
+    requested_by: str
+
+
+@dataclass(frozen=True)
+class GuidanceDraftRunInput:
+    tenant_id: str
+    run_id: str
+    request_item_id: str
+
+
+@dataclass(frozen=True)
 class RunInput:
     tenant_id: str
     run_id: str

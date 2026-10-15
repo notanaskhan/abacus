@@ -26,6 +26,7 @@ from abacus.kernel.config import settings
 from abacus.kernel.errors import NotFound
 from abacus.modules.agents.engagement_agent import handle as engagement_agent_handle
 from abacus.modules.agents.engagement_agent import next_tick as engagement_agent_next_tick
+from abacus.modules.agents.guidance_draft import create_draft_run, draft
 from abacus.modules.agents.inbox_match import create_match_run, match
 from abacus.modules.agents.knowledge import embed_next_batch, fail_document
 from abacus.modules.agents.service import (
@@ -48,6 +49,8 @@ from abacus.modules.agents.workflow_types import (
     BatchOutcome,
     FailInput,
     FailKnowledgeInput,
+    GuidanceDraftInput,
+    GuidanceDraftRunInput,
     KnowledgeInput,
     MatchInput,
     MatchRunInput,
@@ -352,6 +355,74 @@ async def match_activity(input: MatchRunInput) -> ScreeningOutcome:
         raise _as_application_error(exc, retryable=True) from None
 
 
+# --- The guidance drafter (SPEC-035; TASK-073) ---------------------------------------------------
+
+
+@activity.defn(name="guidance_draft.create_run")
+async def create_draft_run_activity(input: GuidanceDraftInput) -> str | None:
+    try:
+        run_id = await create_draft_run(
+            UUID(input.tenant_id),
+            UUID(input.engagement_id),
+            UUID(input.request_item_id),
+            UUID(input.event_id),
+            UUID(input.requested_by),
+        )
+    except NotFound as exc:
+        raise _as_application_error(exc, retryable=False) from None
+    except Exception as exc:
+        raise _as_application_error(exc, retryable=True) from None
+    return str(run_id) if run_id is not None else None
+
+
+async def _draft(tenant_id: UUID, run_id: UUID, item_id: UUID) -> ScreeningOutcome:
+    try:
+        agent = await load_agent_context(tenant_id, run_id)
+    except AgentRunNotRunning:
+        return await _recorded(tenant_id, run_id)
+    except NoActiveTenant:
+        await fail_run(tenant_id, run_id, INITIATOR_INACTIVE)
+        return await _recorded(tenant_id, run_id)
+    work_class = slots.current_class()
+    if work_class is not None:
+        await slots.keep(agent.tenant, agent.engagement_id, work_class)
+    try:
+        outcome = await draft(agent, item_id)
+        await mark_queued(tenant_id, run_id, None, None)
+    except NotAdmitted as refused:
+        estimate = datetime.now(UTC) + timedelta(seconds=refused.retry_after)
+        await mark_queued(tenant_id, run_id, refused.reason, estimate)
+        max_wait = settings().work_classes[work_class].max_wait_seconds if work_class else 600
+        raise ApplicationError(
+            NOT_ADMITTED,
+            refused.reason,
+            refused.retry_after,
+            max_wait,
+            type=NOT_ADMITTED,
+            non_retryable=True,
+        ) from None
+    except AgentRunNotRunning:
+        return await _recorded(tenant_id, run_id)
+    return ScreeningOutcome(outcome.status, str(run_id), None, None)
+
+
+@activity.defn(name="guidance_draft.draft")
+async def draft_activity(input: GuidanceDraftRunInput) -> ScreeningOutcome:
+    try:
+        async with _heartbeating():
+            return await _draft(
+                UUID(input.tenant_id), UUID(input.run_id), UUID(input.request_item_id)
+            )
+    except ApplicationError as exc:
+        if exc.type == NOT_ADMITTED:
+            raise
+        raise _as_application_error(exc, retryable=True) from None
+    except (NotFound, *REVIEW_TERMINAL) as exc:  # the run already failed with its code
+        raise _as_application_error(exc, retryable=False) from None
+    except Exception as exc:
+        raise _as_application_error(exc, retryable=True) from None
+
+
 # --- Knowledge embedding (SPEC-009; TASK-024 design §7) ----------------------------------------
 
 
@@ -371,6 +442,8 @@ ACTIVITIES = (
     review_activity,
     create_match_run_activity,  # SPEC-033 (TASK-066)
     match_activity,
+    create_draft_run_activity,  # SPEC-035 (TASK-073)
+    draft_activity,
     acquire_slot_activity,
     release_slot_activity,
     screen_activity,

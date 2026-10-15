@@ -176,6 +176,7 @@ def test_ac2_screening_is_time_sensitive_as_its_spec_says() -> None:
         "background",
         "background",  # SPEC-030 (TASK-059): the upload reviewer
         "background",  # SPEC-033 (TASK-066): the matcher
+        "batch",  # SPEC-035 (TASK-073): the guidance drafter
     ]
     assert agents.spec(agents.SCREENER).work_class == "time_sensitive"
     assert work_class_of(agents.ScreeningWorkflow) == "time_sensitive"

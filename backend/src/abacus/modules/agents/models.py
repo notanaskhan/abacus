@@ -238,3 +238,17 @@ class GuidanceDraftRow(Base):
     passed_checks: Mapped[bool]
     check_reasons: Mapped[list[str]] = mapped_column(ARRAY(String))
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class GuidanceDraftDecision(Base):
+    """A person approved or discarded a guidance draft (SPEC-035; TASK-073). Insert-only."""
+
+    __tablename__ = "guidance_draft_decisions"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    draft_id: Mapped[UUID] = mapped_column(primary_key=True)
+    decision: Mapped[str]
+    edited: Mapped[bool]
+    confirmed_read: Mapped[bool]
+    decided_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

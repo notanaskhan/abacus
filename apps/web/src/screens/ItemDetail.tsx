@@ -148,6 +148,13 @@ export function ItemDetail({
           engagementId={engagementId}
           item={item}
           canEdit={myRole !== undefined && DECIDERS.has(myRole)}
+          {...(item.guidance_approved_by != null
+            ? {
+                approver:
+                  team.find((m) => m.user_id === item.guidance_approved_by)?.display_name ??
+                  "your team",
+              }
+            : {})}
         />
       </Panel>
       {/* SPEC-032 (TASK-063 D1): the request's own thread. */}

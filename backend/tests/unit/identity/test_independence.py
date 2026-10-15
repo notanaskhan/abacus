@@ -118,6 +118,9 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "evidence.read",
         "evidence.reject",
         "evidence.upload",
+        "guidance_draft.decide",  # SPEC-035 (TASK-073)
+        "guidance_draft.read",
+        "guidance_draft.request",
         "inbox_match.read",  # SPEC-033 (TASK-066)
         "inbox_match.request",
         "ledger_import.upload",  # SPEC-028 (TASK-052)

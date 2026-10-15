@@ -394,6 +394,26 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "allow",
         "agent": "task_scope",
     },
+    "guidance_draft.read": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "reviewer": "allow",
+        "independence": "required",
+    },
+    "guidance_draft.request": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "independence": "required",
+    },
+    "guidance_draft.decide": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "independence": "required",
+    },
     "guidance_draft.run": {
         "system": "allow",
         "agent": "task_scope",

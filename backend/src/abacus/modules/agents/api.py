@@ -49,6 +49,8 @@ from abacus.modules.agents.upload_review import (
 from abacus.modules.agents.workflow_types import (
     AgentEvent,
     AgentInput,
+    GuidanceDraftInput,
+    GuidanceDraftRunInput,
     HandleInput,
     HandleResult,
     MatchInput,
@@ -59,6 +61,7 @@ from abacus.modules.agents.workflow_types import (
     SlotGrant,
 )
 from abacus.modules.agents.workflows import (
+    GuidanceDraftWorkflow,
     InboxMatchWorkflow,
     ScreeningWorkflow,
     UploadReviewWorkflow,
@@ -89,6 +92,9 @@ __all__ = [
     "DraftOutcome",
     "EngagementAgent",
     "EngagementGraph",
+    "GuidanceDraftInput",
+    "GuidanceDraftRunInput",
+    "GuidanceDraftWorkflow",
     "HandleInput",
     "HandleResult",
     "Handoff",
