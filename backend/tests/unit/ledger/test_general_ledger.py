@@ -18,12 +18,21 @@ from abacus.modules.ledger.api import GlSummary, NormaliseError, TbAccount, vali
 from abacus_tools.synthetic import generate
 from abacus_tools.synthetic.general_ledger import (
     build,
+    intacct_general_ledger_csv,
+    netsuite_general_ledger_csv,
+    qbd_general_ledger_xlsx,
     qbo_general_ledger_csv,
     xero_general_ledger_xlsx,
 )
 from abacus_tools.synthetic.model import TrialBalance
 
-WRITERS = {"qbo_gl_csv": qbo_general_ledger_csv, "xero_gl_xlsx": xero_general_ledger_xlsx}
+WRITERS = {
+    "qbo_gl_csv": qbo_general_ledger_csv,
+    "xero_gl_xlsx": xero_general_ledger_xlsx,
+    "qbd_gl_xlsx": qbd_general_ledger_xlsx,  # TASK-071
+    "netsuite_gl_csv": netsuite_general_ledger_csv,
+    "intacct_gl_csv": intacct_general_ledger_csv,
+}
 
 
 def _world(seed: int) -> tuple[TrialBalance, date, date]:
@@ -132,4 +141,18 @@ def test_ac2_the_isolated_parse_returns_only_a_summary(tmp_path: Path) -> None:
     assert summary.line_count == sum(1 for _ in read_entries(out))
     with pytest.raises(NormaliseError) as refused:
         parse_gl_isolated(b"\x00" * 10, "xero_gl_xlsx", start, end, out)
+    assert refused.value.code == "unrecognised_format"
+
+
+@pytest.mark.parametrize("made", sorted(WRITERS))
+@pytest.mark.parametrize("chosen", sorted(WRITERS))
+def test_ac2_a_file_from_another_system_is_refused(made: str, chosen: str, tmp_path: Path) -> None:
+    """TASK-071: every format's required headers differ, so no export reads as another's."""
+    tb, start, end = _world(11)
+    content = WRITERS[made](build(tb, start=start), year=end.year)
+    if made == chosen:
+        assert _parse(content, chosen, start, end, tmp_path).line_count > 0
+        return
+    with pytest.raises(NormaliseError) as refused:
+        _parse(content, chosen, start, end, tmp_path)
     assert refused.value.code == "unrecognised_format"

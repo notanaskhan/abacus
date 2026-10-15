@@ -397,3 +397,164 @@ def xero_general_ledger_xlsx(
     out = io.BytesIO()
     workbook.save(out)
     return out.getvalue()
+
+
+# --- QuickBooks Desktop, NetSuite, Sage Intacct (SPEC-034 Q1; TASK-071) -----------------------
+
+
+def qbd_general_ledger_xlsx(
+    gl: SyntheticGl, *, company: str = "Example Company", year: int = 2026
+) -> bytes:
+    """QuickBooks Desktop's General Ledger: account headings ("1000 · Checking"), a "Beginning
+    Balance" row with the balance, postings with Debit and Credit, "Total ..." rows."""
+    workbook = Workbook(write_only=True)
+    sheet = workbook.create_sheet("General Ledger")
+    sheet.append([company])
+    sheet.append(["General Ledger"])
+    sheet.append([f"January through December {year}"])
+    sheet.append([])
+    sheet.append(
+        [None, "Type", "Date", "Num", "Name", "Memo", "Split", "Debit", "Credit", "Balance"]
+    )
+    names = dict(gl.accounts)
+    for code, postings in _by_account(gl).items():
+        heading = f"{code} · {names.get(code, code)}"
+        sheet.append([heading] + [None] * 9)
+        balance = gl.openings.get(code, ZERO)
+        if code in gl.openings:
+            sheet.append([None, "Beginning Balance"] + [None] * 7 + [float(balance)])
+        for p in sorted(postings, key=lambda x: (x.on, x.reference)):
+            balance += p.debit - p.credit
+            sheet.append(
+                [
+                    None,
+                    p.kind,
+                    p.on.strftime("%m/%d/%Y"),
+                    p.reference,
+                    p.counterparty,
+                    p.description,
+                    None,
+                    float(p.debit) if p.debit else None,
+                    float(p.credit) if p.credit else None,
+                    float(balance),
+                ]
+            )
+        debit = sum((x.debit for x in postings), ZERO)
+        credit = sum((x.credit for x in postings), ZERO)
+        sheet.append([f"Total {heading}"] + [None] * 6 + [float(debit), float(credit), None])
+    out = io.BytesIO()
+    workbook.save(out)
+    return out.getvalue()
+
+
+def _flat_rows(
+    gl: SyntheticGl, year: int
+) -> list[tuple[str, str, date, str, str, str, str, Decimal, Decimal]]:
+    """(code, name, date, type, reference, party, description, debit, credit), openings first."""
+    names = dict(gl.accounts)
+    rows: list[tuple[str, str, date, str, str, str, str, Decimal, Decimal]] = []
+    for code, opening in gl.openings.items():
+        if code in names:
+            debit, credit = (opening, ZERO) if opening >= 0 else (ZERO, -opening)
+            rows.append(
+                (
+                    code,
+                    names[code],
+                    date(year, 1, 1),
+                    "Opening Balance",
+                    "",
+                    "",
+                    "Beginning balance",
+                    debit,
+                    credit,
+                )
+            )
+    for p in sorted(gl.postings, key=lambda x: (x.on, x.reference, x.code)):
+        rows.append(
+            (
+                p.code,
+                p.name,
+                p.on,
+                p.kind,
+                p.reference,
+                p.counterparty,
+                p.description,
+                p.debit,
+                p.credit,
+            )
+        )
+    return rows
+
+
+def netsuite_general_ledger_csv(
+    gl: SyntheticGl, *, company: str = "Example Company", year: int = 2026
+) -> bytes:
+    """NetSuite's General Ledger, flat: every line names its account ("1000 - Checking");
+    opening balances are rows typed "Opening Balance"."""
+    out = io.StringIO()
+    writer = csv.writer(out, lineterminator="\n")
+    writer.writerow([company])
+    writer.writerow(["General Ledger"])
+    writer.writerow([f"Jan {year} - Dec {year}"])
+    writer.writerow([])
+    writer.writerow(
+        ["Account", "Date", "Type", "Document Number", "Name", "Memo", "Debit", "Credit"]
+    )
+    for code, name, on, kind, ref, party, memo, debit, credit in _flat_rows(gl, year):
+        writer.writerow(
+            [
+                f"{code} - {name}",
+                on.strftime("%m/%d/%Y"),
+                kind,
+                ref,
+                party,
+                "" if kind == "Opening Balance" else memo,
+                _money(debit) if debit else "",
+                _money(credit) if credit else "",
+            ]
+        )
+    return out.getvalue().encode("utf-8")
+
+
+def intacct_general_ledger_csv(
+    gl: SyntheticGl, *, company: str = "Example Company", year: int = 2026
+) -> bytes:
+    """Sage Intacct's General ledger, flat: the account code and title in their own columns;
+    opening balances are rows described "Beginning balance"."""
+    out = io.StringIO()
+    writer = csv.writer(out, lineterminator="\n")
+    writer.writerow([company])
+    writer.writerow(["General ledger"])
+    writer.writerow([f"01/01/{year} to 12/31/{year}"])
+    writer.writerow([])
+    writer.writerow(
+        [
+            "Account no.",
+            "Account title",
+            "Date",
+            "Journal",
+            "Document",
+            "Description",
+            "Debit",
+            "Credit",
+        ]
+    )
+    for code, name, on, kind, ref, _party, memo, debit, credit in _flat_rows(gl, year):
+        journal = (
+            ""
+            if kind == "Opening Balance"
+            else ("GJ" if kind in ("Journal", "Transfer") else kind)
+        )
+        writer.writerow(
+            [
+                code,
+                name,
+                on.strftime("%m/%d/%Y"),
+                journal,
+                ref,
+                memo,
+                _money(debit) if debit else "",
+                _money(credit) if credit else "",
+            ]
+        )
+    return out.getvalue().encode("utf-8")
