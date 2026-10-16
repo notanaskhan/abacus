@@ -1,7 +1,7 @@
 ---
 id: ADR-112
 title: AI runs only on synthetic tenants, enforced in the AI gateway
-status: accepted
+status: superseded by ADR-115
 date: 2026-10-11
 deciders: Founder
 risk_zone: red

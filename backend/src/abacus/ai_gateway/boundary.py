@@ -1,27 +1,50 @@
-"""The model data boundary (SPEC-026 AC-2; TASK-049; ADR-031). PROTECTED.
+"""The model data boundary (SPEC-026 AC-2; TASK-049; ADR-031; SPEC-036; TASK-075). PROTECTED.
 
-A real model sees only synthetic data until zero-retention and no-training terms are recorded and
-staging exists. Settings refuse real routes outside the evaluation environment (AC-1); this is the
-per-call layer: before any network call on a route other than `fake`, the call's firm must be
-marked synthetic. Identity owns that fact and registers the check; unregistered means refused.
+The per-call layer, before any network call on a route other than `fake`:
+- a synthetic firm passes (basis `synthetic`). Identity owns that fact and registers the check;
+- any other firm passes only when all of SPEC-036's conditions hold (basis `client_data`): the
+  route is `bedrock` with `model_data_boundary: client_data` (`route`); the provider terms register
+  covers it today (`terms`, ADR-114); the firm has opted in (`firm`); the agent is cleared for
+  client data (`agent`); the engagement isn't excluded (`engagement`, skipped without one); and the
+  agent's stage for the firm is `shadow` or `live` (`stage`).
+
+Module facts arrive by registration; an unregistered fact means refused. A refusal is audited with
+its reason, counted, and raised as `DataBoundaryRefused`, never retried or rerouted.
 """
 
 from __future__ import annotations
 
 import time
 from collections.abc import Awaitable, Callable
-from typing import Final
+from dataclasses import dataclass
+from datetime import date
+from typing import Final, Literal, cast
+from uuid import UUID
 
-from abacus.kernel.config import Route
+from abacus.kernel import provider_terms
+from abacus.kernel.config import Route, settings
 from abacus.kernel.db import TenantContext
 from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import meter
-from abacus.kernel.uow import Target, uow
+from abacus.kernel.uow import Ref, Target, uow
 
 SyntheticCheck = Callable[[TenantContext], Awaitable[bool]]
+# SPEC-036: (firm) -> opted in; (firm, engagement) -> excluded; (firm, agent) -> stage.
+FirmCheck = Callable[[TenantContext], Awaitable[bool]]
+EngagementCheck = Callable[[TenantContext, UUID], Awaitable[bool]]
+StageCheck = Callable[[TenantContext, str], Awaitable[str | None]]
+AgentCheck = Callable[[str], bool]
+Reason = Literal["route", "terms", "firm", "agent", "engagement", "stage"]
+REASONS: Final[tuple[Reason, ...]] = ("route", "terms", "firm", "agent", "engagement", "stage")
+CLIENT_DATA_ROUTES: Final[frozenset[Route]] = frozenset({"bedrock"})  # ADR-113
 _CACHE_SECONDS: Final = 60.0
 _check: SyntheticCheck | None = None
+_opted_in: FirmCheck | None = None
+_excluded: EngagementCheck | None = None
+_stage: StageCheck | None = None
+_cleared: AgentCheck | None = None
 _cache: dict[object, tuple[bool, float]] = {}
+_facts: dict[tuple[object, ...], tuple[object, float]] = {}
 _log = get_logger(__name__)
 _refused = meter(__name__).create_counter(
     "abacus.ai.boundary_refused", description="Real-model calls refused at the data boundary"
@@ -29,7 +52,19 @@ _refused = meter(__name__).create_counter(
 
 
 class DataBoundaryRefused(Exception):
-    """A real model was asked to see a firm that isn't synthetic. Never retried or rerouted."""
+    """A real model was asked to see data it may not. Never retried or rerouted."""
+
+    def __init__(self, message: str, reason: Reason = "route") -> None:
+        super().__init__(message)
+        self.reason: Reason = reason
+
+
+@dataclass(frozen=True)
+class Basis:
+    """Why a real-route call was allowed, for its usage record (SPEC-036 §4.8)."""
+
+    basis: Literal["synthetic", "client_data"]
+    terms_version: str | None = None
 
 
 def register_synthetic_tenants(check: SyntheticCheck) -> None:
@@ -37,6 +72,25 @@ def register_synthetic_tenants(check: SyntheticCheck) -> None:
     if _check is not None and _check is not check:
         raise RuntimeError("the synthetic-tenant check is already registered")
     _check = check
+
+
+def register_client_data_facts(
+    *,
+    opted_in: FirmCheck | None = None,
+    excluded: EngagementCheck | None = None,
+    stage: StageCheck | None = None,
+    cleared: AgentCheck | None = None,
+) -> None:
+    """SPEC-036: identity (opt-in), engagements (exclusion) and agents (stage, clearance)."""
+    global _opted_in, _excluded, _stage, _cleared
+    if opted_in is not None:
+        _opted_in = opted_in
+    if excluded is not None:
+        _excluded = excluded
+    if stage is not None:
+        _stage = stage
+    if cleared is not None:
+        _cleared = cleared
 
 
 async def _synthetic(tenant: TenantContext) -> bool:
@@ -51,17 +105,91 @@ async def _synthetic(tenant: TenantContext) -> bool:
     return answer
 
 
-async def enforce_boundary(tenant: TenantContext, route: Route, prompt: str) -> None:
-    """Return if `route` may see this firm's data; else audit, count and raise."""
-    if route == "fake" or await _synthetic(tenant):
-        return
-    _refused.add(1, {"route": route, "prompt": prompt})
-    _log.warning("ai.boundary_refused", tenant_id=tenant.tenant_id, route=route, prompt=prompt)
+async def is_synthetic(tenant: TenantContext) -> bool:
+    return await _synthetic(tenant)
+
+
+async def _cached[T](key: tuple[object, ...], ask: Callable[[], Awaitable[T]]) -> T:
+    now = time.monotonic()
+    found = _facts.get(key)
+    if found is not None and found[1] > now:
+        return cast(T, found[0])  # stored by this function for `key`
+    answer = await ask()
+    _facts[key] = (answer, now + _CACHE_SECONDS)
+    return answer
+
+
+async def _client_data_refusal(
+    tenant: TenantContext, route: Route, agent_id: str | None, engagement_id: UUID | None
+) -> Reason | None:
+    """SPEC-036 §4.2, in order: the first condition that fails, or None."""
+    if route not in CLIENT_DATA_ROUTES or settings().model_data_boundary != "client_data":
+        return "route"
+    if provider_terms.covering(route, date.today()) is None:
+        return "terms"
+    opted_in = _opted_in
+    if opted_in is None or not await _cached(("firm", tenant.tenant_id), lambda: opted_in(tenant)):
+        return "firm"
+    if agent_id is None or _cleared is None or not _cleared(agent_id):
+        return "agent"
+    if engagement_id is not None:
+        excluded = _excluded
+        if excluded is None or await _cached(
+            ("engagement", tenant.tenant_id, engagement_id),
+            lambda: excluded(tenant, engagement_id),
+        ):
+            return "engagement"
+    stage = _stage
+    found = (
+        await _cached(("stage", tenant.tenant_id, agent_id), lambda: stage(tenant, agent_id))
+        if stage is not None
+        else None
+    )
+    if found not in ("shadow", "live"):
+        return "stage"
+    return None
+
+
+async def enforce_boundary(
+    tenant: TenantContext,
+    route: Route,
+    prompt: str,
+    *,
+    agent_id: str | None = None,
+    engagement_id: UUID | None = None,
+) -> Basis | None:
+    """Return why `route` may see this firm's data (None for `fake`); else audit, count and
+    raise with the reason."""
+    if route == "fake":
+        return None
+    if await _synthetic(tenant):
+        return Basis("synthetic")
+    reason = await _client_data_refusal(tenant, route, agent_id, engagement_id)
+    if reason is None:
+        return Basis("client_data", provider_terms.version())
+    _refused.add(1, {"route": route, "prompt": prompt, "reason": reason})
+    _log.warning(
+        "ai.boundary_refused",
+        tenant_id=tenant.tenant_id,
+        route=route,
+        prompt=prompt,
+        reason=reason,
+    )
     async with uow(tenant) as tx:
-        tx.record("ai.boundary_refused", target=Target("firm", tenant.tenant_id))
-    raise DataBoundaryRefused(f"route {route!r} may see synthetic firms only (SPEC-026)")
+        tx.record(
+            "ai.boundary_refused",
+            target=Target("firm", tenant.tenant_id),
+            after=Ref(reason=REASONS.index(reason)),
+        )
+    raise DataBoundaryRefused(f"route {route!r} may not see this firm's data ({reason})", reason)
 
 
-def clear_cache() -> None:
-    """Tests only."""
-    _cache.clear()
+def clear_cache(tenant_id: UUID | None = None) -> None:
+    """Forget cached facts: one firm's (opt-out, exclusion, promotion; SPEC-036 Q5), or all."""
+    if tenant_id is None:
+        _cache.clear()
+        _facts.clear()
+        return
+    _cache.pop(tenant_id, None)
+    for key in [k for k in _facts if k[1] == tenant_id]:
+        _facts.pop(key, None)

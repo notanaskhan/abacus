@@ -1,0 +1,22 @@
+# The provider terms register (ADR-114). PROTECTED: only the founder edits it.
+# A model route carries client data only while an entry here covers it. Compiled into
+# backend/src/abacus/kernel/_provider_terms.py by `python -m abacus_tools.codegen.provider_terms`;
+# a test fails if they differ. Never edit an old entry: add a new one.
+#
+# Each entry:
+#   route: bedrock                      # the only eligible route (ADR-113)
+#   provider: Amazon Web Services
+#   documents:                          # what is relied on, as accepted
+#     - {title: "...", version: "...", accepted_on: YYYY-MM-DD}
+#   training: none                      # inputs and outputs never train or improve models
+#   retention:
+#     beyond_processing: false          # prompts and outputs aren't stored after processing
+#     exceptions:                       # each named, at most 30 days (ADR-114 Q1)
+#       - {purpose: "...", max_days: 30}
+#   region: us-east-1                   # US only (ADR-021, ADR-113)
+#   subprocessors: ["..."]
+#   breach_notice: "..."                # the provider's commitment (ADR-097)
+#   approved_by: founder
+#   approved_on: YYYY-MM-DD
+#   review_by: YYYY-MM-DD               # at most 12 months after approved_on
+entries: []
