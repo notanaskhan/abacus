@@ -45,8 +45,12 @@ from abacus.ai_gateway.admission import (
     refusal_reason,
 )
 from abacus.ai_gateway.boundary import (
+    CLIENT_DATA_ROUTES,
+    Basis,
     DataBoundaryRefused,
     enforce_boundary,
+    is_synthetic,
+    register_client_data_facts,
     register_synthetic_tenants,
 )
 from abacus.ai_gateway.budgets import BudgetExhausted, check_budget, forget_spend
@@ -206,6 +210,7 @@ async def _record_usage(
     outcome: Outcome,
     inputs_hash: str,
     route: Route,
+    basis: Basis | None = None,
 ) -> None:
     record_id = uuid4()
     async with uow(attribution.tenant) as tx:
@@ -213,9 +218,10 @@ async def _record_usage(
             text(
                 "INSERT INTO usage_records (id, tenant_id, engagement_id, agent_id, "
                 "agent_run_id, prompt_id, prompt_version, model, tier, input_tokens, "
-                "output_tokens, cost_usd, outcome, inputs_hash, route) VALUES (:id, :tenant, "
-                ":engagement, :agent, :run, :prompt_id, :prompt_version, :model, :tier, "
-                ":input_tokens, :output_tokens, :cost, :outcome, :inputs_hash, :route)"
+                "output_tokens, cost_usd, outcome, inputs_hash, route, boundary_basis, "
+                "terms_version) VALUES (:id, :tenant, :engagement, :agent, :run, :prompt_id, "
+                ":prompt_version, :model, :tier, :input_tokens, :output_tokens, :cost, :outcome, "
+                ":inputs_hash, :route, :basis, :terms_version)"
             ),
             {
                 "id": record_id,
@@ -233,6 +239,8 @@ async def _record_usage(
                 "outcome": outcome,
                 "inputs_hash": inputs_hash,
                 "route": route,
+                "basis": basis.basis if basis else None,
+                "terms_version": basis.terms_version if basis else None,
             },
         )
         tx.record("model.called", target=Target("usage_record", record_id))
@@ -612,6 +620,15 @@ def _next_route_exists(c: GatewayCall[BaseModel], tier: Tier, excluded: frozense
     return any(model_id(tier, r) is not None for r in _candidate_routes(c, excluded))
 
 
+async def barred_routes(tenant: TenantContext) -> frozenset[Route]:
+    """ADR-113 (SPEC-036): the real routes a firm's call may never try. A firm that isn't
+    synthetic tries only routes that can carry client data, so an outage on Bedrock queues the
+    call instead of failing over to `direct`."""
+    if await is_synthetic(tenant):
+        return frozenset()
+    return frozenset(r for r in ("direct", "bedrock") if r not in CLIENT_DATA_ROUTES)
+
+
 async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult[T]:
     pinned = _evaluation_tier.get()
     tier = pinned or c.tier
@@ -624,6 +641,18 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
     earlier = await _spent_by_run(c.attribution)
     temperature = settings().model_catalog[tier].temperature
     request = ModelRequest(model, found.text, user, c.max_output_tokens, found.ref, temperature)
+    barred = await barred_routes(c.attribution.tenant)
+    if barred and planned and not _candidate_routes(cast(GatewayCall[BaseModel], c), barred):
+        # Nothing left that may carry client data: refuse now, with its reason, rather than
+        # wait for a route that can never admit this call.
+        await enforce_boundary(
+            c.attribution.tenant,
+            planned[0],
+            found.ref,
+            agent_id=c.attribution.agent_id,
+            engagement_id=c.attribution.engagement_id,
+        )
+    basis: Basis | None = None
     for attempt in (1, 2):
         estimate = cost(tier, estimate_tokens(request.system + request.user), c.max_output_tokens)
         if earlier + spent + estimate > c.budget_usd:
@@ -651,7 +680,7 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
         needed = estimate_tokens(request.system + request.user) + c.max_output_tokens
         # Evaluation mode never steps down: a run measures exactly the tier it pinned.
         tiers = (tier, *c.cheaper_tiers) if attempt == 1 and pinned is None else (tier,)
-        excluded: set[Route] = set()
+        excluded: set[Route] = set(barred)
         while True:  # SPEC-010: a failed route hands the attempt to the next allowed route
             tier, route, model = await _admitted(
                 cast(GatewayCall[BaseModel], c), tiers, needed, found.ref, frozenset(excluded)
@@ -659,7 +688,13 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
             request = replace(request, model=model)
             try:
                 async with asyncio.timeout(c.timeout_seconds):
-                    await enforce_boundary(c.attribution.tenant, route, found.ref)  # SPEC-026
+                    basis = await enforce_boundary(  # SPEC-026, SPEC-036
+                        c.attribution.tenant,
+                        route,
+                        found.ref,
+                        agent_id=c.attribution.agent_id,
+                        engagement_id=c.attribution.engagement_id,
+                    )
                     response = await route_provider(route).complete(request)
                 break
             except (ProviderError, TimeoutError) as exc:
@@ -683,6 +718,7 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
                     outcome="rate_limited" if error.rate_limited else "provider_error",
                     inputs_hash=inputs_hash,
                     route=route,
+                    basis=basis,
                 )
                 excluded.add(route)
                 tiers = (tier,)
@@ -710,6 +746,7 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
             outcome=outcome,
             inputs_hash=inputs_hash,
             route=route,
+            basis=basis,
         )
         if output is not None:
             return GatewayResult(
@@ -803,6 +840,7 @@ __all__ = [
     "evaluation",
     "model_id",
     "prompt",
+    "register_client_data_facts",
     "register_synthetic_tenants",
     "registry",
     "sanitise_text",

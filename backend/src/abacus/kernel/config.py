@@ -15,6 +15,7 @@ from typing import Annotated, Literal, Self, cast
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from abacus.kernel import provider_terms
 from abacus.kernel.classification import classified
 from abacus.kernel.work_class import WORK_CLASSES, WorkClass
 
@@ -290,11 +291,13 @@ class Settings(BaseSettings):
     )
     route_parity: Annotated[dict[Route, ParityRecord], classified("internal")] = {}
     anthropic_api_key: Annotated[SecretStr | None, classified("restricted")] = None
-    # SPEC-026 (TASK-049): what a real model may see. Only synthetic data until zero-retention and
-    # no-training terms are recorded and staging exists (ADR-031); lifting it is a later spec.
-    model_data_boundary: Annotated[Literal["synthetic_only"], classified("internal")] = (
-        "synthetic_only"
-    )
+    # SPEC-026 (TASK-049): what a real model may see. `synthetic_only`: synthetic firms only.
+    # SPEC-036 (TASK-075): `client_data` also lets real firms through the gateway's five-part
+    # check, in staging and production, on Bedrock, while the provider terms register covers it
+    # (ADR-114).
+    model_data_boundary: Annotated[
+        Literal["synthetic_only", "client_data"], classified("internal")
+    ] = "synthetic_only"
     # SPEC-026 Q3: a real model on a developer's machine (prompt work), synthetic firms only.
     allow_real_model_locally: Annotated[bool, classified("internal")] = False
     bedrock_region: Annotated[str, classified("internal")] = "us-east-1"
@@ -367,9 +370,24 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _real_models_synthetic_only(self) -> Self:
-        """SPEC-026 AC-1, AC-4: a real model only where data is synthetic, and pinned."""
+        """SPEC-026 AC-1, AC-4: a real model only where data is synthetic, and pinned. SPEC-036
+        AC-1, AC-8: or, with `client_data`, Bedrock alone in staging and production while the
+        register covers it today."""
         real: list[Route] = [r for r in self.model_routes if r != "fake"]
-        if real or self.embedding_provider != "fake":
+        if self.model_data_boundary == "client_data":
+            if self.environment not in ("staging", "production"):
+                raise ValueError("model_data_boundary client_data is for staging and production")
+            if set(real) != {"bedrock"} or self.embedding_provider != "fake":
+                raise ValueError(
+                    "with client_data, model_routes are bedrock (and fake) only and embeddings "
+                    "stay fake (SPEC-036; ADR-113)"
+                )
+            if provider_terms.covering("bedrock", date.today()) is None:
+                raise ValueError(
+                    "client_data needs a current bedrock entry in docs/operations/"
+                    "provider-terms.yaml (ADR-114); none covers today"
+                )
+        elif real or self.embedding_provider != "fake":
             allowed = self.environment == "evaluation" or (
                 self.environment == "local" and self.allow_real_model_locally
             )

@@ -1,5 +1,6 @@
 """Public interface of the agents module; other modules import only this (ADR-008)."""
 
+from abacus.ai_gateway import register_client_data_facts
 from abacus.modules.agents.activities import ACTIVITIES
 from abacus.modules.agents.citations import SheetLayoutError
 from abacus.modules.agents.citations import verify as verify_citations
@@ -44,7 +45,7 @@ from abacus.modules.agents.service import (
     screen,
     screening_results_for,
 )
-from abacus.modules.agents.spec import AGENTS, AgentSpec, spec
+from abacus.modules.agents.spec import AGENTS, AgentSpec, cleared_for_client_data, spec
 from abacus.modules.agents.upload_review import (
     REVIEWER,
     ReviewOutcome,
@@ -75,6 +76,8 @@ from abacus.modules.evidence.api import register_proposal_source
 
 # Evidence owns review decisions; agents owns what was proposed (TASK-019 D1).
 register_proposal_source(proposals_for, proposal_of)
+# SPEC-036 (TASK-075): which agents may see a real firm's data (stages follow in TASK-076).
+register_client_data_facts(cleared=cleared_for_client_data)
 
 __all__ = [
     "ACTIVITIES",

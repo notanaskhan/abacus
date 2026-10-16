@@ -95,9 +95,10 @@ def test_ac1_local_allows_it_only_when_asked(monkeypatch: pytest.MonkeyPatch) ->
 
 
 def test_ac1_the_boundary_has_one_value(monkeypatch: pytest.MonkeyPatch) -> None:
+    """SPEC-036 (TASK-075) adds `client_data`, for staging and production only: here, refused."""
     _environment(monkeypatch, "evaluation")
     with pytest.raises(ValidationError):
-        Settings(model_data_boundary="client_data")  # pyright: ignore[reportArgumentType] -- refused by type
+        Settings(model_data_boundary="client_data")
 
 
 @pytest.mark.parametrize(

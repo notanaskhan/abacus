@@ -53,10 +53,11 @@ Each provider call writes a usage record (`prompt_id` `embed`, tier `small`).
 
 The provider sits behind `EmbeddingProvider`. `FakeEmbedder` (deterministic, hashed word features, 1,024 dimensions) is used in synthetic environments when none is configured. The real provider comes with ADR-073.
 
-## The data boundary (SPEC-026; TASK-049; ADR-031)
+## The data boundary (SPEC-026, SPEC-036; TASK-049, TASK-075; ADR-031, ADR-114, ADR-115)
 A real model sees synthetic data only, until provider terms (zero retention, no training) are recorded and staging exists.
-- **Settings:** `model_data_boundary` has one value, `synthetic_only`. A real route (or the real embedding provider) is refused in `staging`, `production` and `test`, and in `local` unless `allow_real_model_locally`. Every real-route model ID must be pinned (no `latest`).
+- **Settings:** `model_data_boundary` is `synthetic_only` (default) or `client_data`. `client_data` is for `staging` and `production` only, with `model_routes` of `bedrock` (and `fake`), fake embeddings, and a `bedrock` entry in the provider terms register covering today (`kernel.provider_terms`, compiled from `docs/operations/provider-terms.yaml`). Under `synthetic_only`: A real route (or the real embedding provider) is refused in `staging`, `production` and `test`, and in `local` unless `allow_real_model_locally`. Every real-route model ID must be pinned (no `latest`).
 - **Per call:** `enforce_boundary` runs before both provider calls (`_call`, `embed`). Any route other than `fake` needs the call's firm to be synthetic, answered by identity through `register_synthetic_tenants` (unregistered means refused, cached 60 s). A refusal raises `DataBoundaryRefused` (never retried or rerouted), audits `ai.boundary_refused` and counts `abacus.ai.boundary_refused`.
+- **Real firms (SPEC-036):** a firm that isn't synthetic passes only when the route is `bedrock` under `client_data` (`route`), the register covers it (`terms`), the firm opted in (`firm`), the agent's spec is `client_data: cleared` (`agent`), the engagement isn't excluded (`engagement`) and the agent's stage is `shadow` or `live` (`stage`). Facts arrive through `register_client_data_facts`; unregistered means refused. The refusal carries its reason (audited as its index in `boundary.REASONS`). `barred_routes` keeps a real firm's call off `direct`, so a Bedrock outage queues instead of failing over. Usage records keep `boundary_basis` and, for client data, `terms_version`. `clear_cache(tenant)` forgets one firm's facts.
 - **Who's synthetic:** `firms.synthetic`, set only by the local seed and the evaluation stack as the owner; the app can't write it.
 
 ## Model routes (SPEC-010; ADR-073; TASK-025)

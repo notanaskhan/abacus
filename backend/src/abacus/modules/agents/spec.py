@@ -85,6 +85,10 @@ class AgentSpec(BaseModel):
     routes: Annotated[
         tuple[Literal["direct", "bedrock"], ...], Field(min_length=1), classified("internal")
     ]
+    # SPEC-036 (TASK-075): `cleared` lets the agent see a real firm's data (the gateway's other
+    # conditions still apply). The codegen refuses it without a committed Bedrock evaluation
+    # report and Bedrock route parity (AC-4).
+    client_data: Annotated[Literal["none", "cleared"], classified("internal")] = "none"
 
 
 def _load() -> dict[str, AgentSpec]:
@@ -107,6 +111,12 @@ def _load() -> dict[str, AgentSpec]:
 
 
 AGENTS: dict[str, AgentSpec] = _load()
+
+
+def cleared_for_client_data(agent_id: str) -> bool:
+    """SPEC-036 §4.4, registered with the gateway."""
+    found = AGENTS.get(agent_id)
+    return found is not None and found.client_data == "cleared"
 
 
 def spec(agent_id: str) -> AgentSpec:
