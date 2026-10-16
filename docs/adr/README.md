@@ -117,3 +117,4 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-111](ADR-111-client-prechecks.md) | Client-facing pre-checks are mechanical, with fixed wording | amber | accepted |
 | [ADR-112](ADR-112-data-boundary.md) | AI runs only on synthetic tenants, enforced in the AI gateway | red | accepted |
 | [ADR-113](ADR-113-client-data-route.md) | Client data uses Bedrock in-region only; the direct API is for synthetic data | red | accepted |
+| [ADR-114](ADR-114-provider-terms.md) | A model route carries client data only with recorded, current provider terms | red | accepted |
