@@ -119,3 +119,5 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-113](ADR-113-client-data-route.md) | Client data uses Bedrock in-region only; the direct API is for synthetic data | red | accepted |
 | [ADR-114](ADR-114-provider-terms.md) | A model route carries client data only with recorded, current provider terms | red | accepted |
 | [ADR-115](ADR-115-data-boundary-real-firms.md) | AI sees a real firm's data only through SPEC-036's five conditions, enforced in the gateway | red | accepted |
+| [ADR-116](ADR-116-workpapers.md) | A workpaper is rendered by code, versioned, and signed off by people; it never changes once reviewed | red | accepted |
+| [ADR-117](ADR-117-procedures.md) | In a procedure, code builds the population and selects the sample; agents assess items; people conclude | red | accepted |
