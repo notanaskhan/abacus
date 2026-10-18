@@ -189,3 +189,13 @@ async def test_ac2_a_real_firm_never_fails_over_to_direct(world: _World) -> None
     assert await barred_routes(_tenant()) == frozenset({"direct"})
     world.synthetic = True
     assert await barred_routes(_tenant()) == frozenset()
+
+
+async def test_ac6_an_excluded_engagement_refuses_every_route_and_firm(world: _World) -> None:
+    """The partner's switch holds for synthetic firms and the fake route too."""
+    world.excluded, world.synthetic = True, True
+    for route in ("fake", "direct", "bedrock"):
+        boundary.clear_cache()
+        with pytest.raises(DataBoundaryRefused) as raised:
+            await _call(route)
+        assert raised.value.reason == "engagement"

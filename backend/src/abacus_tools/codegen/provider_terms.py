@@ -100,6 +100,12 @@ def render(source: str) -> str:
     lines.append("ENTRIES: tuple[TermsEntry, ...] = (\n")
     for e in entries:
         approved, review = _date(e, "approved_on"), _date(e, "review_by")
+        retention = cast(dict[str, object], e["retention"])
+        exceptions = [
+            (str(x["purpose"]), int(cast(int, x["max_days"])))
+            for x in cast(list[dict[str, object]], retention.get("exceptions") or [])
+        ]
+        subprocessors = [str(x) for x in cast(list[object], e["subprocessors"])]
         lines += [
             "    TermsEntry(\n",
             f"        {_q(e['route'])},\n",
@@ -107,10 +113,23 @@ def render(source: str) -> str:
             f"        {_q(e['region'])},\n",
             f"        date({approved.year}, {approved.month}, {approved.day}),\n",
             f"        date({review.year}, {review.month}, {review.day}),\n",
+            f"        material={_q(material(e))},\n",
+            "        retention_exceptions=(\n",
+            *[f"            ({_q(p)}, {d}),\n" for p, d in exceptions],
+            "        ),\n",
+            "        subprocessors=(\n",
+            *[f"            {_q(x)},\n" for x in subprocessors],
+            "        ),\n",
             "    ),\n",
         ]
     lines.append(")\n")
     return "".join(lines)
+
+
+def material(entry: dict[str, object]) -> str:
+    """SPEC-036 Q4: what a firm agrees to. Training, retention, region and subprocessors only."""
+    facts = {k: entry.get(k) for k in ("training", "retention", "region", "subprocessors")}
+    return hashlib.sha256(json.dumps(facts, sort_keys=True, default=str).encode()).hexdigest()
 
 
 def _q(value: object) -> str:

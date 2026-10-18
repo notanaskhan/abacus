@@ -504,6 +504,174 @@
         "title": "AgentsStateOut",
         "type": "object"
       },
+      "AiClientDataIn": {
+        "additionalProperties": false,
+        "properties": {
+          "on": {
+            "cls": "internal",
+            "title": "On",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "on"
+        ],
+        "title": "AiClientDataIn",
+        "type": "object"
+      },
+      "AiClientDataOut": {
+        "description": "SPEC-036 (TASK-076): the firm's opt-in, the disclosure and each assistant's stage.",
+        "properties": {
+          "assistants": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/AssistantOut"
+            },
+            "title": "Assistants",
+            "type": "array"
+          },
+          "available": {
+            "cls": "internal",
+            "title": "Available",
+            "type": "boolean"
+          },
+          "current": {
+            "cls": "internal",
+            "title": "Current",
+            "type": "boolean"
+          },
+          "disclosure": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DisclosureOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "lapsed": {
+            "cls": "internal",
+            "title": "Lapsed",
+            "type": "boolean"
+          },
+          "opted_in_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Opted In At"
+          },
+          "opted_in_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Opted In By"
+          }
+        },
+        "required": [
+          "available",
+          "current",
+          "lapsed",
+          "assistants"
+        ],
+        "title": "AiClientDataOut",
+        "type": "object"
+      },
+      "AiExclusionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "excluded": {
+            "cls": "internal",
+            "title": "Excluded",
+            "type": "boolean"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "excluded"
+        ],
+        "title": "AiExclusionIn",
+        "type": "object"
+      },
+      "AiExclusionOut": {
+        "properties": {
+          "excluded": {
+            "cls": "internal",
+            "title": "Excluded",
+            "type": "boolean"
+          },
+          "excluded_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Excluded At"
+          },
+          "excluded_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Excluded By"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "excluded"
+        ],
+        "title": "AiExclusionOut",
+        "type": "object"
+      },
       "AppliedMethodologyOut": {
         "properties": {
           "items_created": {
@@ -661,6 +829,37 @@
           "evidence_version_id"
         ],
         "title": "AssignedOut",
+        "type": "object"
+      },
+      "AssistantOut": {
+        "properties": {
+          "agent_id": {
+            "cls": "internal",
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "purpose": {
+            "cls": "internal",
+            "title": "Purpose",
+            "type": "string"
+          },
+          "stage": {
+            "cls": "internal",
+            "enum": [
+              "shadow",
+              "live",
+              "off"
+            ],
+            "title": "Stage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "agent_id",
+          "purpose",
+          "stage"
+        ],
+        "title": "AssistantOut",
         "type": "object"
       },
       "AutonomyIn": {
@@ -1866,6 +2065,57 @@
           "id"
         ],
         "title": "DiscardedOut",
+        "type": "object"
+      },
+      "DisclosureOut": {
+        "properties": {
+          "letter_wording": {
+            "cls": "internal",
+            "title": "Letter Wording",
+            "type": "string"
+          },
+          "provider": {
+            "cls": "internal",
+            "title": "Provider",
+            "type": "string"
+          },
+          "region": {
+            "cls": "internal",
+            "title": "Region",
+            "type": "string"
+          },
+          "retention_exceptions": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/RetentionExceptionOut"
+            },
+            "title": "Retention Exceptions",
+            "type": "array"
+          },
+          "review_by": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Review By",
+            "type": "string"
+          },
+          "subprocessors": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Subprocessors",
+            "type": "array"
+          }
+        },
+        "required": [
+          "provider",
+          "region",
+          "retention_exceptions",
+          "subprocessors",
+          "review_by",
+          "letter_wording"
+        ],
+        "title": "DisclosureOut",
         "type": "object"
       },
       "DocumentKindIn": {
@@ -5703,6 +5953,26 @@
         "title": "RequestItemOut",
         "type": "object"
       },
+      "RetentionExceptionOut": {
+        "properties": {
+          "max_days": {
+            "cls": "internal",
+            "title": "Max Days",
+            "type": "integer"
+          },
+          "purpose": {
+            "cls": "internal",
+            "title": "Purpose",
+            "type": "string"
+          }
+        },
+        "required": [
+          "purpose",
+          "max_days"
+        ],
+        "title": "RetentionExceptionOut",
+        "type": "object"
+      },
       "RetrievalIn": {
         "additionalProperties": false,
         "properties": {
@@ -9493,6 +9763,227 @@
           "agents"
         ],
         "x-abacus-action": "agent.pause"
+      }
+    },
+    "/v1/engagements/{engagement_id}/ai-exclusion": {
+      "get": {
+        "operationId": "ai_exclusion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiExclusionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ai Exclusion Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "engagement.read_metadata"
+      },
+      "put": {
+        "description": "SPEC-036 AC-6: the engagement partner switches AI off for this engagement, or on again.",
+        "operationId": "set_ai_exclusion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiExclusionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiExclusionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Set Ai Exclusion Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "engagement.ai_exclude"
       }
     },
     "/v1/engagements/{engagement_id}/board-summary": {
@@ -20855,6 +21346,217 @@
           "identity"
         ],
         "x-abacus-action": "firm_agents.pause"
+      }
+    },
+    "/v1/firm/ai-client-data": {
+      "get": {
+        "operationId": "ai_client_data",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiClientDataOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ai Client Data Route",
+        "tags": [
+          "identity"
+        ],
+        "x-abacus-action": "firm.read_settings"
+      },
+      "put": {
+        "description": "SPEC-036 AC-3: opt in (against the disclosure) or out; firm administrator, fresh MFA.",
+        "operationId": "set_ai_client_data",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiClientDataIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiClientDataOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Set Ai Client Data Route",
+        "tags": [
+          "identity"
+        ],
+        "x-abacus-action": "firm.ai_client_data"
       }
     },
     "/v1/firm/autonomy": {

@@ -1,3 +1,4 @@
+import { AiExclusionControl } from "./AiClientData";
 import { engagementGraphOptions } from "@abacus/api-client/query";
 import { Skeleton, StatusPill } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
@@ -39,6 +40,7 @@ export function EngagementLayout({ engagementId }: { engagementId: string }): JS
         )}
       </div>
       <AgentControls engagementId={engagementId} />
+      <AiExclusionControl engagementId={engagementId} />
       <IndependenceBanner engagementId={engagementId} />
       <Tabs
         label="Engagement"

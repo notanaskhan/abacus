@@ -1342,6 +1342,8 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus_tools/access_review.py",
             # SPEC-024 (TASK-040): sign-up codes are the owner's; the app role can't reach them.
             "src/abacus_tools/signup_codes.py",
+            # SPEC-036 (TASK-076 D1): agent stages are the owner's; the app role only reads them.
+            "src/abacus_tools/agent_stage.py",
             "tests/integration/conftest.py",
             "tests/integration/test_local_stack.py",
             "tests/integration/test_tenancy.py",
@@ -1450,6 +1452,8 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/kernel/db/*",
             "src/abacus_tools/quality/schema_check.py",
             "src/abacus_tools/quality/banned_patterns.py",
+            # SPEC-036 (TASK-076 D1): writes a stage and its audit event as the platform.
+            "src/abacus_tools/agent_stage.py",
             "tests/integration/test_tenancy.py",
             "tests/integration/test_schema_check_db.py",
             "tests/integration/agent_tests/test_work_slots_db.py",  # calls the ledger functions

@@ -25,6 +25,7 @@ class AgentRun(Base):
     methodology_version_id: Mapped[UUID | None]  # a firm-level run's template version
     evidence_version_id: Mapped[UUID | None]
     inbox_file_id: Mapped[UUID | None]  # SPEC-033 (TASK-066): a matcher run's file
+    shadow: Mapped[bool] = mapped_column(server_default=FetchedValue())  # SPEC-036: never shown
     initiator_user_id: Mapped[UUID]
     source_event_id: Mapped[UUID | None]
     task_scope: Mapped[list[str]] = mapped_column(ARRAY(String))
@@ -294,3 +295,18 @@ class TemplateGuidanceDecision(Base):
     confirmed_read: Mapped[bool]
     decided_by: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class AgentStage(Base):
+    """An agent's stage for the firm (SPEC-036; TASK-076): the newest row is the stage. Written
+    only by the founder's operations command through the owner role (D1)."""
+
+    __tablename__ = "agent_stages"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    tenant_id: Mapped[UUID]
+    agent_id: Mapped[str]
+    stage: Mapped[str]
+    changed_by: Mapped[str]
+    note: Mapped[str]
+    created_at: Mapped[datetime]

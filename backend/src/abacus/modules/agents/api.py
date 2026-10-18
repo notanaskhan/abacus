@@ -46,6 +46,7 @@ from abacus.modules.agents.service import (
     screening_results_for,
 )
 from abacus.modules.agents.spec import AGENTS, AgentSpec, cleared_for_client_data, spec
+from abacus.modules.agents.stages import assistants, stage_for
 from abacus.modules.agents.upload_review import (
     REVIEWER,
     ReviewOutcome,
@@ -73,11 +74,14 @@ from abacus.modules.agents.workflows import (
     UploadReviewWorkflow,
 )
 from abacus.modules.evidence.api import register_proposal_source
+from abacus.modules.identity.api import register_ai_assistants
 
 # Evidence owns review decisions; agents owns what was proposed (TASK-019 D1).
 register_proposal_source(proposals_for, proposal_of)
 # SPEC-036 (TASK-075): which agents may see a real firm's data (stages follow in TASK-076).
-register_client_data_facts(cleared=cleared_for_client_data)
+register_client_data_facts(cleared=cleared_for_client_data, stage=stage_for)
+# SPEC-036 (TASK-076): identity's disclosure lists the cleared assistants and their stage.
+register_ai_assistants(assistants)
 
 __all__ = [
     "ACTIVITIES",

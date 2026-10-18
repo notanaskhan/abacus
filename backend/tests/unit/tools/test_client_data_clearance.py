@@ -94,3 +94,12 @@ def test_adr114_a_complete_entry_is_accepted() -> None:
 def test_adr114_an_entry_missing_a_condition_is_refused(changes: dict[str, object]) -> None:
     with pytest.raises(TermsInvalid):
         validate(_entry(**changes))
+
+
+def test_q4_a_new_review_date_keeps_the_material_terms() -> None:
+    from abacus_tools.codegen.provider_terms import material
+
+    base = _entry()
+    assert material(base) == material(_entry(review_by=date(2027, 6, 30)))
+    assert material(base) != material(_entry(region="us-west-2"))
+    assert material(base) != material(_entry(subprocessors=["Another Co"]))

@@ -16,6 +16,7 @@ from sqlalchemy import ColumnElement, Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import QueryableAttribute
 
+from abacus.ai_gateway import forget_boundary_facts
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.logging import get_logger
@@ -36,6 +37,7 @@ from abacus.modules.engagements.repository import (
     lock_or_insert_template,
     lock_template,
     open_engagement_ids,
+    set_ai_exclusion,
     set_methodology_version,
     version_rows,
 )
@@ -747,3 +749,61 @@ async def gate_client_data(ctx: AuthContext, engagement_id: UUID, action: str) -
             "client_data.gate_refused", engagement_id=str(engagement_id), action=action
         )
         raise
+
+
+# --- AI exclusion (SPEC-036 §4.6; TASK-076) -----------------------------------------------------
+
+
+@dataclass(frozen=True)
+class AiExclusion:
+    excluded_at: datetime | None
+    excluded_by: UUID | None
+    reason: str | None
+
+
+async def ai_excluded(tenant: TenantContext, engagement_id: UUID) -> bool:
+    """For the gateway (SPEC-036 §4.2 `engagement`): whether AI is off for this engagement."""
+    async with tenant_session(tenant) as session:
+        found = await get_engagement(session, engagement_id)
+    return found is not None and found.ai_excluded_at is not None
+
+
+async def ai_exclusion(ctx: AuthContext, engagement_id: UUID) -> AiExclusion:
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "engagement.read_metadata", ref.resource())
+    async with tenant_session(ctx.tenant) as session:
+        found = await get_engagement(session, engagement_id)
+    if found is None:
+        raise NotFound("engagement")
+    return AiExclusion(found.ai_excluded_at, found.ai_excluded_by, found.ai_excluded_reason)
+
+
+async def set_ai_exclusion_of(
+    ctx: AuthContext, engagement_id: UUID, excluded: bool, reason: str | None
+) -> AiExclusion:
+    """AC-6: the engagement partner switches AI off (with a reason) or on again. The firm's
+    cached boundary facts are dropped in this request."""
+    reason = (reason or "").strip() or None
+    if excluded and reason is None:
+        raise AiExclusionReasonRequired(str(engagement_id))
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, "engagement.ai_exclude", ref.resource())
+        await set_ai_exclusion(
+            tx.session,
+            engagement_id,
+            ctx.user_id if excluded else None,
+            reason if excluded else None,
+        )
+        tx.record(
+            "engagement.ai_excluded" if excluded else "engagement.ai_included",
+            target=Target("engagement", engagement_id),
+        )
+    forget_boundary_facts(ctx.tenant_id)
+    return await ai_exclusion(ctx, engagement_id)
+
+
+class AiExclusionReasonRequired(DomainInvalid):
+    """Switching AI off for an engagement needs a reason (SPEC-036 §4.6)."""
+
+    code = "ai_exclusion_reason_required"

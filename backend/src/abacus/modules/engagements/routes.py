@@ -19,12 +19,14 @@ from abacus.modules.engagements.onboarding import Onboarding, StepId, acknowledg
 from abacus.modules.engagements.onboarding import dismiss as dismiss_onboarding
 from abacus.modules.engagements.roll_forward import ItemKind, RollForward, propose
 from abacus.modules.engagements.service import (
+    AiExclusion,
     EngagementMetadata,
     EngagementType,
     EngagementView,
     NewEngagement,
     TemplateVersionSummary,
     add_to_team,
+    ai_exclusion,
     change_team_role,
     client_contacts_of,
     create_engagement,
@@ -41,6 +43,7 @@ from abacus.modules.engagements.service import (
     revoke_client_invitation,
     search_clients,
     self_join,
+    set_ai_exclusion_of,
     team_candidates,
     team_of_engagement,
 )
@@ -895,3 +898,54 @@ Member = Annotated[AuthContext, Depends(current_member)]
 async def my_confirmations_route(ctx: Member) -> list[OpenConfirmationOut]:
     """The person's own independence requests still to answer."""
     return [OpenConfirmationOut.model_validate(asdict(c)) for c in await my_confirmations(ctx)]
+
+
+# --- AI exclusion (SPEC-036; TASK-076) ----------------------------------------------------------
+
+
+class AiExclusionOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    excluded: Annotated[bool, classified("internal")]
+    excluded_at: Annotated[datetime | None, classified("internal")] = None
+    excluded_by: Annotated[UUID | None, classified("internal")] = None
+    reason: Annotated[str | None, classified("confidential")] = None
+
+
+class AiExclusionIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    excluded: Annotated[bool, classified("internal")]
+    reason: Annotated[str | None, Field(max_length=300), classified("confidential")] = None
+
+
+def _exclusion_out(found: AiExclusion) -> AiExclusionOut:
+    return AiExclusionOut(
+        excluded=found.excluded_at is not None,
+        excluded_at=found.excluded_at,
+        excluded_by=found.excluded_by,
+        reason=found.reason,
+    )
+
+
+@router.get(
+    "/{engagement_id}/ai-exclusion",
+    action="engagement.read_metadata",
+    response_model=AiExclusionOut,
+)
+async def ai_exclusion_route(engagement_id: UUID, ctx: Ctx) -> AiExclusionOut:
+    return _exclusion_out(await ai_exclusion(ctx, engagement_id))
+
+
+@router.put(
+    "/{engagement_id}/ai-exclusion",
+    action="engagement.ai_exclude",
+    response_model=AiExclusionOut,
+)
+async def set_ai_exclusion_route(
+    engagement_id: UUID, body: AiExclusionIn, ctx: Ctx
+) -> AiExclusionOut:
+    """SPEC-036 AC-6: the engagement partner switches AI off for this engagement, or on again."""
+    return _exclusion_out(
+        await set_ai_exclusion_of(ctx, engagement_id, body.excluded, body.reason)
+    )

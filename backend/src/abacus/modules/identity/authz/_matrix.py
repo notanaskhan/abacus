@@ -129,6 +129,13 @@ ACTIONS: dict[str, dict[str, str]] = {
         "firm_admin": "allow",
         "mfa_recent": "required",
     },
+    "firm.ai_client_data": {
+        "firm_admin": "allow",
+        "mfa_recent": "required",
+    },
+    "engagement.ai_exclude": {
+        "engagement_partner": "allow",
+    },
     "acceptance.record": {
         "engagement_partner": "allow",
         "mfa_recent": "required",

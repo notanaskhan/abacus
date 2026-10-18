@@ -231,6 +231,85 @@ export type AgentsStateOut = {
 };
 
 /**
+ * AiClientDataIn
+ */
+export type AiClientDataIn = {
+    /**
+     * On
+     */
+    on: boolean;
+};
+
+/**
+ * AiClientDataOut
+ *
+ * SPEC-036 (TASK-076): the firm's opt-in, the disclosure and each assistant's stage.
+ */
+export type AiClientDataOut = {
+    /**
+     * Assistants
+     */
+    assistants: Array<AssistantOut>;
+    /**
+     * Available
+     */
+    available: boolean;
+    /**
+     * Current
+     */
+    current: boolean;
+    disclosure?: DisclosureOut | null;
+    /**
+     * Lapsed
+     */
+    lapsed: boolean;
+    /**
+     * Opted In At
+     */
+    opted_in_at?: string | null;
+    /**
+     * Opted In By
+     */
+    opted_in_by?: string | null;
+};
+
+/**
+ * AiExclusionIn
+ */
+export type AiExclusionIn = {
+    /**
+     * Excluded
+     */
+    excluded: boolean;
+    /**
+     * Reason
+     */
+    reason?: string | null;
+};
+
+/**
+ * AiExclusionOut
+ */
+export type AiExclusionOut = {
+    /**
+     * Excluded
+     */
+    excluded: boolean;
+    /**
+     * Excluded At
+     */
+    excluded_at?: string | null;
+    /**
+     * Excluded By
+     */
+    excluded_by?: string | null;
+    /**
+     * Reason
+     */
+    reason?: string | null;
+};
+
+/**
  * AppliedMethodologyOut
  */
 export type AppliedMethodologyOut = {
@@ -312,6 +391,24 @@ export type AssignedOut = {
      * Evidence Version Id
      */
     evidence_version_id: string;
+};
+
+/**
+ * AssistantOut
+ */
+export type AssistantOut = {
+    /**
+     * Agent Id
+     */
+    agent_id: string;
+    /**
+     * Purpose
+     */
+    purpose: string;
+    /**
+     * Stage
+     */
+    stage: 'shadow' | 'live' | 'off';
 };
 
 /**
@@ -881,6 +978,36 @@ export type DiscardedOut = {
      * Id
      */
     id: string;
+};
+
+/**
+ * DisclosureOut
+ */
+export type DisclosureOut = {
+    /**
+     * Letter Wording
+     */
+    letter_wording: string;
+    /**
+     * Provider
+     */
+    provider: string;
+    /**
+     * Region
+     */
+    region: string;
+    /**
+     * Retention Exceptions
+     */
+    retention_exceptions: Array<RetentionExceptionOut>;
+    /**
+     * Review By
+     */
+    review_by: string;
+    /**
+     * Subprocessors
+     */
+    subprocessors: Array<string>;
 };
 
 /**
@@ -2814,6 +2941,20 @@ export type RequestItemOut = {
 };
 
 /**
+ * RetentionExceptionOut
+ */
+export type RetentionExceptionOut = {
+    /**
+     * Max Days
+     */
+    max_days: number;
+    /**
+     * Purpose
+     */
+    purpose: string;
+};
+
+/**
  * RetrievalIn
  */
 export type RetrievalIn = {
@@ -4608,6 +4749,110 @@ export type ResumeAgentResponses = {
 };
 
 export type ResumeAgentResponse = ResumeAgentResponses[keyof ResumeAgentResponses];
+
+export type AiExclusionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/ai-exclusion';
+};
+
+export type AiExclusionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AiExclusionError = AiExclusionErrors[keyof AiExclusionErrors];
+
+export type AiExclusionResponses = {
+    /**
+     * Successful Response
+     */
+    200: AiExclusionOut;
+};
+
+export type AiExclusionResponse = AiExclusionResponses[keyof AiExclusionResponses];
+
+export type SetAiExclusionData = {
+    body: AiExclusionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/ai-exclusion';
+};
+
+export type SetAiExclusionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SetAiExclusionError = SetAiExclusionErrors[keyof SetAiExclusionErrors];
+
+export type SetAiExclusionResponses = {
+    /**
+     * Successful Response
+     */
+    200: AiExclusionOut;
+};
+
+export type SetAiExclusionResponse = SetAiExclusionResponses[keyof SetAiExclusionResponses];
 
 export type BoardSummaryData = {
     body?: never;
@@ -9912,6 +10157,104 @@ export type ResumeFirmAgentsResponses = {
 };
 
 export type ResumeFirmAgentsResponse = ResumeFirmAgentsResponses[keyof ResumeFirmAgentsResponses];
+
+export type AiClientDataData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/ai-client-data';
+};
+
+export type AiClientDataErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AiClientDataError = AiClientDataErrors[keyof AiClientDataErrors];
+
+export type AiClientDataResponses = {
+    /**
+     * Successful Response
+     */
+    200: AiClientDataOut;
+};
+
+export type AiClientDataResponse = AiClientDataResponses[keyof AiClientDataResponses];
+
+export type SetAiClientDataData = {
+    body: AiClientDataIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/ai-client-data';
+};
+
+export type SetAiClientDataErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SetAiClientDataError = SetAiClientDataErrors[keyof SetAiClientDataErrors];
+
+export type SetAiClientDataResponses = {
+    /**
+     * Successful Response
+     */
+    200: AiClientDataOut;
+};
+
+export type SetAiClientDataResponse = SetAiClientDataResponses[keyof SetAiClientDataResponses];
 
 export type AutonomyData = {
     body?: never;

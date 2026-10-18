@@ -253,6 +253,7 @@ APP_INSERT_COLUMNS.update(
             | {"evidence_version_id", "initiator_user_id", "source_event_id"}
             | {"inbox_file_id"}  # SPEC-033 (TASK-066): the matcher's file
             | {"methodology_version_id"}  # SPEC-035 Q3 (TASK-074): a firm-level run's version
+            | {"shadow"}  # SPEC-036 (TASK-076): started in shadow
         ),
         "screening_results": frozenset(
             {"id", "tenant_id", "engagement_id", "evidence_version_id", "agent_run_id"}
@@ -296,7 +297,10 @@ IMMUTABLE_TABLES: dict[str, str] = {
 # listed here keep whatever their migration grants (insert-only tables grant none).
 APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),
-    "engagements": frozenset({"status", "methodology_version_id"}),  # SPEC-008: pinned once
+    "engagements": frozenset(
+        {"status", "methodology_version_id"}  # SPEC-008: pinned once
+        | {"ai_excluded_at", "ai_excluded_by", "ai_excluded_reason"}  # SPEC-036 (TASK-076)
+    ),
     "request_items": frozenset(
         {"status", "client_visible", "client_assignee_user_id"}
         | {"retrievability_tier", "dataset", "tier_source", "tier_rule"}  # SPEC-022
@@ -318,6 +322,7 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"sso_skipped_at", "onboarding_dismissed_at"}
         | {"require_letter"}  # SPEC-025 (TASK-044)
         | {"drafted_guidance_to_clients"}  # SPEC-035 (TASK-073)
+        | {"ai_client_data_at", "ai_client_data_by", "ai_client_data_material"}  # SPEC-036
         | {"agents_paused_at", "agents_paused_by"}  # SPEC-027 (TASK-050): the firm switch
         | {"time_zone"}  # SPEC-027 (TASK-051): the agent's daily tick
     ),
@@ -408,6 +413,7 @@ TABLE_OWNERS: dict[str, str] = {
     "guidance_drafts": "agents",  # SPEC-035 (TASK-072)
     "guidance_draft_decisions": "agents",  # SPEC-035 (TASK-073)
     "template_guidance_drafts": "agents",  # SPEC-035 Q3 (TASK-074)
+    "agent_stages": "agents",  # SPEC-036 (TASK-076): owner-written, app reads only
     "template_guidance_decisions": "agents",  # SPEC-035 Q3 (TASK-074)
     "gl_account_balances": "ledger",
     "gl_entries": "ledger",

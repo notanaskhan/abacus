@@ -60,6 +60,7 @@ from abacus.modules.agents.repository import (
     try_lock_run,
 )
 from abacus.modules.agents.spec import declared, spec
+from abacus.modules.agents.stages import starts_in_shadow
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.evidence.api import Proposal, read_content, version_view
 from abacus.modules.identity.api import (
@@ -135,6 +136,7 @@ async def create_screening_run(
                 tx.session,
                 tenant_id=tenant_id,
                 agent_id=screener.id,
+                shadow=await starts_in_shadow(tx.session, reader, screener.id),  # SPEC-036
                 spec_version=screener.version,
                 engagement_id=version.engagement_id,
                 evidence_version_id=evidence_version_id,

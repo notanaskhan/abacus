@@ -8,7 +8,7 @@ from decimal import Decimal
 from typing import cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import func, insert, select, update
+from sqlalchemy import ColumnElement, func, insert, select, update
 from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,6 +17,7 @@ from sqlalchemy.orm import QueryableAttribute, aliased
 from abacus.modules.agents.models import (
     AgentActivity,
     AgentRun,
+    AgentStage,
     EngagementAgentState,
     GuidanceDraftDecision,
     GuidanceDraftRow,
@@ -39,6 +40,11 @@ from abacus.modules.identity.api import AuthContext, visible
 _RUN_ENGAGEMENT = cast("QueryableAttribute[UUID]", AgentRun.engagement_id)
 
 
+def _shown_run(run_id: QueryableAttribute[UUID]) -> ColumnElement[bool]:
+    """SPEC-036 AC-5 (TASK-076): output of a run started in shadow is never shown to the firm."""
+    return run_id.not_in(select(AgentRun.id).where(AgentRun.shadow.is_(True)))
+
+
 async def insert_run(
     session: AsyncSession,
     *,
@@ -52,6 +58,7 @@ async def insert_run(
     task_scope: list[str],
     inbox_file_id: UUID | None = None,
     methodology_version_id: UUID | None = None,
+    shadow: bool = False,
 ) -> UUID | None:
     """The new run's ID, or None if this agent already ran for this event."""
     return (
@@ -69,6 +76,7 @@ async def insert_run(
                 task_scope=task_scope,
                 inbox_file_id=inbox_file_id,
                 methodology_version_id=methodology_version_id,
+                shadow=shadow,
             )
             .on_conflict_do_nothing(constraint="agent_runs_once_per_event")
             .returning(AgentRun.id)
@@ -184,7 +192,10 @@ async def latest_result_for_version(
     return (
         await session.execute(
             select(ScreeningResult)
-            .where(ScreeningResult.evidence_version_id == evidence_version_id)
+            .where(
+                ScreeningResult.evidence_version_id == evidence_version_id,
+                _shown_run(ScreeningResult.agent_run_id),
+            )
             .order_by(ScreeningResult.created_at.desc(), ScreeningResult.id.desc())
             .limit(1)
         )
@@ -203,6 +214,7 @@ async def latest_results(
                 .where(
                     ScreeningResult.engagement_id == engagement_id,
                     visible(ctx, "evidence.read", ScreeningResult.engagement_id),
+                    _shown_run(ScreeningResult.agent_run_id),
                 )
                 .ext(distinct_on(ScreeningResult.evidence_version_id))
                 .order_by(
@@ -676,6 +688,7 @@ async def latest_review_run(
             .where(
                 AgentRun.agent_id == agent_id,
                 AgentRun.evidence_version_id == version_id,
+                AgentRun.shadow.is_(False),
                 visible(ctx, "upload_review.read", _RUN_ENGAGEMENT),
             )
             .order_by(AgentRun.started_at.desc(), AgentRun.id.desc())
@@ -700,6 +713,7 @@ async def shown_flags(
                 .where(
                     UploadReview.agent_run_id == run_id,
                     UploadReviewFlag.shown.is_(True),
+                    _shown_run(UploadReview.agent_run_id),
                     visible(ctx, "upload_review.read", UploadReview.engagement_id),
                 )
                 .order_by(UploadReviewFlag.position)
@@ -730,6 +744,7 @@ async def shown_flag_counts(
             .where(
                 UploadReview.engagement_id == engagement_id,
                 visible(ctx, "upload_review.read", UploadReview.engagement_id),
+                _shown_run(UploadReview.agent_run_id),
             )
         )
     ).all()
@@ -760,6 +775,7 @@ async def latest_match_runs(
                     AgentRun.agent_id == agent_id,
                     AgentRun.engagement_id == engagement_id,
                     AgentRun.inbox_file_id.is_not(None),
+                    AgentRun.shadow.is_(False),
                     visible(ctx, "inbox_match.read", _RUN_ENGAGEMENT),
                 )
                 .ext(distinct_on(AgentRun.inbox_file_id))
@@ -789,6 +805,7 @@ async def list_match_results(
         .where(
             InboxMatchRun.agent_run_id.in_(run_ids),
             visible(ctx, "inbox_match.read", InboxMatchRun.engagement_id),
+            _shown_run(InboxMatchRun.agent_run_id),
         )
         .order_by(InboxMatchRun.agent_run_id, InboxMatchProposal.rank)
     )
@@ -805,7 +822,10 @@ async def shown_picks(
         return {}
     latest = (
         select(InboxMatchRun.id)
-        .where(InboxMatchRun.inbox_file_id.in_(inbox_file_ids))
+        .where(
+            InboxMatchRun.inbox_file_id.in_(inbox_file_ids),
+            _shown_run(InboxMatchRun.agent_run_id),
+        )
         .ext(distinct_on(InboxMatchRun.inbox_file_id))
         .order_by(InboxMatchRun.inbox_file_id, InboxMatchRun.created_at.desc())
         .subquery()
@@ -842,6 +862,7 @@ async def pending_guidance_drafts(
                     GuidanceDraftRow.engagement_id == engagement_id,
                     GuidanceDraftRow.passed_checks.is_(True),
                     GuidanceDraftRow.id.not_in(decided),
+                    _shown_run(GuidanceDraftRow.agent_run_id),
                     visible(ctx, "guidance_draft.read", GuidanceDraftRow.engagement_id),
                 )
                 .ext(distinct_on(GuidanceDraftRow.request_item_id))
@@ -887,6 +908,7 @@ async def template_drafts(
         .where(
             TemplateGuidanceDraft.methodology_version_id == version_id,
             TemplateGuidanceDraft.passed_checks.is_(True),
+            _shown_run(TemplateGuidanceDraft.agent_run_id),
         )
         .ext(distinct_on(TemplateGuidanceDraft.position))
         .order_by(TemplateGuidanceDraft.position, TemplateGuidanceDraft.created_at.desc())
@@ -920,3 +942,16 @@ async def insert_template_decision(session: AsyncSession, **values: object) -> b
         .returning(TemplateGuidanceDecision.draft_id)
     )
     return made.scalar_one_or_none() is not None
+
+
+# --- Stages (SPEC-036; TASK-076) ----------------------------------------------------------------
+
+
+async def stage_of(session: AsyncSession, agent_id: str) -> str | None:
+    """The agent's newest stage row for the session's firm, or None."""
+    return await session.scalar(
+        select(AgentStage.stage)
+        .where(AgentStage.agent_id == agent_id)
+        .order_by(AgentStage.created_at.desc())
+        .limit(1)
+    )

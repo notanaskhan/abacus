@@ -159,12 +159,24 @@ async def enforce_boundary(
     engagement_id: UUID | None = None,
 ) -> Basis | None:
     """Return why `route` may see this firm's data (None for `fake`); else audit, count and
-    raise with the reason."""
-    if route == "fake":
+    raise with the reason. An engagement its partner excluded refuses every route, for every
+    firm (SPEC-036 AC-6)."""
+    excluded = _excluded
+    if (
+        engagement_id is not None
+        and excluded is not None
+        and await _cached(
+            ("engagement", tenant.tenant_id, engagement_id),
+            lambda: excluded(tenant, engagement_id),
+        )
+    ):
+        reason: Reason | None = "engagement"
+    elif route == "fake":
         return None
-    if await _synthetic(tenant):
+    elif await _synthetic(tenant):
         return Basis("synthetic")
-    reason = await _client_data_refusal(tenant, route, agent_id, engagement_id)
+    else:
+        reason = await _client_data_refusal(tenant, route, agent_id, engagement_id)
     if reason is None:
         return Basis("client_data", provider_terms.version())
     _refused.add(1, {"route": route, "prompt": prompt, "reason": reason})
