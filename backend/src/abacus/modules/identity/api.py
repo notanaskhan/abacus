@@ -1,6 +1,6 @@
 """Public interface of the identity module; other modules import only this (ADR-008)."""
 
-from abacus.ai_gateway import register_synthetic_tenants
+from abacus.ai_gateway import register_client_data_facts, register_synthetic_tenants
 from abacus.modules.identity.authz import (
     MFA_RECENT,
     WALL_SAFE,
@@ -34,11 +34,13 @@ from abacus.modules.identity.events import (
     StaffInvitationIssued,
 )
 from abacus.modules.identity.firm_settings import (
+    Assistant,
     AutonomyView,
     FirmFacts,
     LevelNotAvailable,
     acknowledge,
     agents_paused,
+    ai_client_data_opted_in,
     autonomy,
     autonomy_level,
     drafted_guidance_to_clients,
@@ -47,6 +49,7 @@ from abacus.modules.identity.firm_settings import (
     is_synthetic_firm,
     letter_policy,
     note_budget_reviewed,
+    register_ai_assistants,
     set_autonomy,
     set_letter_policy,
 )
@@ -132,6 +135,8 @@ from abacus.modules.identity.tokens import (
 # SPEC-026 (TASK-049): the AI gateway's per-call data boundary asks identity which firms are
 # synthetic.
 register_synthetic_tenants(is_synthetic_firm)
+# SPEC-036 (TASK-076): and which real firms have opted in against today's terms.
+register_client_data_facts(opted_in=ai_client_data_opted_in)
 
 __all__ = [
     "ACTION_KEY",
@@ -146,6 +151,7 @@ __all__ = [
     "Actor",
     "AgentContext",
     "AlreadyMember",
+    "Assistant",
     "AuthContext",
     "AutonomyView",
     "Candidate",
@@ -220,6 +226,7 @@ __all__ = [
     "note_budget_reviewed",
     "policy_agent_may_hold",
     "register_active_engagements",
+    "register_ai_assistants",
     "register_engagement_client",
     "register_independence",
     "register_member_added",

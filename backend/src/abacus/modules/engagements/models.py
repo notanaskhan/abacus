@@ -29,6 +29,10 @@ class Engagement(Base):
     methodology_version_id: Mapped[UUID | None]
     # SPEC-025 (TASK-048): the engagement this one was rolled forward from, set at creation.
     prior_engagement_id: Mapped[UUID | None]
+    # SPEC-036 (TASK-076): the engagement partner switched AI off for this engagement.
+    ai_excluded_at: Mapped[datetime | None]
+    ai_excluded_by: Mapped[UUID | None]
+    ai_excluded_reason: Mapped[str | None]
 
 
 class MethodologyTemplate(Base):

@@ -883,3 +883,36 @@ async def drafted_guidance_shown(session: AsyncSession) -> bool:
 
 async def set_drafted_guidance_shown(session: AsyncSession, shown: bool) -> None:
     await session.execute(text("UPDATE firms SET drafted_guidance_to_clients = :s"), {"s": shown})
+
+
+# --- AI on clients' data (SPEC-036; TASK-076) ---------------------------------------------------
+
+
+@dataclass(frozen=True)
+class AiClientDataRow:
+    at: datetime | None
+    by: UUID | None
+    material: str | None
+
+
+async def ai_client_data(session: AsyncSession) -> AiClientDataRow:
+    """The session's firm's opt-in (who, when, which terms), or all None."""
+    row = (
+        await session.execute(
+            text("SELECT ai_client_data_at, ai_client_data_by, ai_client_data_material FROM firms")
+        )
+    ).one()
+    return AiClientDataRow(
+        cast(datetime | None, row[0]), cast(UUID | None, row[1]), cast(str | None, row[2])
+    )
+
+
+async def set_ai_client_data(session: AsyncSession, by: UUID | None, material: str | None) -> None:
+    await session.execute(
+        text(
+            "UPDATE firms SET ai_client_data_at = CASE WHEN CAST(:by AS uuid) IS NULL THEN NULL "
+            "ELSE clock_timestamp() END, ai_client_data_by = CAST(:by AS uuid), "
+            "ai_client_data_material = CAST(:material AS text)"
+        ),
+        {"by": by, "material": material},
+    )

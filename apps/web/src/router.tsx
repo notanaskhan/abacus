@@ -5,6 +5,7 @@ import { Link, createRootRoute, createRoute, createRouter } from "@tanstack/reac
 import type { JSX } from "react";
 import { CALLBACK_PATH } from "./auth/session";
 import { AdminLayout } from "./screens/AdminLayout";
+import { AiClientDataSetting } from "./screens/AiClientData";
 import {
   Autonomy,
   DraftedGuidanceSetting,
@@ -240,6 +241,7 @@ const autonomyRoute = createRoute({
         <DraftedGuidanceSetting canSet={role === "firm_admin"} />
         <FirmAgents canSet={role === "firm_admin"} />
         <FirmTimeZone canSet={role === "firm_admin"} />
+        <AiClientDataSetting canSet={role === "firm_admin"} />
       </div>
     );
   },

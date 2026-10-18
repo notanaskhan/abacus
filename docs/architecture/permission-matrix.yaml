@@ -52,6 +52,8 @@ actions:
   activity.read:            {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow}   # the activity feed
   agent.pause:              {engagement_partner: allow, manager: allow}   # pause or resume an engagement's agent
   firm_agents.pause:        {firm_admin: allow, mfa_recent: required}   # every agent in the firm
+  firm.ai_client_data:      {firm_admin: allow, mfa_recent: required}   # SPEC-036 (TASK-076): opt in to AI on clients' data, against the disclosure
+  engagement.ai_exclude:    {engagement_partner: allow}   # SPEC-036 (TASK-076): switch AI off for one engagement
   # --- Acceptance, independence and the letter (SPEC-025; TASK-044) ---
   acceptance.record:        {engagement_partner: allow, mfa_recent: required}   # decision, documentation, the independence conclusion
   independence.confirm:     {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow}   # for oneself only (the service refuses others)

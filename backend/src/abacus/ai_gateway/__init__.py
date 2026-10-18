@@ -53,6 +53,9 @@ from abacus.ai_gateway.boundary import (
     register_client_data_facts,
     register_synthetic_tenants,
 )
+from abacus.ai_gateway.boundary import (
+    clear_cache as forget_boundary_facts,
+)
 from abacus.ai_gateway.budgets import BudgetExhausted, check_budget, forget_spend
 from abacus.ai_gateway.context import (
     MAX_ROWS,
@@ -838,6 +841,8 @@ __all__ = [
     "embed",
     "estimate_tokens",
     "evaluation",
+    "forget_boundary_facts",
+    "is_synthetic",
     "model_id",
     "prompt",
     "register_client_data_facts",

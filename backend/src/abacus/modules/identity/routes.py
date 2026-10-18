@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import asdict
-from datetime import datetime
-from typing import Annotated, Literal
+from datetime import date, datetime
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Request
@@ -13,11 +13,14 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel.classification import classified
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.firm_settings import (
+    AiClientDataView,
     autonomy,
     read_agents_state,
+    read_ai_client_data,
     read_drafted_guidance_setting,
     read_letter_policy,
     read_time_zone,
+    set_ai_client_data_setting,
     set_autonomy,
     set_drafted_guidance_setting,
     set_firm_agents_paused,
@@ -548,6 +551,99 @@ async def drafted_guidance_route(ctx: Ctx) -> DraftedGuidanceIO:
 )
 async def set_drafted_guidance_route(body: DraftedGuidanceIO, ctx: Ctx) -> DraftedGuidanceIO:
     return DraftedGuidanceIO(shown=await set_drafted_guidance_setting(ctx, body.shown))
+
+
+class AssistantOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    agent_id: Annotated[str, classified("internal")]
+    purpose: Annotated[str, classified("internal")]
+    stage: Annotated[Literal["shadow", "live", "off"], classified("internal")]
+
+
+class RetentionExceptionOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    purpose: Annotated[str, classified("internal")]
+    max_days: Annotated[int, classified("internal")]
+
+
+class DisclosureOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    provider: Annotated[str, classified("internal")]
+    region: Annotated[str, classified("internal")]
+    retention_exceptions: Annotated[list[RetentionExceptionOut], classified("internal")]
+    subprocessors: Annotated[list[str], classified("internal")]
+    review_by: Annotated[date, classified("internal")]
+    letter_wording: Annotated[str, classified("internal")]
+
+
+class AiClientDataOut(BaseModel):
+    """SPEC-036 (TASK-076): the firm's opt-in, the disclosure and each assistant's stage."""
+
+    model_config = ConfigDict(frozen=True)
+
+    available: Annotated[bool, classified("internal")]
+    opted_in_at: Annotated[datetime | None, classified("internal")] = None
+    opted_in_by: Annotated[UUID | None, classified("internal")] = None
+    current: Annotated[bool, classified("internal")]
+    lapsed: Annotated[bool, classified("internal")]
+    disclosure: Annotated[DisclosureOut | None, classified("internal")] = None
+    assistants: Annotated[list[AssistantOut], classified("internal")]
+
+
+class AiClientDataIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    on: Annotated[bool, classified("internal")]
+
+
+def _ai_out(view: AiClientDataView) -> AiClientDataOut:
+    d = view.disclosure
+    return AiClientDataOut(
+        available=view.available,
+        opted_in_at=view.opted_in_at,
+        opted_in_by=view.opted_in_by,
+        current=view.current,
+        lapsed=view.lapsed,
+        disclosure=DisclosureOut(
+            provider=d.provider,
+            region=d.region,
+            retention_exceptions=[
+                RetentionExceptionOut(purpose=p, max_days=n) for p, n in d.retention_exceptions
+            ],
+            subprocessors=list(d.subprocessors),
+            review_by=d.review_by,
+            letter_wording=d.letter_wording,
+        )
+        if d is not None
+        else None,
+        assistants=[
+            AssistantOut(
+                agent_id=a.agent_id,
+                purpose=a.purpose,
+                stage=cast(Literal["shadow", "live", "off"], a.stage),
+            )
+            for a in view.assistants
+        ],
+    )
+
+
+@router.get("/firm/ai-client-data", action="firm.read_settings", response_model=AiClientDataOut)
+async def ai_client_data_route(ctx: Ctx) -> AiClientDataOut:
+    return _ai_out(await read_ai_client_data(ctx))
+
+
+@router.put(
+    "/firm/ai-client-data",
+    action="firm.ai_client_data",
+    response_model=AiClientDataOut,
+    errors=(409,),
+)
+async def set_ai_client_data_route(body: AiClientDataIn, ctx: Ctx) -> AiClientDataOut:
+    """SPEC-036 AC-3: opt in (against the disclosure) or out; firm administrator, fresh MFA."""
+    return _ai_out(await set_ai_client_data_setting(ctx, body.on))
 
 
 @router.get("/firm/letter-policy", action="firm.read_settings", response_model=LetterPolicyOut)

@@ -53,6 +53,7 @@ from abacus.modules.agents.service import (
     fail_run,
 )
 from abacus.modules.agents.spec import spec
+from abacus.modules.agents.stages import starts_in_shadow
 from abacus.modules.engagements.api import check_facts, get_ref, lock_ref
 from abacus.modules.evidence.api import ReviewMaterial, review_material
 from abacus.modules.identity.api import AgentContext, Forbidden, authorise, is_active_member
@@ -123,6 +124,7 @@ async def create_review_run(
                 tx.session,
                 tenant_id=tenant_id,
                 agent_id=reviewer.id,
+                shadow=await starts_in_shadow(tx.session, reader, reviewer.id),  # SPEC-036
                 spec_version=reviewer.version,
                 engagement_id=material.engagement_id,
                 evidence_version_id=evidence_version_id,

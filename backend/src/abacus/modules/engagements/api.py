@@ -1,5 +1,6 @@
 """Public interface of the engagements module; other modules import only this (ADR-008)."""
 
+from abacus.ai_gateway import register_client_data_facts
 from abacus.modules.engagements.events import EngagementCreated, IndependenceRequested
 from abacus.modules.engagements.roll_forward import (
     PriorItem,
@@ -17,6 +18,7 @@ from abacus.modules.engagements.service import (
     TemplateVersionSummary,
     VersionNotLatest,
     active_engagements,
+    ai_excluded,
     check_facts,
     client_of,
     client_subquery,
@@ -62,6 +64,8 @@ from abacus.modules.identity.api import (
 
 # Identity owns ethical walls; this module owns which client an engagement belongs to (TASK-016).
 register_engagement_client(client_subquery, client_of)
+# SPEC-036 (TASK-076): the AI gateway asks whether AI is off for an engagement.
+register_client_data_facts(excluded=ai_excluded)
 # SPEC-014: which engagements count for firm-level reads by engagement role (not archived).
 register_active_engagements(active_engagements)
 # SPEC-025 (TASK-044): whoever joins a team is asked to confirm their independence.

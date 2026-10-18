@@ -496,3 +496,20 @@ async def put_letter(session: AsyncSession, values: dict[str, object]) -> None:
         .values(**values)
         .on_conflict_do_update(index_elements=["tenant_id", "engagement_id"], set_=keep)
     )
+
+
+# --- AI exclusion (SPEC-036; TASK-076) ----------------------------------------------------------
+
+
+async def set_ai_exclusion(
+    session: AsyncSession, engagement_id: UUID, by: UUID | None, reason: str | None
+) -> None:
+    await session.execute(
+        update(Engagement)
+        .where(Engagement.id == engagement_id)
+        .values(
+            ai_excluded_at=func.clock_timestamp() if by is not None else None,
+            ai_excluded_by=by,
+            ai_excluded_reason=reason,
+        )
+    )

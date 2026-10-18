@@ -50,6 +50,7 @@ from abacus.modules.agents.service import (
     fail_run,
 )
 from abacus.modules.agents.spec import spec
+from abacus.modules.agents.stages import starts_in_shadow
 from abacus.modules.agents.upload_review import TERMINAL
 from abacus.modules.engagements.api import (
     MethodologyVersionView,
@@ -138,6 +139,7 @@ async def create_draft_run(
                 tx.session,
                 tenant_id=tenant_id,
                 agent_id=drafter.id,
+                shadow=await starts_in_shadow(tx.session, reader, drafter.id),  # SPEC-036
                 spec_version=drafter.version,
                 engagement_id=engagement_id,
                 evidence_version_id=None,
@@ -255,6 +257,7 @@ async def create_template_draft_run(
                 tx.session,
                 tenant_id=tenant_id,
                 agent_id=drafter.id,
+                shadow=await starts_in_shadow(tx.session, reader, drafter.id),  # SPEC-036
                 spec_version=drafter.version,
                 engagement_id=None,
                 evidence_version_id=None,

@@ -67,3 +67,6 @@ Seven steps, each computed from data (identity's `firm_facts` plus this module's
 - **Per person (TASK-045):** engagements registers `confirmed_subquery` / `confirmed_for` with identity (`register_independence`), so a team member reaches the engagement's client data only once their own confirmation is `confirmed`. Someone added later is restricted alone; declining closes it to them again. The web shows "Confirm your independence to see client data" on the engagement until they do.
 - **Existing engagements:** marked "accepted, before Act 1", with their staff confirmed, by migration 0036.
 - **Still to come:** per-person access to client data is TASK-045, in `authorise`.
+
+## AI exclusion (SPEC-036; TASK-076)
+`GET/PUT /v1/engagements/{id}/ai-exclusion`: the engagement partner (`engagement.ai_exclude`) switches AI off with a reason, or on again; audited, and the gateway refuses every model call on the engagement while it's off (`ai_excluded`, registered).

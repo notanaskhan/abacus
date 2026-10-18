@@ -18,6 +18,11 @@ class TermsEntry:
     region: str
     approved_on: date
     review_by: date
+    # SPEC-036 Q4 (TASK-076): a hash of training, retention, region and subprocessors. A firm's
+    # opt-in lapses when it changes; a new review date alone doesn't change it.
+    material: str = ""
+    retention_exceptions: tuple[tuple[str, int], ...] = ()
+    subprocessors: tuple[str, ...] = ()
 
 
 def covering(route: str, on: date) -> TermsEntry | None:
