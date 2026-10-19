@@ -4,7 +4,7 @@ title: CI rebuild — stage 2 on main and the merge queue, ready-for-review gati
 spec: SPEC-000
 acceptance_criteria: [AC-20]
 risk_zone: red
-status: in-review
+status: done
 branch: task-078-ci-rebuild
 worktree:
 created: 2026-10-19

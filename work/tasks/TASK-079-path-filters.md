@@ -4,7 +4,7 @@ title: CI path filters — backend suites report success on frontend- or docs-on
 spec: SPEC-000
 acceptance_criteria: [AC-20]
 risk_zone: red
-status: in-review
+status: done
 branch: task-079-path-filters
 worktree:
 created: 2026-10-19

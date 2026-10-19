@@ -4,7 +4,7 @@ title: Local safety guards — generated files never hand-edited, local DB guard
 spec: SPEC-000
 acceptance_criteria: [AC-20]
 risk_zone: red
-status: in-review
+status: done
 branch: task-080-local-guards
 worktree:
 created: 2026-10-19
