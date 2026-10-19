@@ -787,6 +787,14 @@ LIST_EXEMPT = frozenset(
         # engagement.
         ("src/abacus/modules/fieldwork/repository.py", "selected_items"),
         ("src/abacus/modules/fieldwork/repository.py", "rule_counts"),
+        # SPEC-037 (TASK-078): one procedure's results, support requests, versions and
+        # signatures, after `authorise` on its engagement.
+        ("src/abacus/modules/fieldwork/repository.py", "all_items"),
+        ("src/abacus/modules/fieldwork/repository.py", "newest_results"),
+        ("src/abacus/modules/fieldwork/repository.py", "results_by_id"),
+        ("src/abacus/modules/fieldwork/repository.py", "support_requested"),
+        ("src/abacus/modules/fieldwork/repository.py", "workpaper_versions"),
+        ("src/abacus/modules/fieldwork/repository.py", "signatures_of"),
         # Methodology templates are firm-wide (SPEC-008): read after `authorise` on the firm
         # (`methodology.read`) or by a caller authorised on the engagement; no engagement rows.
         ("src/abacus/modules/engagements/repository.py", "list_templates"),

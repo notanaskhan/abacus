@@ -51,6 +51,7 @@ export function EngagementLayout({ engagementId }: { engagementId: string }): JS
           { label: "Map", to: "/engagements/$engagementId/map", params },
           { label: "People", to: "/engagements/$engagementId/people", params },
           { label: "Review", to: "/engagements/$engagementId/review", params },
+          { label: "Fieldwork", to: "/engagements/$engagementId/fieldwork", params },
           { label: "Activity", to: "/engagements/$engagementId/activity", params },
         ]}
       />

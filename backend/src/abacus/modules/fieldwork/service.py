@@ -34,11 +34,13 @@ from abacus.modules.fieldwork.repository import (
     lock_procedure,
     newest_materiality,
     newest_population,
+    newest_results,
     newest_selection,
     newest_settings,
     rule_counts,
     selected_items,
     set_procedure,
+    support_requested,
 )
 from abacus.modules.fieldwork.workflow_types import ProcedureSelectInput
 from abacus.modules.fieldwork.workflows import ProcedureSelectWorkflow
@@ -453,6 +455,11 @@ class ItemView:
     descriptions: tuple[str, ...]
     rules: tuple[str, ...]
     reason: str | None
+    id: UUID | None = None
+    result: str | None = None  # TASK-078: the newest result
+    note: str | None = None
+    evidence_version_ids: tuple[UUID, ...] = ()
+    support_requested: bool = False
 
 
 async def items_of(
@@ -468,6 +475,8 @@ async def items_of(
         rows = await selected_items(
             session, selection.id, offset=offset, limit=min(limit, MAX_ITEMS_PAGE)
         )
+        results = await newest_results(session, selection.id)
+        asked = await support_requested(session, selection.id)
     return [
         ItemView(
             r.position,
@@ -480,6 +489,11 @@ async def items_of(
             tuple(r.descriptions),
             tuple(r.rules),
             r.reason,
+            r.id,
+            results[r.id].result if r.id in results else None,
+            results[r.id].note if r.id in results else None,
+            tuple(results[r.id].evidence_version_ids or []) if r.id in results else (),
+            r.id in asked,
         )
         for r in rows
     ]

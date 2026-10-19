@@ -7,15 +7,21 @@ from decimal import Decimal
 from uuid import UUID, uuid4
 
 from sqlalchemy import func, insert, select, update
+from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.modules.fieldwork.models import (
     EngagementMateriality,
     FieldworkSettings,
+    ItemResult,
+    ItemSupportRequest,
     PopulationRow,
     Procedure,
+    ProcedureConclusion,
     SelectedItem,
     SelectionRow,
+    WorkpaperSignature,
+    WorkpaperVersion,
 )
 from abacus.modules.identity.api import AuthContext, visible
 
@@ -175,3 +181,164 @@ async def rule_counts(session: AsyncSession, selection_id: UUID) -> dict[str, in
 
 def money(value: Decimal) -> Decimal:
     return value.quantize(Decimal("0.01"))
+
+
+# --- Results and workpapers (SPEC-037; TASK-078) -----------------------------------------------
+
+
+async def get_item(session: AsyncSession, item_id: UUID) -> SelectedItem | None:
+    return (
+        await session.execute(select(SelectedItem).where(SelectedItem.id == item_id))
+    ).scalar_one_or_none()
+
+
+async def all_items(session: AsyncSession, selection_id: UUID) -> Sequence[SelectedItem]:
+    """Every entry of one selection, for the workpaper (LIST_EXEMPT: after `authorise` on the
+    procedure's engagement)."""
+    return (
+        (
+            await session.execute(
+                select(SelectedItem)
+                .where(SelectedItem.selection_id == selection_id)
+                .order_by(SelectedItem.position)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def insert_result(session: AsyncSession, **values: object) -> None:
+    await session.execute(insert(ItemResult).values(**values))
+
+
+async def newest_results(session: AsyncSession, selection_id: UUID) -> dict[UUID, ItemResult]:
+    """Per entry of the selection, its newest result (LIST_EXEMPT, as above)."""
+    rows = (
+        (
+            await session.execute(
+                select(ItemResult)
+                .join(SelectedItem, SelectedItem.id == ItemResult.selected_item_id)
+                .where(SelectedItem.selection_id == selection_id)
+                .ext(distinct_on(ItemResult.selected_item_id))
+                .order_by(ItemResult.selected_item_id, ItemResult.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return {r.selected_item_id: r for r in rows}
+
+
+async def results_by_id(session: AsyncSession, ids: Sequence[UUID]) -> dict[UUID, ItemResult]:
+    """A signed version's results (LIST_EXEMPT, as above)."""
+    if not ids:
+        return {}
+    rows = (await session.execute(select(ItemResult).where(ItemResult.id.in_(ids)))).scalars()
+    return {r.selected_item_id: r for r in rows.all()}
+
+
+async def insert_support_request(session: AsyncSession, **values: object) -> None:
+    await session.execute(insert(ItemSupportRequest).values(**values))
+
+
+async def support_requested(session: AsyncSession, selection_id: UUID) -> set[UUID]:
+    """The selection's entries with a support request (LIST_EXEMPT, as above)."""
+    rows = await session.execute(
+        select(ItemSupportRequest.selected_item_id)
+        .join(SelectedItem, SelectedItem.id == ItemSupportRequest.selected_item_id)
+        .where(SelectedItem.selection_id == selection_id)
+    )
+    return set(rows.scalars().all())
+
+
+async def insert_conclusion(session: AsyncSession, **values: object) -> None:
+    await session.execute(insert(ProcedureConclusion).values(**values))
+
+
+async def newest_conclusion(
+    session: AsyncSession, procedure_id: UUID
+) -> ProcedureConclusion | None:
+    return (
+        await session.execute(
+            select(ProcedureConclusion)
+            .where(ProcedureConclusion.procedure_id == procedure_id)
+            .order_by(ProcedureConclusion.created_at.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
+async def get_conclusion(session: AsyncSession, conclusion_id: UUID) -> ProcedureConclusion | None:
+    return (
+        await session.execute(
+            select(ProcedureConclusion).where(ProcedureConclusion.id == conclusion_id)
+        )
+    ).scalar_one_or_none()
+
+
+async def get_selection(session: AsyncSession, selection_id: UUID) -> SelectionRow | None:
+    return (
+        await session.execute(select(SelectionRow).where(SelectionRow.id == selection_id))
+    ).scalar_one_or_none()
+
+
+async def get_population(session: AsyncSession, population_id: UUID) -> PopulationRow | None:
+    return (
+        await session.execute(select(PopulationRow).where(PopulationRow.id == population_id))
+    ).scalar_one_or_none()
+
+
+async def workpaper_versions(
+    session: AsyncSession, procedure_id: UUID
+) -> Sequence[WorkpaperVersion]:
+    """One procedure's versions, oldest first (LIST_EXEMPT, as above)."""
+    return (
+        (
+            await session.execute(
+                select(WorkpaperVersion)
+                .where(WorkpaperVersion.procedure_id == procedure_id)
+                .order_by(WorkpaperVersion.version)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def insert_version(session: AsyncSession, **values: object) -> UUID:
+    version_id = uuid4()
+    await session.execute(insert(WorkpaperVersion).values(id=version_id, **values))
+    return version_id
+
+
+async def signatures_of(
+    session: AsyncSession, version_ids: Sequence[UUID]
+) -> Sequence[WorkpaperSignature]:
+    """Signatures on these versions (LIST_EXEMPT, as above)."""
+    if not version_ids:
+        return []
+    return (
+        (
+            await session.execute(
+                select(WorkpaperSignature)
+                .where(WorkpaperSignature.workpaper_version_id.in_(version_ids))
+                .order_by(WorkpaperSignature.created_at)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def insert_signature(session: AsyncSession, **values: object) -> bool:
+    """False when the version already has this kind of signature."""
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+    made = await session.execute(
+        pg_insert(WorkpaperSignature)
+        .values(**values)
+        .on_conflict_do_nothing()
+        .returning(WorkpaperSignature.kind)
+    )
+    return made.scalar_one_or_none() is not None

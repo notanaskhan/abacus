@@ -499,6 +499,20 @@ ACTIONS: dict[str, dict[str, str]] = {
         "reviewer": "allow",
         "independence": "required",
     },
+    "workpaper.sign_ready": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "independence": "required",
+    },
+    "workpaper.sign_reviewed": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "reviewer": "allow",
+        "independence": "required",
+    },
     "suggestion.resolve": {
         "engagement_partner": "allow",
         "manager": "allow",

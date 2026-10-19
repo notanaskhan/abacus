@@ -1,4 +1,5 @@
-import { listTemplatesOptions, listTemplatesQueryKey } from "@abacus/api-client/query";
+import { FieldworkDefaults } from "./FieldworkDefaults";
+import { listTemplatesOptions, listTemplatesQueryKey, meOptions } from "@abacus/api-client/query";
 import {
   Alert,
   Button,
@@ -22,6 +23,10 @@ import { type Problem, XLSX, uploadWorkbook, workbookProblems } from "./methodol
 /** SPEC-016 AC-6: templates and versions; upload with row-level problems and fresh MFA. */
 export function Methodology(): JSX.Element {
   const templates = useQuery(listTemplatesOptions());
+  const me = useQuery(meOptions());
+  const tenant = me.data?.active_tenant_id ?? null;
+  const firmRole = me.data?.memberships.find((m) => m.tenant_id === tenant)?.firm_role;
+  const canSetDefaults = firmRole === "firm_admin" || firmRole === "practice_leader";
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -79,6 +84,7 @@ export function Methodology(): JSX.Element {
           </Table>
         </div>
       )}
+      <FieldworkDefaults canSet={canSetDefaults} />
     </div>
   );
 }
