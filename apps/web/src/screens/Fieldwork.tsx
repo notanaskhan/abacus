@@ -30,6 +30,7 @@ import {
   AgentText,
   AiTag,
   Alert,
+  Badge,
   Button,
   Label,
   Panel,
@@ -38,6 +39,7 @@ import {
   Table,
   Td,
   Th,
+  type Tone,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
@@ -626,20 +628,24 @@ function ProcedurePanel({
     label: `${v.source} v${String(v.version_no)}`,
   }));
   return (
-    <div className="flex flex-col gap-4">
-      {surl && <SubsequentLedger engagementId={engagementId} canUpload={canRun} />}
-      {surl && <Accounts engagementId={engagementId} canSet={canSet} />}
+    <div className="flex flex-col gap-3">
       {surl && (
-        <Bands
-          engagementId={engagementId}
-          procedureId={p.id}
-          bands={(p.parameters.bands ?? []) as { until_day: number | null; percent: number }[]}
-          thresholds={((p.parameters.thresholds as string[] | undefined) ?? []) satisfies string[]}
-          canSet={canSet}
-        />
+        <div className="grid items-start gap-3 xl:grid-cols-2">
+          <SubsequentLedger engagementId={engagementId} canUpload={canRun} />
+          <Bands
+            engagementId={engagementId}
+            procedureId={p.id}
+            bands={(p.parameters.bands ?? []) as { until_day: number | null; percent: number }[]}
+            thresholds={
+              ((p.parameters.thresholds as string[] | undefined) ?? []) satisfies string[]
+            }
+            canSet={canSet}
+          />
+        </div>
       )}
+      {surl && <Accounts engagementId={engagementId} canSet={canSet} />}
       <Panel
-        title={surl ? "Search for unrecorded liabilities" : "Journal entry testing"}
+        title="Selection"
         action={
           canRun ? (
             <Button
@@ -792,59 +798,168 @@ export function Fieldwork({ engagementId }: { engagementId: string }): JSX.Eleme
   const jet = procedures.data.find((p) => p.definition === "journal_entry_testing");
   const surl = procedures.data.find((p) => p.definition === "unrecorded_liabilities");
   return (
-    <div className="flex flex-col gap-4">
-      <MaterialityPanel engagementId={engagementId} canSet={canSet} />
-      {jet ? (
-        <ProcedurePanel engagementId={engagementId} procedure={jet} role={role} />
-      ) : (
-        <Panel title="Journal entry testing">
-          <div className="flex flex-col gap-2 text-sm">
-            <p className="text-muted">
-              Selects journal entries from the general ledger by risk criteria and a random sample,
-              for your team to test and sign off.
-            </p>
-            {canRun && (
-              <div>
-                <Button
-                  size="sm"
-                  disabled={start.isPending}
-                  onClick={() => {
-                    start.mutate(path);
-                  }}
-                >
-                  Start
-                </Button>
+    <div className="grid items-start gap-3 lg:grid-cols-[264px_minmax(0,1fr)]">
+      <FieldworkRail engagementId={engagementId} jet={jet} surl={surl} />
+      <div className="flex min-w-0 flex-col gap-6">
+        <section id="fw-materiality" className="scroll-mt-[58px]">
+          <MaterialityPanel engagementId={engagementId} canSet={canSet} />
+        </section>
+        <section id="fw-jet" aria-label="Journal entry testing" className="scroll-mt-[58px]">
+          <SectionHeading title="Journal entry testing" procedure={jet} />
+          {jet ? (
+            <ProcedurePanel engagementId={engagementId} procedure={jet} role={role} />
+          ) : (
+            <Panel title="Not started">
+              <div className="flex flex-col gap-2 text-sm">
+                <p className="text-muted">
+                  Selects journal entries from the general ledger by risk criteria and a random
+                  sample, for your team to test and sign off.
+                </p>
+                {canRun && (
+                  <div>
+                    <Button
+                      size="sm"
+                      disabled={start.isPending}
+                      onClick={() => {
+                        start.mutate(path);
+                      }}
+                    >
+                      Start
+                    </Button>
+                  </div>
+                )}
+                {start.isError && <Alert title="Couldn't start">{said(start.error)}</Alert>}
               </div>
-            )}
-            {start.isError && <Alert title="Couldn't start">{said(start.error)}</Alert>}
-          </div>
-        </Panel>
-      )}
-      {surl ? (
-        <ProcedurePanel engagementId={engagementId} procedure={surl} role={role} />
-      ) : (
-        <Panel title="Search for unrecorded liabilities">
-          <div className="flex flex-col gap-2 text-sm">
-            <p className="text-muted">
-              Tests payments made after year end for liabilities that should have been recorded at
-              year end: larger payments by timing band, with a check for a matching bill.
-            </p>
-            {canRun && (
-              <div>
-                <Button
-                  size="sm"
-                  disabled={start.isPending}
-                  onClick={() => {
-                    start.mutate({ ...path, body: { definition: "unrecorded_liabilities" } });
-                  }}
-                >
-                  Start
-                </Button>
+            </Panel>
+          )}
+        </section>
+        <section
+          id="fw-surl"
+          aria-label="Search for unrecorded liabilities"
+          className="scroll-mt-[58px]"
+        >
+          <SectionHeading title="Search for unrecorded liabilities" procedure={surl} />
+          {surl ? (
+            <ProcedurePanel engagementId={engagementId} procedure={surl} role={role} />
+          ) : (
+            <Panel title="Not started">
+              <div className="flex flex-col gap-2 text-sm">
+                <p className="text-muted">
+                  Tests payments made after year end for liabilities that should have been recorded
+                  at year end: larger payments by timing band, with a check for a matching bill.
+                </p>
+                {canRun && (
+                  <div>
+                    <Button
+                      size="sm"
+                      disabled={start.isPending}
+                      onClick={() => {
+                        start.mutate({ ...path, body: { definition: "unrecorded_liabilities" } });
+                      }}
+                    >
+                      Start
+                    </Button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </Panel>
-      )}
+            </Panel>
+          )}
+        </section>
+      </div>
     </div>
+  );
+}
+
+/** A procedure's state in a word (TASK-096). */
+function procedureState(p: ProcedureOut | undefined): { label: string; tone: Tone } {
+  if (p === undefined) return { label: "Not started", tone: "neutral" };
+  if (p.status === "selecting") return { label: "Selecting", tone: "warning" };
+  if (p.status === "failed") return { label: "Needs attention", tone: "danger" };
+  if (p.selection != null)
+    return { label: `${String(p.selection.item_count)} selected`, tone: "success" };
+  return { label: "Set up", tone: "warning" };
+}
+
+function SectionHeading({
+  title,
+  procedure,
+}: {
+  title: string;
+  procedure: ProcedureOut | undefined;
+}): JSX.Element {
+  const state = procedureState(procedure);
+  return (
+    <div className="mb-2.5 flex items-center gap-2.5 px-1">
+      <h2 className="text-[15px] font-medium tracking-[-0.012em]">{title}</h2>
+      <StatusPill tone={state.tone}>{state.label}</StatusPill>
+    </div>
+  );
+}
+
+/** The cockpit's rail (TASK-096, the plan's T2): materiality and each procedure with its state;
+ * a row jumps to its section. */
+function FieldworkRail({
+  engagementId,
+  jet,
+  surl,
+}: {
+  engagementId: string;
+  jet: ProcedureOut | undefined;
+  surl: ProcedureOut | undefined;
+}): JSX.Element {
+  const current = useQuery({
+    ...materialityOptions({ path: { engagement_id: engagementId } }),
+    retry: false,
+  });
+  const m = current.data;
+  const rows: { id: string; title: string; meta: string; state: { label: string; tone: Tone } }[] =
+    [
+      {
+        id: "fw-materiality",
+        title: "Materiality",
+        meta: m == null ? "Not set yet" : `Performance ${money(m.performance)}`,
+        state:
+          m == null ? { label: "To set", tone: "warning" } : { label: "Set", tone: "success" },
+      },
+      {
+        id: "fw-jet",
+        title: "Journal entry testing",
+        meta: "Risk criteria and a random sample",
+        state: procedureState(jet),
+      },
+      {
+        id: "fw-surl",
+        title: "Search for unrecorded liabilities",
+        meta: "Payments after year end",
+        state: procedureState(surl),
+      },
+    ];
+  return (
+    <nav
+      aria-label="Procedures"
+      className="flex flex-col overflow-hidden rounded-pane bg-card shadow-e2 lg:sticky lg:top-[58px]"
+    >
+      <div className="flex h-[46px] items-center border-b-[0.5px] border-hair px-4 text-[14.5px] font-medium tracking-[-0.012em]">
+        Procedures
+      </div>
+      <ul className="flex flex-col p-1.5">
+        {rows.map((r) => (
+          <li key={r.id}>
+            <a
+              href={`#${r.id}`}
+              className="flex flex-col gap-1 rounded-tile px-2.5 py-2 text-ink hover:bg-nav-fill hover:no-underline"
+            >
+              <span className="text-[13px] font-medium">{r.title}</span>
+              <span className="flex items-center justify-between gap-2">
+                <span className="truncate text-[11.5px] text-ink-3">{r.meta}</span>
+                <span className="shrink-0">
+                  <Badge tone={r.state.tone}>{r.state.label}</Badge>
+                </span>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }
