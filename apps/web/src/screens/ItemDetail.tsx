@@ -129,11 +129,13 @@ export function ItemDetail({
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-2xl whitespace-pre-line">{item.description}</h2>
-          <p className="text-sm text-muted">
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-3 px-1">
+        <div className="flex min-w-0 flex-col gap-1">
+          <h2 className="text-[15px] font-medium tracking-[-0.012em] whitespace-pre-line">
+            {item.description}
+          </h2>
+          <p className="text-[12.5px] text-ink-3">
             {item.audit_area}
             {item.retrievability_tier != null && ` · Tier ${item.retrievability_tier}`}
             {item.client_visible === false && " · Hidden from client"}
@@ -142,128 +144,69 @@ export function ItemDetail({
         </div>
         <StatusPill tone={status.tone}>{status.label}</StatusPill>
       </div>
-      {/* SPEC-031 AC-3 (TASK-061): what the client reads about this request. */}
-      <Panel title="Client guidance">
-        <ClientGuidance
-          engagementId={engagementId}
-          item={item}
-          canEdit={myRole !== undefined && DECIDERS.has(myRole)}
-          {...(item.guidance_approved_by != null
-            ? {
-                approver:
-                  team.find((m) => m.user_id === item.guidance_approved_by)?.display_name ??
-                  "your team",
-              }
-            : {})}
-        />
-      </Panel>
-      {/* SPEC-032 (TASK-063 D1): the request's own thread. */}
-      <Panel title="Comments">
-        <CommentThread
-          ids={{ engagementId, itemId }}
-          me={me.data?.user_id}
-          side="firm"
-          canShare={canShare}
-          canRedact={canRedact}
-          label="Comments on this request"
-        />
-      </Panel>
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <Panel
-          title="Evidence"
-          action={
-            myRole !== undefined &&
-            ["open", "received", "needs_revision"].includes(item.status) ? (
-              <UploadForClient
-                engagementId={engagementId}
-                itemId={itemId}
-                itemLabel={item.description}
-                onDone={refresh}
-              />
-            ) : undefined
-          }
-        >
-          {versions.isPending ? (
-            <Skeleton className="h-24" />
-          ) : versions.isError ? (
-            <Alert title="Couldn't load the evidence">{errorMessage(versions.error)}</Alert>
-          ) : list.length === 0 ? (
-            <EmptyState title="No evidence yet">
-              Retrieve it from the client's ledger on the Requests board, or wait for the client to
-              upload it.
-            </EmptyState>
-          ) : (
-            <ol aria-label="Evidence versions" className="flex flex-col gap-2">
-              {list.map((v) => (
-                <li key={v.id}>
-                  <VersionCard
-                    engagementId={engagementId}
-                    version={v}
-                    selected={v.id === shown?.id}
-                    onSelect={() => {
-                      setSelected(v.id);
-                    }}
-                  />
-                </li>
-              ))}
-            </ol>
+      {/* The evidence triad (TASK-095): the evidence and its preview on the left; the decision,
+          the agent's screening and the checks on the right, decision first. */}
+      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+        <div className="flex min-w-0 flex-col gap-3">
+          <Panel
+            title="Evidence"
+            action={
+              myRole !== undefined &&
+              ["open", "received", "needs_revision"].includes(item.status) ? (
+                <UploadForClient
+                  engagementId={engagementId}
+                  itemId={itemId}
+                  itemLabel={item.description}
+                  onDone={refresh}
+                />
+              ) : undefined
+            }
+          >
+            {versions.isPending ? (
+              <Skeleton className="h-24" />
+            ) : versions.isError ? (
+              <Alert title="Couldn't load the evidence">{errorMessage(versions.error)}</Alert>
+            ) : list.length === 0 ? (
+              <EmptyState title="No evidence yet">
+                Retrieve it from the client's ledger on the Requests board, or wait for the client
+                to upload it.
+              </EmptyState>
+            ) : (
+              <ol aria-label="Evidence versions" className="flex flex-col gap-2">
+                {list.map((v) => (
+                  <li key={v.id}>
+                    <VersionCard
+                      engagementId={engagementId}
+                      version={v}
+                      selected={v.id === shown?.id}
+                      onSelect={() => {
+                        setSelected(v.id);
+                      }}
+                    />
+                  </li>
+                ))}
+              </ol>
+            )}
+          </Panel>
+          {shown !== undefined && (
+            <>
+              {/* SPEC-029 AC-12 (TASK-056): look without downloading. */}
+              <Panel title="Preview">
+                <EvidencePreview
+                  source={{
+                    kind: "upload",
+                    engagementId,
+                    itemId,
+                    versionId: shown.id,
+                  }}
+                  openAtPage={previewPage}
+                />
+              </Panel>
+            </>
           )}
-        </Panel>
+        </div>
         {shown !== undefined && (
-          <div className="flex flex-col gap-4">
-            {/* SPEC-029 AC-11 (TASK-057): what code found, and what the request expects. */}
-            <Panel
-              title="Checks"
-              action={
-                myRole !== undefined && DECIDERS.has(myRole) ? (
-                  <DocumentKindSelect engagementId={engagementId} item={item} />
-                ) : undefined
-              }
-            >
-              <FirmChecksPanel ids={{ engagementId, itemId, versionId: shown.id }} />
-            </Panel>
-            {/* SPEC-032 AC-1 (TASK-063): a thread per version, beside its other panels. */}
-            <Panel title="Comments on this version">
-              <CommentThread
-                key={shown.id}
-                ids={{ engagementId, itemId, versionId: shown.id }}
-                me={me.data?.user_id}
-                side="firm"
-                canShare={canShare}
-                canRedact={canRedact}
-                label="Comments on this version"
-              />
-            </Panel>
-            {/* SPEC-030 AC-6 (TASK-059): the upload reviewer's flags, firm only. */}
-            <Panel title="AI review">
-              <AIReviewPanel
-                engagementId={engagementId}
-                versionId={shown.id}
-                canRequest={myRole !== undefined && DECIDERS.has(myRole)}
-                onOpenPage={setPreviewPage}
-              />
-            </Panel>
-            {/* SPEC-029 AC-12 (TASK-056): look without downloading. */}
-            <Panel title="Preview">
-              <EvidencePreview
-                source={{
-                  kind: "upload",
-                  engagementId,
-                  itemId,
-                  versionId: shown.id,
-                }}
-                openAtPage={previewPage}
-              />
-            </Panel>
-            <Screening
-              result={resultFor(shown.id)}
-              loading={screening.isPending}
-              screenNow={
-                shown.method === "retrieved" && myRole !== undefined ? (
-                  <ScreenNow engagementId={engagementId} versionId={shown.id} />
-                ) : null
-              }
-            />
+          <div className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-[58px]">
             <Panel title="Decision">
               {shown.decision !== null ? (
                 <p className="text-sm">
@@ -288,8 +231,77 @@ export function ItemDetail({
                 <p className="text-sm text-muted">Awaiting review.</p>
               )}
             </Panel>
+            <Screening
+              result={resultFor(shown.id)}
+              loading={screening.isPending}
+              screenNow={
+                shown.method === "retrieved" && myRole !== undefined ? (
+                  <ScreenNow engagementId={engagementId} versionId={shown.id} />
+                ) : null
+              }
+            />
+            {/* SPEC-029 AC-11 (TASK-057): what code found, and what the request expects. */}
+            <Panel
+              title="Checks"
+              action={
+                myRole !== undefined && DECIDERS.has(myRole) ? (
+                  <DocumentKindSelect engagementId={engagementId} item={item} />
+                ) : undefined
+              }
+            >
+              <FirmChecksPanel ids={{ engagementId, itemId, versionId: shown.id }} />
+            </Panel>
+            {/* SPEC-030 AC-6 (TASK-059): the upload reviewer's flags, firm only. */}
+            <Panel title="AI review">
+              <AIReviewPanel
+                engagementId={engagementId}
+                versionId={shown.id}
+                canRequest={myRole !== undefined && DECIDERS.has(myRole)}
+                onOpenPage={setPreviewPage}
+              />
+            </Panel>
+            {/* SPEC-032 AC-1 (TASK-063): a thread per version, beside its other panels. */}
+            <Panel title="Comments on this version">
+              <CommentThread
+                key={shown.id}
+                ids={{ engagementId, itemId, versionId: shown.id }}
+                me={me.data?.user_id}
+                side="firm"
+                canShare={canShare}
+                canRedact={canRedact}
+                label="Comments on this version"
+              />
+            </Panel>
           </div>
         )}
+      </div>
+      <div className="grid items-start gap-3 lg:grid-cols-2">
+        {/* SPEC-031 AC-3 (TASK-061): what the client reads about this request. */}
+        <Panel title="Client guidance">
+          <ClientGuidance
+            engagementId={engagementId}
+            item={item}
+            canEdit={myRole !== undefined && DECIDERS.has(myRole)}
+            {...(item.guidance_approved_by != null
+              ? {
+                  approver:
+                    team.find((m) => m.user_id === item.guidance_approved_by)?.display_name ??
+                    "your team",
+                }
+              : {})}
+          />
+        </Panel>
+        {/* SPEC-032 (TASK-063 D1): the request's own thread. */}
+        <Panel title="Comments">
+          <CommentThread
+            ids={{ engagementId, itemId }}
+            me={me.data?.user_id}
+            side="firm"
+            canShare={canShare}
+            canRedact={canRedact}
+            label="Comments on this request"
+          />
+        </Panel>
       </div>
     </div>
   );
@@ -334,12 +346,16 @@ function VersionCard({
   };
   return (
     <div
-      className={`flex flex-col gap-1 rounded-[var(--radius-control)] border p-3 text-sm ${
-        selected ? "border-stroke bg-sel-bg" : "border-line"
+      className={`flex flex-col gap-1 rounded-nested border p-3 text-[12.5px] ${
+        selected ? "border-stroke bg-shell" : "border-line"
       }`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <button type="button" className="font-semibold hover:underline" onClick={onSelect}>
+        <button
+          type="button"
+          className="text-[13px] font-medium hover:underline"
+          onClick={onSelect}
+        >
           Version {v.version_no}
         </button>
         <Button size="sm" variant="outline" disabled={busy} onClick={() => void save()}>
@@ -361,9 +377,11 @@ function VersionCard({
       </p>
       {v.note != null && <p className="text-xs text-muted">{v.note}</p>}
       {v.file_name !== null && <p className="break-all">{v.file_name}</p>}
-      <p className="text-xs text-muted tabular-nums">
-        {when(v.created_at)} · {size(v.size_bytes)} · {v.media_type} ·{" "}
-        <span title={v.fingerprint}>{v.fingerprint.slice(0, 12)}</span>
+      <p className="text-[11.5px] text-ink-3 tabular-nums">
+        {when(v.created_at)} · {size(v.size_bytes)} · {fileKind(v.media_type)} ·{" "}
+        <span className="font-mono" title={`SHA-256 ${v.fingerprint}`}>
+          {v.fingerprint.slice(0, 12)}
+        </span>
       </p>
       {v.decision !== null && (
         <p className="text-xs">{DECISION_LABEL[v.decision.decision] ?? v.decision.decision}</p>
@@ -600,6 +618,16 @@ const IMPORT_SYSTEMS: Record<string, string> = {
   import_qbo_tb_csv: "a QuickBooks Online",
   import_xero_tb_xlsx: "a Xero",
 };
+
+/** A file type a person reads, not a media type. */
+function fileKind(mediaType: string): string {
+  if (mediaType.includes("spreadsheetml") || mediaType.includes("ms-excel")) return "Excel";
+  if (mediaType === "text/csv") return "CSV";
+  if (mediaType === "application/pdf") return "PDF";
+  if (mediaType.includes("wordprocessingml") || mediaType === "application/msword") return "Word";
+  if (mediaType.startsWith("image/")) return "Image";
+  return mediaType;
+}
 
 function importedSystem(source: string): string {
   return IMPORT_SYSTEMS[source] ?? "an accounting system";

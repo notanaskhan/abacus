@@ -18,6 +18,9 @@ const REASONS: Record<string, string> = {
   empty: "This file has no pages.",
 };
 
+// A figure, aligned right as in a ledger (TASK-095); the text itself is never changed.
+const NUMERIC = /^\(?-?[\d,]+(\.\d+)?\)?$/;
+
 function usePreview(source: PreviewSource) {
   const pending = (data: PreviewOut | undefined): number | false =>
     data?.kind === "pending" ? 3000 : false;
@@ -178,7 +181,12 @@ export function EvidencePreview({
               {rows.slice(1).map((row, r) => (
                 <tr key={r}>
                   {row.map((cell, n) => (
-                    <Td key={n} className="whitespace-pre-wrap">
+                    <Td
+                      key={n}
+                      className={
+                        NUMERIC.test(cell) ? "text-right tabular-nums" : "whitespace-pre-wrap"
+                      }
+                    >
                       {cell}
                     </Td>
                   ))}
