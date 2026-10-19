@@ -14,6 +14,7 @@ from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from decimal import Decimal
+from pathlib import Path
 from typing import cast
 
 import httpx
@@ -31,7 +32,7 @@ from abacus.modules.agents.api import (
 from abacus.modules.identity.api import configure_verifier, reset_verifier
 from abacus_tools.fakes.identity import FakeIdentityProvider
 
-from .support import Person, Seeder, World, retrieve, uploaded_version
+from .support import Person, Seeder, World, make_world, retrieve, uploaded_version
 
 Json = dict[str, object]
 ROLES = ["engagement_partner", "manager", "senior", "staff", "reviewer"]
@@ -45,6 +46,7 @@ VERSION_KEYS = {
     "period_start",
     "period_end",
     "created_at",
+    "problems",  # SPEC-029 (TASK-057): the version's mechanical check problems
 }
 RESULT_KEYS = {
     "id",
@@ -66,7 +68,8 @@ ITEM_KEYS = {
     "created_at",
     "evidence_version_id",
     # Added by later specs: SPEC-008 (tier), SPEC-020 (client visibility and assignee),
-    # SPEC-022 (dataset, tier source, availability), SPEC-027 (due date).
+    # SPEC-022 (dataset, tier source, availability), SPEC-027 (due date), SPEC-029 (document
+    # kind), SPEC-031 (client hub fields), SPEC-032 (comment counts), SPEC-035 (guidance).
     "retrievability_tier",
     "client_visible",
     "client_assignee_user_id",
@@ -74,6 +77,17 @@ ITEM_KEYS = {
     "tier_source",
     "available",
     "due_on",
+    "document_kind",
+    "document_kind_source",
+    "why",
+    "good_looks_like",
+    "still_needed",
+    "blocks_fieldwork",
+    "effort",
+    "comment_count",
+    "unread_comments",
+    "guidance_source",
+    "guidance_approved_by",
 }
 FORBIDDEN_WORDS = ("content", "storage", "key", "fingerprint", "sha256", "size_bytes", "tenant")
 READS = ["request-items", "evidence-versions", "screening-results"]
@@ -117,6 +131,18 @@ class Api:
 @pytest.fixture
 def api(http: httpx.AsyncClient, idp: FakeIdentityProvider, seed: Seeder) -> Api:
     return Api(http, idp, seed)
+
+
+@pytest.fixture
+async def world(seed: Seeder, fake_dir: Path) -> World:
+    """The firm's screener is live: a shadow run's results are never read (SPEC-036 AC-5)."""
+    found = await make_world(seed, fake_dir)
+    await seed.run(
+        "INSERT INTO agent_stages (tenant_id, agent_id, stage, changed_by, note) "
+        "VALUES ($1, 'evidence.screener', 'live', 'test-seed', 'promoted for the board reads')",
+        found.tenant_id,
+    )
+    return found
 
 
 class Provider:

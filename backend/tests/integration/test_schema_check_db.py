@@ -1082,11 +1082,17 @@ def test_ac20_update_limited_to_the_declared_column_passes(
 def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     assert {
         "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),  # TASK-016
-        "engagements": frozenset({"status", "methodology_version_id"}),  # SPEC-008: pinned once
+        "engagements": frozenset(
+            {"status", "methodology_version_id"}  # SPEC-008: pinned once
+            | {"ai_excluded_at", "ai_excluded_by", "ai_excluded_reason"}  # SPEC-036 (TASK-076)
+        ),
         "request_items": frozenset(
             {"status", "client_visible", "client_assignee_user_id"}  # SPEC-015, SPEC-016
             | {"retrievability_tier", "dataset", "tier_source", "tier_rule"}  # SPEC-022
             | {"due_on"}  # SPEC-027 (TASK-051)
+            | {"document_kind", "document_kind_source"}  # SPEC-029 (TASK-055)
+            | {"why", "good_looks_like", "still_needed", "blocks_fieldwork", "effort"}  # TASK-060
+            | {"guidance_source", "guidance_approved_by"}  # SPEC-035 (TASK-073)
         ),
         # TASK-019: who has taken a queued version (take, release, reassign).
         "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
@@ -1103,6 +1109,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"require_letter"}  # SPEC-025 (TASK-044)
             | {"agents_paused_at", "agents_paused_by"}  # SPEC-027 (TASK-050)
             | {"time_zone"}  # SPEC-027 (TASK-051)
+            | {"drafted_guidance_to_clients"}  # SPEC-035 (TASK-073)
+            | {"ai_client_data_at", "ai_client_data_by", "ai_client_data_material"}  # TASK-076
         ),
         "engagement_agents": frozenset(  # SPEC-027 (TASK-050, TASK-051)
             {"paused_at", "paused_by", "reason", "updated_at", "self_paused_reason"}
@@ -1144,6 +1152,11 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"failure_code", "finished_at"}
             | {"queued_reason", "estimated_start_at"}  # TASK-018b
         ),
+        "comment_reads": frozenset({"last_read_at"}),  # SPEC-032 (TASK-062)
+        "gl_imports": frozenset(  # SPEC-034 (TASK-069)
+            {"status", "gl_snapshot_id", "line_count", "failure_code", "failure_details"}
+            | {"updated_at"}
+        ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -1171,6 +1184,9 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     assert sc.APP_INSERT_COLUMNS["agent_runs"] == frozenset(
         {"id", "tenant_id", "agent_id", "spec_version", "engagement_id", "evidence_version_id"}
         | {"initiator_user_id", "source_event_id", "task_scope"}
+        | {"inbox_file_id"}  # SPEC-033 (TASK-066): the matcher's file
+        | {"methodology_version_id"}  # SPEC-035 Q3 (TASK-074): a firm-level run's version
+        | {"shadow"}  # SPEC-036 (TASK-076): started in shadow
     )
     assert sc.APP_INSERT_COLUMNS["screening_results"] == frozenset(
         {"id", "tenant_id", "engagement_id", "evidence_version_id", "agent_run_id", "action"}
@@ -1181,6 +1197,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         | {"prompt_version", "model", "tier", "input_tokens", "output_tokens", "cost_usd"}
         | {"outcome", "inputs_hash"}
         | {"route"}  # SPEC-010 (TASK-025, migration 0021): the model route used
+        | {"terms_version", "boundary_basis"}  # SPEC-036 (TASK-075, migration 0055)
     )
     assert {"ledger_snapshots", "trial_balance_lines", "fulfilments"} <= sc.INSERT_ONLY_TABLES
     assert {"screening_results", "usage_records"} <= sc.INSERT_ONLY_TABLES
@@ -1196,6 +1213,9 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         {"id", "tenant_id", "engagement_id", "request_list_id", "description", "audit_area"}
         | {"created_by"}
         | {"retrievability_tier", "dataset", "tier_source", "tier_rule"}  # SPEC-022
+        | {"document_kind", "document_kind_source"}  # SPEC-029 (TASK-055)
+        | {"why", "good_looks_like", "blocks_fieldwork", "effort", "guidance_source"}  # SPEC-031
+        | {"guidance_approved_by"}  # SPEC-035 (TASK-074)
     )
     assert sc.APP_INSERT_COLUMNS["engagement_members"] == frozenset(
         {"tenant_id", "engagement_id", "user_id", "role"}
@@ -1254,6 +1274,9 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "trial_balance_lines": LEDGER_FUNCTION,
         "review_decisions": "review_decisions_immutable",  # TASK-019 (ADR-004)
         "eval_case_results": "eval_case_results_immutable",  # TASK-020
+        "gl_snapshots": LEDGER_FUNCTION,  # SPEC-034 (TASK-069)
+        "gl_account_balances": LEDGER_FUNCTION,
+        "gl_entries": LEDGER_FUNCTION,
     }
     assert _evidence_problems(evidence) == []
 
