@@ -60,6 +60,17 @@ ITEM_KEYS = {
     "tier_source",
     "available",
     "due_on",  # SPEC-027 (TASK-051)
+    "document_kind",  # SPEC-029 (TASK-055)
+    "document_kind_source",
+    "why",  # SPEC-031 (TASK-060): what the client reads, and how the firm plans the item
+    "good_looks_like",
+    "still_needed",
+    "blocks_fieldwork",
+    "effort",
+    "comment_count",  # SPEC-032 (TASK-062)
+    "unread_comments",
+    "guidance_source",  # SPEC-035 (TASK-073)
+    "guidance_approved_by",
 }
 ALL_ROLES = ["engagement_partner", "manager", "senior", "staff", "reviewer"]
 

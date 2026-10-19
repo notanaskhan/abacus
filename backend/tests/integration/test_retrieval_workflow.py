@@ -627,7 +627,11 @@ async def test_ac10_audit_events_and_outbox_are_as_after_the_pipeline(
     outbox = await seed.rows(
         "SELECT event_type FROM outbox WHERE tenant_id = $1 ORDER BY seq", world.tenant_id
     )
-    assert [str(r["event_type"]) for r in outbox] == ["evidence_version.created"]
+    # SPEC-034 (TASK-069): a new snapshot also wakes general ledgers waiting for it.
+    assert [str(r["event_type"]) for r in outbox] == [
+        "ledger_snapshot.recorded",
+        "evidence_version.created",
+    ]
 
 
 # --- AC-11: failures decided by the data ---------------------------------------------------------

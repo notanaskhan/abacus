@@ -244,8 +244,13 @@ async def test_ac20_the_relay_continues_the_trace_into_the_screening_workflow(
     flow = await _flow(temporal, world)
     names = [s.name for s in flow.spans]
     assert any(n.startswith("RunWorkflow:") and "screening" in n for n in names)
-    [publish] = [s for s in flow.spans if s.name == "outbox.publish"]
-    assert (publish.attributes or {})["outbox.event_type"] == EVIDENCE_VERSION_CREATED
+    # SPEC-034 (TASK-069): the snapshot's `ledger_snapshot.recorded` is published too.
+    [publish] = [
+        s
+        for s in flow.spans
+        if s.name == "outbox.publish"
+        and (s.attributes or {}).get("outbox.event_type") == EVIDENCE_VERSION_CREATED
+    ]
     assert (publish.attributes or {})["tenant.id"] == str(world.tenant_id)
     ids = {tracing_support.span_hex(s) for s in flow.spans}
     assert publish.parent is not None

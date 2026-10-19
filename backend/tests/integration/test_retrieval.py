@@ -998,7 +998,8 @@ async def test_ac10_the_outbox_announces_the_new_version(seed: Seeder, world: Wo
             "SELECT event_type FROM outbox WHERE tenant_id = $1 ORDER BY seq", world.tenant_id
         )
     ]
-    assert types == ["evidence_version.created"]
+    # SPEC-034 (TASK-069): a new snapshot also wakes general ledgers waiting for it.
+    assert types == ["ledger_snapshot.recorded", "evidence_version.created"]
 
 
 # --- idempotency and quiet repeats (§12) -----------------------------------------------------
@@ -1018,8 +1019,9 @@ async def test_ac20_every_stage_repeated_after_success_returns_the_recorded_resu
     assert await run_pipeline(system) == result
     assert await seed.count("audit_events", world.tenant_id) == before
     assert await seed.actions(world.tenant_id) == EXPECTED_EVENTS
-    for table in ("ledger_snapshots", "evidence_versions", "fulfilments", "outbox"):
+    for table in ("ledger_snapshots", "evidence_versions", "fulfilments"):
         assert await seed.count(table, world.tenant_id) == 1
+    assert await seed.count("outbox", world.tenant_id) == 2  # SPEC-034 (TASK-069): + recorded
 
 
 async def test_ac20_pull_raw_pulls_at_most_once_per_run(seed: Seeder, world: World) -> None:
