@@ -6,7 +6,7 @@ id: ADR-XXX
 title: <Decision in a few words>
 status: proposed         # proposed | accepted | superseded by ADR-YYY | deprecated
 date: YYYY-MM-DD
-deciders: <names>
+deciders: <GitHub handles: notanaskhan, ayushkbhatia>
 risk_zone: amber         # green | amber | red
 ---
 

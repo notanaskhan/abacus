@@ -349,3 +349,113 @@ def test_ac20_index_link_mismatch_is_reported(pack: Write) -> None:
 def test_ac20_missing_policy_file_is_reported(pack: Write, tmp_path: Path) -> None:
     (tmp_path / "docs" / "architecture" / "dependency-allowlist.yaml").unlink()
     assert _only(vd.validate()) == "docs/architecture: dependency-allowlist.yaml is missing"
+
+
+# --- number blocks and deciders (F-01-T10) ----------------------------------------------------
+
+
+def _adr(number: int, deciders: str = "notanaskhan", zone: str = "amber") -> str:
+    return ADR.replace("ADR-001", f"ADR-{number:03d}").replace(
+        "deciders: Founder\nrisk_zone: amber", f"deciders: {deciders}\nrisk_zone: {zone}"
+    )
+
+
+def _index(*numbers: int) -> str:
+    rows = "".join(
+        f"| [ADR-{n:03d}](ADR-{n:03d}-x.md) | Decision | amber | accepted |\n" for n in numbers
+    )
+    return ADR_INDEX + rows
+
+
+def _task(number: int) -> str:
+    return TASK.replace("TASK-001", f"TASK-{number:03d}")
+
+
+@pytest.mark.parametrize(
+    ("doc_id", "owner"),
+    [
+        ("ADR-115", None),
+        ("ADR-116", "notanaskhan"),
+        ("ADR-199", "notanaskhan"),
+        ("ADR-200", "ayushkbhatia"),
+        ("ADR-299", "ayushkbhatia"),
+        ("ADR-300", None),
+        ("SPEC-036", None),
+        ("SPEC-037", "notanaskhan"),
+        ("SPEC-100", "ayushkbhatia"),
+        ("SPEC-200", None),
+        ("TASK-076", None),
+        ("TASK-077", "notanaskhan"),
+        ("TASK-499", "notanaskhan"),
+        ("TASK-500", "ayushkbhatia"),
+        ("TASK-999", "ayushkbhatia"),
+    ],
+)
+def test_each_id_belongs_to_its_block(doc_id: str, owner: str | None) -> None:
+    assert vd.block_owner(doc_id) == owner
+
+
+@pytest.mark.parametrize("number", [116, 150, 299])
+def test_an_adr_inside_a_block_passes(pack: Write, number: int) -> None:
+    pack(f"docs/adr/ADR-{number:03d}-x.md", _adr(number))
+    pack("docs/adr/README.md", _index(number))
+    assert vd.validate() == []
+
+
+def test_an_adr_outside_every_block_is_refused(pack: Write) -> None:
+    pack("docs/adr/ADR-300-x.md", _adr(300))
+    pack("docs/adr/README.md", _index(300))
+    assert any("ADR-300 is outside every number block" in e for e in vd.validate())
+
+
+def test_a_spec_outside_every_block_is_refused(pack: Write) -> None:
+    pack("docs/specs/SPEC-250-x.md", SPEC.replace("SPEC-001", "SPEC-250"))
+    assert any("SPEC-250 is outside every number block" in e for e in vd.validate())
+
+
+@pytest.mark.parametrize("number", [77, 499, 500, 999])
+def test_a_task_inside_a_block_passes(pack: Write, number: int) -> None:
+    pack(f"work/tasks/TASK-{number:03d}-x.md", _task(number))
+    assert vd.validate() == []
+
+
+def test_two_tasks_taking_one_number_are_refused(pack: Write) -> None:
+    pack("work/tasks/TASK-077-mine.md", _task(77))
+    pack("work/tasks/TASK-077-theirs.md", _task(77))
+    assert any("duplicate id 'TASK-077'" in e for e in vd.validate())
+
+
+@pytest.mark.parametrize(
+    "deciders",
+    [
+        "notanaskhan",
+        "ayushkbhatia",
+        "notanaskhan, ayushkbhatia",
+        "[notanaskhan]",
+        "'@notanaskhan'",
+    ],
+)
+def test_a_new_adr_names_founder_handles(pack: Write, deciders: str) -> None:
+    pack("docs/adr/ADR-140-x.md", _adr(140, deciders))
+    pack("docs/adr/README.md", _index(140))
+    assert vd.validate() == []
+
+
+@pytest.mark.parametrize("deciders", ["Founder", "notanaskhan, Founder", "someone"])
+def test_a_new_adr_without_handles_is_refused(pack: Write, deciders: str) -> None:
+    pack("docs/adr/ADR-140-x.md", _adr(140, deciders))
+    pack("docs/adr/README.md", _index(140))
+    assert any("ADR-140-x.md: deciders must be GitHub handles" in e for e in vd.validate())
+
+
+def test_legacy_adrs_keep_their_deciders(pack: Write) -> None:
+    pack("docs/adr/ADR-115-x.md", _adr(115, "Founder"))
+    pack("docs/adr/ADR-131-x.md", _adr(131, "Founder", "red"))
+    pack(
+        "docs/adr/README.md",
+        _index(115, 131).replace(
+            "| [ADR-131](ADR-131-x.md) | Decision | amber |",
+            "| [ADR-131](ADR-131-x.md) | Decision | red |",
+        ),
+    )
+    assert vd.validate() == []
