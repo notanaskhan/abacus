@@ -56,6 +56,20 @@ PROTECTED = [
 # Protected only once they exist: new files allowed, edits to existing files need approval.
 PROTECTED_IF_EXISTS = ["docs/adr/ADR-*.md", "backend/migrations/versions/*"]
 
+# Generated: never hand-edited, even with an approval; regenerate instead (F-01-T09).
+# (pattern, the command that regenerates it)
+GENERATED = [
+    ("packages/api-client/openapi.json", "make generate"),
+    ("packages/api-client/src/**", "make generate"),
+    ("**/_matrix.py", "python -m abacus_tools.codegen.permission_matrix"),
+    ("**/_flags.py", "python -m abacus_tools.codegen.feature_flags"),
+    ("**/_provider_terms.py", "python -m abacus_tools.codegen.provider_terms"),
+    ("**/_specs.py", "python -m abacus_tools.codegen.agent_specs"),
+    ("**/_eval_suites.py", "python -m abacus_tools.codegen.eval_suites"),
+    ("backend/tests/durations.json", "python -m abacus_tools.ci.shard --record <report>"),
+    ("backend/tests/workflows/histories/*.json", "the workflow's replay recorder (abacus_tools.workflows)"),
+]
+
 _TOP_KEY = re.compile(r"^([A-Za-z_]+):\s*(.*)$")
 _LIST_ITEM = re.compile(r"^\s+-\s+(.+)$")
 
@@ -140,6 +154,9 @@ def violation(path: str) -> str | None:
         return f"{path} is outside the project."
     if _match(r, ["work/approvals/**"]):
         return "Approval files can only be created by the founder, by hand."
+    for pattern, command in GENERATED:
+        if _match(r, [pattern]):
+            return f"{r} is generated; never edit it by hand. Regenerate it: {command} (or make regenerate)."
     if _match(r, PROTECTED) and not approved(r):
         return f"{r} is a protected path. Ask the founder for an approval file in work/approvals/."
     if _match(r, PROTECTED_IF_EXISTS) and os.path.exists(os.path.join(ROOT, r)) and not approved(r):

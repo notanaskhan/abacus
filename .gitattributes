@@ -1,0 +1,11 @@
+# Generated files (F-01-T09): collapsed in PR diffs. Never hand-edit or hand-merge them; run
+# `make regenerate` (workflow replay histories: re-record with the workflow's recorder).
+packages/api-client/openapi.json linguist-generated=true
+packages/api-client/src/** linguist-generated=true
+backend/src/abacus/modules/identity/authz/_matrix.py linguist-generated=true
+backend/src/abacus/kernel/_flags.py linguist-generated=true
+backend/src/abacus/kernel/_provider_terms.py linguist-generated=true
+backend/src/abacus/modules/agents/specs/_specs.py linguist-generated=true
+backend/src/abacus/ai_gateway/_eval_suites.py linguist-generated=true
+backend/tests/durations.json linguist-generated=true
+backend/tests/workflows/histories/*.json linguist-generated=true

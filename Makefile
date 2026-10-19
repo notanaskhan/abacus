@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: setup dev seed e2e check-fast check check-generated check-heads ci-unit ci-integration ci-coverage ci-contracts ci-frontend test test-integration evals generate migrate loadtest seed-staging route-parity flag access-review
+.PHONY: setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard ci-unit ci-integration ci-coverage ci-contracts ci-frontend test test-integration evals generate migrate loadtest seed-staging route-parity flag access-review
 
 setup:
 	cd backend && uv sync --locked
@@ -29,7 +29,7 @@ dev:
 	while kill -0 $$oidc $$api $$worker $$web 2>/dev/null; do sleep 1; done
 
 # Dev firm and users for local sign-in; run again after creating an engagement to connect it.
-seed:
+seed: db-guard
 	mkdir -p backend/.local/fake-connector
 	cd backend && $(LOCAL_ENV) uv run python -m abacus_tools.local.seed_dev
 
@@ -57,6 +57,16 @@ check-generated:
 		uv run python -m abacus_tools.codegen.$$g --check || { \
 			echo "generated file out of date: run python -m abacus_tools.codegen.$$g"; exit 1; }; \
 	done
+
+# Every generated file, rebuilt from its source. Resolve a conflict in one by running this, never
+# by picking a side (F-01-T09). Workflow replay histories are re-recorded per workflow instead.
+regenerate:
+	cd backend && for g in $(GENERATORS); do uv run python -m abacus_tools.codegen.$$g || exit 1; done
+	$(MAKE) generate
+
+# Local database targets refuse hosted databases (F-01-T09).
+db-guard:
+	@cd backend && uv run python -m abacus_tools.local.db_guard
 
 # One migration head (F-01-T06): two migrations sharing a down_revision fail here.
 check-heads:
@@ -131,11 +141,11 @@ generate:
 	pnpm -C packages/api-client exec openapi-ts
 	pnpm -C packages/api-client build:types
 
-migrate:
+migrate: db-guard
 	cd backend && uv run alembic upgrade head
 
-loadtest:
+loadtest: db-guard
 	cd backend && uv run python -m abacus_tools.loadtest.run --profile $(PROFILE)
 
-seed-staging:
+seed-staging: db-guard
 	cd backend && uv run python -m abacus_tools.synthetic.seed --profile $(PROFILE)

@@ -16,13 +16,19 @@
       {
         "matcher": "Edit|MultiEdit|Write",
         "hooks": [
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/protect_paths.py\"" }
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/protect_paths.py\""
+          }
         ]
       },
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_bash.py\"" }
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_bash.py\""
+          }
         ]
       }
     ],
@@ -30,7 +36,20 @@
       {
         "matcher": "Edit|MultiEdit|Write",
         "hooks": [
-          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/format_on_edit.sh\"" }
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/format_on_edit.sh\""
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/session_context.py\""
+          }
         ]
       }
     ]
