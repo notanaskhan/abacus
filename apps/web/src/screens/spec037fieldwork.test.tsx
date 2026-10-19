@@ -71,6 +71,7 @@ function tab(role: string, extra = {}) {
     [`GET ${BASE}/procedures/${P}/items`]: () => json([ITEM]),
     [`GET ${BASE}/procedures/${P}/workpaper`]: () => json(DRAFT),
     [`GET ${BASE}/evidence-versions`]: () => json([]),
+    [`GET ${BASE}/procedures/${P}/assessments`]: () => json([]),
     ...extra,
   });
   renderRoutes([{ path: "/", component: () => <Fieldwork engagementId={E} /> }]);
@@ -166,5 +167,53 @@ describe("ac7 states", () => {
   it("asks for materiality when it isn't set", async () => {
     tab("staff", { [`GET ${BASE}/materiality`]: () => json(null) });
     expect(await screen.findByText(/Not set yet/)).toBeTruthy();
+  });
+});
+
+describe("task-085 the entry assessor", () => {
+  it("shows the AI proposal beside the entry, tagged, with its citations", async () => {
+    tab("staff", {
+      [`GET ${BASE}/procedures/${P}/assessments`]: () =>
+        json([
+          {
+            selected_item_id: "i1",
+            verdict: "explained",
+            rationale: "The memo shows the accrual and the CFO's approval.",
+            citations: [
+              {
+                document: "D1",
+                claim: "amount",
+                page: 1,
+                quote: "$43,210.09",
+                verified: true,
+                amount_matches: true,
+              },
+            ],
+            created_at: "2026-10-19T12:00:00Z",
+          },
+        ]),
+    });
+    expect(await screen.findByText("AI: the support explains it")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Why" }));
+    expect(screen.getByText(/CFO's approval/)).toBeTruthy();
+    expect(screen.getByLabelText<HTMLSelectElement>("Result for TE-YE").value).toBe("");
+  });
+
+  it("starts assessments and says the team still decides", async () => {
+    const { calls } = tab("staff", {
+      [`POST ${BASE}/procedures/${P}/assess`]: () => json({ items: ["i1"] }, 202),
+    });
+    fireEvent.click(await screen.findByRole("button", { name: "Assess with AI" }));
+    expect(await screen.findByText(/your team still records every result/)).toBeTruthy();
+    expect(calls.some((c) => c.path.endsWith("/assess"))).toBe(true);
+  });
+
+  it("explains when AI assessment isn't available", async () => {
+    tab("staff", {
+      [`POST ${BASE}/procedures/${P}/assess`]: () =>
+        json({ detail: "ai_assessor_unavailable" }, 409),
+    });
+    fireEvent.click(await screen.findByRole("button", { name: "Assess with AI" }));
+    expect(await screen.findByText("AI assessment isn't available here.")).toBeTruthy();
   });
 });

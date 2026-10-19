@@ -795,6 +795,7 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/fieldwork/repository.py", "support_requested"),
         ("src/abacus/modules/fieldwork/repository.py", "workpaper_versions"),
         ("src/abacus/modules/fieldwork/repository.py", "signatures_of"),
+        ("src/abacus/modules/fieldwork/repository.py", "support_request_ids"),  # TASK-085
         # Methodology templates are firm-wide (SPEC-008): read after `authorise` on the firm
         # (`methodology.read`) or by a caller authorised on the engagement; no engagement rows.
         ("src/abacus/modules/engagements/repository.py", "list_templates"),
@@ -968,6 +969,7 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "agents": frozenset(
         {"identity", "engagements", "organisations", "evidence", "requests", "ledger"}
         | {"communications"}
+        | {"fieldwork"}  # SPEC-037 Q4 (TASK-085 D3): the entry assessor reads selected entries
     ),
     # The outbound scope checker reads each owner's facts through its API (SPEC-006, TASK-021 D2).
     # SPEC-032 (TASK-062 D1): it registers itself as the check on comments shared with a client.

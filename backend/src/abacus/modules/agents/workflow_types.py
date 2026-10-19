@@ -168,3 +168,21 @@ class NextTickInput:
     """SPEC-027 (TASK-051): whose time zone sets the agent's daily tick."""
 
     tenant_id: str
+
+
+@dataclass(frozen=True)
+class EntryAssessInput:
+    """SPEC-037 Q4 (TASK-085): one entry assessor run on a selected entry, for `requested_by`."""
+
+    tenant_id: str
+    engagement_id: str
+    selected_item_id: str
+    event_id: str
+    requested_by: str
+
+
+@dataclass(frozen=True)
+class EntryAssessRunInput:
+    tenant_id: str
+    run_id: str
+    selected_item_id: str

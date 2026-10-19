@@ -800,6 +800,96 @@
         "title": "AreaOut",
         "type": "object"
       },
+      "AssessIn": {
+        "additionalProperties": false,
+        "properties": {
+          "item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 200,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Item Ids"
+          }
+        },
+        "title": "AssessIn",
+        "type": "object"
+      },
+      "AssessStartedOut": {
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "AssessStartedOut",
+        "type": "object"
+      },
+      "AssessmentOut": {
+        "properties": {
+          "citations": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/EntryCitationOut"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "rationale": {
+            "cls": "confidential",
+            "title": "Rationale",
+            "type": "string"
+          },
+          "selected_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Selected Item Id",
+            "type": "string"
+          },
+          "verdict": {
+            "cls": "internal",
+            "enum": [
+              "explained",
+              "not_explained",
+              "unclear"
+            ],
+            "title": "Verdict",
+            "type": "string"
+          }
+        },
+        "required": [
+          "selected_item_id",
+          "verdict",
+          "rationale",
+          "citations",
+          "created_at"
+        ],
+        "title": "AssessmentOut",
+        "type": "object"
+      },
       "AssignIn": {
         "additionalProperties": false,
         "properties": {
@@ -2888,6 +2978,98 @@
           "name"
         ],
         "title": "EntityChoiceOut",
+        "type": "object"
+      },
+      "EntryCitationOut": {
+        "properties": {
+          "amount_matches": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Amount Matches"
+          },
+          "cell": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Cell"
+          },
+          "claim": {
+            "cls": "internal",
+            "title": "Claim",
+            "type": "string"
+          },
+          "document": {
+            "cls": "internal",
+            "title": "Document",
+            "type": "string"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Page"
+          },
+          "quote": {
+            "cls": "restricted",
+            "title": "Quote",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason"
+          },
+          "sheet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Sheet"
+          },
+          "verified": {
+            "cls": "internal",
+            "title": "Verified",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "document",
+          "claim",
+          "quote",
+          "verified"
+        ],
+        "title": "EntryCitationOut",
         "type": "object"
       },
       "ErrorOut": {
@@ -16401,6 +16583,264 @@
         "summary": "Procedure Route",
         "tags": [
           "fieldwork"
+        ],
+        "x-abacus-action": "procedure.read"
+      }
+    },
+    "/v1/engagements/{engagement_id}/procedures/{procedure_id}/assess": {
+      "post": {
+        "description": "SPEC-037 Q4: \"Assess with AI\" for entries with documents and no assessment yet.",
+        "operationId": "assess",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "procedure_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Procedure Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssessIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessStartedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Assess Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "entry_assessment.request"
+      }
+    },
+    "/v1/engagements/{engagement_id}/procedures/{procedure_id}/assessments": {
+      "get": {
+        "description": "Each entry's newest assessment, AI-tagged on screen; firm roles only.",
+        "operationId": "assessments",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "procedure_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Procedure Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AssessmentOut"
+                  },
+                  "title": "Response Assessments",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Assessments Route",
+        "tags": [
+          "agents"
         ],
         "x-abacus-action": "procedure.read"
       }

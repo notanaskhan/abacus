@@ -374,6 +374,52 @@ export type AreaOut = {
 };
 
 /**
+ * AssessIn
+ */
+export type AssessIn = {
+    /**
+     * Item Ids
+     */
+    item_ids?: Array<string> | null;
+};
+
+/**
+ * AssessStartedOut
+ */
+export type AssessStartedOut = {
+    /**
+     * Items
+     */
+    items: Array<string>;
+};
+
+/**
+ * AssessmentOut
+ */
+export type AssessmentOut = {
+    /**
+     * Citations
+     */
+    citations: Array<EntryCitationOut>;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Rationale
+     */
+    rationale: string;
+    /**
+     * Selected Item Id
+     */
+    selected_item_id: string;
+    /**
+     * Verdict
+     */
+    verdict: 'explained' | 'not_explained' | 'unclear';
+};
+
+/**
  * AssignIn
  */
 export type AssignIn = {
@@ -1388,6 +1434,48 @@ export type EntityChoiceOut = {
      * Name
      */
     name: string;
+};
+
+/**
+ * EntryCitationOut
+ */
+export type EntryCitationOut = {
+    /**
+     * Amount Matches
+     */
+    amount_matches?: boolean | null;
+    /**
+     * Cell
+     */
+    cell?: string | null;
+    /**
+     * Claim
+     */
+    claim: string;
+    /**
+     * Document
+     */
+    document: string;
+    /**
+     * Page
+     */
+    page?: number | null;
+    /**
+     * Quote
+     */
+    quote: string;
+    /**
+     * Reason
+     */
+    reason?: string | null;
+    /**
+     * Sheet
+     */
+    sheet?: string | null;
+    /**
+     * Verified
+     */
+    verified: boolean;
 };
 
 /**
@@ -7910,6 +7998,124 @@ export type ProcedureResponses = {
 };
 
 export type ProcedureResponse = ProcedureResponses[keyof ProcedureResponses];
+
+export type AssessData = {
+    body: AssessIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Procedure Id
+         */
+        procedure_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/procedures/{procedure_id}/assess';
+};
+
+export type AssessErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AssessError = AssessErrors[keyof AssessErrors];
+
+export type AssessResponses = {
+    /**
+     * Successful Response
+     */
+    202: AssessStartedOut;
+};
+
+export type AssessResponse = AssessResponses[keyof AssessResponses];
+
+export type AssessmentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Procedure Id
+         */
+        procedure_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/procedures/{procedure_id}/assessments';
+};
+
+export type AssessmentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AssessmentsError = AssessmentsErrors[keyof AssessmentsErrors];
+
+export type AssessmentsResponses = {
+    /**
+     * Response Assessments
+     *
+     * Successful Response
+     */
+    200: Array<AssessmentOut>;
+};
+
+export type AssessmentsResponse = AssessmentsResponses[keyof AssessmentsResponses];
 
 export type ConclusionData = {
     body: ConclusionIn;

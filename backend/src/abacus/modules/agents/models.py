@@ -310,3 +310,21 @@ class AgentStage(Base):
     changed_by: Mapped[str]
     note: Mapped[str]
     created_at: Mapped[datetime]
+
+
+class EntryAssessmentRow(Base):
+    """The entry assessor's proposal on a selected entry (SPEC-037 Q4; TASK-085). Insert-only."""
+
+    __tablename__ = "entry_assessments"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    selected_item_id: Mapped[UUID]
+    agent_run_id: Mapped[UUID]
+    prompt_ref: Mapped[str]
+    verdict: Mapped[str]
+    shown_verdict: Mapped[str]
+    rationale: Mapped[str]
+    citations: Mapped[list[dict[str, object]]] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

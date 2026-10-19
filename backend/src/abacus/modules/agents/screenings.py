@@ -21,6 +21,7 @@ from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.errors import NotFound
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import OutboxEvent, Ref, Target, uow
+from abacus.modules.agents.assess_start import WORKFLOWS as ASSESS_WORKFLOWS
 from abacus.modules.agents.draft_start import WORKFLOWS as DRAFT_WORKFLOWS
 from abacus.modules.agents.engagement_agent import agent_on, firm_resumed, to_agent
 from abacus.modules.agents.engagement_agent_workflow import EngagementAgent
@@ -62,6 +63,7 @@ WORKFLOWS: dict[type, WorkClass] = {
 WORKFLOWS.update(REVIEW_WORKFLOWS)  # SPEC-030 (TASK-059): the worker hosts it with these
 WORKFLOWS.update(MATCH_WORKFLOWS)  # SPEC-033 (TASK-066)
 WORKFLOWS.update(DRAFT_WORKFLOWS)  # SPEC-035 (TASK-073)
+WORKFLOWS.update(ASSESS_WORKFLOWS)  # SPEC-037 Q4 (TASK-085)
 register_work_classes(WORKFLOWS)
 
 

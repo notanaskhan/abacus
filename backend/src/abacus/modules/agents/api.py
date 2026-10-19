@@ -10,6 +10,7 @@ from abacus.modules.agents.engagement_agent_workflow import (
     NEXT_TICK as ENGAGEMENT_AGENT_NEXT_TICK,
 )
 from abacus.modules.agents.engagement_agent_workflow import EngagementAgent
+from abacus.modules.agents.entry_assess import ASSESSOR, ask, check
 from abacus.modules.agents.fake_responses import SCREEN_PROMPT, screening_responder
 from abacus.modules.agents.fake_responses import install as install_fake_responses
 from abacus.modules.agents.graph import EngagementGraph, engagement_graph
@@ -56,6 +57,8 @@ from abacus.modules.agents.upload_review import (
 from abacus.modules.agents.workflow_types import (
     AgentEvent,
     AgentInput,
+    EntryAssessInput,
+    EntryAssessRunInput,
     GuidanceDraftInput,
     GuidanceDraftRunInput,
     HandleInput,
@@ -68,6 +71,7 @@ from abacus.modules.agents.workflow_types import (
     SlotGrant,
 )
 from abacus.modules.agents.workflows import (
+    EntryAssessWorkflow,
     GuidanceDraftWorkflow,
     InboxMatchWorkflow,
     ScreeningWorkflow,
@@ -86,6 +90,7 @@ register_ai_assistants(assistants)
 __all__ = [
     "ACTIVITIES",
     "AGENTS",
+    "ASSESSOR",
     "DRAFTER",
     "ENGAGEMENT_AGENT_HANDLE",
     "ENGAGEMENT_AGENT_NEXT_TICK",
@@ -104,6 +109,9 @@ __all__ = [
     "DraftOutcome",
     "EngagementAgent",
     "EngagementGraph",
+    "EntryAssessInput",
+    "EntryAssessRunInput",
+    "EntryAssessWorkflow",
     "GuidanceDraftInput",
     "GuidanceDraftRunInput",
     "GuidanceDraftWorkflow",
@@ -128,6 +136,8 @@ __all__ = [
     "SlotGrant",
     "UploadReviewWorkflow",
     "VerifiedCitation",
+    "ask",
+    "check",
     "create_draft_run",
     "create_match_run",
     "create_review_run",

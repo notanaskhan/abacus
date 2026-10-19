@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import cast
 
 from abacus.ai_gateway import Tier
-from abacus.modules.agents.api import DRAFTER, MATCHER, REVIEWER, spec
-from abacus_tools.evals import guidance_drafting, matching
+from abacus.modules.agents.api import ASSESSOR, DRAFTER, MATCHER, REVIEWER, spec
+from abacus_tools.evals import entry_assessment, guidance_drafting, matching
 from abacus_tools.evals.report import render
 from abacus_tools.evals.runner import EvalRoute, Subset, guard, guard_real, prepare, run
 from abacus_tools.evals.upload_review import evaluate, load_suite, validate
@@ -35,6 +35,10 @@ def main(argv: list[str]) -> int:
         )
     if args.agent == DRAFTER:  # SPEC-035 (TASK-072): its own runner
         return draft_main(
+            cast(Tier | None, args.tier), cast(str, args.route), cast(Path, args.out)
+        )
+    if args.agent == ASSESSOR:  # SPEC-037 Q4 (TASK-085): its own runner
+        return assess_main(
             cast(Tier | None, args.tier), cast(str, args.route), cast(Path, args.out)
         )
     if args.agent == MATCHER:  # SPEC-033 (TASK-065): its own runner
@@ -69,6 +73,26 @@ def review_main(tier: Tier | None, route: str, out: Path) -> int:
     async def record(stack: Stack) -> None:
         world = await prepare(stack)
         results.append(await evaluate(stack, world, suite, chosen, route, out))
+
+    run_with_stack(record)
+    return 0 if results and results[0]["status"] == "passed" else 1
+
+
+def assess_main(tier: Tier | None, route: str, out: Path) -> int:
+    """The entry assessor's suite, on a throwaway stack; real routes only (no fake answers)."""
+    if route == "fake":
+        print("the entry assessor has no fake answers: run it with --route direct")
+        return 2
+    guard()
+    guard_real(cast(EvalRoute, route))
+    chosen: Tier = tier or spec(ASSESSOR).tier
+    suite = entry_assessment.load_suite()
+    entry_assessment.validate(suite)
+    results: list[dict[str, object]] = []
+
+    async def record(stack: Stack) -> None:
+        world = await prepare(stack)
+        results.append(await entry_assessment.evaluate(stack, world, suite, chosen, route, out))
 
     run_with_stack(record)
     return 0 if results and results[0]["status"] == "passed" else 1

@@ -1,0 +1,32 @@
+# The entry assessor (ADR-047; SPEC-037 Q4; TASK-085). Source of truth: compiled into _specs.py
+# by `python -m abacus_tools.codegen.agent_specs`; a test fails if they drift.
+id: fieldwork.entry_assessor
+version: 2
+purpose: Say whether the documents linked to a selected journal entry support it, for a person to decide.
+shape: single_call
+prompt: fieldwork.entry_assess@v2
+tier: small
+escalation_tier: medium
+input_schema: EntryAssessInput
+output_schema: EntryAssessment
+task_scope: [procedure.read, evidence.read, entry_assessment.run]
+tools: []
+limits:
+  max_output_tokens: 600
+  max_cost_usd: "0.02"
+  max_steps: 1
+  max_seconds: 60
+autonomy: propose
+# Every assessment is shown with its verified citations; an unverified "explained" is shown as
+# unclear (TASK-085 §3), so nothing is hidden by confidence.
+confidence_routing:
+  below: "0"
+  route: hidden
+untrusted_inputs: [entry, documents]
+evaluation_suite: evals/entry_assessment
+# SPEC-037: firm-side working aid, deferrable under pressure (ADR-069/105).
+work_class: batch
+essential: false
+cheaper_tiers: []
+routes: [bedrock, direct]
+client_data: none

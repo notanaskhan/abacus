@@ -18,7 +18,7 @@ from decimal import Decimal
 from typing import Final, cast
 from uuid import UUID
 
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import check_facts, engagement_label, get_ref, lock_ref
@@ -49,12 +49,13 @@ from abacus.modules.fieldwork.repository import (
     results_by_id,
     rule_counts,
     signatures_of,
+    support_request_ids,
     support_requested,
     workpaper_versions,
 )
 from abacus.modules.fieldwork.workpaper import Row, Signature, Workpaper, render_workpaper
 from abacus.modules.identity.api import AuthContext, authorise, engagement_role_of, engagement_team
-from abacus.modules.requests.api import NewRequestItem, add_request_item
+from abacus.modules.requests.api import NewRequestItem, add_request_item, read_item_versions
 from abacus.modules.sampling.api import RULES
 
 RESULTS: Final = ("supported", "exception", "not_tested")
@@ -558,3 +559,90 @@ async def workpaper_file(
         render_workpaper(document, _signatures(versions, signed, version)),
         f"journal-entry-testing-v{version}.xlsx",
     )
+
+
+# --- For the entry assessor (SPEC-037 Q4; TASK-085 D1) ------------------------------------------
+
+MAX_DOCUMENTS: Final = 3
+
+
+@dataclass(frozen=True)
+class EntryFacts:
+    """A selected entry as the assessor may see it, and the documents a person tied to it: the
+    evidence linked on its newest result, then what fulfilled its support requests."""
+
+    engagement_id: UUID
+    procedure_id: UUID
+    posted_on: str
+    kind: str
+    reference: str
+    counterparty: str
+    accounts: tuple[str, ...]
+    amount: Decimal
+    descriptions: tuple[str, ...]
+    evidence_version_ids: tuple[UUID, ...]
+
+
+async def entry_facts(tenant: TenantContext, item_id: UUID) -> EntryFacts | None:
+    """For a caller that authorises `procedure.read` on the engagement it returns (None when the
+    entry isn't in the tenant)."""
+    async with tenant_session(tenant) as session:
+        item = await get_item(session, item_id)
+        if item is None:
+            return None
+        selection = await get_selection(session, item.selection_id)
+        if selection is None:
+            return None
+        procedure = await get_procedure(session, selection.procedure_id)
+        results = await newest_results(session, item.selection_id)
+        requested = await support_request_ids(session, item_id)
+    if procedure is None:
+        return None
+    newest = results.get(item_id)
+    linked: list[UUID] = list(newest.evidence_version_ids or []) if newest is not None else []
+    for request_item in requested:
+        linked += await read_item_versions(tenant, request_item)
+    return EntryFacts(
+        procedure.engagement_id,
+        procedure.id,
+        item.posted_on.isoformat(),
+        item.kind,
+        item.reference,
+        item.counterparty,
+        tuple(item.accounts),
+        item.amount,
+        tuple(item.descriptions),
+        tuple(dict.fromkeys(linked))[:MAX_DOCUMENTS],
+    )
+
+
+async def assessable_items(
+    ctx: AuthContext, engagement_id: UUID, procedure_id: UUID
+) -> list[UUID]:
+    """The current selection's entries with at least one document to read."""
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "procedure.read", ref.resource())
+    await _procedure(ctx, engagement_id, procedure_id)
+    selection = await _current_selection(ctx, procedure_id)
+    async with tenant_session(ctx.tenant) as session:
+        items = await all_items(session, selection.id)
+    found: list[UUID] = []
+    for item in items:
+        facts = await entry_facts(ctx.tenant, item.id)
+        if facts is not None and facts.evidence_version_ids:
+            found.append(item.id)
+    return found
+
+
+async def selection_item_ids(
+    ctx: AuthContext, engagement_id: UUID, procedure_id: UUID
+) -> list[UUID]:
+    """The current selection's entries (none before a selection)."""
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "procedure.read", ref.resource())
+    await _procedure(ctx, engagement_id, procedure_id)
+    async with tenant_session(ctx.tenant) as session:
+        selection = await newest_selection(session, procedure_id)
+        if selection is None:
+            return []
+        return [i.id for i in await all_items(session, selection.id)]

@@ -46,6 +46,7 @@ MATCH_REQUEST = "/v1/engagements/{engagement_id}/inbox/{file_id}/match"  # SPEC-
 DRAFTS = "/v1/engagements/{engagement_id}/request-items/draft-guidance"  # SPEC-035: 202
 TEMPLATE_DRAFTS = "/v1/methodology/versions/{version_id}/draft-guidance"  # TASK-074: 202
 SELECT = "/v1/engagements/{engagement_id}/procedures/{procedure_id}/select"  # TASK-083: 202
+ASSESS = "/v1/engagements/{engagement_id}/procedures/{procedure_id}/assess"  # TASK-085: 202
 GL_IMPORT = (
     "/v1/engagements/{engagement_id}/connection/import/gl"  # SPEC-034: 202, processed later
 )
@@ -145,6 +146,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         DRAFTS,
         TEMPLATE_DRAFTS,
         SELECT,
+        ASSESS,
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)

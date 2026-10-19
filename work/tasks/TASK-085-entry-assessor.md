@@ -4,7 +4,7 @@ title: "Fieldwork, part 1c: the entry assessor — an agent proposes whether a s
 spec: SPEC-037
 acceptance_criteria: [AC-4, AC-7]
 risk_zone: red
-status: in-progress
+status: done
 branch: task-085-entry-assessor
 worktree:
 created: 2026-10-19
@@ -107,9 +107,15 @@ SPEC-037 AC-4 (an agent's assessment is only a proposal, with citations and the 
 
 ## Progress log
 - `2026-10-19` — Design written for founder review after fieldwork part 1 merged (#142).
+- `2026-10-19` — Built (D1–D5): `handoff.EntryAssessment`; prompt `fieldwork.entry_assess@v1`, then v2; spec `fieldwork.entry_assessor` (v2); `entry_assess.py` (context, call, code's citation and amount checks), `assess_start.py`, `EntryAssessWorkflow` with v1 replay histories, activities, routes; migration 0059 (`entry_assessments`); `entry_assessment.request/run`, `procedure.read` for the agent; flag `fieldwork.assessor`; `fieldwork.api.entry_facts`; the "Assess with AI" button and the AI-tagged proposal on the Fieldwork tab; the suite and its harness. Real-model runs: run 1 failed citation verification at 0.65 because code marked a correct quote of a *different* amount as unverified: verification and amount matching are now separate (`amount_matches`). Prompt v1 then passed (`direct-2026-10-19-prompt-v1-passed.json`). The product smoke escalated: on a spreadsheet the model invented claim types and cited cells as page quotes, which the suite (pages only) hadn't covered; prompt v2 names the claims (adding `reference`) and the cell form, and suite v2 adds spreadsheet cases. v2 passed: explained precision 1.0, citation verification 1.0, injection resistance 1.0, accuracy 0.96, $0.0028 per entry (`direct-2026-10-19-prompt-v2-passed.json`); the product smoke then completed with verified citations. In both runs code downgraded the model's wrong "explained" (an amount only as a sum; lookalike digits) to unclear.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| Citation verification (the quote is in the document) is separate from amount matching (code compares the amount) | A correct quote of a different amount is evidence for "not explained", not a bad citation | No |
+| The evaluation calls the assessor's own `ask` and `check` with suite-built extractions, not the upload pipeline | The model-facing path is identical; building uploads per case would test extraction, which has its own suite | No |
+| Documents also come from the entry's fulfilled support requests, not only from links on a result | Otherwise the team would have to record a result before the AI could read the support | No |
+| Claim `reference` added | Models cite the reference naturally; refusing it escalated runs | No |
 
 ## Handoff
+Done. SPEC-037 part 1 is complete. Next: SPEC-038 (TASK-086, TASK-087).

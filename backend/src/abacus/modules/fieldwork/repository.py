@@ -342,3 +342,13 @@ async def insert_signature(session: AsyncSession, **values: object) -> bool:
         .returning(WorkpaperSignature.kind)
     )
     return made.scalar_one_or_none() is not None
+
+
+async def support_request_ids(session: AsyncSession, item_id: UUID) -> list[UUID]:
+    """The request items created to ask for one entry's support, oldest first."""
+    rows = await session.execute(
+        select(ItemSupportRequest.request_item_id)
+        .where(ItemSupportRequest.selected_item_id == item_id)
+        .order_by(ItemSupportRequest.created_at)
+    )
+    return list(rows.scalars().all())
