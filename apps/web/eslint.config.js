@@ -2,8 +2,10 @@
 import { defineConfig } from "eslint/config";
 import tseslint from "typescript-eslint";
 
+// Tailwind's palette: its numbered shades and its families with no token. The plan's status
+// tokens (`bg-green`, `text-red-ink`, `bg-amber-tint`, TASK-092) are allowed.
 const PALETTE =
-  "/\\b(bg|text|border|ring|outline|divide|fill|stroke|placeholder|from|to)-(neutral|gray|red|green|amber|blue|slate|zinc|stone|yellow|white|black)\\b/";
+  "/\\b(bg|text|border|ring|outline|divide|fill|stroke|placeholder|from|to)-((neutral|gray|blue|slate|zinc|stone|yellow|white|black)\\b|(red|green|amber)-[0-9])/";
 const HEX = "/#[0-9a-fA-F]{6}\\b|#[0-9a-fA-F]{3}\\b/";
 
 export default defineConfig(

@@ -8,17 +8,21 @@ export interface TabItem {
   exact?: boolean;
 }
 
-/** Page tabs as links; TanStack marks the current one (`aria-current`, data-status). */
+/** Page tabs as links on a segmented track (TASK-092): the current one is a white pill on a
+ * ring; TanStack marks it (`aria-current`, data-status). */
 export function Tabs({ items, label }: { items: TabItem[]; label: string }): JSX.Element {
   return (
-    <nav aria-label={label} className="flex flex-wrap gap-1 border-b border-line">
+    <nav
+      aria-label={label}
+      className="flex w-fit max-w-full flex-wrap gap-0.5 rounded-full bg-nav-fill p-1"
+    >
       {items.map((item) => (
         <Link
           key={item.label}
           to={item.to}
           params={item.params}
           activeOptions={{ exact: item.exact ?? false }}
-          className="border-b-2 border-transparent px-3 py-2.5 text-sm text-muted hover:text-ink data-[status=active]:border-accent data-[status=active]:font-semibold data-[status=active]:text-ink"
+          className="flex h-[28px] items-center rounded-full px-3.5 text-[13.5px] tracking-[-0.005em] text-ink-2 transition-colors hover:text-ink data-[status=active]:bg-card data-[status=active]:font-medium data-[status=active]:text-ink data-[status=active]:shadow-e1"
         >
           {item.label}
         </Link>

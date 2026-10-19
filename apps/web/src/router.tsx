@@ -153,18 +153,7 @@ const boardRoute = createRoute({
         <div className="flex justify-end">
           <ImportRequestList engagementId={engagementId} />
         </div>
-        <Board
-          engagementId={engagementId}
-          reviewLink={
-            <Link
-              to="/engagements/$engagementId/review"
-              params={{ engagementId }}
-              className="text-sm text-accent hover:underline"
-            >
-              Review queue
-            </Link>
-          }
-        />
+        <Board engagementId={engagementId} />
       </div>
     );
   },

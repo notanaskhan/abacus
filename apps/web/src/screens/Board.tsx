@@ -30,7 +30,7 @@ import {
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { type JSX, type ReactNode, type SyntheticEvent, useEffect, useState } from "react";
+import { type JSX, type SyntheticEvent, useEffect, useState } from "react";
 import { errorMessage } from "../api";
 import { DueDatesBar, ItemDue, useDefaultDue } from "./DueDates";
 import { GuidanceDrafts } from "./GuidanceDrafts";
@@ -54,14 +54,7 @@ const RETRIEVAL_POLL_MS = 2000;
 const MATCH_REQUESTERS = new Set(["engagement_partner", "manager", "senior", "staff"]);
 const DRAFTERS = new Set(["engagement_partner", "manager", "senior"]); // SPEC-035
 
-export function Board({
-  engagementId,
-  reviewLink = null,
-}: {
-  engagementId: string;
-  /** The router's link to the review queue (the router passes it; tests may leave it out). */
-  reviewLink?: ReactNode;
-}): JSX.Element {
+export function Board({ engagementId }: { engagementId: string }): JSX.Element {
   const path = { path: { engagement_id: engagementId } };
   const engagement = useQuery(getEngagementOptions(path));
   const me = useQuery(meOptions());
@@ -148,16 +141,10 @@ export function Board({
 
   return (
     <section aria-labelledby="board-heading" className="flex flex-col gap-4">
-      <div>
-        <h1 id="board-heading" className="text-xl font-semibold">
-          {engagement.data.name}
-        </h1>
-        {reviewLink}
-        <p className="text-sm text-muted">
-          {engagement.data.client_name} — {engagement.data.client_entity_name} ·{" "}
-          {engagement.data.fiscal_period_start} to {engagement.data.fiscal_period_end}
-        </p>
-      </div>
+      {/* The record header names the engagement (TASK-092); the heading stays for structure. */}
+      <h1 id="board-heading" className="sr-only">
+        {engagement.data.name}
+      </h1>
       <AddRequestItem engagementId={engagementId} />
       {rows.length > 0 && (
         <DueDatesBar engagementId={engagementId} items={rows.map((r) => r.item)} />
