@@ -259,3 +259,17 @@ async def latest_snapshot_for(
             .limit(1)
         )
     ).scalar_one_or_none()
+
+
+async def newest_gl_snapshot(
+    session: AsyncSession, client_entity_id: UUID, period_end: date
+) -> UUID | None:
+    """SPEC-037: the newest general ledger snapshot for the entity and year end."""
+    return await session.scalar(
+        select(GlSnapshot.id)
+        .where(
+            GlSnapshot.client_entity_id == client_entity_id, GlSnapshot.period_end == period_end
+        )
+        .order_by(GlSnapshot.created_at.desc())
+        .limit(1)
+    )

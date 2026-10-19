@@ -45,6 +45,7 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
         worker_main.notifications,
         worker_main.communications,  # SPEC-015: invitation emails
         worker_main.evidence,  # SPEC-029 (TASK-054): upload processing
+        worker_main.fieldwork,  # SPEC-037 (TASK-077): procedure selection
     ) == worker_main.MODULES
     assert tuple(m.SUBSCRIPTIONS for m in worker_main.MODULES) == worker_main.SUBSCRIBERS
     # SPEC-022 (TASK-038): automatic retrieval when a client connects or an item is classified.

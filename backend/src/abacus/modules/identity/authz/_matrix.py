@@ -474,6 +474,31 @@ ACTIONS: dict[str, dict[str, str]] = {
     "suggestion.create": {
         "agent": "task_scope",
     },
+    "materiality.set": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "independence": "required",
+    },
+    "procedure.configure": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "independence": "required",
+    },
+    "procedure.run": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "independence": "required",
+    },
+    "procedure.read": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "reviewer": "allow",
+        "independence": "required",
+    },
     "suggestion.resolve": {
         "engagement_partner": "allow",
         "manager": "allow",
