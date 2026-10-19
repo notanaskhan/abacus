@@ -19,6 +19,11 @@ UPLOAD_REVIEW_ENABLED = Flag(
     kind="boolean",
     default="false",
 )
+FIELDWORK_PROCEDURES = Flag(
+    name="fieldwork.procedures",
+    kind="boolean",
+    default="false",
+)
 GUIDANCE_DRAFTING = Flag(
     name="guidance.drafting",
     kind="boolean",
@@ -58,6 +63,7 @@ RETRIEVAL_AUTO = Flag(
 FLAGS: dict[str, Flag] = {
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
+    "fieldwork.procedures": FIELDWORK_PROCEDURES,
     "guidance.drafting": GUIDANCE_DRAFTING,
     "ledger.gl_import": LEDGER_GL_IMPORT,
     "matching.enabled": MATCHING_ENABLED,

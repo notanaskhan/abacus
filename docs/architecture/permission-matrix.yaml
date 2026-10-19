@@ -217,6 +217,11 @@ actions:
   upload_review.read:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # SPEC-030 (TASK-059 D1): firm roles only; clients are refused by role
   upload_review.request:    {engagement_partner: allow, manager: allow, senior: allow, independence: required}   # SPEC-030: "Review now" at Advise
   suggestion.create:        {agent: task_scope}
+  # --- Fieldwork (SPEC-037; TASK-077) ---
+  materiality.set:          {engagement_partner: allow, manager: allow, independence: required}   # Q3: entered by people
+  procedure.configure:      {engagement_partner: allow, manager: allow, independence: required}   # a procedure's criteria
+  procedure.run:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # start, pick, select
+  procedure.read:           {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # firm roles only; clients are refused by role
   suggestion.resolve:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny}
 
   # --- Communications (SPEC-006 Q4; TASK-021) ---

@@ -161,6 +161,7 @@ async def _flags_on() -> None:
     await set_flag(FIRM, "matching.enabled", "true", "seed", "local development")  # SPEC-033
     await set_flag(FIRM, "ledger.gl_import", "true", "seed", "local development")  # SPEC-034
     await set_flag(FIRM, "guidance.drafting", "true", "seed", "local development")  # SPEC-035
+    await set_flag(FIRM, "fieldwork.procedures", "true", "seed", "local development")  # SPEC-037
 
 
 def main() -> int:

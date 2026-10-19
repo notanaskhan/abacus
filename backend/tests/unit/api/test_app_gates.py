@@ -45,6 +45,7 @@ REVIEW_REQUEST = "/v1/engagements/{engagement_id}/evidence-versions/{version_id}
 MATCH_REQUEST = "/v1/engagements/{engagement_id}/inbox/{file_id}/match"  # SPEC-033: 202
 DRAFTS = "/v1/engagements/{engagement_id}/request-items/draft-guidance"  # SPEC-035: 202
 TEMPLATE_DRAFTS = "/v1/methodology/versions/{version_id}/draft-guidance"  # TASK-074: 202
+SELECT = "/v1/engagements/{engagement_id}/procedures/{procedure_id}/select"  # TASK-077: 202
 GL_IMPORT = (
     "/v1/engagements/{engagement_id}/connection/import/gl"  # SPEC-034: 202, processed later
 )
@@ -143,6 +144,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         GL_IMPORT,
         DRAFTS,
         TEMPLATE_DRAFTS,
+        SELECT,
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
@@ -181,6 +183,9 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/methodology/versions/{version_id}/guidance-drafts/approve",
         "/v1/methodology/versions/{version_id}/guidance-drafts/discard",
         "/v1/methodology/versions/{version_id}/publish-drafted",
+        # SPEC-037 (TASK-077): a procedure, and people's picks, are created.
+        "/v1/engagements/{engagement_id}/procedures",
+        "/v1/engagements/{engagement_id}/procedures/{procedure_id}/picks",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

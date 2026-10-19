@@ -11,7 +11,7 @@ hostile); totals and differences are computed here (ADR-050).
 from __future__ import annotations
 
 import io
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
@@ -30,6 +30,7 @@ from abacus.modules.evidence.render import (
 from abacus.modules.evidence.render import (
     _utc as utc,  # pyright: ignore[reportPrivateUsage] -- the same timezone rule
 )
+from abacus.modules.ledger.api import journals  # TASK-077 D1: one grouping
 
 # openpyxl's write-only sheet has untyped stubs; it appends rows as `Worksheet` does.
 Sheet = Worksheet
@@ -257,29 +258,6 @@ def _entry_cells(sheet: Sheet, e: GlEntryRow, names: Mapping[str, str]) -> list[
         _amount(sheet, e.debit),
         _amount(sheet, e.credit),
     ]
-
-
-def journal_key(e: GlEntryRow) -> tuple[str, str, str, str]:
-    """D2: a transaction is its date, type and reference; without a reference, its date, type and
-    name."""
-    reference = e.reference or ""
-    return (
-        e.posted_on.isoformat(),
-        e.kind or "",
-        reference,
-        "" if reference else (e.counterparty or ""),
-    )
-
-
-def journals(
-    entries: Iterable[GlEntryRow],
-) -> Iterator[tuple[tuple[str, str, str, str], list[GlEntryRow]]]:
-    """The postings grouped by transaction, in date, type, reference order (lines by line no)."""
-    grouped: dict[tuple[str, str, str, str], list[GlEntryRow]] = {}
-    for e in entries:
-        grouped.setdefault(journal_key(e), []).append(e)
-    for key in sorted(grouped):
-        yield key, sorted(grouped[key], key=lambda x: x.line_no)
 
 
 def render_journal_listing(

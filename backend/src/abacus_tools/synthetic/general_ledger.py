@@ -65,8 +65,16 @@ def _months(start: date, end: date) -> list[date]:
 
 
 def build(
-    tb: TrialBalance, *, start: date, flaws: Iterable[str] = (), volume: int = 0
+    tb: TrialBalance,
+    *,
+    start: date,
+    flaws: Iterable[str] = (),
+    volume: int = 0,
+    test_entries: bool = False,
 ) -> SyntheticGl:
+    """`test_entries` (SPEC-037; TASK-077): adds manual journals that journal entry testing's
+    criteria should select (large, round, near year end, weekend, keywords), each paired with its
+    reversal so the ledger still reconciles."""
     flaws = set(flaws)
     lines = list(tb.lines)
     cash = next(
@@ -277,6 +285,8 @@ def build(
         )
     if "outside_period" in flaws:
         postings[0] = replace(postings[0], on=tb.as_of + timedelta(days=1))
+    if test_entries and other is not None:
+        postings.extend(_test_entries(cash, other, tb.as_of))
     return SyntheticGl(tuple(accounts), openings, tuple(postings))
 
 
@@ -558,3 +568,34 @@ def intacct_general_ledger_csv(
             ]
         )
     return out.getvalue().encode("utf-8")
+
+
+def _test_entries(
+    cash: TrialBalanceLine, other: TrialBalanceLine, year_end: date
+) -> list[Posting]:
+    """Pairs of manual journals that net to zero, each tripping criteria (SPEC-037 §4.4)."""
+    saturday = year_end - timedelta(days=(year_end.weekday() - 5) % 7 or 7)
+    cases = [
+        ("TE-LARGE", year_end - timedelta(days=40), Decimal("400000.00"), "Reclass to accrual"),
+        ("TE-ROUND", year_end - timedelta(days=90), Decimal("50000.00"), "Monthly accrual"),
+        ("TE-YE", year_end - timedelta(days=1), Decimal("43210.09"), "Year-end adjust per CFO"),
+        ("TE-WKND", saturday - timedelta(days=21), Decimal("29876.54"), "Correction"),
+    ]
+    found: list[Posting] = []
+    for ref, on, amount, note in cases:
+        for suffix, debit_line, credit_line in (("", other, cash), ("-R", cash, other)):
+            for line, debit, credit in ((debit_line, amount, ZERO), (credit_line, ZERO, amount)):
+                found.append(
+                    Posting(
+                        line.account_code,
+                        line.account_name,
+                        on,
+                        "Journal Entry",
+                        ref + suffix,
+                        "",
+                        note,
+                        debit,
+                        credit,
+                    )
+                )
+    return found

@@ -36,6 +36,7 @@ from abacus.modules.ledger.repository import (
     insert_gl_snapshot,
     latest_snapshot_for,
     lines_of,
+    newest_gl_snapshot,
 )
 from abacus.modules.ledger.service import Unvalidated
 
@@ -249,3 +250,13 @@ async def gl_entries(
         )
         for r in rows
     ]
+
+
+async def latest_gl_snapshot(
+    tenant: TenantContext, client_entity_id: UUID, period_end: date
+) -> GlSnapshotView | None:
+    """SPEC-037 (TASK-077): the newest reconciled general ledger snapshot for an entity's year,
+    for a caller that authorised on the engagement."""
+    async with tenant_session(tenant) as session:
+        found = await newest_gl_snapshot(session, client_entity_id, period_end)
+    return await gl_snapshot_view(tenant, found) if found is not None else None
