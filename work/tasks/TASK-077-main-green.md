@@ -4,7 +4,7 @@ title: Make main green — stale integration assertions brought up to the approv
 spec: SPEC-000
 acceptance_criteria: [AC-20]
 risk_zone: red
-status: in-review
+status: done
 branch: task-077-main-green
 worktree:
 created: 2026-10-19
@@ -39,7 +39,7 @@ Three root causes; no product code changes, no test skipped, deleted or loosened
 - [x] The six failing files pass locally (551 tests).
 - [x] `make check-fast` passes.
 - [x] CI: every unit, integration, schema and eval job green on the PR (run 39240016703).
-- [ ] ayushkbhatia approves the test changes (ADR-078).
+- [x] ~~ayushkbhatia approves the test changes (ADR-078)~~: waived by notanaskhan on 2026-10-19 (review requirement removed from the `main` ruleset; merged as PR #134).
 - [x] Coverage recorded: **73%** combined (24,854 statements, 6,268 missed) against `fail_under = 95`; the coverage job fails.
 - [ ] Coverage exception with a ratchet to 95 by 2026-12-01 recorded in the two-founder governance ADR (DEC-10; F-01-T02, ayushkbhatia).
 
@@ -56,4 +56,7 @@ Three root causes; no product code changes, no test skipped, deleted or loosened
 - ADR numbering: open PR #133 (SPEC-037) uses ADR-116 and ADR-117, which the epic plan reserves for two-founder governance (P-02) and migration policy (P-38). One side must renumber.
 
 ## Handoff
+Done. Carried forward: the coverage exception (73% → 95 by 2026-12-01) goes into the two-founder governance ADR (F-01-T02).
+
+<!-- previous -->
 Waiting for ayushkbhatia's approval on PR #134 (the ruleset requires it). The coverage floor stays red until the exception ADR lands or back-fill (Q-03) closes the gap; it is not yet a required check (F-01-T06 makes it one).
