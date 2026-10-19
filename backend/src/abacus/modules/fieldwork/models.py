@@ -8,6 +8,7 @@ from uuid import UUID
 
 from sqlalchemy import ARRAY, FetchedValue, Integer, Numeric, String
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from abacus.kernel.db import Base
@@ -102,3 +103,63 @@ class SelectedItem(Base):
     descriptions: Mapped[list[str]] = mapped_column(ARRAY(String))
     rules: Mapped[list[str]] = mapped_column(ARRAY(String))
     reason: Mapped[str | None]
+
+
+class ItemResult(Base):
+    __tablename__ = "item_results"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    selected_item_id: Mapped[UUID]
+    result: Mapped[str]
+    note: Mapped[str | None]
+    evidence_version_ids: Mapped[list[UUID]] = mapped_column(ARRAY(PgUUID(as_uuid=True)))
+    recorded_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class ItemSupportRequest(Base):
+    __tablename__ = "item_support_requests"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    selected_item_id: Mapped[UUID] = mapped_column(primary_key=True)
+    request_item_id: Mapped[UUID] = mapped_column(primary_key=True)
+    requested_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class ProcedureConclusion(Base):
+    __tablename__ = "procedure_conclusions"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    procedure_id: Mapped[UUID]
+    text: Mapped[str]
+    written_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class WorkpaperVersion(Base):
+    __tablename__ = "workpaper_versions"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    procedure_id: Mapped[UUID]
+    version: Mapped[int]
+    selection_id: Mapped[UUID]
+    result_ids: Mapped[list[UUID]] = mapped_column(ARRAY(PgUUID(as_uuid=True)))
+    conclusion_id: Mapped[UUID]
+    materiality_id: Mapped[UUID]
+    sha256: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class WorkpaperSignature(Base):
+    __tablename__ = "workpaper_signatures"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    workpaper_version_id: Mapped[UUID] = mapped_column(primary_key=True)
+    kind: Mapped[str] = mapped_column(primary_key=True)
+    signed_by: Mapped[UUID]
+    role: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

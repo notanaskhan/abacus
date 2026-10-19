@@ -186,6 +186,10 @@ def test_ac20_creating_routes_answer_201() -> None:
         # SPEC-037 (TASK-077): a procedure, and people's picks, are created.
         "/v1/engagements/{engagement_id}/procedures",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/picks",
+        # SPEC-037 (TASK-078): a support request, and each signature, are created.
+        "/v1/engagements/{engagement_id}/procedures/{procedure_id}/items/{item_id}/request-support",
+        "/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper/sign-ready",
+        "/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper/sign-reviewed",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

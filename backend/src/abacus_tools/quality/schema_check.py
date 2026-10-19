@@ -79,6 +79,8 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"template_guidance_drafts", "template_guidance_decisions"}  # SPEC-035 Q3 (TASK-074)
     | {"engagement_materiality", "fieldwork_settings"}  # SPEC-037 (TASK-077): versions
     | {"populations", "selections", "selected_items"}  # SPEC-037 (TASK-077): ADR-117
+    | {"item_results", "item_support_requests", "procedure_conclusions"}  # TASK-078
+    | {"workpaper_versions", "workpaper_signatures"}  # SPEC-037 (TASK-078): ADR-116
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -155,6 +157,22 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "selected_items": frozenset(
         {"tenant_id", "selection_id", "position", "posted_on", "kind", "reference"}
         | {"counterparty", "line_nos", "accounts", "amount", "descriptions", "rules", "reason"}
+    ),
+    # Fieldwork results and workpapers (SPEC-037; TASK-078; ADR-116).
+    "item_results": frozenset(
+        {"tenant_id", "selected_item_id", "result", "note", "evidence_version_ids"}
+        | {"recorded_by"}
+    ),
+    "item_support_requests": frozenset(
+        {"tenant_id", "selected_item_id", "request_item_id", "requested_by"}
+    ),
+    "procedure_conclusions": frozenset({"tenant_id", "procedure_id", "text", "written_by"}),
+    "workpaper_versions": frozenset(
+        {"id", "tenant_id", "procedure_id", "version", "selection_id", "result_ids"}
+        | {"conclusion_id", "materiality_id", "sha256"}
+    ),
+    "workpaper_signatures": frozenset(
+        {"tenant_id", "workpaper_version_id", "kind", "signed_by", "role"}
     ),
     # Drafted guidance on templates (SPEC-035 Q3; TASK-074): drafts and decisions, as made.
     "template_guidance_drafts": frozenset(
@@ -443,6 +461,11 @@ TABLE_OWNERS: dict[str, str] = {
     "populations": "fieldwork",
     "selections": "fieldwork",
     "selected_items": "fieldwork",
+    "item_results": "fieldwork",  # SPEC-037 (TASK-078)
+    "item_support_requests": "fieldwork",
+    "procedure_conclusions": "fieldwork",
+    "workpaper_versions": "fieldwork",
+    "workpaper_signatures": "fieldwork",
     "agent_stages": "agents",  # SPEC-036 (TASK-076): owner-written, app reads only
     "template_guidance_decisions": "agents",  # SPEC-035 Q3 (TASK-074)
     "gl_account_balances": "ledger",

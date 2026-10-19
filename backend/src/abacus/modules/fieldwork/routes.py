@@ -6,10 +6,10 @@ from __future__ import annotations
 from dataclasses import asdict
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import Depends, Query
+from fastapi import Depends, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
@@ -29,6 +29,16 @@ from abacus.modules.fieldwork.service import (
     set_materiality,
     set_parameters,
     start_procedure,
+)
+from abacus.modules.fieldwork.workpapers import (
+    WorkpaperState,
+    record_result,
+    request_support,
+    set_conclusion,
+    sign_ready,
+    sign_reviewed,
+    workpaper_file,
+    workpaper_state,
 )
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
@@ -263,6 +273,11 @@ async def select_route(engagement_id: UUID, procedure_id: UUID, ctx: Ctx) -> Pro
 class ItemOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
+    id: Annotated[UUID | None, classified("internal")] = None
+    result: Annotated[str | None, classified("confidential")] = None
+    note: Annotated[str | None, classified("confidential")] = None
+    evidence_version_ids: Annotated[list[UUID], classified("internal")] = []
+    support_requested: Annotated[bool, classified("internal")] = False
     position: Annotated[int, classified("internal")]
     posted_on: Annotated[str, classified("internal")]
     kind: Annotated[str, classified("confidential")]
@@ -292,7 +307,171 @@ async def items_route(
                 "accounts": list(i.accounts),
                 "descriptions": list(i.descriptions),
                 "rules": list(i.rules),
+                "evidence_version_ids": list(i.evidence_version_ids),
             }
         )
         for i in await items_of(ctx, engagement_id, procedure_id, offset=offset, limit=limit)
     ]
+
+
+# --- Results, support, conclusion and the workpaper (SPEC-037; TASK-078) -----------------------
+
+
+class ResultIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    result: Annotated[Literal["supported", "exception", "not_tested"], classified("internal")]
+    note: Annotated[str | None, Field(max_length=2000), classified("confidential")] = None
+    evidence_version_ids: Annotated[list[UUID], Field(max_length=20), classified("internal")] = []
+
+
+class DoneOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    ok: Annotated[bool, classified("internal")] = True
+
+
+@router.put(
+    "/procedures/{procedure_id}/items/{item_id}/result",
+    action="procedure.run",
+    response_model=DoneOut,
+)
+async def result_route(
+    engagement_id: UUID, procedure_id: UUID, item_id: UUID, body: ResultIn, ctx: Ctx
+) -> DoneOut:
+    """SPEC-037 AC-4: a person's result on a selected entry (appended; the newest counts)."""
+    await record_result(
+        ctx,
+        engagement_id,
+        procedure_id,
+        item_id,
+        result=body.result,
+        note=body.note,
+        evidence_ids=body.evidence_version_ids,
+    )
+    return DoneOut()
+
+
+class SupportOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    request_item_id: Annotated[UUID, classified("internal")]
+
+
+@router.post(
+    "/procedures/{procedure_id}/items/{item_id}/request-support",
+    action="procedure.run",
+    response_model=SupportOut,
+    status_code=201,
+)
+async def request_support_route(
+    engagement_id: UUID, procedure_id: UUID, item_id: UUID, ctx: Ctx
+) -> SupportOut:
+    """Ask the client for an entry's support: an ordinary request, linked to the entry."""
+    made = await request_support(ctx, engagement_id, procedure_id, item_id)
+    return SupportOut(request_item_id=made)
+
+
+class ConclusionIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    text: Annotated[str, Field(min_length=1, max_length=4000), classified("confidential")]
+
+
+@router.put(
+    "/procedures/{procedure_id}/conclusion", action="procedure.run", response_model=DoneOut
+)
+async def conclusion_route(
+    engagement_id: UUID, procedure_id: UUID, body: ConclusionIn, ctx: Ctx
+) -> DoneOut:
+    await set_conclusion(ctx, engagement_id, procedure_id, body.text)
+    return DoneOut()
+
+
+class SignatureOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    kind: Annotated[Literal["ready", "reviewed"], classified("internal")]
+    signed_by: Annotated[UUID, classified("internal")]
+    name: Annotated[str, classified("internal")]
+    role: Annotated[str, classified("internal")]
+    signed_at: Annotated[datetime, classified("internal")]
+
+
+class VersionOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    version: Annotated[int, classified("internal")]
+    created_at: Annotated[datetime, classified("internal")]
+    signatures: Annotated[list[SignatureOut], classified("internal")]
+
+
+class WorkpaperOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    status: Annotated[Literal["not_started", "draft", "ready", "reviewed"], classified("internal")]
+    entries: Annotated[int, classified("internal")]
+    with_result: Annotated[int, classified("internal")]
+    exceptions: Annotated[int, classified("internal")]
+    conclusion: Annotated[str, classified("confidential")]
+    versions: Annotated[list[VersionOut], classified("internal")]
+
+
+def _workpaper_out(state: WorkpaperState) -> WorkpaperOut:
+    return WorkpaperOut.model_validate(asdict(state))
+
+
+@router.get(
+    "/procedures/{procedure_id}/workpaper", action="procedure.read", response_model=WorkpaperOut
+)
+async def workpaper_route(engagement_id: UUID, procedure_id: UUID, ctx: Ctx) -> WorkpaperOut:
+    return _workpaper_out(await workpaper_state(ctx, engagement_id, procedure_id))
+
+
+@router.post(
+    "/procedures/{procedure_id}/workpaper/sign-ready",
+    action="workpaper.sign_ready",
+    response_model=WorkpaperOut,
+    status_code=201,
+    errors=(409,),
+)
+async def sign_ready_route(engagement_id: UUID, procedure_id: UUID, ctx: Ctx) -> WorkpaperOut:
+    """ADR-116: the preparer signs the current state; it becomes the next version."""
+    return _workpaper_out(await sign_ready(ctx, engagement_id, procedure_id))
+
+
+@router.post(
+    "/procedures/{procedure_id}/workpaper/sign-reviewed",
+    action="workpaper.sign_reviewed",
+    response_model=WorkpaperOut,
+    status_code=201,
+    errors=(409,),
+)
+async def sign_reviewed_route(engagement_id: UUID, procedure_id: UUID, ctx: Ctx) -> WorkpaperOut:
+    """ADR-116: another person signs the latest ready version, while nothing has changed."""
+    return _workpaper_out(await sign_reviewed(ctx, engagement_id, procedure_id))
+
+
+@router.get(
+    "/procedures/{procedure_id}/workpaper/file",
+    action="procedure.read",
+    response_model=bytes,
+    errors=(409,),
+)
+async def workpaper_file_route(
+    engagement_id: UUID,
+    procedure_id: UUID,
+    ctx: Ctx,
+    version: Annotated[int | None, Query(ge=1)] = None,
+) -> Response:
+    """The current draft, or a signed version (re-rendered and checked, D1), as an attachment."""
+    content, name = await workpaper_file(ctx, engagement_id, procedure_id, version)
+    return Response(
+        content=content,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f'attachment; filename="{name}"',
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "no-store",
+        },
+    )
