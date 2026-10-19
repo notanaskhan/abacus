@@ -3,17 +3,26 @@ import { type VariantProps, cva } from "class-variance-authority";
 import type { ButtonHTMLAttributes, JSX } from "react";
 import { cn } from "../cn";
 
+// Pill buttons (TASK-091): one dark primary per surface, white secondary on a 0.5px ring, tonal
+// and ghost for quiet actions; press scales to .985.
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-[var(--radius-control)] text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full whitespace-nowrap select-none transition-[background-color,box-shadow,transform] duration-150 active:scale-[.985] disabled:pointer-events-none disabled:opacity-45 [&_svg]:size-3.5",
   {
     variants: {
       variant: {
-        default: "bg-accent text-on-accent hover:bg-accent-hover",
-        outline: "border border-line bg-surface text-ink hover:bg-sunken",
-        ghost: "text-ink hover:bg-sunken",
-        danger: "border border-danger bg-surface text-danger hover:bg-danger-soft",
+        default: "bg-espresso font-medium text-on-dark shadow-cta hover:bg-cta-hover",
+        outline: "bg-card text-ink shadow-e1 hover:bg-nav-fill",
+        tonal: "bg-chip text-ink hover:bg-tonal-hover",
+        ghost: "text-ink-2 hover:bg-nav-fill hover:text-ink",
+        danger: "bg-red-tint font-medium text-red-ink hover:bg-red-tint-hover",
+        success: "bg-green font-medium text-on-dark shadow-cta hover:bg-green-hover",
       },
-      size: { default: "h-9 px-4", sm: "h-8 px-3" },
+      size: {
+        default: "h-[30px] px-3.5 text-[13px]",
+        sm: "h-[26px] px-3 text-[12.5px]",
+        lg: "h-[34px] px-4 text-[13.5px]",
+        icon: "size-7 p-0",
+      },
     },
     defaultVariants: { variant: "default", size: "default" },
   },

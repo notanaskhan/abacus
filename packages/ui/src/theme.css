@@ -1,53 +1,201 @@
-/* Direction C, "Atelier" (SPEC-016): the only place colours, fonts and radii are defined. */
-@import "@fontsource/source-sans-3/latin-400.css";
-@import "@fontsource/source-sans-3/latin-600.css";
-@import "@fontsource/source-sans-3/latin-700.css";
-@import "@fontsource/newsreader/latin-500.css";
-@import "@fontsource/newsreader/latin-600.css";
+/* The design foundation (TASK-091; the plan's cross/design-foundations.md): the only place colours,
+   fonts, type sizes, radii and shadows are defined. Warm greige surfaces, espresso ink on an alpha
+   ladder, olive / ochre / brick status families, Geist at 400 and 500 only, no serif, no blue, no
+   gradients, 0.5px rings instead of borders on panes.
+
+   The SPEC-016 token names (ground, surface, muted, line, accent, ok, warn, info, danger, ai) stay
+   as aliases so every screen takes the new look at once; new code uses the plan's names (card,
+   shell, nested, ink-2, hair, espresso, green / amber / red …). */
+@import "@fontsource/geist/latin-400.css";
+@import "@fontsource/geist/latin-500.css";
+@import "@fontsource/geist-mono/latin-400.css";
+@import "@fontsource/geist-mono/latin-500.css";
 
 @theme {
-  --color-ground: #f6f4f0;
-  --color-surface: #fffdfa;
-  --color-rail: #efebe4;
-  --color-sunken: #f1ede6;
-  --color-ink: #23201c;
-  --color-muted: #5f5850;
-  --color-line: #e2dcd2;
-  --color-accent: #7a4e12;
-  --color-accent-hover: #643f0d;
-  --color-accent-soft: #f3e8d6;
-  --color-on-accent: #ffffff;
-  --color-ok: #24502a;
-  --color-ok-soft: #e6efe6;
-  --color-warn: #7a3b0b;
-  --color-warn-soft: #f7e6d5;
-  --color-info: #4e3470;
-  --color-info-soft: #ede6f4;
-  --color-danger: #8a1c1c;
-  --color-danger-soft: #f8e3e1;
-  --color-ai: #5e3f86;
-  --color-ai-line: #c9b6de;
-  --font-sans: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Newsreader", Georgia, serif;
+  /* Surfaces, light to dark */
+  --color-card: #ffffff;
+  --color-band-hd: #fbfbfa;
+  --color-shell: #f8f8f6;
+  --color-nav-fill: #f2f1ef;
+  --color-nested: #efeeeb;
+  --color-sel-bg: #e8e6e0;
+  --color-chip: #e1dfd9;
+  --color-tonal-hover: #d9d6cf;
+
+  /* Ink: espresso on a fixed alpha ladder (ink-2 and ink-3 meet AA on card, shell and nested) */
+  --color-ink: rgba(43, 31, 23, 0.95);
+  --color-ink-2: rgba(43, 31, 23, 0.66);
+  --color-ink-3: rgba(43, 31, 23, 0.6);
+  --color-ink-4: rgba(43, 31, 23, 0.3);
+  --color-hair: rgba(43, 31, 23, 0.1);
+  --color-rule: rgba(43, 31, 23, 0.14);
+  --color-stroke: rgba(43, 31, 23, 0.22);
+
+  /* Dark fills */
+  --color-espresso: #2b1f17;
+  --color-cta-hover: #3b2a1f;
+  --color-cta-press: #22180f;
+  --color-on-dark: #fefefe;
+
+  /* Status families: olive done, ochre in progress, brick issue */
+  --color-green: #5c6b2e;
+  --color-green-ink: #47521f;
+  --color-green-tint: #e6ebd8;
+  --color-green-hover: #525f29;
+  --color-amber: #ba8f45;
+  --color-amber-ink: #7c5718;
+  --color-amber-tint: #f6eedf;
+  --color-red: #b13327;
+  --color-red-ink: #8e2418;
+  --color-red-tint: #f7e4e1;
+  --color-red-tint-hover: #f0d5d0;
+
+  /* Source tracing only, never a status */
+  --color-match-bg: #ecd9f0;
+  --color-match-line: #bf99c8;
+  --color-match-ink: #9253a2;
+
+  /* SPEC-016 aliases */
+  --color-ground: #f8f8f6;
+  --color-surface: #ffffff;
+  --color-rail: #f2f1ef;
+  --color-sunken: #efeeeb;
+  --color-muted: rgba(43, 31, 23, 0.66);
+  --color-line: rgba(43, 31, 23, 0.1);
+  --color-accent: #2b1f17;
+  --color-accent-hover: #3b2a1f;
+  --color-accent-soft: #e8e6e0;
+  --color-on-accent: #fefefe;
+  --color-ok: #47521f;
+  --color-ok-soft: #e6ebd8;
+  --color-warn: #7c5718;
+  --color-warn-soft: #f6eedf;
+  --color-info: #7c5718; /* in progress is ochre; purple is reserved for source tracing */
+  --color-info-soft: #f6eedf;
+  --color-danger: #8e2418;
+  --color-danger-soft: #f7e4e1;
+  --color-ai: rgba(43, 31, 23, 0.6);
+  --color-ai-line: rgba(43, 31, 23, 0.22);
+
+  /* Type: Geist 400/500; the old serif display face is gone */
+  --font-sans: "Geist", "Inter Tight", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-ui: "Geist", "Inter Tight", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Geist", "Inter Tight", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-weight-semibold: 500;
+  --font-weight-bold: 500;
+
+  /* Sizes map Tailwind's scale onto the plan's roles: meta 11.5, body 13, tab 13.5, pane 14.5,
+     title 15, page 20; no display sizes in the product */
+  --text-xs: 11.5px;
+  --text-xs--line-height: 1.3;
+  --text-sm: 13px;
+  --text-sm--line-height: 1.45;
+  --text-base: 13.5px;
+  --text-base--line-height: 1.45;
+  --text-lg: 14.5px;
+  --text-lg--line-height: 1.3;
+  --text-xl: 15px;
+  --text-xl--line-height: 1.3;
+  --text-2xl: 20px;
+  --text-2xl--line-height: 1.2;
+  --text-3xl: 20px;
+  --text-3xl--line-height: 1.2;
+
+  /* Radii */
   --radius-control: 8px;
   --radius-panel: 12px;
+  --radius-pill: 999px;
+  --radius-pane: 12px;
+  --radius-nested: 10px;
+  --radius-tile: 8px;
+  --radius-dialog: 14px;
+
+  /* Elevation: every shadow begins with a 0.5px ink ring, which is the border */
+  --shadow-e1: 0 0 0 0.5px rgba(43, 31, 23, 0.07), 0 1px 2px rgba(43, 31, 23, 0.05);
+  --shadow-e2:
+    0 0 0 0.5px rgba(43, 31, 23, 0.06), 0 1px 2px rgba(43, 31, 23, 0.04),
+    0 4px 10px rgba(43, 31, 23, 0.05);
+  --shadow-e3:
+    0 0 0 0.5px rgba(43, 31, 23, 0.05), 0 2px 4px rgba(43, 31, 23, 0.04),
+    0 14px 30px rgba(43, 31, 23, 0.1);
+  --shadow-pop:
+    0 0 0 0.5px rgba(43, 31, 23, 0.1), 0 2px 6px rgba(43, 31, 23, 0.06),
+    0 18px 40px rgba(43, 31, 23, 0.18);
+  --shadow-menu:
+    0 0 0 0.5px rgba(43, 31, 23, 0.1), 0 2px 6px rgba(43, 31, 23, 0.07),
+    0 22px 48px rgba(43, 31, 23, 0.2);
+  --shadow-modal:
+    0 0 0 0.5px rgba(43, 31, 23, 0.1), 0 2px 6px rgba(43, 31, 23, 0.06),
+    0 26px 60px rgba(43, 31, 23, 0.22);
+  --shadow-cta: 0 1px 2px rgba(43, 31, 23, 0.2);
+  --inset-shadow-hair: inset 0 0 0 0.5px rgba(43, 31, 23, 0.1);
+  --inset-shadow-sel: inset 0 0 0 1px rgba(43, 31, 23, 0.22);
+
+  --ease-out: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 @layer base {
   html {
-    font-family: var(--font-sans);
-    font-size: 15px;
+    font-size: 14px;
     color: var(--color-ink);
-    background: var(--color-ground);
+    background: var(--color-shell);
+    color-scheme: light;
+  }
+  body {
+    font: 400 13px/1.45 var(--font-ui);
+    letter-spacing: -0.005em;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+    letter-spacing: inherit;
+  }
+  b,
+  strong {
+    font-weight: 500;
   }
   h1,
   h2,
   h3 {
-    font-family: var(--font-display);
-    font-weight: 600;
+    font-family: var(--font-ui);
+    font-weight: 500;
+    letter-spacing: -0.012em;
+  }
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  select,
+  textarea {
+    background-color: var(--color-card);
+  }
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--color-espresso);
+  }
+  ::placeholder {
+    color: var(--color-ink-3);
+  }
+  ::selection {
+    background: var(--color-sel-bg);
   }
   :focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
+    outline: none;
+    box-shadow:
+      0 0 0 2px var(--color-card),
+      0 0 0 3.5px var(--color-espresso);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }

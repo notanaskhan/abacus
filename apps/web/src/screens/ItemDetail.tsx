@@ -335,7 +335,7 @@ function VersionCard({
   return (
     <div
       className={`flex flex-col gap-1 rounded-[var(--radius-control)] border p-3 text-sm ${
-        selected ? "border-accent bg-accent-soft" : "border-line"
+        selected ? "border-stroke bg-sel-bg" : "border-line"
       }`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">

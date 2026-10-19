@@ -84,7 +84,7 @@ export function Autonomy({ canSet }: { canSet: boolean }): JSX.Element {
           <label
             key={l.level}
             className={`flex items-start gap-3 rounded-[var(--radius-control)] border p-3 ${
-              chosen === l.level ? "border-accent bg-accent-soft" : "border-line"
+              chosen === l.level ? "border-stroke bg-sel-bg" : "border-line"
             } ${l.available ? "" : "opacity-60"}`}
           >
             <input

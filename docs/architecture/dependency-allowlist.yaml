@@ -61,6 +61,8 @@ typescript:
     lucide-react: approved
     "@fontsource/source-sans-3": approved   # self-hosted UI font; the CSP blocks remote fonts (SPEC-016)
     "@fontsource/newsreader": approved      # self-hosted heading font (SPEC-016)
+    "@fontsource/geist": approved           # self-hosted UI font, the plan's design foundation (TASK-091)
+    "@fontsource/geist-mono": approved      # self-hosted mono for IDs and figures (TASK-091)
     "@workos-inc/authkit-react": pending
   dev:
     typescript: approved
