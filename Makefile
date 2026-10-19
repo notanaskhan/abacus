@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: setup dev seed e2e check-fast check check-generated check-heads ci-unit ci-integration ci-coverage ci-contracts test test-integration evals generate migrate loadtest seed-staging route-parity flag access-review
+.PHONY: setup dev seed e2e check-fast check check-generated check-heads ci-unit ci-integration ci-coverage ci-contracts ci-frontend test test-integration evals generate migrate loadtest seed-staging route-parity flag access-review
 
 setup:
 	cd backend && uv sync --locked
@@ -66,7 +66,7 @@ check-heads:
 check: check-fast
 	cd backend && uv run pytest $(UNIT_TESTS) --cov --cov-fail-under=0
 	cd backend && uv run pytest $(INTEGRATION_TESTS) --cov --cov-append
-	$(MAKE) ci-contracts
+	$(MAKE) ci-contracts ci-frontend
 
 # CI stage 2 runs `check` as parallel jobs (TASK-017). Each suite is split into SHARDS by recorded
 # run time (abacus_tools.ci.shard; every test file runs in exactly one shard), each shard keeps
@@ -97,6 +97,9 @@ ci-contracts:
 		$(MAKE) generate && git diff --exit-code packages/api-client && \
 		test -z "$$(git status --porcelain --untracked-files=all packages/api-client)"; \
 	else echo "api-client drift: skipped until backend/src/abacus/api/export_openapi.py exists (TASK-008)"; fi
+
+# The SPA's tests (F-01-T07: their own CI job, run when the frontend changes; vite build is stage 1).
+ci-frontend:
 	pnpm -C apps/web exec vitest run
 
 test:
