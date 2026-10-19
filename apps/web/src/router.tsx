@@ -5,6 +5,7 @@ import { Link, createRootRoute, createRoute, createRouter } from "@tanstack/reac
 import type { JSX } from "react";
 import { CALLBACK_PATH } from "./auth/session";
 import { AdminLayout } from "./screens/AdminLayout";
+import { Fieldwork } from "./screens/Fieldwork";
 import { AiClientDataSetting } from "./screens/AiClientData";
 import {
   Autonomy,
@@ -184,6 +185,14 @@ const peopleRoute = createRoute({
     return <People engagementId={engagementId} />;
   },
 });
+const fieldworkRoute = createRoute({
+  getParentRoute: () => engagementRoute,
+  path: "/fieldwork",
+  component: function FieldworkPage(): JSX.Element {
+    const { engagementId } = engagementRoute.useParams();
+    return <Fieldwork engagementId={engagementId} />;
+  },
+});
 const reviewRoute = createRoute({
   getParentRoute: () => engagementRoute,
   path: "/review",
@@ -323,6 +332,7 @@ const routeTree = rootRoute.addChildren([
       engagementActivityRoute,
       peopleRoute,
       reviewRoute,
+      fieldworkRoute,
     ]),
     knowledgeRoute,
     adminRoute.addChildren([

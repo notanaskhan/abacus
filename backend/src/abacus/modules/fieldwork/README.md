@@ -16,4 +16,15 @@ selects; people conclude.
   records `populations`, `selections` and `selected_items` in one transaction. Changing the
   parameters and selecting again keeps the old selection. Not performed (D4): entries after year
   end (SPEC-038) and who entered an entry (not in exports).
-- Results, the workpaper, sign-off and screens: TASK-078.
+- **Results** (`PUT …/items/{item}/result`, `procedure.run`): `supported`, `exception` (note) or
+  `not_tested` (reason), with evidence versions the engagement holds; appended, the newest counts.
+  `POST …/items/{item}/request-support` creates an ordinary request worded with the entry's
+  reference, date and amount only. `PUT …/conclusion`: the preparer's conclusion.
+- **Workpaper** (`workpapers.py`, `workpaper.py`; ADR-116): `POST …/workpaper/sign-ready`
+  (`workpaper.sign_ready`) makes the next `workpaper_versions` row, holding the selection, result,
+  conclusion and materiality IDs and the SHA-256 of the content rendered without the Sign-off
+  sheet; `POST …/workpaper/sign-reviewed` (`workpaper.sign_reviewed`) by someone else, while
+  nothing has changed. `GET …/workpaper/file?version=n` re-renders and checks the fingerprint (D1);
+  without a version, the current draft. Sheets: Summary, Selections, Exceptions, Sign-off.
+- **Screens:** the engagement's Fieldwork tab; "Journal entry testing defaults" in firm admin →
+  Methodology.

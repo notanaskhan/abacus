@@ -134,6 +134,8 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "screening.request",
         "upload_review.read",  # SPEC-030 (TASK-059 D1)
         "upload_review.request",  # SPEC-030 (TASK-058)
+        "workpaper.sign_ready",  # SPEC-037 (TASK-078)
+        "workpaper.sign_reviewed",
     ]
     assert all(RULES[a].independence for a in MARKED)
     assert not RULES["request_item.read"].independence

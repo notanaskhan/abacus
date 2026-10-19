@@ -779,6 +779,16 @@ export type CompleteOut = {
 };
 
 /**
+ * ConclusionIn
+ */
+export type ConclusionIn = {
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
  * ConfirmationOut
  */
 export type ConfirmationOut = {
@@ -1094,6 +1104,16 @@ export type DocumentKindIn = {
      * Document Kind
      */
     document_kind?: 'bank_statement' | 'ar_aging' | 'ap_aging' | 'schedule' | null;
+};
+
+/**
+ * DoneOut
+ */
+export type DoneOut = {
+    /**
+     * Ok
+     */
+    ok?: boolean;
 };
 
 /**
@@ -2069,9 +2089,21 @@ export type ItemOut = {
      */
     descriptions: Array<string>;
     /**
+     * Evidence Version Ids
+     */
+    evidence_version_ids?: Array<string>;
+    /**
+     * Id
+     */
+    id?: string | null;
+    /**
      * Kind
      */
     kind: string;
+    /**
+     * Note
+     */
+    note?: string | null;
     /**
      * Position
      */
@@ -2089,9 +2121,17 @@ export type ItemOut = {
      */
     reference: string;
     /**
+     * Result
+     */
+    result?: string | null;
+    /**
      * Rules
      */
     rules: Array<string>;
+    /**
+     * Support Requested
+     */
+    support_requested?: boolean;
 };
 
 /**
@@ -3219,6 +3259,24 @@ export type RequestItemOut = {
 };
 
 /**
+ * ResultIn
+ */
+export type ResultIn = {
+    /**
+     * Evidence Version Ids
+     */
+    evidence_version_ids?: Array<string>;
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Result
+     */
+    result: 'supported' | 'exception' | 'not_tested';
+};
+
+/**
  * RetentionExceptionOut
  */
 export type RetentionExceptionOut = {
@@ -3687,6 +3745,32 @@ export type SheetPreviewOut = {
 };
 
 /**
+ * SignatureOut
+ */
+export type SignatureOut = {
+    /**
+     * Kind
+     */
+    kind: 'ready' | 'reviewed';
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Role
+     */
+    role: string;
+    /**
+     * Signed At
+     */
+    signed_at: string;
+    /**
+     * Signed By
+     */
+    signed_by: string;
+};
+
+/**
  * SignupIn
  */
 export type SignupIn = {
@@ -3880,6 +3964,16 @@ export type SuggestionOut = {
      * Source
      */
     source?: 'matcher' | 'content' | 'file_name';
+};
+
+/**
+ * SupportOut
+ */
+export type SupportOut = {
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
 };
 
 /**
@@ -4251,6 +4345,24 @@ export type ValidationErrorOut = {
 };
 
 /**
+ * VersionOut
+ */
+export type VersionOut = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Signatures
+     */
+    signatures: Array<SignatureOut>;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * WallIn
  */
 export type WallIn = {
@@ -4302,6 +4414,36 @@ export type WallOut = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * WorkpaperOut
+ */
+export type WorkpaperOut = {
+    /**
+     * Conclusion
+     */
+    conclusion: string;
+    /**
+     * Entries
+     */
+    entries: number;
+    /**
+     * Exceptions
+     */
+    exceptions: number;
+    /**
+     * Status
+     */
+    status: 'not_started' | 'draft' | 'ready' | 'reviewed';
+    /**
+     * Versions
+     */
+    versions: Array<VersionOut>;
+    /**
+     * With Result
+     */
+    with_result: number;
 };
 
 /**
@@ -7769,6 +7911,62 @@ export type ProcedureResponses = {
 
 export type ProcedureResponse = ProcedureResponses[keyof ProcedureResponses];
 
+export type ConclusionData = {
+    body: ConclusionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Procedure Id
+         */
+        procedure_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/procedures/{procedure_id}/conclusion';
+};
+
+export type ConclusionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ConclusionError = ConclusionErrors[keyof ConclusionErrors];
+
+export type ConclusionResponses = {
+    /**
+     * Successful Response
+     */
+    200: DoneOut;
+};
+
+export type ConclusionResponse = ConclusionResponses[keyof ConclusionResponses];
+
 export type ItemsData = {
     body?: never;
     headers?: {
@@ -7835,6 +8033,126 @@ export type ItemsResponses = {
 };
 
 export type ItemsResponse = ItemsResponses[keyof ItemsResponses];
+
+export type RequestSupportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Procedure Id
+         */
+        procedure_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/procedures/{procedure_id}/items/{item_id}/request-support';
+};
+
+export type RequestSupportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RequestSupportError = RequestSupportErrors[keyof RequestSupportErrors];
+
+export type RequestSupportResponses = {
+    /**
+     * Successful Response
+     */
+    201: SupportOut;
+};
+
+export type RequestSupportResponse = RequestSupportResponses[keyof RequestSupportResponses];
+
+export type ResultData = {
+    body: ResultIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Procedure Id
+         */
+        procedure_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/procedures/{procedure_id}/items/{item_id}/result';
+};
+
+export type ResultErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ResultError = ResultErrors[keyof ResultErrors];
+
+export type ResultResponses = {
+    /**
+     * Successful Response
+     */
+    200: DoneOut;
+};
+
+export type ResultResponse = ResultResponses[keyof ResultResponses];
 
 export type SetParametersData = {
     body: CriteriaIoInput;
@@ -8015,6 +8333,249 @@ export type SelectResponses = {
 };
 
 export type SelectResponse = SelectResponses[keyof SelectResponses];
+
+export type WorkpaperData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Procedure Id
+         */
+        procedure_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper';
+};
+
+export type WorkpaperErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type WorkpaperError = WorkpaperErrors[keyof WorkpaperErrors];
+
+export type WorkpaperResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkpaperOut;
+};
+
+export type WorkpaperResponse = WorkpaperResponses[keyof WorkpaperResponses];
+
+export type WorkpaperFileData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Procedure Id
+         */
+        procedure_id: string;
+    };
+    query?: {
+        /**
+         * Version
+         */
+        version?: number | null;
+    };
+    url: '/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper/file';
+};
+
+export type WorkpaperFileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type WorkpaperFileError = WorkpaperFileErrors[keyof WorkpaperFileErrors];
+
+export type WorkpaperFileResponses = {
+    /**
+     * Response Workpaper File
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type WorkpaperFileResponse = WorkpaperFileResponses[keyof WorkpaperFileResponses];
+
+export type SignReadyData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Procedure Id
+         */
+        procedure_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper/sign-ready';
+};
+
+export type SignReadyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SignReadyError = SignReadyErrors[keyof SignReadyErrors];
+
+export type SignReadyResponses = {
+    /**
+     * Successful Response
+     */
+    201: WorkpaperOut;
+};
+
+export type SignReadyResponse = SignReadyResponses[keyof SignReadyResponses];
+
+export type SignReviewedData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Procedure Id
+         */
+        procedure_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper/sign-reviewed';
+};
+
+export type SignReviewedErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SignReviewedError = SignReviewedErrors[keyof SignReviewedErrors];
+
+export type SignReviewedResponses = {
+    /**
+     * Successful Response
+     */
+    201: WorkpaperOut;
+};
+
+export type SignReviewedResponse = SignReviewedResponses[keyof SignReviewedResponses];
 
 export type DraftsData = {
     body?: never;

@@ -222,6 +222,8 @@ actions:
   procedure.configure:      {engagement_partner: allow, manager: allow, independence: required}   # a procedure's criteria
   procedure.run:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # start, pick, select
   procedure.read:           {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # firm roles only; clients are refused by role
+  workpaper.sign_ready:     {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # SPEC-037 (TASK-078): the preparer
+  workpaper.sign_reviewed:  {engagement_partner: allow, manager: allow, senior: allow, reviewer: allow, independence: required}   # ADR-116 Q2, TASK-078 D3: never the preparer (the service refuses)
   suggestion.resolve:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny}
 
   # --- Communications (SPEC-006 Q4; TASK-021) ---

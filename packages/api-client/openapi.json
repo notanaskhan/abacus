@@ -1649,6 +1649,23 @@
         "title": "CompleteOut",
         "type": "object"
       },
+      "ConclusionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "cls": "confidential",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "ConclusionIn",
+        "type": "object"
+      },
       "ConfirmationOut": {
         "properties": {
           "answered_at": {
@@ -2298,6 +2315,18 @@
           }
         },
         "title": "DocumentKindIn",
+        "type": "object"
+      },
+      "DoneOut": {
+        "properties": {
+          "ok": {
+            "cls": "internal",
+            "default": true,
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "title": "DoneOut",
         "type": "object"
       },
       "DraftGuidanceIn": {
@@ -4206,10 +4235,45 @@
             "title": "Descriptions",
             "type": "array"
           },
+          "evidence_version_ids": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Evidence Version Ids",
+            "type": "array"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Id"
+          },
           "kind": {
             "cls": "confidential",
             "title": "Kind",
             "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
           },
           "position": {
             "cls": "internal",
@@ -4238,6 +4302,18 @@
             "title": "Reference",
             "type": "string"
           },
+          "result": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Result"
+          },
           "rules": {
             "cls": "internal",
             "items": {
@@ -4245,6 +4321,12 @@
             },
             "title": "Rules",
             "type": "array"
+          },
+          "support_requested": {
+            "cls": "internal",
+            "default": false,
+            "title": "Support Requested",
+            "type": "boolean"
           }
         },
         "required": [
@@ -6506,6 +6588,50 @@
         "title": "RequestItemOut",
         "type": "object"
       },
+      "ResultIn": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_version_ids": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Evidence Version Ids",
+            "type": "array"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
+          "result": {
+            "cls": "internal",
+            "enum": [
+              "supported",
+              "exception",
+              "not_tested"
+            ],
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "ResultIn",
+        "type": "object"
+      },
       "RetentionExceptionOut": {
         "properties": {
           "max_days": {
@@ -7483,6 +7609,50 @@
         "title": "SheetPreviewOut",
         "type": "object"
       },
+      "SignatureOut": {
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "ready",
+              "reviewed"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "cls": "internal",
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "cls": "internal",
+            "title": "Role",
+            "type": "string"
+          },
+          "signed_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Signed At",
+            "type": "string"
+          },
+          "signed_by": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Signed By",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "signed_by",
+          "name",
+          "role",
+          "signed_at"
+        ],
+        "title": "SignatureOut",
+        "type": "object"
+      },
       "SignupIn": {
         "additionalProperties": false,
         "properties": {
@@ -7868,6 +8038,21 @@
           "matched"
         ],
         "title": "SuggestionOut",
+        "type": "object"
+      },
+      "SupportOut": {
+        "properties": {
+          "request_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Request Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_item_id"
+        ],
+        "title": "SupportOut",
         "type": "object"
       },
       "SupportSessionIn": {
@@ -8617,6 +8802,36 @@
         "title": "ValidationErrorOut",
         "type": "object"
       },
+      "VersionOut": {
+        "properties": {
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "signatures": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/SignatureOut"
+            },
+            "title": "Signatures",
+            "type": "array"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "created_at",
+          "signatures"
+        ],
+        "title": "VersionOut",
+        "type": "object"
+      },
       "WallIn": {
         "additionalProperties": false,
         "properties": {
@@ -8720,6 +8935,59 @@
           "removed_at"
         ],
         "title": "WallOut",
+        "type": "object"
+      },
+      "WorkpaperOut": {
+        "properties": {
+          "conclusion": {
+            "cls": "confidential",
+            "title": "Conclusion",
+            "type": "string"
+          },
+          "entries": {
+            "cls": "internal",
+            "title": "Entries",
+            "type": "integer"
+          },
+          "exceptions": {
+            "cls": "internal",
+            "title": "Exceptions",
+            "type": "integer"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "not_started",
+              "draft",
+              "ready",
+              "reviewed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "versions": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/VersionOut"
+            },
+            "title": "Versions",
+            "type": "array"
+          },
+          "with_result": {
+            "cls": "internal",
+            "title": "With Result",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "status",
+          "entries",
+          "with_result",
+          "exceptions",
+          "conclusion",
+          "versions"
+        ],
+        "title": "WorkpaperOut",
         "type": "object"
       },
       "YourPartOut": {
@@ -16137,6 +16405,132 @@
         "x-abacus-action": "procedure.read"
       }
     },
+    "/v1/engagements/{engagement_id}/procedures/{procedure_id}/conclusion": {
+      "put": {
+        "operationId": "conclusion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "procedure_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Procedure Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConclusionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DoneOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Conclusion Route",
+        "tags": [
+          "fieldwork"
+        ],
+        "x-abacus-action": "procedure.run"
+      }
+    },
     "/v1/engagements/{engagement_id}/procedures/{procedure_id}/items": {
       "get": {
         "operationId": "items",
@@ -16278,6 +16672,270 @@
           "fieldwork"
         ],
         "x-abacus-action": "procedure.read"
+      }
+    },
+    "/v1/engagements/{engagement_id}/procedures/{procedure_id}/items/{item_id}/request-support": {
+      "post": {
+        "description": "Ask the client for an entry's support: an ordinary request, linked to the entry.",
+        "operationId": "request_support",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "procedure_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Procedure Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Request Support Route",
+        "tags": [
+          "fieldwork"
+        ],
+        "x-abacus-action": "procedure.run"
+      }
+    },
+    "/v1/engagements/{engagement_id}/procedures/{procedure_id}/items/{item_id}/result": {
+      "put": {
+        "description": "SPEC-037 AC-4: a person's result on a selected entry (appended; the newest counts).",
+        "operationId": "result",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "procedure_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Procedure Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DoneOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Result Route",
+        "tags": [
+          "fieldwork"
+        ],
+        "x-abacus-action": "procedure.run"
       }
     },
     "/v1/engagements/{engagement_id}/procedures/{procedure_id}/parameters": {
@@ -16678,6 +17336,522 @@
           "fieldwork"
         ],
         "x-abacus-action": "procedure.run"
+      }
+    },
+    "/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper": {
+      "get": {
+        "operationId": "workpaper",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "procedure_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Procedure Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkpaperOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Workpaper Route",
+        "tags": [
+          "fieldwork"
+        ],
+        "x-abacus-action": "procedure.read"
+      }
+    },
+    "/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper/file": {
+      "get": {
+        "description": "The current draft, or a signed version (re-rendered and checked, D1), as an attachment.",
+        "operationId": "workpaper_file",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "procedure_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Procedure Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Workpaper File",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Workpaper File Route",
+        "tags": [
+          "fieldwork"
+        ],
+        "x-abacus-action": "procedure.read"
+      }
+    },
+    "/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper/sign-ready": {
+      "post": {
+        "description": "ADR-116: the preparer signs the current state; it becomes the next version.",
+        "operationId": "sign_ready",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "procedure_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Procedure Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkpaperOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Sign Ready Route",
+        "tags": [
+          "fieldwork"
+        ],
+        "x-abacus-action": "workpaper.sign_ready"
+      }
+    },
+    "/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper/sign-reviewed": {
+      "post": {
+        "description": "ADR-116: another person signs the latest ready version, while nothing has changed.",
+        "operationId": "sign_reviewed",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "procedure_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Procedure Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkpaperOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Sign Reviewed Route",
+        "tags": [
+          "fieldwork"
+        ],
+        "x-abacus-action": "workpaper.sign_reviewed"
       }
     },
     "/v1/engagements/{engagement_id}/reminders": {
