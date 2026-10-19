@@ -4,7 +4,7 @@ title: "Fieldwork, part 1: procedures and workpapers, starting with journal entr
 status: approved
 owner: founder
 risk_zone: red
-related_adrs: [ADR-004, ADR-005, ADR-042, ADR-050, ADR-052, ADR-065, ADR-111, ADR-115, ADR-116, ADR-117]
+related_adrs: [ADR-004, ADR-005, ADR-042, ADR-050, ADR-052, ADR-065, ADR-111, ADR-115, ADR-131, ADR-132]
 related_specs: [SPEC-008, SPEC-031, SPEC-034, SPEC-036]
 created: 2026-10-19
 updated: 2026-10-19
@@ -20,9 +20,9 @@ updated: 2026-10-19
 Abacus collects and checks evidence until it's ready for review. This spec takes the next step into **fieldwork**: running audit procedures on the data and evidence Abacus already holds, and producing workpapers that a reviewer signs off.
 
 It builds the shared machinery once and proves it with one procedure:
-- **population** and **selection** by code (ADR-117);
+- **population** and **selection** by code (ADR-132);
 - **assessment** of items, optionally by an agent, decided by people;
-- **workpapers** rendered by code, with preparer and reviewer sign-off (ADR-116);
+- **workpapers** rendered by code, with preparer and reviewer sign-off (ADR-131);
 - **the first procedure: journal entry testing** (Q1), on the general ledger detail we already import (SPEC-034).
 
 The search for unrecorded liabilities follows as the second procedure (Q2).
@@ -45,7 +45,7 @@ The search for unrecorded liabilities follows as the second procedure (Q2).
 **Goals**
 1. **Procedures** (new `fieldwork` module, Q5): a procedure is defined in versioned configuration and code. An engagement runs a procedure instance with its parameters, population, selection, items, exceptions, conclusion and workpaper.
 2. **Materiality, entered by a person:** overall materiality, performance materiality and the trivial threshold on the engagement, with who set them and when. Procedures read them; nothing computes or suggests them in this spec (Q3).
-3. **Population (code, ADR-117):** for journal entry testing, every journal entry in the engagement's latest reconciled general ledger snapshot, grouped into entries as TASK-070 does. The count and totals must tie to the snapshot, or the procedure stops with a reason.
+3. **Population (code, ADR-132):** for journal entry testing, every journal entry in the engagement's latest reconciled general ledger snapshot, grouped into entries as TASK-070 does. The count and totals must tie to the snapshot, or the procedure stops with a reason.
 4. **Selection (code):**
    - **criteria**, each a pure rule with a version: entries at or above a threshold derived from performance materiality; round amounts; posted within N days before or after year end; posted after year end; manual entry types; entries to rarely used accounts; descriptions matching a firm-editable word list; weekend dates;
    - **plus a recorded random selection** of the rest, by seed and count;
@@ -55,7 +55,7 @@ The search for unrecorded liabilities follows as the second procedure (Q2).
    - each selected entry can be linked to evidence (existing evidence versions, or a request created for the client: "Support for journal entry JE-1042");
    - optionally, the entry assessor proposes whether the support explains the entry, with citations (Q4);
    - a person marks each entry `supported`, `exception` (with a note) or `not tested` (with a reason).
-6. **Workpaper (ADR-116):** "Journal entry testing" rendered by code with these sheets:
+6. **Workpaper (ADR-131):** "Journal entry testing" rendered by code with these sheets:
    - Summary: parameters, population tie-out, criteria, counts, exceptions and the conclusion;
    - Population;
    - Selections, each with its rules and the person's result;
@@ -72,7 +72,7 @@ The search for unrecorded liabilities follows as the second procedure (Q2).
 **Non-goals**
 - Financial statements, disclosures, forms and questionnaires.
 - Computing or suggesting materiality.
-- Documentation completion and locking (ADR-116 Q1, a later spec).
+- Documentation completion and locking (ADR-131 Q1, a later spec).
 - Statistical sampling for substantive tests of details (later, in `sampling`).
 - The search for unrecorded liabilities (SPEC-038, Q2).
 - Any agent writing figures, selecting entries, concluding or signing (ADR-005, ADR-050).
