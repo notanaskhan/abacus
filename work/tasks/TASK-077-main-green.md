@@ -2,7 +2,7 @@
 id: TASK-077
 title: Make main green — stale integration assertions brought up to the approved specs (epic F-01-T05)
 spec: SPEC-000
-acceptance_criteria: []
+acceptance_criteria: [AC-20]
 risk_zone: red
 status: in-review
 branch: task-077-main-green
