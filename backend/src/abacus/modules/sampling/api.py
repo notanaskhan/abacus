@@ -4,6 +4,16 @@ Populations and selection by code (ADR-132; SPEC-037; TASK-083): pure functions 
 snapshots, with versioned rules, so another auditor can re-perform a selection.
 """
 
+from abacus.modules.sampling.payments import (
+    PAYMENTS_RULE_VERSION,
+    Band,
+    Bill,
+    bills_by_party,
+    build_payments,
+    recorded_bill,
+    select_payments,
+    ties,
+)
 from abacus.modules.sampling.population import (
     RULE_VERSION,
     Entry,
@@ -26,16 +36,24 @@ from abacus.modules.sampling.selection import (
 __all__ = [
     "CRITERIA_VERSION",
     "DEFAULT_KEYWORDS",
+    "PAYMENTS_RULE_VERSION",
     "RANDOM_METHOD",
     "RULES",
     "RULE_VERSION",
+    "Band",
+    "Bill",
     "Entry",
     "Parameters",
     "Population",
     "Selected",
+    "bills_by_party",
+    "build_payments",
     "build_population",
     "manual_kinds_for",
+    "recorded_bill",
     "seeded_v1",
     "select",
+    "select_payments",
     "tie_out",
+    "ties",
 ]

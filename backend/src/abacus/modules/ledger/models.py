@@ -6,7 +6,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import Numeric
+from sqlalchemy import FetchedValue, Numeric
 from sqlalchemy.orm import Mapped, mapped_column
 
 from abacus.kernel.db import Base
@@ -55,7 +55,8 @@ class GlSnapshot(Base):
     period_end: Mapped[date]
     source: Mapped[str]
     raw_fingerprint: Mapped[str]
-    tb_snapshot_id: Mapped[UUID]
+    tb_snapshot_id: Mapped[UUID | None]  # None only for a subsequent-period ledger (SPEC-038)
+    kind: Mapped[str] = mapped_column(server_default=FetchedValue())  # year | subsequent
     line_count: Mapped[int]
     total_debit: Mapped[Decimal] = mapped_column(Numeric(20, 2))
     total_credit: Mapped[Decimal] = mapped_column(Numeric(20, 2))

@@ -228,3 +228,20 @@ def journals[P: Posting](entries: Iterable[P]) -> Iterator[tuple[JournalKey, lis
         grouped.setdefault(journal_key(e), []).append(e)
     for key in sorted(grouped):
         yield key, sorted(grouped[key], key=lambda x: x.line_no)
+
+
+# --- The subsequent period (SPEC-038; TASK-086) --------------------------------------------------
+
+
+def validate_subsequent(gl: GlSummary, *, period_start: date, period_end: date) -> GlCheck:
+    """SPEC-038 Q1: no trial balance to reconcile to, so code checks what it can. Every line in
+    the window; every month in it with activity (the cut-off month may be partial, but needs a
+    line); debits equal credits."""
+    missing = [m for m in _months(period_start, period_end) if m not in gl.months]
+    if gl.outside_period or missing:
+        return GlCheck(
+            "period_mismatch", months=tuple(f"{y:04d}-{m:02d}" for y, m in missing[:12])
+        )
+    if gl.total_debit != gl.total_credit:
+        return GlCheck("unbalanced", (("", gl.total_debit - gl.total_credit),))
+    return GlCheck(None)

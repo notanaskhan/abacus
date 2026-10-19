@@ -425,18 +425,29 @@ async def gl_import_route(
     request: Request,
     ctx: Ctx,
     format: Annotated[str, Query(min_length=1, max_length=50)],
+    kind: Annotated[Literal["year", "subsequent"], Query()] = "year",
+    cutoff: Annotated[date | None, Query()] = None,
 ) -> GlImportOut:
     """SPEC-034 AC-1, AC-2: a general ledger export, scanned and stored; processed in the
-    background (`processing`, then `waiting_for_tb`, `reconciled` or `failed`)."""
+    background (`processing`, then `waiting_for_tb`, `reconciled` or `failed`). SPEC-038:
+    `kind=subsequent` covers the day after year end to `cutoff` (default 90 days)."""
     await check_gl_receive(ctx, engagement_id)
     content = await _gl_file(request)
-    return _gl_out(await receive_gl_export(ctx, engagement_id, format_id=format, content=content))
+    return _gl_out(
+        await receive_gl_export(
+            ctx, engagement_id, format_id=format, content=content, kind=kind, cutoff=cutoff
+        )
+    )
 
 
 @connection_router.get(
     "/import/gl", action="connection.read_log", response_model=GlImportOut | None
 )
-async def latest_gl_import_route(engagement_id: UUID, ctx: Ctx) -> GlImportOut | None:
+async def latest_gl_import_route(
+    engagement_id: UUID,
+    ctx: Ctx,
+    kind: Annotated[Literal["year", "subsequent"], Query()] = "year",
+) -> GlImportOut | None:
     """SPEC-034 AC-5: the latest general ledger upload for the client entity, or null."""
-    view = await latest_gl(ctx, engagement_id)
+    view = await latest_gl(ctx, engagement_id, kind)
     return None if view is None else _gl_out(view)

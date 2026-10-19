@@ -21,7 +21,7 @@ import tempfile
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Final
 from uuid import UUID, uuid4
@@ -32,7 +32,7 @@ from temporalio.exceptions import WorkflowAlreadyStartedError
 from abacus.kernel import _flags
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
-from abacus.kernel.errors import NotFound
+from abacus.kernel.errors import DomainInvalid, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.logging import get_logger
 from abacus.kernel.scanning import scan
@@ -89,7 +89,9 @@ from abacus.modules.ledger.api import (
     gl_entries,
     gl_snapshot_view,
     record_gl_snapshot,
+    record_subsequent_snapshot,
     validate_gl,
+    validate_subsequent,
     year_end_trial_balance,
 )
 from abacus.modules.organisations.api import client_names
@@ -156,8 +158,20 @@ async def dispatch_gl_import(tenant_id: UUID, import_id: UUID, *, again: str = "
         )
 
 
+class CutoffInvalid(DomainInvalid):
+    """SPEC-038 Q2: the cut-off is 30 to 366 days after year end."""
+
+    code = "cutoff_invalid"
+
+
 async def receive_gl_export(
-    ctx: AuthContext, engagement_id: UUID, *, format_id: str, content: bytes
+    ctx: AuthContext,
+    engagement_id: UUID,
+    *,
+    format_id: str,
+    content: bytes,
+    kind: str = "year",
+    cutoff: date | None = None,
 ) -> GlImportView:
     """SPEC-034 AC-1, AC-2, AC-7: stored, recorded `processing`, and handed to the workflow."""
     await check_gl_receive(ctx, engagement_id)
@@ -181,6 +195,11 @@ async def receive_gl_export(
     metadata = await engagement_metadata(ctx, engagement_id)
     start = metadata.engagement.fiscal_period_start
     end = metadata.engagement.fiscal_period_end
+    if kind == "subsequent":  # SPEC-038: from the day after year end to the cut-off
+        cutoff = cutoff or end + timedelta(days=90)
+        if not 30 <= (cutoff - end).days <= 366:
+            raise CutoffInvalid(str(engagement_id))
+        start, end = end + timedelta(days=1), cutoff
     try:
         stored = await stage_content(ctx.tenant_id, content)
     except ContentTooLarge:  # the storage cap, should the two limits ever differ
@@ -203,6 +222,7 @@ async def receive_gl_export(
             size_bytes=stored.size,
             uploaded_by=ctx.user_id,
             on_behalf=role not in _CLIENT_ROLES,
+            kind=kind,
         )
         if row is None:  # AC-7: the same file again
             found = await gl_import_by_fingerprint(
@@ -221,11 +241,13 @@ async def receive_gl_export(
     return _view(row)
 
 
-async def latest_gl(ctx: AuthContext, engagement_id: UUID) -> GlImportView | None:
+async def latest_gl(
+    ctx: AuthContext, engagement_id: UUID, kind: str = "year"
+) -> GlImportView | None:
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, "connection.read_log", ref.resource())
     async with tenant_session(ctx.tenant) as session:
-        row = await latest_gl_import(session, ref.client_entity_id)
+        row = await latest_gl_import(session, ref.client_entity_id, kind)
     return None if row is None else _view(row)
 
 
@@ -264,6 +286,8 @@ async def process_gl_import(tenant_id: UUID, import_id: UUID) -> str:
         raise NotFound("gl_import")
     if row.status in ("reconciled", "failed"):
         return row.status
+    if row.kind == "subsequent":
+        return await _process_subsequent(tenant, row)
     tb = await year_end_trial_balance(
         tenant, row.client_entity_id, row.period_start, row.period_end
     )
@@ -320,6 +344,62 @@ async def process_gl_import(tenant_id: UUID, import_id: UUID) -> str:
                 tenant, import_id, "gl_import.failed", status="failed", failure_code=str(exc)
             )
             return "failed"
+        await _set(
+            tenant,
+            import_id,
+            "gl_import.reconciled",
+            status="reconciled",
+            gl_snapshot_id=recorded.id,
+            line_count=summary.line_count,
+        )
+        return "reconciled"
+    finally:
+        shutil.rmtree(workdir, ignore_errors=True)
+
+
+async def _process_subsequent(tenant: TenantContext, row: GlImport) -> str:
+    """SPEC-038 (TASK-086): no trial balance to wait for or reconcile to (Q1): parsed in
+    isolation, checked for the window, months and balance, and snapshotted as `subsequent`."""
+    import_id = row.id
+    stored = StoredObject(row.storage_key, row.storage_version_id, row.fingerprint, row.size_bytes)
+    content = await read_content(tenant, stored)
+    workdir = Path(tempfile.mkdtemp(prefix="abacus-gl-"))
+    try:
+        out = str(workdir / "entries.csv")
+        try:
+            summary = await asyncio.to_thread(
+                parse_gl_isolated, content, row.format, row.period_start, row.period_end, out
+            )
+        except NormaliseError as exc:
+            await _set(
+                tenant, import_id, "gl_import.failed", status="failed", failure_code=exc.code
+            )
+            return "failed"
+        check = validate_subsequent(
+            summary, period_start=row.period_start, period_end=row.period_end
+        )
+        if check.failure is not None:
+            await _set(
+                tenant,
+                import_id,
+                "gl_import.failed",
+                status="failed",
+                failure_code=check.failure,
+                failure_details=_details(check.accounts, check.months),
+                line_count=summary.line_count,
+            )
+            return "failed"
+        async with uow(tenant) as tx:
+            recorded = await record_subsequent_snapshot(
+                tx,
+                client_entity_id=row.client_entity_id,
+                period_start=row.period_start,
+                period_end=row.period_end,
+                summary=summary,
+                entries=read_entries(out),
+                raw_fingerprint=row.fingerprint,
+                source=GL_FORMATS[row.format].source,
+            )
         await _set(
             tenant,
             import_id,
@@ -400,6 +480,8 @@ async def _render_as(sys: SystemContext, import_id: UUID) -> list[str]:
         row = await get_gl_import(session, import_id)
     if row is None or row.gl_snapshot_id is None:
         raise NotFound("gl_import")
+    if row.kind == "subsequent":
+        return []  # SPEC-038: the subsequent period is fieldwork's, never the year's evidence
     engagement = await get_ref(sys, row.engagement_id)
     await authorise(sys, "evidence.upload", engagement.resource())
     uploader = await member_context(tenant_id, row.uploaded_by)

@@ -103,6 +103,9 @@ class SelectedItem(Base):
     descriptions: Mapped[list[str]] = mapped_column(ARRAY(String))
     rules: Mapped[list[str]] = mapped_column(ARRAY(String))
     reason: Mapped[str | None]
+    band: Mapped[int | None]  # SPEC-038: a payment's timing band
+    recorded_bill_reference: Mapped[str | None]
+    recorded_bill_date: Mapped[date | None]
 
 
 class ItemResult(Base):
@@ -115,6 +118,7 @@ class ItemResult(Base):
     note: Mapped[str | None]
     evidence_version_ids: Mapped[list[UUID]] = mapped_column(ARRAY(PgUUID(as_uuid=True)))
     recorded_by: Mapped[UUID]
+    relates_to_year: Mapped[str | None]  # SPEC-038: yes | no | unclear
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
 
 
@@ -162,4 +166,18 @@ class WorkpaperSignature(Base):
     kind: Mapped[str] = mapped_column(primary_key=True)
     signed_by: Mapped[UUID]
     role: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class EngagementAccount(Base):
+    """Bank or payables accounts a person confirmed (SPEC-038; TASK-086). Insert-only."""
+
+    __tablename__ = "engagement_accounts"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    role: Mapped[str]
+    account_codes: Mapped[list[str]] = mapped_column(ARRAY(String))
+    confirmed_by: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

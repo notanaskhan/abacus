@@ -42,6 +42,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
+import { Accounts, Bands, SubsequentLedger } from "./UnrecordedLiabilities";
 
 // SPEC-037 (TASK-083, TASK-084): journal entry testing. Code builds the population and selects
 // entries (ADR-132); people record results, conclude and sign the workpaper (ADR-131).
@@ -63,6 +64,8 @@ const MESSAGES: Record<string, string> = {
   reviewer_is_preparer: "The reviewer can't be the person who signed it as ready.",
   workpaper_fingerprint_mismatch: "This version no longer matches what was signed.",
   ai_assessor_unavailable: "AI assessment isn't available here.",
+  accounts_missing: "Confirm the bank and payables accounts first.",
+  no_subsequent_ledger: "Upload the general ledger after year end first.",
 };
 
 const RULES: Record<string, string> = {
@@ -75,7 +78,10 @@ const RULES: Record<string, string> = {
   keywords: "Flagged words",
   random: "Random",
   picked: "Picked by the team",
+  band: "Over its band's threshold",
 };
+
+const RELATES: Record<string, string> = { yes: "Yes", no: "No", unclear: "Unclear" };
 
 const VERDICTS: Record<string, string> = {
   explained: "AI: the support explains it",
@@ -282,6 +288,8 @@ function EntryRow({
   const [result, setResult] = useState(item.result ?? "");
   const [note, setNote] = useState(item.note ?? "");
   const [linked, setLinked] = useState<string[]>(item.evidence_version_ids ?? []);
+  const [relates, setRelates] = useState(item.relates_to_year ?? "");
+  const banded = item.band != null;
   const path = { engagement_id: engagementId, procedure_id: procedureId, item_id: item.id ?? "" };
   const refresh = (): void => {
     void queryClient.invalidateQueries({
@@ -308,6 +316,14 @@ function EntryRow({
       <Td className="text-xs">
         {item.rules.map((r) => RULES[r] ?? r).join(", ")}
         {item.reason != null && <div className="text-muted">{item.reason}</div>}
+        {banded && (
+          <div className="text-muted">
+            {`Band ${String(item.band)} · `}
+            {item.recorded_bill_reference != null
+              ? `Bill recorded at year end: ${item.recorded_bill_reference}, ${item.recorded_bill_date ?? ""}`
+              : "No matching bill at year end"}
+          </div>
+        )}
         {assessment !== undefined && <Assessment assessment={assessment} />}
       </Td>
       <Td>
@@ -328,6 +344,23 @@ function EntryRow({
                 </option>
               ))}
             </select>
+            {banded && (
+              <select
+                aria-label={`Relates to the year for ${item.reference || item.posted_on}`}
+                value={relates}
+                onChange={(e) => {
+                  setRelates(e.target.value);
+                }}
+                className="rounded-[var(--radius-control)] border border-line bg-surface p-1"
+              >
+                <option value="">Relates to the year?</option>
+                {Object.entries(RELATES).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {`Relates to the year: ${v}`}
+                  </option>
+                ))}
+              </select>
+            )}
             {result !== "" && result !== "supported" && (
               <input
                 aria-label="Note"
@@ -368,6 +401,8 @@ function EntryRow({
                       result: result as "supported" | "exception" | "not_tested",
                       note: note || null,
                       evidence_version_ids: linked,
+                      relates_to_year:
+                        relates === "" ? null : (relates as "yes" | "no" | "unclear"),
                     },
                   });
                 }}
@@ -390,7 +425,11 @@ function EntryRow({
             )}
           </div>
         ) : (
-          <span className="text-sm">{RESULTS[item.result ?? ""] ?? "No result"}</span>
+          <span className="text-sm">
+            {RESULTS[item.result ?? ""] ?? "No result"}
+            {item.relates_to_year != null &&
+              ` · relates to the year: ${RELATES[item.relates_to_year] ?? ""}`}
+          </span>
         )}
       </Td>
     </tr>
@@ -573,6 +612,8 @@ function ProcedurePanel({
     },
   });
   const p = detail.data;
+  const surl = p.definition === "unrecorded_liabilities";
+  const canSet = role === "engagement_partner" || role === "manager";
   const canRun = ["engagement_partner", "manager", "senior", "staff"].includes(role ?? "");
   const canReview = ["engagement_partner", "manager", "senior", "reviewer"].includes(role ?? "");
   const choices = (evidence.data ?? []).map((v) => ({
@@ -581,8 +622,19 @@ function ProcedurePanel({
   }));
   return (
     <div className="flex flex-col gap-4">
+      {surl && <SubsequentLedger engagementId={engagementId} canUpload={canRun} />}
+      {surl && <Accounts engagementId={engagementId} canSet={canSet} />}
+      {surl && (
+        <Bands
+          engagementId={engagementId}
+          procedureId={p.id}
+          bands={(p.parameters.bands ?? []) as { until_day: number | null; percent: number }[]}
+          thresholds={((p.parameters.thresholds as string[] | undefined) ?? []) satisfies string[]}
+          canSet={canSet}
+        />
+      )}
       <Panel
-        title="Journal entry testing"
+        title={surl ? "Search for unrecorded liabilities" : "Journal entry testing"}
         action={
           canRun ? (
             <Button
@@ -592,7 +644,7 @@ function ProcedurePanel({
                 select.mutate(path);
               }}
             >
-              {p.selection ? "Select again" : "Select entries"}
+              {p.selection ? "Select again" : surl ? "Select payments" : "Select entries"}
             </Button>
           ) : undefined
         }
@@ -606,9 +658,13 @@ function ProcedurePanel({
           )}
           {p.population != null && (
             <p>
-              {`${p.population.entry_count.toLocaleString()} journal entries (${p.population.line_count.toLocaleString()} ledger lines) `}
+              {surl
+                ? `${p.population.entry_count.toLocaleString()} payments after year end, ${Number(p.population.total_debit).toLocaleString("en-US", { minimumFractionDigits: 2 })} in total, `
+                : `${p.population.entry_count.toLocaleString()} journal entries (${p.population.line_count.toLocaleString()} ledger lines) `}
               {p.population.tied
-                ? "agree to the general ledger."
+                ? surl
+                  ? "agree to the bank-account credits in the export."
+                  : "agree to the general ledger."
                 : "didn't agree to the general ledger."}
             </p>
           )}
@@ -621,20 +677,24 @@ function ProcedurePanel({
             </p>
           )}
           {p.selection == null && p.status !== "selecting" && (
-            <p className="text-muted">No entries selected yet.</p>
+            <p className="text-muted">
+              {surl ? "No payments selected yet." : "No entries selected yet."}
+            </p>
           )}
-          <p className="text-xs text-muted">
-            Not performed: entries posted after year end (needs the subsequent-period ledger) and
-            who entered each entry (not in the export).
-          </p>
+          {!surl && (
+            <p className="text-xs text-muted">
+              Not performed: entries posted after year end (needs the subsequent-period ledger) and
+              who entered each entry (not in the export).
+            </p>
+          )}
           {select.isError && <Alert title="Couldn't select">{said(select.error)}</Alert>}
         </div>
       </Panel>
       {p.selection != null && (
         <Panel
-          title="Selected entries"
+          title={surl ? "Selected payments" : "Selected entries"}
           action={
-            canRun ? (
+            canRun && !surl ? (
               <Button
                 size="sm"
                 variant="outline"
@@ -724,6 +784,7 @@ export function Fieldwork({ engagementId }: { engagementId: string }): JSX.Eleme
     );
   }
   const jet = procedures.data.find((p) => p.definition === "journal_entry_testing");
+  const surl = procedures.data.find((p) => p.definition === "unrecorded_liabilities");
   return (
     <div className="flex flex-col gap-4">
       <MaterialityPanel engagementId={engagementId} canSet={canSet} />
@@ -750,6 +811,31 @@ export function Fieldwork({ engagementId }: { engagementId: string }): JSX.Eleme
               </div>
             )}
             {start.isError && <Alert title="Couldn't start">{said(start.error)}</Alert>}
+          </div>
+        </Panel>
+      )}
+      {surl ? (
+        <ProcedurePanel engagementId={engagementId} procedure={surl} role={role} />
+      ) : (
+        <Panel title="Search for unrecorded liabilities">
+          <div className="flex flex-col gap-2 text-sm">
+            <p className="text-muted">
+              Tests payments made after year end for liabilities that should have been recorded at
+              year end: larger payments by timing band, with a check for a matching bill.
+            </p>
+            {canRun && (
+              <div>
+                <Button
+                  size="sm"
+                  disabled={start.isPending}
+                  onClick={() => {
+                    start.mutate({ ...path, body: { definition: "unrecorded_liabilities" } });
+                  }}
+                >
+                  Start
+                </Button>
+              </div>
+            )}
           </div>
         </Panel>
       )}

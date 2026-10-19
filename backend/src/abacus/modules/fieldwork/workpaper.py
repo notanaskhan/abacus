@@ -48,6 +48,7 @@ RULE_LABELS: Final = {
     "keywords": "Description contains a flagged word",
     "random": "Random selection",
     "picked": "Selected by the team",
+    "band": "At or above its timing band's threshold",
 }
 NOT_PERFORMED: Final = {
     "after_year_end": "Entries posted after year end: needs the subsequent-period ledger.",
@@ -69,6 +70,9 @@ class Row:
     note: str | None
     evidence: tuple[str, ...]
     support_requested: bool
+    band: int | None = None  # SPEC-038
+    recorded_bill: str | None = None
+    relates_to_year: str | None = None
 
 
 @dataclass(frozen=True)
@@ -106,6 +110,9 @@ class Workpaper:
     conclusion: str
     not_performed: Sequence[str]
     stamp: datetime  # the newest record included: the document's fixed date
+    title: str = "Journal entry testing"
+    population_rows: Sequence[tuple[str, str]] = ()  # SPEC-038: replaces the journal entries block
+    notes: Sequence[str] = ()
 
 
 Sheet = Worksheet
@@ -144,7 +151,7 @@ def _pair(sheet: Sheet, label: str, value: Cell | str) -> list[Cell]:
 def _summary(book: Workbook, w: Workpaper) -> None:
     s = book.create_sheet("Summary")
     rows: list[list[Cell]] = [
-        [_text(s, "Journal entry testing", bold=True)],
+        [_text(s, w.title, bold=True)],
         _pair(s, "Client", w.client_name),
         _pair(s, "Engagement", w.engagement_name),
         _pair(s, "Year end", w.year_end.isoformat()),
@@ -156,13 +163,23 @@ def _summary(book: Workbook, w: Workpaper) -> None:
         _pair(s, "Benchmark", w.benchmark),
         [],
         [_text(s, "Population", bold=True)],
-        _pair(s, "Source", f"General ledger snapshot {w.gl_snapshot_id}"),
-        _pair(s, "Full listing", "The journal listing workbook held as evidence for this ledger"),
-        _pair(s, "Journal entries", _number(s, w.entry_count)),
-        _pair(s, "Ledger lines", _number(s, w.line_count)),
-        _pair(s, "Total debits", _amount(s, w.total_debit)),
-        _pair(s, "Total credits", _amount(s, w.total_credit)),
-        _pair(s, "Tie-out", "Agrees to the ledger snapshot (lines and debits)"),
+        *(
+            [_pair(s, k, v) for k, v in w.population_rows]
+            if w.population_rows
+            else [
+                _pair(s, "Source", f"General ledger snapshot {w.gl_snapshot_id}"),
+                _pair(
+                    s,
+                    "Full listing",
+                    "The journal listing workbook held as evidence for this ledger",
+                ),
+                _pair(s, "Journal entries", _number(s, w.entry_count)),
+                _pair(s, "Ledger lines", _number(s, w.line_count)),
+                _pair(s, "Total debits", _amount(s, w.total_debit)),
+                _pair(s, "Total credits", _amount(s, w.total_credit)),
+                _pair(s, "Tie-out", "Agrees to the ledger snapshot (lines and debits)"),
+            ]
+        ),
         [],
         [_text(s, "Selection", bold=True)],
         _pair(s, "Procedure", f"{w.definition} v{w.definition_version}"),
@@ -180,8 +197,12 @@ def _summary(book: Workbook, w: Workpaper) -> None:
     for key in ("supported", "exception", "not_tested", None):
         count = sum(1 for r in w.rows if r.result == key)
         rows.append(_pair(s, RESULT_LABELS[key], _number(s, count)))
-    rows += [[], [_text(s, "Not performed", bold=True)]]
-    rows += [[_text(s, NOT_PERFORMED.get(n, n))] for n in w.not_performed]
+    if w.not_performed:
+        rows += [[], [_text(s, "Not performed", bold=True)]]
+        rows += [[_text(s, NOT_PERFORMED.get(n, n))] for n in w.not_performed]
+    if w.notes:
+        rows += [[], [_text(s, "Notes", bold=True)]]
+        rows += [[_text(s, n)] for n in w.notes]
     rows += [[], [_text(s, "Conclusion", bold=True)], [_text(s, w.conclusion)]]
     for row in rows:
         s.append(row)
@@ -203,10 +224,23 @@ _HEAD: Final = (
 )
 
 
-def _rows(book: Workbook, title: str, rows: Sequence[Row]) -> None:
+_BANDED: Final = ("Band", "Bill recorded at year end", "Relates to the year")
+RELATES: Final = {"yes": "Yes", "no": "No", "unclear": "Unclear"}
+
+
+def _rows(book: Workbook, title: str, rows: Sequence[Row], banded: bool = False) -> None:
     s = book.create_sheet(title)
-    s.append([_text(s, h, bold=True) for h in _HEAD])
+    s.append([_text(s, h, bold=True) for h in (*_HEAD, *(_BANDED if banded else ()))])
     for r in rows:
+        extra = (
+            [
+                _number(s, r.band or 0),
+                _text(s, r.recorded_bill or "None found"),
+                _text(s, RELATES.get(r.relates_to_year or "", "")),
+            ]
+            if banded
+            else []
+        )
         s.append(
             [
                 _text(s, r.posted_on.isoformat()),
@@ -221,6 +255,7 @@ def _rows(book: Workbook, title: str, rows: Sequence[Row]) -> None:
                 _text(s, r.note or ""),
                 _text(s, "; ".join(r.evidence)),
                 _text(s, "Yes" if r.support_requested else ""),
+                *extra,
             ]
         )
 
@@ -266,8 +301,9 @@ def render_workpaper(
     book.properties.creator = "Abacus"
     book.properties.created = w.stamp.astimezone(UTC).replace(tzinfo=None)
     _summary(book, w)
-    _rows(book, "Selections", w.rows)
-    _rows(book, "Exceptions", [r for r in w.rows if r.result == "exception"])
+    banded = bool(w.population_rows)
+    _rows(book, "Selections", w.rows, banded)
+    _rows(book, "Exceptions", [r for r in w.rows if r.result == "exception"], banded)
     if with_signoff:
         _signoff(book, signatures)
     buffer = io.BytesIO()

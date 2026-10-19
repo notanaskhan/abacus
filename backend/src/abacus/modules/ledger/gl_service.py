@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Final
 from uuid import UUID, uuid4
@@ -24,6 +24,7 @@ from abacus.modules.ledger.general_ledger import (
     GlSummary,
     TbAccount,
     validate_gl,
+    validate_subsequent,
 )
 from abacus.modules.ledger.models import GlAccountBalance, GlEntryRow
 from abacus.modules.ledger.repository import (
@@ -37,6 +38,7 @@ from abacus.modules.ledger.repository import (
     latest_snapshot_for,
     lines_of,
     newest_gl_snapshot,
+    newest_subsequent_snapshot,
 )
 from abacus.modules.ledger.service import Unvalidated
 
@@ -188,11 +190,12 @@ class GlSnapshotView:
     period_end: date
     source: str
     raw_fingerprint: str
-    tb_snapshot_id: UUID
+    tb_snapshot_id: UUID | None
     line_count: int
     total_debit: Decimal
     created_at: datetime
     balances: tuple[Balance, ...]
+    kind: str = "year"
 
 
 async def gl_snapshot_view(tenant: TenantContext, snapshot_id: UUID) -> GlSnapshotView:
@@ -225,6 +228,7 @@ async def gl_snapshot_view(tenant: TenantContext, snapshot_id: UUID) -> GlSnapsh
             )
             for r in rows
         ),
+        snapshot.kind,
     )
 
 
@@ -260,3 +264,77 @@ async def latest_gl_snapshot(
     async with tenant_session(tenant) as session:
         found = await newest_gl_snapshot(session, client_entity_id, period_end)
     return await gl_snapshot_view(tenant, found) if found is not None else None
+
+
+async def latest_subsequent_snapshot(
+    tenant: TenantContext, client_entity_id: UUID, year_end: date
+) -> GlSnapshotView | None:
+    """SPEC-038: the newest subsequent-period ledger (from the day after year end)."""
+    async with tenant_session(tenant) as session:
+        found = await newest_subsequent_snapshot(
+            session, client_entity_id, year_end + timedelta(days=1)
+        )
+    return await gl_snapshot_view(tenant, found) if found is not None else None
+
+
+async def record_subsequent_snapshot(
+    tx: UnitOfWork,
+    *,
+    client_entity_id: UUID,
+    period_start: date,
+    period_end: date,
+    summary: GlSummary,
+    entries: Iterable[GlEntry],
+    raw_fingerprint: str,
+    source: str,
+) -> GlSnapshotRef:
+    """SPEC-038 (TASK-086): inside the caller's unit of work, a checked subsequent-period ledger
+    as an immutable snapshot of kind `subsequent` (no trial balance, no account balances)."""
+    check = validate_subsequent(summary, period_start=period_start, period_end=period_end)
+    if check.failure is not None:
+        raise Unvalidated(check.failure)
+    tenant = await transaction_context(tx.session)
+    snapshot_id = uuid4()
+    made = await insert_gl_snapshot(
+        tx.session,
+        id=snapshot_id,
+        tenant_id=tenant.tenant_id,
+        client_entity_id=client_entity_id,
+        period_start=period_start,
+        period_end=period_end,
+        source=source,
+        raw_fingerprint=raw_fingerprint,
+        tb_snapshot_id=None,
+        kind="subsequent",
+        line_count=summary.line_count,
+        total_debit=summary.total_debit,
+        total_credit=summary.total_credit,
+    )
+    if made is None:
+        existing = await find_gl_snapshot(
+            tx.session,
+            client_entity_id=client_entity_id,
+            period_start=period_start,
+            period_end=period_end,
+            raw_fingerprint=raw_fingerprint,
+        )
+        if existing is None:
+            raise NotFound("gl_snapshot")
+        return GlSnapshotRef(existing.id, created=False)
+    count = 0
+    batch: list[dict[str, object]] = []
+    for entry in entries:
+        count += 1
+        batch.append(_entry_row(tenant.tenant_id, snapshot_id, entry))
+        if len(batch) >= BATCH:
+            await insert_gl_rows(tx.session, GlEntryRow, batch)
+            batch = []
+    await insert_gl_rows(tx.session, GlEntryRow, batch)
+    if count != summary.line_count:
+        raise Unvalidated("entries_differ_from_summary")
+    tx.record(
+        "gl_snapshot.created",
+        target=Target("gl_snapshot", snapshot_id),
+        after=Ref(client_entity_id=client_entity_id, raw_fingerprint=raw_fingerprint, lines=count),
+    )
+    return GlSnapshotRef(snapshot_id, created=True)

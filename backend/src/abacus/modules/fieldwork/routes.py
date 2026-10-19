@@ -14,10 +14,12 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
 from abacus.modules.fieldwork.service import (
+    AccountsView,
     Defaults,
     Materiality,
     Pick,
     ProcedureView,
+    accounts_of,
     add_picks,
     fieldwork_defaults,
     items_of,
@@ -25,6 +27,8 @@ from abacus.modules.fieldwork.service import (
     procedure_detail,
     procedures_of,
     request_selection,
+    set_accounts,
+    set_bands,
     set_fieldwork_defaults,
     set_materiality,
     set_parameters,
@@ -193,6 +197,14 @@ async def procedures_route(engagement_id: UUID, ctx: Ctx) -> list[ProcedureOut]:
     return [_procedure_out(p) for p in await procedures_of(ctx, engagement_id)]
 
 
+class StartIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    definition: Annotated[
+        Literal["journal_entry_testing", "unrecorded_liabilities"], classified("internal")
+    ] = "journal_entry_testing"
+
+
 @router.post(
     "/procedures",
     action="procedure.run",
@@ -200,9 +212,12 @@ async def procedures_route(engagement_id: UUID, ctx: Ctx) -> list[ProcedureOut]:
     status_code=201,
     errors=(409,),
 )
-async def start_procedure_route(engagement_id: UUID, ctx: Ctx) -> ProcedureOut:
-    """SPEC-037: start journal entry testing (once per engagement)."""
-    return _procedure_out(await start_procedure(ctx, engagement_id))
+async def start_procedure_route(
+    engagement_id: UUID, ctx: Ctx, body: StartIn | None = None
+) -> ProcedureOut:
+    """SPEC-037, SPEC-038: start a procedure (once per engagement and definition)."""
+    chosen = body.definition if body is not None else "journal_entry_testing"
+    return _procedure_out(await start_procedure(ctx, engagement_id, chosen))
 
 
 @router.get("/procedures/{procedure_id}", action="procedure.read", response_model=ProcedureOut)
@@ -288,6 +303,12 @@ class ItemOut(BaseModel):
     descriptions: Annotated[list[str], classified("restricted")]
     rules: Annotated[list[str], classified("internal")]
     reason: Annotated[str | None, classified("confidential")] = None
+    band: Annotated[int | None, classified("internal")] = None
+    recorded_bill_reference: Annotated[str | None, classified("confidential")] = None
+    recorded_bill_date: Annotated[str | None, classified("internal")] = None
+    relates_to_year: Annotated[Literal["yes", "no", "unclear"] | None, classified("internal")] = (
+        None
+    )
 
 
 @router.get(
@@ -323,6 +344,9 @@ class ResultIn(BaseModel):
     result: Annotated[Literal["supported", "exception", "not_tested"], classified("internal")]
     note: Annotated[str | None, Field(max_length=2000), classified("confidential")] = None
     evidence_version_ids: Annotated[list[UUID], Field(max_length=20), classified("internal")] = []
+    relates_to_year: Annotated[Literal["yes", "no", "unclear"] | None, classified("internal")] = (
+        None  # SPEC-038
+    )
 
 
 class DoneOut(BaseModel):
@@ -348,6 +372,7 @@ async def result_route(
         result=body.result,
         note=body.note,
         evidence_ids=body.evidence_version_ids,
+        relates_to_year=body.relates_to_year,
     )
     return DoneOut()
 
@@ -475,3 +500,80 @@ async def workpaper_file_route(
             "Cache-Control": "no-store",
         },
     )
+
+
+# --- Unrecorded liabilities: bands and accounts (SPEC-038; TASK-086, TASK-087) -----------------
+
+
+class BandIO(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    until_day: Annotated[int | None, Field(ge=1, le=366), classified("internal")] = None
+    percent: Annotated[int, Field(ge=1, le=100), classified("internal")]
+
+
+class BandsIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    bands: Annotated[list[BandIO], Field(min_length=1, max_length=6), classified("internal")]
+
+
+@router.put(
+    "/procedures/{procedure_id}/bands",
+    action="procedure.configure",
+    response_model=ProcedureOut,
+    errors=(409,),
+)
+async def bands_route(
+    engagement_id: UUID, procedure_id: UUID, body: BandsIn, ctx: Ctx
+) -> ProcedureOut:
+    """SPEC-038 Q4: the timing bands, as % of performance materiality."""
+    raw = [b.model_dump() for b in body.bands]
+    return _procedure_out(await set_bands(ctx, engagement_id, procedure_id, raw))
+
+
+class AccountOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    code: Annotated[str, classified("confidential")]
+    name: Annotated[str, classified("confidential")]
+
+
+class AccountsOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    accounts: Annotated[list[AccountOut], classified("confidential")]
+    bank: Annotated[list[str], classified("confidential")]
+    payables: Annotated[list[str], classified("confidential")]
+    suggested_bank: Annotated[list[str], classified("confidential")]
+    suggested_payables: Annotated[list[str], classified("confidential")]
+    confirmed: Annotated[bool, classified("internal")]
+
+
+class AccountsIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    bank: Annotated[list[str], Field(min_length=1, max_length=50), classified("confidential")]
+    payables: Annotated[list[str], Field(min_length=1, max_length=50), classified("confidential")]
+
+
+def _accounts_out(v: AccountsView) -> AccountsOut:
+    return AccountsOut(
+        accounts=[AccountOut(code=c, name=n) for c, n in v.accounts],
+        bank=list(v.bank),
+        payables=list(v.payables),
+        suggested_bank=list(v.suggested_bank),
+        suggested_payables=list(v.suggested_payables),
+        confirmed=v.confirmed,
+    )
+
+
+@router.get("/fieldwork/accounts", action="procedure.read", response_model=AccountsOut)
+async def accounts_route(engagement_id: UUID, ctx: Ctx) -> AccountsOut:
+    """SPEC-038 Q3, Q5: confirmed bank and payables accounts, with suggestions by name."""
+    return _accounts_out(await accounts_of(ctx, engagement_id))
+
+
+@router.put("/fieldwork/accounts", action="procedure.configure", response_model=AccountsOut)
+async def set_accounts_route(engagement_id: UUID, body: AccountsIn, ctx: Ctx) -> AccountsOut:
+    return _accounts_out(await set_accounts(ctx, engagement_id, body.bank, body.payables))
