@@ -177,10 +177,12 @@ def test_ac20_edit_hook_fails_closed_when_rules_crash(project: tuple[Path, Run])
         "git checkout -- .github/CODEOWNERS",
         "cp /tmp/x .git/hooks/pre-commit",
         "sed -i '' 's/a/b/' backend/src/abacus/kernel/uow/core.py",
-        "git push origin main",
-        "git push origin HEAD:refs/heads/main",
         "git push --force origin feature",
+        "git push --force origin main",
         "uv add requests",
+        "git checkout --theirs packages/api-client/openapi.json",
+        "git checkout --ours -- backend/src/abacus/kernel/_flags.py",
+        "git checkout --theirs backend/tests/durations.json",
     ],
 )
 def test_ac20_risky_shell_command_is_blocked(project: tuple[Path, Run], command: str) -> None:
@@ -195,6 +197,10 @@ def test_ac20_risky_shell_command_is_blocked(project: tuple[Path, Run], command:
         "cat .github/CODEOWNERS",
         'git commit -m "routes -> service; Makefile untouched"',
         "git push -u origin task-001-scaffolding",
+        # The founder pushes straight to main (2026-10-19); force pushes stay blocked.
+        "git push origin main",
+        "git push origin HEAD:refs/heads/main",
+        "git checkout --theirs apps/web/src/router.tsx",
         "git clone https://github.com/x/abacus.git > /dev/null",
         "uv run pytest tests/unit",
     ],
@@ -209,3 +215,96 @@ def test_ac20_bash_hook_fails_closed_on_bad_input(project: tuple[Path, Run]) -> 
         [sys.executable, str(hook)], input="{not json", capture_output=True, text=True, check=False
     )
     assert result.returncode == 2
+
+
+# --- generated files (F-01-T09) ---------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "packages/api-client/openapi.json",
+        "packages/api-client/src/sdk.gen.ts",
+        "backend/src/abacus/modules/identity/authz/_matrix.py",
+        "backend/src/abacus/kernel/_flags.py",
+        "backend/src/abacus/kernel/_provider_terms.py",
+        "backend/src/abacus/modules/agents/specs/_specs.py",
+        "backend/src/abacus/ai_gateway/_eval_suites.py",
+        "backend/tests/durations.json",
+        "backend/tests/workflows/histories/retrieval-v1.json",
+    ],
+)
+def test_a_generated_file_is_never_edited_by_hand(project: tuple[Path, Run], rel: str) -> None:
+    _approve(project[0], rel)
+    assert _edit(project, rel) == 2
+
+
+@pytest.mark.parametrize(
+    "rel",
+    ["packages/api-client/package.json", "backend/src/abacus/kernel/flags.py"],
+)
+def test_a_generated_files_neighbour_is_not_generated(project: tuple[Path, Run], rel: str) -> None:
+    root = project[0]
+    message = subprocess.run(
+        [sys.executable, str(root / ".claude" / "hooks" / "protect_paths.py")],
+        input=json.dumps({"tool_input": {"file_path": str(root / rel)}}),
+        capture_output=True,
+        text=True,
+        env={**os.environ, "CLAUDE_PROJECT_DIR": str(root)},
+        check=False,
+    ).stderr
+    assert "generated" not in message
+
+
+# --- session context (F-01-T09) ---------------------------------------------------------------
+
+
+def _session(project: tuple[Path, Run], env: dict[str, str] | None = None) -> tuple[int, str]:
+    root = project[0]
+    result = subprocess.run(
+        [sys.executable, str(root / ".claude" / "hooks" / "session_context.py")],
+        capture_output=True,
+        text=True,
+        env={**os.environ, "CLAUDE_PROJECT_DIR": str(root), **(env or {})},
+        check=False,
+    )
+    return result.returncode, result.stdout
+
+
+def test_session_context_never_blocks_outside_a_repository(project: tuple[Path, Run]) -> None:
+    code, out = _session(project)
+    assert code == 0
+    assert "git state unavailable" in out
+    assert "port offset: 0" in out
+    assert "HANDOFF_VERSION not set" in out
+
+
+def test_session_context_names_the_branch_task_and_offset(project: tuple[Path, Run]) -> None:
+    root = project[0]
+    git = shutil.which("git")
+    assert git is not None
+    for args in (
+        ["init", "-q", "-b", "task-123-thing"],
+        [
+            "-c",
+            "user.email=t@example.com",
+            "-c",
+            "user.name=t",
+            "commit",
+            "-q",
+            "--allow-empty",
+            "-m",
+            "x",
+        ],
+    ):
+        subprocess.run([git, *args], cwd=root, check=True, capture_output=True)
+    tasks = root / "work" / "tasks"
+    tasks.mkdir(parents=True)
+    (tasks / "TASK-123-thing.md").write_text("---\nid: TASK-123\nstatus: in-progress\n---\n")
+    (root / ".worktree.env").write_text("COMPOSE_PROJECT_NAME=abacus-x\nABACUS_PORT_OFFSET=10\n")
+    code, out = _session(project, {"ABACUS_PORT_OFFSET": ""})
+    assert code == 0
+    assert "branch: task-123-thing" in out
+    assert "work/tasks/TASK-123-thing.md (status: in-progress)" in out
+    assert "no origin/main ref" in out
+    assert "port offset: 10" in out

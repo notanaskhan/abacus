@@ -11,7 +11,6 @@ import sys
 
 RULES = [
     (r"git\s+push\b.*(\s--force\b|\s-f\b|--force-with-lease|\s\+\S)", "Force pushes are forbidden."),
-    (r"git\s+push\b.*\b(main|master)\b", "Never push directly to main. Open a pull request."),
     (r"git\s+commit\b.*(--no-verify|\s-n\b)", "Skipping hooks is forbidden."),
     (r"\brm\s+-[a-zA-Z]*r[a-zA-Z]*f?\s+(/|~|\.|\*)(\s|$)", "Recursive deletion of root, home or the project is forbidden."),
     (r"\bsudo\b", "sudo is not allowed."),
@@ -45,12 +44,20 @@ def stems(patterns):
     return sorted(out)
 
 
+# Resolving a conflict in a generated file by picking a side leaves it out of date (F-01-T09).
+PICK_SIDE = re.compile(r"\bgit\s+checkout\b.*\s--(ours|theirs)\b")
+
+
 def check(cmd):
-    from _protected import PROTECTED, PROTECTED_IF_EXISTS
+    from _protected import GENERATED, PROTECTED, PROTECTED_IF_EXISTS
 
     for pattern, reason in RULES:
         if re.search(pattern, cmd):
             return reason
+    if PICK_SIDE.search(cmd):
+        for stem in stems([pattern for pattern, _ in GENERATED]):
+            if re.search(r"(?<![\w.-])" + re.escape(stem) + r"(?![\w-])", cmd, re.IGNORECASE):
+                return f"'{stem}' is generated: don't pick a side of the conflict; run make regenerate."
     if WRITERS.search(cmd):
         for stem in stems(PROTECTED + PROTECTED_IF_EXISTS):
             if re.search(r"(?<![\w.-])" + re.escape(stem) + r"(?![\w-])", cmd, re.IGNORECASE):
