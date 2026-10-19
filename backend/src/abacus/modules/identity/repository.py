@@ -226,6 +226,8 @@ async def engagement_members_of(
             await session.execute(
                 select(engagement_members.c.user_id, engagement_members.c.role)
                 .where(engagement_members.c.engagement_id == engagement_id)
+                # the firm team only: client users share the table (TASK-090)
+                .where(engagement_members.c.role.in_(sorted(ENGAGEMENT_ROLES)))
                 .order_by(engagement_members.c.role, engagement_members.c.user_id)
             )
         ).all()
