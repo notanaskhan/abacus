@@ -125,6 +125,7 @@ class GlImport(Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
     tenant_id: Mapped[UUID]
+    kind: Mapped[str] = mapped_column(server_default=FetchedValue())  # year | subsequent
     engagement_id: Mapped[UUID]
     client_entity_id: Mapped[UUID]
     format: Mapped[str]

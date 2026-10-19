@@ -127,6 +127,20 @@ export type AcceptedInvitationOut = {
 };
 
 /**
+ * AccountOut
+ */
+export type AccountOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
  * AccountRuleOut
  */
 export type AccountRuleOut = {
@@ -142,6 +156,50 @@ export type AccountRuleOut = {
      * Area Code
      */
     area_code: string;
+};
+
+/**
+ * AccountsIn
+ */
+export type AccountsIn = {
+    /**
+     * Bank
+     */
+    bank: Array<string>;
+    /**
+     * Payables
+     */
+    payables: Array<string>;
+};
+
+/**
+ * AccountsOut
+ */
+export type AccountsOut = {
+    /**
+     * Accounts
+     */
+    accounts: Array<AccountOut>;
+    /**
+     * Bank
+     */
+    bank: Array<string>;
+    /**
+     * Confirmed
+     */
+    confirmed: boolean;
+    /**
+     * Payables
+     */
+    payables: Array<string>;
+    /**
+     * Suggested Bank
+     */
+    suggested_bank: Array<string>;
+    /**
+     * Suggested Payables
+     */
+    suggested_payables: Array<string>;
 };
 
 /**
@@ -479,6 +537,30 @@ export type AutonomyOut = {
      * Set At
      */
     set_at: string | null;
+};
+
+/**
+ * BandIO
+ */
+export type BandIo = {
+    /**
+     * Percent
+     */
+    percent: number;
+    /**
+     * Until Day
+     */
+    until_day?: number | null;
+};
+
+/**
+ * BandsIn
+ */
+export type BandsIn = {
+    /**
+     * Bands
+     */
+    bands: Array<BandIo>;
 };
 
 /**
@@ -2169,6 +2251,10 @@ export type ItemOut = {
      */
     amount: string;
     /**
+     * Band
+     */
+    band?: number | null;
+    /**
      * Counterparty
      */
     counterparty: string;
@@ -2205,9 +2291,21 @@ export type ItemOut = {
      */
     reason?: string | null;
     /**
+     * Recorded Bill Date
+     */
+    recorded_bill_date?: string | null;
+    /**
+     * Recorded Bill Reference
+     */
+    recorded_bill_reference?: string | null;
+    /**
      * Reference
      */
     reference: string;
+    /**
+     * Relates To Year
+     */
+    relates_to_year?: 'yes' | 'no' | 'unclear' | null;
     /**
      * Result
      */
@@ -3359,6 +3457,10 @@ export type ResultIn = {
      */
     note?: string | null;
     /**
+     * Relates To Year
+     */
+    relates_to_year?: 'yes' | 'no' | 'unclear' | null;
+    /**
      * Result
      */
     result: 'supported' | 'exception' | 'not_tested';
@@ -3991,16 +4093,6 @@ export type StaffMemberOut = {
 };
 
 /**
- * StartIn
- */
-export type StartIn = {
-    /**
-     * Provider
-     */
-    provider: string;
-};
-
-/**
  * StartOut
  */
 export type StartOut = {
@@ -4579,6 +4671,16 @@ export type AbacusModulesAgentsRoutesCitationOut = {
 };
 
 /**
+ * StartIn
+ */
+export type AbacusModulesConnectionsRoutesStartIn = {
+    /**
+     * Provider
+     */
+    provider: string;
+};
+
+/**
  * CitationOut
  *
  * A checked citation of the proposal (the same shape as the board's).
@@ -4604,6 +4706,16 @@ export type AbacusModulesEvidenceRoutesCitationOut = {
      * Verified
      */
     verified: boolean;
+};
+
+/**
+ * StartIn
+ */
+export type AbacusModulesFieldworkRoutesStartIn = {
+    /**
+     * Definition
+     */
+    definition?: 'journal_entry_testing' | 'unrecorded_liabilities';
 };
 
 export type GetBudgetData = {
@@ -6017,7 +6129,12 @@ export type LatestGlImportData = {
          */
         engagement_id: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Kind
+         */
+        kind?: 'year' | 'subsequent';
+    };
     url: '/v1/engagements/{engagement_id}/connection/import/gl';
 };
 
@@ -6076,6 +6193,14 @@ export type GlImportData = {
          * Format
          */
         format: string;
+        /**
+         * Kind
+         */
+        kind?: 'year' | 'subsequent';
+        /**
+         * Cutoff
+         */
+        cutoff?: string | null;
     };
     url: '/v1/engagements/{engagement_id}/connection/import/gl';
 };
@@ -6338,7 +6463,7 @@ export type RevokeResponses = {
 export type RevokeResponse = RevokeResponses[keyof RevokeResponses];
 
 export type StartData = {
-    body: StartIn;
+    body: AbacusModulesConnectionsRoutesStartIn;
     headers?: {
         /**
          * Authorization
@@ -6816,6 +6941,110 @@ export type RequestReviewResponses = {
 };
 
 export type RequestReviewResponse = RequestReviewResponses[keyof RequestReviewResponses];
+
+export type AccountsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/fieldwork/accounts';
+};
+
+export type AccountsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AccountsError = AccountsErrors[keyof AccountsErrors];
+
+export type AccountsResponses = {
+    /**
+     * Successful Response
+     */
+    200: AccountsOut;
+};
+
+export type AccountsResponse = AccountsResponses[keyof AccountsResponses];
+
+export type SetAccountsData = {
+    body: AccountsIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/fieldwork/accounts';
+};
+
+export type SetAccountsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SetAccountsError = SetAccountsErrors[keyof SetAccountsErrors];
+
+export type SetAccountsResponses = {
+    /**
+     * Successful Response
+     */
+    200: AccountsOut;
+};
+
+export type SetAccountsResponse = SetAccountsResponses[keyof SetAccountsResponses];
 
 export type EngagementGraphData = {
     body?: never;
@@ -7888,7 +8117,10 @@ export type ProceduresResponses = {
 export type ProceduresResponse = ProceduresResponses[keyof ProceduresResponses];
 
 export type StartProcedureData = {
-    body?: never;
+    /**
+     * Body
+     */
+    body?: AbacusModulesFieldworkRoutesStartIn | null;
     headers?: {
         /**
          * Authorization
@@ -8116,6 +8348,66 @@ export type AssessmentsResponses = {
 };
 
 export type AssessmentsResponse = AssessmentsResponses[keyof AssessmentsResponses];
+
+export type BandsData = {
+    body: BandsIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Procedure Id
+         */
+        procedure_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/procedures/{procedure_id}/bands';
+};
+
+export type BandsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type BandsError = BandsErrors[keyof BandsErrors];
+
+export type BandsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ProcedureOut;
+};
+
+export type BandsResponse = BandsResponses[keyof BandsResponses];
 
 export type ConclusionData = {
     body: ConclusionIn;

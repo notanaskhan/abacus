@@ -11,6 +11,7 @@ from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.modules.fieldwork.models import (
+    EngagementAccount,
     EngagementMateriality,
     FieldworkSettings,
     ItemResult,
@@ -352,3 +353,33 @@ async def support_request_ids(session: AsyncSession, item_id: UUID) -> list[UUID
         .order_by(ItemSupportRequest.created_at)
     )
     return list(rows.scalars().all())
+
+
+# --- Bank and payables accounts (SPEC-038; TASK-086) --------------------------------------------
+
+
+async def insert_accounts(session: AsyncSession, **values: object) -> None:
+    await session.execute(insert(EngagementAccount).values(**values))
+
+
+async def confirmed_accounts(
+    session: AsyncSession, engagement_id: UUID
+) -> dict[str, EngagementAccount]:
+    """Per role, the newest confirmation (two rows at most; after `authorise` on the
+    engagement)."""
+    found: dict[str, EngagementAccount] = {}
+    for role in ("bank", "payables"):
+        row = (
+            await session.execute(
+                select(EngagementAccount)
+                .where(
+                    EngagementAccount.engagement_id == engagement_id,
+                    EngagementAccount.role == role,
+                )
+                .order_by(EngagementAccount.created_at.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        if row is not None:
+            found[role] = row
+    return found

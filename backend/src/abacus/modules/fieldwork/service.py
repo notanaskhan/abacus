@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import secrets
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Final, cast
 from uuid import NAMESPACE_URL, UUID, uuid5
@@ -26,7 +26,9 @@ from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import check_facts, get_ref, lock_ref
 from abacus.modules.fieldwork.models import Procedure
 from abacus.modules.fieldwork.repository import (
+    confirmed_accounts,
     get_procedure,
+    insert_accounts,
     insert_materiality,
     insert_procedure,
     insert_settings,
@@ -45,12 +47,22 @@ from abacus.modules.fieldwork.repository import (
 from abacus.modules.fieldwork.workflow_types import ProcedureSelectInput
 from abacus.modules.fieldwork.workflows import ProcedureSelectWorkflow
 from abacus.modules.identity.api import AuthContext, Resource, authorise
-from abacus.modules.ledger.api import latest_gl_snapshot
+from abacus.modules.ledger.api import latest_gl_snapshot, latest_subsequent_snapshot
 from abacus.modules.sampling.api import DEFAULT_KEYWORDS
 
 WORKFLOWS: dict[type, WorkClass] = {ProcedureSelectWorkflow: "batch"}
 register_work_classes(WORKFLOWS)
 JOURNAL_ENTRY_TESTING: Final = "journal_entry_testing"
+UNRECORDED_LIABILITIES: Final = "unrecorded_liabilities"  # SPEC-038
+DEFINITIONS: Final = (JOURNAL_ENTRY_TESTING, UNRECORDED_LIABILITIES)
+# SPEC-038 Q4: % of performance materiality by days after year end.
+DEFAULT_BANDS: Final = (
+    {"until_day": 30, "percent": 10},
+    {"until_day": 60, "percent": 25},
+    {"until_day": None, "percent": 100},
+)
+BANK_WORDS: Final = ("cash", "bank", "checking", "savings", "money market")
+PAYABLES_WORDS: Final = ("payable",)
 DEFINITION_VERSION: Final = 1
 MAX_ITEMS_PAGE: Final = 500
 
@@ -87,6 +99,18 @@ class ProcedureBusy(DomainConflict):
 
 class ParametersInvalid(DomainInvalid):
     code = "parameters_invalid"
+
+
+class AccountsMissing(DomainConflict):
+    """SPEC-038 Q3: bank and payables accounts are confirmed before selecting."""
+
+    code = "accounts_missing"
+
+
+class NoSubsequentLedger(DomainConflict):
+    """SPEC-038: the general ledger after year end hasn't been imported and checked yet."""
+
+    code = "no_subsequent_ledger"
 
 
 # --- Materiality (Q3) ---------------------------------------------------------------------------
@@ -274,16 +298,20 @@ async def procedures_of(ctx: AuthContext, engagement_id: UUID) -> list[Procedure
         return [_summary(p) for p in await list_procedures(session, ctx, engagement_id)]
 
 
-async def start_procedure(ctx: AuthContext, engagement_id: UUID) -> ProcedureView:
-    """Journal entry testing, once per engagement, with the firm's defaults and a new seed."""
+async def start_procedure(
+    ctx: AuthContext, engagement_id: UUID, definition: str = JOURNAL_ENTRY_TESTING
+) -> ProcedureView:
+    """A procedure, once per engagement and definition, with the firm's defaults and a seed."""
     await _available(ctx)
+    if definition not in DEFINITIONS:
+        raise ParametersInvalid(definition[:40])
     async with tenant_session(ctx.tenant) as session:
         defaults = defaults_from(await newest_settings(session))
-    parameters: dict[str, object] = {
-        **defaults.as_json(),
-        "seed": secrets.randbelow(2**31),
-        "picks": [],
-    }
+    parameters: dict[str, object] = (
+        {**defaults.as_json(), "seed": secrets.randbelow(2**31), "picks": []}
+        if definition == JOURNAL_ENTRY_TESTING
+        else {"bands": [dict(b) for b in DEFAULT_BANDS], "seed": 0, "picks": []}
+    )
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "procedure.run", ref.resource())
@@ -291,7 +319,7 @@ async def start_procedure(ctx: AuthContext, engagement_id: UUID) -> ProcedureVie
             tx.session,
             tenant_id=ctx.tenant_id,
             engagement_id=engagement_id,
-            definition=JOURNAL_ENTRY_TESTING,
+            definition=definition,
             definition_version=DEFINITION_VERSION,
             parameters=parameters,
             started_by=ctx.user_id,
@@ -405,6 +433,21 @@ async def add_picks(
     return await procedure_detail(ctx, engagement_id, procedure_id)
 
 
+async def _ready_for(
+    ctx: AuthContext, entity_id: UUID, engagement_id: UUID, procedure_id: UUID, year_end: date
+) -> None:
+    """SPEC-038: unrecorded liabilities also needs confirmed accounts and the subsequent ledger."""
+    found = await _owned(ctx, engagement_id, procedure_id)
+    if found.definition != UNRECORDED_LIABILITIES:
+        return
+    async with tenant_session(ctx.tenant) as session:
+        accounts = await confirmed_accounts(session, engagement_id)
+    if {"bank", "payables"} - set(accounts):
+        raise AccountsMissing(str(engagement_id))
+    if await latest_subsequent_snapshot(ctx.tenant, entity_id, year_end) is None:
+        raise NoSubsequentLedger(str(engagement_id))
+
+
 async def request_selection(
     ctx: AuthContext, engagement_id: UUID, procedure_id: UUID
 ) -> ProcedureView:
@@ -424,6 +467,9 @@ async def request_selection(
         is None
     ):
         raise NoLedger(str(engagement_id))
+    await _ready_for(
+        ctx, ref.client_entity_id, engagement_id, procedure_id, facts.fiscal_period_end
+    )
     async with uow(ctx.tenant) as tx:
         procedure = await lock_procedure(tx.session, procedure_id)
         if procedure is None or procedure.engagement_id != engagement_id:
@@ -460,6 +506,10 @@ class ItemView:
     note: str | None = None
     evidence_version_ids: tuple[UUID, ...] = ()
     support_requested: bool = False
+    band: int | None = None  # SPEC-038
+    recorded_bill_reference: str | None = None
+    recorded_bill_date: str | None = None
+    relates_to_year: str | None = None
 
 
 async def items_of(
@@ -494,6 +544,117 @@ async def items_of(
             results[r.id].note if r.id in results else None,
             tuple(results[r.id].evidence_version_ids or []) if r.id in results else (),
             r.id in asked,
+            r.band,
+            r.recorded_bill_reference,
+            r.recorded_bill_date.isoformat() if r.recorded_bill_date else None,
+            results[r.id].relates_to_year if r.id in results else None,
         )
         for r in rows
     ]
+
+
+# --- Unrecorded liabilities: bands and accounts (SPEC-038; TASK-086, TASK-087) -----------------
+
+
+def bands_from(raw: object) -> list[dict[str, object]]:
+    """Validated bands: 1 to 6, `until_day` rising (only the last may be open), 1-100 percent."""
+    try:
+        bands: list[dict[str, object]] = [
+            {
+                "until_day": None
+                if b.get("until_day") is None
+                else int(cast(int, b["until_day"])),
+                "percent": int(cast(int, b["percent"])),
+            }
+            for b in cast(list[dict[str, object]], raw)
+        ]
+    except (TypeError, ValueError, KeyError, AttributeError):
+        raise ParametersInvalid("bands") from None
+    days = [cast(int, b["until_day"]) for b in bands if b["until_day"] is not None]
+    if (
+        not 1 <= len(bands) <= 6
+        or days != sorted(set(days))
+        or any(b["until_day"] is None for b in bands[:-1])
+        or not all(1 <= cast(int, b["percent"]) <= 100 for b in bands)
+    ):
+        raise ParametersInvalid("bands")
+    return bands
+
+
+async def set_bands(
+    ctx: AuthContext, engagement_id: UUID, procedure_id: UUID, raw: object
+) -> ProcedureView:
+    bands = bands_from(raw)
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, "procedure.configure", ref.resource())
+        procedure = await lock_procedure(tx.session, procedure_id)
+        if procedure is None or procedure.engagement_id != engagement_id:
+            raise NotFound("procedure")
+        if procedure.status == "selecting":
+            raise ProcedureBusy(str(procedure_id))
+        await set_procedure(
+            tx.session, procedure_id, parameters={**procedure.parameters, "bands": bands}
+        )
+        tx.record("procedure.parameters_changed", target=Target("procedure", procedure_id))
+    return await procedure_detail(ctx, engagement_id, procedure_id)
+
+
+@dataclass(frozen=True)
+class AccountsView:
+    accounts: tuple[tuple[str, str], ...]  # (code, name) from the year's ledger
+    bank: tuple[str, ...]  # confirmed
+    payables: tuple[str, ...]
+    suggested_bank: tuple[str, ...]
+    suggested_payables: tuple[str, ...]
+    confirmed: bool
+
+
+async def accounts_of(ctx: AuthContext, engagement_id: UUID) -> AccountsView:
+    """SPEC-038 Q3, Q5: confirmed accounts, and suggestions from account names."""
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "procedure.read", ref.resource())
+    facts = await check_facts(ctx.tenant, engagement_id)
+    snapshot = (
+        await latest_gl_snapshot(ctx.tenant, ref.client_entity_id, facts.fiscal_period_end)
+        if facts is not None
+        else None
+    )
+    named = tuple((b.code, b.name) for b in snapshot.balances) if snapshot else ()
+    async with tenant_session(ctx.tenant) as session:
+        found = await confirmed_accounts(session, engagement_id)
+
+    def suggest(words: tuple[str, ...]) -> tuple[str, ...]:
+        return tuple(c for c, n in named if any(w in n.casefold() for w in words))
+
+    bank, payables = found.get("bank"), found.get("payables")
+    return AccountsView(
+        named,
+        tuple(bank.account_codes) if bank else (),
+        tuple(payables.account_codes) if payables else (),
+        suggest(BANK_WORDS),
+        suggest(PAYABLES_WORDS),
+        bank is not None and payables is not None,
+    )
+
+
+async def set_accounts(
+    ctx: AuthContext, engagement_id: UUID, bank: list[str], payables: list[str]
+) -> AccountsView:
+    """A partner or manager confirms them (`procedure.configure`)."""
+    if not bank or not payables or len(bank) > 50 or len(payables) > 50:
+        raise ParametersInvalid("accounts")
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, "procedure.configure", ref.resource())
+        for role, codes in (("bank", bank), ("payables", payables)):
+            await insert_accounts(
+                tx.session,
+                tenant_id=ctx.tenant_id,
+                engagement_id=engagement_id,
+                role=role,
+                account_codes=sorted({c.strip()[:50] for c in codes if c.strip()}),
+                confirmed_by=ctx.user_id,
+            )
+        tx.record("fieldwork.accounts_confirmed", target=Target("engagement", engagement_id))
+    return await accounts_of(ctx, engagement_id)

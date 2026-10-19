@@ -282,6 +282,26 @@
         "title": "AcceptedInvitationOut",
         "type": "object"
       },
+      "AccountOut": {
+        "properties": {
+          "code": {
+            "cls": "confidential",
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ],
+        "title": "AccountOut",
+        "type": "object"
+      },
       "AccountRuleOut": {
         "properties": {
           "account_from": {
@@ -306,6 +326,96 @@
           "account_to"
         ],
         "title": "AccountRuleOut",
+        "type": "object"
+      },
+      "AccountsIn": {
+        "additionalProperties": false,
+        "properties": {
+          "bank": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Bank",
+            "type": "array"
+          },
+          "payables": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Payables",
+            "type": "array"
+          }
+        },
+        "required": [
+          "bank",
+          "payables"
+        ],
+        "title": "AccountsIn",
+        "type": "object"
+      },
+      "AccountsOut": {
+        "properties": {
+          "accounts": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/AccountOut"
+            },
+            "title": "Accounts",
+            "type": "array"
+          },
+          "bank": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Bank",
+            "type": "array"
+          },
+          "confirmed": {
+            "cls": "internal",
+            "title": "Confirmed",
+            "type": "boolean"
+          },
+          "payables": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Payables",
+            "type": "array"
+          },
+          "suggested_bank": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Suggested Bank",
+            "type": "array"
+          },
+          "suggested_payables": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Suggested Payables",
+            "type": "array"
+          }
+        },
+        "required": [
+          "accounts",
+          "bank",
+          "payables",
+          "suggested_bank",
+          "suggested_payables",
+          "confirmed"
+        ],
+        "title": "AccountsOut",
         "type": "object"
       },
       "ActivityOut": {
@@ -997,6 +1107,57 @@
           "set_at"
         ],
         "title": "AutonomyOut",
+        "type": "object"
+      },
+      "BandIO": {
+        "additionalProperties": false,
+        "properties": {
+          "percent": {
+            "cls": "internal",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Percent",
+            "type": "integer"
+          },
+          "until_day": {
+            "anyOf": [
+              {
+                "maximum": 366.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Until Day"
+          }
+        },
+        "required": [
+          "percent"
+        ],
+        "title": "BandIO",
+        "type": "object"
+      },
+      "BandsIn": {
+        "additionalProperties": false,
+        "properties": {
+          "bands": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/BandIO"
+            },
+            "maxItems": 6,
+            "minItems": 1,
+            "title": "Bands",
+            "type": "array"
+          }
+        },
+        "required": [
+          "bands"
+        ],
+        "title": "BandsIn",
         "type": "object"
       },
       "BoardSummaryOut": {
@@ -4404,6 +4565,18 @@
             "title": "Amount",
             "type": "string"
           },
+          "band": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Band"
+          },
           "counterparty": {
             "cls": "restricted",
             "title": "Counterparty",
@@ -4479,10 +4652,51 @@
             "cls": "confidential",
             "title": "Reason"
           },
+          "recorded_bill_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Recorded Bill Date"
+          },
+          "recorded_bill_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Recorded Bill Reference"
+          },
           "reference": {
             "cls": "confidential",
             "title": "Reference",
             "type": "string"
+          },
+          "relates_to_year": {
+            "anyOf": [
+              {
+                "enum": [
+                  "yes",
+                  "no",
+                  "unclear"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Relates To Year"
           },
           "result": {
             "anyOf": [
@@ -6797,6 +7011,23 @@
             "cls": "confidential",
             "title": "Note"
           },
+          "relates_to_year": {
+            "anyOf": [
+              {
+                "enum": [
+                  "yes",
+                  "no",
+                  "unclear"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Relates To Year"
+          },
           "result": {
             "cls": "internal",
             "enum": [
@@ -8100,23 +8331,6 @@
         "title": "StaffMemberOut",
         "type": "object"
       },
-      "StartIn": {
-        "additionalProperties": false,
-        "properties": {
-          "provider": {
-            "cls": "internal",
-            "maxLength": 50,
-            "minLength": 1,
-            "title": "Provider",
-            "type": "string"
-          }
-        },
-        "required": [
-          "provider"
-        ],
-        "title": "StartIn",
-        "type": "object"
-      },
       "StartOut": {
         "properties": {
           "authorise_url": {
@@ -9262,6 +9476,23 @@
         "title": "CitationOut",
         "type": "object"
       },
+      "abacus__modules__connections__routes__StartIn": {
+        "additionalProperties": false,
+        "properties": {
+          "provider": {
+            "cls": "internal",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider"
+        ],
+        "title": "StartIn",
+        "type": "object"
+      },
       "abacus__modules__evidence__routes__CitationOut": {
         "description": "A checked citation of the proposal (the same shape as the board's).",
         "properties": {
@@ -9324,6 +9555,23 @@
           "verified"
         ],
         "title": "CitationOut",
+        "type": "object"
+      },
+      "abacus__modules__fieldwork__routes__StartIn": {
+        "additionalProperties": false,
+        "properties": {
+          "definition": {
+            "cls": "internal",
+            "default": "journal_entry_testing",
+            "enum": [
+              "journal_entry_testing",
+              "unrecorded_liabilities"
+            ],
+            "title": "Definition",
+            "type": "string"
+          }
+        },
+        "title": "StartIn",
         "type": "object"
       }
     },
@@ -12324,6 +12572,20 @@
             }
           },
           {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "default": "year",
+              "enum": [
+                "year",
+                "subsequent"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
             "in": "header",
             "name": "authorization",
             "required": false,
@@ -12423,7 +12685,7 @@
         "x-abacus-action": "connection.read_log"
       },
       "post": {
-        "description": "SPEC-034 AC-1, AC-2: a general ledger export, scanned and stored; processed in the\nbackground (`processing`, then `waiting_for_tb`, `reconciled` or `failed`).",
+        "description": "SPEC-034 AC-1, AC-2: a general ledger export, scanned and stored; processed in the\nbackground (`processing`, then `waiting_for_tb`, `reconciled` or `failed`). SPEC-038:\n`kind=subsequent` covers the day after year end to `cutoff` (default 90 days).",
         "operationId": "gl_import",
         "parameters": [
           {
@@ -12445,6 +12707,37 @@
               "minLength": 1,
               "title": "Format",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "default": "year",
+              "enum": [
+                "year",
+                "subsequent"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cutoff",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cutoff"
             }
           },
           {
@@ -13063,7 +13356,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/StartIn"
+                "$ref": "#/components/schemas/abacus__modules__connections__routes__StartIn"
               }
             }
           },
@@ -14055,6 +14348,227 @@
           "agents"
         ],
         "x-abacus-action": "upload_review.request"
+      }
+    },
+    "/v1/engagements/{engagement_id}/fieldwork/accounts": {
+      "get": {
+        "description": "SPEC-038 Q3, Q5: confirmed bank and payables accounts, with suggestions by name.",
+        "operationId": "accounts",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Accounts Route",
+        "tags": [
+          "fieldwork"
+        ],
+        "x-abacus-action": "procedure.read"
+      },
+      "put": {
+        "operationId": "set_accounts",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Set Accounts Route",
+        "tags": [
+          "fieldwork"
+        ],
+        "x-abacus-action": "procedure.configure"
       }
     },
     "/v1/engagements/{engagement_id}/graph": {
@@ -16356,7 +16870,7 @@
         "x-abacus-action": "procedure.read"
       },
       "post": {
-        "description": "SPEC-037: start journal entry testing (once per engagement).",
+        "description": "SPEC-037, SPEC-038: start a procedure (once per engagement and definition).",
         "operationId": "start_procedure",
         "parameters": [
           {
@@ -16402,6 +16916,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/abacus__modules__fieldwork__routes__StartIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "content": {
@@ -16843,6 +17374,143 @@
           "agents"
         ],
         "x-abacus-action": "procedure.read"
+      }
+    },
+    "/v1/engagements/{engagement_id}/procedures/{procedure_id}/bands": {
+      "put": {
+        "description": "SPEC-038 Q4: the timing bands, as % of performance materiality.",
+        "operationId": "bands",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "procedure_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Procedure Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BandsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcedureOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Bands Route",
+        "tags": [
+          "fieldwork"
+        ],
+        "x-abacus-action": "procedure.configure"
       }
     },
     "/v1/engagements/{engagement_id}/procedures/{procedure_id}/conclusion": {

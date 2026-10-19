@@ -71,6 +71,52 @@ _PARAMETER_LABELS: Final = (
 )
 
 
+SURL_COMPLETENESS: Final = (
+    "Completeness of the payments rests on the client's general ledger export for the period "
+    "after year end: there is no trial balance at the cut-off to reconcile it to (SPEC-038 Q1). "
+    "Code checked every line falls in the period, every month has activity, and debits equal "
+    "credits; the export's fingerprint is recorded."
+)
+
+
+def _surl_bands(params: dict[str, object]) -> list[tuple[str, str]]:
+    bands = cast(list[dict[str, object]], params.get("bands") or [])
+    thresholds = cast(list[str], params.get("thresholds") or [])
+    found: list[tuple[str, str]] = []
+    start = 1
+    for n, b in enumerate(bands):
+        until = b.get("until_day")
+        span = f"days {start} to {until}" if until is not None else f"day {start} onwards"
+        limit = thresholds[n] if n < len(thresholds) else "?"
+        found.append((f"Band {n + 1} ({span})", f"{b.get('percent')}% of performance: {limit}"))
+        start = int(cast(int, until)) + 1 if until is not None else start
+    return found
+
+
+def _surl_population(params: dict[str, object], population: object) -> list[tuple[str, str]]:
+    from abacus.modules.fieldwork.models import PopulationRow
+
+    p = cast(PopulationRow, population)
+    period = cast(list[str], params.get("subsequent_period") or ["?", "?"])
+    return [
+        ("Source", f"General ledger after year end, {period[0]} to {period[1]}"),
+        ("Export fingerprint", str(params.get("subsequent_fingerprint", ""))),
+        ("Bank accounts", ", ".join(cast(list[str], params.get("bank_accounts") or []))),
+        ("Payables accounts", ", ".join(cast(list[str], params.get("payables_accounts") or []))),
+        ("Payments", str(p.entry_count)),
+        ("Total paid from the bank accounts", f"{p.total_debit:,.2f}"),
+        ("Tie-out", "Agrees to the bank-account credits in the export"),
+    ]
+
+
+def _file_stem(procedure: Procedure) -> str:
+    return (
+        "unrecorded-liabilities"
+        if procedure.definition == "unrecorded_liabilities"
+        else "journal-entry-testing"
+    )
+
+
 class ResultInvalid(DomainInvalid):
     """An exception needs a note, and not tested a reason; evidence must be this engagement's."""
 
@@ -139,8 +185,11 @@ async def record_result(
     result: str,
     note: str | None,
     evidence_ids: Sequence[UUID],
+    relates_to_year: str | None = None,
 ) -> None:
     note = (note or "").strip() or None
+    if relates_to_year not in (None, "yes", "no", "unclear"):
+        raise ResultInvalid(str(item_id))
     if result not in RESULTS or (result != "supported" and note is None):
         raise ResultInvalid(str(item_id))
     if evidence_ids:
@@ -163,6 +212,7 @@ async def record_result(
             note=note[:2000] if note else None,
             evidence_version_ids=list(dict.fromkeys(evidence_ids))[:20],
             recorded_by=ctx.user_id,
+            relates_to_year=relates_to_year,
         )
         tx.record(
             "procedure.result_recorded",
@@ -292,6 +342,7 @@ async def _document(ctx: AuthContext, procedure: Procedure, inputs: _Inputs) -> 
     if population is None or label is None:
         raise NotFound("population")
     params = inputs.selection.parameters
+    surl = procedure.definition == "unrecorded_liabilities"
     stamps = [inputs.selection.created_at, inputs.materiality.created_at]
     stamps += [r.created_at for r in inputs.results.values()]
     rows: list[Row] = []
@@ -313,6 +364,13 @@ async def _document(ctx: AuthContext, procedure: Procedure, inputs: _Inputs) -> 
                 if result
                 else (),
                 item.id in asked,
+                item.band,
+                (
+                    f"{item.recorded_bill_reference}, {item.recorded_bill_date.isoformat()}"
+                    if item.recorded_bill_date
+                    else None
+                ),
+                result.relates_to_year if result else None,
             )
         )
 
@@ -340,12 +398,17 @@ async def _document(ctx: AuthContext, procedure: Procedure, inputs: _Inputs) -> 
         random_method=inputs.selection.random_method,
         seed=inputs.selection.seed,
         threshold=Decimal(str(params.get("threshold", "0"))),
-        parameters=[(label_, shown(params.get(key))) for key, label_ in _PARAMETER_LABELS],
+        parameters=_surl_bands(params)
+        if surl
+        else [(label_, shown(params.get(key))) for key, label_ in _PARAMETER_LABELS],
         by_rule=[(r, counts[r]) for r in RULES if r in counts],
         rows=rows,
         conclusion=inputs.conclusion,
-        not_performed=("after_year_end", "entered_by"),
+        not_performed=() if surl else ("after_year_end", "entered_by"),
         stamp=max(stamps),
+        title="Search for unrecorded liabilities" if surl else "Journal entry testing",
+        population_rows=_surl_population(params, population) if surl else (),
+        notes=(SURL_COMPLETENESS,) if surl else (),
     )
 
 
@@ -539,7 +602,7 @@ async def workpaper_file(
         if inputs is None:
             raise NotFound("selection")
         document = await _document(ctx, procedure, inputs)
-        return render_workpaper(document, []), "journal-entry-testing-draft.xlsx"
+        return render_workpaper(document, []), f"{_file_stem(procedure)}-draft.xlsx"
     found = next((v for v in versions if v.version == version), None)
     if found is None:
         raise NotFound("workpaper_version")
@@ -557,7 +620,7 @@ async def workpaper_file(
         raise FingerprintMismatch(str(procedure_id))
     return (
         render_workpaper(document, _signatures(versions, signed, version)),
-        f"journal-entry-testing-v{version}.xlsx",
+        f"{_file_stem(procedure)}-v{version}.xlsx",
     )
 
 

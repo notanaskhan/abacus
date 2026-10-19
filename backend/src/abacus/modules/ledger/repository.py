@@ -268,7 +268,25 @@ async def newest_gl_snapshot(
     return await session.scalar(
         select(GlSnapshot.id)
         .where(
-            GlSnapshot.client_entity_id == client_entity_id, GlSnapshot.period_end == period_end
+            GlSnapshot.client_entity_id == client_entity_id,
+            GlSnapshot.period_end == period_end,
+            GlSnapshot.kind == "year",
+        )
+        .order_by(GlSnapshot.created_at.desc())
+        .limit(1)
+    )
+
+
+async def newest_subsequent_snapshot(
+    session: AsyncSession, client_entity_id: UUID, period_start: date
+) -> UUID | None:
+    """SPEC-038: the newest subsequent-period ledger starting the day after year end."""
+    return await session.scalar(
+        select(GlSnapshot.id)
+        .where(
+            GlSnapshot.client_entity_id == client_entity_id,
+            GlSnapshot.period_start == period_start,
+            GlSnapshot.kind == "subsequent",
         )
         .order_by(GlSnapshot.created_at.desc())
         .limit(1)

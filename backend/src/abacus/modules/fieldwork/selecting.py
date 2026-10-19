@@ -9,6 +9,7 @@ with its reason and selects nothing.
 
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal
 from typing import cast
 from uuid import UUID
@@ -16,7 +17,9 @@ from uuid import UUID
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import check_facts, entity_of
+from abacus.modules.fieldwork.models import Procedure
 from abacus.modules.fieldwork.repository import (
+    confirmed_accounts,
     get_procedure,
     insert_items,
     insert_population,
@@ -25,16 +28,29 @@ from abacus.modules.fieldwork.repository import (
     newest_materiality,
     set_procedure,
 )
-from abacus.modules.ledger.api import GlEntry, JournalKey, gl_entries, latest_gl_snapshot
+from abacus.modules.ledger.api import (
+    GlEntry,
+    JournalKey,
+    gl_entries,
+    latest_gl_snapshot,
+    latest_subsequent_snapshot,
+)
 from abacus.modules.sampling.api import (
     CRITERIA_VERSION,
+    PAYMENTS_RULE_VERSION,
     RANDOM_METHOD,
     RULE_VERSION,
+    Band,
     Parameters,
+    bills_by_party,
+    build_payments,
     build_population,
     manual_kinds_for,
+    recorded_bill,
     select,
+    select_payments,
     tie_out,
+    ties,
 )
 
 PAGE = 5000
@@ -76,8 +92,18 @@ async def run_selection(tenant_id: UUID, procedure_id: UUID, requested_by: UUID)
         if facts is not None and entity is not None
         else None
     )
-    if snapshot is None or facts is None:
+    if snapshot is None or facts is None or entity is None:
         return await _fail(tenant, procedure_id, "no_ledger")
+    if procedure.definition == "unrecorded_liabilities":
+        return await _run_unrecorded(
+            tenant,
+            procedure,
+            materiality.performance,
+            snapshot.id,
+            facts.fiscal_period_end,
+            entity,
+            requested_by,
+        )
     postings: list[GlEntry] = []
     after = 0
     while True:
@@ -167,6 +193,137 @@ async def run_selection(tenant_id: UUID, procedure_id: UUID, requested_by: UUID)
                 for i, s in enumerate(chosen)
             ],
         )
+        await set_procedure(tx.session, procedure_id, status="selected", failure_code=None)
+        tx.record(
+            "procedure.selected",
+            target=Target("procedure", procedure_id),
+            after=Ref(selection_id=selection_id, items=len(chosen)),
+        )
+    return "selected"
+
+
+# --- The search for unrecorded liabilities (SPEC-038; TASK-087) ---------------------------------
+
+
+async def _all_postings(tenant: TenantContext, snapshot_id: UUID) -> list[GlEntry]:
+    postings: list[GlEntry] = []
+    after = 0
+    while True:
+        page = await gl_entries(tenant, snapshot_id, after=after, limit=PAGE)
+        if not page:
+            return postings
+        postings.extend(page)
+        after = page[-1].line_no
+
+
+async def _run_unrecorded(
+    tenant: TenantContext,
+    procedure: Procedure,
+    performance: Decimal,
+    year_snapshot_id: UUID,
+    year_end: date,
+    entity: UUID,
+    requested_by: UUID,
+) -> str:
+    procedure_id = procedure.id
+    async with tenant_session(tenant) as session:
+        accounts = await confirmed_accounts(session, procedure.engagement_id)
+    subsequent = await latest_subsequent_snapshot(tenant, entity, year_end)
+    if subsequent is None:
+        return await _fail(tenant, procedure_id, "no_subsequent_ledger")
+    if {"bank", "payables"} - set(accounts):
+        return await _fail(tenant, procedure_id, "accounts_missing")
+    bank = frozenset(accounts["bank"].account_codes)
+    payables = frozenset(accounts["payables"].account_codes)
+    population, bank_credits = build_payments(await _all_postings(tenant, subsequent.id), bank)
+    failure = ties(population, bank_credits)
+    raw = procedure.parameters
+    bands = [
+        Band(
+            None if b.get("until_day") is None else int(cast(int, b["until_day"])),
+            (performance * int(cast(int, b["percent"])) / 100).quantize(Decimal("0.01")),
+        )
+        for b in cast(list[dict[str, object]], raw["bands"])
+    ]
+    picks: dict[JournalKey, str] = {}
+    for pick in cast(list[dict[str, object]], raw.get("picks") or []):
+        key = cast(list[str], pick["key"])
+        picks[(key[0], key[1], key[2], key[3])] = str(pick["reason"])
+    known = {e.key for e in population.entries}
+    picks = {k: v for k, v in picks.items() if k in known}
+    chosen = select_payments(population, year_end, bands, picks) if failure is None else []
+    bills = bills_by_party(await _all_postings(tenant, year_snapshot_id), payables, year_end)
+    async with uow(tenant) as tx:
+        locked = await lock_procedure(tx.session, procedure_id)
+        if locked is None or locked.status != "selecting":
+            return locked.status if locked is not None else "missing"
+        population_id = await insert_population(
+            tx.session,
+            tenant_id=tenant.tenant_id,
+            procedure_id=procedure_id,
+            gl_snapshot_id=subsequent.id,
+            rule_version=PAYMENTS_RULE_VERSION,
+            entry_count=len(population.entries),
+            line_count=population.line_count,
+            total_debit=bank_credits,
+            total_credit=bank_credits,
+            tied=failure is None,
+            failure=failure,
+        )
+        if failure is not None:
+            await set_procedure(
+                tx.session, procedure_id, status="failed", failure_code="population_not_tied"
+            )
+            tx.record("procedure.failed", target=Target("procedure", procedure_id))
+            return "failed"
+        selection_id = await insert_selection(
+            tx.session,
+            tenant_id=tenant.tenant_id,
+            procedure_id=procedure_id,
+            population_id=population_id,
+            parameters={
+                **raw,
+                "thresholds": [str(b.threshold) for b in bands],
+                "bank_accounts": sorted(bank),
+                "payables_accounts": sorted(payables),
+                "subsequent_period": [
+                    subsequent.period_start.isoformat(),
+                    subsequent.period_end.isoformat(),
+                ],
+                "subsequent_fingerprint": subsequent.raw_fingerprint,
+            },
+            criteria_version=PAYMENTS_RULE_VERSION,
+            random_method="none",
+            seed=0,
+            item_count=len(chosen),
+            created_by=requested_by,
+        )
+        rows: list[dict[str, object]] = []
+        for i, s in enumerate(chosen):
+            bill = recorded_bill(s, bills)
+            rows.append(
+                {
+                    "tenant_id": tenant.tenant_id,
+                    "selection_id": selection_id,
+                    "position": i,
+                    "posted_on": s.entry.posted_on,
+                    "kind": s.entry.key[1],
+                    "reference": s.entry.key[2],
+                    "counterparty": s.entry.counterparty or s.entry.key[3],
+                    "line_nos": list(s.entry.line_nos),
+                    "accounts": list(s.entry.accounts),
+                    "amount": s.entry.amount,
+                    "descriptions": [d[:500] for d in s.entry.descriptions[:5]],
+                    "rules": list(s.rules),
+                    "reason": s.reason,
+                    "band": s.band,
+                    "recorded_bill_reference": (bill.reference or "(no reference)")
+                    if bill
+                    else None,
+                    "recorded_bill_date": bill.posted_on if bill else None,
+                }
+            )
+        await insert_items(tx.session, rows)
         await set_procedure(tx.session, procedure_id, status="selected", failure_code=None)
         tx.record(
             "procedure.selected",

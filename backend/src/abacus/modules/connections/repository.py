@@ -468,11 +468,13 @@ async def get_gl_import(session: AsyncSession, import_id: UUID) -> GlImport | No
     ).scalar_one_or_none()
 
 
-async def latest_gl_import(session: AsyncSession, client_entity_id: UUID) -> GlImport | None:
+async def latest_gl_import(
+    session: AsyncSession, client_entity_id: UUID, kind: str = "year"
+) -> GlImport | None:
     return (
         await session.execute(
             select(GlImport)
-            .where(GlImport.client_entity_id == client_entity_id)
+            .where(GlImport.client_entity_id == client_entity_id, GlImport.kind == kind)
             .order_by(GlImport.created_at.desc(), GlImport.id.desc())
             .limit(1)
         )

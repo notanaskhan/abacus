@@ -12,6 +12,7 @@ from abacus.modules.ledger.general_ledger import (
     journal_key,
     journals,
     validate_gl,
+    validate_subsequent,
 )
 from abacus.modules.ledger.gl_service import (
     GlSnapshotRef,
@@ -20,7 +21,9 @@ from abacus.modules.ledger.gl_service import (
     gl_entries,
     gl_snapshot_view,
     latest_gl_snapshot,
+    latest_subsequent_snapshot,
     record_gl_snapshot,
+    record_subsequent_snapshot,
     year_end_trial_balance,
 )
 from abacus.modules.ledger.normalise import (
@@ -67,11 +70,14 @@ __all__ = [
     "journal_key",
     "journals",
     "latest_gl_snapshot",
+    "latest_subsequent_snapshot",
     "record_gl_snapshot",
     "record_snapshot",
+    "record_subsequent_snapshot",
     "scope_facts",
     "snapshot_view",
     "validate",
     "validate_gl",
+    "validate_subsequent",
     "year_end_trial_balance",
 ]

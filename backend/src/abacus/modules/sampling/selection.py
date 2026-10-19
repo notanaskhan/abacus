@@ -63,6 +63,7 @@ class Selected:
     entry: Entry
     rules: tuple[str, ...]
     reason: str | None = None  # a person's pick
+    band: int | None = None  # SPEC-038: the payment's timing band (1-based)
 
 
 def manual_kinds_for(source: str, extra: tuple[str, ...] = ()) -> frozenset[str]:

@@ -82,6 +82,7 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"item_results", "item_support_requests", "procedure_conclusions"}  # TASK-084
     | {"workpaper_versions", "workpaper_signatures"}  # SPEC-037 (TASK-084): ADR-131
     | {"entry_assessments"}  # SPEC-037 Q4 (TASK-085): proposals, as made
+    | {"engagement_accounts"}  # SPEC-038 (TASK-086): confirmations, as made
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -158,6 +159,10 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "selected_items": frozenset(
         {"tenant_id", "selection_id", "position", "posted_on", "kind", "reference"}
         | {"counterparty", "line_nos", "accounts", "amount", "descriptions", "rules", "reason"}
+        | {"band", "recorded_bill_reference", "recorded_bill_date"}  # SPEC-038 (TASK-087)
+    ),
+    "engagement_accounts": frozenset(  # SPEC-038 (TASK-086)
+        {"tenant_id", "engagement_id", "role", "account_codes", "confirmed_by"}
     ),
     # The entry assessor (SPEC-037 Q4; TASK-085): proposals, as made.
     "entry_assessments": frozenset(
@@ -167,7 +172,7 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     # Fieldwork results and workpapers (SPEC-037; TASK-084; ADR-131).
     "item_results": frozenset(
         {"tenant_id", "selected_item_id", "result", "note", "evidence_version_ids"}
-        | {"recorded_by"}
+        | {"recorded_by", "relates_to_year"}
     ),
     "item_support_requests": frozenset(
         {"tenant_id", "selected_item_id", "request_item_id", "requested_by"}
@@ -194,6 +199,7 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "gl_snapshots": frozenset(
         {"id", "tenant_id", "client_entity_id", "period_start", "period_end", "source"}
         | {"raw_fingerprint", "tb_snapshot_id", "line_count", "total_debit", "total_credit"}
+        | {"kind"}  # SPEC-038 (TASK-086)
     ),
     "gl_account_balances": frozenset(
         {"tenant_id", "snapshot_id", "account_code", "account_name", "opening", "debit"}
@@ -207,6 +213,7 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"id", "tenant_id", "engagement_id", "client_entity_id", "format", "period_start"}
         | {"period_end", "storage_key", "storage_version_id", "fingerprint", "size_bytes"}
         | {"uploaded_by", "on_behalf"}
+        | {"kind"}  # SPEC-038 (TASK-086)
     ),
     # Inbox match proposals (SPEC-033; TASK-065): the matcher's, as made.
     "inbox_match_runs": frozenset(
@@ -468,6 +475,7 @@ TABLE_OWNERS: dict[str, str] = {
     "selections": "fieldwork",
     "selected_items": "fieldwork",
     "entry_assessments": "agents",  # SPEC-037 Q4 (TASK-085)
+    "engagement_accounts": "fieldwork",  # SPEC-038 (TASK-086)
     "item_results": "fieldwork",  # SPEC-037 (TASK-084)
     "item_support_requests": "fieldwork",
     "procedure_conclusions": "fieldwork",
