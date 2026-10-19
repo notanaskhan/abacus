@@ -38,10 +38,13 @@ Three root causes; no product code changes, no test skipped, deleted or loosened
 ## Definition of done
 - [x] The six failing files pass locally (551 tests).
 - [x] `make check-fast` passes.
-- [ ] CI stage 2 green on the PR; ayushkbhatia approves the test changes (ADR-078).
-- [ ] Coverage recorded against `fail_under = 95`.
+- [x] CI: every unit, integration, schema and eval job green on the PR (run 39240016703).
+- [ ] ayushkbhatia approves the test changes (ADR-078).
+- [x] Coverage recorded: **73%** combined (24,854 statements, 6,268 missed) against `fail_under = 95`; the coverage job fails.
+- [ ] Coverage exception with a ratchet to 95 by 2026-12-01 recorded in the two-founder governance ADR (DEC-10; F-01-T02, ayushkbhatia).
 
 ## Progress log
+- 2026-10-19: CI run 39240016703: all test jobs pass; coverage 73% (floor 95). Lowest: `abacus_tools/workflows/record_*`, `access_review`, `route_parity`, `evals/__main__`, `codegen/feature_flags` at 0%.
 - 2026-10-19: reproduced CI's 21 failures locally; traced each to its spec/task; fixed assertions; six files green; stage 1 green.
 
 ## Gotchas and discoveries
@@ -49,7 +52,8 @@ Three root causes; no product code changes, no test skipped, deleted or loosened
 - `test_observability_flow.py` errors (9) when run in the same local session as the other five files, but passes alone; CI shards run it separately. Watch on CI.
 
 ## Questions for the human
-- None.
+- Coverage is 22 points under the floor, far more than T05's "≤ 2 founder-days" back-fill, so the epic's dated exception applies. Never lowering `fail_under`.
+- ADR numbering: open PR #133 (SPEC-037) uses ADR-116 and ADR-117, which the epic plan reserves for two-founder governance (P-02) and migration policy (P-38). One side must renumber.
 
 ## Handoff
-Waiting for CI and ayushkbhatia's review on the PR. After merge: record coverage from the PR's coverage job and mark done.
+Waiting for ayushkbhatia's approval on PR #134 (the ruleset requires it). The coverage floor stays red until the exception ADR lands or back-fill (Q-03) closes the gap; it is not yet a required check (F-01-T06 makes it one).
