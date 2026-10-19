@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
 from abacus.kernel.text import MultiLineText
+from abacus.modules.agents.assess_start import assessments_of, request_assessments
 from abacus.modules.agents.draft_start import (
     Approval,
     decide_drafts,
@@ -394,6 +395,75 @@ async def approve_drafts_route(engagement_id: UUID, body: DecideIn, ctx: Ctx) ->
 async def discard_drafts_route(engagement_id: UUID, body: DecideIn, ctx: Ctx) -> DecidedOut:
     approvals = [Approval(a.draft_id) for a in body.approvals]
     return DecidedOut(decided=await decide_drafts(ctx, engagement_id, approvals, discard=True))
+
+
+# --- The entry assessor (SPEC-037 Q4; TASK-085) -------------------------------------------------
+
+
+class AssessIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    item_ids: Annotated[list[UUID] | None, Field(max_length=200), classified("internal")] = None
+
+
+class AssessStartedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    items: Annotated[list[UUID], classified("internal")]
+
+
+@router.post(
+    "/procedures/{procedure_id}/assess",
+    action="entry_assessment.request",
+    status_code=202,
+    response_model=AssessStartedOut,
+    errors=(409,),
+)
+async def assess_route(
+    engagement_id: UUID, procedure_id: UUID, body: AssessIn, ctx: Ctx
+) -> AssessStartedOut:
+    """SPEC-037 Q4: "Assess with AI" for entries with documents and no assessment yet."""
+    started = await request_assessments(ctx, engagement_id, procedure_id, body.item_ids)
+    return AssessStartedOut(items=list(started))
+
+
+class EntryCitationOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    document: Annotated[str, classified("internal")]
+    claim: Annotated[str, classified("internal")]
+    page: Annotated[int | None, classified("internal")] = None
+    sheet: Annotated[str | None, classified("confidential")] = None
+    cell: Annotated[str | None, classified("internal")] = None
+    quote: Annotated[str, classified("restricted")]
+    verified: Annotated[bool, classified("internal")]
+    reason: Annotated[str | None, classified("internal")] = None
+    amount_matches: Annotated[bool | None, classified("internal")] = None
+
+
+class AssessmentOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    selected_item_id: Annotated[UUID, classified("internal")]
+    verdict: Annotated[Literal["explained", "not_explained", "unclear"], classified("internal")]
+    rationale: Annotated[str, classified("confidential")]
+    citations: Annotated[list[EntryCitationOut], classified("confidential")]
+    created_at: Annotated[datetime, classified("internal")]
+
+
+@router.get(
+    "/procedures/{procedure_id}/assessments",
+    action="procedure.read",
+    response_model=list[AssessmentOut],
+)
+async def assessments_route(
+    engagement_id: UUID, procedure_id: UUID, ctx: Ctx
+) -> list[AssessmentOut]:
+    """Each entry's newest assessment, AI-tagged on screen; firm roles only."""
+    return [
+        AssessmentOut.model_validate({**asdict(a), "citations": list(a.citations)})
+        for a in await assessments_of(ctx, engagement_id, procedure_id)
+    ]
 
 
 @router.get("/agent", action="activity.read", response_model=AgentOut)

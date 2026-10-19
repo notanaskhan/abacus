@@ -55,12 +55,24 @@ class AgentSpec(BaseModel):
     escalation_tier: Annotated[Tier, classified("internal")]
     # What the agent is started with (`workflow_types.ScreeningInput`).
     input_schema: Annotated[
-        Literal["ScreeningInput", "UploadReviewInput", "MatchInput", "GuidanceDraftInput"],
+        Literal[
+            "ScreeningInput",
+            "UploadReviewInput",
+            "MatchInput",
+            "GuidanceDraftInput",
+            "EntryAssessInput",
+        ],
         classified("internal"),
     ]
     # The handoff model the agent's output must validate against (`handoff.ScreeningOutput`).
     output_schema: Annotated[
-        Literal["ScreeningOutput", "UploadReviewOutput", "MatchOutput", "GuidanceDraft"],
+        Literal[
+            "ScreeningOutput",
+            "UploadReviewOutput",
+            "MatchOutput",
+            "GuidanceDraft",
+            "EntryAssessment",
+        ],
         classified("internal"),
     ]
     task_scope: Annotated[frozenset[str], classified("internal")]

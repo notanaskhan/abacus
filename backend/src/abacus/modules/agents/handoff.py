@@ -164,3 +164,39 @@ class VerifiedDocumentCitation:
     quote: str
     verified: bool
     reason: str | None  # page_not_found | cell_not_found | quote_not_found
+
+
+# --- The entry assessor (SPEC-037 Q4; TASK-085) -------------------------------------------------
+
+# D1: the person's linked documents are given as D1..D3; code maps them back to versions.
+DocumentRef = Annotated[str, Field(pattern=r"^D[1-3]$")]
+EntryClaim = Literal["amount", "date", "party", "approval", "nature", "reference"]
+
+
+class EntryCitation(BaseModel):
+    """A quote from one of the entry's documents, saying what it shows."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    document: Annotated[DocumentRef, classified("internal")]
+    claim: Annotated[EntryClaim, classified("internal")]
+    page: Annotated[int | None, Field(ge=1, le=1000), classified("internal")] = None
+    sheet: Annotated[str | None, Field(max_length=100), classified("confidential")] = None
+    cell: Annotated[CellRef | None, classified("internal")] = None
+    quote: Annotated[str, Field(min_length=1, max_length=1000), classified("confidential")]
+
+    @model_validator(mode="after")
+    def _one_place(self) -> EntryCitation:
+        if (self.page is None) == (self.cell is None):
+            raise ValueError("a citation names a page or a cell")
+        return self
+
+
+class EntryAssessment(BaseModel):
+    """Whether the documents support the entry: a proposal for a person (ADR-005)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    verdict: Annotated[Literal["explained", "not_explained", "unclear"], classified("internal")]
+    rationale: Annotated[str, Field(min_length=1, max_length=400), classified("confidential")]
+    citations: Annotated[list[EntryCitation], Field(max_length=5), classified("confidential")] = []

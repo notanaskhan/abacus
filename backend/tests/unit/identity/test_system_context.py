@@ -50,6 +50,7 @@ CONTRACT_ALLOWED = {
     "upload_review.run",  # SPEC-030 (TASK-058): the reviewer records its review
     "inbox_match.run",  # SPEC-033 (TASK-065): the matcher records its proposals
     "guidance_draft.run",  # SPEC-035 (TASK-072): the drafter records its drafts
+    "entry_assessment.run",  # SPEC-037 Q4 (TASK-085): the assessor records its assessments
 }
 REASON = "documented in the working paper"
 

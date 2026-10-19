@@ -221,8 +221,10 @@ actions:
   materiality.set:          {engagement_partner: allow, manager: allow, independence: required}   # Q3: entered by people
   procedure.configure:      {engagement_partner: allow, manager: allow, independence: required}   # a procedure's criteria
   procedure.run:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # start, pick, select
-  procedure.read:           {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # firm roles only; clients are refused by role
+  procedure.read:           {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: task_scope, independence: required}   # firm roles only; clients are refused by role. agent: the entry assessor (TASK-085)
   workpaper.sign_ready:     {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # SPEC-037 (TASK-084): the preparer
+  entry_assessment.request: {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # SPEC-037 Q4 (TASK-085): "Assess with AI"
+  entry_assessment.run:     {system: allow, agent: task_scope}   # TASK-085: the entry assessor records its assessments
   workpaper.sign_reviewed:  {engagement_partner: allow, manager: allow, senior: allow, reviewer: allow, independence: required}   # ADR-131 Q2, TASK-084 D3: never the preparer (the service refuses)
   suggestion.resolve:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny}
 

@@ -162,6 +162,7 @@ async def _flags_on() -> None:
     await set_flag(FIRM, "ledger.gl_import", "true", "seed", "local development")  # SPEC-034
     await set_flag(FIRM, "guidance.drafting", "true", "seed", "local development")  # SPEC-035
     await set_flag(FIRM, "fieldwork.procedures", "true", "seed", "local development")  # SPEC-037
+    await set_flag(FIRM, "fieldwork.assessor", "true", "seed", "local development")  # TASK-085
 
 
 def main() -> int:

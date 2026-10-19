@@ -497,6 +497,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "staff": "allow",
         "reviewer": "allow",
+        "agent": "task_scope",
         "independence": "required",
     },
     "workpaper.sign_ready": {
@@ -505,6 +506,17 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "staff": "allow",
         "independence": "required",
+    },
+    "entry_assessment.request": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "independence": "required",
+    },
+    "entry_assessment.run": {
+        "system": "allow",
+        "agent": "task_scope",
     },
     "workpaper.sign_reviewed": {
         "engagement_partner": "allow",

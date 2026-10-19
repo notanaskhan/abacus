@@ -19,6 +19,7 @@ from abacus.modules.agents.models import (
     AgentRun,
     AgentStage,
     EngagementAgentState,
+    EntryAssessmentRow,
     GuidanceDraftDecision,
     GuidanceDraftRow,
     InboxMatchProposal,
@@ -954,4 +955,38 @@ async def stage_of(session: AsyncSession, agent_id: str) -> str | None:
         .where(AgentStage.agent_id == agent_id)
         .order_by(AgentStage.created_at.desc())
         .limit(1)
+    )
+
+
+# --- The entry assessor (SPEC-037 Q4; TASK-085) -------------------------------------------------
+
+
+async def insert_entry_assessment(session: AsyncSession, **values: object) -> None:
+    await session.execute(insert(EntryAssessmentRow).values(**values))
+
+
+async def newest_assessments(
+    session: AsyncSession, ctx: AuthContext, engagement_id: UUID, item_ids: Sequence[UUID]
+) -> list[EntryAssessmentRow]:
+    """Per entry, its newest assessment from a run that wasn't in shadow (SPEC-036)."""
+    if not item_ids:
+        return []
+    return list(
+        (
+            await session.execute(
+                select(EntryAssessmentRow)
+                .where(
+                    EntryAssessmentRow.engagement_id == engagement_id,
+                    EntryAssessmentRow.selected_item_id.in_(item_ids),
+                    visible(ctx, "procedure.read", EntryAssessmentRow.engagement_id),
+                    _shown_run(EntryAssessmentRow.agent_run_id),
+                )
+                .ext(distinct_on(EntryAssessmentRow.selected_item_id))
+                .order_by(
+                    EntryAssessmentRow.selected_item_id, EntryAssessmentRow.created_at.desc()
+                )
+            )
+        )
+        .scalars()
+        .all()
     )

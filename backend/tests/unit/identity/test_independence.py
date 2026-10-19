@@ -114,6 +114,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "comment.read",
         "comment.share",
         "connection.read_log",
+        "entry_assessment.request",  # SPEC-037 Q4 (TASK-085)
         "evidence.accept",
         "evidence.read",
         "evidence.reject",

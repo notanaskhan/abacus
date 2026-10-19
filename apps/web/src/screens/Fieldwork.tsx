@@ -1,6 +1,9 @@
-import type { ItemOut, ProcedureOut } from "@abacus/api-client";
+import type { AssessmentOut, ItemOut, ProcedureOut } from "@abacus/api-client";
 import { workpaperFile } from "@abacus/api-client";
 import {
+  assessMutation,
+  assessmentsOptions,
+  assessmentsQueryKey,
   conclusionMutation,
   itemsOptions,
   itemsQueryKey,
@@ -23,7 +26,19 @@ import {
   workpaperOptions,
   workpaperQueryKey,
 } from "@abacus/api-client/query";
-import { Alert, Button, Label, Panel, Skeleton, StatusPill, Table, Td, Th } from "@abacus/ui";
+import {
+  AgentText,
+  AiTag,
+  Alert,
+  Button,
+  Label,
+  Panel,
+  Skeleton,
+  StatusPill,
+  Table,
+  Td,
+  Th,
+} from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
@@ -47,6 +62,7 @@ const MESSAGES: Record<string, string> = {
   workpaper_changed: "Something changed after it was signed as ready: sign as ready again.",
   reviewer_is_preparer: "The reviewer can't be the person who signed it as ready.",
   workpaper_fingerprint_mismatch: "This version no longer matches what was signed.",
+  ai_assessor_unavailable: "AI assessment isn't available here.",
 };
 
 const RULES: Record<string, string> = {
@@ -60,6 +76,47 @@ const RULES: Record<string, string> = {
   random: "Random",
   picked: "Picked by the team",
 };
+
+const VERDICTS: Record<string, string> = {
+  explained: "AI: the support explains it",
+  not_explained: "AI: the support doesn't explain it",
+  unclear: "AI: unclear",
+};
+
+// SPEC-037 Q4 (TASK-085): the assessor's proposal, AI-tagged; the team still records the result.
+function Assessment({ assessment }: { assessment: AssessmentOut }): JSX.Element {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="flex flex-col gap-1 rounded-[var(--radius-control)] border border-ai-line p-2 text-xs">
+      <span className="flex items-center gap-2">
+        <AiTag />
+        <span className="font-medium">{VERDICTS[assessment.verdict] ?? assessment.verdict}</span>
+        <button
+          type="button"
+          className="text-muted underline"
+          onClick={() => {
+            setOpen(!open);
+          }}
+        >
+          {open ? "Hide why" : "Why"}
+        </button>
+      </span>
+      {open && (
+        <>
+          <AgentText text={assessment.rationale} />
+          <ul className="flex flex-col gap-1">
+            {assessment.citations.map((c, n) => (
+              <li key={n} className={c.verified ? "" : "text-muted line-through"}>
+                {`${c.document} ${c.page != null ? `p.${String(c.page)}` : `${c.sheet ?? ""} ${c.cell ?? ""}`} (${c.claim}): `}
+                <AgentText text={c.quote} />
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+}
 
 const STATUS: Record<string, string> = {
   not_started: "Not started",
@@ -212,12 +269,14 @@ function EntryRow({
   item,
   evidence,
   canRun,
+  assessment,
 }: {
   engagementId: string;
   procedureId: string;
   item: ItemOut;
   evidence: { id: string; label: string }[];
   canRun: boolean;
+  assessment: AssessmentOut | undefined;
 }): JSX.Element {
   const queryClient = useQueryClient();
   const [result, setResult] = useState(item.result ?? "");
@@ -249,6 +308,7 @@ function EntryRow({
       <Td className="text-xs">
         {item.rules.map((r) => RULES[r] ?? r).join(", ")}
         {item.reason != null && <div className="text-muted">{item.reason}</div>}
+        {assessment !== undefined && <Assessment assessment={assessment} />}
       </Td>
       <Td>
         {canRun ? (
@@ -492,6 +552,20 @@ function ProcedurePanel({
     ...listEvidenceVersionsOptions({ path: { engagement_id: engagementId } }),
     retry: false,
   });
+  const assessments = useQuery({
+    ...assessmentsOptions(path),
+    enabled: detail.data.selection != null,
+    retry: false,
+  });
+  const assess = useMutation({
+    ...assessMutation(),
+    onSuccess: () => {
+      setTimeout(() => {
+        void queryClient.invalidateQueries({ queryKey: assessmentsQueryKey(path) });
+      }, 4000);
+    },
+  });
+  const byItem = new Map((assessments.data ?? []).map((a) => [a.selected_item_id, a]));
   const select = useMutation({
     ...selectMutation(),
     onSuccess: () => {
@@ -557,7 +631,29 @@ function ProcedurePanel({
         </div>
       </Panel>
       {p.selection != null && (
-        <Panel title="Selected entries">
+        <Panel
+          title="Selected entries"
+          action={
+            canRun ? (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={assess.isPending}
+                onClick={() => {
+                  assess.mutate({ ...path, body: {} });
+                }}
+              >
+                Assess with AI
+              </Button>
+            ) : undefined
+          }
+        >
+          {assess.isError && <Alert title="Couldn't start">{said(assess.error)}</Alert>}
+          {assess.isSuccess && (
+            <p className="text-xs text-muted">
+              {`Assessing ${String(assess.data.items.length)} entries with linked support. AI proposals appear beside each entry; your team still records every result.`}
+            </p>
+          )}
           {items.isPending ? (
             <Skeleton className="h-40" />
           ) : items.isError ? (
@@ -583,6 +679,7 @@ function ProcedurePanel({
                       item={item}
                       evidence={choices}
                       canRun={canRun}
+                      assessment={item.id != null ? byItem.get(item.id) : undefined}
                     />
                   ))}
                 </tbody>
