@@ -1,6 +1,6 @@
 # fieldwork
 
-Audit procedures and their records (SPEC-037; ADR-116, ADR-117). Code builds the population and
+Audit procedures and their records (SPEC-037; ADR-131, ADR-132). Code builds the population and
 selects; people conclude.
 
 - **Materiality** (`GET`/`PUT /v1/engagements/{id}/materiality`, `materiality.set`): overall,
@@ -20,7 +20,7 @@ selects; people conclude.
   `not_tested` (reason), with evidence versions the engagement holds; appended, the newest counts.
   `POST …/items/{item}/request-support` creates an ordinary request worded with the entry's
   reference, date and amount only. `PUT …/conclusion`: the preparer's conclusion.
-- **Workpaper** (`workpapers.py`, `workpaper.py`; ADR-116): `POST …/workpaper/sign-ready`
+- **Workpaper** (`workpapers.py`, `workpaper.py`; ADR-131): `POST …/workpaper/sign-ready`
   (`workpaper.sign_ready`) makes the next `workpaper_versions` row, holding the selection, result,
   conclusion and materiality IDs and the SHA-256 of the content rendered without the Sign-off
   sheet; `POST …/workpaper/sign-reviewed` (`workpaper.sign_reviewed`) by someone else, while

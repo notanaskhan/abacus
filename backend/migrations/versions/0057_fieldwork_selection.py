@@ -1,4 +1,4 @@
-"""Fieldwork, part 1a (SPEC-037; TASK-077; ADR-116, ADR-117).
+"""Fieldwork, part 1a (SPEC-037; TASK-083; ADR-131, ADR-132).
 
 - `engagement_materiality` (insert-only; the newest is current): overall, performance and trivial,
   with the benchmark and percentage as text, set by a person (Q3).
@@ -6,7 +6,7 @@
 - `procedures`: one journal entry testing per engagement (definition and version), its parameters
   and status; the app may update only its parameters and status.
 - `populations`, `selections`, `selected_items` (insert-only): what code built and selected, so a
-  selection can be re-performed (ADR-117).
+  selection can be re-performed (ADR-132).
 
 Revision ID: 0057
 Revises: 0056

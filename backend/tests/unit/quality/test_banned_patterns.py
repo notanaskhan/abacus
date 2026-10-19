@@ -1487,7 +1487,7 @@ BOUND2_VIOLATING = [
     ("requests", "from abacus.modules.evidence.api import add_version\n"),
 ]
 BOUND2_CLEAN = [
-    # SPEC-037 (TASK-077): sampling builds populations from ledger snapshots.
+    # SPEC-037 (TASK-083): sampling builds populations from ledger snapshots.
     ("sampling", "from abacus.modules.ledger.api import x\n"),
     ("engagements", "from abacus.modules.identity.api import AuthContext\n"),
     ("engagements", "from abacus.modules.organisations.api import create_client\n"),
@@ -2185,7 +2185,7 @@ def test_ac20_bound_002_only_named_modules_may_depend_on_ledger() -> None:
     # communications reads scope facts through the ledger API (SPEC-006, TASK-021 D2); agents
     # reads the engagement graph's accounts (SPEC-008, TASK-023 D1); evidence cross-checks
     # uploads against the year end's snapshot (SPEC-029, TASK-055 D2).
-    # SPEC-037 (TASK-077): sampling builds populations, and fieldwork finds the ledger.
+    # SPEC-037 (TASK-083): sampling builds populations, and fieldwork finds the ledger.
     assert sorted(m for m, deps in bp.MODULE_DEPENDENCIES.items() if "ledger" in deps) == [
         "agents",
         "communications",

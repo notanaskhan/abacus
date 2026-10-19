@@ -1,6 +1,6 @@
 """Public interface of the fieldwork module; other modules import only this (ADR-008).
 
-Procedures and their records (SPEC-037; TASK-077; ADR-116, ADR-117): materiality entered by
+Procedures and their records (SPEC-037; TASK-083; ADR-131, ADR-132): materiality entered by
 people, journal entry testing's population and selection by code (`sampling`).
 """
 

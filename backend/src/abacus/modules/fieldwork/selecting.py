@@ -1,4 +1,4 @@
-"""The selection activity's work (SPEC-037 AC-1, AC-2; TASK-077; ADR-117).
+"""The selection activity's work (SPEC-037 AC-1, AC-2; TASK-083; ADR-132).
 
 The platform acts on the procedure's own row (the row is the proof, as runs are for retrievals):
 it streams the engagement's newest reconciled general ledger snapshot, builds the population and

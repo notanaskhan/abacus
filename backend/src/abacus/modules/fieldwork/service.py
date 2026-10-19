@@ -1,4 +1,4 @@
-"""Fieldwork: materiality, firm defaults, and procedures (SPEC-037; TASK-077; ADR-117).
+"""Fieldwork: materiality, firm defaults, and procedures (SPEC-037; TASK-083; ADR-132).
 
 People enter materiality (Q3); procedures copy the firm's default criteria into their parameters
 when they start, with a seed chosen by code and recorded. Selecting runs in the background
@@ -456,7 +456,7 @@ class ItemView:
     rules: tuple[str, ...]
     reason: str | None
     id: UUID | None = None
-    result: str | None = None  # TASK-078: the newest result
+    result: str | None = None  # TASK-084: the newest result
     note: str | None = None
     evidence_version_ids: tuple[UUID, ...] = ()
     support_requested: bool = False

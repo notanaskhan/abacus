@@ -28,8 +28,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
 
-// SPEC-037 (TASK-077, TASK-078): journal entry testing. Code builds the population and selects
-// entries (ADR-117); people record results, conclude and sign the workpaper (ADR-116).
+// SPEC-037 (TASK-083, TASK-084): journal entry testing. Code builds the population and selects
+// entries (ADR-132); people record results, conclude and sign the workpaper (ADR-131).
 
 const MESSAGES: Record<string, string> = {
   fieldwork_unavailable: "Fieldwork isn't switched on for your firm yet.",

@@ -1,6 +1,6 @@
 # sampling
 
-Populations and selection by code, pure functions over ledger snapshots (ADR-117; SPEC-037).
+Populations and selection by code, pure functions over ledger snapshots (ADR-132; SPEC-037).
 
 - `build_population(postings)`: postings grouped into journal entries by ledger's `journal_key`;
   `tie_out` checks lines and debits against the snapshot.

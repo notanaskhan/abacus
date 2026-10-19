@@ -1,5 +1,5 @@
-"""Results, support, the conclusion, and the signed workpaper (SPEC-037 AC-4 to AC-6; TASK-078;
-ADR-116).
+"""Results, support, the conclusion, and the signed workpaper (SPEC-037 AC-4 to AC-6; TASK-084;
+ADR-131).
 
 People record a result on each selected entry (appended; the newest counts), link evidence the
 engagement holds, or ask the client for support through an ordinary request. The preparer signs
@@ -99,7 +99,7 @@ class ChangedSinceReady(DomainConflict):
 
 
 class OwnWork(DomainConflict):
-    """ADR-116: the reviewer isn't the preparer."""
+    """ADR-131: the reviewer isn't the preparer."""
 
     code = "reviewer_is_preparer"
 

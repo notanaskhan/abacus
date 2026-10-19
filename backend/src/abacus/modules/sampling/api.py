@@ -1,6 +1,6 @@
 """Public interface of the sampling module; other modules import only this (ADR-008).
 
-Populations and selection by code (ADR-117; SPEC-037; TASK-077): pure functions over ledger
+Populations and selection by code (ADR-132; SPEC-037; TASK-083): pure functions over ledger
 snapshots, with versioned rules, so another auditor can re-perform a selection.
 """
 

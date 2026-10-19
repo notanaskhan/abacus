@@ -255,7 +255,7 @@ async def gl_entries(
 async def latest_gl_snapshot(
     tenant: TenantContext, client_entity_id: UUID, period_end: date
 ) -> GlSnapshotView | None:
-    """SPEC-037 (TASK-077): the newest reconciled general ledger snapshot for an entity's year,
+    """SPEC-037 (TASK-083): the newest reconciled general ledger snapshot for an entity's year,
     for a caller that authorised on the engagement."""
     async with tenant_session(tenant) as session:
         found = await newest_gl_snapshot(session, client_entity_id, period_end)

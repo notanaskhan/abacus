@@ -109,9 +109,9 @@ The search for unrecorded liabilities follows as the second procedure (Q2).
 - **Rendering:** streaming openpyxl, fixed metadata and ZIP timestamps, as `render_gl` does.
 
 ## 7. Delivery
-- **TASK-077 (red):** materiality, `sampling` (populations, criteria, seeded selection), the procedure records, journal entry testing's population and selection, and the API.
-- **TASK-078 (red):** results, linking support and requesting it, the workpaper renderer, sign-off, and the screens.
-- **TASK-079 (red, if Q4 is yes):** the entry assessor agent, its evaluation suite, and its place in the procedure.
+- **TASK-083 (red):** materiality, `sampling` (populations, criteria, seeded selection), the procedure records, journal entry testing's population and selection, and the API.
+- **TASK-084 (red):** results, linking support and requesting it, the workpaper renderer, sign-off, and the screens.
+- **TASK-085 (red, if Q4 is yes):** the entry assessor agent, its evaluation suite, and its place in the procedure.
 
 ## 8. Test plan
 | AC | Level | What |
@@ -128,6 +128,6 @@ All resolved: the founder approved every recommendation below on 2026-10-19.
 - **Q1: the first procedure.** *Recommendation:* journal entry testing. It's required on every audit, its population is the general ledger we already import and reconcile, and its criteria are mechanical. The search for unrecorded liabilities needs payments made *after* year end, which our year-scoped ledger import refuses today. It therefore needs a new "subsequent period" import first, so it comes second.
 - **Q2: the second procedure.** *Recommendation:* the search for unrecorded liabilities (SPEC-038). It adds a subsequent-period disbursements import, selection of payments by timing band against thresholds (as in the screenshot you shared), and matching to the year-end payables listing.
 - **Q3: materiality.** *Recommendation:* entered by the partner or manager, with its benchmark and percentage recorded as text. Code derives the selection threshold from performance materiality by the firm's setting (default: 100%); nothing suggests materiality.
-- **Q4: an agent in this spec.** *Recommendation:* yes, but last (TASK-079), and real-firm use only through SPEC-036's gates. The assessor reads each selected entry and its linked support and proposes "explained" or "not explained", with citations. People decide. Without it, the procedure is complete and useful.
+- **Q4: an agent in this spec.** *Recommendation:* yes, but last (TASK-085), and real-firm use only through SPEC-036's gates. The assessor reads each selected entry and its linked support and proposes "explained" or "not explained", with citations. People decide. Without it, the procedure is complete and useful.
 - **Q5: one module or two.** *Recommendation:* `sampling` (already reserved in the module map) for populations and selection, reusable by later procedures; `fieldwork` for procedures, results and workpapers.
 - **Q6: the default criteria.** *Recommendation:* the list in §4.4, with the window (3 days), the round-amount rule (a multiple of 1,000 at or above the trivial threshold) and the word list as firm settings, so a firm's methodology can change them. Each changes the selection only through a recorded parameter.

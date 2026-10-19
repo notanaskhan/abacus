@@ -45,7 +45,7 @@ REVIEW_REQUEST = "/v1/engagements/{engagement_id}/evidence-versions/{version_id}
 MATCH_REQUEST = "/v1/engagements/{engagement_id}/inbox/{file_id}/match"  # SPEC-033: 202
 DRAFTS = "/v1/engagements/{engagement_id}/request-items/draft-guidance"  # SPEC-035: 202
 TEMPLATE_DRAFTS = "/v1/methodology/versions/{version_id}/draft-guidance"  # TASK-074: 202
-SELECT = "/v1/engagements/{engagement_id}/procedures/{procedure_id}/select"  # TASK-077: 202
+SELECT = "/v1/engagements/{engagement_id}/procedures/{procedure_id}/select"  # TASK-083: 202
 GL_IMPORT = (
     "/v1/engagements/{engagement_id}/connection/import/gl"  # SPEC-034: 202, processed later
 )
@@ -183,10 +183,10 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/methodology/versions/{version_id}/guidance-drafts/approve",
         "/v1/methodology/versions/{version_id}/guidance-drafts/discard",
         "/v1/methodology/versions/{version_id}/publish-drafted",
-        # SPEC-037 (TASK-077): a procedure, and people's picks, are created.
+        # SPEC-037 (TASK-083): a procedure, and people's picks, are created.
         "/v1/engagements/{engagement_id}/procedures",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/picks",
-        # SPEC-037 (TASK-078): a support request, and each signature, are created.
+        # SPEC-037 (TASK-084): a support request, and each signature, are created.
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/items/{item_id}/request-support",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper/sign-ready",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper/sign-reviewed",

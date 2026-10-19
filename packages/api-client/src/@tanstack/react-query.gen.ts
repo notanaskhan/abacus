@@ -1479,7 +1479,7 @@ export const workpaperFileOptions = (options: Options<WorkpaperFileData>) => que
 /**
  * Sign Ready Route
  *
- * ADR-116: the preparer signs the current state; it becomes the next version.
+ * ADR-131: the preparer signs the current state; it becomes the next version.
  */
 export const signReadyMutation = (options?: Partial<Options<SignReadyData>>): UseMutationOptions<SignReadyResponse, SignReadyError, Options<SignReadyData>> => {
     const mutationOptions: UseMutationOptions<SignReadyResponse, SignReadyError, Options<SignReadyData>> = {
@@ -1498,7 +1498,7 @@ export const signReadyMutation = (options?: Partial<Options<SignReadyData>>): Us
 /**
  * Sign Reviewed Route
  *
- * ADR-116: another person signs the latest ready version, while nothing has changed.
+ * ADR-131: another person signs the latest ready version, while nothing has changed.
  */
 export const signReviewedMutation = (options?: Partial<Options<SignReviewedData>>): UseMutationOptions<SignReviewedResponse, SignReviewedError, Options<SignReviewedData>> => {
     const mutationOptions: UseMutationOptions<SignReviewedResponse, SignReviewedError, Options<SignReviewedData>> = {

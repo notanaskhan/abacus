@@ -1,4 +1,4 @@
-"""The journal entry testing workpaper, rendered by code (SPEC-037 AC-5; TASK-078; ADR-116).
+"""The journal entry testing workpaper, rendered by code (SPEC-037 AC-5; TASK-084; ADR-131).
 
 Deterministic (ADR-042): the same records always give the same bytes. openpyxl's write-only
 workbook, every text cell an explicit string (never a formula), fixed document properties, and a

@@ -17602,7 +17602,7 @@
     },
     "/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper/sign-ready": {
       "post": {
-        "description": "ADR-116: the preparer signs the current state; it becomes the next version.",
+        "description": "ADR-131: the preparer signs the current state; it becomes the next version.",
         "operationId": "sign_ready",
         "parameters": [
           {
@@ -17729,7 +17729,7 @@
     },
     "/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper/sign-reviewed": {
       "post": {
-        "description": "ADR-116: another person signs the latest ready version, while nothing has changed.",
+        "description": "ADR-131: another person signs the latest ready version, while nothing has changed.",
         "operationId": "sign_reviewed",
         "parameters": [
           {

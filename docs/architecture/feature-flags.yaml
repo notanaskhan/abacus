@@ -22,7 +22,7 @@ flags:
     kind: boolean
     default: false
   - name: fieldwork.procedures
-    description: Fieldwork procedures (SPEC-037; TASK-077), starting with journal entry testing; code builds populations and selects entries, people conclude. Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
+    description: Fieldwork procedures (SPEC-037; TASK-083), starting with journal entry testing; code builds populations and selects entries, people conclude. Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
     owner: founder
     created: 2026-10-19
     expires: 2027-01-17

@@ -54,7 +54,7 @@ ROUTERS = (
     agents.graph_router,
     agents.knowledge_router,
     agents.template_drafts_router,  # SPEC-035 Q3 (TASK-074)
-    fieldwork.router,  # SPEC-037 (TASK-077)
+    fieldwork.router,  # SPEC-037 (TASK-083)
     fieldwork.firm_router,
     platform.router,
     notifications.router,
