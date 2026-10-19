@@ -111,7 +111,7 @@ export function LedgerExport({
           {formats.data.map((f) => (
             <label
               key={f.id}
-              className="flex cursor-pointer items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 has-[:checked]:border-accent"
+              className="flex cursor-pointer items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 has-[:checked]:border-stroke has-[:checked]:bg-sel-bg"
             >
               <input
                 type="radio"

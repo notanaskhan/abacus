@@ -56,7 +56,7 @@ function Comment({
     <li
       id={`comment-${comment.id}`}
       className={`flex flex-col gap-1 rounded-[var(--radius-control)] border p-3 text-sm ${
-        internal ? "border-dashed border-warn bg-warn-soft" : "border-line bg-surface"
+        internal ? "border-line bg-warn-soft" : "border-line bg-surface"
       }`}
     >
       <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted">
@@ -283,7 +283,7 @@ export function CommentThread({
             setText(event.target.value);
           }}
           className={`rounded-[var(--radius-control)] border bg-surface p-2 text-sm ${
-            visibility === "shared" ? "border-accent" : "border-dashed border-warn"
+            visibility === "shared" ? "border-stroke" : "border-line bg-warn-soft"
           }`}
         />
         {mention !== null && (

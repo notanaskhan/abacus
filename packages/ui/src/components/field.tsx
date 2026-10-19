@@ -2,6 +2,7 @@ import * as LabelPrimitive from "@radix-ui/react-label";
 import type { ComponentProps, InputHTMLAttributes, JSX } from "react";
 import { cn } from "../cn";
 
+/** A recessed field: nested greige with an inset hair ring, white and ringed on focus. */
 export function Input({
   className,
   ...props
@@ -9,7 +10,7 @@ export function Input({
   return (
     <input
       className={cn(
-        "h-9 w-full rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm text-ink placeholder:text-muted",
+        "h-[30px] w-full rounded-tile border-0 bg-nested px-2.5 text-[13px] text-ink inset-shadow-hair transition-colors placeholder:text-ink-3 hover:bg-sel-bg focus:bg-card",
         className,
       )}
       {...props}
@@ -22,6 +23,9 @@ export function Label({
   ...props
 }: ComponentProps<typeof LabelPrimitive.Root>): JSX.Element {
   return (
-    <LabelPrimitive.Root className={cn("text-sm font-semibold text-ink", className)} {...props} />
+    <LabelPrimitive.Root
+      className={cn("text-[12px] font-medium text-ink-2", className)}
+      {...props}
+    />
   );
 }
