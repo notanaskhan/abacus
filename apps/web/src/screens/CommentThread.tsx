@@ -301,7 +301,7 @@ export function CommentThread({
         {chosen.length > 0 && (
           <p className="flex flex-wrap gap-1 text-xs" aria-label="Will be notified">
             {chosen.map((c) => (
-              <span key={c.user_id} className="rounded-full bg-accent-soft px-2 py-0.5">
+              <span key={c.user_id} className="rounded-[5px] bg-accent-soft px-2 py-0.5">
                 {c.display_name}
                 <button
                   type="button"

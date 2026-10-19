@@ -235,7 +235,7 @@ function InboxRow({
                 .map((r) => (
                   <span
                     key={`${r.code}-${r.value ?? ""}`}
-                    className="rounded-full bg-sunken px-2 py-0.5 text-xs text-muted"
+                    className="rounded-[5px] bg-sunken px-2 py-0.5 text-xs text-muted"
                   >
                     {reasonLabel(r)}
                   </span>

@@ -3,10 +3,10 @@ import { type VariantProps, cva } from "class-variance-authority";
 import type { ButtonHTMLAttributes, JSX } from "react";
 import { cn } from "../cn";
 
-// Pill buttons (TASK-091): one dark primary per surface, white secondary on a 0.5px ring, tonal
+// Buttons (TASK-091; squared corners, TASK-093): one dark primary per surface, white secondary on a 0.5px ring, tonal
 // and ghost for quiet actions; press scales to .985.
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full whitespace-nowrap select-none transition-[background-color,box-shadow,transform] duration-150 active:scale-[.985] disabled:pointer-events-none disabled:opacity-45 [&_svg]:size-3.5",
+  "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[7px] whitespace-nowrap select-none transition-[background-color,box-shadow,transform] duration-150 active:scale-[.985] disabled:pointer-events-none disabled:opacity-45 [&_svg]:size-3.5",
   {
     variants: {
       variant: {

@@ -10,13 +10,13 @@ import {
 } from "@abacus/api-client/query";
 import {
   Alert,
-  Badge,
   Button,
   Dialog,
   EmptyState,
   Input,
   Label,
   Skeleton,
+  StatusPill,
   Table,
   Td,
   Th,
@@ -30,9 +30,16 @@ import { Onboarding } from "./Onboarding";
 import { RollForwardReview } from "./RollForward";
 import { type EngagementType, ENGAGEMENT_TYPES, typeLabel } from "./engagementTypes";
 
+type StatusFilter = "active" | "archived" | "all";
+
+/** The engagements index (TASK-093, the plan's T1): to-dos first, then one pane with search,
+ * a status filter and a table whose rows open the engagement. */
 export function Engagements(): JSX.Element {
   const engagements = useQuery(listEngagementsOptions());
+  const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<StatusFilter>("active");
   const create = (
     <Button
       onClick={() => {
@@ -42,75 +49,156 @@ export function Engagements(): JSX.Element {
       New engagement
     </Button>
   );
+  const all = engagements.data ?? [];
+  const needle = search.trim().toLowerCase();
+  const shown = all.filter(
+    (e) =>
+      (status === "all" || e.status === status) &&
+      (needle === "" ||
+        `${e.name} ${e.client_name} ${e.client_entity_name}`.toLowerCase().includes(needle)),
+  );
+  const counts = {
+    active: all.filter((e) => e.status === "active").length,
+    archived: all.filter((e) => e.status !== "active").length,
+    all: all.length,
+  };
 
   return (
-    <section aria-labelledby="engagements-heading" className="flex flex-col gap-4">
+    <section aria-labelledby="engagements-heading" className="flex flex-col gap-3">
       <Onboarding />
       <MyConfirmations />
-      <div className="flex items-center justify-between">
-        <h1 id="engagements-heading" className="text-xl font-semibold">
-          Engagements
-        </h1>
-        {create}
-      </div>
-      {engagements.isPending ? (
-        <div className="flex flex-col gap-2" aria-busy="true">
-          <Skeleton className="h-8" />
-          <Skeleton className="h-8" />
-          <Skeleton className="h-8" />
-        </div>
-      ) : engagements.isError ? (
-        <Alert
-          title="Couldn't load engagements"
-          action={
-            <Button size="sm" variant="outline" onClick={() => void engagements.refetch()}>
-              Retry
-            </Button>
-          }
-        >
-          {errorMessage(engagements.error)}
-        </Alert>
-      ) : engagements.data.length === 0 ? (
-        <EmptyState title="No engagements yet" action={create}>
-          Create one to start requesting evidence.
-        </EmptyState>
-      ) : (
-        <Table>
-          <thead>
-            <tr>
-              <Th>Engagement</Th>
-              <Th>Client</Th>
-              <Th>Fiscal period</Th>
-              <Th>Status</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {engagements.data.map((e) => (
-              <tr key={e.id}>
-                <Td>
-                  <Link
-                    to="/engagements/$engagementId"
-                    params={{ engagementId: e.id }}
-                    className="font-medium underline-offset-2 hover:underline"
-                  >
-                    {e.name}
-                  </Link>
-                </Td>
-                <Td>
-                  {e.client_name} — {e.client_entity_name}
-                  <span className="block text-xs text-muted">{typeLabel(e.type)}</span>
-                </Td>
-                <Td>
-                  {e.fiscal_period_start} to {e.fiscal_period_end}
-                </Td>
-                <Td>
-                  <Badge tone={e.status === "active" ? "success" : "neutral"}>{e.status}</Badge>
-                </Td>
-              </tr>
+      <div className="flex flex-col overflow-hidden rounded-pane bg-card shadow-e2">
+        <div className="flex min-h-[50px] flex-wrap items-center gap-2 border-b-[0.5px] border-hair px-3 py-2">
+          <h1
+            id="engagements-heading"
+            className="mr-1 pl-1 text-[15px] font-medium tracking-[-0.012em]"
+          >
+            Engagements
+          </h1>
+          {engagements.data !== undefined && (
+            <span className="text-[12.5px] text-ink-3 tabular-nums">{all.length}</span>
+          )}
+          <div
+            role="group"
+            aria-label="Status"
+            className="ml-2 flex gap-0.5 rounded-[9px] bg-nav-fill p-[3px]"
+          >
+            {(
+              [
+                ["active", "Active"],
+                ["archived", "Archived"],
+                ["all", "All"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={status === value}
+                onClick={() => {
+                  setStatus(value);
+                }}
+                className="flex h-[24px] items-center gap-1.5 rounded-[6px] px-2.5 text-[12.5px] text-ink-2 hover:text-ink aria-pressed:bg-card aria-pressed:font-medium aria-pressed:text-ink aria-pressed:shadow-e1"
+              >
+                {label}
+                <span className="text-[11px] text-ink-3 tabular-nums">{counts[value]}</span>
+              </button>
             ))}
-          </tbody>
-        </Table>
-      )}
+          </div>
+          <span className="flex-1" />
+          <Input
+            type="search"
+            aria-label="Search engagements"
+            placeholder="Search engagements or clients"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+            }}
+            className="w-[260px]"
+          />
+          {create}
+        </div>
+        {engagements.isPending ? (
+          <div className="flex flex-col gap-3 p-4" aria-busy="true">
+            <Skeleton className="w-[62%]" />
+            <Skeleton className="w-[38%]" />
+            <Skeleton className="w-[74%]" />
+          </div>
+        ) : engagements.isError ? (
+          <div className="p-3">
+            <Alert
+              title="Couldn't load engagements"
+              action={
+                <Button size="sm" variant="outline" onClick={() => void engagements.refetch()}>
+                  Retry
+                </Button>
+              }
+            >
+              {errorMessage(engagements.error)}
+            </Alert>
+          </div>
+        ) : engagements.data.length === 0 ? (
+          <EmptyState title="No engagements yet" action={create}>
+            Create one to start requesting evidence.
+          </EmptyState>
+        ) : shown.length === 0 ? (
+          <EmptyState title="Nothing matches">
+            Try another search, or show {status === "active" ? "archived" : "all"} engagements.
+          </EmptyState>
+        ) : (
+          <Table>
+            <thead>
+              <tr>
+                <Th className="pl-4">Engagement</Th>
+                <Th>Client</Th>
+                <Th>Type</Th>
+                <Th>Fiscal period</Th>
+                <Th className="pr-4">Status</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map((e) => (
+                <tr
+                  key={e.id}
+                  className="h-[40px] cursor-pointer transition-colors hover:bg-shell"
+                  onClick={() => {
+                    void navigate({
+                      to: "/engagements/$engagementId",
+                      params: { engagementId: e.id },
+                    });
+                  }}
+                >
+                  <Td className="pl-4">
+                    <Link
+                      to="/engagements/$engagementId"
+                      params={{ engagementId: e.id }}
+                      className="font-medium text-ink hover:no-underline"
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                      }}
+                    >
+                      {e.name}
+                    </Link>
+                  </Td>
+                  <Td className="text-ink-2">
+                    {e.client_name === e.client_entity_name
+                      ? e.client_name
+                      : `${e.client_name} — ${e.client_entity_name}`}
+                  </Td>
+                  <Td className="text-ink-2">{typeLabel(e.type)}</Td>
+                  <Td className="text-ink-2 tabular-nums">
+                    {e.fiscal_period_start} to {e.fiscal_period_end}
+                  </Td>
+                  <Td className="pr-4">
+                    <StatusPill tone={e.status === "active" ? "success" : "neutral"}>
+                      {e.status === "active" ? "Active" : "Archived"}
+                    </StatusPill>
+                  </Td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+      </div>
       <CreateEngagement open={creating} onOpenChange={setCreating} />
     </section>
   );
