@@ -1,0 +1,29 @@
+name: Reserve a TASK number
+description: Reserve the next number for a task in your own block, before writing it (F-01-T10).
+title: "TASK-083: <title>"
+labels: ["reservation", "task"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Title the issue `TASK-NNN: <title>` with the next free number in **your** block.
+        Blocks: notanaskhan 077–499 · ayushkbhatia 500–999. `validate_docs` refuses ids outside every block and duplicate ids.
+        Close the issue with the merge that adds the file.
+  - type: dropdown
+    id: owner
+    attributes:
+      label: Block owner
+      options: [notanaskhan, ayushkbhatia]
+    validations:
+      required: true
+  - type: input
+    id: epic
+    attributes:
+      label: Owning epic or task
+      placeholder: "e.g. F-01, P-07-T06"
+  - type: textarea
+    id: summary
+    attributes:
+      label: What it covers
+    validations:
+      required: true

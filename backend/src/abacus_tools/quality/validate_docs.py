@@ -50,6 +50,18 @@ ID_IN_NAME = re.compile(r"^((?:ADR|SPEC|TASK)-\d{3})(?:-|\.md$)")
 AC_ID = re.compile(r"\bAC-\d+\b")
 INDEX_ROW = re.compile(r"^\|\s*\[(ADR-\d{3})\]\(([^)]+)\)\s*\|[^|]*\|[^|]*\|\s*([^|]+?)\s*\|\s*$")
 
+# Number blocks (F-01-T10): each founder mints ids from their own block, so two sessions never
+# take the same number. Ids up to LEGACY predate the blocks and are untouched.
+FOUNDERS = frozenset({"notanaskhan", "ayushkbhatia"})
+LEGACY = {"ADR": 115, "SPEC": 36, "TASK": 76}
+BLOCKS: dict[str, tuple[tuple[int, int, str], ...]] = {
+    "ADR": ((116, 199, "notanaskhan"), (200, 299, "ayushkbhatia")),
+    "SPEC": ((37, 99, "notanaskhan"), (100, 199, "ayushkbhatia")),
+    "TASK": ((77, 499, "notanaskhan"), (500, 999, "ayushkbhatia")),
+}
+# Accepted before handles were required (2026-10-19); immutable, so recorded here instead.
+LEGACY_DECIDERS = frozenset({"ADR-131", "ADR-132"})
+
 
 @dataclass(frozen=True)
 class Doc:
@@ -118,11 +130,53 @@ def _check_common(doc: Doc, report: Report, date_fields: tuple[str, ...]) -> Non
     match = ID_IN_NAME.match(doc.path.name)
     if not match or match.group(1) != doc.meta.get("id"):
         report.add(doc.path, f"id '{doc.meta.get('id')}' does not match the filename")
+    _check_block(doc, report)
     if doc.meta.get("risk_zone") not in RISK_ZONES:
         report.add(doc.path, f"risk_zone must be one of {sorted(RISK_ZONES)}")
     for name in date_fields:
         if not _is_date(doc.meta.get(name)):
             report.add(doc.path, f"'{name}' must be an ISO date (YYYY-MM-DD)")
+
+
+def block_owner(doc_id: str) -> str | None:
+    """The owner of the block holding an id; None for legacy ids and ids outside every block."""
+    kind, _, number = doc_id.partition("-")
+    n = int(number)
+    if n <= LEGACY[kind]:
+        return None
+    return next((owner for low, high, owner in BLOCKS[kind] if low <= n <= high), None)
+
+
+def _check_block(doc: Doc, report: Report) -> None:
+    match = ID_IN_NAME.match(doc.path.name)
+    if match is None:
+        return
+    doc_id = match.group(1)
+    kind, _, number = doc_id.partition("-")
+    if int(number) > LEGACY[kind] and block_owner(doc_id) is None:
+        blocks = ", ".join(f"{lo:03d}-{hi:03d} {owner}" for lo, hi, owner in BLOCKS[kind])
+        report.add(doc.path, f"{doc_id} is outside every number block ({kind}: {blocks})")
+
+
+def deciders(value: object) -> list[str]:
+    items = _str_list(value)
+    if items is None:
+        items = str(value).split(",")
+    return [d.strip().removeprefix("@") for item in items for d in item.split(",") if d.strip()]
+
+
+def _check_deciders(doc: Doc, report: Report) -> None:
+    doc_id = str(doc.meta["id"])
+    if int(doc_id.partition("-")[2]) <= LEGACY["ADR"] or doc_id in LEGACY_DECIDERS:
+        return
+    names = deciders(doc.meta["deciders"])
+    unknown = [n for n in names if n not in FOUNDERS]
+    if not names or unknown:
+        report.add(
+            doc.path,
+            f"deciders must be GitHub handles ({', '.join(sorted(FOUNDERS))}), not "
+            f"{', '.join(repr(n) for n in unknown) or 'nothing'}",
+        )
 
 
 def _check_unique(docs: list[Doc], report: Report) -> None:
@@ -155,6 +209,7 @@ def check_adrs(report: Report) -> dict[str, Doc]:
     on_disk = _ids_on_disk(ADR_DIR, "ADR")
     for doc in docs:
         _check_common(doc, report, ("date",))
+        _check_deciders(doc, report)
         status = str(doc.meta["status"])
         superseded = SUPERSEDED.match(status)
         if superseded is None and status not in ADR_STATUSES:
