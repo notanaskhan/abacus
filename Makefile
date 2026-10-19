@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: setup dev seed e2e check-fast check ci-unit ci-integration ci-coverage ci-contracts test test-integration evals generate migrate loadtest seed-staging route-parity flag access-review
+.PHONY: setup dev seed e2e check-fast check check-generated check-heads ci-unit ci-integration ci-coverage ci-contracts test test-integration evals generate migrate loadtest seed-staging route-parity flag access-review
 
 setup:
 	cd backend && uv sync --locked
@@ -42,11 +42,26 @@ check-fast:
 	cd backend && uv run ruff format --check . && uv run ruff check . && uv run pyright && uv run lint-imports
 	cd backend && uv run python -m abacus_tools.quality.banned_patterns
 	cd backend && uv run python -m abacus_tools.quality.validate_docs
-	cd backend && uv run python -m abacus_tools.codegen.feature_flags --check
+	$(MAKE) check-generated check-heads
 	cd backend && uv run python -m abacus_tools.quality.secrets_scan
 	cd backend && uv run python -m abacus_tools.quality.check_dependencies
 	pnpm -C apps/web exec tsc --noEmit && pnpm -C apps/web exec eslint . && pnpm -C apps/web exec prettier --check .
 	pnpm -C packages/ui exec tsc --noEmit && pnpm -C packages/ui exec eslint . && pnpm -C packages/ui exec prettier --check .
+	pnpm -C apps/web exec vite build --logLevel warn
+
+# Generated files match their sources; never hand-edit one (F-01-T06). The API client's drift
+# check stays in ci-contracts, which needs the OpenAPI export.
+GENERATORS = permission_matrix feature_flags provider_terms agent_specs eval_suites
+check-generated:
+	@cd backend && for g in $(GENERATORS); do \
+		uv run python -m abacus_tools.codegen.$$g --check || { \
+			echo "generated file out of date: run python -m abacus_tools.codegen.$$g"; exit 1; }; \
+	done
+
+# One migration head (F-01-T06): two migrations sharing a down_revision fail here.
+check-heads:
+	@cd backend && heads="$$(uv run alembic heads | grep -c '(head)')" && [ "$$heads" -eq 1 ] || { \
+		echo "multiple heads: rebase onto origin/main and renumber (P-38)"; exit 1; }
 
 check: check-fast
 	cd backend && uv run pytest $(UNIT_TESTS) --cov --cov-fail-under=0

@@ -5,13 +5,16 @@ name: ci
 on:
   push:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  merge_group:
 
 permissions:
   contents: read
 
+# Every commit on main keeps its own complete run (F-01-T06); elsewhere a newer push wins.
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.ref }}-${{ github.ref == 'refs/heads/main' && github.sha || 'latest' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   stage-1:
@@ -26,16 +29,20 @@ jobs:
         with:
           node-version: 24
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
       - run: corepack enable
       - run: make setup
       - run: make check-fast
 
-  # Stage 2 is `make check` split into parallel jobs (TASK-017): the suites run in shards balanced
+  # Stage 2 runs on pushes to main, ready (non-draft) pull requests and the merge queue
+  # (F-01-T06); a draft gets stage 1 only. It is `make check` split into parallel jobs (TASK-017): the suites run in shards balanced
   # by recorded run time (every test file in exactly one shard), and the coverage floor applies to
   # the combined data. Stage 1 is the job above, so it isn't repeated here.
   unit:
     name: stage 2 unit tests (${{ matrix.shard }}/2)
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'merge_group' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && !github.event.pull_request.draft)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
@@ -50,6 +57,9 @@ jobs:
         with:
           node-version: 24
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
       - run: corepack enable
       - run: make setup
       - run: make ci-unit SHARD=${{ matrix.shard }} SHARDS=2
@@ -63,7 +73,7 @@ jobs:
 
   integration:
     name: stage 2 integration tests (${{ matrix.shard }}/5)
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'merge_group' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && !github.event.pull_request.draft)
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
@@ -78,6 +88,9 @@ jobs:
         with:
           node-version: 24
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
       - run: corepack enable
       - run: make setup
       - run: make ci-integration SHARD=${{ matrix.shard }} SHARDS=5
@@ -91,7 +104,7 @@ jobs:
 
   contracts:
     name: stage 2 schema, api-client and frontend tests
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'merge_group' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && !github.event.pull_request.draft)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -102,6 +115,9 @@ jobs:
         with:
           node-version: 24
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
       - run: corepack enable
       - run: make setup
       - run: make ci-contracts
@@ -109,6 +125,7 @@ jobs:
   coverage:
     name: stage 2 coverage floor
     needs: [unit, integration]
+    if: github.event_name == 'merge_group' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && !github.event.pull_request.draft)
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -119,6 +136,9 @@ jobs:
         with:
           node-version: 24
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
       - run: corepack enable
       - run: make setup
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -134,7 +154,7 @@ jobs:
   # provider exists; a real-model run will need the evaluation key secret.
   evals-fast:
     name: stage 3 evaluations (fast subset)
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'merge_group' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && !github.event.pull_request.draft)
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -146,12 +166,15 @@ jobs:
         with:
           node-version: 24
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
       - run: corepack enable
       - run: make setup
       - name: agent behaviour changed?
         id: paths
         env:
-          BASE: ${{ github.event.pull_request.base.sha }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
         run: |
           if git diff --name-only "$BASE" HEAD | grep -qE '^(backend/src/abacus/ai_gateway/|backend/src/abacus/modules/agents/|evals/|backend/src/abacus_tools/evals/)'; then
             echo "run=true" >> "$GITHUB_OUTPUT"
@@ -161,7 +184,7 @@ jobs:
 
   stage-2:
     name: stages 1 and 2 (make check)
-    if: always() && github.event_name == 'pull_request'
+    if: always() && (github.event_name == 'merge_group' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && !github.event.pull_request.draft))
     needs: [stage-1, unit, integration, contracts, coverage, evals-fast]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
