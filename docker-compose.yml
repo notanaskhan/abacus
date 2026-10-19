@@ -2,6 +2,9 @@
 # Images are pinned by digest and approved under `containers:` in the dependency allowlist;
 # integration tests start the same images through testcontainers, reading them from this file.
 # Ports bind to 127.0.0.1 only. Credentials are fixed local values, unusable outside this machine.
+# A linked worktree runs its own project and ports (F-01-T09): the Makefile sets
+# COMPOSE_PROJECT_NAME and the ABACUS_*_PORT values from `.worktree.env`; the defaults are the
+# primary checkout's.
 name: abacus
 
 services:
@@ -13,7 +16,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: abacus
     ports:
-      - "127.0.0.1:55432:5432"  # host 55432: 5432 is often taken by a local Postgres
+      - "127.0.0.1:${ABACUS_DB_PORT:-55432}:5432"  # host 55432: 5432 is often taken by a local Postgres
     volumes:
       - db-data:/var/lib/postgresql/data
       # Roles and privileges, then local-only passwords; run on first start of an empty volume.
@@ -33,7 +36,7 @@ services:
       ROOT_SECRET_KEY: abacuslocal
     command: ["--health", "/health", "posix", "--versioning-dir", "/versions", "/data"]
     ports:
-      - "127.0.0.1:7070:7070"
+      - "127.0.0.1:${ABACUS_S3_PORT:-7070}:7070"
     volumes:
       - s3-data:/data
       - s3-versions:/versions
@@ -49,8 +52,8 @@ services:
     # In-memory: workflow history is lost on restart, which is fine locally (no root, no volume).
     command: ["server", "start-dev", "--ip", "0.0.0.0"]
     ports:
-      - "127.0.0.1:7233:7233"
-      - "127.0.0.1:8233:8233"
+      - "127.0.0.1:${ABACUS_TEMPORAL_PORT:-7233}:7233"
+      - "127.0.0.1:${ABACUS_TEMPORAL_UI_PORT:-8233}:8233"
     healthcheck:
       test: ["CMD", "temporal", "operator", "cluster", "health", "--address", "127.0.0.1:7233"]
       interval: 2s

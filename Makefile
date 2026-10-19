@@ -1,29 +1,54 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard ci-unit ci-integration ci-coverage ci-contracts ci-frontend test test-integration evals generate migrate loadtest seed-staging route-parity flag access-review
+.PHONY: setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend test test-integration evals generate migrate loadtest seed-staging route-parity flag access-review
 
 setup:
 	cd backend && uv sync --locked
 	pnpm install --frozen-lockfile
 	pnpm -C packages/api-client build:types
 
+# This checkout's local stack (F-01-T09): `make worktree-env` writes the git-ignored
+# .worktree.env, giving a linked worktree its own compose project and a port offset (10, 20, …).
+# Without it: project `abacus`, offset 0, today's ports. CI never has one.
+-include .worktree.env
+ABACUS_PORT_OFFSET ?= 0
+COMPOSE_PROJECT_NAME ?= abacus
+export ABACUS_PORT_OFFSET COMPOSE_PROJECT_NAME
+port = $(shell echo $$(( $(1) + $(ABACUS_PORT_OFFSET) )))
+export ABACUS_DB_PORT := $(call port,55432)
+export ABACUS_S3_PORT := $(call port,7070)
+export ABACUS_TEMPORAL_PORT := $(call port,7233)
+export ABACUS_TEMPORAL_UI_PORT := $(call port,8233)
+API_PORT := $(call port,8001)
+# The local stack's public credentials (as in abacus.kernel.config), at this checkout's ports.
+STACK_DB = 127.0.0.1:$(ABACUS_DB_PORT)/abacus
+STACK_ENV = ABACUS_DATABASE_URL=postgresql+asyncpg://abacus_app:abacusapp@$(STACK_DB) \
+	ABACUS_MIGRATIONS_DATABASE_URL=postgresql+asyncpg://abacus_owner:abacusowner@$(STACK_DB) \
+	ABACUS_RELAY_DATABASE_URL=postgresql+asyncpg://abacus_relay:abacusrelay@$(STACK_DB) \
+	ABACUS_IDENTITY_DATABASE_URL=postgresql+asyncpg://abacus_identity:abacusidentity@$(STACK_DB) \
+	ABACUS_LOCAL_SUPERUSER_DSN=postgresql://postgres:postgres@$(STACK_DB) \
+	ABACUS_S3_ENDPOINT_URL=http://127.0.0.1:$(ABACUS_S3_PORT) \
+	ABACUS_TEMPORAL_TARGET=127.0.0.1:$(ABACUS_TEMPORAL_PORT)
+
 # Local runs: the fake connector reads fixtures from here; seed_dev writes them (TASK-012).
-LOCAL_ENV = ABACUS_FAKE_CONNECTOR_DIR=$(CURDIR)/backend/.local/fake-connector
+LOCAL_ENV = $(STACK_ENV) ABACUS_FAKE_CONNECTOR_DIR=$(CURDIR)/backend/.local/fake-connector
 
 # The API on :8001, the local sign-in server on :9000, the worker (relay + screening with the
-# fake model) and the SPA on :5173, which proxies /v1 to the API. Ctrl-C, or any of them
+# fake model) and the SPA on :5173, which proxies /v1 to the API; each port plus this checkout's
+# offset. Ctrl-C, or any of them
 # exiting, stops them all (polled: macOS's /bin/sh is bash 3.2, which has no `wait -n`). The ports
 # are also set in apps/web/vite.config.ts (proxy), abacus_tools/fakes/oidc_server.py (HOST, PORT,
 # REDIRECT_URIS) and .github/workflows/e2e.yml.
 dev:
 	docker compose up -d --wait db s3 temporal
 	mkdir -p backend/.local/fake-connector
-	cd backend && uv run alembic upgrade head && uv run python -m abacus_tools.local.evidence_bucket
+	cd backend && $(LOCAL_ENV) uv run alembic upgrade head && \
+		$(LOCAL_ENV) uv run python -m abacus_tools.local.evidence_bucket
 	cd backend; \
 	export $(LOCAL_ENV); \
 	export ABACUS_IDENTITY_JWKS="$$(uv run python -m abacus_tools.fakes.oidc_server --jwks)"; \
 	trap 'kill 0' EXIT; \
 	uv run python -m abacus_tools.fakes.oidc_server & oidc=$$!; \
-	uv run uvicorn --factory abacus.api.app:create_app --port 8001 --reload & api=$$!; \
+	uv run uvicorn --factory abacus.api.app:create_app --port $(API_PORT) --reload & api=$$!; \
 	uv run python -m abacus.worker & worker=$$!; \
 	pnpm -C ../apps/web dev & web=$$!; \
 	while kill -0 $$oidc $$api $$worker $$web 2>/dev/null; do sleep 1; done
@@ -66,7 +91,16 @@ regenerate:
 
 # Local database targets refuse hosted databases (F-01-T09).
 db-guard:
-	@cd backend && uv run python -m abacus_tools.local.db_guard
+	@cd backend && $(STACK_ENV) uv run python -m abacus_tools.local.db_guard
+
+# Give a linked worktree its own compose project and ports (F-01-T09); run once per worktree.
+worktree-env:
+	@cd backend && uv run python -m abacus_tools.local.worktree_env
+
+# The SPA alone, on fixtures: no Docker, Python or Temporal (F-01-T09). F-04 and F-05 supply the
+# fixture handlers behind VITE_FIXTURES.
+dev-fixtures:
+	VITE_FIXTURES=1 pnpm -C apps/web dev
 
 # One migration head (F-01-T06): two migrations sharing a down_revision fail here.
 check-heads:
@@ -142,7 +176,7 @@ generate:
 	pnpm -C packages/api-client build:types
 
 migrate: db-guard
-	cd backend && uv run alembic upgrade head
+	cd backend && $(STACK_ENV) uv run alembic upgrade head
 
 loadtest: db-guard
 	cd backend && uv run python -m abacus_tools.loadtest.run --profile $(PROFILE)

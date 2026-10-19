@@ -33,15 +33,17 @@ function contentSecurityPolicy(authority: string): Plugin {
 }
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, ".", "VITE_");
-  const authority = env.VITE_OIDC_AUTHORITY ?? "http://127.0.0.1:9000";
+  const env = loadEnv(mode, ".", ["VITE_", "ABACUS_PORT_OFFSET"]);
+  // This worktree's port offset (F-01-T09; `make worktree-env`): 0 in the primary checkout and CI.
+  const offset = Number(env.ABACUS_PORT_OFFSET ?? "0") || 0;
+  const authority = env.VITE_OIDC_AUTHORITY ?? `http://127.0.0.1:${String(9000 + offset)}`;
   return {
     plugins: [react(), tailwindcss(), contentSecurityPolicy(authority)],
     server: {
-      port: 5173,
+      port: 5173 + offset,
       strictPort: true,
-      // Same origin in the browser: /v1 goes to the API (make dev runs it on :8001). No CORS.
-      proxy: { "/v1": "http://127.0.0.1:8001" },
+      // Same origin in the browser: /v1 goes to the API (make dev runs it on :8001 + offset).
+      proxy: { "/v1": `http://127.0.0.1:${String(8001 + offset)}` },
     },
     test: {
       environment: "jsdom",
