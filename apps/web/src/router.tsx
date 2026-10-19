@@ -149,12 +149,10 @@ const boardRoute = createRoute({
   component: function BoardPage(): JSX.Element {
     const { engagementId } = engagementRoute.useParams();
     return (
-      <div className="flex flex-col gap-3">
-        <div className="flex justify-end">
-          <ImportRequestList engagementId={engagementId} />
-        </div>
-        <Board engagementId={engagementId} />
-      </div>
+      <Board
+        engagementId={engagementId}
+        actions={<ImportRequestList engagementId={engagementId} />}
+      />
     );
   },
 });

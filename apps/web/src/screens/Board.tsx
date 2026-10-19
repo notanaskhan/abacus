@@ -18,19 +18,20 @@ import {
 } from "@abacus/api-client/query";
 import {
   AgentText,
+  AiTag,
   Alert,
   Badge,
   Button,
-  Card,
   EmptyState,
   Input,
   Label,
   Skeleton,
   Spinner,
+  StatusPill,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { type JSX, type SyntheticEvent, useEffect, useState } from "react";
+import { type JSX, type ReactNode, type SyntheticEvent, useEffect, useState } from "react";
 import { errorMessage } from "../api";
 import { DueDatesBar, ItemDue, useDefaultDue } from "./DueDates";
 import { GuidanceDrafts } from "./GuidanceDrafts";
@@ -54,7 +55,14 @@ const RETRIEVAL_POLL_MS = 2000;
 const MATCH_REQUESTERS = new Set(["engagement_partner", "manager", "senior", "staff"]);
 const DRAFTERS = new Set(["engagement_partner", "manager", "senior"]); // SPEC-035
 
-export function Board({ engagementId }: { engagementId: string }): JSX.Element {
+export function Board({
+  engagementId,
+  actions,
+}: {
+  engagementId: string;
+  /** Page actions for the list's header (the router passes "Import from Excel"). */
+  actions?: ReactNode;
+}): JSX.Element {
   const path = { path: { engagement_id: engagementId } };
   const engagement = useQuery(getEngagementOptions(path));
   const me = useQuery(meOptions());
@@ -140,60 +148,90 @@ export function Board({ engagementId }: { engagementId: string }): JSX.Element {
   const shown = applyFilters(rows, filters, aiFlags);
 
   return (
-    <section aria-labelledby="board-heading" className="flex flex-col gap-4">
+    <section aria-labelledby="board-heading" className="flex flex-col gap-3">
       {/* The record header names the engagement (TASK-092); the heading stays for structure. */}
       <h1 id="board-heading" className="sr-only">
         {engagement.data.name}
       </h1>
-      <AddRequestItem engagementId={engagementId} />
-      {rows.length > 0 && (
-        <DueDatesBar engagementId={engagementId} items={rows.map((r) => r.item)} />
-      )}
-      <InboxPanel
-        engagementId={engagementId}
-        items={items.data}
-        firm={{ canRequestMatch: myRole !== undefined && MATCH_REQUESTERS.has(myRole) }}
-      />
-      <GuidanceDrafts
-        engagementId={engagementId}
-        items={items.data}
-        canDraft={myRole !== undefined && DRAFTERS.has(myRole)}
-      />
-      <SummaryStrip engagementId={engagementId} />
-      {rows.length > 0 && (
-        <FilterBar
-          filters={filters}
-          areas={[...new Set(rows.map((r) => r.item.audit_area))].sort()}
-          onChange={setFilter}
+      <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
+        <InboxPanel
+          engagementId={engagementId}
+          items={items.data}
+          firm={{ canRequestMatch: myRole !== undefined && MATCH_REQUESTERS.has(myRole) }}
         />
-      )}
-      {rows.length === 0 ? (
-        <EmptyState title="No request items yet">
-          Add one to request evidence from the client.
-        </EmptyState>
-      ) : shown.length === 0 ? (
-        <EmptyState title="No items match these filters">
-          Clear a filter to see more requests.
-        </EmptyState>
-      ) : (
-        <ul className="flex flex-col gap-3" aria-label="Request items">
-          {shown.map((row) => (
-            <li key={row.item.id}>
-              <RequestItemCard
-                row={row}
-                aiFlags={aiFlags.get(row.evidence?.id ?? "") ?? 0}
-                fallbackDue={defaultDue}
-                engagement={engagement.data}
-                pollingExpired={pollingExpired}
-                onRefresh={() => void results.refetch()}
-              />
-            </li>
-          ))}
-        </ul>
-      )}
+        <GuidanceDrafts
+          engagementId={engagementId}
+          items={items.data}
+          canDraft={myRole !== undefined && DRAFTERS.has(myRole)}
+        />
+      </div>
+      {/* One pane for the list (TASK-094): summary and the list's due date, filters, the rows
+          in columns, and a row to add a request. */}
+      <div className="flex flex-col overflow-hidden rounded-pane bg-card shadow-e2">
+        <div className="flex min-h-[50px] flex-wrap items-center gap-x-5 gap-y-2 border-b-[0.5px] border-hair px-4 py-2">
+          <h2 className="text-[15px] font-medium tracking-[-0.012em]">Requests</h2>
+          <SummaryStrip engagementId={engagementId} />
+          <span className="flex-1" />
+          {rows.length > 0 && (
+            <DueDatesBar engagementId={engagementId} items={rows.map((r) => r.item)} />
+          )}
+          {actions}
+        </div>
+        {rows.length > 0 && (
+          <div className="border-b-[0.5px] border-hair bg-band-hd px-4 py-2">
+            <FilterBar
+              filters={filters}
+              areas={[...new Set(rows.map((r) => r.item.audit_area))].sort()}
+              onChange={setFilter}
+            />
+          </div>
+        )}
+        {rows.length === 0 ? (
+          <EmptyState title="No request items yet">
+            Add one to request evidence from the client.
+          </EmptyState>
+        ) : shown.length === 0 ? (
+          <EmptyState title="No items match these filters">
+            Clear a filter to see more requests.
+          </EmptyState>
+        ) : (
+          <>
+            <div
+              aria-hidden="true"
+              className={`hidden h-[30px] items-center gap-4 border-b-[0.5px] border-hair px-4 text-[11.5px] text-ink-2 lg:grid ${ROW_GRID}`}
+            >
+              <span>Request</span>
+              <span>Status</span>
+              <span>Evidence</span>
+              <span>Agent screening</span>
+              <span>Due</span>
+            </div>
+            <ul className="flex flex-col divide-y-[0.5px] divide-hair" aria-label="Request items">
+              {shown.map((row) => (
+                <li key={row.item.id}>
+                  <RequestItemCard
+                    row={row}
+                    aiFlags={aiFlags.get(row.evidence?.id ?? "") ?? 0}
+                    fallbackDue={defaultDue}
+                    engagement={engagement.data}
+                    pollingExpired={pollingExpired}
+                    onRefresh={() => void results.refetch()}
+                  />
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+        <div className="border-t-[0.5px] border-hair bg-band-hd px-4 py-3">
+          <AddRequestItem engagementId={engagementId} />
+        </div>
+      </div>
     </section>
   );
 }
+
+const ROW_GRID =
+  "lg:grid-cols-[minmax(220px,1.3fr)_120px_minmax(160px,1fr)_minmax(240px,1.6fr)_190px]";
 
 function RequestItemCard({
   row,
@@ -212,62 +250,55 @@ function RequestItemCard({
 }): JSX.Element {
   const { item, evidence, screening } = row;
   return (
-    <Card className="flex flex-col gap-3">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+    <div className="flex flex-col gap-2 px-4 py-3 transition-colors hover:bg-shell/60">
+      <div className={`grid grid-cols-1 items-start gap-x-4 gap-y-2 ${ROW_GRID}`}>
+        <div className="flex min-w-0 flex-col gap-1">
           <Link
             to="/engagements/$engagementId/items/$itemId"
             params={{ engagementId: item.engagement_id, itemId: item.id }}
-            className="font-medium hover:underline"
+            className="text-[13px] font-medium text-ink hover:underline"
           >
             {item.description}
           </Link>
-          <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
+          <p className="flex flex-wrap items-center gap-2 text-[12px] text-ink-3">
             {item.audit_area}
             <TierChip item={item} />
           </p>
         </div>
-        <Badge tone={statusTone(item.status)} aria-label={`Status: ${statusLabel(item.status)}`}>
-          {statusLabel(item.status)}
-        </Badge>
-      </div>
-      <dl className="grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1 text-sm">
-        <dt className="text-muted">Source</dt>
-        <dd>
-          {evidence === null
-            ? "No evidence yet"
-            : `${sourceLabel(evidence)} · version ${String(evidence.version_no)}`}
-          {/* SPEC-029 AC-11 (TASK-057): code found something in the latest version. */}
-          {evidence !== null && (evidence.problems ?? 0) > 0 && (
-            <Badge tone="warning" className="ml-2">
-              Problems found
-            </Badge>
-          )}
-          {evidence !== null && aiFlags > 0 && (
-            <Badge tone="warning" className="ml-2">
-              AI flags
-            </Badge>
-          )}
-          {/* SPEC-032 AC-8 (TASK-063): comments on the request and its versions. */}
-          {(item.comment_count ?? 0) > 0 && (
-            <Badge
-              tone={item.unread_comments === true ? "info" : "neutral"}
-              className="ml-2"
-              aria-label={`${String(item.comment_count)} comments${item.unread_comments === true ? ", unread" : ""}`}
-            >
-              Comments {item.comment_count}
-              {item.unread_comments === true && " •"}
-            </Badge>
-          )}
-        </dd>
-        <dt className="text-muted">Due</dt>
-        <dd>
-          <ItemDue item={item} fallback={fallbackDue} />
-        </dd>
-        <dt className="text-muted">Screening</dt>
-        <dd>
+        <div>
+          <StatusPill tone={statusTone(item.status)}>
+            <span aria-label={`Status: ${statusLabel(item.status)}`}>
+              {statusLabel(item.status)}
+            </span>
+          </StatusPill>
+        </div>
+        <div className="flex flex-col items-start gap-1 text-[12.5px]">
+          <span className={evidence === null ? "text-ink-3" : ""}>
+            {evidence === null
+              ? "No evidence yet"
+              : `${sourceLabel(evidence)} · version ${String(evidence.version_no)}`}
+          </span>
+          <span className="flex flex-wrap gap-1">
+            {/* SPEC-029 AC-11 (TASK-057): code found something in the latest version. */}
+            {evidence !== null && (evidence.problems ?? 0) > 0 && (
+              <Badge tone="warning">Problems found</Badge>
+            )}
+            {evidence !== null && aiFlags > 0 && <Badge tone="warning">AI flags</Badge>}
+            {/* SPEC-032 AC-8 (TASK-063): comments on the request and its versions. */}
+            {(item.comment_count ?? 0) > 0 && (
+              <Badge
+                tone={item.unread_comments === true ? "info" : "neutral"}
+                aria-label={`${String(item.comment_count)} comments${item.unread_comments === true ? ", unread" : ""}`}
+              >
+                Comments {item.comment_count}
+                {item.unread_comments === true && " •"}
+              </Badge>
+            )}
+          </span>
+        </div>
+        <div className="min-w-0 text-[12.5px]">
           {screening.kind === "none" ? (
-            "—"
+            <span className="text-ink-4">—</span>
           ) : screening.kind === "pending" ? (
             pollingExpired ? (
               <span className="flex items-center gap-2">
@@ -282,16 +313,19 @@ function RequestItemCard({
           ) : (
             <ScreeningSummary result={screening.result} />
           )}
-        </dd>
-      </dl>
-      <div className="flex flex-wrap items-center justify-between gap-3">
+        </div>
+        <div className="text-[12.5px]">
+          <ItemDue item={item} fallback={fallbackDue} />
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-3 text-[12px]">
         {(item.status === "open" || item.status === "received") && (
           <Retrieve item={item} engagement={engagement} />
         )}
         <TierOverride item={item} />
         <HiddenFromClient item={item} />
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -333,24 +367,28 @@ function HiddenFromClient({ item }: { item: RequestItemOut }): JSX.Element {
 /** The agent's proposal: labelled as one, model text shown only through AgentText (ADR-065). */
 function ScreeningSummary({ result }: { result: ScreeningResultOut }): JSX.Element {
   return (
-    <div className="flex flex-col gap-2" aria-label="Screening result">
-      <p>
-        <span className="text-muted">Agent proposes: </span>
+    <div className="flex flex-col gap-1.5" aria-label="Screening result">
+      <p className="flex flex-wrap items-center gap-1.5">
+        <AiTag />
+        <span className="text-ink-3">Agent proposes:</span>
         <Badge tone={result.action === "ready_for_review" ? "success" : "warning"}>
           {result.action === "ready_for_review" ? "Ready for review" : "Needs revision"}
-        </Badge>{" "}
-        <span className="text-muted">confidence {confidencePercent(result.confidence)}</span>
+        </Badge>
+        <span className="text-[11.5px] text-ink-3">
+          confidence {confidencePercent(result.confidence)}
+        </span>
       </p>
-      <AgentText text={result.rationale} className="text-ink" />
+      <AgentText text={result.rationale} className="text-[12.5px] leading-[1.45] text-ink-2" />
       {result.citations.length > 0 && (
-        <ul className="flex flex-col gap-1" aria-label="Citations">
+        <ul className="flex flex-wrap gap-x-3 gap-y-1" aria-label="Citations">
           {result.citations.map((c) => (
-            <li key={c.cell} className="flex items-center gap-2">
+            <li key={c.cell} className="flex items-center gap-1.5 text-[12px]">
               <Badge tone={c.verified ? "success" : "danger"}>
                 {c.verified ? "Verified" : "Unverified"}
               </Badge>
-              <span>
-                Cell <AgentText inline text={c.cell} />
+              <span className="font-mono text-[11.5px] text-ink-2">
+                <span className="sr-only">Cell </span>
+                <AgentText inline text={c.cell} />
               </span>
               {c.quote !== null && <AgentText inline text={`“${c.quote}”`} />}
               {c.value !== null && <AgentText inline text={c.value} />}
@@ -491,7 +529,7 @@ function AddRequestItem({ engagementId }: { engagementId: string }): JSX.Element
   }
 
   return (
-    <Card>
+    <div>
       <form
         onSubmit={submit}
         className="flex flex-wrap items-end gap-3"
@@ -510,7 +548,7 @@ function AddRequestItem({ engagementId }: { engagementId: string }): JSX.Element
           <Label htmlFor="audit_area">Audit area</Label>
           <Input id="audit_area" name="audit_area" required placeholder="General" />
         </div>
-        <Button type="submit" disabled={mutation.isPending}>
+        <Button type="submit" variant="outline" disabled={mutation.isPending}>
           Add request item
         </Button>
       </form>
@@ -519,7 +557,7 @@ function AddRequestItem({ engagementId }: { engagementId: string }): JSX.Element
           <Alert title="Couldn't add the request item">{errorMessage(mutation.error)}</Alert>
         </div>
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -539,7 +577,7 @@ const STATUS_FILTERS: [string, string][] = [
   ["accepted", "Accepted"],
 ];
 const SELECT_CLASS =
-  "h-8 rounded-[var(--radius-control)] border border-line bg-surface px-2 text-sm";
+  "h-[26px] rounded-[6px] border-0 bg-card px-2 text-[12.5px] text-ink shadow-e1 hover:bg-nav-fill";
 
 /** SPEC-022 AC-5: narrow the list; every choice lives in the URL. */
 function FilterBar({
@@ -556,7 +594,7 @@ function FilterBar({
     label: string,
     options: [string, string][],
   ): JSX.Element => (
-    <label className="flex flex-col gap-1 text-xs text-muted">
+    <label className="flex items-center gap-1.5 text-[12px] text-ink-3">
       {label}
       <select
         className={SELECT_CLASS}
@@ -575,7 +613,11 @@ function FilterBar({
     </label>
   );
   return (
-    <div role="search" aria-label="Filter requests" className="flex flex-wrap items-end gap-3">
+    <div
+      role="search"
+      aria-label="Filter requests"
+      className="flex flex-wrap items-center gap-x-4 gap-y-2"
+    >
       {select("status", "Status", STATUS_FILTERS)}
       {select(
         "area",
@@ -599,7 +641,7 @@ function FilterBar({
         ["assigned", "Assigned"],
         ["unassigned", "Unassigned"],
       ])}
-      <label className="flex flex-col gap-1 text-xs text-muted">
+      <label className="ml-auto flex items-center gap-1.5 text-[12px] text-ink-3">
         Search
         <input
           type="search"
@@ -624,28 +666,20 @@ function SummaryStrip({ engagementId }: { engagementId: string }): JSX.Element |
   const s = summary.data;
   const share = s.retrievable_share;
   return (
-    <dl
-      aria-label="Board summary"
-      className="grid grid-cols-2 gap-3 rounded-[var(--radius-panel)] border border-line bg-surface p-3 text-sm sm:grid-cols-4"
-    >
-      <div>
-        <dt className="text-muted">Requests</dt>
-        <dd className="text-lg font-semibold tabular-nums">{s.total}</dd>
-      </div>
-      <div>
-        <dt className="text-muted">Retrieved, never asked</dt>
-        <dd className="text-lg font-semibold tabular-nums">{s.retrieved_never_asked}</dd>
-      </div>
-      <div>
-        <dt className="text-muted">Retrievable share</dt>
-        <dd className="text-lg font-semibold tabular-nums">
-          {share === null ? "—" : `${String(Math.round(share * 100))}%`}
-        </dd>
-      </div>
-      <div>
-        <dt className="text-muted">Unclassified</dt>
-        <dd className="text-lg font-semibold tabular-nums">{s.unclassified}</dd>
-      </div>
+    <dl aria-label="Board summary" className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
+      {(
+        [
+          ["Requests", String(s.total)],
+          ["Retrieved, never asked", String(s.retrieved_never_asked)],
+          ["Retrievable share", share === null ? "—" : `${String(Math.round(share * 100))}%`],
+          ["Unclassified", String(s.unclassified)],
+        ] as const
+      ).map(([label, value]) => (
+        <div key={label} className="flex items-baseline gap-1.5">
+          <dt className="text-[12px] text-ink-3">{label}</dt>
+          <dd className="text-[13px] font-medium tabular-nums">{value}</dd>
+        </div>
+      ))}
     </dl>
   );
 }
@@ -658,7 +692,7 @@ function TierChip({ item }: { item: RequestItemOut }): JSX.Element {
     <span className="inline-flex items-center gap-1 text-xs">
       <span
         title={TIER_MEANING[tier]}
-        className="rounded border border-line px-1.5 font-semibold text-ink"
+        className="rounded-[4px] bg-nested px-1.5 py-px font-medium text-ink-2"
       >
         Tier {tier}
       </span>
