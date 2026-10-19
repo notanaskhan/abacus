@@ -34,7 +34,7 @@ export function AiTag({ citations, href }: { citations?: number; href?: string }
       {citations !== undefined && citations > 0 && href !== undefined && (
         <a
           href={href}
-          className="rounded-full bg-nested px-1.5 py-px text-[11px] font-medium text-ink-2 hover:bg-sel-bg hover:text-ink"
+          className="rounded-[5px] bg-nested px-1.5 py-px text-[11px] font-medium text-ink-2 hover:bg-sel-bg hover:text-ink"
         >
           {citations === 1 ? "1 citation" : `${String(citations)} citations`}
         </a>
@@ -120,7 +120,7 @@ export function RailButton({
       title={label}
       onClick={onClick}
       className={cn(
-        "relative flex size-10 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-nav-fill hover:text-ink [&_svg]:size-[17px]",
+        "relative flex size-10 items-center justify-center rounded-[8px] text-ink-2 transition-colors hover:bg-nav-fill hover:text-ink [&_svg]:size-[17px]",
         active && "bg-sel-bg text-ink",
       )}
     >

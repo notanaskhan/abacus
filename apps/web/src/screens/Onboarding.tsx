@@ -104,57 +104,63 @@ export function Onboarding({ always = false }: { always?: boolean }): JSX.Elemen
         </span>
       }
     >
-      <ol aria-label="Setup steps" className="flex flex-col divide-y divide-line">
+      {/* A compact grid of steps, not a tall list (TASK-093). */}
+      <ol
+        aria-label="Setup steps"
+        className="grid grid-cols-1 items-start gap-2 sm:grid-cols-2 xl:grid-cols-4"
+      >
         {steps.map((step, index) => {
           const copy = STEPS[step.id];
           return (
-            <li key={step.id} className="flex flex-wrap items-center justify-between gap-3 py-2">
-              <div className="flex items-start gap-3">
-                <span
-                  aria-hidden="true"
-                  className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
-                    step.done ? "bg-ok-soft text-ok" : "bg-sunken text-muted"
-                  }`}
-                >
-                  {step.done ? "✓" : String(index + 1)}
-                </span>
-                <div>
-                  <p className="font-medium">
-                    {copy.title}
-                    <span className="sr-only">{step.done ? " (done)" : " (to do)"}</span>
-                  </p>
-                  <p className="text-sm text-muted">
+            <li
+              key={step.id}
+              className={`flex items-start gap-2.5 rounded-nested px-3 py-2.5 ${
+                step.done ? "bg-shell" : "bg-card shadow-e1"
+              }`}
+            >
+              <span
+                aria-hidden="true"
+                className={`mt-px flex size-[18px] shrink-0 items-center justify-center rounded-full text-[10.5px] font-medium ${
+                  step.done ? "bg-green-tint text-green-ink" : "bg-chip text-ink-2"
+                }`}
+              >
+                {step.done ? "✓" : String(index + 1)}
+              </span>
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <p className={`text-[13px] font-medium ${step.done ? "text-ink-2" : ""}`}>
+                  {copy.title}
+                  <span className="sr-only">{step.done ? " (done)" : " (to do)"}</span>
+                </p>
+                {!step.done && (
+                  <p className="text-[11.5px] leading-[1.4] text-ink-3">
                     {step.how === "skipped"
                       ? "Skipped for now."
                       : step.how === "none_needed"
                         ? "No walls needed."
                         : copy.detail}
                   </p>
-                </div>
+                )}
+                {!step.done && (
+                  <span className="mt-0.5 flex flex-wrap items-center gap-2">
+                    {step.id === "sso" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          acknowledge.mutate({ path: { step: "sso" } });
+                        }}
+                      >
+                        Skip for now
+                      </Button>
+                    )}
+                    {copy.action !== "" && (
+                      <Link to={copy.to} className="text-[12.5px] font-medium text-ink underline">
+                        {copy.action}
+                      </Link>
+                    )}
+                  </span>
+                )}
               </div>
-              {!step.done && (
-                <span className="flex gap-2">
-                  {step.id === "sso" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        acknowledge.mutate({ path: { step: "sso" } });
-                      }}
-                    >
-                      Skip for now
-                    </Button>
-                  )}
-                  {copy.action !== "" && (
-                    <Link
-                      to={copy.to}
-                      className="text-sm font-semibold text-accent hover:underline"
-                    >
-                      {copy.action}
-                    </Link>
-                  )}
-                </span>
-              )}
             </li>
           );
         })}

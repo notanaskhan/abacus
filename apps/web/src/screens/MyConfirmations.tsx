@@ -11,11 +11,17 @@ import { errorMessage } from "../api";
 /** SPEC-025 AC-5: the person's own independence confirmations still to give. */
 export function MyConfirmations(): JSX.Element | null {
   const open = useQuery({ ...myConfirmationsOptions(), retry: false });
+  const [all, setAll] = useState(false);
   if (open.data === undefined || open.data.length === 0) return null;
+  // A to-do list, not a wall (TASK-093): the first few, then the rest on request.
+  const shown = all ? open.data : open.data.slice(0, 3);
   return (
-    <Panel title="Your independence confirmations">
-      <ul className="flex flex-col divide-y divide-line">
-        {open.data.map((c) => (
+    <Panel
+      title="Your independence confirmations"
+      action={<StatusPill tone="warning">{open.data.length} to confirm</StatusPill>}
+    >
+      <ul className="-my-3 flex flex-col divide-y-[0.5px] divide-hair">
+        {shown.map((c) => (
           <ConfirmationRow
             key={c.engagement_id}
             engagementId={c.engagement_id}
@@ -25,6 +31,18 @@ export function MyConfirmations(): JSX.Element | null {
           />
         ))}
       </ul>
+      {open.data.length > 3 && (
+        <Button
+          size="sm"
+          variant="ghost"
+          className="self-start"
+          onClick={() => {
+            setAll((v) => !v);
+          }}
+        >
+          {all ? "Show fewer" : `Show all ${String(open.data.length)}`}
+        </Button>
+      )}
     </Panel>
   );
 }
@@ -86,12 +104,14 @@ function ConfirmationRow({
     });
   };
   return (
-    <li className="flex flex-col gap-2 py-3 text-sm">
-      <p className="font-medium">{label}</p>
-      <p className="text-muted">{statement}</p>
-      {declined && (
-        <p className="text-xs text-danger">You declined. Confirm if that has changed.</p>
-      )}
+    <li className="flex flex-wrap items-center gap-x-4 gap-y-2 py-2.5 text-[13px]">
+      <div className="flex min-w-[280px] flex-1 flex-col gap-0.5">
+        <p className="font-medium">{label}</p>
+        <p className="text-[12px] leading-[1.45] text-ink-3">{statement}</p>
+        {declined && (
+          <p className="text-[12px] text-red-ink">You declined. Confirm if that has changed.</p>
+        )}
+      </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button
           size="sm"

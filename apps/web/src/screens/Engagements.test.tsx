@@ -1,5 +1,5 @@
 import type { EngagementSummaryOut } from "@abacus/api-client";
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { json, mockApi, never, renderRoutes, signInForTest } from "../testing/support";
 import { Engagements } from "./Engagements";
@@ -83,7 +83,7 @@ describe("ac18 Engagements screen", () => {
     );
     expect(screen.getAllByText(/Acme/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/2025-01-01/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText("active").length).toBe(2);
+    expect(within(screen.getByRole("table")).getAllByText("Active").length).toBe(2); // TASK-093 pill
   });
 
   it("creates an engagement with the five fields, refreshes the list and opens it", async () => {
