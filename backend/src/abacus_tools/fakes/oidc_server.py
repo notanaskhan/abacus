@@ -1,6 +1,6 @@
 """A local OpenID Connect sign-in server for the SPA (TASK-012 Q2; SPEC-000 §20). Local only.
 
-Run: python -m abacus_tools.fakes.oidc_server        (serves on 127.0.0.1:9000)
+Run: python -m abacus_tools.fakes.oidc_server        (serves on 127.0.0.1:9000 + port offset)
      python -m abacus_tools.fakes.oidc_server --jwks (prints the public key set for the API)
 
 The browser flow is authorization code with PKCE (S256), as WorkOS will be (TASK-014):
@@ -33,13 +33,16 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Resp
 
 from abacus.kernel.config import settings
 from abacus_tools.fakes.identity import AUDIENCE, ISSUER, FakeIdentityProvider
+from abacus_tools.local.worktree_env import port_offset
 
-HOST, PORT = "127.0.0.1", 9000
+# This worktree's ports (F-01-T09): only its own SPA may sign in through it.
+OFFSET = port_offset()
+HOST, PORT = "127.0.0.1", 9000 + OFFSET
 CLIENT_ID = "abacus-web"
 REDIRECT_URIS = frozenset(
     {
-        "http://localhost:5173/signin/callback",
-        "http://127.0.0.1:5173/signin/callback",
+        f"http://localhost:{5173 + OFFSET}/signin/callback",
+        f"http://127.0.0.1:{5173 + OFFSET}/signin/callback",
     }
 )
 # The dev users `seed_dev` creates (subject, display name). Sign-in is a choice, not a password.

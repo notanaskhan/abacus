@@ -35,3 +35,6 @@ test-results/
 .DS_Store
 .idea/
 .vscode/
+
+# This checkout's local stack: compose project and port offset (make worktree-env, F-01-T09)
+.worktree.env
