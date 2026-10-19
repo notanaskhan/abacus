@@ -22,7 +22,7 @@ import { ConfirmItsYou, isForbidden } from "../shell/mfa";
 // AgentText with the AI tag (ADR-065).
 
 const REFUSED: Record<string, string> = {
-  ai_drafting_unavailable: "AI drafting isn't available here.",
+  ai_drafting_unavailable: "Agent drafting isn't available here.",
   edited_draft_refused:
     "The edited text can't be used: remove amounts, dates, names, links or contact details.",
   read_not_confirmed: "Tick that you've read each draft first.",
@@ -61,7 +61,7 @@ function DraftCard({
       </span>
       {editing ? (
         <>
-          <Label htmlFor={`why-${draft.id}`}>Why we ask</Label>
+          <Label htmlFor={`why-${draft.id}`}>Why we need it</Label>
           <textarea
             id={`why-${draft.id}`}
             rows={2}
@@ -86,7 +86,7 @@ function DraftCard({
         </>
       ) : (
         <dl className="flex flex-col gap-1">
-          <dt className="font-medium">Why we ask</dt>
+          <dt className="font-medium">Why we need it</dt>
           <dd className="text-muted">
             <AgentText text={draft.why} />
           </dd>
@@ -213,8 +213,8 @@ export function TemplateGuidanceDrafts({
       ) : (
         <div className="flex flex-col gap-3">
           <p className="text-xs text-muted">
-            Drafted with AI from each standard request&apos;s description. Nothing changes until
-            you approve and publish a new version; engagements on older versions keep theirs.
+            The agent drafted these from each standard request&apos;s description. Nothing changes
+            until you approve and publish a new version; engagements on older versions keep theirs.
             Clients see approved drafts only if your firm allows it in settings.
           </p>
           <ul aria-label="Template drafts" className="flex flex-col gap-2">

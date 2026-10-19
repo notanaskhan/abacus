@@ -501,10 +501,10 @@ ACTIONS: dict[str, dict[str, str]] = {
         "independence": "required",
     },
     "workpaper.sign_ready": {
-        "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
         "staff": "allow",
+        "agent": "deny",
         "independence": "required",
     },
     "entry_assessment.request": {
@@ -522,7 +522,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
-        "reviewer": "allow",
+        "agent": "deny",
         "independence": "required",
     },
     "suggestion.resolve": {

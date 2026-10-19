@@ -74,7 +74,9 @@ describe("ac4 review", () => {
       [`POST ${BASE}/guidance-drafts/approve`]: () => json({ decided: 1 }, 201),
     });
     fireEvent.click(await screen.findByRole("button", { name: "Edit" }));
-    fireEvent.change(screen.getByLabelText("Why we ask"), { target: { value: "Edited why." } });
+    fireEvent.change(screen.getByLabelText("Why we need it"), {
+      target: { value: "Edited why." },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Approve edited" }));
     await waitFor(() => {
       expect(calls.find((c) => c.path.endsWith("/approve"))?.body).toMatchObject({
@@ -123,6 +125,6 @@ describe("ac8 states and labels", () => {
   it("labels approved drafted guidance for the firm", () => {
     expect(
       sourceLabel({ ...ITEMS[0], guidance_source: "drafted" } as RequestItemOut, "Dana Leader"),
-    ).toBe("Drafted with AI, approved by Dana Leader");
+    ).toBe("Drafted via Agent, approved by Dana Leader");
   });
 });

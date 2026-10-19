@@ -1,5 +1,6 @@
-"""SPEC-036 AC-5 (TASK-076): a cleared agent starts in shadow for a real firm; synthetic firms
-never run in shadow; the founder's command refuses `live` before the shadow threshold (Q1)."""
+"""SPEC-036 AC-5 (TASK-076, TASK-089): a cleared agent is off for a real firm until set to
+shadow; synthetic firms never run in shadow; the founder's command refuses `live` before the
+shadow threshold (Q1)."""
 
 from __future__ import annotations
 
@@ -44,9 +45,15 @@ def row(monkeypatch: pytest.MonkeyPatch) -> dict[str, object]:
     return found
 
 
-async def test_ac5_a_cleared_agent_starts_in_shadow(row: dict[str, object]) -> None:
+async def test_ac5_a_cleared_agent_is_off_until_set(row: dict[str, object]) -> None:
+    assert await stages.stage_for(TENANT, "evidence.screener") is None  # the gateway refuses
+    assert not await stages.starts_in_shadow(None, TENANT, "evidence.screener")  # type: ignore[arg-type] -- the session is faked
+
+
+async def test_ac5_an_agent_set_to_shadow_runs_in_shadow(row: dict[str, object]) -> None:
+    row["stage"] = "shadow"
     assert await stages.stage_for(TENANT, "evidence.screener") == "shadow"
-    assert await stages.starts_in_shadow(None, TENANT, "evidence.screener")  # type: ignore[arg-type] -- the session is faked
+    assert await stages.starts_in_shadow(None, TENANT, "evidence.screener")  # type: ignore[arg-type] -- as above
 
 
 async def test_ac5_an_uncleared_agent_has_no_stage(row: dict[str, object]) -> None:

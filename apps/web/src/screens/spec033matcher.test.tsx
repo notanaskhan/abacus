@@ -1,5 +1,5 @@
 // SPEC-033 AC-3, AC-5, AC-9 (TASK-066): the matcher's proposals for the firm (AI tag, rationale,
-// verified quotes, "Suggest with AI"), and its picks for the client as "Suggested" only.
+// verified quotes, "Suggest with agent"), and its picks for the client as "Suggested" only.
 import type { FileMatchOut, InboxFileOut, RequestItemOut } from "@abacus/api-client";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -100,7 +100,7 @@ describe("ac3 the firm's view", () => {
     expect(
       await screen.findByText("AI suggestions aren't available for real client data yet."),
     ).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Suggest with AI" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Suggest with agent" })).toBeNull();
   });
 
   it("says when none of the requests fit", async () => {
@@ -116,7 +116,7 @@ describe("ac3 the firm's view", () => {
       [`POST /v1/engagements/${E}/inbox/f1/match`]: () =>
         json({ detail: "ai_match_unavailable" }, 409),
     });
-    fireEvent.click(await screen.findByRole("button", { name: "Suggest with AI" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Suggest with agent" }));
     expect(
       await screen.findByText("AI suggestions aren't available in this environment."),
     ).toBeTruthy();
