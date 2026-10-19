@@ -1,19 +1,7 @@
 import { meOptions } from "@abacus/api-client/query";
-import {
-  Alert,
-  Bell,
-  BookOpen,
-  Building2,
-  Button,
-  Card,
-  FolderOpen,
-  LogOut,
-  Rail,
-  RailButton,
-  Spinner,
-} from "@abacus/ui";
+import { Alert, Bell, Building2, Button, Card, LogOut, Spinner } from "@abacus/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, Navigate, Outlet } from "@tanstack/react-router";
+import { Link, Navigate, Outlet, useRouterState } from "@tanstack/react-router";
 import { type JSX, useEffect, useState } from "react";
 import { App } from "../App";
 import { isForbidden } from "../shell/mfa";
@@ -22,7 +10,7 @@ import { errorMessage } from "../api";
 import { accessToken, chooseTenant, chosenTenant, signIn, signOut } from "../auth/session";
 import { NotificationPanel, useUnreadCount } from "../shell/NotificationPanel";
 
-/** The signed-in firm workspace (SPEC-016): rail, header, notifications, and the page. */
+/** The signed-in firm workspace: the toolbar (TASK-092), notifications, and the page. */
 export function Layout(): JSX.Element {
   const signedIn = accessToken() !== null;
   useEffect(() => {
@@ -34,9 +22,6 @@ export function Layout(): JSX.Element {
   return <SignedIn />;
 }
 
-const RAIL_LINK =
-  "flex size-11 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-sunken hover:text-ink data-[status=active]:bg-accent-soft data-[status=active]:text-accent";
-
 function SignedIn(): JSX.Element {
   const queryClient = useQueryClient();
   const me = useQuery(meOptions());
@@ -44,6 +29,7 @@ function SignedIn(): JSX.Element {
   // several; the choice is also kept for the client's X-Abacus-Tenant header).
   const [picked, setPicked] = useState<string | null>(chosenTenant);
   const [panel, setPanel] = useState(false);
+  const path = useRouterState({ select: (r) => r.location.pathname });
 
   if (me.isPending) {
     return (
@@ -106,73 +92,104 @@ function SignedIn(): JSX.Element {
 
   const isAdmin = firm.firm_role === "firm_admin" || firm.firm_role === "practice_leader";
   return (
-    <div className="flex min-h-screen flex-col bg-ground sm:flex-row">
-      <Rail label="Workspace">
+    <div className="flex min-h-screen flex-col bg-shell">
+      <header className="sticky top-0 z-30 flex h-[46px] shrink-0 items-center gap-2 border-b-[0.5px] border-hair bg-card px-3">
         <Link
           to="/"
           aria-label="Abacus home"
-          className="mb-2 flex size-9 items-center justify-center rounded-[var(--radius-control)] bg-accent font-display text-lg font-semibold text-on-accent"
+          className="mr-1 flex items-center gap-2 rounded-full pr-2 text-[14.5px] font-medium tracking-[-0.02em] text-ink hover:no-underline"
         >
-          A
+          <span
+            aria-hidden="true"
+            className="flex size-[22px] items-center justify-center rounded-[6px] bg-espresso text-[12px] font-medium text-on-dark"
+          >
+            A
+          </span>
+          Abacus
         </Link>
-        <Link to="/" aria-label="Engagements" title="Engagements" className={RAIL_LINK}>
-          <FolderOpen aria-hidden="true" className="size-5" />
-        </Link>
-        <Link to="/knowledge" aria-label="Knowledge" title="Knowledge" className={RAIL_LINK}>
-          <BookOpen aria-hidden="true" className="size-5" />
-        </Link>
+        <nav aria-label="Workspace" className="ml-3 flex items-center gap-px">
+          <Link
+            to="/"
+            data-current={path === "/" || path.startsWith("/engagements") ? "true" : undefined}
+            className={NAV_LINK}
+          >
+            Engagements
+          </Link>
+          <Link
+            to="/knowledge"
+            data-current={path.startsWith("/knowledge") ? "true" : undefined}
+            className={NAV_LINK}
+          >
+            Knowledge
+          </Link>
+        </nav>
+        <span className="flex-1" />
         {isAdmin && (
           <Link
             to="/admin/methodology"
-            aria-label="Firm admin"
-            title="Firm admin"
-            className={RAIL_LINK}
+            data-current={path.startsWith("/admin") ? "true" : undefined}
+            className={NAV_LINK}
           >
-            <Building2 aria-hidden="true" className="size-5" />
+            <Building2 aria-hidden="true" className="mr-1.5 size-3.5" />
+            Firm settings
           </Link>
         )}
-        <span className="flex-1" />
         <NotificationsButton
           active={panel}
           onToggle={() => {
             setPanel((open) => !open);
           }}
         />
-        <RailButton
-          label="Sign out"
+        <span className="flex h-[30px] items-center gap-2 rounded-full bg-nav-fill pr-3 pl-1 text-[13px] shadow-e1">
+          <span
+            aria-hidden="true"
+            className="flex size-[22px] items-center justify-center rounded-full bg-chip text-[10.5px] font-medium text-ink-2"
+          >
+            {initials(me.data.display_name)}
+          </span>
+          <span className="max-w-[260px] truncate">
+            {me.data.display_name} · {firm.firm_name}
+          </span>
+        </span>
+        <button
+          type="button"
+          aria-label="Sign out"
+          title="Sign out"
           onClick={() => {
             signOut();
             queryClient.clear();
             void signIn("/");
           }}
+          className="flex size-[30px] items-center justify-center rounded-full text-ink-2 hover:bg-nav-fill hover:text-ink"
         >
-          <LogOut aria-hidden="true" className="size-5" />
-        </RailButton>
-      </Rail>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-surface px-6 py-3">
-          <Link to="/" className="font-display text-lg font-semibold">
-            Abacus
-          </Link>
-          <span className="text-sm text-muted">
-            {me.data.display_name} · {firm.firm_name}
-          </span>
-        </header>
-        <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
-          <main className="mx-auto w-full max-w-7xl min-w-0 flex-1 p-6">
-            <Outlet />
-          </main>
-          {panel && (
-            <NotificationPanel
-              onClose={() => {
-                setPanel(false);
-              }}
-            />
-          )}
-        </div>
+          <LogOut aria-hidden="true" className="size-[15px]" />
+        </button>
+      </header>
+      <div className="flex min-h-0 flex-1">
+        <main className="mx-auto w-full max-w-[1400px] min-w-0 flex-1 px-3 pt-3 pb-8">
+          <Outlet />
+        </main>
+        {panel && (
+          <NotificationPanel
+            onClose={() => {
+              setPanel(false);
+            }}
+          />
+        )}
       </div>
     </div>
   );
+}
+
+const NAV_LINK =
+  "flex h-8 items-center rounded-full px-3 text-[13.5px] tracking-[-0.005em] text-ink-2 hover:bg-sel-bg hover:text-ink hover:no-underline data-[current=true]:bg-nav-fill data-[current=true]:font-medium data-[current=true]:text-ink";
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return parts
+    .slice(0, 2)
+    .map((p) => p.charAt(0).toUpperCase())
+    .join("");
 }
 
 function NotificationsButton({
@@ -183,9 +200,23 @@ function NotificationsButton({
   onToggle: () => void;
 }): JSX.Element {
   const unread = useUnreadCount();
+  // A dot, never a count (the plan's bell); the count stays in the accessible name.
   return (
-    <RailButton label="Notifications" badge={unread} active={active} onClick={onToggle}>
-      <Bell aria-hidden="true" className="size-5" />
-    </RailButton>
+    <button
+      type="button"
+      aria-label={unread > 0 ? `Notifications, ${String(unread)} unread` : "Notifications"}
+      aria-pressed={active}
+      title="Notifications"
+      onClick={onToggle}
+      className="relative flex size-[30px] items-center justify-center rounded-full bg-nav-fill text-ink-2 shadow-e1 hover:bg-sel-bg hover:text-ink aria-pressed:bg-sel-bg aria-pressed:text-ink"
+    >
+      <Bell aria-hidden="true" className="size-[15px]" />
+      {unread > 0 && (
+        <span
+          aria-hidden="true"
+          className="absolute top-[6px] right-[7px] size-1.5 rounded-full bg-red ring-[1.5px] ring-nav-fill"
+        />
+      )}
+    </button>
   );
 }
