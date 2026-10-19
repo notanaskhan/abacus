@@ -1,4 +1,4 @@
-"""Fieldwork routes (SPEC-037; TASK-077). Flag `fieldwork.procedures` gates starting and
+"""Fieldwork routes (SPEC-037; TASK-083). Flag `fieldwork.procedures` gates starting and
 selecting; reads follow `procedure.read`."""
 
 from __future__ import annotations
@@ -314,7 +314,7 @@ async def items_route(
     ]
 
 
-# --- Results, support, conclusion and the workpaper (SPEC-037; TASK-078) -----------------------
+# --- Results, support, conclusion and the workpaper (SPEC-037; TASK-084) -----------------------
 
 
 class ResultIn(BaseModel):
@@ -436,7 +436,7 @@ async def workpaper_route(engagement_id: UUID, procedure_id: UUID, ctx: Ctx) -> 
     errors=(409,),
 )
 async def sign_ready_route(engagement_id: UUID, procedure_id: UUID, ctx: Ctx) -> WorkpaperOut:
-    """ADR-116: the preparer signs the current state; it becomes the next version."""
+    """ADR-131: the preparer signs the current state; it becomes the next version."""
     return _workpaper_out(await sign_ready(ctx, engagement_id, procedure_id))
 
 
@@ -448,7 +448,7 @@ async def sign_ready_route(engagement_id: UUID, procedure_id: UUID, ctx: Ctx) ->
     errors=(409,),
 )
 async def sign_reviewed_route(engagement_id: UUID, procedure_id: UUID, ctx: Ctx) -> WorkpaperOut:
-    """ADR-116: another person signs the latest ready version, while nothing has changed."""
+    """ADR-131: another person signs the latest ready version, while nothing has changed."""
     return _workpaper_out(await sign_reviewed(ctx, engagement_id, procedure_id))
 
 

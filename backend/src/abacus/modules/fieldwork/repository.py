@@ -1,4 +1,4 @@
-"""Fieldwork data access (SPEC-037; TASK-077). Only this module's tables (ADR-008)."""
+"""Fieldwork data access (SPEC-037; TASK-083). Only this module's tables (ADR-008)."""
 
 from __future__ import annotations
 
@@ -183,7 +183,7 @@ def money(value: Decimal) -> Decimal:
     return value.quantize(Decimal("0.01"))
 
 
-# --- Results and workpapers (SPEC-037; TASK-078) -----------------------------------------------
+# --- Results and workpapers (SPEC-037; TASK-084) -----------------------------------------------
 
 
 async def get_item(session: AsyncSession, item_id: UUID) -> SelectedItem | None:

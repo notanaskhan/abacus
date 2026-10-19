@@ -1,4 +1,4 @@
-"""Fieldwork, part 1b (SPEC-037; TASK-078; ADR-116).
+"""Fieldwork, part 1b (SPEC-037; TASK-084; ADR-131).
 
 All insert-only (the newest row is current where it matters):
 - `item_results`: a person's result on a selected entry (`supported`, `exception` with a note,

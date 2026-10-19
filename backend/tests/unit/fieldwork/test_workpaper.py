@@ -1,4 +1,4 @@
-"""SPEC-037 AC-5, AC-6 (TASK-078; ADR-116): the workpaper renders deterministically; signing
+"""SPEC-037 AC-5, AC-6 (TASK-084; ADR-131): the workpaper renders deterministically; signing
 fingerprints its content without the Sign-off sheet; the client's support request carries only
 the entry's reference, date and amount."""
 

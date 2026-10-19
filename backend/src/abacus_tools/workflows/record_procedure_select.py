@@ -1,4 +1,4 @@
-"""Record the procedure selection workflow's replay histories (SPEC-037, TASK-077; ADR-090). See
+"""Record the procedure selection workflow's replay histories (SPEC-037, TASK-083; ADR-090). See
 `histories.py` for the fixture rules.
 
 Run: python -m abacus_tools.workflows.record_procedure_select <output-directory> [version]

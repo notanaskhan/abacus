@@ -1,4 +1,4 @@
-"""SPEC-037 AC-1, AC-2 (TASK-077): a synthetic ledger with test entries still reconciles, parses
+"""SPEC-037 AC-1, AC-2 (TASK-083): a synthetic ledger with test entries still reconciles, parses
 into a population that ties, and journal entry testing selects every planted entry."""
 
 from __future__ import annotations

@@ -72,7 +72,7 @@ def build(
     volume: int = 0,
     test_entries: bool = False,
 ) -> SyntheticGl:
-    """`test_entries` (SPEC-037; TASK-077): adds manual journals that journal entry testing's
+    """`test_entries` (SPEC-037; TASK-083): adds manual journals that journal entry testing's
     criteria should select (large, round, near year end, weekend, keywords), each paired with its
     reversal so the ledger still reconciles."""
     flaws = set(flaws)

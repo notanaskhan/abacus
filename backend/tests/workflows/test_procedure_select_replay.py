@@ -1,4 +1,4 @@
-"""SPEC-037 AC-1 (TASK-077; ADR-090): the procedure selection workflow replays its recorded
+"""SPEC-037 AC-1 (TASK-083; ADR-090): the procedure selection workflow replays its recorded
 histories (offline; recorded by `abacus_tools.workflows.record_procedure_select` with stubs)."""
 
 from __future__ import annotations

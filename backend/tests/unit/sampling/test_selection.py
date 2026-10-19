@@ -1,4 +1,4 @@
-"""SPEC-037 AC-1, AC-2 (TASK-077; ADR-117): the population ties to its ledger; each criterion
+"""SPEC-037 AC-1, AC-2 (TASK-083; ADR-132): the population ties to its ledger; each criterion
 selects exactly its entries; the same inputs and seed always select the same entries."""
 
 from __future__ import annotations

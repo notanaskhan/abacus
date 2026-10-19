@@ -1,5 +1,5 @@
-"""A procedure's population, built by code from a reconciled general ledger snapshot (ADR-117;
-SPEC-037 AC-1; TASK-077).
+"""A procedure's population, built by code from a reconciled general ledger snapshot (ADR-132;
+SPEC-037 AC-1; TASK-083).
 
 Postings group into journal entries by ledger's `journal_key` (the same grouping the journal
 listing workbook uses). The population must tie to its snapshot, every line in exactly one entry

@@ -325,13 +325,13 @@ async def test_ac1_every_worker_registers_every_modules_workflows_and_activities
             *worker_main.connections.WORKFLOWS,
             *worker_main.agents.WORKFLOWS,
             *worker_main.evidence.WORKFLOWS,  # SPEC-029 (TASK-054)
-            *worker_main.fieldwork.WORKFLOWS,  # SPEC-037 (TASK-077)
+            *worker_main.fieldwork.WORKFLOWS,  # SPEC-037 (TASK-083)
         ]
         assert kwargs["activities"] == [
             *worker_main.connections.ACTIVITIES,
             *worker_main.agents.ACTIVITIES,
             *worker_main.evidence.ACTIVITIES,  # SPEC-029 (TASK-054)
-            *worker_main.fieldwork.ACTIVITIES,  # SPEC-037 (TASK-077)
+            *worker_main.fieldwork.ACTIVITIES,  # SPEC-037 (TASK-083)
         ]
         assert kwargs["graceful_shutdown_timeout"] == worker_main.GRACEFUL_SHUTDOWN
 

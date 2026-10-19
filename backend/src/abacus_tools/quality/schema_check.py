@@ -77,10 +77,10 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"guidance_drafts"}  # SPEC-035 (TASK-072): proposals, as made
     | {"guidance_draft_decisions"}  # SPEC-035 (TASK-073): people's decisions, as made
     | {"template_guidance_drafts", "template_guidance_decisions"}  # SPEC-035 Q3 (TASK-074)
-    | {"engagement_materiality", "fieldwork_settings"}  # SPEC-037 (TASK-077): versions
-    | {"populations", "selections", "selected_items"}  # SPEC-037 (TASK-077): ADR-117
-    | {"item_results", "item_support_requests", "procedure_conclusions"}  # TASK-078
-    | {"workpaper_versions", "workpaper_signatures"}  # SPEC-037 (TASK-078): ADR-116
+    | {"engagement_materiality", "fieldwork_settings"}  # SPEC-037 (TASK-083): versions
+    | {"populations", "selections", "selected_items"}  # SPEC-037 (TASK-083): ADR-132
+    | {"item_results", "item_support_requests", "procedure_conclusions"}  # TASK-084
+    | {"workpaper_versions", "workpaper_signatures"}  # SPEC-037 (TASK-084): ADR-131
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -137,7 +137,7 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"good_looks_like", "effort", "effort_reason", "blocks_fieldwork", "blocks_reason"}
         | {"passed_checks", "check_reasons"}
     ),
-    # Fieldwork (SPEC-037; TASK-077): materiality, firm defaults, procedures and selections.
+    # Fieldwork (SPEC-037; TASK-083): materiality, firm defaults, procedures and selections.
     "engagement_materiality": frozenset(
         {"tenant_id", "engagement_id", "overall", "performance", "trivial", "benchmark", "set_by"}
     ),
@@ -158,7 +158,7 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "selection_id", "position", "posted_on", "kind", "reference"}
         | {"counterparty", "line_nos", "accounts", "amount", "descriptions", "rules", "reason"}
     ),
-    # Fieldwork results and workpapers (SPEC-037; TASK-078; ADR-116).
+    # Fieldwork results and workpapers (SPEC-037; TASK-084; ADR-131).
     "item_results": frozenset(
         {"tenant_id", "selected_item_id", "result", "note", "evidence_version_ids"}
         | {"recorded_by"}
@@ -338,7 +338,7 @@ IMMUTABLE_TABLES: dict[str, str] = {
 # listed here keep whatever their migration grants (insert-only tables grant none).
 APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),
-    "procedures": frozenset({"parameters", "status", "failure_code"}),  # SPEC-037 (TASK-077)
+    "procedures": frozenset({"parameters", "status", "failure_code"}),  # SPEC-037 (TASK-083)
     "engagements": frozenset(
         {"status", "methodology_version_id"}  # SPEC-008: pinned once
         | {"ai_excluded_at", "ai_excluded_by", "ai_excluded_reason"}  # SPEC-036 (TASK-076)
@@ -455,13 +455,13 @@ TABLE_OWNERS: dict[str, str] = {
     "guidance_drafts": "agents",  # SPEC-035 (TASK-072)
     "guidance_draft_decisions": "agents",  # SPEC-035 (TASK-073)
     "template_guidance_drafts": "agents",  # SPEC-035 Q3 (TASK-074)
-    "engagement_materiality": "fieldwork",  # SPEC-037 (TASK-077)
+    "engagement_materiality": "fieldwork",  # SPEC-037 (TASK-083)
     "fieldwork_settings": "fieldwork",
     "procedures": "fieldwork",
     "populations": "fieldwork",
     "selections": "fieldwork",
     "selected_items": "fieldwork",
-    "item_results": "fieldwork",  # SPEC-037 (TASK-078)
+    "item_results": "fieldwork",  # SPEC-037 (TASK-084)
     "item_support_requests": "fieldwork",
     "procedure_conclusions": "fieldwork",
     "workpaper_versions": "fieldwork",

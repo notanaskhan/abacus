@@ -837,7 +837,7 @@ export const workpaperFile = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * Sign Ready Route
  *
- * ADR-116: the preparer signs the current state; it becomes the next version.
+ * ADR-131: the preparer signs the current state; it becomes the next version.
  */
 export const signReady = <ThrowOnError extends boolean = false>(options: Options<SignReadyData, ThrowOnError>): RequestResult<SignReadyResponses, SignReadyErrors, ThrowOnError> => (options.client ?? client).post<SignReadyResponses, SignReadyErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -848,7 +848,7 @@ export const signReady = <ThrowOnError extends boolean = false>(options: Options
 /**
  * Sign Reviewed Route
  *
- * ADR-116: another person signs the latest ready version, while nothing has changed.
+ * ADR-131: another person signs the latest ready version, while nothing has changed.
  */
 export const signReviewed = <ThrowOnError extends boolean = false>(options: Options<SignReviewedData, ThrowOnError>): RequestResult<SignReviewedResponses, SignReviewedErrors, ThrowOnError> => (options.client ?? client).post<SignReviewedResponses, SignReviewedErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

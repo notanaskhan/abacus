@@ -1,11 +1,11 @@
 ---
-id: TASK-077
+id: TASK-083
 title: "Fieldwork, part 1a: materiality, the sampling module, procedure records, and journal entry testing's population and selection"
 spec: SPEC-037
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-6]
 risk_zone: red
 status: done
-branch: task-077-fieldwork-selection
+branch: fieldwork-part1
 worktree:
 created: 2026-10-19
 updated: 2026-10-19
@@ -20,15 +20,15 @@ updated: 2026-10-19
 > - Append to the *Progress log* before ending any session, even mid-task.
 
 ## Objective
-SPEC-037 §7, TASK-077. An engagement can record materiality and start journal entry testing. Code builds the population from the reconciled general ledger, ties it out, and selects entries by the criteria plus a seeded random sample. Every selected entry says which rules chose it, and re-running gives the same entries.
+SPEC-037 §7, TASK-083. An engagement can record materiality and start journal entry testing. Code builds the population from the reconciled general ledger, ties it out, and selects entries by the criteria plus a seeded random sample. Every selected entry says which rules chose it, and re-running gives the same entries.
 
-Results, the workpaper, sign-off and the screens follow in TASK-078.
+Results, the workpaper, sign-off and the screens follow in TASK-084.
 
 ## Scope
-SPEC-037 AC-1, AC-2, AC-3 and AC-6. AC-7 (screens) is in TASK-078.
+SPEC-037 AC-1, AC-2, AC-3 and AC-6. AC-7 (screens) is in TASK-084.
 
 ## Context to load
-- Spec: `docs/specs/SPEC-037-fieldwork-procedures.md`; ADR-050, ADR-116, ADR-117
+- Spec: `docs/specs/SPEC-037-fieldwork-procedures.md`; ADR-050, ADR-131, ADR-132
 - Code:
   - `ledger/gl_service.py` (`gl_snapshot_view`, `gl_entries`), `ledger/repository.py` (GL snapshot lookup by entity and period);
   - `evidence/render_gl.py` (`journal_key`, `journals`: how postings group into entries, TASK-070 D2);
@@ -53,7 +53,7 @@ SPEC-037 AC-1, AC-2, AC-3 and AC-6. AC-7 (screens) is in TASK-078.
    - **Recording it:** `engagement_materiality` (insert-only; the newest row is current) holds overall materiality, performance materiality and the trivial threshold, plus the benchmark and percentage as text, who set it and when.
    - **API:** `GET` and `PUT /v1/engagements/{id}/materiality`, with `materiality.set` for the partner and manager.
    - **Validation:** amounts are positive, and trivial ≤ performance ≤ overall.
-3. **The sampling module (ADR-117):** pure functions plus their records.
+3. **The sampling module (ADR-132):** pure functions plus their records.
    - **Population:** `build_population(entries)` returns entries and totals. It must tie to the snapshot: total debits equal the snapshot's, and the entries' postings account for every line.
    - **Criteria,** each a pure function from an entry and the parameters to "selected or not", each with an id and version:
      - `large`: amount ≥ the selection threshold, which is performance materiality × the firm's percentage (default 100%);
@@ -87,7 +87,7 @@ SPEC-037 AC-1, AC-2, AC-3 and AC-6. AC-7 (screens) is in TASK-078.
    - `procedure.run`: partner, manager, senior and staff;
    - `procedure.read`: the team and the reviewer;
    - all marked `independence: required`, and clients are refused by role (AC-6).
-8. **Firm defaults (Q6):** `fieldwork_settings` (one row per firm, versions): threshold percentage, round unit, window days, rare-account count, keyword list and random count. Read and changed through the API by a firm admin or practice leader (`methodology.manage`); its screen comes with TASK-078. A procedure copies the defaults into its parameters when it starts.
+8. **Firm defaults (Q6):** `fieldwork_settings` (one row per firm, versions): threshold percentage, round unit, window days, rare-account count, keyword list and random count. Read and changed through the API by a firm admin or practice leader (`methodology.manage`); its screen comes with TASK-084. A procedure copies the defaults into its parameters when it starts.
 9. **Synthetic data:** `abacus_tools/synthetic/general_ledger.py` gains journal entries that trip each criterion, so tests and the Dev firm have something to find.
 10. **Tests:**
     - property tests: each criterion selects exactly its entries; the same inputs and seed always select the same entries; the population ties to synthetic ledgers, and a broken tie stops;
@@ -117,7 +117,7 @@ SPEC-037 AC-1, AC-2, AC-3 and AC-6. AC-7 (screens) is in TASK-078.
 - [ ] Module READMEs and the relevant docs are updated
 
 ## Progress log
-- `2026-10-19` — Design written for founder review after SPEC-037, ADR-116 and ADR-117 were approved (PR #133, awaiting merge).
+- `2026-10-19` — Design written for founder review after SPEC-037, ADR-131 and ADR-132 were approved (PR #133, awaiting merge).
 - `2026-10-19` — Built (D1–D5): journal grouping moved to `ledger.general_ledger` (evidence's renderer imports it); `sampling` (population, tie-out, criteria, `seeded_v1`, people's picks); migration 0057 (materiality, firm defaults, procedures, populations, selections, selected items); the `fieldwork` module (service, routes, `ProcedureSelectWorkflow` with v1 replay histories, activities); `materiality.set`, `procedure.configure/run/read`; flag `fieldwork.procedures`; synthetic ledgers with planted test entries. Unit and workflow tests (11,165) and gates pass. Local smoke on the Dev firm's 760,072-line ledger: selection refused without materiality; invalid materiality refused; clients refused; 380,036 entries tied out; selected in 11–16 seconds; re-running gave the same entries. The first smoke showed the weekend rule alone choosing 107,678 entries: the founder chose a trivial floor (criteria v2), after which the bulk ledger's small transfers fall below it and planted entries are all chosen.
 
 ## Decisions made during this task
@@ -129,4 +129,4 @@ SPEC-037 AC-1, AC-2, AC-3 and AC-6. AC-7 (screens) is in TASK-078.
 | A person's pick that names an entry no longer in the ledger lapses at the next selection | A replacement ledger can drop it; failing the whole selection would block the team | No |
 
 ## Handoff
-Done. Next: TASK-078 (results, support, the workpaper renderer, sign-off, screens). Branch is built on `spec-037-fieldwork` (PR #133, awaiting merge).
+Done. Next: TASK-084 (results, support, the workpaper renderer, sign-off, screens). Branch is built on `spec-037-fieldwork` (PR #133, awaiting merge).

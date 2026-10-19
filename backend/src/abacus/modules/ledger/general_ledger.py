@@ -187,7 +187,7 @@ def validate_gl(
     return GlCheck(None, balances=result)
 
 
-# --- Journal entries (TASK-070 D2; moved here by TASK-077 D1) ------------------------------------
+# --- Journal entries (TASK-070 D2; moved here by TASK-083 D1) ------------------------------------
 
 
 class Posting(Protocol):

@@ -1,4 +1,4 @@
-"""Selecting journal entries for testing, by code (ADR-117; SPEC-037 AC-2; TASK-077).
+"""Selecting journal entries for testing, by code (ADR-132; SPEC-037 AC-2; TASK-083).
 
 Each criterion is a pure rule with an id; `CRITERIA_VERSION` changes when any rule's meaning does.
 The random part draws from entries no criterion chose, with a recorded seed, by `seeded_v1`: a

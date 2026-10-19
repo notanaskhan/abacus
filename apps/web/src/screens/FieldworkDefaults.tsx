@@ -10,7 +10,7 @@ import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
 import { ConfirmItsYou, isForbidden } from "../shell/mfa";
 
-// SPEC-037 Q6 (TASK-078): the firm's default criteria for journal entry testing, copied into
+// SPEC-037 Q6 (TASK-084): the firm's default criteria for journal entry testing, copied into
 // each new procedure. Changing them is `methodology.manage` (fresh MFA).
 
 export function FieldworkDefaults({ canSet }: { canSet: boolean }): JSX.Element {
