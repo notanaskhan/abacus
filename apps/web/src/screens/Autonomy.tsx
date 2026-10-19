@@ -300,7 +300,7 @@ export function DraftedGuidanceSetting({ canSet }: { canSet: boolean }): JSX.Ele
   if (setting.data === undefined) return null;
   const refused = save.isError && !isForbidden(save.error);
   return (
-    <Panel title="Guidance drafted with AI">
+    <Panel title="Guidance drafted by the agent">
       <label className="flex items-start gap-3 text-sm">
         <input
           type="checkbox"
@@ -312,7 +312,7 @@ export function DraftedGuidanceSetting({ canSet }: { canSet: boolean }): JSX.Ele
           }}
         />
         <span>
-          Show guidance drafted with AI and approved by your team to clients
+          Show guidance the agent drafted and your team approved by your team to clients
           <span className="block text-muted">
             Off: clients see the standard wording, or nothing, until your team writes its own. Your
             team always sees the drafts it approved, labelled.

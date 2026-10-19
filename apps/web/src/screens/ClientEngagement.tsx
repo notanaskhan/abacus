@@ -156,7 +156,7 @@ type FileState = { name: string; state: "uploading" | "done" | "failed"; message
  * them (or fixed copy); shown only when present. */
 function Guidance({ item }: { item: RequestItemOut }): JSX.Element | null {
   const parts: [string, string | null | undefined][] = [
-    ["Why we ask", item.why],
+    ["Why we need it", item.why],
     ["What good looks like", item.good_looks_like],
     ["Still needed", item.still_needed],
   ];

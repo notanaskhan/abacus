@@ -65,7 +65,7 @@ export function Board({
   const path = { path: { engagement_id: engagementId } };
   const engagement = useQuery(getEngagementOptions(path));
   const me = useQuery(meOptions());
-  // SPEC-033 (TASK-066): who may ask the matcher ("Suggest with AI").
+  // SPEC-033 (TASK-066): who may ask the matcher ("Suggest with agent").
   const myRole = engagement.data?.team.find((m) => m.user_id === me.data?.user_id)?.role;
   const items = useQuery(listRequestItemsOptions(path));
   const versions = useQuery(listEvidenceVersionsOptions(path));

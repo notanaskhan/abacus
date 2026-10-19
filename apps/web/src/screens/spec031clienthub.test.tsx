@@ -76,7 +76,7 @@ describe("ac1 the client's request", () => {
   it("shows no guidance headings when there's none", async () => {
     page([item()]);
     expect(await screen.findByText("Bank statements for December")).toBeTruthy();
-    expect(screen.queryByText("Why we ask")).toBeNull();
+    expect(screen.queryByText("Why we need it")).toBeNull();
   });
 
   it("lists items that block fieldwork first, marked", async () => {

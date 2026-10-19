@@ -16,12 +16,12 @@ import { errorMessage } from "../api";
 import { ConfirmItsYou, isForbidden } from "../shell/mfa";
 
 // SPEC-036 (TASK-076): a firm opts in to AI on its clients' data against a disclosure generated
-// from the provider terms register (ADR-114); each assistant starts as a trial (shadow) whose
+// from the provider terms register (ADR-114); each agent capability starts in shadow whose
 // work isn't shown until promoted; an engagement partner can switch AI off for one engagement.
 
 const STAGE_LABEL: Record<string, string> = {
-  shadow: "Trial (not shown to your team yet)",
-  live: "On",
+  shadow: "Shadow (runs, not shown to your team yet)",
+  live: "Live",
   off: "Off",
 };
 
@@ -99,8 +99,8 @@ export function AiClientDataSetting({ canSet }: { canSet: boolean }): JSX.Elemen
       <div className="flex flex-col gap-3">
         {!data.available ? (
           <p className="text-sm text-muted">
-            Not available yet. AI assistants run on synthetic data only until the provider terms
-            are in place.
+            Not available yet. The agent runs on synthetic data only until the provider terms are
+            in place.
           </p>
         ) : (
           <>
@@ -112,7 +112,7 @@ export function AiClientDataSetting({ canSet }: { canSet: boolean }): JSX.Elemen
             )}
             <Disclosure data={data} />
             {data.assistants.length > 0 ? (
-              <ul aria-label="Assistants" className="flex flex-col gap-1 text-sm">
+              <ul aria-label="Agent capabilities" className="flex flex-col gap-1 text-sm">
                 {data.assistants.map((a) => (
                   <li key={a.agent_id} className="flex flex-wrap items-center gap-2">
                     <span className="font-medium">{a.purpose}</span>
@@ -123,10 +123,10 @@ export function AiClientDataSetting({ canSet }: { canSet: boolean }): JSX.Elemen
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted">No assistants are available yet.</p>
+              <p className="text-sm text-muted">No agent capabilities are available yet.</p>
             )}
             <p className="text-xs text-muted">
-              Each assistant starts as a trial: it runs, but your team doesn&apos;t see its work
+              Each capability starts in shadow: it runs, but your team doesn&apos;t see its work
               until we&apos;ve compared it with your team&apos;s decisions. Clients never see
               anything written by AI.
             </p>

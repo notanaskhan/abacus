@@ -17,7 +17,7 @@ import { errorMessage } from "../api";
 // AgentText with the AI tag (ADR-065).
 
 const REFUSED: Record<string, string> = {
-  ai_drafting_unavailable: "AI drafting isn't available here.",
+  ai_drafting_unavailable: "Agent drafting isn't available here.",
   edited_draft_refused:
     "The edited text can't be used: remove amounts, dates, names, links or contact details.",
   read_not_confirmed: "Tick that you've read each draft first.",
@@ -52,7 +52,7 @@ function DraftCard({
       </span>
       {editing ? (
         <>
-          <Label htmlFor={`why-${draft.id}`}>Why we ask</Label>
+          <Label htmlFor={`why-${draft.id}`}>Why we need it</Label>
           <textarea
             id={`why-${draft.id}`}
             rows={2}
@@ -77,7 +77,7 @@ function DraftCard({
         </>
       ) : (
         <dl className="flex flex-col gap-1">
-          <dt className="font-medium">Why we ask</dt>
+          <dt className="font-medium">Why we need it</dt>
           <dd className="text-muted">
             <AgentText text={draft.why} />
           </dd>
@@ -188,7 +188,7 @@ export function GuidanceDrafts({
       ) : (
         <div className="flex flex-col gap-3">
           <p className="text-xs text-muted">
-            Drafted with AI from each request&apos;s description. Nothing changes until you
+            The agent drafted these from each request&apos;s description. Nothing changes until you
             approve. Clients see approved drafts only if your firm allows it in settings.
           </p>
           <ul aria-label="Drafts to review" className="flex flex-col gap-2">

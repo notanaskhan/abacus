@@ -49,7 +49,7 @@ describe("ac3 opting in", () => {
       "PUT /v1/firm/ai-client-data": () => json({ ...OFF, current: true }),
     });
     expect(await screen.findByText(/Amazon Web Services, in our own account/)).toBeTruthy();
-    expect(screen.getByText("Trial (not shown to your team yet)")).toBeTruthy();
+    expect(screen.getByText("Shadow (runs, not shown to your team yet)")).toBeTruthy();
     const turnOn = screen.getByRole("button", { name: "Turn on" });
     expect((turnOn as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(screen.getByLabelText(/I've read how our clients' data is handled/));

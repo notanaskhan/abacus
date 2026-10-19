@@ -77,16 +77,16 @@ const RULES: Record<string, string> = {
   weekend: "Weekend",
   keywords: "Flagged words",
   random: "Random",
-  picked: "Picked by the team",
+  picked: "Unpredictable pick",
   band: "Over its band's threshold",
 };
 
 const RELATES: Record<string, string> = { yes: "Yes", no: "No", unclear: "Unclear" };
 
 const VERDICTS: Record<string, string> = {
-  explained: "AI: the support explains it",
-  not_explained: "AI: the support doesn't explain it",
-  unclear: "AI: unclear",
+  explained: "Agent suggests: the support explains it",
+  not_explained: "Agent suggests: the support doesn't explain it",
+  unclear: "Agent suggests: unclear",
 };
 
 // SPEC-037 Q4 (TASK-085): the assessor's proposal, AI-tagged; the team still records the result.
@@ -127,7 +127,7 @@ function Assessment({ assessment }: { assessment: AssessmentOut }): JSX.Element 
 const STATUS: Record<string, string> = {
   not_started: "Not started",
   draft: "Draft",
-  ready: "Ready for review",
+  ready: "Prepared",
   reviewed: "Reviewed",
 };
 
@@ -440,11 +440,13 @@ function WorkpaperPanel({
   engagementId,
   procedureId,
   canRun,
+  canPrepare,
   canReview,
 }: {
   engagementId: string;
   procedureId: string;
   canRun: boolean;
+  canPrepare: boolean;
   canReview: boolean;
 }): JSX.Element {
   const queryClient = useQueryClient();
@@ -517,7 +519,7 @@ function WorkpaperPanel({
               Save conclusion
             </Button>
           )}
-          {canRun && (
+          {canPrepare && (
             <Button
               size="sm"
               disabled={ready.isPending || w.status === "ready" || w.status === "reviewed"}
@@ -525,7 +527,7 @@ function WorkpaperPanel({
                 ready.mutate(path);
               }}
             >
-              Sign as ready
+              Sign off as preparer
             </Button>
           )}
           {canReview && (
@@ -536,7 +538,7 @@ function WorkpaperPanel({
                 reviewed.mutate(path);
               }}
             >
-              Sign as reviewed
+              Sign off as reviewer
             </Button>
           )}
           <Button size="sm" variant="ghost" onClick={() => void download()}>
@@ -615,7 +617,10 @@ function ProcedurePanel({
   const surl = p.definition === "unrecorded_liabilities";
   const canSet = role === "engagement_partner" || role === "manager";
   const canRun = ["engagement_partner", "manager", "senior", "staff"].includes(role ?? "");
-  const canReview = ["engagement_partner", "manager", "senior", "reviewer"].includes(role ?? "");
+  // ADR-131 Q2 (TASK-089): staff, senior or manager prepare; senior, manager or partner review,
+  // never the EQR (`reviewer`), who signs only at L5
+  const canPrepare = ["manager", "senior", "staff"].includes(role ?? "");
+  const canReview = ["engagement_partner", "manager", "senior"].includes(role ?? "");
   const choices = (evidence.data ?? []).map((v) => ({
     id: v.id,
     label: `${v.source} v${String(v.version_no)}`,
@@ -703,7 +708,7 @@ function ProcedurePanel({
                   assess.mutate({ ...path, body: {} });
                 }}
               >
-                Assess with AI
+                Assess with agent
               </Button>
             ) : undefined
           }
@@ -753,6 +758,7 @@ function ProcedurePanel({
           engagementId={engagementId}
           procedureId={p.id}
           canRun={canRun}
+          canPrepare={canPrepare}
           canReview={canReview}
         />
       )}

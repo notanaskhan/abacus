@@ -24,7 +24,7 @@ const EFFORT: Record<string, string> = {
 export function sourceLabel(item: RequestItemOut, approver?: string): string | null {
   switch (item.guidance_source) {
     case "drafted": // SPEC-035 (TASK-073): approved drafter text, labelled for the firm
-      return `Drafted with AI, approved by ${approver ?? "your team"}`;
+      return `Drafted via Agent, approved by ${approver ?? "your team"}`;
     case "kind_default":
       return `Default for ${KIND[item.document_kind ?? ""] ?? "this kind of document"}`;
     case "template":
@@ -111,7 +111,7 @@ export function ClientGuidance({
 
   if (draft === null) {
     const rows: [string, string | null | undefined][] = [
-      ["Why we ask", item.why],
+      ["Why we need it", item.why],
       ["What good looks like", item.good_looks_like],
       ["Still needed", item.still_needed],
     ];
@@ -176,7 +176,7 @@ export function ClientGuidance({
       <p className="text-xs text-muted">The client sees these words exactly as written.</p>
       <TextField
         id={`why-${item.id}`}
-        label="Why we ask"
+        label="Why we need it"
         value={draft.why}
         onChange={(why) => {
           set({ why });

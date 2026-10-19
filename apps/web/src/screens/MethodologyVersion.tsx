@@ -23,7 +23,7 @@ function Guidance({
   return (
     <span className="flex items-center gap-1">
       <AiTag />
-      {`Drafted with AI, approved by ${approver}`}
+      {`Drafted via Agent, approved by ${approver}`}
     </span>
   );
 }

@@ -62,7 +62,7 @@ export function InboxAIMatch({
           request.mutate({ path: { engagement_id: engagementId, file_id: fileId } });
         }}
       >
-        Suggest with AI
+        Suggest with agent
       </Button>
       {refused !== null && <span className="text-xs text-danger">{refused}</span>}
     </span>

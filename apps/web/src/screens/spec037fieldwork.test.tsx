@@ -114,6 +114,7 @@ describe("ac4 results", () => {
         result: "exception",
         note: "No approval",
         evidence_version_ids: [],
+        relates_to_year: null, // SPEC-038 (TASK-087): asked only for the search
       });
     });
   });
@@ -136,7 +137,7 @@ describe("ac5 sign-off", () => {
       [`POST ${BASE}/procedures/${P}/workpaper/sign-ready`]: () =>
         json({ ...DRAFT, status: "ready" }, 201),
     });
-    fireEvent.click(await screen.findByRole("button", { name: "Sign as ready" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Sign off as preparer" }));
     await waitFor(() => {
       expect(calls.some((c) => c.path.endsWith("/sign-ready"))).toBe(true);
     });
@@ -148,7 +149,7 @@ describe("ac5 sign-off", () => {
       [`POST ${BASE}/procedures/${P}/workpaper/sign-reviewed`]: () =>
         json({ detail: "reviewer_is_preparer" }, 409),
     });
-    fireEvent.click(await screen.findByRole("button", { name: "Sign as reviewed" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Sign off as reviewer" }));
     expect(await screen.findByText(/can't be the person who signed it as ready/)).toBeTruthy();
   });
 });
@@ -156,7 +157,8 @@ describe("ac5 sign-off", () => {
 describe("ac7 states", () => {
   it("offers to start when nothing has started", async () => {
     tab("senior", { [`GET ${BASE}/procedures`]: () => json([]) });
-    expect(await screen.findByRole("button", { name: "Start" })).toBeTruthy();
+    // journal entry testing and the search for unrecorded liabilities (TASK-087) each offer Start
+    expect((await screen.findAllByRole("button", { name: "Start" })).length).toBe(2);
   });
 
   it("says fieldwork is for the engagement team when refused", async () => {
@@ -193,7 +195,7 @@ describe("task-085 the entry assessor", () => {
           },
         ]),
     });
-    expect(await screen.findByText("AI: the support explains it")).toBeTruthy();
+    expect(await screen.findByText("Agent suggests: the support explains it")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Why" }));
     expect(screen.getByText(/CFO's approval/)).toBeTruthy();
     expect(screen.getByLabelText<HTMLSelectElement>("Result for TE-YE").value).toBe("");
@@ -203,7 +205,7 @@ describe("task-085 the entry assessor", () => {
     const { calls } = tab("staff", {
       [`POST ${BASE}/procedures/${P}/assess`]: () => json({ items: ["i1"] }, 202),
     });
-    fireEvent.click(await screen.findByRole("button", { name: "Assess with AI" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Assess with agent" }));
     expect(await screen.findByText(/your team still records every result/)).toBeTruthy();
     expect(calls.some((c) => c.path.endsWith("/assess"))).toBe(true);
   });
@@ -213,7 +215,7 @@ describe("task-085 the entry assessor", () => {
       [`POST ${BASE}/procedures/${P}/assess`]: () =>
         json({ detail: "ai_assessor_unavailable" }, 409),
     });
-    fireEvent.click(await screen.findByRole("button", { name: "Assess with AI" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Assess with agent" }));
     expect(await screen.findByText("AI assessment isn't available here.")).toBeTruthy();
   });
 });
