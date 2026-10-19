@@ -59,12 +59,15 @@ export function DueDatesBar({
   const now = today();
   const overdue = items.filter((i) => isOverdue(i, effectiveDue(i, fallback), now)).length;
   return (
-    <div className="flex flex-wrap items-end gap-3 text-sm">
-      <div className="flex flex-col gap-1">
-        <Label htmlFor="default-due">Due date for the request list</Label>
+    <div className="flex flex-wrap items-center gap-2 text-[12.5px]">
+      <div className="flex items-center gap-2">
+        <Label htmlFor="default-due" title="Items without their own date are due then.">
+          Due date for the request list
+        </Label>
         <Input
           id="default-due"
           type="date"
+          className="h-[26px] w-[140px]"
           value={shown}
           onChange={(e) => {
             setValue(e.target.value);
@@ -80,7 +83,6 @@ export function DueDatesBar({
       >
         Save
       </Button>
-      <span className="text-muted">Items without their own date are due then.</span>
       {overdue > 0 && <Badge tone="warning">{`${String(overdue)} overdue`}</Badge>}
       {save.isError && (
         <span role="alert" className="text-danger">
