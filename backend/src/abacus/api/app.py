@@ -29,6 +29,7 @@ from abacus.modules.agents import api as agents
 from abacus.modules.connections import api as connections
 from abacus.modules.engagements import api as engagements
 from abacus.modules.evidence import api as evidence
+from abacus.modules.fieldwork import api as fieldwork
 from abacus.modules.identity import api as identity
 from abacus.modules.notifications import api as notifications
 from abacus.modules.platform import api as platform
@@ -53,6 +54,8 @@ ROUTERS = (
     agents.graph_router,
     agents.knowledge_router,
     agents.template_drafts_router,  # SPEC-035 Q3 (TASK-074)
+    fieldwork.router,  # SPEC-037 (TASK-077)
+    fieldwork.firm_router,
     platform.router,
     notifications.router,
 )

@@ -124,6 +124,10 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "inbox_match.read",  # SPEC-033 (TASK-066)
         "inbox_match.request",
         "ledger_import.upload",  # SPEC-028 (TASK-052)
+        "materiality.set",  # SPEC-037 (TASK-077)
+        "procedure.configure",
+        "procedure.read",
+        "procedure.run",
         "review.assign",
         "review.read",
         "review.take",

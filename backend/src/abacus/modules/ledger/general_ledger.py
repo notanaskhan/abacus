@@ -12,11 +12,11 @@ model; every amount in a failure's details is computed here.
 from __future__ import annotations
 
 import unicodedata
-from collections.abc import Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
-from typing import Final
+from typing import Final, Protocol
 
 MAX_DETAILS: Final = 5
 # Balance sheet accounts by the common US numbering (assets, liabilities, equity), used only when
@@ -185,3 +185,46 @@ def validate_gl(
             balances=result,
         )
     return GlCheck(None, balances=result)
+
+
+# --- Journal entries (TASK-070 D2; moved here by TASK-077 D1) ------------------------------------
+
+
+class Posting(Protocol):
+    """What grouping needs from a posting (a `GlEntry`, or evidence's rendering row)."""
+
+    @property
+    def line_no(self) -> int: ...
+    @property
+    def posted_on(self) -> date: ...
+    @property
+    def kind(self) -> str | None: ...
+    @property
+    def reference(self) -> str | None: ...
+    @property
+    def counterparty(self) -> str | None: ...
+
+
+JournalKey = tuple[str, str, str, str]
+
+
+def journal_key(e: Posting) -> JournalKey:
+    """A transaction is its date, type and reference; without a reference, its date, type and
+    name. The journal listing and journal entry testing both group by this, so "an entry" means
+    one thing everywhere."""
+    reference = e.reference or ""
+    return (
+        e.posted_on.isoformat(),
+        e.kind or "",
+        reference,
+        "" if reference else (e.counterparty or ""),
+    )
+
+
+def journals[P: Posting](entries: Iterable[P]) -> Iterator[tuple[JournalKey, list[P]]]:
+    """The postings grouped by transaction, in date, type, reference order (lines by line no)."""
+    grouped: dict[JournalKey, list[P]] = {}
+    for e in entries:
+        grouped.setdefault(journal_key(e), []).append(e)
+    for key in sorted(grouped):
+        yield key, sorted(grouped[key], key=lambda x: x.line_no)

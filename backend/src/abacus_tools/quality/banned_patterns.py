@@ -783,6 +783,10 @@ LIST_EXEMPT = frozenset(
         # SPEC-035 Q3 (TASK-074): a template version's drafts are firm-wide, read after
         # `authorise(template_guidance.read)` on the firm; no engagement rows.
         ("src/abacus/modules/agents/repository.py", "template_drafts"),
+        # SPEC-037 (TASK-077): one selection's entries, after `authorise(procedure.read)` on its
+        # engagement.
+        ("src/abacus/modules/fieldwork/repository.py", "selected_items"),
+        ("src/abacus/modules/fieldwork/repository.py", "rule_counts"),
         # Methodology templates are firm-wide (SPEC-008): read after `authorise` on the firm
         # (`methodology.read`) or by a caller authorised on the engagement; no engagement rows.
         ("src/abacus/modules/engagements/repository.py", "list_templates"),
@@ -965,6 +969,13 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     # Notifications subscribes to events and resolves recipients through identity (SPEC-013);
     # nothing imports it.
     "notifications": frozenset({"identity"}),
+    # SPEC-037 (TASK-077): populations and selection are pure functions over ledger snapshots.
+    "sampling": frozenset({"ledger"}),
+    # Procedures read engagements and ledger snapshots, and select through sampling; TASK-078
+    # adds evidence (support) and requests (asking the client for it).
+    "fieldwork": frozenset(
+        {"identity", "engagements", "ledger", "sampling", "evidence", "requests"}
+    ),
 }
 
 

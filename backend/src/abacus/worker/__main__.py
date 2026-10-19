@@ -58,10 +58,11 @@ from abacus.modules.communications import api as communications
 from abacus.modules.connections import api as connections
 from abacus.modules.evidence import api as evidence
 from abacus.modules.evidence.api import check_ready
+from abacus.modules.fieldwork import api as fieldwork
 from abacus.modules.notifications import api as notifications
 
 GRACEFUL_SHUTDOWN = timedelta(seconds=60)
-MODULES = (connections, agents, notifications, communications, evidence)  # evidence: SPEC-029
+MODULES = (connections, agents, notifications, communications, evidence, fieldwork)  # SPEC-037
 SUBSCRIBERS = tuple(module.SUBSCRIPTIONS for module in MODULES)
 
 
