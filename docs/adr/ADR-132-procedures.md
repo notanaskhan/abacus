@@ -1,5 +1,5 @@
 ---
-id: ADR-117
+id: ADR-132
 title: In a procedure, code builds the population and selects the sample; agents assess items; people conclude
 status: accepted
 date: 2026-10-19
@@ -31,7 +31,7 @@ Another auditor must be able to re-perform the selection and get the same items.
 
    The method, parameters, seed and selected items are stored, so re-running the selection gives the same items. Thresholds come from the engagement's recorded materiality, entered by a person, never by a model.
 3. **Assessment (agent, optional):** for each selected item, an agent may propose an assessment from the item and its evidence ("the invoice dates the service to December; it relates to the prior period"). Each proposal cites what it read and is shown with the AI tag. A person accepts, changes or rejects each one (ADR-005).
-4. **Conclusion (person):** exceptions are recorded by people, and the procedure's conclusion is a person's, written into the workpaper (ADR-116).
+4. **Conclusion (person):** exceptions are recorded by people, and the procedure's conclusion is a person's, written into the workpaper (ADR-131).
 5. **Procedure definitions are code and configuration, versioned:** the population rule, selection methods allowed, what evidence each item needs, and the workpaper layout. A firm's methodology names which procedures apply to an engagement. Changing a definition is a new version; running procedures keep theirs.
 
 ## Options considered
@@ -66,5 +66,5 @@ When building a procedure, write the population and selection as pure functions 
 - Firms want to bring their own sampling tools' selections (import a selection, keeping its record).
 
 ## Related
-- ADRs: ADR-004, ADR-005, ADR-050, ADR-052, ADR-065, ADR-116.
+- ADRs: ADR-004, ADR-005, ADR-050, ADR-052, ADR-065, ADR-131.
 - Specs: SPEC-034, SPEC-037.

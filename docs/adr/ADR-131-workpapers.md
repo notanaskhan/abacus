@@ -1,5 +1,5 @@
 ---
-id: ADR-116
+id: ADR-131
 title: A workpaper is rendered by code, versioned, and signed off by people; it never changes once reviewed
 status: accepted
 date: 2026-10-19
@@ -58,7 +58,7 @@ Agents may propose per-item assessments and draft narrative for a workpaper. The
 - PCAOB (issuer) audits come into scope (AS 1215's stricter timelines).
 
 ## Related
-- ADRs: ADR-004, ADR-005, ADR-042, ADR-050, ADR-065, ADR-111, ADR-117.
+- ADRs: ADR-004, ADR-005, ADR-042, ADR-050, ADR-065, ADR-111, ADR-132.
 - Specs: SPEC-034, SPEC-037.
 
 ## Open questions (resolved before acceptance)
