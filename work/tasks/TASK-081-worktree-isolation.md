@@ -4,7 +4,7 @@ title: Worktree isolation — own compose project and ports per worktree, and de
 spec: SPEC-000
 acceptance_criteria: [AC-20]
 risk_zone: red
-status: in-review
+status: done
 branch: task-081-worktree-isolation
 worktree:
 created: 2026-10-19
