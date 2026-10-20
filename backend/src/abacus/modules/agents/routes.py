@@ -29,7 +29,9 @@ from abacus.modules.agents.engagement_agent import (
     AgentView,
     activity_feed,
     agent_view,
+    draft_follow_ups,
     drafts,
+    preview_follow_up,
     set_paused,
     settle_draft,
 )
@@ -555,6 +557,48 @@ async def send_draft_route(
 async def dismiss_draft_route(engagement_id: UUID, reminder_id: UUID, ctx: Ctx) -> SettledOut:
     await settle_draft(ctx, engagement_id, reminder_id, send=False)
     return SettledOut(id=reminder_id)
+
+
+class DraftedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    drafted: Annotated[int, classified("internal")]
+
+
+@router.post(
+    "/reminders/draft",
+    action="follow_up.draft",
+    response_model=DraftedOut,
+    status_code=201,
+    errors=(409,),
+)
+async def draft_follow_ups_route(engagement_id: UUID, ctx: Ctx) -> DraftedOut:
+    """TASK-104: follow-ups for everything overdue now, one per contact, for a person to send."""
+    return DraftedOut(drafted=await draft_follow_ups(ctx, engagement_id))
+
+
+class FollowUpPreviewIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    note: Annotated[str | None, Field(default=None, max_length=500), classified("confidential")]
+
+
+class FollowUpPreviewOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    subject: Annotated[str, classified("confidential")]
+    body: Annotated[str, classified("confidential")]
+
+
+@router.post(
+    "/reminders/{reminder_id}/preview", action="follow_up.draft", response_model=FollowUpPreviewOut
+)
+async def preview_follow_up_route(
+    engagement_id: UUID, reminder_id: UUID, body: FollowUpPreviewIn, ctx: Ctx
+) -> FollowUpPreviewOut:
+    """TASK-104: the email exactly as it will be sent (fixed template; no model text)."""
+    subject, text = await preview_follow_up(ctx, engagement_id, reminder_id, body.note)
+    return FollowUpPreviewOut(subject=subject, body=text)
 
 
 # --- The engagement graph (SPEC-008 §8; TASK-023 D1) --------------------------------------------

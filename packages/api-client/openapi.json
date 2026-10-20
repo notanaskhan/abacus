@@ -2799,6 +2799,20 @@
         "title": "DraftedGuidanceIO",
         "type": "object"
       },
+      "DraftedOut": {
+        "properties": {
+          "drafted": {
+            "cls": "internal",
+            "title": "Drafted",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "drafted"
+        ],
+        "title": "DraftedOut",
+        "type": "object"
+      },
       "DueDatesIn": {
         "additionalProperties": false,
         "description": "SPEC-027 AC-9 (TASK-051): set or clear (`null`) several items' due date.",
@@ -3697,6 +3711,46 @@
           "state"
         ],
         "title": "FlowStepOut",
+        "type": "object"
+      },
+      "FollowUpPreviewIn": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          }
+        },
+        "title": "FollowUpPreviewIn",
+        "type": "object"
+      },
+      "FollowUpPreviewOut": {
+        "properties": {
+          "body": {
+            "cls": "confidential",
+            "title": "Body",
+            "type": "string"
+          },
+          "subject": {
+            "cls": "confidential",
+            "title": "Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject",
+          "body"
+        ],
+        "title": "FollowUpPreviewOut",
         "type": "object"
       },
       "FormatOut": {
@@ -20820,6 +20874,123 @@
         "x-abacus-action": "follow_up.draft"
       }
     },
+    "/v1/engagements/{engagement_id}/reminders/draft": {
+      "post": {
+        "description": "TASK-104: follow-ups for everything overdue now, one per contact, for a person to send.",
+        "operationId": "draft_follow_ups",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Draft Follow Ups Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "follow_up.draft"
+      }
+    },
     "/v1/engagements/{engagement_id}/reminders/{reminder_id}/dismiss": {
       "post": {
         "operationId": "dismiss_draft",
@@ -20934,6 +21105,133 @@
           "agents"
         ],
         "x-abacus-action": "follow_up.send"
+      }
+    },
+    "/v1/engagements/{engagement_id}/reminders/{reminder_id}/preview": {
+      "post": {
+        "description": "TASK-104: the email exactly as it will be sent (fixed template; no model text).",
+        "operationId": "preview_follow_up",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "reminder_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Reminder Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FollowUpPreviewIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowUpPreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Preview Follow Up Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "follow_up.draft"
       }
     },
     "/v1/engagements/{engagement_id}/reminders/{reminder_id}/send": {

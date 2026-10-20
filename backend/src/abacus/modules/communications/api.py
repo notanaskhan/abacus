@@ -1,7 +1,7 @@
 """Public interface of the communications module; other modules import only this (ADR-008)."""
 
 from abacus.modules.communications.invitations import deliver_invitation, deliver_staff_invitation
-from abacus.modules.communications.reminders import send_reminder
+from abacus.modules.communications.reminders import render_reminder, send_reminder
 from abacus.modules.communications.scope import Violation, check_scope, comment_scope_kinds
 from abacus.modules.communications.service import Draft, MessageView, OutOfScope, send
 from abacus.modules.communications.transport import LocalMailbox, Transport, configure_transport
@@ -30,6 +30,7 @@ __all__ = [
     "Violation",
     "check_scope",
     "configure_transport",
+    "render_reminder",
     "send",
     "send_reminder",
 ]

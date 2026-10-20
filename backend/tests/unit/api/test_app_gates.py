@@ -131,6 +131,7 @@ NOT_CREATING = {
     # SPEC-027 (TASK-051): sending or dismissing a draft returns its id.
     "/v1/engagements/{engagement_id}/reminders/{reminder_id}/send",
     "/v1/engagements/{engagement_id}/reminders/{reminder_id}/dismiss",
+    "/v1/engagements/{engagement_id}/reminders/{reminder_id}/preview",  # TASK-104: a read
     "/v1/engagements/{engagement_id}/request-items/{item_id}/comments/read",  # SPEC-032: a mark
 }
 
@@ -195,6 +196,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/items/sign-prepared",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/items/sign-reviewed",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/notes",  # SPEC-041
+        "/v1/engagements/{engagement_id}/reminders/draft",  # TASK-104
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/notes/{note_id}/respond",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/notes/{note_id}/clear",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper/sign-ready",

@@ -5,10 +5,10 @@ reminded on the first business-day tick after it's due, then every 3 business da
 for that due date. A changed due date starts the sequence again. One email per contact per tick,
 listing their items; the item's client assignee, else the engagement's client admins.
 
-At Routine autonomy the agent sends, as itself: an `agent_runs` row for the `engagement.agent`
-policy spec with the engagement's earliest active partner as initiator, so `follow_up.send` is
-bounded by that person (ADR-025). At Advise it drafts for a person. Nothing client-facing happens
-before the engagement is open (SPEC-025).
+The agent only drafts (TASK-104; the plan's DEC-74, P-06-T14): a person reads the follow-up and
+sends it, with ten seconds to undo, at every autonomy level. A person can also draft follow-ups for
+everything overdue now (`draft_now`). Nothing client-facing happens before the engagement is open
+(SPEC-025).
 """
 
 from __future__ import annotations
@@ -18,24 +18,19 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
 from typing import Final
-from uuid import UUID, uuid5
+from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import Target, uow
 from abacus.modules.agents.events import AgentDigest, RemindersDrafted
 from abacus.modules.agents.repository import (
-    finish_run,
+    drafted_item_ids,
     insert_reminder,
-    insert_run,
     reminder_history,
-    settle_reminder,
 )
-from abacus.modules.agents.service import load_agent_context
-from abacus.modules.agents.spec import ENGAGEMENT_AGENT, POLICY_AGENTS
-from abacus.modules.communications.api import send_reminder
 from abacus.modules.engagements.api import EngagementNotOpen, require_open
-from abacus.modules.identity.api import autonomy_level, client_admins, earliest_partner
+from abacus.modules.identity.api import client_admins
 from abacus.modules.requests.api import OverdueItem, overdue_for
 
 CADENCE: Final = 3  # business days between reminders of an item
@@ -135,14 +130,8 @@ async def remind(tenant: TenantContext, engagement_id: UUID, zone: str, tick_id:
     batches = plan(overdue, history, await client_admins(tenant, engagement_id), today, zone)
     if not batches:
         return await _digest(tenant, engagement_id, Outcome(len(overdue), reason="not_due"))
-    if await autonomy_level(tenant.tenant_id) < 1:
-        drafted = await _draft(tenant, engagement_id, batches)
-        return await _digest(tenant, engagement_id, Outcome(len(overdue), drafted=drafted))
-    partner = await earliest_partner(tenant, engagement_id)
-    if partner is None:
-        return Outcome(len(overdue), reason="no_partner")
-    sent = await _send(tenant, engagement_id, partner, batches, uuid5(tick_id, "P-4"))
-    return await _digest(tenant, engagement_id, Outcome(len(overdue), sent=sent))
+    drafted = await _draft(tenant, engagement_id, batches)
+    return await _digest(tenant, engagement_id, Outcome(len(overdue), drafted=drafted))
 
 
 async def _draft(
@@ -164,60 +153,6 @@ async def _draft(
     return len(batches)
 
 
-async def _send(
-    tenant: TenantContext,
-    engagement_id: UUID,
-    partner: UUID,
-    batches: dict[UUID, list[tuple[OverdueItem, int]]],
-    source: UUID,
-) -> int:
-    policy = POLICY_AGENTS[ENGAGEMENT_AGENT]
-    async with uow(tenant) as tx:
-        run_id = await insert_run(
-            tx.session,
-            tenant_id=tenant.tenant_id,
-            agent_id=policy.id,
-            spec_version=policy.version,
-            engagement_id=engagement_id,
-            evidence_version_id=None,
-            initiator_user_id=partner,
-            source_event_id=source,
-            task_scope=sorted(policy.task_scope),
-        )
-        if run_id is None:
-            return 0  # this tick already sent (a retried activity)
-        tx.record("agent_run.started", target=Target("agent_run", run_id))
-    agent = await load_agent_context(tenant.tenant_id, run_id)
-    sent = 0
-    try:
-        for recipient, items in batches.items():
-            # Recorded first (as a draft), so its items count towards the cadence even if the
-            # send fails: then it waits for a person instead of being emailed again.
-            async with uow(tenant) as tx:
-                reminder_id = await insert_reminder(
-                    tx.session,
-                    tenant_id=tenant.tenant_id,
-                    engagement_id=engagement_id,
-                    recipient_user_id=recipient,
-                    status="drafted",
-                    agent_run_id=run_id,
-                    items=[(i.id, i.due_on, n) for i, n in items],
-                )
-                tx.record("reminder.recorded", target=Target("reminder", reminder_id))
-            await send_reminder(agent, engagement_id, recipient, [i.description for i, _ in items])
-            async with uow(tenant) as tx:
-                await settle_reminder(tx.session, reminder_id, status="sent", by=None, note=None)
-                tx.record("reminder.sent", target=Target("reminder", reminder_id))
-            sent += 1
-    finally:
-        async with uow(tenant) as tx:
-            await finish_run(
-                tx.session, run_id, status="completed", output={"reminders_sent": sent}
-            )
-            tx.record("agent_run.completed", target=Target("agent_run", run_id))
-    return sent
-
-
 async def _digest(tenant: TenantContext, engagement_id: UUID, outcome: Outcome) -> Outcome:
     """P-5: the team hears about overdue items once a day, in the app."""
     if outcome.overdue:
@@ -232,3 +167,30 @@ async def _digest(tenant: TenantContext, engagement_id: UUID, outcome: Outcome) 
             )
             tx.record("agent.digest", target=Target("engagement", engagement_id))
     return outcome
+
+
+async def draft_now(tenant: TenantContext, engagement_id: UUID, zone: str) -> int:
+    """TASK-104: a person asks for follow-ups on everything overdue now, one draft per contact,
+    outside the cadence. Items already in a waiting draft, or reminded three times for this due
+    date, are left out."""
+    today = today_in(zone)
+    overdue = await overdue_for(tenant, engagement_id, today)
+    if not overdue:
+        return 0
+    await require_open(tenant, engagement_id)
+    async with tenant_session(tenant) as session:
+        history = await reminder_history(session, [i.id for i in overdue])
+        waiting = await drafted_item_ids(session, engagement_id)
+    admins = await client_admins(tenant, engagement_id)
+    batches: dict[UUID, list[tuple[OverdueItem, int]]] = defaultdict(list)
+    for item in overdue:
+        if item.id in waiting:
+            continue
+        sent = sum(1 for i, d, _n, _at in history if i == item.id and d == item.due_on)
+        if sent >= MAX_PER_ITEM:
+            continue
+        for recipient in (
+            [item.client_assignee_user_id] if item.client_assignee_user_id else admins
+        ):
+            batches[recipient].append((item, sent + 1))
+    return await _draft(tenant, engagement_id, dict(batches)) if batches else 0

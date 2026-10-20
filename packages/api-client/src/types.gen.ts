@@ -1365,6 +1365,16 @@ export type DraftedGuidanceIo = {
 };
 
 /**
+ * DraftedOut
+ */
+export type DraftedOut = {
+    /**
+     * Drafted
+     */
+    drafted: number;
+};
+
+/**
  * DueDatesIn
  *
  * SPEC-027 AC-9 (TASK-051): set or clear (`null`) several items' due date.
@@ -1801,6 +1811,30 @@ export type FlowStepOut = {
      * State
      */
     state: 'done' | 'current' | 'todo';
+};
+
+/**
+ * FollowUpPreviewIn
+ */
+export type FollowUpPreviewIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+};
+
+/**
+ * FollowUpPreviewOut
+ */
+export type FollowUpPreviewOut = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Subject
+     */
+    subject: string;
 };
 
 /**
@@ -9964,6 +9998,62 @@ export type DraftsResponses = {
 
 export type DraftsResponse = DraftsResponses[keyof DraftsResponses];
 
+export type DraftFollowUpsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/reminders/draft';
+};
+
+export type DraftFollowUpsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DraftFollowUpsError = DraftFollowUpsErrors[keyof DraftFollowUpsErrors];
+
+export type DraftFollowUpsResponses = {
+    /**
+     * Successful Response
+     */
+    201: DraftedOut;
+};
+
+export type DraftFollowUpsResponse = DraftFollowUpsResponses[keyof DraftFollowUpsResponses];
+
 export type DismissDraftData = {
     body?: never;
     headers?: {
@@ -10019,6 +10109,62 @@ export type DismissDraftResponses = {
 };
 
 export type DismissDraftResponse = DismissDraftResponses[keyof DismissDraftResponses];
+
+export type PreviewFollowUpData = {
+    body: FollowUpPreviewIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Reminder Id
+         */
+        reminder_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/reminders/{reminder_id}/preview';
+};
+
+export type PreviewFollowUpErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PreviewFollowUpError = PreviewFollowUpErrors[keyof PreviewFollowUpErrors];
+
+export type PreviewFollowUpResponses = {
+    /**
+     * Successful Response
+     */
+    200: FollowUpPreviewOut;
+};
+
+export type PreviewFollowUpResponse = PreviewFollowUpResponses[keyof PreviewFollowUpResponses];
 
 export type SendDraftData = {
     body: SendDraftIn;

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, date, datetime
+from typing import cast
 
 import pytest
 
@@ -107,26 +108,10 @@ class _World:
         async def admins(*_: object) -> list[uuid.UUID]:
             return [ADMIN]
 
-        async def level(*_: object) -> int:
-            return self.level
-
-        async def partner(*_: object) -> uuid.UUID | None:
-            return self.partner
-
         async def draft(
             tenant: object, engagement: object, batches: dict[uuid.UUID, object]
         ) -> int:
             self.drafted.append(batches)
-            return len(batches)
-
-        async def send(
-            tenant: object,
-            engagement: object,
-            partner: object,
-            batches: dict[uuid.UUID, object],
-            source: object,
-        ) -> int:
-            self.sent.append((partner, batches))
             return len(batches)
 
         async def digest(
@@ -151,10 +136,7 @@ class _World:
 
         monkeypatch.setattr(reminders, "tenant_session", session)
         monkeypatch.setattr(reminders, "client_admins", admins)
-        monkeypatch.setattr(reminders, "autonomy_level", level)
-        monkeypatch.setattr(reminders, "earliest_partner", partner)
         monkeypatch.setattr(reminders, "_draft", draft)
-        monkeypatch.setattr(reminders, "_send", send)
         monkeypatch.setattr(reminders, "_digest", digest)
 
 
@@ -163,14 +145,14 @@ async def _tick(world: _World) -> reminders.Outcome:
     return await reminders.remind(tenant, uuid.uuid4(), "America/New_York", uuid.uuid4())
 
 
-async def test_ac3_routine_sends_as_the_agent_for_the_partner(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+async def test_dec74_the_agent_drafts_even_at_routine(monkeypatch: pytest.MonkeyPatch) -> None:
+    """TASK-104 (the plan's DEC-74, superseding SPEC-027 AC-3's Routine send): a person sends."""
     world = _World(monkeypatch)
     outcome = await _tick(world)
-    assert (outcome.sent, outcome.drafted, outcome.overdue) == (1, 0, 1)
-    [(partner, batches)] = world.sent
-    assert partner == world.partner and list(batches) == [ADMIN]
+    assert (outcome.sent, outcome.drafted, outcome.overdue) == (0, 1, 1)
+    assert world.sent == []
+    [batches] = world.drafted
+    assert list(cast(dict[uuid.UUID, object], batches)) == [ADMIN]
     assert world.digests == [outcome]
 
 
@@ -192,11 +174,13 @@ async def test_ac5_nothing_client_facing_before_the_engagement_is_open(
     assert world.digests == [outcome]  # the team still hears about overdue items
 
 
-async def test_ac8_no_active_partner_sends_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_ac8_no_active_partner_still_drafts_and_sends_nothing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     world = _World(monkeypatch)
     world.partner = None
     outcome = await _tick(world)
-    assert outcome.reason == "no_partner" and world.sent == []
+    assert world.sent == [] and outcome.drafted == 1  # drafting needs no partner to act for
 
 
 async def test_nothing_overdue_is_silent(monkeypatch: pytest.MonkeyPatch) -> None:
