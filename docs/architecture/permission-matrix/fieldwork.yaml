@@ -1,0 +1,29 @@
+# The fieldwork module's actions (ADR-027; P-39, F-03-T07). Compiled with every other
+# module's file into identity/authz/_matrix.py by `make regenerate`.
+
+actions:
+  # --- Fieldwork (SPEC-037; TASK-083) ---
+  materiality.set:          {engagement_partner: allow, manager: allow, independence: required}   # Q3: entered by people
+  procedure.configure:      {engagement_partner: allow, manager: allow, independence: required}   # a procedure's criteria
+  procedure.run:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # start, pick, select
+  procedure.read:           {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: task_scope, independence: required}   # firm roles only; clients are refused by role. agent: the entry assessor (TASK-085)
+  workpaper.sign_ready:     {manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # SPEC-037 (TASK-084), ADR-131 Q2: the preparer; TASK-089: never the agent
+  workpaper.sign_reviewed:  {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # ADR-131 Q2: never the preparer (the service refuses); TASK-089: never the EQR (`reviewer`) or the agent
+  sample.approve:           {engagement_partner: allow, manager: allow, agent: deny, independence: required}   # SPEC-040 (TASK-100) Q1: a manager or the partner agrees the sample
+  item.sign_prepared:       {manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # SPEC-040 AC-6: the row's preparer (Q5: never the partner)
+  item.sign_reviewed:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # SPEC-040 AC-7: never the row's preparer (the service refuses), the EQR or the agent
+  review_note.raise:        {engagement_partner: allow, manager: allow, senior: allow, reviewer: allow, agent: deny, independence: required}   # SPEC-041 (TASK-103) Q1: reviewers, the EQR included
+  review_note.respond:      {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: deny, independence: required}   # SPEC-041 AC-2: the preparer answers; the raiser can reply
+  review_note.clear:        {engagement_partner: allow, manager: allow, senior: allow, reviewer: allow, agent: deny, independence: required}   # SPEC-041 AC-3: only the raiser (the service checks)
+  finding.raise:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # SPEC-043 (TASK-107) AC-4
+  misstatement.set:         {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # SPEC-043 AC-4: people record misstatements
+  materiality.decide:       {engagement_partner: allow, agent: deny, independence: required}   # SPEC-300 (TASK-301) AC-2: only the engagement partner decides materiality
+  risk.assess:              {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # SPEC-300 AC-4: the team records and revises risks
+  risk.approve:             {engagement_partner: allow, agent: deny, independence: required}   # SPEC-300 AC-5: the partner approves significant risks and rebuttals
+  finding.propose_severity: {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # SPEC-301 (TASK-302) AC-1
+  finding.conclude_severity: {engagement_partner: allow, agent: deny, independence: required}   # SPEC-301 AC-2: only the engagement partner concludes severity
+  finding.communicate:      {engagement_partner: allow, manager: allow, agent: deny, independence: required}   # SPEC-301 AC-3
+  adjustment.propose:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # SPEC-301 AC-4
+  adjustment.approve:       {engagement_partner: allow, manager: allow, agent: deny, independence: required}   # SPEC-301 AC-5
+  adjustment.record_response: {engagement_partner: allow, manager: allow, agent: deny, independence: required}   # SPEC-301 AC-5: the client's answer, as told to the firm
+  representation.edit:      {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # SPEC-301 AC-7

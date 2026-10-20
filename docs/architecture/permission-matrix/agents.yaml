@@ -1,0 +1,48 @@
+# The agents module's actions (ADR-027; P-39, F-03-T07). Compiled with every other
+# module's file into identity/authz/_matrix.py by `make regenerate`.
+
+actions:
+  knowledge.manage:         {firm_admin: allow, practice_leader: allow, mfa_recent: required}   # SPEC-009 Q4
+  knowledge.read:           {firm_admin: allow, practice_leader: allow, quality_partner: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, platform_support_content: allow}   # SPEC-009 Q4
+  # --- The engagement agent (SPEC-027; TASK-050) ---
+  activity.read:            {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow}   # the activity feed
+  agent.pause:              {engagement_partner: allow, manager: allow}   # pause or resume an engagement's agent
+  engagement.read:          # content, not just metadata — ADR-024
+    practice_leader: in_scope
+    quality_partner: in_scope
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    staff: allow
+    reviewer: allow
+    client_admin: client_visible_only
+    client_contributor: client_visible_only
+    platform_support_content: allow   # SPEC-012
+  # --- Screening and suggestions ---
+  screening.run:            {system: allow, agent: task_scope}
+  screening.request:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # SPEC-024 (TASK-042 D1): "Screen now" at Advise
+  upload_review.run:        {system: allow, agent: task_scope}   # SPEC-030 (TASK-058): the upload reviewer records its review
+  guidance_draft.read:      {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # SPEC-035 (TASK-073): firm roles; drafts never reach clients
+  guidance_draft.request:   {engagement_partner: allow, manager: allow, senior: allow, independence: required}   # SPEC-035: "Draft guidance"
+  guidance_draft.decide:    {engagement_partner: allow, manager: allow, senior: allow, independence: required}   # SPEC-035: approve or discard (ADR-005)
+  guidance_draft.run:       {system: allow, agent: task_scope}   # SPEC-035 (TASK-072): the guidance drafter records its drafts
+  template_guidance.read:   {firm_admin: allow, practice_leader: allow}   # SPEC-035 Q3 (TASK-074 D3): drafts on a template version
+  template_guidance.request: {firm_admin: allow, practice_leader: allow}   # SPEC-035 Q3: "Draft guidance" on a template version
+  template_guidance.decide: {firm_admin: allow, practice_leader: allow}   # SPEC-035 Q3: approve or discard; publishing a version is methodology.manage
+  inbox_match.run:          {system: allow, agent: task_scope}   # SPEC-033 (TASK-065): the matcher records its proposals
+  inbox_match.read:         {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # SPEC-033 (TASK-066): firm roles only; clients get request IDs through the inbox
+  inbox_match.request:      {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # SPEC-033: "Suggest with AI"
+  upload_review.read:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # SPEC-030 (TASK-059 D1): firm roles only; clients are refused by role
+  upload_review.request:    {engagement_partner: allow, manager: allow, senior: allow, independence: required}   # SPEC-030: "Review now" at Advise
+  suggestion.create:        {agent: task_scope}
+  entry_assessment.request: {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # SPEC-037 Q4 (TASK-085): "Assess with AI"
+  entry_assessment.run:     {system: allow, agent: task_scope}   # TASK-085: the entry assessor records its assessments
+  entry_assessment.adopt:   {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # SPEC-044 (TASK-109) AC-4: a person adopts the agent's proposals as results
+  suggestion.resolve:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny}
+  # --- Follow-ups ---
+  follow_up.draft:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: task_scope}
+  follow_up.send:
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    agent: firm_setting(autonomy_policy)   # routine reminders only, per autonomy policy. TASK-104: the agent no longer sends (it only drafts); the deny follows with the agent-spec change (DEC-74)

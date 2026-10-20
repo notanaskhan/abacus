@@ -44,7 +44,11 @@ from abacus.modules.ledger.service import (
     snapshot_view,
 )
 
+# The routers the API mounts, in order (P-39; F-03-T07).
+ROUTERS: tuple[()] = ()
+
 __all__ = [
+    "ROUTERS",
     "Balance",
     "GlAccount",
     "GlCheck",

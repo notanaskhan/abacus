@@ -87,7 +87,7 @@ The attempt then moves to the next usable route. When none is left, the call wai
 - `embedding_provider = bedrock-titan` switches embeddings to Titan v2 on Bedrock.
 
 ## Prompt rollouts (SPEC-011; TASK-026)
-A variant flag named `prompt.<agent_id>` (in `docs/architecture/feature-flags.yaml`) may switch one firm to another prompt version.
+A variant flag named `prompt.<agent_id>` (in `docs/architecture/feature-flags/<module>.yaml`) may switch one firm to another prompt version.
 
 **When the flag is honoured:**
 - the prompt must be registered;

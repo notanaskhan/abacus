@@ -1512,7 +1512,7 @@ READ_ACTIONS = sorted(
     action
     for action in cast(
         dict[str, dict[str, str]],
-        cast(dict[str, object], yaml.safe_load(pm.SOURCE.read_text()))["actions"],
+        cast(dict[str, object], yaml.safe_load(pm.source()))["actions"],
     )
     if action.split(".", 1)[1] in {"read", "read_metadata", "read_log"}
 )

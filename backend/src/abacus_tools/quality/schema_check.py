@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import importlib
 import sys
 from collections.abc import Generator
 from contextlib import contextmanager
@@ -41,6 +42,7 @@ from alembic.config import Config
 from testcontainers.community.postgres import PostgresContainer
 
 from abacus.kernel.db.migration import tenant_table
+from abacus.modules import MODULES
 
 BACKEND = Path(__file__).resolve().parents[3]
 REPO = BACKEND.parent
@@ -57,381 +59,27 @@ NON_TENANT_TABLES = frozenset(
     | {"signup_codes", "signup_attempts"}  # SPEC-024 (TASK-040): `firm_signup` only
     | {"staff_invitation_tokens"}  # SPEC-024 (TASK-041): definer functions only
 )
-# Tables the app may insert into and read, never update or delete (ADR-004); TASK-009/010 add.
-INSERT_ONLY_TABLES: frozenset[str] = frozenset(
-    {"audit_events", "outbox", "evidence_versions", "ledger_snapshots", "trial_balance_lines"}
-    | {"fulfilments", "screening_results", "usage_records", "review_decisions", "messages"}
-    | {"eval_case_results"}
-    | {"methodology_templates", "methodology_versions", "methodology_areas"}
-    | {"methodology_request_items", "methodology_account_rules"}
-    | {"agent_activity"}  # SPEC-027 (TASK-050): the feed is never rewritten
-    | {"ledger_imports"}  # SPEC-028 (TASK-052): an upload and its check are facts
-    | {"upload_extractions"}  # SPEC-029 (TASK-054): a derived record, rebuilt, never edited
-    | {"upload_checks"}  # SPEC-029 (TASK-055): what code found, as found
-    | {"upload_previews", "upload_preview_pages"}  # SPEC-029 (TASK-056): server-made, kept
-    | {"upload_reviews", "upload_review_flags"}  # SPEC-030 (TASK-058): proposals, as made
-    | {"reminder_items"}  # SPEC-027 (TASK-051)
-    | {"comments", "comment_mentions", "comment_redactions"}  # SPEC-032 (TASK-062): ADR-109
-    | {"inbox_match_runs", "inbox_match_proposals"}  # SPEC-033 (TASK-065): proposals, as made
-    | {"gl_snapshots", "gl_account_balances", "gl_entries"}  # SPEC-034 (TASK-069): ADR-004
-    | {"guidance_drafts"}  # SPEC-035 (TASK-072): proposals, as made
-    | {"guidance_draft_decisions"}  # SPEC-035 (TASK-073): people's decisions, as made
-    | {"template_guidance_drafts", "template_guidance_decisions"}  # SPEC-035 Q3 (TASK-074)
-    | {"engagement_materiality", "fieldwork_settings"}  # SPEC-037 (TASK-083): versions
-    | {"populations", "selections", "selected_items"}  # SPEC-037 (TASK-083): ADR-132
-    | {"item_results", "item_support_requests", "procedure_conclusions"}  # TASK-084
-    | {"workpaper_versions", "workpaper_signatures"}  # SPEC-037 (TASK-084): ADR-131
-    | {"entry_assessments"}  # SPEC-037 Q4 (TASK-085): proposals, as made
-    | {"engagement_accounts"}  # SPEC-038 (TASK-086): confirmations, as made
-    | {"selection_approvals", "item_signoffs"}  # SPEC-040 (TASK-100): decisions, as made
-    | {"review_notes", "review_note_events"}  # SPEC-041 (TASK-103): notes, as written
-    | {"client_item_responses", "client_list_done"}  # SPEC-042 (TASK-106): as the client said
-    | {"findings", "misstatements"}  # SPEC-043 (TASK-107): as raised and recorded
-    | {"procedure_session_events"}  # SPEC-044 (TASK-109): plan approvals, as given
-    | {"materiality_decisions", "risks", "risk_versions", "risk_approvals"}  # SPEC-300 (TASK-301)
-    | {"finding_severities", "finding_communications", "adjustments", "adjustment_lines"}
-    | {"adjustment_events", "representations", "representation_removals"}  # SPEC-301
-    | {"work_item_assignments", "engagement_entities"}  # F-03-T05 (0068)
-    | {"gate_policy_overrides"}  # F-03-T12 (0069): a new row per change
-    | {"request_categories"}  # F-03-T14 (0070)
+# Insert-only tables outside the modules (ADR-004); each module lists its own in registry.py.
+_PLATFORM_INSERT_ONLY: frozenset[str] = frozenset(
+    {"audit_events", "eval_case_results", "outbox", "usage_records"}
 )
-# Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
-APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
+# Insert columns for tables outside the modules (TASK-006); modules declare theirs.
+_PLATFORM_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "audit_events": frozenset(
         {"tenant_id", "actor_kind", "actor_id", "action", "target_type", "target_id"}
         | {"before_ref", "after_ref", "trace_id"}
     ),
     "outbox": frozenset({"id", "tenant_id", "event_type", "payload", "trace_context"}),
-    "ethical_walls": frozenset({"id", "tenant_id", "user_id", "client_id", "created_by"}),
-    "clients": frozenset({"id", "tenant_id", "name"}),
-    "client_entities": frozenset({"id", "tenant_id", "client_id", "name"}),
-    "engagements": frozenset(
-        {"id", "tenant_id", "client_id", "client_entity_id", "name", "created_by"}
-        | {"fiscal_period_start", "fiscal_period_end"}
-        | {"type"}  # SPEC-024: the engagement's type
-        | {"prior_engagement_id"}  # SPEC-025 (TASK-048): roll-forward, set at creation only
-        | {"office_id", "standards_set_id"}  # F-03-T12 (0069)
+    "usage_records": frozenset(
+        {"id", "tenant_id", "engagement_id", "agent_id", "agent_run_id", "prompt_id"}
+        | {"prompt_version", "model", "tier", "input_tokens", "output_tokens", "cost_usd"}
+        | {"outcome", "inputs_hash", "route"}
+        | {"boundary_basis", "terms_version"}  # SPEC-036 (TASK-075)
     ),
-    "request_lists": frozenset(
-        {"id", "tenant_id", "engagement_id"}
-        | {"work_item_id", "name", "kind", "part", "status", "prior_year_source_ref"}  # F-03-T14
-    ),
-    "request_categories": frozenset(  # F-03-T14 (0070)
-        {"tenant_id", "request_list_id", "name", "position"}
-    ),
-    "request_items": frozenset(
-        {"id", "tenant_id", "engagement_id", "request_list_id", "description", "audit_area"}
-        | {"created_by", "retrievability_tier"}
-        | {"dataset", "tier_source", "tier_rule"}  # SPEC-022
-        | {"document_kind", "document_kind_source"}  # SPEC-029 (TASK-055)
-        | {"why", "good_looks_like", "blocks_fieldwork", "effort", "guidance_source"}  # SPEC-031
-        | {"guidance_approved_by"}  # SPEC-035 (TASK-074): from a drafted template, or rolled
-    ),
-    # Methodology templates (SPEC-008): insert-only, immutable versions.
-    "methodology_templates": frozenset(
-        {"id", "tenant_id", "name", "created_by", "engagement_types"}  # SPEC-024: types served
-    ),
-    "methodology_versions": frozenset(
-        {"id", "tenant_id", "template_id", "version", "source_fingerprint", "imported_by"}
-    ),
-    "methodology_areas": frozenset({"tenant_id", "version_id", "code", "name", "position"}),
-    "methodology_request_items": frozenset(
-        {"tenant_id", "version_id", "area_code", "description", "retrievability_tier"}
-        | {"position"}
-        | {"why", "good_looks_like", "blocks_fieldwork", "effort"}  # SPEC-031 (TASK-060)
-        | {"guidance_source", "guidance_approved_by"}  # SPEC-035 Q3 (TASK-074)
-    ),
-    "methodology_account_rules": frozenset(
-        {"tenant_id", "version_id", "area_code", "account_from", "account_to", "position"}
-    ),
-    # Client invitations (SPEC-015): never the token (only its hash, elsewhere).
-    "client_invitations": frozenset(
-        {"id", "tenant_id", "engagement_id", "email", "role", "invited_by", "expires_at"}
-    ),
-    "guidance_draft_decisions": frozenset(  # SPEC-035 (TASK-073)
-        {"tenant_id", "draft_id", "decision", "edited", "confirmed_read", "decided_by"}
-    ),
-    # Guidance drafts (SPEC-035; TASK-072): the drafter's, as made.
-    "guidance_drafts": frozenset(
-        {"tenant_id", "engagement_id", "request_item_id", "agent_run_id", "prompt_ref", "why"}
-        | {"good_looks_like", "effort", "effort_reason", "blocks_fieldwork", "blocks_reason"}
-        | {"passed_checks", "check_reasons"}
-    ),
-    # Fieldwork (SPEC-037; TASK-083): materiality, firm defaults, procedures and selections.
-    "engagement_materiality": frozenset(
-        {"tenant_id", "engagement_id", "overall", "performance", "trivial", "benchmark", "set_by"}
-        | {"basis_amount", "rate_pct", "performance_pct", "trivial_pct", "rationale"}  # SPEC-300
-    ),
-    # Planning (SPEC-300; TASK-301): the partner's materiality decision and the risk register.
-    "materiality_decisions": frozenset({"tenant_id", "materiality_id", "rationale", "decided_by"}),
-    "risks": frozenset({"tenant_id", "engagement_id", "number", "raised_by"}),
-    "risk_versions": frozenset(
-        {"tenant_id", "risk_id", "title", "area", "level", "assertions", "inherent", "control"}
-        | {"significant", "fraud", "rationale", "recorded_by"}
-    ),
-    "risk_approvals": frozenset({"tenant_id", "risk_version_id", "rationale", "approved_by"}),
-    # Completion (SPEC-301; TASK-302): severity, proposed entries and representations.
-    "finding_severities": frozenset(
-        {"tenant_id", "finding_id", "stage", "severity", "rationale", "set_by"}
-    ),
-    "finding_communications": frozenset(
-        {"tenant_id", "finding_id", "communicated_on", "recipients", "recorded_by"}
-    ),
-    "adjustments": frozenset(
-        {"tenant_id", "engagement_id", "kind", "number", "finding_id", "description", "raised_by"}
-    ),
-    "adjustment_lines": frozenset(
-        {"tenant_id", "adjustment_id", "position", "account_code", "debit", "credit"}
-    ),
-    "adjustment_events": frozenset({"tenant_id", "adjustment_id", "kind", "note", "by_user"}),
-    "representations": frozenset(
-        {"tenant_id", "engagement_id", "body", "finding_id", "adjustment_id", "raised_by"}
-    ),
-    "representation_removals": frozenset({"tenant_id", "representation_id", "removed_by"}),
-    # Work items (F-03-T05; migration 0068).
-    "work_items": frozenset(
-        {"tenant_id", "engagement_id", "client_id", "client_entity_id", "kind", "name"}
-        | {"period_start", "period_end", "office_id", "due_on", "created_by"}
-    ),
-    "assurance_work_items": frozenset(
-        {"work_item_id", "tenant_id", "engagement_id", "assurance_type", "phase", "is_group_audit"}
-    ),
-    "work_item_assignments": frozenset(
-        {"tenant_id", "work_item_id", "engagement_id", "user_id", "function", "assigned_by"}
-        | {"removed_at"}
-    ),
-    "engagement_entities": frozenset(
-        {"tenant_id", "engagement_id", "client_entity_id", "role", "ownership_pct"}
-    ),
-    "gate_policy_overrides": frozenset(  # F-03-T12 (0069)
-        {"tenant_id", "type_family", "gate", "requirement", "set_by"}
-    ),
-    "fieldwork_settings": frozenset({"tenant_id", "settings", "set_by"}),
-    "procedures": frozenset(
-        {"id", "tenant_id", "engagement_id", "definition", "definition_version", "parameters"}
-        | {"started_by"}
-    ),
-    "populations": frozenset(
-        {"id", "tenant_id", "procedure_id", "gl_snapshot_id", "rule_version", "entry_count"}
-        | {"line_count", "total_debit", "total_credit", "tied", "failure"}
-    ),
-    "selections": frozenset(
-        {"id", "tenant_id", "procedure_id", "population_id", "parameters", "criteria_version"}
-        | {"random_method", "seed", "item_count", "created_by"}
-    ),
-    "selected_items": frozenset(
-        {"tenant_id", "selection_id", "position", "posted_on", "kind", "reference"}
-        | {"counterparty", "line_nos", "accounts", "amount", "descriptions", "rules", "reason"}
-        | {"band", "recorded_bill_reference", "recorded_bill_date"}  # SPEC-038 (TASK-087)
-    ),
-    "engagement_accounts": frozenset(  # SPEC-038 (TASK-086)
-        {"tenant_id", "engagement_id", "role", "account_codes", "confirmed_by"}
-    ),
-    # The entry assessor (SPEC-037 Q4; TASK-085): proposals, as made.
-    "entry_assessments": frozenset(
-        {"tenant_id", "engagement_id", "selected_item_id", "agent_run_id", "prompt_ref"}
-        | {"verdict", "shown_verdict", "rationale", "citations"}
-    ),
-    # Fieldwork results and workpapers (SPEC-037; TASK-084; ADR-131).
-    "procedure_session_events": frozenset(
-        {"tenant_id", "procedure_id", "kind", "by_user"}
-    ),  # SPEC-044 (TASK-109)
-    "findings": frozenset(
-        {
-            "tenant_id",
-            "engagement_id",
-            "procedure_id",
-            "selected_item_id",
-            "title",
-            "description",
-            "raised_by",
-        }
-    ),  # SPEC-043 (TASK-107)
-    "misstatements": frozenset(
-        {"tenant_id", "finding_id", "kind", "amount", "account_code", "corrected", "recorded_by"}
-    ),  # SPEC-043
-    "client_item_responses": frozenset(
-        {"tenant_id", "engagement_id", "request_item_id", "kind", "reason", "note", "by_user"}
-    ),  # SPEC-042 (TASK-106)
-    "client_list_done": frozenset({"tenant_id", "engagement_id", "by_user"}),  # SPEC-042
-    "review_notes": frozenset(
-        {"tenant_id", "engagement_id", "procedure_id", "selected_item_id", "body", "raised_by"}
-    ),  # SPEC-041 (TASK-103)
-    "review_note_events": frozenset(
-        {"tenant_id", "review_note_id", "kind", "body", "by_user"}
-    ),  # SPEC-041 (TASK-103)
-    "selection_approvals": frozenset(
-        {"tenant_id", "selection_id", "approved_by", "note"}
-    ),  # SPEC-040 (TASK-100)
-    "item_signoffs": frozenset(
-        {"tenant_id", "selected_item_id", "item_result_id", "level", "signed_by"}
-    ),  # SPEC-040 (TASK-100)
-    "item_results": frozenset(
-        {"tenant_id", "selected_item_id", "result", "note", "evidence_version_ids"}
-        | {"recorded_by", "relates_to_year"}
-        | {"adopted_assessment_id"}  # SPEC-044 (TASK-109)
-    ),
-    "item_support_requests": frozenset(
-        {"tenant_id", "selected_item_id", "request_item_id", "requested_by"}
-    ),
-    "procedure_conclusions": frozenset({"tenant_id", "procedure_id", "text", "written_by"}),
-    "workpaper_versions": frozenset(
-        {"id", "tenant_id", "procedure_id", "version", "selection_id", "result_ids"}
-        | {"conclusion_id", "materiality_id", "sha256"}
-    ),
-    "workpaper_signatures": frozenset(
-        {"tenant_id", "workpaper_version_id", "kind", "signed_by", "role"}
-    ),
-    # Drafted guidance on templates (SPEC-035 Q3; TASK-074): drafts and decisions, as made.
-    "template_guidance_drafts": frozenset(
-        {"tenant_id", "methodology_version_id", "position", "agent_run_id", "prompt_ref", "why"}
-        | {"good_looks_like", "effort", "effort_reason", "blocks_fieldwork", "blocks_reason"}
-        | {"passed_checks", "check_reasons"}
-    ),
-    "template_guidance_decisions": frozenset(
-        {"tenant_id", "draft_id", "decision", "why", "good_looks_like", "effort"}
-        | {"blocks_fieldwork", "edited", "confirmed_read", "decided_by"}
-    ),
-    # General ledger detail (SPEC-034; TASK-069): snapshots, balances, entries; imports.
-    "gl_snapshots": frozenset(
-        {"id", "tenant_id", "client_entity_id", "period_start", "period_end", "source"}
-        | {"raw_fingerprint", "tb_snapshot_id", "line_count", "total_debit", "total_credit"}
-        | {"kind"}  # SPEC-038 (TASK-086)
-    ),
-    "gl_account_balances": frozenset(
-        {"tenant_id", "snapshot_id", "account_code", "account_name", "opening", "debit"}
-        | {"credit", "closing", "tb_closing", "opening_derived"}
-    ),
-    "gl_entries": frozenset(
-        {"tenant_id", "snapshot_id", "line_no", "account_code", "posted_on", "reference"}
-        | {"kind", "counterparty", "description", "debit", "credit", "source_ref"}
-    ),
-    "gl_imports": frozenset(
-        {"id", "tenant_id", "engagement_id", "client_entity_id", "format", "period_start"}
-        | {"period_end", "storage_key", "storage_version_id", "fingerprint", "size_bytes"}
-        | {"uploaded_by", "on_behalf"}
-        | {"kind"}  # SPEC-038 (TASK-086)
-    ),
-    # Inbox match proposals (SPEC-033; TASK-065): the matcher's, as made.
-    "inbox_match_runs": frozenset(
-        {"id", "tenant_id", "engagement_id", "inbox_file_id", "agent_run_id", "prompt_ref"}
-        | {"none_fit", "truncated"}
-    ),
-    "inbox_match_proposals": frozenset(
-        {"tenant_id", "match_id", "rank", "request_item_id", "confidence", "rationale"}
-        | {"citations", "shown"}
-    ),
-    # Comments (SPEC-032; TASK-062): the text sealed; mentions, redactions, last reads.
-    "comments": frozenset(
-        {"id", "tenant_id", "engagement_id", "request_item_id", "evidence_version_id"}
-        | {"author_user_id", "author_side", "visibility", "body_sealed", "body_fingerprint"}
-        | {"corrects_comment_id"}
-    ),
-    "comment_mentions": frozenset({"tenant_id", "comment_id", "user_id"}),
-    "comment_redactions": frozenset({"tenant_id", "comment_id", "redacted_by", "reason"}),
-    "comment_reads": frozenset(
-        {"tenant_id", "user_id", "request_item_id", "evidence_version_id", "last_read_at"}
-    ),
-    # Notifications (SPEC-013): identifiers only; one per recipient per event.
-    "notifications": frozenset(
-        {"id", "tenant_id", "recipient_user_id", "kind", "event_id", "engagement_id"}
-        | {"subject_type", "subject_id"}
-    ),
-    # Break-glass (SPEC-012): requested by staff; lifecycle columns updated as it is approved.
-    "support_sessions": frozenset(
-        {"id", "tenant_id", "staff_id", "staff_subject", "reason", "scope", "duration_minutes"}
-        | {"emergency"}
-    ),
+    "budgets": frozenset({"tenant_id", "monthly_soft_usd", "monthly_hard_usd", "updated_by"}),
     # Feature flags (SPEC-011): set per firm by operators.
     "feature_flag_states": frozenset({"tenant_id", "flag", "value", "set_by", "reason"}),
-    # Knowledge (SPEC-009): vectors and status are set later by the embedding workflow.
-    "knowledge_documents": frozenset(
-        {"id", "tenant_id", "title", "source_kind", "media_type", "fingerprint", "char_count"}
-        | {"added_by"}
-    ),
-    "knowledge_chunks": frozenset(
-        {"tenant_id", "document_id", "position", "heading_path", "text", "char_count"}
-    ),
-    "engagement_members": frozenset({"tenant_id", "engagement_id", "user_id", "role"}),
-    "evidence_items": frozenset(
-        {"id", "tenant_id", "engagement_id", "title", "created_by_kind", "created_by_id"}
-    ),
-    "evidence_versions": frozenset(
-        {"id", "tenant_id", "engagement_id", "evidence_item_id", "version_no", "fingerprint"}
-        | {"storage_key", "storage_version_id", "size_bytes", "media_type", "source", "method"}
-        | {"pulled_at", "period_start", "period_end", "client_entity_id", "snapshot_id"}
-        | {"idempotency_key"}
-        | {"upload_note"}  # SPEC-023: written once, at insert
-    ),
-    "staff_invitations": frozenset(  # SPEC-024 (TASK-041)
-        {"id", "tenant_id", "email", "firm_role", "invited_by", "expires_at"}
-    ),
-    # SPEC-023 (TASK-039): files dropped at the engagement level, waiting to be matched.
-    "inbox_files": frozenset(
-        {"tenant_id", "engagement_id", "file_name", "media_type", "size_bytes", "fingerprint"}
-        | {"storage_key", "storage_version_id", "uploaded_by", "uploaded_by_staff", "note"}
-    ),
 }
-APP_INSERT_COLUMNS.update(
-    {
-        "sync_runs": frozenset(
-            {"id", "tenant_id", "connection_id", "engagement_id", "request_item_id", "dataset"}
-            | {"period_start", "period_end", "started_by", "client_entity_id"}
-        ),
-        "ledger_snapshots": frozenset(
-            {"id", "tenant_id", "client_entity_id", "period_start", "period_end", "pulled_at"}
-            | {"source", "raw_fingerprint", "line_count", "total_debit", "total_credit"}
-        ),
-        "trial_balance_lines": frozenset(
-            {"id", "tenant_id", "snapshot_id", "account_code", "account_name", "debit"}
-            | {"credit", "source_ref"}
-        ),
-        "fulfilments": frozenset(
-            {"id", "tenant_id", "request_item_id", "evidence_version_id", "created_by_kind"}
-            | {"created_by_id", "engagement_id"}
-        ),
-        # SPEC-020 (TASK-036): a client admin connects; states and sealed secrets are the flow's.
-        "connections": frozenset(
-            {"id", "tenant_id", "client_entity_id", "provider", "scopes", "created_by"}
-        ),
-        "connection_states": frozenset(
-            {"tenant_id", "engagement_id", "client_entity_id", "user_id", "provider"}
-            | {"state_hash", "expires_at"}
-        ),
-        "connection_secrets": frozenset({"connection_id", "tenant_id", "sealed"}),
-        "agent_runs": frozenset(
-            {"id", "tenant_id", "agent_id", "spec_version", "engagement_id", "task_scope"}
-            | {"evidence_version_id", "initiator_user_id", "source_event_id"}
-            | {"inbox_file_id"}  # SPEC-033 (TASK-066): the matcher's file
-            | {"methodology_version_id"}  # SPEC-035 Q3 (TASK-074): a firm-level run's version
-            | {"shadow"}  # SPEC-036 (TASK-076): started in shadow
-        ),
-        "screening_results": frozenset(
-            {"id", "tenant_id", "engagement_id", "evidence_version_id", "agent_run_id"}
-            | {"action", "confidence", "rationale", "citations", "unverified"}
-        ),
-        "usage_records": frozenset(
-            {"id", "tenant_id", "engagement_id", "agent_id", "agent_run_id", "prompt_id"}
-            | {"prompt_version", "model", "tier", "input_tokens", "output_tokens", "cost_usd"}
-            | {"outcome", "inputs_hash", "route"}
-            | {"boundary_basis", "terms_version"}  # SPEC-036 (TASK-075)
-        ),
-        "review_decisions": frozenset(
-            {"id", "tenant_id", "engagement_id", "evidence_version_id", "request_item_id"}
-            | {"decision", "reason_code", "note", "screening_result_id", "corrects_proposal"}
-            | {"actor_kind", "actor_id"}
-        ),
-        "messages": frozenset(
-            {"id", "tenant_id", "engagement_id", "channel", "recipient_ref", "body", "status"}
-            | {"violations", "created_by"}
-        ),
-        "budgets": frozenset({"tenant_id", "monthly_soft_usd", "monthly_hard_usd", "updated_by"}),
-        "review_assignments": frozenset(
-            {"tenant_id", "evidence_version_id", "engagement_id", "assignee_user_id"}
-            | {"assigned_by"}
-        ),
-    }
-)
 # Tables whose rows no role may change or remove: a BEFORE UPDATE OR DELETE trigger and a BEFORE
 # TRUNCATE trigger must call this function (ADR-004 second layer, TASK-009).
 IMMUTABLE_TABLES: dict[str, str] = {
@@ -444,222 +92,24 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "gl_entries": "ledger_immutable",
     "trial_balance_lines": "ledger_immutable",
 }
-# Columns the app may update; any other UPDATE on these tables is reported (TASK-008). Tables not
-# listed here keep whatever their migration grants (insert-only tables grant none).
-APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
-    "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),
-    "procedures": frozenset({"parameters", "status", "failure_code"}),  # SPEC-037 (TASK-083)
-    "engagements": frozenset(
-        {"status", "methodology_version_id"}  # SPEC-008: pinned once
-        | {"ai_excluded_at", "ai_excluded_by", "ai_excluded_reason"}  # SPEC-036 (TASK-076)
-    ),
-    "request_items": frozenset(
-        {"status", "client_visible", "client_assignee_user_id"}
-        | {"retrievability_tier", "dataset", "tier_source", "tier_rule"}  # SPEC-022
-        | {"due_on"}  # SPEC-027 (TASK-051)
-        | {"document_kind", "document_kind_source"}  # SPEC-029 (TASK-055)
-        | {"why", "good_looks_like", "still_needed", "blocks_fieldwork", "effort"}  # SPEC-031
-        | {"guidance_source"}
-        | {"guidance_approved_by"}  # SPEC-035 (TASK-073)
-        | {"sent_at", "na_reason", "na_note", "na_by", "na_at", "client_ignored_at"}  # F-03-T15
-        | {"incorporation_state", "incorporated_by", "incorporated_at"}
-    ),
-    "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
-    "work_items": frozenset({"name", "status", "due_on", "archived_at", "archive_locked_at"}),
-    "request_lists": frozenset(
-        {"default_due_on"}  # SPEC-027 (TASK-051)
-        | {"status", "published_at", "published_by", "marked_done_at", "marked_done_by"}  # T14
-    ),
-    "assurance_work_items": frozenset({"phase", "auto_mode"}),  # F-03-T05 (0068)
-    "connections": frozenset(
-        {"status", "last_checked_at", "last_check_ok", "revoked_at", "revoked_by"}
-    ),
-    "connection_states": frozenset({"used_at"}),  # SPEC-020: spent once
-    "staff_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
-    # SPEC-024 (TASK-042): the firm's autonomy level and its onboarding acknowledgements.
-    "firms": frozenset(
-        {"autonomy_level", "autonomy_set_at", "budget_reviewed_at", "walls_none_needed_at"}
-        | {"sso_skipped_at", "onboarding_dismissed_at"}
-        | {"require_letter"}  # SPEC-025 (TASK-044)
-        | {"drafted_guidance_to_clients"}  # SPEC-035 (TASK-073)
-        | {"ai_client_data_at", "ai_client_data_by", "ai_client_data_material"}  # SPEC-036
-        | {"agents_paused_at", "agents_paused_by"}  # SPEC-027 (TASK-050): the firm switch
-        | {"time_zone"}  # SPEC-027 (TASK-051): the agent's daily tick
-    ),
-    # SPEC-027 (TASK-050): an engagement's agent paused or resumed.
-    "engagement_agents": frozenset(
-        {"paused_at", "paused_by", "reason", "updated_at", "self_paused_reason"}
-    ),
-    # SPEC-028 (TASK-052): an import's scan result and what became of it.
-    # SPEC-027 (TASK-051): a drafted reminder is sent or dismissed by a person.
-    "reminders": frozenset({"status", "note", "decided_by", "decided_at"}),
-    # SPEC-025 (TASK-044): a person answers once; the letter's record is replaced in place.
-    "independence_confirmations": frozenset(
-        {"status", "statement_version", "note", "answered_at"}
-    ),
-    "engagement_letters": frozenset(
-        {"status", "letter_date", "reason", "link", "recorded_by", "recorded_at"}
-        | {"file_key", "file_version_id", "file_fingerprint", "file_size", "file_media_type"}
-        | {"file_name"}
-    ),
-    "inbox_files": frozenset(  # SPEC-023: assigned or discarded, once
-        {"status", "assigned_item_id", "assigned_version_id", "decided_by", "decided_at"}
-    ),
+# Update columns for tables outside the modules (TASK-008); modules declare theirs.
+_PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     # SPEC-007 AC-7: a firm admin replaces the firm's budget (upsert).
     "budgets": frozenset({"monthly_soft_usd", "monthly_hard_usd", "updated_by", "updated_at"}),
     "feature_flag_states": frozenset({"value", "set_by", "reason", "set_at"}),  # SPEC-011
-    "notifications": frozenset({"read_at"}),  # SPEC-013
-    "comment_reads": frozenset({"last_read_at"}),  # SPEC-032 (TASK-062)
-    "gl_imports": frozenset(  # SPEC-034 (TASK-069): where an upload stands
-        {"status", "failure_code", "failure_details", "gl_snapshot_id", "line_count"}
-        | {"updated_at"}
-    ),
-    "client_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
-    "support_sessions": frozenset(  # SPEC-012: lifecycle only
-        {"status", "approved_by_kind", "approved_by", "starts_at", "expires_at", "ended_at"}
-        | {"acknowledged_at"}
-    ),
-    # SPEC-009: document status, and each chunk's vector written once.
-    "knowledge_documents": frozenset({"status", "failure_code", "withdrawn_at"}),
-    "knowledge_chunks": frozenset({"embedding", "embedding_model", "embedded_at"}),
-    "agent_runs": frozenset(
-        {"status", "context_hash", "output", "failure_code", "finished_at"}
-        | {"queued_reason", "estimated_start_at"}
-    ),
-    "sync_runs": frozenset(
-        {"status", "raw_storage_key", "raw_version_id", "raw_fingerprint", "snapshot_id"}
-        | {"raw_size_bytes", "raw_pulled_at", "failure_code", "finished_at", "source"}
-        | {"evidence_version_id", "queued_reason", "estimated_start_at"}
-    ),
 }
-# Who owns each table (ADR-103): a module or kernel package. Every table must be listed, and every
-# listed table must exist. Modules touch only their own tables (ADR-008).
-TABLE_OWNERS: dict[str, str] = {
+# Tables owned outside the modules (ADR-103): migrations, kernel packages, the AI gateway and
+# evaluation tooling. Module tables come from each module's registry.py (P-39; F-03-T07).
+_PLATFORM_TABLE_OWNERS: dict[str, str] = {
     "alembic_version": "migrations",
     "audit_events": "kernel.uow",
     "outbox": "kernel.uow",
-    "firms": "identity",
-    "users": "identity",
-    "memberships": "identity",
-    "engagement_members": "identity",
-    "ethical_walls": "identity",
-    "clients": "organisations",
-    "client_entities": "organisations",
-    "engagements": "engagements",
-    "methodology_templates": "engagements",
-    "methodology_versions": "engagements",
-    "methodology_areas": "engagements",
-    "methodology_request_items": "engagements",
-    "methodology_account_rules": "engagements",
-    "request_lists": "requests",
-    "request_categories": "requests",  # F-03-T14 (0070)
-    "request_items": "requests",
-    "evidence_items": "evidence",
-    "evidence_versions": "evidence",
-    "inbox_files": "evidence",
-    # SPEC-025 (TASK-044): acceptance, independence and the letter, recorded per engagement.
-    "engagement_acceptance": "engagements",
-    "independence_confirmations": "engagements",
-    "engagement_agents": "agents",  # SPEC-027 (TASK-050)
-    "agent_activity": "agents",
-    "ledger_imports": "connections",  # SPEC-028 (TASK-052)
-    "upload_extractions": "evidence",  # SPEC-029 (TASK-054)
-    "upload_checks": "evidence",  # SPEC-029 (TASK-055)
-    "upload_previews": "evidence",  # SPEC-029 (TASK-056)
-    "upload_preview_pages": "evidence",
-    "upload_reviews": "agents",  # SPEC-030 (TASK-058)
-    "upload_review_flags": "agents",
-    "inbox_match_runs": "agents",  # SPEC-033 (TASK-065)
-    "gl_snapshots": "ledger",  # SPEC-034 (TASK-069)
-    "guidance_drafts": "agents",  # SPEC-035 (TASK-072)
-    "guidance_draft_decisions": "agents",  # SPEC-035 (TASK-073)
-    "template_guidance_drafts": "agents",  # SPEC-035 Q3 (TASK-074)
-    "engagement_materiality": "fieldwork",  # SPEC-037 (TASK-083)
-    "fieldwork_settings": "fieldwork",
-    "procedures": "fieldwork",
-    "populations": "fieldwork",
-    "selections": "fieldwork",
-    "selected_items": "fieldwork",
-    "entry_assessments": "agents",  # SPEC-037 Q4 (TASK-085)
-    "engagement_accounts": "fieldwork",  # SPEC-038 (TASK-086)
-    "item_results": "fieldwork",  # SPEC-037 (TASK-084)
-    "selection_approvals": "fieldwork",  # SPEC-040 (TASK-100)
-    "review_notes": "fieldwork",  # SPEC-041 (TASK-103)
-    "client_item_responses": "requests",  # SPEC-042 (TASK-106)
-    "findings": "fieldwork",  # SPEC-043 (TASK-107)
-    "procedure_session_events": "fieldwork",  # SPEC-044 (TASK-109)
-    "misstatements": "fieldwork",
-    "materiality_decisions": "fieldwork",  # SPEC-300 (TASK-301)
-    "risks": "fieldwork",
-    "risk_versions": "fieldwork",
-    "risk_approvals": "fieldwork",
-    "finding_severities": "fieldwork",  # SPEC-301 (TASK-302)
-    "finding_communications": "fieldwork",
-    "adjustments": "fieldwork",
-    "adjustment_lines": "fieldwork",
-    "adjustment_events": "fieldwork",
-    "representations": "fieldwork",
-    "representation_removals": "fieldwork",
-    "work_items": "engagements",  # F-03-T05 (0068)
-    "assurance_work_items": "engagements",
-    "work_item_assignments": "engagements",
-    "engagement_entities": "engagements",
-    "gate_policy_overrides": "engagements",  # F-03-T12 (0069)
-    "client_list_done": "requests",
-    "review_note_events": "fieldwork",
-    "item_signoffs": "fieldwork",  # SPEC-040 (TASK-100)
-    "item_support_requests": "fieldwork",
-    "procedure_conclusions": "fieldwork",
-    "workpaper_versions": "fieldwork",
-    "workpaper_signatures": "fieldwork",
-    "agent_stages": "agents",  # SPEC-036 (TASK-076): owner-written, app reads only
-    "template_guidance_decisions": "agents",  # SPEC-035 Q3 (TASK-074)
-    "gl_account_balances": "ledger",
-    "gl_entries": "ledger",
-    "gl_imports": "connections",
-    "inbox_match_proposals": "agents",
-    "reminders": "agents",  # SPEC-027 (TASK-051)
-    "reminder_items": "agents",
-    "engagement_letters": "engagements",
-    "connections": "connections",
-    "sync_runs": "connections",
-    "connection_states": "connections",
-    "connection_secrets": "connections",
-    "ledger_snapshots": "ledger",
-    "trial_balance_lines": "ledger",
-    "fulfilments": "requests",
-    "agent_runs": "agents",
-    "screening_results": "agents",
-    # Review queues (SPEC-004 Q4): evidence owns decisions, assignments and the catalogue.
-    "review_decisions": "evidence",
-    "messages": "communications",
-    "review_assignments": "evidence",
-    "review_reason_codes": "evidence",
     # Evaluation runs (SPEC-005 Q2): written only by the evaluation tooling.
     "eval_runs": "abacus_tools.evals",
     "eval_case_results": "abacus_tools.evals",
     "usage_records": "ai_gateway",
     "budgets": "ai_gateway",  # SPEC-007 Q2
     "feature_flag_states": "kernel.flags",  # SPEC-011
-    "support_sessions": "identity",  # SPEC-012
-    "notifications": "notifications",  # SPEC-013
-    # SPEC-032 (TASK-062 Q1): comments live with the request items they discuss.
-    "comments": "requests",
-    "comment_mentions": "requests",
-    "comment_redactions": "requests",
-    "comment_reads": "requests",
-    # SPEC-015: invitations, and the token and failure tables reached only by definer functions.
-    "client_invitations": "identity",
-    "invitation_tokens": "identity",
-    "invitation_failures": "identity",
-    # SPEC-024 (TASK-040): sign-up codes and attempts, reached only through `firm_signup`.
-    "signup_codes": "identity",
-    "signup_attempts": "identity",
-    # SPEC-024 (TASK-041): staff invitations, and their tokens behind definer functions.
-    "staff_invitations": "identity",
-    "staff_invitation_tokens": "identity",
-    "knowledge_documents": "agents",  # SPEC-009 Q5
-    "knowledge_chunks": "agents",
     # The work slot ledger (TASK-018 D3): reached only through SECURITY DEFINER functions.
     "work_slots": "kernel.slots",
     "work_waiters": "kernel.slots",
@@ -667,6 +117,31 @@ TABLE_OWNERS: dict[str, str] = {
     # Provider capacity (TASK-018c): through SECURITY DEFINER functions only, like the slots.
     "provider_capacity": "ai_gateway",
 }
+
+
+def _collect() -> tuple[
+    dict[str, str], frozenset[str], dict[str, frozenset[str]], dict[str, frozenset[str]]
+]:
+    """Every module's registry, merged with the platform's; a table claimed twice fails."""
+    owners = dict(_PLATFORM_TABLE_OWNERS)
+    insert_only = set(_PLATFORM_INSERT_ONLY)
+    inserts = dict(_PLATFORM_INSERT_COLUMNS)
+    updates = dict(_PLATFORM_UPDATE_COLUMNS)
+    for module in MODULES:
+        registry = importlib.import_module(f"abacus.modules.{module}.registry")
+        for table in registry.TABLES:
+            if table in owners:
+                raise ValueError(f"{table} is claimed by {owners[table]} and {module}")
+            owners[table] = module
+        insert_only |= registry.INSERT_ONLY
+        inserts.update(registry.INSERT_COLUMNS)
+        updates.update(registry.UPDATE_COLUMNS)
+    return owners, frozenset(insert_only), inserts, updates
+
+
+# Who owns each table (ADR-103), the insert-only tables (ADR-004), and the columns the app may
+# insert (TASK-006) and update (TASK-008): every table listed, every listed table existing.
+TABLE_OWNERS, INSERT_ONLY_TABLES, APP_INSERT_COLUMNS, APP_UPDATE_COLUMNS = _collect()
 # Tables shared by every tenant, readable only through abacus_identity (ADR-002, TASK-007): the app
 # role has no privileges on them at all. Each entry is founder-reviewed (protected file).
 GLOBAL_TABLES = frozenset(

@@ -1,0 +1,6 @@
+# The platform module's actions (ADR-027; P-39, F-03-T07). Compiled with every other
+# module's file into identity/authz/_matrix.py by `make regenerate`.
+
+actions:
+  budget.read:              {firm_admin: allow, practice_leader: allow, platform_support: allow, platform_support_content: allow}   # SPEC-007
+  budget.manage:            {firm_admin: allow, mfa_recent: required}     # SPEC-007 Q3

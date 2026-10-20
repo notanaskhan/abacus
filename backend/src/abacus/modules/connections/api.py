@@ -66,6 +66,7 @@ from abacus.modules.connections.workflow_types import (
 )
 from abacus.modules.connections.workflows import GlImportWorkflow, RetrievalWorkflow
 from abacus.modules.engagements.api import register_auto_retrieval
+from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.requests.api import register_available_datasets
 
 # Outbox events this module handles (the worker's relay routes them): automatic retrieval when a
@@ -83,9 +84,17 @@ register_available_datasets(available_datasets)
 # SPEC-027 (TASK-050): the engagement agent starts this rule through engagements (ADR-106).
 register_auto_retrieval(auto_retrieve)
 
+# The routers the API mounts, in order (P-39; F-03-T07).
+ROUTERS: tuple[AbacusRouter, ...] = (
+    router,
+    connection_router,
+    complete_router,
+)
+
 __all__ = [
     "ACTIVITIES",
     "CONNECTORS",
+    "ROUTERS",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
     "ActionCapReached",

@@ -1,6 +1,6 @@
 """The permission matrix as typed rules, validated at import (ADR-027). PROTECTED.
 
-Source: `docs/architecture/permission-matrix.yaml`, rendered into `_matrix.py` by
+Source: `docs/architecture/permission-matrix/<module>.yaml`, rendered into `_matrix.py` by
 `abacus_tools.codegen.permission_matrix`. Anything this module doesn't understand is an import
 error, so a matrix change can't silently mean something new.
 """

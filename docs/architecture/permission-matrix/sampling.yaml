@@ -1,0 +1,7 @@
+# The sampling module's actions (ADR-027; P-39, F-03-T07). Compiled with every other
+# module's file into identity/authz/_matrix.py by `make regenerate`.
+
+actions:
+  # --- Sampling ---
+  sample_set.create:        {engagement_partner: allow, manager: allow, senior: allow}
+  support_match.run:        {system: allow, agent: task_scope}

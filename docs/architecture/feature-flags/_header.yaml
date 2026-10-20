@@ -1,0 +1,6 @@
+# Feature flag registry (ADR-089; SPEC-011). Change it in the same change as the code that reads the flag; make regenerate.
+#
+# Each flag: name, description, owner, created, expires (at most 90 days after created; an
+# expired flag fails `make check-fast` until it is removed), kind (boolean | variant), values
+# (variants only) and default (the safe behaviour: flags fall back to it on any read error).
+# Regenerate the runtime module after editing: python -m abacus_tools.codegen.feature_flags

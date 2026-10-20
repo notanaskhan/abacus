@@ -1,6 +1,7 @@
 """Public interface of the requests module; other modules import only this (ADR-008)."""
 
 from abacus.modules.engagements.api import register_roll_forward_items
+from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.requests.availability import register_available_datasets
 from abacus.modules.requests.classification import classify, document_kind
 from abacus.modules.requests.comments import register_comment_scope_check
@@ -44,7 +45,15 @@ from abacus.modules.requests.service import (
 # SPEC-025 (TASK-048 D1): last year's items for a roll-forward, and copying the confirmed ones.
 register_roll_forward_items(proposed_items, copy_items)
 
+# The routers the API mounts, in order (P-39; F-03-T07).
+ROUTERS: tuple[AbacusRouter, ...] = (
+    router,
+    firm_router,
+    methodology_router,
+)
+
 __all__ = [
+    "ROUTERS",
     "DueDatesChanged",
     "FulfilledVersion",
     "FulfilmentRef",

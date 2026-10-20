@@ -133,7 +133,7 @@ def test_d1_only_policy_agents_may_declare_follow_up_send() -> None:
 def test_the_matrix_s_only_agent_firm_setting_is_the_autonomy_policy() -> None:
     """The parsed matrix keeps `firm_setting`, not its name; `authorise` reads an agent's as the
     autonomy policy, so any other would be a silent grant. This fails first."""
-    actions = cast(dict[str, dict[str, str]], yaml.safe_load(pm.SOURCE.read_text())["actions"])
+    actions = cast(dict[str, dict[str, str]], yaml.safe_load(pm.source())["actions"])
     agent_settings = {
         name: entries["agent"]
         for name, entries in actions.items()

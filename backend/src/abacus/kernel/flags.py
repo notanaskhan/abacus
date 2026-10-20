@@ -1,6 +1,6 @@
 """Feature flags (ADR-089; SPEC-011). Read per firm, defaulting safely.
 
-Flags are declared in `docs/architecture/feature-flags.yaml` and generated into
+Flags are declared in `docs/architecture/feature-flags/<module>.yaml` and generated into
 `kernel/_flags.py`; code passes those constants, never names (FLAG-001). `flag()` returns the
 firm's value, or the registry default when the firm has none, the stored value is no longer
 valid, or the read fails (it never raises). Values are cached per process for 30 seconds (Q5).

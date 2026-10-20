@@ -140,11 +140,21 @@ register_synthetic_tenants(is_synthetic_firm)
 # SPEC-036 (TASK-076): and which real firms have opted in against today's terms.
 register_client_data_facts(opted_in=ai_client_data_opted_in)
 
+# The routers the API mounts, in order (P-39; F-03-T07).
+ROUTERS: tuple[AbacusRouter, ...] = (
+    router,
+    staff_router,
+    firm_support_router,
+    invitation_router,
+    signup_router,
+)
+
 __all__ = [
     "ACTION_KEY",
     "IDENTITY",
     "MFA_RECENT",
     "OWN",
+    "ROUTERS",
     "SELF",
     "STAFF",
     "WALL_SAFE",

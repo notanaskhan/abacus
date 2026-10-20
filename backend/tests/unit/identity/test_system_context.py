@@ -1,7 +1,7 @@
 """AC-10, AC-20: `SystemContext`, `system_context`, and `authorise` / `visible` for the platform
 actor (TASK-010a interface contract, "SystemContext").
 
-Expectations are generated from `docs/architecture/permission-matrix.yaml`: the system holds the
+Expectations are generated from `docs/architecture/permission-matrix/`: the system holds the
 role `system` and nothing else, so the matrix decides. The database read of engagement roles is
 replaced as in the permission-matrix tests; for a system context it must never be consulted.
 """
@@ -12,7 +12,6 @@ import dataclasses
 import json
 import uuid
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from typing import cast
 
 import pytest
@@ -38,7 +37,7 @@ from abacus_tools.codegen import permission_matrix as pm
 
 make_rule = matrix._rule  # pyright: ignore[reportPrivateUsage] -- contract tests the validator
 
-DOCUMENT = cast(dict[str, object], yaml.safe_load(Path(pm.SOURCE).read_text()))
+DOCUMENT = cast(dict[str, object], yaml.safe_load(pm.source()))
 YAML_ACTIONS = cast(dict[str, dict[str, str]], DOCUMENT["actions"])
 READ_VERBS = {"read", "read_metadata", "read_log"}
 CONTRACT_ALLOWED = {

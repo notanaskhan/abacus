@@ -321,18 +321,11 @@ async def test_ac1_every_worker_registers_every_modules_workflows_and_activities
 ) -> None:
     await worker_main.build_workers()
     for kwargs in boot.built:
-        assert kwargs["workflows"] == [
-            *worker_main.connections.WORKFLOWS,
-            *worker_main.agents.WORKFLOWS,
-            *worker_main.evidence.WORKFLOWS,  # SPEC-029 (TASK-054)
-            *worker_main.fieldwork.WORKFLOWS,  # SPEC-037 (TASK-083)
-        ]
-        assert kwargs["activities"] == [
-            *worker_main.connections.ACTIVITIES,
-            *worker_main.agents.ACTIVITIES,
-            *worker_main.evidence.ACTIVITIES,  # SPEC-029 (TASK-054)
-            *worker_main.fieldwork.ACTIVITIES,  # SPEC-037 (TASK-083)
-        ]
+        # F-03-T07: every worker module's, in MODULES order (SPEC-029, SPEC-037 among them).
+        assert kwargs["workflows"] == [w for m in worker_main.MODULES for w in m.WORKFLOWS]
+        assert kwargs["activities"] == [a for m in worker_main.MODULES for a in m.ACTIVITIES]
+        names = {m.__name__.split(".")[2] for m in worker_main.MODULES}
+        assert {"connections", "agents", "evidence", "fieldwork"} <= names
         assert kwargs["graceful_shutdown_timeout"] == worker_main.GRACEFUL_SHUTDOWN
 
 

@@ -18,8 +18,12 @@ register_comment_scope_check(comment_scope_kinds)
 WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()
 
+# The routers the API mounts, in order (P-39; F-03-T07).
+ROUTERS: tuple[()] = ()
+
 __all__ = [
     "ACTIVITIES",
+    "ROUTERS",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
     "Draft",

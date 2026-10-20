@@ -1,6 +1,6 @@
 """AC-6, AC-8, AC-20: the permission matrix, `authorise` and `visible` (TASK-007 contract).
 
-Tests over every (role, action) are generated from `docs/architecture/permission-matrix.yaml`, so
+Tests over every (role, action) are generated from `docs/architecture/permission-matrix/`, so
 a matrix change changes the tests with it (ADR-027). `authorise` reads the engagement role from the
 database when `resource.engagement_id` is set; here that read is replaced by `EngagementRoles`.
 """
@@ -48,7 +48,7 @@ MODIFIERS = {"mfa_recent", "requires", "notify", "independence"}
 make_rule = matrix._rule  # pyright: ignore[reportPrivateUsage] -- contract tests the validator
 make_decision = matrix._decision  # pyright: ignore[reportPrivateUsage] -- contract tests it
 
-DOCUMENT = cast(dict[str, object], yaml.safe_load(pm.SOURCE.read_text()))
+DOCUMENT = cast(dict[str, object], yaml.safe_load(pm.source()))
 YAML_ROLES = cast(list[str], DOCUMENT["roles"])
 YAML_ACTIONS = cast(dict[str, dict[str, str]], DOCUMENT["actions"])
 
@@ -190,19 +190,33 @@ async def _denied_layer(
 
 
 def test_ac20_generated_matrix_module_matches_the_yaml() -> None:
-    assert pm.render(pm.SOURCE.read_text()) == pm.TARGET.read_text()
+    assert pm.render(pm.source()) == pm.TARGET.read_text()
 
 
 def test_ac20_check_mode_returns_0_when_the_module_is_current() -> None:
     assert pm.main(["--check"]) == 0
 
 
+def _drifted(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """A copy of the matrix with one more module file (F-03-T07: the matrix is split)."""
+    for path in pm.SOURCE_DIR.glob("*.yaml"):
+        (tmp_path / path.name).write_text(path.read_text())
+    (tmp_path / "probe.yaml").write_text("actions:\n  probe.read: {firm_admin: allow}\n")
+    monkeypatch.setattr(pm, "SOURCE_DIR", tmp_path)
+
+
+def test_t07_an_action_in_two_module_files_is_refused(tmp_path: Path) -> None:
+    for path in pm.SOURCE_DIR.glob("*.yaml"):
+        (tmp_path / path.name).write_text(path.read_text())
+    (tmp_path / "zz.yaml").write_text("actions:\n  firm.manage_users: {firm_admin: allow}\n")
+    with pytest.raises(ValueError, match="duplicate key"):
+        pm.render(pm.source(tmp_path))
+
+
 def test_ac20_check_mode_returns_1_when_the_yaml_has_drifted(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    drifted = tmp_path / "permission-matrix.yaml"
-    drifted.write_text(pm.SOURCE.read_text() + "\n  probe.read: {firm_admin: allow}\n")
-    monkeypatch.setattr(pm, "SOURCE", drifted)
+    _drifted(monkeypatch, tmp_path)
     assert pm.main(["--check"]) == 1
 
 
@@ -210,9 +224,7 @@ def test_ac20_check_mode_does_not_write_the_target(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     before = pm.TARGET.read_text()
-    drifted = tmp_path / "permission-matrix.yaml"
-    drifted.write_text(pm.SOURCE.read_text() + "\n  probe.read: {firm_admin: allow}\n")
-    monkeypatch.setattr(pm, "SOURCE", drifted)
+    _drifted(monkeypatch, tmp_path)
     pm.main(["--check"])
     assert pm.TARGET.read_text() == before
 
@@ -223,11 +235,11 @@ def test_ac20_generate_mode_writes_the_rendered_module(
     target = tmp_path / "_matrix.py"
     monkeypatch.setattr(pm, "TARGET", target)
     assert pm.main([]) == 0
-    assert target.read_text() == pm.render(pm.SOURCE.read_text())
+    assert target.read_text() == pm.render(pm.source())
 
 
 def test_ac20_render_is_deterministic() -> None:
-    source = pm.SOURCE.read_text()
+    source = pm.source()
     assert pm.render(source) == pm.render(source)
 
 
@@ -261,7 +273,7 @@ def test_ac20_render_accepts_the_same_document_without_the_duplicate() -> None:
 
 
 def test_ac20_render_includes_every_action_and_role() -> None:
-    rendered = pm.render(pm.SOURCE.read_text())
+    rendered = pm.render(pm.source())
     for action in YAML_ACTIONS:
         assert action in rendered
     for role in YAML_ROLES:

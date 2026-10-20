@@ -32,6 +32,7 @@ import signal
 import sys
 from collections.abc import Sequence
 from datetime import timedelta
+from importlib import import_module
 
 from temporalio.client import Client
 from temporalio.worker import Worker
@@ -53,16 +54,19 @@ from abacus.kernel.temporal import payload_codec, temporal_client
 from abacus.kernel.temporal_metrics import ScheduleToStartInterceptor
 from abacus.kernel.uow import Handler
 from abacus.kernel.uow.relay import RoutingPublisher, run_relay
+from abacus.modules import MODULES as ALL_MODULES
 from abacus.modules.agents import api as agents
-from abacus.modules.communications import api as communications
-from abacus.modules.connections import api as connections
-from abacus.modules.evidence import api as evidence
 from abacus.modules.evidence.api import check_ready
-from abacus.modules.fieldwork import api as fieldwork
 from abacus.modules.notifications import api as notifications
 
 GRACEFUL_SHUTDOWN = timedelta(seconds=60)
-MODULES = (connections, agents, notifications, communications, evidence, fieldwork)  # SPEC-037
+# The modules with worker parts (subscriptions, workflows, activities), in MODULES order (P-39;
+# F-03-T07): a module's api.py declares them, so adding one never edits the worker.
+MODULES = tuple(
+    api
+    for api in (import_module(f"abacus.modules.{name}.api") for name in ALL_MODULES)
+    if hasattr(api, "SUBSCRIPTIONS")
+)
 SUBSCRIBERS = tuple(module.SUBSCRIPTIONS for module in MODULES)
 
 

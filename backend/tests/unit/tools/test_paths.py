@@ -26,7 +26,7 @@ ALL = {"backend": True, "frontend": True, "agents": True}
         (["evals/screener/suite.yaml"], True, False, True),
         (["backend/src/abacus/ai_gateway/call.py"], True, False, True),
         (["packages/api-client/openapi.json"], True, True, False),
-        (["docs/architecture/permission-matrix.yaml"], True, False, False),
+        (["docs/architecture/permission-matrix/requests.yaml"], True, False, False),
         (["docs/product/failure-taxonomy.md"], True, False, False),
         (["Makefile"], True, False, False),
         ([".github/workflows/ci.yml"], True, False, False),

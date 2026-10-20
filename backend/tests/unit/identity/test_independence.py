@@ -30,7 +30,7 @@ from abacus.modules.identity.authz import recording_checks
 from abacus.modules.identity.authz.matrix import RULES
 from abacus_tools.codegen import permission_matrix as pm
 
-DOCUMENT = cast(dict[str, object], yaml.safe_load(pm.SOURCE.read_text()))
+DOCUMENT = cast(dict[str, object], yaml.safe_load(pm.source()))
 ACTIONS = cast(dict[str, dict[str, str]], DOCUMENT["actions"])
 STAFF_ROLES = ("engagement_partner", "manager", "senior", "staff", "reviewer")
 MARKED = sorted(a for a, entries in ACTIONS.items() if entries.get("independence") == "required")

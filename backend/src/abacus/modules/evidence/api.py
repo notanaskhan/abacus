@@ -76,7 +76,13 @@ from abacus.modules.evidence.workflow_types import INBOX as UPLOAD_INBOX
 from abacus.modules.evidence.workflow_types import VERSION as UPLOAD_VERSION
 from abacus.modules.evidence.workflow_types import UploadInput
 from abacus.modules.evidence.workflows import UploadProcessing
-from abacus.modules.identity.api import register_member_removed
+from abacus.modules.identity.api import AbacusRouter, register_member_removed
+
+# The routers the API mounts, in order (P-39; F-03-T07).
+ROUTERS: tuple[AbacusRouter, ...] = (
+    router,
+    firm_router,
+)
 
 __all__ = [
     "ACTIVITIES",
@@ -86,6 +92,7 @@ __all__ = [
     "FIRST_LINE_ROW",
     "MAX_CONTENT_BYTES",
     "NAME_COLUMN",
+    "ROUTERS",
     "SUBSCRIPTIONS",
     "SUGGESTION_MIN_SCORE",
     "TOTAL_LABEL",
