@@ -147,7 +147,7 @@ async def test_the_registration_is_made_once_and_only_once(lookup: Lookup) -> No
     def other() -> Select[UUID]:
         raise AssertionError("never called")
 
-    registered = authz._active_engagements  # pyright: ignore[reportPrivateUsage]
+    registered = authz._active_engagements  # pyright: ignore[reportPrivateUsage] -- the registration under test
     assert registered is not None
     authz.register_active_engagements(registered)  # the same one again is fine
     with pytest.raises(RuntimeError, match="already registered"):

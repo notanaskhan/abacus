@@ -10,6 +10,7 @@ import hashlib
 import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import date
 from typing import Final, Literal, Protocol, cast
 
 import asyncpg
@@ -49,6 +50,7 @@ class Person:
 class Site:
     """One client with one entity and one open engagement holding one request item."""
 
+    tenant_id: uuid.UUID
     client_id: uuid.UUID
     entity_id: uuid.UUID
     engagement_id: uuid.UUID
@@ -204,7 +206,51 @@ class Seeder:
                 f"tenants/{tenant_id}/sha256/{fingerprint}",
             ),
         )
-        return Site(client_id, entity_id, engagement_id, item_id, version_id, marker)
+        return Site(tenant_id, client_id, entity_id, engagement_id, item_id, version_id, marker)
+
+    async def client_contact(self, site: Site, role: str = "client_admin") -> Person:
+        """A client user of the site's engagement (a `client` membership and a client role)."""
+        who = await self.person(site.tenant_id)
+        await self.run(
+            "UPDATE memberships SET kind = 'client' WHERE tenant_id = $1 AND user_id = $2",
+            who.tenant_id,
+            who.user_id,
+        )
+        await self.run(
+            "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+            "VALUES ($1, $2, $3, $4)",
+            who.tenant_id,
+            site.engagement_id,
+            who.user_id,
+            role,
+        )
+        return who
+
+    async def item(
+        self,
+        site: Site,
+        description: str,
+        *,
+        status: str = "open",
+        due_on: date | None = None,
+        assignee: Person | None = None,
+    ) -> uuid.UUID:
+        """Another request item on the site's engagement (its list is the site's)."""
+        return cast(
+            uuid.UUID,
+            await self.value(
+                "INSERT INTO request_items (tenant_id, engagement_id, request_list_id, "
+                "description, audit_area, created_by, status, due_on, client_assignee_user_id) "
+                "SELECT i.tenant_id, i.engagement_id, i.request_list_id, $2, 'Cash', "
+                "i.created_by, $3, $4, $5 FROM request_items i WHERE i.id = $1 "
+                "RETURNING id",
+                site.item_id,
+                description,
+                status,
+                due_on,
+                assignee.user_id if assignee is not None else None,
+            ),
+        )
 
     async def actions(self, tenant_id: uuid.UUID) -> list[str]:
         """The firm's audit trail, oldest first (actions only)."""

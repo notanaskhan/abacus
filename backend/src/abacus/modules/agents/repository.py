@@ -641,13 +641,20 @@ async def settle_reminder(
 async def set_self_paused(
     session: AsyncSession, tenant_id: UUID, engagement_id: UUID, reason: str | None
 ) -> None:
+    # The app role may INSERT only the columns a person's pause sets (migration 0039) and UPDATE
+    # `self_paused_reason` (0040): make the row, then update it, so the INSERT names no other.
     await session.execute(
         pg_insert(EngagementAgentState)
-        .values(tenant_id=tenant_id, engagement_id=engagement_id, self_paused_reason=reason)
-        .on_conflict_do_update(
-            index_elements=["tenant_id", "engagement_id"],
-            set_={"self_paused_reason": reason, "updated_at": func.now()},
+        .values(tenant_id=tenant_id, engagement_id=engagement_id)
+        .on_conflict_do_nothing(index_elements=["tenant_id", "engagement_id"])
+    )
+    await session.execute(
+        update(EngagementAgentState)
+        .where(
+            EngagementAgentState.tenant_id == tenant_id,
+            EngagementAgentState.engagement_id == engagement_id,
         )
+        .values(self_paused_reason=reason, updated_at=func.now())
     )
 
 
