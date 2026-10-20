@@ -138,6 +138,8 @@ class EngagementSummaryOut(BaseModel):
     fiscal_period_start: Annotated[date, classified("confidential")]
     fiscal_period_end: Annotated[date, classified("confidential")]
     created_at: Annotated[datetime, classified("internal")]
+    client_id: Annotated[UUID, classified("internal")]  # SPEC-303 (TASK-304)
+    client_entity_id: Annotated[UUID, classified("internal")]
 
 
 class EngagementOut(EngagementSummaryOut):

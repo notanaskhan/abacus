@@ -44,6 +44,7 @@ import { SignInCallback } from "./screens/SignInCallback";
 import { Gallery } from "./gallery/Gallery";
 import { Findings } from "./screens/Findings";
 import { Planning } from "./screens/Planning";
+import { ClientRecord, Clients } from "./screens/Clients";
 import { Signup } from "./screens/Signup";
 
 // Code-based routes (no file-router plugin): the firm workspace and the client portal (ADR-011).
@@ -209,6 +210,20 @@ const reviewRoute = createRoute({
 });
 
 // Firm admin (SPEC-016, SPEC-019 Q1): one section with tabs; Knowledge is on the rail for all staff.
+// SPEC-303 (TASK-304): clients, joined from the engagements the person can see.
+const firmClientsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/clients",
+  component: Clients,
+});
+const firmClientRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/clients/$clientId",
+  component: function ClientPage(): JSX.Element {
+    const { clientId } = firmClientRoute.useParams();
+    return <ClientRecord clientId={clientId} />;
+  },
+});
 const knowledgeRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/knowledge",
@@ -350,6 +365,8 @@ const routeTree = rootRoute.addChildren([
       planningRoute,
     ]),
     knowledgeRoute,
+    firmClientsRoute,
+    firmClientRoute,
     ...(import.meta.env.DEV ? [galleryRoute] : []),
     adminRoute.addChildren([
       methodologyRoute,

@@ -1693,9 +1693,17 @@ export type EngagementIn = {
  */
 export type EngagementOut = {
     /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
      * Client Entity Name
      */
     client_entity_name: string;
+    /**
+     * Client Id
+     */
+    client_id: string;
     /**
      * Client Name
      */
@@ -1739,9 +1747,17 @@ export type EngagementOut = {
  */
 export type EngagementSummaryOut = {
     /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
      * Client Entity Name
      */
     client_entity_name: string;
+    /**
+     * Client Id
+     */
+    client_id: string;
     /**
      * Client Name
      */

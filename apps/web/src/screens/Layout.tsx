@@ -117,6 +117,13 @@ function SignedIn(): JSX.Element {
             Engagements
           </Link>
           <Link
+            to="/clients"
+            data-current={path.startsWith("/clients") ? "true" : undefined}
+            className={NAV_LINK}
+          >
+            Clients
+          </Link>
+          <Link
             to="/knowledge"
             data-current={path.startsWith("/knowledge") ? "true" : undefined}
             className={NAV_LINK}

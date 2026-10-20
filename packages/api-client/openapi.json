@@ -3549,11 +3549,23 @@
       },
       "EngagementOut": {
         "properties": {
+          "client_entity_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Entity Id",
+            "type": "string"
+          },
           "client_entity_name": {
             "cls": "confidential",
             "maxLength": 200,
             "minLength": 1,
             "title": "Client Entity Name",
+            "type": "string"
+          },
+          "client_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Id",
             "type": "string"
           },
           "client_name": {
@@ -3633,6 +3645,8 @@
           "fiscal_period_start",
           "fiscal_period_end",
           "created_at",
+          "client_id",
+          "client_entity_id",
           "team"
         ],
         "title": "EngagementOut",
@@ -3640,11 +3654,23 @@
       },
       "EngagementSummaryOut": {
         "properties": {
+          "client_entity_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Entity Id",
+            "type": "string"
+          },
           "client_entity_name": {
             "cls": "confidential",
             "maxLength": 200,
             "minLength": 1,
             "title": "Client Entity Name",
+            "type": "string"
+          },
+          "client_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Id",
             "type": "string"
           },
           "client_name": {
@@ -3715,7 +3741,9 @@
           "client_entity_name",
           "fiscal_period_start",
           "fiscal_period_end",
-          "created_at"
+          "created_at",
+          "client_id",
+          "client_entity_id"
         ],
         "title": "EngagementSummaryOut",
         "type": "object"
