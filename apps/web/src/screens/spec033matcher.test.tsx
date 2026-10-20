@@ -8,8 +8,8 @@ import { InboxPanel } from "./InboxPanel";
 
 const E = "e1";
 const ITEMS = [
-  { id: "i1", description: "Debt agreements", status: "open" },
-  { id: "i2", description: "Lease agreements", status: "open" },
+  { id: "i1", description: "Debt agreements", status: "requested" },
+  { id: "i2", description: "Lease agreements", status: "requested" },
 ].map((i) => ({
   ...i,
   engagement_id: E,

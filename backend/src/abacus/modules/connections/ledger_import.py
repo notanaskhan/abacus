@@ -260,7 +260,7 @@ async def receive_export(
 async def _retrieve(ctx: AuthContext, engagement_id: UUID, period: Period) -> None:
     """Start the pipeline for the open trial balance items, as the person who uploaded."""
     for item in await request_items_for(ctx, engagement_id):
-        if item.status != "open" or item.dataset != "trial_balance":
+        if item.status not in ("draft", "requested") or item.dataset != "trial_balance":
             continue
         try:
             await trigger_retrieval(

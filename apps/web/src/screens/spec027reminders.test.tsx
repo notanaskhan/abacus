@@ -16,7 +16,7 @@ function item(over: Partial<RequestItemOut> = {}): RequestItemOut {
     engagement_id: E,
     description: "Bank statements",
     audit_area: "Cash",
-    status: "open",
+    status: "requested",
     created_at: "2026-01-02T00:00:00Z",
     ...over,
   };
@@ -34,7 +34,7 @@ describe("SPEC-027 due dates (TASK-051)", () => {
     expect(effectiveDue(item(), "2026-02-01")).toBe("2026-02-01");
     expect(effectiveDue(item(), null)).toBeNull();
     expect(isOverdue(item(), "2026-02-01", "2026-02-02")).toBe(true);
-    expect(isOverdue(item({ status: "received" }), "2026-02-01", "2026-02-02")).toBe(false);
+    expect(isOverdue(item({ status: "uploaded" }), "2026-02-01", "2026-02-02")).toBe(false);
     expect(isOverdue(item(), "2026-02-01", "2026-02-01")).toBe(false);
   });
 

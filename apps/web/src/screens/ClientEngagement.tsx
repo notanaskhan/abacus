@@ -102,7 +102,7 @@ export function ClientEngagement({ engagementId }: { engagementId: string }): JS
   const ignoredBy = new Map((responses.data ?? []).map((r) => [r.request_item_id, r]));
   const all = items.data ?? [];
   const doneCount = all.filter(
-    (i) => ignoredBy.has(i.id) || ["received", "ready_for_review", "accepted"].includes(i.status),
+    (i) => ignoredBy.has(i.id) || ["uploaded", "received", "not_applicable"].includes(i.status),
   ).length;
 
   const areas = new Map<string, RequestItemOut[]>();
@@ -253,7 +253,7 @@ function ClientItem({
   const takesFiles =
     ignored === undefined &&
     provided === null &&
-    ["open", "received", "needs_revision"].includes(item.status);
+    ["requested", "uploaded", "returned"].includes(item.status);
   const uploads = useQuery({ ...listUploadsOptions({ path: ids }), enabled: open });
   const uploaded = new Set((uploads.data ?? []).map((u) => u.evidence_version_id));
   const fromSystem = (view.data?.history ?? []).filter(
@@ -569,7 +569,7 @@ function NotApplicable({
       </p>
     );
   }
-  if (!["open", "needs_revision"].includes(item.status)) return null;
+  if (!["requested", "returned"].includes(item.status)) return null;
   if (!asking) {
     return (
       <div>

@@ -28,12 +28,12 @@ const ROWS: Row[] = [
   {
     id: "r1",
     name: "Trial balance as of year end",
-    status: "ready_for_review",
+    status: "uploaded",
     amount: 161345.67,
   },
-  { id: "r2", name: "General ledger detail", status: "needs_revision", amount: 218000 },
-  { id: "r3", name: "Bank confirmations", status: "open", amount: 52345.67 },
-  { id: "r4", name: "Fixed asset roll-forward", status: "accepted", amount: 1200 },
+  { id: "r2", name: "General ledger detail", status: "returned", amount: 218000 },
+  { id: "r3", name: "Bank confirmations", status: "requested", amount: 52345.67 },
+  { id: "r4", name: "Fixed asset roll-forward", status: "received", amount: 1200 },
 ];
 
 const COLUMNS: Column<Row>[] = [
@@ -168,7 +168,7 @@ export function Gallery(): JSX.Element {
         open={drawer}
         onOpenChange={setDrawer}
         title="Trial balance as of year end"
-        meta={<Status domain="request" value="ready_for_review" />}
+        meta={<Status domain="request" value="uploaded" />}
         footer={<Button>Accept</Button>}
       >
         <Fieldset title="Details">

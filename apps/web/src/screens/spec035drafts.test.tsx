@@ -10,8 +10,8 @@ import { GuidanceDrafts } from "./GuidanceDrafts";
 const E = "e1";
 const BASE = `/v1/engagements/${E}`;
 const ITEMS = [
-  { id: "i1", description: "Lease agreements", status: "open" },
-  { id: "i2", description: "Board minutes", status: "open" },
+  { id: "i1", description: "Lease agreements", status: "requested" },
+  { id: "i2", description: "Board minutes", status: "requested" },
 ].map((i) => ({
   ...i,
   engagement_id: E,

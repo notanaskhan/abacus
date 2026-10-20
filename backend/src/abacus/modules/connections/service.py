@@ -129,7 +129,7 @@ async def start_retrieval(
         item = await item_ref(tx, request_item_id)
         if item.engagement_id != engagement_id:
             raise NotFound("request_item")
-        if item.status not in ("open", "received"):
+        if item.status not in ("draft", "requested", "uploaded"):
             raise ItemNotFulfillable(item.status)
         existing = await active_run(tx.session, request_item_id, period.start, period.end)
         if existing is not None:

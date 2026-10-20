@@ -1336,10 +1336,7 @@ export type DecisionOut = {
      * Id
      */
     id: string;
-    /**
-     * Item Status
-     */
-    item_status: string;
+    item_status: RequestStatus;
     /**
      * Reason Code
      */
@@ -2780,10 +2777,7 @@ export type ItemHitOut = {
      * Id
      */
     id: string;
-    /**
-     * Status
-     */
-    status: string;
+    status: RequestStatus;
 };
 
 /**
@@ -4373,10 +4367,7 @@ export type RequestItemOut = {
      * Retrievability Tier
      */
     retrievability_tier?: 'A' | 'B' | 'C' | 'D' | 'E' | null;
-    /**
-     * Status
-     */
-    status: 'open' | 'received' | 'ready_for_review' | 'needs_revision';
+    status: RequestStatus;
     /**
      * Still Needed
      */
@@ -4394,6 +4385,11 @@ export type RequestItemOut = {
      */
     why?: string | null;
 };
+
+/**
+ * RequestStatus
+ */
+export type RequestStatus = 'draft' | 'requested' | 'uploaded' | 'received' | 'returned' | 'not_applicable';
 
 /**
  * RespondedOut

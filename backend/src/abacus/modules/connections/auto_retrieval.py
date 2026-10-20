@@ -116,7 +116,7 @@ async def auto_retrieve(
     items = [
         i
         for i in await request_items_for(ctx, engagement_id)
-        if i.status == "open"
+        if i.status in ("draft", "requested")
         and i.retrievability_tier == "A"
         and i.dataset in datasets
         and (only is None or i.id == only)

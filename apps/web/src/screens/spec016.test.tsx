@@ -38,7 +38,7 @@ function graph(over: Partial<EngagementGraphOut> = {}): EngagementGraphOut {
           {
             id: "i1",
             description: "Aged receivables listing",
-            status: "received",
+            status: "uploaded",
             retrievability_tier: "A",
             evidence_version_id: "v9",
             screening_action: "needs_revision",
@@ -46,7 +46,7 @@ function graph(over: Partial<EngagementGraphOut> = {}): EngagementGraphOut {
           {
             id: "i2",
             description: "Credit notes after year end",
-            status: "open",
+            status: "requested",
             retrievability_tier: "B",
             evidence_version_id: null,
             screening_action: null,

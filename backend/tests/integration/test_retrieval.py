@@ -85,7 +85,7 @@ EXPECTED_EVENTS = [
     "evidence_item.created",
     "evidence_version.created",
     "fulfilment.created",
-    "request_item.received",
+    "request_item.uploaded",
     "sync_run.succeeded",
 ]
 Role = Literal["engagement_partner", "manager", "senior", "staff", "reviewer"]
@@ -278,7 +278,7 @@ class Seeder:
             uuid.UUID,
             await self.value(
                 "INSERT INTO request_lists (tenant_id, engagement_id) VALUES ($1, $2) "
-                "ON CONFLICT (tenant_id, engagement_id) DO UPDATE SET tenant_id = $1 "
+                "ON CONFLICT ON CONSTRAINT request_lists_binder_key DO UPDATE SET tenant_id = $1 "
                 "RETURNING id",
                 tenant_id,
                 engagement_id,
@@ -659,7 +659,7 @@ async def test_ac20_another_firms_request_item_is_not_found(seed: Seeder, world:
     assert await seed.count("sync_runs", other) == 0
 
 
-@pytest.mark.parametrize("status", ["ready_for_review", "needs_revision"])
+@pytest.mark.parametrize("status", ["returned", "received"])
 async def test_ac20_an_item_past_receipt_is_not_fulfillable(
     seed: Seeder, world: World, status: str
 ) -> None:
@@ -670,7 +670,7 @@ async def test_ac20_an_item_past_receipt_is_not_fulfillable(
 
 
 async def test_ac20_a_received_item_may_be_retrieved_again(seed: Seeder, world: World) -> None:
-    await seed.run("UPDATE request_items SET status = 'received' WHERE id = $1", world.item_id)
+    await seed.run("UPDATE request_items SET status = 'uploaded' WHERE id = $1", world.item_id)
     assert await _start(world)
 
 
@@ -895,7 +895,7 @@ async def test_ac10_the_pipeline_makes_one_snapshot_one_version_one_fulfilment(
     for table in ("ledger_snapshots", "evidence_items", "evidence_versions", "fulfilments"):
         assert await seed.count(table, world.tenant_id) == 1
     assert await seed.count("trial_balance_lines", world.tenant_id) == len(TB.lines)
-    assert await seed.item_status(world.item_id) == "received"
+    assert await seed.item_status(world.item_id) == "uploaded"
 
 
 async def test_ac10_the_snapshot_holds_the_validated_trial_balance(
@@ -965,7 +965,7 @@ async def test_ac10_the_item_is_fulfilled_by_rule(seed: Seeder, world: World) ->
     assert fulfilment["request_item_id"] == world.item_id
     assert fulfilment["evidence_version_id"] == result.evidence_version_id
     assert fulfilment["engagement_id"] == world.engagement_id
-    assert await seed.item_status(world.item_id) == "received"
+    assert await seed.item_status(world.item_id) == "uploaded"
 
 
 async def test_ac10_audit_events_are_in_order_with_the_right_actors(
@@ -1055,7 +1055,7 @@ async def test_ac20_concurrent_render_makes_one_version_and_one_fulfilment(
     assert await seed.count("fulfilments", world.tenant_id) == 1
     actions = await seed.actions(world.tenant_id)
     assert actions.count("sync_run.succeeded") == 1
-    assert actions.count("request_item.received") == 1
+    assert actions.count("request_item.uploaded") == 1
 
 
 async def test_ac20_a_snapshot_repeated_mid_run_is_quiet(seed: Seeder, world: World) -> None:
@@ -1090,8 +1090,8 @@ async def test_ac20_a_second_item_for_the_same_pull_shares_the_snapshot_not_the_
     assert await seed.count("ledger_snapshots", world.tenant_id) == 1
     assert (await seed.actions(world.tenant_id)).count("ledger_snapshot.created") == 1
     assert await seed.count("fulfilments", world.tenant_id) == 2
-    assert await seed.item_status(second_item) == "received"
-    assert await seed.item_status(world.item_id) == "received"
+    assert await seed.item_status(second_item) == "uploaded"
+    assert await seed.item_status(world.item_id) == "uploaded"
 
 
 # --- AC-11: validation failures ------------------------------------------------------------------
@@ -1170,7 +1170,7 @@ async def test_ac11_a_failed_validation_ends_the_run_with_no_snapshot_or_evidenc
     assert row["raw_fingerprint"] is not None  # the raw payload is kept: it is the evidence of why
     for table in ("ledger_snapshots", "trial_balance_lines", "evidence_versions", "fulfilments"):
         assert await seed.count(table, world.tenant_id) == 0
-    assert await seed.item_status(world.item_id) == "open"
+    assert await seed.item_status(world.item_id) == "requested"
     assert await seed.actions(world.tenant_id) == [
         "sync_run.started",
         "sync_run.raw_stored",
@@ -1231,7 +1231,7 @@ async def test_ac11_a_malformed_payload_fails_the_run_after_the_raw_is_kept(
     assert (row["status"], row["failure_code"]) == ("failed", code)
     assert row["raw_fingerprint"] == hashlib.sha256(content).hexdigest()
     assert await seed.count("ledger_snapshots", world.tenant_id) == 0
-    assert await seed.item_status(world.item_id) == "open"
+    assert await seed.item_status(world.item_id) == "requested"
 
 
 async def test_ac11_an_unreadable_amount_fails_the_run_as_invalid_amount(
@@ -1339,7 +1339,7 @@ async def test_ac20_fail_run_ends_a_running_run_and_records_it_once(
     assert await seed.actions(world.tenant_id) == ["sync_run.started", "sync_run.failed"]
     event = (await seed.events(world.tenant_id))[-1]
     assert (event.actor_kind, event.actor_id) == ("system", f"run:{run_id}")
-    assert await seed.item_status(world.item_id) == "open"
+    assert await seed.item_status(world.item_id) == "requested"
 
 
 async def test_ac20_fail_run_on_a_finished_run_changes_and_records_nothing(
@@ -1363,7 +1363,7 @@ async def test_ac20_fail_run_cannot_undo_a_succeeded_run(seed: Seeder, world: Wo
     row = await seed.run_row(run_id)
     assert (row["status"], row["failure_code"]) == ("succeeded", None)
     assert await seed.count("audit_events", world.tenant_id) == events
-    assert await seed.item_status(world.item_id) == "received"
+    assert await seed.item_status(world.item_id) == "uploaded"
 
 
 # --- the system context confines a stage to its run ------------------------------------------
@@ -1432,7 +1432,7 @@ async def test_ac20_render_is_refused_for_an_archived_engagement_before_any_writ
         await render(system)
     assert await seed.count("evidence_versions", world.tenant_id) == 0
     assert await seed.count("fulfilments", world.tenant_id) == 0
-    assert await seed.item_status(world.item_id) == "open"
+    assert await seed.item_status(world.item_id) == "requested"
 
 
 async def test_ac20_render_before_a_snapshot_is_not_found(world: World) -> None:
@@ -1498,8 +1498,8 @@ async def test_ac10_the_platform_fulfils_an_open_item_by_rule(
     [row] = await seed.rows("SELECT * FROM fulfilments WHERE id = $1", ref.id)
     assert (row["created_by_kind"], row["created_by_id"]) == ("rule", str(system.tenant.actor_id))
     assert row["engagement_id"] == world.engagement_id
-    assert await seed.item_status(world.item_id) == "received"
-    assert await seed.actions(world.tenant_id) == ["fulfilment.created", "request_item.received"]
+    assert await seed.item_status(world.item_id) == "uploaded"
+    assert await seed.actions(world.tenant_id) == ["fulfilment.created", "request_item.uploaded"]
 
 
 async def test_ac10_a_person_who_may_propose_fulfils_as_human_not_rule(
@@ -1521,7 +1521,7 @@ async def test_ac20_a_reviewer_may_not_fulfil(seed: Seeder, fulfilling: Fulfilli
     with pytest.raises(Forbidden):
         await _fulfil(reviewer.context(), world.item_id, version)
     assert await seed.count("fulfilments", world.tenant_id) == 0
-    assert await seed.item_status(world.item_id) == "open"
+    assert await seed.item_status(world.item_id) == "requested"
 
 
 async def test_ac20_the_platform_may_not_fulfil_for_another_engagement(
@@ -1549,7 +1549,7 @@ async def test_ac10_fulfilling_again_with_the_same_version_changes_nothing(
     assert await seed.count("fulfilments", world.tenant_id) == 1
     actions = await seed.actions(world.tenant_id)
     assert actions.count("fulfilment.created") == 1
-    assert actions.count("request_item.received") == 1
+    assert actions.count("request_item.uploaded") == 1
 
 
 async def test_ac10_a_further_version_for_a_received_item_is_a_new_fulfilment_without_a_move(
@@ -1563,12 +1563,12 @@ async def test_ac10_a_further_version_for_a_received_item_is_a_new_fulfilment_wi
     assert ref.id is not None
     assert ref.received is False
     assert await seed.count("fulfilments", world.tenant_id) == 2
-    assert (await seed.actions(world.tenant_id)).count("request_item.received") == 1
+    assert (await seed.actions(world.tenant_id)).count("request_item.uploaded") == 1
 
 
 # TASK-019 (SPEC-004 amendment): a sent-back `needs_revision` item takes new evidence; an
 # accepted one never does.
-@pytest.mark.parametrize("status", ["ready_for_review", "accepted"])
+@pytest.mark.parametrize("status", ["received"])
 async def test_ac20_an_item_past_receipt_takes_no_fulfilment(
     seed: Seeder, fulfilling: Fulfilling, status: str
 ) -> None:
@@ -1589,7 +1589,7 @@ async def test_ac20_evidence_of_another_engagement_cannot_fulfil_the_item(
     with pytest.raises(DBAPIError):
         await _fulfil(_platform(world), world.item_id, foreign_version)
     assert await seed.count("fulfilments", world.tenant_id) == 0
-    assert await seed.item_status(world.item_id) == "open"
+    assert await seed.item_status(world.item_id) == "requested"
 
 
 async def test_ac20_fulfilling_is_repeatable_to_the_last_detail(

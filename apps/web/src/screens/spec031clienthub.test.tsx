@@ -26,7 +26,7 @@ function item(over: Partial<RequestItemOut> = {}): RequestItemOut {
     engagement_id: E,
     description: "Bank statements for December",
     audit_area: "Cash",
-    status: "open",
+    status: "requested",
     created_at: "2026-10-01T00:00:00Z",
     ...over,
   };
@@ -90,7 +90,7 @@ describe("ac1 the client's request", () => {
 
 describe("ac4 provided", () => {
   it("says where it came from and asks for no upload", async () => {
-    page([item({ status: "received" })], {
+    page([item({ status: "uploaded" })], {
       ...NO_VIEW,
       provided: { source: "export", on: "2026-10-05T12:00:00Z" },
     });
@@ -147,7 +147,7 @@ describe("ac7 history", () => {
 
   it("shows the send-back note with the upload and the provided rows", async () => {
     page(
-      [item({ status: "needs_revision" })],
+      [item({ status: "returned" })],
       {
         provided: null,
         gap: null,

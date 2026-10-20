@@ -7,7 +7,7 @@ import { InboxPanel } from "./InboxPanel";
 
 const E = "e1";
 
-function item(id: string, description: string, status = "open"): RequestItemOut {
+function item(id: string, description: string, status = "requested"): RequestItemOut {
   return {
     id,
     engagement_id: E,

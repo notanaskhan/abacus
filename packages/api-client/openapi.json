@@ -2786,9 +2786,8 @@
             "type": "string"
           },
           "item_status": {
-            "cls": "internal",
-            "title": "Item Status",
-            "type": "string"
+            "$ref": "#/components/schemas/RequestStatus",
+            "cls": "internal"
           },
           "reason_code": {
             "anyOf": [
@@ -5749,9 +5748,8 @@
             "type": "string"
           },
           "status": {
-            "cls": "internal",
-            "title": "Status",
-            "type": "string"
+            "$ref": "#/components/schemas/RequestStatus",
+            "cls": "internal"
           }
         },
         "required": [
@@ -8963,15 +8961,8 @@
             "title": "Retrievability Tier"
           },
           "status": {
-            "cls": "internal",
-            "enum": [
-              "open",
-              "received",
-              "ready_for_review",
-              "needs_revision"
-            ],
-            "title": "Status",
-            "type": "string"
+            "$ref": "#/components/schemas/RequestStatus",
+            "cls": "internal"
           },
           "still_needed": {
             "anyOf": [
@@ -9031,6 +9022,18 @@
         ],
         "title": "RequestItemOut",
         "type": "object"
+      },
+      "RequestStatus": {
+        "enum": [
+          "draft",
+          "requested",
+          "uploaded",
+          "received",
+          "returned",
+          "not_applicable"
+        ],
+        "title": "RequestStatus",
+        "type": "string"
       },
       "RespondedOut": {
         "properties": {

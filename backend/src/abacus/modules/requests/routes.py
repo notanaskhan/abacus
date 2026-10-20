@@ -11,6 +11,7 @@ from fastapi import Depends, Query, Request
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, ConfigDict, Field
 
+from abacus.kernel._statuses import RequestStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.modules.identity.api import (
@@ -63,7 +64,6 @@ from abacus.modules.requests.workbook import MAX_BYTES, Problem, RequestListInva
 
 router = AbacusRouter(prefix="/v1/engagements/{engagement_id}/request-items", tags=["requests"])
 Effort = Literal["small", "medium", "large"]
-Status = Literal["open", "received", "ready_for_review", "needs_revision"]
 Tier = Literal["A", "B", "C", "D", "E"]
 DocumentKind = Literal["bank_statement", "ar_aging", "ap_aging", "schedule"]
 TierSource = Literal["override", "methodology", "rule"]
@@ -87,7 +87,7 @@ class RequestItemOut(BaseModel):
     engagement_id: Annotated[UUID, classified("internal")]
     description: Annotated[str, classified("confidential")]
     audit_area: Annotated[str, classified("confidential")]
-    status: Annotated[Status, classified("internal")]
+    status: Annotated[RequestStatus, classified("internal")]  # C2: generated (F-03-T15)
     created_at: Annotated[datetime, classified("internal")]
     evidence_version_id: Annotated[UUID | None, classified("internal")] = None
     retrievability_tier: Annotated[Tier | None, classified("internal")] = None
@@ -731,7 +731,7 @@ class ItemHitOut(BaseModel):
     engagement_id: Annotated[UUID, classified("internal")]
     description: Annotated[str, classified("confidential")]
     audit_area: Annotated[str, classified("internal")]
-    status: Annotated[str, classified("internal")]
+    status: Annotated[RequestStatus, classified("internal")]
 
 
 @firm_router.get("/search/request-items", action=OWN, response_model=list[ItemHitOut])
@@ -746,7 +746,7 @@ async def search_request_items_route(
             engagement_id=i.engagement_id,
             description=i.description,
             audit_area=i.audit_area,
-            status=i.status,
+            status=RequestStatus(i.status),
         )
         for i in await search_request_items(ctx, q)
     ]

@@ -9,8 +9,8 @@ import { reasonLabel } from "./matchingMessages";
 
 const E = "e1";
 const ITEMS = [
-  { id: "i1", description: "Bank statement - operating", status: "open" },
-  { id: "i2", description: "Bank statement - payroll", status: "open" },
+  { id: "i1", description: "Bank statement - operating", status: "requested" },
+  { id: "i2", description: "Bank statement - payroll", status: "requested" },
 ].map((i) => ({
   ...i,
   engagement_id: E,

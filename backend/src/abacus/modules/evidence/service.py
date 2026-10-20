@@ -347,9 +347,9 @@ _DECISION_ACTION: dict[str, str] = {
 # evidence: the rejected version was its newest (else the decision is `superseded`), so nothing
 # older is reviewable any more (TASK-019 reviews B1/M1).
 _ITEM_AFTER: dict[str, str] = {
-    "accept": "accepted",
-    "reject": "open",
-    "send_back": "needs_revision",
+    "accept": "received",
+    "reject": "requested",  # the database keeps a firm-only item in draft
+    "send_back": "returned",
 }
 _ONE_DECISION = "review_decisions_once"
 _CHECK_VIOLATION = "23514"

@@ -208,7 +208,7 @@ export function Board({
             aria-label="Requests by status"
             className="flex flex-wrap items-center gap-1.5 border-b-[0.5px] border-hair px-4 py-2"
           >
-            {(["open", "received", "ready_for_review", "needs_revision"] as const).map((s) => {
+            {(["draft", "requested", "uploaded", "returned", "received"] as const).map((s) => {
               const word = statusWord("request", s);
               const on = filters.status === s;
               return (
@@ -444,9 +444,9 @@ function RequestItemCard({
         />
       )}
       <div className="flex flex-wrap items-center gap-3 text-[12px]">
-        {(item.status === "open" || item.status === "received") && (
-          <Retrieve item={item} engagement={engagement} />
-        )}
+        {(item.status === "draft" ||
+          item.status === "requested" ||
+          item.status === "uploaded") && <Retrieve item={item} engagement={engagement} />}
         <TierOverride item={item} />
         <HiddenFromClient item={item} />
       </div>
@@ -706,15 +706,11 @@ function AddRequestItem({ engagementId }: { engagementId: string }): JSX.Element
 }
 
 function statusTone(status: RequestItemOut["status"]): "neutral" | "success" | "warning" {
-  return status === "ready_for_review"
-    ? "success"
-    : status === "needs_revision"
-      ? "warning"
-      : "neutral";
+  return status === "received" ? "success" : status === "returned" ? "warning" : "neutral";
 }
 
 const STATUS_FILTERS: [string, string][] = (
-  ["open", "received", "ready_for_review", "needs_revision", "accepted"] as const
+  ["draft", "requested", "uploaded", "returned", "received", "not_applicable"] as const
 ).map((s) => [s, statusWord("request", s).label]);
 const SELECT_CLASS =
   "h-[26px] rounded-[6px] border-0 bg-card px-2 text-[12.5px] text-ink shadow-e1 hover:bg-nav-fill";

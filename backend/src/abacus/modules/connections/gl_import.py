@@ -426,7 +426,7 @@ async def on_ledger_snapshot_recorded(event: OutboxEvent) -> None:
 # --- Evidence and fulfilment (SPEC-034 AC-6; TASK-070) ------------------------------------------
 
 GL_DATASETS: Final = {"general_ledger": "General ledger", "journals": "Journal listing"}
-_TAKES_EVIDENCE: Final = frozenset({"open", "received", "needs_revision"})
+_TAKES_EVIDENCE: Final = frozenset({"draft", "requested", "uploaded", "returned"})
 _PAGE: Final = 5000
 
 

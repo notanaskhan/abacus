@@ -30,7 +30,7 @@ function page() {
           engagement_id: "e1",
           description: "Bank statements December",
           audit_area: "Cash",
-          status: "open",
+          status: "requested",
         },
       ]),
     "GET /v1/firm/search/findings": () => json([]),

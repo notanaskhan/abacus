@@ -241,7 +241,7 @@ describe("ac8 unread on the Board", () => {
         engagement_id: E,
         description: id,
         audit_area: "Cash",
-        status: "open",
+        status: "requested",
         created_at: "",
         unread_comments: unread,
       },

@@ -22,7 +22,7 @@ E = uuid4()
 
 def _item(description: str, kind: str | None, area: str = "Cash") -> RequestItemView:
     return RequestItemView(
-        uuid4(), E, description, area, "open", datetime.now(UTC), document_kind=kind
+        uuid4(), E, description, area, "requested", datetime.now(UTC), document_kind=kind
     )
 
 

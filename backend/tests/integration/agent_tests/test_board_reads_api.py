@@ -256,7 +256,7 @@ async def test_ac18_a_request_item_has_a_null_evidence_version_before_any_retrie
     assert set(item) == ITEM_KEYS
     assert item["id"] == str(world.item_id)
     assert item["evidence_version_id"] is None
-    assert item["status"] == "open"
+    assert item["status"] == "requested"
 
 
 async def test_ac18_a_request_item_carries_the_retrievals_version_after_a_retrieval(
@@ -269,7 +269,7 @@ async def test_ac18_a_request_item_carries_the_retrievals_version_after_a_retrie
     assert item["engagement_id"] == str(world.engagement_id)
     assert item["description"] == "Trial balance"
     assert item["audit_area"] == "Financial reporting"
-    assert item["status"] == "received"
+    assert item["status"] == "uploaded"
     assert set(item) == ITEM_KEYS
 
 

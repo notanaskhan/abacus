@@ -1353,6 +1353,48 @@ def _check_layout(backend: Path) -> Iterator[tuple[str, Finding]]:
         )
 
 
+# F-03-T15 (migration 0071): the retired request status codes (chapter 09 section 9.5.6).
+_RETIRED_REQUEST_CODES = frozenset({"open", "ready_for_review", "needs_revision", "accepted"})
+
+
+def _status_side(node: ast.AST) -> bool:
+    return (isinstance(node, ast.Attribute) and node.attr == "status") or (
+        isinstance(node, ast.Name) and node.id == "status"
+    )
+
+
+def _retired_literals(node: ast.AST) -> list[str]:
+    return [
+        c.value
+        for c in ast.walk(node)
+        if isinstance(c, ast.Constant) and c.value in _RETIRED_REQUEST_CODES
+    ]
+
+
+def _check_retired_request_codes(src: SourceFile) -> Iterator[Finding]:
+    """A request item's status compared with, filtered by or set to a retired code."""
+    for node in ast.walk(src.tree):
+        found: list[str] = []
+        if isinstance(node, ast.Compare) and (
+            _status_side(node.left) or any(_status_side(c) for c in node.comparators)
+        ):
+            found = _retired_literals(node)
+        elif (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "in_"
+            and _status_side(node.func.value)
+        ):
+            found = [v for a in node.args for v in _retired_literals(a)]
+        elif isinstance(node, ast.keyword) and node.arg == "status":
+            found = _retired_literals(node.value)
+        for value in found:
+            yield Finding(
+                getattr(node, "lineno", 0),
+                f"request status {value!r} is retired (F-03-T15): use the registry's codes",
+            )
+
+
 RULES: list[Rule | TreeRule] = [
     Rule(
         id="UOW-001",
@@ -1412,6 +1454,18 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus_tools/stack.py",  # the recorders' and evals' stack (connect_db)
             # Seeds the local stack as its superuser (local only; TASK-012).
             "src/abacus_tools/local/seed_dev.py",
+        ),
+    ),
+    Rule(
+        id="REQ-002",
+        description="No retired request status codes (open, ready_for_review, ...)",
+        adr="ADR-138",
+        check=_check_retired_request_codes,
+        include=(
+            "src/abacus/modules/requests/*",
+            "src/abacus/modules/evidence/*",
+            "src/abacus/modules/connections/*",
+            "src/abacus/modules/engagements/*",
         ),
     ),
     Rule(
