@@ -171,7 +171,11 @@ async def set_severity(
             after=Ref(severity=SEVERITIES.index(severity)),
         )
         if stage == "proposed":  # SPEC-305: the partner is asked to conclude
-            tx.emit(SeverityProposed(engagement_id=engagement_id, finding_id=finding_id))
+            tx.emit(
+                SeverityProposed(
+                    engagement_id=engagement_id, finding_id=finding_id, by_user=ctx.user_id
+                )
+            )
 
 
 async def record_communication(

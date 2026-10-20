@@ -182,8 +182,10 @@ describe("ac7 states", () => {
   });
 
   it("asks for materiality when it isn't set", async () => {
-    tab("staff", { [`GET ${BASE}/materiality`]: () => json(null) });
-    expect(await screen.findByText(/Not set yet/)).toBeTruthy();
+    // SPEC-300 (TASK-307): materiality is proposed on Planning and decided by the partner.
+    tab("staff", { [`GET ${BASE}/materiality/versions`]: () => json([]) });
+    expect(await screen.findByText("Not proposed yet")).toBeTruthy();
+    expect(screen.getByText("To propose")).toBeTruthy();
   });
 });
 

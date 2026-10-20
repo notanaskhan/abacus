@@ -86,9 +86,12 @@ async def _mentioned(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
 
 
 async def _partners(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
-    """SPEC-305 (TASK-306): the engagement partner, who alone decides."""
-    engagement_id = _uuid(payload, "engagement_id")
-    return [] if engagement_id is None else await engagement_partners(tenant_id, engagement_id)
+    """SPEC-305 (TASK-306): the engagement partner, who alone decides; never about their own
+    proposal (TASK-307)."""
+    engagement_id, by = _uuid(payload, "engagement_id"), _uuid(payload, "by_user")
+    if engagement_id is None:
+        return []
+    return [u for u in await engagement_partners(tenant_id, engagement_id) if u != by]
 
 
 @dataclass(frozen=True)
