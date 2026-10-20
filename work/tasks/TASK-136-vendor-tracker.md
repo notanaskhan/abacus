@@ -4,7 +4,7 @@ title: "F-09-T01 · Programme set-up: docs/ops/vendors/README.md tracker with on
 spec: SPEC-049
 acceptance_criteria: [AC-1, AC-2, AC-3]
 risk_zone: green
-status: todo
+status: in-progress
 epic: F-09
 plan_key: F-09-T01
 branch: task-136-vendor-tracker
@@ -84,6 +84,7 @@ cd backend && uv run python -m abacus_tools.quality.validate_docs
 Append-only. Newest at the bottom.
 
 - `2026-10-20` — Task file written at kickoff (SU-14). No work started.
+- 2026-10-20 (SU-26): docs/ops/vendors/README.md written: every §7.6 application plus the founding items, with start, needed-by, gate, fallback, status, issue and vault columns, and a "Never in git" section. No GitHub issues: the builder chose to track status in the README only.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
