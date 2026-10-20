@@ -34,6 +34,9 @@ DISTINCT_INPUT = "ZX-DISTINCTIVE-9137-input"
 PERIOD = {"fiscal_period_start": "2025-01-01", "fiscal_period_end": "2025-12-31"}
 CREATE_ITEM = {"description": "Bank confirmations", "audit_area": "Cash"}
 ENGAGEMENT_KEYS = {
+    "client_id",  # SPEC-303 (TASK-304)
+    "client_entity_id",
+    "service_line",  # F-03-T12
     "id",
     "name",
     "type",
@@ -394,7 +397,8 @@ async def test_ac4_firm_admin_and_practice_leader_create_an_engagement(
     assert set(body) == ENGAGEMENT_KEYS
     assert uuid.UUID(cast(str, body["id"]))
     assert body["name"] == "FY2025 audit"
-    assert body["type"] == "audit"
+    assert body["type"] == "fs_audit"
+    assert body["service_line"] == "audit"
     assert body["status"] == "active"
     assert body["client_name"] == "Acme Corp"
     assert body["client_entity_name"] == "Acme Holdings LLC"

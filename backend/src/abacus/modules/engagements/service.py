@@ -89,8 +89,24 @@ from abacus.modules.organisations.api import (
 )
 
 ClientRole = Literal["client_admin", "client_contributor"]
-# SPEC-024 Q5: the US engagement types under AICPA standards.
-EngagementType = Literal["audit", "review", "compilation", "agreed_upon_procedures"]
+# F-03-T12 (migration 0069): the 14 engagement types; `audit` became `fs_audit` (no alias).
+# DEC-19: single_audit and yellow_book stay out.
+EngagementType = Literal[
+    "fs_audit",
+    "ebp_audit",
+    "review",
+    "compilation",
+    "preparation",
+    "agreed_upon_procedures",
+    "soc1",
+    "soc2",
+    "readiness",
+    "internal_audit",
+    "tax_compliance",
+    "cas_monthly_close",
+    "notice_response",
+    "advisory",
+]
 
 
 class TemplateTypeMismatch(DomainConflict):
@@ -127,7 +143,7 @@ class NewEngagement:
     client_entity_name: str
     fiscal_period_start: date
     fiscal_period_end: date
-    type: EngagementType = "audit"
+    type: EngagementType = "fs_audit"
     # SPEC-025 AC-1: an existing client (and entity, or a new entity under it); else a new client.
     client_id: UUID | None = None
     client_entity_id: UUID | None = None
@@ -152,6 +168,7 @@ class EngagementView:
     created_at: datetime
     client_id: UUID  # SPEC-303 (TASK-304)
     client_entity_id: UUID
+    service_line: str  # F-03-T12
 
 
 def _view(engagement: Engagement, names: ClientNames) -> EngagementView:
@@ -167,6 +184,7 @@ def _view(engagement: Engagement, names: ClientNames) -> EngagementView:
         created_at=engagement.created_at,
         client_id=names.client_id,
         client_entity_id=engagement.client_entity_id,
+        service_line=engagement.service_line,
     )
 
 
@@ -384,7 +402,7 @@ class TemplateVersionSummary:
     version_id: UUID
     version: int
     created_at: datetime
-    engagement_types: tuple[str, ...] = ("audit",)
+    engagement_types: tuple[str, ...] = ("fs_audit",)
 
 
 @dataclass(frozen=True)
@@ -410,7 +428,7 @@ async def import_template(
     ctx: AuthContext,
     name: str,
     data: bytes,
-    engagement_types: Sequence[EngagementType] = ("audit",),
+    engagement_types: Sequence[EngagementType] = ("fs_audit",),
 ) -> TemplateVersionSummary:
     """Parse and store the workbook as the template's next version (AC-1 to AC-3). Raises
     `TemplateInvalid` with every problem, storing nothing."""
@@ -426,7 +444,7 @@ async def import_template(
             tenant_id=ctx.tenant_id,
             name=name,
             created_by=ctx.user_id,
-            engagement_types=sorted(set(engagement_types)) or ["audit"],
+            engagement_types=sorted(set(engagement_types)) or ["fs_audit"],
         )
         version_id, number = await insert_version(
             tx.session,

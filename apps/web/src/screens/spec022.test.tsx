@@ -57,7 +57,8 @@ function routes(): Parameters<typeof mockApi>[0] {
       json({
         id: E,
         name: "FY2026 audit",
-        type: "audit",
+        type: "fs_audit",
+        service_line: "audit",
         status: "active",
         client_name: "Northwind",
         client_entity_name: "Northwind Ltd",

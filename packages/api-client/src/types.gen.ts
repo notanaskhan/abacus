@@ -1685,7 +1685,7 @@ export type EngagementIn = {
     /**
      * Type
      */
-    type?: 'audit' | 'review' | 'compilation' | 'agreed_upon_procedures';
+    type?: 'fs_audit' | 'ebp_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'readiness' | 'internal_audit' | 'tax_compliance' | 'cas_monthly_close' | 'notice_response' | 'advisory';
 };
 
 /**
@@ -1729,9 +1729,10 @@ export type EngagementOut = {
      */
     name: string;
     /**
-     * Status
+     * Service Line
      */
-    status: 'active' | 'archived';
+    service_line: 'audit' | 'tax' | 'cas' | 'advisory';
+    status: EngagementStatus;
     /**
      * Team
      */
@@ -1739,8 +1740,13 @@ export type EngagementOut = {
     /**
      * Type
      */
-    type: 'audit' | 'review' | 'compilation' | 'agreed_upon_procedures';
+    type: 'fs_audit' | 'ebp_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'readiness' | 'internal_audit' | 'tax_compliance' | 'cas_monthly_close' | 'notice_response' | 'advisory';
 };
+
+/**
+ * EngagementStatus
+ */
+export type EngagementStatus = 'prospect' | 'accepted' | 'declined' | 'contracted' | 'active' | 'on_hold' | 'delivered' | 'archived';
 
 /**
  * EngagementSummaryOut
@@ -1783,13 +1789,14 @@ export type EngagementSummaryOut = {
      */
     name: string;
     /**
-     * Status
+     * Service Line
      */
-    status: 'active' | 'archived';
+    service_line: 'audit' | 'tax' | 'cas' | 'advisory';
+    status: EngagementStatus;
     /**
      * Type
      */
-    type: 'audit' | 'review' | 'compilation' | 'agreed_upon_procedures';
+    type: 'fs_audit' | 'ebp_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'readiness' | 'internal_audit' | 'tax_compliance' | 'cas_monthly_close' | 'notice_response' | 'advisory';
 };
 
 /**
@@ -4757,7 +4764,7 @@ export type RollForwardProposalIn = {
     /**
      * Type
      */
-    type?: 'audit' | 'review' | 'compilation' | 'agreed_upon_procedures';
+    type?: 'fs_audit' | 'ebp_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'readiness' | 'internal_audit' | 'tax_compliance' | 'cas_monthly_close' | 'notice_response' | 'advisory';
 };
 
 /**
@@ -5617,7 +5624,7 @@ export type TemplateVersionOut = {
     /**
      * Engagement Types
      */
-    engagement_types?: Array<'audit' | 'review' | 'compilation' | 'agreed_upon_procedures'>;
+    engagement_types?: Array<'fs_audit' | 'ebp_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'readiness' | 'internal_audit' | 'tax_compliance' | 'cas_monthly_close' | 'notice_response' | 'advisory'>;
     /**
      * Template Id
      */
@@ -17765,7 +17772,7 @@ export type ImportTemplateData = {
         /**
          * Engagement Type
          */
-        engagement_type?: Array<'audit' | 'review' | 'compilation' | 'agreed_upon_procedures'> | null;
+        engagement_type?: Array<'fs_audit' | 'ebp_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'readiness' | 'internal_audit' | 'tax_compliance' | 'cas_monthly_close' | 'notice_response' | 'advisory'> | null;
     };
     url: '/v1/methodology/templates/{name}/versions';
 };

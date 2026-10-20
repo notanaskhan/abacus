@@ -11,7 +11,7 @@ const BODY: EngagementIn = {
   client_entity_name: "Halvorsen Logistics",
   fiscal_period_start: "2026-01-01",
   fiscal_period_end: "2026-12-31",
-  type: "audit",
+  type: "fs_audit",
   client_id: "c1",
   client_entity_id: "e1",
 };

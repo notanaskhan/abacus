@@ -30,7 +30,8 @@ const engagement: EngagementOut = {
   fiscal_period_start: "2025-01-01",
   fiscal_period_end: "2025-12-31",
   status: "active",
-  type: "audit",
+  type: "fs_audit",
+  service_line: "audit",
   created_at: "2025-01-02T00:00:00Z",
   team: [],
 };

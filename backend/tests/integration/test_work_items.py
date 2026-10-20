@@ -105,7 +105,7 @@ async def test_t05_a_new_engagement_holds_one_assurance_item_and_a_primary_entit
         "JOIN assurance_work_items a ON a.work_item_id = w.id WHERE w.engagement_id = :e",
         e=engagement,
     )
-    assert items == [("assurance", "N", "planning", "audit")]
+    assert items == [("assurance", "N", "planning", "fs_audit")]
     primary = await _rows(
         ctx, "SELECT role FROM engagement_entities WHERE engagement_id = :e", e=engagement
     )
@@ -138,3 +138,26 @@ async def test_t05_entity_links_are_insert_only_and_rls_hides_other_firms(
         other, "SELECT count(*) FROM work_items WHERE engagement_id = :e", e=engagement
     )
     assert seen == [(0,)]
+
+
+async def test_t12_a_tax_engagement_has_no_assurance_item_but_its_primary_entity(
+    migrated_db: Migrated,
+) -> None:
+    ctx, engagement = await _engagement(migrated_db.superuser_dsn)
+    tax = await _value(
+        migrated_db.superuser_dsn,
+        "INSERT INTO engagements (tenant_id, client_id, client_entity_id, name, type, "
+        "fiscal_period_start, fiscal_period_end, created_by) "
+        "SELECT tenant_id, client_id, client_entity_id, 'Returns', 'tax_compliance', "
+        "fiscal_period_start, fiscal_period_end, created_by FROM engagements WHERE id = $1 "
+        "RETURNING id",
+        engagement,
+    )
+    rows = await _rows(
+        ctx,
+        "SELECT e.service_line, (SELECT count(*) FROM work_items w WHERE w.engagement_id = e.id), "
+        "(SELECT count(*) FROM engagement_entities x WHERE x.engagement_id = e.id) "
+        "FROM engagements e WHERE e.id = :e",
+        e=tax,
+    )
+    assert rows == [("tax", 0, 1)]

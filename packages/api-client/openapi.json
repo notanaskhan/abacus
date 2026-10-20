@@ -3526,12 +3526,22 @@
           },
           "type": {
             "cls": "internal",
-            "default": "audit",
+            "default": "fs_audit",
             "enum": [
-              "audit",
+              "fs_audit",
+              "ebp_audit",
               "review",
               "compilation",
-              "agreed_upon_procedures"
+              "preparation",
+              "agreed_upon_procedures",
+              "soc1",
+              "soc2",
+              "readiness",
+              "internal_audit",
+              "tax_compliance",
+              "cas_monthly_close",
+              "notice_response",
+              "advisory"
             ],
             "title": "Type",
             "type": "string"
@@ -3606,14 +3616,20 @@
             "title": "Name",
             "type": "string"
           },
-          "status": {
+          "service_line": {
             "cls": "internal",
             "enum": [
-              "active",
-              "archived"
+              "audit",
+              "tax",
+              "cas",
+              "advisory"
             ],
-            "title": "Status",
+            "title": "Service Line",
             "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EngagementStatus",
+            "cls": "internal"
           },
           "team": {
             "cls": "confidential",
@@ -3626,10 +3642,20 @@
           "type": {
             "cls": "internal",
             "enum": [
-              "audit",
+              "fs_audit",
+              "ebp_audit",
               "review",
               "compilation",
-              "agreed_upon_procedures"
+              "preparation",
+              "agreed_upon_procedures",
+              "soc1",
+              "soc2",
+              "readiness",
+              "internal_audit",
+              "tax_compliance",
+              "cas_monthly_close",
+              "notice_response",
+              "advisory"
             ],
             "title": "Type",
             "type": "string"
@@ -3640,6 +3666,7 @@
           "name",
           "type",
           "status",
+          "service_line",
           "client_name",
           "client_entity_name",
           "fiscal_period_start",
@@ -3651,6 +3678,20 @@
         ],
         "title": "EngagementOut",
         "type": "object"
+      },
+      "EngagementStatus": {
+        "enum": [
+          "prospect",
+          "accepted",
+          "declined",
+          "contracted",
+          "active",
+          "on_hold",
+          "delivered",
+          "archived"
+        ],
+        "title": "EngagementStatus",
+        "type": "string"
       },
       "EngagementSummaryOut": {
         "properties": {
@@ -3711,22 +3752,38 @@
             "title": "Name",
             "type": "string"
           },
-          "status": {
+          "service_line": {
             "cls": "internal",
             "enum": [
-              "active",
-              "archived"
+              "audit",
+              "tax",
+              "cas",
+              "advisory"
             ],
-            "title": "Status",
+            "title": "Service Line",
             "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EngagementStatus",
+            "cls": "internal"
           },
           "type": {
             "cls": "internal",
             "enum": [
-              "audit",
+              "fs_audit",
+              "ebp_audit",
               "review",
               "compilation",
-              "agreed_upon_procedures"
+              "preparation",
+              "agreed_upon_procedures",
+              "soc1",
+              "soc2",
+              "readiness",
+              "internal_audit",
+              "tax_compliance",
+              "cas_monthly_close",
+              "notice_response",
+              "advisory"
             ],
             "title": "Type",
             "type": "string"
@@ -3737,6 +3794,7 @@
           "name",
           "type",
           "status",
+          "service_line",
           "client_name",
           "client_entity_name",
           "fiscal_period_start",
@@ -9766,12 +9824,22 @@
           },
           "type": {
             "cls": "internal",
-            "default": "audit",
+            "default": "fs_audit",
             "enum": [
-              "audit",
+              "fs_audit",
+              "ebp_audit",
               "review",
               "compilation",
-              "agreed_upon_procedures"
+              "preparation",
+              "agreed_upon_procedures",
+              "soc1",
+              "soc2",
+              "readiness",
+              "internal_audit",
+              "tax_compliance",
+              "cas_monthly_close",
+              "notice_response",
+              "advisory"
             ],
             "title": "Type",
             "type": "string"
@@ -11546,14 +11614,24 @@
           "engagement_types": {
             "cls": "internal",
             "default": [
-              "audit"
+              "fs_audit"
             ],
             "items": {
               "enum": [
-                "audit",
+                "fs_audit",
+                "ebp_audit",
                 "review",
                 "compilation",
-                "agreed_upon_procedures"
+                "preparation",
+                "agreed_upon_procedures",
+                "soc1",
+                "soc2",
+                "readiness",
+                "internal_audit",
+                "tax_compliance",
+                "cas_monthly_close",
+                "notice_response",
+                "advisory"
               ],
               "type": "string"
             },
@@ -37643,10 +37721,20 @@
                 {
                   "items": {
                     "enum": [
-                      "audit",
+                      "fs_audit",
+                      "ebp_audit",
                       "review",
                       "compilation",
-                      "agreed_upon_procedures"
+                      "preparation",
+                      "agreed_upon_procedures",
+                      "soc1",
+                      "soc2",
+                      "readiness",
+                      "internal_audit",
+                      "tax_compliance",
+                      "cas_monthly_close",
+                      "notice_response",
+                      "advisory"
                     ],
                     "type": "string"
                   },

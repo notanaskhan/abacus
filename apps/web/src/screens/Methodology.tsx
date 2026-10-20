@@ -93,7 +93,7 @@ function UploadPanel(): JSX.Element {
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [file, setFile] = useState<File | null>(null);
-  const [types, setTypes] = useState<EngagementType[]>(["audit"]);
+  const [types, setTypes] = useState<EngagementType[]>(["fs_audit"]);
   const [problems, setProblems] = useState<Problem[] | null>(null);
   const [confirm, setConfirm] = useState(false);
   const upload = useMutation({
