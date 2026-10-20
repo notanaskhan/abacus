@@ -10,9 +10,14 @@ If one of these is missing when this skill needs it, stop and report which one a
 - packages/ui/src/tokens/DECISIONS.md (arrives with F-05-T01, S0)
 - the /components specimen gallery's parity tiers (arrive with F-05)
 
-Input: KIT (for example C-16 Request, T1 Index list, O3 Dialog). Sources: $ACCRUED_HANDOFF_DIR/handoff/kits.md (the kit's
-section), kits/<Kit>.dc.html (grep the part; read renderVals for derived values), handoff/canvases/Component Sheet.md,
-design-tokens.md, packages/ui/src/tokens/DECISIONS.md.
+Input: KIT (for example C-16 Request, T1 Index list, O3 Dialog). Sources, in this order:
+1. The kit's own handoff bundle, when one exists: $ACCRUED_HANDOFF_DIR/kit-handoffs/C-NN */design_handoff_*/ (C-00 to C-14
+   today): README.md, IMPLEMENTATION.md, specs/*.md, CLAUDE.md, then design/*.html (grep, never print whole) and
+   screenshots/*.png (downscale first). These are the newest and most detailed source (Oct 17–18).
+2. $ACCRUED_HANDOFF_DIR/handoff/kits.md (the kit's section), kits/<Kit>.dc.html (grep the part; read renderVals for derived
+   values), handoff/canvases/Component Sheet.md.
+3. design-tokens.md and $ACCRUED_HANDOFF_DIR/kit-handoffs/_foundations/ only for values missing from tokens.ts;
+   packages/ui/src/tokens/DECISIONS.md for decisions already taken.
 
 ## Layer rules
 - L1 primitives and templates: Radix for behaviour only, styled 100% with tokens, no domain words, `forceState` on every
@@ -21,9 +26,11 @@ design-tokens.md, packages/ui/src/tokens/DECISIONS.md.
   intents out through callbacks; no API calls; renders from fixtures with no backend.
 
 ## Steps
-1. Read the kit section, its props and every state the Component Sheet shows; list the states.
-2. Conflicts: a built kit wins over 02-design-system A8 (DEC-15). Any other conflict → one line in tokens/DECISIONS.md;
-   stop if it would change a token (tokens are ayushkbhatia's).
+1. Read the kit bundle (if any) and the kit section, its props and every state the bundle screenshots and the Component
+   Sheet show; list the states.
+2. Conflicts: the kit bundle wins over kits.md; a built kit wins over 02-design-system A8 (DEC-15). Record every conflict
+   as one line in tokens/DECISIONS.md. If honouring it would change a token, take the plan's AA ladder and ADR-155 as
+   the default, record the decision, and carry on.
 3. Write <Kit>/types.ts, <Kit>.tsx, <Kit>.specimens.tsx (one specimen per state, ids like "C-16.b") and <Kit>.test.tsx
    (behaviour, keyboard, forceState, "…" on dialog openers, HumanAction refusing agent actors where relevant).
 4. Tokens only; Geist 400/500; hairlines; no blur; numbers through format.ts; status through StatusPill object + code;

@@ -35,7 +35,8 @@ The handoff is read-only and stays outside git. Copy into the repo only text you
 5. revision.md if present — CHANGES, NEW STATES, AVOID, Acceptance checklist. Revision wins for what it lists.
    Ignore spec-alt.md (identical to spec.md).
 6. Only this screen's section of handoff/canvases/<canvas>.md (grep "## <ID>") — host frame, time notes.
-7. kits.md sections of mounted kits; design-tokens.md only for values missing from tokens.ts.
+7. For each mounted kit: its bundle in kit-handoffs/C-NN */ (README, specs) if one exists, else its kits.md section;
+   design-tokens.md only for values missing from tokens.ts.
 8. Status words from docs/product/status-vocabulary.yaml (blueprint §3.3.1) — never lib/status.js.
 9. Screenshots: <ID>a.png and only the states the text leaves ambiguous; downscale first
    (`sips -Z 1440 in.png --out "$TMPDIR/x.png"`).
