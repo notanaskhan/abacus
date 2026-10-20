@@ -154,7 +154,7 @@ export function ItemDetail({
             title="Evidence"
             action={
               myRole !== undefined &&
-              ["open", "received", "needs_revision"].includes(item.status) ? (
+              ["draft", "requested", "uploaded", "returned"].includes(item.status) ? (
                 <UploadForClient
                   engagementId={engagementId}
                   itemId={itemId}

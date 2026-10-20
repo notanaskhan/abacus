@@ -255,7 +255,7 @@ async def attach(
     if locked.engagement_id != engagement_id:
         raise NotFound("request_item")
     await authorise(ctx, "evidence.upload", item_resource(locked, locked_engagement.resource()))
-    if locked.status not in ("open", "received", "needs_revision"):
+    if locked.status not in ("draft", "requested", "uploaded", "returned"):
         raise ItemClosed
     if await fingerprint_among(tx.session, await item_versions(tx, item_id), stored.fingerprint):
         raise DuplicateUpload

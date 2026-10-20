@@ -74,6 +74,9 @@ from abacus.modules.requests.repository import (
 )
 from abacus.modules.requests.workbook import SheetPreview, normalise, preview, read_rows
 
+# F-03-T15: the statuses that take evidence (an upload, a retrieval, a firm file).
+TAKES_EVIDENCE: Final = frozenset({"draft", "requested", "uploaded", "returned"})
+
 
 @dataclass(frozen=True)
 class RequestItemView:
@@ -370,7 +373,7 @@ async def fulfil_by_rule(
     item = await item_ref(tx, request_item_id, lock=True)
     ref = await lock_ref(tx, item.engagement_id)
     await authorise(ctx, "fulfilment.propose", ref.resource())
-    if item.status not in ("open", "received", "needs_revision"):
+    if item.status not in TAKES_EVIDENCE:
         raise ItemNotFulfillable(item.status)
     fulfilment_id = await insert_fulfilment(
         tx.session,
@@ -390,7 +393,7 @@ async def fulfil_by_rule(
     received = await mark_received(tx.session, request_item_id)
     if received:
         tx.record(
-            "request_item.received",
+            "request_item.uploaded",  # F-03-T15: v2 word for an upload
             target=Target("request_item", request_item_id),
             after=Ref(evidence_version_id=evidence_version_id),
         )
@@ -424,8 +427,8 @@ async def fulfilled_versions(ctx: AuthContext, engagement_id: UUID) -> list[Fulf
 
 
 # A review decision moves its item (SPEC-004 §6, Q2): only from a status that awaits review.
-_REVIEWABLE = ("received", "ready_for_review", "needs_revision")
-_AFTER_REVIEW = frozenset({"accepted", "received", "open", "needs_revision"})
+_REVIEWABLE = ("uploaded", "returned")
+_AFTER_REVIEW = frozenset({"received", "uploaded", "requested", "returned"})
 
 
 @dataclass(frozen=True)
@@ -655,7 +658,7 @@ async def fulfil_by_upload(
     caller authorised `evidence.upload` on this item, with its facts, and holds its lock."""
     tenant = await transaction_context(tx.session)
     item = await item_ref(tx, request_item_id)
-    if item.status not in ("open", "received", "needs_revision"):
+    if item.status not in TAKES_EVIDENCE:
         raise ItemNotFulfillable(item.status)
     fulfilment_id = await insert_fulfilment(
         tx.session,
@@ -675,7 +678,7 @@ async def fulfil_by_upload(
     received = await mark_received(tx.session, request_item_id)
     if received:
         tx.record(
-            "request_item.received",
+            "request_item.uploaded",  # F-03-T15: v2 word for an upload
             target=Target("request_item", request_item_id),
             after=Ref(evidence_version_id=evidence_version_id),
         )
@@ -895,7 +898,7 @@ async def set_item_guidance(
 
 
 EFFORT_INDEX = {"small": 1, "medium": 2, "large": 3}
-OPEN_FOR_CLIENT = frozenset({"open", "needs_revision"})
+OPEN_FOR_CLIENT = frozenset({"requested", "returned"})
 
 
 @dataclass(frozen=True)

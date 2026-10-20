@@ -28,9 +28,9 @@ def _item(description: str, status: str, area: str = "Cash") -> PriorItem:
 
 
 def test_ac2_used_items_are_ticked_and_every_other_item_is_not() -> None:
-    accepted = _item("Bank statements", "accepted")
+    accepted = _item("Bank statements", "received")
     waived = _item("Petty cash count", "waived")
-    open_ = _item("Loan agreements", "open")
+    open_ = _item("Loan agreements", "requested")
     found = classify_items([accepted, waived, open_], [])
     assert [(p.kind, p.ticked) for p in found] == [
         ("used", True),
@@ -42,7 +42,7 @@ def test_ac2_used_items_are_ticked_and_every_other_item_is_not() -> None:
 
 
 def test_ac2_template_additions_are_flagged_and_ticked_matching_ignores_case_and_spacing() -> None:
-    prior = [_item("Bank  statements", "accepted")]
+    prior = [_item("Bank  statements", "received")]
     seeds = [
         TemplateSeed(0, "bank statements", "cash", "A"),  # last year's item: not new
         TemplateSeed(1, "Bank confirmations", "Cash", "B"),
@@ -56,7 +56,7 @@ def test_ac2_template_additions_are_flagged_and_ticked_matching_ignores_case_and
 
 def test_ac2_same_description_in_another_area_is_new() -> None:
     found = classify_items(
-        [_item("Confirmations", "accepted", "Cash")],
+        [_item("Confirmations", "received", "Cash")],
         [TemplateSeed(0, "Confirmations", "Receivables", None)],
     )
     assert [p.kind for p in found] == ["used", "new_in_template"]

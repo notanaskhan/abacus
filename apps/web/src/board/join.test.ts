@@ -8,7 +8,7 @@ function item(id: string, versionId?: string | null): RequestItemOut {
     engagement_id: "e1",
     description: `Item ${id}`,
     audit_area: "Cash",
-    status: "open",
+    status: "requested",
     created_at: "2025-01-01T00:00:00Z",
     ...(versionId === undefined ? {} : { evidence_version_id: versionId }),
   };
@@ -94,11 +94,12 @@ describe("ac18 board join", () => {
     expect(sourceLabel(version("v", "uploaded"))).toBe("Uploaded");
   });
 
-  it("labels all four statuses", () => {
-    expect(statusLabel("open")).toBe("Requested"); // TASK-105: the plan's words
-    expect(statusLabel("received")).toBe("Uploaded");
-    expect(statusLabel("ready_for_review")).toBe("Ready for review");
-    expect(statusLabel("needs_revision")).toBe("Returned");
+  it("labels the request statuses (F-03-T15: v2 codes)", () => {
+    expect(statusLabel("requested")).toBe("Requested");
+    expect(statusLabel("uploaded")).toBe("Uploaded");
+    expect(statusLabel("returned")).toBe("Returned");
+    expect(statusLabel("received")).toBe("Received");
+    expect(statusLabel("draft")).toBe("Draft");
   });
 
   it("shows confidence as a percentage", () => {

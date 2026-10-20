@@ -461,6 +461,8 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"why", "good_looks_like", "still_needed", "blocks_fieldwork", "effort"}  # SPEC-031
         | {"guidance_source"}
         | {"guidance_approved_by"}  # SPEC-035 (TASK-073)
+        | {"sent_at", "na_reason", "na_note", "na_by", "na_at", "client_ignored_at"}  # F-03-T15
+        | {"incorporation_state", "incorporated_by", "incorporated_at"}
     ),
     "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
     "work_items": frozenset({"name", "status", "due_on", "archived_at", "archive_locked_at"}),

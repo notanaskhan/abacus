@@ -42,7 +42,7 @@ function item(over: Partial<RequestItemOut> = {}): RequestItemOut {
     engagement_id: E,
     description: "Trial balance",
     audit_area: "Financial reporting",
-    status: "received",
+    status: "uploaded",
     evidence_version_id: "v1",
     created_at: "2025-01-03T00:00:00Z",
     ...over,
@@ -183,7 +183,7 @@ describe("ac18 Board screen", () => {
 
   it("shows no screening for an item without evidence", async () => {
     api({
-      items: [item({ status: "open", evidence_version_id: null })],
+      items: [item({ status: "requested", evidence_version_id: null })],
       versions: [],
       results: [],
     });
@@ -268,7 +268,7 @@ describe("ac18 Board screen", () => {
       estimated_start_at: null,
     };
     const { calls } = api({
-      items: [item({ status: "open", evidence_version_id: null })],
+      items: [item({ status: "requested", evidence_version_id: null })],
       versions: [],
       results: [],
       [`POST ${BASE}/retrievals`]: () => json(run, 202),
@@ -312,7 +312,7 @@ describe("ac18 Board screen", () => {
 
     function openItemApi(get: () => Response | Promise<Response>): ReturnType<typeof mockApi> {
       return api({
-        items: [item({ status: "open", evidence_version_id: null })],
+        items: [item({ status: "requested", evidence_version_id: null })],
         versions: [],
         results: [],
         [`POST ${BASE}/retrievals`]: () => json(queuedRun(), 202),
@@ -447,7 +447,7 @@ describe("ac18 Board screen", () => {
 
   it("disables Retrieve from the click, before any response arrives", async () => {
     api({
-      items: [item({ status: "open", evidence_version_id: null })],
+      items: [item({ status: "requested", evidence_version_id: null })],
       versions: [],
       results: [],
       [`POST ${BASE}/retrievals`]: never,

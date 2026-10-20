@@ -22,7 +22,7 @@ function item(over: Partial<RequestItemOut> = {}): RequestItemOut {
     engagement_id: E,
     description: "Bank statements for December",
     audit_area: "Cash",
-    status: "open",
+    status: "requested",
     created_at: "2026-10-01T00:00:00Z",
     ...over,
   };
@@ -97,7 +97,7 @@ describe("SPEC-042 the portal", () => {
 
   it("lets the admin mark the list done once everything is done (ac4)", async () => {
     const { calls } = page(
-      [item({ status: "received" })],
+      [item({ status: "uploaded" })],
       {
         [`POST ${ITEMS}/client-done`]: () =>
           json({ by: "u-c", name: "Casey", at: "2026-10-20T10:00:00Z" }, 201),

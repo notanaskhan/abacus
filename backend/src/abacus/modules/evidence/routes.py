@@ -11,6 +11,7 @@ from uuid import UUID
 from fastapi import Depends, Path, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
+from abacus.kernel._statuses import RequestStatus
 from abacus.kernel.classification import classified
 from abacus.modules.evidence.board_summary import board_summary
 from abacus.modules.evidence.client_view import client_view
@@ -188,7 +189,7 @@ class DecisionOut(BaseModel):
     decision: Annotated[Literal["accept", "reject", "send_back"], classified("internal")]
     reason_code: Annotated[str | None, classified("public")]
     corrects_proposal: Annotated[bool, classified("internal")]
-    item_status: Annotated[str, classified("internal")]
+    item_status: Annotated[RequestStatus, classified("internal")]
 
 
 class ReasonCodeOut(BaseModel):

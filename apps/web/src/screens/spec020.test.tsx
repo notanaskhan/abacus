@@ -23,7 +23,7 @@ function item(over: Partial<RequestItemOut> = {}): RequestItemOut {
     engagement_id: E,
     description: "Bank statements for December",
     audit_area: "Cash",
-    status: "open",
+    status: "requested",
     created_at: "2026-10-01T00:00:00Z",
     evidence_version_id: null,
     retrievability_tier: null,
@@ -159,8 +159,7 @@ describe("ac8 ac9 uploads", () => {
   it("offers no upload on a request that no longer takes files", async () => {
     mockApi({
       [`GET /v1/engagements/${E}`]: () => json(ENGAGEMENT),
-      [`GET /v1/engagements/${E}/request-items`]: () =>
-        json([item({ status: "ready_for_review" })]),
+      [`GET /v1/engagements/${E}/request-items`]: () => json([item({ status: "received" })]),
       [`GET /v1/engagements/${E}/client-contacts`]: () => json({ detail: "forbidden" }, 403),
     });
     page();

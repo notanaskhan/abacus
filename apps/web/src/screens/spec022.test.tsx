@@ -13,7 +13,7 @@ function item(over: Partial<RequestItemOut>): RequestItemOut {
     engagement_id: E,
     description: "Trial balance at year end",
     audit_area: "General ledger",
-    status: "open",
+    status: "requested",
     created_at: "2026-10-01T00:00:00Z",
     evidence_version_id: null,
     retrievability_tier: "A",

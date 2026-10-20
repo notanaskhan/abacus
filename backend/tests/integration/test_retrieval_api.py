@@ -268,7 +268,7 @@ class Seeder:
             uuid.UUID,
             await self.value(
                 "INSERT INTO request_lists (tenant_id, engagement_id) VALUES ($1, $2) "
-                "ON CONFLICT (tenant_id, engagement_id) DO UPDATE SET tenant_id = $1 "
+                "ON CONFLICT ON CONSTRAINT request_lists_binder_key DO UPDATE SET tenant_id = $1 "
                 "RETURNING id",
                 tenant_id,
                 engagement_id,
@@ -721,7 +721,7 @@ async def test_ac10_a_trigger_runs_through_to_a_succeeded_run_with_timestamps(
     )
     version = uuid.UUID(cast(str, done["evidence_version_id"]))
     assert await seed.value("SELECT count(*) FROM evidence_versions WHERE id = $1", version) == 1
-    assert await seed.item_status(world.item_id) == "received"
+    assert await seed.item_status(world.item_id) == "uploaded"
 
 
 async def test_ac11_an_unbalanced_trial_balance_ends_failed_validation(
@@ -733,7 +733,7 @@ async def test_ac11_an_unbalanced_trial_balance_ends_failed_validation(
     assert (done["status"], done["failure_code"]) == ("failed_validation", "unbalanced")
     assert done["evidence_version_id"] is None
     assert done["finished_at"] is not None
-    assert await seed.item_status(world.item_id) == "open"
+    assert await seed.item_status(world.item_id) == "requested"
 
 
 async def test_ac11_a_trigger_after_a_failed_run_makes_a_new_run_that_can_succeed(
@@ -867,7 +867,7 @@ async def test_ac20_without_an_active_connection_the_answer_is_409_no_connection
     assert recorder.calls == []
 
 
-@pytest.mark.parametrize("status", ["ready_for_review", "needs_revision"])
+@pytest.mark.parametrize("status", ["returned", "received"])
 async def test_ac20_an_item_past_receipt_is_409_item_not_open(
     api: Api, seed: Seeder, world: World, recorder: Recorder, status: str
 ) -> None:
@@ -882,7 +882,7 @@ async def test_ac20_an_item_past_receipt_is_409_item_not_open(
 async def test_ac20_a_received_item_may_be_retrieved_again(
     api: Api, seed: Seeder, world: World, recorder: Recorder
 ) -> None:
-    await seed.run("UPDATE request_items SET status = 'received' WHERE id = $1", world.item_id)
+    await seed.run("UPDATE request_items SET status = 'uploaded' WHERE id = $1", world.item_id)
     assert (await api.post()).status_code == 202
 
 
@@ -959,7 +959,7 @@ async def test_ac20_an_unreachable_temporal_is_503_and_ends_the_new_run_as_faile
     [row] = await seed.rows("SELECT * FROM sync_runs WHERE tenant_id = $1", world.tenant_id)
     assert (row["status"], row["failure_code"]) == ("failed", "workflow_unavailable")
     assert row["finished_at"] is not None
-    assert await seed.item_status(world.item_id) == "open"
+    assert await seed.item_status(world.item_id) == "requested"
     assert (await seed.actions(world.tenant_id)).count("sync_run.failed") == 1
 
 

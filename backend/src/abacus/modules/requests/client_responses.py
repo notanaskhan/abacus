@@ -33,7 +33,7 @@ from abacus.modules.requests.repository import (
 from abacus.modules.requests.service import read_item, request_items_for
 
 REASONS: Final = ("not_this_year", "sent_another_way", "dont_have")
-_DONE_STATUSES: Final = frozenset({"received", "ready_for_review", "accepted"})
+_DONE_STATUSES: Final = frozenset({"uploaded", "received"})
 
 
 class ResponseInvalid(DomainInvalid):

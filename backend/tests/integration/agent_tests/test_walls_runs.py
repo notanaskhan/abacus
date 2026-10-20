@@ -133,7 +133,7 @@ async def test_ac7_the_whole_pipeline_is_denied_for_a_walled_requester(
     with pytest.raises(Forbidden):
         await run_pipeline(system)
     assert await net.seed.count("evidence_versions", world.tenant_id) == 0
-    assert await net.seed.item_status(world.item_id) == "open"
+    assert await net.seed.item_status(world.item_id) == "requested"
 
 
 async def test_ac7_the_stage_activity_fails_with_a_non_retryable_forbidden(
@@ -156,7 +156,7 @@ async def test_ac8_a_person_walled_from_another_client_still_completes_their_ret
     other = await net.site(world.tenant_id, admin.user_id)
     await net.wall(admin, world.requester.user_id, other.client_id)
     result = await retrieve(world)
-    assert await net.seed.item_status(world.item_id) == "received"
+    assert await net.seed.item_status(world.item_id) == "uploaded"
     assert result.evidence_version_id is not None
 
 
@@ -172,7 +172,7 @@ async def test_ac8_someone_elses_wall_does_not_stop_the_run(
     )
     await net.wall(admin, colleague.user_id, client_id)
     await retrieve(world)
-    assert await net.seed.item_status(world.item_id) == "received"
+    assert await net.seed.item_status(world.item_id) == "uploaded"
 
 
 async def test_ac9_after_removal_a_new_retrieval_completes(
@@ -181,7 +181,7 @@ async def test_ac9_after_removal_a_new_retrieval_completes(
     wall_id = await _wall_requester(net, admin, world)
     assert (await net.remove_wall(admin, wall_id)).status_code == 200
     await retrieve(world)
-    assert await net.seed.item_status(world.item_id) == "received"
+    assert await net.seed.item_status(world.item_id) == "uploaded"
 
 
 # --- retrieval over Temporal: the run ends failed, with code forbidden ---------------------------
@@ -236,7 +236,7 @@ async def test_ac7_a_retrieval_workflow_for_a_walled_person_ends_failed_with_cod
     assert (outcome.status, outcome.code) == ("failed", "forbidden")
     status, code, raw = await _run_row(net.seed, run_id)
     assert (status, code, raw) == ("failed", "forbidden", None)
-    assert await net.seed.item_status(world.item_id) == "open"
+    assert await net.seed.item_status(world.item_id) == "requested"
 
 
 # --- screening: an agent acting for its initiator ------------------------------------------------

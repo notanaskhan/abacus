@@ -174,7 +174,9 @@ function InboxRow({
   const assign = useMutation({ ...assignInboxFileMutation(), ...after });
   const discard = useMutation({ ...discardMutation(), ...after });
   const describe = new Map(items.map((i) => [i.id, i.description]));
-  const open = items.filter((i) => ["open", "received", "needs_revision"].includes(i.status));
+  const open = items.filter((i) =>
+    ["draft", "requested", "uploaded", "returned"].includes(i.status),
+  );
   const ids = { engagement_id: engagementId, file_id: file.id };
   const failed = assign.error ?? discard.error;
   const busy = assign.isPending || discard.isPending;

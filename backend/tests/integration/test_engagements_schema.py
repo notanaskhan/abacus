@@ -583,13 +583,13 @@ ITEM_WITH_STATUS = (
 )
 
 
-@pytest.mark.parametrize("status", ["open", "received", "ready_for_review", "needs_revision"])
+@pytest.mark.parametrize("status", ["draft", "requested", "uploaded", "received", "returned"])
 async def test_ac20_every_request_item_status_is_accepted(db: Db, firm: Firm, status: str) -> None:
     p = await _item_params(db, firm)
     await db.run(ITEM_WITH_STATUS, p["t"], p["g"], p["l"], p["u"], status)
 
 
-@pytest.mark.parametrize("status", ["done", "closed", ""])
+@pytest.mark.parametrize("status", ["done", "closed", "", "open", "ready_for_review"])
 async def test_ac20_a_request_item_status_outside_the_allowed_values_is_a_check_error(
     db: Db, firm: Firm, status: str
 ) -> None:
@@ -600,7 +600,9 @@ async def test_ac20_a_request_item_status_outside_the_allowed_values_is_a_check_
     assert "check constraint" in message
 
 
-async def test_ac20_a_request_item_status_defaults_to_open(db: Db, firm: Firm) -> None:
+async def test_ac20_a_request_item_status_defaults_to_requested_when_visible(
+    db: Db, firm: Firm
+) -> None:
     engagement = await db.engagement(firm)
     request_list = await db.request_list(firm.tenant_id, engagement)
     status = await db.value(
@@ -611,7 +613,7 @@ async def test_ac20_a_request_item_status_defaults_to_open(db: Db, firm: Firm) -
         request_list,
         firm.user_id,
     )
-    assert status == "open"
+    assert status == "requested"  # F-03-T15: draft, made requested by client visibility
 
 
 # --- grants for abacus_app -----------------------------------------------------------------------

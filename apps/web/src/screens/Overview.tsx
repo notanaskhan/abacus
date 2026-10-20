@@ -56,7 +56,7 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
   const g = graph.data;
   const items = g.areas.flatMap((a) => a.items);
   const done = (area: GraphAreaOut): number =>
-    area.items.filter((i) => i.status !== "open").length;
+    area.items.filter((i) => i.status !== "requested" && i.status !== "draft").length;
   const area = g.areas.find((a) => a.name === selected) ?? g.areas[0];
   const ready = items.filter((i) => i.screening_action === "ready_for_review").length;
   const revise = items.filter((i) => i.screening_action === "needs_revision").length;
@@ -73,7 +73,7 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
           title="Audit areas"
           action={
             <Count
-              done={items.filter((i) => i.status !== "open").length}
+              done={items.filter((i) => i.status !== "requested" && i.status !== "draft").length}
               total={items.length}
               label="received"
             />

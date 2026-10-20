@@ -22,7 +22,7 @@ from abacus.modules.requests.api import RequestItemView, classify
 MAX_SUGGESTIONS: Final = 3
 MIN_SCORE: Final = 35
 RULE_BONUS: Final = 40
-TAKES_EVIDENCE: Final = frozenset({"open", "received", "needs_revision"})
+TAKES_EVIDENCE: Final = frozenset({"draft", "requested", "uploaded", "returned"})
 _STOP: Final = frozenset(
     {
         "a",

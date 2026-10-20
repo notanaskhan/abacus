@@ -236,8 +236,10 @@ async def mark_received(session: AsyncSession, item_id: UUID) -> bool:
     further on). A sent-back item takes new evidence (SPEC-004, TASK-019)."""
     result = await session.execute(
         update(RequestItem)
-        .where(RequestItem.id == item_id, RequestItem.status.in_(("open", "needs_revision")))
-        .values(status="received")
+        .where(
+            RequestItem.id == item_id, RequestItem.status.in_(("draft", "requested", "returned"))
+        )
+        .values(status="uploaded")
         .returning(RequestItem.id)
     )
     return result.scalar_one_or_none() is not None
@@ -412,7 +414,7 @@ async def overdue_items(
         .join(RequestList, RequestList.id == RequestItem.request_list_id)
         .where(
             RequestItem.engagement_id == engagement_id,
-            RequestItem.status.in_(("open", "needs_revision")),
+            RequestItem.status.in_(("requested", "returned")),
             due < today,
         )
         .order_by(due, RequestItem.created_at, RequestItem.id)
@@ -433,7 +435,7 @@ async def overdue_counts(
         .join(RequestList, RequestList.id == RequestItem.request_list_id)
         .where(
             RequestItem.engagement_id.in_(engagement_ids),
-            RequestItem.status.in_(("open", "needs_revision")),
+            RequestItem.status.in_(("requested", "returned")),
             due < today,
             visible(ctx, "request_item.read", RequestItem.engagement_id),
         )

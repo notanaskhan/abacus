@@ -914,7 +914,7 @@ async def test_ac7_partner_manager_and_senior_create_request_items(
     assert body["engagement_id"] == str(engagement_id)
     assert body["description"] == "Aged AR"
     assert body["audit_area"] == "AR"
-    assert body["status"] == "open"
+    assert body["status"] == "requested"
     assert body["evidence_version_id"] is None
     assert datetime.fromisoformat(cast(str, body["created_at"])).tzinfo is not None
 
@@ -925,7 +925,7 @@ async def test_ac7_partner_manager_and_senior_create_request_items(
     [row] = rows
     assert str(row["id"]) == body["id"]
     assert row["engagement_id"] == engagement_id
-    assert row["status"] == "open"
+    assert row["status"] == "requested"
     assert row["created_by"] == who.user_id
 
 

@@ -11,7 +11,7 @@ from abacus.modules.requests.api import RequestItemView
 E = uuid.uuid4()
 
 
-def _item(description: str, area: str = "Area", status: str = "open") -> RequestItemView:
+def _item(description: str, area: str = "Area", status: str = "requested") -> RequestItemView:
     return RequestItemView(
         uuid.uuid4(), E, description, area, status, datetime(2026, 10, 1, tzinfo=UTC)
     )
@@ -39,7 +39,7 @@ def test_ac3_a_shared_rule_lifts_an_abbreviation() -> None:
 
 
 def test_ac3_closed_items_and_weak_matches_are_never_suggested() -> None:
-    closed = _item("Bank statements", status="accepted")
+    closed = _item("Bank statements", status="received")
     weak = _item("Bank reconciliation working papers and supporting schedules")
     assert suggest("bank.pdf", [closed, weak]) == []
 

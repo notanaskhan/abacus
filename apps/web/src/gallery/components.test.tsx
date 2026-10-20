@@ -94,7 +94,7 @@ describe("data table", () => {
 describe("status vocabulary", () => {
   it("reads every state one way, and an unknown one as itself", () => {
     expect(statusWord("workpaper", "ready")).toEqual({ label: "Prepared", tone: "warning" });
-    expect(statusWord("request", "ready_for_review").label).toBe("Ready for review");
+    expect(statusWord("request", "uploaded").label).toBe("Uploaded");
     expect(statusWord("request", "mystery")).toEqual({ label: "mystery", tone: "neutral" });
   });
 });

@@ -89,7 +89,7 @@ EXPECTED_EVENTS = [
     "evidence_item.created",
     "evidence_version.created",
     "fulfilment.created",
-    "request_item.received",
+    "request_item.uploaded",
     "sync_run.succeeded",
 ]
 Role = Literal["engagement_partner", "manager", "senior", "staff", "reviewer"]
@@ -284,7 +284,7 @@ class Seeder:
             uuid.UUID,
             await self.value(
                 "INSERT INTO request_lists (tenant_id, engagement_id) VALUES ($1, $2) "
-                "ON CONFLICT (tenant_id, engagement_id) DO UPDATE SET tenant_id = $1 "
+                "ON CONFLICT ON CONSTRAINT request_lists_binder_key DO UPDATE SET tenant_id = $1 "
                 "RETURNING id",
                 tenant_id,
                 engagement_id,
@@ -590,7 +590,7 @@ async def test_ac10_the_database_is_as_after_the_pipeline(
     for table in ("ledger_snapshots", "evidence_items", "evidence_versions", "fulfilments"):
         assert await seed.count(table, world.tenant_id) == 1
     assert await seed.count("trial_balance_lines", world.tenant_id) == len(TB.lines)
-    assert await seed.item_status(world.item_id) == "received"
+    assert await seed.item_status(world.item_id) == "uploaded"
     [snap] = await seed.rows(
         "SELECT * FROM ledger_snapshots WHERE tenant_id = $1", world.tenant_id
     )
@@ -651,7 +651,7 @@ async def test_ac11_an_unbalanced_trial_balance_fails_validation(
     assert row["evidence_version_id"] is None
     for table in ("ledger_snapshots", "evidence_versions", "fulfilments"):
         assert await seed.count(table, world.tenant_id) == 0
-    assert await seed.item_status(world.item_id) == "open"
+    assert await seed.item_status(world.item_id) == "requested"
     assert (await seed.actions(world.tenant_id)).count("sync_run.failed") == 1
 
 
@@ -665,7 +665,7 @@ async def test_ac11_a_malformed_payload_fails_the_run(
     row = await seed.run_row(run_id)
     assert (row["status"], row["failure_code"]) == ("failed", "malformed_payload")
     assert await seed.count("ledger_snapshots", world.tenant_id) == 0
-    assert await seed.item_status(world.item_id) == "open"
+    assert await seed.item_status(world.item_id) == "requested"
 
 
 @pytest.mark.usefixtures("worker")
@@ -736,7 +736,7 @@ async def test_ac11_an_outage_that_exhausts_the_retries_maps_to_provider_unavail
     assert outcome == RetrievalOutcome("failed", "provider_unavailable", None)
     row = await seed.run_row(run_id)
     assert (row["status"], row["failure_code"]) == ("failed", "provider_unavailable")
-    assert await seed.item_status(world.item_id) == "open"
+    assert await seed.item_status(world.item_id) == "requested"
 
 
 # --- every payload is encrypted at rest (ADR-017) ------------------------------------------------
@@ -1153,7 +1153,7 @@ async def test_ac20_a_retrigger_after_a_failed_run_makes_a_new_run_and_workflow_
     assert again.status == "succeeded"
     assert (await seed.run_row(first.sync_run_id))["status"] == "failed_validation"
     assert (await seed.run_row(second.sync_run_id))["status"] == "succeeded"
-    assert await seed.item_status(world.item_id) == "received"
+    assert await seed.item_status(world.item_id) == "uploaded"
 
 
 # --- failure text never reaches Temporal in the clear --------------------------------------------
@@ -1222,7 +1222,7 @@ async def test_ac20_a_cancelled_workflow_ends_its_run_as_cancelled_and_stays_can
     assert isinstance(raised.value.cause, CancelledError)
     row = await seed.run_row(run_id)
     assert (row["status"], row["failure_code"]) == ("failed", "cancelled")
-    assert await seed.item_status(world.item_id) == "open"
+    assert await seed.item_status(world.item_id) == "requested"
 
 
 # --- work-class queues (AC-1, AC-2, AC-16) -------------------------------------------------------

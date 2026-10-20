@@ -215,14 +215,14 @@ describe("ac11 board filter", () => {
     const items = [
       {
         id: "a",
-        status: "received",
+        status: "uploaded",
         audit_area: "Cash",
         description: "A",
         evidence_version_id: "va",
       },
       {
         id: "b",
-        status: "received",
+        status: "uploaded",
         audit_area: "Cash",
         description: "B",
         evidence_version_id: "vb",

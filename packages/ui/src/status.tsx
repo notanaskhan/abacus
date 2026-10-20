@@ -15,20 +15,22 @@ export const STATUS = {
   // The plan's firm-side request words (S19 §3; TASK-105): asked, uploaded and waiting for the
   // team, screened and ready for a decision, or returned to the client. ("Received" means accepted
   // in the plan, so an upload is never called received.)
+  // F-03-T15: request status v2 (chapter 09 §9.5.6): a firm-only draft, asked of the client,
+  // uploaded and waiting for the team, returned, received (accepted), or not applicable.
   request: {
-    open: { label: "Requested", tone: "neutral" },
-    received: { label: "Uploaded", tone: "warning" },
-    ready_for_review: { label: "Ready for review", tone: "warning" },
-    needs_revision: { label: "Returned", tone: "danger" },
-    accepted: { label: "Received", tone: "success" },
+    draft: { label: "Draft", tone: "neutral" },
+    requested: { label: "Requested", tone: "neutral" },
+    uploaded: { label: "Uploaded", tone: "warning" },
+    returned: { label: "Returned", tone: "danger" },
+    received: { label: "Received", tone: "success" },
+    not_applicable: { label: "Not applicable", tone: "neutral" },
   },
   // The client's words for their requests (the plan's POR-03; TASK-106): never the firm's states.
   clientRequest: {
-    open: { label: "To do", tone: "neutral" },
+    requested: { label: "To do", tone: "neutral" },
+    uploaded: { label: "Done", tone: "success" },
+    returned: { label: "Returned", tone: "danger" },
     received: { label: "Done", tone: "success" },
-    ready_for_review: { label: "Done", tone: "success" },
-    needs_revision: { label: "Returned", tone: "danger" },
-    accepted: { label: "Done", tone: "success" },
     not_applicable: { label: "Doesn't apply", tone: "neutral" },
   },
   engagement: {

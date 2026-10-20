@@ -22,7 +22,7 @@ export function effectiveDue(
 /** Overdue: past its due date and still open or sent back (what the agent reminds about). */
 export function isOverdue(item: RequestItemOut, due: string | null, today: string): boolean {
   return (
-    due !== null && due < today && (item.status === "open" || item.status === "needs_revision")
+    due !== null && due < today && (item.status === "requested" || item.status === "returned")
   );
 }
 

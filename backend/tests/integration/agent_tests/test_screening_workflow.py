@@ -418,7 +418,7 @@ async def test_ac14_the_workflow_completes_with_a_recorded_agent_result(
     assert outcome.screening_result_id == str(result["id"])
     assert (result["created_by_kind"], str(result["agent_run_id"])) == ("agent", outcome.run_id)
     assert await _scheduled_activities(handle) == [*SLOTTED, "screening.release_slot"]
-    assert await seed.item_status(world.item_id) == "received"  # the agent only proposes
+    assert await seed.item_status(world.item_id) == "uploaded"  # the agent only proposes
     [usage] = await seed.rows(
         "SELECT outcome FROM usage_records WHERE tenant_id = $1", world.tenant_id
     )

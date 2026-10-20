@@ -12,7 +12,7 @@ const ITEM: RequestItemOut = {
   engagement_id: E,
   description: "Trial balance at year end",
   audit_area: "General ledger",
-  status: "ready_for_review",
+  status: "uploaded",
   created_at: "2026-10-01T00:00:00Z",
   evidence_version_id: "v2",
   retrievability_tier: "A",

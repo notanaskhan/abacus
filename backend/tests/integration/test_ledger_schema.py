@@ -207,7 +207,8 @@ class Seeder:
     ) -> uuid.UUID:
         list_id = await self.value(
             "INSERT INTO request_lists (tenant_id, engagement_id) VALUES ($1, $2) "
-            "ON CONFLICT (tenant_id, engagement_id) DO UPDATE SET tenant_id = $1 RETURNING id",
+            "ON CONFLICT ON CONSTRAINT request_lists_binder_key "
+            "DO UPDATE SET tenant_id = $1 RETURNING id",
             tenant_id,
             engagement_id,
         )

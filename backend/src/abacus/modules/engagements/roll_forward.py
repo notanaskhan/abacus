@@ -174,12 +174,12 @@ def classify_items(
     additions flagged and ticked (D5, D6)."""
     found = [
         ProposedItem(
-            "used" if item.status == "accepted" else "not_used",
+            "used" if item.status == "received" else "not_used",
             item.description,
             item.audit_area,
             item.tier,
             item.client_visible,
-            ticked=item.status == "accepted",
+            ticked=item.status == "received",
             prior_item_id=item.id,
         )
         for item in prior

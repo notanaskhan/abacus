@@ -61,15 +61,8 @@ export function sourceLabel(evidence: EvidenceVersionOut): string {
 }
 
 // TASK-105: the request words live in the design system's status vocabulary.
-const STATUS_LABELS: Record<RequestItemOut["status"], string> = {
-  open: statusWord("request", "open").label,
-  received: statusWord("request", "received").label,
-  ready_for_review: statusWord("request", "ready_for_review").label,
-  needs_revision: statusWord("request", "needs_revision").label,
-};
-
 export function statusLabel(status: RequestItemOut["status"]): string {
-  return STATUS_LABELS[status];
+  return statusWord("request", status).label;
 }
 
 export function confidencePercent(confidence: string): string {
