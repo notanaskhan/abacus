@@ -1,7 +1,8 @@
-"""AC-20: the protected-path hooks block what they must, allow what they must, and fail closed.
+"""AC-20: the path hooks block what they must, allow what they must, and fail closed.
 
-Each test copies `.claude/hooks/` into a temporary project so real approval files never leak in,
-and runs the hooks under every available interpreter — including the system `python3`, which is
+Solo edition (SU-06): no approval files. Edits are blocked only for secrets, generated files and
+migrations already on origin/main. Each test copies `.claude/hooks/` into a temporary project and
+runs the hooks under every available interpreter — including the system `python3`, which is
 what Claude Code invokes (on macOS it is 3.9; a crash there once disabled every hook silently).
 """
 
@@ -23,7 +24,6 @@ SYSTEM_PYTHON = Path("/usr/bin/python3")
 INTERPRETERS = [pytest.param(sys.executable, id="venv")] + (
     [pytest.param(str(SYSTEM_PYTHON), id="system")] if SYSTEM_PYTHON.exists() else []
 )
-APPROVAL = "task: TASK-T\napproved_by: founder\nexpires: 2999-01-01\npaths:\n{paths}"
 
 Run = Callable[[str, dict[str, object]], int]
 
@@ -58,98 +58,82 @@ def _bash(project: tuple[Path, Run], command: str) -> int:
     return project[1]("guard_bash.py", {"command": command})
 
 
-def _approve(root: Path, *paths: str) -> None:
-    approvals = root / "work" / "approvals"
-    approvals.mkdir(parents=True, exist_ok=True)
-    body = "".join(f"  - {p}\n" for p in paths)
-    (approvals / "TASK-T.yaml").write_text(APPROVAL.format(paths=body), encoding="utf-8")
-
-
 @pytest.mark.parametrize(
     "rel",
     [
-        "AGENTS.md",
-        "agents.md",
-        "Makefile",
-        "backend/Makefile",
-        ".claude/settings.json",
-        ".CLAUDE/settings.json",
-        ".claude/hooks/_protected.py",
-        ".github/CODEOWNERS",
-        ".git/hooks/pre-commit",
-        ".gitignore",
-        "pnpm-workspace.yaml",
-        "packages/ui/package.json",
-        "apps/web/.npmrc",
-        "backend/pyproject.toml",
-        "backend/src/abacus_tools/quality/banned_patterns.py",
-        "backend/tests/unit/quality/test_hooks.py",
-        "backend/src/abacus/kernel/uow/core.py",
-        "backend/src/abacus/modules/identity/authz/policy.py",
-        "work/approvals/TASK-X.yaml",
-        "docs/product/failure-taxonomy.md",
+        ".env",
+        "backend/.env.local",
+        "infra/certs/server.pem",
+        "deploy.KEY",
+        "infra/secrets/prod.json",
+        "credentials",
+        "home/.aws/credentials.json",
         "../outside.txt",
     ],
 )
-def test_ac20_protected_path_is_blocked(project: tuple[Path, Run], rel: str) -> None:
+def test_ac20_secret_or_outside_path_is_blocked(project: tuple[Path, Run], rel: str) -> None:
     assert _edit(project, rel) == 2
 
 
 @pytest.mark.parametrize(
     "rel",
     [
+        "AGENTS.md",
+        "Makefile",
+        ".claude/settings.json",
+        ".claude/hooks/_protected.py",
+        ".github/workflows/ci.yml",
+        ".gitignore",
+        "backend/pyproject.toml",
+        "backend/src/abacus/kernel/uow/core.py",
+        "backend/src/abacus/modules/identity/authz/policy.py",
         "backend/src/abacus/modules/sampling/service.py",
-        "backend/src/abacus/kernel/outbox/relay.py",
         "docs/adr/ADR-200-new.md",
-        "docs/adr/drafts/ADR-1.md",
         "docs/specs/SPEC-001-new.md",
+        ".env.example",
+        "apps/web/.env.sample",
+        "backend/migrations/versions/0099_new.py",
         "..notes.md",
     ],
 )
-def test_ac20_unprotected_path_is_allowed(project: tuple[Path, Run], rel: str) -> None:
+def test_ac20_ordinary_path_is_allowed(project: tuple[Path, Run], rel: str) -> None:
     assert _edit(project, rel) == 0
 
 
-def test_ac20_existing_adr_is_immutable(project: tuple[Path, Run]) -> None:
+def test_ac20_existing_adr_can_be_edited(project: tuple[Path, Run]) -> None:
     adr = project[0] / "docs" / "adr" / "ADR-001-x.md"
     adr.parent.mkdir(parents=True)
     adr.write_text("---\n", encoding="utf-8")
-    assert _edit(project, "docs/adr/ADR-001-x.md") == 2
+    assert _edit(project, "docs/adr/ADR-001-x.md") == 0
 
 
-def test_ac20_symlink_to_protected_file_is_blocked(project: tuple[Path, Run]) -> None:
+def test_ac20_applied_migration_is_immutable(project: tuple[Path, Run]) -> None:
+    # No git in the temporary project, so an existing migration counts as on main (fail closed).
+    migration = project[0] / "backend" / "migrations" / "versions" / "0001_x.py"
+    migration.parent.mkdir(parents=True)
+    migration.write_text("x = 1\n", encoding="utf-8")
+    assert _edit(project, "backend/migrations/versions/0001_x.py") == 2
+
+
+def test_ac20_migration_not_yet_on_main_can_be_edited(project: tuple[Path, Run]) -> None:
     root = project[0]
-    (root / "notes.md").symlink_to(root / "AGENTS.md")
+    git = shutil.which("git")
+    assert git is not None
+    ident = ["-c", "user.email=t@example.com", "-c", "user.name=t"]
+    subprocess.run([git, "init", "-q", "-b", "main"], cwd=root, check=True)
+    subprocess.run([git, *ident, "commit", "-q", "--allow-empty", "-m", "x"], cwd=root, check=True)
+    subprocess.run([git, "update-ref", "refs/remotes/origin/main", "HEAD"], cwd=root, check=True)
+    migration = root / "backend" / "migrations" / "versions" / "0002_y.py"
+    migration.parent.mkdir(parents=True)
+    migration.write_text("x = 1\n", encoding="utf-8")
+    assert _edit(project, "backend/migrations/versions/0002_y.py") == 0
+
+
+def test_ac20_symlink_to_secret_file_is_blocked(project: tuple[Path, Run]) -> None:
+    root = project[0]
+    (root / "server.pem").write_text("x\n", encoding="utf-8")
+    (root / "notes.md").symlink_to(root / "server.pem")
     assert _edit(project, "notes.md") == 2
-
-
-def test_ac20_approval_unblocks_exactly_its_paths(project: tuple[Path, Run]) -> None:
-    _approve(
-        project[0], "AGENTS.md  # with a trailing comment", "backend/src/abacus/kernel/uow/**"
-    )
-    assert _edit(project, "AGENTS.md") == 0
-    assert _edit(project, "backend/src/abacus/kernel/uow/deep/core.py") == 0
-    assert _edit(project, "Makefile") == 2
-    assert _edit(project, "backend/src/abacus/kernel/db/engine.py") == 2
-
-
-@pytest.mark.parametrize(
-    "approval",
-    [
-        "task: T\napproved_by: founder\nexpires: 2000-01-01\npaths:\n  - AGENTS.md\n",
-        "task: T\napproved_by: founder\nexpires: never\npaths:\n  - AGENTS.md\n",
-        "task: T\napproved_by: agent\nexpires: 2999-01-01\npaths:\n  - AGENTS.md\n",
-        "task: T\napproved_by: founder\nexpires: 2999-01-01\npaths:\n  - '**'\n",
-        "task: T\napproved_by: founder\nexpires: 2999-01-01\npaths:\n  - '*'\n",
-        "task: T\napproved_by: founder\nexpires: 2999-01-01\nnotes:\n  - AGENTS.md\npaths:\n",
-    ],
-    ids=["expired", "not-a-date", "not-founder", "double-star", "star", "not-under-paths"],
-)
-def test_ac20_invalid_approval_does_not_unblock(project: tuple[Path, Run], approval: str) -> None:
-    approvals = project[0] / "work" / "approvals"
-    approvals.mkdir(parents=True)
-    (approvals / "TASK-T.yaml").write_text(approval, encoding="utf-8")
-    assert _edit(project, "AGENTS.md") == 2
 
 
 def test_ac20_edit_hook_fails_closed_on_bad_input(project: tuple[Path, Run]) -> None:
@@ -169,17 +153,10 @@ def test_ac20_edit_hook_fails_closed_when_rules_crash(project: tuple[Path, Run])
 @pytest.mark.parametrize(
     "command",
     [
-        "echo x > AGENTS.md",
-        "echo x >> agents.md",
-        "python3 -c \"open('AGENTS.md', 'w')\"",
-        "perl -pi -e 's/a/b/' Makefile",
-        "ln -s AGENTS.md notes.md",
-        "git checkout -- .github/CODEOWNERS",
-        "cp /tmp/x .git/hooks/pre-commit",
-        "sed -i '' 's/a/b/' backend/src/abacus/kernel/uow/core.py",
         "git push --force origin feature",
         "git push --force origin main",
-        "uv add requests",
+        "terraform destroy",
+        "sudo rm x",
         "git checkout --theirs packages/api-client/openapi.json",
         "git checkout --ours -- backend/src/abacus/kernel/_flags.py",
         "git checkout --theirs backend/tests/durations.json",
@@ -197,12 +174,18 @@ def test_ac20_risky_shell_command_is_blocked(project: tuple[Path, Run], command:
         "cat .github/CODEOWNERS",
         'git commit -m "routes -> service; Makefile untouched"',
         "git push -u origin task-001-scaffolding",
-        # The founder pushes straight to main (2026-10-19); force pushes stay blocked.
+        # Pushing straight to main is allowed; force pushes stay blocked.
         "git push origin main",
         "git push origin HEAD:refs/heads/main",
         "git checkout --theirs apps/web/src/router.tsx",
         "git clone https://github.com/x/abacus.git > /dev/null",
         "uv run pytest tests/unit",
+        "echo x > AGENTS.md",
+        "sed -i '' 's/a/b/' backend/src/abacus/kernel/uow/core.py",
+        "uv add requests",
+        "pnpm add zod",
+        "terraform apply",
+        "gh pr merge 12 --squash",
     ],
 )
 def test_ac20_ordinary_shell_command_is_allowed(project: tuple[Path, Run], command: str) -> None:
@@ -235,7 +218,6 @@ def test_ac20_bash_hook_fails_closed_on_bad_input(project: tuple[Path, Run]) -> 
     ],
 )
 def test_a_generated_file_is_never_edited_by_hand(project: tuple[Path, Run], rel: str) -> None:
-    _approve(project[0], rel)
     assert _edit(project, rel) == 2
 
 

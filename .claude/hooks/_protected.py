@@ -1,4 +1,8 @@
-"""Shared protected-path rules for hooks. Mirrors docs/architecture/protected-paths.md.
+"""Shared path rules for hooks. Mirrors docs/architecture/protected-paths.md.
+
+Solo edition (SU-06): no approval files. The hooks keep only what protects data and correctness:
+secret files are never written by an agent, generated files are regenerated rather than edited,
+and a migration already on origin/main is never edited.
 
 Runs under whatever `python3` is first on PATH (macOS ships 3.9): keep it 3.9-compatible.
 Matching is case-insensitive (APFS is) and segment-aware: `*` never crosses `/`; `**` spans
@@ -6,57 +10,25 @@ zero or more directories.
 """
 from __future__ import annotations
 
-import datetime
 import fnmatch
-import glob
 import os
-import re
+import subprocess
 
 ROOT = os.path.realpath(os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd()))
 
-# Always protected: any edit or creation requires an approval file.
-PROTECTED = [
-    "AGENTS.md", "CLAUDE.md", "**/Makefile",
-    ".claude/**",
-    ".github/**",
-    ".git/**",
-    "**/.gitignore",
-    "infra/**",
-    "**/*compose*.y*ml",
-    "work/approvals/**",
-    "docs/architecture/permission-matrix.yaml",
-    "docs/architecture/protected-paths.md",
-    "docs/architecture/dependency-allowlist.yaml",
-    "docs/product/glossary.md",
-    "docs/product/failure-taxonomy.md",
-    # Evaluation thresholds, cost baselines and judge calibration (ADR-079, ADR-070; TASK-020 D5).
-    "evals/*/suite.yaml",
-    "evals/baselines.yaml",
-    "evals/judges/*",
-    "**/pyproject.toml", "backend/uv.lock",
-    "**/package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "**/.npmrc",
-    "backend/src/abacus_tools/quality/**",
-    "backend/tests/unit/quality/**",
-    "backend/src/abacus/modules/identity/**",
-    "backend/src/abacus/api/**",
-    "backend/src/abacus/kernel/db/**",
-    "backend/alembic.ini", "backend/migrations/env.py", "backend/migrations/bootstrap*.sql",
-    "backend/migrations/script.py.mako",
-    "backend/src/abacus/kernel/uow/**",
-    "backend/src/abacus/kernel/crypto/**",
-    "backend/src/abacus/modules/audit_trail/**",
-    "backend/src/abacus/modules/evidence/**",
-    "backend/src/abacus/modules/connections/**",
-    "backend/src/abacus/modules/ledger/**",
-    "backend/src/abacus/worker/**",
-    "backend/src/abacus/ai_gateway/**",
-    "backend/src/abacus/modules/agents/**",
-    "backend/src/abacus/kernel/storage.py",
+# Secrets: never written by an agent. Templates (.env.example, .env.sample) are fine.
+SECRETS = [
+    "**/.env", "**/.env.*",
+    "**/*.pem", "**/*.key", "**/*.p12", "**/*.pfx",
+    "**/secrets/**",
+    "**/credentials", "**/credentials.*",
 ]
-# Protected only once they exist: new files allowed, edits to existing files need approval.
-PROTECTED_IF_EXISTS = ["docs/adr/ADR-*.md", "backend/migrations/versions/*"]
+SECRET_TEMPLATES = ["**/.env.example", "**/.env.sample", "**/.env.template"]
 
-# Generated: never hand-edited, even with an approval; regenerate instead (F-01-T09).
+# Immutable once on origin/main: an applied migration is replaced by a new one, never edited.
+IMMUTABLE_ON_MAIN = ["backend/migrations/versions/*"]
+
+# Generated: never hand-edited; regenerate instead (F-01-T09).
 # (pattern, the command that regenerates it)
 GENERATED = [
     ("packages/api-client/openapi.json", "make generate"),
@@ -70,12 +42,9 @@ GENERATED = [
     ("backend/tests/workflows/histories/*.json", "the workflow's replay recorder (abacus_tools.workflows)"),
 ]
 
-_TOP_KEY = re.compile(r"^([A-Za-z_]+):\s*(.*)$")
-_LIST_ITEM = re.compile(r"^\s+-\s+(.+)$")
-
 
 def rel(path: str) -> str:
-    """Repo-relative path with symlinks resolved, so a link cannot launder a protected target."""
+    """Repo-relative path with symlinks resolved, so a link cannot launder a guarded target."""
     p = os.path.realpath(path if os.path.isabs(path) else os.path.join(ROOT, path))
     return os.path.relpath(p, ROOT).replace(os.sep, "/")
 
@@ -94,71 +63,38 @@ def _match(r: str, patterns: list[str]) -> bool:
     return any(_segments_match(parts, p.lower().split("/")) for p in patterns)
 
 
-def _acceptable_pattern(pattern: str) -> bool:
-    """Approval patterns must name a concrete top-level directory or file: no `*`, `**/*`."""
-    first = pattern.split("/")[0]
-    return bool(first) and "*" not in first and "?" not in first and ".." not in pattern.split("/")
-
-
-def parse_approval(text: str) -> tuple[dict[str, str], list[str]]:
-    """Top-level `key: value` pairs and the items under `paths:` (comments stripped)."""
-    keys: dict[str, str] = {}
-    paths: list[str] = []
-    in_paths = False
-    for raw in text.splitlines():
-        line = raw.split(" #", 1)[0].rstrip()
-        if not line.strip() or line.lstrip().startswith("#"):
-            continue
-        top = _TOP_KEY.match(line)
-        if top:
-            keys[top.group(1)] = top.group(2).strip()
-            in_paths = top.group(1) == "paths"
-            continue
-        item = _LIST_ITEM.match(line)
-        if in_paths and item:
-            paths.append(item.group(1).strip().strip("'\""))
-    return keys, paths
-
-
-def _valid_until(expires: str) -> bool:
+def on_main(r: str) -> bool:
+    """True when the path exists on origin/main. Without git or origin/main, a file that exists
+    on disk counts as on main (fail closed)."""
     try:
-        return datetime.date.fromisoformat(expires) >= datetime.date.today()
-    except ValueError:
-        return False
-
-
-def approved(r: str) -> bool:
-    """An approval file in work/approvals/*.yaml written by the founder:
-       task: TASK-012
-       approved_by: founder
-       expires: 2026-12-31
-       paths:
-         - backend/src/abacus/kernel/uow/**
-    """
-    for f in glob.glob(os.path.join(ROOT, "work/approvals/*.yaml")):
-        try:
-            with open(f, encoding="utf-8") as fh:
-                keys, paths = parse_approval(fh.read())
-        except (OSError, UnicodeDecodeError):
-            continue
-        if keys.get("approved_by") != "founder" or not _valid_until(keys.get("expires", "")):
-            continue
-        if _match(r, [p for p in paths if _acceptable_pattern(p)]):
-            return True
-    return False
+        result = subprocess.run(
+            ["git", "-C", ROOT, "cat-file", "-e", "origin/main:" + r],
+            capture_output=True,
+            timeout=5,
+            check=False,
+        )
+        known = subprocess.run(
+            ["git", "-C", ROOT, "rev-parse", "--verify", "--quiet", "origin/main"],
+            capture_output=True,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return True
+    if known.returncode != 0:
+        return True
+    return result.returncode == 0
 
 
 def violation(path: str) -> str | None:
     r = rel(path)
     if r == ".." or r.startswith("../"):
         return f"{path} is outside the project."
-    if _match(r, ["work/approvals/**"]):
-        return "Approval files can only be created by the founder, by hand."
     for pattern, command in GENERATED:
         if _match(r, [pattern]):
             return f"{r} is generated; never edit it by hand. Regenerate it: {command} (or make regenerate)."
-    if _match(r, PROTECTED) and not approved(r):
-        return f"{r} is a protected path. Ask the founder for an approval file in work/approvals/."
-    if _match(r, PROTECTED_IF_EXISTS) and os.path.exists(os.path.join(ROOT, r)) and not approved(r):
-        return f"{r} already exists and is immutable (accepted ADR or applied migration). Create a new file instead, or ask for approval."
+    if _match(r, SECRETS) and not _match(r, SECRET_TEMPLATES):
+        return f"{r} holds secrets; agents never write it. Edit it yourself, outside the session."
+    if _match(r, IMMUTABLE_ON_MAIN) and os.path.exists(os.path.join(ROOT, r)) and on_main(r):
+        return f"{r} is an applied migration on main and is immutable. Add a new migration instead."
     return None

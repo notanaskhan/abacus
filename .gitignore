@@ -3,8 +3,6 @@
 .env.*
 **/secrets/
 
-# Founder approvals are local session controls; the approval is recorded in the task file instead.
-work/approvals/*.yaml
 
 # Claude Code personal settings
 .claude/settings.local.json

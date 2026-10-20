@@ -1,16 +1,4 @@
 {
-  "permissions": {
-    "deny": [
-      "Read(./.env)",
-      "Read(./.env.*)",
-      "Read(./**/secrets/**)",
-      "Bash(terraform apply:*)",
-      "Bash(terraform destroy:*)",
-      "Bash(git push --force:*)",
-      "Bash(git push -f:*)",
-      "Bash(git commit --no-verify:*)"
-    ]
-  },
   "hooks": {
     "PreToolUse": [
       {
