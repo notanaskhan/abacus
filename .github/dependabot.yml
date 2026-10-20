@@ -1,0 +1,45 @@
+# Dependabot (SU-18): grouped weekly updates, so a week's bumps arrive as one pull request per
+# ecosystem and ride one batch merge. Security updates are not grouped and arrive as they land.
+# Terraform joins when Q-01 creates infra/ (Dependabot fails on a missing directory).
+# New packages still need an entry in docs/architecture/dependency-allowlist.yaml.
+version: 2
+updates:
+  - package-ecosystem: uv
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      python:
+        patterns: ["*"]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: npm # pnpm workspace (pnpm-lock.yaml)
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      javascript:
+        patterns: ["*"]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ["*"]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      compose-images:
+        patterns: ["*"]
+    open-pull-requests-limit: 5
