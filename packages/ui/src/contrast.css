@@ -1,0 +1,18 @@
+/* The handoff's ink ladder (SPEC-048 AC-4, DEC-11). The shipped ladder is the AA one in theme.css
+   (ink-2 .70, ink-3 .66, match text #7E4590, focus outline). The gallery sets
+   <html data-contrast="reference"> for ?contrast=reference so the parity harness can compare
+   against the handoff PNGs; production builds never set the attribute. Mirrored by
+   referenceLadder in tokens/tokens.ts. */
+[data-contrast="reference"] {
+  --color-ink-2: rgba(43, 31, 23, 0.62);
+  --color-ink-3: rgba(43, 31, 23, 0.54);
+  --color-muted: rgba(43, 31, 23, 0.54);
+  --color-match-ink: #9253a2;
+  --focus-ring: 0 0 0 2px rgba(43, 31, 23, 0.28), 0 0 0 0.5px rgba(43, 31, 23, 0.22);
+}
+
+/* The handoff draws focus as a box-shadow ring; the reference run restores it. */
+[data-contrast="reference"] :focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}

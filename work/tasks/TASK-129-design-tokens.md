@@ -4,7 +4,7 @@ title: "F-05-T03 · Tokens: tokens.ts, theme.css (@theme static with namespace r
 spec: SPEC-048
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-14]
 risk_zone: green
-status: in-progress
+status: done
 epic: F-05
 plan_key: F-05-T03
 branch: task-129-design-tokens
@@ -44,7 +44,7 @@ Decided 2026-10-20: controls use pills (`--radius-pill`); Anas's 7px squared con
 - Prior work: TASK-091..101 (Anas: tokens, Geist, components)
 
 ## Plan
-- [ ] Plan written in this file (required for amber and red)
+- [x] Plan written in this file (required for amber and red)
 
 Steps:
 1. [ ] Diff existing theme.css against design-foundations; write tokens.ts as the single source
@@ -94,11 +94,13 @@ Append-only. Newest at the bottom.
 
 - `2026-10-20` — task file written from the epic (SU-14); nothing built yet.
 - 2026-10-20 (SU-24): tests first in apps/web/src/lint/tokens.test.ts, then fixed: ink-2 .70 and ink-3 .66 (AA on every surface), match text #7E4590, focus outline 2px rgba(43,31,23,.55), Tailwind's default palette and shadows reset; ClientBell shadow-lg -> shadow-pop. Still to do here: the typed tokens.ts mirror and root.css.
+- 2026-10-20 (solo build): tokens-mirror.test.ts first (apps/web/src/lint, because packages/ui has no Vitest): tokens.ts equals theme.css (@theme static) and root.css in both directions, the foundations counts hold, the probe emits no bg-red-500/shadow-lg rules and bg-green-tint/text-body/shadow-e2/rounded-pane emit the token values, --radius-pill is 999px, contrast.css restores the handoff ladder. Built tokens.ts, root.css, contrast.css, styles.css (the entry apps/web imports) and the ./tokens, ./styles.css exports; theme.css regenerated from tokens.ts (new colours, shadows, radii, 27 type roles, layout, z, scrims, motion). AC-3 (axe on /components/**) is wired in TASK-135. text-sm's reset and the weight/radius resets are TASK-132. Open: --spacing 1px and breakpoints deferred (numeric-spacing codemod). make check-fast, vitest (422) and vite build green.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
-| | | yes / no |
+| Type roles for the six Tailwind-mapped sizes carry size and line height only, at today's values | Keeps the T06 codemod pixel-neutral; weight and tracking arrive with the primitives (T14) | no |
+| surface-deep for the plan's surface | surface is still the white SPEC-016 alias until T34 | no |
 
 ## Gotchas and discoveries
 - 
@@ -107,8 +109,8 @@ Append-only. Newest at the bottom.
 - [ ] 
 
 ## Handoff
-- **Current state:** not started
-- **Exact next step:** step 1 of the plan
+- **Current state:** done (see the progress log)
+- **Exact next step:** none for this task
 - **Uncommitted or partial work:** none
 - **Known failing checks:** none
 - **Open issues:** none

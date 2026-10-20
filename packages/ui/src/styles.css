@@ -1,0 +1,4 @@
+/* The design system's stylesheet entry (ADR-155): import after `@import "tailwindcss"`. */
+@import "./theme.css";
+@import "./root.css";
+@import "./contrast.css";

@@ -1,7 +1,12 @@
-/* The design foundation (TASK-091; the plan's cross/design-foundations.md): the only place colours,
-   fonts, type sizes, radii and shadows are defined. Warm greige surfaces, espresso ink on an alpha
-   ladder, olive / ochre / brick status families, Geist at 400 and 500 only, no serif, no blue, no
-   gradients, 0.5px rings instead of borders on panes.
+/* The design foundation (TASK-091, F-05-T03; the plan's cross/design-foundations.md): the only place
+   colours, fonts, type sizes, radii and shadows are defined. Warm greige surfaces, espresso ink on
+   an alpha ladder, olive / ochre / brick status families, Geist at 400 and 500 only, no serif, no
+   blue, no gradients, 0.5px rings instead of borders on panes.
+
+   `@theme static` emits every variable, used or not, so code can read them (charts, tests).
+   packages/ui/src/tokens/tokens.ts is the typed mirror and is proven equal to this block by
+   apps/web/src/lint/tokens-mirror.test.ts. Layout sizes, z-index, scrims and motion live in
+   root.css; the reference ink ladder in contrast.css.
 
    The SPEC-016 token names (ground, surface, muted, line, accent, ok, warn, info, danger, ai) stay
    as aliases so every screen takes the new look at once; new code uses the plan's names (card,
@@ -11,11 +16,12 @@
 @import "@fontsource/geist-mono/latin-400.css";
 @import "@fontsource/geist-mono/latin-500.css";
 
-@theme {
+@theme static {
   /* Only the plan's tokens exist: Tailwind's default palette and shadows compile to nothing
      (SPEC-048). Type sizes stay mapped onto the plan's roles until the F-05-T06 codemod. */
   --color-*: initial;
   --shadow-*: initial;
+
   /* Surfaces, light to dark */
   --color-card: #ffffff;
   --color-band-hd: #fbfbfa;
@@ -24,10 +30,13 @@
   --color-nested: #efeeeb;
   --color-sel-bg: #e8e6e0;
   --color-chip: #e1dfd9;
+  --color-surface-deep: #d7d5ce;
+  --color-presentation: #e9e3dd;
+
+  /* Tonal button hover */
   --color-tonal-hover: #d9d6cf;
 
-  /* Ink: espresso on the plan's AA alpha ladder (DEC-11): ink-2 .70 and ink-3 .66 meet
-     4.5:1 for small text on card, surface, shell, nav-fill and nested. */
+  /* Ink: espresso on the AA alpha ladder (DEC-11) */
   --color-ink: rgba(43, 31, 23, 0.95);
   --color-ink-2: rgba(43, 31, 23, 0.7);
   --color-ink-3: rgba(43, 31, 23, 0.66);
@@ -47,18 +56,52 @@
   --color-green-ink: #47521f;
   --color-green-tint: #e6ebd8;
   --color-green-hover: #525f29;
+  --color-green-tint-hover: #dce3ca;
   --color-amber: #ba8f45;
   --color-amber-ink: #7c5718;
   --color-amber-tint: #f6eedf;
+  --color-amber-tint-hover: #f0e4cf;
+  --color-amber-line: rgba(124, 87, 24, 0.22);
   --color-red: #b13327;
   --color-red-ink: #8e2418;
   --color-red-tint: #f7e4e1;
   --color-red-tint-hover: #f0d5d0;
+  --color-negative: #b13327;
+
+  /* Clay: document icon tiles only */
+  --color-clay: #a45f3d;
 
   /* Source tracing only, never a status */
   --color-match-bg: #ecd9f0;
+  --color-match-bg-2: #e4d1e9;
   --color-match-line: #bf99c8;
-  --color-match-ink: #7e4590; /* AA match text (DEC-11) */
+  --color-match-ink: #7e4590;
+  --color-match-mark: #dacfeb;
+  --color-match-soft: rgba(204, 189, 229, 0.62);
+  --color-match-i9: #e9e3f2;
+  --color-match-hover: #f8f2f9;
+
+  /* Data visualisation */
+  --color-viz-p1: #d4c0b4;
+  --color-viz-p2: #c0c89f;
+  --color-viz-p3: #e1bf8d;
+  --color-viz-p4: #f3b5a8;
+  --color-viz-d1: #8a6c58;
+  --color-viz-d2: #687933;
+  --color-viz-d3: #936b1c;
+  --color-viz-d4: #b55545;
+
+  /* Rendered documents only */
+  --color-doc-typed: #6a98e8;
+  --color-doc-ink: #111111;
+  --color-doc-black: #000000;
+  --color-doc-fill-dark: #1a2f7a;
+  --color-doc-check: #8a97a8;
+  --color-doc-zebra: #fbfaf8;
+  --color-hl-rose: #e39a9a;
+  --color-hl-apricot: #e3b47e;
+  --color-hl-sage: #a9c08e;
+  --color-hl-slate: #9db2c9;
 
   /* SPEC-016 aliases */
   --color-ground: #f8f8f6;
@@ -75,23 +118,27 @@
   --color-ok-soft: #e6ebd8;
   --color-warn: #7c5718;
   --color-warn-soft: #f6eedf;
-  --color-info: #7c5718; /* in progress is ochre; purple is reserved for source tracing */
+  --color-info: #7c5718;
   --color-info-soft: #f6eedf;
   --color-danger: #8e2418;
   --color-danger-soft: #f7e4e1;
   --color-ai: rgba(43, 31, 23, 0.6);
   --color-ai-line: rgba(43, 31, 23, 0.22);
 
-  /* Type: Geist 400/500; the old serif display face is gone */
+  /* Families */
   --font-sans: "Geist", "Inter Tight", -apple-system, "Helvetica Neue", Arial, sans-serif;
   --font-ui: "Geist", "Inter Tight", -apple-system, "Helvetica Neue", Arial, sans-serif;
   --font-display: "Geist", "Inter Tight", -apple-system, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-doc: "Arimo", "Helvetica Neue", Arial, sans-serif;
+  --font-legal: "Gelasio", Georgia, serif;
+  --font-statement: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Legacy weight names */
   --font-weight-semibold: 500;
   --font-weight-bold: 500;
 
-  /* Sizes map Tailwind's scale onto the plan's roles: meta 11.5, body 13, tab 13.5, pane 14.5,
-     title 15, page 20; no display sizes in the product */
+  /* Type: Tailwind names mapped onto the plan's sizes until the F-05-T06 codemod */
   --text-xs: 11.5px;
   --text-xs--line-height: 1.3;
   --text-sm: 13px;
@@ -107,14 +154,104 @@
   --text-3xl: 20px;
   --text-3xl--line-height: 1.2;
 
+  /* Type roles (design-foundations 1.6) */
+  --text-dashboard: 20px;
+  --text-dashboard--line-height: 1.2;
+  --text-brand: 16px;
+  --text-brand--line-height: 1.2;
+  --text-brand--letter-spacing: -0.02em;
+  --text-brand--font-weight: 500;
+  --text-title: 15px;
+  --text-title--line-height: 1.3;
+  --text-pane: 14.5px;
+  --text-pane--line-height: 1.3;
+  --text-tab: 14px;
+  --text-tab--line-height: 1.2;
+  --text-tab--letter-spacing: -0.005em;
+  --text-section: 13.5px;
+  --text-section--line-height: 1.2;
+  --text-section--letter-spacing: -0.01em;
+  --text-section--font-weight: 500;
+  --text-nav: 13.5px;
+  --text-nav--line-height: 1.45;
+  --text-body: 13px;
+  --text-body--line-height: 1.45;
+  --text-chat: 13.5px;
+  --text-chat--line-height: 1.45;
+  --text-chat--letter-spacing: -0.005em;
+  --text-dense: 12.5px;
+  --text-dense--line-height: 1.3;
+  --text-dense--letter-spacing: -0.005em;
+  --text-para: 12.5px;
+  --text-para--line-height: 1.55;
+  --text-para--letter-spacing: -0.003em;
+  --text-cell: 12px;
+  --text-cell--line-height: 1.2;
+  --text-cell--letter-spacing: -0.005em;
+  --text-th: 11.5px;
+  --text-th--line-height: 1.2;
+  --text-th--letter-spacing: -0.003em;
+  --text-meta: 11.5px;
+  --text-meta--line-height: 1.3;
+  --text-count: 11.5px;
+  --text-count--line-height: 1;
+  --text-count--font-weight: 500;
+  --text-pill: 12px;
+  --text-pill--line-height: 1;
+  --text-pill--letter-spacing: -0.005em;
+  --text-pill--font-weight: 500;
+  --text-pill-card: 11.5px;
+  --text-pill-card--line-height: 1;
+  --text-pill-card--font-weight: 500;
+  --text-pill-sm: 11px;
+  --text-pill-sm--line-height: 1;
+  --text-pill-sm--letter-spacing: -0.003em;
+  --text-pill-sm--font-weight: 500;
+  --text-micro: 10.5px;
+  --text-micro--line-height: 1;
+  --text-micro--letter-spacing: -0.002em;
+  --text-micro--font-weight: 500;
+  --text-band-dark: 12px;
+  --text-band-dark--line-height: 1;
+  --text-band-dark--letter-spacing: 0.04em;
+  --text-band-dark--font-weight: 500;
+  --text-outline-hd: 12px;
+  --text-outline-hd--line-height: 1;
+  --text-outline-hd--letter-spacing: 0.06em;
+  --text-outline-hd--font-weight: 500;
+  --text-group-row: 10px;
+  --text-group-row--line-height: 1;
+  --text-group-row--letter-spacing: 0.07em;
+  --text-group-row--font-weight: 500;
+  --text-kpi-label: 9.5px;
+  --text-kpi-label--line-height: 1;
+  --text-kpi-label--letter-spacing: 0.07em;
+  --text-kpi-label--font-weight: 500;
+  --text-kpi: 22px;
+  --text-kpi--line-height: 1.1;
+  --text-btn-lg: 14px;
+  --text-btn-lg--line-height: 1.2;
+  --text-btn: 13.5px;
+  --text-btn--line-height: 1.2;
+  --text-btn-sm: 12.5px;
+  --text-btn-sm--line-height: 1.2;
+
   /* Radii */
-  --radius-control: 8px;
-  --radius-panel: 12px;
   --radius-pill: 999px;
   --radius-pane: 12px;
   --radius-nested: 10px;
   --radius-tile: 8px;
+  --radius-tile-lg: 9px;
+  --radius-sheet: 6px;
+  --radius-prop: 5px;
+  --radius-value: 4px;
   --radius-dialog: 14px;
+  --radius-menu: 15px;
+  --radius-menu-inner: 11px;
+  --radius-window: 16px;
+  --radius-phone: 28px;
+  --radius-control: 8px;
+  --radius-panel: 12px;
 
   /* Elevation: every shadow begins with a 0.5px ink ring, which is the border */
   --shadow-e1: 0 0 0 0.5px rgba(43, 31, 23, 0.07), 0 1px 2px rgba(43, 31, 23, 0.05);
@@ -127,17 +264,31 @@
   --shadow-pop:
     0 0 0 0.5px rgba(43, 31, 23, 0.1), 0 2px 6px rgba(43, 31, 23, 0.06),
     0 18px 40px rgba(43, 31, 23, 0.18);
+  --shadow-note: 0 0 0 0.5px rgba(43, 31, 23, 0.1), 0 14px 32px rgba(43, 31, 23, 0.2);
   --shadow-menu:
     0 0 0 0.5px rgba(43, 31, 23, 0.1), 0 2px 6px rgba(43, 31, 23, 0.07),
     0 22px 48px rgba(43, 31, 23, 0.2);
   --shadow-modal:
     0 0 0 0.5px rgba(43, 31, 23, 0.1), 0 2px 6px rgba(43, 31, 23, 0.06),
     0 26px 60px rgba(43, 31, 23, 0.22);
+  --shadow-sheet:
+    0 0 0 0.5px rgba(43, 31, 23, 0.1), 0 4px 12px rgba(43, 31, 23, 0.1),
+    0 28px 70px rgba(43, 31, 23, 0.26);
+  --shadow-ask:
+    0 0 0 0.5px rgba(43, 31, 23, 0.07), 0 2px 6px rgba(43, 31, 23, 0.06),
+    0 -2px 22px rgba(43, 31, 23, 0.06), 0 18px 40px rgba(43, 31, 23, 0.16);
+  --shadow-fab: 0 0 0 0.5px rgba(43, 31, 23, 0.08), 0 2px 6px rgba(43, 31, 23, 0.1);
   --shadow-cta: 0 1px 2px rgba(43, 31, 23, 0.2);
+  --shadow-lift: 0 1px 2px rgba(43, 31, 23, 0.18);
+  --shadow-page: 0 0 0 0.5px rgba(43, 31, 23, 0.1), 0 2px 7px rgba(43, 31, 23, 0.16);
   --inset-shadow-hair: inset 0 0 0 0.5px rgba(43, 31, 23, 0.1);
   --inset-shadow-sel: inset 0 0 0 1px rgba(43, 31, 23, 0.22);
+  --inset-shadow-match: inset 0 0 0 1px #bf99c8;
 
+  /* Easing */
   --ease-out: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-fly: cubic-bezier(0.32, 0.72, 0.32, 1);
 }
 
 @keyframes drawer-in {

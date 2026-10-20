@@ -1,0 +1,65 @@
+/* Non-utility tokens (SPEC-048 AC-1, F-05-T03): motion, layout sizes, z-index, scrims and the
+   hairline. Used through Tailwind's variable shorthand: h-(--toolbar-h), w-(--rail-w),
+   z-(--z-modal), bg-(--scrim). Mirrored by packages/ui/src/tokens/tokens.ts. */
+:root {
+  /* Motion */
+  --motion-color: 180ms ease;
+  --motion-row: 200ms ease;
+  --motion-press: 220ms cubic-bezier(0.25, 1, 0.5, 1);
+  --motion-reveal: 260ms cubic-bezier(0.25, 1, 0.5, 1);
+  --motion-match: 360ms ease;
+  --motion-collapse: 340ms ease-out;
+  --motion-spin: 820ms linear;
+  --stagger-kpi: 45ms;
+  --stagger-rows: 70ms;
+  --stagger-docs: 135ms;
+  --stagger-uploads: 130ms;
+
+  /* Layout sizes */
+  --app-w: 1400px;
+  --toolbar-h: 46px;
+  --subbar-h: 42px;
+  --auditbar-h: 59px;
+  --tabs-h: 50px;
+  --tabs-h-compact: 44px;
+  --tabs-h-workbench: 60px;
+  --pane-hd-h: 46px;
+  --bar-h: 44px;
+  --rail-w: 330px;
+  --rail-w-wide: 358px;
+  --rail-w-list: 320px;
+  --rail-w-portal: 336px;
+  --rail-w-inbox: 392px;
+  --tree-w: 214px;
+  --wp-w: 536px;
+  --ev-w: 490px;
+  --queue-w: 262px;
+  --queue-w-close: 310px;
+  --queue-w-entity: 470px;
+  --dock-w: 330px;
+  --dock-w-doc: 360px;
+  --nav-w-board: 280px;
+  --drawer-w: 480px;
+  --sheet-w: 500px;
+  --dialog-w: 560px;
+  --palette-w: 640px;
+  --menu-w: 462px;
+  --menu-w-sm: 240px;
+  --gutter-pane: 10px;
+  --edge-app: 12px;
+
+  /* Z-index */
+  --z-pop: 30;
+  --z-menu: 40;
+  --z-drawer: 50;
+  --z-modal: 60;
+  --z-toast: 70;
+
+  /* Scrims */
+  --scrim: rgba(43, 31, 23, 0.22);
+  --scrim-agent: rgba(43, 31, 23, 0.28);
+  --scrim-sheet: rgba(43, 31, 23, 0.3);
+
+  /* Hairline */
+  --hairline: 0.5px solid var(--color-hair);
+}

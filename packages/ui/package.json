@@ -10,7 +10,11 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
+    "./styles.css": "./src/styles.css",
     "./theme.css": "./src/theme.css",
+    "./root.css": "./src/root.css",
+    "./contrast.css": "./src/contrast.css",
+    "./tokens": "./src/tokens/tokens.ts",
     "./tokens/*": "./src/tokens/*",
     "./fonts/*": "./src/fonts/*",
     "./specimens": "./src/specimens/index.ts"
