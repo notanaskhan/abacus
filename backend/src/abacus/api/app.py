@@ -26,6 +26,7 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.telemetry import configure_tracing, shutdown_tracing
 from abacus.kernel.temporal import payload_codec
 from abacus.modules.agents import api as agents
+from abacus.modules.audit_trail import api as audit_trail
 from abacus.modules.connections import api as connections
 from abacus.modules.engagements import api as engagements
 from abacus.modules.evidence import api as evidence
@@ -60,6 +61,7 @@ ROUTERS = (
     evidence.firm_router,  # TASK-102
     platform.router,
     notifications.router,
+    audit_trail.router,  # SPEC-304 (TASK-305)
 )
 # What a validation error may say about each problem: never the submitted value (client content
 # is hostile, AGENTS.md #8), never pydantic's internal context.

@@ -20,6 +20,7 @@ from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Annotated, ClassVar
 from uuid import UUID, uuid4
 
@@ -231,7 +232,78 @@ async def _unit_of_work(ctx: TenantContext) -> AsyncGenerator[UnitOfWork]:
             await session.close()
 
 
+@dataclass(frozen=True)
+class AuditFilter:
+    """SPEC-304 (TASK-305): what the audit log explorer narrows to; None means any."""
+
+    action: str | None = None
+    actor_kind: str | None = None
+    actor_id: str | None = None
+    target_type: str | None = None
+    target_id: str | None = None
+    since: datetime | None = None
+    until: datetime | None = None
+
+
+@dataclass(frozen=True)
+class AuditRow:
+    seq: int
+    occurred_at: datetime
+    actor_kind: str
+    actor_id: str
+    action: str
+    target_type: str
+    target_id: str
+    before_ref: dict[str, str | int] | None
+    after_ref: dict[str, str | int] | None
+    trace_id: str | None
+
+
+async def audit_page(
+    session: AsyncSession, where: AuditFilter, before_seq: int | None, limit: int
+) -> list[AuditRow]:
+    """The active tenant's trail, newest first, `limit` rows older than `before_seq` (SPEC-304).
+    The audit trail's owner answers; the caller has authorised the read. Static SQL: a filter
+    left as NULL matches every row."""
+    rows = await session.execute(
+        text(
+            "SELECT seq, occurred_at, actor_kind, actor_id, action, target_type, target_id, "
+            "before_ref, after_ref, trace_id FROM audit_events WHERE "
+            "(CAST(:action AS text) IS NULL OR action = :action) "
+            "AND (CAST(:actor_kind AS text) IS NULL OR actor_kind = :actor_kind) "
+            "AND (CAST(:actor_id AS text) IS NULL OR actor_id = :actor_id) "
+            "AND (CAST(:target_type AS text) IS NULL OR target_type = :target_type) "
+            "AND (CAST(:target_id AS text) IS NULL OR target_id = :target_id) "
+            "AND (CAST(:since AS timestamptz) IS NULL OR occurred_at >= :since) "
+            "AND (CAST(:until AS timestamptz) IS NULL OR occurred_at < :until) "
+            "AND (CAST(:before_seq AS bigint) IS NULL OR seq < :before_seq) "
+            "ORDER BY seq DESC LIMIT :limit"
+        ),
+        {
+            "action": where.action,
+            "actor_kind": where.actor_kind,
+            "actor_id": where.actor_id,
+            "target_type": where.target_type,
+            "target_id": where.target_id,
+            "since": where.since,
+            "until": where.until,
+            "before_seq": before_seq,
+            "limit": limit,
+        },
+    )
+    return [AuditRow(*row) for row in rows.all()]
+
+
+async def audit_facets(session: AsyncSession) -> tuple[list[str], list[str]]:
+    """The distinct actions and target types in the active tenant's trail (SPEC-304)."""
+    actions = await session.execute(text("SELECT DISTINCT action FROM audit_events ORDER BY 1"))
+    types = await session.execute(text("SELECT DISTINCT target_type FROM audit_events ORDER BY 1"))
+    return [str(a) for (a,) in actions.all()], [str(t) for (t,) in types.all()]
+
+
 __all__ = [
+    "AuditFilter",
+    "AuditRow",
     "DomainEvent",
     "Handler",
     "MissingAuditEvent",
@@ -239,6 +311,8 @@ __all__ = [
     "Ref",
     "Target",
     "UnitOfWork",
+    "audit_facets",
+    "audit_page",
     "uow",
 ]
 

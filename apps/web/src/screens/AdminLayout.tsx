@@ -43,12 +43,13 @@ export function AdminLayout(): JSX.Element {
         { label: "Budget", to: "/admin/budget" },
       ],
     ],
-    ...(isAdmin
-      ? ([["Security", [{ label: "Support access", to: "/admin/support" }]]] as [
-          string,
-          Section[],
-        ][])
-      : []),
+    [
+      "Security",
+      [
+        ...(isAdmin ? [{ label: "Support access", to: "/admin/support" } as Section] : []),
+        { label: "Audit log", to: "/admin/audit-log" }, // SPEC-304 (TASK-305)
+      ],
+    ],
   ];
   return (
     <div className="grid items-start gap-3 lg:grid-cols-[240px_minmax(0,1fr)]">
