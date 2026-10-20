@@ -121,6 +121,11 @@ ACTIONS: dict[str, dict[str, str]] = {
         "staff": "allow",
         "reviewer": "allow",
     },
+    "audit.read": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
+        "quality_partner": "allow",
+    },
     "agent.pause": {
         "engagement_partner": "allow",
         "manager": "allow",

@@ -50,6 +50,7 @@ actions:
   roll_forward.read:        {firm_admin: allow, practice_leader: allow}   # SPEC-025 (TASK-048 D3): last year's team, template and items, checked on that engagement
   # --- The engagement agent (SPEC-027; TASK-050) ---
   activity.read:            {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow}   # the activity feed
+  audit.read:               {firm_admin: allow, practice_leader: allow, quality_partner: allow}   # SPEC-304 (TASK-305): the firm's audit log explorer; identifiers only (ADR-007)
   agent.pause:              {engagement_partner: allow, manager: allow}   # pause or resume an engagement's agent
   firm_agents.pause:        {firm_admin: allow, mfa_recent: required}   # every agent in the firm
   firm.ai_client_data:      {firm_admin: allow, mfa_recent: required}   # SPEC-036 (TASK-076): opt in to AI on clients' data, against the disclosure

@@ -1859,6 +1859,74 @@ export type ErrorOut = {
 };
 
 /**
+ * EventOut
+ */
+export type EventOut = {
+    /**
+     * Action
+     */
+    action: string;
+    /**
+     * Actor Id
+     */
+    actor_id: string;
+    /**
+     * Actor Kind
+     */
+    actor_kind: string;
+    /**
+     * Actor Name
+     */
+    actor_name: string | null;
+    /**
+     * After Ref
+     */
+    after_ref: {
+        [key: string]: string | number;
+    } | null;
+    /**
+     * Before Ref
+     */
+    before_ref: {
+        [key: string]: string | number;
+    } | null;
+    /**
+     * Occurred At
+     */
+    occurred_at: string;
+    /**
+     * Seq
+     */
+    seq: number;
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Target Type
+     */
+    target_type: string;
+    /**
+     * Trace Id
+     */
+    trace_id: string | null;
+};
+
+/**
+ * EventPageOut
+ */
+export type EventPageOut = {
+    /**
+     * Events
+     */
+    events: Array<EventOut>;
+    /**
+     * Next Before
+     */
+    next_before: number | null;
+};
+
+/**
  * EvidenceVersionOut
  */
 export type EvidenceVersionOut = {
@@ -1902,6 +1970,20 @@ export type EvidenceVersionOut = {
      * Version No
      */
     version_no: number;
+};
+
+/**
+ * FacetsOut
+ */
+export type FacetsOut = {
+    /**
+     * Actions
+     */
+    actions: Array<string>;
+    /**
+     * Target Types
+     */
+    target_types: Array<string>;
 };
 
 /**
@@ -15549,6 +15631,137 @@ export type SetAiClientDataResponses = {
 };
 
 export type SetAiClientDataResponse = SetAiClientDataResponses[keyof SetAiClientDataResponses];
+
+export type AuditEventsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Action
+         */
+        action?: string | null;
+        /**
+         * Actor Kind
+         */
+        actor_kind?: 'human' | 'agent' | 'system' | null;
+        /**
+         * Actor Id
+         */
+        actor_id?: string | null;
+        /**
+         * Target Type
+         */
+        target_type?: string | null;
+        /**
+         * Target Id
+         */
+        target_id?: string | null;
+        /**
+         * Since
+         */
+        since?: string | null;
+        /**
+         * Until
+         */
+        until?: string | null;
+        /**
+         * Before
+         */
+        before?: number | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/firm/audit-events';
+};
+
+export type AuditEventsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AuditEventsError = AuditEventsErrors[keyof AuditEventsErrors];
+
+export type AuditEventsResponses = {
+    /**
+     * Successful Response
+     */
+    200: EventPageOut;
+};
+
+export type AuditEventsResponse = AuditEventsResponses[keyof AuditEventsResponses];
+
+export type AuditFacetsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/audit-events/facets';
+};
+
+export type AuditFacetsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AuditFacetsError = AuditFacetsErrors[keyof AuditFacetsErrors];
+
+export type AuditFacetsResponses = {
+    /**
+     * Successful Response
+     */
+    200: FacetsOut;
+};
+
+export type AuditFacetsResponse = AuditFacetsResponses[keyof AuditFacetsResponses];
 
 export type AutonomyData = {
     body?: never;

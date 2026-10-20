@@ -44,6 +44,7 @@ import { SignInCallback } from "./screens/SignInCallback";
 import { Gallery } from "./gallery/Gallery";
 import { Findings } from "./screens/Findings";
 import { Planning } from "./screens/Planning";
+import { AuditLog } from "./screens/AuditLog";
 import { ClientRecord, Clients } from "./screens/Clients";
 import { Signup } from "./screens/Signup";
 
@@ -288,6 +289,11 @@ const peopleAdminRoute = createRoute({
   path: "/admin/people",
   component: FirmPeople,
 });
+const auditLogRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/admin/audit-log",
+  component: AuditLog,
+});
 const supportRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/admin/support",
@@ -377,6 +383,7 @@ const routeTree = rootRoute.addChildren([
       setupRoute,
       peopleAdminRoute,
       supportRoute,
+      auditLogRoute,
       wallsRoute,
     ]),
   ]),
