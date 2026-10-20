@@ -1,6 +1,6 @@
 // SPEC-037 AC-4, AC-5, AC-7 (TASK-084): the Fieldwork tab: materiality, starting and selecting,
 // a result per entry, sign-off, and the not-allowed and error states.
-import type { ItemOut, ProcedureOut, WorkpaperOut } from "@abacus/api-client";
+import type { FlowOut, ItemOut, ProcedureOut, WorkpaperOut } from "@abacus/api-client";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { json, mockApi, renderRoutes, signInForTest } from "../testing/support";
@@ -44,6 +44,20 @@ const ITEM: ItemOut = {
   descriptions: ["Year-end adjust"],
   rules: ["near_year_end", "keywords"],
 };
+// SPEC-040 (TASK-100): results need an approved sample.
+const APPROVED: FlowOut = {
+  approval: {
+    approved_by: "u-m",
+    name: "Mo Manager",
+    approved_at: "2026-10-20T09:00:00Z",
+    note: null,
+  },
+  steps: [],
+  exceptions: 0,
+  needs_input: 1,
+  passed: 0,
+  rows: [{ item_id: "i1", prepared: null, reviewed: null }],
+};
 const DRAFT: WorkpaperOut = {
   status: "draft",
   entries: 1,
@@ -72,6 +86,7 @@ function tab(role: string, extra = {}) {
     [`GET ${BASE}/procedures/${P}/workpaper`]: () => json(DRAFT),
     [`GET ${BASE}/evidence-versions`]: () => json([]),
     [`GET ${BASE}/procedures/${P}/assessments`]: () => json([]),
+    [`GET ${BASE}/procedures/${P}/flow`]: () => json(APPROVED),
     ...extra,
   });
   renderRoutes([{ path: "/", component: () => <Fieldwork engagementId={E} /> }]);

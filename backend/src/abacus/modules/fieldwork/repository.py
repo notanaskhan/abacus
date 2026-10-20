@@ -15,11 +15,13 @@ from abacus.modules.fieldwork.models import (
     EngagementMateriality,
     FieldworkSettings,
     ItemResult,
+    ItemSignoff,
     ItemSupportRequest,
     PopulationRow,
     Procedure,
     ProcedureConclusion,
     SelectedItem,
+    SelectionApproval,
     SelectionRow,
     WorkpaperSignature,
     WorkpaperVersion,
@@ -383,3 +385,56 @@ async def confirmed_accounts(
         if row is not None:
             found[role] = row
     return found
+
+
+# --- The flow (SPEC-040; TASK-100) --------------------------------------------------------------
+
+
+async def approval_of(session: AsyncSession, selection_id: UUID) -> SelectionApproval | None:
+    """The selection's approval, if any (one per selection)."""
+    return (
+        await session.execute(
+            select(SelectionApproval).where(SelectionApproval.selection_id == selection_id)
+        )
+    ).scalar_one_or_none()
+
+
+async def insert_approval(session: AsyncSession, **values: object) -> bool:
+    """False when the selection is already approved."""
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+    made = await session.execute(
+        pg_insert(SelectionApproval)
+        .values(**values)
+        .on_conflict_do_nothing()
+        .returning(SelectionApproval.id)
+    )
+    return made.scalar_one_or_none() is not None
+
+
+async def signoffs_of(session: AsyncSession, selection_id: UUID) -> Sequence[ItemSignoff]:
+    """Every sign-off on the selection's rows, oldest first (LIST_EXEMPT, as above)."""
+    return (
+        (
+            await session.execute(
+                select(ItemSignoff)
+                .join(SelectedItem, SelectedItem.id == ItemSignoff.selected_item_id)
+                .where(SelectedItem.selection_id == selection_id)
+                .order_by(ItemSignoff.created_at)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def insert_signoffs(session: AsyncSession, rows: list[dict[str, object]]) -> int:
+    """How many were new (a person signing the same result at the same level again is skipped)."""
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+    if not rows:
+        return 0
+    made = await session.execute(
+        pg_insert(ItemSignoff).values(rows).on_conflict_do_nothing().returning(ItemSignoff.id)
+    )
+    return len(made.scalars().all())

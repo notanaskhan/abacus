@@ -227,6 +227,9 @@ actions:
   entry_assessment.run:     {system: allow, agent: task_scope}   # TASK-085: the entry assessor records its assessments
   workpaper.sign_reviewed:  {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # ADR-131 Q2: never the preparer (the service refuses); TASK-089: never the EQR (`reviewer`) or the agent
   suggestion.resolve:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny}
+  sample.approve:           {engagement_partner: allow, manager: allow, agent: deny, independence: required}   # SPEC-040 (TASK-100) Q1: a manager or the partner agrees the sample
+  item.sign_prepared:       {manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # SPEC-040 AC-6: the row's preparer (Q5: never the partner)
+  item.sign_reviewed:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # SPEC-040 AC-7: never the row's preparer (the service refuses), the EQR or the agent
 
   # --- Communications (SPEC-006 Q4; TASK-021) ---
   message.send:             {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny}

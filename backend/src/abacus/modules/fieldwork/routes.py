@@ -13,6 +13,13 @@ from fastapi import Depends, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
+from abacus.modules.fieldwork.flow import (
+    FlowState,
+    approve_sample,
+    flow_state,
+    request_selection_support,
+    sign_items,
+)
 from abacus.modules.fieldwork.service import (
     AccountsView,
     Defaults,
@@ -577,3 +584,149 @@ async def accounts_route(engagement_id: UUID, ctx: Ctx) -> AccountsOut:
 @router.put("/fieldwork/accounts", action="procedure.configure", response_model=AccountsOut)
 async def set_accounts_route(engagement_id: UUID, body: AccountsIn, ctx: Ctx) -> AccountsOut:
     return _accounts_out(await set_accounts(ctx, engagement_id, body.bank, body.payables))
+
+
+# --- The flow (SPEC-040; TASK-100) --------------------------------------------------------------
+
+
+class ApprovalOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    approved_by: Annotated[UUID, classified("internal")]
+    name: Annotated[str, classified("internal")]
+    approved_at: Annotated[datetime, classified("internal")]
+    note: Annotated[str | None, classified("confidential")]
+
+
+class RowSignOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    signed_by: Annotated[UUID, classified("internal")]
+    name: Annotated[str, classified("internal")]
+    initials: Annotated[str, classified("internal")]
+    signed_at: Annotated[datetime, classified("internal")]
+    stale: Annotated[bool, classified("internal")]
+
+
+class RowStateOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    item_id: Annotated[UUID, classified("internal")]
+    prepared: Annotated[RowSignOut | None, classified("internal")]
+    reviewed: Annotated[RowSignOut | None, classified("internal")]
+
+
+class FlowStepOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    key: Annotated[str, classified("internal")]
+    label: Annotated[str, classified("internal")]
+    state: Annotated[Literal["done", "current", "todo"], classified("internal")]
+
+
+class FlowOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    approval: Annotated[ApprovalOut | None, classified("internal")]
+    steps: Annotated[list[FlowStepOut], classified("internal")]
+    exceptions: Annotated[int, classified("internal")]
+    needs_input: Annotated[int, classified("internal")]
+    passed: Annotated[int, classified("internal")]
+    rows: Annotated[list[RowStateOut], classified("internal")]
+
+
+def _flow_out(state: FlowState) -> FlowOut:
+    return FlowOut.model_validate(asdict(state))
+
+
+@router.get("/procedures/{procedure_id}/flow", action="procedure.read", response_model=FlowOut)
+async def flow_route(engagement_id: UUID, procedure_id: UUID, ctx: Ctx) -> FlowOut:
+    """SPEC-040 AC-11, AC-12: the procedure's steps, triage counts and row sign-offs."""
+    return _flow_out(await flow_state(ctx, engagement_id, procedure_id))
+
+
+class ApproveIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    note: Annotated[str | None, Field(default=None, max_length=1000), classified("confidential")]
+
+
+@router.post(
+    "/procedures/{procedure_id}/approve",
+    action="sample.approve",
+    response_model=FlowOut,
+    status_code=201,
+    errors=(409,),
+)
+async def approve_route(
+    engagement_id: UUID, procedure_id: UUID, body: ApproveIn, ctx: Ctx
+) -> FlowOut:
+    """SPEC-040 AC-1: a manager or the engagement partner approves the current selection."""
+    await approve_sample(ctx, engagement_id, procedure_id, body.note)
+    return _flow_out(await flow_state(ctx, engagement_id, procedure_id))
+
+
+class SelectionSupportOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    request_item_id: Annotated[UUID, classified("internal")]
+    items: Annotated[int, classified("internal")]
+
+
+@router.post(
+    "/procedures/{procedure_id}/request-support",
+    action="procedure.run",
+    response_model=SelectionSupportOut,
+    status_code=201,
+    errors=(409,),
+)
+async def request_selection_support_route(
+    engagement_id: UUID, procedure_id: UUID, ctx: Ctx
+) -> SelectionSupportOut:
+    """SPEC-040 AC-4: one request to the client listing every item still without one."""
+    made, items = await request_selection_support(ctx, engagement_id, procedure_id)
+    return SelectionSupportOut(request_item_id=made, items=items)
+
+
+class SignItemsIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    item_ids: Annotated[list[UUID], Field(min_length=1, max_length=500), classified("internal")]
+
+
+class SignedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    rows: Annotated[int, classified("internal")]
+
+
+@router.post(
+    "/procedures/{procedure_id}/items/sign-prepared",
+    action="item.sign_prepared",
+    response_model=SignedOut,
+    status_code=201,
+    errors=(409,),
+)
+async def sign_prepared_route(
+    engagement_id: UUID, procedure_id: UUID, body: SignItemsIn, ctx: Ctx
+) -> SignedOut:
+    """SPEC-040 AC-6, AC-9: the preparer signs rows, each on its current result."""
+    return SignedOut(
+        rows=await sign_items(ctx, engagement_id, procedure_id, "prepared", body.item_ids)
+    )
+
+
+@router.post(
+    "/procedures/{procedure_id}/items/sign-reviewed",
+    action="item.sign_reviewed",
+    response_model=SignedOut,
+    status_code=201,
+    errors=(409,),
+)
+async def sign_reviewed_items_route(
+    engagement_id: UUID, procedure_id: UUID, body: SignItemsIn, ctx: Ctx
+) -> SignedOut:
+    """SPEC-040 AC-7: a reviewer who isn't the row's preparer signs rows."""
+    return SignedOut(
+        rows=await sign_items(ctx, engagement_id, procedure_id, "reviewed", body.item_ids)
+    )
