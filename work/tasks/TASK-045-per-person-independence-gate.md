@@ -116,6 +116,7 @@ Not touched:
 - [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-20` — Q-03 back-fill (S0-10): 11 acceptance tests for SPEC-025 AC-7 over HTTP against Postgres: the engagement gate with each plain reason, and the per-person gate (adding someone restricts only them). No code change.
 - `2026-10-09` — Implemented:
   - the `independence: required` modifier (`Rule.independence`; the codegen needed no change, as generated actions carry modifier keys as written), on the nine actions of D1;
   - the `independence` layer in `authorise`, after roles; the `register_independence` slot (fail closed), cached per request; `visible()` requires a confirmation for staff roles on marked actions, client reach unchanged;

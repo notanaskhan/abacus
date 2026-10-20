@@ -102,6 +102,7 @@ Checked and not needed:
 - [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-20` — Q-03 back-fill (S0-10): 29 acceptance tests for SPEC-024 AC-3 and AC-4 (invite, accept, expiry, lockout, resend, revoke, role change, last administrator) over HTTP against Postgres. No code change. AC-8 (screen states) is covered by `spec024people.test.tsx`.
 - `2026-10-09` — Implemented:
   - migration 0033 (staff invitations and tokens; definer functions for tokens, staff membership, firm role and revocation, with last-admin protection);
   - the staff service and routes; the staff accept route; the invitation email (`/join` link);

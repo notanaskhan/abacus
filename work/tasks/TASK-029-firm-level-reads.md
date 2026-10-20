@@ -60,6 +60,7 @@ All of SPEC-014. Excluded: firm-level writes and practice scope.
 - [ ] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-20` — Q-03 back-fill (S0-10): acceptance tests added from SPEC-014: real-database AC-1 to AC-3 (each firm-level read by each engagement role, archived versus active, another firm's engagement) and unit AC-6 plus the fail-closed and once-per-request rules. No code change.
 - `2026-10-08` — Implemented:
   - the `register_active_engagements` slot, registered by engagements;
   - `engagement_roles_in_firm`, cached per request and fail-closed;

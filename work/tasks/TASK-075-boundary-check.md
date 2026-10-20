@@ -103,6 +103,7 @@ SPEC-036 AC-1, AC-2 (all five conditions, with TASK-076's three as fail-closed r
 - [ ] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-20` — Q-03 back-fill (S0-10): acceptance tests for SPEC-036 AC-1, AC-2, AC-4, AC-8 against the committed register and agent specs, and through `ai_gateway.call` with a stub on the real route (no call made, audited once, not retried; a synthetic firm unaffected). No code change.
 - `2026-10-16` — Design written for founder review after SPEC-036 and ADR-114 merged (#130).
 - `2026-10-16` — Built (D1–D4): the empty register `docs/operations/provider-terms.yaml` (protected) with `abacus_tools.codegen.provider_terms` validating ADR-114 and compiling `kernel/_provider_terms.py`; `client_data` settings (staging and production, Bedrock only, register covering today); the five-part check in `ai_gateway/boundary.py` with reason codes and `register_client_data_facts`; `barred_routes` (no failover to `direct` for real firms; an early refusal when nothing else is left); `AgentSpec.client_data` with the codegen clearance check; migration 0055 (`usage_records.boundary_basis`, `terms_version`); ADR-115 superseding ADR-112 (status line edited under the extended approval). Unit and workflow tests (10,905) and gates pass. No local smoke: nothing opens until TASK-076 and C2.
 
