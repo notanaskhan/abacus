@@ -45,7 +45,7 @@ from abacus.modules.evidence.render_gl import (
     render_journal_listing,
 )
 from abacus.modules.evidence.render_gl import GlEntryRow as GlRenderEntry
-from abacus.modules.evidence.routes import router
+from abacus.modules.evidence.routes import firm_router, router
 from abacus.modules.evidence.service import (
     EngagementArchived,
     EvidenceVersionRef,
@@ -123,6 +123,7 @@ __all__ = [
     "check_upload_content",
     "engagement_snapshots",
     "evidence_versions_for",
+    "firm_router",
     "match_material",
     "process_upload",
     "read_content",

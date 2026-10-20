@@ -6,6 +6,7 @@ import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from datetime import date, datetime
+from typing import Final
 from uuid import UUID, uuid4
 
 from abacus.kernel.db import TenantContext, tenant_session, transaction_context
@@ -21,6 +22,7 @@ from abacus.modules.identity.api import (
     authorise_items,
     drafted_guidance_to_clients,
     engagement_role_of,
+    my_engagements,
 )
 from abacus.modules.requests.availability import available_datasets
 from abacus.modules.requests.classification import (
@@ -58,6 +60,7 @@ from abacus.modules.requests.repository import (
     list_request_items,
     mark_received,
     newest_fulfilment,
+    overdue_counts,
     overdue_items,
     request_list_for,
     set_classification,
@@ -1014,3 +1017,14 @@ async def overdue_for(
     async with tenant_session(tenant) as session:
         rows = await overdue_items(session, engagement_id, today)
     return [OverdueItem(i.id, i.description, due, i.client_assignee_user_id) for i, due in rows]
+
+
+_STAFF_ROLES: Final = frozenset({"engagement_partner", "manager", "senior", "staff"})
+
+
+async def overdue_mine(ctx: AuthContext, today: date) -> list[tuple[UUID, int]]:
+    """TASK-102: per engagement on the caller's team, how many client items are past due."""
+    ids = [e for e, role in (await my_engagements(ctx)).items() if role in _STAFF_ROLES]
+    async with tenant_session(ctx.tenant) as session:
+        counts = await overdue_counts(session, ctx, ids, today)
+    return sorted(counts.items(), key=lambda c: -c[1])

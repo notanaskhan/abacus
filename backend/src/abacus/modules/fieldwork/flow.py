@@ -28,6 +28,7 @@ from abacus.modules.fieldwork.repository import (
     insert_approval,
     insert_signoffs,
     insert_support_request,
+    list_procedures,
     newest_population,
     newest_results,
     newest_selection,
@@ -43,7 +44,12 @@ from abacus.modules.fieldwork.workpapers import (
     require_approved,
     workpaper_state,
 )
-from abacus.modules.identity.api import AuthContext, authorise, engagement_team
+from abacus.modules.identity.api import (
+    AuthContext,
+    authorise,
+    engagement_team,
+    my_engagements,
+)
 from abacus.modules.requests.api import NewRequestItem, add_request_item
 
 LEVELS: Final = ("prepared", "reviewed")
@@ -360,3 +366,77 @@ async def flow_state(ctx: AuthContext, engagement_id: UUID, procedure_id: UUID) 
         for k, (key, label) in enumerate(labels)
     ]
     return FlowState(approval, steps, exceptions, needs_input, passed, rows)
+
+
+# --- TASK-102: what's waiting on this person, across their engagements -------------------------
+
+_APPROVERS: Final = frozenset({"engagement_partner", "manager"})  # SPEC-040 Q1
+_PREPARERS: Final = frozenset({"staff", "senior", "manager"})  # AC-6
+_REVIEWERS: Final = frozenset({"senior", "manager", "engagement_partner"})  # AC-7
+
+
+@dataclass(frozen=True)
+class Waiting:
+    engagement_id: UUID
+    procedure_id: UUID
+    definition: str
+    kind: str  # approve_sample | prepare_rows | review_rows
+    count: int
+
+
+async def waiting_for(ctx: AuthContext) -> list[Waiting]:
+    """Samples to approve, rows to sign as preparer, and rows another person prepared to review,
+    on the caller's engagements, by their role there. Procedures are read through `visible()`,
+    so walls and independence apply."""
+    found: list[Waiting] = []
+    roles = await my_engagements(ctx)
+    async with tenant_session(ctx.tenant) as session:
+        for engagement_id, role in roles.items():
+            for procedure in await list_procedures(session, ctx, engagement_id):
+                selection = await newest_selection(session, procedure.id)
+                if selection is None:
+                    continue
+                approved = await approval_of(session, selection.id) is not None
+                if not approved:
+                    if role in _APPROVERS:
+                        found.append(
+                            Waiting(
+                                engagement_id,
+                                procedure.id,
+                                procedure.definition,
+                                "approve_sample",
+                                selection.item_count,
+                            )
+                        )
+                    continue
+                results = await newest_results(session, selection.id)
+                signoffs = await signoffs_of(session, selection.id)
+                prepared = current_signoffs(signoffs, results, "prepared")
+                reviewed = current_signoffs(signoffs, results, "reviewed")
+                to_prepare = sum(1 for i in results if i not in prepared)
+                to_review = sum(
+                    1
+                    for i, s in prepared.items()
+                    if i not in reviewed and s.signed_by != ctx.user_id
+                )
+                if role in _PREPARERS and to_prepare:
+                    found.append(
+                        Waiting(
+                            engagement_id,
+                            procedure.id,
+                            procedure.definition,
+                            "prepare_rows",
+                            to_prepare,
+                        )
+                    )
+                if role in _REVIEWERS and to_review:
+                    found.append(
+                        Waiting(
+                            engagement_id,
+                            procedure.id,
+                            procedure.definition,
+                            "review_rows",
+                            to_review,
+                        )
+                    )
+    return found

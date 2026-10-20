@@ -1381,6 +1381,20 @@ export type DueDatesIn = {
 };
 
 /**
+ * EngagementCountOut
+ */
+export type EngagementCountOut = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+};
+
+/**
  * EngagementGraphOut
  */
 export type EngagementGraphOut = {
@@ -2941,6 +2955,20 @@ export type OpenConfirmationOut = {
      * Status
      */
     status: 'requested' | 'declined';
+};
+
+/**
+ * OverdueCountOut
+ */
+export type OverdueCountOut = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
 };
 
 /**
@@ -4689,6 +4717,32 @@ export type VersionOut = {
      * Version
      */
     version: number;
+};
+
+/**
+ * WaitingOut
+ */
+export type WaitingOut = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Definition
+     */
+    definition: string;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Kind
+     */
+    kind: 'approve_sample' | 'prepare_rows' | 'review_rows';
+    /**
+     * Procedure Id
+     */
+    procedure_id: string;
 };
 
 /**
@@ -13719,6 +13773,153 @@ export type SetTimeZoneResponses = {
 };
 
 export type SetTimeZoneResponse = SetTimeZoneResponses[keyof SetTimeZoneResponses];
+
+export type FieldworkWaitingData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/waiting/fieldwork';
+};
+
+export type FieldworkWaitingErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type FieldworkWaitingError = FieldworkWaitingErrors[keyof FieldworkWaitingErrors];
+
+export type FieldworkWaitingResponses = {
+    /**
+     * Response Fieldwork Waiting
+     *
+     * Successful Response
+     */
+    200: Array<WaitingOut>;
+};
+
+export type FieldworkWaitingResponse = FieldworkWaitingResponses[keyof FieldworkWaitingResponses];
+
+export type OverdueWaitingData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/waiting/overdue';
+};
+
+export type OverdueWaitingErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type OverdueWaitingError = OverdueWaitingErrors[keyof OverdueWaitingErrors];
+
+export type OverdueWaitingResponses = {
+    /**
+     * Response Overdue Waiting
+     *
+     * Successful Response
+     */
+    200: Array<OverdueCountOut>;
+};
+
+export type OverdueWaitingResponse = OverdueWaitingResponses[keyof OverdueWaitingResponses];
+
+export type ReviewWaitingData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/waiting/review';
+};
+
+export type ReviewWaitingErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ReviewWaitingError = ReviewWaitingErrors[keyof ReviewWaitingErrors];
+
+export type ReviewWaitingResponses = {
+    /**
+     * Response Review Waiting
+     *
+     * Successful Response
+     */
+    200: Array<EngagementCountOut>;
+};
+
+export type ReviewWaitingResponse = ReviewWaitingResponses[keyof ReviewWaitingResponses];
 
 export type AcceptInvitationData = {
     body: AcceptInvitationIn;

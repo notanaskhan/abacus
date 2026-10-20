@@ -13,6 +13,7 @@ is content-addressed and reused by the next attempt.
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -58,6 +59,7 @@ from abacus.modules.identity.api import (
     authorise,
     could,
     engagement_role_of,
+    my_engagements,
     serving_request,
 )
 from abacus.modules.requests.api import (
@@ -723,3 +725,52 @@ async def release_member_assignments(
             target=Target("evidence_version", version_id),
             after=Ref(user_id=user_id),
         )
+
+
+_DECIDERS: Final = frozenset({"engagement_partner", "manager", "senior"})
+
+
+async def _queued_count(ctx: AuthContext, engagement_id: UUID) -> int:
+    """How many versions `review_queue` would list, without building its entries (no proposals
+    or summaries): the newest fulfilled version per item, undecided, counted once."""
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "review.read", ref.resource())
+    fulfilled = await fulfilled_versions(ctx, engagement_id)
+    if not fulfilled:
+        return 0
+    async with tenant_session(ctx.tenant) as session:
+        versions, decided, _taken = await list_review_state(session, ctx, engagement_id)
+    held = {v.id for v in versions}
+    newest: dict[UUID, FulfilledVersion] = {}
+    for f in fulfilled:
+        prior = newest.get(f.request_item_id)
+        if prior is None or (f.fulfilled_at, f.fulfilment_id) > (
+            prior.fulfilled_at,
+            prior.fulfilment_id,
+        ):
+            newest[f.request_item_id] = f
+    return len(
+        {
+            f.evidence_version_id
+            for f in newest.values()
+            if f.evidence_version_id in held and f.evidence_version_id not in decided
+        }
+    )
+
+
+async def review_waiting(ctx: AuthContext) -> list[tuple[UUID, int]]:
+    """TASK-102: per engagement where the caller decides evidence, how many versions wait for a
+    decision (counted concurrently). An engagement the caller can't read yet (independence, a
+    wall) is left out."""
+    ids = [e for e, role in (await my_engagements(ctx)).items() if role in _DECIDERS]
+
+    async def one(engagement_id: UUID) -> tuple[UUID, int]:
+        try:
+            return engagement_id, await _queued_count(ctx, engagement_id)
+        except Forbidden:
+            return engagement_id, 0
+
+    counted: list[tuple[UUID, int]] = []
+    for start in range(0, len(ids), 8):  # a few at a time, to spare the pool
+        counted += await asyncio.gather(*(one(e) for e in ids[start : start + 8]))
+    return [(e, n) for e, n in counted if n > 0]

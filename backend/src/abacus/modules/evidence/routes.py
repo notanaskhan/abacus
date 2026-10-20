@@ -39,6 +39,7 @@ from abacus.modules.evidence.service import (
     reason_codes_for,
     release,
     review_queue,
+    review_waiting,
     take,
 )
 from abacus.modules.evidence.setup_files import download_setup_file, upload_setup_file
@@ -54,7 +55,13 @@ from abacus.modules.evidence.uploads import (
     upload_preview_page,
     uploads_for,
 )
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.identity.api import (
+    OWN,
+    AbacusRouter,
+    AuthContext,
+    current_context,
+    current_member,
+)
 
 router = AbacusRouter(prefix="/v1/engagements/{engagement_id}", tags=["evidence"])
 Method = Literal["retrieved", "uploaded", "imported"]
@@ -899,3 +906,23 @@ async def setup_file_route(
             "Cache-Control": "no-store",
         },
     )
+
+
+# --- TASK-102: decisions waiting on the caller, across their engagements -------------------------
+
+firm_router = AbacusRouter(prefix="/v1/firm", tags=["evidence"])
+
+
+class EngagementCountOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    count: Annotated[int, classified("internal")]
+
+
+@firm_router.get("/waiting/review", action=OWN, response_model=list[EngagementCountOut])
+async def review_waiting_route(
+    ctx: Annotated[AuthContext, Depends(current_member)],
+) -> list[EngagementCountOut]:
+    """Evidence waiting for the caller's decision, per engagement."""
+    return [EngagementCountOut(engagement_id=e, count=n) for e, n in await review_waiting(ctx)]

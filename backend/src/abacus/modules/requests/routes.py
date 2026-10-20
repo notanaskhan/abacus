@@ -12,7 +12,13 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
 from abacus.kernel.text import MultiLineText, SingleLineText
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.identity.api import (
+    OWN,
+    AbacusRouter,
+    AuthContext,
+    current_context,
+    current_member,
+)
 from abacus.modules.requests.comments import (
     MAX_BODY,
     MAX_REASON,
@@ -33,6 +39,7 @@ from abacus.modules.requests.service import (
     assign_to_client,
     import_request_list,
     list_due_date,
+    overdue_mine,
     preview_request_list,
     request_items_for,
     set_client_visibility,
@@ -586,3 +593,25 @@ async def redact_comment_route(
     """SPEC-032 AC-6: a firm administrator hides a comment posted in error."""
     await redact(ctx, engagement_id, item_id, comment_id, body.reason)
     return ThreadReadOut()
+
+
+# --- TASK-102: client items past due on the caller's engagements --------------------------------
+
+firm_router = AbacusRouter(prefix="/v1/firm", tags=["requests"])
+
+
+class OverdueCountOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    count: Annotated[int, classified("internal")]
+
+
+@firm_router.get("/waiting/overdue", action=OWN, response_model=list[OverdueCountOut])
+async def overdue_waiting_route(
+    ctx: Annotated[AuthContext, Depends(current_member)],
+) -> list[OverdueCountOut]:
+    """Client items past due, per engagement on the caller's team."""
+    return [
+        OverdueCountOut(engagement_id=e, count=n) for e, n in await overdue_mine(ctx, date.today())
+    ]

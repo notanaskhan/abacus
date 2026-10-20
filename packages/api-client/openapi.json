@@ -2835,6 +2835,27 @@
         "title": "DueDatesIn",
         "type": "object"
       },
+      "EngagementCountOut": {
+        "properties": {
+          "count": {
+            "cls": "internal",
+            "title": "Count",
+            "type": "integer"
+          },
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "engagement_id",
+          "count"
+        ],
+        "title": "EngagementCountOut",
+        "type": "object"
+      },
       "EngagementGraphOut": {
         "properties": {
           "areas": {
@@ -5965,6 +5986,27 @@
           "statement"
         ],
         "title": "OpenConfirmationOut",
+        "type": "object"
+      },
+      "OverdueCountOut": {
+        "properties": {
+          "count": {
+            "cls": "internal",
+            "title": "Count",
+            "type": "integer"
+          },
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "engagement_id",
+          "count"
+        ],
+        "title": "OverdueCountOut",
         "type": "object"
       },
       "PauseIn": {
@@ -9509,6 +9551,51 @@
           "signatures"
         ],
         "title": "VersionOut",
+        "type": "object"
+      },
+      "WaitingOut": {
+        "properties": {
+          "count": {
+            "cls": "internal",
+            "title": "Count",
+            "type": "integer"
+          },
+          "definition": {
+            "cls": "internal",
+            "title": "Definition",
+            "type": "string"
+          },
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "approve_sample",
+              "prepare_rows",
+              "review_rows"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "procedure_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Procedure Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "engagement_id",
+          "procedure_id",
+          "definition",
+          "kind",
+          "count"
+        ],
+        "title": "WaitingOut",
         "type": "object"
       },
       "WallIn": {
@@ -28886,6 +28973,309 @@
           "identity"
         ],
         "x-abacus-action": "firm.manage_settings"
+      }
+    },
+    "/v1/firm/waiting/fieldwork": {
+      "get": {
+        "description": "TASK-102: samples to approve and rows to sign, on the caller's engagements.",
+        "operationId": "fieldwork_waiting",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WaitingOut"
+                  },
+                  "title": "Response Fieldwork Waiting",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Fieldwork Waiting Route",
+        "tags": [
+          "fieldwork"
+        ],
+        "x-abacus-action": "own"
+      }
+    },
+    "/v1/firm/waiting/overdue": {
+      "get": {
+        "description": "Client items past due, per engagement on the caller's team.",
+        "operationId": "overdue_waiting",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OverdueCountOut"
+                  },
+                  "title": "Response Overdue Waiting",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Overdue Waiting Route",
+        "tags": [
+          "requests"
+        ],
+        "x-abacus-action": "own"
+      }
+    },
+    "/v1/firm/waiting/review": {
+      "get": {
+        "description": "Evidence waiting for the caller's decision, per engagement.",
+        "operationId": "review_waiting",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EngagementCountOut"
+                  },
+                  "title": "Response Review Waiting",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Review Waiting Route",
+        "tags": [
+          "evidence"
+        ],
+        "x-abacus-action": "own"
       }
     },
     "/v1/invitations/accept": {

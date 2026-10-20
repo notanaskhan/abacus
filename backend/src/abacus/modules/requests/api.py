@@ -11,7 +11,7 @@ from abacus.modules.requests.events import (
     RequestItemDocumentKindChanged,
 )
 from abacus.modules.requests.roll_forward import copy_items, proposed_items
-from abacus.modules.requests.routes import methodology_router, router
+from abacus.modules.requests.routes import firm_router, methodology_router, router
 from abacus.modules.requests.service import (
     FulfilledVersion,
     FulfilmentRef,
@@ -63,6 +63,7 @@ __all__ = [
     "apply_drafted_guidance",
     "classify",
     "document_kind",
+    "firm_router",
     "fulfil_by_rule",
     "fulfil_by_upload",
     "fulfilled_items",

@@ -42,6 +42,7 @@ from abacus.modules.identity.repository import (
     get_wall,
     insert_engagement_member,
     insert_wall,
+    my_engagement_roles,
     remove_wall,
     team_candidate_ids,
     walled_clients,
@@ -393,6 +394,11 @@ async def engagement_role_of(
 ) -> str | None:
     """A person's role on an engagement (staff or client), or None (SPEC-020: client assignees)."""
     return await engagement_role(tenant, user_id, engagement_id)
+
+
+async def my_engagements(ctx: AuthContext) -> dict[UUID, EngagementRole]:
+    """TASK-102: the caller's own engagements and firm role on each, for "waiting on you"."""
+    return await my_engagement_roles(ctx.tenant, ctx.user_id)
 
 
 async def names_of(user_ids: list[UUID]) -> dict[UUID, str]:
