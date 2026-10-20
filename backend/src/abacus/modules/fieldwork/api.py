@@ -13,6 +13,8 @@ from abacus.modules.fieldwork.workpapers import (
     EntryFacts,
     assessable_items,
     entry_facts,
+    items_with_results,
+    record_result,
     selection_item_ids,
 )
 
@@ -28,6 +30,8 @@ __all__ = [
     "assessable_items",
     "entry_facts",
     "firm_router",
+    "items_with_results",
+    "record_result",
     "router",
     "selection_item_ids",
 ]

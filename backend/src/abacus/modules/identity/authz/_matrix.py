@@ -525,6 +525,14 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "allow",
         "agent": "task_scope",
     },
+    "entry_assessment.adopt": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "agent": "deny",
+        "independence": "required",
+    },
     "workpaper.sign_reviewed": {
         "engagement_partner": "allow",
         "manager": "allow",

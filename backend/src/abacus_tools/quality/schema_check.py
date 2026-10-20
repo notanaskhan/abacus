@@ -87,6 +87,7 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"review_notes", "review_note_events"}  # SPEC-041 (TASK-103): notes, as written
     | {"client_item_responses", "client_list_done"}  # SPEC-042 (TASK-106): as the client said
     | {"findings", "misstatements"}  # SPEC-043 (TASK-107): as raised and recorded
+    | {"procedure_session_events"}  # SPEC-044 (TASK-109): plan approvals, as given
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -174,6 +175,9 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"verdict", "shown_verdict", "rationale", "citations"}
     ),
     # Fieldwork results and workpapers (SPEC-037; TASK-084; ADR-131).
+    "procedure_session_events": frozenset(
+        {"tenant_id", "procedure_id", "kind", "by_user"}
+    ),  # SPEC-044 (TASK-109)
     "findings": frozenset(
         {
             "tenant_id",
@@ -207,6 +211,7 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "item_results": frozenset(
         {"tenant_id", "selected_item_id", "result", "note", "evidence_version_ids"}
         | {"recorded_by", "relates_to_year"}
+        | {"adopted_assessment_id"}  # SPEC-044 (TASK-109)
     ),
     "item_support_requests": frozenset(
         {"tenant_id", "selected_item_id", "request_item_id", "requested_by"}
@@ -515,6 +520,7 @@ TABLE_OWNERS: dict[str, str] = {
     "review_notes": "fieldwork",  # SPEC-041 (TASK-103)
     "client_item_responses": "requests",  # SPEC-042 (TASK-106)
     "findings": "fieldwork",  # SPEC-043 (TASK-107)
+    "procedure_session_events": "fieldwork",  # SPEC-044 (TASK-109)
     "misstatements": "fieldwork",
     "client_list_done": "requests",
     "review_note_events": "fieldwork",
