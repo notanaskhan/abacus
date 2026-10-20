@@ -4,7 +4,7 @@ title: "Q-01-T01 · AWS landing zone: Organizations, Control Tower, Identity Cen
 spec: SPEC-050
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5]
 risk_zone: red
-status: todo
+status: in-progress
 epic: Q-01
 plan_key: Q-01-T01
 branch: task-142-aws-landing-zone
@@ -45,11 +45,13 @@ Six member accounts run under Control Tower with the builder on Identity Center 
 - Epic: `docs/plan/epics/Q-01.md` §0 (lines 10-29), §3 (124-236), §9 (455-524), §10 (525-555), §11 (556-576); read in full: §3 F1 (landing zone, residency and access); §9 row Q-01-T01; §10 R0 bullet 1; §11 R1, R3
 - Row: `docs/plan/epics/Q-01.tasks.csv`, plan key Q-01-T01
 - Amendment: `docs/plan/AMENDMENT-solo.md` (solo overrides)
-- ADRs: ADR-035, ADR-087, ADR-114; drafts P-55 (ADR-130) and P-54 (ADR-129) from Q-01-T02
+- ADRs: ADR-035, ADR-087, ADR-114; ADR-142 (P-55, AWS topology) and ADR-141 (P-54, WorkOS)
 - Code: `infra/README.md` (new)
 
 ## Plan
-- [ ] Plan written into this file before any build step (required for amber and red; zone is red)
+- [x] Plan written into this file before any build step (required for amber and red; zone is red)
+
+Plan (2026-10-20): the session prepares, the builder clicks. Policies are files in `infra/landing-zone/` (region guard with us-east-1 open only for CloudFront, ACM, WAF, Shield and Bedrock US Geo; no IAM users or access keys; protected CloudTrail, Config, GuardDuty, Security Hub, Access Analyzer, Macie; no leaving the org; AI-services opt-out). `infra/README.md` holds the eight console steps, the SSO profile block, the checks and the console log. Control Tower's own Region deny control stays off because the custom SCP replaces it. Rollback: detach an SCP at the root. Gap: Identity Center cannot expire an assignment, so 4-hour expiry is by hand plus the EventBridge alert until a Q-01 automation lands.
 
 Steps:
 1. [ ] Builder: create the organisation and enrol Control Tower by hand; log each step in `infra/README.md`
@@ -95,6 +97,7 @@ make check
 Append-only. Newest at the bottom.
 
 - `2026-10-20` — Task file written at kickoff (SU-14). No work started.
+- 2026-10-20 (SU-19): policies and runbook written; waiting on the builder's console steps and the checks in infra/README.md §3.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
