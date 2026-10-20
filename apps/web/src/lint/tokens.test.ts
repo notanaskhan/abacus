@@ -15,7 +15,9 @@ let TAILWIND = "";
 beforeAll(async () => {
   const fsModule = "node:fs";
   const fs = (await import(/* @vite-ignore */ fsModule)) as Fs;
-  THEME = fs.readFileSync(`${cwd}/../../packages/ui/src/theme.css`, "utf8");
+  const ui = `${cwd}/../../packages/ui/src`;
+  // The base layer (body, focus outline) moved from theme.css to base.css in F-05-T05.
+  THEME = `${fs.readFileSync(`${ui}/theme.css`, "utf8")}\n${fs.readFileSync(`${ui}/base.css`, "utf8")}`;
   TAILWIND = fs.readFileSync(`${cwd}/node_modules/tailwindcss/index.css`, "utf8");
 });
 

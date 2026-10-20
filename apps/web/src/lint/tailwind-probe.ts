@@ -1,12 +1,16 @@
 // Test helper (SPEC-048 AC-2): compiles Tailwind over the design system's theme.css for a list of
 // candidate classes, so a test can see which rules a class emits (or that it emits none).
 import { compile } from "tailwindcss";
-import { UI, WEB, read } from "./ui-files";
+import { UI, WEB, exists, read } from "./ui-files";
 
-/** theme.css without the Fontsource imports (they point at node_modules, not at a stylesheet). */
+/** The design system's stylesheets (theme, root, base, motion, utilities) without the Fontsource imports. */
 export async function themeSource(): Promise<string> {
-  const theme = await read(`${UI}/theme.css`);
-  return theme.replace(/^@import "@fontsource[^\n]*\n/gm, "");
+  const files = ["theme.css", "root.css", "base.css", "motion.css", "utilities.css"];
+  const parts: string[] = [];
+  for (const file of files) {
+    if (await exists(`${UI}/${file}`)) parts.push(await read(`${UI}/${file}`));
+  }
+  return parts.join("\n").replace(/^@import "@fontsource[^\n]*\n/gm, "");
 }
 
 export async function compiled(candidates: string[]): Promise<string> {

@@ -1,0 +1,70 @@
+/* Utilities (SPEC-048 AC-8, F-05-T05): the shapes the components repeat. Hairlines are the
+   0.5px ink rule (--hairline); a pane is a card with the pane radius and the e2 ring; a well is
+   a recessed shell-coloured area; tabular and doc-scope switch figures and the document face.
+   Panes, wells and cards keep a CanvasText edge under forced colors, where shadows vanish. */
+@utility hairline-t {
+  border-top: var(--hairline);
+}
+@utility hairline-b {
+  border-bottom: var(--hairline);
+}
+@utility hairline-l {
+  border-left: var(--hairline);
+}
+@utility hairline-r {
+  border-right: var(--hairline);
+}
+
+@utility pane {
+  background-color: var(--color-card);
+  border-radius: var(--radius-pane);
+  box-shadow: var(--shadow-e2);
+  @media (forced-colors: active) {
+    border: 1px solid CanvasText;
+  }
+}
+@utility pane-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--pane-hd-h);
+  padding-inline: var(--edge-app);
+  font-size: var(--text-pane);
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  border-bottom: var(--hairline);
+}
+@utility well {
+  background-color: var(--color-shell);
+  border-radius: var(--radius-nested);
+  box-shadow: var(--inset-shadow-hair);
+  @media (forced-colors: active) {
+    border: 1px solid CanvasText;
+  }
+}
+
+/* Tabular figures are on globally; label columns switch them off. */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+@utility tabular-off {
+  font-variant-numeric: normal;
+}
+
+/* Rendered documents (forms, PDFs, letters): the document face, and the only place 600 and 700
+   weights are allowed (the compiled-CSS check, F-05-T07, admits them under [data-doc]). */
+@utility doc-scope {
+  font-family: var(--font-doc);
+  color: var(--color-doc-ink);
+  font-variant-numeric: normal;
+}
+[data-doc] b,
+[data-doc] strong {
+  font-weight: 700;
+}
+[data-doc] .doc-semibold {
+  font-weight: 600;
+}
+[data-doc] .doc-bold {
+  font-weight: 700;
+}

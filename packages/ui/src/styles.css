@@ -3,3 +3,6 @@
 @import "./theme.css";
 @import "./root.css";
 @import "./contrast.css";
+@import "./base.css";
+@import "./motion.css";
+@import "./utilities.css";

@@ -4,7 +4,7 @@ title: "F-05-T05 · base.css, motion.css, utilities.css (hairline, pane, well, t
 spec: SPEC-048
 acceptance_criteria: [AC-8]
 risk_zone: green
-status: todo
+status: done
 epic: F-05
 plan_key: F-05-T05
 branch: task-131-base-motion-utilities-css
@@ -40,7 +40,7 @@ body computes to 13px/15.6px Geist with tabular numbers on #F8F8F6 and forced-co
 - Prior work: TASK-091..101 (Anas: tokens, Geist, components)
 
 ## Plan
-- [ ] Plan written in this file (required for amber and red)
+- [x] Plan written in this file (required for amber and red)
 
 Steps:
 1. [ ] Write the three files over the T03 tokens
@@ -83,11 +83,13 @@ Append-only. Newest at the bottom.
 
 - `2026-10-20` — task file written from the epic (SU-14); nothing built yet.
 - 2026-10-20 (SU-24): open for the builder: the plan's body line height is 15.6px (1.2); the app ships 13px/1.45. Changing it moves every screen; decide here and record in tokens/DECISIONS.md.
+- 2026-10-20 (solo build): base-css.test.ts first (body 13px Geist, tabular, shell colour, focus outline in base and forced-colors, reduced-motion block, utilities emit token values, 600/700 only under [data-doc]). Moved the base layer and keyframes out of theme.css into base.css and motion.css; added utilities.css (hairline-t/b/l/r, pane, pane-header, well, tabular, tabular-off, doc-scope) and the ./base.css, ./motion.css, ./utilities.css exports; styles.css imports all. The body keeps line height 1.45; the plan's 15.6px stays an open decision in DECISIONS.md (the static test pins 1.45 and the open row, so changing it is deliberate). tokens.test.ts now reads base.css for the body and focus checks (the rules moved; no assertion changed). The browser computed-style and forced-colors emulation run needs the gallery (TASK-135). No text-* roles added here. make check-fast, vitest (438) and vite build green.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
-| | | yes / no |
+| Body line height stays 1.45 (plan: 15.6px) | Moves every screen; decide with the primitives in T14 | no |
+| Forced-colors focus outline names CanvasText, same 2px and offset | The .55 espresso would vanish on a dark forced palette | no |
 
 ## Gotchas and discoveries
 - 
@@ -96,8 +98,8 @@ Append-only. Newest at the bottom.
 - [ ] 
 
 ## Handoff
-- **Current state:** not started
-- **Exact next step:** step 1 of the plan
+- **Current state:** done (see the progress log)
+- **Exact next step:** none for this task
 - **Uncommitted or partial work:** none
 - **Known failing checks:** none
 - **Open issues:** none

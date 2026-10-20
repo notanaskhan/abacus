@@ -1,0 +1,80 @@
+/* Motion (SPEC-048 AC-8, F-05-T05): keyframes and the reduced-motion block. Durations and easing
+   are the tokens in root.css and theme.css. No bounces, no shimmer. The Web Animations API loops
+   are stopped separately by useReducedMotion() (F-05-T13), which a media query cannot do. */
+@keyframes drawer-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+@keyframes sheet-in {
+  from {
+    opacity: 0.6;
+    transform: translate(-50%, 40px);
+  }
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes ac-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes ac-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes ac-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@keyframes ac-typing {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@utility motion-spin {
+  animation: ac-spin var(--motion-spin) infinite;
+}
+@utility motion-pulse {
+  animation: ac-pulse 1.2s ease-in-out infinite;
+}
+@utility motion-reveal {
+  animation: ac-reveal var(--motion-reveal) both;
+}
+@utility motion-typing {
+  animation: ac-typing 1100ms ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
