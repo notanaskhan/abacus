@@ -1,7 +1,8 @@
 # CI stage 5 (ADR-083): the Playwright journey with accessibility checks, nightly and on demand,
 # not on every pull request (TASK-012 Q5). PROTECTED. Runs the same Makefile targets as local
 # development against the compose stack. Actions are pinned to full commit SHAs; the token is
-# read-only; no secrets are used.
+# read-only except in nightly-red, which may only write issues; no secrets are used.
+# F-01-T08 (SPEC-045 AC-14, AC-15): a red scheduled night opens or updates one nightly-red issue.
 name: e2e
 
 on:
@@ -31,7 +32,16 @@ jobs:
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
       - run: corepack enable
       - run: make setup
-      - run: pnpm -C apps/web exec playwright install --with-deps chromium
+      - name: Playwright browser cache
+        id: playwright-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm -C apps/web exec playwright install --with-deps chromium
+      - if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm -C apps/web exec playwright install-deps chromium
       - name: Start the local stack (API, sign-in, worker, SPA)
         run: |
           make dev > dev.log 2>&1 &
@@ -56,3 +66,30 @@ jobs:
           name: playwright-report
           path: apps/web/playwright-report
           retention-days: 7
+
+  nightly-red:
+    name: open or update the nightly-red issue
+    needs: journey
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Open or update the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create nightly-red --repo "$REPO" --color B60205 \
+            --description "The nightly e2e journey failed" --force
+          open=$(gh issue list --repo "$REPO" --label nightly-red --state open \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --repo "$REPO" --body "Red again: $RUN_URL"
+          else
+            gh issue create --repo "$REPO" --label nightly-red \
+              --title "Nightly e2e journey is red" \
+              --body "The scheduled e2e journey failed: $RUN_URL. Two red nights in a row make the fix the first work of the next session (SPEC-045 AC-15)."
+          fi

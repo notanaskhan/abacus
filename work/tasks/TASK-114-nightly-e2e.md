@@ -4,7 +4,7 @@ title: "F-01-T08 · Repair the nightly e2e journey for the Setup-first flow with
 spec: SPEC-045
 acceptance_criteria: [AC-14, AC-15]
 risk_zone: red
-status: todo
+status: in-progress
 epic: F-01
 plan_key: F-01-T08
 branch: task-114-nightly-e2e
@@ -77,6 +77,7 @@ make check
 Append-only. Newest at the bottom.
 
 - (none yet)
+- 2026-10-20 (SU-17): journey rewritten as the setup-first journey: create, Setup checklist, acceptance and independence conclusion, independence confirmation, Requests tab, retrieve, screened; axe after every step; unique client names per run; the dev seed kept as one named idempotent step (no firm connections UI yet). Found and fixed an AA contrast failure on ink-3 (DEC-115). Passes twice in a row locally. e2e.yml: Playwright browser cache (actions/cache pinned to v6.1.0's SHA) and a nightly-red job (issues: write only) that opens or updates one issue. Waiting for three green nights.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
