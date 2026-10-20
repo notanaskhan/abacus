@@ -93,6 +93,7 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"adjustment_events", "representations", "representation_removals"}  # SPEC-301
     | {"work_item_assignments", "engagement_entities"}  # F-03-T05 (0068)
     | {"gate_policy_overrides"}  # F-03-T12 (0069): a new row per change
+    | {"request_categories"}  # F-03-T14 (0070)
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -111,7 +112,13 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"prior_engagement_id"}  # SPEC-025 (TASK-048): roll-forward, set at creation only
         | {"office_id", "standards_set_id"}  # F-03-T12 (0069)
     ),
-    "request_lists": frozenset({"id", "tenant_id", "engagement_id"}),
+    "request_lists": frozenset(
+        {"id", "tenant_id", "engagement_id"}
+        | {"work_item_id", "name", "kind", "part", "status", "prior_year_source_ref"}  # F-03-T14
+    ),
+    "request_categories": frozenset(  # F-03-T14 (0070)
+        {"tenant_id", "request_list_id", "name", "position"}
+    ),
     "request_items": frozenset(
         {"id", "tenant_id", "engagement_id", "request_list_id", "description", "audit_area"}
         | {"created_by", "retrievability_tier"}
@@ -457,6 +464,10 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
     "work_items": frozenset({"name", "status", "due_on", "archived_at", "archive_locked_at"}),
+    "request_lists": frozenset(
+        {"default_due_on"}  # SPEC-027 (TASK-051)
+        | {"status", "published_at", "published_by", "marked_done_at", "marked_done_by"}  # T14
+    ),
     "assurance_work_items": frozenset({"phase", "auto_mode"}),  # F-03-T05 (0068)
     "connections": frozenset(
         {"status", "last_checked_at", "last_check_ok", "revoked_at", "revoked_by"}
@@ -539,6 +550,7 @@ TABLE_OWNERS: dict[str, str] = {
     "methodology_request_items": "engagements",
     "methodology_account_rules": "engagements",
     "request_lists": "requests",
+    "request_categories": "requests",  # F-03-T14 (0070)
     "request_items": "requests",
     "evidence_items": "evidence",
     "evidence_versions": "evidence",
