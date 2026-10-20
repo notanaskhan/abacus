@@ -4,7 +4,7 @@ title: "F-03-T02 · Draft N's F-03 ADRs from chapter 03 text: P-38, P-04, P-05, 
 spec: SPEC-047
 acceptance_criteria: [AC-3]
 risk_zone: red
-status: todo
+status: done
 epic: F-03
 plan_key: F-03-T02
 branch: task-123-n-adr-drafts
@@ -67,6 +67,7 @@ cd backend && uv run python -m abacus_tools.quality.validate_docs
 Append-only. Newest at the bottom.
 
 - (none yet)
+- 2026-10-20: done in setup step SU-13: ADR-135 (P-38), ADR-136 (P-04), ADR-137 (P-05), ADR-140 (P-39), ADR-139 (P-36), ADR-144 (P-44), ADR-145 (P-06), ADR-146 (P-09) accepted and indexed in docs/adr/README.md and docs/adr/backlog.md.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

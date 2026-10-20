@@ -4,7 +4,7 @@ title: "F-03-T03 · Draft AY's F-03 ADRs: P-34 status registry and codegen; P-28
 spec: SPEC-047
 acceptance_criteria: [AC-4]
 risk_zone: amber
-status: todo
+status: done
 epic: F-03
 plan_key: F-03-T03
 branch: task-124-status-adr-drafts
@@ -66,6 +66,7 @@ cd backend && uv run python -m abacus_tools.quality.validate_docs
 Append-only. Newest at the bottom.
 
 - (none yet)
+- 2026-10-20: done in setup step SU-13: ADR-138 (P-34), ADR-148 (P-28) accepted and indexed in docs/adr/README.md and docs/adr/backlog.md.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
