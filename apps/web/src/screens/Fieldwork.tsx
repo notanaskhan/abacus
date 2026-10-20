@@ -16,7 +16,6 @@ import {
   itemsOptions,
   itemsQueryKey,
   listEvidenceVersionsOptions,
-  materialityOptions,
   materialityVersionsOptions,
   meOptions,
   procedureOptions,
@@ -1208,19 +1207,24 @@ function FieldworkRail({
   jet: ProcedureOut | undefined;
   surl: ProcedureOut | undefined;
 }): JSX.Element {
-  const current = useQuery({
-    ...materialityOptions({ path: { engagement_id: engagementId } }),
+  const versions = useQuery({
+    ...materialityVersionsOptions({ path: { engagement_id: engagementId } }),
     retry: false,
   });
-  const m = current.data;
+  const m = versions.data?.[0];
   const rows: { id: string; title: string; meta: string; state: { label: string; tone: Tone } }[] =
     [
       {
         id: "fw-materiality",
         title: "Materiality",
-        meta: m == null ? "Not set yet" : `Performance ${money(m.performance)}`,
+        meta: m == null ? "Not proposed yet" : `Performance ${money(m.performance)}`,
+        // SPEC-300: sampling waits for the partner's decision (TASK-307).
         state:
-          m == null ? { label: "To set", tone: "warning" } : { label: "Set", tone: "success" },
+          m == null
+            ? { label: "To propose", tone: "warning" }
+            : m.status === "decided"
+              ? { label: "Decided", tone: "success" }
+              : { label: "Waiting on the partner", tone: "warning" },
       },
       {
         id: "fw-jet",

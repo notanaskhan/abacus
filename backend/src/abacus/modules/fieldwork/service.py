@@ -200,7 +200,7 @@ async def set_materiality(
             rationale=text,
         )
         tx.record("materiality.set", target=Target("engagement", engagement_id))
-        tx.emit(MaterialityProposed(engagement_id=engagement_id))  # SPEC-305
+        tx.emit(MaterialityProposed(engagement_id=engagement_id, by_user=ctx.user_id))  # SPEC-305
     found = await materiality_of(ctx, engagement_id)
     if found is None:  # just written in this request
         raise NotFound("materiality")

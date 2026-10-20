@@ -297,7 +297,11 @@ async def record_risk(
             after=Ref(significant=int(clean.significant), fraud=FRAUD.index(clean.fraud)),
         )
         if clean.significant or clean.fraud == "rebuttal":  # SPEC-305: the partner is asked
-            tx.emit(RiskApprovalRequested(engagement_id=engagement_id, risk_id=risk_id))
+            tx.emit(
+                RiskApprovalRequested(
+                    engagement_id=engagement_id, risk_id=risk_id, by_user=ctx.user_id
+                )
+            )
     return risk_id
 
 

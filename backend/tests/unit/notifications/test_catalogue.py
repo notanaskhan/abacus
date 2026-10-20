@@ -1,5 +1,9 @@
 """SPEC-013 catalogue invariants."""
 
+import uuid
+
+import pytest
+
 from abacus.modules.notifications.api import CATALOGUE, SUBSCRIPTIONS, TEMPLATES
 
 
@@ -31,3 +35,20 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "risk.approval_requested",
         "finding.severity_proposed",
     }
+
+
+async def test_task307_the_partner_is_not_told_of_their_own_proposal(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from abacus.modules.notifications import catalogue
+
+    partner, other = uuid.uuid4(), uuid.uuid4()
+
+    async def partners(*_: object) -> list[uuid.UUID]:
+        return [partner, other]
+
+    monkeypatch.setattr(catalogue, "engagement_partners", partners)
+    payload: dict[str, object] = {"engagement_id": str(uuid.uuid4()), "by_user": str(partner)}
+    assert await catalogue.CATALOGUE["materiality.proposed"].recipients(uuid.uuid4(), payload) == [
+        other
+    ]
