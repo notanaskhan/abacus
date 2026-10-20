@@ -5,29 +5,80 @@
       "Sid": "DenyRegionalApisOutsideUsEast2AndUsWest2",
       "Effect": "Deny",
       "NotAction": [
-        "a4b:*", "account:*", "acm:*", "aws-portal:*", "bedrock:*", "budgets:*", "ce:*",
-        "chatbot:*", "cloudfront:*", "controltower:*", "cur:*", "globalaccelerator:*",
-        "health:*", "iam:*", "identitystore:*", "organizations:*", "pricing:*", "route53:*",
-        "route53domains:*", "servicequotas:*", "shield:*", "sso:*", "sso-directory:*", "sts:*",
-        "support:*", "supportplans:*", "trustedadvisor:*", "waf:*", "wafv2:*"
+        "a4b:*",
+        "account:*",
+        "acm:*",
+        "aws-portal:*",
+        "bedrock:*",
+        "budgets:*",
+        "ce:*",
+        "chatbot:*",
+        "cloudfront:*",
+        "controltower:*",
+        "cur:*",
+        "globalaccelerator:*",
+        "health:*",
+        "iam:*",
+        "identitystore:*",
+        "organizations:*",
+        "pricing:*",
+        "route53:*",
+        "route53domains:*",
+        "servicequotas:*",
+        "shield:*",
+        "sso:*",
+        "sso-directory:*",
+        "sts:*",
+        "support:*",
+        "supportplans:*",
+        "trustedadvisor:*",
+        "waf:*",
+        "wafv2:*",
+        "signin:*",
+        "sso-oauth:*",
+        "identitystore-auth:*",
+        "account-access:*",
+        "builderid:*"
       ],
       "Resource": "*",
       "Condition": {
-        "StringNotEquals": { "aws:RequestedRegion": ["us-east-2", "us-west-2"] },
+        "StringNotEquals": {
+          "aws:RequestedRegion": [
+            "us-east-2",
+            "us-west-2"
+          ]
+        },
         "ArnNotLike": {
-          "aws:PrincipalARN": ["arn:aws:iam::*:role/AWSControlTowerExecution"]
+          "aws:PrincipalARN": [
+            "arn:aws:iam::*:role/AWSControlTowerExecution"
+          ]
         }
       }
     },
     {
       "Sid": "AllowGlobalEdgeAndBedrockGeoOnlyInUsRegions",
       "Effect": "Deny",
-      "Action": ["acm:*", "bedrock:*", "cloudfront:*", "waf:*", "wafv2:*", "shield:*"],
+      "Action": [
+        "acm:*",
+        "bedrock:*",
+        "cloudfront:*",
+        "waf:*",
+        "wafv2:*",
+        "shield:*"
+      ],
       "Resource": "*",
       "Condition": {
-        "StringNotEquals": { "aws:RequestedRegion": ["us-east-2", "us-west-2", "us-east-1"] },
+        "StringNotEquals": {
+          "aws:RequestedRegion": [
+            "us-east-2",
+            "us-west-2",
+            "us-east-1"
+          ]
+        },
         "ArnNotLike": {
-          "aws:PrincipalARN": ["arn:aws:iam::*:role/AWSControlTowerExecution"]
+          "aws:PrincipalARN": [
+            "arn:aws:iam::*:role/AWSControlTowerExecution"
+          ]
         }
       }
     }
