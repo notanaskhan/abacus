@@ -1223,6 +1223,8 @@ function procedureState(p: ProcedureOut | undefined): { label: string; tone: Ton
   if (p.status === "failed") return { label: "Needs attention", tone: "danger" };
   if (p.selection != null)
     return { label: `${String(p.selection.item_count)} selected`, tone: "success" };
+  // The list's copy of a procedure has its status but not its selection (TASK-108).
+  if (p.status === "selected") return { label: "Selected", tone: "success" };
   return { label: "Set up", tone: "warning" };
 }
 
