@@ -88,6 +88,7 @@ Append-only. Newest at the bottom.
 
 - (none yet)
 - 2026-10-20 (SU-15): main's stage 2 was red on two counts. (1) test_schema_check_db expected no update columns for `procedures`, though schema_check declares parameters, status and failure_code (SPEC-037, TASK-083); the contract line is added. (2) test_screening.py inherited a drained or blocked provider_capacity bucket from earlier tests in its shard (27 failures in shard 3/5); it now empties the bucket before and after each test, like its siblings. Shard 3/5: 27 failed before, 579 passed after. Coverage floor work (DEC-10) still open.
+- 2026-10-20: with stage 2 green the coverage floor job ran and failed at 70% < 95. DEC-10's dated exception now exists: backend/coverage-exception.toml (70 now, 78 from Nov 6, 87 from Nov 20, expires Dec 1) read by abacus_tools.ci.coverage_floor, which `make ci-coverage` and `make check` call; the floor in pyproject.toml stays 95 and tests refuse any step that drops or reaches the floor. Also fixed an order-dependent assertion in test_work_slot_workflows (counted work_slots and work_waiters across every tenant; now scoped to the test's tenant).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

@@ -522,8 +522,14 @@ async def test_ac14_a_run_cancelled_while_queued_ends_cancelled_with_the_queue_f
     assert (got["queued_reason"], got["estimated_start_at"]) == (None, None)
     assert got["finished_at"] is not None
     # the blocker is another run's: only ours is gone
-    assert await seed.value("SELECT count(*) FROM work_slots") == 1
-    assert await seed.value("SELECT count(*) FROM work_waiters") == 0
+    assert (
+        await seed.value("SELECT count(*) FROM work_slots WHERE tenant_id = $1", world.tenant_id)
+        == 1
+    )
+    assert (
+        await seed.value("SELECT count(*) FROM work_waiters WHERE tenant_id = $1", world.tenant_id)
+        == 0
+    )
     actions = await seed.actions(world.tenant_id)
     assert "sync_run.queued" in actions
     assert actions.count("sync_run.failed") == 1
@@ -842,7 +848,10 @@ async def test_ac14_a_screening_cancelled_while_queued_ends_cancelled_with_queue
         "SELECT estimated_start_at FROM agent_runs WHERE tenant_id = $1", world.tenant_id
     )
     assert rows[0]["estimated_start_at"] is None
-    assert await seed.value("SELECT count(*) FROM work_waiters") == 0
+    assert (
+        await seed.value("SELECT count(*) FROM work_waiters WHERE tenant_id = $1", world.tenant_id)
+        == 0
+    )
     assert (await _activities(handle))[-2:] == ["screening.fail_run", "screening.release_slot"]
 
 
@@ -870,7 +879,10 @@ async def test_ac6_a_skipped_screening_takes_no_slot_and_never_waits(
     outcome = await handle.result()
     assert outcome.status == "skipped"
     assert await _activities(handle) == ["screening.create_run"]
-    assert await seed.value("SELECT count(*) FROM work_waiters") == 0
+    assert (
+        await seed.value("SELECT count(*) FROM work_waiters WHERE tenant_id = $1", world.tenant_id)
+        == 0
+    )
 
 
 async def test_ac6_a_screening_release_that_keeps_failing_does_not_change_the_outcome(
