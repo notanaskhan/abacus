@@ -857,77 +857,6 @@
         "title": "ApplyMethodologyIn",
         "type": "object"
       },
-      "ApprovalIn": {
-        "additionalProperties": false,
-        "properties": {
-          "blocks_fieldwork": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Blocks Fieldwork"
-          },
-          "draft_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Draft Id",
-            "type": "string"
-          },
-          "effort": {
-            "anyOf": [
-              {
-                "enum": [
-                  "small",
-                  "medium",
-                  "large"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Effort"
-          },
-          "good_looks_like": {
-            "anyOf": [
-              {
-                "maxLength": 600,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "Good Looks Like"
-          },
-          "why": {
-            "anyOf": [
-              {
-                "maxLength": 300,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "Why"
-          }
-        },
-        "required": [
-          "draft_id"
-        ],
-        "title": "ApprovalIn",
-        "type": "object"
-      },
       "ApprovalOut": {
         "properties": {
           "approved_at": {
@@ -1257,6 +1186,78 @@
           "bands"
         ],
         "title": "BandsIn",
+        "type": "object"
+      },
+      "BasisIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Amount"
+          },
+          "performance_pct": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 100.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Performance Pct"
+          },
+          "rate_pct": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 100.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Rate Pct"
+          },
+          "trivial_pct": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 100.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Trivial Pct"
+          }
+        },
+        "required": [
+          "amount",
+          "rate_pct",
+          "performance_pct",
+          "trivial_pct"
+        ],
+        "title": "BasisIn",
         "type": "object"
       },
       "BoardSummaryOut": {
@@ -2483,7 +2484,7 @@
           "approvals": {
             "cls": "internal",
             "items": {
-              "$ref": "#/components/schemas/ApprovalIn"
+              "$ref": "#/components/schemas/abacus__modules__agents__routes__ApprovalIn"
             },
             "maxItems": 500,
             "minItems": 1,
@@ -2515,6 +2516,23 @@
           "decided"
         ],
         "title": "DecidedOut",
+        "type": "object"
+      },
+      "DecisionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "rationale": {
+            "cls": "confidential",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rationale"
+        ],
+        "title": "DecisionIn",
         "type": "object"
       },
       "DecisionOut": {
@@ -5942,6 +5960,17 @@
       "MaterialityIn": {
         "additionalProperties": false,
         "properties": {
+          "basis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BasisIn"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
           "benchmark": {
             "cls": "confidential",
             "maxLength": 200,
@@ -5976,6 +6005,19 @@
             ],
             "cls": "confidential",
             "title": "Performance"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Rationale"
           },
           "trivial": {
             "anyOf": [
@@ -6048,6 +6090,187 @@
           "set_at"
         ],
         "title": "MaterialityOut",
+        "type": "object"
+      },
+      "MaterialityVersionOut": {
+        "properties": {
+          "basis_amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Basis Amount"
+          },
+          "benchmark": {
+            "cls": "confidential",
+            "title": "Benchmark",
+            "type": "string"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decided At"
+          },
+          "decided_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decided By Name"
+          },
+          "decision_rationale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Decision Rationale"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "overall": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Overall",
+            "type": "string"
+          },
+          "performance": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Performance",
+            "type": "string"
+          },
+          "performance_pct": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Performance Pct"
+          },
+          "rate_pct": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Rate Pct"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Rationale"
+          },
+          "set_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Set At",
+            "type": "string"
+          },
+          "set_by_name": {
+            "cls": "internal",
+            "title": "Set By Name",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "proposed",
+              "decided",
+              "superseded"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "trivial": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Trivial",
+            "type": "string"
+          },
+          "trivial_pct": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Trivial Pct"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "status",
+          "overall",
+          "performance",
+          "trivial",
+          "benchmark",
+          "basis_amount",
+          "rate_pct",
+          "performance_pct",
+          "trivial_pct",
+          "rationale",
+          "set_by_name",
+          "set_at",
+          "decided_by_name",
+          "decided_at",
+          "decision_rationale"
+        ],
+        "title": "MaterialityVersionOut",
         "type": "object"
       },
       "MeOut": {
@@ -8262,6 +8485,275 @@
           "evidence_version_id"
         ],
         "title": "ReviewRequestedOut",
+        "type": "object"
+      },
+      "RiskBody": {
+        "additionalProperties": false,
+        "properties": {
+          "area": {
+            "cls": "confidential",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Area",
+            "type": "string"
+          },
+          "assertions": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "existence",
+                "completeness",
+                "accuracy",
+                "valuation",
+                "cut_off",
+                "rights_obligations",
+                "presentation"
+              ],
+              "type": "string"
+            },
+            "maxItems": 7,
+            "title": "Assertions",
+            "type": "array"
+          },
+          "control": {
+            "cls": "confidential",
+            "enum": [
+              "low",
+              "moderate",
+              "high",
+              "maximum"
+            ],
+            "title": "Control",
+            "type": "string"
+          },
+          "fraud": {
+            "cls": "confidential",
+            "default": "none",
+            "enum": [
+              "none",
+              "presumed",
+              "rebuttal"
+            ],
+            "title": "Fraud",
+            "type": "string"
+          },
+          "inherent": {
+            "cls": "confidential",
+            "enum": [
+              "low",
+              "moderate",
+              "high"
+            ],
+            "title": "Inherent",
+            "type": "string"
+          },
+          "level": {
+            "cls": "internal",
+            "enum": [
+              "financial_statement",
+              "assertion"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Rationale"
+          },
+          "significant": {
+            "cls": "confidential",
+            "default": false,
+            "title": "Significant",
+            "type": "boolean"
+          },
+          "title": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "area",
+          "level",
+          "assertions",
+          "inherent",
+          "control"
+        ],
+        "title": "RiskBody",
+        "type": "object"
+      },
+      "RiskOut": {
+        "properties": {
+          "approved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approved At"
+          },
+          "approved_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approved By Name"
+          },
+          "area": {
+            "cls": "confidential",
+            "title": "Area",
+            "type": "string"
+          },
+          "assertions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Assertions",
+            "type": "array"
+          },
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "control": {
+            "cls": "confidential",
+            "enum": [
+              "low",
+              "moderate",
+              "high",
+              "maximum"
+            ],
+            "title": "Control",
+            "type": "string"
+          },
+          "fraud": {
+            "cls": "confidential",
+            "enum": [
+              "none",
+              "presumed",
+              "rebuttal"
+            ],
+            "title": "Fraud",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "inherent": {
+            "cls": "confidential",
+            "enum": [
+              "low",
+              "moderate",
+              "high"
+            ],
+            "title": "Inherent",
+            "type": "string"
+          },
+          "level": {
+            "cls": "internal",
+            "enum": [
+              "financial_statement",
+              "assertion"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "needs_approval": {
+            "cls": "internal",
+            "title": "Needs Approval",
+            "type": "boolean"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Rationale"
+          },
+          "recorded_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "recorded_by_name": {
+            "cls": "internal",
+            "title": "Recorded By Name",
+            "type": "string"
+          },
+          "rmm": {
+            "cls": "confidential",
+            "enum": [
+              "low",
+              "moderate",
+              "high"
+            ],
+            "title": "Rmm",
+            "type": "string"
+          },
+          "significant": {
+            "cls": "confidential",
+            "title": "Significant",
+            "type": "boolean"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "title",
+          "area",
+          "level",
+          "assertions",
+          "inherent",
+          "control",
+          "rmm",
+          "significant",
+          "fraud",
+          "rationale",
+          "needs_approval",
+          "approved_by_name",
+          "approved_at",
+          "recorded_by_name",
+          "recorded_at"
+        ],
+        "title": "RiskOut",
         "type": "object"
       },
       "RollForwardIn": {
@@ -10615,6 +11107,77 @@
         "title": "YourPartOut",
         "type": "object"
       },
+      "abacus__modules__agents__routes__ApprovalIn": {
+        "additionalProperties": false,
+        "properties": {
+          "blocks_fieldwork": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Blocks Fieldwork"
+          },
+          "draft_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Draft Id",
+            "type": "string"
+          },
+          "effort": {
+            "anyOf": [
+              {
+                "enum": [
+                  "small",
+                  "medium",
+                  "large"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Effort"
+          },
+          "good_looks_like": {
+            "anyOf": [
+              {
+                "maxLength": 600,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Good Looks Like"
+          },
+          "why": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Why"
+          }
+        },
+        "required": [
+          "draft_id"
+        ],
+        "title": "ApprovalIn",
+        "type": "object"
+      },
       "abacus__modules__agents__routes__CitationOut": {
         "properties": {
           "cell": {
@@ -10758,6 +11321,26 @@
           "verified"
         ],
         "title": "CitationOut",
+        "type": "object"
+      },
+      "abacus__modules__fieldwork__routes__ApprovalIn": {
+        "additionalProperties": false,
+        "properties": {
+          "rationale": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Rationale"
+          }
+        },
+        "title": "ApprovalIn",
         "type": "object"
       },
       "abacus__modules__fieldwork__routes__StartIn": {
@@ -18303,6 +18886,238 @@
           "fieldwork"
         ],
         "x-abacus-action": "materiality.set"
+      }
+    },
+    "/v1/engagements/{engagement_id}/materiality/decide": {
+      "post": {
+        "description": "SPEC-300 AC-2: the engagement partner decides the newest version.",
+        "operationId": "decide_materiality",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MaterialityVersionOut"
+                  },
+                  "title": "Response Decide Materiality",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Decide Materiality Route",
+        "tags": [
+          "fieldwork"
+        ],
+        "x-abacus-action": "materiality.decide"
+      }
+    },
+    "/v1/engagements/{engagement_id}/materiality/versions": {
+      "get": {
+        "description": "SPEC-300 AC-3: every materiality version, newest first, with its decision.",
+        "operationId": "materiality_versions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MaterialityVersionOut"
+                  },
+                  "title": "Response Materiality Versions",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Materiality Versions Route",
+        "tags": [
+          "fieldwork"
+        ],
+        "x-abacus-action": "procedure.read"
       }
     },
     "/v1/engagements/{engagement_id}/methodology": {
@@ -27956,6 +28771,498 @@
           "evidence"
         ],
         "x-abacus-action": "review.read"
+      }
+    },
+    "/v1/engagements/{engagement_id}/risks": {
+      "get": {
+        "description": "SPEC-300 AC-6: the risk register.",
+        "operationId": "risks",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RiskOut"
+                  },
+                  "title": "Response Risks",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Risks Route",
+        "tags": [
+          "fieldwork"
+        ],
+        "x-abacus-action": "procedure.read"
+      },
+      "post": {
+        "description": "SPEC-300 AC-4: record a new risk.",
+        "operationId": "add_risk",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiskBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RiskOut"
+                  },
+                  "title": "Response Add Risk",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Add Risk Route",
+        "tags": [
+          "fieldwork"
+        ],
+        "x-abacus-action": "risk.assess"
+      }
+    },
+    "/v1/engagements/{engagement_id}/risks/{risk_id}/approve": {
+      "post": {
+        "description": "SPEC-300 AC-5: the partner approves the significant risk or rebuttal.",
+        "operationId": "approve_risk",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "risk_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Risk Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/abacus__modules__fieldwork__routes__ApprovalIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RiskOut"
+                  },
+                  "title": "Response Approve Risk",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Approve Risk Route",
+        "tags": [
+          "fieldwork"
+        ],
+        "x-abacus-action": "risk.approve"
+      }
+    },
+    "/v1/engagements/{engagement_id}/risks/{risk_id}/versions": {
+      "post": {
+        "description": "SPEC-300 AC-4: revise a risk (a new version; the old one stays).",
+        "operationId": "revise_risk",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "risk_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Risk Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiskBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RiskOut"
+                  },
+                  "title": "Response Revise Risk",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Revise Risk Route",
+        "tags": [
+          "fieldwork"
+        ],
+        "x-abacus-action": "risk.assess"
       }
     },
     "/v1/engagements/{engagement_id}/screening-results": {

@@ -30,8 +30,19 @@ from abacus.modules.fieldwork.flow import (
     waiting_for,
 )
 from abacus.modules.fieldwork.notes import NoteView, clear, notes_for, raise_note, respond
+from abacus.modules.fieldwork.planning import (
+    MaterialityVersionView,
+    RiskIn,
+    RiskView,
+    approve_risk,
+    decide_materiality,
+    materiality_history,
+    record_risk,
+    risks_for,
+)
 from abacus.modules.fieldwork.service import (
     AccountsView,
+    Basis,
     Defaults,
     Materiality,
     Pick,
@@ -76,6 +87,18 @@ Ctx = Annotated[AuthContext, Depends(current_context)]
 Money = Annotated[Decimal, Field(gt=0, max_digits=18, decimal_places=2)]
 
 
+Pct = Annotated[Decimal, Field(gt=0, le=100, max_digits=6, decimal_places=3)]
+
+
+class BasisIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    amount: Annotated[Money, classified("confidential")]
+    rate_pct: Annotated[Pct, classified("confidential")]
+    performance_pct: Annotated[Pct, classified("confidential")]
+    trivial_pct: Annotated[Pct, classified("confidential")]
+
+
 class MaterialityIn(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -83,6 +106,12 @@ class MaterialityIn(BaseModel):
     performance: Annotated[Money, classified("confidential")]
     trivial: Annotated[Money, classified("confidential")]
     benchmark: Annotated[str, Field(min_length=1, max_length=200), classified("confidential")]
+    basis: Annotated[
+        BasisIn | None, Field(default=None), classified("confidential")
+    ]  # SPEC-300 AC-1: code computes the amounts from it
+    rationale: Annotated[
+        str | None, Field(default=None, max_length=2000), classified("confidential")
+    ]
 
 
 class MaterialityOut(BaseModel):
@@ -119,6 +148,8 @@ async def set_materiality_route(
             performance=body.performance,
             trivial=body.trivial,
             benchmark=body.benchmark,
+            basis=Basis(**body.basis.model_dump()) if body.basis else None,
+            rationale=body.rationale,
         )
     )
 
@@ -984,6 +1015,183 @@ async def findings_summary_route(engagement_id: UUID, ctx: Ctx) -> SummaryOut:
     """SPEC-043 AC-3: the summary of uncorrected misstatements, computed by code."""
     found: Summary = await summary_for(ctx, engagement_id)
     return SummaryOut.model_validate(asdict(found))
+
+
+# --- Planning: materiality decision and risks (SPEC-300; TASK-301) ------------------------------
+
+
+class MaterialityVersionOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    version: Annotated[int, classified("internal")]
+    status: Annotated[Literal["proposed", "decided", "superseded"], classified("internal")]
+    overall: Annotated[Decimal, classified("confidential")]
+    performance: Annotated[Decimal, classified("confidential")]
+    trivial: Annotated[Decimal, classified("confidential")]
+    benchmark: Annotated[str, classified("confidential")]
+    basis_amount: Annotated[Decimal | None, classified("confidential")]
+    rate_pct: Annotated[Decimal | None, classified("confidential")]
+    performance_pct: Annotated[Decimal | None, classified("confidential")]
+    trivial_pct: Annotated[Decimal | None, classified("confidential")]
+    rationale: Annotated[str | None, classified("confidential")]
+    set_by_name: Annotated[str, classified("internal")]
+    set_at: Annotated[datetime, classified("internal")]
+    decided_by_name: Annotated[str | None, classified("internal")]
+    decided_at: Annotated[datetime | None, classified("internal")]
+    decision_rationale: Annotated[str | None, classified("confidential")]
+
+
+def _versions_out(found: list[MaterialityVersionView]) -> list[MaterialityVersionOut]:
+    return [MaterialityVersionOut.model_validate(asdict(v)) for v in found]
+
+
+@router.get(
+    "/materiality/versions", action="procedure.read", response_model=list[MaterialityVersionOut]
+)
+async def materiality_versions_route(engagement_id: UUID, ctx: Ctx) -> list[MaterialityVersionOut]:
+    """SPEC-300 AC-3: every materiality version, newest first, with its decision."""
+    return _versions_out(await materiality_history(ctx, engagement_id))
+
+
+class DecisionIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    rationale: Annotated[str, Field(min_length=1, max_length=2000), classified("confidential")]
+
+
+@router.post(
+    "/materiality/decide",
+    action="materiality.decide",
+    response_model=list[MaterialityVersionOut],
+    status_code=201,
+)
+async def decide_materiality_route(
+    engagement_id: UUID, body: DecisionIn, ctx: Ctx
+) -> list[MaterialityVersionOut]:
+    """SPEC-300 AC-2: the engagement partner decides the newest version."""
+    await decide_materiality(ctx, engagement_id, body.rationale)
+    return _versions_out(await materiality_history(ctx, engagement_id))
+
+
+RiskLevel = Literal["financial_statement", "assertion"]
+Rating = Literal["low", "moderate", "high"]
+ControlRating = Literal["low", "moderate", "high", "maximum"]
+Fraud = Literal["none", "presumed", "rebuttal"]
+Assertion = Literal[
+    "existence",
+    "completeness",
+    "accuracy",
+    "valuation",
+    "cut_off",
+    "rights_obligations",
+    "presentation",
+]
+
+
+class RiskBody(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    title: Annotated[str, Field(min_length=1, max_length=200), classified("confidential")]
+    area: Annotated[str, Field(min_length=1, max_length=120), classified("confidential")]
+    level: Annotated[RiskLevel, classified("internal")]
+    assertions: Annotated[list[Assertion], Field(max_length=7), classified("internal")]
+    inherent: Annotated[Rating, classified("confidential")]
+    control: Annotated[ControlRating, classified("confidential")]
+    significant: Annotated[bool, Field(default=False), classified("confidential")]
+    fraud: Annotated[Fraud, Field(default="none"), classified("confidential")]
+    rationale: Annotated[
+        str | None, Field(default=None, max_length=2000), classified("confidential")
+    ]
+
+
+class RiskOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    code: Annotated[str, classified("internal")]
+    title: Annotated[str, classified("confidential")]
+    area: Annotated[str, classified("confidential")]
+    level: Annotated[RiskLevel, classified("internal")]
+    assertions: Annotated[list[str], classified("internal")]
+    inherent: Annotated[Rating, classified("confidential")]
+    control: Annotated[ControlRating, classified("confidential")]
+    rmm: Annotated[Rating, classified("confidential")]
+    significant: Annotated[bool, classified("confidential")]
+    fraud: Annotated[Fraud, classified("confidential")]
+    rationale: Annotated[str | None, classified("confidential")]
+    needs_approval: Annotated[bool, classified("internal")]
+    approved_by_name: Annotated[str | None, classified("internal")]
+    approved_at: Annotated[datetime | None, classified("internal")]
+    recorded_by_name: Annotated[str, classified("internal")]
+    recorded_at: Annotated[datetime, classified("internal")]
+
+
+def _risks_out(found: list[RiskView]) -> list[RiskOut]:
+    return [RiskOut.model_validate(asdict(r)) for r in found]
+
+
+def _risk_in(body: RiskBody) -> RiskIn:
+    return RiskIn(
+        body.title,
+        body.area,
+        body.level,
+        list(body.assertions),
+        body.inherent,
+        body.control,
+        body.significant,
+        body.fraud,
+        body.rationale,
+    )
+
+
+@router.get("/risks", action="procedure.read", response_model=list[RiskOut])
+async def risks_route(engagement_id: UUID, ctx: Ctx) -> list[RiskOut]:
+    """SPEC-300 AC-6: the risk register."""
+    return _risks_out(await risks_for(ctx, engagement_id))
+
+
+@router.post("/risks", action="risk.assess", response_model=list[RiskOut], status_code=201)
+async def add_risk_route(engagement_id: UUID, body: RiskBody, ctx: Ctx) -> list[RiskOut]:
+    """SPEC-300 AC-4: record a new risk."""
+    await record_risk(ctx, engagement_id, None, _risk_in(body))
+    return _risks_out(await risks_for(ctx, engagement_id))
+
+
+@router.post(
+    "/risks/{risk_id}/versions",
+    action="risk.assess",
+    response_model=list[RiskOut],
+    status_code=201,
+)
+async def revise_risk_route(
+    engagement_id: UUID, risk_id: UUID, body: RiskBody, ctx: Ctx
+) -> list[RiskOut]:
+    """SPEC-300 AC-4: revise a risk (a new version; the old one stays)."""
+    await record_risk(ctx, engagement_id, risk_id, _risk_in(body))
+    return _risks_out(await risks_for(ctx, engagement_id))
+
+
+class ApprovalIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    rationale: Annotated[
+        str | None, Field(default=None, max_length=2000), classified("confidential")
+    ]
+
+
+@router.post(
+    "/risks/{risk_id}/approve",
+    action="risk.approve",
+    response_model=list[RiskOut],
+    status_code=201,
+)
+async def approve_risk_route(
+    engagement_id: UUID, risk_id: UUID, body: ApprovalIn, ctx: Ctx
+) -> list[RiskOut]:
+    """SPEC-300 AC-5: the partner approves the significant risk or rebuttal."""
+    await approve_risk(ctx, engagement_id, risk_id, body.rationale)
+    return _risks_out(await risks_for(ctx, engagement_id))
 
 
 # --- The agent procedure session (SPEC-044; TASK-109) ------------------------------------------

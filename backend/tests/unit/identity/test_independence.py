@@ -129,6 +129,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "item.sign_prepared",  # SPEC-040 (TASK-100)
         "item.sign_reviewed",
         "ledger_import.upload",  # SPEC-028 (TASK-052)
+        "materiality.decide",  # SPEC-300 (TASK-301)
         "materiality.set",  # SPEC-037 (TASK-083)
         "misstatement.set",  # SPEC-043 (TASK-107)
         "procedure.configure",
@@ -140,6 +141,8 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "review_note.clear",  # SPEC-041 (TASK-103)
         "review_note.raise",
         "review_note.respond",
+        "risk.approve",  # SPEC-300 (TASK-301)
+        "risk.assess",
         "sample.approve",  # SPEC-040 (TASK-100)
         "screening.request",
         "upload_review.read",  # SPEC-030 (TASK-059 D1)

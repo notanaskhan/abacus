@@ -412,32 +412,6 @@ export type ApplyMethodologyIn = {
 };
 
 /**
- * ApprovalIn
- */
-export type ApprovalIn = {
-    /**
-     * Blocks Fieldwork
-     */
-    blocks_fieldwork?: boolean | null;
-    /**
-     * Draft Id
-     */
-    draft_id: string;
-    /**
-     * Effort
-     */
-    effort?: 'small' | 'medium' | 'large' | null;
-    /**
-     * Good Looks Like
-     */
-    good_looks_like?: string | null;
-    /**
-     * Why
-     */
-    why?: string | null;
-};
-
-/**
  * ApprovalOut
  */
 export type ApprovalOut = {
@@ -613,6 +587,28 @@ export type BandsIn = {
      * Bands
      */
     bands: Array<BandIo>;
+};
+
+/**
+ * BasisIn
+ */
+export type BasisIn = {
+    /**
+     * Amount
+     */
+    amount: number | string;
+    /**
+     * Performance Pct
+     */
+    performance_pct: number | string;
+    /**
+     * Rate Pct
+     */
+    rate_pct: number | string;
+    /**
+     * Trivial Pct
+     */
+    trivial_pct: number | string;
 };
 
 /**
@@ -1189,7 +1185,7 @@ export type DecideIn = {
     /**
      * Approvals
      */
-    approvals: Array<ApprovalIn>;
+    approvals: Array<AbacusModulesAgentsRoutesApprovalIn>;
     /**
      * Confirmed Read
      */
@@ -1204,6 +1200,16 @@ export type DecidedOut = {
      * Decided
      */
     decided: number;
+};
+
+/**
+ * DecisionIn
+ */
+export type DecisionIn = {
+    /**
+     * Rationale
+     */
+    rationale: string;
 };
 
 /**
@@ -2927,6 +2933,7 @@ export type MatchRequestedOut = {
  * MaterialityIn
  */
 export type MaterialityIn = {
+    basis?: BasisIn | null;
     /**
      * Benchmark
      */
@@ -2939,6 +2946,10 @@ export type MaterialityIn = {
      * Performance
      */
     performance: number | string;
+    /**
+     * Rationale
+     */
+    rationale?: string | null;
     /**
      * Trivial
      */
@@ -2973,6 +2984,80 @@ export type MaterialityOut = {
      * Trivial
      */
     trivial: string;
+};
+
+/**
+ * MaterialityVersionOut
+ */
+export type MaterialityVersionOut = {
+    /**
+     * Basis Amount
+     */
+    basis_amount: string | null;
+    /**
+     * Benchmark
+     */
+    benchmark: string;
+    /**
+     * Decided At
+     */
+    decided_at: string | null;
+    /**
+     * Decided By Name
+     */
+    decided_by_name: string | null;
+    /**
+     * Decision Rationale
+     */
+    decision_rationale: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Overall
+     */
+    overall: string;
+    /**
+     * Performance
+     */
+    performance: string;
+    /**
+     * Performance Pct
+     */
+    performance_pct: string | null;
+    /**
+     * Rate Pct
+     */
+    rate_pct: string | null;
+    /**
+     * Rationale
+     */
+    rationale: string | null;
+    /**
+     * Set At
+     */
+    set_at: string;
+    /**
+     * Set By Name
+     */
+    set_by_name: string;
+    /**
+     * Status
+     */
+    status: 'proposed' | 'decided' | 'superseded';
+    /**
+     * Trivial
+     */
+    trivial: string;
+    /**
+     * Trivial Pct
+     */
+    trivial_pct: string | null;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -4084,6 +4169,122 @@ export type ReviewRequestedOut = {
      * Evidence Version Id
      */
     evidence_version_id: string;
+};
+
+/**
+ * RiskBody
+ */
+export type RiskBody = {
+    /**
+     * Area
+     */
+    area: string;
+    /**
+     * Assertions
+     */
+    assertions: Array<'existence' | 'completeness' | 'accuracy' | 'valuation' | 'cut_off' | 'rights_obligations' | 'presentation'>;
+    /**
+     * Control
+     */
+    control: 'low' | 'moderate' | 'high' | 'maximum';
+    /**
+     * Fraud
+     */
+    fraud?: 'none' | 'presumed' | 'rebuttal';
+    /**
+     * Inherent
+     */
+    inherent: 'low' | 'moderate' | 'high';
+    /**
+     * Level
+     */
+    level: 'financial_statement' | 'assertion';
+    /**
+     * Rationale
+     */
+    rationale?: string | null;
+    /**
+     * Significant
+     */
+    significant?: boolean;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * RiskOut
+ */
+export type RiskOut = {
+    /**
+     * Approved At
+     */
+    approved_at: string | null;
+    /**
+     * Approved By Name
+     */
+    approved_by_name: string | null;
+    /**
+     * Area
+     */
+    area: string;
+    /**
+     * Assertions
+     */
+    assertions: Array<string>;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Control
+     */
+    control: 'low' | 'moderate' | 'high' | 'maximum';
+    /**
+     * Fraud
+     */
+    fraud: 'none' | 'presumed' | 'rebuttal';
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Inherent
+     */
+    inherent: 'low' | 'moderate' | 'high';
+    /**
+     * Level
+     */
+    level: 'financial_statement' | 'assertion';
+    /**
+     * Needs Approval
+     */
+    needs_approval: boolean;
+    /**
+     * Rationale
+     */
+    rationale: string | null;
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
+    /**
+     * Recorded By Name
+     */
+    recorded_by_name: string;
+    /**
+     * Rmm
+     */
+    rmm: 'low' | 'moderate' | 'high';
+    /**
+     * Significant
+     */
+    significant: boolean;
+    /**
+     * Title
+     */
+    title: string;
 };
 
 /**
@@ -5255,6 +5456,32 @@ export type YourPartOut = {
 };
 
 /**
+ * ApprovalIn
+ */
+export type AbacusModulesAgentsRoutesApprovalIn = {
+    /**
+     * Blocks Fieldwork
+     */
+    blocks_fieldwork?: boolean | null;
+    /**
+     * Draft Id
+     */
+    draft_id: string;
+    /**
+     * Effort
+     */
+    effort?: 'small' | 'medium' | 'large' | null;
+    /**
+     * Good Looks Like
+     */
+    good_looks_like?: string | null;
+    /**
+     * Why
+     */
+    why?: string | null;
+};
+
+/**
  * CitationOut
  */
 export type AbacusModulesAgentsRoutesCitationOut = {
@@ -5316,6 +5543,16 @@ export type AbacusModulesEvidenceRoutesCitationOut = {
      * Verified
      */
     verified: boolean;
+};
+
+/**
+ * ApprovalIn
+ */
+export type AbacusModulesFieldworkRoutesApprovalIn = {
+    /**
+     * Rationale
+     */
+    rationale?: string | null;
 };
 
 /**
@@ -8833,6 +9070,114 @@ export type SetMaterialityResponses = {
 };
 
 export type SetMaterialityResponse = SetMaterialityResponses[keyof SetMaterialityResponses];
+
+export type DecideMaterialityData = {
+    body: DecisionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/materiality/decide';
+};
+
+export type DecideMaterialityErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DecideMaterialityError = DecideMaterialityErrors[keyof DecideMaterialityErrors];
+
+export type DecideMaterialityResponses = {
+    /**
+     * Response Decide Materiality
+     *
+     * Successful Response
+     */
+    201: Array<MaterialityVersionOut>;
+};
+
+export type DecideMaterialityResponse = DecideMaterialityResponses[keyof DecideMaterialityResponses];
+
+export type MaterialityVersionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/materiality/versions';
+};
+
+export type MaterialityVersionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type MaterialityVersionsError = MaterialityVersionsErrors[keyof MaterialityVersionsErrors];
+
+export type MaterialityVersionsResponses = {
+    /**
+     * Response Materiality Versions
+     *
+     * Successful Response
+     */
+    200: Array<MaterialityVersionOut>;
+};
+
+export type MaterialityVersionsResponse = MaterialityVersionsResponses[keyof MaterialityVersionsResponses];
 
 export type ApplyMethodologyData = {
     body: ApplyMethodologyIn;
@@ -13280,6 +13625,230 @@ export type ReasonCodesResponses = {
 };
 
 export type ReasonCodesResponse = ReasonCodesResponses[keyof ReasonCodesResponses];
+
+export type RisksData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/risks';
+};
+
+export type RisksErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RisksError = RisksErrors[keyof RisksErrors];
+
+export type RisksResponses = {
+    /**
+     * Response Risks
+     *
+     * Successful Response
+     */
+    200: Array<RiskOut>;
+};
+
+export type RisksResponse = RisksResponses[keyof RisksResponses];
+
+export type AddRiskData = {
+    body: RiskBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/risks';
+};
+
+export type AddRiskErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AddRiskError = AddRiskErrors[keyof AddRiskErrors];
+
+export type AddRiskResponses = {
+    /**
+     * Response Add Risk
+     *
+     * Successful Response
+     */
+    201: Array<RiskOut>;
+};
+
+export type AddRiskResponse = AddRiskResponses[keyof AddRiskResponses];
+
+export type ApproveRiskData = {
+    body: AbacusModulesFieldworkRoutesApprovalIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Risk Id
+         */
+        risk_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/risks/{risk_id}/approve';
+};
+
+export type ApproveRiskErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ApproveRiskError = ApproveRiskErrors[keyof ApproveRiskErrors];
+
+export type ApproveRiskResponses = {
+    /**
+     * Response Approve Risk
+     *
+     * Successful Response
+     */
+    201: Array<RiskOut>;
+};
+
+export type ApproveRiskResponse = ApproveRiskResponses[keyof ApproveRiskResponses];
+
+export type ReviseRiskData = {
+    body: RiskBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Risk Id
+         */
+        risk_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/risks/{risk_id}/versions';
+};
+
+export type ReviseRiskErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ReviseRiskError = ReviseRiskErrors[keyof ReviseRiskErrors];
+
+export type ReviseRiskResponses = {
+    /**
+     * Response Revise Risk
+     *
+     * Successful Response
+     */
+    201: Array<RiskOut>;
+};
+
+export type ReviseRiskResponse = ReviseRiskResponses[keyof ReviseRiskResponses];
 
 export type ListScreeningResultsData = {
     body?: never;

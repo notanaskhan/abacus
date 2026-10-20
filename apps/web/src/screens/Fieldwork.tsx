@@ -17,7 +17,7 @@ import {
   itemsQueryKey,
   listEvidenceVersionsOptions,
   materialityOptions,
-  materialityQueryKey,
+  materialityVersionsOptions,
   meOptions,
   procedureOptions,
   procedureQueryKey,
@@ -26,7 +26,6 @@ import {
   requestSupportMutation,
   resultMutation,
   selectMutation,
-  setMaterialityMutation,
   signReadyMutation,
   signReviewedMutation,
   startProcedureMutation,
@@ -60,6 +59,7 @@ import {
   toast,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
 import { systemName } from "../board/join";
@@ -73,6 +73,7 @@ import { Accounts, Bands, SubsequentLedger } from "./UnrecordedLiabilities";
 const MESSAGES: Record<string, string> = {
   fieldwork_unavailable: "Fieldwork isn't switched on for your firm yet.",
   materiality_missing: "Set materiality first.",
+  materiality_undecided: "Waiting for the engagement partner to decide materiality (Planning).",
   no_ledger: "Import the general ledger for this year first.",
   procedure_exists: "Journal entry testing has already started.",
   procedure_selecting: "Entries are being selected. Try again in a moment.",
@@ -187,91 +188,32 @@ function useRole(engagementId: string): string | undefined {
   return team.data?.find((m) => m.user_id === me.data?.user_id)?.role;
 }
 
-function MaterialityPanel({
-  engagementId,
-  canSet,
-}: {
-  engagementId: string;
-  canSet: boolean;
-}): JSX.Element {
-  const queryClient = useQueryClient();
+/** SPEC-300 (TASK-301): materiality is proposed and decided on Planning; here it's read. */
+function MaterialityPanel({ engagementId }: { engagementId: string }): JSX.Element {
   const path = { path: { engagement_id: engagementId } };
-  const current = useQuery({ ...materialityOptions(path), retry: false });
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ overall: "", performance: "", trivial: "", benchmark: "" });
-  const save = useMutation({
-    ...setMaterialityMutation(),
-    onSuccess: () => {
-      setEditing(false);
-      void queryClient.invalidateQueries({ queryKey: materialityQueryKey(path) });
-    },
-  });
-  if (current.isPending) return <Skeleton className="h-24" />;
-  if (current.isError)
-    return <Alert title="Couldn't load materiality">{said(current.error)}</Alert>;
-  const m = current.data;
-  const field = (key: keyof typeof form, label: string): JSX.Element => (
-    <div className="flex flex-col gap-1">
-      <Label htmlFor={`mat-${key}`}>{label}</Label>
-      <input
-        id={`mat-${key}`}
-        value={form[key]}
-        inputMode={key === "benchmark" ? "text" : "decimal"}
-        onChange={(e) => {
-          setForm({ ...form, [key]: e.target.value });
-        }}
-        className="rounded-[var(--radius-control)] border border-line bg-surface p-2 text-sm"
-      />
-    </div>
-  );
+  const versions = useQuery({ ...materialityVersionsOptions(path), retry: false });
+  if (versions.isPending) return <Skeleton className="h-24" />;
+  if (versions.isError)
+    return <Alert title="Couldn't load materiality">{said(versions.error)}</Alert>;
+  const m = versions.data[0];
   return (
     <Panel
       title="Materiality"
       action={
-        canSet && !editing ? (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setEditing(true);
-            }}
-          >
-            {m ? "Change" : "Set materiality"}
-          </Button>
-        ) : undefined
+        <Link
+          to="/engagements/$engagementId/planning"
+          params={{ engagementId }}
+          className="text-[12.5px] text-accent hover:underline"
+        >
+          {m === undefined ? "Propose on Planning" : "Open planning"}
+        </Link>
       }
     >
-      {editing ? (
-        <div className="flex flex-col gap-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            {field("overall", "Overall")}
-            {field("performance", "Performance")}
-            {field("trivial", "Clearly trivial")}
-            {field("benchmark", "Benchmark (for example, 1% of revenue)")}
-          </div>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              disabled={save.isPending}
-              onClick={() => {
-                save.mutate({ ...path, body: form });
-              }}
-            >
-              Save
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setEditing(false);
-              }}
-            >
-              Cancel
-            </Button>
-          </div>
-          {save.isError && <Alert title="Couldn't save">{said(save.error)}</Alert>}
-        </div>
-      ) : m ? (
+      {m === undefined ? (
+        <p className="text-sm text-muted">
+          Not proposed yet. Sampling waits for the engagement partner's decision.
+        </p>
+      ) : (
         <dl className="grid gap-2 text-sm sm:grid-cols-4">
           <div>
             <dt className="text-muted">Overall</dt>
@@ -286,14 +228,16 @@ function MaterialityPanel({
             <dd className="tabular-nums">{money(m.trivial)}</dd>
           </div>
           <div>
-            <dt className="text-muted">Benchmark</dt>
-            <dd>{m.benchmark}</dd>
+            <dt className="text-muted">Status</dt>
+            <dd>
+              {m.status === "decided" ? (
+                <StatusPill tone="success">Decided</StatusPill>
+              ) : (
+                <StatusPill tone="warning">Waiting on the partner</StatusPill>
+              )}
+            </dd>
           </div>
         </dl>
-      ) : (
-        <p className="text-sm text-muted">
-          Not set yet. {canSet ? "" : "The partner or manager sets it."}
-        </p>
       )}
     </Panel>
   );
@@ -1157,7 +1101,7 @@ export function Fieldwork({ engagementId }: { engagementId: string }): JSX.Eleme
       <FieldworkRail engagementId={engagementId} jet={jet} surl={surl} />
       <div className="flex min-w-0 flex-col gap-6">
         <section id="fw-materiality" className="scroll-mt-[58px]">
-          <MaterialityPanel engagementId={engagementId} canSet={canSet} />
+          <MaterialityPanel engagementId={engagementId} />
         </section>
         <section id="fw-jet" aria-label="Journal entry testing" className="scroll-mt-[58px]">
           <SectionHeading title="Journal entry testing" procedure={jet} />

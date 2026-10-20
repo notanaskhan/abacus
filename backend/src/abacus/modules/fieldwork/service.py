@@ -25,6 +25,7 @@ from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import check_facts, get_ref, lock_ref
 from abacus.modules.fieldwork.models import Procedure
+from abacus.modules.fieldwork.planning import compute
 from abacus.modules.fieldwork.repository import (
     confirmed_accounts,
     get_procedure,
@@ -34,6 +35,7 @@ from abacus.modules.fieldwork.repository import (
     insert_settings,
     list_procedures,
     lock_procedure,
+    materiality_decisions,
     newest_materiality,
     newest_population,
     newest_results,
@@ -83,6 +85,12 @@ class MaterialityMissing(DomainConflict):
     code = "materiality_missing"
 
 
+class MaterialityUndecided(DomainConflict):
+    """SPEC-300 AC-2: selection waits for the engagement partner's materiality decision."""
+
+    code = "materiality_undecided"
+
+
 class NoLedger(DomainConflict):
     """No reconciled general ledger for the engagement's entity and year end."""
 
@@ -114,6 +122,16 @@ class NoSubsequentLedger(DomainConflict):
 
 
 # --- Materiality (Q3) ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class Basis:
+    """SPEC-300 AC-1: what overall materiality is computed from."""
+
+    amount: Decimal
+    rate_pct: Decimal
+    performance_pct: Decimal
+    trivial_pct: Decimal
 
 
 @dataclass(frozen=True)
@@ -151,8 +169,15 @@ async def set_materiality(
     performance: Decimal,
     trivial: Decimal,
     benchmark: str,
+    basis: Basis | None = None,
+    rationale: str | None = None,
 ) -> Materiality:
-    """A new version (insert-only); the partner or manager (`materiality.set`)."""
+    """A new version (insert-only), proposed by the partner or manager (`materiality.set`).
+    SPEC-300 AC-1: with a basis, code computes the amounts (ADR-050)."""
+    if basis is not None:
+        computed = compute(basis.amount, basis.rate_pct, basis.performance_pct, basis.trivial_pct)
+        overall, performance, trivial = computed.overall, computed.performance, computed.trivial
+    text = (rationale or "").strip()[:2000] or None
     if not (Decimal(0) < trivial <= performance <= overall) or not benchmark.strip():
         raise MaterialityInvalid(str(engagement_id))
     async with uow(ctx.tenant) as tx:
@@ -167,6 +192,11 @@ async def set_materiality(
             trivial=trivial,
             benchmark=benchmark.strip()[:200],
             set_by=ctx.user_id,
+            basis_amount=basis.amount if basis else None,
+            rate_pct=basis.rate_pct if basis else None,
+            performance_pct=basis.performance_pct if basis else None,
+            trivial_pct=basis.trivial_pct if basis else None,
+            rationale=text,
         )
         tx.record("materiality.set", target=Target("engagement", engagement_id))
     found = await materiality_of(ctx, engagement_id)
@@ -459,8 +489,13 @@ async def request_selection(
     facts = await check_facts(ctx.tenant, engagement_id)
     async with tenant_session(ctx.tenant) as session:
         materiality = await newest_materiality(session, engagement_id)
+        decided = materiality is not None and bool(
+            await materiality_decisions(session, [materiality.id])
+        )
     if materiality is None:
         raise MaterialityMissing(str(engagement_id))
+    if not decided:
+        raise MaterialityUndecided(str(engagement_id))
     if (
         facts is None
         or await latest_gl_snapshot(ctx.tenant, ref.client_entity_id, facts.fiscal_period_end)

@@ -18,6 +18,7 @@ from abacus.modules.fieldwork.models import (
     ItemResult,
     ItemSignoff,
     ItemSupportRequest,
+    MaterialityDecision,
     Misstatement,
     PopulationRow,
     Procedure,
@@ -25,6 +26,9 @@ from abacus.modules.fieldwork.models import (
     ProcedureSessionEvent,
     ReviewNote,
     ReviewNoteEvent,
+    Risk,
+    RiskApproval,
+    RiskVersion,
     SelectedItem,
     SelectionApproval,
     SelectionRow,
@@ -575,3 +579,130 @@ async def plan_approval(session: AsyncSession, procedure_id: UUID) -> ProcedureS
             .limit(1)
         )
     ).scalar_one_or_none()
+
+
+# --- Planning: materiality decisions and the risk register (SPEC-300; TASK-301) ----------------
+
+
+async def materiality_versions(
+    session: AsyncSession, engagement_id: UUID
+) -> Sequence[EngagementMateriality]:
+    """Every materiality version, newest first (LIST_EXEMPT: read after `procedure.read`)."""
+    return (
+        (
+            await session.execute(
+                select(EngagementMateriality)
+                .where(EngagementMateriality.engagement_id == engagement_id)
+                .order_by(EngagementMateriality.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def materiality_decisions(
+    session: AsyncSession, materiality_ids: Sequence[UUID]
+) -> dict[UUID, MaterialityDecision]:
+    """Per version, its decision (LIST_EXEMPT: versions read after `procedure.read`)."""
+    if not materiality_ids:
+        return {}
+    rows = (
+        (
+            await session.execute(
+                select(MaterialityDecision).where(
+                    MaterialityDecision.materiality_id.in_(materiality_ids)
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return {d.materiality_id: d for d in rows}
+
+
+async def insert_materiality_decision(session: AsyncSession, **values: object) -> None:
+    await session.execute(insert(MaterialityDecision).values(**values))
+
+
+async def risks_of(session: AsyncSession, ctx: AuthContext, engagement_id: UUID) -> Sequence[Risk]:
+    """The engagement's risks, R1 first, through `visible()`."""
+    return (
+        (
+            await session.execute(
+                select(Risk)
+                .where(
+                    Risk.engagement_id == engagement_id,
+                    visible(ctx, "procedure.read", Risk.engagement_id),
+                )
+                .order_by(Risk.number)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def get_risk(session: AsyncSession, risk_id: UUID) -> Risk | None:
+    return (await session.execute(select(Risk).where(Risk.id == risk_id))).scalar_one_or_none()
+
+
+async def next_risk_number(session: AsyncSession, engagement_id: UUID) -> int:
+    """Under the engagement's lock (LIST_EXEMPT: a count inside the caller's unit of work)."""
+    top = await session.scalar(
+        select(func.max(Risk.number)).where(Risk.engagement_id == engagement_id)
+    )
+    return int(top or 0) + 1
+
+
+async def insert_risk(session: AsyncSession, **values: object) -> UUID:
+    made = await session.execute(insert(Risk).values(**values).returning(Risk.id))
+    return made.scalar_one()
+
+
+async def insert_risk_version(session: AsyncSession, **values: object) -> UUID:
+    made = await session.execute(insert(RiskVersion).values(**values).returning(RiskVersion.id))
+    return made.scalar_one()
+
+
+async def newest_risk_versions(
+    session: AsyncSession, risk_ids: Sequence[UUID]
+) -> dict[UUID, RiskVersion]:
+    """Per risk, its newest version (LIST_EXEMPT: risks read through `visible()`)."""
+    if not risk_ids:
+        return {}
+    rows = (
+        (
+            await session.execute(
+                select(RiskVersion)
+                .where(RiskVersion.risk_id.in_(risk_ids))
+                .ext(distinct_on(RiskVersion.risk_id))
+                .order_by(RiskVersion.risk_id, RiskVersion.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return {v.risk_id: v for v in rows}
+
+
+async def risk_approvals(
+    session: AsyncSession, version_ids: Sequence[UUID]
+) -> dict[UUID, RiskApproval]:
+    """Per version, its approval (LIST_EXEMPT: versions read through `visible()` risks)."""
+    if not version_ids:
+        return {}
+    rows = (
+        (
+            await session.execute(
+                select(RiskApproval).where(RiskApproval.risk_version_id.in_(version_ids))
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return {a.risk_version_id: a for a in rows}
+
+
+async def insert_risk_approval(session: AsyncSession, **values: object) -> None:
+    await session.execute(insert(RiskApproval).values(**values))
