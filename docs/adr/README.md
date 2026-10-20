@@ -122,3 +122,12 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-131](ADR-131-workpapers.md) | A workpaper is rendered by code, versioned, and signed off by people; it never changes once reviewed | red | accepted |
 | [ADR-132](ADR-132-procedures.md) | In a procedure, code builds the population and selects the sample; agents assess items; people conclude | red | accepted |
 | [ADR-133](ADR-133-product-naming.md) | The product is "Accrued" in every UI string and document; abacus is the code namespace only | amber | accepted |
+| [ADR-134](ADR-134-fieldwork-on-review-grammar.md) | Fieldwork sign-off, review notes and workpapers ride the review grammar (proposal P-07, epic P-04) | red | accepted |
+| [ADR-135](ADR-135-pre-launch-migration-policy.md) | Until the first real firm is live, a breaking change is one reversible migration | red | accepted |
+| [ADR-136](ADR-136-engagement-work-items-gates.md) | Engagements hold work items, and the server enforces the gates | red | accepted |
+| [ADR-137](ADR-137-module-map-29.md) | The backend has 29 modules with a one-way dependency graph | amber | accepted |
+| [ADR-138](ADR-138-status-registry.md) | One status vocabulary file is the contract; enums, OpenAPI and UI tables are generated from it | amber | accepted |
+| [ADR-139](ADR-139-api-conventions.md) | API conventions - list envelope, allowed_actions, error catalogue, idempotency, classification, versioning | amber | accepted |
+| [ADR-140](ADR-140-per-module-registries.md) | Registries and the permission matrix are split per module | amber | accepted |
+| [ADR-141](ADR-141-authentication-workos.md) | Authentication and sessions use WorkOS AuthKit, with a BFF session for the portal | red | accepted |
+| [ADR-142](ADR-142-aws-topology-regions.md) | AWS production topology - us-east-2 primary, us-west-2 DR | red | accepted |
