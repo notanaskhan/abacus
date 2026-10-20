@@ -1,0 +1,189 @@
+# AI threat model (ADR-064)
+
+A living model of how the Accrued Agent and its data paths can be attacked or can go wrong, and what stops each case. ADR-064 requires it to be reviewed whenever an agent, a tool or a data source is added, and to treat every string that comes from a client or a client system as untrusted. First version: Tue Oct 20, 2026 (Q-02-T02). Companion decisions: ADR-052 (hostile client content), ADR-065 (output controls), ADR-113 to ADR-115 (the data boundary).
+
+## How to use this file
+
+- **Adding an agent, a tool, a data source or a route:** add or update the rows it touches in the same change, and tick the checklist at the end. ADR-064 says the pull-request checklist requires this; `.github/pull_request_template.md` does not carry the item yet, so copy the checklist by hand until it does.
+- **Coverage column.** Every threat row names where its mitigation is proven, one of:
+  - **Tested**: an existing test or evaluation suite (a path that exists today).
+  - **Planned**: a task id from the plan (`Q-02-Tnn`) that will add the test or control.
+  - **ADR**: the rule is decided in an accepted ADR; no test names it yet. Each such row is also listed under *Gaps*.
+- Evaluation suites (`evals/`) call real models and carry thresholds that are never lowered. A row that cites one relies on the suite's `adversarial_containment` or `injection_resistance` metric staying at 1.0.
+- This file holds no client data, no prompts' full text, no secrets and no names of firms or people.
+
+## What is being protected: assets
+
+| ID | Asset | Class (ADR-031) | Why it matters |
+|---|---|---|---|
+| AS-01 | Client financial data: trial balances, ledger rows, uploaded evidence, request responses, messages | Restricted | The firm's duty of confidentiality; the reason firms buy the product |
+| AS-02 | Tax return information (TRI) and direct identifiers (taxpayer identification numbers, names tied to returns) | Restricted, with extra flags planned (Q-02-T25, Q-02-T32) | Statutory consent and disclosure rules; breach-notification duties |
+| AS-03 | Health-plan participant data that can appear in benefit-plan audits (PHI) | Restricted, flag planned (Q-02-T25) | Business-associate posture; added breach duties |
+| AS-04 | Tenant boundary: one firm never sees, affects or learns from another | n/a | A single cross-firm exposure is a SEV1 (ADR-097) |
+| AS-05 | Per-firm encryption keys and connector credentials | Restricted | Compromise opens one firm's evidence and its client systems |
+| AS-06 | Integrity of decisions: what a person accepted, waived or signed, and the audit trail behind it | Confidential | Agents propose, named humans decide (ADR-005); a forged or silent decision destroys the audit value |
+| AS-07 | Evidence immutability and citations | Restricted | A changed or invented source defeats the product's reason to exist (ADR-004, ADR-066) |
+| AS-08 | Firm knowledge: methodology, approved rules, corrections, examples | Confidential | Poisoned or leaked knowledge changes future work or helps a competitor (ADR-053, ADR-068) |
+| AS-09 | The provider-terms register and the route configuration | Internal, protected | They decide which model routes may carry client data (ADR-114) |
+| AS-10 | Prompts, the prompt registry and evaluation baselines | Internal | An unreviewed prompt or a lowered threshold silently weakens every defence |
+| AS-11 | Capacity and budget: model quota, per-firm and platform AI spend | Internal | Exhaustion is an availability and cost attack (ADR-069 to ADR-072) |
+| AS-12 | What clients see: messages, requests and portal content | Confidential | Model-written text to a firm's clients is held off until the data boundary lifts (ADR-111) |
+
+## Who attacks, and what can go wrong without an attacker
+
+| ID | Actor | Capability |
+|---|---|---|
+| ACT-A | Hostile or careless client contact, or a client's counterparty | Writes any file, email, request response or comment the product ingests |
+| ACT-B | Compromised or manipulated client system | Controls every field a connector returns: account names, vendor and customer names, memos, descriptions |
+| ACT-C | Another firm (a tenant) | Holds a valid account on the same platform; probes for cross-tenant reads, cache reuse or shared state |
+| ACT-D | Firm staff acting beyond their remit | A walled-off person, or someone without access to a client, using an agent as a proxy |
+| ACT-E | Client portal user | Valid portal session scoped to one client; tries other clients, other firms or firm routes |
+| ACT-F | The model itself | Not malicious: wrong arithmetic, invented citations, over-confident output, following instructions it should treat as data |
+| ACT-G | A model provider or sub-processor | Retains, trains on, or exposes data under terms we did not approve |
+| ACT-H | Supply chain | A dependency or tool that reads prompts, credentials or data |
+| ACT-I | An Accrued account or workstation that is compromised | Operator access to production, or the builder's own agent sessions |
+
+## Data path and trust boundaries
+
+```
+ client / client system ──TB1──▶ ingest (scan, parse, store, classify)
+                                     │
+ portal user ───────────────TB2────▶ API (authorise, visible, walls)
+                                     │
+                         context builder ──TB3──▶ ai_gateway ──TB4──▶ model route
+                         (untrusted blocks)      (boundary, limits,   (approved cloud route
+                                                  PII refusal, log)    or synthetic-only route)
+                                     ▲                                    │
+                                     └──── schema check, citation check ◀─┘ TB5
+                                     │
+                    agent run ──TB6──▶ tool layer (narrow typed tools, intersected permissions)
+                                     │
+                    results ──TB7──▶ firm users (shadow filter, plain text)  /  clients (deterministic templates only)
+                                     │
+                    telemetry, logs, exports ──TB8──▶ shared tooling (scrubbed)
+```
+
+| ID | Boundary | What crosses | Rule that holds it |
+|---|---|---|---|
+| TB1 | Client or client system into the platform | Uploads, email, connector fields, request responses, comments | Everything is hostile (ADR-052, ADR-064); scan before parsing, isolated parsing, formulas never run (ADR-110); connectors read only (ADR-040) |
+| TB2 | Portal into the API | Portal requests with a client-scoped session | Scoped grants and the client access ladder (ADR-108, ADR-146); portal principals reach no firm routes; portal host pinned to the session's tenant |
+| TB3 | Context builder into the gateway | The assembled prompt and its untrusted blocks | Spec-named untrusted fields go in labelled, JSON-encoded blocks; raw ledger data never reaches a model (ADR-050, ADR-051); direct identifiers refused (planned, Q-02-T32) |
+| TB4 | Gateway to the model route | The call and the client data in it | Bedrock inside our cloud account, US region, no global profile; a current register entry; firm opt-in; cleared agent; stage; no exclusion; no failover for real firms (ADR-113 to ADR-115) |
+| TB5 | Model output back into the platform | Text, structured fields, citations | Schema-constrained output; quotes verified against the source; plain-text sanitising with links stripped (ADR-065, ADR-066) |
+| TB6 | Agent into the tool layer | Tool calls | Narrow typed tools; permissions are the intersection of agent role, initiator and task scope; the model never decides permissions; no decision actions in agent contexts (ADR-005, ADR-025, ADR-049) |
+| TB7 | Platform out to people | Agent results to firm users; messages to clients | Shadow-stage output hidden from firm reads; agent text only through the sanitising component; no model-written text to clients (ADR-111) |
+| TB8 | Platform out to shared tooling | Logs, traces, error reports, metrics, usage records | Allowlisted attributes only; classification tags drive scrubbing; usage records hold hashes and counts, not content (ADR-031, ADR-022) |
+
+## Threats and mitigations
+
+### Hostile content and prompt injection
+
+| ID | Boundary | Threat | Mitigation | Coverage |
+|---|---|---|---|---|
+| HC-01 | TB1, TB3 | Instructions inside an uploaded document (visible, hidden or white-on-white) tell the screener or upload reviewer to mark it ready or to ignore a flaw | The document is the only untrusted field and sits in a labelled block; the prompt treats blocks as data; output is schema-constrained and only proposes (ADR-052, ADR-005) | Tested: `backend/tests/unit/agents/test_upload_reviewer.py`, `backend/tests/unit/ai_gateway/test_prompt_registry.py`, `evals/upload_review/suite.yaml`, `evals/screening/suite.yaml` |
+| HC-02 | TB1, TB3 | Instructions in connector fields (account names, vendor names, memos) reach the screener or another agent | The boundary covers ledger fields, not only uploads (ADR-064); fields named in the agent spec render only inside untrusted blocks | Tested: `backend/tests/integration/agent_tests/test_screening.py`. Planned: Q-02-T26 (adversarial account names in the screener suite) |
+| HC-03 | TB1, TB3 | Instructions in an inbound email or attachment steer the matcher | The document alone is untrusted; candidates are references; the matcher only proposes | Tested: `backend/tests/unit/agents/test_matcher.py`, `evals/matching/suite.yaml` |
+| HC-04 | TB1, TB3 | Client-written text (request descriptions, comments, responses) steers the guidance drafter or entry assessor | Item text and examples are the only untrusted fields; containment needs the item delimited | Tested: `backend/tests/unit/agents/test_guidance_drafter.py`, `backend/tests/unit/agents/test_entry_assessor.py`, `evals/guidance_drafting/suite.yaml`, `evals/entry_assessment/suite.yaml` |
+| HC-05 | TB3 | Content contains the closing delimiter, or a fake trusted field, to break out of its block | Untrusted values are JSON-encoded with `<` escaped; a hostile key cannot become a field | Tested: `backend/tests/unit/ai_gateway/test_context_builder.py`, `backend/tests/unit/tools/evals/test_evals.py` |
+| HC-06 | TB1, TB5 | Zero-width characters, compatibility forms or lookalike names defeat quote verification or entity matching | Quotes are normalised before verification; suites carry deception and lookalike cases | Tested: `backend/tests/unit/agents/test_upload_reviewer.py`, `evals/screening/suite.yaml` |
+| HC-07 | TB1 | Spreadsheet formulas or macros run in the parser or the preview | Formulas are never evaluated, only cached values; macros ignored; previews are server-made images | Tested: `backend/tests/unit/evidence/test_extraction.py`, `backend/tests/unit/connections/test_import_parse.py`, `backend/tests/unit/synthetic/test_adversarial.py` |
+| HC-08 | TB1 | Malware, archive bombs or parser exploits in an upload | Malware scan before any parsing, fail closed outside synthetic environments; isolated worker with limits (ADR-110, ADR-153) | Tested: `backend/tests/unit/kernel/test_scanning.py`. Planned: Q-02-T35, Q-02-T42 (pen test #1 covers the upload pipeline) |
+| HC-09 | TB3 | Oversized or crafted fields exhaust the context or the budget | Per-layer token budgets with recorded truncation; lists over the row limit refused; budget refused before the provider is called | Tested: `backend/tests/unit/ai_gateway/test_context_builder.py`, `backend/tests/integration/agent_tests/test_gateway_call.py`, `evals/screening/suite.yaml` |
+| HC-10 | TB5, TB7 | Model text carries an outbound link, image beacon or markup that leaks data when rendered | Links to hosts outside an allowlist (empty by default) become a placeholder; the front end renders agent text only through a plain-text component (ADR-065) | Tested: `apps/web/src/agent-text.test.tsx`, `apps/web/src/lint/eslint-rules.test.ts`. ADR: ADR-065 for the server-side sanitiser, which has no backend test (see Gaps) |
+| HC-11 | TB5 | A made-up or altered quotation is accepted as evidence | Citations are structured; each quote is checked against the page or cell it names; the firm sees only verified quotes (ADR-066) | Tested: `backend/tests/unit/agents/test_upload_reviewer.py`, `backend/tests/unit/agents/test_agent_citations.py`; suites hold `citation_verification` at 1.0 |
+| HC-12 | TB5 | The model does arithmetic on financial data and gets it wrong | Code computes, the model judges; totals are summed from line rows in code; raw ledger lists over the row limit never reach a model (ADR-050) | Tested: `backend/tests/unit/agents/test_agent_citations.py`, `backend/tests/unit/ai_gateway/test_context_builder.py` |
+
+### Tool layer and agency
+
+| ID | Boundary | Threat | Mitigation | Coverage |
+|---|---|---|---|---|
+| TL-01 | TB6 | An injected instruction persuades an agent to accept, reject, waive, mark not-applicable or send | Agent contexts never hold decision actions; the action is refused at the role layer; a database trigger will refuse agent and policy actors on the human-only list | Tested: `backend/tests/integration/agent_tests/test_agent_authz.py`. Planned: Q-02-T17 (human-only guard), Q-02-T22 (tests) |
+| TL-02 | TB6 | Confused deputy: an agent reaches data its initiator may not see | Effective permission is the intersection of agent role, initiator and task scope; unknown, revoked or other-firm initiators get no context | Tested: `backend/tests/integration/agent_tests/test_agent_authz.py`, `backend/tests/unit/identity/test_firm_level_agent.py` |
+| TL-03 | TB6 | An agent keeps running for someone who has since been walled off from the client | The wall is checked before relationship, role and attribute, at every stage; a walled run fails non-retryably; walls answer 404 | Tested: `backend/tests/integration/agent_tests/test_walls_runs.py`, `backend/tests/unit/identity/test_ethical_walls.py` |
+| TL-04 | TB6 | Injected instructions drive a generic tool: arbitrary query, URL fetch or file read | No generic query, HTTP or file tools; tools are named for intent with typed inputs and outputs; no agent framework (ADR-049, ADR-057) | Tested: `backend/tests/unit/quality/test_banned_patterns_agents.py` (static rules for agent code). ADR: ADR-049 |
+| TL-05 | TB1, TB6 | A connector writes to a client's system | Connector clients have read methods only; worker outbound hosts restricted; a conformance test fails any non-read request (ADR-040) | Tested: `backend/tests/unit/connections/test_fake_conformance.py` |
+| TL-06 | TB7 | An agent sends or schedules client-facing messages beyond the firm's autonomy policy | Autonomy conditions bound by declared scope and initiator; client-visible pre-checks are deterministic templates; no model text to clients (ADR-111) | Tested: `backend/tests/unit/identity/test_autonomy_condition.py`, `backend/tests/unit/communications/test_invitation_wording.py`. Planned: Q-02-T08, Q-02-T09 (no model text to clients) |
+| TL-07 | TB7 | An outbound message names clients, entities, accounts or amounts outside the engagement | Scope checker in the send path blocks and flags (ADR-065); today only deterministic templates are sent (ADR-111) | ADR: ADR-065, ADR-111. No scope-checker test yet (see Gaps) |
+| TL-08 | TB6, TB7 | An agent action is attributed to "the agent" with no named person, so no one is accountable | Every action names a person, "person via Agent", or the system for scheduled work; delegation chain recorded (ADR-007, ADR-025) | Planned: Q-02-T16 (attribution columns), Q-02-T22 (tests for each actor kind) |
+| TL-09 | TB6 | Learning-loop poisoning: hostile content becomes an example or a firm rule | Corrections become examples at once but firm rules only after manager approval and a passing evaluation; rules are versioned and reversible (ADR-068) | ADR: ADR-068, ADR-053. No test yet (see Gaps) |
+| TL-10 | TB3 | A prompt or model is changed without evaluation, or a cheaper tier is used where it is not eligible | Versioned, immutable prompt registry; tier eligibility is keyed to the agent's own suite and fails closed; evaluations run on prompt or model change (ADR-074, ADR-081) | Tested: `backend/tests/unit/ai_gateway/test_prompt_registry.py`, `backend/tests/unit/ai_gateway/test_tier_eligibility.py` |
+| TL-11 | TB3, TB4 | Denial of wallet: bulk hostile uploads run up cost or starve other firms | Per-firm and platform budgets; work classes with fair share; admission control degrades instead of failing silently (ADR-069, ADR-071, ADR-072) | Tested: `backend/tests/integration/agent_tests/test_gateway_call.py`, `backend/tests/integration/test_work_class_queues.py` |
+
+### Cross-tenant exposure
+
+| ID | Boundary | Threat | Mitigation | Coverage |
+|---|---|---|---|---|
+| CT-01 | TB2, TB3 | A query without tenant scope feeds another firm's rows into a response or a prompt | Shared schema with forced row-level security; every query in a tenant session; no tenant means no rows | Tested: `backend/tests/integration/test_tenancy.py`. Planned: Q-02-T13 (generated isolation test over every registered table) |
+| CT-02 | TB6 | An agent context is issued for a user of another firm | Context issuance checks firm membership; other-firm initiators get nothing; denial at the tenancy layer comes first | Tested: `backend/tests/integration/agent_tests/test_agent_authz.py` |
+| CT-03 | TB3, TB4 | Prompt caches, result reuse or few-shot retrieval share state across firms | Caching keys, result reuse and example retrieval are scoped to one firm; identical inputs from two firms are separate runs (ADR-067) | ADR: ADR-067. No test yet (see Gaps) |
+| CT-04 | TB3 | Memory, knowledge retrieval or embeddings return another firm's content | Retrieval goes through `visible()`; memory scoped to firm, client or engagement; no learning across firms (ADR-053) | Planned: Q-02-T13 (covers every registered table, including embedding tables). ADR: ADR-053 |
+| CT-05 | TB8 | Client content reaches shared logs, traces, error reports or metrics | Only allowlisted span attributes are exported; exception events are never exported; classification tags drive scrubbing | Tested: `backend/tests/unit/kernel/test_telemetry_scrubbing.py`, `backend/tests/unit/kernel/test_classification.py`, `backend/tests/unit/quality/test_banned_patterns_logging.py` |
+| CT-06 | TB8 | Usage records or events keep the prompt or the model output | Usage records carry a hash of the inputs and counts; never the output or the context | Tested: `backend/tests/integration/agent_tests/test_gateway_call.py` |
+| CT-07 | TB4 | A provider keeps or trains on one firm's data, exposing it to others | Zero training and no retention beyond processing are conditions of a register entry; a counsel second approver is added before real data (ADR-114) | Tested: `backend/tests/unit/tools/test_client_data_clearance.py`. Planned: Q-02-T18, Q-02-T52 |
+| CT-08 | TB2 | A portal user reaches another client's items, another firm's data, or a firm route | Client-scoped grants; client roles only respond; one matrix action per route; portal host pinned to the session's tenant | Tested: `backend/tests/unit/requests/test_client_responses.py`. Planned: Q-02-T13, Q-02-T15 (route introspection), Q-02-T35, Q-02-T42 (pen test #1 covers the portal and its custom-domain host). ADR: ADR-108, ADR-146 |
+| CT-09 | TB8 | Event streams carry record content to a client that should not have it | Events carry identifiers only; the client fetches content through authorised routes | ADR: ADR-024. The real-time channel is not built; its pen test is scheduled for Nov 2027 (chapter 06 §5.6). Test to be added when it ships (see Gaps) |
+| CT-10 | TB1 | A firm's key or connector credential is compromised and opens its evidence | Per-firm keys; envelope encryption with the firm id bound as associated data; rotation runbook; destroying the key shreds the data | Tested: `backend/tests/unit/kernel/test_crypto.py`. ADR: ADR-035, ADR-104 |
+
+### Data boundary and model route
+
+| ID | Boundary | Threat | Mitigation | Coverage |
+|---|---|---|---|---|
+| DB-01 | TB4 | A real firm's data is sent to the direct API or any unapproved route, including by failover when the approved route is down | Client data uses the approved cloud route only; the direct route is for synthetic data and evaluations; outage degrades and queues, never reroutes (ADR-113) | Tested: `backend/tests/unit/ai_gateway/test_client_data_boundary.py`, `backend/tests/unit/ai_gateway/test_data_boundary.py`, `backend/tests/unit/kernel/test_client_data_settings.py`, `backend/tests/unit/kernel/test_model_data_boundary_settings.py` |
+| DB-02 | TB4 | A global inference profile is used and processing leaves the United States | Only in-region or US geography profiles; configuration validation rejects global profiles (ADR-113) | Planned: Q-02-T11 (route configuration on staging; add the check there). ADR: ADR-113. No test names the global profile yet (see Gaps) |
+| DB-03 | TB4 | The register has no entry for the route, or the entry is past its review date | Settings refuse client data without a current entry; at boot a past-due entry switches client data off for that route (ADR-114) | Tested: `backend/tests/unit/kernel/test_client_data_settings.py`, `backend/tests/unit/tools/test_client_data_clearance.py`. Planned: Q-02-T18 (second approver, boot validation) |
+| DB-04 | TB4 | An agent without a passing Bedrock evaluation and parity report processes real data | The agent spec must say `client_data: cleared`, which needs both reports; none is cleared yet | Tested: `backend/tests/unit/tools/test_client_data_clearance.py`. Planned: Q-02-T44 |
+| DB-05 | TB4 | An engagement its partner excluded is still processed | Exclusion refuses every route for every firm, audited and counted | Tested: `backend/tests/unit/ai_gateway/test_client_data_boundary.py` |
+| DB-06 | TB7 | Shadow-stage output is shown to firm users or clients before it is validated | Shadow output is recorded and hidden on every firm-facing read; the first stage is always shadow; only a platform action promotes | Tested: `backend/tests/unit/agents/test_agent_stages.py`. Planned: Q-02-T08, Q-02-T09, Q-02-T48 |
+| DB-07 | TB4 | A firm has not opted in, or opted in against an older disclosure | Opt-in is checked in the gateway before any network call; a material change to the terms needs a new opt-in (ADR-114, ADR-115) | Tested: `backend/tests/unit/ai_gateway/test_client_data_boundary.py`. Planned: Q-02-T07, Q-02-T08 |
+
+### Tax return information and personal data
+
+| ID | Boundary | Threat | Mitigation | Coverage |
+|---|---|---|---|---|
+| TRI-01 | TB3 | A taxpayer identification number or similar identifier appears in model context | Gateway refuses TIN patterns in context (audited, never retried); masking helpers; fields tagged by kind | Planned: Q-02-T32 (control), Q-02-T52 (tests). ADR: ADR-031 |
+| TRI-02 | TB4 | Tax return information is processed without the taxpayer's consent, or on a route whose terms do not cover it | Consent-gate shape agreed before the tax epic builds it; the route and register rules apply first; tax work is not in the real-data scope before the tax pilot gate | Planned: Q-02-T25 (consent-gate shape), RB-17 in `docs/runbooks/README.md`. ADR: ADR-113, ADR-114 |
+| TRI-03 | TB8 | Tax return information or health-plan data lands in logs, exports or error reports | Classification flags force Restricted; scrubbing by tag across logs, error tracking and metrics | Tested: `backend/tests/unit/kernel/test_classification.py`, `backend/tests/unit/kernel/test_telemetry_scrubbing.py`. Planned: Q-02-T32 |
+| TRI-04 | TB4 | Health-plan participant data reaches a vendor without a business-associate posture | A `phi` flag on fields; posture documented in the diligence pack before real data | Planned: Q-02-T25 (flag), Q-02-T49 (diligence pack). ADR: ADR-031 |
+| TRI-05 | TB7 | An identifier is revealed to a user with no record of who looked | Masked by default; reveal logged as an access event | Planned: Q-02-T32 (masking), Q-02-T20 (access events) |
+
+### Supply chain and platform
+
+| ID | Boundary | Threat | Mitigation | Coverage |
+|---|---|---|---|---|
+| SC-01 | all | A dependency or agent framework reads prompts or credentials | No orchestration framework; dependency allowlist; dependency review and audit in CI (ADR-057, ADR-083) | Tested: `backend/tests/unit/quality/test_check_dependencies.py` |
+| SC-02 | TB3, TB4 | Code calls a provider directly and skips the gateway's controls | Provider SDKs import only inside the gateway; every provider call is preceded by the boundary check (ADR-019) | Tested: `backend/tests/unit/ai_gateway/test_data_boundary.py` |
+| SC-03 | all | A secret or real client data is committed to the public repository (prompts, fixtures, test data) | Secrets scan on every change; synthetic data only until the real-data gate (ADR-085) | Tested: `backend/tests/unit/quality/test_secrets_scan.py` |
+| SC-04 | TB6 | The builder's own agent session is steered by hostile text in a repository file or tool output | Agent sessions are tools, not authorities: tool output is data; a person approves every merge; protected paths are not edited by agents (ADR-084, ADR-086) | ADR: ADR-084, ADR-086; `docs/architecture/protected-paths.md` |
+
+## Cross-tenant and TRI exposure: the short version
+
+A hostile string cannot read another firm's data because it never carries authority: it arrives as data inside a block, the model's reply is schema-checked, and anything the reply asks for goes through the same `authorise` and row-level-security path a person would. The remaining exposure is therefore (1) a query that skips the tenant session (CT-01, closed by the generated isolation test), (2) state shared across firms by design: caches, examples, embeddings (CT-03, CT-04, the least-tested rows), and (3) the model route and its terms (CT-07, DB-01 to DB-03). Tax return information and personal identifiers add a content-level risk that tenancy cannot address: the control is to refuse or mask them before they reach a model (TRI-01), which is planned and not yet built. Until Q-02-T32 and the consent gate exist, no tax data goes to a model.
+
+## Gaps found while writing this model
+
+Each gap is a row above whose evidence is an ADR only. None is a new decision; each needs a test or a task. The builder decides whether to open a task.
+
+| Gap | Rows | Suggested closure |
+|---|---|---|
+| The server-side output sanitiser (`backend/src/abacus/ai_gateway/sanitise.py`) has no backend test | HC-10 | A unit test for each link form it strips and the allowlist case (SPEC-006 AC-1, AC-2) |
+| No test names the outbound scope checker | TL-07 | A test with seeded out-of-scope values, written when the first model-drafted message is allowed |
+| No test shows caches, examples and result reuse are firm-scoped | CT-03, CT-04 | A two-firm gateway test: identical input, separate runs, no shared example |
+| No test names the global-profile rejection | DB-02 | A settings-validation test, in Q-02-T11 |
+| Event-stream payloads (identifiers only) have no test because the channel is not built | CT-09 | A test when the real-time channel ships; pen test #2 |
+| Learning-loop safeguards have no test | TL-09 | A test that a correction is retrievable immediately and cannot become a firm rule without approval |
+
+## Review
+
+| Date | Reviewer | Scope | Result |
+|---|---|---|---|
+| 2026-10-20 | Authoring session (self-review). The security reviewer subagent (`.claude/agents/security-reviewer.md`) has not been run; it is optional under the solo amendment and blocks nothing | Walked the reviewer's checklist items 5 to 12, 17 and 19 against this file; checked that every cited test path exists and every cited task id is in `docs/plan/epics/Q-02.tasks.csv`; checked that no row names a firm, a person, an amount or a secret | No threat row lacks a coverage entry. Six gaps listed above. Rows TRI-01 to TRI-05 are plan-only until Q-02-T25 and Q-02-T32 land |
+
+## Update checklist (copy into the pull request that adds an agent, tool or data source)
+
+- [ ] Which strings from clients or client systems does it read? Each is named as untrusted in the agent spec.
+- [ ] Which tools does it call? Each is narrow and typed, and authorises against the agent context.
+- [ ] Which decision actions does it come near? None are in its context.
+- [ ] Which routes may it use? The data-boundary conditions in ADR-115 are unchanged, or an ADR says why.
+- [ ] Does it touch tax return information, identifiers or health-plan data? The flags and the gateway refusal apply.
+- [ ] What does it write back, and where is that shown? Plain text only, hidden in shadow.
+- [ ] Which rows above change, and which test or evaluation case covers the new path?
