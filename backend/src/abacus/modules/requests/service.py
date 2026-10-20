@@ -63,6 +63,7 @@ from abacus.modules.requests.repository import (
     overdue_counts,
     overdue_items,
     request_list_for,
+    search_items,
     set_classification,
     set_client_fields,
     set_default_due_on,
@@ -1028,3 +1029,15 @@ async def overdue_mine(ctx: AuthContext, today: date) -> list[tuple[UUID, int]]:
     async with tenant_session(ctx.tenant) as session:
         counts = await overdue_counts(session, ctx, ids, today)
     return sorted(counts.items(), key=lambda c: -c[1])
+
+
+SEARCH_LIMIT: Final = 8
+
+
+async def search_request_items(ctx: AuthContext, q: str) -> list[RequestItem]:
+    """SPEC-302 AC-2: request items across the caller's engagements; walls apply."""
+    text = q.strip()
+    if len(text) < 2:
+        return []
+    async with tenant_session(ctx.tenant) as session:
+        return list(await search_items(session, ctx, text[:100], SEARCH_LIMIT))

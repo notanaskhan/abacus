@@ -30,6 +30,7 @@ from abacus.modules.fieldwork.repository import (
     insert_misstatement,
     newest_materiality,
     newest_misstatements,
+    search_findings,
 )
 from abacus.modules.identity.api import AuthContext, authorise, engagement_team
 
@@ -243,3 +244,13 @@ async def summary_for(ctx: AuthContext, engagement_id: UUID) -> Summary:
     return Summary(
         materiality is not None, overall, performance, trivial, by_kind, total, position
     )
+
+
+async def search(ctx: AuthContext, q: str) -> list[Finding]:
+    """SPEC-302 AC-2: findings across the caller's engagements, newest first."""
+    text = q.strip()[:100]
+    if len(text) < 2:
+        return []
+    escaped = text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    async with tenant_session(ctx.tenant) as session:
+        return list(await search_findings(session, ctx, f"%{escaped}%", 8))

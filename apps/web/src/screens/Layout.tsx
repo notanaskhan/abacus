@@ -9,6 +9,7 @@ import { NoFirm } from "./Signup";
 import { errorMessage } from "../api";
 import { accessToken, chooseTenant, chosenTenant, signIn, signOut } from "../auth/session";
 import { NotificationPanel, useUnreadCount } from "../shell/NotificationPanel";
+import { Palette } from "../shell/Palette";
 
 /** The signed-in firm workspace: the toolbar (TASK-092), notifications, and the page. */
 export function Layout(): JSX.Element {
@@ -124,6 +125,12 @@ function SignedIn(): JSX.Element {
           </Link>
         </nav>
         <span className="flex-1" />
+        <Palette
+          isAdmin={isAdmin}
+          onNotifications={() => {
+            setPanel(true);
+          }}
+        />
         {isAdmin && (
           <Link
             to="/admin/methodology"

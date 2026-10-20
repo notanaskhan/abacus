@@ -1937,6 +1937,24 @@ export type FileMatchOut = {
 };
 
 /**
+ * FindingHitOut
+ */
+export type FindingHitOut = {
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * FindingIn
  */
 export type FindingIn = {
@@ -2635,6 +2653,32 @@ export type IndependenceIn = {
      * Note
      */
     note?: string | null;
+};
+
+/**
+ * ItemHitOut
+ */
+export type ItemHitOut = {
+    /**
+     * Audit Area
+     */
+    audit_area: string;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Status
+     */
+    status: string;
 };
 
 /**
@@ -16220,6 +16264,114 @@ export type AcknowledgeStepResponses = {
 };
 
 export type AcknowledgeStepResponse = AcknowledgeStepResponses[keyof AcknowledgeStepResponses];
+
+export type SearchFindingsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Q
+         */
+        q?: string;
+    };
+    url: '/v1/firm/search/findings';
+};
+
+export type SearchFindingsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SearchFindingsError = SearchFindingsErrors[keyof SearchFindingsErrors];
+
+export type SearchFindingsResponses = {
+    /**
+     * Response Search Findings
+     *
+     * Successful Response
+     */
+    200: Array<FindingHitOut>;
+};
+
+export type SearchFindingsResponse = SearchFindingsResponses[keyof SearchFindingsResponses];
+
+export type SearchRequestItemsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Q
+         */
+        q?: string;
+    };
+    url: '/v1/firm/search/request-items';
+};
+
+export type SearchRequestItemsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SearchRequestItemsError = SearchRequestItemsErrors[keyof SearchRequestItemsErrors];
+
+export type SearchRequestItemsResponses = {
+    /**
+     * Response Search Request Items
+     *
+     * Successful Response
+     */
+    200: Array<ItemHitOut>;
+};
+
+export type SearchRequestItemsResponse = SearchRequestItemsResponses[keyof SearchRequestItemsResponses];
 
 export type StaffData = {
     body?: never;

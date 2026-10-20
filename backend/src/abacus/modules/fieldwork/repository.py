@@ -860,3 +860,24 @@ async def get_representation(session: AsyncSession, rep_id: UUID) -> Representat
     return (
         await session.execute(select(Representation).where(Representation.id == rep_id))
     ).scalar_one_or_none()
+
+
+async def search_findings(
+    session: AsyncSession, ctx: AuthContext, pattern: str, limit: int
+) -> Sequence[Finding]:
+    """SPEC-302 (TASK-303): findings whose title contains the pattern, through `visible()`."""
+    return (
+        (
+            await session.execute(
+                select(Finding)
+                .where(
+                    Finding.title.ilike(pattern, escape="\\"),
+                    visible(ctx, "procedure.read", Finding.engagement_id),
+                )
+                .order_by(Finding.created_at.desc())
+                .limit(limit)
+            )
+        )
+        .scalars()
+        .all()
+    )

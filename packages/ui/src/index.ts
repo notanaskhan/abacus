@@ -20,6 +20,7 @@ export { Toaster, UNDO_MS, toast } from "./components/toast";
 export { Menu, type MenuItem, Popover, Tooltip, TooltipProvider } from "./components/popover";
 export { type Column, DataTable } from "./components/data-table";
 export { CitationChip } from "./components/citation";
+export { CommandPalette, type PaletteGroup, type PaletteItem } from "./components/command-palette";
 export { STATUS, Status, type StatusDomain, type StatusWord, statusWord } from "./status";
 // Icons for the shell, so apps use one icon set without depending on it directly.
 export {
@@ -32,4 +33,5 @@ export {
   FolderOpen,
   LogOut,
   PanelRight,
+  Search,
 } from "lucide-react";
