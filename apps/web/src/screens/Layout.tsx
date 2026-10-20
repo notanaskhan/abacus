@@ -8,7 +8,8 @@ import { isForbidden } from "../shell/mfa";
 import { NoFirm } from "./Signup";
 import { errorMessage } from "../api";
 import { accessToken, chooseTenant, chosenTenant, signIn, signOut } from "../auth/session";
-import { NotificationPanel, useUnreadCount } from "../shell/NotificationPanel";
+import { NotificationDrawer } from "../shell/NotificationDrawer";
+import { useUnreadCount } from "../shell/NotificationPanel";
 import { Palette } from "../shell/Palette";
 
 /** The signed-in firm workspace: the toolbar (TASK-092), notifications, and the page. */
@@ -183,13 +184,7 @@ function SignedIn(): JSX.Element {
         <main className="mx-auto w-full max-w-[1400px] min-w-0 flex-1 px-3 pt-3 pb-8">
           <Outlet />
         </main>
-        {panel && (
-          <NotificationPanel
-            onClose={() => {
-              setPanel(false);
-            }}
-          />
-        )}
+        <NotificationDrawer open={panel} onOpenChange={setPanel} />
       </div>
     </div>
   );

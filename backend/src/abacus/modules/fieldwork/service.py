@@ -24,6 +24,7 @@ from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import check_facts, get_ref, lock_ref
+from abacus.modules.fieldwork.events import MaterialityProposed
 from abacus.modules.fieldwork.models import Procedure
 from abacus.modules.fieldwork.planning import compute
 from abacus.modules.fieldwork.repository import (
@@ -199,6 +200,7 @@ async def set_materiality(
             rationale=text,
         )
         tx.record("materiality.set", target=Target("engagement", engagement_id))
+        tx.emit(MaterialityProposed(engagement_id=engagement_id))  # SPEC-305
     found = await materiality_of(ctx, engagement_id)
     if found is None:  # just written in this request
         raise NotFound("materiality")

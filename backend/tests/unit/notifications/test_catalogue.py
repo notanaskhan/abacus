@@ -27,4 +27,7 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "reminders.drafted",  # SPEC-027 (TASK-051)
         "agent.digest",
         "comment.mentioned",  # SPEC-032 (TASK-062)
+        "materiality.proposed",  # SPEC-305 (TASK-306)
+        "risk.approval_requested",
+        "finding.severity_proposed",
     }

@@ -14,7 +14,12 @@ from dataclasses import dataclass
 from typing import Final, cast
 from uuid import UUID
 
-from abacus.modules.identity.api import engagement_leads, firm_admins, team_of
+from abacus.modules.identity.api import (
+    engagement_leads,
+    engagement_partners,
+    firm_admins,
+    team_of,
+)
 
 Recipients = Callable[[UUID, dict[str, object]], Awaitable[list[UUID]]]
 
@@ -80,6 +85,12 @@ async def _mentioned(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     return sorted({UUID(str(u)) for u in cast(list[object], raw)})
 
 
+async def _partners(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """SPEC-305 (TASK-306): the engagement partner, who alone decides."""
+    engagement_id = _uuid(payload, "engagement_id")
+    return [] if engagement_id is None else await engagement_partners(tenant_id, engagement_id)
+
+
 @dataclass(frozen=True)
 class Kind:
     kind: str
@@ -123,6 +134,12 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "agent.digest": Kind("agent.digest", _leads, "engagement", "engagement_id"),
     # SPEC-032 (TASK-062): a person mentioned in a comment, on the request it's about.
     "comment.mentioned": Kind("comment.mentioned", _mentioned, "request_item", "request_item_id"),
+    # SPEC-305 (TASK-306): decisions reserved to the engagement partner.
+    "materiality.proposed": Kind("materiality.proposed", _partners, "engagement", "engagement_id"),
+    "risk.approval_requested": Kind("risk.approval_requested", _partners, "risk", "risk_id"),
+    "finding.severity_proposed": Kind(
+        "finding.severity_proposed", _partners, "finding", "finding_id"
+    ),
 }
 
 # AC-7: fixed English text per kind; placeholders are names the reader can already see.
@@ -143,4 +160,7 @@ TEMPLATES: Final[dict[str, str]] = {
     "reminders.drafted": "Overdue reminders on {engagement} are waiting for you to send.",
     "agent.digest": "Items are overdue on {engagement}: see its activity for today's reminders.",
     "comment.mentioned": "You were mentioned in a comment on {engagement}.",
+    "materiality.proposed": "Materiality on {engagement} is waiting for your decision.",
+    "risk.approval_requested": "A risk on {engagement} is waiting for your approval.",
+    "finding.severity_proposed": "A deficiency on {engagement} is waiting for you to conclude.",
 }
