@@ -1,0 +1,10 @@
+# Copy to backend.tf after the first apply, then: terraform init -migrate-state
+# Moves the bootstrap state from local disk into the bucket it created.
+terraform {
+  backend "s3" {
+    bucket       = "abacus-shared-tfstate"
+    key          = "bootstrap/terraform.tfstate"
+    region       = "us-east-2"
+    use_lockfile = true
+  }
+}

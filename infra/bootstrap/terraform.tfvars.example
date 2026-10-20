@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars (git-ignored) and fill in. Never commit real account IDs.
+shared_account_id = "REPLACE_WITH_12_DIGIT_SHARED_ID"
+
+# Leave these out until the accounts exist, then add and re-apply.
+# staging_account_id    = "REPLACE_WITH_12_DIGIT_STAGING_ID"
+# production_account_id = "REPLACE_WITH_12_DIGIT_PRODUCTION_ID"

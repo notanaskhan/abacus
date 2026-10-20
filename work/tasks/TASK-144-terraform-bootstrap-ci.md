@@ -47,7 +47,15 @@ An infra-only PR receives a plan comment from the read-only role, a public-bucke
 - Reference pattern to copy: `.claude/skills/infra-terraform/SKILL.md` arrives in Q-01-T57; until then follow chapter 06 §1
 
 ## Plan
-- [ ] Plan written into this file before any build step (required for amber and red; zone is red)
+- [x] Plan written into this file before any build step (required for amber and red; zone is red)
+
+SU-20 session plan (2026-10-20, branch `setup/su-20`; no apply, no AWS calls, no commit):
+1. Layout: `infra/{bootstrap,modules,envs/{shared,staging,production,production-dr},policies}`; `landing-zone/` stays. Envs get backend + provider + README only. Modules are README skeletons.
+2. `infra/bootstrap` (Terraform >= 1.10, `hashicorp/aws ~> 6.0`): state bucket in `shared` (versioning, dedicated KMS key with rotation, SSE-KMS, public access block, TLS-only policy, native S3 locking via `use_lockfile` in env backends), GitHub OIDC provider, per-environment read-only plan role (sub `pull_request` and `ref:refs/heads/main`), one apply role per environment trusted only for `ref:refs/heads/main`. Account IDs are variables; outputs are role names only. Lock file for linux_amd64 and darwin_arm64.
+3. `.github/workflows/infra.yml`: PR checks (fmt, validate, tflint, trivy config), plan matrix using `vars.AWS_PLAN_ROLE_<ENV>` (skipped with a notice when unset) plus summary comment; nightly drift job with `plan -detailed-exitcode` opening or updating one `infra-drift` issue. No apply. Actions pinned to SHAs; `id-token: write` only on plan jobs.
+4. `infra/README.md`: "Terraform bootstrap (SU-20)" section with the one-time commands and where repo variables go. No account IDs.
+5. Verify: `terraform init -backend=false`, `fmt -check`, `validate`, `make check-fast`.
+Deferred (not in SU-20): trivy fixture bucket (step 4 below), `.claude/settings.json` and `guard_bash.py` edits, tflint/trivy local runs (tools not installed locally; CI runs them).
 
 Steps:
 1. [ ] Write the bootstrap module and run the first apply by hand (builder)
@@ -98,6 +106,7 @@ make check
 Append-only. Newest at the bottom.
 
 - `2026-10-20` — Task file written at kickoff (SU-14). No work started.
+- `2026-10-20` — SU-20 session: built infra/ layout, bootstrap, modules/github-oidc, env roots, locks, infra.yml, README section. fmt/validate pass; check-fast passes. tflint/trivy not installed locally (CI runs them). No apply, no AWS calls, nothing committed. Remaining: fixture bucket for trivy, .claude/settings.json deny and guard_bash.py, builder runs bootstrap apply.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

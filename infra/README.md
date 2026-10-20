@@ -70,6 +70,51 @@ aws organizations describe-effective-policy --policy-type AISERVICES_OPT_OUT_POL
 
 Record each result in the log below.
 
+## Terraform bootstrap (SU-20)
+
+One-time, run by hand on your laptop after the `shared` account and its SSO profile exist (section 2). Never from a session or CI. `infra/bootstrap` creates the state bucket (versioned, own KMS key, public access blocked, TLS-only, native S3 locking), the GitHub OIDC provider, a read-only plan role per environment (trusted for `repo:notanaskhan/abacus` `pull_request` and `main`) and an apply role per environment (trusted only for `refs/heads/main`). Nothing here contains an account ID: you supply them in an untracked file.
+
+1. Create the variables file (git-ignored; `*.tfvars` is in `infra/.gitignore`):
+
+   ```bash
+   cp infra/bootstrap/terraform.tfvars.example infra/bootstrap/terraform.tfvars
+   # edit it: set shared_account_id; add staging_account_id / production_account_id once those accounts exist
+   ```
+
+2. Sign in and initialise:
+
+   ```bash
+   export AWS_PROFILE=shared
+   aws sso login --sso-session accrued
+   terraform -chdir=infra/bootstrap init
+   ```
+
+   Staging and production roles use the `staging` and `production` SSO profiles (variables `staging_profile`, `production_profile`); run `aws sso login` for those too before the pass that includes them. Production needs a time-boxed elevated assignment.
+
+3. Review, then apply:
+
+   ```bash
+   terraform -chdir=infra/bootstrap plan -var-file=terraform.tfvars -out=bootstrap.tfplan
+   terraform -chdir=infra/bootstrap apply bootstrap.tfplan
+   ```
+
+4. Move the bootstrap state into the bucket it created (state then lives in S3 with locking; the local `terraform.tfstate` can be deleted after the migration succeeds):
+
+   ```bash
+   cp infra/bootstrap/backend.tf.example infra/bootstrap/backend.tf
+   terraform -chdir=infra/bootstrap init -migrate-state
+   ```
+
+   Commit `backend.tf` (it holds no account ID). Re-apply later, with the extra account IDs, the same way.
+
+5. Read the role names: `terraform -chdir=infra/bootstrap output`. A role ARN is `arn:aws:iam::<account id>:role/<role name>`; build it in your shell, do not paste it into the repo.
+
+6. In GitHub, repository Settings, Secrets and variables, Actions, tab **Variables** (variables, not secrets; they are not in git), add the plan role ARN per environment: `AWS_PLAN_ROLE_SHARED`, `AWS_PLAN_ROLE_STAGING`, `AWS_PLAN_ROLE_PRODUCTION`, `AWS_PLAN_ROLE_PRODUCTION_DR` (the production account's `abacus-tf-plan-production-dr`). While a variable is unset, `infra.yml` skips that environment's plan with a notice. The apply role ARNs are not used by any workflow yet.
+
+7. Log it in the console log below (date, operator, "terraform bootstrap applied").
+
+Notes: the plan roles carry AWS `ReadOnlyAccess`, which can read objects in their own account, including state in `shared`; they are assumable only by workflows of this repository on pull requests and `main`. The apply roles carry `AdministratorAccess` bounded by the organisation SCPs until each environment narrows it. Environment backends use `use_lockfile = true` and the bucket's default KMS encryption.
+
 ## 4. Console log
 
 Every one-time console step, newest last. Operator is the person at the keyboard.

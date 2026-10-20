@@ -1,0 +1,267 @@
+# Infrastructure checks, read-only plans and drift detection (Q-01-T03, SPEC-050 AC-6).
+# There is deliberately no apply anywhere in this workflow: apply is run by the builder
+# by hand (infra/README.md). Every action is pinned to a full commit SHA.
+name: infra
+
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra.yml"
+  schedule:
+    - cron: "17 5 * * *" # nightly drift plan, runs on the default branch
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: infra-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false # cancelling a plan can leave a stale state lock file
+
+env:
+  TF_VERSION: "1.10.5"
+  TF_IN_AUTOMATION: "true"
+
+jobs:
+  checks:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      - name: fmt
+        run: terraform fmt -check -recursive -diff infra
+      - name: validate
+        run: |
+          for dir in infra/bootstrap infra/envs/*/; do
+            echo "::group::validate $dir"
+            terraform -chdir="$dir" init -backend=false -input=false
+            terraform -chdir="$dir" validate
+            echo "::endgroup::"
+          done
+      - uses: terraform-linters/setup-tflint@6ffdbaa3be476b3431f7275c26966ef32ff60337 # v6.3.2
+      - name: tflint
+        run: tflint --recursive --config "$GITHUB_WORKSPACE/infra/.tflint.hcl" --chdir infra
+      - name: trivy config
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: infra
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          hide-progress: true
+
+  plan:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write # OIDC token for the read-only plan role
+      pull-requests: write # plan summary comment
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { env: shared, var: SHARED, dir: infra/envs/shared, region: us-east-2 }
+          - { env: staging, var: STAGING, dir: infra/envs/staging, region: us-east-2 }
+          - { env: production, var: PRODUCTION, dir: infra/envs/production, region: us-east-2 }
+          - { env: production-dr, var: PRODUCTION_DR, dir: infra/envs/production-dr, region: us-west-2 }
+    env:
+      PLAN_ROLE: ${{ vars[format('AWS_PLAN_ROLE_{0}', matrix.var)] }}
+    steps:
+      - name: Plan role configured?
+        id: gate
+        run: |
+          if [ -n "$PLAN_ROLE" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=plan skipped (${{ matrix.env }})::repo variable AWS_PLAN_ROLE_${{ matrix.var }} is not set; see infra/README.md"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          role-to-arn: ${{ env.PLAN_ROLE }}
+          aws-region: ${{ matrix.region }}
+          role-session-name: infra-plan-${{ matrix.env }}
+      - name: terraform plan
+        id: plan
+        if: steps.gate.outputs.configured == 'true'
+        run: |
+          set +e
+          terraform -chdir="${{ matrix.dir }}" init -input=false
+          init_code=$?
+          if [ "$init_code" -eq 0 ]; then
+            terraform -chdir="${{ matrix.dir }}" plan -input=false -lock-timeout=120s -no-color -detailed-exitcode > "$RUNNER_TEMP/plan.txt" 2>&1
+            code=$?
+          else
+            echo "terraform init failed" > "$RUNNER_TEMP/plan.txt"
+            code=$init_code
+          fi
+          cat "$RUNNER_TEMP/plan.txt"
+          # detailed-exitcode: 0 no changes, 2 changes; both are fine for a PR comment.
+          echo "exitcode=$code" >> "$GITHUB_OUTPUT"
+          [ "$code" -eq 0 ] || [ "$code" -eq 2 ]
+      - name: Plan summary comment
+        if: always() && steps.gate.outputs.configured == 'true'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PLAN_ENV: ${{ matrix.env }}
+          PLAN_EXIT: ${{ steps.plan.outputs.exitcode }}
+        with:
+          script: |
+            const fs = require('fs');
+            const env = process.env.PLAN_ENV;
+            const code = process.env.PLAN_EXIT;
+            const status = code === '0' ? 'no changes' : code === '2' ? 'changes pending' : 'plan failed';
+            let out = '';
+            try { out = fs.readFileSync(`${process.env.RUNNER_TEMP}/plan.txt`, 'utf8'); } catch (e) { out = '(no plan output)'; }
+            const max = 50000;
+            if (out.length > max) out = '... (truncated)\n' + out.slice(out.length - max);
+            const marker = `<!-- infra-plan:${env} -->`;
+            const body = `${marker}\n### Terraform plan: \`${env}\` (${status})\nRead-only role. Never applied from CI.\n<details><summary>Plan output</summary>\n\n\`\`\`\n${out}\n\`\`\`\n</details>`;
+            await core.summary.addRaw(body).write();
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const existing = comments.find(c => c.body && c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+  drift:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write # OIDC token for the read-only plan role
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { env: shared, var: SHARED, dir: infra/envs/shared, region: us-east-2 }
+          - { env: staging, var: STAGING, dir: infra/envs/staging, region: us-east-2 }
+          - { env: production, var: PRODUCTION, dir: infra/envs/production, region: us-east-2 }
+          - { env: production-dr, var: PRODUCTION_DR, dir: infra/envs/production-dr, region: us-west-2 }
+    env:
+      PLAN_ROLE: ${{ vars[format('AWS_PLAN_ROLE_{0}', matrix.var)] }}
+    steps:
+      - name: Plan role configured?
+        id: gate
+        run: |
+          mkdir -p "$RUNNER_TEMP/drift"
+          if [ -n "$PLAN_ROLE" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "skipped" > "$RUNNER_TEMP/drift/${{ matrix.env }}.status"
+            echo "::notice title=drift plan skipped (${{ matrix.env }})::repo variable AWS_PLAN_ROLE_${{ matrix.var }} is not set"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          role-to-arn: ${{ env.PLAN_ROLE }}
+          aws-region: ${{ matrix.region }}
+          role-session-name: infra-drift-${{ matrix.env }}
+      - name: terraform plan -detailed-exitcode
+        if: steps.gate.outputs.configured == 'true'
+        run: |
+          set +e
+          terraform -chdir="${{ matrix.dir }}" init -input=false
+          code=$?
+          if [ "$code" -eq 0 ]; then
+            terraform -chdir="${{ matrix.dir }}" plan -input=false -lock-timeout=120s -no-color -detailed-exitcode
+            code=$?
+          fi
+          case "$code" in
+            0) echo "clean" > "$RUNNER_TEMP/drift/${{ matrix.env }}.status" ;;
+            2) echo "drift" > "$RUNNER_TEMP/drift/${{ matrix.env }}.status" ;;
+            *) echo "error" > "$RUNNER_TEMP/drift/${{ matrix.env }}.status" ;;
+          esac
+          exit 0
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: drift-${{ matrix.env }}
+          path: ${{ runner.temp }}/drift/${{ matrix.env }}.status
+          if-no-files-found: ignore
+          retention-days: 2
+
+  drift-report:
+    needs: drift
+    if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write # the only job allowed to write issues
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: drift-*
+          path: drift
+      - name: Open, update or close the infra-drift issue
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const results = {};
+            if (fs.existsSync('drift')) {
+              for (const dir of fs.readdirSync('drift')) {
+                for (const f of fs.readdirSync(path.join('drift', dir))) {
+                  results[f.replace(/\.status$/, '')] = fs.readFileSync(path.join('drift', dir, f), 'utf8').trim();
+                }
+              }
+            }
+            const bad = Object.entries(results).filter(([, s]) => s === 'drift' || s === 'error');
+            const { owner, repo } = context.repo;
+            const label = 'infra-drift';
+            try {
+              await github.rest.issues.createLabel({ owner, repo, name: label, color: 'b60205', description: 'Terraform drift detected by the nightly plan' });
+            } catch (e) { /* label already exists */ }
+            const open = await github.paginate(github.rest.issues.listForRepo, { owner, repo, labels: label, state: 'open' });
+            const issue = open.find(i => !i.pull_request);
+            const run = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const table = Object.entries(results).map(([e, s]) => `| ${e} | ${s} |`).join('\n') || '| (no results) | |';
+            const body = `Nightly \`terraform plan -detailed-exitcode\` (read-only). Latest run: ${run}\n\n| environment | result |\n|---|---|\n${table}\n\n"drift" means the plan has changes nobody merged; "error" means the plan could not run. Fix by hand per infra/README.md; apply is never run from CI.`;
+            if (bad.length > 0) {
+              if (issue) {
+                await github.rest.issues.update({ owner, repo, issue_number: issue.number, body });
+              } else {
+                await github.rest.issues.create({ owner, repo, title: 'Infrastructure drift detected', labels: [label], body });
+              }
+            } else if (issue) {
+              await github.rest.issues.createComment({ owner, repo, issue_number: issue.number, body: `Clean on the latest run: ${run}` });
+              await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'closed' });
+            }

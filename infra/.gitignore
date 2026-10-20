@@ -1,0 +1,15 @@
+# Terraform local artefacts. State, plans and variable files never enter git (public repo).
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
