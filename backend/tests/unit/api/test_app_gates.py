@@ -197,6 +197,9 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/items/sign-reviewed",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/notes",  # SPEC-041
         "/v1/engagements/{engagement_id}/reminders/draft",  # TASK-104
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/client-response",  # SPEC-042
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/client-response/withdraw",
+        "/v1/engagements/{engagement_id}/request-items/client-done",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/notes/{note_id}/respond",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/notes/{note_id}/clear",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper/sign-ready",

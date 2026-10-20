@@ -1,4 +1,9 @@
-import type { ClientContactOut, HistoryEntryOut, RequestItemOut } from "@abacus/api-client";
+import type {
+  ClientContactOut,
+  ClientResponseOut,
+  HistoryEntryOut,
+  RequestItemOut,
+} from "@abacus/api-client";
 import { upload } from "@abacus/api-client";
 import {
   assignToClientMutation,
@@ -11,6 +16,13 @@ import {
   listUploadsOptions,
   listUploadsQueryKey,
   meOptions,
+  clientDoneOptions,
+  clientDoneQueryKey,
+  clientRespondMutation,
+  clientResponsesOptions,
+  clientResponsesQueryKey,
+  clientWithdrawMutation,
+  markDoneMutation,
 } from "@abacus/api-client/query";
 import {
   Alert,
@@ -22,6 +34,7 @@ import {
   Panel,
   Skeleton,
   StatusPill,
+  statusWord,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -36,7 +49,6 @@ import { ConnectionPanel } from "./ConnectionPanel";
 import { EvidencePreview } from "./EvidencePreview";
 import { InboxPanel } from "./InboxPanel";
 import { gapMessage, outcomeLabel, providedBy, providedMessage } from "./clientHubMessages";
-import { statusOf } from "./engagementLabels";
 import { longDate } from "./importMessages";
 
 // SPEC-020 AC-9: refusals in plain words (the API returns fixed codes).
@@ -84,6 +96,15 @@ export function ClientEngagement({ engagementId }: { engagementId: string }): JS
   const firmName =
     me.data?.memberships.find((m) => m.tenant_id === active)?.firm_name ?? "your audit firm";
 
+  // SPEC-042 (TASK-106): what the client said doesn't apply, and whether the list is marked done.
+  const responses = useQuery({ ...clientResponsesOptions(path), retry: false, enabled: signedIn });
+  const doneMark = useQuery({ ...clientDoneOptions(path), retry: false, enabled: signedIn });
+  const ignoredBy = new Map((responses.data ?? []).map((r) => [r.request_item_id, r]));
+  const all = items.data ?? [];
+  const doneCount = all.filter(
+    (i) => ignoredBy.has(i.id) || ["received", "ready_for_review", "accepted"].includes(i.status),
+  ).length;
+
   const areas = new Map<string, RequestItemOut[]>();
   // SPEC-031 Q5: what blocks fieldwork comes first.
   const ordered = [...(items.data ?? [])].sort(
@@ -118,6 +139,15 @@ export function ClientEngagement({ engagementId }: { engagementId: string }): JS
             </p>
           </div>
         )}
+        {all.length > 0 && (
+          <DoneBar
+            engagementId={engagementId}
+            done={doneCount}
+            total={all.length}
+            marked={doneMark.data ?? null}
+            canMark={isAdmin}
+          />
+        )}
         {isAdmin && <ConnectionPanel engagementId={engagementId} firmName={firmName} canConnect />}
         {items.data !== undefined && <InboxPanel engagementId={engagementId} items={items.data} />}
         {items.isPending ? (
@@ -138,6 +168,7 @@ export function ClientEngagement({ engagementId }: { engagementId: string }): JS
                   <ClientItem
                     key={item.id}
                     item={item}
+                    ignored={ignoredBy.get(item.id)}
                     contributors={isAdmin ? contributors : null}
                     me={me.data?.user_id}
                   />
@@ -191,10 +222,12 @@ function Outcome({ entry }: { entry: HistoryEntryOut | undefined }): JSX.Element
 
 function ClientItem({
   item,
+  ignored,
   contributors,
   me,
 }: {
   item: RequestItemOut;
+  ignored: ClientResponseOut | undefined;
   contributors: ClientContactOut[] | null;
   me: string | undefined;
 }): JSX.Element {
@@ -205,7 +238,11 @@ function ClientItem({
   // SPEC-032 (TASK-063): the request's thread, and one version's.
   const [talking, setTalking] = useState(false);
   const [versionThread, setVersionThread] = useState<string | null>(null);
-  const status = statusOf(item.status);
+  // SPEC-042: the client's own words, never the firm's states.
+  const status = statusWord(
+    "clientRequest",
+    ignored !== undefined ? "not_applicable" : item.status,
+  );
   const ids = { engagement_id: item.engagement_id, item_id: item.id };
   // SPEC-031 AC-4, AC-5, AC-7: provided, the bank statement gap and the history. Without it the
   // row still works as before (uploads only).
@@ -214,7 +251,9 @@ function ClientItem({
   const gap = view.data?.gap != null ? gapMessage(view.data.gap) : null;
   const history = new Map((view.data?.history ?? []).map((h) => [h.evidence_version_id, h]));
   const takesFiles =
-    provided === null && ["open", "received", "needs_revision"].includes(item.status);
+    ignored === undefined &&
+    provided === null &&
+    ["open", "received", "needs_revision"].includes(item.status);
   const uploads = useQuery({ ...listUploadsOptions({ path: ids }), enabled: open });
   const uploaded = new Set((uploads.data ?? []).map((u) => u.evidence_version_id));
   const fromSystem = (view.data?.history ?? []).filter(
@@ -268,6 +307,7 @@ function ClientItem({
       </div>
       {item.due_on != null && <p className="text-sm text-muted">Due {longDate(item.due_on)}</p>}
       <Guidance item={item} />
+      <NotApplicable item={item} ignored={ignored} />
       {provided !== null && <p className="text-sm text-ok">{providedMessage(provided)}</p>}
       {gap !== null && <p className="text-sm">{gap}</p>}
       <div className="flex flex-wrap items-center gap-3">
@@ -474,5 +514,187 @@ function ClientItem({
         )}
       </Dialog>
     </li>
+  );
+}
+
+const REASONS = [
+  ["not_this_year", "Not applicable this year"],
+  ["sent_another_way", "Already sent another way"],
+  ["dont_have", "I don't have this"],
+] as const;
+
+/** SPEC-042 AC-1, AC-2: "This doesn't apply" with a reason (and a note), or taking it back. */
+function NotApplicable({
+  item,
+  ignored,
+}: {
+  item: RequestItemOut;
+  ignored: ClientResponseOut | undefined;
+}): JSX.Element | null {
+  const queryClient = useQueryClient();
+  const ids = { engagement_id: item.engagement_id, item_id: item.id };
+  const [asking, setAsking] = useState(false);
+  const [reason, setReason] = useState<(typeof REASONS)[number][0]>("not_this_year");
+  const [note, setNote] = useState("");
+  const refresh = (): void => {
+    const path = { path: { engagement_id: item.engagement_id } };
+    void queryClient.invalidateQueries({ queryKey: clientResponsesQueryKey(path) });
+    void queryClient.invalidateQueries({ queryKey: clientDoneQueryKey(path) });
+  };
+  const respond = useMutation({
+    ...clientRespondMutation(),
+    onSuccess: () => {
+      setAsking(false);
+      setNote("");
+      refresh();
+    },
+  });
+  const withdraw = useMutation({ ...clientWithdrawMutation(), onSuccess: refresh });
+  if (ignored !== undefined) {
+    const label = REASONS.find(([k]) => k === ignored.reason)?.[1] ?? "Doesn't apply";
+    return (
+      <p className="flex flex-wrap items-center gap-2 text-[12.5px] text-ink-2">
+        {`You said: ${label}`}
+        {ignored.note != null && <span className="text-ink-3">{`· ${ignored.note}`}</span>}
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={withdraw.isPending}
+          onClick={() => {
+            withdraw.mutate({ path: ids });
+          }}
+        >
+          Undo
+        </Button>
+      </p>
+    );
+  }
+  if (!["open", "needs_revision"].includes(item.status)) return null;
+  if (!asking) {
+    return (
+      <div>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            setAsking(true);
+          }}
+        >
+          This doesn't apply…
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <fieldset className="flex flex-col gap-2 rounded-nested bg-shell p-3">
+      <legend className="sr-only">{`Why ${item.description} doesn't apply`}</legend>
+      {REASONS.map(([value, label]) => (
+        <label key={value} className="flex items-center gap-2 text-[13px]">
+          <input
+            type="radio"
+            name={`reason-${item.id}`}
+            checked={reason === value}
+            onChange={() => {
+              setReason(value);
+            }}
+          />
+          {label}
+        </label>
+      ))}
+      <input
+        aria-label="A note for your auditor (optional)"
+        placeholder="A note for your auditor (optional)"
+        value={note}
+        maxLength={500}
+        onChange={(e) => {
+          setNote(e.target.value);
+        }}
+        className="h-[30px] rounded-tile border-0 bg-card px-2.5 text-[13px] inset-shadow-hair"
+      />
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          disabled={respond.isPending}
+          onClick={() => {
+            respond.mutate({
+              path: ids,
+              body: note.trim() === "" ? { reason } : { reason, note },
+            });
+          }}
+        >
+          Send
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            setAsking(false);
+          }}
+        >
+          Cancel
+        </Button>
+        {respond.isError && (
+          <span className="text-xs text-danger">{errorMessage(respond.error)}</span>
+        )}
+      </div>
+    </fieldset>
+  );
+}
+
+/** SPEC-042 AC-4: progress, and the client admin's "Mark as done" once everything is done. */
+function DoneBar({
+  engagementId,
+  done,
+  total,
+  marked,
+  canMark,
+}: {
+  engagementId: string;
+  done: number;
+  total: number;
+  marked: { name: string; at: string } | null;
+  canMark: boolean;
+}): JSX.Element {
+  const queryClient = useQueryClient();
+  const mark = useMutation({
+    ...markDoneMutation(),
+    onSuccess: (data) => {
+      queryClient.setQueryData(
+        clientDoneQueryKey({ path: { engagement_id: engagementId } }),
+        data,
+      );
+    },
+  });
+  const complete = done >= total;
+  return (
+    <div className="flex flex-wrap items-center gap-3 rounded-pane bg-card px-4 py-3 shadow-e2">
+      <div className="flex min-w-[200px] flex-1 flex-col gap-1.5">
+        <span className="text-[13px] font-medium">{`${String(done)} of ${String(total)} done`}</span>
+        <span className="h-1.5 overflow-hidden rounded-full bg-chip">
+          <span
+            className="block h-full rounded-full bg-green"
+            style={{ width: `${String(Math.round((done / Math.max(total, 1)) * 100))}%` }}
+          />
+        </span>
+      </div>
+      {marked !== null ? (
+        <span className="text-[12.5px] text-ink-2">
+          {`Marked done by ${marked.name || "your team"} on ${longDate(marked.at.slice(0, 10))}`}
+        </span>
+      ) : (
+        canMark && (
+          <Button
+            variant={complete ? "success" : "tonal"}
+            disabled={!complete || mark.isPending}
+            onClick={() => {
+              mark.mutate({ path: { engagement_id: engagementId } });
+            }}
+          >
+            Mark as done
+          </Button>
+        )
+      )}
+      {mark.isError && <span className="text-xs text-danger">{errorMessage(mark.error)}</span>}
+    </div>
   );
 }

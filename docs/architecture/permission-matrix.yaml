@@ -111,6 +111,8 @@ actions:
   request_item.create:      {engagement_partner: allow, manager: allow, senior: allow}
   request_item.update:      {engagement_partner: allow, manager: allow, senior: allow}
   request_item.assign:      {engagement_partner: allow, manager: allow, senior: allow, client_admin: allow}
+  client_item.respond:      {client_admin: client_visible_only, client_contributor: assigned_only}   # SPEC-042 (TASK-106): "This doesn't apply", with a reason
+  client_list.mark_done:    {client_admin: allow}   # SPEC-042 AC-4: the client admin marks their list done
   request_item.waive:       {engagement_partner: allow, manager: allow, requires: reason}
   request_item.mark_ready:  {engagement_partner: allow, manager: allow, senior: allow, staff: allow}
 

@@ -10,6 +10,8 @@ import {
   listRequestItemsOptions,
   listRequestItemsQueryKey,
   boardSummaryOptions,
+  clientDoneOptions,
+  clientResponsesOptions,
   setClientVisibilityMutation,
   setTierMutation,
   listScreeningResultsOptions,
@@ -74,6 +76,9 @@ export function Board({
   const engagement = useQuery(getEngagementOptions(path));
   const me = useQuery(meOptions());
   const [quickView, setQuickView] = useState<string | null>(null);
+  // SPEC-042 (TASK-106): what the client said doesn't apply, and whether they marked it done.
+  const clientSaid = useQuery({ ...clientResponsesOptions(path), retry: false });
+  const clientDone = useQuery({ ...clientDoneOptions(path), retry: false });
   // SPEC-033 (TASK-066): who may ask the matcher ("Suggest with agent").
   const myRole = engagement.data?.team.find((m) => m.user_id === me.data?.user_id)?.role;
   const items = useQuery(listRequestItemsOptions(path));
@@ -183,6 +188,11 @@ export function Board({
       <div className="flex flex-col overflow-hidden rounded-pane bg-card shadow-e2">
         <div className="flex min-h-[50px] flex-wrap items-center gap-x-5 gap-y-2 border-b-[0.5px] border-hair px-4 py-2">
           <h2 className="text-[15px] font-medium tracking-[-0.012em]">Requests</h2>
+          {clientDone.data != null && (
+            <StatusPill tone="success">
+              {`Marked done by ${clientDone.data.name || "the client"}`}
+            </StatusPill>
+          )}
           <SummaryStrip engagementId={engagementId} />
           <span className="flex-1" />
           {rows.length > 0 && (
@@ -272,6 +282,10 @@ export function Board({
                     onQuickView={() => {
                       setQuickView(row.item.id);
                     }}
+                    clientSaid={
+                      (clientSaid.data ?? []).find((r) => r.request_item_id === row.item.id)
+                        ?.reason
+                    }
                   />
                 </li>
               ))}
@@ -308,6 +322,7 @@ function RequestItemCard({
   pollingExpired,
   onRefresh,
   onQuickView,
+  clientSaid,
 }: {
   row: BoardRow;
   aiFlags: number;
@@ -316,6 +331,7 @@ function RequestItemCard({
   pollingExpired: boolean;
   onRefresh: () => void;
   onQuickView: () => void;
+  clientSaid: string | undefined;
 }): JSX.Element {
   const { item, evidence, screening } = row;
   return (
@@ -344,6 +360,11 @@ function RequestItemCard({
             {item.audit_area}
             <TierChip item={item} />
           </p>
+          {clientSaid !== undefined && (
+            <span>
+              <Badge tone="warning">{`Client: doesn't apply · ${CLIENT_REASONS[clientSaid] ?? clientSaid}`}</Badge>
+            </span>
+          )}
         </div>
         <div>
           <StatusPill tone={statusTone(item.status)}>
@@ -894,3 +915,9 @@ function RequestDrawer({
     </Drawer>
   );
 }
+
+const CLIENT_REASONS: Record<string, string> = {
+  not_this_year: "not applicable this year",
+  sent_another_way: "already sent another way",
+  dont_have: "they don't have it",
+};
