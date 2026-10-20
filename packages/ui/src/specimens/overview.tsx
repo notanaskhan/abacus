@@ -1,21 +1,15 @@
-import {
-  Badge,
-  Button,
-  type Column,
-  DataTable,
-  Drawer,
-  Fieldset,
-  Menu,
-  Popover,
-  Sheet,
-  Status,
-  Tooltip,
-  toast,
-} from "@abacus/ui";
 import { type JSX, useState } from "react";
+import { Button } from "../components/button";
+import { type Column, DataTable } from "../components/data-table";
+import { Drawer, Fieldset, Sheet } from "../components/overlays";
+import { Menu, Popover, Tooltip } from "../components/popover";
+import { Badge } from "../components/surfaces";
+import { toast } from "../components/toast";
+import { Status } from "../status";
 
-// The component gallery (TASK-101): every shared component in one place, for building and for
-// checking the look. Dev builds only (the router leaves it out of production).
+// The component gallery's first specimen (TASK-101, moved here by F-05-T09): every shared
+// component in one place, for building and for checking the look. Reached only through
+// "@abacus/ui/specimens", which production never imports.
 
 interface Row {
   id: string;
@@ -68,13 +62,12 @@ function Section({
   );
 }
 
-export function Gallery(): JSX.Element {
+export function Overview(): JSX.Element {
   const [drawer, setDrawer] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   return (
     <div className="flex flex-col gap-3">
-      <h1 className="px-1 text-[20px] font-medium tracking-[-0.015em]">Components</h1>
       <Section title="Buttons and status">
         <div className="flex flex-wrap items-center gap-2">
           <Button>Primary</Button>

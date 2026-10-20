@@ -1,7 +1,13 @@
 import { meOptions } from "@abacus/api-client/query";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, Button, EmptyState } from "@abacus/ui";
-import { Link, createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import {
+  Link,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  lazyRouteComponent,
+} from "@tanstack/react-router";
 import type { JSX } from "react";
 import { CALLBACK_PATH } from "./auth/session";
 import { AdminLayout } from "./screens/AdminLayout";
@@ -41,7 +47,6 @@ import { Overview } from "./screens/Overview";
 import { DefaultToSetup, Setup } from "./screens/Setup";
 import { Review } from "./screens/Review";
 import { SignInCallback } from "./screens/SignInCallback";
-import { Gallery } from "./gallery/Gallery";
 import { Findings } from "./screens/Findings";
 import { Planning } from "./screens/Planning";
 import { AuditLog } from "./screens/AuditLog";
@@ -340,12 +345,35 @@ const acceptRoute = createRoute({
   component: Accept,
 });
 
-// TASK-101: the component gallery, in dev builds only.
-const galleryRoute = createRoute({
-  getParentRoute: () => appRoute,
-  path: "/_ds",
-  component: Gallery,
-});
+// F-05-T09 (SPEC-048): the /components gallery. `VITE_UI_GALLERY=1` compiles it (dev, fixture and
+// opt-in preview builds); a production build constant-folds the flag away, so neither the routes
+// nor the lazy chunk behind them reach `dist/`. It sits outside the app shell and calls no API.
+const GALLERY = import.meta.env.VITE_UI_GALLERY === "1";
+function galleryRoutes() {
+  const pages = (name: "GalleryLayout" | "GalleryIndex" | "TokensPage" | "ScreenPage") =>
+    lazyRouteComponent(() => import("./gallery/pages"), name);
+  const layout = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/components",
+    // The query parameters are read where they are used (gallery/fixture-mode.ts).
+    component: pages("GalleryLayout"),
+  });
+  return [
+    layout.addChildren([
+      createRoute({ getParentRoute: () => layout, path: "/", component: pages("GalleryIndex") }),
+      createRoute({
+        getParentRoute: () => layout,
+        path: "tokens",
+        component: pages("TokensPage"),
+      }),
+      createRoute({
+        getParentRoute: () => layout,
+        path: "screens/$id",
+        component: pages("ScreenPage"),
+      }),
+    ]),
+  ];
+}
 
 const routeTree = rootRoute.addChildren([
   callbackRoute,
@@ -355,6 +383,8 @@ const routeTree = rootRoute.addChildren([
   signupRoute,
   joinRoute,
   acceptRoute,
+  // Typed as no routes: the gallery stays out of the app's route types (links to it are plain).
+  ...(GALLERY ? (galleryRoutes() as unknown as []) : []),
   appRoute.addChildren([
     engagementsRoute,
     engagementRoute.addChildren([
@@ -373,7 +403,6 @@ const routeTree = rootRoute.addChildren([
     knowledgeRoute,
     firmClientsRoute,
     firmClientRoute,
-    ...(import.meta.env.DEV ? [galleryRoute] : []),
     adminRoute.addChildren([
       methodologyRoute,
       methodologyVersionRoute,

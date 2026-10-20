@@ -64,13 +64,18 @@ function fontPreload(): Plugin {
   };
 }
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, ".", ["VITE_", "ABACUS_PORT_OFFSET"]);
+  // The /components gallery (F-05-T09): on for the dev server and tests, off for any build unless
+  // VITE_UI_GALLERY=1 opts in. `define` makes the flag a constant, so a production build drops the
+  // gallery's routes and its lazy chunk entirely.
+  const gallery = env.VITE_UI_GALLERY ?? (command === "serve" ? "1" : "");
   // This worktree's port offset (F-01-T09; `make worktree-env`): 0 in the primary checkout and CI.
   const offset = Number(env.ABACUS_PORT_OFFSET ?? "0") || 0;
   const authority = env.VITE_OIDC_AUTHORITY ?? `http://127.0.0.1:${String(9000 + offset)}`;
   return {
     plugins: [react(), tailwindcss(), contentSecurityPolicy(authority), fontPreload()],
+    define: { "import.meta.env.VITE_UI_GALLERY": JSON.stringify(gallery) },
     server: {
       port: 5173 + offset,
       strictPort: true,
@@ -80,6 +85,8 @@ export default defineConfig(({ mode }) => {
     test: {
       environment: "jsdom",
       include: ["src/**/*.test.{ts,tsx}"],
+      // The tokens page reads theme.css as text (`?raw`); Vitest otherwise blanks every .css.
+      css: { include: [/theme\.css/] },
     },
   };
 });
