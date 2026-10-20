@@ -14,7 +14,11 @@ from abacus.modules.organisations.service import (
     normalise,
 )
 
+# The routers the API mounts, in order (P-39; F-03-T07).
+ROUTERS: tuple[()] = ()
+
 __all__ = [
+    "ROUTERS",
     "ClientChoice",
     "ClientNames",
     "EntityChoice",

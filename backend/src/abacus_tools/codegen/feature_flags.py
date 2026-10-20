@@ -21,12 +21,12 @@ from typing import cast
 import yaml
 
 BACKEND = Path(__file__).resolve().parents[3]
-SOURCE = BACKEND.parent / "docs" / "architecture" / "feature-flags.yaml"
+SOURCE_DIR = BACKEND.parent / "docs" / "architecture" / "feature-flags"
 TARGET = BACKEND / "src" / "abacus" / "kernel" / "_flags.py"
 MAX_LIFETIME = timedelta(days=90)
 _NAME = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$")
 _FIELDS = {"name", "description", "owner", "created", "expires", "kind", "values", "default"}
-_HEADER = '''"""GENERATED from docs/architecture/feature-flags.yaml. Do not edit.
+_HEADER = '''"""GENERATED from docs/architecture/feature-flags/*.yaml. Do not edit.
 
 Regenerate: python -m abacus_tools.codegen.feature_flags
 """
@@ -55,6 +55,20 @@ def _date(value: object, field: str, name: str) -> date:
     if isinstance(value, date):
         return value
     raise RegistryError(f"{name}: {field} must be a date (YYYY-MM-DD)")
+
+
+def source(directory: Path | None = None) -> str:
+    """Every module's flags (P-39; F-03-T07: one file per module), joined into one document."""
+    folder = directory or SOURCE_DIR
+    parts = ["flags:"]
+    for path in sorted(folder.glob("*.yaml")):
+        if path.name.startswith("_"):
+            continue
+        text = f"\n{path.read_text(encoding='utf-8')}"
+        if "\nflags:\n" not in text:
+            raise RegistryError(f"{path.name}: a module file holds one `flags:` list")
+        parts.append(text.split("\nflags:\n", 1)[1].rstrip("\n"))
+    return "\n".join(parts) + "\n"
 
 
 def parse(source: str) -> list[Entry]:
@@ -105,6 +119,7 @@ def constant(name: str) -> str:
 
 def render(entries: list[Entry]) -> str:
     """One `Flag(...)` per flag, one argument per line (under `# fmt: off`)."""
+    entries = sorted(entries, key=lambda e: e.name)  # the file a flag lives in never matters
     lines = [_HEADER]
     for e in entries:
         lines.append(f"{constant(e.name)} = Flag(\n")
@@ -132,9 +147,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args(argv)
     try:
-        entries = parse(SOURCE.read_text(encoding="utf-8"))
+        entries = parse(source())
     except RegistryError as exc:
-        print(f"feature-flags.yaml: {exc}", file=sys.stderr)
+        print(f"feature-flags/: {exc}", file=sys.stderr)
         return 1
     output = render(entries)
     if not args.check:

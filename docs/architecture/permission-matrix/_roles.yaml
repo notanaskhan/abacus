@@ -1,0 +1,25 @@
+# Permission matrix (ADR-027). Change it in the same change as the routes it governs; make regenerate.
+# Tests are generated from this file. Every API route declares exactly one action below.
+#
+# Values:
+#   allow                     permitted, subject to global conditions
+#   deny                      never permitted
+#   assigned_only             only items assigned to this client user
+#   client_visible_only       only client-visible fields and items
+#   firm_setting(<name>)      permitted if the firm enables <name>
+#   in_scope                  practice leader / quality partner: engagements in their scope
+#   task_scope                agent: only if the task declares this action
+#
+# Global conditions (apply to every action unless overridden):
+#   walled: deny              ADR-026 — overrides every role
+#   tenant_mismatch: deny     ADR-014 / ADR-023
+#   archived_write: deny      archived engagements are read-only
+#   access_expired: deny      expired client grants and connections
+#
+# Roles without an engagement relationship (firm_admin, practice_leader, quality_partner)
+# are evaluated per ADR-024. Agents: ADR-005, ADR-025. Draft v0.1 — finalise in SPEC.
+
+roles: [firm_admin, practice_leader, quality_partner,
+        engagement_partner, manager, senior, staff, reviewer,
+        client_admin, client_contributor, agent, system,
+        platform_support, platform_support_content]   # SPEC-012: break-glass, read-only

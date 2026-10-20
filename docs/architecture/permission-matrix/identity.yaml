@@ -1,0 +1,16 @@
+# The identity module's actions (ADR-027; P-39, F-03-T07). Compiled with every other
+# module's file into identity/authz/_matrix.py by `make regenerate`.
+
+actions:
+  # --- Firm administration ---
+  firm.manage_users:        {firm_admin: allow, mfa_recent: required}
+  firm.manage_settings:     {firm_admin: allow, mfa_recent: required}
+  support_session.read:     {firm_admin: allow}   # SPEC-012
+  support_session.manage:   {firm_admin: allow, mfa_recent: required}   # SPEC-012 Q1
+  autonomy_policy.update:   {firm_admin: allow, mfa_recent: required}
+  firm.read_settings:       {firm_admin: allow, practice_leader: allow}   # SPEC-024 (TASK-042 D1): autonomy and the checklist, read without fresh MFA
+  wall.create:              {firm_admin: allow, mfa_recent: required}
+  wall.remove:              {firm_admin: allow, mfa_recent: required}
+  wall.list:                {firm_admin: allow, mfa_recent: required}   # SPEC-002 Q2 (named wall.read there)
+  firm_agents.pause:        {firm_admin: allow, mfa_recent: required}   # every agent in the firm
+  firm.ai_client_data:      {firm_admin: allow, mfa_recent: required}   # SPEC-036 (TASK-076): opt in to AI on clients' data, against the disclosure

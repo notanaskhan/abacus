@@ -78,7 +78,7 @@ from abacus.modules.agents.workflows import (
     UploadReviewWorkflow,
 )
 from abacus.modules.evidence.api import register_proposal_source
-from abacus.modules.identity.api import register_ai_assistants
+from abacus.modules.identity.api import AbacusRouter, register_ai_assistants
 
 # Evidence owns review decisions; agents owns what was proposed (TASK-019 D1).
 register_proposal_source(proposals_for, proposal_of)
@@ -86,6 +86,14 @@ register_proposal_source(proposals_for, proposal_of)
 register_client_data_facts(cleared=cleared_for_client_data, stage=stage_for)
 # SPEC-036 (TASK-076): identity's disclosure lists the cleared assistants and their stage.
 register_ai_assistants(assistants)
+
+# The routers the API mounts, in order (P-39; F-03-T07).
+ROUTERS: tuple[AbacusRouter, ...] = (
+    router,
+    graph_router,
+    knowledge_router,
+    template_drafts_router,
+)
 
 __all__ = [
     "ACTIVITIES",
@@ -96,6 +104,7 @@ __all__ = [
     "ENGAGEMENT_AGENT_NEXT_TICK",
     "MATCHER",
     "REVIEWER",
+    "ROUTERS",
     "SCREENER",
     "SCREEN_PROMPT",
     "SUBSCRIPTIONS",

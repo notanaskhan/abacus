@@ -1,0 +1,63 @@
+# The evidence module's actions (ADR-027; P-39, F-03-T07). Compiled with every other
+# module's file into identity/authz/_matrix.py by `make regenerate`.
+
+actions:
+  legal_hold.place:         {firm_admin: allow, mfa_recent: required}
+  legal_hold.lift:          {firm_admin: allow, mfa_recent: required}
+  # --- Evidence ---
+  evidence.read:
+    independence: required   # SPEC-025 (TASK-045): client data, per person
+    practice_leader: in_scope
+    quality_partner: in_scope
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    staff: allow
+    reviewer: allow
+    client_admin: client_visible_only
+    client_contributor: assigned_only
+    agent: task_scope
+    platform_support_content: allow   # SPEC-012
+  evidence.upload:
+    independence: required   # SPEC-025 (TASK-045): client data, per person
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    staff: allow
+    client_admin: allow
+    client_contributor: assigned_only
+    system: allow             # retrieval via connections
+  evidence.accept:
+    independence: required   # SPEC-025 (TASK-045): client data, per person
+    engagement_partner: allow
+    manager: allow
+    senior: firm_setting(seniors_can_accept)
+    agent: deny               # ADR-005
+  evidence.reject:
+    independence: required   # SPEC-025 (TASK-045): client data, per person
+    engagement_partner: allow
+    manager: allow
+    senior: firm_setting(seniors_can_accept)
+    agent: deny               # ADR-005
+  evidence.void:            {engagement_partner: allow, manager: allow, requires: reason}
+  # --- Review queues (SPEC-004 Q7, Q8; TASK-019) ---
+  review.read:
+    independence: required   # SPEC-025 (TASK-045): client data, per person
+    practice_leader: in_scope
+    quality_partner: in_scope
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    staff: allow
+    reviewer: allow
+    agent: deny               # ADR-005
+    platform_support: allow   # SPEC-012
+    platform_support_content: allow   # SPEC-012
+  review.take:
+    independence: required   # SPEC-025 (TASK-045): client data, per person
+    engagement_partner: allow
+    manager: allow
+    senior: firm_setting(seniors_can_accept)
+    agent: deny               # ADR-005
+  review.assign:           {engagement_partner: allow, manager: allow, agent: deny, independence: required}
+  export.create:            {engagement_partner: allow, manager: allow, mfa_recent: required}

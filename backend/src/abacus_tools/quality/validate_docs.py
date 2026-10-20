@@ -23,7 +23,7 @@ ADR_DIR = REPO / "docs" / "adr"
 SPEC_DIR = REPO / "docs" / "specs"
 TASK_DIR = REPO / "work" / "tasks"
 POLICY_FILES = (
-    REPO / "docs" / "architecture" / "permission-matrix.yaml",
+    *sorted((REPO / "docs" / "architecture" / "permission-matrix").glob("*.yaml")),  # F-03-T07
     REPO / "docs" / "architecture" / "dependency-allowlist.yaml",
 )
 

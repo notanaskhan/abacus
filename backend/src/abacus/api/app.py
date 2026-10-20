@@ -7,6 +7,7 @@ document (the API client is generated from `app.openapi()` in code, ADR-013; `ex
 
 from __future__ import annotations
 
+import importlib
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import cast
@@ -25,43 +26,15 @@ from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, Servic
 from abacus.kernel.logging import get_logger
 from abacus.kernel.telemetry import configure_tracing, shutdown_tracing
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.agents import api as agents
-from abacus.modules.audit_trail import api as audit_trail
-from abacus.modules.connections import api as connections
-from abacus.modules.engagements import api as engagements
-from abacus.modules.evidence import api as evidence
-from abacus.modules.fieldwork import api as fieldwork
+from abacus.modules import MODULES
 from abacus.modules.identity import api as identity
-from abacus.modules.notifications import api as notifications
-from abacus.modules.platform import api as platform
-from abacus.modules.requests import api as requests
 
-ROUTERS = (
-    identity.router,
-    identity.staff_router,
-    identity.firm_support_router,
-    identity.invitation_router,
-    identity.signup_router,  # SPEC-024 (TASK-040)
-    engagements.router,
-    engagements.methodology_router,
-    engagements.firm_router,
-    requests.router,
-    requests.firm_router,  # TASK-102
-    requests.methodology_router,
-    connections.router,
-    connections.connection_router,  # SPEC-020 (TASK-036)
-    connections.complete_router,
-    evidence.router,
-    agents.router,
-    agents.graph_router,
-    agents.knowledge_router,
-    agents.template_drafts_router,  # SPEC-035 Q3 (TASK-074)
-    fieldwork.router,  # SPEC-037 (TASK-083)
-    fieldwork.firm_router,
-    evidence.firm_router,  # TASK-102
-    platform.router,
-    notifications.router,
-    audit_trail.router,  # SPEC-304 (TASK-305)
+# Every module's routers, in MODULES order (P-39; F-03-T07): adding a router edits only that
+# module's api.py.
+ROUTERS = tuple(
+    router
+    for module in MODULES
+    for router in importlib.import_module(f"abacus.modules.{module}.api").ROUTERS
 )
 # What a validation error may say about each problem: never the submitted value (client content
 # is hostile, AGENTS.md #8), never pydantic's internal context.

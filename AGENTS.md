@@ -20,7 +20,7 @@ One builder works through Claude Code, sequentially: setup, then phases, sprints
 | Product source of truth | `$ACCRUED_BLUEPRINT_DIR/accrued-blueprint/01-platform-blueprint.md` (§3.3.1 status words, §4 navigation, §9 seed) |
 | Out of scope | Scope decisions D1–D10 and exclusions X-01…X-08 (`$ACCRUED_BLUEPRINT_DIR/Accrued-Scope-Decision-Record/`; DEC-19) |
 | Words to use | `docs/product/glossary.md` — never introduce synonyms. Status words: `docs/product/status-vocabulary.yaml` (arrives with F-03, S0) |
-| Who can do what | `docs/architecture/permission-matrix.yaml` |
+| Who can do what | `docs/architecture/permission-matrix/<module>.yaml` |
 | API contracts | `docs/contracts/<name>.md` and `backend/tests/contracts/` (arrive with F-03, S1) |
 | Patterns to copy | `docs/architecture/reference/` and `.claude/skills/` |
 | What agents must not touch | `docs/architecture/protected-paths.md` |

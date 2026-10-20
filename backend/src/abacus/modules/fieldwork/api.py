@@ -17,11 +17,19 @@ from abacus.modules.fieldwork.workpapers import (
     record_result,
     selection_item_ids,
 )
+from abacus.modules.identity.api import AbacusRouter
 
 SUBSCRIPTIONS: dict[str, object] = {}
 
+# The routers the API mounts, in order (P-39; F-03-T07).
+ROUTERS: tuple[AbacusRouter, ...] = (
+    router,
+    firm_router,
+)
+
 __all__ = [
     "ACTIVITIES",
+    "ROUTERS",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
     "EntryFacts",

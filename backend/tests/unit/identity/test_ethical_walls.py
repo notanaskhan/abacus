@@ -1,7 +1,7 @@
 """AC-4, AC-7, AC-8, AC-11, AC-20: ethical walls in `authorise` and `visible` (TASK-016 interface
 contract, "Enforcement"), with the database reads faked.
 
-The matrix-driven cases are generated from `docs/architecture/permission-matrix.yaml`
+The matrix-driven cases are generated from `docs/architecture/permission-matrix/`
 (ADR-027): every human role is denied at layer `wall` on a walled client's engagement, for every
 action, before relationship, role and attribute checks.
 """
@@ -41,7 +41,7 @@ ENGAGEMENT_ROLES = ("engagement_partner", "manager", "senior", "staff", "reviewe
 HUMAN_ROLES = (*FIRM_ROLES, *ENGAGEMENT_ROLES)
 ACTIONS = cast(
     dict[str, dict[str, str]],
-    cast(dict[str, object], yaml.safe_load(pm.SOURCE.read_text()))["actions"],
+    cast(dict[str, object], yaml.safe_load(pm.source()))["actions"],
 )
 REASON = "documented in the working paper"
 WALL_SQL = "NOT (EXISTS (SELECT ethical_walls.id FROM ethical_walls WHERE "

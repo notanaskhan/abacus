@@ -1,0 +1,18 @@
+# The fieldwork module's flags (ADR-089; P-39, F-03-T07). Compiled with every other module's
+# file into kernel/_flags.py by `make regenerate`.
+
+flags:
+  - name: fieldwork.assessor
+    description: The entry assessor (AI) proposes whether a selected journal entry's linked support explains it, for a person to decide (SPEC-037 Q4; TASK-085). Synthetic firms only until SPEC-036 clears it. Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
+    owner: ayushkbhatia
+    created: 2026-10-19
+    expires: 2027-01-17
+    kind: boolean
+    default: false
+  - name: fieldwork.procedures
+    description: Fieldwork procedures (SPEC-037; TASK-083), starting with journal entry testing; code builds populations and selects entries, people conclude. Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
+    owner: ayushkbhatia
+    created: 2026-10-19
+    expires: 2027-01-17
+    kind: boolean
+    default: false

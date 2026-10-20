@@ -1,0 +1,53 @@
+# The requests module's actions (ADR-027; P-39, F-03-T07). Compiled with every other
+# module's file into identity/authz/_matrix.py by `make regenerate`.
+
+actions:
+  engagement.apply_methodology: {engagement_partner: allow, manager: allow}   # SPEC-008 AC-4
+  # --- Request items ---
+  request_item.read:
+    practice_leader: in_scope
+    quality_partner: in_scope
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    staff: allow
+    reviewer: allow
+    client_admin: client_visible_only
+    client_contributor: assigned_only
+    agent: task_scope
+    platform_support: allow   # SPEC-012
+    platform_support_content: allow   # SPEC-012
+  request_item.create:      {engagement_partner: allow, manager: allow, senior: allow}
+  request_item.update:      {engagement_partner: allow, manager: allow, senior: allow}
+  request_item.assign:      {engagement_partner: allow, manager: allow, senior: allow, client_admin: allow}
+  client_item.respond:      {client_admin: client_visible_only, client_contributor: assigned_only}   # SPEC-042 (TASK-106): "This doesn't apply", with a reason
+  client_list.mark_done:    {client_admin: allow}   # SPEC-042 AC-4: the client admin marks their list done
+  request_item.waive:       {engagement_partner: allow, manager: allow, requires: reason}
+  request_item.mark_ready:  {engagement_partner: allow, manager: allow, senior: allow, staff: allow}
+  # --- Comments (SPEC-032; TASK-062; ADR-109): client roles see shared comments only (service) ---
+  comment.read:
+    independence: required   # client data, per person
+    practice_leader: in_scope
+    quality_partner: in_scope
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    staff: allow
+    reviewer: allow
+    client_admin: client_visible_only
+    client_contributor: assigned_only
+    platform_support_content: allow   # TASK-062 D4: break-glass content, read-only
+  comment.create:
+    independence: required
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    staff: allow
+    reviewer: allow
+    client_admin: client_visible_only
+    client_contributor: assigned_only
+  comment.share:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}
+  comment.redact:           {firm_admin: allow, mfa_recent: required}   # ADR-109: a comment posted in error
+  # --- Fulfilments ---
+  fulfilment.propose:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: task_scope, system: allow}
+  fulfilment.confirm:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny}

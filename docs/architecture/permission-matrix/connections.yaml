@@ -1,0 +1,11 @@
+# The connections module's actions (ADR-027; P-39, F-03-T07). Compiled with every other
+# module's file into identity/authz/_matrix.py by `make regenerate`.
+
+actions:
+  # --- Connections ---
+  connection.create:        {client_admin: allow, mfa_recent: required}   # only the client grants access; fresh MFA (SPEC-020 AC-3)
+  connection.check:         {client_admin: allow, engagement_partner: allow, manager: allow}   # SPEC-020 AC-4 (TASK-036 D4)
+  connection.revoke:        {client_admin: allow, engagement_partner: allow, manager: allow}
+  connection.pull:          {system: allow}
+  connection.read_log:     {client_admin: allow, engagement_partner: allow, manager: allow, platform_support: allow, platform_support_content: allow, independence: required}
+  ledger_import.upload:     {client_admin: allow, engagement_partner: allow, manager: allow, senior: allow, independence: required}   # SPEC-028 (TASK-052): an exported trial balance (staff: on behalf, Q4)

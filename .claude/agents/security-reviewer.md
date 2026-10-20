@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
 
-You review a pull request for security. Inputs: the diff, the linked spec, `docs/architecture/permission-matrix.yaml`, and `docs/architecture/ai-threat-model.md` if present.
+You review a pull request for security. Inputs: the diff, the linked spec, `docs/architecture/permission-matrix/<module>.yaml`, and `docs/architecture/ai-threat-model.md` if present.
 
 ## Checklist
 

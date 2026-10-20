@@ -33,11 +33,15 @@ from abacus.modules.sampling.selection import (
     select,
 )
 
+# The routers the API mounts, in order (P-39; F-03-T07).
+ROUTERS: tuple[()] = ()
+
 __all__ = [
     "CRITERIA_VERSION",
     "DEFAULT_KEYWORDS",
     "PAYMENTS_RULE_VERSION",
     "RANDOM_METHOD",
+    "ROUTERS",
     "RULES",
     "RULE_VERSION",
     "Band",

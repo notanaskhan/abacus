@@ -4,6 +4,7 @@ interface contract, "Worker"; TASK-011 Q4)."""
 from __future__ import annotations
 
 import asyncio
+import importlib
 import os
 import signal
 import uuid
@@ -39,17 +40,18 @@ def _event(event_type: str) -> OutboxEvent:
 
 def test_ac14_the_worker_hosts_connections_and_agents() -> None:
     # SPEC-013: notifications subscribes to its catalogued events.
-    assert (
-        worker_main.connections,
-        worker_main.agents,
-        worker_main.notifications,
-        worker_main.communications,  # SPEC-015: invitation emails
-        worker_main.evidence,  # SPEC-029 (TASK-054): upload processing
-        worker_main.fieldwork,  # SPEC-037 (TASK-083): procedure selection
-    ) == worker_main.MODULES
+    # F-03-T07: collected from each module's api.py, in MODULES order.
+    assert tuple(m.__name__.split(".")[2] for m in worker_main.MODULES) == (
+        "agents",
+        "communications",  # SPEC-015: invitation emails
+        "connections",
+        "evidence",  # SPEC-029 (TASK-054): upload processing
+        "fieldwork",  # SPEC-037 (TASK-083): procedure selection
+        "notifications",
+    )
     assert tuple(m.SUBSCRIPTIONS for m in worker_main.MODULES) == worker_main.SUBSCRIBERS
     # SPEC-022 (TASK-038): automatic retrieval when a client connects or an item is classified.
-    assert set(worker_main.connections.SUBSCRIPTIONS) == {
+    assert set(importlib.import_module("abacus.modules.connections.api").SUBSCRIPTIONS) == {
         "connection.created",
         "request_item.classified",
         "ledger_snapshot.recorded",  # SPEC-034 (TASK-069): waiting general ledgers follow
@@ -77,11 +79,16 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "ledger_snapshot.recorded",  # SPEC-034 (TASK-069): waiting general ledgers follow
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
-    assert worker_main.connections.on_connection_created in built.handlers["connection.created"]
+    assert (
+        importlib.import_module("abacus.modules.connections.api").on_connection_created
+        in built.handlers["connection.created"]
+    )
     assert list(built.handlers[EVIDENCE_VERSION_CREATED]) == [
         worker_main.agents.start_screening,
         # SPEC-029 (TASK-056 D1): every new version is processed, for previews.
-        worker_main.evidence.SUBSCRIPTIONS[EVIDENCE_VERSION_CREATED],
+        importlib.import_module("abacus.modules.evidence.api").SUBSCRIPTIONS[
+            EVIDENCE_VERSION_CREATED
+        ],
     ]
 
 

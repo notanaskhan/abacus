@@ -205,6 +205,8 @@ def _check_module_boundary(src: SourceFile) -> Iterator[Finding]:
 
     def check(target: str, line: int) -> Iterator[Finding]:
         parts = target.split(".")
+        if target == "abacus.modules.MODULES":  # P-39 (F-03-T07): the list of module names
+            return
         if target == "abacus.modules":
             yield Finding(
                 line, "import of the abacus.modules package; import <module>.api instead"

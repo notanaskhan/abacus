@@ -1,0 +1,6 @@
+# The communications module's actions (ADR-027; P-39, F-03-T07). Compiled with every other
+# module's file into identity/authz/_matrix.py by `make regenerate`.
+
+actions:
+  # --- Communications (SPEC-006 Q4; TASK-021) ---
+  message.send:             {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny}

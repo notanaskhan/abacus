@@ -12,8 +12,8 @@ If one of these is missing when this skill needs it, stop and report which one a
 - backend/tests/contracts/ consumer contract tests (arrive with F-03-T18, S1)
 - docs/product/status-vocabulary.yaml and its generated enums (arrive with F-03-T04, S0)
 - the Brightwater Hale seed scenarios and `stub_from_seed` (arrive with F-04, S1–S3); until then stubs return `501 not_implemented`
-- per-module matrix and flag files (`permission-matrix.d/`, `feature-flags.d/`) arrive with F-03's registry split; until then
-  edit docs/architecture/permission-matrix.yaml and docs/architecture/feature-flags.yaml
+- the matrix and flags are split per module (F-03-T07): edit your module's
+  docs/architecture/permission-matrix/<module>.yaml and docs/architecture/feature-flags/<module>.yaml
 
 Input: the contract a task needs: `<name> vN`, its screen IDs and artboard states, seed figures that must foot,
 human-only gates and expected actions.

@@ -56,6 +56,7 @@ from abacus.modules.engagements.workbook import (
     area_for,
 )
 from abacus.modules.identity.api import (
+    AbacusRouter,
     register_active_engagements,
     register_engagement_client,
     register_independence,
@@ -73,7 +74,15 @@ register_member_added(request_independence)
 # SPEC-025 (TASK-045): a staff engagement role reaches client data once its holder confirms.
 register_independence(confirmed_subquery, confirmed_for)
 
+# The routers the API mounts, in order (P-39; F-03-T07).
+ROUTERS: tuple[AbacusRouter, ...] = (
+    router,
+    methodology_router,
+    firm_router,
+)
+
 __all__ = [
+    "ROUTERS",
     "AccountRule",
     "ApprovedGuidance",
     "Area",

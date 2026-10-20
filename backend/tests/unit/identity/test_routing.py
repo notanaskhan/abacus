@@ -12,7 +12,6 @@ import json
 import uuid
 from collections.abc import AsyncIterator, Callable, Iterable
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Annotated, Protocol, cast
 
 import httpx
@@ -54,7 +53,7 @@ from abacus_tools.fakes.identity import FakeIdentityProvider
 
 MATRIX = cast(
     dict[str, dict[str, str]],
-    cast(dict[str, object], yaml.safe_load(pm.SOURCE.read_text()))["actions"],
+    cast(dict[str, object], yaml.safe_load(pm.source()))["actions"],
 )
 VERBS = ["get", "post", "put", "patch", "delete"]
 FORBIDDEN_WORDS = ("tenancy", "relationship", "attribute", "layer", "role")
@@ -497,7 +496,7 @@ def test_ac20_probe_router_declares_the_expected_actions() -> None:
 
 
 def test_ac20_pm_source_path_exists() -> None:
-    assert Path(pm.SOURCE).is_file()
+    assert (pm.SOURCE_DIR / "_roles.yaml").is_file()
 
 
 def test_ac20_tenant_header_is_not_exported_from_identity_api() -> None:

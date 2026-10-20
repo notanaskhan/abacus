@@ -1,0 +1,7 @@
+# The audit_trail module's actions (ADR-027; P-39, F-03-T07). Compiled with every other
+# module's file into identity/authz/_matrix.py by `make regenerate`.
+
+actions:
+  audit.read:               {firm_admin: allow, practice_leader: allow, quality_partner: allow}   # SPEC-304 (TASK-305): the firm's audit log explorer; identifiers only (ADR-007)
+  # --- Audit trail and export ---
+  audit_event.read:         {engagement_partner: allow, manager: allow, quality_partner: in_scope, firm_admin: allow, platform_support: allow, platform_support_content: allow}

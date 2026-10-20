@@ -1,0 +1,11 @@
+# The evidence module's flags (ADR-089; P-39, F-03-T07). Compiled with every other module's
+# file into kernel/_flags.py by `make regenerate`.
+
+flags:
+  - name: uploads.processing
+    description: Each upload is read in isolation (text, tables, fields) by a background workflow (SPEC-029; TASK-054). Scanning applies whatever this says. Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
+    owner: ayushkbhatia
+    created: 2026-10-12
+    expires: 2027-01-09
+    kind: boolean
+    default: false

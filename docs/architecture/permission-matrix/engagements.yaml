@@ -1,0 +1,47 @@
+# The engagements module's actions (ADR-027; P-39, F-03-T07). Compiled with every other
+# module's file into identity/authz/_matrix.py by `make regenerate`.
+
+actions:
+  methodology.manage:       {firm_admin: allow, practice_leader: allow, mfa_recent: required}   # SPEC-008 Q3
+  methodology.read:         {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow, platform_support: allow, platform_support_content: allow, agent: task_scope}   # SPEC-008; agent: the guidance drafter on a template, firm-level (TASK-074 D1)
+  # --- Engagements ---
+  engagement.create:        {firm_admin: allow, practice_leader: allow}
+  roll_forward.read:        {firm_admin: allow, practice_leader: allow}   # SPEC-025 (TASK-048 D3): last year's team, template and items, checked on that engagement
+  engagement.ai_exclude:    {engagement_partner: allow}   # SPEC-036 (TASK-076): switch AI off for one engagement
+  # --- Acceptance, independence and the letter (SPEC-025; TASK-044) ---
+  acceptance.record:        {engagement_partner: allow, mfa_recent: required}   # decision, documentation, the independence conclusion
+  independence.confirm:     {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow}   # for oneself only (the service refuses others)
+  letter.record:            {engagement_partner: allow, manager: allow}
+  setup.read:               {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow}
+  client.read:              {firm_admin: allow, practice_leader: allow}   # SPEC-025 (TASK-043 D1): the client picker, as engagement.create
+  engagement.read_metadata:
+    firm_admin: allow
+    practice_leader: in_scope
+    quality_partner: allow
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    staff: allow
+    reviewer: allow
+    platform_support: allow   # SPEC-012
+    platform_support_content: allow   # SPEC-012
+    client_admin: allow       # SPEC-020: their own engagement's name, firm and period
+    client_contributor: allow
+  work_item.read_metadata:  # F-03-T05 (C1): an engagement's work items; firm staff only for now
+    firm_admin: allow
+    practice_leader: in_scope
+    quality_partner: allow
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    staff: allow
+    reviewer: allow
+    agent: task_scope
+  engagement.self_join:     {firm_admin: allow, notify: engagement_team}
+  client_contact.invite:    {engagement_partner: allow, manager: allow, client_admin: allow}   # SPEC-015 Q2 (client admins: contributors only, in the service)
+  client_contact.read:      {engagement_partner: allow, manager: allow, senior: allow, client_admin: allow}   # SPEC-015
+  client_contact.remove:    {engagement_partner: allow, manager: allow, client_admin: allow}   # SPEC-015 (client admins: contributors only)
+  engagement.update:        {engagement_partner: allow, manager: allow}
+  engagement.member_add:    {engagement_partner: allow, manager: allow}
+  engagement.member_remove: {engagement_partner: allow, manager: allow}
+  engagement.archive:       {engagement_partner: allow}
