@@ -4,7 +4,7 @@ title: "F-05-T02 · Allowlist bundle #1: Fontsource Geist/Geist Mono/Arimo/Gelas
 spec: SPEC-048
 acceptance_criteria: [AC-13]
 risk_zone: red
-status: todo
+status: done
 epic: F-05
 plan_key: F-05-T02
 branch: task-128-allowlist-bundle-1
@@ -84,6 +84,7 @@ make check
 Append-only. Newest at the bottom.
 
 - `2026-10-20` — task file written from the epic (SU-14); nothing built yet.
+- 2026-10-20 (SU-21): allowlist bundle #1 landed: workos and @workos-inc/authkit-react approved (DEC-22); @sentry/browser; types-boto3 extras kms, sesv2, secretsmanager, ssm, sqs; containers clamav/clamav, aws-otel-collector, python; a terraform section (terraform, hashicorp/aws) enforced by check_dependencies with tests first; @fontsource/arimo and gelasio, @tanstack/react-table and react-virtual; packages/ui exports map (., theme.css, tokens/*, fonts/*, specimens). Radix overlays are covered by the existing @radix-ui/* row. check_dependencies and make check-fast green.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

@@ -25,7 +25,7 @@ python:
     sentry-sdk: approved
     structlog: approved         # structured logging helper (ADR-022)
     anthropic: approved         # ai_gateway only (ADR-019)
-    workos: pending             # identity vendor pending commercial check (ADR-029)
+    workos: approved            # staff sign-in and sessions (DEC-22, ADR-141, Q-01-T05)
     pdfplumber: approved        # upload extraction: PDF text and tables, in an isolated child (SPEC-029 Q1, TASK-054; brings pdfminer.six)
     pypdfium2: approved         # upload previews: PDF page images, server-side (SPEC-029 Q1, ADR-110)
     pillow: approved            # upload previews: images re-encoded server-side, metadata stripped (SPEC-029, ADR-110)
@@ -44,7 +44,7 @@ python:
     types-PyYAML: approved      # pyyaml stubs; required for strict Pyright (ADR-009)
     pytest-cov: approved        # coverage floors in make check (ADR-079, TASK-002)
     hatchling: approved         # build backend in backend/pyproject.toml (TASK-001 approved plan, step 10)
-    types-boto3: approved       # boto3 type stubs (s3 extra) for strict Pyright (TASK-004)
+    types-boto3: approved       # boto3 type stubs for strict Pyright: s3 (TASK-004); kms, sesv2, secretsmanager, ssm, sqs (Q-01-T05)
     asyncpg-stubs: approved     # asyncpg type stubs for strict Pyright (TASK-004)
 
 typescript:
@@ -63,7 +63,12 @@ typescript:
     "@fontsource/newsreader": approved      # self-hosted heading font (SPEC-016)
     "@fontsource/geist": approved           # self-hosted UI font, the plan's design foundation (TASK-091)
     "@fontsource/geist-mono": approved      # self-hosted mono for IDs and figures (TASK-091)
-    "@workos-inc/authkit-react": pending
+    "@workos-inc/authkit-react": approved  # firm app sign-in through AuthKit (DEC-22, ADR-141)
+    "@sentry/browser": approved             # browser error reporting, scrubbed before send (ADR-022, Q-01-T05)
+    "@fontsource/arimo": approved           # self-hosted metric-compatible fallback font (F-05-T02)
+    "@fontsource/gelasio": approved         # self-hosted serif for statements and letters (F-05-T02)
+    "@tanstack/react-table": approved       # headless table state for the DataTable kit (F-05-T02, ADR-011)
+    "@tanstack/react-virtual": approved     # row virtualisation for long tables and lists (F-05-T02)
   dev:
     typescript: approved
     vite: approved
@@ -87,3 +92,12 @@ containers:
   pgvector/pgvector: approved     # PostgreSQL 17 with pgvector, local and tests (ADR-014, TASK-004)
   versity/versitygw: approved     # S3-compatible with Object Lock, local and tests; MinIO's image is no longer public (ADR-016, TASK-004)
   temporalio/temporal: approved   # Temporal CLI dev server, local and tests (ADR-017, TASK-004)
+  clamav/clamav: approved         # malware scanning daemon for uploads, local and staging (ADR-110, P-64, Q-01-T05)
+  public.ecr.aws/aws-observability/aws-otel-collector: approved  # OpenTelemetry collector sidecar (ADR-022, Q-01-T05)
+  python: approved                # the backend's base image, slim variant, by digest (Q-01-T05, Q-01-T06)
+
+# Terraform core, providers and registry modules (Q-01-T05), checked by check_dependencies in every *.tf.
+# Local modules (./, ../) need no row; modules from git, URLs or buckets are refused.
+terraform:
+  terraform: approved             # infrastructure as code, version >= 1.10 (ADR-021, ADR-142)
+  hashicorp/aws: approved         # the AWS provider (ADR-021, ADR-142)

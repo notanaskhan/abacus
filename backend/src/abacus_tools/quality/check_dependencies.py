@@ -239,6 +239,51 @@ def _container_problems(repo: Path, allowlist: Mapping[str, object], problems: s
                 problems.add(f"{rel}: {pinned['name']} {PENDING}")
 
 
+_TF_SKIPPED_DIRS = frozenset({".terraform", "node_modules"})
+_TF_BLOCK = re.compile(r"^\s*terraform\s*\{", re.MULTILINE)
+_TF_SOURCE = re.compile(r'^\s*source\s*=\s*"([^"]+)"', re.MULTILINE)
+_TF_LOCAL = re.compile(r"^\.{1,2}/")
+_TF_REGISTRY = re.compile(r"^[A-Za-z0-9-]+/[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?$")
+
+
+def _terraform_files(repo: Path) -> Iterator[Path]:
+    for path in sorted(repo.rglob("*.tf")):
+        parts = path.relative_to(repo).parts[:-1]
+        if path.is_file() and not any(p in _TF_SKIPPED_DIRS for p in parts):
+            yield path
+
+
+def _terraform_problems(repo: Path, allowlist: Mapping[str, object], problems: set[str]) -> None:
+    """Terraform core, providers and registry modules must be approved in the `terraform`
+    section; local modules are fine; modules from git, URLs or buckets are refused."""
+    section = allowlist.get("terraform")
+    entries = (
+        {str(k): str(v) for k, v in cast(dict[object, object], section).items()}
+        if isinstance(section, dict)
+        else {}
+    )
+
+    def judge(rel: str, name: str) -> None:
+        status = entries.get(name)
+        if status is None:
+            problems.add(f"{rel}: {name} is not in the dependency allowlist")
+        elif status != "approved":
+            problems.add(f"{rel}: {name} {PENDING}")
+
+    for path in _terraform_files(repo):
+        rel = path.relative_to(repo).as_posix()
+        text = path.read_text(encoding="utf-8")
+        if _TF_BLOCK.search(text):
+            judge(rel, "terraform")
+        for source in _TF_SOURCE.findall(text):
+            if _TF_LOCAL.match(source):
+                continue
+            if not _TF_REGISTRY.match(source):
+                problems.add(f"{rel}: {source} {REGISTRY}")
+                continue
+            judge(rel, source)
+
+
 def check(repo: Path = REPO) -> list[str]:
     loaded: object = yaml.safe_load((repo / ALLOWLIST).read_text(encoding="utf-8"))
     allowlist = cast(dict[str, object], loaded) if isinstance(loaded, dict) else {}
@@ -256,6 +301,7 @@ def check(repo: Path = REPO) -> list[str]:
             if verdict:
                 problems.add(f"{dep.manifest}: {dep.name} {verdict}")
     _container_problems(repo, allowlist, problems)
+    _terraform_problems(repo, allowlist, problems)
     return sorted(problems)
 
 

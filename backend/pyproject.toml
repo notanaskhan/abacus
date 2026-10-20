@@ -25,6 +25,7 @@ dependencies = [
     "structlog",
     "temporalio",
     "uvicorn>=0.40",
+    "workos>=10.6.0",
 ]
 
 [dependency-groups]
@@ -40,7 +41,7 @@ dev = [
     "pyyaml",
     "types-PyYAML",
     "testcontainers",
-    "types-boto3[s3]",
+    "types-boto3[kms,s3,secretsmanager,sesv2,sqs,ssm]",
     "asyncpg-stubs",
 ]
 

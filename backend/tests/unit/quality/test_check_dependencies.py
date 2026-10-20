@@ -1183,3 +1183,99 @@ def test_ac20_same_image_in_two_services_is_reported_for_each_occurrence(
     result = cd.check(tmp_path)
     assert result
     assert set(result) == {_unlisted(COMPOSE, PG)}
+
+
+# --- terraform (Q-01-T05, SU-21) --------------------------------------------------------------
+
+TF_MAIN = """
+terraform {
+  required_version = ">= 1.10"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
+}
+
+module "network" {
+  source = "./modules/network"
+}
+"""
+
+
+def _tf_repo(root: Path, terraform: dict[str, str] | None, text: str = TF_MAIN) -> Path:
+    allow: dict[str, object] = dict(_allowlist())
+    if terraform is not None:
+        allow["terraform"] = terraform
+    _write(root, "docs/architecture/dependency-allowlist.yaml", json.dumps(allow, indent=2))
+    _write(root, PYPROJECT, '[project]\nname = "x"\nversion = "0"\ndependencies = []\n')
+    _write(root, "infra/envs/staging/main.tf", text)
+    return root
+
+
+def test_terraform_approved_core_and_provider_pass(tmp_path: Path) -> None:
+    repo = _tf_repo(tmp_path, {"terraform": "approved", "hashicorp/aws": "approved"})
+    assert cd.check(repo) == []
+
+
+def test_terraform_unlisted_provider_is_reported(tmp_path: Path) -> None:
+    repo = _tf_repo(tmp_path, {"terraform": "approved"})
+    assert cd.check(repo) == [
+        "infra/envs/staging/main.tf: hashicorp/aws is not in the dependency allowlist"
+    ]
+
+
+def test_terraform_core_must_be_listed(tmp_path: Path) -> None:
+    repo = _tf_repo(tmp_path, {"hashicorp/aws": "approved"})
+    assert cd.check(repo) == [
+        "infra/envs/staging/main.tf: terraform is not in the dependency allowlist"
+    ]
+
+
+def test_terraform_pending_provider_is_reported(tmp_path: Path) -> None:
+    repo = _tf_repo(tmp_path, {"terraform": "approved", "hashicorp/aws": "pending"})
+    assert [p for p in cd.check(repo) if "hashicorp/aws" in p] == [
+        f"infra/envs/staging/main.tf: hashicorp/aws {cd.PENDING}"
+    ]
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "git::https://example.com/vpc.git",
+        "github.com/someone/vpc",
+        "https://example.com/vpc.zip",
+        "s3::https://bucket/vpc.zip",
+    ],
+)
+def test_terraform_module_from_outside_the_registry_is_refused(
+    tmp_path: Path, source: str
+) -> None:
+    text = TF_MAIN.replace("./modules/network", source)
+    repo = _tf_repo(tmp_path, {"terraform": "approved", "hashicorp/aws": "approved"}, text)
+    assert cd.check(repo) == [f"infra/envs/staging/main.tf: {source} {cd.REGISTRY}"]
+
+
+def test_terraform_registry_module_needs_a_row(tmp_path: Path) -> None:
+    text = TF_MAIN.replace("./modules/network", "terraform-aws-modules/vpc/aws")
+    repo = _tf_repo(tmp_path, {"terraform": "approved", "hashicorp/aws": "approved"}, text)
+    assert cd.check(repo) == [
+        "infra/envs/staging/main.tf: terraform-aws-modules/vpc/aws"
+        " is not in the dependency allowlist"
+    ]
+
+
+def test_terraform_provider_cache_is_not_scanned(tmp_path: Path) -> None:
+    repo = _tf_repo(tmp_path, {"terraform": "approved", "hashicorp/aws": "approved"})
+    _write(
+        repo,
+        "infra/envs/staging/.terraform/modules/x/main.tf",
+        'terraform {\n  required_providers {\n    x = { source = "acme/x" }\n  }\n}\n',
+    )
+    assert cd.check(repo) == []
+
+
+def test_no_terraform_files_need_no_terraform_section(tmp_path: Path) -> None:
+    repo = _repo(tmp_path, _allowlist())
+    assert cd.check(repo) == []

@@ -4,7 +4,7 @@ title: "Q-01-T05 · Platform allowlist PR (protected): workos approved (DEC-22);
 spec: SPEC-050
 acceptance_criteria: [AC-9]
 risk_zone: red
-status: todo
+status: done
 epic: Q-01
 plan_key: Q-01-T05
 branch: task-146-platform-allowlist
@@ -88,6 +88,7 @@ make check
 Append-only. Newest at the bottom.
 
 - `2026-10-20` — Task file written at kickoff (SU-14). No work started.
+- 2026-10-20 (SU-21): allowlist bundle #1 landed: workos and @workos-inc/authkit-react approved (DEC-22); @sentry/browser; types-boto3 extras kms, sesv2, secretsmanager, ssm, sqs; containers clamav/clamav, aws-otel-collector, python; a terraform section (terraform, hashicorp/aws) enforced by check_dependencies with tests first; @fontsource/arimo and gelasio, @tanstack/react-table and react-virtual; packages/ui exports map (., theme.css, tokens/*, fonts/*, specimens). Radix overlays are covered by the existing @radix-ui/* row. check_dependencies and make check-fast green.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
