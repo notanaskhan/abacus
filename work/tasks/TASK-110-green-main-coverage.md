@@ -4,7 +4,7 @@ title: "F-01-T05 · Make main green: fix stale assertions against their spec ACs
 spec: SPEC-045
 acceptance_criteria: [AC-1, AC-2, AC-3]
 risk_zone: red
-status: todo
+status: in-progress
 epic: F-01
 plan_key: F-01-T05
 branch: task-110-green-main-coverage
@@ -87,6 +87,7 @@ make check
 Append-only. Newest at the bottom.
 
 - (none yet)
+- 2026-10-20 (SU-15): main's stage 2 was red on two counts. (1) test_schema_check_db expected no update columns for `procedures`, though schema_check declares parameters, status and failure_code (SPEC-037, TASK-083); the contract line is added. (2) test_screening.py inherited a drained or blocked provider_capacity bucket from earlier tests in its shard (27 failures in shard 3/5); it now empties the bucket before and after each test, like its siblings. Shard 3/5: 27 failed before, 579 passed after. Coverage floor work (DEC-10) still open.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

@@ -1141,6 +1141,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"acknowledged_at"}
         ),
         "knowledge_documents": frozenset({"status", "failure_code", "withdrawn_at"}),  # SPEC-009
+        # SPEC-037 (TASK-083): a procedure's parameters are set, then it runs to a status.
+        "procedures": frozenset({"parameters", "status", "failure_code"}),
         "knowledge_chunks": frozenset({"embedding", "embedding_model", "embedded_at"}),
         "agent_runs": frozenset(
             {"status", "context_hash", "output", "failure_code", "finished_at"}

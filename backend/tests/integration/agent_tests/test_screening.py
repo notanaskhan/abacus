@@ -13,6 +13,7 @@ import io
 import json
 import re
 import uuid
+from collections.abc import AsyncIterator
 from decimal import Decimal
 from pathlib import Path
 from typing import cast
@@ -117,6 +118,16 @@ class Recorder:
     async def complete(self, request: ModelRequest) -> ModelResponse:
         self.requests.append(request)
         return await self.inner.complete(request)
+
+
+@pytest.fixture(autouse=True)
+async def _fresh_model_buckets(seed: Seeder) -> AsyncIterator[None]:
+    """SPEC-010 Q3: the per-model bucket is shared by every test in a shard. Start and end each
+    screening test with an empty one, so an earlier test's outage block or spent tokens never
+    turn a screen into NotAdmitted("provider_capacity")."""
+    await seed.run("DELETE FROM provider_capacity")
+    yield
+    await seed.run("DELETE FROM provider_capacity")
 
 
 @pytest.fixture
