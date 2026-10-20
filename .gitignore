@@ -36,3 +36,6 @@ test-results/
 
 # This checkout's local stack: compose project and port offset (make worktree-env, F-01-T09)
 .worktree.env
+
+# Claude Code agent worktrees (local only)
+.claude/worktrees/
