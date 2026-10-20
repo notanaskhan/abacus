@@ -4,7 +4,7 @@ title: "F-03-T01 · Contract register: docs/contracts/README.md for C1–C21 (pr
 spec: SPEC-047
 acceptance_criteria: [AC-1, AC-2]
 risk_zone: red
-status: todo
+status: done
 epic: F-03
 plan_key: F-03-T01
 branch: task-122-contract-register
@@ -35,10 +35,10 @@ Solo reading: the code-owner review clause, the issue template and CODEOWNERS ar
 
 ## Plan
 Steps:
-1. [ ] Write the plan here (red zone): source the provider epic and freeze sprint of C1 to C21 from chapter 01.
-2. [ ] Create `docs/contracts/README.md` and `_TEMPLATE.md`.
-3. [ ] Document the frozen-contract rule (v2 with one sprint of overlap).
-4. [ ] Run validate_docs.
+1. [x] Write the plan here (red zone): source the provider epic and freeze sprint of C1 to C21 from chapter 01.
+2. [x] Create `docs/contracts/README.md` and `_TEMPLATE.md`.
+3. [x] Document the frozen-contract rule (v2 with one sprint of overlap).
+4. [x] Run validate_docs.
 
 Files to create or change:
 - `docs/contracts/README.md`
@@ -67,7 +67,8 @@ cd backend && uv run python -m abacus_tools.quality.validate_docs
 ## Progress log
 Append-only. Newest at the bottom.
 
-- (none yet)
+- 2026-10-20 Plan: README.md carries the C1..C21 register from chapter 01 section 1.3.2 (provider, consumers, freeze sprint with start date Sn = 2026-10-19 + 14n days, version, status) plus the handshake and the frozen-contract rule; _TEMPLATE.md is the per-contract doc skeleton. Void under the solo amendment: code-owner review, the issue template and CODEOWNERS.
+- 2026-10-20 Built `docs/contracts/README.md` (AC-1: 21 rows, all columns; AC-2: "The frozen-contract rule" section, v2 with one sprint of overlap, snapshot diff, consumer tests in provider CI, CI enforcement noted as F-03-T18) and `docs/contracts/_TEMPLATE.md`. validate_docs passes. Status set to done.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -81,8 +82,8 @@ Append-only. Newest at the bottom.
 - [ ] None.
 
 ## Handoff
-- **Current state:** Not started.
-- **Exact next step:** Read the Objective, then step 1.
+- **Current state:** Done.
+- **Exact next step:** None.
 - **Uncommitted or partial work:** None.
 - **Known failing checks:** None.
 - **Open issues:** None.
