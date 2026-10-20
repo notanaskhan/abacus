@@ -52,23 +52,23 @@ The shared kernel (`abacus.kernel`: db sessions, tenant context, unit of work, o
 11. **Workflow changes use Temporal versioning.** (ADR-090)
 12. **No new dependencies** unless listed in `docs/architecture/dependency-allowlist.yaml`.
 13. **Never skip, weaken or delete a test.** Never lower a threshold.
-14. **Never edit protected paths** (`docs/architecture/protected-paths.md`) without an approval file from the founder.
+14. **Never write secrets, hand-edit generated files or edit a migration already on `main`.** See `docs/architecture/protected-paths.md`. The repository is public.
 
 ## How you work
 
 1. Read the task file, the spec sections it lists, and the ADRs it names. Nothing more unless the plan requires it.
-2. Amber and red tasks: write a plan in the task file and **stop for approval** before coding.
+2. Amber and red tasks: write the plan into the task file first (files, migrations, registry and flag edits, tests, rollback), then build.
 3. Copy the reference pattern for anything similar that already exists.
-4. Write tests that reference acceptance criteria (`test_ac3_...`). For amber and red, tests come from a separate session.
+4. Write the acceptance tests first, from the spec (`test_ac3_...`), then implement until they pass.
 5. Small diffs. One task per session.
-6. Run `make check`. Do not claim done until it passes.
+6. Run `make check`. Do not claim done until it passes. Work on a short branch; merge once it is green.
 7. Append to the task's progress log before ending any session, even mid-task.
-8. If anything is ambiguous, contradicts an ADR, or needs a protected path: **stop and ask.** Do not guess or work around it.
+8. If something is ambiguous or contradicts an ADR, take the plan's proposed option (`docs/plan/09-decisions-adrs.md`), record the decision in `docs/product/decision-log.md` or a new ADR, and carry on. Ask only when no option is written down.
 
 ## When you make a mistake twice
 
-Tell the founder so it can become a lint rule, test or constitution line.
+Say so in the task file's progress log so it can become a lint rule, test or constitution line.
 
 ## Reviewers
 
-Reviewer definitions live in `.claude/agents/` as tool-agnostic prompts: architecture, security, tests, AI. Amber and red work is reviewed by a different model from the one that wrote it.
+Reviewer definitions live in `.claude/agents/` as tool-agnostic prompts: architecture, security, tests, AI. Use them for an optional self-review of amber and red work before merging.

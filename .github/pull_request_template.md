@@ -10,8 +10,8 @@
 
 ## Risk zone
 - [ ] Green
-- [ ] Amber — plan approved and diff reviewed
-- [ ] Red — human-designed, reviewed line by line
+- [ ] Amber — plan written in the task file first
+- [ ] Red — plan written in the task file first; self-reviewed line by line
 
 ## Acceptance criteria delivered
 - [ ] AC-1
@@ -27,7 +27,7 @@
 ### Architecture
 - [ ] Respects module boundaries; no reaching into another module's internals
 - [ ] Follows the established reference patterns
-- [ ] No new dependencies — or each is listed and approved
+- [ ] No new dependencies — or each is added to the dependency allowlist
 - [ ] ADR added or updated if an architectural choice was made
 
 ### Security and tenancy
@@ -39,7 +39,7 @@
 
 ### Data and evidence integrity
 - [ ] Migrations are reversible, or a rollback plan is described below
-- [ ] No destructive data changes without an approved plan
+- [ ] No destructive data changes without a written plan
 - [ ] State changes write audit-trail entries
 - [ ] Evidence records remain immutable; changes create new versions
 
@@ -68,15 +68,13 @@
 - [ ] Module README and relevant docs updated
 - [ ] Task log closed with final state
 
-## Reviews
+## Self-review (optional)
 | Review | Result | Notes |
 |---|---|---|
 | Architecture reviewer agent | pass / changes requested | |
 | Security reviewer agent | | |
 | Test reviewer agent | | |
 | AI reviewer agent (if applicable) | | |
-| Cross-model review (amber and red) | | |
-| Human review | | |
 
 ## Rollout and rollback
 - Feature flag:
@@ -85,5 +83,5 @@
 ## Gate output
 <Paste the final summary of typecheck, lint, architecture rules, tests and security scan.>
 
-## Notes for reviewers
+## Notes
 <Anything surprising, risky, or worth a closer look.>

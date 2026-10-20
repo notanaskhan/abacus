@@ -1,4 +1,4 @@
-# Permission matrix — PROTECTED PATH (ADR-027). Changes require human approval.
+# Permission matrix (ADR-027). Change it in the same change as the routes it governs; make regenerate.
 # Tests are generated from this file. Every API route declares exactly one action below.
 #
 # Values:

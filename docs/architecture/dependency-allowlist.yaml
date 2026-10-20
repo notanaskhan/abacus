@@ -1,4 +1,4 @@
-# Dependency allowlist — PROTECTED. Adding a package requires founder approval.
+# Dependency allowlist. Add a package here in the same change that first uses it; check_dependencies enforces it.
 # status: approved | pending (approved in principle, awaiting a decision noted in reason)
 
 python:

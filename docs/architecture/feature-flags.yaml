@@ -1,4 +1,4 @@
-# Feature flag registry (ADR-089; SPEC-011). PROTECTED: changes need the founder's approval.
+# Feature flag registry (ADR-089; SPEC-011). Change it in the same change as the code that reads the flag; make regenerate.
 #
 # Each flag: name, description, owner, created, expires (at most 90 days after created; an
 # expired flag fails `make check-fast` until it is removed), kind (boolean | variant), values

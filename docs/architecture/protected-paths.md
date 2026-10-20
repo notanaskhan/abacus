@@ -1,56 +1,24 @@
 # Protected paths
 
-Changes to these paths require the founder's explicit approval. Enforcement is layered, because no single layer is enough:
+Solo edition (2026-10-20, SU-06). One builder works through Claude Code with no approval files, no code owners and no review gate. The local hooks in `.claude/hooks/` keep only the guards that protect data and correctness; `make check` is the gate before merging.
 
-| Layer | Where | Strength |
+| Layer | Where | What it does |
 |---|---|---|
-| Local hooks | `.claude/hooks/` | Convenience: stops agents early, but can be bypassed or fail |
-| Code owners | `.github/CODEOWNERS` | Authoritative: founder review required to merge |
-| Branch protection | GitHub settings on `main` | Authoritative: required checks and reviews; no direct pushes |
-| CI checks | Pipeline stages 1–5 | Authoritative: rule violations fail the build |
+| Edit hook | `.claude/hooks/protect_paths.py` (rules in `_protected.py`) | Blocks agent edits to secret files, generated files and migrations already on `origin/main` |
+| Shell hook | `.claude/hooks/guard_bash.py` | Blocks destructive or unsafe commands (below) |
+| Checks | `make check-fast`, `make check` | Lint, types, import rules, generated-file drift, single migration head, secrets scan, tests |
+| `main` ruleset | GitHub settings | No force pushes, no deletion, linear history |
 
-## Always protected
+## Never edited by an agent
 
-- The constitution and agent configuration: `AGENTS.md`, `CLAUDE.md`, `.claude/`
-- Gates and pipeline: every `Makefile`, `.github/`, `backend/src/abacus_tools/quality/` and its tests `backend/tests/unit/quality/`
-- Repository plumbing: `.git/` (local hooks), every `.gitignore`
-- Infrastructure: `infra/`, every `*compose*.y*ml`, overrides included (which images run, which ports open)
-- Approvals: `work/approvals/` — the founder writes these by hand
-- Policy files: permission matrix, this file, dependency allowlist, glossary, failure taxonomy, and the coverage floor (`[tool.coverage.report] fail_under` in `backend/pyproject.toml`, ADR-079), and the evaluation suites, cost baselines and judge calibration records (`evals/*/suite.yaml`, `evals/baselines.yaml`, `evals/judges/*`; ADR-079, ADR-070), and the provider terms register (`docs/operations/provider-terms.yaml`; ADR-114)
-- CI: `.github/workflows/` (stages 1 and 2 run the same `make` targets as local development)
-- Dependency manifests and lockfiles: every `package.json` and `pyproject.toml`, `pnpm-workspace.yaml`, `.npmrc`, `backend/uv.lock`, `pnpm-lock.yaml`
-- Red-zone code: identity and authorisation (`abacus.modules.identity`), the API surface that binds every route to an action (`abacus.api`), database session and tenancy, unit of work, encryption and object storage (`abacus.kernel.db`, `.uow`, `.crypto`, `.storage`), evidence, connectors and ledger (`abacus.modules.evidence`, `.connections`, `.ledger`), the workflow worker (`abacus.worker`), audit trail (`abacus.modules.audit_trail`)
-- Migration control: `backend/alembic.ini`, `backend/migrations/env.py` (which role, which timeouts) and `backend/migrations/bootstrap*.sql` (the database roles, their privileges and local passwords) and `backend/migrations/script.py.mako` (the shape of every new migration)
-- The AI gateway and agents (`abacus.ai_gateway`, `abacus.modules.agents`: code owners; agents build them under approval during Phase 1)
+- **Secrets:** `.env`, `.env.*` (templates `.env.example`, `.env.sample` and `.env.template` are fine), `*.pem`, `*.key`, `*.p12`, `*.pfx`, any `secrets/` directory, `credentials` files. Edit these yourself, outside the session. Never commit them: the repository is public.
+- **Generated files:** `packages/api-client/openapi.json` and `packages/api-client/src/**` (`make generate`), `_matrix.py`, `_flags.py`, `_provider_terms.py`, `_specs.py`, `_eval_suites.py` (their `abacus_tools.codegen` module or `make regenerate`), `backend/tests/durations.json`, workflow replay histories. Regenerate instead; resolve a conflict in one by regenerating, never by picking a side.
+- **Applied migrations:** a file in `backend/migrations/versions/` that is already on `origin/main`. Add a new migration instead; keep one Alembic head. A migration that exists only on your branch can still be edited.
 
-## Protected once they exist
+## Shell commands the hook refuses
 
-- Accepted ADRs — supersede with a new ADR instead
-- Applied migrations — add a new migration instead
+Force pushes; `git commit --no-verify`; recursive deletion of root, home or the project; `sudo`; `chmod 777`; `terraform destroy`, `import` and `state`; `psql`, `pg_dump` and `pg_restore` against a non-local host; AWS production profiles; direct calls to model provider APIs (use `ai_gateway`); `alembic downgrade` against staging or production; `git checkout --ours/--theirs` on a generated file.
 
-## How the founder grants approval
+## Still binding, as rules rather than locks
 
-Create `work/approvals/<task>.yaml` by hand:
-
-```yaml
-task: TASK-012
-approved_by: founder
-expires: 2026-12-31
-paths:
-  - backend/src/abacus/kernel/uow/**
-  - backend/migrations/versions/*
-reason: Walking skeleton — unit of work implementation
-```
-
-Rules the hook enforces on approval files: `approved_by` must be `founder`; `expires` must be an ISO date not in the past; only items under `paths:` count; a trailing `# comment` is ignored; a pattern must start with a concrete directory or file (`*` or `**` alone approves nothing). In patterns, `*` matches within one directory and `**` spans any number; matching is case-insensitive.
-
-Keep approvals narrow, short-lived, and delete them when the task merges.
-
-**Approval files are local and never committed** (they are git-ignored). GitHub does not let a reviewer approve a push they made themselves, so committing approvals would block your own merges. Instead, record each approval in the task file's plan section — *Approved by founder: paths …* — which is committed with the work and becomes the audit trail.
-
-## Setup checklist for the founder
-
-- [ ] Replace `@founder` in `CODEOWNERS` with your GitHub handle
-- [ ] Protect `main`: require pull requests, code owner review, all CI checks, linear history; disallow force pushes
-- [ ] In Claude Code, run `/hooks` to confirm the project hooks are loaded
-- [ ] Test once: ask the agent to edit `AGENTS.md` and confirm it is blocked
+The policy files keep their meaning and are changed deliberately, in the same change as the code that needs them: the permission matrix, the dependency allowlist, the glossary, the failure taxonomy, the coverage floor, evaluation suites, cost baselines and judge calibration, and the provider terms register. Accepted ADRs are superseded by a new ADR rather than rewritten; `validate_docs` checks the supersede chain.
