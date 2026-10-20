@@ -5831,6 +5831,44 @@ export type WallOut = {
 };
 
 /**
+ * WorkItemOut
+ */
+export type WorkItemOut = {
+    /**
+     * Due On
+     */
+    due_on: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'assurance' | 'tax_return' | 'close' | 'notice' | 'advisory_project';
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Period End
+     */
+    period_end: string | null;
+    /**
+     * Period Start
+     */
+    period_start: string | null;
+    /**
+     * Phase
+     */
+    phase: string | null;
+    /**
+     * Status
+     */
+    status: 'active' | 'archived';
+};
+
+/**
  * WorkpaperOut
  */
 export type WorkpaperOut = {
@@ -15331,6 +15369,60 @@ export type ChangeTeamRoleResponses = {
 
 export type ChangeTeamRoleResponse = ChangeTeamRoleResponses[keyof ChangeTeamRoleResponses];
 
+export type WorkItemsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/work-items';
+};
+
+export type WorkItemsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type WorkItemsError = WorkItemsErrors[keyof WorkItemsErrors];
+
+export type WorkItemsResponses = {
+    /**
+     * Response Work Items
+     *
+     * Successful Response
+     */
+    200: Array<WorkItemOut>;
+};
+
+export type WorkItemsResponse = WorkItemsResponses[keyof WorkItemsResponses];
+
 export type SetupFileData = {
     body?: never;
     headers?: {
@@ -15653,7 +15745,7 @@ export type AuditEventsData = {
         /**
          * Actor Kind
          */
-        actor_kind?: 'human' | 'agent' | 'system' | null;
+        actor_kind?: 'human' | 'agent' | 'system' | 'support' | null;
         /**
          * Actor Id
          */

@@ -11950,6 +11950,107 @@
         "title": "WallOut",
         "type": "object"
       },
+      "WorkItemOut": {
+        "properties": {
+          "due_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Due On"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "assurance",
+              "tax_return",
+              "close",
+              "notice",
+              "advisory_project"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Period End"
+          },
+          "period_start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Period Start"
+          },
+          "phase": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Phase"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "active",
+              "archived"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "status",
+          "period_start",
+          "period_end",
+          "due_on",
+          "phase"
+        ],
+        "title": "WorkItemOut",
+        "type": "object"
+      },
       "WorkpaperOut": {
         "properties": {
           "conclusion": {
@@ -32458,6 +32559,117 @@
         "x-abacus-action": "engagement.member_add"
       }
     },
+    "/v1/engagements/{engagement_id}/work-items": {
+      "get": {
+        "description": "F-03-T05 (C1): the engagement's work items.",
+        "operationId": "work_items",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WorkItemOut"
+                  },
+                  "title": "Response Work Items",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Work Items Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "work_item.read_metadata"
+      }
+    },
     "/v1/engagements/{engagement_id}/{which}/file": {
       "get": {
         "description": "The file as an attachment, never inline; audited and verified.",
@@ -33121,7 +33333,8 @@
                   "enum": [
                     "human",
                     "agent",
-                    "system"
+                    "system",
+                    "support"
                   ],
                   "type": "string"
                 },
