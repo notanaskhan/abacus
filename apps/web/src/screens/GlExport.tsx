@@ -82,7 +82,7 @@ export function GlExport({ engagementId }: { engagementId: string }): JSX.Elemen
       aria-label="General ledger detail"
       className="flex flex-col gap-3 border-t border-line pt-3 text-body"
     >
-      <h3 className="font-semibold">General ledger detail</h3>
+      <h3 className="font-medium">General ledger detail</h3>
       <p className="text-muted">
         Every transaction for the year, so your auditor can test them. It&apos;s checked against
         your trial balance.

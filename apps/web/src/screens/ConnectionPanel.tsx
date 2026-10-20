@@ -148,7 +148,7 @@ export function ConnectionPanel({
           ) : canConnect ? (
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="flex flex-col gap-2 rounded-md border border-line p-3">
-                <h3 className="font-semibold">Connect (fastest)</h3>
+                <h3 className="font-medium">Connect (fastest)</h3>
                 <p className="text-body text-muted">
                   Connect your accounting system so your auditor can retrieve records directly.
                 </p>
@@ -156,7 +156,7 @@ export function ConnectionPanel({
               </div>
               {canExport && (
                 <div className="flex flex-col gap-2 rounded-md border border-line p-3">
-                  <h3 className="font-semibold">Export instead</h3>
+                  <h3 className="font-medium">Export instead</h3>
                   <p className="text-body text-muted">
                     Export your trial balance from your accounting system and upload the file. No
                     connection needed.

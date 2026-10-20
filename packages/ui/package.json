@@ -20,6 +20,7 @@
     "./utilities.css": "./src/utilities.css",
     "./contrast.css": "./src/contrast.css",
     "./tokens": "./src/tokens/tokens.ts",
+    "./eslint-design-rules": "./eslint-design-rules.js",
     "./tokens/*": "./src/tokens/*",
     "./fonts/*": "./src/fonts/*",
     "./specimens": "./src/specimens/index.ts"

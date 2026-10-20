@@ -25,7 +25,7 @@ export function Dialog({
         <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger>
       )}
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 bg-[rgba(43,31,23,.22)]" />
+        <DialogPrimitive.Overlay className="fixed inset-0 bg-espresso/22" />
         <DialogPrimitive.Content className="fixed top-1/2 left-1/2 flex max-h-[calc(100vh-4rem)] w-[calc(100%-2rem)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-dialog bg-shell shadow-modal">
           <div className="relative flex h-[52px] shrink-0 items-center justify-center border-b-[0.5px] border-hair bg-card px-12">
             <DialogPrimitive.Title className="truncate text-[14.5px] font-medium tracking-[-0.012em]">

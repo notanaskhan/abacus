@@ -79,7 +79,7 @@ export function RollForwardReview({
     <div className="flex flex-col gap-4 text-body">
       <div className="flex flex-col gap-1">
         <p>
-          Rolling forward from <span className="font-semibold">{prior.name}</span> (
+          Rolling forward from <span className="font-medium">{prior.name}</span> (
           {prior.fiscal_period_start} – {prior.fiscal_period_end}).
         </p>
         {proposal.others.length > 0 && (
@@ -104,7 +104,7 @@ export function RollForwardReview({
       </div>
 
       <section aria-label="Team" className="flex flex-col gap-2">
-        <h3 className="font-semibold">Team</h3>
+        <h3 className="font-medium">Team</h3>
         <p className="text-meta text-muted">You join as engagement partner.</p>
         {proposal.team.length === 0 && <p className="text-muted">No one else from last year.</p>}
         <ul className="flex flex-col gap-1">
@@ -156,7 +156,7 @@ export function RollForwardReview({
       </section>
 
       <section aria-label="Template" className="flex flex-col gap-1">
-        <h3 className="font-semibold">Template</h3>
+        <h3 className="font-medium">Template</h3>
         {proposal.template === null ? (
           <p className="text-muted">Last year&apos;s engagement had no template.</p>
         ) : (
@@ -169,7 +169,7 @@ export function RollForwardReview({
       </section>
 
       <section aria-label="Request list" className="flex flex-col gap-2">
-        <h3 className="font-semibold">Request list</h3>
+        <h3 className="font-medium">Request list</h3>
         <p className="text-muted">
           {counts.used} of {counts.used + counts.not_used} used last year, {counts.not_used} not
           used, {counts.new_in_template} new in the template.

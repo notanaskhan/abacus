@@ -55,7 +55,7 @@ export function Drawer({
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-[rgba(43,31,23,.12)]" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-espresso/12" />
         <DialogPrimitive.Content
           className={cn(
             "fixed top-2.5 right-2.5 bottom-2.5 z-50 flex max-w-[calc(100vw-20px)] flex-col overflow-hidden rounded-dialog bg-shell shadow-modal",
@@ -100,7 +100,7 @@ export function Sheet({
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-[rgba(43,31,23,.28)]" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-espresso/28" />
         <DialogPrimitive.Content className="fixed top-[52px] bottom-0 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-[500px] -translate-x-1/2 flex-col overflow-hidden rounded-t-[16px] bg-shell shadow-modal data-[state=open]:animate-[sheet-in_260ms_var(--ease-out)]">
           <div className="relative flex h-[56px] shrink-0 items-center justify-center border-b-[0.5px] border-hair bg-card px-14">
             <span className="absolute top-1/2 left-3 -translate-y-1/2">

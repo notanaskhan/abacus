@@ -73,7 +73,7 @@ function Shell({ children }: { children: ReactNode }): JSX.Element {
   return (
     <main className="flex min-h-screen items-center justify-center bg-ground p-6">
       <Card className="flex w-full max-w-md flex-col gap-3 p-6">
-        <p className="font-display text-pane font-semibold">Abacus</p>
+        <p className="font-display text-pane font-medium">Abacus</p>
         {children}
       </Card>
     </main>

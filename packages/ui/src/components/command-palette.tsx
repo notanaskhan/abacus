@@ -61,7 +61,7 @@ export function CommandPalette({
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[rgba(43,31,23,.22)]" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-espresso/22" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
           className="fixed top-[88px] left-1/2 z-50 flex max-h-[calc(100vh-120px)] w-[calc(100%-2rem)] max-w-[640px] -translate-x-1/2 flex-col overflow-hidden rounded-dialog bg-card shadow-modal"

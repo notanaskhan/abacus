@@ -404,7 +404,7 @@ function CreateEngagement({
               really is a different client,{" "}
               <button
                 type="button"
-                className="font-semibold text-accent hover:underline"
+                className="font-medium text-accent hover:underline"
                 onClick={() => {
                   setConfirmNew(true);
                 }}
@@ -424,7 +424,7 @@ function CreateEngagement({
               {created.reason} You can apply it from the engagement&apos;s setup.{" "}
               <button
                 type="button"
-                className="font-semibold text-accent hover:underline"
+                className="font-medium text-accent hover:underline"
                 onClick={() => {
                   openEngagement(created.id);
                 }}
@@ -544,7 +544,7 @@ function ClientPicker({
     return (
       <div className="flex items-center justify-between rounded-[var(--radius-control)] border border-line bg-sunken px-3 py-2 text-body">
         <span>
-          Client: <span className="font-semibold">{picked.name}</span>
+          Client: <span className="font-medium">{picked.name}</span>
         </span>
         <Button
           size="sm"

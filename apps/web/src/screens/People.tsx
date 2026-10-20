@@ -106,7 +106,7 @@ function Team({ engagementId }: { engagementId: string }): JSX.Element {
             <tbody>
               {team.data.map((m) => (
                 <tr key={m.user_id}>
-                  <Td className="font-semibold">{m.display_name}</Td>
+                  <Td className="font-medium">{m.display_name}</Td>
                   <Td>
                     {mayHandle(m.role) ? (
                       <label className="sr-only" htmlFor={`role-${m.user_id}`}>

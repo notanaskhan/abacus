@@ -91,7 +91,7 @@ export function Toaster(): JSX.Element {
             <button
               type="button"
               onClick={t.undo}
-              className="h-[26px] rounded-full bg-[rgba(255,255,255,.14)] px-3 text-[12.5px] hover:bg-[rgba(255,255,255,.22)]"
+              className="h-[26px] rounded-full bg-on-dark/14 px-3 text-[12.5px] hover:bg-on-dark/22"
             >
               Undo
             </button>

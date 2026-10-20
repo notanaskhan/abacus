@@ -104,7 +104,7 @@ export function NoFirm(): JSX.Element {
       <Alert title="You're not part of a firm yet">
         If your firm already uses Abacus, ask its administrator to invite you. Setting up a new
         firm?{" "}
-        <Link to="/signup" className="font-semibold text-accent hover:underline">
+        <Link to="/signup" className="font-medium text-accent hover:underline">
           Set up your firm
         </Link>
       </Alert>

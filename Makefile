@@ -73,6 +73,7 @@ check-fast:
 	pnpm -C apps/web exec tsc --noEmit && pnpm -C apps/web exec eslint . && pnpm -C apps/web exec prettier --check .
 	pnpm -C packages/ui exec tsc --noEmit && pnpm -C packages/ui exec eslint . && pnpm -C packages/ui exec prettier --check .
 	pnpm -C apps/web exec vite build --logLevel warn
+	pnpm -C apps/web exec node scripts/check-compiled-css.js dist
 
 # Generated files match their sources; never hand-edit one (F-01-T06). The API client's drift
 # check stays in ci-contracts, which needs the OpenAPI export.

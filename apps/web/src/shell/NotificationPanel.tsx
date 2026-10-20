@@ -79,14 +79,14 @@ export function NotificationPanel({
                 />
                 <div className="flex flex-1 flex-col gap-1 text-body">
                   {href === null ? (
-                    <span className={n.read ? "text-muted" : "font-semibold"}>{text}</span>
+                    <span className={n.read ? "text-muted" : "font-medium"}>{text}</span>
                   ) : (
                     <Link
                       to={href.to}
                       {...(href.hash !== undefined ? { hash: href.hash } : {})}
                       onClick={onClose}
                       className={
-                        n.read ? "text-muted hover:underline" : "font-semibold hover:underline"
+                        n.read ? "text-muted hover:underline" : "font-medium hover:underline"
                       }
                     >
                       {text}

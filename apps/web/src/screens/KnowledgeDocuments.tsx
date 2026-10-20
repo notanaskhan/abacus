@@ -96,7 +96,7 @@ export function KnowledgeDocuments(): JSX.Element {
                 const status = STATUS[d.status] ?? { label: d.status, tone: "neutral" as Tone };
                 return (
                   <tr key={d.id}>
-                    <Td className="font-semibold">{d.title}</Td>
+                    <Td className="font-medium">{d.title}</Td>
                     <Td>
                       <StatusPill tone={status.tone}>{status.label}</StatusPill>
                       {d.status === "failed" && d.failure_code !== null && (

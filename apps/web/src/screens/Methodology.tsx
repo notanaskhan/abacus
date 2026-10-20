@@ -71,7 +71,7 @@ export function Methodology(): JSX.Element {
                     <Link
                       to="/admin/methodology/$versionId"
                       params={{ versionId: t.version_id }}
-                      className="font-semibold text-accent hover:underline"
+                      className="font-medium text-accent hover:underline"
                     >
                       {t.template_name}
                     </Link>
@@ -144,7 +144,7 @@ function UploadPanel(): JSX.Element {
           />
         </div>
         <fieldset className="flex flex-col gap-1">
-          <legend className="text-body font-semibold">Used for (new templates)</legend>
+          <legend className="text-body font-medium">Used for (new templates)</legend>
           <div className="flex flex-wrap gap-3 text-body">
             {ENGAGEMENT_TYPES.map(([value, label]) => (
               <label key={value} className="flex items-center gap-1">
@@ -171,7 +171,7 @@ function UploadPanel(): JSX.Element {
       {upload.isSuccess && <p className="text-body text-ok">New version uploaded.</p>}
       {problems !== null && problems.length > 0 && (
         <div role="alert" className="flex flex-col gap-2">
-          <p className="text-body font-semibold text-danger">
+          <p className="text-body font-medium text-danger">
             Nothing was saved. Fix{" "}
             {problems.length === 1 ? "this problem" : `these ${String(problems.length)} problems`}{" "}
             and upload again.

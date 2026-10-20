@@ -113,7 +113,7 @@ export function Contacts({ engagementId }: { engagementId: string }): JSX.Elemen
             <tbody>
               {contacts.data.map((c) => (
                 <tr key={`${c.kind}-${c.id}`}>
-                  <Td className="font-semibold">{c.email ?? "Client member"}</Td>
+                  <Td className="font-medium">{c.email ?? "Client member"}</Td>
                   <Td>{ROLE[c.role] ?? c.role}</Td>
                   <Td>
                     {c.kind === "member" ? (
@@ -271,7 +271,7 @@ function InviteDialog({
           />
         </div>
         <fieldset className="flex flex-col gap-2">
-          <legend className="text-body font-semibold">Role</legend>
+          <legend className="text-body font-medium">Role</legend>
           <label className="flex items-center gap-2 text-body">
             <input
               type="radio"

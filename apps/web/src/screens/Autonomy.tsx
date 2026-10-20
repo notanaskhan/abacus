@@ -99,7 +99,7 @@ export function Autonomy({ canSet }: { canSet: boolean }): JSX.Element {
               className="mt-1"
             />
             <span className="flex flex-col gap-0.5">
-              <span className="flex items-center gap-2 font-semibold">
+              <span className="flex items-center gap-2 font-medium">
                 {l.name}
                 {current.data.level === l.level && <StatusPill tone="success">Current</StatusPill>}
                 {!l.available && (

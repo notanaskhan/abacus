@@ -43,7 +43,7 @@ export function MapView({ engagementId }: { engagementId: string }): JSX.Element
           )}
           {noRequests.length > 0 && (
             <p className="text-body">
-              <span className="font-semibold">Areas with accounts but no requests: </span>
+              <span className="font-medium">Areas with accounts but no requests: </span>
               {noRequests.join(", ")}
             </p>
           )}
@@ -61,7 +61,7 @@ export function MapView({ engagementId }: { engagementId: string }): JSX.Element
         >
           <div className="grid gap-4 md:grid-cols-2">
             <div className="flex flex-col gap-1">
-              <h3 className="font-sans text-meta font-semibold tracking-wide text-muted uppercase">
+              <h3 className="font-sans text-meta font-medium tracking-wide text-muted uppercase">
                 Accounts
               </h3>
               {area.accounts.length === 0 ? (
@@ -71,7 +71,7 @@ export function MapView({ engagementId }: { engagementId: string }): JSX.Element
               )}
             </div>
             <div className="flex flex-col gap-1">
-              <h3 className="font-sans text-meta font-semibold tracking-wide text-muted uppercase">
+              <h3 className="font-sans text-meta font-medium tracking-wide text-muted uppercase">
                 Requests
               </h3>
               {area.items.length === 0 ? (

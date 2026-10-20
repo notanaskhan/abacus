@@ -198,9 +198,9 @@ function ImportDialog({
       description="Your own spreadsheet: pick the columns, check the preview, then import. Duplicates are skipped."
     >
       <ol aria-label="Steps" className="mb-3 flex gap-3 text-meta text-muted">
-        <li className={step === "file" ? "font-semibold text-ink" : ""}>1 · File</li>
-        <li className={step === "map" ? "font-semibold text-ink" : ""}>2 · Columns and preview</li>
-        <li className={step === "done" ? "font-semibold text-ink" : ""}>3 · Done</li>
+        <li className={step === "file" ? "font-medium text-ink" : ""}>1 · File</li>
+        <li className={step === "map" ? "font-medium text-ink" : ""}>2 · Columns and preview</li>
+        <li className={step === "done" ? "font-medium text-ink" : ""}>3 · Done</li>
       </ol>
 
       {step === "file" && (
@@ -343,7 +343,7 @@ function ImportDialog({
         <div className="flex flex-col gap-3">
           <dl className="grid grid-cols-2 gap-2 text-body">
             <dt className="text-muted">Created</dt>
-            <dd className="font-semibold tabular-nums">{counts.created}</dd>
+            <dd className="font-medium tabular-nums">{counts.created}</dd>
             <dt className="text-muted">Duplicates skipped</dt>
             <dd className="tabular-nums">{counts.duplicates}</dd>
             <dt className="text-muted">Empty rows skipped</dt>
@@ -359,9 +359,7 @@ function ImportDialog({
 
       {problems !== null && problems.length > 0 && (
         <div role="alert" className="mt-3 flex flex-col gap-1 text-body">
-          <p className="font-semibold text-danger">
-            Nothing was imported. Fix these and try again:
-          </p>
+          <p className="font-medium text-danger">Nothing was imported. Fix these and try again:</p>
           <ul className="list-disc pl-5">
             {problems.map((p, index) => (
               <li key={`${p.where}-${String(index)}`}>

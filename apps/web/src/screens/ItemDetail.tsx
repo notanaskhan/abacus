@@ -428,7 +428,7 @@ function Screening({
       ) : (
         <div className="flex flex-col gap-2 text-body">
           <p>
-            <span className="font-semibold">{ACTION_LABEL[result.action] ?? result.action}</span> ·
+            <span className="font-medium">{ACTION_LABEL[result.action] ?? result.action}</span> ·
             confidence {confidencePercent(result.confidence)}
           </p>
           <AgentText text={result.rationale} />
@@ -466,7 +466,7 @@ function Screening({
           )}
           {result.unverified.length > 0 && (
             <div>
-              <p className="font-semibold">Claims without a verified source</p>
+              <p className="font-medium">Claims without a verified source</p>
               <ul className="list-disc pl-5">
                 {result.unverified.map((claim, index) => (
                   <li key={`${String(index)}-${claim}`}>

@@ -56,7 +56,7 @@ export function Spinner({ label }: { label: string }): JSX.Element {
         viewBox="0 0 16 16"
         className="size-3.5 animate-spin [animation-duration:820ms]"
       >
-        <circle cx="8" cy="8" r="6.25" fill="none" stroke="rgba(43,31,23,.14)" strokeWidth="1.5" />
+        <circle cx="8" cy="8" r="6.25" fill="none" className="stroke-rule" strokeWidth="1.5" />
         <circle
           cx="8"
           cy="8"

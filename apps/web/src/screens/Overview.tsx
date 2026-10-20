@@ -144,7 +144,7 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
                     const status = statusOf(item.status);
                     return (
                       <tr key={item.id}>
-                        <Td className="font-semibold">{item.description}</Td>
+                        <Td className="font-medium">{item.description}</Td>
                         <Td className="text-muted">{item.retrievability_tier ?? "—"}</Td>
                         <Td>
                           <StatusPill tone={status.tone}>{status.label}</StatusPill>
@@ -242,7 +242,7 @@ function GapRow({
       <Link
         to="/engagements/$engagementId/map"
         params={{ engagementId }}
-        className="font-semibold text-accent tabular-nums hover:underline"
+        className="font-medium text-accent tabular-nums hover:underline"
       >
         {count}
       </Link>
@@ -278,7 +278,7 @@ export function ApplyMethodology({ engagementId }: { engagementId: string }): JS
             apply.mutate({ path: { engagement_id: engagementId }, body: { version_id: version } });
         }}
       >
-        <label className="flex flex-col gap-1 text-body font-semibold">
+        <label className="flex flex-col gap-1 text-body font-medium">
           Methodology version
           <select
             value={version}

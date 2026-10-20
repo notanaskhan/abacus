@@ -116,7 +116,7 @@ function BudgetPanel({
       }
     >
       <p className="text-body">
-        <span className="text-dashboard font-semibold tabular-nums">{usd(spent)}</span>{" "}
+        <span className="text-dashboard font-medium tabular-nums">{usd(spent)}</span>{" "}
         <span className="text-muted">
           of {usd(hard)} · {state}
           {isDefault && " · default budget"}
@@ -225,7 +225,7 @@ function Metering(): JSX.Element {
         onClick={() => {
           setSort(key);
         }}
-        className="font-semibold hover:underline"
+        className="font-medium hover:underline"
       >
         {text}
       </button>
@@ -279,9 +279,9 @@ function Metering(): JSX.Element {
                 </tr>
               ))}
               <tr>
-                <Td className="font-semibold">Total</Td>
+                <Td className="font-medium">Total</Td>
                 <Td />
-                <Td className="text-right font-semibold tabular-nums">{usd(total)}</Td>
+                <Td className="text-right font-medium tabular-nums">{usd(total)}</Td>
               </tr>
             </tbody>
           </Table>
