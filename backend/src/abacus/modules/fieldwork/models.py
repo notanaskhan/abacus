@@ -238,3 +238,35 @@ class ReviewNoteEvent(Base):
     body: Mapped[str | None]
     by_user: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class Finding(Base):
+    """A finding on the engagement (SPEC-043; TASK-107). Insert-only."""
+
+    __tablename__ = "findings"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    procedure_id: Mapped[UUID | None]
+    selected_item_id: Mapped[UUID | None]
+    title: Mapped[str]
+    description: Mapped[str | None]
+    raised_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class Misstatement(Base):
+    """A misstatement on a finding (SPEC-043). Insert-only; the newest per finding counts."""
+
+    __tablename__ = "misstatements"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    finding_id: Mapped[UUID]
+    kind: Mapped[str]
+    amount: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    account_code: Mapped[str | None]
+    corrected: Mapped[bool]
+    recorded_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

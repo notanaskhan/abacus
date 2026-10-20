@@ -42,6 +42,7 @@ import { DefaultToSetup, Setup } from "./screens/Setup";
 import { Review } from "./screens/Review";
 import { SignInCallback } from "./screens/SignInCallback";
 import { Gallery } from "./gallery/Gallery";
+import { Findings } from "./screens/Findings";
 import { Signup } from "./screens/Signup";
 
 // Code-based routes (no file-router plugin): the firm workspace and the client portal (ADR-011).
@@ -171,6 +172,14 @@ const peopleRoute = createRoute({
   component: function PeoplePage(): JSX.Element {
     const { engagementId } = engagementRoute.useParams();
     return <People engagementId={engagementId} />;
+  },
+});
+const findingsRoute = createRoute({
+  getParentRoute: () => engagementRoute,
+  path: "/findings",
+  component: function FindingsPage(): JSX.Element {
+    const { engagementId } = engagementRoute.useParams();
+    return <Findings engagementId={engagementId} />;
   },
 });
 const fieldworkRoute = createRoute({
@@ -328,6 +337,7 @@ const routeTree = rootRoute.addChildren([
       peopleRoute,
       reviewRoute,
       fieldworkRoute,
+      findingsRoute,
     ]),
     knowledgeRoute,
     ...(import.meta.env.DEV ? [galleryRoute] : []),

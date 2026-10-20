@@ -35,6 +35,8 @@ import {
   approveMutation,
   flowOptions,
   notesOptions,
+  raiseFindingMutation,
+  findingsQueryKey,
   flowQueryKey,
   requestSelectionSupportMutation,
   signPreparedMutation,
@@ -55,6 +57,7 @@ import {
   Td,
   Th,
   type Tone,
+  toast,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
@@ -349,6 +352,14 @@ function EntryRow({
     });
   };
   const save = useMutation({ ...resultMutation(), onSuccess: refresh });
+  // SPEC-043 (TASK-107): an exception becomes a finding, prefilled from the row.
+  const raise = useMutation({
+    ...raiseFindingMutation(),
+    onSuccess: (data) => {
+      queryClient.setQueryData(findingsQueryKey({ path: { engagement_id: engagementId } }), data);
+      toast.show("Finding raised: see the Findings tab");
+    },
+  });
   const ask = useMutation({ ...requestSupportMutation(), onSuccess: refresh });
   return (
     <tr className={selected ? "bg-shell" : undefined}>
@@ -474,6 +485,26 @@ function EntryRow({
               >
                 {item.support_requested ? "Support requested" : "Ask the client for support"}
               </Button>
+              {item.result === "exception" && item.id != null && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={raise.isPending || raise.isSuccess}
+                  onClick={() => {
+                    raise.mutate({
+                      path: { engagement_id: engagementId },
+                      body: {
+                        title: `Exception: ${item.reference || item.posted_on}, ${money(item.amount)}`,
+                        description: item.note ?? null,
+                        procedure_id: procedureId,
+                        item_id: item.id ?? null,
+                      },
+                    });
+                  }}
+                >
+                  {raise.isSuccess ? "Finding raised" : "Raise finding"}
+                </Button>
+              )}
             </div>
             {(save.isError || ask.isError) && (
               <span className="text-xs text-danger">{said(save.error ?? ask.error)}</span>

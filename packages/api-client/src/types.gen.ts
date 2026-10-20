@@ -1765,6 +1765,63 @@ export type FileMatchOut = {
 };
 
 /**
+ * FindingIn
+ */
+export type FindingIn = {
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Item Id
+     */
+    item_id?: string | null;
+    /**
+     * Procedure Id
+     */
+    procedure_id?: string | null;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * FindingOut
+ */
+export type FindingOut = {
+    /**
+     * Description
+     */
+    description: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Item Id
+     */
+    item_id: string | null;
+    misstatement: MisstatementOut | null;
+    /**
+     * Procedure Id
+     */
+    procedure_id: string | null;
+    /**
+     * Raised At
+     */
+    raised_at: string;
+    /**
+     * Raised By Name
+     */
+    raised_by_name: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * FirmClientOut
  */
 export type FirmClientOut = {
@@ -2571,6 +2628,24 @@ export type JoinedOut = {
 };
 
 /**
+ * KindTotalOut
+ */
+export type KindTotalOut = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Total
+     */
+    total: string;
+};
+
+/**
  * KnowledgeDocumentIn
  */
 export type KnowledgeDocumentIn = {
@@ -2959,6 +3034,58 @@ export type MethodologyVersionOut = {
      */
     rules: Array<AccountRuleOut>;
     summary: TemplateVersionOut;
+};
+
+/**
+ * MisstatementIn
+ */
+export type MisstatementIn = {
+    /**
+     * Account Code
+     */
+    account_code?: string | null;
+    /**
+     * Amount
+     */
+    amount: number | string;
+    /**
+     * Corrected
+     */
+    corrected?: boolean;
+    /**
+     * Kind
+     */
+    kind: 'factual' | 'judgmental' | 'projected';
+};
+
+/**
+ * MisstatementOut
+ */
+export type MisstatementOut = {
+    /**
+     * Account Code
+     */
+    account_code: string | null;
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Corrected
+     */
+    corrected: boolean;
+    /**
+     * Kind
+     */
+    kind: 'factual' | 'judgmental' | 'projected';
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
+    /**
+     * Recorded By Name
+     */
+    recorded_by_name: string;
 };
 
 /**
@@ -4511,6 +4638,40 @@ export type SuggestionOut = {
      * Source
      */
     source?: 'matcher' | 'content' | 'file_name';
+};
+
+/**
+ * SummaryOut
+ */
+export type SummaryOut = {
+    /**
+     * By Kind
+     */
+    by_kind: Array<KindTotalOut>;
+    /**
+     * Materiality Set
+     */
+    materiality_set: boolean;
+    /**
+     * Overall
+     */
+    overall: string | null;
+    /**
+     * Performance
+     */
+    performance: string | null;
+    /**
+     * Position
+     */
+    position: 'below_performance' | 'at_or_above_performance' | 'at_or_above_overall' | 'unknown';
+    /**
+     * Total
+     */
+    total: string;
+    /**
+     * Trivial
+     */
+    trivial: string | null;
 };
 
 /**
@@ -7438,6 +7599,224 @@ export type SetAccountsResponses = {
 };
 
 export type SetAccountsResponse = SetAccountsResponses[keyof SetAccountsResponses];
+
+export type FindingsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/findings';
+};
+
+export type FindingsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type FindingsError = FindingsErrors[keyof FindingsErrors];
+
+export type FindingsResponses = {
+    /**
+     * Response Findings
+     *
+     * Successful Response
+     */
+    200: Array<FindingOut>;
+};
+
+export type FindingsResponse = FindingsResponses[keyof FindingsResponses];
+
+export type RaiseFindingData = {
+    body: FindingIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/findings';
+};
+
+export type RaiseFindingErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RaiseFindingError = RaiseFindingErrors[keyof RaiseFindingErrors];
+
+export type RaiseFindingResponses = {
+    /**
+     * Response Raise Finding
+     *
+     * Successful Response
+     */
+    201: Array<FindingOut>;
+};
+
+export type RaiseFindingResponse = RaiseFindingResponses[keyof RaiseFindingResponses];
+
+export type FindingsSummaryData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/findings/summary';
+};
+
+export type FindingsSummaryErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type FindingsSummaryError = FindingsSummaryErrors[keyof FindingsSummaryErrors];
+
+export type FindingsSummaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: SummaryOut;
+};
+
+export type FindingsSummaryResponse = FindingsSummaryResponses[keyof FindingsSummaryResponses];
+
+export type MisstatementData = {
+    body: MisstatementIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Finding Id
+         */
+        finding_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/findings/{finding_id}/misstatement';
+};
+
+export type MisstatementErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type MisstatementError = MisstatementErrors[keyof MisstatementErrors];
+
+export type MisstatementResponses = {
+    /**
+     * Response Misstatement
+     *
+     * Successful Response
+     */
+    201: Array<FindingOut>;
+};
+
+export type MisstatementResponse = MisstatementResponses[keyof MisstatementResponses];
 
 export type EngagementGraphData = {
     body?: never;
