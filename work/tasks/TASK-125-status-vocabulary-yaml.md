@@ -4,7 +4,7 @@ title: "F-03-T04 · Author docs/product/status-vocabulary.yaml from blueprint 3.
 spec: SPEC-047
 acceptance_criteria: [AC-5, AC-6, AC-7, AC-8]
 risk_zone: red
-status: todo
+status: in-progress
 epic: F-03
 plan_key: F-03-T04
 branch: task-125-status-vocabulary-yaml
@@ -71,6 +71,7 @@ cd backend && uv run python -m abacus_tools.quality.validate_docs
 Append-only. Newest at the bottom.
 
 - (none yet)
+- 2026-10-20 (SU-25): docs/product/status-vocabulary.yaml created: 56 objects, 290 codes (engagement 8, request 6 plus derived overdue, binder 5), a retired map, and all 144 handoff status words mapped (21 have no status home and say why). Where the app's label differs (e.g. request received shown as Uploaded) the blueprint label is kept and marked CONFLICT for F-05-T12. Codegen from this file is still to do here.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

@@ -4,7 +4,7 @@ title: "F-02-T04 · Glossary change-set PR (DEC-14, chapter 09 section 9.5): hea
 spec: SPEC-046
 acceptance_criteria: [AC-11, AC-12, AC-13, AC-14]
 risk_zone: red
-status: todo
+status: done
 epic: F-02
 plan_key: F-02-T04
 branch: task-118-glossary
@@ -69,6 +69,7 @@ cd backend && uv run python -m abacus_tools.quality.validate_docs
 Append-only. Newest at the bottom.
 
 - (none yet)
+- 2026-10-20 (SU-25): glossary change set applied: §9.5.1 header rules, 25 amended rows, reserved words, 105 additions in 26 module sections, the legacy rename and freeze table, copy-level bans, the Evidence board label (R-07), machine-readable Don't use cells. glossary_report.py prints the counts (150 terms, 101 Don't use entries). The §9.5.6 status bridge lives in the status registry.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

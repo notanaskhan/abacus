@@ -5,83 +5,355 @@
 > - Never introduce a synonym. If a concept isn't here, stop and propose an addition.
 > - "Code name" is the identifier to use in Python, TypeScript and SQL.
 
+## Rules
+
+1. **UI labels follow Accrued; code identifiers follow this glossary.** A screen may say "Binder", "Document", "Reminder", "Activity", "Deadlines", "Approvals" or "Integrations". Python, TypeScript, SQL, API paths and specs use the code names below. This is the addendum §3.3 vocabulary bridge, made binding.
+2. **The copy registry is the only place UI words live** (`apps/web/src/screens/<ID>/copy.ts`, keyed by screen ID). Lint rules L1–L11 check it. Firm-editable text (email templates, checklists, methodology) lives in the database.
+3. **The "Don't use" columns generate the identifier ban list** in `backend/src/abacus_tools/quality/banned_patterns.py` (rule L12), so the glossary and the linter cannot drift apart. A "Don't use" cell holds backtick-quoted identifiers or words, comma-separated, or "—". Any qualification (a compound that is allowed, a UI exemption) is written in the Meaning cell, never in the ban cell.
+4. A concept that is not here means: stop and propose an addition. This repo rule is unchanged.
+
+Every table of terms keeps the column order Term | Meaning | Code name | Don't use. `python3 -I backend/src/abacus_tools/quality/glossary_report.py` prints the term and ban counts per section.
+
 ## Organisations and identity
 
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
 | Abacus | Internal code namespace (packages, modules, database and infrastructure names). Never user-facing: the product is Accrued, and the portal shows the firm's name (ADR-133). | `abacus` | — |
-| Firm | An accounting or audit practice using the platform. The tenant. | `firm` (`tenant_id` on records) | company, org, account, customer |
-| User | A single global human identity with one login. | `user` | account, member, person |
-| Membership | A user's belonging to a firm, with roles. | `membership` | seat, firm_user |
-| Client | A firm's relationship with a company it serves. Owned by one firm. | `client` | customer, company, account |
-| Client entity | One legal company within a client. | `client_entity` | subsidiary, company, org |
-| Contact | A person at a client the firm communicates with. | `contact` | client_user, rep |
-| Actor | Whoever performs an action: `human`, `agent` or `system`. | `actor` (`actor.kind`) | user (when an agent acted), performer |
+| Firm | An accounting or audit practice using the platform. The tenant. | `firm` (`tenant_id` on records) | `company`, `org`, `account`, `customer` |
+| User | A single global human identity with one login. When an agent acted, the actor is not a user. | `user` | `account`, `member`, `person` |
+| Membership | A user's belonging to a firm, with roles. Adds `level`, `office_id`, `offshore` and `service_lines`. UI "46 of 46 seats" reads `plan_entitlements.seats`; `seat` stays banned in code. | `membership` | `seat`, `firm_user` |
+| Client | A firm's relationship with a business, household, plan sponsor, nonprofit or family (trust) group. It owns entities, contacts and relationships. Walls attach here. | `client` (`clients.kind`) | `customer`, `company`, `account` |
+| Client entity | One legal or tax person within a client: individual, joint-filing household unit, C or S corp, LLC, partnership, trust, estate, benefit plan or exempt organisation. Carries a sealed TIN. | `client_entity` (`entity_type`, `tin_sealed`, `tin_last4`) | `subsidiary`, `company`, `org` |
+| Contact | A person at a client the firm communicates with. May hold scoped portal access through a client access grant. Kinds: client person, third party, K-1 recipient, TCWG, component auditor, prospect. Use `contact` plus `client_access_grant`, not `client_user`. | `contact` (`contact_kind`) | `client_user`, `rep` |
+| Actor | Whoever performs an action: `human`, `agent`, `system`, plus `support` (already in code), `policy` (dormant, P-08) and the reserved `api_client`, `delegated_user`, `link_principal`. Agent work is attributed "‹person› via Agent"; policy work "Policy: ‹name vN›". Never name "Accrued Agent" as the actor of an approval. Never record `user` when an agent acted. | `actor` (`actor.kind`) | `performer` |
 
 ## Engagements
 
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
-| Engagement | One job for one client and one fiscal period, e.g. the FY2026 audit. Has a type: `audit`, later `tax`, `cas`. | `engagement` | project, job, audit (as an entity name) |
-| Engagement member | A user's role on a specific engagement. | `engagement_member` | team_member, assignee |
-| Fiscal period | The span of time an engagement covers. | `fiscal_period` | year, period_range |
-| Audit area | A section of the audit evidence belongs to, e.g. cash, receivables. | `audit_area` | category, section, folder |
-| Milestone | A key date in an engagement, e.g. fieldwork start. | `milestone` | deadline, phase |
-| Archived | Locked state after completion; nothing may change. | `archived` | closed, finished, done |
+| Engagement | The contract for one service and one period: letter, team, budget and gates G1–G3. Holds one or more **work items**. `service_line` + `type` (`fs_audit`, `ebp_audit`, `review`, `compilation`, `preparation`, `agreed_upon_procedures`, `soc1`, `soc2`, `readiness`, `internal_audit`, `tax_compliance`, `cas_monthly_close`, `notice_response`, `advisory`). `audit` is never an entity name or a type value. | `engagement` | `project`, `job`, `audit` |
+| Engagement member | A user's role on a specific engagement, plus roles `eqr_reviewer`, `specialist` and `client_service`. The repo role `reviewer` is kept as the read-only QC role (Q-06). Distinct from a **work-item assignment**, which records a function. | `engagement_member` | `team_member`, `assignee` |
+| Fiscal period | The span of time an engagement covers. | `fiscal_period` | `year`, `period_range` |
+| Audit area | A section of the audit evidence belongs to, e.g. cash, receivables. | `audit_area` | `category`, `section`, `folder` |
+| Milestone | A key date in an engagement, e.g. fieldwork start. **Not** a phase and **not** a statutory due date: both are separate terms (see Phase and Deadlines). `deadline` and `phase` stay banned as synonyms of milestone. | `milestone` | — |
+| Archived | The engagement's end state: locked after completion, nothing may change. Work items lock separately (`archive_locked_at`; UI "Locked"). `closed` is allowed as a status of binders, notices and review notes, never to mean archived. | `archived` | `finished`, `done` |
 
 ## Requests and evidence
 
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
-| Request list | The full set of items requested for an engagement. UI may label it "PBC list". | `request_list` | pbc_list, checklist |
-| Request item | One thing asked for. UI may label it "PBC request". | `request_item` | pbc_item, ask, task, request (alone) |
-| Retrievability tier | Classification of a request item, A to E, by whether it can be retrieved or must be requested (SPEC-022): **A** a standard report the connected system produces as is; **B** derivable by code from retrieved ledger data; **C** a document attached to records in the connected system; **D** held by the client, not in the connected system; **E** from third parties or physical records. A to C are *retrievable*. | `retrievability_tier` | type, source_type |
-| Fulfilment | The link between a request item and an evidence item that satisfies it. | `fulfilment` | match, link, mapping |
-| Evidence item | The stable concept of a piece of evidence, e.g. "AR aging at 31 Dec". | `evidence_item` | document, file, artifact, attachment |
-| Evidence version | One immutable snapshot of an evidence item. | `evidence_version` | revision, copy, upload |
-| Provenance | Where an evidence version came from: source, method, time, period, entity, fingerprint. | `provenance` | metadata, origin |
-| Method | How evidence arrived: `retrieved`, `uploaded`, `emailed`. | `provenance.method` | channel, source (alone) |
-| Fingerprint | SHA-256 hash of a file's content. | `sha256` | checksum, hash (alone) |
-| Screening result | Output of a mechanical or AI check on an evidence version. | `screening_result` | validation, check_result |
-| Review decision | A human's judgement on an evidence version or request item. | `review_decision` | approval, sign_off |
-| Suggestion | A proposal created by an agent for a human to accept or reject. | `suggestion` | recommendation, proposal |
-| Follow-up | A message asking a contact for missing or corrected evidence. | `follow_up` | reminder, chaser, nudge |
+| Request list | One or more per work item. UI label **"Binder"** (firm) or "PBC list". Kinds: organizer, PBC, close intake, intake, third party. | `request_list` | `pbc_list`, `checklist` |
+| Request item | One thing asked for. UI label "Request" or "PBC request". Status codes follow the status bridge (SPEC-022, §3.3.1). Never a bare `request`. | `request_item` | `pbc_item`, `ask`, `task` |
+| Retrievability tier | Classification of a request item, A to E, by whether it can be retrieved or must be requested (SPEC-022): **A** a standard report the connected system produces as is; **B** derivable by code from retrieved ledger data; **C** a document attached to records in the connected system; **D** held by the client, not in the connected system; **E** from third parties or physical records. A to C are *retrievable*. | `retrievability_tier` | `type`, `source_type` |
+| Fulfilment | The link between a request item and an evidence item that satisfies it, plus `confidence` and `created_by_kind`. Agent fulfilments stay proposals until a person confirms. May cross engagements within one client (P-40). UI may say "Matched" or "Linked". | `fulfilment` | `match`, `link`, `mapping` |
+| Evidence item | The stable concept of a piece of evidence, e.g. "AR aging at 31 Dec". Client-scoped files are allowed (`engagement_id` nullable). UI says **"Document"** in Files and the portal and **"Evidence"** on audit and attest screens. `document` is allowed in code only in compounds (see Reserved words). | `evidence_item` | `document`, `file`, `artifact`, `attachment` |
+| Evidence version | One immutable snapshot of an evidence item. | `evidence_version` | `revision`, `copy`, `upload` |
+| Provenance | Where an evidence version came from: source, method, time, period, entity, fingerprint. | `provenance` | `metadata`, `origin` |
+| Method | How evidence arrived: `retrieved`, `uploaded`, `emailed`. Never a bare `source`. | `provenance.method` | `channel` |
+| Fingerprint | SHA-256 hash of a file's content. Never a bare `hash`. | `sha256` | `checksum` |
+| Screening result | Output of a mechanical or AI check on an evidence version, with two named checks and file flags (DEC-48). UI label "Evidence screening", never "Evidence check". | `screening_result` | `validation`, `check_result` |
+| Review decision | A human's judgement on an evidence version or request item (evidence and requests only). Distinct from `sign_off` (L1–L5 approval of reviewable content) and from `decision` (a role-reserved judgement on a decision card). `approval` and `sign_off` stay banned as synonyms of review decision. | `review_decision` | — |
+| Suggestion | One proposed value for one target, created by an agent for a human to accept or reject. UI may say "Agent recommendation" on decision cards and "Recommendations" on INS-03; `recommendation` stays banned in code. | `suggestion` | `recommendation` |
+| Follow-up | A message asking a contact for missing or corrected evidence. UI may keep "Remind…", "Reminder" (POR-20 template name) and "Request Chaser" (library agent). In code `reminder` stays banned; the legacy tables are renamed (see Legacy identifiers). | `follow_up` | `reminder`, `chaser`, `nudge` |
 
 ## Connections and ledger
 
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
-| Connection | A scoped, read-only, expiring link to a client entity's external system. | `connection` | integration, link, sync |
-| Sync run | One execution of pulling data through a connection. | `sync_run` | job, import, fetch |
-| Ledger snapshot | An immutable record of ledger data as pulled at a point in time. | `ledger_snapshot` | ledger_copy, export |
-| Change event | A detected change in ledger data after evidence was accepted. | `change_event` | diff, update |
-| Attachment | A file stored against a transaction in the client's ledger. Distinct from evidence. | `ledger_attachment` | document, file |
+| Connection | A scoped, read-only, expiring link to a client entity's external system. Client-authorised; several per entity are allowed. Still read-only: firm-installed apps are **integrations** (own term), and writes happen only through declared integration adapters. | `connection` | `link`, `sync` |
+| Sync run | One execution of pulling data through a connection. A tax-engine export or import is an `engine_sync_event`, not a sync run. | `sync_run` | `job`, `import`, `fetch` |
+| Ledger snapshot | An immutable record of ledger data as pulled at a point in time. | `ledger_snapshot` | `ledger_copy`, `export` |
+| Change event | A detected change in ledger data after evidence was accepted. | `change_event` | `diff`, `update` |
+| Attachment | A file stored against a transaction in the client's ledger. Distinct from evidence. | `ledger_attachment` | `document`, `file` |
 
 ## Sampling
 
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
-| Sample set | A selection of items chosen for testing. | `sample_set` | selection, sample_list |
-| Sample item | One selected item, usually a transaction. | `sample_item` | selection_row |
-| Support match | The result of searching for a sample item's support: `found`, `not_found`, `doubtful`. | `support_match` | match, lookup |
+| Sample set | A selection of items chosen for testing. Re-performable: carries `seed` and `algorithm_version` (P-57). | `sample_set` (`sample_sets`, `seed`, `algorithm_version`) | `selection`, `sample_list` |
+| Sample item | One selected item, usually a transaction. | `sample_item` | `selection_row` |
+| Support match | The result of searching for a sample item's support: `found`, `not_found`, `doubtful`. | `support_match` | `match`, `lookup` |
 
 ## Agents and platform
 
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
-| Agent run | One execution of an AI agent on a task, fully logged. | `agent_run` | ai_call, job, invocation |
-| Prompt | A versioned instruction template in the prompt registry, referenced as `name@vN`. | `prompt` | template, instruction |
-| Autonomy policy | Firm-configurable rules for which agent actions run automatically and which need approval. | `autonomy_policy` | permissions, ai_settings |
-| Audit event | An append-only record of an action. | `audit_event` | log, history, activity |
-| Domain event | A message announcing a state change to other modules. | `domain_event` | message, signal |
-| Outbox | The table where domain events wait to be published. | `outbox` | queue |
-| Unit of work | The helper that commits a state change with its audit and domain events atomically. | `uow` | transaction (alone) |
-| Kernel | The shared technical foundation every module uses: database sessions, tenant context, unit of work, outbox, encryption, config, logging. Not a module. (ADR-101) | `abacus.kernel` | platform (the twelfth module), core, common, shared, utils |
-| Message | A communication sent to or from a contact. | `message` | email, chat |
-| Notification | An alert to a user inside the platform. | `notification` | alert, ping |
+| Agent run | One execution of an AI agent on a task, fully logged. | `agent_run` | `ai_call`, `job`, `invocation` |
+| Prompt | A versioned instruction template in the prompt registry, referenced as `name@vN`. A user's saved request text is a **saved prompt**. Compounds such as `engagement_template`, `email_template`, `report_template` and `note_template` are allowed; `template` is banned only as a synonym of prompt. | `prompt` | `instruction` |
+| Autonomy policy | Firm-configurable rules for which agent actions run automatically and which need approval. Versioned per engagement type (`autonomy_policy_version`), with Auto mode. UI label "AI policy". | `autonomy_policy` | `permissions`, `ai_settings` |
+| Audit event | An append-only record of an action. UI may say "Activity" (tabs) and "Audit log" (ADM-07). In code `activity` stays banned; the legacy `agent_activity` is frozen (see Legacy identifiers). | `audit_event` | `log`, `history`, `activity` |
+| Domain event | A message announcing a state change to other modules. | `domain_event` | `message`, `signal` |
+| Outbox | The table where domain events wait to be published. | `outbox` | `queue` |
+| Unit of work | The helper that commits a state change with its audit and domain events atomically. Never a bare `transaction`. | `uow` | — |
+| Kernel | The shared technical foundation every module uses: database sessions, tenant context, unit of work, outbox, encryption, config, logging. Not a module. (ADR-101) Its sibling entry is Abacus, the internal code namespace. Not the `platform` module, which is separate. | `abacus.kernel` | `core`, `common`, `shared`, `utils` |
+| Message | A communication sent to a contact (outbound only). Adds `message_thread` (portal thread) and `inbound_message` (firm mailbox). | `message` | `email`, `chat` |
+| Notification | An alert to a user inside the platform. | `notification` | `alert`, `ping` |
+
+## New terms: identity
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Level | Eligibility on a membership: partner, manager, senior, staff, seasonal, admin. | `memberships.level` | — |
+| IT / Security | Firm role: the Qualified Individual. No client content without a break-glass session. | `security_admin` | — |
+| Client service | Engagement role: binders, invitations, envelopes, request status, intake triage (DEC-20). | `client_service` | — |
+| EQR reviewer | Engagement role: L5 and G6 only; never L1–L4 on that engagement. | `eqr_reviewer` | — |
+| Client access / role / scope | Portal rights. The role union is evaluated per target scope. | `client_access_grants` (`role`, `scope_kind`, `document_classes`) | `client_user` |
+| Ethical wall | A barrier that hides a client from named users. Added as a term at last (long-requested). | `ethical_walls` | — |
+| Approval grant | Single-use authority for a write after approval. | `approval_grants` | — |
+| Policy principal | The dormant actor kind for policy acceptances (P-08). | `actor_kind='policy'` | — |
+
+## New terms: organisations
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Office | A filter, never an access boundary (DEC-30). | `offices`, `office_id` | — |
+| Team | Firm grouping; offshore teams are allowed. | `teams` | — |
+| Relationship | A link between entities: spouse, owner_of %, trustee_of, beneficiary_of, sponsor_of, upper_tier_of, executor_of, gp_of, lp_of. | `entity_relationships` | — |
+| TIN | Masked everywhere; reveal is logged. | `tin_sealed`, `tin_last4`, action `tin.reveal` | — |
+| Consent (§7216) | One purpose per signed document. Purposes: `use`, `ai_disclosure`, `offshore_disclosure`, `third_party_disclosure`, `other_services_use`, `firm_defined`. | `consents`, `consent_signers` | — |
+| Authorization (2848/8821) | UI "On file / Not on file". | `tax_authorizations` | — |
+
+## New terms: engagements
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Service line | One of audit, tax, cas, advisory. UI "Departments" is never used. | `service_line` | `department`, `departments` |
+| Work-item function | A function recorded on a work-item assignment: preparer · first_level_reviewer · detail_reviewer · manager_reviewer · signer · eqr · close_preparer · close_reviewer · project_lead · specialist. | `work_item_assignments.function` | — |
+| Engagement contact | Facts used by conditions, not roles (approver_of_record, ske_designee, signing_officer, …). | `engagement_contacts` | — |
+| Work item | The unit of work under an engagement. Kind: assurance, tax_return, close, notice, advisory_project. | `work_items` | — |
+| Project (advisory) | An advisory work item. Never a bare `project` in code. | `advisory_projects` | `project` |
+| Gate | Gate providers G1–G9. Computed live, snapshot at transition. | `gates_met(...)` | — |
+| Multi-entity scope | Group audits and households (P-63). | `engagement_entities` | — |
+
+## New terms: requests
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Binder | One or more per work item (DEC-31). UI label for a request list. | `request_lists` (`kind`, `part`, `work_item_id`) | — |
+| Request category | The binder rail grouping. "category" is allowed only in this compound. | `request_categories` | — |
+| Delegation | Third-party request scope (POR-14). | `request_delegations` | — |
+| Questionnaire / question / answer | Organizers, POR-05, POR-11. | `questionnaires`, `questions`, `answers`, `transaction_questions` | — |
+| Evidence board | The legacy SPEC-022 request-item board (R-07). The component moves from `apps/web/src/screens/Board.tsx` to `apps/web/src/domain/requests/RequestBoard.tsx` (DS-S4); binder surfaces keep the handoff label "Requests". Not the ENG-10 Board (see New terms: workpapers). | `RequestBoard` | — |
+
+## New terms: evidence
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Citation | Ten kinds; quotes are re-read from the extraction layer. | `citations` (v2), `citation_events` | — |
+| Virtual document | A split of a combined PDF. | `evidence_versions.parent_version_id` + `page_range` | — |
+| Document class / classification | OCR and classification outputs. `document` appears in code only in these compounds. | `document_class`, `document_classifications`, `extracted_fields`, `evidence_pages` | — |
+| PII region / reveal | Server-masked renditions; logged reveal. | `pii_regions`, `pii_reveals` | — |
+| Annotation | SHL-08 viewer marks; the evidence itself is unchanged. | `annotations` | — |
+| Withdrawal | P-31. | `evidence_withdrawals` | — |
+| File folder | The Files tree. | `file_folders` | — |
+| Archive / addition | Seal manifests; post-lock additions. | `archives`, `archive_additions`, `audit_checkpoints` | — |
+| Retention policy / legal hold / destruction batch | P-14. | `retention_policies`, `legal_holds`, `hold_objects`, `destruction_batches` | — |
+| Capture session | POR-19 mobile capture. | `capture_sessions` | — |
+| Firm export | Dual control (DEC-72). | `firm_exports` | — |
+
+## New terms: communications
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Inbox (firm mailbox) | Distinct from the engagement drop zone `inbox_files`, which is kept. | `mailboxes`, `inbox_threads`, `inbound_messages`, `inbox_attachments`, `triage_decisions` | — |
+| Portal thread | POR-07. | `message_threads` | — |
+
+## New terms: signatures
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Envelope / signer | Provider `docusign` or `record`. | `envelopes`, `envelope_documents`, `envelope_signers`, `envelope_events`, `signature_evidence`, `envelope_policies` | — |
+
+## New terms: review
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Sign-off (L1–L5) | Approval of reviewable content. Insert-only; staleness computed. Distinct from `review_decision`. | `sign_offs` (`level`, `content_hash`) | — |
+| Review note | Blocks L2+; a comment never does. | `review_notes`, `review_note_events` | — |
+| Issue | One service for tax, close, audit and attest. | `issues`, `issue_events`, `issue_links` | — |
+| Decision card / decision | Reserved roles; rationale required; agents raise cards (X-13). | `decision_cards`, `decisions` | — |
+| Checkpoint | Returns and workbooks. | `checkpoints`, `checkpoint_diffs`, `checkpoint_decisions` | — |
+| Field history | SHL-09 provenance. | `field_value_versions` | — |
+| Approvals (Home queue) | A projection; "Approvals" is a UI label only. | `human_gates` (projection; `kind`) | — |
+
+## New terms: collaboration
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Comment / mention / thread | Append-only (P-42). Polymorphic anchors; thread events `resolved` and `reopened`. | `comments`, `comment_mentions` | — |
+| Presence | P-15. UNLOGGED table. | `presence_heartbeats` | — |
+| To-do | Assignable work. Never "task"; never assigned to the agent; never client-visible. PRJ-01 "Tasks" becomes "To-dos" (DF-22). | `todos` | `task` |
+
+## New terms: workpapers
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Board | The ENG-10 view (T19). A read model over `procedures`, `control_tests` and `close_procedures`; nothing new is stored. The SPEC-022 evidence board is a different concept (see Evidence board). | `board` | — |
+| Workpaper | Cell keys such as `EBP-04!C14` are stable citation targets. | `workpapers`, `workpaper_sections`, `workpaper_versions`, `workpaper_cells` | — |
+| Sheet / column / row / cell / view | 11 column types. | `sheets`, `sheet_columns`, `sheet_rows`, `sheet_cells`, `sheet_views` | — |
+| Agent column | Cells hold suggestions until adopted. | `agent_columns`, `agent_column_runs` | — |
+
+## New terms: methodology
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Engagement template / template version | Replaces the set-once methodology pin. | `engagement_templates`, `template_versions`, `engagement_template_links`, `template_rollouts` | — |
+| Program / step / procedure | A step is template content; a procedure is the engagement instance. | `programs`, `program_steps`, `procedures` | — |
+| Scoping rule | Evaluated by code. | `scoping_rules` | — |
+| Framework / criterion / control / mapping | Paraphrase unless licensed. | `frameworks`, `criteria`, `control_sets`, `controls`, `control_mappings`, `control_tests` | — |
+| Firm standard / threshold policy | Database content (BH-TAX-02, BH AJE thresholds v2). | `firm_standards`, `threshold_policies` (+ versions) | — |
+| Skill | Firm-written; eval-gated. | `agent_skills` | — |
+
+## New terms: adjustments
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Proposed entry (AJE, RJE, PAJE, TJE, elimination) | `client_declined` added (DEC-83). | `proposed_entries`, `proposed_entry_lines`, `proposed_entry_decisions` | — |
+| Approval batch | "Approved by RM under BH AJE thresholds v2". | `approval_batches` | — |
+| Posting batch | The first true external write. | `posting_batches`, `posting_results` | — |
+
+## New terms: assurance
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Audit (record) | Work-item kind `assurance`. | `assurance_work_items` | — |
+| Phase | Planning · Fieldwork · In review · Completion. Not a milestone. | `assurance_work_items.phase` | — |
+| Materiality | A decision card reserved to the EP. | `materiality_versions` | — |
+| Finding / misstatement / deficiency | One root, two children (DEC-83). | `findings`, `misstatements`, `deficiencies` | — |
+| Confirmation | Link-principal responses (POR-17). | `confirmations` | — |
+| Component / component auditor | POR-23. | `components`, `component_auditors`, `component_instructions`, `component_deliverables` | — |
+| Report / representation letter / governance communication | G7 and G8. | `audit_reports`, `report_releases`, `representation_letters`, `governance_communications` | — |
+
+## New terms: ledger
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Consolidation / elimination | Q-15. Eliminations are `proposed_entries(kind='elimination')`. | `consolidations`, `consolidation_entities` | — |
+
+## New terms: reporting
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Statement document / line item / linked value | Linked values are TB-linked · Formula · Override · Stale override. | `statement_documents`, `statement_versions`, `line_items`, `linked_values`, `tracked_changes` | — |
+
+## New terms: tax
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Return | `return` is a Python keyword. | `tax_returns` | — |
+| Return worksheet / field | Field-level provenance. | `return_worksheets`, `return_fields` | — |
+| Document approval (tax) | Distinct from `review_decision` (Q-09). Allowed `document` compound. | `document_approvals` | — |
+| K-1 package / activity | Drafts never reach the portal. | `k1_packages`, `k1_activities`, `k1_treatments` | — |
+| Transmission record | A human record; Accrued never transmits. | `transmissions`, `efile_acks` | — |
+
+## New terms: closes
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Close | A period close (`period` 'YYYY-MM'). Never "closed" for archived. | `closes` | — |
+| Close task (UI) | The UI label "task" is allowed only on close-run surfaces (CLS-02, CLS-09 "Task groups"). The code name is `close_procedures`; the component is `RunStepRow`. | `close_procedures` | `task` |
+| Close plan | Industry templates are database content. | `close_plans` (+ versions, rows) | — |
+| Reconciliation | Two-sided bank reconciliation. | `reconciliations`, `reconciling_items` | — |
+
+## New terms: notices
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Notice | Distinct from `notification`. | `notices` | — |
+
+## New terms: practice
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Deadlines | Statutory due dates; rules are platform reference data (DEC-76). Not a milestone. | `filing_deadlines`, `due_date_rules` | — |
+| Fee proposal (ENG-09) | Not a bare `proposal` (X-14). | `fee_proposals` | `proposal` |
+| Insight | Metadata and counts only (R9). | `insight_metrics` | — |
+
+## New terms: attest
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Attest exception / management response | ATT-06. | `attest_exceptions`, `management_responses` | — |
+| Action plan / IA issue | Overdue is derived. | `action_plans`, `ia_issues`, `auditable_units`, `ia_plans` | — |
+
+## New terms: integrations
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Integration (firm, personal) | A firm-installed app. May write only through a declared capability. Distinct from a connection. | `integration_catalog`, `firm_integrations`, `user_integrations`, `integration_events`, `integration_interest` | — |
+| Write capability | A protected registry entry (P-17). | `write-capabilities.yaml` entry | — |
+| Engine sync | Sync-chip states. Not a sync run. | `engine_sync_events` | — |
+
+## New terms: platform
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Reference set | Platform-published calendars (P-62). | `reference_sets` (+ versions) | — |
+| Agent-minute | Metering unit (P-28). | `agent_minute`; `plan_entitlements` | — |
+
+## New terms: kernel
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| TRI | Tax return information. Data-class tag, plus `phi` and `pii_kind`. Gated by `consent_7216`. | `tri` | — |
+
+## New terms: agents
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Agent (capability) | Code-declared agent spec (ADR-047). | `modules/agents/specs/*.yaml` | — |
+| Run step | One step of an agent run. Never "task". | `agent_run_steps` | `task` |
+| Plan / question / artifact / event | P-47. | `agent_plans`, `agent_questions`, `run_artifacts`, `run_events` | — |
+| Proposal (agent change set) | Groups suggestions (X-14). | `proposals`, `proposal_rows` | — |
+| Learned context | UI label; no "memory", "trained" or "learned" in copy. | `memory_items`, `corrections`, `agent_feedback` | — |
+| Review package | SHL-19. | `review_packages` | — |
+| Today | UI "Today". | `daily_briefings` | — |
+
+## New terms: workbench
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Library agent | Platform rows, published through PLT-01. | `library_agents`, `agent_installs` | — |
+| Agent (firm-made) | Only narrows a capability. | `agent_definitions` (+ versions) | — |
+| Session | A workbench session. Distinct from `support_session`. | `workbench_sessions`, `session_items` | — |
+| Saved prompt | A user's saved request text. Never a bare `prompt`. | `saved_prompts` | — |
+| Schedule / trigger | P-50, P-51. | `agent_schedules`, `triggers` | — |
+
+## Legacy identifiers: rename or freeze
+
+| Identifier | Problem | Action | When |
+|---|---|---|---|
+| `reminders`, `reminder_items` (migration 0040), `/reminders` routes, `reminders.py` | Violate the glossary's own `follow_up` rule | Rename to `follow_up_schedules` and `follow_up_items`; routes become `/follow-ups` | In the P-44 migration window (S1) |
+| `request_items.status` codes | The `received` inversion | Migrate (status code bridge, §9.5.6) | P-44 (S1) |
+| `engagements.type = 'audit'` | Collides with the reserved word and the new taxonomy | Rewrite to `fs_audit`, with no alias | P-04 migration (S1) |
+| `agent_runs.status` (`running`, `completed`, `escalated`, `failed`) | Four states vs 14 canonical ones | Migrate per §9.5.6 | P-47 (S1–S2) |
+| `connections.status` (`active`, `needs_attention`, `revoked`) | Display words differ | Keep the codes; map them in the registry (§9.5.6) | S2 |
+| `agent_activity` table, `activity.read` action | Use "activity" in code | **Freeze**: no new uses; a later rename to `run_events` | When P-47 lands |
+| `apps/web/src/screens/Board.tsx` (the SPEC-022 evidence board) | Collides with the ENG-10 Board | Move to `apps/web/src/domain/requests/RequestBoard.tsx`; UI label "Requests" | DS-S4 |
+| `RollForwardProposal*` classes | "proposal" | Leave as they are (internal); rename to `RollForwardPlan*` when next touched | Opportunistic |
+| `connections.provider` CHECK (`'fake','import'`), `sync_runs.dataset` CHECK (`'trial_balance'`), `sync_runs.request_item_id NOT NULL`, the `connections_one_live` index | Block real connectors, scheduled syncs and OneWorld | Widen the CHECKs; make `request_item_id` nullable; make the index unique per (entity, provider, external company) | P-17/P-63 (S2) |
+| Repo `reviewer` engagement role | Semantics undocumented | Keep as the read-only QC role; document it (Q-06) | Glossary PR |
+| `inbox_files` | Two different "inboxes" | Keep: the engagement drop zone. The firm mailbox uses `inbox_threads` | Glossary PR |
+
+## Copy-level bans (UI strings)
+
+Lint rules L1–L12 check these against the copy registry.
+
+| Never write | Instead | Rule |
+|---|---|---|
+| "Accrual" (as the product), "Arc", "ACME", "Accrual Agent", "Published by Accrual" | "Accrued". Exception: "Accrual" as an accounting method or close term, via the constant `ACCOUNTING_METHOD` | L1 |
+| "Approved by Accrued Agent", or any approval, sign-off, release, send or post attributed to the agent | "‹person› via Agent" for agent-authored work; "Policy: ‹name vN›" for policy acceptances | L5/L6 |
+| Persona names for the agent; Fieldguide terms (Field Board, AI Actions/✦, Prompt Library, Agent Knowledge, Today's Focus, Field Financials, Request Analysis, Tax Export, Departments) | Board, Agent column / Draft with agent, Saved prompts, Learned context, Today, Statements studio, Evidence screening, Hand off to tax, Service lines | D7, guardrails ch. 5 |
+| "task" for assignable work | "To-do" (hyphenated) | R6, L2 |
+| "memory", "trained", "learned" for learned context; "overwrite" for template updates; sparkle or wand glyphs | "Learned context"; "Update"; the atom glyph | AVOID lists |
+| "Evidence check" | "Evidence screening" | decision record naming map |
+| "n hidden by an ethical wall" | nothing (404 semantics) | DEC-43 |
+| "Accrued" in the portal or client emails (except the optional footer) | The firm's name | L7 white-label crawler |
+| Emoji, "!" in agent or product voice, "..." | "…" (U+2026) on dialog openers | L2/L3 |
+| Font weights 600/700 outside document renderers; blue; zebra rows | Geist 400/500; tokens only | L8 |
 
 ## Reserved words
 
-- **Task** means a development task in `work/tasks/` only. Never use it for product concepts.
-- **Audit** means the type of engagement or the profession. Use **audit event** for logged actions.
-- **Document** is not a domain term. Use **evidence item**, **ledger attachment** or **message**.
+- **Task** means a development task in `work/tasks/` only. Unchanged in code. The UI label "task" is allowed only on close-run surfaces (CLS-02, CLS-09 "Task groups", "3 tasks running at once"). The code names are `close_procedures` and `agent_run_steps`; the component is `RunStepRow`. Assignable work is a **to-do** (`todo`). PRJ-01 "Tasks" becomes "To-dos" (DF-22).
+- **Audit** means the type of engagement or the profession. Unchanged. Engagement types are `fs_audit` and `ebp_audit`; the work-item kind is `assurance`; the table is `assurance_work_items`. Use **audit event** for logged actions. The "Audits" nav item is unaffected.
+- **Document** is a UI label in Files and the portal. In code it may appear **only in compounds**: `document_class`, `document_classifications`, `document_approvals` (tax, Q-09), `statement_documents`, `generated_document`. Never as a bare `document` entity; use **evidence item**, **ledger attachment** or **message**.

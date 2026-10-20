@@ -1,0 +1,777 @@
+# status-vocabulary.yaml - the single source of status words for Accrued.
+#
+# Authority: ADR-138, DEC-08 (docs/plan/09-decisions-adrs.md). Sources: blueprint
+# 01-platform-blueprint.md section 3.3.1, addendum-waves-5-8 section 3.2, gap analysis
+# section 6.5, and the code bridge in 09-decisions-adrs.md section 9.5.6.
+# Backend StrEnums, OpenAPI enums and UI labels (packages/ui/src/status.ts) are GENERATED
+# from this file (F-03, F-05-T12). Do not hand-write a status word anywhere else.
+#
+# Rules
+#   - Labels are sentence case ("In review"). Title-case demo words are normalized.
+#   - The `match` pill variant is source tracing only and is never used for a status.
+#   - Overdue (and past due) is DERIVED from a due date. It is never stored (derived: true).
+#   - `label` is the firm-side display word. `context_labels` are the same code shown
+#     differently in a named place. `client_label` is the portal wording when it differs.
+#   - `variant` is a pill variant from blueprint 3.3.1: state, amber, green-tint, green,
+#     red-tint, red, neutral, muted, soon, outline, tag. `variant: null` means the
+#     blueprint gives only a disc/glyph (see `disc`) or gives no pill; none is invented.
+#   - `terminal: true` means no further transition in the normal flow.
+#   - Where the app's current label (packages/ui/src/status.tsx) differs from the
+#     blueprint, the blueprint label is kept and an "app label" comment names the app
+#     label so F-05-T12 can reconcile.
+#   - Placeholders in labels ({date}, {n}, {role}) are filled at render time.
+#
+# Handoff word count (sources/handoff/lib/status.js): 21 objects, 144 words. All 144 appear
+# under handoff_words below (see the count comment there).
+
+version: 1
+
+objects:
+
+  # ---- Engagement (domain P1 lifecycle; 8 states) ----
+  engagement:
+    source: "blueprint 3.3.1; 9.5.6"
+    codes:
+      prospect:   {label: "Prospect",  variant: neutral,   terminal: false, derived: false}
+      accepted:   {label: "Accepted",  variant: neutral,   terminal: false, derived: false}
+      declined:   {label: "Declined",  variant: soon,      terminal: true,  derived: false}
+      contracted: {label: "Letter signed", variant: green-tint, terminal: false, derived: false}   # canonical state is Contracted; display is "Letter signed"
+      active:     {label: "Active",    variant: state,     terminal: false, derived: false}   # app label: "Active" (success tone)
+      on_hold:    {label: "On hold",   variant: muted,     terminal: false, derived: false}
+      delivered:  {label: "Delivered", variant: green,     terminal: false, derived: false}
+      archived:   {label: "Archived",  variant: soon,      terminal: true,  derived: false, context_labels: {with_lock_icon: "Archived"}}   # app label: "Archived" (neutral tone)
+
+  # ---- Return (tax) ----
+  return:
+    source: "blueprint 3.3.1"
+    codes:
+      not_started:     {label: "Not started", variant: neutral, terminal: false, derived: false}
+      gathering:       {label: "Gathering",   variant: state,   terminal: false, derived: false}
+      preparing:       {label: "Preparing",   variant: state,   terminal: false, derived: false, context_labels: {subbar_1040_1041: "Draft", subbar_entity_returns: "Working"}}   # Working = 1065/1120-S/1120/990 while the Agent tab builds the workbook
+      prepared:        {label: "Prepared",    variant: neutral, terminal: false, derived: false, context_variants: {subbar: state}}
+      in_review:       {label: "In review",   variant: state,   terminal: false, derived: false, context_labels: {subbar_rail_rows: "In review · {level}"}}   # level: Detail, Manager, Partner
+      action_required: {label: "Action required", variant: red-tint, terminal: false, derived: false, context_labels: {home_and_tax_tiles: "Issues"}}
+      approved:        {label: "Approved",    variant: green-tint, terminal: false, derived: false}
+      awaiting_signature: {label: "Awaiting signature", variant: amber, terminal: false, derived: false}
+      filed:           {label: "Filed",       variant: green-tint, terminal: false, derived: false}   # transmitted, acknowledgement pending
+      accepted:        {label: "Accepted",    variant: green,  terminal: true,  derived: false}
+      rejected:        {label: "Rejected",    variant: red-tint, terminal: false, derived: false}
+      fixing:          {label: "Fixing",      variant: state,  terminal: false, derived: false}
+
+  return_flag:   # side flags on a return, not part of the main flow
+    source: "blueprint 3.3.1 (Return side flags)"
+    codes:
+      extended:   {label: "Extended", variant: tag,   terminal: false, derived: false, context_labels: {tag: "Extended · {date}"}}
+      on_hold:    {label: "On hold",  variant: muted, terminal: false, derived: false}
+      superseded: {label: "Superseded", variant: soon, terminal: true,  derived: false}   # shown struck through
+      amended:    {label: "Amended",  variant: tag,   terminal: false, derived: false}
+
+  return_sync_chip:   # every state is the same white chip with a leading glyph; no green-tint fill
+    source: "blueprint 3.3.1; TAX-09"
+    codes:
+      not_yet_exported:      {label: "Not yet exported", variant: outline, disc: refresh_amber, terminal: false, derived: false}
+      ready_for_export:      {label: "Ready for export", variant: outline, disc: refresh_amber, terminal: false, derived: false, context_labels: {tile: "Ready"}}
+      exporting:             {label: "Exporting…", variant: outline, disc: spinner, terminal: false, derived: false}
+      synced:                {label: "Synced {date}", variant: outline, disc: check_olive, terminal: false, derived: false}   # e.g. "Synced Sep 10"; the older two-word completion label is retired
+      out_of_sync:           {label: "Out of sync", variant: outline, disc: triangle_amber, terminal: false, derived: false}
+      import_pending_approval: {label: "Import pending approval", variant: outline, disc: dot_amber, terminal: false, derived: false}
+      failed:                {label: "Export failed", variant: outline, disc: x_brick, terminal: false, derived: false}
+
+  k1_package:
+    source: "blueprint 3.3.1; TXP-12"
+    codes:
+      not_prepared: {label: "Not prepared", variant: neutral, terminal: false, derived: false, client_label: "Not released yet"}
+      draft:        {label: "Draft K-1 · pre-release", variant: amber, terminal: false, derived: false, client_label: "Not released yet"}   # sub-line "final pending {entity} approval"; internal handoff only, never on the portal; portal adds "Expected by {date}"
+      released:     {label: "Released {date}", variant: green-tint, terminal: false, derived: false}
+      viewed:       {label: "Viewed",     variant: green-tint, terminal: false, derived: false}
+      downloaded:   {label: "Downloaded", variant: green-tint, terminal: false, derived: false}
+      bounced:      {label: "Bounced",    variant: red-tint,   terminal: false, derived: false}
+      superseded:   {label: "Superseded (amended K-1)", variant: soon, terminal: true, derived: false}
+
+  # ---- Audit ----
+  audit_engagement:   # record card (AUD-01)
+    source: "blueprint 3.3.1"
+    codes:
+      planning:        {label: "Planning",   variant: state, terminal: false, derived: false}
+      fieldwork:       {label: "Fieldwork",  variant: state, terminal: false, derived: false}
+      in_review:       {label: "In review",  variant: state, terminal: false, derived: false}
+      completion:      {label: "Completion", variant: state, terminal: false, derived: false}
+      ready_to_release: {label: "Ready to release", variant: green-tint, terminal: false, derived: false}
+      released:        {label: "Released {date}", variant: green, terminal: false, derived: false}
+      archiving:       {label: "Archive in {days} days", variant: muted, disc: clock, terminal: false, derived: false}
+      archived:        {label: "Archived", variant: soon, disc: lock, terminal: true, derived: false}
+      processing:      {label: "Processing", variant: state, terminal: false, derived: true}   # transient run badge, replaces the phase pill while a run executes; not stored
+
+  audit_section:   # section / workpaper rail row
+    source: "blueprint 3.3.1"
+    codes:
+      not_started:        {label: "Not started", variant: null, disc: ring, terminal: false, derived: false}
+      queued:             {label: "Queued", variant: null, disc: ring, terminal: false, derived: false}   # sub-line ink-3, projection of the active run
+      waiting_on_inputs:  {label: "Waiting on inputs", variant: null, disc: half, terminal: false, derived: false, context_labels: {pill_when_idle: "In progress", sub_line_when_run_active: "Waiting on inputs"}}
+      ready_to_run:       {label: "Ready", variant: null, disc: ring, terminal: false, derived: false}   # "Compliance Testing Ready"
+      in_progress:        {label: "In progress", variant: null, disc: half, terminal: false, derived: false}
+      running:            {label: "Running", variant: null, disc: spinner, terminal: false, derived: false, context_labels: {pill: "In progress"}}
+      blocked_on_decision: {label: "Blocked on a {role} decision", variant: null, disc: triangle_amber, terminal: false, derived: false, context_labels: {pill: "In progress"}}
+      draft_ready:        {label: "Ready", variant: null, disc: check_olive, terminal: false, derived: false, context_labels: {sub_line: "Complete · {time}"}}
+      prepared:           {label: "Prepared · {initials}", variant: null, disc: check_grey, terminal: false, derived: false}   # L1; app label (workpaper.ready): "Prepared"
+      reviewed:           {label: "Reviewed · {initials}", variant: null, disc: check_olive, terminal: false, derived: false}   # L2/L3; app label (workpaper.reviewed): "Reviewed"
+      signed_off:         {label: "Signed off", variant: null, disc: check_olive, terminal: false, derived: false}   # L4 partner approved
+      locked:             {label: "Locked", variant: soon, disc: lock, terminal: true, derived: false}
+      failed:             {label: "Failed — see run", variant: null, disc: x_brick, terminal: false, derived: false}
+      changed_after_signoff: {label: "Changed after sign-off", variant: null, disc: triangle_amber, terminal: false, derived: false}   # sign-off chip struck
+
+  program_board:   # audit programs on the Board
+    source: "addendum 3.2; gap 6.5"
+    codes:
+      not_started: {label: "Not started", variant: null, disc: ring,  terminal: false, derived: false}
+      in_progress: {label: "In progress", variant: null, disc: half,  terminal: false, derived: false}
+      in_review:   {label: "In review",   variant: null, disc: dot_amber, terminal: false, derived: false}
+      complete:    {label: "Complete",    variant: null, disc: check_olive, terminal: true, derived: false}
+
+  control_board:   # attest / internal-audit controls on the Board
+    source: "addendum 3.2; gap 6.5"
+    codes:
+      not_started:     {label: "Not started", variant: null, disc: ring, terminal: false, derived: false}
+      testing:         {label: "Testing",     variant: null, disc: spinner, terminal: false, derived: false}
+      pending:         {label: "Pending",     variant: muted, terminal: false, derived: false}
+      preparer_review: {label: "Preparer review", variant: null, disc: half, terminal: false, derived: false}
+      manager_review:  {label: "Manager review",  variant: null, disc: half, terminal: false, derived: false}
+      review_complete: {label: "Review complete", variant: null, disc: check_olive, terminal: true, derived: false}
+
+  card_overlay:   # overlay state on a Board card
+    source: "addendum 3.2"
+    codes:
+      needs_input:       {label: "Needs input",       variant: amber, terminal: false, derived: false}
+      waiting_on_client: {label: "Waiting on client", variant: muted, terminal: false, derived: false}
+      agent_running:     {label: "Agent running",     variant: null, disc: spinner, terminal: false, derived: false}   # ink-2 spinner
+      sent_back:         {label: "Sent back",         variant: null, disc: left_bar_brick, terminal: false, derived: false}   # brick 3px left bar; app label (decision.reject): "Sent back"
+
+  control_test_result:
+    source: "addendum 3.2; gap 6.5"
+    codes:
+      not_tested:         {label: "Not tested", variant: null, disc: ring, terminal: false, derived: false}   # app label (result.not_tested): "Not tested"
+      no_exceptions_noted: {label: "No exceptions noted", variant: null, disc: check_olive, terminal: false, derived: false}   # app label (result.supported): "Supported"
+      exceptions_noted:   {label: "Exceptions noted", variant: red-tint, terminal: false, derived: false}   # app label (result.exception): "Exception"
+      not_applicable:     {label: "Not applicable", variant: muted, terminal: true, derived: false}
+
+  attest_exception:
+    source: "addendum 3.2"
+    codes:
+      noted:             {label: "Noted",             variant: red-tint, terminal: false, derived: false}
+      response_received: {label: "Response received", variant: state,    terminal: false, derived: false}
+      evaluated:         {label: "Evaluated",         variant: green-tint, terminal: true, derived: false}
+
+  deficiency:   # AU-C 265 workflow
+    source: "blueprint 3.3.1"
+    codes:
+      exception_for_resolution: {label: "Exception for resolution", variant: amber, terminal: false, derived: false}
+      proposed:    {label: "Proposed",    variant: state,  terminal: false, derived: false}
+      concluded:   {label: "Concluded",   variant: neutral, terminal: false, derived: false}
+      communicated: {label: "Communicated", variant: green-tint, terminal: true, derived: false}
+
+  deficiency_severity:
+    source: "blueprint 3.3.1"
+    codes:
+      deficiency:             {label: "Deficiency", variant: red-tint, terminal: false, derived: false}
+      significant_deficiency: {label: "Significant deficiency", variant: red, terminal: false, derived: false}
+      material_weakness:      {label: "Material weakness", variant: red, emphasis: bold, terminal: false, derived: false}   # Accrued addition; label bold
+
+  misstatement:   # AU-C 450
+    source: "blueprint 3.3.1"
+    codes:
+      candidate:         {label: "Candidate", variant: state, terminal: false, derived: false}
+      confirmed:         {label: "Confirmed", variant: neutral, terminal: false, derived: false}
+      below_ct:          {label: "Below CT", variant: muted, terminal: false, derived: false}
+      proposed_to_client: {label: "Proposed to client", variant: amber, terminal: false, derived: false}
+      booked:            {label: "Booked", variant: green, terminal: true, derived: false}
+      passed_on_sum:     {label: "Passed on SUM", variant: neutral, terminal: true, derived: false}
+
+  misstatement_type:   # type tag beside a confirmed misstatement; a category, never a state
+    source: "blueprint 3.3.1"
+    codes:
+      factual:    {label: "Factual",    variant: tag, terminal: false, derived: false}
+      judgmental: {label: "Judgmental", variant: tag, terminal: false, derived: false}
+      projected:  {label: "Projected",  variant: tag, terminal: false, derived: false}
+
+  ia_issue_rating:
+    source: "addendum 3.2"
+    codes:
+      high:   {label: "High",   variant: red,     terminal: false, derived: false}
+      medium: {label: "Medium", variant: amber,   terminal: false, derived: false}
+      low:    {label: "Low",    variant: neutral, terminal: false, derived: false}
+
+  action_plan:
+    source: "addendum 3.2; gap 6.5"
+    codes:
+      open:        {label: "Open",        variant: neutral,    terminal: false, derived: false}
+      in_progress: {label: "In progress", variant: state,      terminal: false, derived: false}
+      implemented: {label: "Implemented", variant: green-tint, terminal: false, derived: false}
+      validated:   {label: "Validated",   variant: green,      terminal: true,  derived: false}
+      overdue:     {label: "Overdue",     variant: red-tint,   terminal: false, derived: true}
+
+  # ---- Close ----
+  close:
+    source: "blueprint 3.3.1"
+    codes:
+      not_started: {label: "Not started", variant: neutral, terminal: false, derived: false}
+      in_progress: {label: "In progress", variant: state,   terminal: false, derived: false}
+      in_review:   {label: "In review",   variant: state,   terminal: false, derived: false}
+      approved:    {label: "Approved",    variant: green-tint, terminal: false, derived: false}
+      delivered:   {label: "Delivered",   variant: green,   terminal: false, derived: false}
+      locked:      {label: "Locked",      variant: soon,    terminal: true,  derived: false}
+      past_due:    {label: "{n} days past due", variant: null, terminal: false, derived: true}   # derived chip; variant not specified in 3.3.1
+
+  close_task:   # close task / agent task row
+    source: "blueprint 3.3.1"
+    codes:
+      queued:          {label: "Queued",          variant: null, disc: ring, terminal: false, derived: false}
+      running:         {label: "Running",         variant: null, disc: spinner, terminal: false, derived: false}
+      needs_attention: {label: "Needs attention", variant: null, disc: triangle_amber, terminal: false, derived: false}
+      done:            {label: "Done",            variant: null, disc: check_olive, terminal: true, derived: false}
+      failed:          {label: "Failed",          variant: null, disc: x_brick, terminal: false, derived: false}
+
+  proposed_entry:   # AJE
+    source: "blueprint 3.3.1"
+    codes:
+      proposed:         {label: "Proposed", variant: state, terminal: false, derived: false}
+      within_threshold: {label: "Within threshold", variant: null, disc: check_olive, terminal: false, derived: false, context_labels: {with_class: "Within threshold · ≤ {amount} {class}"}}
+      review_required:  {label: "Review required", variant: null, disc: ring, text_tone: amber, terminal: false, derived: false}
+      approved:         {label: "Approved", variant: green, terminal: false, derived: false, context_labels: {attribution: "Approved by {person} under {policy}"}}   # a named human; never the agent
+      client_approved:  {label: "Client approved", variant: green, terminal: false, derived: false}   # attest only
+      posted:           {label: "Posted", variant: green-tint, terminal: true, derived: false, context_labels: {with_ref: "Posted · {system} {ref}"}}
+      failed_post:      {label: "Failed post", variant: red, terminal: false, derived: false}
+      reversed:         {label: "Reversed", variant: soon, terminal: true, derived: false}
+
+  tie_out_tally:
+    source: "blueprint 3.3.1"
+    codes:
+      tie:            {label: "tie", variant: green, terminal: false, derived: false}   # lower-case literal in 3.3.1; handoff word is "Ties"
+      "off":          {label: "off {amount}", variant: amber, terminal: false, derived: false}   # handoff word is "Off {amount}"
+      check:          {label: "Check", variant: amber, terminal: false, derived: false}
+      pending:        {label: "Pending", variant: muted, terminal: false, derived: false}
+      ties_once_posted: {label: "Ties once posted", variant: null, disc: conic_dot_amber, text_tone: amber, terminal: false, derived: false}
+      reconciled:     {label: "Reconciled", variant: green, terminal: true, derived: false}
+
+  # ---- Requests and documents ----
+  request:   # PBC / binder request; UI label "Request" (record: request_item)
+    source: "blueprint 3.3.1; addendum 3.2; 9.5.6; DEC-09"
+    codes:
+      draft:         {label: "Draft", variant: neutral, terminal: false, derived: false}   # firm only, never client-visible; neutral outline
+      requested:     {label: "Requested {date}", variant: null, disc: ring, terminal: false, derived: false, client_label: "To do"}   # app label (open): "Requested"; client row action "Upload…"; app clientRequest.open: "To do"
+      uploaded:      {label: "Uploaded – needs review", variant: null, disc: dot_amber, terminal: false, derived: false, client_label: "Done"}   # app label (received/ready_for_review): "Uploaded" (TASK-105); client sees "✓ You uploaded {date}"; screening sub-state in evidence_screening
+      received:      {label: "Received ✓", variant: green, terminal: true, derived: false, client_label: "Done"}   # app label (accepted): "Received"; the repo's old `received` meant uploaded
+      returned:      {label: "Returned · {reason}", variant: red-tint, terminal: false, derived: false, client_label: "Returned"}   # app label (needs_revision): "Returned"
+      not_applicable: {label: "Not applicable", variant: muted, terminal: true, derived: false, client_label: "Ignored"}   # app clientRequest.not_applicable: "Doesn't apply"
+      overdue:       {label: "Overdue", variant: red-tint, terminal: false, derived: true}   # never stored
+
+  request_close:   # close-intake variant
+    source: "blueprint 3.3.1"
+    codes:
+      requested:   {label: "Requested", variant: null, disc: ring, terminal: false, derived: false}
+      received:    {label: "Received",  variant: null, disc: dot_amber, terminal: false, derived: false}
+      matched:     {label: "Matched",   variant: green-tint, terminal: false, derived: false}
+      pending_incorporation: {label: "Pending incorporation", variant: amber, terminal: false, derived: false}
+      incorporated: {label: "Incorporated", variant: green, terminal: true, derived: false}
+
+  document:
+    source: "blueprint 3.3.1"
+    codes:
+      uploading:  {label: "Uploading",  variant: null, disc: ring_upload, terminal: false, derived: false}
+      processing: {label: "Processing", variant: null, disc: spinner, terminal: false, derived: false}
+      classified: {label: "Classified", variant: neutral, terminal: false, derived: false}
+      matched:    {label: "Matched",    variant: green-tint, terminal: false, derived: false}
+      approved:   {label: "Approved",   variant: null, disc: check_ink_micro, terminal: false, derived: false, context_labels: {row_micro_pill: "✓ {n}"}}   # ink micro-pill, never green
+      rejected:   {label: "Rejected",   variant: null, disc: x_grey, terminal: false, derived: false}
+      superseded: {label: "Superseded", variant: soon, terminal: true, derived: false}
+
+  evidence_screening:
+    source: "addendum 3.2; 9.5.6"
+    codes:
+      passed:       {label: "Passed",       variant: null, disc: check_olive, terminal: false, derived: false}
+      flagged:      {label: "Flagged",      variant: null, disc: triangle_amber, terminal: false, derived: false}
+      not_screened: {label: "Not screened", variant: null, disc: ring, terminal: false, derived: false}
+
+  inbox_item:
+    source: "blueprint 3.3.1"
+    codes:
+      new:     {label: "New",     variant: null, disc: ring_16, terminal: false, derived: false}
+      waiting: {label: "Waiting", variant: null, disc: dot_gold_16, terminal: false, derived: false}
+      filed:   {label: "Filed",   variant: null, disc: check_olive_15, terminal: true, derived: false}
+      ignored: {label: "Ignored", variant: null, disc: x_ink4_15, terminal: true, derived: false}
+
+  issue:
+    source: "blueprint 3.3.1"   # kind lines (Missing information, Action required, Review point, Waiting on client) are labels on an issue, not states
+    codes:
+      open:           {label: "Open", variant: null, disc: flag, terminal: false, derived: false}   # sub-state "Instructions required"; flag brick when high, amber otherwise
+      in_progress:    {label: "In progress", variant: null, disc: atom_spinner, terminal: false, derived: false}   # agent fixing
+      resolved:       {label: "Resolved", variant: null, disc: check_olive, terminal: false, derived: false}
+      verified:       {label: "Verified", variant: null, disc: check_olive, terminal: true, derived: false}
+      reopened:       {label: "Reopened", variant: null, disc: flag, terminal: false, derived: false}
+      not_applicable: {label: "Not applicable", variant: muted, terminal: true, derived: false}
+
+  issue_severity:
+    source: "blueprint 3.3.1"
+    codes:
+      high:   {label: "High",   variant: null, disc: flag_brick, terminal: false, derived: false}
+      medium: {label: "Medium", variant: null, disc: flag_amber, terminal: false, derived: false}
+      low:    {label: "Low",    variant: null, disc: flag_amber, terminal: false, derived: false}
+
+  issue_audit_route:
+    source: "blueprint 3.3.1"
+    codes:
+      under_evaluation:         {label: "Under evaluation", variant: state, terminal: false, derived: false}
+      converted_to_misstatement: {label: "Converted to misstatement", variant: neutral, terminal: true, derived: false}
+      converted_to_deficiency:  {label: "Converted to deficiency", variant: neutral, terminal: true, derived: false}
+
+  review_note:
+    source: "blueprint 3.3.1"
+    codes:
+      open:      {label: "Open",      variant: amber, terminal: false, derived: false}
+      responded: {label: "Responded", variant: state, terminal: false, derived: false}
+      cleared:   {label: "Cleared",   variant: green, terminal: false, derived: false}
+      closed:    {label: "Closed",    variant: green-tint, terminal: true, derived: false}
+      withdrawn: {label: "Withdrawn", variant: soon, terminal: true, derived: false}
+
+  comment_thread:
+    source: "addendum 3.2; gap 6.5"
+    codes:
+      open:     {label: "Open",     variant: null,  terminal: false, derived: false}
+      resolved: {label: "Resolved", variant: muted, terminal: true,  derived: false}
+
+  todo:   # UI "To-do" (hyphenated); the word "task" is banned for assignable work
+    source: "addendum 3.2; gap 6.5"
+    codes:
+      open:    {label: "Open", variant: null, disc: ring, terminal: false, derived: false}
+      done:    {label: "Done", variant: null, disc: check_olive, terminal: true, derived: false}
+      overdue: {label: "Overdue", variant: red-tint, terminal: false, derived: true}
+
+  # ---- Signing, notices, consent ----
+  envelope:
+    source: "blueprint 3.3.1"
+    codes:
+      draft:  {label: "Draft",  variant: neutral, terminal: false, derived: false}
+      sent:   {label: "Sent",   variant: amber,   terminal: false, derived: false}
+      viewed: {label: "Viewed", variant: amber,   terminal: false, derived: false}
+      partially_signed: {label: "{signed} of {total} signed", variant: amber, terminal: false, derived: false}
+      completed: {label: "Completed", variant: green, terminal: true, derived: false}
+      declined:  {label: "Declined",  variant: red-tint, terminal: true, derived: false}
+      expired:   {label: "Expired",   variant: muted, terminal: true, derived: false}
+      voided:    {label: "Voided",    variant: soon,  terminal: true, derived: false}
+
+  notice:
+    source: "blueprint 3.3.1"
+    codes:
+      received:       {label: "New", variant: red-tint, terminal: false, derived: false}   # canonical state Received, display "New"
+      classified:     {label: "Classified", variant: neutral, terminal: false, derived: false}
+      analyzing:      {label: "Analyzing", variant: state, terminal: false, derived: false}
+      response_drafted: {label: "Response drafted", variant: state, terminal: false, derived: false}
+      approved:       {label: "Approved", variant: green-tint, terminal: false, derived: false}
+      sent:           {label: "Response sent", variant: amber, terminal: false, derived: false}
+      awaiting_irs:   {label: "Awaiting IRS", variant: muted, terminal: false, derived: false}
+      closed:         {label: "Resolved", variant: green, terminal: true, derived: false}   # canonical state Closed, display "Resolved"
+      escalated:      {label: "Escalated", variant: red-tint, terminal: false, derived: false}
+
+  consent:   # section 7216
+    source: "blueprint 3.3.1"
+    codes:
+      requested: {label: "Requested", variant: amber, terminal: false, derived: false}
+      signed:    {label: "Signed · expires {date}", variant: green, terminal: false, derived: false}
+      expiring:  {label: "Expiring",  variant: amber, terminal: false, derived: false}
+      expired:   {label: "Expired",   variant: red-tint, terminal: true, derived: false}
+      declined:  {label: "Declined",  variant: neutral, terminal: true, derived: false}
+      revoked:   {label: "Revoked",   variant: soon, terminal: true, derived: false}
+
+  consent_purpose:   # each purpose is its own signed document; a category, never a state
+    source: "blueprint 3.3.1"
+    codes:
+      use:                   {label: "Consent to use", variant: tag, terminal: false, derived: false}
+      ai_disclosure:         {label: "Consent to disclose — AI sub-processors", variant: tag, terminal: false, derived: false}
+      offshore_disclosure:   {label: "Consent to disclose — offshore preparers", variant: tag, terminal: false, derived: false}
+      third_party_disclosure: {label: "Consent to disclose — named third party", variant: tag, terminal: false, derived: false}
+
+  # ---- Platform ----
+  agent_run:
+    source: "blueprint 3.3.1; 9.5.6; DEC-09"
+    codes:
+      queued:                 {label: "Queued", variant: muted, terminal: false, derived: false}
+      planning:               {label: "Planning…", variant: null, disc: spinner, terminal: false, derived: false}   # spinner ink-2, never amber
+      awaiting_plan_approval: {label: "Plan ready — approve?", variant: amber, terminal: false, derived: false}
+      dispatched:             {label: "Dispatched", variant: neutral, terminal: false, derived: false}
+      running:                {label: "Running", variant: null, disc: spinner, terminal: false, derived: false}
+      needs_input:            {label: "Needs your answer", variant: amber, terminal: false, derived: false}   # escalations arrive here with reason `escalated`
+      blocked_on_decision:    {label: "Blocked on a {role} decision", variant: null, disc: triangle_amber, terminal: false, derived: false}
+      waiting_on_inputs:      {label: "Waiting on inputs", variant: muted, terminal: false, derived: false}
+      succeeded:              {label: "Ready for review", variant: state, terminal: true, derived: false}
+      approved:               {label: "Approved", variant: green, terminal: true, derived: true}   # outcome, derived from reviewer decisions
+      partially_approved:     {label: "{n} of {total} approved", variant: green-tint, terminal: true, derived: true}
+      rejected:               {label: "Rejected", variant: red-tint, terminal: true, derived: true}
+      failed:                 {label: "Failed", variant: red, terminal: true, derived: false, context_labels: {run_row: "Failed — see run"}}
+      cancelled:              {label: "Cancelled", variant: muted, terminal: true, derived: false}
+
+  workbench_session:
+    source: "blueprint 3.3.1"
+    codes:
+      live:             {label: "Live", variant: null, disc: dot_olive, terminal: false, derived: false}
+      running:          {label: "Running", variant: null, disc: spinner, terminal: false, derived: false}
+      awaiting_answer:  {label: "Needs your answer", variant: null, disc: dot_amber, terminal: false, derived: false}
+      ready_for_review: {label: "Ready for review", variant: state, terminal: false, derived: false}
+      complete:         {label: "Complete", variant: null, disc: check_olive, terminal: true, derived: false}
+      failed:           {label: "Failed", variant: null, disc: x_brick, terminal: false, derived: false}
+
+  integration:   # catalogue and connection (repo object: connection)
+    source: "blueprint 3.3.1; 9.5.6"
+    codes:
+      available:    {label: "Available",  variant: outline, terminal: false, derived: false}
+      connecting:   {label: "Connecting", variant: null, disc: spinner, terminal: false, derived: false}
+      connected:    {label: "Connected",  variant: null, disc: check_olive, terminal: false, derived: false}
+      needs_attention: {label: "Needs attention", variant: amber, terminal: false, derived: false}   # blueprint canonical state Degraded; split from needs_reauth on failure code
+      needs_reauth: {label: "Needs reauth", variant: amber, terminal: false, derived: false}   # failure codes token_expired / invalid_grant
+      disconnected: {label: "Disconnected", variant: neutral, terminal: false, derived: false}   # neutral, not red
+      coming_soon:  {label: "Coming soon", variant: soon, terminal: false, derived: false}
+      paused:       {label: "Paused", variant: muted, terminal: false, derived: false}   # DF-31; variant not specified in the sources, muted proposed
+
+  agent_template:
+    source: "blueprint 3.3.1"
+    codes:
+      available:        {label: "Available", variant: outline, terminal: false, derived: false}
+      installed:        {label: "Installed", variant: null, disc: check_olive, terminal: false, derived: false}
+      update_available: {label: "Update available", variant: amber, terminal: false, derived: false}
+      coming_soon:      {label: "Coming soon", variant: soon, terminal: false, derived: false}
+
+  template_version:
+    source: "addendum 3.2; gap 6.5"
+    codes:
+      draft:      {label: "Draft",      variant: neutral, terminal: false, derived: false}
+      published:  {label: "Published",  variant: green-tint, terminal: false, derived: false}
+      deprecated: {label: "Deprecated", variant: muted, terminal: true, derived: false}
+
+  engagement_template_link:
+    source: "addendum 3.2"
+    codes:
+      current:          {label: "Current", variant: green-tint, terminal: false, derived: false}
+      update_available: {label: "Update available", variant: state, terminal: false, derived: false}
+      updated:          {label: "Updated {date}", variant: neutral, terminal: false, derived: false}
+      held:             {label: "Held", variant: muted, terminal: false, derived: false}
+
+  trigger:
+    source: "addendum 3.2"
+    codes:
+      "on":      {label: "On", variant: green-tint, terminal: false, derived: false}   # quoted: YAML 1.1 reads bare on/off as booleans
+      "off":     {label: "Off", variant: muted, terminal: false, derived: false}
+      duplicate: {label: "Duplicate", variant: amber, terminal: false, derived: false}
+
+  saved_prompt_access:   # category, never a state
+    source: "addendum 3.2"
+    codes:
+      firm:         {label: "Firm", variant: tag, terminal: false, derived: false}
+      service_line: {label: "Service line", variant: tag, terminal: false, derived: false}
+      personal:     {label: "Personal", variant: tag, terminal: false, derived: false}
+
+  learned_context_item:   # never "memory", "trained" or "learned" as a status word
+    source: "addendum 3.2"
+    codes:
+      proposed: {label: "Proposed", variant: outline, terminal: false, derived: false}
+      approved: {label: "Approved", variant: green-tint, terminal: false, derived: false}
+      retired:  {label: "Retired",  variant: muted, terminal: true, derived: false}
+
+  # ---- Binder, archive, checkpoint, project ----
+  binder:
+    source: "blueprint 3.3.1"
+    codes:
+      draft:       {label: "Draft", variant: neutral, terminal: false, derived: false}
+      published:   {label: "Published", variant: state, terminal: false, derived: false}
+      unpublished: {label: "Unpublished", variant: muted, terminal: false, derived: false}
+      complete:    {label: "Complete", variant: green-tint, terminal: false, derived: false, context_labels: {mark_as_done: "Marked done by {person}"}}
+      closed:      {label: "Closed", variant: soon, terminal: true, derived: false}
+
+  archive:   # locked binder
+    source: "blueprint 3.3.1"
+    codes:
+      assembling:         {label: "Archive in {days} days", variant: muted, disc: clock, terminal: false, derived: false}
+      locked:             {label: "Locked · WORM", variant: soon, disc: lock, terminal: false, derived: false}
+      post_lock_addition: {label: "Addition logged", variant: amber, terminal: false, derived: false}
+
+  checkpoint:
+    source: "blueprint 3.3.1"
+    codes:
+      proposed: {label: "Proposed", variant: state, terminal: false, derived: false}
+      approved: {label: "Approved", variant: green, terminal: false, derived: false}
+      rejected: {label: "Rejected", variant: red-tint, terminal: true, derived: false}
+      current:  {label: "Current",  variant: tag, terminal: false, derived: false}   # a star marks a named checkpoint
+
+  project:   # advisory
+    source: "blueprint 3.3.1"
+    codes:
+      scoping:   {label: "Scoping",   variant: neutral, terminal: false, derived: false}
+      active:    {label: "Active",    variant: state,   terminal: false, derived: false}
+      delivered: {label: "Delivered", variant: green,   terminal: false, derived: false}
+      closed:    {label: "Closed",    variant: soon,    terminal: true,  derived: false}
+
+  # ---- Consolidation and group audit ----
+  consolidation:
+    source: "addendum 3.2"
+    codes:
+      draft:     {label: "Draft",     variant: state, terminal: false, derived: false}
+      finalized: {label: "Finalized", variant: green-tint, terminal: true, derived: false}
+
+  elimination_entry:
+    source: "addendum 3.2"
+    codes:
+      proposed: {label: "Proposed", variant: outline, terminal: false, derived: false}
+      approved: {label: "Approved", variant: green-tint, terminal: false, derived: false}
+      posted:   {label: "Posted",   variant: green, terminal: true, derived: false}
+
+  component:   # planned-work scope; a category, never a state
+    source: "addendum 3.2"
+    codes:
+      full_scope:          {label: "Full scope", variant: tag, terminal: false, derived: false}
+      specific_procedures: {label: "Specific procedures", variant: tag, terminal: false, derived: false}
+      analytical_only:     {label: "Analytical only", variant: tag, terminal: false, derived: false}
+
+  component_instructions:
+    source: "addendum 3.2"
+    codes:
+      draft:        {label: "Draft", variant: neutral, terminal: false, derived: false}
+      sent:         {label: "Sent",  variant: state, terminal: false, derived: false}
+      acknowledged: {label: "Acknowledged", variant: green-tint, terminal: true, derived: false}
+
+  component_deliverable:
+    source: "addendum 3.2"
+    codes:
+      expected: {label: "Expected", variant: muted, terminal: false, derived: false}
+      received: {label: "Received", variant: state, terminal: false, derived: false}
+      reviewed: {label: "Reviewed", variant: green-tint, terminal: true, derived: false}
+      late:     {label: "Late", variant: red-tint, terminal: false, derived: true}   # derived from the due date
+
+  linked_value:   # statements cell (FS cell)
+    source: "addendum 3.2; gap 6.5"
+    codes:
+      tb_linked:      {label: "TB-linked", variant: null, terminal: false, derived: false}
+      formula:        {label: "Formula", variant: null, terminal: false, derived: false}
+      override:       {label: "Override", variant: null, disc: dotted_underline_amber, terminal: false, derived: false}
+      stale_override: {label: "Stale override", variant: null, disc: amber_tint_relink, terminal: false, derived: false, context_labels: {action: "↺ Relink"}}
+
+# Retired codes and words. key = "<object>.<code>" (repo object where it differs) -> replacement.
+retired:
+  # --- request_item.status (9.5.6, DEC-09; migration P-44) ---
+  "request_item.open":             {replacement: ["request.draft", "request.requested"], note: "draft while firm-only; requested once sent to the client"}
+  "request_item.received":         {replacement: ["request.uploaded"], note: "INVERSION: repo received meant uploaded; screening sub-state not_screened"}
+  "request_item.ready_for_review": {replacement: ["request.uploaded"], note: "screening sub-state passed"}
+  "request_item.needs_revision":   {replacement: ["request.returned"]}
+  "request_item.accepted":         {replacement: ["request.received"], note: "Accrued received means accepted"}
+  # --- engagement.status ---
+  "engagement.active":   {replacement: ["engagement.active"], note: "unchanged"}
+  "engagement.archived": {replacement: ["engagement.archived"], note: "unchanged; display adds a lock"}
+  # --- connections.status (repo object: connection; registry object: integration) ---
+  "connection.active":          {replacement: ["integration.connected"]}
+  "connection.needs_attention": {replacement: ["integration.needs_attention", "integration.needs_reauth"], note: "split on failure code token_expired / invalid_grant"}
+  "connection.revoked":         {replacement: ["integration.disconnected"], note: "neutral, not red"}
+  # --- agent_runs.status (migration P-47) ---
+  "agent_run.completed": {replacement: ["agent_run.succeeded"], note: "display Ready for review"}
+  "agent_run.escalated": {replacement: ["agent_run.needs_input"], note: "reason: escalated"}
+  # --- app codes in packages/ui/src/status.tsx (inferred; F-05-T12 to confirm) ---
+  "ui.workpaper.draft":  {replacement: ["audit_section.in_progress"], note: "inferred"}
+  "ui.workpaper.ready":  {replacement: ["audit_section.prepared"], note: "inferred; app label Prepared"}
+  "ui.result.supported": {replacement: ["control_test_result.no_exceptions_noted"], note: "inferred"}
+  "ui.result.exception": {replacement: ["control_test_result.exceptions_noted"], note: "inferred"}
+  "ui.decision.accept":  {replacement: [], note: "a decision value, not a status; no registry home yet (accept/reject)"}
+  "ui.decision.reject":  {replacement: ["card_overlay.sent_back"], note: "inferred from the label Sent back; confirm"}
+  # --- words and tables ---
+  "blueprint.02-design-system.A7.2":  {replacement: ["blueprint 3.3.1"], note: "status table retired in favour of 3.3.1"}
+  "label.Synced (two-word completion)": {replacement: ["return_sync_chip.synced"], note: "use Synced {date}"}
+  "label.Evidence check":             {replacement: ["evidence_screening"], note: "naming map: Evidence screening"}
+  "handoff.lib/status.js":            {replacement: ["status-vocabulary.yaml"], note: "keep only its visual tables (variants, sizes, discs); conflicts with 3.3.1 on 17 objects"}
+
+# Every status word in sources/handoff/lib/status.js, mapped to a registry code or marked
+# `status: false` (no registry home yet), with the reason. Keyed by the handoff object name.
+# Entries marked `# CONFLICT` change meaning in the move; entries with status: false need a
+# decision from the product founder (see F-05-T12).
+#
+# COUNT: 144 words across 21 handoff objects (verified by script against status.js).
+handoff_words:
+
+  "Engagement":   # 6
+    "Draft":       {status: false, reason: "no Draft engagement state in 3.3.1; nearest is engagement.prospect, which is a pre-contract state"}
+    "Letter sent": {object: envelope, code: sent}   # the engagement letter is an envelope; the engagement stays accepted until contracted
+    "Active":      {object: engagement, code: active}
+    "On hold":     {object: engagement, code: on_hold}
+    "Complete":    {object: engagement, code: delivered}
+    "Archived":    {object: engagement, code: archived}
+
+  "Tax return":   # 12
+    "Not started":      {object: return, code: not_started}
+    "Waiting on client": {object: card_overlay, code: waiting_on_client}   # overlay, not a return state
+    "Preparing":        {object: return, code: preparing}
+    "Working":          {object: return, code: preparing}   # context label on entity returns
+    "Processing":       {object: agent_run, code: running}   # transient run badge, not a return state
+    "In review":        {object: return, code: in_review}
+    "Ready to file":    {object: return, code: approved}   # CONFLICT: 3.3.1 has Approved then Awaiting signature, no Ready to file
+    "Transmitted":      {object: return, code: filed}      # Filed = transmitted, acknowledgement pending
+    "Accepted":         {object: return, code: accepted}
+    "Rejected":         {object: return, code: rejected}
+    "Filed":            {object: return, code: filed}      # CONFLICT: handoff Filed is green (done); 3.3.1 Filed is ack-pending; done is accepted
+    "Extended":         {object: return_flag, code: extended}
+
+  "Return sync chip":   # 7
+    "Not yet exported":        {object: return_sync_chip, code: not_yet_exported}
+    "Ready for export":        {object: return_sync_chip, code: ready_for_export}
+    "Exporting":               {object: return_sync_chip, code: exporting}
+    "Synced":                  {object: return_sync_chip, code: synced}
+    "Out of sync":             {object: return_sync_chip, code: out_of_sync}
+    "Import pending approval": {object: return_sync_chip, code: import_pending_approval}
+    "Export failed":           {object: return_sync_chip, code: failed}
+
+  "Document":   # 8
+    "Requested":    {object: request, code: requested}   # a request state, not a document state
+    "Received":     {object: request, code: uploaded}    # CONFLICT: handoff Received meant uploaded; Accrued received means accepted
+    "Processing":   {object: document, code: processing}
+    "Needs review": {object: document, code: classified}   # nearest; awaiting approval
+    "Approved":     {object: document, code: approved}
+    "Rejected":     {object: document, code: rejected}
+    "Duplicate":    {status: false, reason: "no Duplicate state in 3.3.1; a duplicate is a flag on a document, not a lifecycle state"}
+    "Superseded":   {object: document, code: superseded}
+
+  "Audit":   # 9
+    "Not started":   {status: false, reason: "no pre-Planning state on the audit engagement record in 3.3.1"}
+    "Planning":      {object: audit_engagement, code: planning}
+    "Processing":    {object: audit_engagement, code: processing}
+    "Fieldwork":     {object: audit_engagement, code: fieldwork}
+    "Completion":    {object: audit_engagement, code: completion}
+    "In review":     {object: audit_engagement, code: in_review}
+    "Ready to issue": {object: audit_engagement, code: ready_to_release}   # CONFLICT: 3.3.1 word is release, not issue
+    "Issued":        {object: audit_engagement, code: released}
+    "Archived":      {object: audit_engagement, code: archived}
+
+  "Audit section":   # 10
+    "Queued":            {object: audit_section, code: queued}
+    "Running":           {object: audit_section, code: running}
+    "In progress":       {object: audit_section, code: in_progress}
+    "Waiting on inputs": {object: audit_section, code: waiting_on_inputs}
+    "Blocked":           {object: audit_section, code: blocked_on_decision}   # label "Blocked on a {role} decision"
+    "Ready":             {object: audit_section, code: ready_to_run}
+    "Complete":          {object: audit_section, code: draft_ready}   # sub-line "Complete · {time}"
+    "Exceptions":        {status: false, reason: "a count line ({n} exceptions found), not a state; exceptions live on control_test_result / issue"}
+    "Failed":            {object: audit_section, code: failed}
+    "Skipped":           {status: false, reason: "no Skipped state in 3.3.1"}
+
+  "Workpaper":   # 6 (3.3.1 treats workpaper as the audit section rail row)
+    "Not started":    {object: audit_section, code: not_started}
+    "In progress":    {object: audit_section, code: in_progress}
+    "Prepared":       {object: audit_section, code: prepared}
+    "Review notes":   {object: review_note, code: open}   # open review notes on the workpaper, not a workpaper state
+    "Reviewed":       {object: audit_section, code: reviewed}
+    "Not applicable": {status: false, reason: "no Not applicable state on a section or workpaper in 3.3.1"}
+
+  "Close":   # 5
+    "Not started": {object: close, code: not_started}
+    "In progress": {object: close, code: in_progress}
+    "In review":   {object: close, code: in_review}
+    "Reopened":    {status: false, reason: "3.3.1 has no reopen state; Locked is final (Approved, Delivered, Locked)"}
+    "Closed":      {object: close, code: locked}   # CONFLICT: 3.3.1 has Delivered and Locked; Closed is not a close state
+
+  "Close task":   # 8
+    "Queued":            {object: close_task, code: queued}
+    "Running":           {object: close_task, code: running}
+    "Waiting on client": {object: card_overlay, code: waiting_on_client}
+    "Issues found":      {object: close_task, code: needs_attention}
+    "No issues":         {object: close_task, code: done}
+    "Reconciled":        {object: close_task, code: done}
+    "Failed":            {object: close_task, code: failed}
+    "Skipped":           {status: false, reason: "no Skipped state in 3.3.1"}
+
+  "Request":   # 7
+    "Draft":     {object: request, code: draft}
+    "Sent":      {object: request, code: requested}
+    "Viewed":    {status: false, reason: "a client view event, not a request state in 3.3.1"}
+    "Answered":  {object: request, code: uploaded}
+    "Overdue":   {object: request, code: overdue}   # derived, never stored
+    "Closed":    {object: request, code: received}
+    "Cancelled": {status: false, reason: "no Cancelled state in 3.3.1; not_applicable means the request does not apply, not that it was cancelled"}
+
+  "Inbox item":   # 4
+    "Unprocessed": {object: inbox_item, code: new}
+    "Waiting":     {object: inbox_item, code: waiting}
+    "Filed":       {object: inbox_item, code: filed}
+    "Ignored":     {object: inbox_item, code: ignored}
+
+  "Issue":   # 5
+    "Open":              {object: issue, code: open}
+    "Review point":      {status: false, reason: "a kind line on an open issue (3.3.1), not a state"}
+    "Waiting on client": {status: false, reason: "a kind line on an open issue (3.3.1); the Board overlay is card_overlay.waiting_on_client"}
+    "Resolved":          {object: issue, code: resolved}
+    "Dismissed":         {object: issue, code: not_applicable}
+
+  "Audit finding":   # 7
+    "Observation":            {status: false, reason: "no Observation state in 3.3.1"}
+    "Deficiency":             {object: deficiency_severity, code: deficiency}
+    "Significant deficiency": {object: deficiency_severity, code: significant_deficiency}
+    "Material weakness":      {object: deficiency_severity, code: material_weakness}
+    "Corrected":              {object: misstatement, code: booked}
+    "Uncorrected":            {object: misstatement, code: confirmed}   # nearest; uncorrected items are confirmed and later passed on SUM
+    "Passed":                 {object: misstatement, code: passed_on_sum}
+
+  "Agent run":   # 7
+    "Queued":     {object: agent_run, code: queued}
+    "Running":    {object: agent_run, code: running}
+    "Waiting on you": {object: agent_run, code: needs_input}
+    "Complete":   {object: agent_run, code: succeeded}   # display Ready for review
+    "Exceptions": {status: false, reason: "an outcome count on a succeeded run, not a run state in 3.3.1"}
+    "Failed":     {object: agent_run, code: failed}
+    "Cancelled":  {object: agent_run, code: cancelled}
+
+  "AJE":   # 7
+    "Proposed":  {object: proposed_entry, code: proposed}
+    "In review": {object: proposed_entry, code: review_required}
+    "Approved":  {object: proposed_entry, code: approved}
+    "Posted":    {object: proposed_entry, code: posted}
+    "Passed":    {object: misstatement, code: passed_on_sum}
+    "Rejected":  {status: false, reason: "proposed_entry has Failed post but no Rejected in 3.3.1"}
+    "Reversed":  {object: proposed_entry, code: reversed}
+
+  "Session":   # 6
+    "Running":        {object: workbench_session, code: running}
+    "Waiting on you": {object: workbench_session, code: awaiting_answer}
+    "Paused":         {status: false, reason: "no Paused session state in 3.3.1"}
+    "Done":           {object: workbench_session, code: complete}
+    "Failed":         {object: workbench_session, code: failed}
+    "Archived":       {status: false, reason: "no Archived session state in 3.3.1"}
+
+  "Agent template":   # 6
+    "Available":        {object: agent_template, code: available}
+    "Installed":        {object: agent_template, code: installed}
+    "Update available": {object: agent_template, code: update_available}
+    "Draft":            {status: false, reason: "agent_template has no Draft in 3.3.1 (template_version.draft is a different object)"}
+    "Coming soon":      {object: agent_template, code: coming_soon}
+    "Deprecated":       {status: false, reason: "agent_template has no Deprecated in 3.3.1 (template_version.deprecated is a different object)"}
+
+  "Integration":   # 6
+    "Available":    {object: integration, code: available}
+    "Connecting":   {object: integration, code: connecting}
+    "Connected":    {object: integration, code: connected}
+    "Syncing":      {status: false, reason: "an activity on a connected integration, not a state in 3.3.1"}
+    "Disconnected": {object: integration, code: disconnected}
+    "Coming soon":  {object: integration, code: coming_soon}
+
+  "Signature":   # 8
+    "Draft":            {object: envelope, code: draft}
+    "Sent":             {object: envelope, code: sent}
+    "Viewed":           {object: envelope, code: viewed}
+    "Partially signed": {object: envelope, code: partially_signed}
+    "Signed":           {object: envelope, code: completed}
+    "Declined":         {object: envelope, code: declined}
+    "Expired":          {object: envelope, code: expired}
+    "Voided":           {object: envelope, code: voided}
+
+  "Notice":   # 6
+    "New":              {object: notice, code: received}
+    "Researching":      {object: notice, code: analyzing}
+    "Response drafted": {object: notice, code: response_drafted}
+    "Responded":        {object: notice, code: sent}
+    "Resolved":         {object: notice, code: closed}
+    "Response overdue": {status: false, reason: "overdue is derived from the respond-by date and never stored; notice has no overdue state"}
+
+  "Tally":   # 4
+    "Ties":    {object: tie_out_tally, code: tie}
+    "Off":     {object: tie_out_tally, code: "off"}
+    "Check":   {object: tie_out_tally, code: check}
+    "Pending": {object: tie_out_tally, code: pending}
