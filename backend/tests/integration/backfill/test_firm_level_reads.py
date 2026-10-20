@@ -32,7 +32,7 @@ ENGAGEMENT_ROLES: tuple[Role, ...] = (
     "reviewer",
 )
 READ_VERBS = {"read", "read_metadata", "read_log"}
-MATRIX = cast(dict[str, dict[str, str]], yaml.safe_load(pm.SOURCE.read_text())["actions"])
+MATRIX = cast(dict[str, dict[str, str]], yaml.safe_load(pm.source())["actions"])
 FIRM_READS = sorted(a for a in MATRIX if a.split(".", 1)[1] in READ_VERBS)
 
 
