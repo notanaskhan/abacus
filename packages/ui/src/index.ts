@@ -29,4 +29,5 @@ export {
   ChevronLeft,
   FolderOpen,
   LogOut,
+  PanelRight,
 } from "lucide-react";

@@ -25,15 +25,21 @@ import {
   EmptyState,
   Input,
   Label,
+  Drawer,
+  Fieldset,
+  PanelRight,
   Skeleton,
   Spinner,
+  Status,
   StatusPill,
+  statusWord,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { type JSX, type ReactNode, type SyntheticEvent, useEffect, useState } from "react";
 import { errorMessage } from "../api";
 import { DueDatesBar, ItemDue, useDefaultDue } from "./DueDates";
+import { CommentThread } from "./CommentThread";
 import { FollowUps } from "./FollowUps";
 import { GuidanceDrafts } from "./GuidanceDrafts";
 import { InboxPanel } from "./InboxPanel";
@@ -67,6 +73,7 @@ export function Board({
   const path = { path: { engagement_id: engagementId } };
   const engagement = useQuery(getEngagementOptions(path));
   const me = useQuery(meOptions());
+  const [quickView, setQuickView] = useState<string | null>(null);
   // SPEC-033 (TASK-066): who may ask the matcher ("Suggest with agent").
   const myRole = engagement.data?.team.find((m) => m.user_id === me.data?.user_id)?.role;
   const items = useQuery(listRequestItemsOptions(path));
@@ -147,6 +154,10 @@ export function Board({
   // SPEC-030 (TASK-059): shown AI flags per version (firm roles only; a refusal shows none).
   const aiFlags = new Map((reviewFlags.data ?? []).map((f) => [f.evidence_version_id, f.flags]));
   const shown = applyFilters(rows, filters, aiFlags);
+  // TASK-105: status counts as quick filters, and a quick view of one request.
+  const counts = new Map<string, number>();
+  for (const r of rows) counts.set(r.item.status, (counts.get(r.item.status) ?? 0) + 1);
+  const viewing = rows.find((r) => r.item.id === quickView);
 
   return (
     <section aria-labelledby="board-heading" className="flex flex-col gap-3">
@@ -179,6 +190,46 @@ export function Board({
           )}
           {actions}
         </div>
+        {rows.length > 0 && (
+          <div
+            role="group"
+            aria-label="Requests by status"
+            className="flex flex-wrap items-center gap-1.5 border-b-[0.5px] border-hair px-4 py-2"
+          >
+            {(["open", "received", "ready_for_review", "needs_revision"] as const).map((s) => {
+              const word = statusWord("request", s);
+              const on = filters.status === s;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => {
+                    setFilter("status", on ? "" : s);
+                  }}
+                  className={`flex h-[26px] items-center gap-1.5 rounded-[7px] px-2.5 text-[12.5px] transition-colors ${
+                    on ? "bg-sel-bg font-medium text-ink" : "text-ink-2 hover:bg-nav-fill"
+                  }`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`size-1.5 rounded-full ${
+                      word.tone === "danger"
+                        ? "bg-red"
+                        : word.tone === "warning"
+                          ? "bg-amber"
+                          : word.tone === "success"
+                            ? "bg-green"
+                            : "bg-ink-4"
+                    }`}
+                  />
+                  {word.label}
+                  <span className="text-ink-3 tabular-nums">{counts.get(s) ?? 0}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
         {rows.length > 0 && (
           <div className="border-b-[0.5px] border-hair bg-band-hd px-4 py-2">
             <FilterBar
@@ -218,6 +269,9 @@ export function Board({
                     engagement={engagement.data}
                     pollingExpired={pollingExpired}
                     onRefresh={() => void results.refetch()}
+                    onQuickView={() => {
+                      setQuickView(row.item.id);
+                    }}
                   />
                 </li>
               ))}
@@ -228,6 +282,17 @@ export function Board({
           <AddRequestItem engagementId={engagementId} />
         </div>
       </div>
+      {viewing !== undefined && (
+        <RequestDrawer
+          row={viewing}
+          fallbackDue={defaultDue}
+          me={me.data?.user_id}
+          canShare={myRole !== undefined && SHARERS.has(myRole)}
+          onClose={() => {
+            setQuickView(null);
+          }}
+        />
+      )}
     </section>
   );
 }
@@ -242,6 +307,7 @@ function RequestItemCard({
   engagement,
   pollingExpired,
   onRefresh,
+  onQuickView,
 }: {
   row: BoardRow;
   aiFlags: number;
@@ -249,19 +315,31 @@ function RequestItemCard({
   engagement: EngagementOut;
   pollingExpired: boolean;
   onRefresh: () => void;
+  onQuickView: () => void;
 }): JSX.Element {
   const { item, evidence, screening } = row;
   return (
     <div className="flex flex-col gap-2 px-4 py-3 transition-colors hover:bg-shell/60">
       <div className={`grid grid-cols-1 items-start gap-x-4 gap-y-2 ${ROW_GRID}`}>
         <div className="flex min-w-0 flex-col gap-1">
-          <Link
-            to="/engagements/$engagementId/items/$itemId"
-            params={{ engagementId: item.engagement_id, itemId: item.id }}
-            className="text-[13px] font-medium text-ink hover:underline"
-          >
-            {item.description}
-          </Link>
+          <span className="flex items-start gap-1.5">
+            <Link
+              to="/engagements/$engagementId/items/$itemId"
+              params={{ engagementId: item.engagement_id, itemId: item.id }}
+              className="text-[13px] font-medium text-ink hover:underline"
+            >
+              {item.description}
+            </Link>
+            <button
+              type="button"
+              aria-label={`Quick view: ${item.description}`}
+              title="Quick view"
+              onClick={onQuickView}
+              className="mt-px flex size-[20px] shrink-0 items-center justify-center rounded-[5px] text-ink-3 hover:bg-nav-fill hover:text-ink"
+            >
+              <PanelRight aria-hidden="true" className="size-3.5" />
+            </button>
+          </span>
           <p className="flex flex-wrap items-center gap-2 text-[12px] text-ink-3">
             {item.audit_area}
             <TierChip item={item} />
@@ -571,13 +649,9 @@ function statusTone(status: RequestItemOut["status"]): "neutral" | "success" | "
       : "neutral";
 }
 
-const STATUS_FILTERS: [string, string][] = [
-  ["open", "Open"],
-  ["received", "Received"],
-  ["ready_for_review", "Ready for review"],
-  ["needs_revision", "Needs revision"],
-  ["accepted", "Accepted"],
-];
+const STATUS_FILTERS: [string, string][] = (
+  ["open", "received", "ready_for_review", "needs_revision", "accepted"] as const
+).map((s) => [s, statusWord("request", s).label]);
 const SELECT_CLASS =
   "h-[26px] rounded-[6px] border-0 bg-card px-2 text-[12.5px] text-ink shadow-e1 hover:bg-nav-fill";
 
@@ -745,5 +819,78 @@ function TierOverride({ item }: { item: RequestItemOut }): JSX.Element {
         </span>
       )}
     </label>
+  );
+}
+
+const SHARERS = new Set(["engagement_partner", "manager", "senior"]); // SPEC-032 (TASK-063)
+
+/** TASK-105: one request beside the list (the plan's SHL-14 drawer): details, evidence, the
+ * agent's screening and the request's comments; the full page is a click away. */
+function RequestDrawer({
+  row,
+  fallbackDue,
+  me,
+  canShare,
+  onClose,
+}: {
+  row: BoardRow;
+  fallbackDue: string | null | undefined;
+  me: string | undefined;
+  canShare: boolean;
+  onClose: () => void;
+}): JSX.Element {
+  const { item, evidence, screening } = row;
+  return (
+    <Drawer
+      open
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+      title={item.description}
+      meta={<Status domain="request" value={item.status} />}
+      footer={
+        <Link
+          to="/engagements/$engagementId/items/$itemId"
+          params={{ engagementId: item.engagement_id, itemId: item.id }}
+          className="text-[13px] font-medium text-ink underline"
+        >
+          Open the full page
+        </Link>
+      }
+    >
+      <Fieldset title="Details">
+        <dl className="grid grid-cols-[110px_1fr] gap-x-3 gap-y-1.5 text-[12.5px]">
+          <dt className="text-ink-3">Audit area</dt>
+          <dd>{item.audit_area}</dd>
+          <dt className="text-ink-3">Tier</dt>
+          <dd>{item.retrievability_tier ?? "Unclassified"}</dd>
+          <dt className="text-ink-3">Due</dt>
+          <dd>{item.due_on ?? (fallbackDue != null ? `${fallbackDue} (the list's)` : "—")}</dd>
+          <dt className="text-ink-3">Client</dt>
+          <dd>{item.client_visible === false ? "Hidden from the client" : "Can see it"}</dd>
+        </dl>
+      </Fieldset>
+      <Fieldset title="Evidence">
+        <p className="text-[12.5px]">
+          {evidence === null
+            ? "No evidence yet."
+            : `${sourceLabel(evidence)} · version ${String(evidence.version_no)}`}
+        </p>
+      </Fieldset>
+      {screening.kind === "result" && (
+        <Fieldset title="Agent screening">
+          <ScreeningSummary result={screening.result} />
+        </Fieldset>
+      )}
+      <Fieldset title="Comments">
+        <CommentThread
+          ids={{ engagementId: item.engagement_id, itemId: item.id }}
+          me={me}
+          side="firm"
+          canShare={canShare}
+          label="Comments on this request"
+        />
+      </Fieldset>
+    </Drawer>
   );
 }

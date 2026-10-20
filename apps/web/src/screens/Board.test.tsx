@@ -116,7 +116,7 @@ describe("ac18 Board screen", () => {
       within(screen.getByRole("list", { name: "Request items" })).getByText("Financial reporting"),
     ).toBeTruthy();
     expect(
-      within(screen.getByRole("list", { name: "Request items" })).getByText("Received"),
+      within(screen.getByRole("list", { name: "Request items" })).getByText("Uploaded"), // TASK-105
     ).toBeTruthy();
     expect(screen.getByText("Retrieved · version 1")).toBeTruthy();
     expect(screen.getByText(/Agent proposes/)).toBeTruthy();
@@ -188,7 +188,7 @@ describe("ac18 Board screen", () => {
     expect(await screen.findByText("No evidence yet")).toBeTruthy();
     expect(screen.queryByText("Screening…")).toBeNull();
     expect(
-      within(screen.getByRole("list", { name: "Request items" })).getByText("Open"),
+      within(screen.getByRole("list", { name: "Request items" })).getByText("Requested"),
     ).toBeTruthy();
   });
 
@@ -512,5 +512,26 @@ describe("ac18 Board screen", () => {
     expect(
       screen.queryAllByRole("link", { name: /accept|approve|reject|waive|confirm/i }),
     ).toHaveLength(0);
+  });
+});
+
+describe("TASK-105 status counts and the quick view", () => {
+  it("counts requests by status and filters by one", async () => {
+    api();
+    renderRoutes([{ path: "/", component: () => <Board engagementId={E} /> }]);
+    const group = await screen.findByRole("group", { name: "Requests by status" });
+    const uploaded = within(group).getByRole("button", { name: /Uploaded/ });
+    expect(uploaded.textContent).toContain("1");
+    fireEvent.click(uploaded);
+    expect(uploaded.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("opens a request beside the list", async () => {
+    api();
+    renderRoutes([{ path: "/", component: () => <Board engagementId={E} /> }]);
+    fireEvent.click(await screen.findByRole("button", { name: "Quick view: Trial balance" }));
+    const drawer = await screen.findByRole("dialog");
+    expect(within(drawer).getByText("Financial reporting")).toBeTruthy();
+    expect(within(drawer).getByRole("link", { name: "Open the full page" })).toBeTruthy();
   });
 });

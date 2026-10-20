@@ -1,12 +1,8 @@
-import type { Tone } from "@abacus/ui";
+import { STATUS, type Tone } from "@abacus/ui";
 
-/** Item statuses as words and tones (never colour alone, SPEC-016). */
-export const ITEM_STATUS: Record<string, { label: string; tone: Tone }> = {
-  open: { label: "Open", tone: "neutral" },
-  received: { label: "Received", tone: "success" },
-  ready_for_review: { label: "Ready for review", tone: "info" },
-  needs_revision: { label: "Needs revision", tone: "warning" },
-};
+/** Item statuses as words and tones (never colour alone, SPEC-016): the design system's request
+ * vocabulary (TASK-105). */
+export const ITEM_STATUS: Record<string, { label: string; tone: Tone }> = STATUS.request;
 
 export const SCREENING: Record<string, string> = {
   ready_for_review: "Ready for review",
