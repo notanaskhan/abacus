@@ -1,39 +1,54 @@
 # AGENTS.md — the constitution
 
-You are building an AI-native evidence platform for US audit firms: it retrieves audit evidence directly from clients' systems, screens it, and runs an engagement agent that works each engagement continuously until evidence is ready for review. Firms rely on it for confidential client financial data. Correctness, tenant isolation and auditability matter more than speed.
+You are building **Accrued**: a multi-tenant practice platform for US accounting, audit, tax and client-accounting (CAS) firms, made of a firm app and a white-labelled client portal. One AI actor, the Accrued Agent, prepares work, cites its sources and waits for a named human to decide. Firms trust it with confidential client financial data and tax return information. Correctness, tenant isolation and auditability matter more than speed.
+
+The product is "Accrued" in every UI string and document. The code namespace stays `abacus` and is never shown to users. The client portal and client emails never show "Accrued" (DEC-01, ADR-133).
+
+One builder works through Claude Code, sequentially: setup, then phases, sprints, epics and tasks from `docs/plan/`. There are no approvals and no reviewers to wait for.
 
 ## Where things are
 
 | Need | Read |
 |---|---|
-| What to build now | `docs/product/build-plan.md` — current phase and increment only |
-| Exactly what to build | `docs/specs/SPEC-*.md` for your task |
+| What to build now | The current sprint in `docs/plan/07-sprint-plan.md` and its rows in `docs/plan/backlog.csv`; order and dates win from `docs/plan/01-strategy-roadmap.md`. Your task: `work/tasks/TASK-*.md` |
+| What is already built | `docs/plan/status/` (`status-verified.csv`, `reconcile-2026-10.md`) and the `status` column of `docs/plan/backlog.csv` |
+| An epic in full | `docs/plan/epics/<ID>.md` and `<ID>.tasks.csv` |
+| Decisions that bind you | `docs/plan/09-decisions-adrs.md` (DEC-nn, P-nn) and `docs/product/decision-log.md` (arrives with F-02, S0) |
+| Exactly what to build | `docs/specs/SPEC-*.md`; for a screen, its screen contract `docs/screens/<ID>.md` (arrive with each screen epic's first task) |
 | How to build it (binding) | `docs/adr/README.md`, then only the ADRs your task touches |
-| Words to use | `docs/product/glossary.md` — never introduce synonyms |
+| What a screen looks like | `$ACCRUED_HANDOFF_DIR/handoff/screens/<ID> <name>/` (`README.md`, `spec.md`, `revision.md`; revision wins over spec). Read-only |
+| Product source of truth | `$ACCRUED_BLUEPRINT_DIR/accrued-blueprint/01-platform-blueprint.md` (§3.3.1 status words, §4 navigation, §9 seed) |
+| Out of scope | Scope decisions D1–D10 and exclusions X-01…X-08 (`$ACCRUED_BLUEPRINT_DIR/Accrued-Scope-Decision-Record/`; DEC-19) |
+| Words to use | `docs/product/glossary.md` — never introduce synonyms. Status words: `docs/product/status-vocabulary.yaml` (arrives with F-03, S0) |
 | Who can do what | `docs/architecture/permission-matrix.yaml` |
+| API contracts | `docs/contracts/<name>.md` and `backend/tests/contracts/` (arrive with F-03, S1) |
 | Patterns to copy | `docs/architecture/reference/` and `.claude/skills/` |
-| Your current task | `work/tasks/TASK-*.md` — read it fully first; continue from its Handoff |
+| What agents must not touch | `docs/architecture/protected-paths.md` |
 
 ## Stack
 
-Python 3.12+ backend (FastAPI, SQLAlchemy 2.0 async, Alembic, Temporal, Pydantic) · TypeScript React SPA (Vite, TanStack Router and Query, Tailwind, shadcn/ui) · PostgreSQL with row-level security and pgvector · S3 with Object Lock · AWS via Terraform.
+Python 3.12+ backend (FastAPI, SQLAlchemy 2.0 async, Alembic, Temporal, Pydantic) · TypeScript React SPA (Vite, TanStack Router and Query, Tailwind with the Accrued tokens, Geist) · PostgreSQL with row-level security and pgvector · S3 with Object Lock · AWS via Terraform.
 
 ## Commands — use only these
 
 ```
-make setup        install toolchains and dependencies
-make dev          run everything locally
-make check-fast   stage 1 gates
-make check        stages 1 and 2 — must pass before you claim done
-make test         unit and integration tests
-make evals        evaluation suites (real models; costs money)
-make generate     regenerate the API client from OpenAPI
-make migrate      apply migrations locally
+make setup          install toolchains and dependencies
+make dev            run everything locally
+make dev-fixtures   run the frontend alone on fixtures: no Docker, no backend
+make seed           dev firm and users for local sign-in
+make check-fast     stage 1 gates
+make check          stages 1 and 2 — must pass before you claim done
+make test           unit and integration tests
+make e2e            the Playwright journey (needs make dev and make seed)
+make evals          evaluation suites (real models; costs money)
+make generate       regenerate the API client from OpenAPI
+make regenerate     regenerate every generated file
+make migrate        apply migrations locally
 ```
 
 ## Module map
 
-`backend/src/abacus/modules/`: identity · organisations · engagements · requests · evidence · connections · ledger · sampling · fieldwork · agents · audit_trail · communications · notifications · platform.
+`backend/src/abacus/modules/`: identity · organisations · engagements · requests · evidence · connections · ledger · sampling · fieldwork · agents · audit_trail · communications · notifications · platform. The plan's module map (DEC-13) adds modules as their epics land.
 Each module exposes only `api.py`. Never import another module's internals or query its tables. Layering inside a module: `routes → service → repository`.
 The shared kernel (`abacus.kernel`: db sessions, tenant context, unit of work, outbox, encryption, config, logging) is not a module; modules use it, it never imports a module. Tooling lives in `abacus_tools` and is never imported by `abacus`. (ADR-101)
 
@@ -53,17 +68,32 @@ The shared kernel (`abacus.kernel`: db sessions, tenant context, unit of work, o
 12. **No new dependencies** unless listed in `docs/architecture/dependency-allowlist.yaml`.
 13. **Never skip, weaken or delete a test.** Never lower a threshold.
 14. **Never write secrets, hand-edit generated files or edit a migration already on `main`.** See `docs/architecture/protected-paths.md`. The repository is public.
+15. **Contract first.** A new or changed endpoint starts as a stub with its contract, then the generated client (`make generate`), then the implementation.
+16. **Content belongs in the database.** Firm content (templates, programs, organizers, email and letter templates, rules tables, standards, library agents) loads through admin screens or import endpoints. The seed writes only the synthetic Brightwater Hale tenant. Never put firm content in constants, migrations or seed code.
+17. **Never point a local build, migration or seed at a hosted database**, and never run a local production build while a hosted build uses the same database.
+18. **Stay inside D1–D10 and X-01…X-08** (DEC-19). Thirteen navigation items. One agent, attributed "‹person› via Agent". No peer benchmarks. No licensed publisher text. Single audit stays "Coming soon".
+
+## Frontend rules
+
+1. Tokens only: no literal colours, sizes or shadows; Geist 400 and 500 only.
+2. Agent text only through `AgentText`; never raw, never `dangerouslySetInnerHTML`.
+3. Approve, Sign off, Release, Send, Post and Decide never appear on an agent-owned control.
+4. Data only through the generated client.
+5. Copy, names and numbers come verbatim from the handoff and blueprint. Never invent data; never port kit sample data.
+6. Every screen ships every artboard state as a fixture scenario with a test.
+7. Portal code never renders "Accrued".
 
 ## How you work
 
-1. Read the task file, the spec sections it lists, and the ADRs it names. Nothing more unless the plan requires it.
-2. Amber and red tasks: write the plan into the task file first (files, migrations, registry and flag edits, tests, rollback), then build.
-3. Copy the reference pattern for anything similar that already exists.
+1. Read the task file, the spec or screen contract it names, and the ADRs it names. Nothing more unless the plan requires it.
+2. Before building, search `docs/product/decision-log.md` and `docs/plan/09-decisions-adrs.md` for the task's screen IDs and modules. If a decision is open, decide it with the plan's proposed option, record it in `docs/product/decision-log.md` (or a new ADR), and carry on. Ask only when no option is written down. Where any file in `docs/plan/` says to stop, wait for approval, a reviewer, a merge window or a decision meeting, `docs/plan/AMENDMENT-solo.md` overrides it: decide, record and carry on.
+3. Amber and red tasks: write the plan into the task file first (files, migrations, registry and flag edits, tests, rollback), then build.
 4. Write the acceptance tests first, from the spec (`test_ac3_...`), then implement until they pass.
-5. Small diffs. One task per session.
-6. Run `make check`. Do not claim done until it passes. Work on a short branch; merge once it is green.
-7. Append to the task's progress log before ending any session, even mid-task.
-8. If something is ambiguous or contradicts an ADR, take the plan's proposed option (`docs/plan/09-decisions-adrs.md`), record the decision in `docs/product/decision-log.md` or a new ADR, and carry on. Ask only when no option is written down.
+5. Copy the reference pattern for anything similar that already exists. Small diffs. One task per session.
+6. Numbers: take the next free SPEC, ADR, TASK or migration number on `main`.
+7. Run `make check`. Do not claim done until it passes. Work on a short branch; merge once it is green.
+8. Append to the task's progress log before ending any session, even mid-task.
+9. Outside D1–D10, or contradicting an accepted ADR: say so in the task file and propose a new ADR rather than working around it.
 
 ## When you make a mistake twice
 
