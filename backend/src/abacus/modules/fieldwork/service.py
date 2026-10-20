@@ -510,6 +510,7 @@ class ItemView:
     recorded_bill_reference: str | None = None
     recorded_bill_date: str | None = None
     relates_to_year: str | None = None
+    adopted: bool = False  # SPEC-044: the result was adopted from the agent
 
 
 async def items_of(
@@ -548,6 +549,7 @@ async def items_of(
             r.recorded_bill_reference,
             r.recorded_bill_date.isoformat() if r.recorded_bill_date else None,
             results[r.id].relates_to_year if r.id in results else None,
+            r.id in results and results[r.id].adopted_assessment_id is not None,
         )
         for r in rows
     ]

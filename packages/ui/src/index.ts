@@ -22,6 +22,7 @@ export { type Column, DataTable } from "./components/data-table";
 export { STATUS, Status, type StatusDomain, type StatusWord, statusWord } from "./status";
 // Icons for the shell, so apps use one icon set without depending on it directly.
 export {
+  Atom,
   Bell,
   BookOpen,
   Building2,

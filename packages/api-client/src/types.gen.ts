@@ -251,6 +251,26 @@ export type ActivityOut = {
 };
 
 /**
+ * AdoptIn
+ */
+export type AdoptIn = {
+    /**
+     * Item Ids
+     */
+    item_ids?: Array<string> | null;
+};
+
+/**
+ * AdoptedOut
+ */
+export type AdoptedOut = {
+    /**
+     * Adopted
+     */
+    adopted: number;
+};
+
+/**
  * AgentOut
  */
 export type AgentOut = {
@@ -2473,6 +2493,10 @@ export type ItemOut = {
      */
     accounts: Array<string>;
     /**
+     * Adopted
+     */
+    adopted?: boolean;
+    /**
      * Amount
      */
     amount: string;
@@ -3312,6 +3336,20 @@ export type PicksIn = {
      * Picks
      */
     picks: Array<PickIn>;
+};
+
+/**
+ * PlanStepOut
+ */
+export type PlanStepOut = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Text
+     */
+    text: string;
 };
 
 /**
@@ -4282,6 +4320,24 @@ export type SendDraftIn = {
      * Note
      */
     note?: string | null;
+};
+
+/**
+ * SessionOut
+ */
+export type SessionOut = {
+    /**
+     * Approved At
+     */
+    approved_at: string | null;
+    /**
+     * Approved By Name
+     */
+    approved_by_name: string | null;
+    /**
+     * Plan
+     */
+    plan: Array<PlanStepOut>;
 };
 
 /**
@@ -9003,6 +9059,66 @@ export type ProcedureResponses = {
 
 export type ProcedureResponse = ProcedureResponses[keyof ProcedureResponses];
 
+export type AdoptData = {
+    body: AdoptIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Procedure Id
+         */
+        procedure_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/procedures/{procedure_id}/adopt';
+};
+
+export type AdoptErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AdoptError = AdoptErrors[keyof AdoptErrors];
+
+export type AdoptResponses = {
+    /**
+     * Successful Response
+     */
+    201: AdoptedOut;
+};
+
+export type AdoptResponse = AdoptResponses[keyof AdoptResponses];
+
 export type ApproveData = {
     body: ApproveIn;
     headers?: {
@@ -10151,6 +10267,122 @@ export type SelectResponses = {
 };
 
 export type SelectResponse = SelectResponses[keyof SelectResponses];
+
+export type SessionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Procedure Id
+         */
+        procedure_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/procedures/{procedure_id}/session';
+};
+
+export type SessionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SessionError = SessionErrors[keyof SessionErrors];
+
+export type SessionResponses = {
+    /**
+     * Successful Response
+     */
+    200: SessionOut;
+};
+
+export type SessionResponse = SessionResponses[keyof SessionResponses];
+
+export type ApprovePlanData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Procedure Id
+         */
+        procedure_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/procedures/{procedure_id}/session/approve-plan';
+};
+
+export type ApprovePlanErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ApprovePlanError = ApprovePlanErrors[keyof ApprovePlanErrors];
+
+export type ApprovePlanResponses = {
+    /**
+     * Successful Response
+     */
+    201: SessionOut;
+};
+
+export type ApprovePlanResponse = ApprovePlanResponses[keyof ApprovePlanResponses];
 
 export type WorkpaperData = {
     body?: never;

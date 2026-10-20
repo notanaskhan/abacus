@@ -22,6 +22,7 @@ from abacus.modules.fieldwork.models import (
     PopulationRow,
     Procedure,
     ProcedureConclusion,
+    ProcedureSessionEvent,
     ReviewNote,
     ReviewNoteEvent,
     SelectedItem,
@@ -553,3 +554,24 @@ async def newest_misstatements(
         .all()
     )
     return {m.finding_id: m for m in rows}
+
+
+# --- The agent procedure session (SPEC-044; TASK-109) ------------------------------------------
+
+
+async def insert_session_event(session: AsyncSession, **values: object) -> None:
+    await session.execute(insert(ProcedureSessionEvent).values(**values))
+
+
+async def plan_approval(session: AsyncSession, procedure_id: UUID) -> ProcedureSessionEvent | None:
+    return (
+        await session.execute(
+            select(ProcedureSessionEvent)
+            .where(
+                ProcedureSessionEvent.procedure_id == procedure_id,
+                ProcedureSessionEvent.kind == "plan_approved",
+            )
+            .order_by(ProcedureSessionEvent.created_at)
+            .limit(1)
+        )
+    ).scalar_one_or_none()

@@ -119,6 +119,7 @@ class ItemResult(Base):
     evidence_version_ids: Mapped[list[UUID]] = mapped_column(ARRAY(PgUUID(as_uuid=True)))
     recorded_by: Mapped[UUID]
     relates_to_year: Mapped[str | None]  # SPEC-038: yes | no | unclear
+    adopted_assessment_id: Mapped[UUID | None]  # SPEC-044: the agent proposal a person adopted
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
 
 
@@ -269,4 +270,17 @@ class Misstatement(Base):
     account_code: Mapped[str | None]
     corrected: Mapped[bool]
     recorded_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class ProcedureSessionEvent(Base):
+    """A person approving a procedure session's plan (SPEC-044; TASK-109). Insert-only."""
+
+    __tablename__ = "procedure_session_events"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    procedure_id: Mapped[UUID]
+    kind: Mapped[str]
+    by_user: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

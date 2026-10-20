@@ -230,6 +230,7 @@ async def record_result(
     note: str | None,
     evidence_ids: Sequence[UUID],
     relates_to_year: str | None = None,
+    adopted_assessment_id: UUID | None = None,
 ) -> None:
     note = (note or "").strip() or None
     if relates_to_year not in (None, "yes", "no", "unclear"):
@@ -258,12 +259,25 @@ async def record_result(
             evidence_version_ids=list(dict.fromkeys(evidence_ids))[:20],
             recorded_by=ctx.user_id,
             relates_to_year=relates_to_year,
+            adopted_assessment_id=adopted_assessment_id,
         )
         tx.record(
             "procedure.result_recorded",
             target=Target("selected_item", item_id),
             after=Ref(result=RESULTS.index(result), evidence=len(evidence_ids)),
         )
+
+
+async def items_with_results(
+    ctx: AuthContext, engagement_id: UUID, procedure_id: UUID
+) -> set[UUID]:
+    """SPEC-044: the current selection's rows that already have a result (for adoption)."""
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "procedure.read", ref.resource())
+    await _procedure(ctx, engagement_id, procedure_id)
+    selection = await _current_selection(ctx, procedure_id)
+    async with tenant_session(ctx.tenant) as session:
+        return set(await newest_results(session, selection.id))
 
 
 def support_wording(reference: str, posted_on: str, amount: Decimal) -> str:

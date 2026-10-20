@@ -63,6 +63,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
 import { systemName } from "../board/join";
+import { AgentSession } from "./AgentSession";
 import { NoteCount, NotesDrawer } from "./ReviewNotes";
 import { Accounts, Bands, SubsequentLedger } from "./UnrecordedLiabilities";
 
@@ -831,6 +832,14 @@ function ProcedurePanel({
   return (
     <div className="flex flex-col gap-3">
       <Steps flow={flow.data} />
+      <AgentSession
+        engagementId={engagementId}
+        procedure={p}
+        flow={flow.data}
+        items={items.data ?? []}
+        assessments={assessments.data ?? []}
+        role={role}
+      />
       {surl && (
         <div className="grid items-start gap-3 xl:grid-cols-2">
           <SubsequentLedger engagementId={engagementId} canUpload={canRun} />

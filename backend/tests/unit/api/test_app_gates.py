@@ -201,6 +201,9 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/request-items/{item_id}/client-response/withdraw",
         "/v1/engagements/{engagement_id}/request-items/client-done",
         "/v1/engagements/{engagement_id}/findings",  # SPEC-043
+        # SPEC-044 (TASK-109): the session's plan approval and adopting the agent's proposals
+        "/v1/engagements/{engagement_id}/procedures/{procedure_id}/session/approve-plan",
+        "/v1/engagements/{engagement_id}/procedures/{procedure_id}/adopt",
         "/v1/engagements/{engagement_id}/findings/{finding_id}/misstatement",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/notes/{note_id}/respond",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/notes/{note_id}/clear",

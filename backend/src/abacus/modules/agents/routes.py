@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
 from abacus.kernel.text import MultiLineText
+from abacus.modules.agents.adopt import adopt
 from abacus.modules.agents.assess_start import assessments_of, request_assessments
 from abacus.modules.agents.draft_start import (
     Approval,
@@ -599,6 +600,34 @@ async def preview_follow_up_route(
     """TASK-104: the email exactly as it will be sent (fixed template; no model text)."""
     subject, text = await preview_follow_up(ctx, engagement_id, reminder_id, body.note)
     return FollowUpPreviewOut(subject=subject, body=text)
+
+
+class AdoptIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    item_ids: Annotated[
+        list[UUID] | None, Field(default=None, max_length=500), classified("internal")
+    ]
+
+
+class AdoptedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    adopted: Annotated[int, classified("internal")]
+
+
+@router.post(
+    "/procedures/{procedure_id}/adopt",
+    action="entry_assessment.adopt",
+    response_model=AdoptedOut,
+    status_code=201,
+    errors=(409,),
+)
+async def adopt_route(
+    engagement_id: UUID, procedure_id: UUID, body: AdoptIn, ctx: Ctx
+) -> AdoptedOut:
+    """SPEC-044 AC-4: a person adopts the agent's proposals as results."""
+    return AdoptedOut(adopted=await adopt(ctx, engagement_id, procedure_id, body.item_ids))
 
 
 # --- The engagement graph (SPEC-008 §8; TASK-023 D1) --------------------------------------------

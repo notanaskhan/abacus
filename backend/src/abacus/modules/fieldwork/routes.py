@@ -51,6 +51,7 @@ from abacus.modules.fieldwork.service import (
     set_parameters,
     start_procedure,
 )
+from abacus.modules.fieldwork.session import approve_plan, session_of
 from abacus.modules.fieldwork.workpapers import (
     WorkpaperState,
     record_result,
@@ -329,6 +330,7 @@ class ItemOut(BaseModel):
     band: Annotated[int | None, classified("internal")] = None
     recorded_bill_reference: Annotated[str | None, classified("confidential")] = None
     recorded_bill_date: Annotated[str | None, classified("internal")] = None
+    adopted: Annotated[bool, classified("internal")] = False  # SPEC-044 (TASK-109)
     relates_to_year: Annotated[Literal["yes", "no", "unclear"] | None, classified("internal")] = (
         None
     )
@@ -982,3 +984,52 @@ async def findings_summary_route(engagement_id: UUID, ctx: Ctx) -> SummaryOut:
     """SPEC-043 AC-3: the summary of uncorrected misstatements, computed by code."""
     found: Summary = await summary_for(ctx, engagement_id)
     return SummaryOut.model_validate(asdict(found))
+
+
+# --- The agent procedure session (SPEC-044; TASK-109) ------------------------------------------
+
+
+class PlanStepOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    key: Annotated[str, classified("internal")]
+    text: Annotated[str, classified("internal")]
+
+
+class SessionOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    plan: Annotated[list[PlanStepOut], classified("internal")]
+    approved_by_name: Annotated[str | None, classified("internal")]
+    approved_at: Annotated[datetime | None, classified("internal")]
+
+
+async def _session_out(ctx: AuthContext, engagement_id: UUID, procedure_id: UUID) -> SessionOut:
+    found = await session_of(ctx, engagement_id, procedure_id)
+    return SessionOut(
+        plan=[PlanStepOut(key=k, text=t) for k, t in found.plan],
+        approved_by_name=found.approved_by_name,
+        approved_at=found.approved_at,
+    )
+
+
+@router.get(
+    "/procedures/{procedure_id}/session", action="procedure.read", response_model=SessionOut
+)
+async def session_route(engagement_id: UUID, procedure_id: UUID, ctx: Ctx) -> SessionOut:
+    """SPEC-044 AC-1: the session's plan, and its approval."""
+    return await _session_out(ctx, engagement_id, procedure_id)
+
+
+@router.post(
+    "/procedures/{procedure_id}/session/approve-plan",
+    action="procedure.run",
+    response_model=SessionOut,
+    status_code=201,
+    errors=(409,),
+)
+async def approve_plan_route(engagement_id: UUID, procedure_id: UUID, ctx: Ctx) -> SessionOut:
+    """SPEC-044 AC-2: a person approves the plan; the selection starts if there's none."""
+    if await approve_plan(ctx, engagement_id, procedure_id):
+        await request_selection(ctx, engagement_id, procedure_id)
+    return await _session_out(ctx, engagement_id, procedure_id)

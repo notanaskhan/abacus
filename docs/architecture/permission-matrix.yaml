@@ -227,6 +227,7 @@ actions:
   workpaper.sign_ready:     {manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # SPEC-037 (TASK-084), ADR-131 Q2: the preparer; TASK-089: never the agent
   entry_assessment.request: {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # SPEC-037 Q4 (TASK-085): "Assess with AI"
   entry_assessment.run:     {system: allow, agent: task_scope}   # TASK-085: the entry assessor records its assessments
+  entry_assessment.adopt:   {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # SPEC-044 (TASK-109) AC-4: a person adopts the agent's proposals as results
   workpaper.sign_reviewed:  {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # ADR-131 Q2: never the preparer (the service refuses); TASK-089: never the EQR (`reviewer`) or the agent
   suggestion.resolve:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny}
   sample.approve:           {engagement_partner: allow, manager: allow, agent: deny, independence: required}   # SPEC-040 (TASK-100) Q1: a manager or the partner agrees the sample
