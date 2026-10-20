@@ -68,6 +68,14 @@ describe("SPEC-048 ac6 compiled-CSS check", () => {
     ).toHaveLength(1);
   });
 
+  it("passes the handoff reference colours inside [data-contrast=reference] only (ADR-155 §5)", () => {
+    const reference = "[data-contrast=reference]{--color-match-ink:#9253a2}";
+    expect(check.checkCss(reference, tokens)).toEqual([]);
+    expect(check.checkCss(`${reference}.x{color:#9253a2}`, tokens)).toEqual([
+      ".x { color: #9253a2 }: colour literal #9253a2 is not a design token",
+    ]);
+  });
+
   it("fails a seeded colour literal that is not a token", () => {
     for (const literal of [
       "#7a4e12",

@@ -15,9 +15,12 @@ export interface Token {
 }
 
 /** The handoff's values where they differ from the AA ladder (ADR-155 decision 5; DEC-115). */
+// The handoff's reference values are data shown for parity comparison, never styles (ADR-155 §5).
 export const REFERENCE_OVERRIDES: Readonly<Record<string, string>> = {
+  // eslint-disable-next-line no-restricted-syntax -- handoff reference value, displayed as data
   "ink-3": "rgba(43, 31, 23, 0.54)",
-  "match-ink": "rgb(146, 83, 162)", // #9253A2 in the handoff
+  // eslint-disable-next-line no-restricted-syntax -- handoff reference value (#9253A2), displayed as data
+  "match-ink": "rgb(146, 83, 162)",
 };
 
 /** The surfaces a text token must read on. */

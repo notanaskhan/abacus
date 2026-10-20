@@ -1,7 +1,9 @@
 // SPEC-048 AC-6 (F-05-T07): the compiled-CSS check. After a production build it scans
 // dist/**/assets/*.css and fails on
 //   - a font-weight of 600 or above (600, 700, 800, 900, bold, bolder) outside a [data-doc] rule,
-//   - a colour literal (hex, rgb(), rgba(), hsl(), oklch(), …) that is not a design token.
+//   - a colour literal (hex, rgb(), rgba(), hsl(), oklch(), …) that is not a design token, except
+//     inside a [data-contrast=reference] rule: the handoff's own values, used only for parity runs
+//     (ADR-155 §5; contrast.css).
 // A token is a colour literal that theme.css defines. Minifiers rewrite colours (rgba(43,31,23,.95)
 // becomes #2b1f17f2) and Tailwind's opacity modifiers (bg-ink/50) change the alpha, so colours are
 // compared by red, green and blue, not as text; fully transparent is always allowed.
@@ -15,6 +17,7 @@ const WEIGHT = /(?:^|\s)(?:600|700|800|900|bold|bolder|semibold)(?=\s|$)/i;
 const COLOUR_FUNCTION = /\b(?:hsla?|hwb|oklch|oklab|lab|lch|color)\(/i;
 const HEX = /#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{4}|[0-9a-f]{3})(?![0-9a-z])/gi;
 const DATA_DOC = /\[data-doc(?:[~|^$*]?=[^\]]*)?\]/;
+const REFERENCE = /\[data-contrast=["']?reference["']?\]/;
 const RGB = /\brgba?\(([^)]*)\)/gi;
 
 /** @param {string} hex @returns {string} */
@@ -138,6 +141,7 @@ export function checkCss(css, tokens) {
     if (!weightsAllowed && (prop === "font-weight" || prop === "font") && WEIGHT.test(value)) {
       messages.push(`${where} { ${prop}: ${value} }: weights above 500 belong in [data-doc]`);
     }
+    if (context.some((c) => REFERENCE.test(c))) continue;
     for (const { text, key } of colourLiterals(value)) {
       if (key === null || !isToken(key)) {
         messages.push(

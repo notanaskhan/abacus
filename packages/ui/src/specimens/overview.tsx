@@ -42,6 +42,7 @@ const COLUMNS: Column<Row>[] = [
     key: "amount",
     header: "Amount",
     align: "right",
+    // eslint-disable-next-line no-restricted-properties -- TODO(F-05-T10): format.ts money formatter
     cell: (r) => r.amount.toLocaleString("en-US", { minimumFractionDigits: 2 }),
     sortValue: (r) => r.amount,
   },

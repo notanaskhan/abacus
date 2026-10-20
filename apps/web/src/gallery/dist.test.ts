@@ -28,7 +28,7 @@ function files(dir: string): string[] {
   });
 }
 
-async function bundle(gallery: string | undefined): Promise<string> {
+async function bundle(gallery: string | undefined, only = /\.(js|css|html)$/): Promise<string> {
   const outDir = mkdtempSync(join(tmpdir(), "abacus-dist-"));
   out.push(outDir);
   const saved = process.env.VITE_UI_GALLERY;
@@ -46,7 +46,7 @@ async function bundle(gallery: string | undefined): Promise<string> {
     else process.env.VITE_UI_GALLERY = saved;
   }
   return files(outDir)
-    .filter((f) => /\.(js|css|html)$/.test(f))
+    .filter((f) => only.test(f))
     .map((f) => readFileSync(f, "utf8"))
     .join("\n");
 }
@@ -62,7 +62,10 @@ describe("ac10 production dist", () => {
       expect(dist.includes(marker), `dist contains "${marker}"`).toBe(false);
     }
     expect(dist.includes("/components/tokens")).toBe(false);
-    expect(dist.includes("data-contrast")).toBe(false);
+    // contrast.css ships the inert [data-contrast="reference"] selector (ADR-155 §5); what must
+    // never ship is gallery code that sets the attribute, so only the scripts are checked.
+    const scripts = await bundle(undefined, /\.js$/);
+    expect(scripts.includes("data-contrast")).toBe(false);
   }, 240_000);
 
   it("contains them when VITE_UI_GALLERY=1 (the scan can see the gallery)", async () => {

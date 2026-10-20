@@ -187,17 +187,6 @@ export const textRoles = {
   "btn-sm": { size: "12.5px", lineHeight: "1.2" },
 } as const satisfies Record<string, TextRole>;
 
-/** Tailwind's own type names, mapped onto the plan's sizes until the F-05-T06 codemod retires them. */
-export const legacyText = {
-  xs: { size: "11.5px", lineHeight: "1.3" },
-  sm: { size: "13px", lineHeight: "1.45" },
-  base: { size: "13.5px", lineHeight: "1.45" },
-  lg: { size: "14.5px", lineHeight: "1.3" },
-  xl: { size: "15px", lineHeight: "1.3" },
-  "2xl": { size: "20px", lineHeight: "1.2" },
-  "3xl": { size: "20px", lineHeight: "1.2" },
-} as const satisfies Record<string, TextRole>;
-
 /** The 13 radii. Controls are pills (DEC-109). */
 export const radii = {
   pill: "999px",
@@ -363,7 +352,6 @@ export const themeVariables: Readonly<Record<string, string>> = Object.fromEntri
   ...prefixed("color-", colors.aliases),
   ...prefixed("font-", fonts),
   ...prefixed("font-weight-", fontWeights),
-  ...textVariables(legacyText),
   ...textVariables(textRoles),
   ...prefixed("radius-", radii),
   ...prefixed("radius-", legacyRadii),

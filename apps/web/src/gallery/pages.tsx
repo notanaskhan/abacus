@@ -65,6 +65,7 @@ export function GalleryIndex(): JSX.Element {
   );
 }
 
+// eslint-disable-next-line no-restricted-properties -- TODO(F-05-T10): format.ts ratio formatter
 const RATIO = (n: number): string => n.toFixed(2);
 
 export function TokensPage(): JSX.Element {

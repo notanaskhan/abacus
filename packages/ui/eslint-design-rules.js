@@ -133,7 +133,7 @@ export const colourLiteralSyntax = [
 // components still use Tailwind's text-xs to text-3xl, which theme.css maps onto the plan's roles
 // (ADR-155 §1), so banning them now would fail every screen. To switch on: set
 // TYPE_SCALE_BAN_ENABLED to true. eslint-rules.test.ts checks the flag against the shipped config.
-export const TYPE_SCALE_BAN_ENABLED = false;
+export const TYPE_SCALE_BAN_ENABLED = true;
 
 /** text-xs … text-3xl (and text-sm/6 and variants). Exported switched off; see the TODO above. */
 export const deferredTypeScaleSyntax = [
