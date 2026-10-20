@@ -88,6 +88,7 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"client_item_responses", "client_list_done"}  # SPEC-042 (TASK-106): as the client said
     | {"findings", "misstatements"}  # SPEC-043 (TASK-107): as raised and recorded
     | {"procedure_session_events"}  # SPEC-044 (TASK-109): plan approvals, as given
+    | {"materiality_decisions", "risks", "risk_versions", "risk_approvals"}  # SPEC-300 (TASK-301)
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -147,7 +148,16 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     # Fieldwork (SPEC-037; TASK-083): materiality, firm defaults, procedures and selections.
     "engagement_materiality": frozenset(
         {"tenant_id", "engagement_id", "overall", "performance", "trivial", "benchmark", "set_by"}
+        | {"basis_amount", "rate_pct", "performance_pct", "trivial_pct", "rationale"}  # SPEC-300
     ),
+    # Planning (SPEC-300; TASK-301): the partner's materiality decision and the risk register.
+    "materiality_decisions": frozenset({"tenant_id", "materiality_id", "rationale", "decided_by"}),
+    "risks": frozenset({"tenant_id", "engagement_id", "number", "raised_by"}),
+    "risk_versions": frozenset(
+        {"tenant_id", "risk_id", "title", "area", "level", "assertions", "inherent", "control"}
+        | {"significant", "fraud", "rationale", "recorded_by"}
+    ),
+    "risk_approvals": frozenset({"tenant_id", "risk_version_id", "rationale", "approved_by"}),
     "fieldwork_settings": frozenset({"tenant_id", "settings", "set_by"}),
     "procedures": frozenset(
         {"id", "tenant_id", "engagement_id", "definition", "definition_version", "parameters"}
@@ -522,6 +532,10 @@ TABLE_OWNERS: dict[str, str] = {
     "findings": "fieldwork",  # SPEC-043 (TASK-107)
     "procedure_session_events": "fieldwork",  # SPEC-044 (TASK-109)
     "misstatements": "fieldwork",
+    "materiality_decisions": "fieldwork",  # SPEC-300 (TASK-301)
+    "risks": "fieldwork",
+    "risk_versions": "fieldwork",
+    "risk_approvals": "fieldwork",
     "client_list_done": "requests",
     "review_note_events": "fieldwork",
     "item_signoffs": "fieldwork",  # SPEC-040 (TASK-100)

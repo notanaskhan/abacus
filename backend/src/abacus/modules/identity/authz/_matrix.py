@@ -606,6 +606,23 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "independence": "required",
     },
+    "materiality.decide": {
+        "engagement_partner": "allow",
+        "agent": "deny",
+        "independence": "required",
+    },
+    "risk.assess": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "agent": "deny",
+        "independence": "required",
+    },
+    "risk.approve": {
+        "engagement_partner": "allow",
+        "agent": "deny",
+        "independence": "required",
+    },
     "message.send": {
         "engagement_partner": "allow",
         "manager": "allow",

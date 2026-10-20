@@ -26,6 +26,11 @@ class EngagementMateriality(Base):
     benchmark: Mapped[str]
     set_by: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    basis_amount: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))  # SPEC-300 (TASK-301)
+    rate_pct: Mapped[Decimal | None] = mapped_column(Numeric(6, 3))
+    performance_pct: Mapped[Decimal | None] = mapped_column(Numeric(6, 3))
+    trivial_pct: Mapped[Decimal | None] = mapped_column(Numeric(6, 3))
+    rationale: Mapped[str | None]
 
 
 class FieldworkSettings(Base):
@@ -283,4 +288,64 @@ class ProcedureSessionEvent(Base):
     procedure_id: Mapped[UUID]
     kind: Mapped[str]
     by_user: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class MaterialityDecision(Base):
+    """The engagement partner deciding a materiality version (SPEC-300; TASK-301). Insert-only."""
+
+    __tablename__ = "materiality_decisions"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    materiality_id: Mapped[UUID]
+    rationale: Mapped[str]
+    decided_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class Risk(Base):
+    """A risk on the engagement, R1, R2… (SPEC-300). Insert-only."""
+
+    __tablename__ = "risks"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    number: Mapped[int]
+    raised_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class RiskVersion(Base):
+    """A risk's assessment (SPEC-300). Insert-only; the newest per risk counts."""
+
+    __tablename__ = "risk_versions"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    risk_id: Mapped[UUID]
+    title: Mapped[str]
+    area: Mapped[str]
+    level: Mapped[str]
+    assertions: Mapped[list[str]] = mapped_column(ARRAY(String))
+    inherent: Mapped[str]
+    control: Mapped[str]
+    significant: Mapped[bool]
+    fraud: Mapped[str]
+    rationale: Mapped[str | None]
+    recorded_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class RiskApproval(Base):
+    """The partner approving a risk version's significant risk or rebuttal (SPEC-300)."""
+
+    __tablename__ = "risk_approvals"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    risk_version_id: Mapped[UUID]
+    rationale: Mapped[str | None]
+    approved_by: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

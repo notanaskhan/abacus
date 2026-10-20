@@ -238,6 +238,9 @@ actions:
   review_note.clear:        {engagement_partner: allow, manager: allow, senior: allow, reviewer: allow, agent: deny, independence: required}   # SPEC-041 AC-3: only the raiser (the service checks)
   finding.raise:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # SPEC-043 (TASK-107) AC-4
   misstatement.set:         {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # SPEC-043 AC-4: people record misstatements
+  materiality.decide:       {engagement_partner: allow, agent: deny, independence: required}   # SPEC-300 (TASK-301) AC-2: only the engagement partner decides materiality
+  risk.assess:              {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # SPEC-300 AC-4: the team records and revises risks
+  risk.approve:             {engagement_partner: allow, agent: deny, independence: required}   # SPEC-300 AC-5: the partner approves significant risks and rebuttals
 
   # --- Communications (SPEC-006 Q4; TASK-021) ---
   message.send:             {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny}
