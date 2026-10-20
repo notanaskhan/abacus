@@ -22,6 +22,7 @@ from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import get_ref, lock_ref
+from abacus.modules.fieldwork.events import SeverityProposed
 from abacus.modules.fieldwork.models import (
     Adjustment,
     AdjustmentEvent,
@@ -169,6 +170,8 @@ async def set_severity(
             target=Target("finding", finding_id),
             after=Ref(severity=SEVERITIES.index(severity)),
         )
+        if stage == "proposed":  # SPEC-305: the partner is asked to conclude
+            tx.emit(SeverityProposed(engagement_id=engagement_id, finding_id=finding_id))
 
 
 async def record_communication(

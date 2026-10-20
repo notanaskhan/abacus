@@ -17,7 +17,42 @@ const TEXT: Record<string, string> = {
   "reminders.drafted": "Overdue reminders are waiting for you to send.",
   "agent.digest": "Items are overdue on an engagement: see its activity.",
   "comment.mentioned": "You were mentioned in a comment.", // SPEC-032 (TASK-063)
+  // SPEC-305 (TASK-306): decisions reserved to the engagement partner.
+  "materiality.proposed": "Materiality is waiting for your decision.",
+  "risk.approval_requested": "A risk is waiting for your approval.",
+  "finding.severity_proposed": "A deficiency is waiting for you to conclude its severity.",
 };
+
+export type Category = "needs_you" | "mentions" | "client" | "updates";
+
+const CATEGORY: Record<string, Category> = {
+  "review.assigned": "needs_you",
+  "independence.requested": "needs_you",
+  "reminders.drafted": "needs_you",
+  "support_session.requested": "needs_you",
+  "materiality.proposed": "needs_you",
+  "risk.approval_requested": "needs_you",
+  "finding.severity_proposed": "needs_you",
+  "comment.mentioned": "mentions",
+  "evidence.uploaded": "client",
+  "connection.created": "client",
+  "connection.revoked": "client",
+};
+
+/** SPEC-305: which drawer tab a kind belongs to. */
+export function categoryOf(kind: string): Category {
+  return CATEGORY[kind] ?? "updates";
+}
+
+/** SPEC-305: the day group a notification falls in, relative to `now`. */
+export function dayGroup(iso: string, now: Date = new Date()): string {
+  const day = (d: Date): number => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round((day(now) - day(new Date(iso))) / 86_400_000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return "Earlier this week";
+  return "Older";
+}
 
 export function notificationText(kind: string): string {
   return TEXT[kind] ?? "You have a new notification.";
@@ -49,5 +84,9 @@ function firmHref(n: NotificationOut): string | null {
   if (n.engagement_id === null) return null;
   if (n.kind === "review.assigned") return `/engagements/${n.engagement_id}/review`;
   if (n.kind === "evidence.uploaded") return `/engagements/${n.engagement_id}/requests`;
+  if (n.kind === "reminders.drafted") return `/engagements/${n.engagement_id}/requests`;
+  if (n.kind === "materiality.proposed" || n.kind === "risk.approval_requested")
+    return `/engagements/${n.engagement_id}/planning`;
+  if (n.kind === "finding.severity_proposed") return `/engagements/${n.engagement_id}/findings`;
   return `/engagements/${n.engagement_id}`;
 }

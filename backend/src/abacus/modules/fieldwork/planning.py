@@ -20,6 +20,7 @@ from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import get_ref, lock_ref
+from abacus.modules.fieldwork.events import RiskApprovalRequested
 from abacus.modules.fieldwork.repository import (
     get_risk,
     insert_materiality_decision,
@@ -295,6 +296,8 @@ async def record_risk(
             target=Target("risk", risk_id),
             after=Ref(significant=int(clean.significant), fraud=FRAUD.index(clean.fraud)),
         )
+        if clean.significant or clean.fraud == "rebuttal":  # SPEC-305: the partner is asked
+            tx.emit(RiskApprovalRequested(engagement_id=engagement_id, risk_id=risk_id))
     return risk_id
 
 

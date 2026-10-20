@@ -210,11 +210,18 @@ async def team_of(tenant_id: UUID, engagement_id: UUID) -> list[tuple[UUID, Enga
 
 
 LEAD_ROLES: frozenset[EngagementRole] = frozenset({"engagement_partner", "manager"})
+PARTNER_ROLES: frozenset[EngagementRole] = frozenset({"engagement_partner"})
 
 
 async def engagement_leads(tenant_id: UUID, engagement_id: UUID) -> list[UUID]:
     """The engagement's partner and managers (SPEC-013 recipients)."""
     return [user for user, role in await team_of(tenant_id, engagement_id) if role in LEAD_ROLES]
+
+
+async def engagement_partners(tenant_id: UUID, engagement_id: UUID) -> list[UUID]:
+    """SPEC-305 (TASK-306): the engagement partner(s), who alone decide reserved matters."""
+    team = await team_of(tenant_id, engagement_id)
+    return sorted({user for user, role in team if role in PARTNER_ROLES})
 
 
 async def earliest_partner(tenant: TenantContext, engagement_id: UUID) -> UUID | None:
