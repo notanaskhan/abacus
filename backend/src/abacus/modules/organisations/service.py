@@ -34,6 +34,7 @@ class NewClient:
 class ClientNames:
     client_name: str
     client_entity_name: str
+    client_id: UUID  # SPEC-303 (TASK-304): the clients index groups by it
 
 
 async def create_client(

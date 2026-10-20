@@ -150,6 +150,8 @@ class EngagementView:
     fiscal_period_start: date
     fiscal_period_end: date
     created_at: datetime
+    client_id: UUID  # SPEC-303 (TASK-304)
+    client_entity_id: UUID
 
 
 def _view(engagement: Engagement, names: ClientNames) -> EngagementView:
@@ -163,6 +165,8 @@ def _view(engagement: Engagement, names: ClientNames) -> EngagementView:
         fiscal_period_start=engagement.fiscal_period_start,
         fiscal_period_end=engagement.fiscal_period_end,
         created_at=engagement.created_at,
+        client_id=names.client_id,
+        client_entity_id=engagement.client_entity_id,
     )
 
 

@@ -15,6 +15,8 @@ function engagement(id: string, name: string): EngagementSummaryOut {
     name,
     client_name: "Acme",
     client_entity_name: "Acme Holdings",
+    client_id: "c1",
+    client_entity_id: "ce1",
     fiscal_period_start: "2025-01-01",
     fiscal_period_end: "2025-12-31",
     status: "active",

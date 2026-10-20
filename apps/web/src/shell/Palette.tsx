@@ -138,6 +138,13 @@ export function Palette({
       },
     },
     {
+      id: "p-clients",
+      label: "Clients",
+      run: () => {
+        go("/clients");
+      },
+    },
+    {
       id: "p-knowledge",
       label: "Knowledge",
       run: () => {
@@ -180,10 +187,26 @@ export function Palette({
       { label: "Go to", items: pages },
     ];
   } else {
+    const seen = new Set<string>();
+    const clients: PaletteItem[] = [];
+    for (const e of engagements.data ?? []) {
+      if (seen.has(e.client_id) || !matches(e.client_name, q)) continue;
+      seen.add(e.client_id);
+      clients.push({
+        id: `c-${e.client_id}`,
+        label: e.client_name,
+        hint: "Client",
+        run: () => {
+          go(`/clients/${e.client_id}`);
+        },
+      });
+    }
+    clients.splice(4);
     const found = (engagements.data ?? [])
       .filter((e) => matches(`${e.client_name} ${e.client_entity_name} ${e.name}`, q))
       .slice(0, 6);
     groups = [
+      { label: "Clients", items: clients },
       { label: "Engagements", items: found.map(engagementItem) },
       {
         label: "Request items",

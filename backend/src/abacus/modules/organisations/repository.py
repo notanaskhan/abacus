@@ -26,14 +26,16 @@ async def insert_client_entity(
     )
 
 
-async def names_of(session: AsyncSession, entity_ids: list[UUID]) -> dict[UUID, tuple[str, str]]:
+async def names_of(
+    session: AsyncSession, entity_ids: list[UUID]
+) -> dict[UUID, tuple[str, str, UUID]]:
     """Client and entity names by entity ID. The caller has authorised access to their
     engagements."""
     if not entity_ids:
         return {}
     rows = (
         await session.execute(
-            select(ClientEntity.id, Client.name, ClientEntity.name)
+            select(ClientEntity.id, Client.name, ClientEntity.name, Client.id)
             .join(
                 Client,
                 (Client.id == ClientEntity.client_id)
@@ -42,7 +44,7 @@ async def names_of(session: AsyncSession, entity_ids: list[UUID]) -> dict[UUID, 
             .where(ClientEntity.id.in_(entity_ids))
         )
     ).all()
-    return {row[0]: (row[1], row[2]) for row in rows}
+    return {row[0]: (row[1], row[2], row[3]) for row in rows}
 
 
 async def names_in_firm(session: AsyncSession) -> list[tuple[UUID, UUID, str]]:

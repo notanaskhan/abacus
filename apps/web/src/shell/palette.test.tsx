@@ -10,6 +10,8 @@ const ENG = {
   name: "FY2025 audit",
   client_name: "Northwind Robotics",
   client_entity_name: "Northwind Robotics 401(k) Plan",
+  client_id: "c1",
+  client_entity_id: "ce1",
   status: "active",
   type: "audit",
   created_at: "2026-09-01T00:00:00Z",
@@ -69,7 +71,7 @@ describe("SPEC-302 command palette", () => {
     expect(await screen.findByText("Bank statements December")).toBeTruthy();
     expect(calls.some((c) => c.path === "/v1/firm/search/request-items")).toBe(true);
     fireEvent.change(input, { target: { value: "northwind" } });
-    expect(await screen.findByText("Northwind Robotics")).toBeTruthy();
+    expect((await screen.findAllByText("Northwind Robotics")).length).toBe(2); // client, engagement
     fireEvent.change(input, { target: { value: "bank" } });
     await screen.findByText("Bank statements December");
     fireEvent.keyDown(input, { key: "Enter" });
