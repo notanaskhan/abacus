@@ -1,0 +1,28 @@
+{
+  "EngagementStatus": {
+    "enum": [
+      "prospect",
+      "accepted",
+      "declined",
+      "contracted",
+      "active",
+      "on_hold",
+      "delivered",
+      "archived"
+    ],
+    "title": "EngagementStatus",
+    "type": "string"
+  },
+  "RequestStatus": {
+    "enum": [
+      "draft",
+      "requested",
+      "uploaded",
+      "received",
+      "returned",
+      "not_applicable"
+    ],
+    "title": "RequestStatus",
+    "type": "string"
+  }
+}

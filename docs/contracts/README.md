@@ -10,8 +10,8 @@ Status values: `planned` (no stub), `stub` (models, 501 routes, matrix actions, 
 
 | C | Contract | File | Provider (epic) | Consumers | Freeze sprint | Freeze starts | Version | Status |
 |---|---|---|---|---|---|---|---|---|
-| C1 | Work item and engagement lifecycle (8 states, G1-G3 facts, per-type gate policy) | `work-items.md` | F-03 | every module | S1 | 2026-11-02 | v1 | stub (F-03-T06) |
-| C2 | Status registry: YAML to StrEnum, OpenAPI enums, `status.ts` | `status-registry.md` | F-03 (YAML authored in F-03-T04, codegen F-03-T09) | all | S1 | 2026-11-02 | v1 | planned |
+| C1 | Work item and engagement lifecycle (8 states, G1-G3 facts, per-type gate policy) | `work-items.md` | F-03 | every module | S1 | 2026-11-02 | v1 | frozen (F-03-T19, 2026-10-21) |
+| C2 | Status registry: YAML to StrEnum, OpenAPI enums, `status.ts` | `status-registry.md` | F-03 (YAML authored in F-03-T04, codegen F-03-T09) | all | S1 | 2026-11-02 | v1 | frozen (F-03-T19, 2026-10-21) |
 | C3 | Review grammar: suggestion and change set, decision, sign_off (content hash, staleness, segregation), issue, checkpoint, field_value_version, human_gate | `review-grammar.md` | P-04 | A-*, T-*, C-*, I-01 | schema S3, services S12 | 2026-11-30, 2027-04-05 | v1 | planned |
 | C4 | Citation v2, viewer manifest, regions, masked PII and logged reveal | `citation-v2.md` | P-03 | every trace surface | S5 | 2026-12-28 | v1 | planned |
 | C5 | Requests and binders; portal scopes (`client_access_grant`, role union) | `requests-binders.md` | P-06, P-08 (schema half in F-03-T14, T15, T26); portal read models | A-01, R-01, T-02, C-01 | S3 | 2026-11-30 | v1 | planned |
@@ -24,7 +24,7 @@ Status values: `planned` (no stub), `stub` (models, 501 routes, matrix actions, 
 | C12 | TB hand-off into tax | `tb-handoff.md` | T-06 | AUD-38, CLS-12 | S50 | 2028-09-18 | v1 | planned |
 | C13 | Human-gate projection registration slot (Home) | `human-gates.md` | I-01 with P-04 | every module | S10 | 2027-03-08 | v1 | planned |
 | C14 | Board and program-status read model | `board-status.md` | K-04 | AUD-01/02, TAX-01, CLS-01/02, ATT-04 | S59 | 2029-01-22 | v1 | planned |
-| C15 | Search registration | `search.md` | P-02 (slot reserved by F-03-T08) | all modules | slot S1, index S39 | 2026-11-02, 2028-04-17 | v1 | planned |
+| C15 | Search registration | `search.md` | P-02 (slot reserved by F-03-T08) | all modules | slot S1, index S39 | 2026-11-02, 2028-04-17 | v1 | slot reserved (F-03-T08) |
 | C16 | Notification kinds and transactional email templates (database) | `notifications.md` | P-01, R-01 | all | S5 | 2026-12-28 | v1 | planned |
 | C17 | Workbench tool registry (per-module read and compute tools, ADR-049) | `workbench-tools.md` | P-10 | W-02, W-03, I-02 | S32 | 2028-01-10 | v1 | planned |
 | C18 | Portal approvals (FS packages, client AJE approval) | `portal-approvals.md` | R-02 | A-06, A-07, C-02 | S30 | 2027-12-13 | v1 | planned |
@@ -50,7 +50,7 @@ Once a contract is `frozen` at v1:
 
 - **Additive changes** (a new optional field, a new operation, a new enum member that consumers must tolerate) go in place, with the contract doc updated in the same commit.
 - **Breaking changes** (removing or renaming a field, an operation or an enum member; changing a type, a status code or a human-only action; tightening validation) ship as **vN+1** with **one sprint of overlap**: vN keeps working and stays in the generated client until the end of the next sprint, then is removed. The contract doc and this register carry both versions during the overlap.
-- **CI.** A snapshot diff of the OpenAPI schema and the contract models fails the build when a frozen field is removed or renamed, unless the same change ships vN+1 with overlap. Consumer contract tests run in the provider's CI and must stay green. CI enforcement is a later row (F-03-T18); until it lands the rule is applied by hand and by the contract tests.
+- **CI.** A snapshot diff of the OpenAPI schema and the contract models fails the build when a frozen field is removed or renamed, unless the same change ships vN+1 with overlap. Consumer contract tests run in the provider's CI and must stay green. CI enforcement (F-03-T18): `make ci-contracts` runs `python -m abacus_tools.contracts --check` against each frozen snapshot in `backend/tests/contracts/<contract>/vN.json`; `--freeze <contract> vN` writes a new version and never rewrites one.
 - **Approval.** The two-founder approval clause in chapter 01 is void under `docs/plan/AMENDMENT-solo.md`. The builder decides, records the decision in `docs/product/decision-log.md` and bumps the register row.
 
 ## Adding or changing a row

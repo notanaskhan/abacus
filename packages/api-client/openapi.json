@@ -3602,6 +3602,15 @@
             "title": "Fiscal Period Start",
             "type": "string"
           },
+          "gates": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/GateOut"
+            },
+            "title": "Gates",
+            "type": "array"
+          },
           "id": {
             "cls": "internal",
             "format": "uuid",
@@ -4763,6 +4772,40 @@
           "needed"
         ],
         "title": "GapOut",
+        "type": "object"
+      },
+      "GateOut": {
+        "properties": {
+          "blockers": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "gate": {
+            "cls": "internal",
+            "enum": [
+              "G1",
+              "G2",
+              "G3"
+            ],
+            "title": "Gate",
+            "type": "string"
+          },
+          "met": {
+            "cls": "internal",
+            "title": "Met",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "gate",
+          "met",
+          "blockers"
+        ],
+        "title": "GateOut",
         "type": "object"
       },
       "GlAccountDifferenceOut": {

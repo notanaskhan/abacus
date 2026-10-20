@@ -16,6 +16,7 @@ from abacus.kernel._statuses import EngagementStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.config import settings
 from abacus.kernel.text import SingleLineText
+from abacus.modules.engagements.gates import engagement_gates
 from abacus.modules.engagements.onboarding import Onboarding, StepId, acknowledge_step, onboarding
 from abacus.modules.engagements.onboarding import dismiss as dismiss_onboarding
 from abacus.modules.engagements.roll_forward import ItemKind, RollForward, propose
@@ -146,8 +147,18 @@ class EngagementSummaryOut(BaseModel):
     client_entity_id: Annotated[UUID, classified("internal")]
 
 
+class GateOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    gate: Annotated[Literal["G1", "G2", "G3"], classified("internal")]
+    met: Annotated[bool, classified("internal")]
+    blockers: Annotated[list[str], classified("internal")]
+
+
 class EngagementOut(EngagementSummaryOut):
     team: Annotated[list[TeamMemberOut], classified("confidential")]
+    # C1 (F-03-T19): the G1 to G3 gates the type requires; filled on GET /v1/engagements/{id}.
+    gates: Annotated[list[GateOut], classified("internal")] = []
 
 
 def _summary(view: EngagementView) -> EngagementSummaryOut:
@@ -281,7 +292,11 @@ async def list_engagements_route(ctx: Ctx) -> list[EngagementSummaryOut]:
 
 @router.get("/{engagement_id}", action="engagement.read_metadata", response_model=EngagementOut)
 async def get_engagement_route(engagement_id: UUID, ctx: Ctx) -> EngagementOut:
-    return _out(await engagement_metadata(ctx, engagement_id))
+    metadata = await engagement_metadata(ctx, engagement_id)
+    gates = await engagement_gates(ctx.tenant, engagement_id, metadata.engagement.type)
+    return _out(metadata).model_copy(
+        update={"gates": [GateOut.model_validate(asdict(g)) for g in gates]}
+    )
 
 
 class WorkItemOut(BaseModel):

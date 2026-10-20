@@ -140,6 +140,7 @@ ci-coverage:
 
 ci-contracts:
 	cd backend && uv run python -m abacus_tools.quality.schema_check
+	cd backend && uv run python -m abacus_tools.contracts --check && uv run pytest tests/contracts
 	@if [ -f backend/src/abacus/api/export_openapi.py ]; then \
 		$(MAKE) generate && git diff --exit-code packages/api-client && \
 		test -z "$$(git status --porcelain --untracked-files=all packages/api-client)"; \

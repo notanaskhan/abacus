@@ -1718,6 +1718,10 @@ export type EngagementOut = {
      */
     fiscal_period_start: string;
     /**
+     * Gates
+     */
+    gates?: Array<GateOut>;
+    /**
      * Id
      */
     id: string;
@@ -2265,6 +2269,24 @@ export type GapOut = {
      * Needed
      */
     needed: Array<string>;
+};
+
+/**
+ * GateOut
+ */
+export type GateOut = {
+    /**
+     * Blockers
+     */
+    blockers: Array<string>;
+    /**
+     * Gate
+     */
+    gate: 'G1' | 'G2' | 'G3';
+    /**
+     * Met
+     */
+    met: boolean;
 };
 
 /**

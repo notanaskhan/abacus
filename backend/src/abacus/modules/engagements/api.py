@@ -3,6 +3,7 @@
 from abacus.ai_gateway import register_client_data_facts
 from abacus.modules.engagements.audit_targets import AUDIT_KINDS, audit_engagements, visible_among
 from abacus.modules.engagements.events import EngagementCreated, IndependenceRequested
+from abacus.modules.engagements.gates import register_gates
 from abacus.modules.engagements.roll_forward import (
     PriorItem,
     TemplateSeed,
@@ -83,6 +84,8 @@ register_active_engagements(active_engagements)
 register_member_added(request_independence)
 # SPEC-025 (TASK-045): a staff engagement role reaches client data once its holder confirms.
 register_independence(confirmed_subquery, confirmed_for)
+
+register_gates()  # C1: G1 to G3 in the fail-closed gate slot
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
