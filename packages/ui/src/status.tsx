@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 import type { Tone } from "./components/surfaces";
 import { StatusPill } from "./components/workspace";
+import { STATUS_REGISTRY } from "./status.gen";
 
 // The status vocabulary (TASK-101, the plan's §3.3.1): every state the product shows, with its
 // word and tone, in one place, so the same state never reads two ways on two screens.
@@ -63,4 +64,44 @@ export function statusWord(domain: StatusDomain, value: string): StatusWord {
 export function Status({ domain, value }: { domain: StatusDomain; value: string }): JSX.Element {
   const word = statusWord(domain, value);
   return <StatusPill tone={word.tone}>{word.label}</StatusPill>;
+}
+
+// C2 (F-03-T09): the registry generated from docs/product/status-vocabulary.yaml. New screens read
+// words from here; STATUS above stays for the legacy request codes until request status v2.
+
+export type RegistryObject = keyof typeof STATUS_REGISTRY;
+export type RegistryCode<O extends RegistryObject> = keyof (typeof STATUS_REGISTRY)[O] & string;
+
+const VARIANT_TONE: Record<string, Tone> = {
+  green: "success",
+  "green-tint": "success",
+  red: "danger",
+  "red-tint": "danger",
+  amber: "warning",
+  state: "info",
+};
+
+interface RegistryEntry {
+  label: string;
+  variant: string | null;
+  clientLabel?: string;
+}
+
+/** The registry's word and tone for a code; `client` uses the portal wording when there is one.
+ * Placeholders ({date}, {reason}) are filled from `fill`, or dropped with their separator. */
+export function registryWord(
+  object: RegistryObject,
+  code: string,
+  options: { client?: boolean; fill?: Record<string, string> } = {},
+): StatusWord {
+  const codes: Record<string, RegistryEntry> = STATUS_REGISTRY[object];
+  const entry = codes[code];
+  if (entry === undefined) return { label: code, tone: "neutral" };
+  const raw =
+    options.client === true && entry.clientLabel !== undefined ? entry.clientLabel : entry.label;
+  const label = raw
+    .replace(/\{(\w+)\}/g, (_m, key: string) => options.fill?.[key] ?? "")
+    .replace(/\s*·\s*$/, "")
+    .trim();
+  return { label, tone: VARIANT_TONE[entry.variant ?? ""] ?? "neutral" };
 }
