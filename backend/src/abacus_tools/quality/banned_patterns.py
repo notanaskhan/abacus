@@ -1398,6 +1398,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_identity.py",
             "tests/integration/test_engagements.py",
             "tests/integration/test_engagements_schema.py",
+            "tests/integration/test_work_items.py",  # F-03-T05: setup as the superuser
             "tests/integration/test_evidence.py",
             "tests/integration/test_retrieval.py",
             "tests/integration/test_ledger_schema.py",

@@ -58,6 +58,7 @@ from abacus.modules.engagements.setup import (
     setup,
 )
 from abacus.modules.engagements.setup_steps import StepKey, StepState
+from abacus.modules.engagements.work_items import work_items_of
 from abacus.modules.engagements.workbook import Problem, TemplateInvalid
 from abacus.modules.identity.api import (
     OWN,
@@ -278,6 +279,32 @@ async def list_engagements_route(ctx: Ctx) -> list[EngagementSummaryOut]:
 @router.get("/{engagement_id}", action="engagement.read_metadata", response_model=EngagementOut)
 async def get_engagement_route(engagement_id: UUID, ctx: Ctx) -> EngagementOut:
     return _out(await engagement_metadata(ctx, engagement_id))
+
+
+class WorkItemOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    kind: Annotated[
+        Literal["assurance", "tax_return", "close", "notice", "advisory_project"],
+        classified("internal"),
+    ]
+    name: Name
+    status: Annotated[Literal["active", "archived"], classified("internal")]
+    period_start: Annotated[date | None, classified("confidential")]
+    period_end: Annotated[date | None, classified("confidential")]
+    due_on: Annotated[date | None, classified("internal")]
+    phase: Annotated[str | None, classified("internal")]
+
+
+@router.get(
+    "/{engagement_id}/work-items",
+    action="work_item.read_metadata",
+    response_model=list[WorkItemOut],
+)
+async def work_items_route(engagement_id: UUID, ctx: Ctx) -> list[WorkItemOut]:
+    """F-03-T05 (C1): the engagement's work items."""
+    return [WorkItemOut.model_validate(asdict(w)) for w in await work_items_of(ctx, engagement_id)]
 
 
 @router.post(

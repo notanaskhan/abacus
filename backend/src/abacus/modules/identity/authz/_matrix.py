@@ -187,6 +187,17 @@ ACTIONS: dict[str, dict[str, str]] = {
         "client_admin": "allow",
         "client_contributor": "allow",
     },
+    "work_item.read_metadata": {
+        "firm_admin": "allow",
+        "practice_leader": "in_scope",
+        "quality_partner": "allow",
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "reviewer": "allow",
+        "agent": "task_scope",
+    },
     "engagement.read": {
         "practice_leader": "in_scope",
         "quality_partner": "in_scope",

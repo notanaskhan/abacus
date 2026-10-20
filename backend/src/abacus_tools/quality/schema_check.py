@@ -91,6 +91,7 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"materiality_decisions", "risks", "risk_versions", "risk_approvals"}  # SPEC-300 (TASK-301)
     | {"finding_severities", "finding_communications", "adjustments", "adjustment_lines"}
     | {"adjustment_events", "representations", "representation_removals"}  # SPEC-301
+    | {"work_item_assignments", "engagement_entities"}  # F-03-T05 (0068)
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -178,6 +179,21 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "engagement_id", "body", "finding_id", "adjustment_id", "raised_by"}
     ),
     "representation_removals": frozenset({"tenant_id", "representation_id", "removed_by"}),
+    # Work items (F-03-T05; migration 0068).
+    "work_items": frozenset(
+        {"tenant_id", "engagement_id", "client_id", "client_entity_id", "kind", "name"}
+        | {"period_start", "period_end", "office_id", "due_on", "created_by"}
+    ),
+    "assurance_work_items": frozenset(
+        {"work_item_id", "tenant_id", "engagement_id", "assurance_type", "phase", "is_group_audit"}
+    ),
+    "work_item_assignments": frozenset(
+        {"tenant_id", "work_item_id", "engagement_id", "user_id", "function", "assigned_by"}
+        | {"removed_at"}
+    ),
+    "engagement_entities": frozenset(
+        {"tenant_id", "engagement_id", "client_entity_id", "role", "ownership_pct"}
+    ),
     "fieldwork_settings": frozenset({"tenant_id", "settings", "set_by"}),
     "procedures": frozenset(
         {"id", "tenant_id", "engagement_id", "definition", "definition_version", "parameters"}
@@ -435,6 +451,8 @@ APP_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"guidance_approved_by"}  # SPEC-035 (TASK-073)
     ),
     "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
+    "work_items": frozenset({"name", "status", "due_on", "archived_at", "archive_locked_at"}),
+    "assurance_work_items": frozenset({"phase", "auto_mode"}),  # F-03-T05 (0068)
     "connections": frozenset(
         {"status", "last_checked_at", "last_check_ok", "revoked_at", "revoked_by"}
     ),
@@ -563,6 +581,10 @@ TABLE_OWNERS: dict[str, str] = {
     "adjustment_events": "fieldwork",
     "representations": "fieldwork",
     "representation_removals": "fieldwork",
+    "work_items": "engagements",  # F-03-T05 (0068)
+    "assurance_work_items": "engagements",
+    "work_item_assignments": "engagements",
+    "engagement_entities": "engagements",
     "client_list_done": "requests",
     "review_note_events": "fieldwork",
     "item_signoffs": "fieldwork",  # SPEC-040 (TASK-100)

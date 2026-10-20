@@ -160,3 +160,41 @@ class EngagementLetter(Base):
     file_name: Mapped[str | None]
     recorded_by: Mapped[str]
     recorded_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class WorkItem(Base):
+    """A unit of work inside an engagement (F-03-T05; migration 0068)."""
+
+    __tablename__ = "work_items"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    client_id: Mapped[UUID]
+    client_entity_id: Mapped[UUID | None]
+    kind: Mapped[str]
+    name: Mapped[str]
+    period_start: Mapped[date | None]
+    period_end: Mapped[date | None]
+    status: Mapped[str] = mapped_column(server_default=FetchedValue())
+    office_id: Mapped[UUID | None]
+    due_on: Mapped[date | None]
+    archived_at: Mapped[datetime | None]
+    archive_locked_at: Mapped[datetime | None]
+    created_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class AssuranceWorkItem(Base):
+    """The assurance subtype of a work item (F-03-T05)."""
+
+    __tablename__ = "assurance_work_items"
+
+    work_item_id: Mapped[UUID] = mapped_column(primary_key=True)
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    assurance_type: Mapped[str]
+    phase: Mapped[str] = mapped_column(server_default=FetchedValue())
+    standards_set_id: Mapped[UUID | None]
+    auto_mode: Mapped[bool] = mapped_column(server_default=FetchedValue())
+    is_group_audit: Mapped[bool] = mapped_column(server_default=FetchedValue())
