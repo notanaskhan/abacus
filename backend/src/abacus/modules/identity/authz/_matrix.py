@@ -259,6 +259,13 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "client_admin": "allow",
     },
+    "client_item.respond": {
+        "client_admin": "client_visible_only",
+        "client_contributor": "assigned_only",
+    },
+    "client_list.mark_done": {
+        "client_admin": "allow",
+    },
     "request_item.waive": {
         "engagement_partner": "allow",
         "manager": "allow",

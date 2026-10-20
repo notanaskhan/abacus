@@ -119,3 +119,31 @@ class CommentRead(Base):
     request_item_id: Mapped[UUID] = mapped_column(primary_key=True)
     evidence_version_id: Mapped[UUID | None]
     last_read_at: Mapped[datetime]
+
+
+class ClientItemResponse(Base):
+    """A client saying a request doesn't apply, or withdrawing that (SPEC-042). Insert-only."""
+
+    __tablename__ = "client_item_responses"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    request_item_id: Mapped[UUID]
+    kind: Mapped[str]
+    reason: Mapped[str | None]
+    note: Mapped[str | None]
+    by_user: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class ClientListDone(Base):
+    """The client admin marking their list done (SPEC-042). Insert-only."""
+
+    __tablename__ = "client_list_done"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    by_user: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

@@ -21,6 +21,15 @@ export const STATUS = {
     needs_revision: { label: "Returned", tone: "danger" },
     accepted: { label: "Received", tone: "success" },
   },
+  // The client's words for their requests (the plan's POR-03; TASK-106): never the firm's states.
+  clientRequest: {
+    open: { label: "To do", tone: "neutral" },
+    received: { label: "Done", tone: "success" },
+    ready_for_review: { label: "Done", tone: "success" },
+    needs_revision: { label: "Returned", tone: "danger" },
+    accepted: { label: "Done", tone: "success" },
+    not_applicable: { label: "Doesn't apply", tone: "neutral" },
+  },
   engagement: {
     active: { label: "Active", tone: "success" },
     archived: { label: "Archived", tone: "neutral" },

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from datetime import date, datetime
 from typing import Annotated, Literal
 from uuid import UUID
@@ -18,6 +19,13 @@ from abacus.modules.identity.api import (
     AuthContext,
     current_context,
     current_member,
+)
+from abacus.modules.requests.client_responses import (
+    ClientResponse,
+    list_done,
+    mark_done,
+    respond,
+    responses,
 )
 from abacus.modules.requests.comments import (
     MAX_BODY,
@@ -593,6 +601,104 @@ async def redact_comment_route(
     """SPEC-032 AC-6: a firm administrator hides a comment posted in error."""
     await redact(ctx, engagement_id, item_id, comment_id, body.reason)
     return ThreadReadOut()
+
+
+# --- The client's responses (SPEC-042; TASK-106) ------------------------------------------------
+
+
+class ClientResponseOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    request_item_id: Annotated[UUID, classified("internal")]
+    reason: Annotated[
+        Literal["not_this_year", "sent_another_way", "dont_have"], classified("internal")
+    ]
+    note: Annotated[str | None, classified("confidential")]
+    by: Annotated[UUID, classified("internal")]
+    name: Annotated[str, classified("internal")]
+    at: Annotated[datetime, classified("internal")]
+
+
+def _response_out(r: ClientResponse) -> ClientResponseOut:
+    return ClientResponseOut.model_validate(asdict(r))
+
+
+@router.get(
+    "/client-responses", action="request_item.read", response_model=list[ClientResponseOut]
+)
+async def client_responses_route(engagement_id: UUID, ctx: Ctx) -> list[ClientResponseOut]:
+    """SPEC-042 AC-3: the requests a client says don't apply."""
+    return [_response_out(r) for r in await responses(ctx, engagement_id)]
+
+
+class ClientResponseIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    reason: Annotated[
+        Literal["not_this_year", "sent_another_way", "dont_have"], classified("internal")
+    ]
+    note: Annotated[str | None, Field(default=None, max_length=500), classified("confidential")]
+
+
+class RespondedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    request_item_id: Annotated[UUID, classified("internal")]
+
+
+@router.post(
+    "/{item_id}/client-response",
+    action="client_item.respond",
+    response_model=RespondedOut,
+    status_code=201,
+)
+async def client_respond_route(
+    engagement_id: UUID, item_id: UUID, body: ClientResponseIn, ctx: Ctx
+) -> RespondedOut:
+    """SPEC-042 AC-1: the client says this doesn't apply, with a reason."""
+    await respond(ctx, engagement_id, item_id, body.reason, body.note)
+    return RespondedOut(request_item_id=item_id)
+
+
+@router.post(
+    "/{item_id}/client-response/withdraw",
+    action="client_item.respond",
+    response_model=RespondedOut,
+    status_code=201,
+)
+async def client_withdraw_route(engagement_id: UUID, item_id: UUID, ctx: Ctx) -> RespondedOut:
+    """SPEC-042 AC-2: the client takes it back."""
+    await respond(ctx, engagement_id, item_id, None, None)
+    return RespondedOut(request_item_id=item_id)
+
+
+class ListDoneOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    by: Annotated[UUID, classified("internal")]
+    name: Annotated[str, classified("internal")]
+    at: Annotated[datetime, classified("internal")]
+
+
+@router.get("/client-done", action="request_item.read", response_model=ListDoneOut | None)
+async def client_done_route(engagement_id: UUID, ctx: Ctx) -> ListDoneOut | None:
+    """SPEC-042 AC-4: who marked the list done."""
+    found = await list_done(ctx, engagement_id)
+    return ListDoneOut.model_validate(asdict(found)) if found is not None else None
+
+
+@router.post(
+    "/client-done",
+    action="client_list.mark_done",
+    response_model=ListDoneOut | None,
+    status_code=201,
+    errors=(409,),
+)
+async def mark_done_route(engagement_id: UUID, ctx: Ctx) -> ListDoneOut | None:
+    """SPEC-042 AC-4: the client admin marks the list done."""
+    await mark_done(ctx, engagement_id)
+    found = await list_done(ctx, engagement_id)
+    return ListDoneOut.model_validate(asdict(found)) if found is not None else None
 
 
 # --- TASK-102: client items past due on the caller's engagements --------------------------------

@@ -816,6 +816,50 @@ export type ClientInvitationOut = {
 };
 
 /**
+ * ClientResponseIn
+ */
+export type ClientResponseIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Reason
+     */
+    reason: 'not_this_year' | 'sent_another_way' | 'dont_have';
+};
+
+/**
+ * ClientResponseOut
+ */
+export type ClientResponseOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * By
+     */
+    by: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Note
+     */
+    note: string | null;
+    /**
+     * Reason
+     */
+    reason: 'not_this_year' | 'sent_another_way' | 'dont_have';
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+};
+
+/**
  * ClientViewOut
  */
 export type ClientViewOut = {
@@ -2693,6 +2737,24 @@ export type LetterPolicyOut = {
 };
 
 /**
+ * ListDoneOut
+ */
+export type ListDoneOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * By
+     */
+    by: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
  * LogEntryOut
  */
 export type LogEntryOut = {
@@ -3665,6 +3727,16 @@ export type RequestItemOut = {
      * Why
      */
     why?: string | null;
+};
+
+/**
+ * RespondedOut
+ */
+export type RespondedOut = {
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
 };
 
 /**
@@ -10328,6 +10400,172 @@ export type CreateRequestItemResponses = {
 
 export type CreateRequestItemResponse = CreateRequestItemResponses[keyof CreateRequestItemResponses];
 
+export type ClientDoneData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/client-done';
+};
+
+export type ClientDoneErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ClientDoneError = ClientDoneErrors[keyof ClientDoneErrors];
+
+export type ClientDoneResponses = {
+    /**
+     * Response Client Done
+     *
+     * Successful Response
+     */
+    200: ListDoneOut | null;
+};
+
+export type ClientDoneResponse = ClientDoneResponses[keyof ClientDoneResponses];
+
+export type MarkDoneData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/client-done';
+};
+
+export type MarkDoneErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type MarkDoneError = MarkDoneErrors[keyof MarkDoneErrors];
+
+export type MarkDoneResponses = {
+    /**
+     * Response Mark Done
+     *
+     * Successful Response
+     */
+    201: ListDoneOut | null;
+};
+
+export type MarkDoneResponse = MarkDoneResponses[keyof MarkDoneResponses];
+
+export type ClientResponsesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/client-responses';
+};
+
+export type ClientResponsesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ClientResponsesError = ClientResponsesErrors[keyof ClientResponsesErrors];
+
+export type ClientResponsesResponses = {
+    /**
+     * Response Client Responses
+     *
+     * Successful Response
+     */
+    200: Array<ClientResponseOut>;
+};
+
+export type ClientResponsesResponse = ClientResponsesResponses[keyof ClientResponsesResponses];
+
 export type DefaultDueDateData = {
     body?: never;
     headers?: {
@@ -10785,6 +11023,118 @@ export type AssignToClientResponses = {
 };
 
 export type AssignToClientResponse = AssignToClientResponses[keyof AssignToClientResponses];
+
+export type ClientRespondData = {
+    body: ClientResponseIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/client-response';
+};
+
+export type ClientRespondErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ClientRespondError = ClientRespondErrors[keyof ClientRespondErrors];
+
+export type ClientRespondResponses = {
+    /**
+     * Successful Response
+     */
+    201: RespondedOut;
+};
+
+export type ClientRespondResponse = ClientRespondResponses[keyof ClientRespondResponses];
+
+export type ClientWithdrawData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/client-response/withdraw';
+};
+
+export type ClientWithdrawErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ClientWithdrawError = ClientWithdrawErrors[keyof ClientWithdrawErrors];
+
+export type ClientWithdrawResponses = {
+    /**
+     * Successful Response
+     */
+    201: RespondedOut;
+};
+
+export type ClientWithdrawResponse = ClientWithdrawResponses[keyof ClientWithdrawResponses];
 
 export type ClientViewData = {
     body?: never;

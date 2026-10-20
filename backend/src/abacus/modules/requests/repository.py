@@ -15,6 +15,8 @@ from sqlalchemy.sql.elements import ColumnElement
 from abacus.modules.identity.api import AuthContext, visible, visible_items
 from abacus.modules.requests.guidance import Guidance
 from abacus.modules.requests.models import (
+    ClientItemResponse,
+    ClientListDone,
     Comment,
     CommentMention,
     CommentRead,
@@ -603,3 +605,53 @@ async def list_comment_counts(
         query = query.where(Comment.visibility == "shared")
     rows = await session.execute(query)
     return {item: (int(count), bool(unread)) for item, count, unread in rows.tuples().all()}
+
+
+# --- The client's responses (SPEC-042; TASK-106) ------------------------------------------------
+
+
+async def client_responses(
+    session: AsyncSession, ctx: AuthContext, engagement_id: UUID
+) -> dict[UUID, ClientItemResponse]:
+    """Per item the actor may read (the items' own `visible_items`), its newest response."""
+    rows = (
+        (
+            await session.execute(
+                select(ClientItemResponse)
+                .join(RequestItem, RequestItem.id == ClientItemResponse.request_item_id)
+                .where(
+                    ClientItemResponse.engagement_id == engagement_id,
+                    visible_items(
+                        ctx,
+                        "request_item.read",
+                        RequestItem.engagement_id,
+                        RequestItem.client_visible,
+                        RequestItem.client_assignee_user_id,
+                    ),
+                )
+                .order_by(ClientItemResponse.created_at)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return {r.request_item_id: r for r in rows}  # oldest first, so the newest wins
+
+
+async def insert_client_response(session: AsyncSession, **values: object) -> None:
+    await session.execute(insert(ClientItemResponse).values(**values))
+
+
+async def newest_list_done(session: AsyncSession, engagement_id: UUID) -> ClientListDone | None:
+    return (
+        await session.execute(
+            select(ClientListDone)
+            .where(ClientListDone.engagement_id == engagement_id)
+            .order_by(ClientListDone.created_at.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
+async def insert_list_done(session: AsyncSession, **values: object) -> None:
+    await session.execute(insert(ClientListDone).values(**values))
