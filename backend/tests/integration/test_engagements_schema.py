@@ -475,8 +475,10 @@ SUPERUSER_ENGAGEMENT = (
 )
 
 
-# SPEC-024: review, compilation and agreed-upon procedures are engagement types; tax isn't.
-@pytest.mark.parametrize(("status", "kind"), [("paused", "audit"), ("active", "tax")])
+# F-03-T12 (0069): the 14 types and 8 lifecycle codes; `audit` is retired, `paused` was never one.
+@pytest.mark.parametrize(
+    ("status", "kind"), [("paused", "fs_audit"), ("active", "audit"), ("active", "single_audit")]
+)
 async def test_ac20_engagement_status_and_type_outside_the_allowed_values_are_check_errors(
     db: Db, firm: Firm, status: str, kind: str
 ) -> None:
@@ -487,7 +489,7 @@ async def test_ac20_engagement_status_and_type_outside_the_allowed_values_are_ch
     assert "check constraint" in message
 
 
-@pytest.mark.parametrize("status", ["active", "archived"])
+@pytest.mark.parametrize("status", ["prospect", "active", "on_hold", "archived"])
 async def test_ac20_engagement_statuses_active_and_archived_are_accepted(
     db: Db, firm: Firm, status: str
 ) -> None:
@@ -498,7 +500,7 @@ async def test_ac20_engagement_statuses_active_and_archived_are_accepted(
         firm.entity_id,
         firm.user_id,
         status,
-        "audit",
+        "fs_audit",
     )
 
 
@@ -507,7 +509,7 @@ async def test_ac20_an_engagement_status_and_type_default_to_active_and_audit(
 ) -> None:
     engagement = await db.engagement(firm)
     row = await db.value("SELECT status || '/' || type FROM engagements WHERE id = $1", engagement)
-    assert row == "active/audit"
+    assert row == "active/fs_audit"
 
 
 @pytest.mark.parametrize("name", ["", "x" * 201])
@@ -804,7 +806,7 @@ async def test_ac20_the_app_may_supply_an_explicit_id_on_the_listed_tables(
         "UPDATE engagements SET fiscal_period_end = '2030-01-01' WHERE id = :i",
         "UPDATE engagements SET created_by = :u WHERE id = :i",
         "UPDATE engagements SET client_id = :c WHERE id = :i",
-        "UPDATE engagements SET type = 'audit' WHERE id = :i",
+        "UPDATE engagements SET type = 'review' WHERE id = :i",
         "UPDATE engagements SET created_at = now() WHERE id = :i",
         "UPDATE engagements SET tenant_id = :t WHERE id = :i",
     ],

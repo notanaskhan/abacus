@@ -37,7 +37,7 @@ async def insert_engagement(
     fiscal_period_start: date,
     fiscal_period_end: date,
     created_by: UUID,
-    type: str = "audit",
+    type: str = "fs_audit",
     prior_engagement_id: UUID | None = None,
 ) -> None:
     await session.execute(
@@ -149,7 +149,7 @@ async def lock_or_insert_template(
     tenant_id: UUID,
     name: str,
     created_by: UUID,
-    engagement_types: Sequence[str] = ("audit",),
+    engagement_types: Sequence[str] = ("fs_audit",),
 ) -> tuple[UUID, bool]:
     """The template's ID, created if new; locked, so concurrent imports number versions in turn."""
     created = (

@@ -12,6 +12,7 @@ from fastapi import Depends, Query, Request
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from abacus.kernel._statuses import EngagementStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.config import settings
 from abacus.kernel.text import SingleLineText
@@ -104,7 +105,7 @@ class EngagementIn(BaseModel):
     fiscal_period_start: Annotated[date, classified("confidential")]
     fiscal_period_end: Annotated[date, classified("confidential")]
     # SPEC-024 AC-6: the engagement's type.
-    type: Annotated[EngagementType, classified("internal")] = "audit"
+    type: Annotated[EngagementType, classified("internal")] = "fs_audit"
     # SPEC-025 AC-1: an existing client (and entity), picked rather than typed; the names above
     # are then the chosen ones (or, with no entity id, the new entity's name).
     client_id: Annotated[UUID | None, classified("internal")] = None
@@ -133,7 +134,9 @@ class EngagementSummaryOut(BaseModel):
     id: Annotated[UUID, classified("internal")]
     name: Name
     type: Annotated[EngagementType, classified("internal")]
-    status: Annotated[Literal["active", "archived"], classified("internal")]
+    # F-03-T12: the registry's 8 lifecycle codes (C2), generated from status-vocabulary.yaml.
+    status: Annotated[EngagementStatus, classified("internal")]
+    service_line: Annotated[Literal["audit", "tax", "cas", "advisory"], classified("internal")]
     client_name: Name
     client_entity_name: Name
     fiscal_period_start: Annotated[date, classified("confidential")]
@@ -198,7 +201,7 @@ class RollForwardProposalIn(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     client_entity_id: Annotated[UUID, classified("internal")]
-    type: Annotated[EngagementType, classified("internal")] = "audit"
+    type: Annotated[EngagementType, classified("internal")] = "fs_audit"
     fiscal_period_start: Annotated[date, classified("confidential")]
     prior_engagement_id: Annotated[UUID | None, classified("internal")] = None
 
@@ -510,7 +513,7 @@ class TemplateVersionOut(BaseModel):
     version_id: Annotated[UUID, classified("internal")]
     version: Annotated[int, classified("internal")]
     created_at: Annotated[datetime, classified("internal")]
-    engagement_types: Annotated[list[EngagementType], classified("internal")] = ["audit"]
+    engagement_types: Annotated[list[EngagementType], classified("internal")] = ["fs_audit"]
 
 
 class AreaOut(BaseModel):
@@ -589,7 +592,7 @@ async def import_template_route(
     an existing template keeps its own."""
     try:
         summary = await import_template(
-            ctx, name, await _body(request), tuple(engagement_type or ("audit",))
+            ctx, name, await _body(request), tuple(engagement_type or ("fs_audit",))
         )
     except TemplateInvalid as invalid:
         # Where and what, never the cell (ADR-052), in the validation error shape.

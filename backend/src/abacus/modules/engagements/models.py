@@ -20,6 +20,10 @@ class Engagement(Base):
     client_entity_id: Mapped[UUID]
     name: Mapped[str]
     type: Mapped[str]
+    # F-03-T12 (0069): set by the database from the type; office and standards set to come.
+    service_line: Mapped[str] = mapped_column(server_default=FetchedValue())
+    office_id: Mapped[UUID | None]
+    standards_set_id: Mapped[UUID | None]
     fiscal_period_start: Mapped[date]
     fiscal_period_end: Mapped[date]
     status: Mapped[str]

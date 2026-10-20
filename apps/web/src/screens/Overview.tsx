@@ -265,7 +265,7 @@ export function ApplyMethodology({ engagementId }: { engagementId: string }): JS
     },
   });
   // SPEC-024 AC-6: only templates for this engagement's type.
-  const type = engagement.data?.type ?? "audit";
+  const type = engagement.data?.type ?? "fs_audit";
   const offered = (templates.data ?? []).filter((t) => t.engagement_types?.includes(type));
   if (templates.isError || offered.length === 0) return <></>;
   return (

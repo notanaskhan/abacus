@@ -92,6 +92,7 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"finding_severities", "finding_communications", "adjustments", "adjustment_lines"}
     | {"adjustment_events", "representations", "representation_removals"}  # SPEC-301
     | {"work_item_assignments", "engagement_entities"}  # F-03-T05 (0068)
+    | {"gate_policy_overrides"}  # F-03-T12 (0069): a new row per change
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -108,6 +109,7 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"fiscal_period_start", "fiscal_period_end"}
         | {"type"}  # SPEC-024: the engagement's type
         | {"prior_engagement_id"}  # SPEC-025 (TASK-048): roll-forward, set at creation only
+        | {"office_id", "standards_set_id"}  # F-03-T12 (0069)
     ),
     "request_lists": frozenset({"id", "tenant_id", "engagement_id"}),
     "request_items": frozenset(
@@ -193,6 +195,9 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "engagement_entities": frozenset(
         {"tenant_id", "engagement_id", "client_entity_id", "role", "ownership_pct"}
+    ),
+    "gate_policy_overrides": frozenset(  # F-03-T12 (0069)
+        {"tenant_id", "type_family", "gate", "requirement", "set_by"}
     ),
     "fieldwork_settings": frozenset({"tenant_id", "settings", "set_by"}),
     "procedures": frozenset(
@@ -585,6 +590,7 @@ TABLE_OWNERS: dict[str, str] = {
     "assurance_work_items": "engagements",
     "work_item_assignments": "engagements",
     "engagement_entities": "engagements",
+    "gate_policy_overrides": "engagements",  # F-03-T12 (0069)
     "client_list_done": "requests",
     "review_note_events": "fieldwork",
     "item_signoffs": "fieldwork",  # SPEC-040 (TASK-100)

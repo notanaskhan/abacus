@@ -105,7 +105,7 @@ describe("ac6 engagement types", () => {
       }) as TemplateVersionOut;
     mockApi({
       "GET /v1/methodology/templates": () =>
-        json([template("Audit core", ["audit"]), template("Review pack", ["review"])]),
+        json([template("Audit core", ["fs_audit"]), template("Review pack", ["review"])]),
       "GET /v1/engagements/e1": () => json({ id: "e1", type: "review", team: [] }),
     });
     renderRoutes([{ path: "/", component: () => <ApplyMethodology engagementId="e1" /> }]);

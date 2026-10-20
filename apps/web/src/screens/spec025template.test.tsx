@@ -14,7 +14,7 @@ const ROUTES = [
 function template(
   id: string,
   name: string,
-  types: EngagementType[] = ["audit"],
+  types: EngagementType[] = ["fs_audit"],
 ): TemplateVersionOut {
   return {
     template_id: `t-${id}`,
@@ -34,7 +34,8 @@ const CREATED = {
   fiscal_period_start: "2026-01-01",
   fiscal_period_end: "2026-12-31",
   status: "active",
-  type: "audit",
+  type: "fs_audit",
+  service_line: "audit",
   created_at: "2026-01-02T00:00:00Z",
   team: [],
 };
@@ -112,7 +113,9 @@ describe("SPEC-025 AC-3 template for the type (TASK-047)", () => {
     api([template("v-r", "Review", ["review"])]);
     await openDialog();
     expect(
-      await screen.findByText(/Your firm has no template for audit engagements yet/),
+      await screen.findByText(
+        /Your firm has no template for financial statement audit engagements yet/,
+      ),
     ).toBeTruthy();
     expect(screen.getByRole("link", { name: "Methodology" })).toBeTruthy();
   });

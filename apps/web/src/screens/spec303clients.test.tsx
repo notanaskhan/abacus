@@ -9,7 +9,8 @@ function eng(over: Partial<EngagementSummaryOut>): EngagementSummaryOut {
   return {
     id: "e1",
     name: "FY2025 audit",
-    type: "audit",
+    type: "fs_audit",
+    service_line: "audit",
     status: "active",
     client_id: "c1",
     client_name: "Northwind Robotics",

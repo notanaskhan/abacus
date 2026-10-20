@@ -49,7 +49,7 @@ export function workbookProblems(error: unknown): Problem[] | null {
 export async function uploadWorkbook(
   name: string,
   file: File,
-  types: EngagementType[] = ["audit"],
+  types: EngagementType[] = ["fs_audit"],
 ): Promise<void> {
   await importTemplate({
     path: { name },

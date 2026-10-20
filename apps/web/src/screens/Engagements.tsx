@@ -217,7 +217,7 @@ function CreateEngagement({
   const [picked, setPicked] = useState<ClientChoiceOut | null>(null);
   const [entity, setEntity] = useState<string>("");
   const [confirmNew, setConfirmNew] = useState(false);
-  const [type, setType] = useState<EngagementType>("audit");
+  const [type, setType] = useState<EngagementType>("fs_audit");
   // SPEC-025 AC-3 (TASK-047): the request list to start from; null until the creator chooses.
   const [choice, setChoice] = useState<string | null>(null);
   const [created, setCreated] = useState<{ id: string; reason: string } | null>(null);
@@ -276,7 +276,7 @@ function CreateEngagement({
       client_entity_name: chosenEntity?.name ?? field("client_entity_name"),
       fiscal_period_start: field("fiscal_period_start"),
       fiscal_period_end: field("fiscal_period_end"),
-      type: (field("type") || "audit") as EngagementType,
+      type: (field("type") || "fs_audit") as EngagementType,
       // SPEC-025 AC-1: a client the firm already has, picked rather than typed again.
       ...(picked !== null ? { client_id: picked.id } : {}),
       ...(chosenEntity !== undefined ? { client_entity_id: chosenEntity.id } : {}),
@@ -294,7 +294,7 @@ function CreateEngagement({
       {
         body: {
           client_entity_id: entityId,
-          type: body.type ?? "audit",
+          type: body.type ?? "fs_audit",
           fiscal_period_start: body.fiscal_period_start,
           ...(prior !== undefined ? { prior_engagement_id: prior } : {}),
         },
