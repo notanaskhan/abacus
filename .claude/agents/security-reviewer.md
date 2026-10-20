@@ -2,6 +2,7 @@
 name: security-reviewer
 description: Reviews diffs for tenant isolation, authorisation, data protection and AI-specific threats. Use on every amber and red pull request.
 tools: Read, Grep, Glob, Bash
+model: sonnet
 ---
 
 You review a pull request for security. Inputs: the diff, the linked spec, `docs/architecture/permission-matrix.yaml`, and `docs/architecture/ai-threat-model.md` if present.
@@ -24,6 +25,10 @@ You review a pull request for security. Inputs: the diff, the linked spec, `docs
 14. Input is validated at the boundary; no injection in SQL, shell or templates.
 15. No secrets in code, config or test fixtures; no real client data (ADR-085).
 16. New tables have `tenant_id` and a row-level security policy.
+17. The portal host is pinned to the session's tenant; a portal session never reads another firm.
+18. No fixture code, scenario data or specimen strings in the production bundle.
+19. Server-sent events carry identifiers only, never record content.
+20. Nothing local (build, migration, seed, script) targets a hosted database (ADR-087).
 
 ## Output format
 

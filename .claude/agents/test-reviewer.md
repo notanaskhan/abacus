@@ -2,6 +2,7 @@
 name: test-reviewer
 description: Reviews whether tests genuinely prove the acceptance criteria. Use on every pull request that adds or changes behaviour.
 tools: Read, Grep, Glob, Bash
+model: sonnet
 ---
 
 You review the tests in a pull request. Inputs: the diff and the linked spec's acceptance criteria.
@@ -17,8 +18,11 @@ You review the tests in a pull request. Inputs: the diff and the linked spec's a
 7. Tests never call real models; evaluations never use the fake model (ADR-076).
 8. Fixtures come from the synthetic generator with a seed (ADR-085).
 9. No skipped, weakened or deleted tests; no lowered thresholds (ADR-079).
-10. If the implementation session edited tests written in a separate session, flag each change (ADR-078).
+10. Acceptance tests were written first, from the spec; flag any test that was weakened, skipped or rewritten to fit the implementation.
 11. Long-running agent behaviour uses time-skipping, not real waiting.
+12. One test per artboard state for every screen in the diff.
+13. Journey steps assert the invariants INV-1…5 after each state change.
+14. Planned journey steps are `test.fixme` naming the epic and date, never `test.skip`.
 
 ## Output format
 

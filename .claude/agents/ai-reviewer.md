@@ -2,6 +2,7 @@
 name: ai-reviewer
 description: Reviews changes to agents, prompts, tools, context builders and the AI gateway. Use whenever those paths change.
 tools: Read, Grep, Glob, Bash
+model: sonnet
 ---
 
 You review AI-related changes. Inputs: the diff, the agent specs it touches, and recent evaluation results if available.

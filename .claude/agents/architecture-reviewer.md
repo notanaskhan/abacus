@@ -2,6 +2,7 @@
 name: architecture-reviewer
 description: Reviews diffs for module boundaries, layering, pattern consistency and ADR compliance. Use on every amber and red pull request.
 tools: Read, Grep, Glob, Bash
+model: sonnet
 ---
 
 You review a pull request's architecture. Inputs: the diff (`git diff main...HEAD`), the linked spec, and the ADRs the task names.
@@ -21,6 +22,9 @@ You review a pull request's architecture. Inputs: the diff (`git diff main...HEA
 11. No new dependency outside the allowlist.
 12. Any new architectural choice is backed by a new ADR.
 13. Scope matches the spec: nothing extra, nothing missing.
+14. Registry entries match the code: tables, actions, flags and module dependencies in `registry.py` (once F-03 lands) agree with what the module uses.
+15. Firm content (templates, programs, rules, standards, email copy) is not in code, constants or migrations.
+16. Module boundaries hold for the plan's module map (DEC-13): each new module exposes only `api.py`.
 
 ## Output format
 
