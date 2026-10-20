@@ -4,6 +4,7 @@ import type {
   ItemOut,
   ProcedureOut,
   RowSignOut,
+  NoteOut,
   RowStateOut,
 } from "@abacus/api-client";
 import { workpaperFile } from "@abacus/api-client";
@@ -33,6 +34,7 @@ import {
   workpaperOptions,
   approveMutation,
   flowOptions,
+  notesOptions,
   flowQueryKey,
   requestSelectionSupportMutation,
   signPreparedMutation,
@@ -58,6 +60,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
 import { systemName } from "../board/join";
+import { NoteCount, NotesDrawer } from "./ReviewNotes";
 import { Accounts, Bands, SubsequentLedger } from "./UnrecordedLiabilities";
 
 // SPEC-037 (TASK-083, TASK-084): journal entry testing. Code builds the population and selects
@@ -83,6 +86,7 @@ const MESSAGES: Record<string, string> = {
   accounts_missing: "Confirm the bank and payables accounts first.",
   no_subsequent_ledger: "Upload the general ledger after year end first.",
   sample_not_approved: "A manager or the engagement partner approves the sample first.",
+  notes_open: "Clear the review notes first (the person who raised them clears them).",
   sample_already_approved: "This sample is already approved.",
   already_requested: "Every item already has a support request.",
   rows_not_prepared: "Every row needs a preparer's sign-off on its current result first.",
@@ -302,6 +306,9 @@ function EntryRow({
   sign,
   selected,
   onToggle,
+  notes,
+  onNotes,
+  canRaise,
 }: {
   engagementId: string;
   procedureId: string;
@@ -313,6 +320,9 @@ function EntryRow({
   sign: RowStateOut | undefined;
   selected: boolean;
   onToggle: () => void;
+  notes: NoteOut[];
+  onNotes: () => void;
+  canRaise: boolean;
 }): JSX.Element {
   const queryClient = useQueryClient();
   const [result, setResult] = useState(item.result ?? "");
@@ -478,9 +488,12 @@ function EntryRow({
         )}
       </Td>
       <Td>
-        <span className="flex items-center gap-1">
-          <SignSlot label="P" sign={sign?.prepared} />
-          <SignSlot label="R" sign={sign?.reviewed} />
+        <span className="flex flex-col items-start gap-1">
+          <span className="flex items-center gap-1">
+            <SignSlot label="P" sign={sign?.prepared} />
+            <SignSlot label="R" sign={sign?.reviewed} />
+          </span>
+          <NoteCount notes={notes} onOpen={onNotes} canRaise={canRaise} />
         </span>
       </Td>
     </tr>
@@ -753,6 +766,12 @@ function ProcedurePanel({
     },
   });
   const signs = new Map((flow.data?.rows ?? []).map((r) => [r.item_id, r]));
+  // SPEC-041 (TASK-103): review notes.
+  const notes = useQuery({ ...notesOptions(path), retry: false });
+  const me = useQuery(meOptions());
+  const [noting, setNoting] = useState<{ itemId: string | null; title: string } | null>(null);
+  const notesFor = (itemId: string | null): NoteOut[] =>
+    (notes.data ?? []).filter((n) => (n.item_id ?? null) === itemId);
   const approved = flow.data?.approval != null;
   const select = useMutation({
     ...selectMutation(),
@@ -773,6 +792,7 @@ function ProcedurePanel({
   const canPrepare = ["manager", "senior", "staff"].includes(role ?? "");
   const canReview = ["engagement_partner", "manager", "senior"].includes(role ?? "");
   const canApprove = role === "engagement_partner" || role === "manager"; // SPEC-040 Q1
+  const canRaise = ["engagement_partner", "manager", "senior", "reviewer"].includes(role ?? "");
   const choices = (evidence.data ?? []).map((v) => ({
     id: v.id,
     label: `${systemName(v.source)}, version ${String(v.version_no)}`,
@@ -998,6 +1018,14 @@ function ProcedurePanel({
                       approved={approved}
                       sign={item.id != null ? signs.get(item.id) : undefined}
                       selected={item.id != null && picked.has(item.id)}
+                      notes={notesFor(item.id ?? null)}
+                      canRaise={canRaise}
+                      onNotes={() => {
+                        setNoting({
+                          itemId: item.id ?? null,
+                          title: `Review notes · ${item.reference || item.posted_on}`,
+                        });
+                      }}
                       onToggle={() => {
                         const id = item.id;
                         if (id == null) return;
@@ -1015,6 +1043,36 @@ function ProcedurePanel({
             </div>
           )}
         </Panel>
+      )}
+      {p.selection != null && (
+        <div className="flex items-center justify-end gap-2 px-1">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setNoting({ itemId: null, title: "Review notes · workpaper" });
+            }}
+          >
+            {`Review notes (${String(
+              (notes.data ?? []).filter((n) => n.state !== "cleared").length,
+            )} open)`}
+          </Button>
+        </div>
+      )}
+      {noting !== null && (
+        <NotesDrawer
+          open
+          onOpenChange={(o) => {
+            if (!o) setNoting(null);
+          }}
+          engagementId={engagementId}
+          procedureId={p.id}
+          itemId={noting.itemId}
+          title={noting.title}
+          notes={notes.data ?? []}
+          role={role}
+          me={me.data?.user_id}
+        />
       )}
       {p.selection != null && (
         <WorkpaperPanel

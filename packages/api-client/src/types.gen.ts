@@ -2866,6 +2866,80 @@ export type MethodologyVersionOut = {
 };
 
 /**
+ * NoteEntryOut
+ */
+export type NoteEntryOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Body
+     */
+    body: string | null;
+    /**
+     * By
+     */
+    by: string;
+    /**
+     * Kind
+     */
+    kind: 'raised' | 'responded' | 'reopened' | 'cleared';
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * NoteIn
+ */
+export type NoteIn = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Item Id
+     */
+    item_id?: string | null;
+};
+
+/**
+ * NoteOut
+ */
+export type NoteOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Item Id
+     */
+    item_id: string | null;
+    /**
+     * Raised At
+     */
+    raised_at: string;
+    /**
+     * Raised By
+     */
+    raised_by: string;
+    /**
+     * Raised By Name
+     */
+    raised_by_name: string;
+    /**
+     * State
+     */
+    state: 'open' | 'responded' | 'cleared';
+    /**
+     * Thread
+     */
+    thread: Array<NoteEntryOut>;
+};
+
+/**
  * NotificationOut
  */
 export type NotificationOut = {
@@ -3427,6 +3501,16 @@ export type RemovedOut = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * ReplyIn
+ */
+export type ReplyIn = {
+    /**
+     * Body
+     */
+    body: string;
 };
 
 /**
@@ -4738,7 +4822,7 @@ export type WaitingOut = {
     /**
      * Kind
      */
-    kind: 'approve_sample' | 'prepare_rows' | 'review_rows';
+    kind: 'approve_sample' | 'prepare_rows' | 'review_rows' | 'respond_notes' | 'clear_notes';
     /**
      * Procedure Id
      */
@@ -9090,6 +9174,258 @@ export type ResultResponses = {
 };
 
 export type ResultResponse = ResultResponses[keyof ResultResponses];
+
+export type NotesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Procedure Id
+         */
+        procedure_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/procedures/{procedure_id}/notes';
+};
+
+export type NotesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type NotesError = NotesErrors[keyof NotesErrors];
+
+export type NotesResponses = {
+    /**
+     * Response Notes
+     *
+     * Successful Response
+     */
+    200: Array<NoteOut>;
+};
+
+export type NotesResponse = NotesResponses[keyof NotesResponses];
+
+export type RaiseNoteData = {
+    body: NoteIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Procedure Id
+         */
+        procedure_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/procedures/{procedure_id}/notes';
+};
+
+export type RaiseNoteErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RaiseNoteError = RaiseNoteErrors[keyof RaiseNoteErrors];
+
+export type RaiseNoteResponses = {
+    /**
+     * Response Raise Note
+     *
+     * Successful Response
+     */
+    201: Array<NoteOut>;
+};
+
+export type RaiseNoteResponse = RaiseNoteResponses[keyof RaiseNoteResponses];
+
+export type ClearNoteData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Procedure Id
+         */
+        procedure_id: string;
+        /**
+         * Note Id
+         */
+        note_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/procedures/{procedure_id}/notes/{note_id}/clear';
+};
+
+export type ClearNoteErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ClearNoteError = ClearNoteErrors[keyof ClearNoteErrors];
+
+export type ClearNoteResponses = {
+    /**
+     * Response Clear Note
+     *
+     * Successful Response
+     */
+    201: Array<NoteOut>;
+};
+
+export type ClearNoteResponse = ClearNoteResponses[keyof ClearNoteResponses];
+
+export type RespondNoteData = {
+    body: ReplyIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Procedure Id
+         */
+        procedure_id: string;
+        /**
+         * Note Id
+         */
+        note_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/procedures/{procedure_id}/notes/{note_id}/respond';
+};
+
+export type RespondNoteErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RespondNoteError = RespondNoteErrors[keyof RespondNoteErrors];
+
+export type RespondNoteResponses = {
+    /**
+     * Response Respond Note
+     *
+     * Successful Response
+     */
+    201: Array<NoteOut>;
+};
+
+export type RespondNoteResponse = RespondNoteResponses[keyof RespondNoteResponses];
 
 export type SetParametersData = {
     body: CriteriaIoInput;

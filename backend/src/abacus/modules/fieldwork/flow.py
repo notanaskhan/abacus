@@ -22,6 +22,7 @@ from abacus.kernel.errors import DomainConflict, DomainInvalid
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.fieldwork.models import ItemResult, ItemSignoff, SelectedItem
+from abacus.modules.fieldwork.notes import NotesOpen, note_states, open_note_targets
 from abacus.modules.fieldwork.repository import (
     all_items,
     approval_of,
@@ -252,6 +253,9 @@ async def sign_items(
                 raise RowsNotPrepared(str(procedure_id))
             if any(prepared[i].signed_by == ctx.user_id for i in wanted):
                 raise OwnWork(str(procedure_id))  # AC-7: never the row's preparer
+            noted = await open_note_targets(tx.session, procedure_id)
+            if any(i in noted for i in wanted):
+                raise NotesOpen(str(procedure_id))  # SPEC-041 AC-4
         made = await insert_signoffs(
             tx.session,
             [
@@ -380,7 +384,7 @@ class Waiting:
     engagement_id: UUID
     procedure_id: UUID
     definition: str
-    kind: str  # approve_sample | prepare_rows | review_rows
+    kind: str  # approve_sample | prepare_rows | review_rows | respond_notes | clear_notes
     count: int
 
 
@@ -427,6 +431,30 @@ async def waiting_for(ctx: AuthContext) -> list[Waiting]:
                             procedure.definition,
                             "prepare_rows",
                             to_prepare,
+                        )
+                    )
+                # SPEC-041 AC-8: notes to answer (preparers) and answered notes to clear (raisers)
+                states = await note_states(session, procedure.id)
+                to_respond = sum(1 for _r, s in states if s == "open")
+                to_clear = sum(1 for r, s in states if s == "responded" and r == ctx.user_id)
+                if role in _PREPARERS and to_respond:
+                    found.append(
+                        Waiting(
+                            engagement_id,
+                            procedure.id,
+                            procedure.definition,
+                            "respond_notes",
+                            to_respond,
+                        )
+                    )
+                if to_clear:
+                    found.append(
+                        Waiting(
+                            engagement_id,
+                            procedure.id,
+                            procedure.definition,
+                            "clear_notes",
+                            to_clear,
                         )
                     )
                 if role in _REVIEWERS and to_review:
