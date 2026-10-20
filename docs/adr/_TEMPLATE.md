@@ -6,13 +6,13 @@ id: ADR-XXX
 title: <Decision in a few words>
 status: proposed         # proposed | accepted | superseded by ADR-YYY | deprecated
 date: YYYY-MM-DD
-deciders: <GitHub handles: notanaskhan, ayushkbhatia>
+deciders: <who decided>
 risk_zone: amber         # green | amber | red
 ---
 
 > **Instructions for coding agents**
 > - Accepted ADRs are binding. Code that contradicts one must not be written.
-> - If a task seems to require breaking an ADR, **stop** and raise it. Never work around it silently.
+> - If a task seems to require breaking an ADR, propose a new ADR that supersedes it. Never work around it silently.
 > - Never edit an accepted ADR. Propose a new one that supersedes it.
 
 ## Context

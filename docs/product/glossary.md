@@ -9,6 +9,7 @@
 
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
+| Abacus | Internal code namespace (packages, modules, database and infrastructure names). Never user-facing: the product is Accrued, and the portal shows the firm's name (ADR-133). | `abacus` | — |
 | Firm | An accounting or audit practice using the platform. The tenant. | `firm` (`tenant_id` on records) | company, org, account, customer |
 | User | A single global human identity with one login. | `user` | account, member, person |
 | Membership | A user's belonging to a firm, with roles. | `membership` | seat, firm_user |

@@ -121,3 +121,4 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-115](ADR-115-data-boundary-real-firms.md) | AI sees a real firm's data only through SPEC-036's five conditions, enforced in the gateway | red | accepted |
 | [ADR-131](ADR-131-workpapers.md) | A workpaper is rendered by code, versioned, and signed off by people; it never changes once reviewed | red | accepted |
 | [ADR-132](ADR-132-procedures.md) | In a procedure, code builds the population and selects the sample; agents assess items; people conclude | red | accepted |
+| [ADR-133](ADR-133-product-naming.md) | The product is "Accrued" in every UI string and document; abacus is the code namespace only | amber | accepted |
