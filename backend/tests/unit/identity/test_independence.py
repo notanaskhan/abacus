@@ -119,6 +119,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "evidence.read",
         "evidence.reject",
         "evidence.upload",
+        "finding.raise",  # SPEC-043 (TASK-107)
         "guidance_draft.decide",  # SPEC-035 (TASK-073)
         "guidance_draft.read",
         "guidance_draft.request",
@@ -128,6 +129,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "item.sign_reviewed",
         "ledger_import.upload",  # SPEC-028 (TASK-052)
         "materiality.set",  # SPEC-037 (TASK-083)
+        "misstatement.set",  # SPEC-043 (TASK-107)
         "procedure.configure",
         "procedure.read",
         "procedure.run",

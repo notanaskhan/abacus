@@ -14,9 +14,11 @@ from abacus.modules.fieldwork.models import (
     EngagementAccount,
     EngagementMateriality,
     FieldworkSettings,
+    Finding,
     ItemResult,
     ItemSignoff,
     ItemSupportRequest,
+    Misstatement,
     PopulationRow,
     Procedure,
     ProcedureConclusion,
@@ -492,3 +494,62 @@ async def note_events_of(
         .scalars()
         .all()
     )
+
+
+# --- Findings (SPEC-043; TASK-107) ---------------------------------------------------------------
+
+
+async def insert_finding(session: AsyncSession, **values: object) -> UUID:
+    made = await session.execute(insert(Finding).values(**values).returning(Finding.id))
+    return made.scalar_one()
+
+
+async def insert_misstatement(session: AsyncSession, **values: object) -> None:
+    await session.execute(insert(Misstatement).values(**values))
+
+
+async def get_finding(session: AsyncSession, finding_id: UUID) -> Finding | None:
+    return (
+        await session.execute(select(Finding).where(Finding.id == finding_id))
+    ).scalar_one_or_none()
+
+
+async def findings_of(
+    session: AsyncSession, ctx: AuthContext, engagement_id: UUID
+) -> Sequence[Finding]:
+    """The engagement's findings, oldest first, through `visible()`."""
+    return (
+        (
+            await session.execute(
+                select(Finding)
+                .where(
+                    Finding.engagement_id == engagement_id,
+                    visible(ctx, "procedure.read", Finding.engagement_id),
+                )
+                .order_by(Finding.created_at)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def newest_misstatements(
+    session: AsyncSession, finding_ids: Sequence[UUID]
+) -> dict[UUID, Misstatement]:
+    """Per finding, its newest misstatement (LIST_EXEMPT: findings read through `visible()`)."""
+    if not finding_ids:
+        return {}
+    rows = (
+        (
+            await session.execute(
+                select(Misstatement)
+                .where(Misstatement.finding_id.in_(finding_ids))
+                .ext(distinct_on(Misstatement.finding_id))
+                .order_by(Misstatement.finding_id, Misstatement.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return {m.finding_id: m for m in rows}

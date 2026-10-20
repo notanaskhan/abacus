@@ -13,6 +13,14 @@ from fastapi import Depends, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
+from abacus.modules.fieldwork.findings import (
+    FindingView,
+    Summary,
+    findings_for,
+    raise_finding,
+    record_misstatement,
+    summary_for,
+)
 from abacus.modules.fieldwork.flow import (
     FlowState,
     approve_sample,
@@ -855,3 +863,122 @@ async def clear_note_route(
     """SPEC-041 AC-3: the raiser clears it."""
     await clear(ctx, engagement_id, procedure_id, note_id)
     return _notes_out(await notes_for(ctx, engagement_id, procedure_id))
+
+
+# --- Findings (SPEC-043; TASK-107) ---------------------------------------------------------------
+
+
+class MisstatementOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    kind: Annotated[Literal["factual", "judgmental", "projected"], classified("internal")]
+    amount: Annotated[Decimal, classified("confidential")]
+    account_code: Annotated[str | None, classified("confidential")]
+    corrected: Annotated[bool, classified("internal")]
+    recorded_by_name: Annotated[str, classified("internal")]
+    recorded_at: Annotated[datetime, classified("internal")]
+
+
+class FindingOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    title: Annotated[str, classified("confidential")]
+    description: Annotated[str | None, classified("confidential")]
+    procedure_id: Annotated[UUID | None, classified("internal")]
+    item_id: Annotated[UUID | None, classified("internal")]
+    raised_by_name: Annotated[str, classified("internal")]
+    raised_at: Annotated[datetime, classified("internal")]
+    misstatement: Annotated[MisstatementOut | None, classified("confidential")]
+
+
+def _findings_out(found: list[FindingView]) -> list[FindingOut]:
+    return [FindingOut.model_validate(asdict(f)) for f in found]
+
+
+@router.get("/findings", action="procedure.read", response_model=list[FindingOut])
+async def findings_route(engagement_id: UUID, ctx: Ctx) -> list[FindingOut]:
+    """SPEC-043 AC-5: the findings register."""
+    return _findings_out(await findings_for(ctx, engagement_id))
+
+
+class FindingIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    title: Annotated[str, Field(min_length=1, max_length=200), classified("confidential")]
+    description: Annotated[
+        str | None, Field(default=None, max_length=2000), classified("confidential")
+    ]
+    procedure_id: Annotated[UUID | None, Field(default=None), classified("internal")]
+    item_id: Annotated[UUID | None, Field(default=None), classified("internal")]
+
+
+@router.post(
+    "/findings",
+    action="finding.raise",
+    response_model=list[FindingOut],
+    status_code=201,
+)
+async def raise_finding_route(engagement_id: UUID, body: FindingIn, ctx: Ctx) -> list[FindingOut]:
+    """SPEC-043 AC-1: raise a finding, from a fieldwork row or by hand."""
+    await raise_finding(
+        ctx, engagement_id, body.title, body.description, body.procedure_id, body.item_id
+    )
+    return _findings_out(await findings_for(ctx, engagement_id))
+
+
+class MisstatementIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    kind: Annotated[Literal["factual", "judgmental", "projected"], classified("internal")]
+    amount: Annotated[Decimal, Field(max_digits=18, decimal_places=2), classified("confidential")]
+    account_code: Annotated[
+        str | None, Field(default=None, max_length=64), classified("confidential")
+    ]
+    corrected: Annotated[bool, Field(default=False), classified("internal")]
+
+
+@router.post(
+    "/findings/{finding_id}/misstatement",
+    action="misstatement.set",
+    response_model=list[FindingOut],
+    status_code=201,
+)
+async def misstatement_route(
+    engagement_id: UUID, finding_id: UUID, body: MisstatementIn, ctx: Ctx
+) -> list[FindingOut]:
+    """SPEC-043 AC-2: record (or revise) the finding's misstatement."""
+    await record_misstatement(
+        ctx, engagement_id, finding_id, body.kind, body.amount, body.account_code, body.corrected
+    )
+    return _findings_out(await findings_for(ctx, engagement_id))
+
+
+class KindTotalOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    kind: Annotated[str, classified("internal")]
+    count: Annotated[int, classified("internal")]
+    total: Annotated[Decimal, classified("confidential")]
+
+
+class SummaryOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    materiality_set: Annotated[bool, classified("internal")]
+    overall: Annotated[Decimal | None, classified("confidential")]
+    performance: Annotated[Decimal | None, classified("confidential")]
+    trivial: Annotated[Decimal | None, classified("confidential")]
+    by_kind: Annotated[list[KindTotalOut], classified("confidential")]
+    total: Annotated[Decimal, classified("confidential")]
+    position: Annotated[
+        Literal["below_performance", "at_or_above_performance", "at_or_above_overall", "unknown"],
+        classified("internal"),
+    ]
+
+
+@router.get("/findings/summary", action="procedure.read", response_model=SummaryOut)
+async def findings_summary_route(engagement_id: UUID, ctx: Ctx) -> SummaryOut:
+    """SPEC-043 AC-3: the summary of uncorrected misstatements, computed by code."""
+    found: Summary = await summary_for(ctx, engagement_id)
+    return SummaryOut.model_validate(asdict(found))
