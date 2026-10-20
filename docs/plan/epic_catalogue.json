@@ -1,0 +1,2734 @@
+{
+ "file": "/private/tmp/claude-501/-Users-ayushkbhatia-Accrued/3fcc126f-e9c5-416a-a32d-05d3e556ebb5/scratchpad/plan/sections/01-strategy-roadmap.md",
+ "sprint_length_weeks": 2,
+ "phases": [
+  {
+   "id": "PH0",
+   "name": "Unblock, govern and decide",
+   "start": "2026-10-19",
+   "end": "2026-10-30",
+   "goal": "Make two-founder work safe, take the blocking decisions on Decision Day (Fri Oct 23) and start every long-lead vendor, assurance and design-partner clock.",
+   "exit_criteria": [
+    "M1 Oct 30: git history scanned for secrets and anything exposed rotated; repo private",
+    "Branch ruleset with the other founder's code-owner review and stages 1+2 required; _protected.py fix merged (immutable only on origin/main; either founder approves, never the author)",
+    "main green and nightly e2e repaired",
+    "Decision Day agenda (chapter 09 DEC rows, \u00a71.9) recorded with owners on Oct 23",
+    "ADR drafts for work items, request enum, scopes, roles, e-signature, P-29 and the write-capability framework",
+    "DS-S1 tokens and protected bundle #1 merged",
+    "Every vendor, assurance and counsel application filed with a dated ticket; AWS organisation and Terraform state exist",
+    "Named design-partner target list per pilot window and >=6 conversations booked"
+   ]
+  },
+  {
+   "id": "PH1",
+   "name": "Foundations and platform spine on staging",
+   "start": "2026-11-02",
+   "end": "2027-01-22",
+   "goal": "Migrate the model once (work items for all five kinds, request enum, client grants, roles, review-grammar and citation schemas), stand up staging and production, ship the design-system core and the first spine slice.",
+   "exit_criteria": [
+    "M2 Nov 13: R0 staging live with real WorkOS, SES and scanner",
+    "M4 Dec 11: R1 production with canary, SLO alarms, status page, on-call, first restore drill; SOC 2 controls operating",
+    "Work-item, request-enum, client-grant, role, review-grammar and citation-v2 schemas migrated; contracts C1-C6, C13, C16 frozen",
+    "9 expiring flags renewed and P-29 accepted in the Dec 14-18 bundle; SQMS 1 Technology Resource Pack sent by Dec 15",
+    "M5 Jan 22: DS tiers 0-1 at parity tier A and axe AA; J02-audit-core and J12-core skeletons walkable on staging",
+    "Pilot 0 synthetic sessions running since Jan 11; capacity re-baselined from S1-S5"
+   ]
+  },
+  {
+   "id": "PH2",
+   "name": "Audit-evidence MVP and the real-data gate",
+   "start": "2027-01-25",
+   "end": "2027-05-28",
+   "goal": "Finish MVP-1 (45 product screens), pass the real-data gate with no exception path, and prepare pilot onboarding.",
+   "exit_criteria": [
+    "Pen test #1 Feb 15-Mar 5 with criticals and highs retested closed by Apr 9",
+    "SOC 2 Type I report (as of Mar 1)",
+    "M7 Apr 16 real-data gate passed: Type I report, pen test, Bedrock register entry, per-agent evals incl. shadow stage, DPA/MSA with sub-processors, insurance, WISP, MFA, restore drill, compliance kernel, vendor-diligence pack",
+    "55 deferred AC-test suites back-filled, red zone first",
+    "M8 May 28: J01-core, J02-audit-core, J04-PBC slice and J12-core walkable in production on the canary",
+    "Onboarding kit ready (bulk client/contact import; PBC and email templates as database content); tax-pilot go/no-go taken"
+   ]
+  },
+  {
+   "id": "PH3",
+   "name": "Pilot season 1: audit live, extension-season tax pilot, audit execution",
+   "start": "2027-05-31",
+   "end": "2027-12-24",
+   "goal": "Real firms on real data (internal shadow Jun 1, client-facing audit Jul 13, tax pilot Aug 17/Aug 31); build the review-grammar UI, planning, EBP, findings and adjustments, completion schema and notices; get ready for the 2028 season.",
+   "exit_criteria": [
+    ">=2 firms live client-facing on EBP and June-YE engagements with Accrued as PBC and evidence system of record",
+    "Tax pilot (if GO at M8) carried 5-15 extended returns through Sep 15, Sep 30 and Oct 15 with zero invariant violations",
+    "M12 Aug 20 paid-conversion and hiring gate decided",
+    "J09 notices P0 live; J03 fieldwork P0 (EBP-01..06, EBP-07 by Jan 7, 2028) and J04 planning walkable in production",
+    "SOC 2 Type II report (~Sep); pen test #2 closed (Nov)",
+    "M15 Dec 10 R4: TY2027 rules and organizers in the database, December load test, flags renewed; completion/release/archive and runtime-v2 schemas migrated by Dec 24"
+   ]
+  },
+  {
+   "id": "PH4",
+   "name": "Busy season 2028 and the full tax workspace",
+   "start": "2027-12-27",
+   "end": "2028-04-14",
+   "goal": "Operate the 2028 season under the freeze contract; flip completion, release and archive per firm; build the 1040 review workspace, runtime v2, run dock and trace dark.",
+   "exit_criteria": [
+    "Dec-YE 2027 audits run planning to release on Accrued at >=1 firm",
+    "M16 Mar 21: release and archive flipped; first report released (G8) and archived (G9) on Accrued by Apr 14",
+    "J03 P0 and J12 P0 walkable in production",
+    "TY2027 returns live on the coordination kit for tax-pilot firms",
+    "1040 review workspace in shadow from Mar 20"
+   ]
+  },
+  {
+   "id": "PH5",
+   "name": "Extension season 2028, CAS, group audit and audit depth",
+   "start": "2028-04-17",
+   "end": "2028-10-13",
+   "goal": "Tax workspace live for the 2028 extension season; Workbench sessions and Today; fieldwork depth; group audit for Dec-2028 year-ends; CAS read-only; integrations catalogue and tenant console.",
+   "exit_criteria": [
+    "M17 May 2: J06 and J19 P0 live",
+    "M18 Aug 1 / Aug 22: J08 P0 and J07 live",
+    "M19 Sep 29: J20 P0 behind ff.group_audit; J04 core and J05 core live; J14 P0 walkable",
+    "M20 Oct 31: J10 read-only path live on October closes; J02 P0 and J16 P0",
+    "J11 read-only sessions walkable on staging"
+   ]
+  },
+  {
+   "id": "PH6",
+   "name": "Season-3 readiness, engine and depth",
+   "start": "2028-10-16",
+   "end": "2029-04-27",
+   "goal": "CAS posting (W1), TY2028 season tools, entity-return depth, QM for the Dec 15, 2028 SQMS evaluation, mailbox and messages, design-system tier 5, templates v2 and Sheets, Board and triggers, statements studio, portal depth; operate the 2029 season.",
+   "exit_criteria": [
+    "M21 Dec 8: W1 posting live for non-attest CAS clients after a delta pen test; TY2028 season tools; QM ready",
+    "J05, J06, J10, J18 and J28 full live",
+    "M22 Apr 27, 2029: J13, J21 P0 and the engine-based P0 paths of J04, J22-J26 walkable on staging; J02, J10, J12, J16, J19 full"
+   ]
+  },
+  {
+   "id": "PH7",
+   "name": "Expansion lines and GA",
+   "start": "2029-04-30",
+   "end": "2029-08-31",
+   "goal": "Attest, internal audit, agentic audit, Workbench agent library, insights, learning layer, advisory, Office add-ins, developer platform and practice economics; GA hardening.",
+   "exit_criteria": [
+    "M23 Aug 17, 2029: all 28 journeys walkable in production and >=12 live at partner firms",
+    "M24 Aug 31, 2029: 30 days within SLO, runbooks rehearsed, GA",
+    "Spill list (P2 and wave-7/8 depth only) applied if velocity is below plan, so GA holds"
+   ]
+  }
+ ],
+ "epics": [
+  {
+   "id": "F-01",
+   "name": "Two-founder governance, CI enforcement & repo safety",
+   "phase": "PH0-PH1",
+   "track": "Track 0 \u00b7 Foundations & delivery system",
+   "lead": "notanaskhan",
+   "goal": "Day-1 safety for two founders: secret scan and rotation then private repo, enforced CI and other-founder review, protected-path hook fix, worktree isolation, deploy guard, number blocks, batch merge windows, escaped-defect log. Reserve-funded.",
+   "screen_ids": [],
+   "journeys": [
+    "all (precondition)"
+   ],
+   "backend_modules": [
+    ".github",
+    ".claude/hooks",
+    "abacus_tools/quality",
+    "docker-compose.yml",
+    "Makefile"
+   ],
+   "depends_on": [],
+   "decisions_adrs": [
+    "ADR P-02 two-founder governance",
+    "ch.06 release-train ADR (amends ADR-088)",
+    "ADR-083/084/086 applied to two founders"
+   ],
+   "start_sprint": 0,
+   "end_sprint": 1,
+   "size_founder_weeks": 0.9
+  },
+  {
+   "id": "F-02",
+   "name": "Decision Day, ADR programme & glossary",
+   "phase": "PH0-PH1",
+   "track": "Track 0 \u00b7 Foundations & delivery system",
+   "lead": "shared",
+   "goal": "Decision Day (Oct 23) recording the \u00a71.9 agenda in chapter 09's DEC register; adopt chapter 09's ADR backlog (P-01..P-63) with owners and draft/accept sprints; one glossary PR; must-not-build guards for D1-D10 and X-01..X-08.",
+   "screen_ids": [],
+   "journeys": [
+    "all (precondition)"
+   ],
+   "backend_modules": [
+    "docs/adr",
+    "docs/product/glossary.md",
+    "docs/product/decision-log.md"
+   ],
+   "depends_on": [
+    "F-01"
+   ],
+   "decisions_adrs": [
+    "ADR P-01 naming",
+    "ADR P-02",
+    "ADR P-03 design system (supersedes SPEC-016)",
+    "ADR P-29 busy-season policy",
+    "Q-01/Q-02/Q-04/Q-07/Q-08"
+   ],
+   "start_sprint": 0,
+   "end_sprint": 2,
+   "size_founder_weeks": 0.4
+  },
+  {
+   "id": "F-03",
+   "name": "Domain model migrations & contract register",
+   "phase": "PH0-PH1",
+   "track": "Track 0 \u00b7 Foundations & delivery system",
+   "lead": "notanaskhan",
+   "goal": "Migrate the model once before any data: work items for all five kinds with per-type gate policy, request enum, client grants, roles, status codegen, entitlements, module pre-registration, router split, contract register C1-C21.",
+   "screen_ids": [],
+   "journeys": [
+    "all (precondition)",
+    "J01",
+    "J02",
+    "J13"
+   ],
+   "backend_modules": [
+    "engagements",
+    "identity",
+    "organisations",
+    "requests",
+    "platform",
+    "kernel",
+    "apps/web router"
+   ],
+   "depends_on": [
+    "F-01",
+    "F-02"
+   ],
+   "decisions_adrs": [
+    "ADR P-04 work items & gates",
+    "ADR P-05 module map",
+    "ADR P-06 visible()",
+    "ADR P-09 client scopes",
+    "ADR P-10 role catalogue",
+    "ADR P-28 entitlements",
+    "ch.03 status-registry, request-enum and pre-launch migration ADRs"
+   ],
+   "start_sprint": 0,
+   "end_sprint": 4,
+   "size_founder_weeks": 2.1
+  },
+  {
+   "id": "F-04",
+   "name": "Seed universe, demo clock, fakes & journey harness",
+   "phase": "PH1-PH2",
+   "track": "Track 0 \u00b7 Foundations & delivery system",
+   "lead": "ayushkbhatia",
+   "goal": "Brightwater Hale synthetic tenant by epoch, injectable clock, third-party fakes, golden-figure tests, route registry from the link graph, journey Playwright harness with INV-1..5 and axe.",
+   "screen_ids": [],
+   "journeys": [
+    "all (harness)"
+   ],
+   "backend_modules": [
+    "scenarios/brightwater_hale",
+    "kernel.clock",
+    "apps/web/e2e"
+   ],
+   "depends_on": [
+    "F-03"
+   ],
+   "decisions_adrs": [
+    "ch.03 clock and synthetic-firm ADR"
+   ],
+   "start_sprint": 1,
+   "end_sprint": 9,
+   "size_founder_weeks": 2
+  },
+  {
+   "id": "F-05",
+   "name": "Design system core & MVP templates (DS tiers 0-2)",
+   "phase": "PH0-PH2",
+   "track": "Track 0 \u00b7 Foundations & delivery system",
+   "lead": "ayushkbhatia",
+   "goal": "Accrued design system core: tokens, fonts, AA ladder, format/status/icons, primitives, overlays O1-O6, DataTable, SourceViewer shell, MVP templates and specimens in the /components gallery with parity and axe; retire Atelier.",
+   "screen_ids": [
+    "O1-O6",
+    "T1",
+    "T2",
+    "T3",
+    "T5",
+    "T7",
+    "T8",
+    "T9",
+    "T11",
+    "T12",
+    "T15",
+    "TPL-02",
+    "TPL-03",
+    "TPL-05",
+    "TPL-07",
+    "TPL-08",
+    "TPL-09",
+    "TPL-11",
+    "TPL-12",
+    "TPL-15",
+    "TPL-18"
+   ],
+   "journeys": [
+    "chrome of every journey"
+   ],
+   "backend_modules": [
+    "packages/ui",
+    "apps/web"
+   ],
+   "depends_on": [
+    "F-01",
+    "F-02"
+   ],
+   "decisions_adrs": [
+    "ADR P-03 (supersedes SPEC-016)",
+    "D-DS-1..12 incl. AA ink ladder",
+    "allowlist bundle #1"
+   ],
+   "start_sprint": 0,
+   "end_sprint": 10,
+   "size_founder_weeks": 4.2
+  },
+  {
+   "id": "F-06",
+   "name": "Design system tier 3: workbook, document, signing & tax surfaces",
+   "phase": "PH2-PH3",
+   "track": "Track 0 \u00b7 Foundations & delivery system",
+   "lead": "ayushkbhatia",
+   "goal": "Tier-3 kits ahead of consumers: T16 signing ceremony first, then T6 workbook grid, T10 document on well, the tax index and portal-mobile specimens.",
+   "screen_ids": [
+    "T6",
+    "T10",
+    "T16",
+    "TPL-01",
+    "TPL-06",
+    "TPL-10",
+    "TPL-16",
+    "TPL-19"
+   ],
+   "journeys": [
+    "J03",
+    "J06",
+    "J12"
+   ],
+   "backend_modules": [
+    "packages/ui"
+   ],
+   "depends_on": [
+    "F-05"
+   ],
+   "decisions_adrs": [
+    "ADR P-03"
+   ],
+   "start_sprint": 14,
+   "end_sprint": 24,
+   "size_founder_weeks": 1.4
+  },
+  {
+   "id": "F-07",
+   "name": "Design system tier 4: agent chat, calendar, graph & form surfaces",
+   "phase": "PH4-PH5",
+   "track": "Track 0 \u00b7 Foundations & delivery system",
+   "lead": "ayushkbhatia",
+   "goal": "Tier-4 kits: T4 Workbench chat, T13 calendar, T14 graph canvas, T17 form renderer, with specimens.",
+   "screen_ids": [
+    "T4",
+    "T13",
+    "T14",
+    "T17",
+    "TPL-04",
+    "TPL-13",
+    "TPL-14",
+    "TPL-17"
+   ],
+   "journeys": [
+    "J06",
+    "J08",
+    "J11"
+   ],
+   "backend_modules": [
+    "packages/ui"
+   ],
+   "depends_on": [
+    "F-06"
+   ],
+   "decisions_adrs": [
+    "ADR P-03"
+   ],
+   "start_sprint": 38,
+   "end_sprint": 43,
+   "size_founder_weeks": 1.5
+  },
+  {
+   "id": "F-08",
+   "name": "Design system tier 5: Sheet, Board, editor, analytics & add-in surfaces",
+   "phase": "PH5-PH6",
+   "track": "Track 0 \u00b7 Foundations & delivery system",
+   "lead": "ayushkbhatia",
+   "goal": "Tier-5 kits: T18 Sheet, T19 Board, T20 Document editor (no CRDT), T21 analytics dashboard, T22 Office add-in pane, with specimens.",
+   "screen_ids": [
+    "T18",
+    "T19",
+    "T20",
+    "T21",
+    "T22",
+    "TPL-20",
+    "TPL-21",
+    "TPL-22",
+    "TPL-23",
+    "TPL-24"
+   ],
+   "journeys": [
+    "J21",
+    "J22",
+    "J24",
+    "J25",
+    "J27"
+   ],
+   "backend_modules": [
+    "packages/ui"
+   ],
+   "depends_on": [
+    "F-07"
+   ],
+   "decisions_adrs": [
+    "editor-framework ADR",
+    "ADR P-15 SSE presence"
+   ],
+   "start_sprint": 50,
+   "end_sprint": 55,
+   "size_founder_weeks": 2.6
+  },
+  {
+   "id": "F-09",
+   "name": "Vendor, design-partner & commercial programme (non-code)",
+   "phase": "PH0-PH3",
+   "track": "Track 0 \u00b7 Foundations & delivery system",
+   "lead": "ayushkbhatia",
+   "goal": "Non-code programme from AY's non-coding share: every long-lead vendor application in S0, SOC 2 auditor and pen-test booking, counsel, insurance, design-partner targets and LOIs, Pilot 0, SQMS 1 Technology Resource Pack, pricing and the M12 conversion gate.",
+   "screen_ids": [],
+   "journeys": [
+    "all"
+   ],
+   "backend_modules": [
+    "docs/product/discovery",
+    "docs/ops/vendors"
+   ],
+   "depends_on": [],
+   "decisions_adrs": [
+    "DEC-03 AWS spend and region",
+    "DEC-17 vendor applications",
+    "proposed DEC-100 pricing",
+    "proposed DEC-101 hiring trigger"
+   ],
+   "start_sprint": 0,
+   "end_sprint": 30,
+   "size_founder_weeks": 16
+  },
+  {
+   "id": "P-01",
+   "name": "Firm shell, sign-in & notifications",
+   "phase": "PH1-PH2",
+   "track": "Track 1 \u00b7 Platform spine & governance",
+   "lead": "ayushkbhatia",
+   "goal": "Firm shell on the Accrued design: 13-item toolbar, firm switcher and profile, notifications v2 with email, hosted WorkOS sign-in.",
+   "screen_ids": [
+    "SHL-01",
+    "SHL-03",
+    "SHL-04",
+    "SHL-06"
+   ],
+   "journeys": [
+    "J01",
+    "J13",
+    "J16",
+    "J11"
+   ],
+   "backend_modules": [
+    "identity",
+    "notifications"
+   ],
+   "depends_on": [
+    "F-03",
+    "F-05",
+    "Q-01"
+   ],
+   "decisions_adrs": [
+    "ADR P-06",
+    "ADR-030 amendment (later)"
+   ],
+   "start_sprint": 2,
+   "end_sprint": 7,
+   "size_founder_weeks": 0.8
+  },
+  {
+   "id": "P-02",
+   "name": "Search & command palette",
+   "phase": "PH5",
+   "track": "Track 1 \u00b7 Platform spine & governance",
+   "lead": "notanaskhan",
+   "goal": "Go... command palette over Postgres full-text search with wall-safe counts and the search registration slot.",
+   "screen_ids": [
+    "SHL-02"
+   ],
+   "journeys": [
+    "J13",
+    "J16"
+   ],
+   "backend_modules": [
+    "platform (search_documents)"
+   ],
+   "depends_on": [
+    "P-01",
+    "F-03"
+   ],
+   "decisions_adrs": [
+    "ADR P-33 Postgres search",
+    "ADR P-06"
+   ],
+   "start_sprint": 39,
+   "end_sprint": 41,
+   "size_founder_weeks": 0.7
+  },
+  {
+   "id": "P-03",
+   "name": "Trust kit v1: citations v2 & source viewer",
+   "phase": "PH1-PH2",
+   "track": "Track 1 \u00b7 Platform spine & governance",
+   "lead": "notanaskhan",
+   "goal": "Citation popover and source viewer v1: citation v2 table, viewer manifest, word boxes and regions, masked PII with logged reveal.",
+   "screen_ids": [
+    "SHL-07",
+    "SHL-08"
+   ],
+   "journeys": [
+    "J03",
+    "J04",
+    "J06",
+    "J08",
+    "J16"
+   ],
+   "backend_modules": [
+    "evidence (red)",
+    "review"
+   ],
+   "depends_on": [
+    "F-03",
+    "F-05",
+    "Q-02"
+   ],
+   "decisions_adrs": [
+    "ADR-066 extension",
+    "AG-07 citation v2"
+   ],
+   "start_sprint": 5,
+   "end_sprint": 12,
+   "size_founder_weeks": 1.7
+  },
+  {
+   "id": "P-04",
+   "name": "Review grammar & sign-off engine",
+   "phase": "PH1-PH3",
+   "track": "Track 1 \u00b7 Platform spine & governance",
+   "lead": "notanaskhan",
+   "goal": "Review grammar (red): schema before any data; decision and sign-off services; UI for approve agent output, decision card, sign-off L1-L5, issues, field provenance and checkpoint diff, all human-only with INV-1 tests.",
+   "screen_ids": [
+    "SHL-09",
+    "SHL-10",
+    "SHL-11",
+    "SHL-12",
+    "SHL-15",
+    "SHL-16"
+   ],
+   "journeys": [
+    "J03",
+    "J04",
+    "J06",
+    "J13",
+    "J23"
+   ],
+   "backend_modules": [
+    "review (new, red)",
+    "agents (suggestions)",
+    "evidence"
+   ],
+   "depends_on": [
+    "F-03",
+    "P-03"
+   ],
+   "decisions_adrs": [
+    "ADR P-07 sign-offs",
+    "ch.03 generic-suggestions ADR",
+    "AG-08 Undo as compensating event"
+   ],
+   "start_sprint": 3,
+   "end_sprint": 26,
+   "size_founder_weeks": 3.6
+  },
+  {
+   "id": "P-05",
+   "name": "Collaboration: comments v2, to-dos & activity log",
+   "phase": "PH4",
+   "track": "Track 1 \u00b7 Platform spine & governance",
+   "lead": "ayushkbhatia",
+   "goal": "Comments v2 on polymorphic anchors (resolve as events, no edit/delete), to-dos, engagement activity log over the audit_trail read API.",
+   "screen_ids": [
+    "SHL-17",
+    "SHL-18",
+    "AUD-29"
+   ],
+   "journeys": [
+    "J16",
+    "J23",
+    "J03",
+    "J18"
+   ],
+   "backend_modules": [
+    "collaboration (new)",
+    "audit_trail (red)"
+   ],
+   "depends_on": [
+    "P-01",
+    "P-04"
+   ],
+   "decisions_adrs": [
+    "ch.03 generalised-comments ADR (amends ADR-109)",
+    "R6 to-do never task"
+   ],
+   "start_sprint": 33,
+   "end_sprint": 37,
+   "size_founder_weeks": 0.8
+  },
+  {
+   "id": "P-06",
+   "name": "Requests & binders engine",
+   "phase": "PH1-PH2",
+   "track": "Track 1 \u00b7 Platform spine & governance",
+   "lead": "notanaskhan",
+   "goal": "Requests and binders for every service line: binder per work item, Draft/N/A/Ignored/Returned, composer, screening aggregate, human-sent follow-ups, client withdrawal of unaccepted uploads.",
+   "screen_ids": [
+    "BND-01",
+    "BND-02",
+    "SHL-14",
+    "SHL-20"
+   ],
+   "journeys": [
+    "J03",
+    "J06",
+    "J10",
+    "J16",
+    "J22"
+   ],
+   "backend_modules": [
+    "requests",
+    "evidence (red)",
+    "agents"
+   ],
+   "depends_on": [
+    "F-03",
+    "P-03"
+   ],
+   "decisions_adrs": [
+    "Q-04 enum (F-03)",
+    "ADR P-31 withdrawal",
+    "ADR-005/SPEC-033 kept: a person assigns"
+   ],
+   "start_sprint": 3,
+   "end_sprint": 10,
+   "size_founder_weeks": 1.5
+  },
+  {
+   "id": "P-07",
+   "name": "Clients, engagements & gates G1-G3",
+   "phase": "PH1-PH2",
+   "track": "Track 1 \u00b7 Platform spine & governance",
+   "lead": "notanaskhan",
+   "goal": "Clients and engagements with server-enforced G1-G3: client record, contacts and portal access, bulk import for onboarding, human-performed acceptance and independence, engagement wizard, team and roles, roll-forward.",
+   "screen_ids": [
+    "CLI-01",
+    "CLI-02",
+    "CLI-04",
+    "CLI-06",
+    "CLI-07",
+    "CLI-08",
+    "ENG-01",
+    "ENG-02",
+    "ENG-03",
+    "ENG-05",
+    "ENG-13"
+   ],
+   "journeys": [
+    "J02",
+    "J03",
+    "J19",
+    "J25"
+   ],
+   "backend_modules": [
+    "organisations (red)",
+    "engagements",
+    "identity"
+   ],
+   "depends_on": [
+    "F-03",
+    "P-01"
+   ],
+   "decisions_adrs": [
+    "ADR P-04 gate service",
+    "SPEC-025 non-goals superseded (DEC-64)",
+    "ADR P-13 independence"
+   ],
+   "start_sprint": 4,
+   "end_sprint": 15,
+   "size_founder_weeks": 3.5
+  },
+  {
+   "id": "P-08",
+   "name": "Portal shell & client identity",
+   "phase": "PH1-PH2",
+   "track": "Track 1 \u00b7 Platform spine & governance",
+   "lead": "notanaskhan",
+   "goal": "White-label portal shell and client identity: email-code sign-in, role-union home, client_access_grant with scope_only, mandatory MFA for owners and signers, host branding.",
+   "screen_ids": [
+    "POR-01",
+    "POR-02"
+   ],
+   "journeys": [
+    "J02",
+    "J12"
+   ],
+   "backend_modules": [
+    "portal (new)",
+    "identity (red)",
+    "communications"
+   ],
+   "depends_on": [
+    "F-03",
+    "Q-01"
+   ],
+   "decisions_adrs": [
+    "ADR P-09",
+    "ADR P-11",
+    "ADR-030 amendment (MFA)"
+   ],
+   "start_sprint": 4,
+   "end_sprint": 11,
+   "size_founder_weeks": 1.3
+  },
+  {
+   "id": "P-09",
+   "name": "Agent transparency v1: run dock & trace",
+   "phase": "PH4",
+   "track": "Track 4 \u00b7 Agents, knowledge, engine & insights",
+   "lead": "notanaskhan",
+   "goal": "Run dock and run trace v1 over existing agent runs (read-only, polling until SSE), with structured AgentBlocks.",
+   "screen_ids": [
+    "SHL-13",
+    "WB-09"
+   ],
+   "journeys": [
+    "J03",
+    "J10",
+    "J11",
+    "J18"
+   ],
+   "backend_modules": [
+    "agents (red)",
+    "ai_gateway"
+   ],
+   "depends_on": [
+    "P-04"
+   ],
+   "decisions_adrs": [
+    "ADR P-24 structured output",
+    "AG-05"
+   ],
+   "start_sprint": 31,
+   "end_sprint": 34,
+   "size_founder_weeks": 1.1
+  },
+  {
+   "id": "P-10",
+   "name": "Agent runtime v2 & real-time (SSE)",
+   "phase": "PH3-PH4",
+   "track": "Track 4 \u00b7 Agents, knowledge, engine & insights",
+   "lead": "notanaskhan",
+   "goal": "Agent runtime v2 as an additive path: gateway converse() with tools, loop harness and tool registry, run/step events over SSE, plans and approval grants, run records, agent-minute ledger; schema before the Jan 1, 2028 window.",
+   "screen_ids": [],
+   "journeys": [
+    "J11",
+    "J13",
+    "J22",
+    "J23"
+   ],
+   "backend_modules": [
+    "ai_gateway (red)",
+    "agents (red)",
+    "workbench (new)",
+    "notifications (SSE)"
+   ],
+   "depends_on": [
+    "P-04",
+    "Q-02"
+   ],
+   "decisions_adrs": [
+    "ADR P-15 SSE",
+    "ADR P-22 agent model",
+    "ADR P-23 sessions",
+    "AG-01..AG-06, AG-15"
+   ],
+   "start_sprint": 29,
+   "end_sprint": 38,
+   "size_founder_weeks": 3.9
+  },
+  {
+   "id": "P-11",
+   "name": "Document services: renderer, OCR & regions",
+   "phase": "PH3-PH4",
+   "track": "Track 1 \u00b7 Platform spine & governance",
+   "lead": "notanaskhan",
+   "goal": "Document services: deterministic PDF/DOCX renderer with templates in the database, then OCR and tax-form box extraction inside the AWS boundary.",
+   "screen_ids": [],
+   "journeys": [
+    "J02",
+    "J03",
+    "J06",
+    "J09",
+    "J10"
+   ],
+   "backend_modules": [
+    "reporting (new)",
+    "evidence (red)"
+   ],
+   "depends_on": [
+    "Q-01",
+    "P-03"
+   ],
+   "decisions_adrs": [
+    "ADR P-19 deterministic rendering",
+    "ADR P-32 OCR sub-processor"
+   ],
+   "start_sprint": 17,
+   "end_sprint": 34,
+   "size_founder_weeks": 2
+  },
+  {
+   "id": "K-01",
+   "name": "Knowledge library & methodology v1",
+   "phase": "PH2-PH3",
+   "track": "Track 4 \u00b7 Agents, knowledge, engine & insights",
+   "lead": "ayushkbhatia",
+   "goal": "Knowledge catalog, firm PBC templates and programs imported as database content, program editor, methodology versions and import review.",
+   "screen_ids": [
+    "KNW-01",
+    "KNW-02",
+    "KNW-03"
+   ],
+   "journeys": [
+    "J01",
+    "J03",
+    "J24"
+   ],
+   "backend_modules": [
+    "methodology (new)",
+    "engagements"
+   ],
+   "depends_on": [
+    "P-06",
+    "F-03"
+   ],
+   "decisions_adrs": [
+    "content in the database, not commits"
+   ],
+   "start_sprint": 10,
+   "end_sprint": 26,
+   "size_founder_weeks": 1.4
+  },
+  {
+   "id": "K-02",
+   "name": "Firm standards, rules tables & content import",
+   "phase": "PH3",
+   "track": "Track 3 \u00b7 Tax & client operations",
+   "lead": "ayushkbhatia",
+   "goal": "Firm standards and thresholds plus effective-dated rules tables (due dates, 8879 tolerances, 1099 thresholds, retention floors) edited through admin import, never commits.",
+   "screen_ids": [
+    "KNW-04"
+   ],
+   "journeys": [
+    "J01",
+    "J05",
+    "J06",
+    "J10"
+   ],
+   "backend_modules": [
+    "methodology",
+    "practice"
+   ],
+   "depends_on": [
+    "F-03",
+    "G-01"
+   ],
+   "decisions_adrs": [
+    "CMP-10 rules tables"
+   ],
+   "start_sprint": 16,
+   "end_sprint": 19,
+   "size_founder_weeks": 1.1
+  },
+  {
+   "id": "K-03",
+   "name": "Templates v2 & Sheets engine",
+   "phase": "PH6",
+   "track": "Track 4 \u00b7 Agents, knowledge, engine & insights",
+   "lead": "notanaskhan",
+   "goal": "Templates v2 with gated in-place upgrades and Temporal rollout; Sheets with row sign-offs, column configurator, code-evaluated scoping rules and agent columns (D3 hybrid).",
+   "screen_ids": [
+    "SHT-01",
+    "SHT-02",
+    "SHT-03",
+    "SHT-04",
+    "KNW-06",
+    "KNW-07",
+    "SHL-22"
+   ],
+   "journeys": [
+    "J24",
+    "J22",
+    "J01",
+    "J26"
+   ],
+   "backend_modules": [
+    "methodology",
+    "workpapers",
+    "agents"
+   ],
+   "depends_on": [
+    "P-04",
+    "P-10",
+    "F-08",
+    "K-01"
+   ],
+   "decisions_adrs": [
+    "ch.03 templates-v2 ADR (supersedes SPEC-008 pin-once)",
+    "agent columns vs ADR-047 (AG-13)"
+   ],
+   "start_sprint": 52,
+   "end_sprint": 60,
+   "size_founder_weeks": 4.4
+  },
+  {
+   "id": "K-04",
+   "name": "Board, triggers, review package & set up with AI",
+   "phase": "PH6",
+   "track": "Track 4 \u00b7 Agents, knowledge, engine & insights",
+   "lead": "notanaskhan",
+   "goal": "Board as a view over program status, engagement settings and draft-only triggers, dashboard, review package, same-client link requests, Set up with AI.",
+   "screen_ids": [
+    "ENG-10",
+    "ENG-11",
+    "ENG-12",
+    "ENG-14",
+    "SHL-19",
+    "SHL-21"
+   ],
+   "journeys": [
+    "J22",
+    "J23",
+    "J25",
+    "J20",
+    "J04"
+   ],
+   "backend_modules": [
+    "engagements (protected agent workflow)",
+    "agents",
+    "collaboration"
+   ],
+   "depends_on": [
+    "K-03",
+    "P-10"
+   ],
+   "decisions_adrs": [
+    "AG-12 triggers",
+    "ch.03 cross-engagement fulfilment ADR",
+    "Board naming (SPEC-022 board renamed Evidence board)"
+   ],
+   "start_sprint": 59,
+   "end_sprint": 65,
+   "size_founder_weeks": 3.6
+  },
+  {
+   "id": "K-05",
+   "name": "Learning layer & content: skills, learned context, packs, notes",
+   "phase": "PH7",
+   "track": "Track 4 \u00b7 Agents, knowledge, engine & insights",
+   "lead": "ayushkbhatia",
+   "goal": "Learning layer: skills with an eval publish gate, learned context, content packs with fictional publishers (D8), notes library.",
+   "screen_ids": [
+    "KNW-08",
+    "KNW-11",
+    "KNW-12",
+    "WB-13"
+   ],
+   "journeys": [
+    "J24",
+    "J27",
+    "J21",
+    "J01"
+   ],
+   "backend_modules": [
+    "agents (memory)",
+    "methodology"
+   ],
+   "depends_on": [
+    "K-03",
+    "P-10"
+   ],
+   "decisions_adrs": [
+    "AG-13",
+    "AG-14",
+    "D8 licence gating (ADR-056)"
+   ],
+   "start_sprint": 67,
+   "end_sprint": 72,
+   "size_founder_weeks": 2.2
+  },
+  {
+   "id": "A-01",
+   "name": "Audit evidence spine & binder export",
+   "phase": "PH2",
+   "track": "Track 2 \u00b7 Assurance",
+   "lead": "notanaskhan",
+   "goal": "Audit index and cockpit on work items, PBC with viewer and screening, and the binder export package so the firm's tool stays authoritative.",
+   "screen_ids": [
+    "AUD-01",
+    "AUD-02",
+    "AUD-03"
+   ],
+   "journeys": [
+    "J03",
+    "J04",
+    "J20"
+   ],
+   "backend_modules": [
+    "assurance (new)",
+    "requests",
+    "evidence (red)"
+   ],
+   "depends_on": [
+    "P-06",
+    "P-03",
+    "P-07"
+   ],
+   "decisions_adrs": [
+    "ADR-036 export manifest"
+   ],
+   "start_sprint": 7,
+   "end_sprint": 13,
+   "size_founder_weeks": 1.3
+  },
+  {
+   "id": "A-02",
+   "name": "Trial balance & ledger connections",
+   "phase": "PH2-PH3",
+   "track": "Track 2 \u00b7 Assurance",
+   "lead": "notanaskhan",
+   "goal": "Trial balance and leadsheets from file imports, client connections with Export instead, integration framework and write registry skeleton, first live ledger read from discovery.",
+   "screen_ids": [
+    "AUD-06",
+    "POR-16"
+   ],
+   "journeys": [
+    "J02",
+    "J03",
+    "J04",
+    "J28"
+   ],
+   "backend_modules": [
+    "ledger (red)",
+    "connections (red)",
+    "integrations (new, red)"
+   ],
+   "depends_on": [
+    "A-01",
+    "Q-01",
+    "F-09"
+   ],
+   "decisions_adrs": [
+    "ADR-045 first ledger",
+    "ADR P-17 firm-side integrations",
+    "ch.06 write-capability framework (registry only)"
+   ],
+   "start_sprint": 8,
+   "end_sprint": 17,
+   "size_founder_weeks": 1.9
+  },
+  {
+   "id": "A-03",
+   "name": "Sampling & TB mapping",
+   "phase": "PH3",
+   "track": "Track 2 \u00b7 Assurance",
+   "lead": "ayushkbhatia",
+   "goal": "Seeded, versioned sampler with golden tests and single-entity TB mapping with the FS-line taxonomy (de-risks group audit).",
+   "screen_ids": [
+    "AUD-11",
+    "AUD-31"
+   ],
+   "journeys": [
+    "J04",
+    "J03",
+    "J22",
+    "J20"
+   ],
+   "backend_modules": [
+    "sampling",
+    "ledger (red)"
+   ],
+   "depends_on": [
+    "A-02",
+    "P-06"
+   ],
+   "decisions_adrs": [
+    "ADR-050 code computes",
+    "Q-15 mappings and consolidation live in ledger"
+   ],
+   "start_sprint": 20,
+   "end_sprint": 23,
+   "size_founder_weeks": 1
+  },
+  {
+   "id": "A-04",
+   "name": "Audit planning & risk (G4)",
+   "phase": "PH3",
+   "track": "Track 2 \u00b7 Assurance",
+   "lead": "ayushkbhatia",
+   "goal": "Audit planning (G4): program workpaper, risk narrative, code-computed materiality decision, RMM register, internal control, SOC 1 reliance.",
+   "screen_ids": [
+    "AUD-04",
+    "AUD-05",
+    "AUD-07",
+    "AUD-08",
+    "AUD-09",
+    "AUD-10"
+   ],
+   "journeys": [
+    "J03",
+    "J04",
+    "J23"
+   ],
+   "backend_modules": [
+    "workpapers (new)",
+    "review",
+    "methodology",
+    "assurance"
+   ],
+   "depends_on": [
+    "P-04",
+    "K-01",
+    "F-06",
+    "A-02"
+   ],
+   "decisions_adrs": [
+    "SPEC-008 non-goals superseded (materiality, risk)",
+    "ADR-050"
+   ],
+   "start_sprint": 22,
+   "end_sprint": 28,
+   "size_founder_weeks": 2.6
+  },
+  {
+   "id": "A-05",
+   "name": "EBP plan audits",
+   "phase": "PH3-PH4",
+   "track": "Track 2 \u00b7 Assurance",
+   "lead": "ayushkbhatia",
+   "goal": "EBP 401(k) plan audits in dependency order: profile, provisions, eligibility, contributions (shared late_remittance), distributions, accounts, expenses, trust tie-out after AUD-16, 5500 tie-out after AUD-20.",
+   "screen_ids": [
+    "EBP-01",
+    "EBP-02",
+    "EBP-03",
+    "EBP-04",
+    "EBP-05",
+    "EBP-06",
+    "EBP-07",
+    "EBP-08",
+    "EBP-09",
+    "AUD-27"
+   ],
+   "journeys": [
+    "J03",
+    "J04",
+    "J18"
+   ],
+   "backend_modules": [
+    "assurance (ebp)",
+    "sampling",
+    "evidence (red)",
+    "workpapers"
+   ],
+   "depends_on": [
+    "A-04",
+    "A-03",
+    "A-06",
+    "P-03"
+   ],
+   "decisions_adrs": [
+    "TB-from-trust-report ADR",
+    "census PII masking and logged reveal"
+   ],
+   "start_sprint": 23,
+   "end_sprint": 31,
+   "size_founder_weeks": 3.7
+  },
+  {
+   "id": "A-06",
+   "name": "Findings, adjustments, review notes & FS draft",
+   "phase": "PH3",
+   "track": "Track 2 \u00b7 Assurance",
+   "lead": "notanaskhan",
+   "goal": "Findings with the partner severity decision, AJEs and SUM (adjustments module, red, no posting), review notes and sign-off matrix (G5), FS draft and disclosure checklist.",
+   "screen_ids": [
+    "AUD-15",
+    "AUD-16",
+    "AUD-17",
+    "AUD-20"
+   ],
+   "journeys": [
+    "J03",
+    "J22",
+    "J04",
+    "J05"
+   ],
+   "backend_modules": [
+    "adjustments (new, red)",
+    "review",
+    "assurance",
+    "reporting"
+   ],
+   "depends_on": [
+    "P-04",
+    "A-04"
+   ],
+   "decisions_adrs": [
+    "ADR P-07",
+    "no posting under ADR-040"
+   ],
+   "start_sprint": 24,
+   "end_sprint": 30,
+   "size_founder_weeks": 2
+  },
+  {
+   "id": "A-07",
+   "name": "EQR, completion, letters, report, release & archive (G6-G9)",
+   "phase": "PH3-PH4",
+   "track": "Track 2 \u00b7 Assurance",
+   "lead": "notanaskhan",
+   "goal": "EQR (G6), completion, rep letter (G7), governance letters, report, release (G8), assembly and archive (G9) with sealed manifest and immutability; schema before the 2028 window, flipped per firm Mar 21, 2028.",
+   "screen_ids": [
+    "AUD-18",
+    "AUD-19",
+    "AUD-21",
+    "AUD-22",
+    "AUD-23",
+    "AUD-24",
+    "AUD-25"
+   ],
+   "journeys": [
+    "J03",
+    "J04",
+    "J05",
+    "J18",
+    "J21"
+   ],
+   "backend_modules": [
+    "assurance (release/archive red paths)",
+    "evidence (archive)",
+    "reporting",
+    "signatures"
+   ],
+   "depends_on": [
+    "A-06",
+    "N-02",
+    "P-11",
+    "R-02"
+   ],
+   "decisions_adrs": [
+    "ch.03 archive-seal and hash-chain ADR",
+    "ADR P-14 retention",
+    "C-09/C-12/C-13"
+   ],
+   "start_sprint": 27,
+   "end_sprint": 36,
+   "size_founder_weeks": 3.4
+  },
+  {
+   "id": "A-08",
+   "name": "Audit fieldwork depth",
+   "phase": "PH5",
+   "track": "Track 2 \u00b7 Assurance",
+   "lead": "ayushkbhatia",
+   "goal": "Testing workspace with protected GL extension, analytics, confirmations with a tokenised public respondent page, SSARS review/compilation/preparation workspace.",
+   "screen_ids": [
+    "AUD-12",
+    "AUD-13",
+    "AUD-14",
+    "AUD-26",
+    "POR-17"
+   ],
+   "journeys": [
+    "J04",
+    "J05",
+    "J12"
+   ],
+   "backend_modules": [
+    "sampling",
+    "ledger (red)",
+    "assurance",
+    "identity (public token)"
+   ],
+   "depends_on": [
+    "A-03",
+    "A-04",
+    "P-04"
+   ],
+   "decisions_adrs": [
+    "public respondent access ADR",
+    "GL model extension approval"
+   ],
+   "start_sprint": 45,
+   "end_sprint": 50,
+   "size_founder_weeks": 2.3
+  },
+  {
+   "id": "A-09",
+   "name": "Group audit (SAS 149)",
+   "phase": "PH5",
+   "track": "Track 2 \u00b7 Assurance",
+   "lead": "notanaskhan",
+   "goal": "SAS 149 group audit: multi-entity engagements, consolidation in ledger, manual eliminations, group scoping and component materiality, component-auditor room; ready behind a flag for Dec-2028 year-ends.",
+   "screen_ids": [
+    "AUD-32",
+    "AUD-33",
+    "AUD-34",
+    "AUD-35",
+    "POR-23"
+   ],
+   "journeys": [
+    "J20",
+    "J23"
+   ],
+   "backend_modules": [
+    "ledger (consolidation, red)",
+    "assurance",
+    "portal"
+   ],
+   "depends_on": [
+    "A-03",
+    "A-04",
+    "P-04"
+   ],
+   "decisions_adrs": [
+    "Q-15",
+    "connection-index change",
+    "POR-23 external role",
+    "X-06 no fund semantics"
+   ],
+   "start_sprint": 45,
+   "end_sprint": 50,
+   "size_founder_weeks": 2.3
+  },
+  {
+   "id": "A-10",
+   "name": "Statements studio",
+   "phase": "PH6",
+   "track": "Track 2 \u00b7 Assurance",
+   "lead": "ayushkbhatia",
+   "goal": "Statements studio: statement documents with lineage, tie-out engine, editor with tracked changes and presence (no CRDT), disclosure assistant, report templates in the database.",
+   "screen_ids": [
+    "FSP-01",
+    "FSP-02",
+    "FSP-03",
+    "FSP-04",
+    "FSP-05",
+    "FSP-06"
+   ],
+   "journeys": [
+    "J21",
+    "J04"
+   ],
+   "backend_modules": [
+    "reporting",
+    "ledger"
+   ],
+   "depends_on": [
+    "A-07",
+    "F-08",
+    "A-03"
+   ],
+   "decisions_adrs": [
+    "editor-framework ADR",
+    "ADR P-19"
+   ],
+   "start_sprint": 58,
+   "end_sprint": 64,
+   "size_founder_weeks": 2.8
+  },
+  {
+   "id": "A-11",
+   "name": "Agentic audit: procedure session & pre-review",
+   "phase": "PH6-PH7",
+   "track": "Track 2 \u00b7 Assurance",
+   "lead": "notanaskhan",
+   "goal": "Procedure session and pre-review on runtime v2, Sheets and agent columns, with every conclusion left to a named human.",
+   "screen_ids": [
+    "AUD-36",
+    "AUD-37"
+   ],
+   "journeys": [
+    "J22",
+    "J23",
+    "J04"
+   ],
+   "backend_modules": [
+    "agents",
+    "workpapers",
+    "sampling"
+   ],
+   "depends_on": [
+    "K-03",
+    "K-04",
+    "P-10"
+   ],
+   "decisions_adrs": [
+    "AG-12",
+    "ADR-005 human-only"
+   ],
+   "start_sprint": 65,
+   "end_sprint": 68,
+   "size_founder_weeks": 1.1
+  },
+  {
+   "id": "X-01",
+   "name": "Attest core (SOC 1/2, AUP, readiness) & frameworks",
+   "phase": "PH6-PH7",
+   "track": "Track 2 \u00b7 Assurance",
+   "lead": "ayushkbhatia",
+   "goal": "Attest service line (D1): framework library with licence gating, control sets, cockpit, scoping, system description, control matrix on Sheets, testing, exceptions, report and release, client SOC room.",
+   "screen_ids": [
+    "KNW-09",
+    "KNW-10",
+    "ATT-01",
+    "ATT-02",
+    "ATT-03",
+    "ATT-04",
+    "ATT-05",
+    "ATT-06",
+    "ATT-07",
+    "POR-21"
+   ],
+   "journeys": [
+    "J25"
+   ],
+   "backend_modules": [
+    "attest (new)",
+    "methodology",
+    "workpapers",
+    "portal"
+   ],
+   "depends_on": [
+    "K-03",
+    "K-04",
+    "A-07",
+    "A-10"
+   ],
+   "decisions_adrs": [
+    "D1 engagement types soc/aup/readiness",
+    "ADR P-25 for client-facing description drafts",
+    "X-01/X-02/X-04/X-05 not shipped"
+   ],
+   "start_sprint": 62,
+   "end_sprint": 69,
+   "size_founder_weeks": 4
+  },
+  {
+   "id": "X-02",
+   "name": "Attest depth: ISO readiness & GRC sync",
+   "phase": "PH7",
+   "track": "Track 2 \u00b7 Assurance",
+   "lead": "notanaskhan",
+   "goal": "ISO 27001 and CMMC L2 readiness as templates; Drata GRC sync under its own write-adapter ADR (W5).",
+   "screen_ids": [
+    "ATT-08",
+    "ATT-09"
+   ],
+   "journeys": [
+    "J25"
+   ],
+   "backend_modules": [
+    "attest",
+    "integrations (W5, red)",
+    "connections"
+   ],
+   "depends_on": [
+    "X-01",
+    "W-01"
+   ],
+   "decisions_adrs": [
+    "W5 GRC write ADR"
+   ],
+   "start_sprint": 68,
+   "end_sprint": 72,
+   "size_founder_weeks": 1
+  },
+  {
+   "id": "X-03",
+   "name": "Co-sourced internal audit",
+   "phase": "PH7",
+   "track": "Track 2 \u00b7 Assurance",
+   "lead": "ayushkbhatia",
+   "goal": "Co-sourced internal audit (D2): plan, RCM on Sheets, issues and action plans, committee pack, client IA room; BSA/AML only as a template.",
+   "screen_ids": [
+    "IAU-01",
+    "IAU-02",
+    "IAU-03",
+    "IAU-04",
+    "POR-22"
+   ],
+   "journeys": [
+    "J26"
+   ],
+   "backend_modules": [
+    "attest (ia)",
+    "workpapers",
+    "reporting"
+   ],
+   "depends_on": [
+    "X-01",
+    "K-03"
+   ],
+   "decisions_adrs": [
+    "D2",
+    "X-01b",
+    "X-08"
+   ],
+   "start_sprint": 68,
+   "end_sprint": 73,
+   "size_founder_weeks": 1.5
+  },
+  {
+   "id": "T-01",
+   "name": "Tax compliance rails: \u00a77216 gate, CCH file bridge, e-file record",
+   "phase": "PH3",
+   "track": "Track 3 \u00b7 Tax & client operations",
+   "lead": "notanaskhan",
+   "goal": "Tax compliance rails (red): TRI class and fail-closed gateway condition 6, per-taxpayer \u00a77216 consents, offshore masking, MFA for TRI, CCH file bridge with manual Mark transmitted, 8879 gate with Pub 1345 re-lock, never-ERO tests.",
+   "screen_ids": [
+    "CLI-05",
+    "ADM-05",
+    "ADM-08",
+    "TAX-09",
+    "TAX-12"
+   ],
+   "journeys": [
+    "J06",
+    "J07",
+    "J08",
+    "J14",
+    "J28"
+   ],
+   "backend_modules": [
+    "organisations (consents, red)",
+    "integrations (W2, red)",
+    "tax (red paths)",
+    "ai_gateway"
+   ],
+   "depends_on": [
+    "P-08",
+    "Q-02",
+    "N-02",
+    "K-02"
+   ],
+   "decisions_adrs": [
+    "ADR P-12 Sec. 7216 & TIN",
+    "ADR P-18 tax engine (file bridge)",
+    "AG-16",
+    "R-04 never ERO/transmitter",
+    "C-01/C-03"
+   ],
+   "start_sprint": 16,
+   "end_sprint": 21,
+   "size_founder_weeks": 3.9
+  },
+  {
+   "id": "T-02",
+   "name": "Tax extension-season pilot kit",
+   "phase": "PH3",
+   "track": "Track 3 \u00b7 Tax & client operations",
+   "lead": "ayushkbhatia",
+   "goal": "Extension-season tax pilot kit (conditional on M8): return record and board, overview, intake on binders, organizer questions, K-1 package and release gate, K-1 recipient room.",
+   "screen_ids": [
+    "TAX-01",
+    "TAX-02",
+    "TAX-03",
+    "TXP-12",
+    "POR-05",
+    "POR-13"
+   ],
+   "journeys": [
+    "J06",
+    "J07",
+    "J08",
+    "J13"
+   ],
+   "backend_modules": [
+    "tax (new)",
+    "requests",
+    "portal"
+   ],
+   "depends_on": [
+    "T-01",
+    "P-06",
+    "R-01"
+   ],
+   "decisions_adrs": [
+    "computation-boundary ADR (CCH stays engine of record)",
+    "BH-TAX-02 K-1 release gate"
+   ],
+   "start_sprint": 16,
+   "end_sprint": 21,
+   "size_founder_weeks": 2
+  },
+  {
+   "id": "T-03",
+   "name": "TY2027 season readiness: organizer editor, extensions & rules tables",
+   "phase": "PH3",
+   "track": "Track 3 \u00b7 Tax & client operations",
+   "lead": "ayushkbhatia",
+   "goal": "TY2027 readiness for tax-pilot firms: organizer editor, extensions and estimates, TY2027 rules tables loaded before the Jan 1 window.",
+   "screen_ids": [
+    "BND-03",
+    "TAX-13"
+   ],
+   "journeys": [
+    "J06",
+    "J09"
+   ],
+   "backend_modules": [
+    "tax",
+    "requests",
+    "practice"
+   ],
+   "depends_on": [
+    "T-02",
+    "K-02"
+   ],
+   "decisions_adrs": [
+    "CMP-10"
+   ],
+   "start_sprint": 26,
+   "end_sprint": 29,
+   "size_founder_weeks": 1
+  },
+  {
+   "id": "T-04",
+   "name": "Return workspace & individual returns",
+   "phase": "PH4-PH5",
+   "track": "Track 3 \u00b7 Tax & client operations",
+   "lead": "ayushkbhatia",
+   "goal": "Return workspace and individual returns, built dark in the 2028 season: Prepare/Review presets with region lighting, issues, checkpoints, consent-gated assistant, worksheets, K-1 treatment, residency.",
+   "screen_ids": [
+    "TAX-04",
+    "TAX-05",
+    "TAX-06",
+    "TAX-07",
+    "TAX-08",
+    "TXI-01",
+    "TXI-02",
+    "TXI-03"
+   ],
+   "journeys": [
+    "J06",
+    "J13",
+    "J19"
+   ],
+   "backend_modules": [
+    "tax",
+    "evidence (box extraction)",
+    "review",
+    "agents"
+   ],
+   "depends_on": [
+    "T-02",
+    "P-04",
+    "P-10",
+    "P-11"
+   ],
+   "decisions_adrs": [
+    "computation-boundary ADR",
+    "AG-16"
+   ],
+   "start_sprint": 32,
+   "end_sprint": 39,
+   "size_founder_weeks": 3.5
+  },
+  {
+   "id": "T-05",
+   "name": "Entity return workspace & K-1 engines (P0)",
+   "phase": "PH4-PH5",
+   "track": "Track 3 \u00b7 Tax & client operations",
+   "lead": "ayushkbhatia",
+   "goal": "Entity return workspace (P0) for the 2028 extension season: agent tab and run DAG, TB to TTB, Schedule K, allocation, capital, issues, memo, formula workbook; golden tests and CPA review.",
+   "screen_ids": [
+    "TXP-00",
+    "TXP-01",
+    "TXP-02",
+    "TXP-05",
+    "TXP-06",
+    "TXP-07",
+    "TXP-10",
+    "TXP-11"
+   ],
+   "journeys": [
+    "J08",
+    "J13",
+    "J15"
+   ],
+   "backend_modules": [
+    "tax",
+    "ledger (consumer)",
+    "adjustments (consumer)",
+    "workpapers (formula DAG)"
+   ],
+   "depends_on": [
+    "T-04",
+    "A-03",
+    "A-06"
+   ],
+   "decisions_adrs": [
+    "ADR-052 exception for tax workbooks",
+    "CPA review of golden figures"
+   ],
+   "start_sprint": 35,
+   "end_sprint": 44,
+   "size_founder_weeks": 5.1
+  },
+  {
+   "id": "T-06",
+   "name": "Entity return depth, relationships & hand-offs (P1)",
+   "phase": "PH5-PH6",
+   "track": "Track 3 \u00b7 Tax & client operations",
+   "lead": "ayushkbhatia",
+   "goal": "Entity return depth (P1): MACRS, M-1/M-3/M-2, \u00a7752 basis, states and PTET, other entity workpapers, form preview with K-1s, relationships graph (CLI-03 designed first), audit-to-tax hand-off.",
+   "screen_ids": [
+    "TXP-03",
+    "TXP-04",
+    "TXP-08",
+    "TXP-09",
+    "TXP-13",
+    "TAX-11",
+    "CLI-03",
+    "AUD-38"
+   ],
+   "journeys": [
+    "J08",
+    "J15",
+    "J28",
+    "J05"
+   ],
+   "backend_modules": [
+    "tax",
+    "organisations (relationships)",
+    "ledger"
+   ],
+   "depends_on": [
+    "T-05",
+    "F-07",
+    "A-07"
+   ],
+   "decisions_adrs": [
+    "form-renderer vs engine-PDF decision",
+    "CLI-03 design task"
+   ],
+   "start_sprint": 49,
+   "end_sprint": 55,
+   "size_founder_weeks": 4.1
+  },
+  {
+   "id": "T-07",
+   "name": "Trusts & estates (1041 / 706 / 709)",
+   "phase": "PH5",
+   "track": "Track 3 \u00b7 Tax & client operations",
+   "lead": "ayushkbhatia",
+   "goal": "Trusts and estates: instrument reader with clause citations, DNI calc tree, beneficiaries and K-1s, 65-day election, 706/709 workpapers.",
+   "screen_ids": [
+    "TXT-01",
+    "TXT-02",
+    "TXT-03",
+    "TXT-04"
+   ],
+   "journeys": [
+    "J07",
+    "J19"
+   ],
+   "backend_modules": [
+    "tax (fiduciary engine)",
+    "evidence (OCR)"
+   ],
+   "depends_on": [
+    "T-05",
+    "P-11"
+   ],
+   "decisions_adrs": [
+    "clause citation kind",
+    "ADR P-32"
+   ],
+   "start_sprint": 44,
+   "end_sprint": 47,
+   "size_founder_weeks": 1.6
+  },
+  {
+   "id": "T-08",
+   "name": "Tax season & practice tools (TY2028)",
+   "phase": "PH5-PH6",
+   "track": "Track 3 \u00b7 Tax & client operations",
+   "lead": "ayushkbhatia",
+   "goal": "TY2028 season tools: season setup and roll-forward cohorts, deadlines calendar, two-year comparison, firm standards run, consent-filtered planning, amendments.",
+   "screen_ids": [
+    "ENG-07",
+    "HOME-03",
+    "TAX-10",
+    "TAX-14",
+    "TAX-15",
+    "TAX-16"
+   ],
+   "journeys": [
+    "J06",
+    "J15",
+    "J16",
+    "J19"
+   ],
+   "backend_modules": [
+    "tax",
+    "engagements (seasons)",
+    "practice"
+   ],
+   "depends_on": [
+    "T-03",
+    "F-07"
+   ],
+   "decisions_adrs": [
+    "R-03 Sec. 7216 filter on planning"
+   ],
+   "start_sprint": 50,
+   "end_sprint": 55,
+   "size_founder_weeks": 2.4
+  },
+  {
+   "id": "T-09",
+   "name": "Advisory projects & research",
+   "phase": "PH7",
+   "track": "Track 3 \u00b7 Tax & client operations",
+   "lead": "ayushkbhatia",
+   "goal": "Advisory projects: proposals without invoices, project workspace with code-computed modelling, templates and research memos.",
+   "screen_ids": [
+    "ENG-09",
+    "PRJ-01",
+    "KNW-05"
+   ],
+   "journeys": [
+    "J15",
+    "J08"
+   ],
+   "backend_modules": [
+    "engagements (advisory_project)",
+    "methodology",
+    "reporting"
+   ],
+   "depends_on": [
+    "P-11",
+    "T-06"
+   ],
+   "decisions_adrs": [
+    "ADR P-27 payments boundary"
+   ],
+   "start_sprint": 66,
+   "end_sprint": 70,
+   "size_founder_weeks": 1.4
+  },
+  {
+   "id": "C-01",
+   "name": "Close engine (read-only QBO)",
+   "phase": "PH5",
+   "track": "Track 3 \u00b7 Tax & client operations",
+   "lead": "ayushkbhatia",
+   "goal": "Read-only CAS close engine: close work items, QBO live read, close plan and intake, run engine and review, bank reconciliation with OCR, flux, client close requests.",
+   "screen_ids": [
+    "CLS-01",
+    "CLS-02",
+    "CLS-03",
+    "CLS-04",
+    "CLS-05",
+    "CLS-06",
+    "CLS-09",
+    "CLS-10",
+    "POR-11"
+   ],
+   "journeys": [
+    "J10",
+    "J02",
+    "J16"
+   ],
+   "backend_modules": [
+    "closes (new)",
+    "connections (QBO, red)",
+    "ledger",
+    "requests"
+   ],
+   "depends_on": [
+    "A-02",
+    "P-04",
+    "P-11"
+   ],
+   "decisions_adrs": [
+    "ADR-045 QBO first for CAS",
+    "close work-item model"
+   ],
+   "start_sprint": 44,
+   "end_sprint": 51,
+   "size_founder_weeks": 3.9
+  },
+  {
+   "id": "C-02",
+   "name": "Ledger posting, deliverables & hand-offs",
+   "phase": "PH5-PH6",
+   "track": "Track 3 \u00b7 Tax & client operations",
+   "lead": "notanaskhan",
+   "goal": "Named-human threshold batches, QBO posting under W1 (declared scope, idempotent, client-visible log, attest hard-off), FS package release, GL sync console, close-to-tax hand-off, 1099/W-9 file export.",
+   "screen_ids": [
+    "CLS-07",
+    "CLS-08",
+    "CLS-11",
+    "CLS-12",
+    "CLS-13"
+   ],
+   "journeys": [
+    "J10",
+    "J05"
+   ],
+   "backend_modules": [
+    "adjustments (red)",
+    "integrations (W1, red)",
+    "reporting",
+    "tax"
+   ],
+   "depends_on": [
+    "C-01",
+    "A-06",
+    "W-01"
+   ],
+   "decisions_adrs": [
+    "ADR P-16 / W1 posting",
+    "ADR P-08 policy principal (default off)",
+    "ET 1.295 attest-client lock"
+   ],
+   "start_sprint": 49,
+   "end_sprint": 55,
+   "size_founder_weeks": 3.2
+  },
+  {
+   "id": "N-01",
+   "name": "Firm inbox, triage & files",
+   "phase": "PH2-PH3",
+   "track": "Track 3 \u00b7 Tax & client operations",
+   "lead": "notanaskhan",
+   "goal": "Firm inbox from portal uploads and manual intake, triage to requests, supersede as version n+1, read-only Files browser with client-level files.",
+   "screen_ids": [
+    "INB-01",
+    "INB-02",
+    "FIL-01"
+   ],
+   "journeys": [
+    "J06",
+    "J09",
+    "J16"
+   ],
+   "backend_modules": [
+    "communications",
+    "evidence (red)",
+    "requests"
+   ],
+   "depends_on": [
+    "P-06",
+    "P-08"
+   ],
+   "decisions_adrs": [
+    "ch.03 client-scoped files ADR (Q-08)"
+   ],
+   "start_sprint": 13,
+   "end_sprint": 18,
+   "size_founder_weeks": 1.7
+  },
+  {
+   "id": "N-02",
+   "name": "Signatures & engagement letters",
+   "phase": "PH2-PH3",
+   "track": "Track 3 \u00b7 Tax & client operations",
+   "lead": "notanaskhan",
+   "goal": "Signatures (red): record mode, then DocuSign embedded with provider-hosted ID Verification, Connect webhooks, IRS evidence package, handwritten fallback after 3 KBA failures; letter composer (G3); W7 is the first write entry.",
+   "screen_ids": [
+    "SIG-01",
+    "SIG-02",
+    "POR-06",
+    "ENG-04"
+   ],
+   "journeys": [
+    "J02",
+    "J06",
+    "J03",
+    "J15",
+    "J16"
+   ],
+   "backend_modules": [
+    "signatures (new, red)",
+    "reporting",
+    "communications"
+   ],
+   "depends_on": [
+    "P-11",
+    "F-06",
+    "F-09"
+   ],
+   "decisions_adrs": [
+    "ADR P-26 e-signature (provider-hosted KBA)",
+    "W7 DocuSign registry entry",
+    "C-05/C-06"
+   ],
+   "start_sprint": 13,
+   "end_sprint": 21,
+   "size_founder_weeks": 3.6
+  },
+  {
+   "id": "N-03",
+   "name": "Firm mailbox, compose & client messages",
+   "phase": "PH6",
+   "track": "Track 3 \u00b7 Tax & client operations",
+   "lead": "ayushkbhatia",
+   "goal": "Firm mailbox (Graph ingest and send-as, W6), compose and reply, portal threads, client account and delegation, firm-wide request tracker; model-drafted client text only under ADR P-25, off by default.",
+   "screen_ids": [
+    "BND-04",
+    "INB-03",
+    "INB-04",
+    "POR-07",
+    "POR-12"
+   ],
+   "journeys": [
+    "J12",
+    "J16",
+    "J10",
+    "J02"
+   ],
+   "backend_modules": [
+    "communications",
+    "portal",
+    "identity"
+   ],
+   "depends_on": [
+    "N-01",
+    "F-09",
+    "P-10"
+   ],
+   "decisions_adrs": [
+    "W6 Graph send-as",
+    "ADR P-25 (amends ADR-111)",
+    "ADR-030 client TOTP"
+   ],
+   "start_sprint": 56,
+   "end_sprint": 62,
+   "size_founder_weeks": 2.3
+  },
+  {
+   "id": "N-04",
+   "name": "Notices",
+   "phase": "PH3",
+   "track": "Track 3 \u00b7 Tax & client operations",
+   "lead": "ayushkbhatia",
+   "goal": "Notices as the first year-round tax-adjacent module: intake with OCR, code comparison to the return as filed, partner decision, response letter with signature, follow-up timer; payments as link-outs.",
+   "screen_ids": [
+    "NOT-01",
+    "NOT-02",
+    "NOT-03"
+   ],
+   "journeys": [
+    "J09",
+    "J13"
+   ],
+   "backend_modules": [
+    "notices (new)",
+    "tax",
+    "signatures",
+    "evidence"
+   ],
+   "depends_on": [
+    "T-01",
+    "P-11",
+    "N-02"
+   ],
+   "decisions_adrs": [
+    "ADR P-27",
+    "AG-16"
+   ],
+   "start_sprint": 25,
+   "end_sprint": 29,
+   "size_founder_weeks": 1.6
+  },
+  {
+   "id": "R-01",
+   "name": "Portal PBC core & white-label",
+   "phase": "PH2-PH3",
+   "track": "Track 3 \u00b7 Tax & client operations",
+   "lead": "ayushkbhatia",
+   "goal": "Portal PBC core: documents with ignore and mark done, request sheet, third-party room, email templates versioned in the database, branding slots and firm sender domain.",
+   "screen_ids": [
+    "POR-03",
+    "POR-04",
+    "POR-14",
+    "POR-20",
+    "ADM-10"
+   ],
+   "journeys": [
+    "J12",
+    "J03",
+    "J15",
+    "J16"
+   ],
+   "backend_modules": [
+    "portal",
+    "communications",
+    "evidence"
+   ],
+   "depends_on": [
+    "P-08",
+    "P-06"
+   ],
+   "decisions_adrs": [
+    "ADR P-11"
+   ],
+   "start_sprint": 7,
+   "end_sprint": 18,
+   "size_founder_weeks": 1.6
+  },
+  {
+   "id": "R-02",
+   "name": "Portal approvals, deliverables & governance room",
+   "phase": "PH3-PH4",
+   "track": "Track 3 \u00b7 Tax & client operations",
+   "lead": "ayushkbhatia",
+   "goal": "Portal approvals (C18), deliverables registry with download audit (C10), governance room with private TCWG answers.",
+   "screen_ids": [
+    "POR-08",
+    "POR-09",
+    "POR-15"
+   ],
+   "journeys": [
+    "J04",
+    "J05",
+    "J10",
+    "J12"
+   ],
+   "backend_modules": [
+    "portal",
+    "assurance",
+    "reporting"
+   ],
+   "depends_on": [
+    "R-01"
+   ],
+   "decisions_adrs": [
+    "C10/C18 contracts"
+   ],
+   "start_sprint": 29,
+   "end_sprint": 35,
+   "size_founder_weeks": 1.2
+  },
+  {
+   "id": "R-03",
+   "name": "Portal mobile capture, payments link-outs & prospect intake",
+   "phase": "PH6",
+   "track": "Track 3 \u00b7 Tax & client operations",
+   "lead": "ayushkbhatia",
+   "goal": "Portal depth: mobile capture (input capture and stitching first), payments as link-outs, security-reviewed prospect intake.",
+   "screen_ids": [
+    "POR-10",
+    "POR-18",
+    "POR-19"
+   ],
+   "journeys": [
+    "J12",
+    "J09",
+    "J19"
+   ],
+   "backend_modules": [
+    "portal",
+    "evidence"
+   ],
+   "depends_on": [
+    "R-01",
+    "P-11"
+   ],
+   "decisions_adrs": [
+    "ADR P-27",
+    "QR hand-off auth ADR"
+   ],
+   "start_sprint": 59,
+   "end_sprint": 63,
+   "size_founder_weeks": 1
+  },
+  {
+   "id": "W-01",
+   "name": "Integration catalogue & Connect",
+   "phase": "PH5",
+   "track": "Track 4 \u00b7 Agents, knowledge, engine & insights",
+   "lead": "notanaskhan",
+   "goal": "Workbench Connect: data-driven integration catalogue (only built connectors Available), integration detail and connect drawer, connection health.",
+   "screen_ids": [
+    "WB-10",
+    "WB-11"
+   ],
+   "journeys": [
+    "J01",
+    "J14"
+   ],
+   "backend_modules": [
+    "integrations (red)",
+    "connections"
+   ],
+   "depends_on": [
+    "A-02"
+   ],
+   "decisions_adrs": [
+    "ADR P-17"
+   ],
+   "start_sprint": 45,
+   "end_sprint": 48,
+   "size_founder_weeks": 1.1
+  },
+  {
+   "id": "W-02",
+   "name": "Workbench sessions",
+   "phase": "PH5",
+   "track": "Track 4 \u00b7 Agents, knowledge, engine & insights",
+   "lead": "notanaskhan",
+   "goal": "Workbench sessions: grounded read-only answers, then plan, execute and approve with proposed writes and artifacts.",
+   "screen_ids": [
+    "WB-01",
+    "WB-02",
+    "WB-03"
+   ],
+   "journeys": [
+    "J11"
+   ],
+   "backend_modules": [
+    "workbench",
+    "agents",
+    "ai_gateway"
+   ],
+   "depends_on": [
+    "P-10",
+    "F-07"
+   ],
+   "decisions_adrs": [
+    "ADR P-23",
+    "AG-04"
+   ],
+   "start_sprint": 40,
+   "end_sprint": 45,
+   "size_founder_weeks": 1.8
+  },
+  {
+   "id": "W-03",
+   "name": "Agent library, my agents, schedules & saved prompts",
+   "phase": "PH6-PH7",
+   "track": "Track 4 \u00b7 Agents, knowledge, engine & insights",
+   "lead": "notanaskhan",
+   "goal": "Agent library as DB rows, agent details (WB-05 designed in S8-S12), my agents, edit agent, run history and schedules, saved prompts that never run or approve.",
+   "screen_ids": [
+    "WB-04",
+    "WB-05",
+    "WB-06",
+    "WB-07",
+    "WB-08",
+    "WB-12"
+   ],
+   "journeys": [
+    "J11",
+    "J01",
+    "J20"
+   ],
+   "backend_modules": [
+    "workbench",
+    "agents"
+   ],
+   "depends_on": [
+    "W-02",
+    "P-10"
+   ],
+   "decisions_adrs": [
+    "ADR P-22 (firm agents are configuration over declared capabilities)",
+    "AG-11",
+    "WB-05 design task"
+   ],
+   "start_sprint": 63,
+   "end_sprint": 69,
+   "size_founder_weeks": 1.8
+  },
+  {
+   "id": "W-04",
+   "name": "Office add-ins",
+   "phase": "PH7",
+   "track": "Track 4 \u00b7 Agents, knowledge, engine & insights",
+   "lead": "ayushkbhatia",
+   "goal": "Office add-ins: Excel (evidence links, tickmarks, P/R sign-off, offline replay) and Word, with Office SSO.",
+   "screen_ids": [
+    "XLA-01",
+    "XLA-02"
+   ],
+   "journeys": [
+    "J21",
+    "J22"
+   ],
+   "backend_modules": [
+    "apps/office-addin (new)",
+    "api"
+   ],
+   "depends_on": [
+    "K-03",
+    "A-10"
+   ],
+   "decisions_adrs": [
+    "ADR P-20"
+   ],
+   "start_sprint": 69,
+   "end_sprint": 73,
+   "size_founder_weeks": 1.4
+  },
+  {
+   "id": "G-01",
+   "name": "Firm settings, users, roles, offices & walls",
+   "phase": "PH1-PH2",
+   "track": "Track 1 \u00b7 Platform spine & governance",
+   "lead": "notanaskhan",
+   "goal": "Firm settings, profile, users and roles from the matrix, offices, teams, walls v2 and consent-gated offshore groups.",
+   "screen_ids": [
+    "ADM-01",
+    "ADM-02",
+    "ADM-03"
+   ],
+   "journeys": [
+    "J01",
+    "J14",
+    "J16"
+   ],
+   "backend_modules": [
+    "identity (red)",
+    "platform"
+   ],
+   "depends_on": [
+    "F-03",
+    "P-01"
+   ],
+   "decisions_adrs": [
+    "ADR P-10",
+    "Q-07 client_service role (ADR-024)"
+   ],
+   "start_sprint": 6,
+   "end_sprint": 13,
+   "size_founder_weeks": 1
+  },
+  {
+   "id": "G-02",
+   "name": "AI policy, security center & audit log",
+   "phase": "PH2",
+   "track": "Track 1 \u00b7 Platform spine & governance",
+   "lead": "notanaskhan",
+   "goal": "AI policy v1 with TASK-076 opt-in, security center v1 (SSO/MFA, sessions, support access), audit-log explorer with via-Agent attribution and dual-approval export.",
+   "screen_ids": [
+    "ADM-04",
+    "ADM-06",
+    "ADM-07"
+   ],
+   "journeys": [
+    "J01",
+    "J14",
+    "J03",
+    "J06"
+   ],
+   "backend_modules": [
+    "identity",
+    "ai_gateway",
+    "audit_trail (red)"
+   ],
+   "depends_on": [
+    "Q-02",
+    "G-01"
+   ],
+   "decisions_adrs": [
+    "SPEC-036 part 2 (TASK-076)",
+    "ADR P-08 stays off",
+    "C-08 MFA"
+   ],
+   "start_sprint": 9,
+   "end_sprint": 14,
+   "size_founder_weeks": 1.6
+  },
+  {
+   "id": "G-03",
+   "name": "Developer platform & data model",
+   "phase": "PH7",
+   "track": "Track 1 \u00b7 Platform spine & governance",
+   "lead": "notanaskhan",
+   "goal": "Developer platform: API keys, outbox webhooks via an egress proxy (W8), read-only MCP with \u00a77216 withholding; custom fields, tags and TB labels.",
+   "screen_ids": [
+    "ADM-09",
+    "ADM-13"
+   ],
+   "journeys": [
+    "J14",
+    "J11",
+    "J01",
+    "J20"
+   ],
+   "backend_modules": [
+    "identity",
+    "integrations",
+    "platform"
+   ],
+   "depends_on": [
+    "P-10",
+    "W-01"
+   ],
+   "decisions_adrs": [
+    "ADR P-21",
+    "W8 webhooks"
+   ],
+   "start_sprint": 69,
+   "end_sprint": 73,
+   "size_founder_weeks": 1.9
+  },
+  {
+   "id": "G-04",
+   "name": "Platform console, plan & usage, support panel",
+   "phase": "PH5",
+   "track": "Track 1 \u00b7 Platform spine & governance",
+   "lead": "notanaskhan",
+   "goal": "Tenant console replacing CLI provisioning, plan and usage with agent-minute metering (no billing), support panel and status page.",
+   "screen_ids": [
+    "PLT-01",
+    "ADM-14",
+    "SHL-05"
+   ],
+   "journeys": [
+    "J01",
+    "J14",
+    "J27"
+   ],
+   "backend_modules": [
+    "platform",
+    "ai_gateway (metering)",
+    "identity (support)"
+   ],
+   "depends_on": [
+    "F-03",
+    "Q-04"
+   ],
+   "decisions_adrs": [
+    "ADR P-28",
+    "SPEC-012 amendment (no emergency second-staff approval)"
+   ],
+   "start_sprint": 47,
+   "end_sprint": 51,
+   "size_founder_weeks": 1.1
+  },
+  {
+   "id": "I-01",
+   "name": "Home & approvals queue",
+   "phase": "PH2-PH4",
+   "track": "Track 1 \u00b7 Platform spine & governance",
+   "lead": "ayushkbhatia",
+   "goal": "Home and the Waiting-on-you queue on the cross-module human-gate projection (C13), HOME-01 lite for the MVP, HOME-02 with the review UI.",
+   "screen_ids": [
+    "HOME-01",
+    "HOME-02"
+   ],
+   "journeys": [
+    "J13",
+    "J16",
+    "J19"
+   ],
+   "backend_modules": [
+    "practice (home read model)",
+    "review",
+    "notifications"
+   ],
+   "depends_on": [
+    "P-04",
+    "P-01"
+   ],
+   "decisions_adrs": [
+    "C13 registration slot"
+   ],
+   "start_sprint": 10,
+   "end_sprint": 35,
+   "size_founder_weeks": 1.4
+  },
+  {
+   "id": "I-02",
+   "name": "Today brief",
+   "phase": "PH5",
+   "track": "Track 4 \u00b7 Agents, knowledge, engine & insights",
+   "lead": "notanaskhan",
+   "goal": "Today brief per engagement: counts from code, narrative from a registered prompt with verified citations.",
+   "screen_ids": [
+    "SHL-23",
+    "HOME-05"
+   ],
+   "journeys": [
+    "J13",
+    "J23",
+    "J20"
+   ],
+   "backend_modules": [
+    "agents",
+    "practice"
+   ],
+   "depends_on": [
+    "P-10",
+    "I-01"
+   ],
+   "decisions_adrs": [
+    "AG-01"
+   ],
+   "start_sprint": 40,
+   "end_sprint": 43,
+   "size_founder_weeks": 1
+  },
+  {
+   "id": "I-03",
+   "name": "Insights",
+   "phase": "PH6-PH7",
+   "track": "Track 4 \u00b7 Agents, knowledge, engine & insights",
+   "lead": "ayushkbhatia",
+   "goal": "Insights read models: performance, AI adoption and override monitoring, efficiency with firm-history comparisons only (D6), My week pushed to practice management (D5), client responsiveness.",
+   "screen_ids": [
+    "INS-01",
+    "INS-02",
+    "INS-03",
+    "INS-04",
+    "INS-05"
+   ],
+   "journeys": [
+    "J27",
+    "J17"
+   ],
+   "backend_modules": [
+    "practice (insights)",
+    "integrations (W4)"
+   ],
+   "depends_on": [
+    "Q-04",
+    "F-08"
+   ],
+   "decisions_adrs": [
+    "D5",
+    "D6 (P-30 deferred)",
+    "ADR-024 counts only"
+   ],
+   "start_sprint": 61,
+   "end_sprint": 67,
+   "size_founder_weeks": 2.2
+  },
+  {
+   "id": "I-04",
+   "name": "Practice economics & capacity",
+   "phase": "PH7",
+   "track": "Track 4 \u00b7 Agents, knowledge, engine & insights",
+   "lead": "ayushkbhatia",
+   "goal": "Practice economics: budget, time and AI effort, billing and WIP read-through (no invoices), capacity planner.",
+   "screen_ids": [
+    "ENG-06",
+    "ENG-08",
+    "HOME-04"
+   ],
+   "journeys": [
+    "J17"
+   ],
+   "backend_modules": [
+    "practice",
+    "integrations"
+   ],
+   "depends_on": [
+    "I-03",
+    "W-01"
+   ],
+   "decisions_adrs": [
+    "ADR P-27",
+    "D5 integrate-first"
+   ],
+   "start_sprint": 70,
+   "end_sprint": 73,
+   "size_founder_weeks": 1.5
+  },
+  {
+   "id": "Q-01",
+   "name": "Infrastructure, environments & platform services",
+   "phase": "PH0-PH1",
+   "track": "Track 0 \u00b7 Foundations & delivery system",
+   "lead": "notanaskhan",
+   "goal": "Infrastructure and platform services (TASK-014): AWS landing zone, Terraform staging and production, RDS, Object Lock, per-tenant KMS, Temporal Cloud, WorkOS, SES, ClamAV, observability, backups and restore drills, release pipeline. R0 Nov 13, R1 Dec 11, 2026.",
+   "screen_ids": [],
+   "journeys": [
+    "all"
+   ],
+   "backend_modules": [
+    "infra (new)",
+    "kernel",
+    "identity",
+    "communications",
+    "evidence (scanner)"
+   ],
+   "depends_on": [
+    "F-01"
+   ],
+   "decisions_adrs": [
+    "ch.06 region, tenant-key, malware-scanning, kill-switch and observability ADRs",
+    "ADR-088 build-once-promote"
+   ],
+   "start_sprint": 0,
+   "end_sprint": 5,
+   "size_founder_weeks": 3.6
+  },
+  {
+   "id": "Q-02",
+   "name": "Real-data readiness & compliance programme",
+   "phase": "PH0-PH2",
+   "track": "Track 0 \u00b7 Foundations & delivery system",
+   "lead": "notanaskhan",
+   "goal": "Real-data readiness: compliance kernel (hash chain, access events, actor kinds, retention, holds, incident register), MFA, Bedrock register and per-agent evals, TASK-076 opt-in, SOC 2 Type I, pen test #1, WISP, vendor-diligence pack.",
+   "screen_ids": [],
+   "journeys": [
+    "all real-data journeys"
+   ],
+   "backend_modules": [
+    "ai_gateway",
+    "agents",
+    "identity",
+    "kernel",
+    "audit_trail",
+    "evidence"
+   ],
+   "depends_on": [
+    "Q-01"
+   ],
+   "decisions_adrs": [
+    "ADR-113/114/115 register",
+    "C-08 MFA",
+    "C-09 Object Lock",
+    "C-12 run records",
+    "C-13 hash chain"
+   ],
+   "start_sprint": 0,
+   "end_sprint": 13,
+   "size_founder_weeks": 2.9
+  },
+  {
+   "id": "Q-03",
+   "name": "Hardening & test back-fill (reserve-funded)",
+   "phase": "PH1-PH7",
+   "track": "Track 0 \u00b7 Foundations & delivery system",
+   "lead": "shared",
+   "goal": "Reserve-funded hardening and continuous assurance: 55 deferred AC-test suites before real data, mutation testing, load tests, restore drills, pen-test remediation and delta retests per new real-data surface, SOC 2 Type II.",
+   "screen_ids": [],
+   "journeys": [
+    "all"
+   ],
+   "backend_modules": [
+    "all red modules",
+    ".github"
+   ],
+   "depends_on": [
+    "F-01"
+   ],
+   "decisions_adrs": [
+    "ADR-078 separate test author",
+    "ADR-086 earned auto-merge"
+   ],
+   "start_sprint": 6,
+   "end_sprint": 73,
+   "size_founder_weeks": 47
+  },
+  {
+   "id": "Q-04",
+   "name": "Pilot operations, release train & freeze contract",
+   "phase": "PH2-PH7",
+   "track": "Track 0 \u00b7 Foundations & delivery system",
+   "lead": "shared",
+   "goal": "Pilot operations and the freeze contract: onboarding kit, per-firm entitlements and flags, go-live checklists, P-29 in-season rules, flag renewal calendar, weekly promotion, named on-call, 25-30% in-season support, metrics, rollback path.",
+   "screen_ids": [],
+   "journeys": [
+    "all live journeys"
+   ],
+   "backend_modules": [
+    "platform",
+    "audit_trail (metrics)",
+    "ops runbooks"
+   ],
+   "depends_on": [
+    "Q-02"
+   ],
+   "decisions_adrs": [
+    "ADR P-29 busy-season policy",
+    "ADR-089 flag renewal"
+   ],
+   "start_sprint": 12,
+   "end_sprint": 74,
+   "size_founder_weeks": 30.6
+  },
+  {
+   "id": "Q-05",
+   "name": "Quality management & records governance",
+   "phase": "PH5-PH6",
+   "track": "Track 2 \u00b7 Assurance",
+   "lead": "ayushkbhatia",
+   "goal": "Quality management and records governance: consultations, post-issuance, QM dashboard and inspections for the Dec 15, 2028 SQMS evaluation, retention and legal-hold UI, destruction with dual approval and certificate.",
+   "screen_ids": [
+    "AUD-28",
+    "AUD-30",
+    "ADM-11",
+    "ADM-12",
+    "FIL-02"
+   ],
+   "journeys": [
+    "J14",
+    "J18",
+    "J01"
+   ],
+   "backend_modules": [
+    "practice (quality)",
+    "evidence (holds, destruction, red)",
+    "audit_trail"
+   ],
+   "depends_on": [
+    "A-07",
+    "Q-02"
+   ],
+   "decisions_adrs": [
+    "ADR P-14 (supersedes ADR-034 for destruction)",
+    "C-10 legal-hold roles"
+   ],
+   "start_sprint": 50,
+   "end_sprint": 54,
+   "size_founder_weeks": 1.6
+  }
+ ],
+ "deferred_or_excluded": []
+}

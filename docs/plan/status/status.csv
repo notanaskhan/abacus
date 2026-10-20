@@ -1,0 +1,33 @@
+task_id,status,evidence
+F-01-T05,done,TASK-077; commits 40c6e7b 8fbaab1 d325d43 4a4cf8b; coverage recorded at 73% vs fail_under 95
+F-01-T06,done,TASK-078; commits c2c0c03 e4a4dc9
+F-01-T07,done,TASK-079; commits 3e7cfc7 e4a4dc9
+F-01-T09,done,TASK-080 + TASK-081 (parts 1 and 2); commits d6029de 442a095 59cc2bb
+F-01-T10,done,TASK-082; commits e4e3a10 da685ad; reservation forms unused in solo mode
+Q-02-T06,partial,"TASK-076 touches matrix rows firm.ai_client_data and engagement.ai_exclude; commit 9d91bae; flag, glossary rows, fresh-mfa and human-only yaml not checked"
+Q-02-T07,done,TASK-076 / SPEC-036 AC-3 AC-5 AC-6 AC-7 AC-9; commit 9d91bae
+Q-02-T08,partial,TASK-076 shadow output hidden; commit 9d91bae; re-opt-in on register change not evidenced
+F-05-T03,partial,TASK-091; commit a44b885; plan tokens replace Atelier theme; contrast.css and @theme layout not checked
+F-05-T04,partial,TASK-091; commit a44b885; Geist in; Arimo and Gelasio lazy fonts not checked
+F-05-T09,partial,TASK-101; commit c7c546d; dev component gallery exists; tokens page and screen route not checked
+F-05-T12,partial,TASK-101; commit c7c546d; status vocabulary component; codegen runtime (C2) not evidenced
+F-05-T14,partial,TASK-091 TASK-093; commits a44b885 14c662e; buttons and agent mark restyled; primitives list not checked
+F-05-T15,partial,TASK-101; commit c7c546d; Menu Tooltip Fieldset built; other inputs not checked
+F-05-T18,partial,"TASK-092; commit d0e8a73; 46px toolbar, compact record header, segmented tabs"
+F-05-T19,partial,TASK-091; commit a44b885; error and empty states restyled; ViewState and skeleton set not checked
+F-05-T20,partial,TASK-101; commit c7c546d; Drawer Sheet Popover built; OverlayStack FullSheet palette frame not evidenced
+F-05-T21,partial,TASK-101; commit c7c546d; Toast with deferred 10-second Undo; running pill not evidenced
+F-05-T23,partial,"TASK-092 to TASK-097; commits d0e8a73 14c662e 540083b f06f417 f70d0bd 765ae81; legacy screens restyled in the new shell, not moved under legacy/"
+F-05-T27,partial,"TASK-101; commit c7c546d; DataTable with sort, selection, bulk bar; MoneyCell and ledger grammar not evidenced"
+P-01-T02,partial,"TASK-092; commit d0e8a73; toolbar built; nav.ts source, overflow order, bell dot, Go chords not checked"
+P-07-T20,partial,TASK-092; commit d0e8a73; compact engagement record header and tabs
+P-07-T27,partial,TASK-093; commit 14c662e; engagements index as one searchable pane; service-line segmented and status tiles not evidenced
+G-01-T07,partial,TASK-098; commit f9604dd; firm settings in the settings frame with grouped section list
+I-01-T06,partial,"TASK-102; commit a9f1ea2; Home Waiting on you pane, approvals first; tiles and segmented not evidenced"
+P-04-T21,partial,"TASK-103 / SPEC-041; commit 440bc34; raise, respond, clear; open notes block reviewer sign-off; withdraw and sealed bodies not evidenced; fieldwork rows and workpapers only"
+A-03-T04,partial,TASK-083 / SPEC-037; commit 86ebfc6; seeded random sampling module; v2.3 frozen sampler not evidenced
+A-03-T07,partial,TASK-083 / SPEC-037; commit 86ebfc6; population from reconciled ledger with tie-out; upload source and column map not evidenced
+A-04-T08,partial,TASK-083 / SPEC-037; commit 86ebfc6; materiality recorded on engagement; engine and versions not evidenced
+A-08-T10,partial,TASK-083 / SPEC-037; commit 86ebfc6; journal entry selection by criteria plus seeded sample
+A-08-T12,partial,"TASK-083 TASK-084 / SPEC-037; commits 86ebfc6 5c88ded; journal entry testing service, results, workpaper, sign-off"
+A-08-T27,partial,TASK-084 TASK-096; commits 5c88ded f70d0bd; journal entry testing screens and Fieldwork cockpit; AUD-12 states not checked
