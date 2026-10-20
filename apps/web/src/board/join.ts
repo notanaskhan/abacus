@@ -1,3 +1,4 @@
+import { statusWord } from "@abacus/ui";
 // The evidence board's rows: each request item with its evidence and screening (AC-18), joined
 // on the item's evidence version (three reads keep module boundaries; TASK-012 Q1).
 import type { EvidenceVersionOut, RequestItemOut, ScreeningResultOut } from "@abacus/api-client";
@@ -59,11 +60,12 @@ export function sourceLabel(evidence: EvidenceVersionOut): string {
   return evidence.method === "retrieved" ? "Retrieved" : "Uploaded";
 }
 
+// TASK-105: the request words live in the design system's status vocabulary.
 const STATUS_LABELS: Record<RequestItemOut["status"], string> = {
-  open: "Open",
-  received: "Received",
-  ready_for_review: "Ready for review",
-  needs_revision: "Needs revision",
+  open: statusWord("request", "open").label,
+  received: statusWord("request", "received").label,
+  ready_for_review: statusWord("request", "ready_for_review").label,
+  needs_revision: statusWord("request", "needs_revision").label,
 };
 
 export function statusLabel(status: RequestItemOut["status"]): string {

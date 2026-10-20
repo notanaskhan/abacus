@@ -11,12 +11,15 @@ export interface StatusWord {
 }
 
 export const STATUS = {
+  // The plan's firm-side request words (S19 §3; TASK-105): asked, uploaded and waiting for the
+  // team, screened and ready for a decision, or returned to the client. ("Received" means accepted
+  // in the plan, so an upload is never called received.)
   request: {
-    open: { label: "Open", tone: "neutral" },
-    received: { label: "Received", tone: "neutral" },
-    ready_for_review: { label: "Ready for review", tone: "success" },
-    needs_revision: { label: "Needs revision", tone: "warning" },
-    accepted: { label: "Accepted", tone: "success" },
+    open: { label: "Requested", tone: "neutral" },
+    received: { label: "Uploaded", tone: "warning" },
+    ready_for_review: { label: "Ready for review", tone: "warning" },
+    needs_revision: { label: "Returned", tone: "danger" },
+    accepted: { label: "Received", tone: "success" },
   },
   engagement: {
     active: { label: "Active", tone: "success" },

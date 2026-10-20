@@ -95,10 +95,10 @@ describe("ac18 board join", () => {
   });
 
   it("labels all four statuses", () => {
-    expect(statusLabel("open")).toBe("Open");
-    expect(statusLabel("received")).toBe("Received");
+    expect(statusLabel("open")).toBe("Requested"); // TASK-105: the plan's words
+    expect(statusLabel("received")).toBe("Uploaded");
     expect(statusLabel("ready_for_review")).toBe("Ready for review");
-    expect(statusLabel("needs_revision")).toBe("Needs revision");
+    expect(statusLabel("needs_revision")).toBe("Returned");
   });
 
   it("shows confidence as a percentage", () => {
