@@ -1,9 +1,12 @@
 """Secrets and real-identifier scan of tracked files (ADR-083 stage 1, ADR-085). PROTECTED.
 
-Run: python -m abacus_tools.quality.secrets_scan
+Run: python -m abacus_tools.quality.secrets_scan            (tracked files)
+     python -m abacus_tools.quality.secrets_scan --history  (every blob on every ref)
 
-Scans what git tracks (including staged files). Messages never echo the matched value, because
-they end up in CI logs. Exceptions only via EXCLUDE globs in this file. Synthetic data must use
+Scans what git tracks (including staged files), or with --history every blob reachable from any
+ref, reporting the rule, path and commit. Messages never echo the matched value, because they end
+up in CI logs. Exceptions only via EXCLUDE globs and ALLOW entries in this file; every ALLOW entry
+names a reason. Synthetic data must use
 reserved ranges (SSN area 9xx, published test card numbers) so it never trips these rules.
 """
 
@@ -25,6 +28,27 @@ REPO = Path(__file__).resolve().parents[4]
 MAX_BYTES = 1_000_000
 LOCKFILES = frozenset({"uv.lock", "pnpm-lock.yaml"})
 EXCLUDE: tuple[str, ...] = ()
+# (path glob, rule id, reason): findings that are known local fixtures, never real secrets.
+ALLOW: tuple[tuple[str, str, str], ...] = (
+    (
+        "backend/migrations/bootstrap-local.sql",
+        "*",
+        "local-only database role passwords for the docker compose stack;"
+        " never used in a hosted database",
+    ),
+    (
+        "docker-compose.yml",
+        "*",
+        "local S3 gateway root key (ROOT_SECRET_KEY: abacuslocal)"
+        " for the docker compose stack only",
+    ),
+    (
+        "backend/tests/workflows/histories/*.json",
+        "SECRET-003",
+        "Temporal replay histories record the payload codec's encryption-key-id,"
+        " the key's name (platform-v1), not key material",
+    ),
+)
 DATA_SUFFIXES = frozenset({".csv", ".json", ".yaml", ".yml", ".txt", ".tsv"})
 CONFIG_SUFFIXES = frozenset(
     {".py", ".ts", ".tsx", ".js", ".mjs", ".cjs", ".json", ".yaml", ".yml", ".toml"}
@@ -264,18 +288,38 @@ def _tracked_files(repo: Path) -> list[str]:
     return [p for p in out.split("\0") if p]
 
 
+# History only: old blobs reviewed by hand and found not to be secrets (blob id -> reason). Pinned
+# by blob, so a new secret at the same path is still reported.
+REVIEWED_BLOBS: dict[str, str] = {
+    "3fbf56df9da9ba9087c8e8e0eefe205f34e85379": "config.py: local_master_key placeholder",
+    "7e0c27c59f843359ca7ecc3ed453a9b5cbd2792c": "config.py: local_master_key placeholder",
+    "56b5f952f4141ddbdd84c2e498a2d32cd8dbeaf4": "payload_codec.py: key id platform-v1, a name",
+    "0128c3fbde75fea0ed1c15025440167cec52434b": "test_payload_codec.py: key id platform-v1",
+    "ff89ffd90c46be1227a02efeb40c3877bb92e2ed": "test_evidence.py: date-stamped file names",
+    "c6f3a44ea50f494f2cad51b35daf45d0543d0143": "trial balance test: all-zero account number",
+    "bbdfc8d0ce3d4da90297e2397cd9b53c527b9b9a": "Q-02.md: example SSN in a masking example",
+}
+
+
+def _allowed(rel: str, rule_id: str) -> bool:
+    return any(fnmatch(rel, g) and fnmatch(rule_id, r) for g, r, _ in ALLOW)
+
+
+def _decode(rel: str, data: bytes) -> TextFile | None:
+    if data.startswith((codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE)):
+        return TextFile(rel, data.decode("utf-16", errors="replace").splitlines())
+    if b"\0" in data:
+        return None
+    return TextFile(rel, data.decode("utf-8", errors="replace").splitlines())
+
+
 def _load(repo: Path, rel: str) -> TextFile | None:
     if PurePosixPath(rel).name in LOCKFILES or any(fnmatch(rel, g) for g in EXCLUDE):
         return None
     path = repo / rel
     if path.is_symlink() or not path.is_file() or path.stat().st_size > MAX_BYTES:
         return None
-    data = path.read_bytes()
-    if data.startswith((codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE)):
-        return TextFile(rel, data.decode("utf-16", errors="replace").splitlines())
-    if b"\0" in data:
-        return None
-    return TextFile(rel, data.decode("utf-8", errors="replace").splitlines())
+    return _decode(rel, path.read_bytes())
 
 
 def scan(repo: Path = REPO, files: Iterable[str] | None = None) -> list[Violation]:
@@ -286,12 +330,69 @@ def scan(repo: Path = REPO, files: Iterable[str] | None = None) -> list[Violatio
             continue
         for rule in RULES:
             for f in rule.check(text):
-                violations.append(Violation(rel, f.line, rule.id, f.message, rule.adr))
+                if not _allowed(rel, rule.id):
+                    violations.append(Violation(rel, f.line, rule.id, f.message, rule.adr))
     return sorted(violations, key=lambda v: (v.path, v.line, v.rule_id))
 
 
-def main() -> int:
-    violations = scan()
+def _git(repo: Path, *args: str, stdin: bytes | None = None) -> bytes:
+    git = shutil.which("git")
+    if git is None:
+        raise RuntimeError("git is required to scan history")
+    return subprocess.run(
+        [git, *args], cwd=repo, input=stdin, capture_output=True, check=True
+    ).stdout
+
+
+def _history_blobs(repo: Path) -> dict[str, str]:
+    """Blob id -> one path it was committed at, for every blob reachable from any ref."""
+    blobs: dict[str, str] = {}
+    for line in _git(repo, "rev-list", "--objects", "--all").decode().splitlines():
+        sha, _, rel = line.partition(" ")
+        if rel and sha not in blobs:
+            blobs[sha] = rel
+    if not blobs:
+        return {}
+    checked = _git(repo, "cat-file", "--batch-check", stdin="\n".join(blobs).encode() + b"\n")
+    keep: dict[str, str] = {}
+    for row in checked.decode().splitlines():
+        sha, kind, size = row.split()
+        if kind == "blob" and int(size) <= MAX_BYTES:
+            keep[sha] = blobs[sha]
+    return keep
+
+
+def _first_commit(repo: Path, sha: str) -> str:
+    out = _git(repo, "log", "--all", "--reverse", "--format=%h", f"--find-object={sha}")
+    return (out.decode().split() or ["unknown"])[0]
+
+
+def scan_history(repo: Path = REPO) -> list[Violation]:
+    violations: list[Violation] = []
+    for sha, rel in _history_blobs(repo).items():
+        if sha in REVIEWED_BLOBS:
+            continue
+        name = PurePosixPath(rel).name
+        if name in LOCKFILES or any(fnmatch(rel, g) for g in EXCLUDE):
+            continue
+        text = _decode(rel, _git(repo, "cat-file", "blob", sha))
+        if text is None:
+            continue
+        hits = [
+            (rule, f) for rule in RULES for f in rule.check(text) if not _allowed(rel, rule.id)
+        ]
+        if not hits:
+            continue
+        commit = _first_commit(repo, sha)
+        for rule, f in hits:
+            message = f"{f.message} (first in commit {commit}, blob {sha[:12]})"
+            violations.append(Violation(rel, f.line, rule.id, message, rule.adr))
+    return sorted(violations, key=lambda v: (v.path, v.line, v.rule_id, v.message))
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = sys.argv[1:] if argv is None else argv
+    violations = scan_history() if "--history" in args else scan()
     for v in violations:
         print(v)
     if violations:

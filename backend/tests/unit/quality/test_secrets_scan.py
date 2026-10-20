@@ -671,3 +671,101 @@ def test_ac20_repository_has_no_secrets() -> None:
     tracked = list(tracked_files(REPO))
     assert tracked
     assert "AGENTS.md" in tracked
+
+
+# --- history mode (F-01-T01 part 2, SU-16) --------------------------------------------------
+
+
+def _git(root: Path, *args: str) -> str:
+    git = shutil.which("git")
+    assert git is not None
+    ident = ["-c", "user.email=t@example.com", "-c", "user.name=t"]
+    return subprocess.run(
+        [git, *ident, *args], cwd=root, capture_output=True, text=True, check=True
+    ).stdout.strip()
+
+
+def _history_repo(root: Path) -> str:
+    """A repo whose secret was committed, then deleted; returns the leaking commit."""
+    _git(root, "init", "-q", "-b", "main")
+    _write(root, "notes/clean.md", "nothing here\n")
+    _git(root, "add", "-A")
+    _git(root, "commit", "-q", "-m", "clean")
+    _write(root, "notes/leak.md", f"key = {_TOKEN}\n")
+    _git(root, "add", "-A")
+    _git(root, "commit", "-q", "-m", "leak")
+    leaked = _git(root, "rev-parse", "--short", "HEAD")
+    (root / "notes" / "leak.md").unlink()
+    _git(root, "add", "-A")
+    _git(root, "commit", "-q", "-m", "remove")
+    return leaked
+
+
+def test_history_scan_finds_a_secret_deleted_from_the_tree(tmp_path: Path) -> None:
+    leaked = _history_repo(tmp_path)
+    assert ss.scan(tmp_path) == []
+    found = ss.scan_history(tmp_path)
+    assert [(v.path, v.rule_id) for v in found] == [("notes/leak.md", "SECRET-002")]
+    assert leaked in found[0].message
+
+
+def test_history_scan_never_echoes_the_value(tmp_path: Path) -> None:
+    _history_repo(tmp_path)
+    assert all(_TOKEN not in str(v) for v in ss.scan_history(tmp_path))
+
+
+def test_history_scan_covers_every_ref(tmp_path: Path) -> None:
+    _history_repo(tmp_path)
+    _git(tmp_path, "switch", "-q", "-c", "side")
+    _write(tmp_path, "side/leak.md", f"side branch\nkey = {_TOKEN}\n")
+    _git(tmp_path, "add", "-A")
+    _git(tmp_path, "commit", "-q", "-m", "side leak")
+    _git(tmp_path, "switch", "-q", "main")
+    paths = {v.path for v in ss.scan_history(tmp_path)}
+    assert paths == {"notes/leak.md", "side/leak.md"}
+
+
+def test_history_scan_honours_the_allowlist(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _history_repo(tmp_path)
+    monkeypatch.setattr(ss, "ALLOW", (("notes/leak.md", "SECRET-002", "test fixture"),))
+    assert ss.scan_history(tmp_path) == []
+
+
+def test_every_allowlist_entry_has_a_reason() -> None:
+    assert ss.ALLOW, "the local stack fixtures are allowlisted"
+    for glob, rule_id, reason in ss.ALLOW:
+        assert glob and rule_id and len(reason.split()) >= 3, (glob, rule_id)
+    for blob, reason in ss.REVIEWED_BLOBS.items():
+        assert len(blob) == 40 and len(reason.split()) >= 3, blob
+
+
+def test_a_reviewed_blob_is_skipped_but_a_new_blob_at_its_path_is_not(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _history_repo(tmp_path)
+    blob = _git(tmp_path, "rev-parse", "HEAD~1:notes/leak.md")
+    monkeypatch.setattr(ss, "REVIEWED_BLOBS", {blob: "reviewed test fixture"})
+    assert ss.scan_history(tmp_path) == []
+    _write(tmp_path, "notes/leak.md", f"again\nkey = {_TOKEN}\n")
+    _git(tmp_path, "add", "-A")
+    _git(tmp_path, "commit", "-q", "-m", "new leak")
+    assert [v.path for v in ss.scan_history(tmp_path)] == ["notes/leak.md"]
+
+
+def test_main_accepts_history(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[str] = []
+
+    def history(repo: Path = ss.REPO) -> list[ss.Violation]:
+        calls.append("h")
+        return []
+
+    def tree(repo: Path = ss.REPO, files: Iterable[str] | None = None) -> list[ss.Violation]:
+        calls.append("s")
+        return []
+
+    monkeypatch.setattr(ss, "scan_history", history)
+    monkeypatch.setattr(ss, "scan", tree)
+    assert ss.main(["--history"]) == 0
+    assert calls == ["h"]

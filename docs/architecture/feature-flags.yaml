@@ -8,7 +8,7 @@
 flags:
   - name: prompt.evidence.screener
     description: The screener's prompt version per firm (prompt rollouts, SPEC-011 Q3).
-    owner: founder
+    owner: ayushkbhatia
     created: 2026-10-07
     expires: 2027-01-05
     kind: variant
@@ -16,70 +16,70 @@ flags:
     default: evidence.screen@v0
   - name: upload_review.enabled
     description: The upload reviewer (AI) runs on uploads after their checks, at Routine or above, for the engagement partner (SPEC-030; TASK-059). Synthetic firms only while the data boundary holds. Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
-    owner: founder
+    owner: ayushkbhatia
     created: 2026-10-12
     expires: 2027-01-09
     kind: boolean
     default: false
   - name: fieldwork.assessor
     description: The entry assessor (AI) proposes whether a selected journal entry's linked support explains it, for a person to decide (SPEC-037 Q4; TASK-085). Synthetic firms only until SPEC-036 clears it. Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
-    owner: founder
+    owner: ayushkbhatia
     created: 2026-10-19
     expires: 2027-01-17
     kind: boolean
     default: false
   - name: fieldwork.procedures
     description: Fieldwork procedures (SPEC-037; TASK-083), starting with journal entry testing; code builds populations and selects entries, people conclude. Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
-    owner: founder
+    owner: ayushkbhatia
     created: 2026-10-19
     expires: 2027-01-17
     kind: boolean
     default: false
   - name: guidance.drafting
     description: The guidance drafter (AI) drafts why a request is asked and what a good answer looks like, for a person to approve (SPEC-035; TASK-073). Synthetic firms only while the data boundary holds. Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
-    owner: founder
+    owner: ayushkbhatia
     created: 2026-10-15
     expires: 2027-01-13
     kind: boolean
     default: false
   - name: ledger.gl_import
     description: General ledger detail exports can be uploaded, checked against the year-end trial balance and kept as immutable snapshots (SPEC-034; TASK-069). Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
-    owner: founder
+    owner: ayushkbhatia
     created: 2026-10-14
     expires: 2027-01-12
     kind: boolean
     default: false
   - name: matching.enabled
     description: The matcher (AI) proposes which open request an extracted inbox file belongs to, at Routine or above, for the engagement partner, unless code's content rules were decisive (SPEC-033; TASK-066). Synthetic firms only while the data boundary holds. Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
-    owner: founder
+    owner: ayushkbhatia
     created: 2026-10-14
     expires: 2027-01-12
     kind: boolean
     default: false
   - name: uploads.processing
     description: Each upload is read in isolation (text, tables, fields) by a background workflow (SPEC-029; TASK-054). Scanning applies whatever this says. Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
-    owner: founder
+    owner: ayushkbhatia
     created: 2026-10-12
     expires: 2027-01-09
     kind: boolean
     default: false
   - name: ledger.import
     description: Clients (or the firm on their behalf) upload an exported trial balance instead of connecting (SPEC-028; TASK-052). Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
-    owner: founder
+    owner: ayushkbhatia
     created: 2026-10-11
     expires: 2027-01-08
     kind: boolean
     default: false
   - name: engagement_agent.enabled
     description: Route automatic screening, retrieval and inbox matching through each engagement's agent, with its activity feed and pause switches (SPEC-027; TASK-050). Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
-    owner: founder
+    owner: ayushkbhatia
     created: 2026-10-10
     expires: 2027-01-07
     kind: boolean
     default: false
   - name: retrieval.auto
     description: Start retrievals automatically for available tier A items (SPEC-022 AC-4). Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
-    owner: founder
+    owner: ayushkbhatia
     created: 2026-10-09
     expires: 2027-01-07
     kind: boolean

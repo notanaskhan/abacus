@@ -178,8 +178,9 @@ generate:
 migrate: db-guard
 	cd backend && $(STACK_ENV) uv run alembic upgrade head
 
-loadtest: db-guard
-	cd backend && uv run python -m abacus_tools.loadtest.run --profile $(PROFILE)
+# Not built yet: the load test and the staging seed arrive with Q-01 (OPS-16).
+loadtest:
+	@echo "not implemented: Q-01 OPS-16 (load test)" >&2; exit 1
 
-seed-staging: db-guard
-	cd backend && uv run python -m abacus_tools.synthetic.seed --profile $(PROFILE)
+seed-staging:
+	@echo "not implemented: Q-01 OPS-16 (staging seed)" >&2; exit 1
