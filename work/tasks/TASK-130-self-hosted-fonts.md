@@ -4,7 +4,7 @@ title: "F-05-T04 · Self-hosted fonts: fonts.css (Geist and Geist Mono eager wit
 spec: SPEC-048
 acceptance_criteria: [AC-7]
 risk_zone: amber
-status: todo
+status: done
 epic: F-05
 plan_key: F-05-T04
 branch: task-130-self-hosted-fonts
@@ -46,7 +46,7 @@ Verify each item against the code, then build only what is missing. Do not rewri
 - Prior work: TASK-091..101 (Anas: tokens, Geist, components)
 
 ## Plan
-- [ ] Plan written in this file (required for amber and red)
+- [x] Plan written in this file (required for amber and red)
 
 Steps:
 1. [ ] Verify the existing Fontsource imports in theme.css:9-12
@@ -88,11 +88,12 @@ make check
 Append-only. Newest at the bottom.
 
 - `2026-10-20` — task file written from the epic (SU-14); nothing built yet.
+- 2026-10-20 (solo build): fonts.test.ts first (fonts.css has Geist and Geist Mono 400/500 and nothing else, fonts-doc.css has Arimo 400/600/700 and Gelasio 400/500/700 and no shared stylesheet imports it, no Google font host in app or ui sources, the abacus-csp policy string is unchanged). Moved the Fontsource imports out of theme.css into fonts.css (imported by styles.css); added fonts-doc.css with ./fonts.css and ./fonts-doc.css exports; added the abacus-font-preload build plugin in vite.config.ts (four preload links for the Geist woff2 files, confirmed in dist/index.html; no googleapis/gstatic in dist). The browser half (request log, document.fonts.check) is e2e/ds-fonts.spec.ts in TASK-134. make check-fast, vitest (429) and vite build green.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
-| | | yes / no |
+| Preload by a build plugin that reads the bundle for the four Geist woff2 files | Hashed names are known only at build; no CSP change | no |
 
 ## Gotchas and discoveries
 - 
@@ -101,8 +102,8 @@ Append-only. Newest at the bottom.
 - [ ] 
 
 ## Handoff
-- **Current state:** not started
-- **Exact next step:** step 1 of the plan
+- **Current state:** done (see the progress log)
+- **Exact next step:** none for this task
 - **Uncommitted or partial work:** none
 - **Known failing checks:** none
 - **Open issues:** none

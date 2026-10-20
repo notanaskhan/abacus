@@ -1,0 +1,8 @@
+/* Eager fonts (SPEC-048 AC-7, F-05-T04): Geist and Geist Mono at 400 and 500, self-hosted through
+   Fontsource, so no request leaves for Google's font hosts and the CSP stays at 'self'. Vite emits
+   the woff2 files as same-origin assets and apps/web/vite.config.ts preloads them in the
+   production page. Rendered documents use fonts-doc.css instead. */
+@import "@fontsource/geist/latin-400.css";
+@import "@fontsource/geist/latin-500.css";
+@import "@fontsource/geist-mono/latin-400.css";
+@import "@fontsource/geist-mono/latin-500.css";

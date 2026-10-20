@@ -11,6 +11,8 @@
       "default": "./src/index.ts"
     },
     "./styles.css": "./src/styles.css",
+    "./fonts.css": "./src/fonts.css",
+    "./fonts-doc.css": "./src/fonts-doc.css",
     "./theme.css": "./src/theme.css",
     "./root.css": "./src/root.css",
     "./contrast.css": "./src/contrast.css",

@@ -11,11 +11,6 @@
    The SPEC-016 token names (ground, surface, muted, line, accent, ok, warn, info, danger, ai) stay
    as aliases so every screen takes the new look at once; new code uses the plan's names (card,
    shell, nested, ink-2, hair, espresso, green / amber / red …). */
-@import "@fontsource/geist/latin-400.css";
-@import "@fontsource/geist/latin-500.css";
-@import "@fontsource/geist-mono/latin-400.css";
-@import "@fontsource/geist-mono/latin-500.css";
-
 @theme static {
   /* Only the plan's tokens exist: Tailwind's default palette and shadows compile to nothing
      (SPEC-048). Type sizes stay mapped onto the plan's roles until the F-05-T06 codemod. */

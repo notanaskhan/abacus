@@ -1,0 +1,11 @@
+/* Document fonts (SPEC-048 AC-7, F-05-T04): Arimo for rendered forms and PDFs, Gelasio for
+   statements and letters. This file is imported only by a document chunk, never by styles.css, so
+   the 600 and 700 weights stay out of the application's first paint:
+     import "@abacus/ui/fonts-doc.css";
+   Self-hosted through Fontsource; the CSP is unchanged. */
+@import "@fontsource/arimo/latin-400.css";
+@import "@fontsource/arimo/latin-600.css";
+@import "@fontsource/arimo/latin-700.css";
+@import "@fontsource/gelasio/latin-400.css";
+@import "@fontsource/gelasio/latin-500.css";
+@import "@fontsource/gelasio/latin-700.css";
