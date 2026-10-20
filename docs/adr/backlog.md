@@ -15,18 +15,18 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 | P-03 | Accrued design system in `packages/ui` | amber | F-05 | next free | Fri 23 Oct | DEC-04, DEC-11, DEC-15 | to draft |
 | P-04 | Engagement + work items + server-enforced gates | red | F-03 | ADR-136 | Fri 23 Oct | DEC-07, DEC-39 | accepted |
 | P-05 | Module map (29 modules) | amber | F-03 | ADR-137 | Fri 23 Oct | DEC-13 | accepted |
-| P-06 | Generalised `visible()` | red | F-03 | next free | Fri 6 Nov | DEC-33 | to draft |
+| P-06 | Generalised `visible()` | red | F-03 | ADR-145 | Fri 6 Nov | DEC-33 | accepted |
 | P-07 | Review grammar | red | Q-02 | next free (ADR-134 already binds fieldwork to it) | Fri 6 Nov | DEC-36 | to draft |
 | P-08 | Policy principal (dormant) | red | Q-03 | next free | Fri 11 Dec (design); enable ≥ Q2 2027 | DEC-53 | to draft |
-| P-09 | Client identity, scoped grants, link principals, portal MFA | red | F-03 | next free | Fri 6 Nov | DEC-34, DEC-63, DEC-67 | to draft |
-| P-10 | Role catalogue and need-to-know | red | F-03 | next free | Fri 6 Nov | DEC-20, DEC-21 | to draft |
+| P-09 | Client identity, scoped grants, link principals, portal MFA | red | F-03 | ADR-146 | Fri 6 Nov | DEC-34, DEC-63, DEC-67 | accepted |
+| P-10 | Role catalogue and need-to-know | red | F-03 | ADR-147 | Fri 6 Nov | DEC-20, DEC-21 | accepted |
 | P-11 | White-label portal, domains, branded email | amber | F-09 | next free | Fri 13 Nov | DEC-59 | to draft |
 | P-12 | §7216 consents, TRI, TIN sealing, gateway condition | red | Q-02 | next free | Fri 13 Nov | DEC-52 | to draft |
 | P-13 | Independence and attest-client rules | red | P-07 | next free | Fri 27 Nov | DEC-69 | to draft |
 | P-14 | Retention, holds, destruction | red | Q-02 | next free | Fri 27 Nov (data model) | DEC-71 | to draft |
 | P-15 | Real time via SSE, plus presence | amber | P-10 | next free | Fri 6 Nov | DEC-23 | to draft |
 | P-16 | Client-ledger writes (W1) and GRC request sync (W5) | red | C-01 | next free | Fri 27 Nov | DEC-69 | to draft |
-| P-17 | `integrations` module and the write-capability framework | red | F-02 | next free | Fri 6 Nov | DEC-46 | to draft |
+| P-17 | `integrations` module and the write-capability framework | red | F-02 | ADR-150 | Fri 6 Nov | DEC-46 | proposed |
 | P-18 | Tax-engine integration; never transmit | red | F-09 | next free | Fri 13 Nov | DEC-49 | to draft |
 | P-19 | Deterministic document generation | amber | P-11 | next free | Fri 6 Nov | DEC-44 | to draft |
 | P-20 | Office add-ins | amber | — | next free | Q2 2027 | DEC-95 | to draft |
@@ -35,10 +35,10 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 | P-23 | Workbench sessions | red | P-10 | next free | Fri 13 Nov | DEC-40 | to draft |
 | P-24 | Structured agent output | red | F-06 | next free | Fri 6 Nov | DEC-41 | to draft |
 | P-25 | Model-drafted text to clients | red | Q-03 | next free | Fri 11 Dec | DEC-79 | to draft |
-| P-26 | E-signature | red | F-02 | next free | Fri 30 Oct (vendor clock) | DEC-25 | to draft |
+| P-26 | E-signature | red | F-02 | ADR-149 | Fri 30 Oct (vendor clock) | DEC-25 | proposed |
 | P-27 | Payments and billing boundary | amber | F-09 | next free | Fri 11 Dec | DEC-89 | to draft |
-| P-28 | Entitlements, agent-minutes, two-layer budgets | amber | F-03 | next free | Fri 13 Nov | DEC-51, DEC-55 | to draft |
-| P-29 | Busy-season change policy | amber | F-02 | next free | Fri 27 Nov | DEC-68 | to draft |
+| P-28 | Entitlements, agent-minutes, two-layer budgets | amber | F-03 | ADR-148 | Fri 13 Nov | DEC-51, DEC-55 | accepted |
+| P-29 | Busy-season change policy | amber | F-02 | ADR-151 | Fri 27 Nov | DEC-68 | proposed |
 | P-30 | Peer benchmark network | red | — | next free | Deferred | DEC-99 | to draft |
 | P-31 | Client withdrawal of unaccepted uploads | red | P-06 | next free | Fri 13 Nov | DEC-58 | to draft |
 | P-32 | OCR and document understanding | amber | P-11 | next free | Fri 6 Nov | DEC-42 | to draft |
@@ -46,15 +46,15 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 | P-34 | Status registry and codegen | amber | F-03 | ADR-138 | Fri 23 Oct | DEC-08 | accepted |
 | P-35 | Suggestions, proposals, approval grants, Undo; dormant policy actor | red | P-04 | next free | Fri 30 Oct | DEC-24, DEC-28 | to draft |
 | P-36 | API conventions | amber | F-03 | ADR-139 | Fri 23 Oct | DEC-12 | accepted |
-| P-37 | Clock, scenario loader, synthetic marker | amber | F-02 | next free | Fri 30 Oct | DEC-27 | to draft |
+| P-37 | Clock, scenario loader, synthetic marker | amber | F-02 | ADR-143 | Fri 30 Oct | DEC-27 | accepted |
 | P-38 | Pre-launch migration policy | red | F-03 | ADR-135 | Wed 21 Oct | DEC-06 | accepted |
 | P-39 | Per-module registries and matrix files | amber | F-03 | ADR-140 | Fri 23 Oct | DEC-13 | accepted |
 | P-40 | Client-scoped files and cross-engagement fulfilment | red | F-03 | next free | Fri 6 Nov | DEC-33 | to draft |
 | P-41 | Templates v2 | amber | K-04 | next free | Fri 13 Nov | DEC-56 | to draft |
 | P-42 | Generalised comments | red | P-05 | next free | Fri 27 Nov | DEC-29 | to draft |
 | P-43 | Archive seal, DB immutability, hash chain, Object Lock modes | red | A-07 | next free | Fri 11 Dec | DEC-71 | to draft |
-| P-44 | Request status enum migration | red | F-03 | next free | Fri 30 Oct | DEC-09, DEC-74 | to draft |
-| P-45 | Unauthenticated `/healthz` and portal branding routes | red | Q-01 | next free | Fri 13 Nov (with TASK-014) | DEC-59 | to draft |
+| P-44 | Request status enum migration | red | F-03 | ADR-144 | Fri 30 Oct | DEC-09, DEC-74 | accepted |
+| P-45 | Unauthenticated `/healthz` and portal branding routes | red | Q-01 | ADR-152 | Fri 13 Nov (with TASK-014) | DEC-59 | proposed |
 | P-46 | Gateway conversations and tool use | red | P-10 | next free | Fri 6 Nov | DEC-41 | to draft |
 | P-47 | Runs, steps, sessions, canonical run states, run records | red | P-10 | next free | Fri 6 Nov | — | to draft |
 | P-48 | Citation v2 and number provenance | red | P-03 | next free | Fri 13 Nov | — | to draft |
@@ -73,10 +73,10 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 | P-61 | Practice-management writes (W3, W4) | amber | I-03 | next free | When scheduled (P3) | DEC-98 | to draft |
 | P-62 | Platform reference data | amber | A-05 | next free | Fri 27 Nov | DEC-76 | to draft |
 | P-63 | Multi-entity engagements and consolidation | red | A-03 | next free | Fri 20 Nov | DEC-65, DEC-66 | to draft |
-| P-64 | Malware scanning service | red | Q-01 | next free | Fri 13 Nov (draft open Fri 30 Oct) | — | to draft (confirmed 2026-10-20) |
+| P-64 | Malware scanning service | red | Q-01 | ADR-153 | Fri 13 Nov (draft open Fri 30 Oct) | — | proposed |
 | P-65 | Tenant key provisioning | red | Q-01 | next free | Fri 27 Nov | — | to draft (confirmed 2026-10-20) |
 | P-66 | Platform controls and kill switches | red | Q-01 | next free | Fri 27 Nov | — | to draft (confirmed 2026-10-20) |
-| P-67 | Observability and on-call vendors | red | Q-01 | next free | Fri 13 Nov (draft open Fri 30 Oct) | — | to draft (confirmed 2026-10-20) |
+| P-67 | Observability and on-call vendors | red | Q-01 | ADR-154 | Fri 13 Nov (draft open Fri 30 Oct) | — | proposed |
 | P-68 | Tax computation boundary | amber | T-02 | next free | Fri 28 May 2027 (draft S14) | DEC-77 | to draft (confirmed 2026-10-20) |
 | P-69 | Workbook formula engine and the ADR-052 exception for tax workbooks | red | T-05 | next free | Fri 18 Feb 2028 (draft S33) | DEC-84 | to draft (confirmed 2026-10-20) |
 

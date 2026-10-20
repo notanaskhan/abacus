@@ -131,3 +131,15 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-140](ADR-140-per-module-registries.md) | Registries and the permission matrix are split per module | amber | accepted |
 | [ADR-141](ADR-141-authentication-workos.md) | Authentication and sessions use WorkOS AuthKit, with a BFF session for the portal | red | accepted |
 | [ADR-142](ADR-142-aws-topology-regions.md) | AWS production topology - us-east-2 primary, us-west-2 DR | red | accepted |
+| [ADR-143](ADR-143-clock-scenario-synthetic-marker.md) | Business clock, scenario loader and the firm-level synthetic marker | amber | accepted |
+| [ADR-144](ADR-144-request-status-enum-migration.md) | Request status enum migration, follow-up rename and the wrong_document reason | red | accepted |
+| [ADR-145](ADR-145-generalised-visible-scope-kinds.md) | Generalised visible() with declared scope kinds | red | accepted |
+| [ADR-146](ADR-146-client-identity-scoped-grants-portal-mfa.md) | Client identity - scoped grants, link principals and portal MFA | red | accepted |
+| [ADR-147](ADR-147-role-catalogue-need-to-know.md) | Role catalogue and need-to-know - two axes plus work-item functions | red | accepted |
+| [ADR-148](ADR-148-entitlements-agent-minutes-budgets.md) | Entitlements, agent-minutes and two-layer budgets | amber | accepted |
+| [ADR-149](ADR-149-e-signature-record-mode-then-docusign.md) | E-signature - record mode first, then DocuSign embedded with ID Verification behind an EnvelopeProvider port | red | proposed |
+| [ADR-150](ADR-150-integrations-module-write-capabilities.md) | Integrations module and the declared write-capability framework | red | proposed |
+| [ADR-151](ADR-151-busy-season-change-policy-from-go-live.md) | Busy-season change policy - the freeze starts at the first real go-live | red | proposed |
+| [ADR-152](ADR-152-unauthenticated-operational-routes.md) | Unauthenticated operational routes - /healthz and portal branding on an explicit allowlist | red | proposed |
+| [ADR-153](ADR-153-malware-scanning-service.md) | Malware scanning service - ClamAV clamd, synchronous, fail closed | red | proposed |
+| [ADR-154](ADR-154-observability-on-call-vendors.md) | Observability and on-call vendors - CloudWatch, X-Ray, Sentry and Better Stack | red | proposed |
