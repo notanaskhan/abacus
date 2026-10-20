@@ -1,5 +1,7 @@
 """Public interface of the ledger module; other modules import only this (ADR-008)."""
 
+from abacus.kernel.audit_owners import register_entity_owners
+from abacus.modules.ledger.audit_targets import AUDIT_KINDS, audit_entities
 from abacus.modules.ledger.general_ledger import (
     Balance,
     GlAccount,
@@ -46,6 +48,9 @@ from abacus.modules.ledger.service import (
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[()] = ()
+
+# DEC-121: the audit explorer asks each owner which engagement its targets belong to.
+register_entity_owners(AUDIT_KINDS, audit_entities)
 
 __all__ = [
     "ROUTERS",

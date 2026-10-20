@@ -1,7 +1,9 @@
 """Public interface of the notifications module; other modules import only this (ADR-008).
 Nothing imports it to send: modules publish domain events, and this module subscribes."""
 
+from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.notifications.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.notifications.catalogue import CATALOGUE, TEMPLATES
 from abacus.modules.notifications.routes import router
 from abacus.modules.notifications.service import notify, run_purge_job
@@ -13,6 +15,9 @@ ACTIVITIES: tuple[object, ...] = ()
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (router,)
+
+# DEC-121: the audit explorer asks each owner which engagement its targets belong to.
+register_engagement_owners(AUDIT_KINDS, audit_owners)
 
 __all__ = [
     "ACTIVITIES",

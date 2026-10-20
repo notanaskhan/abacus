@@ -1,6 +1,8 @@
 """Public interface of the identity module; other modules import only this (ADR-008)."""
 
 from abacus.ai_gateway import register_client_data_facts, register_synthetic_tenants
+from abacus.kernel.audit_owners import register_engagement_owners
+from abacus.modules.identity.audit_targets import AUDIT_KINDS, audit_hidden_walls, audit_owners
 from abacus.modules.identity.authz import (
     MFA_RECENT,
     WALL_SAFE,
@@ -149,6 +151,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     signup_router,
 )
 
+# DEC-121: the audit explorer asks each owner which engagement its targets belong to.
+register_engagement_owners(AUDIT_KINDS, audit_owners)
+
 __all__ = [
     "ACTION_KEY",
     "IDENTITY",
@@ -197,6 +202,7 @@ __all__ = [
     "agent_context_for_run",
     "agent_may_hold",
     "agents_paused",
+    "audit_hidden_walls",
     "authorise",
     "authorise_items",
     "autonomy",

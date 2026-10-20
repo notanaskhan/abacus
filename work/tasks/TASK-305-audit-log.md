@@ -22,4 +22,5 @@ updated: 2026-10-20
 - [x] `tests/unit/audit_trail/test_explorer.py`, `spec304auditlog.test.tsx`, the router test and the gate list pass; check-fast passes.
 
 ## Progress log
+- `2026-10-20` — DEC-121: walls now apply to the audit explorer for every role (SPEC-002 AC-5, ADR-026). `audit_trail.targets` drops events whose target belongs to an engagement the reader cannot see, resolved through each module's `api.py` (`AUDIT_KINDS`, `audit_owners`), and wall events that name the reader or a client they are walled from; paging reads on until a page of visible events and shows no counts of the others. Unknown target types are hidden. Follow-up: add `engagement_id` to audit events (migration, F-03 or Q-02) so the filter is exact and cheap, then delete the resolvers.
 - 2026-10-20: built and merged.

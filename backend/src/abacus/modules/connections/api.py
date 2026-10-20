@@ -1,7 +1,9 @@
 """Public interface of the connections module; other modules import only this (ADR-008)."""
 
+from abacus.kernel.audit_owners import register_engagement_owners, register_entity_owners
 from abacus.kernel.uow import Handler
 from abacus.modules.connections.activities import ACTIVITIES
+from abacus.modules.connections.audit_targets import AUDIT_KINDS, audit_entities, audit_owners
 from abacus.modules.connections.auto_retrieval import (
     auto_retrieve,
     available_datasets,
@@ -90,6 +92,10 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     connection_router,
     complete_router,
 )
+
+# DEC-121: the audit explorer asks each owner which engagement its targets belong to.
+register_engagement_owners(AUDIT_KINDS - {"connection"}, audit_owners)
+register_entity_owners({"connection"}, audit_entities)
 
 __all__ = [
     "ACTIVITIES",

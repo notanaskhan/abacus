@@ -1002,6 +1002,10 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     # Notifications subscribes to events and resolves recipients through identity (SPEC-013);
     # nothing imports it.
     "notifications": frozenset({"identity"}),
+    # SPEC-002 AC-5, DEC-121: the audit explorer hides events about engagements the reader may not
+    # see; each owner registers which engagement its targets belong to (kernel.audit_owners),
+    # so this reads the registry and depends only on identity and engagements; nothing imports it.
+    "audit_trail": frozenset({"identity", "engagements"}),
     # SPEC-037 (TASK-083): populations and selection are pure functions over ledger snapshots.
     "sampling": frozenset({"ledger"}),
     # Procedures read engagements and ledger snapshots, and select through sampling; TASK-084

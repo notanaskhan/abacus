@@ -455,6 +455,17 @@ async def insert_invitation(session: AsyncSession, values: dict[str, object]) ->
     )
 
 
+async def invitation_engagements(
+    session: AsyncSession, invitation_ids: Sequence[UUID]
+) -> dict[UUID, UUID]:
+    """Invitation id -> its engagement, for the audit explorer (its reader is authorised)."""
+    statement = text(
+        "SELECT id, engagement_id FROM client_invitations WHERE id IN :ids"
+    ).bindparams(bindparam("ids", expanding=True))
+    rows = await session.execute(statement, {"ids": list(invitation_ids)})
+    return {cast(UUID, found): cast(UUID, owned) for found, owned in rows}
+
+
 async def invitations_today(session: AsyncSession, engagement_id: UUID) -> int:
     count = await session.scalar(
         text(

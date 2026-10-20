@@ -1,6 +1,7 @@
 """Public interface of the engagements module; other modules import only this (ADR-008)."""
 
 from abacus.ai_gateway import register_client_data_facts
+from abacus.modules.engagements.audit_targets import AUDIT_KINDS, audit_engagements, visible_among
 from abacus.modules.engagements.events import EngagementCreated, IndependenceRequested
 from abacus.modules.engagements.roll_forward import (
     PriorItem,
@@ -82,6 +83,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 )
 
 __all__ = [
+    "AUDIT_KINDS",
     "ROUTERS",
     "AccountRule",
     "ApprovedGuidance",
@@ -104,6 +106,7 @@ __all__ = [
     "area_for",
     "attach_acceptance_file",
     "attach_letter_file",
+    "audit_engagements",
     "check_facts",
     "engagement_label",
     "engagement_metadata",
@@ -125,4 +128,5 @@ __all__ = [
     "run_auto_retrieval",
     "stored_file",
     "version_detail",
+    "visible_among",
 ]

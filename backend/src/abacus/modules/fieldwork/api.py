@@ -4,7 +4,9 @@ Procedures and their records (SPEC-037; TASK-083; ADR-131, ADR-132): materiality
 people, journal entry testing's population and selection by code (`sampling`).
 """
 
+from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.fieldwork.activities import ACTIVITIES
+from abacus.modules.fieldwork.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.fieldwork.routes import firm_router, router
 from abacus.modules.fieldwork.service import WORKFLOWS
 from abacus.modules.fieldwork.workflow_types import ProcedureSelectInput
@@ -26,6 +28,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     router,
     firm_router,
 )
+
+# DEC-121: the audit explorer asks each owner which engagement its targets belong to.
+register_engagement_owners(AUDIT_KINDS, audit_owners)
 
 __all__ = [
     "ACTIVITIES",

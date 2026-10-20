@@ -1,7 +1,9 @@
 """Public interface of the agents module; other modules import only this (ADR-008)."""
 
 from abacus.ai_gateway import register_client_data_facts
+from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.agents.activities import ACTIVITIES
+from abacus.modules.agents.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.agents.citations import SheetLayoutError
 from abacus.modules.agents.citations import verify as verify_citations
 from abacus.modules.agents.engagement_agent import start_agents
@@ -94,6 +96,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     knowledge_router,
     template_drafts_router,
 )
+
+# DEC-121: the audit explorer asks each owner which engagement its targets belong to.
+register_engagement_owners(AUDIT_KINDS, audit_owners)
 
 __all__ = [
     "ACTIVITIES",

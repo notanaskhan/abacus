@@ -1,5 +1,7 @@
 """Public interface of the communications module; other modules import only this (ADR-008)."""
 
+from abacus.kernel.audit_owners import register_engagement_owners
+from abacus.modules.communications.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.communications.invitations import deliver_invitation, deliver_staff_invitation
 from abacus.modules.communications.reminders import render_reminder, send_reminder
 from abacus.modules.communications.scope import Violation, check_scope, comment_scope_kinds
@@ -20,6 +22,9 @@ ACTIVITIES: tuple[object, ...] = ()
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[()] = ()
+
+# DEC-121: the audit explorer asks each owner which engagement its targets belong to.
+register_engagement_owners(AUDIT_KINDS, audit_owners)
 
 __all__ = [
     "ACTIVITIES",

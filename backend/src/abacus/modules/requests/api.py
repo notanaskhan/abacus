@@ -1,7 +1,9 @@
 """Public interface of the requests module; other modules import only this (ADR-008)."""
 
+from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.engagements.api import register_roll_forward_items
 from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.requests.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.requests.availability import register_available_datasets
 from abacus.modules.requests.classification import classify, document_kind
 from abacus.modules.requests.comments import register_comment_scope_check
@@ -51,6 +53,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     firm_router,
     methodology_router,
 )
+
+# DEC-121: the audit explorer asks each owner which engagement its targets belong to.
+register_engagement_owners(AUDIT_KINDS, audit_owners)
 
 __all__ = [
     "ROUTERS",

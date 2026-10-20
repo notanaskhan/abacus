@@ -11,9 +11,11 @@ from uuid import UUID
 
 from abacus.kernel.db import tenant_session
 from abacus.kernel.uow import AuditFilter, AuditRow, audit_facets, audit_page
+from abacus.modules.audit_trail.targets import readable
 from abacus.modules.identity.api import AuthContext, Resource, authorise, names_of
 
 PAGE: Final = 100
+MAX_SCANS: Final = 20  # batches read looking for a page the reader may see
 
 
 @dataclass(frozen=True)
@@ -50,10 +52,26 @@ async def events(
     """AC-1, AC-2."""
     await authorise(ctx, "audit.read", Resource.firm(ctx.tenant_id))
     size = max(1, min(limit, PAGE))
-    async with tenant_session(ctx.tenant) as session:
-        rows: list[AuditRow] = await audit_page(session, where, before_seq, size + 1)
-    more = len(rows) > size
-    rows = rows[:size]
+    # Walls and roles apply (SPEC-002 AC-5; DEC-121): read on until a page of events the reader
+    # may see, never counting or showing the others.
+    shown: list[AuditRow] = []
+    cursor, more = before_seq, True
+    for _ in range(MAX_SCANS):
+        async with tenant_session(ctx.tenant) as session:
+            batch: list[AuditRow] = await audit_page(session, where, cursor, size + 1)
+        more = len(batch) > size
+        batch = batch[:size]
+        if batch:
+            cursor = batch[-1].seq
+        shown += await readable(ctx, batch)
+        if len(shown) >= size or not more:
+            break
+    rows = shown[:size]
+    last_scanned = cursor
+    full = len(shown) > size
+    next_before = (
+        rows[-1].seq if full else (last_scanned if more and last_scanned is not None else None)
+    )
     people: list[UUID] = sorted(
         {u for r in rows if r.actor_kind == "human" and (u := _uuid(r.actor_id)) is not None},
         key=str,
@@ -76,7 +94,7 @@ async def events(
             )
             for r in rows
         ],
-        rows[-1].seq if more and rows else None,
+        next_before,
     )
 
 

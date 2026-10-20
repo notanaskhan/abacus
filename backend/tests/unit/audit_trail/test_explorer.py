@@ -57,6 +57,10 @@ def seen(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:  # fakes record the
     async def names_of(ids: list[uuid.UUID]) -> dict[uuid.UUID, str]:
         return {i: "Dana Leader" for i in ids}
 
+    async def readable(_ctx: object, rows: list[AuditRow]) -> list[AuditRow]:
+        return list(rows)  # walls and roles are `test_targets.py`'s; here the reader sees all
+
+    monkeypatch.setattr(subject, "readable", readable)
     monkeypatch.setattr(subject, "authorise", authorise)
     monkeypatch.setattr(subject, "audit_page", audit_page)
     monkeypatch.setattr(subject, "names_of", names_of)

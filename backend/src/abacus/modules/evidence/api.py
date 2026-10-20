@@ -1,6 +1,8 @@
 """Public interface of the evidence module; other modules import only this (ADR-008)."""
 
+from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.evidence.activities import ACTIVITIES
+from abacus.modules.evidence.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.evidence.events import (
     EvidenceVersionCreated,
     InboxFileAdded,
@@ -83,6 +85,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     router,
     firm_router,
 )
+
+# DEC-121: the audit explorer asks each owner which engagement its targets belong to.
+register_engagement_owners(AUDIT_KINDS, audit_owners)
 
 __all__ = [
     "ACTIVITIES",
