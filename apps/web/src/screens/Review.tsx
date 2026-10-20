@@ -122,13 +122,13 @@ function ReviewEntry({
           >
             {item}
           </Link>
-          <p className="text-sm text-muted">
+          <p className="text-body text-muted">
             {entry.item_audit_area} · {sourceLabel(version)} from {systemName(version.source)}
             {version.period_start !== null &&
               ` · ${version.period_start} to ${version.period_end ?? ""}`}{" "}
             · version {String(version.version_no)}
           </p>
-          <p className="text-sm text-muted">
+          <p className="text-body text-muted">
             {assignee === null
               ? "Not taken"
               : assignee === meId

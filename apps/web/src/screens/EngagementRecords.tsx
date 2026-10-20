@@ -19,7 +19,7 @@ const LETTER_LABEL: Record<string, string> = {
   signed: "Signed",
   not_required_this_year: "Not required this year",
 };
-const SELECT = "h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm";
+const SELECT = "h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-body";
 
 function when(value: string | null | undefined): string {
   return value == null ? "" : new Date(value).toLocaleDateString();
@@ -136,12 +136,12 @@ function AcceptancePanel({
       }
     >
       {a === null ? (
-        <p className="text-sm text-muted">
+        <p className="text-body text-muted">
           Not recorded yet. The engagement partner records the acceptance or continuance decision
           and their independence conclusion.
         </p>
       ) : (
-        <dl className="grid grid-cols-[11rem_1fr] gap-x-3 gap-y-1 text-sm">
+        <dl className="grid grid-cols-[11rem_1fr] gap-x-3 gap-y-1 text-body">
           <dt className="text-muted">Decision</dt>
           <dd>
             <StatusPill tone={a.decision === "accepted" ? "success" : "danger"}>
@@ -231,7 +231,7 @@ function AcceptancePanel({
               </div>
             </div>
           )}
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2 text-body">
             <input
               type="checkbox"
               checked={concluded}
@@ -255,7 +255,7 @@ function AcceptancePanel({
             </div>
           )}
           {save.isError && !isForbidden(save.error) && (
-            <p role="alert" className="text-sm text-danger">
+            <p role="alert" className="text-body text-danger">
               {errorMessage(save.error)}
             </p>
           )}
@@ -300,7 +300,7 @@ function IndependencePanel({
         >{`${String(confirmed)} of ${String(data.confirmations.length)} confirmed`}</StatusPill>
       }
     >
-      <ul aria-label="Independence confirmations" className="flex flex-col gap-1 text-sm">
+      <ul aria-label="Independence confirmations" className="flex flex-col gap-1 text-body">
         {data.confirmations.map((c) => (
           <li key={c.user_id} className="flex flex-wrap items-center justify-between gap-2">
             <span>{c.display_name || "Team member"}</span>
@@ -315,7 +315,9 @@ function IndependencePanel({
                 <StatusPill tone="neutral">Waiting</StatusPill>
               )}
             </span>
-            {c.note !== null && <span className="w-full text-xs text-muted">Note: {c.note}</span>}
+            {c.note !== null && (
+              <span className="w-full text-meta text-muted">Note: {c.note}</span>
+            )}
           </li>
         ))}
       </ul>
@@ -387,14 +389,14 @@ function LetterPanel({
       }
     >
       {l === null ? (
-        <p className="text-sm text-muted">
+        <p className="text-body text-muted">
           Not recorded.{" "}
           {data.letter_required
             ? "Your firm requires it before client data."
             : "Recommended before the work begins."}
         </p>
       ) : (
-        <p className="text-sm">
+        <p className="text-body">
           <StatusPill
             tone={
               l.status === "signed" || l.status === "not_required_this_year"
@@ -405,19 +407,19 @@ function LetterPanel({
             {LETTER_LABEL[l.status] ?? l.status}
           </StatusPill>
           {l.letter_date !== null && ` · ${when(l.letter_date)}`}
-          {l.reason !== null && <span className="block text-xs text-muted">{l.reason}</span>}
+          {l.reason !== null && <span className="block text-meta text-muted">{l.reason}</span>}
           {l.link !== null && (
             <a
               href={l.link}
               target="_blank"
               rel="noreferrer noopener"
-              className="block text-xs text-accent hover:underline"
+              className="block text-meta text-accent hover:underline"
             >
               Where the signed copy lives
             </a>
           )}
           {l.file_name !== null && (
-            <span className="block text-xs text-muted">Signed copy: {l.file_name}</span>
+            <span className="block text-meta text-muted">Signed copy: {l.file_name}</span>
           )}
         </p>
       )}
@@ -482,7 +484,7 @@ function LetterPanel({
             />
           </div>
           {save.isError && (
-            <p role="alert" className="text-sm text-danger">
+            <p role="alert" className="text-body text-danger">
               {errorMessage(save.error)}
             </p>
           )}

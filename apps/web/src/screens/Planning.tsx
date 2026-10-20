@@ -419,7 +419,7 @@ function ProposeMateriality({
           className="min-h-[80px] w-full rounded-tile border-0 bg-nested p-2.5 text-[13px] inset-shadow-hair focus:bg-card"
         />
       </Fieldset>
-      {save.isError && <p className="text-xs text-danger">{errorMessage(save.error)}</p>}
+      {save.isError && <p className="text-meta text-danger">{errorMessage(save.error)}</p>}
     </Sheet>
   );
 }
@@ -481,7 +481,7 @@ function DecideMateriality({
           Recorded with your name. Sampling can start once it's decided.
         </p>
       </Fieldset>
-      {decide.isError && <p className="text-xs text-danger">{errorMessage(decide.error)}</p>}
+      {decide.isError && <p className="text-meta text-danger">{errorMessage(decide.error)}</p>}
     </Sheet>
   );
 }
@@ -622,7 +622,7 @@ function RiskRegister({
         )}
       </div>
       {approve.isError && (
-        <p className="px-4 pt-2 text-xs text-danger">{errorMessage(approve.error)}</p>
+        <p className="px-4 pt-2 text-meta text-danger">{errorMessage(approve.error)}</p>
       )}
       {rows.length === 0 ? (
         <EmptyState title="No risks yet">
@@ -850,7 +850,7 @@ function RiskSheet({
           </p>
         )}
       </Fieldset>
-      {error != null && <p className="text-xs text-danger">{errorMessage(error)}</p>}
+      {error != null && <p className="text-meta text-danger">{errorMessage(error)}</p>}
     </Sheet>
   );
 }

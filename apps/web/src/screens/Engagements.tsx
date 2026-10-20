@@ -351,7 +351,7 @@ function CreateEngagement({
                 onChange={(event) => {
                   setEntity(event.target.value);
                 }}
-                className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm"
+                className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-body"
               >
                 {picked.entities.map((e) => (
                   <option key={e.id} value={e.id}>
@@ -374,7 +374,7 @@ function CreateEngagement({
                 setType(event.target.value as EngagementType);
                 setChoice(null);
               }}
-              className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm"
+              className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-body"
             >
               {ENGAGEMENT_TYPES.map(([value, label]) => (
                 <option key={value} value={value}>
@@ -475,7 +475,7 @@ function RequestListChoice({
   if (loading) return <Skeleton className="h-9" />;
   if (failed || offered.length === 0) {
     return (
-      <p className="text-sm text-muted">
+      <p className="text-body text-muted">
         {failed
           ? "Couldn't load your firm's templates; the request list starts empty."
           : `Your firm has no template for ${label.toLowerCase()} engagements yet; the request list starts empty.`}{" "}
@@ -495,7 +495,7 @@ function RequestListChoice({
         onChange={(event) => {
           onChange(event.target.value);
         }}
-        className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm"
+        className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-body"
       >
         {offered.length > 1 && <option value="">Choose a template…</option>}
         {offered.map((t) => (
@@ -542,7 +542,7 @@ function ClientPicker({
   });
   if (picked !== null) {
     return (
-      <div className="flex items-center justify-between rounded-[var(--radius-control)] border border-line bg-sunken px-3 py-2 text-sm">
+      <div className="flex items-center justify-between rounded-[var(--radius-control)] border border-line bg-sunken px-3 py-2 text-body">
         <span>
           Client: <span className="font-semibold">{picked.name}</span>
         </span>
@@ -577,7 +577,7 @@ function ClientPicker({
             <li key={c.id}>
               <button
                 type="button"
-                className="w-full rounded-[var(--radius-control)] border border-line px-3 py-1.5 text-left text-sm hover:bg-sunken"
+                className="w-full rounded-[var(--radius-control)] border border-line px-3 py-1.5 text-left text-body hover:bg-sunken"
                 onClick={() => {
                   onPick(c);
                 }}
@@ -593,7 +593,7 @@ function ClientPicker({
         </ul>
       )}
       {found.data !== undefined && found.data.length === 0 && (
-        <p className="text-xs text-muted">No match. Enter a new client below.</p>
+        <p className="text-meta text-muted">No match. Enter a new client below.</p>
       )}
     </div>
   );

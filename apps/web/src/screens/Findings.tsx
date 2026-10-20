@@ -338,7 +338,7 @@ function NewFinding({
           className="min-h-[80px] w-full rounded-tile border-0 bg-nested p-2.5 text-[13px] inset-shadow-hair focus:bg-card"
         />
       </Fieldset>
-      {raise.isError && <p className="text-xs text-danger">{errorMessage(raise.error)}</p>}
+      {raise.isError && <p className="text-meta text-danger">{errorMessage(raise.error)}</p>}
     </Sheet>
   );
 }
@@ -483,7 +483,7 @@ function FindingDrawer({
             </label>
             <div className="flex items-center justify-end gap-2">
               {save.isError && (
-                <span className="text-xs text-danger">{errorMessage(save.error)}</span>
+                <span className="text-meta text-danger">{errorMessage(save.error)}</span>
               )}
               <Button
                 size="sm"

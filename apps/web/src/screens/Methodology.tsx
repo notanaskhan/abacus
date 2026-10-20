@@ -31,7 +31,7 @@ export function Methodology(): JSX.Element {
     <div className="flex flex-col gap-4">
       <div>
         <h2 className="px-1 text-[15px] font-medium tracking-[-0.012em]">Methodology</h2>
-        <p className="text-sm text-muted">
+        <p className="text-body text-muted">
           Your firm&apos;s audit areas, standard requests and account rules. Each upload becomes a
           new version; engagements keep the version they started with.
         </p>
@@ -140,12 +140,12 @@ function UploadPanel(): JSX.Element {
             onChange={(event) => {
               setFile(event.target.files?.[0] ?? null);
             }}
-            className="text-sm file:mr-3 file:rounded-[var(--radius-control)] file:border file:border-line file:bg-surface file:px-3 file:py-1.5 file:text-sm"
+            className="text-body file:mr-3 file:rounded-[var(--radius-control)] file:border file:border-line file:bg-surface file:px-3 file:py-1.5 file:text-body"
           />
         </div>
         <fieldset className="flex flex-col gap-1">
-          <legend className="text-sm font-semibold">Used for (new templates)</legend>
-          <div className="flex flex-wrap gap-3 text-sm">
+          <legend className="text-body font-semibold">Used for (new templates)</legend>
+          <div className="flex flex-wrap gap-3 text-body">
             {ENGAGEMENT_TYPES.map(([value, label]) => (
               <label key={value} className="flex items-center gap-1">
                 <input
@@ -168,10 +168,10 @@ function UploadPanel(): JSX.Element {
           {upload.isPending ? "Uploading…" : "Upload"}
         </Button>
       </form>
-      {upload.isSuccess && <p className="text-sm text-ok">New version uploaded.</p>}
+      {upload.isSuccess && <p className="text-body text-ok">New version uploaded.</p>}
       {problems !== null && problems.length > 0 && (
         <div role="alert" className="flex flex-col gap-2">
-          <p className="text-sm font-semibold text-danger">
+          <p className="text-body font-semibold text-danger">
             Nothing was saved. Fix{" "}
             {problems.length === 1 ? "this problem" : `these ${String(problems.length)} problems`}{" "}
             and upload again.
@@ -195,7 +195,7 @@ function UploadPanel(): JSX.Element {
         </div>
       )}
       {upload.isError && problems === null && !confirm && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-body text-danger">
           {errorMessage(upload.error)}
         </p>
       )}

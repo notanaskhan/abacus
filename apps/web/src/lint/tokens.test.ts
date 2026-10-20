@@ -1,4 +1,5 @@
 // @vitest-environment node
+// ds06-codemod: keep (the type-size probes below name the old classes on purpose)
 // SPEC-048 (F-05-T03, SU-24): the shipped tokens in packages/ui/src/theme.css. The AA ink ladder
 // meets 4.5:1 for small text on every surface, match text and the focus outline follow the plan,
 // Tailwind's default palette and shadows compile to nothing, and the body is 13px Geist with
@@ -103,6 +104,24 @@ describe("SPEC-048 design tokens", () => {
     expect(css).not.toMatch(/\.shadow-lg\b/);
     expect(css).toMatch(/\.bg-card\b/);
     expect(css).toMatch(/\.shadow-pop\b/);
+  });
+
+  it("compiles Tailwind's default type sizes to nothing and the type roles to their sizes", async () => {
+    const sizes = [
+      "text-xs",
+      "text-sm",
+      "text-base",
+      "text-lg",
+      "text-xl",
+      "text-2xl",
+      "text-3xl",
+    ];
+    const roles = ["meta", "body", "nav", "pane", "title", "dashboard"];
+    const css = await compiled([...sizes, ...roles.map((r) => `text-${r}`)]);
+    for (const size of sizes) expect(css).not.toMatch(new RegExp(`\\.${size}\\s*\\{`));
+    for (const role of roles) expect(css).toMatch(new RegExp(`\\.text-${role}\\s*\\{`));
+    expect(css).toMatch(/--text-meta:\s*11\.5px/);
+    expect(css).toMatch(/--text-dashboard:\s*20px/);
   });
 
   it("sets the body in 13px Geist with tabular figures on the shell colour", () => {

@@ -132,7 +132,7 @@ export function NotesDrawer({
             className="min-h-[72px] w-full rounded-tile border-0 bg-nested p-2.5 text-[13px] inset-shadow-hair focus:bg-card"
           />
           <div className="mt-2 flex items-center justify-end gap-2">
-            {raise.isError && <span className="text-xs text-danger">{said(raise.error)}</span>}
+            {raise.isError && <span className="text-meta text-danger">{said(raise.error)}</span>}
             <Button
               size="sm"
               disabled={draft.trim() === "" || raise.isPending}
@@ -219,7 +219,7 @@ function NoteCard({
           />
           <div className="flex items-center justify-end gap-2">
             {(respond.isError || clear.isError) && (
-              <span className="text-xs text-danger">{said(respond.error ?? clear.error)}</span>
+              <span className="text-meta text-danger">{said(respond.error ?? clear.error)}</span>
             )}
             {isRaiser && (
               <Button

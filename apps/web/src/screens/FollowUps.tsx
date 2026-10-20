@@ -108,7 +108,7 @@ export function FollowUps({ engagementId }: { engagementId: string }): JSX.Eleme
         </h2>
         <span className="text-[12.5px] text-ink-3 tabular-nums">{rows.length}</span>
         <span className="flex-1" />
-        {draftNow.isError && <span className="text-xs text-danger">{said(draftNow.error)}</span>}
+        {draftNow.isError && <span className="text-meta text-danger">{said(draftNow.error)}</span>}
         <Button
           size="sm"
           variant="outline"
@@ -210,7 +210,7 @@ function SendSheet({
     >
       <Fieldset title="Email">
         {preview.isPending && <p className="text-[12.5px] text-ink-3">Preparing the preview…</p>}
-        {preview.isError && <p className="text-xs text-danger">{said(preview.error)}</p>}
+        {preview.isError && <p className="text-meta text-danger">{said(preview.error)}</p>}
         {preview.data !== undefined && (
           <div className="flex flex-col gap-2">
             <p className="text-[13px] font-medium">{preview.data.subject}</p>
@@ -236,7 +236,7 @@ function SendSheet({
         />
       </Fieldset>
       {(send.isError || dismiss.isError) && (
-        <p role="alert" className="text-xs text-danger">
+        <p role="alert" className="text-meta text-danger">
           {said(send.error ?? dismiss.error)}
         </p>
       )}

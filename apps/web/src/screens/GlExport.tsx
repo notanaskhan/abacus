@@ -80,7 +80,7 @@ export function GlExport({ engagementId }: { engagementId: string }): JSX.Elemen
   return (
     <section
       aria-label="General ledger detail"
-      className="flex flex-col gap-3 border-t border-line pt-3 text-sm"
+      className="flex flex-col gap-3 border-t border-line pt-3 text-body"
     >
       <h3 className="font-semibold">General ledger detail</h3>
       <p className="text-muted">
@@ -132,7 +132,7 @@ export function GlExport({ engagementId }: { engagementId: string }): JSX.Elemen
               type="file"
               accept={chosen.file_type === "xlsx" ? ".xlsx" : ".csv"}
               disabled={busy}
-              className="text-sm"
+              className="text-body"
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 event.target.value = "";

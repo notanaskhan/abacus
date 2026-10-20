@@ -19,7 +19,7 @@ export function ClientBell(): JSX.Element {
       >
         <Bell aria-hidden="true" className="size-5" />
         {unread > 0 && (
-          <span className="absolute -top-1 -right-1 rounded-full bg-accent px-1.5 text-xs text-on-accent tabular-nums">
+          <span className="absolute -top-1 -right-1 rounded-full bg-accent px-1.5 text-meta text-on-accent tabular-nums">
             {unread}
           </span>
         )}

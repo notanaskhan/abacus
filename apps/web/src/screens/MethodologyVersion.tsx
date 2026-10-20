@@ -39,7 +39,7 @@ export function MethodologyVersion({ versionId }: { versionId: string }): JSX.El
   const names = new Map((members.data ?? []).map((m) => [m.user_id, m.display_name]));
   return (
     <div className="flex flex-col gap-4">
-      <nav aria-label="Breadcrumb" className="text-sm text-muted">
+      <nav aria-label="Breadcrumb" className="text-body text-muted">
         <Link to="/admin/methodology" className="hover:underline">
           Methodology
         </Link>{" "}
@@ -105,7 +105,7 @@ export function MethodologyVersion({ versionId }: { versionId: string }): JSX.El
                   <Td>{i.area_code}</Td>
                   <Td>{i.description}</Td>
                   <Td>{i.tier}</Td>
-                  <Td className="text-xs">
+                  <Td className="text-meta">
                     <Guidance item={i} names={names} />
                   </Td>
                 </tr>

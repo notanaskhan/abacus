@@ -72,7 +72,7 @@ export function Contacts({ engagementId }: { engagementId: string }): JSX.Elemen
           <h2 id="contacts-heading" className="text-[15px] font-medium tracking-[-0.012em]">
             Client contacts
           </h2>
-          <p className="text-sm text-muted">
+          <p className="text-body text-muted">
             People at the client who can see what you share and send evidence. Invitations are
             emailed; links work once and expire after 7 days.
           </p>
@@ -122,7 +122,7 @@ export function Contacts({ engagementId }: { engagementId: string }): JSX.Elemen
                       <span className="inline-flex items-center gap-2">
                         <StatusPill tone="info">Invited</StatusPill>
                         {c.expires_at !== null && (
-                          <span className="text-xs text-muted">
+                          <span className="text-meta text-muted">
                             until {new Date(c.expires_at).toLocaleDateString()}
                           </span>
                         )}
@@ -271,8 +271,8 @@ function InviteDialog({
           />
         </div>
         <fieldset className="flex flex-col gap-2">
-          <legend className="text-sm font-semibold">Role</legend>
-          <label className="flex items-center gap-2 text-sm">
+          <legend className="text-body font-semibold">Role</legend>
+          <label className="flex items-center gap-2 text-body">
             <input
               type="radio"
               name="invite-role"
@@ -283,7 +283,7 @@ function InviteDialog({
             />
             Client admin: sees shared requests and invites colleagues
           </label>
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2 text-body">
             <input
               type="radio"
               name="invite-role"
@@ -296,7 +296,7 @@ function InviteDialog({
           </label>
         </fieldset>
         {invite.isError && (
-          <p role="alert" className="text-sm text-danger">
+          <p role="alert" className="text-body text-danger">
             {errorMessage(invite.error)}
           </p>
         )}

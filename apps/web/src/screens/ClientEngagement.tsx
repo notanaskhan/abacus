@@ -120,7 +120,7 @@ export function ClientEngagement({ engagementId }: { engagementId: string }): JS
         <PortalBrand />
         <span className="flex items-center gap-3">
           <ClientBell />
-          <Link to="/client" className="text-sm text-accent hover:underline">
+          <Link to="/client" className="text-body text-accent hover:underline">
             Your engagements
           </Link>
         </span>
@@ -132,8 +132,8 @@ export function ClientEngagement({ engagementId }: { engagementId: string }): JS
           <Alert title="Couldn't load this engagement">{errorMessage(engagement.error)}</Alert>
         ) : (
           <div>
-            <h1 className="text-3xl">{engagement.data.name}</h1>
-            <p className="text-sm text-muted tabular-nums">
+            <h1 className="text-dashboard">{engagement.data.name}</h1>
+            <p className="text-body text-muted tabular-nums">
               With {firmName} · {engagement.data.client_name} ·{" "}
               {engagement.data.fiscal_period_start} to {engagement.data.fiscal_period_end}
             </p>
@@ -195,7 +195,7 @@ function Guidance({ item }: { item: RequestItemOut }): JSX.Element | null {
   const shown = parts.filter(([, text]) => text != null && text !== "");
   if (shown.length === 0) return null;
   return (
-    <dl className="flex flex-col gap-1 text-sm">
+    <dl className="flex flex-col gap-1 text-body">
       {shown.map(([label, text]) => (
         <div key={label}>
           <dt className="font-medium">{label}</dt>
@@ -305,11 +305,11 @@ function ClientItem({
           <StatusPill tone={status.tone}>{status.label}</StatusPill>
         </span>
       </div>
-      {item.due_on != null && <p className="text-sm text-muted">Due {longDate(item.due_on)}</p>}
+      {item.due_on != null && <p className="text-body text-muted">Due {longDate(item.due_on)}</p>}
       <Guidance item={item} />
       <NotApplicable item={item} ignored={ignored} />
-      {provided !== null && <p className="text-sm text-ok">{providedMessage(provided)}</p>}
-      {gap !== null && <p className="text-sm">{gap}</p>}
+      {provided !== null && <p className="text-body text-ok">{providedMessage(provided)}</p>}
+      {gap !== null && <p className="text-body">{gap}</p>}
       <div className="flex flex-wrap items-center gap-3">
         {takesFiles && (
           <>
@@ -321,7 +321,7 @@ function ClientItem({
               type="file"
               multiple
               accept={ACCEPT}
-              className="text-sm"
+              className="text-body"
               onChange={(event) => {
                 const chosen = Array.from(event.target.files ?? []);
                 event.target.value = "";
@@ -357,7 +357,7 @@ function ClientItem({
           )}
         </Button>
         {contributors !== null && (
-          <span className="ml-auto flex items-center gap-2 text-sm">
+          <span className="ml-auto flex items-center gap-2 text-body">
             <Label htmlFor={`assignee-${item.id}`}>Assigned to</Label>
             <select
               id={`assignee-${item.id}`}
@@ -369,7 +369,7 @@ function ClientItem({
                   body: { user_id: event.target.value === "" ? null : event.target.value },
                 });
               }}
-              className="h-8 rounded-[var(--radius-control)] border border-line bg-surface px-2 text-sm"
+              className="h-8 rounded-[var(--radius-control)] border border-line bg-surface px-2 text-body"
             >
               <option value="">No one</option>
               {contributors.map((c) => (
@@ -391,12 +391,12 @@ function ClientItem({
         />
       )}
       {assign.isError && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-body text-danger">
           {errorMessage(assign.error)}
         </p>
       )}
       {files.length > 0 && (
-        <ul aria-label="Files being uploaded" className="flex flex-col gap-1 text-sm">
+        <ul aria-label="Files being uploaded" className="flex flex-col gap-1 text-body">
           {files.map((f, index) => (
             <li key={`${f.name}-${String(index)}`} className="flex items-center gap-2">
               <span>{f.name}</span>
@@ -417,11 +417,11 @@ function ClientItem({
         (uploads.isPending ? (
           <Skeleton className="h-8" />
         ) : uploads.isError ? (
-          <p className="text-sm text-danger">{errorMessage(uploads.error)}</p>
+          <p className="text-body text-danger">{errorMessage(uploads.error)}</p>
         ) : uploads.data.length === 0 && fromSystem.length === 0 ? (
-          <p className="text-sm text-muted">No files uploaded yet.</p>
+          <p className="text-body text-muted">No files uploaded yet.</p>
         ) : (
-          <ul aria-label="Uploaded files" className="flex flex-col gap-1 text-sm">
+          <ul aria-label="Uploaded files" className="flex flex-col gap-1 text-body">
             {fromSystem.map((h) => (
               <li key={h.evidence_version_id} className="flex flex-wrap gap-x-2 text-muted">
                 <span className="text-ink">{providedBy(provided)}</span>
@@ -484,7 +484,7 @@ function ClientItem({
                   uploadedAt={u.uploaded_at}
                   replace={
                     takesFiles ? (
-                      <Label htmlFor={inputId} className="cursor-pointer text-xs text-accent">
+                      <Label htmlFor={inputId} className="cursor-pointer text-meta text-accent">
                         Replace file
                       </Label>
                     ) : null
@@ -634,7 +634,7 @@ function NotApplicable({
           Cancel
         </Button>
         {respond.isError && (
-          <span className="text-xs text-danger">{errorMessage(respond.error)}</span>
+          <span className="text-meta text-danger">{errorMessage(respond.error)}</span>
         )}
       </div>
     </fieldset>
@@ -694,7 +694,7 @@ function DoneBar({
           </Button>
         )
       )}
-      {mark.isError && <span className="text-xs text-danger">{errorMessage(mark.error)}</span>}
+      {mark.isError && <span className="text-meta text-danger">{errorMessage(mark.error)}</span>}
     </div>
   );
 }

@@ -119,7 +119,7 @@ export function SupportAccess(): JSX.Element {
               <Td>{s.staff_subject}</Td>
               <Td className="max-w-xs whitespace-pre-wrap">{s.reason}</Td>
               <Td>{s.scope === "content" ? "Content" : "Metadata only"}</Td>
-              <Td className="text-xs tabular-nums">
+              <Td className="text-meta tabular-nums">
                 {s.starts_at === null
                   ? `${String(s.duration_minutes)} min, from approval`
                   : `${when(s.starts_at)} – ${when(s.ended_at ?? s.expires_at)}`}
@@ -182,7 +182,7 @@ export function SupportAccess(): JSX.Element {
   return (
     <div className="flex flex-col gap-4">
       {notice !== null && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-body text-danger">
           {notice}
         </p>
       )}
@@ -198,14 +198,14 @@ export function SupportAccess(): JSX.Element {
         <>
           <Panel title="Requested and active">
             {current.length === 0 ? (
-              <p className="text-sm text-muted">No support session is requested or active.</p>
+              <p className="text-body text-muted">No support session is requested or active.</p>
             ) : (
               table(current)
             )}
           </Panel>
           <Panel title="Past sessions">
             {past.length === 0 ? (
-              <p className="text-sm text-muted">No past support sessions.</p>
+              <p className="text-body text-muted">No past support sessions.</p>
             ) : (
               table(past)
             )}

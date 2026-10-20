@@ -104,7 +104,7 @@ export function LedgerExport({
 
   const inputId = `ledger-export-${engagementId}`;
   return (
-    <div className="flex flex-col gap-3 text-sm">
+    <div className="flex flex-col gap-3 text-body">
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1 font-medium">Which accounting system do you use?</legend>
         <div className="flex flex-wrap gap-2">
@@ -148,7 +148,7 @@ export function LedgerExport({
               type="file"
               accept={chosen.file_type === "xlsx" ? ".xlsx" : ".csv"}
               disabled={busy}
-              className="text-sm"
+              className="text-body"
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 event.target.value = "";

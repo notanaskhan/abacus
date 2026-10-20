@@ -104,7 +104,7 @@ export function InboxPanel({
           type="file"
           multiple
           accept={ACCEPT}
-          className="text-sm"
+          className="text-body"
           onChange={(event) => {
             const chosen = Array.from(event.target.files ?? []);
             event.target.value = "";
@@ -113,7 +113,7 @@ export function InboxPanel({
         />
       </div>
       {dropped.length > 0 && (
-        <ul aria-label="Files being added" className="flex flex-col gap-1 text-sm">
+        <ul aria-label="Files being added" className="flex flex-col gap-1 text-body">
           {dropped.map((d, index) => (
             <li key={`${d.name}-${String(index)}`} className="flex items-center gap-2">
               <span>{d.name}</span>
@@ -133,7 +133,7 @@ export function InboxPanel({
       {files.isPending ? (
         <Skeleton className="h-16" />
       ) : waiting.length === 0 ? (
-        <p className="text-sm text-muted">Nothing waiting to be matched.</p>
+        <p className="text-body text-muted">Nothing waiting to be matched.</p>
       ) : (
         <ul aria-label="Files to match" className="flex flex-col divide-y divide-line">
           {waiting.map((file) => (
@@ -196,16 +196,16 @@ function InboxRow({
     });
   };
   return (
-    <li className="flex flex-col gap-2 py-3 text-sm">
+    <li className="flex flex-col gap-2 py-3 text-body">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="font-medium break-all">{file.file_name}</span>
-        <span className="text-xs text-muted">
+        <span className="text-meta text-muted">
           {file.uploaded_by_staff
             ? "Added by the audit team"
             : `Added by ${file.uploaded_by_name || "the client"}`}
         </span>
       </div>
-      {file.note !== null && <p className="text-xs text-muted">{file.note}</p>}
+      {file.note !== null && <p className="text-meta text-muted">{file.note}</p>}
       {file.suggestions.length > 0 ? (
         <ul className="flex flex-col gap-2" aria-label={`Suggestions for ${file.file_name}`}>
           {file.suggestions.map((s) => (
@@ -226,18 +226,18 @@ function InboxRow({
                 (firm !== undefined ? (
                   <AiTag />
                 ) : (
-                  <span className="text-xs text-info">Suggested</span>
+                  <span className="text-meta text-info">Suggested</span>
                 ))}
               {/* SPEC-033 (TASK-064): why, in fixed words. */}
               {s.source === "content" && (
-                <span className="text-xs text-info">From the file&apos;s contents</span>
+                <span className="text-meta text-info">From the file&apos;s contents</span>
               )}
               {(s.reasons ?? [])
                 .filter((r) => r.code !== "file_name" || s.source === "content")
                 .map((r) => (
                   <span
                     key={`${r.code}-${r.value ?? ""}`}
-                    className="rounded-[5px] bg-sunken px-2 py-0.5 text-xs text-muted"
+                    className="rounded-[5px] bg-sunken px-2 py-0.5 text-meta text-muted"
                   >
                     {reasonLabel(r)}
                   </span>
@@ -246,7 +246,7 @@ function InboxRow({
           ))}
         </ul>
       ) : (
-        <p className="text-xs text-muted">No suggestion: choose the request below.</p>
+        <p className="text-meta text-muted">No suggestion: choose the request below.</p>
       )}
       {firm !== undefined && (
         <InboxAIMatch
@@ -264,7 +264,7 @@ function InboxRow({
           onChange={(event) => {
             setChosen(event.target.value);
           }}
-          className="h-8 rounded-[var(--radius-control)] border border-line bg-surface px-2 text-sm"
+          className="h-8 rounded-[var(--radius-control)] border border-line bg-surface px-2 text-body"
         >
           <option value="">Choose a request…</option>
           {open.map((i) => (

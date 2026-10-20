@@ -52,8 +52,8 @@ export function Join(): JSX.Element {
     const clientContact = accept.isError && errorMessage(accept.error) === "client_contact";
     return (
       <Shell>
-        <h1 className="text-2xl">This invitation can&apos;t be used</h1>
-        <p className="text-sm text-muted">
+        <h1 className="text-dashboard">This invitation can&apos;t be used</h1>
+        <p className="text-body text-muted">
           {clientContact
             ? "You're a client contact of this firm, so you can't also join its staff. Ask the firm's administrator."
             : "The link may have expired, been used already, or been sent to a different email address. Ask your firm's administrator to send a new invitation."}
@@ -63,7 +63,7 @@ export function Join(): JSX.Element {
   }
   return (
     <Shell>
-      <h1 className="text-2xl">Joining your firm</h1>
+      <h1 className="text-dashboard">Joining your firm</h1>
       <Spinner label={signedIn ? "Accepting your invitation…" : "Taking you to sign in…"} />
     </Shell>
   );
@@ -73,7 +73,7 @@ function Shell({ children }: { children: ReactNode }): JSX.Element {
   return (
     <main className="flex min-h-screen items-center justify-center bg-ground p-6">
       <Card className="flex w-full max-w-md flex-col gap-3 p-6">
-        <p className="font-display text-lg font-semibold">Abacus</p>
+        <p className="font-display text-pane font-semibold">Abacus</p>
         {children}
       </Card>
     </main>

@@ -150,7 +150,7 @@ export function AgentControls({ engagementId }: { engagementId: string }): JSX.E
   const paused = state.data.paused_at != null;
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-2 text-sm">
+      <div className="flex flex-wrap items-center gap-2 text-body">
         {state.data.firm_paused_at != null ? (
           <StatusPill tone="warning">Agents paused by your firm</StatusPill>
         ) : paused ? (
@@ -210,7 +210,7 @@ export function AgentControls({ engagementId }: { engagementId: string }): JSX.E
           ))}
       </div>
       {(pause.isError || resume.isError) && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-body text-danger">
           {errorMessage(pause.error ?? resume.error)}
         </p>
       )}

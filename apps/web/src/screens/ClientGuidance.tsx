@@ -76,9 +76,9 @@ function TextField({
         onChange={(event) => {
           onChange(event.target.value);
         }}
-        className="rounded-[var(--radius-control)] border border-line bg-surface p-2 text-sm"
+        className="rounded-[var(--radius-control)] border border-line bg-surface p-2 text-body"
       />
-      <span className="text-xs text-muted tabular-nums">
+      <span className="text-meta text-muted tabular-nums">
         {value.length} / {LIMIT}
       </span>
     </div>
@@ -117,7 +117,7 @@ export function ClientGuidance({
     ];
     const written = rows.filter(([, text]) => text != null && text !== "");
     return (
-      <div className="flex flex-col gap-2 text-sm">
+      <div className="flex flex-col gap-2 text-body">
         {written.length === 0 ? (
           <p className="text-muted">No guidance for the client yet.</p>
         ) : (
@@ -130,7 +130,7 @@ export function ClientGuidance({
             ))}
           </dl>
         )}
-        <p className="text-xs text-muted">
+        <p className="text-meta text-muted">
           {item.blocks_fieldwork === true ? "Blocks fieldwork" : "Doesn't block fieldwork"} ·{" "}
           {item.effort != null ? EFFORT[item.effort] : "No estimate"}
           {source !== null && ` · ${source}`}
@@ -157,7 +157,7 @@ export function ClientGuidance({
   };
   return (
     <form
-      className="flex flex-col gap-3 text-sm"
+      className="flex flex-col gap-3 text-body"
       aria-label="Edit client guidance"
       onSubmit={(event) => {
         event.preventDefault();
@@ -173,7 +173,7 @@ export function ClientGuidance({
         });
       }}
     >
-      <p className="text-xs text-muted">The client sees these words exactly as written.</p>
+      <p className="text-meta text-muted">The client sees these words exactly as written.</p>
       <TextField
         id={`why-${item.id}`}
         label="Why we need it"
@@ -216,7 +216,7 @@ export function ClientGuidance({
           onChange={(event) => {
             set({ effort: event.target.value });
           }}
-          className="h-8 rounded-[var(--radius-control)] border border-line bg-surface px-2 text-sm"
+          className="h-8 rounded-[var(--radius-control)] border border-line bg-surface px-2 text-body"
         >
           <option value="">No estimate</option>
           {Object.entries(EFFORT).map(([value, label]) => (

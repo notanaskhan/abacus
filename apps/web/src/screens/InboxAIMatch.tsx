@@ -64,7 +64,7 @@ export function InboxAIMatch({
       >
         Suggest with agent
       </Button>
-      {refused !== null && <span className="text-xs text-danger">{refused}</span>}
+      {refused !== null && <span className="text-meta text-danger">{refused}</span>}
     </span>
   ) : null;
 
@@ -72,17 +72,17 @@ export function InboxAIMatch({
   if (match === undefined) {
     body = suggest;
   } else if (match.status === "running") {
-    body = <span className="text-xs text-muted">Looking at the file…</span>;
+    body = <span className="text-meta text-muted">Looking at the file…</span>;
   } else if (match.status !== "completed") {
     body = (
-      <span className="flex flex-wrap items-center gap-2 text-xs text-muted">
+      <span className="flex flex-wrap items-center gap-2 text-meta text-muted">
         {FAILED[match.reason ?? ""] ?? "The AI suggestion didn't finish."}
         {match.reason !== "data_boundary" && suggest}
       </span>
     );
   } else if (match.none_fit) {
     body = (
-      <div className="flex flex-col gap-1 text-xs">
+      <div className="flex flex-col gap-1 text-meta">
         <span className="flex items-center gap-2">
           <AiTag />
           <span>None of the requests fit</span>
@@ -92,7 +92,7 @@ export function InboxAIMatch({
     );
   } else if (match.proposals.length === 0) {
     body = (
-      <span className="flex flex-wrap items-center gap-2 text-xs text-muted">
+      <span className="flex flex-wrap items-center gap-2 text-meta text-muted">
         <AiTag /> No confident suggestion. {suggest}
       </span>
     );
@@ -100,7 +100,7 @@ export function InboxAIMatch({
     body = (
       <ul aria-label="AI suggestions" className="flex flex-col gap-2">
         {match.proposals.map((p) => (
-          <li key={p.request_item_id} className="flex flex-col gap-1 text-xs">
+          <li key={p.request_item_id} className="flex flex-col gap-1 text-meta">
             <span className="flex flex-wrap items-center gap-2">
               <AiTag citations={p.quotes.length} />
               <span className="font-medium text-ink">

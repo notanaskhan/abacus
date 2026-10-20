@@ -69,7 +69,7 @@ function SignedIn(): JSX.Element {
     return (
       <main className="mx-auto max-w-md p-8">
         <Card>
-          <h1 className="mb-3 text-xl">Choose a firm</h1>
+          <h1 className="mb-3 text-title">Choose a firm</h1>
           <ul className="flex flex-col gap-2">
             {staff.map((m) => (
               <li key={m.tenant_id}>

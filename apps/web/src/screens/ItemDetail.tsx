@@ -212,7 +212,7 @@ export function ItemDetail({
           <div className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-[58px]">
             <Panel title="Decision">
               {shown.decision !== null ? (
-                <p className="text-sm">
+                <p className="text-body">
                   <Badge tone={shown.decision.decision === "accept" ? "success" : "warning"}>
                     {DECISION_LABEL[shown.decision.decision] ?? shown.decision.decision}
                   </Badge>{" "}
@@ -221,7 +221,7 @@ export function ItemDetail({
                   {when(shown.decision.decided_at)}
                 </p>
               ) : shown.id !== newest?.id ? (
-                <p className="text-sm text-muted">A newer version replaced this one.</p>
+                <p className="text-body text-muted">A newer version replaced this one.</p>
               ) : myRole !== undefined && DECIDERS.has(myRole) ? (
                 <DecisionActions
                   engagementId={engagementId}
@@ -231,7 +231,7 @@ export function ItemDetail({
                   onSettled={refresh}
                 />
               ) : (
-                <p className="text-sm text-muted">Awaiting review.</p>
+                <p className="text-body text-muted">Awaiting review.</p>
               )}
             </Panel>
             <Screening
@@ -384,7 +384,7 @@ function VersionCard({
               ? `Added for the client by ${v.uploaded_by_name || "the audit team"}`
               : `Uploaded by ${v.uploaded_by_name || "the client"}`}
       </p>
-      {v.note != null && <p className="text-xs text-muted">{v.note}</p>}
+      {v.note != null && <p className="text-meta text-muted">{v.note}</p>}
       {v.file_name !== null && <p className="break-all">{v.file_name}</p>}
       <p className="text-[11.5px] text-ink-3 tabular-nums">
         {when(v.created_at)} · {size(v.size_bytes)} · {fileKind(v.media_type)} ·{" "}
@@ -393,7 +393,7 @@ function VersionCard({
         </span>
       </p>
       {v.decision !== null && (
-        <p className="text-xs">{DECISION_LABEL[v.decision.decision] ?? v.decision.decision}</p>
+        <p className="text-meta">{DECISION_LABEL[v.decision.decision] ?? v.decision.decision}</p>
       )}
       {failure !== null && (
         <p role="alert" className="text-danger">
@@ -422,11 +422,11 @@ function Screening({
         <Skeleton className="h-16" />
       ) : result === undefined ? (
         <div className="flex flex-wrap items-center gap-3">
-          <p className="text-sm text-muted">Not screened yet.</p>
+          <p className="text-body text-muted">Not screened yet.</p>
           {screenNow}
         </div>
       ) : (
-        <div className="flex flex-col gap-2 text-sm">
+        <div className="flex flex-col gap-2 text-body">
           <p>
             <span className="font-semibold">{ACTION_LABEL[result.action] ?? result.action}</span> ·
             confidence {confidencePercent(result.confidence)}
@@ -447,7 +447,7 @@ function Screening({
                       onOpenCell(c.cell);
                     }}
                   />
-                  <span className="font-mono text-xs">{c.cell}</span>
+                  <span className="font-mono text-meta">{c.cell}</span>
                   {c.verified ? (
                     <StatusPill tone="success">Verified</StatusPill>
                   ) : (
@@ -550,7 +550,7 @@ function UploadForClient({
               id="on-behalf-file"
               type="file"
               accept=".pdf,.xlsx,.xls,.docx,.doc,.csv,.png,.jpg,.jpeg"
-              className="text-sm"
+              className="text-body"
               onChange={(event) => {
                 setFile(event.target.files?.[0] ?? null);
               }}
@@ -569,7 +569,7 @@ function UploadForClient({
             />
           </div>
           {failure !== null && (
-            <p role="alert" className="text-sm text-danger">
+            <p role="alert" className="text-body text-danger">
               {failure}
             </p>
           )}
@@ -625,7 +625,7 @@ function ScreenNow({
         {screen.isSuccess ? "Screening started" : "Screen now"}
       </Button>
       {screen.isError && (
-        <span role="alert" className="text-sm text-danger">
+        <span role="alert" className="text-body text-danger">
           {errorMessage(screen.error)}
         </span>
       )}

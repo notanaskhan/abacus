@@ -240,7 +240,7 @@ export function DeficiencyFieldset({
           </Button>
         </div>
       )}
-      {error != null && <p className="mt-2 text-xs text-danger">{errorMessage(error)}</p>}
+      {error != null && <p className="mt-2 text-meta text-danger">{errorMessage(error)}</p>}
     </Fieldset>
   );
 }
@@ -397,7 +397,7 @@ export function Adjustments({
         )}
       </div>
       {(approve.isError || answer.isError) && (
-        <p className="px-4 pt-2 text-xs text-danger">
+        <p className="px-4 pt-2 text-meta text-danger">
           {errorMessage(approve.error ?? answer.error)}
         </p>
       )}
@@ -607,7 +607,7 @@ function NewEntry({
           </div>
         </div>
       </Fieldset>
-      {propose.isError && <p className="text-xs text-danger">{errorMessage(propose.error)}</p>}
+      {propose.isError && <p className="text-meta text-danger">{errorMessage(propose.error)}</p>}
     </Sheet>
   );
 }
@@ -758,7 +758,7 @@ export function Representations({
           </div>
         )}
         {(add.isError || remove.isError) && (
-          <p className="text-xs text-danger">{errorMessage(add.error ?? remove.error)}</p>
+          <p className="text-meta text-danger">{errorMessage(add.error ?? remove.error)}</p>
         )}
       </div>
     </section>

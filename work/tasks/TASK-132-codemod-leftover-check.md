@@ -4,7 +4,7 @@ title: "F-05-T06 · Codemod DS-06 before the theme swap: bg-surface to bg-card f
 spec: SPEC-048
 acceptance_criteria: [AC-9]
 risk_zone: green
-status: todo
+status: done
 epic: F-05
 plan_key: F-05-T06
 branch: task-132-codemod-leftover-check
@@ -88,10 +88,14 @@ Append-only. Newest at the bottom.
 - `2026-10-20` — task file written from the epic (SU-14); nothing built yet.
 - 2026-10-20 (SU-24): default palette and shadows are already reset (no uses left). Tailwind's text-* sizes are still used 318 times in 56 files, mapped onto the plan's roles; the codemod replaces them with role utilities before the --text-* reset.
 
+- 2026-10-20 (F-05-T06 built): codemod at `apps/web/scripts/ds06-codemod.ts` (rules in `apps/web/src/lint/ds06-codemod.ts`, tests in `ds06-codemod.test.ts`). Run over `apps/web/src` and `packages/ui/src`: 325 uses in 58 files (the 318/56 above was an earlier count). Mapping: xs to meta, sm to body, base to nav, lg to pane, xl to title, 2xl and 3xl to dashboard; the roles are copied from the fonts/tokens branch (b6a131a). `--text-*: initial` is now in theme.css; `tokens.test.ts` asserts text-xs..3xl compile to nothing and the roles compile; a test compares every role's size and line height with the old mapping. Second run reports 0 files. Vitest 429 passed, `vite build` clean.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
-| | | yes / no |
+| text-base maps to text-nav, not text-tab | tab is 14px in the shared roles; nav is 13.5/1.45, an exact match | no |
+| Roles keep today's line heights, with no weight or tracking | no screen may change size; body 1.2 is F-05-T05's open decision | no |
+| A file may opt out with the line `ds06-codemod: keep` | the codemod test and token test name old classes as probes | no |
 
 ## Gotchas and discoveries
 - 
@@ -100,8 +104,8 @@ Append-only. Newest at the bottom.
 - [ ] 
 
 ## Handoff
-- **Current state:** not started
-- **Exact next step:** step 1 of the plan
+- **Current state:** done; codemod run, reset in place
+- **Exact next step:** none (F-05-T23 and T34 follow)
 - **Uncommitted or partial work:** none
 - **Known failing checks:** none
 - **Open issues:** none

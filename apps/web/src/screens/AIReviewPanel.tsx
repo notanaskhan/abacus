@@ -74,14 +74,14 @@ export function AIReviewPanel({
       >
         Review now
       </Button>
-      {refused !== null && <span className="text-xs text-danger">{refused}</span>}
+      {refused !== null && <span className="text-meta text-danger">{refused}</span>}
     </span>
   ) : null;
 
   if (review.isPending) return <Skeleton className="h-20" />;
   if (review.isError) {
     return isForbidden(review.error) ? (
-      <p className="text-sm text-muted">You can&apos;t see this file&apos;s AI review.</p>
+      <p className="text-body text-muted">You can&apos;t see this file&apos;s AI review.</p>
     ) : (
       <Alert title="Couldn't load the AI review">Try again in a moment.</Alert>
     );
@@ -89,16 +89,16 @@ export function AIReviewPanel({
   const data = review.data;
   if (data.status === "none") {
     return (
-      <div className="flex flex-wrap items-center gap-3 text-sm text-muted">
+      <div className="flex flex-wrap items-center gap-3 text-body text-muted">
         Not reviewed yet.
         {reviewNow}
       </div>
     );
   }
-  if (data.status === "running") return <p className="text-sm text-muted">Reviewing…</p>;
+  if (data.status === "running") return <p className="text-body text-muted">Reviewing…</p>;
   if (data.status !== "completed") {
     return (
-      <div className="flex flex-wrap items-center gap-3 text-sm text-muted">
+      <div className="flex flex-wrap items-center gap-3 text-body text-muted">
         {FAILED[data.reason ?? ""] ?? "The AI review didn't finish."}
         {data.reason !== "data_boundary" && reviewNow}
       </div>
@@ -106,7 +106,7 @@ export function AIReviewPanel({
   }
   if (data.flags.length === 0) {
     return (
-      <div className="flex flex-wrap items-center gap-3 text-sm">
+      <div className="flex flex-wrap items-center gap-3 text-body">
         <AiTag />
         <span className="text-ok">No concerns</span>
         {reviewNow}
@@ -119,19 +119,19 @@ export function AIReviewPanel({
         {data.flags.map((flag, n) => (
           <li
             key={`${flag.category}-${String(n)}`}
-            className="flex flex-col gap-1 rounded-[var(--radius-control)] border border-line p-3 text-sm"
+            className="flex flex-col gap-1 rounded-[var(--radius-control)] border border-line p-3 text-body"
           >
             <span className="flex flex-wrap items-center gap-2">
               <AiTag citations={flag.quotes.length} />
               <Badge tone="warning">{CATEGORY[flag.category] ?? flag.category}</Badge>
-              <span className="text-xs text-muted tabular-nums">
+              <span className="text-meta text-muted tabular-nums">
                 {Math.round(Number(flag.confidence) * 100)}% confident
               </span>
             </span>
             <AgentText text={flag.rationale} />
             <ul className="flex flex-col gap-1">
               {flag.quotes.map((quote, q) => (
-                <li key={q} className="text-xs text-muted">
+                <li key={q} className="text-meta text-muted">
                   {quote.page != null ? (
                     <button
                       type="button"

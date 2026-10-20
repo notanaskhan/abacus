@@ -176,7 +176,7 @@ function ImportDialog({
         onChange={(event) => {
           set(event.target.value === "" ? null : Number(event.target.value));
         }}
-        className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm"
+        className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-body"
       >
         <option value="">{optional ? "None" : "Choose a column…"}</option>
         {(chosen?.headers ?? []).map((h, index) => (
@@ -197,7 +197,7 @@ function ImportDialog({
       title="Import a request list"
       description="Your own spreadsheet: pick the columns, check the preview, then import. Duplicates are skipped."
     >
-      <ol aria-label="Steps" className="mb-3 flex gap-3 text-xs text-muted">
+      <ol aria-label="Steps" className="mb-3 flex gap-3 text-meta text-muted">
         <li className={step === "file" ? "font-semibold text-ink" : ""}>1 · File</li>
         <li className={step === "map" ? "font-semibold text-ink" : ""}>2 · Columns and preview</li>
         <li className={step === "done" ? "font-semibold text-ink" : ""}>3 · Done</li>
@@ -214,7 +214,7 @@ function ImportDialog({
               onChange={(event) => {
                 setFile(event.target.files?.[0] ?? null);
               }}
-              className="text-sm"
+              className="text-body"
             />
           </div>
           <div className="flex justify-end gap-2">
@@ -249,7 +249,7 @@ function ImportDialog({
                   setArea(next?.suggested_area ?? null);
                   setTier(next?.suggested_tier ?? null);
                 }}
-                className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm"
+                className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-body"
               >
                 {sheets.map((s, index) => (
                   <option key={s.name} value={index}>
@@ -271,7 +271,7 @@ function ImportDialog({
                   setHeaderRow(row);
                   if (file !== null) void loadPreview(file, row);
                 }}
-                className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm"
+                className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-body"
               />
             </div>
             {columnSelect(
@@ -284,7 +284,7 @@ function ImportDialog({
             {columnSelect("list-area", "Audit area column", area, setArea, false)}
             {columnSelect("list-tier", "Tier column (optional)", tier, setTier, true)}
           </div>
-          <p className="text-xs text-muted">Preview of the first {planned.length} rows</p>
+          <p className="text-meta text-muted">Preview of the first {planned.length} rows</p>
           <div className="max-h-64 overflow-auto rounded-[var(--radius-control)] border border-line">
             <Table>
               <thead>
@@ -341,7 +341,7 @@ function ImportDialog({
 
       {step === "done" && counts !== null && (
         <div className="flex flex-col gap-3">
-          <dl className="grid grid-cols-2 gap-2 text-sm">
+          <dl className="grid grid-cols-2 gap-2 text-body">
             <dt className="text-muted">Created</dt>
             <dd className="font-semibold tabular-nums">{counts.created}</dd>
             <dt className="text-muted">Duplicates skipped</dt>
@@ -358,7 +358,7 @@ function ImportDialog({
       )}
 
       {problems !== null && problems.length > 0 && (
-        <div role="alert" className="mt-3 flex flex-col gap-1 text-sm">
+        <div role="alert" className="mt-3 flex flex-col gap-1 text-body">
           <p className="font-semibold text-danger">
             Nothing was imported. Fix these and try again:
           </p>
@@ -372,7 +372,7 @@ function ImportDialog({
         </div>
       )}
       {failure !== null && (
-        <p role="alert" className="mt-3 text-sm text-danger">
+        <p role="alert" className="mt-3 text-body text-danger">
           {failure}
         </p>
       )}

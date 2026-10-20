@@ -79,7 +79,7 @@ export function ClientHome(): JSX.Element {
               </ul>
             )}
             {me.data.memberships.some((m) => m.kind === "staff") && (
-              <Link to="/" className="text-sm text-accent hover:underline">
+              <Link to="/" className="text-body text-accent hover:underline">
                 Go to your firm workspace
               </Link>
             )}

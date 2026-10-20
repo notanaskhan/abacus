@@ -24,7 +24,7 @@ function refusal(error: unknown): string {
   return REFUSALS[code] ?? code;
 }
 
-const SELECT = "h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm";
+const SELECT = "h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-body";
 
 /** SPEC-019 AC-6: ethical walls. Listing needs a recent sign-in, so the prompt comes first. */
 export function Walls(): JSX.Element {
@@ -169,7 +169,7 @@ function WallList({
           </Button>
         </form>
         {failure !== null && (
-          <p role="alert" className="text-sm text-danger">
+          <p role="alert" className="text-body text-danger">
             {failure}
           </p>
         )}
@@ -181,7 +181,7 @@ function WallList({
         }
       >
         {active.length === 0 ? (
-          <p className="text-sm text-muted">No walls. Everyone can be staffed on any client.</p>
+          <p className="text-body text-muted">No walls. Everyone can be staffed on any client.</p>
         ) : (
           <div className="overflow-x-auto">
             <Table className="min-w-[520px]">

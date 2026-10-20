@@ -42,7 +42,7 @@ export function MapView({ engagementId }: { engagementId: string }): JSX.Element
             </div>
           )}
           {noRequests.length > 0 && (
-            <p className="text-sm">
+            <p className="text-body">
               <span className="font-semibold">Areas with accounts but no requests: </span>
               {noRequests.join(", ")}
             </p>
@@ -61,23 +61,23 @@ export function MapView({ engagementId }: { engagementId: string }): JSX.Element
         >
           <div className="grid gap-4 md:grid-cols-2">
             <div className="flex flex-col gap-1">
-              <h3 className="font-sans text-xs font-semibold tracking-wide text-muted uppercase">
+              <h3 className="font-sans text-meta font-semibold tracking-wide text-muted uppercase">
                 Accounts
               </h3>
               {area.accounts.length === 0 ? (
-                <p className="text-sm text-muted">None mapped</p>
+                <p className="text-body text-muted">None mapped</p>
               ) : (
                 <AccountList accounts={area.accounts} />
               )}
             </div>
             <div className="flex flex-col gap-1">
-              <h3 className="font-sans text-xs font-semibold tracking-wide text-muted uppercase">
+              <h3 className="font-sans text-meta font-semibold tracking-wide text-muted uppercase">
                 Requests
               </h3>
               {area.items.length === 0 ? (
-                <p className="text-sm text-muted">None</p>
+                <p className="text-body text-muted">None</p>
               ) : (
-                <ul className="flex flex-col gap-1 text-sm">
+                <ul className="flex flex-col gap-1 text-body">
                   {area.items.map((item) => {
                     const status = statusOf(item.status);
                     return (
@@ -103,7 +103,7 @@ function AccountList({
   accounts: { code: string; name: string; balance: string }[];
 }): JSX.Element {
   return (
-    <ul className="flex flex-col text-sm">
+    <ul className="flex flex-col text-body">
       {accounts.map((a) => (
         <li
           key={a.code}

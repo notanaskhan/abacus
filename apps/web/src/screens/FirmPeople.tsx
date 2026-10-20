@@ -34,7 +34,7 @@ const ROLES: [Role | "", string][] = [
   ["practice_leader", "Practice leader"],
   ["quality_partner", "Quality partner"],
 ];
-const SELECT = "h-8 rounded-[var(--radius-control)] border border-line bg-surface px-2 text-sm";
+const SELECT = "h-8 rounded-[var(--radius-control)] border border-line bg-surface px-2 text-body";
 
 function roleLabel(role: string | null | undefined): string {
   return ROLES.find(([value]) => value === (role ?? ""))?.[1] ?? "Team member";
@@ -112,7 +112,7 @@ export function FirmPeople(): JSX.Element {
         <>
           <InvitePanel onDone={refresh} onForbidden={setConfirm} />
           {failure !== null && (
-            <p role="alert" className="text-sm text-danger">
+            <p role="alert" className="text-body text-danger">
               {failure}
             </p>
           )}
@@ -193,9 +193,9 @@ export function FirmPeople(): JSX.Element {
           </Panel>
           <Panel title="Pending invitations">
             {list.data.invitations.length === 0 ? (
-              <p className="text-sm text-muted">No pending invitations.</p>
+              <p className="text-body text-muted">No pending invitations.</p>
             ) : (
-              <ul className="flex flex-col divide-y divide-line text-sm">
+              <ul className="flex flex-col divide-y divide-line text-body">
                 {list.data.invitations.map((i) => (
                   <li
                     key={i.id}
@@ -203,7 +203,7 @@ export function FirmPeople(): JSX.Element {
                   >
                     <span>
                       {i.email} · {roleLabel(i.firm_role)}
-                      <span className="block text-xs text-muted">
+                      <span className="block text-meta text-muted">
                         Expires {new Date(i.expires_at).toLocaleDateString()}
                       </span>
                     </span>
@@ -327,9 +327,9 @@ function InvitePanel({
           Send invitation
         </Button>
       </form>
-      {invite.isSuccess && <p className="text-sm text-ok">Invitation sent.</p>}
+      {invite.isSuccess && <p className="text-body text-ok">Invitation sent.</p>}
       {invite.isError && !isForbidden(invite.error) && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-body text-danger">
           {errorMessage(invite.error)}
         </p>
       )}

@@ -45,7 +45,7 @@ export function FieldworkDefaults({ canSet }: { canSet: boolean }): JSX.Element 
         onChange={(e) => {
           setForm({ ...shown, [key]: e.target.value });
         }}
-        className="rounded-[var(--radius-control)] border border-line bg-surface p-2 text-sm"
+        className="rounded-[var(--radius-control)] border border-line bg-surface p-2 text-body"
       />
     </div>
   );
@@ -74,7 +74,7 @@ export function FieldworkDefaults({ canSet }: { canSet: boolean }): JSX.Element 
                   .filter((w) => w !== ""),
               });
             }}
-            className="rounded-[var(--radius-control)] border border-line bg-surface p-2 text-sm"
+            className="rounded-[var(--radius-control)] border border-line bg-surface p-2 text-body"
           />
         </div>
         {canSet && (

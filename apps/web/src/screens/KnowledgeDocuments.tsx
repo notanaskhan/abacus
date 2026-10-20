@@ -100,7 +100,7 @@ export function KnowledgeDocuments(): JSX.Element {
                     <Td>
                       <StatusPill tone={status.tone}>{status.label}</StatusPill>
                       {d.status === "failed" && d.failure_code !== null && (
-                        <p className="mt-1 text-xs text-muted">
+                        <p className="mt-1 text-meta text-muted">
                           {FAILURES[d.failure_code] ?? "Processing failed. Add it again."}
                         </p>
                       )}
@@ -216,7 +216,7 @@ function AddDocument({
               onChange={(event) => {
                 setKind(event.target.value === "public" ? "public" : "firm_own");
               }}
-              className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm"
+              className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-body"
             >
               <option value="firm_own">Our firm&apos;s own</option>
               <option value="public">Publicly available</option>
@@ -236,7 +236,7 @@ function AddDocument({
               if (title === "") setTitle(file.name.replace(/\.(txt|md)$/i, ""));
               void file.text().then(setText);
             }}
-            className="text-sm"
+            className="text-body"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -249,10 +249,10 @@ function AddDocument({
             onChange={(event) => {
               setText(event.target.value);
             }}
-            className="rounded-[var(--radius-control)] border border-line bg-surface p-3 text-sm"
+            className="rounded-[var(--radius-control)] border border-line bg-surface p-3 text-body"
           />
         </div>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-body">
           <input
             type="checkbox"
             checked={markdown}
@@ -263,7 +263,7 @@ function AddDocument({
           The text is Markdown (headings become sections)
         </label>
         {add.isError && !isForbidden(add.error) && (
-          <p role="alert" className="text-sm text-danger">
+          <p role="alert" className="text-body text-danger">
             {errorMessage(add.error)}
           </p>
         )}

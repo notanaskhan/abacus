@@ -46,7 +46,7 @@ function DraftRow({
   const dismiss = useMutation({ ...dismissDraftMutation(), onSuccess: done });
   const busy = send.isPending || dismiss.isPending;
   return (
-    <li className="flex flex-col gap-2 py-3 text-sm">
+    <li className="flex flex-col gap-2 py-3 text-body">
       <p className="font-medium">To {draft.recipient_name || "a client contact"}</p>
       <ul className="list-disc pl-5 text-muted">
         {draft.items.map((i) => (

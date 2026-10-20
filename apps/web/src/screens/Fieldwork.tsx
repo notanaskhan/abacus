@@ -123,7 +123,7 @@ const VERDICTS: Record<string, string> = {
 function Assessment({ assessment }: { assessment: AssessmentOut }): JSX.Element {
   const [open, setOpen] = useState(false);
   return (
-    <div className="flex flex-col gap-1 rounded-[var(--radius-control)] border border-ai-line p-2 text-xs">
+    <div className="flex flex-col gap-1 rounded-[var(--radius-control)] border border-ai-line p-2 text-meta">
       <span className="flex items-center gap-2">
         <AiTag />
         <span className="font-medium">{VERDICTS[assessment.verdict] ?? assessment.verdict}</span>
@@ -209,11 +209,11 @@ function MaterialityPanel({ engagementId }: { engagementId: string }): JSX.Eleme
       }
     >
       {m === undefined ? (
-        <p className="text-sm text-muted">
+        <p className="text-body text-muted">
           Not proposed yet. Sampling waits for the engagement partner's decision.
         </p>
       ) : (
-        <dl className="grid gap-2 text-sm sm:grid-cols-4">
+        <dl className="grid gap-2 text-body sm:grid-cols-4">
           <div>
             <dt className="text-muted">Overall</dt>
             <dd className="tabular-nums">{money(m.overall)}</dd>
@@ -319,10 +319,10 @@ function EntryRow({
       <Td className="tabular-nums">{item.posted_on}</Td>
       <Td>
         {item.reference || "—"}
-        <div className="text-xs text-muted">{item.kind}</div>
+        <div className="text-meta text-muted">{item.kind}</div>
       </Td>
       <Td className="text-right tabular-nums">{money(item.amount)}</Td>
-      <Td className="text-xs">
+      <Td className="text-meta">
         {item.rules.map((r) => RULES[r] ?? r).join(", ")}
         {item.reason != null && <div className="text-muted">{item.reason}</div>}
         {banded && (
@@ -337,7 +337,7 @@ function EntryRow({
       </Td>
       <Td>
         {canRun ? (
-          <div className="flex min-w-[220px] flex-col gap-1 text-sm">
+          <div className="flex min-w-[220px] flex-col gap-1 text-body">
             <select
               aria-label={`Result for ${item.reference || item.posted_on}`}
               value={result}
@@ -391,7 +391,7 @@ function EntryRow({
                   setLinked(Array.from(e.target.selectedOptions, (o) => o.value));
                 }}
                 size={Math.min(evidence.length, 2)}
-                className="max-h-[46px] rounded-[var(--radius-control)] border border-line bg-surface p-1 text-xs"
+                className="max-h-[46px] rounded-[var(--radius-control)] border border-line bg-surface p-1 text-meta"
               >
                 {evidence.map((v) => (
                   <option key={v.id} value={v.id}>
@@ -451,11 +451,11 @@ function EntryRow({
               )}
             </div>
             {(save.isError || ask.isError) && (
-              <span className="text-xs text-danger">{said(save.error ?? ask.error)}</span>
+              <span className="text-meta text-danger">{said(save.error ?? ask.error)}</span>
             )}
           </div>
         ) : (
-          <span className="text-sm">
+          <span className="text-body">
             {RESULTS[item.result ?? ""] ?? "No result"}
             {item.relates_to_year != null &&
               ` · relates to the year: ${RELATES[item.relates_to_year] ?? ""}`}
@@ -592,7 +592,7 @@ function WorkpaperPanel({
   const tone = w.status === "reviewed" ? "success" : w.status === "ready" ? "info" : "neutral";
   return (
     <Panel title="Workpaper" action={<StatusPill tone={tone}>{STATUS[w.status]}</StatusPill>}>
-      <div className="flex flex-col gap-3 text-sm">
+      <div className="flex flex-col gap-3 text-body">
         <p className="text-muted">
           {`${String(w.with_result)} of ${String(w.entries)} entries have a result; ${String(w.exceptions)} exception(s).`}
         </p>
@@ -814,7 +814,7 @@ function ProcedurePanel({
           ) : undefined
         }
       >
-        <div className="flex flex-col gap-2 text-sm">
+        <div className="flex flex-col gap-2 text-body">
           {p.status === "selecting" && <p className="text-muted">Selecting entries…</p>}
           {p.status === "failed" && (
             <Alert title="Selection didn't finish">
@@ -847,7 +847,7 @@ function ProcedurePanel({
             </p>
           )}
           {!surl && (
-            <p className="text-xs text-muted">
+            <p className="text-meta text-muted">
               Not performed: entries posted after year end (needs the subsequent-period ledger) and
               who entered each entry (not in the export).
             </p>
@@ -884,7 +884,7 @@ function ProcedurePanel({
                 </span>
               )}
               {approve.isError && (
-                <span className="text-xs text-danger">{said(approve.error)}</span>
+                <span className="text-meta text-danger">{said(approve.error)}</span>
               )}
             </div>
           )}
@@ -923,7 +923,7 @@ function ProcedurePanel({
           }
         >
           {askAll.isSuccess && (
-            <p className="text-xs text-muted">
+            <p className="text-meta text-muted">
               {`One request sent to the client for ${String(askAll.data.items)} items.`}
             </p>
           )}
@@ -964,7 +964,7 @@ function ProcedurePanel({
           )}
           {assess.isError && <Alert title="Couldn't start">{said(assess.error)}</Alert>}
           {assess.isSuccess && (
-            <p className="text-xs text-muted">
+            <p className="text-meta text-muted">
               {`Assessing ${String(assess.data.items.length)} entries with linked support. AI proposals appear beside each entry; your team still records every result.`}
             </p>
           )}
@@ -1108,7 +1108,7 @@ export function Fieldwork({ engagementId }: { engagementId: string }): JSX.Eleme
             <ProcedurePanel engagementId={engagementId} procedure={jet} role={role} />
           ) : (
             <Panel title="Not started">
-              <div className="flex flex-col gap-2 text-sm">
+              <div className="flex flex-col gap-2 text-body">
                 <p className="text-muted">
                   Selects journal entries from the general ledger by risk criteria and a random
                   sample, for your team to test and sign off.
@@ -1141,7 +1141,7 @@ export function Fieldwork({ engagementId }: { engagementId: string }): JSX.Eleme
             <ProcedurePanel engagementId={engagementId} procedure={surl} role={role} />
           ) : (
             <Panel title="Not started">
-              <div className="flex flex-col gap-2 text-sm">
+              <div className="flex flex-col gap-2 text-body">
                 <p className="text-muted">
                   Tests payments made after year end for liabilities that should have been recorded
                   at year end: larger payments by timing band, with a check for a matching bill.

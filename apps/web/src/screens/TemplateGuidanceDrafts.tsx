@@ -53,11 +53,11 @@ function DraftCard({
   const [good, setGood] = useState(draft.good_looks_like);
   const approved = draft.status === "approved";
   return (
-    <li className="flex flex-col gap-2 rounded-[var(--radius-control)] border border-ai-line p-3 text-sm">
+    <li className="flex flex-col gap-2 rounded-[var(--radius-control)] border border-ai-line p-3 text-body">
       <span className="flex items-center gap-2">
         <AiTag />
         <span className="font-medium">{item?.description ?? "Standard request"}</span>
-        {approved && <span className="text-xs text-muted">Approved, not yet published</span>}
+        {approved && <span className="text-meta text-muted">Approved, not yet published</span>}
       </span>
       {editing ? (
         <>
@@ -97,7 +97,7 @@ function DraftCard({
         </dl>
       )}
       {(draft.effort != null || draft.blocks_fieldwork === true) && (
-        <p className="text-xs text-muted">
+        <p className="text-meta text-muted">
           {draft.effort != null && `Suggested effort: ${draft.effort}`}
           {draft.effort_reason != null && ` (${draft.effort_reason})`}
           {draft.blocks_fieldwork === true && " · Suggests it blocks fieldwork"}
@@ -207,12 +207,12 @@ export function TemplateGuidanceDrafts({
       }
     >
       {drafts.data.length === 0 ? (
-        <p className="text-sm text-muted">
+        <p className="text-body text-muted">
           {asked ? "Drafting… drafts appear here as they're ready." : "No drafts to review."}
         </p>
       ) : (
         <div className="flex flex-col gap-3">
-          <p className="text-xs text-muted">
+          <p className="text-meta text-muted">
             The agent drafted these from each standard request&apos;s description. Nothing changes
             until you approve and publish a new version; engagements on older versions keep theirs.
             Clients see approved drafts only if your firm allows it in settings.
@@ -237,7 +237,7 @@ export function TemplateGuidanceDrafts({
             ))}
           </ul>
           {pending.length > 1 && (
-            <div className="flex flex-wrap items-center gap-3 text-sm">
+            <div className="flex flex-wrap items-center gap-3 text-body">
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"

@@ -29,7 +29,7 @@ function Disclosure({ data }: { data: AiClientDataOut }): JSX.Element | null {
   const d = data.disclosure;
   if (d == null) return null;
   return (
-    <dl className="flex flex-col gap-1 text-sm">
+    <dl className="flex flex-col gap-1 text-body">
       <dt className="font-medium">Who runs it</dt>
       <dd className="text-muted">
         {d.provider}, in our own account, in the {d.region} region (United States).
@@ -77,7 +77,7 @@ export function AiClientDataSetting({ canSet }: { canSet: boolean }): JSX.Elemen
     if (isForbidden(state.error)) {
       return (
         <Panel title="AI on your clients' data">
-          <p className="text-sm text-muted">Only firm administrators can see this setting.</p>
+          <p className="text-body text-muted">Only firm administrators can see this setting.</p>
         </Panel>
       );
     }
@@ -98,7 +98,7 @@ export function AiClientDataSetting({ canSet }: { canSet: boolean }): JSX.Elemen
     >
       <div className="flex flex-col gap-3">
         {!data.available ? (
-          <p className="text-sm text-muted">
+          <p className="text-body text-muted">
             Not available yet. The agent runs on synthetic data only until the provider terms are
             in place.
           </p>
@@ -112,7 +112,7 @@ export function AiClientDataSetting({ canSet }: { canSet: boolean }): JSX.Elemen
             )}
             <Disclosure data={data} />
             {data.assistants.length > 0 ? (
-              <ul aria-label="Agent capabilities" className="flex flex-col gap-1 text-sm">
+              <ul aria-label="Agent capabilities" className="flex flex-col gap-1 text-body">
                 {data.assistants.map((a) => (
                   <li key={a.agent_id} className="flex flex-wrap items-center gap-2">
                     <span className="font-medium">{a.purpose}</span>
@@ -123,9 +123,9 @@ export function AiClientDataSetting({ canSet }: { canSet: boolean }): JSX.Elemen
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted">No agent capabilities are available yet.</p>
+              <p className="text-body text-muted">No agent capabilities are available yet.</p>
             )}
-            <p className="text-xs text-muted">
+            <p className="text-meta text-muted">
               Each capability starts in shadow: it runs, but your team doesn&apos;t see its work
               until we&apos;ve compared it with your team&apos;s decisions. Clients never see
               anything written by AI.
@@ -145,7 +145,7 @@ export function AiClientDataSetting({ canSet }: { canSet: boolean }): JSX.Elemen
                   </Button>
                 </div>
               ) : (
-                <div className="flex flex-wrap items-center gap-3 text-sm">
+                <div className="flex flex-wrap items-center gap-3 text-body">
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -208,7 +208,7 @@ export function AiExclusionControl({
   const excluded = state.data.excluded;
   if (!excluded && !canSwitch) return null;
   return (
-    <div className="flex flex-col gap-2 text-sm">
+    <div className="flex flex-col gap-2 text-body">
       <div className="flex flex-wrap items-center gap-2">
         {excluded && (
           <>

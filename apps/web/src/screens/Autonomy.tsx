@@ -74,7 +74,7 @@ export function Autonomy({ canSet }: { canSet: boolean }): JSX.Element {
   const chosen = picked ?? current.data.level;
   return (
     <Panel title="Autonomy">
-      <p className="text-sm text-muted">
+      <p className="text-body text-muted">
         How much the agent may do on its own. People always make the decisions: accepting,
         rejecting and sending back evidence.
       </p>
@@ -106,7 +106,7 @@ export function Autonomy({ canSet }: { canSet: boolean }): JSX.Element {
                   <StatusPill tone="neutral">Coming with the engagement agent</StatusPill>
                 )}
               </span>
-              <span className="text-sm text-muted">{l.may}</span>
+              <span className="text-body text-muted">{l.may}</span>
             </span>
           </label>
         ))}
@@ -122,16 +122,16 @@ export function Autonomy({ canSet }: { canSet: boolean }): JSX.Element {
             {current.data.set_at === null && picked === null ? "Confirm Routine" : "Save"}
           </Button>
           {current.data.set_at !== null && (
-            <span className="text-xs text-muted">
+            <span className="text-meta text-muted">
               Last set {new Date(current.data.set_at).toLocaleString()}
             </span>
           )}
         </div>
       ) : (
-        <p className="text-sm text-muted">Only firm administrators can change this.</p>
+        <p className="text-body text-muted">Only firm administrators can change this.</p>
       )}
       {save.isError && !isForbidden(save.error) && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-body text-danger">
           {errorMessage(save.error)}
         </p>
       )}
@@ -161,7 +161,7 @@ export function FirmAgents({ canSet }: { canSet: boolean }): JSX.Element | null 
   const paused = state.data.paused_at != null;
   return (
     <Panel title="Engagement agents">
-      <div className="flex flex-wrap items-center gap-3 text-sm">
+      <div className="flex flex-wrap items-center gap-3 text-body">
         <StatusPill tone={paused ? "warning" : "success"}>
           {paused ? "Paused for the whole firm" : "Running"}
         </StatusPill>
@@ -217,7 +217,7 @@ export function FirmTimeZone({ canSet }: { canSet: boolean }): JSX.Element | nul
   const known = ZONES.some(([value]) => value === zone.data.time_zone);
   return (
     <Panel title="Time zone">
-      <label className="flex flex-wrap items-center gap-3 text-sm">
+      <label className="flex flex-wrap items-center gap-3 text-body">
         Your firm&apos;s time zone
         <select
           className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3"
@@ -259,7 +259,7 @@ export function LetterPolicy({ canSet }: { canSet: boolean }): JSX.Element | nul
   if (policy.data === undefined) return null;
   return (
     <Panel title="Engagement letters">
-      <label className="flex items-start gap-3 text-sm">
+      <label className="flex items-start gap-3 text-body">
         <input
           type="checkbox"
           className="mt-1"
@@ -301,7 +301,7 @@ export function DraftedGuidanceSetting({ canSet }: { canSet: boolean }): JSX.Ele
   const refused = save.isError && !isForbidden(save.error);
   return (
     <Panel title="Guidance drafted by the agent">
-      <label className="flex items-start gap-3 text-sm">
+      <label className="flex items-start gap-3 text-body">
         <input
           type="checkbox"
           className="mt-1"
@@ -320,7 +320,7 @@ export function DraftedGuidanceSetting({ canSet }: { canSet: boolean }): JSX.Ele
         </span>
       </label>
       {refused && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-body text-danger">
           This isn&apos;t available for firms with real client data yet.
         </p>
       )}

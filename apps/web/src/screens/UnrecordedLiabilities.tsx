@@ -90,7 +90,7 @@ export function SubsequentLedger({
         ) : undefined
       }
     >
-      <div className="flex flex-col gap-2 text-sm">
+      <div className="flex flex-col gap-2 text-body">
         <p className="text-muted">
           The general ledger from the day after year end to the cut-off date (usually the fieldwork
           date). Payments in it are what the search tests.
@@ -182,7 +182,7 @@ export function Accounts({
   if (a.accounts.length === 0) {
     return (
       <Panel title="Bank and payables accounts">
-        <p className="text-sm text-muted">Import the year's general ledger first.</p>
+        <p className="text-body text-muted">Import the year's general ledger first.</p>
       </Panel>
     );
   }
@@ -199,7 +199,7 @@ export function Accounts({
         </StatusPill>
       }
     >
-      <div className="flex flex-col gap-2 text-sm">
+      <div className="flex flex-col gap-2 text-body">
         <p className="text-muted">
           Payments are credits to the bank accounts. A bill recorded at year end is a credit to the
           payables account. Suggested from account names: check them.
@@ -283,7 +283,7 @@ export function Bands({
   let start = 1;
   return (
     <Panel title="Timing bands">
-      <div className="flex flex-col gap-2 text-sm">
+      <div className="flex flex-col gap-2 text-body">
         <p className="text-muted">
           A payment is selected when it's at or above its band's threshold, a percentage of
           performance materiality.

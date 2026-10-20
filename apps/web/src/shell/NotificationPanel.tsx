@@ -43,7 +43,7 @@ export function NotificationPanel({
       className="flex w-full flex-col gap-3 border-line bg-surface p-4 sm:w-96 sm:border-l"
     >
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg">Notifications</h2>
+        <h2 className="text-pane">Notifications</h2>
         <div className="flex gap-1">
           <Button
             size="sm"
@@ -77,7 +77,7 @@ export function NotificationPanel({
                   aria-hidden="true"
                   className={`mt-1.5 size-2 shrink-0 rounded-full ${n.read ? "bg-line" : "bg-accent"}`}
                 />
-                <div className="flex flex-1 flex-col gap-1 text-sm">
+                <div className="flex flex-1 flex-col gap-1 text-body">
                   {href === null ? (
                     <span className={n.read ? "text-muted" : "font-semibold"}>{text}</span>
                   ) : (
@@ -92,7 +92,7 @@ export function NotificationPanel({
                       {text}
                     </Link>
                   )}
-                  <time dateTime={n.created_at} className="text-xs text-muted">
+                  <time dateTime={n.created_at} className="text-meta text-muted">
                     {new Date(n.created_at).toLocaleString()}
                   </time>
                 </div>

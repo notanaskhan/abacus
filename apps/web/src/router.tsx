@@ -60,7 +60,7 @@ function NotFound(): JSX.Element {
       <EmptyState
         title="Page not found"
         action={
-          <Link to="/" className="text-sm underline">
+          <Link to="/" className="text-body underline">
             Go to engagements
           </Link>
         }

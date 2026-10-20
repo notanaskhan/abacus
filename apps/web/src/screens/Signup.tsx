@@ -42,8 +42,8 @@ export function Signup(): JSX.Element {
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 bg-ground p-6">
       <Card className="flex flex-col gap-4">
         <div>
-          <h1 className="text-2xl">Set up your firm</h1>
-          <p className="text-sm text-muted">
+          <h1 className="text-dashboard">Set up your firm</h1>
+          <p className="text-body text-muted">
             You&apos;ll be its first administrator. Next, you&apos;ll connect sign-on, invite your
             team and upload your methodology.
           </p>
@@ -75,7 +75,7 @@ export function Signup(): JSX.Element {
             />
           </div>
           {failure !== null && (
-            <p role="alert" className="text-sm text-danger">
+            <p role="alert" className="text-body text-danger">
               {REFUSALS[failure] ?? failure}
             </p>
           )}
@@ -87,7 +87,7 @@ export function Signup(): JSX.Element {
           </Button>
         </form>
       </Card>
-      <p className="text-center text-sm text-muted">
+      <p className="text-center text-body text-muted">
         Joining an existing firm? Ask its administrator to invite you.{" "}
         <Link to="/" className="text-accent hover:underline">
           Back

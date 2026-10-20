@@ -80,7 +80,7 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
           }
         >
           {g.areas.length === 0 ? (
-            <p className="text-sm text-muted">
+            <p className="text-body text-muted">
               No areas yet. Apply a methodology or add request items.
             </p>
           ) : (
@@ -173,7 +173,7 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
 
         <div className="flex flex-col gap-4">
           <Panel title="Coverage gaps">
-            <ul className="flex flex-col gap-2 text-sm">
+            <ul className="flex flex-col gap-2 text-body">
               <GapRow
                 label="Unmapped accounts with balances"
                 count={g.gaps.unmapped_accounts.length}
@@ -192,31 +192,31 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
             </ul>
           </Panel>
           <Panel title="Screening">
-            <p className="text-sm text-muted">Proposals only. A reviewer decides each item.</p>
-            <dl className="grid grid-cols-3 gap-2 text-sm">
+            <p className="text-body text-muted">Proposals only. A reviewer decides each item.</p>
+            <dl className="grid grid-cols-3 gap-2 text-body">
               <div className="rounded-[var(--radius-control)] bg-ok-soft p-2.5 text-ok">
-                <dt className="text-xs">Ready for review</dt>
+                <dt className="text-meta">Ready for review</dt>
                 <dd className="text-[15px] font-medium tabular-nums">{ready}</dd>
               </div>
               <div className="rounded-[var(--radius-control)] bg-warn-soft p-2.5 text-warn">
-                <dt className="text-xs">Needs revision</dt>
+                <dt className="text-meta">Needs revision</dt>
                 <dd className="text-[15px] font-medium tabular-nums">{revise}</dd>
               </div>
               <div className="rounded-[var(--radius-control)] bg-sunken p-2.5">
-                <dt className="text-xs">Not screened</dt>
+                <dt className="text-meta">Not screened</dt>
                 <dd className="text-[15px] font-medium tabular-nums">{unscreened}</dd>
               </div>
             </dl>
           </Panel>
           <Panel title="People">
-            <p className="text-sm text-muted">
+            <p className="text-body text-muted">
               Team:{" "}
               {g.team.length === 0 ? "nobody yet" : g.team.map((m) => m.display_name).join(", ")}
             </p>
             <Link
               to="/engagements/$engagementId/people"
               params={{ engagementId }}
-              className="text-sm text-accent hover:underline"
+              className="text-body text-accent hover:underline"
             >
               Manage people
             </Link>
@@ -278,7 +278,7 @@ export function ApplyMethodology({ engagementId }: { engagementId: string }): JS
             apply.mutate({ path: { engagement_id: engagementId }, body: { version_id: version } });
         }}
       >
-        <label className="flex flex-col gap-1 text-sm font-semibold">
+        <label className="flex flex-col gap-1 text-body font-semibold">
           Methodology version
           <select
             value={version}
@@ -299,7 +299,7 @@ export function ApplyMethodology({ engagementId }: { engagementId: string }): JS
           Apply and create requests
         </Button>
         {apply.isError && (
-          <p role="alert" className="text-sm text-danger">
+          <p role="alert" className="text-body text-danger">
             {errorMessage(apply.error)}
           </p>
         )}

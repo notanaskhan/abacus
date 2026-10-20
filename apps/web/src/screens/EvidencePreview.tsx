@@ -103,7 +103,7 @@ function PageImage({ source, page }: { source: PreviewSource; page: number }): J
       if (current !== null) URL.revokeObjectURL(current);
     };
   }, [source, page]);
-  if (failed) return <p className="text-sm text-danger">This page couldn&apos;t be loaded.</p>;
+  if (failed) return <p className="text-body text-danger">This page couldn&apos;t be loaded.</p>;
   if (url === null) return <Skeleton className="h-96" />;
   return (
     <img
@@ -149,25 +149,25 @@ export function EvidencePreview({
   if (preview.isPending) return <Skeleton className="h-64" />;
   if (preview.isError) {
     return isForbidden(preview.error) ? (
-      <p className="text-sm text-muted">You can&apos;t preview this file.</p>
+      <p className="text-body text-muted">You can&apos;t preview this file.</p>
     ) : (
       <Alert title="Couldn't load the preview">Try again, or download the file instead.</Alert>
     );
   }
   const data = preview.data;
   if (data.kind === "pending") {
-    return <p className="text-sm text-muted">Preparing the preview…</p>;
+    return <p className="text-body text-muted">Preparing the preview…</p>;
   }
   if (data.kind === "none") {
     return (
-      <p className="text-sm text-muted">
+      <p className="text-body text-muted">
         {REASONS[data.reason ?? ""] ?? "Preview isn't available."} Download it instead.
       </p>
     );
   }
   if (data.kind === "table") {
     if (data.sheets.length === 0) {
-      return <p className="text-sm text-muted">This spreadsheet is empty.</p>;
+      return <p className="text-body text-muted">This spreadsheet is empty.</p>;
     }
     const shown = data.sheets[Math.min(sheet, data.sheets.length - 1)];
     const rows = shown?.rows ?? [];
@@ -236,7 +236,9 @@ export function EvidencePreview({
           </Table>
         </div>
         {data.truncated && (
-          <p className="text-xs text-muted">Showing the first rows only. Download for the rest.</p>
+          <p className="text-meta text-muted">
+            Showing the first rows only. Download for the rest.
+          </p>
         )}
       </div>
     );
@@ -246,7 +248,7 @@ export function EvidencePreview({
     <div className="flex flex-col gap-2">
       <PageImage source={source} page={Math.min(page, count)} />
       {count > 1 && (
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-2 text-body">
           <Button
             size="sm"
             variant="outline"
@@ -273,7 +275,9 @@ export function EvidencePreview({
         </div>
       )}
       {data.truncated && (
-        <p className="text-xs text-muted">Showing the first pages only. Download for the rest.</p>
+        <p className="text-meta text-muted">
+          Showing the first pages only. Download for the rest.
+        </p>
       )}
     </div>
   );

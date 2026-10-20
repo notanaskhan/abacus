@@ -13,7 +13,7 @@ const ROLES: [StaffRole, string][] = [
   ["staff", "Staff"],
   ["reviewer", "Reviewer"],
 ];
-const SELECT = "h-8 rounded-[var(--radius-control)] border border-line bg-surface px-2 text-sm";
+const SELECT = "h-8 rounded-[var(--radius-control)] border border-line bg-surface px-2 text-body";
 const GROUPS: [ProposedItemOut["kind"], string][] = [
   ["used", "Used last year"],
   ["not_used", "Not used last year"],
@@ -76,7 +76,7 @@ export function RollForwardReview({
     });
   };
   return (
-    <div className="flex flex-col gap-4 text-sm">
+    <div className="flex flex-col gap-4 text-body">
       <div className="flex flex-col gap-1">
         <p>
           Rolling forward from <span className="font-semibold">{prior.name}</span> (
@@ -105,7 +105,7 @@ export function RollForwardReview({
 
       <section aria-label="Team" className="flex flex-col gap-2">
         <h3 className="font-semibold">Team</h3>
-        <p className="text-xs text-muted">You join as engagement partner.</p>
+        <p className="text-meta text-muted">You join as engagement partner.</p>
         {proposal.team.length === 0 && <p className="text-muted">No one else from last year.</p>}
         <ul className="flex flex-col gap-1">
           {proposal.team.map((m) => {
@@ -145,7 +145,7 @@ export function RollForwardReview({
                     ))}
                   </select>
                 ) : (
-                  <span className="text-xs text-muted">
+                  <span className="text-meta text-muted">
                     Not available: left the firm or now walled from this client
                   </span>
                 )}
@@ -200,7 +200,7 @@ export function RollForwardReview({
                           />
                           <span>
                             {i.description}{" "}
-                            <span className="text-xs text-muted">{i.audit_area}</span>
+                            <span className="text-meta text-muted">{i.audit_area}</span>
                             {kind === "new_in_template" && <Badge className="ml-2">New</Badge>}
                           </span>
                         </label>

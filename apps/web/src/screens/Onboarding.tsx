@@ -166,7 +166,7 @@ export function Onboarding({ always = false }: { always?: boolean }): JSX.Elemen
         })}
       </ol>
       {failure !== undefined && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-body text-danger">
           {errorMessage(failure.error)}
         </p>
       )}

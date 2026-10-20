@@ -115,8 +115,8 @@ function BudgetPanel({
         ) : undefined
       }
     >
-      <p className="text-sm">
-        <span className="text-2xl font-semibold tabular-nums">{usd(spent)}</span>{" "}
+      <p className="text-body">
+        <span className="text-dashboard font-semibold tabular-nums">{usd(spent)}</span>{" "}
         <span className="text-muted">
           of {usd(hard)} · {state}
           {isDefault && " · default budget"}
@@ -140,7 +140,7 @@ function BudgetPanel({
           style={{ left: `${String(softPct)}%` }}
         />
       </div>
-      <p className="text-xs text-muted tabular-nums">
+      <p className="text-meta text-muted tabular-nums">
         Soft limit {usd(soft)} (deferrable work waits) · Hard limit {usd(hard)} (only essential
         work runs) · Plan limit {usd(cap)}
       </p>
@@ -185,7 +185,7 @@ function BudgetPanel({
             Cancel
           </Button>
           {save.isError && !isForbidden(save.error) && (
-            <p role="alert" className="w-full text-sm text-danger">
+            <p role="alert" className="w-full text-body text-danger">
               {errorMessage(save.error) === "budget_invalid"
                 ? "The soft limit must be above zero and at most the hard limit; the hard limit at most the plan limit."
                 : errorMessage(save.error)}
@@ -257,7 +257,7 @@ function Metering(): JSX.Element {
       ) : metering.isError ? (
         <Alert title="Couldn't load spend">{errorMessage(metering.error)}</Alert>
       ) : rows.length === 0 ? (
-        <p className="text-sm text-muted">No model spend in this period.</p>
+        <p className="text-body text-muted">No model spend in this period.</p>
       ) : (
         <div className="overflow-x-auto">
           <Table className="min-w-[520px]">

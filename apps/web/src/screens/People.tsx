@@ -65,7 +65,7 @@ function Team({ engagementId }: { engagementId: string }): JSX.Element {
           <h2 id="team-heading" className="text-[15px] font-medium tracking-[-0.012em]">
             Team
           </h2>
-          <p className="text-sm text-muted">
+          <p className="text-body text-muted">
             Firm people working on this engagement. Their engagement role decides what they can see
             and do.
           </p>
@@ -123,7 +123,7 @@ function Team({ engagementId }: { engagementId: string }): JSX.Element {
                             body: { role: event.target.value as StaffRole },
                           });
                         }}
-                        className="h-8 rounded-[var(--radius-control)] border border-line bg-surface px-2 text-sm"
+                        className="h-8 rounded-[var(--radius-control)] border border-line bg-surface px-2 text-body"
                       >
                         {grantable.map((r) => (
                           <option key={r.value} value={r.value}>
@@ -242,24 +242,24 @@ function AddPerson({
             onChange={(event) => {
               setFilter(event.target.value);
             }}
-            className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm"
+            className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-body"
           />
         </div>
         {candidates.isPending ? (
           <Skeleton className="h-24" />
         ) : candidates.isError ? (
-          <p role="alert" className="text-sm text-danger">
+          <p role="alert" className="text-body text-danger">
             {errorMessage(candidates.error)}
           </p>
         ) : shown.length === 0 ? (
-          <p className="text-sm text-muted">No one else can be added.</p>
+          <p className="text-body text-muted">No one else can be added.</p>
         ) : (
           <fieldset className="flex max-h-56 flex-col gap-1 overflow-y-auto">
             <legend className="sr-only">Person</legend>
             {shown.map((c) => (
               <label
                 key={c.user_id}
-                className="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-sunken"
+                className="flex items-center gap-2 rounded px-2 py-1.5 text-body hover:bg-sunken"
               >
                 <input
                   type="radio"
@@ -282,7 +282,7 @@ function AddPerson({
             onChange={(event) => {
               setRole(event.target.value as StaffRole);
             }}
-            className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm"
+            className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-body"
           >
             {roles.map((r) => (
               <option key={r.value} value={r.value}>
@@ -292,7 +292,7 @@ function AddPerson({
           </select>
         </div>
         {add.isError && (
-          <p role="alert" className="text-sm text-danger">
+          <p role="alert" className="text-body text-danger">
             {errorMessage(add.error)}
           </p>
         )}

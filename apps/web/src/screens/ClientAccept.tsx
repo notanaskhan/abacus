@@ -54,8 +54,8 @@ export function Accept(): JSX.Element {
   if (accept.isError || (token === null && !accept.isPending && !accept.isSuccess)) {
     return (
       <Shell>
-        <h1 className="text-2xl">This invitation can&apos;t be used</h1>
-        <p className="text-sm text-muted">
+        <h1 className="text-dashboard">This invitation can&apos;t be used</h1>
+        <p className="text-body text-muted">
           The link may have expired, been used already, or been sent to a different email address.
           Ask your auditor to send a new invitation.
         </p>
@@ -64,7 +64,7 @@ export function Accept(): JSX.Element {
   }
   return (
     <Shell>
-      <h1 className="text-2xl">Joining your engagement</h1>
+      <h1 className="text-dashboard">Joining your engagement</h1>
       <Spinner label={signedIn ? "Accepting your invitation…" : "Taking you to sign in…"} />
     </Shell>
   );

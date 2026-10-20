@@ -55,18 +55,18 @@ function Comment({
   return (
     <li
       id={`comment-${comment.id}`}
-      className={`flex flex-col gap-1 rounded-[var(--radius-control)] border p-3 text-sm ${
+      className={`flex flex-col gap-1 rounded-[var(--radius-control)] border p-3 text-body ${
         internal ? "border-line bg-warn-soft" : "border-line bg-surface"
       }`}
     >
-      <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted">
+      <div className="flex flex-wrap items-center gap-x-2 text-meta text-muted">
         <span className="font-medium text-ink">{comment.author_name || "Someone"}</span>
         <span>{comment.author_side === "client" ? "Client" : "Audit team"}</span>
         <time dateTime={comment.created_at}>{new Date(comment.created_at).toLocaleString()}</time>
         {internal && <span className="text-warn">Internal: the client can&apos;t see this</span>}
       </div>
       {comment.corrects != null && (
-        <a href={`#comment-${comment.corrects}`} className="text-xs text-accent hover:underline">
+        <a href={`#comment-${comment.corrects}`} className="text-meta text-accent hover:underline">
           Corrects an earlier comment
         </a>
       )}
@@ -81,13 +81,13 @@ function Comment({
       {(comment.corrected_by ?? []).length > 0 && (
         <a
           href={`#comment-${comment.corrected_by?.[0] ?? ""}`}
-          className="text-xs text-accent hover:underline"
+          className="text-meta text-accent hover:underline"
         >
           Corrected below
         </a>
       )}
       {comment.redaction == null && (mine || canRedact) && (
-        <div className="flex gap-3 text-xs">
+        <div className="flex gap-3 text-meta">
           {mine && (
             <button type="button" className="text-accent hover:underline" onClick={onCorrect}>
               Correct
@@ -132,7 +132,7 @@ function Mentions({
   return (
     <ul
       aria-label="People you can mention"
-      className="flex flex-col rounded-[var(--radius-control)] border border-line bg-surface text-sm"
+      className="flex flex-col rounded-[var(--radius-control)] border border-line bg-surface text-body"
     >
       {matches.slice(0, 8).map((c) => (
         <li key={c.user_id}>
@@ -144,7 +144,7 @@ function Mentions({
             }}
           >
             {c.display_name}{" "}
-            <span className="text-xs text-muted">
+            <span className="text-meta text-muted">
               {c.side === "client" ? "Client" : "Audit team"}
             </span>
           </button>
@@ -242,7 +242,7 @@ export function CommentThread({
   if (comments.isPending) return <Skeleton className="h-16" />;
   if (comments.isError) {
     return isForbidden(comments.error) ? (
-      <p className="text-sm text-muted">You can&apos;t see these comments.</p>
+      <p className="text-body text-muted">You can&apos;t see these comments.</p>
     ) : (
       <Alert title="Couldn't load the comments">Try again in a moment.</Alert>
     );
@@ -251,7 +251,7 @@ export function CommentThread({
   return (
     <section aria-label={label} className="flex flex-col gap-3">
       {comments.data.length === 0 ? (
-        <p className="text-sm text-muted">No comments yet.</p>
+        <p className="text-body text-muted">No comments yet.</p>
       ) : (
         <ol className="flex flex-col gap-2">
           {comments.data.map((c) => (
@@ -282,7 +282,7 @@ export function CommentThread({
           onChange={(event) => {
             setText(event.target.value);
           }}
-          className={`rounded-[var(--radius-control)] border bg-surface p-2 text-sm ${
+          className={`rounded-[var(--radius-control)] border bg-surface p-2 text-body ${
             visibility === "shared" ? "border-stroke" : "border-line bg-warn-soft"
           }`}
         />
@@ -299,7 +299,7 @@ export function CommentThread({
           />
         )}
         {chosen.length > 0 && (
-          <p className="flex flex-wrap gap-1 text-xs" aria-label="Will be notified">
+          <p className="flex flex-wrap gap-1 text-meta" aria-label="Will be notified">
             {chosen.map((c) => (
               <span key={c.user_id} className="rounded-[5px] bg-accent-soft px-2 py-0.5">
                 {c.display_name}
@@ -317,7 +317,7 @@ export function CommentThread({
             ))}
           </p>
         )}
-        <div className="flex flex-wrap items-center gap-3 text-sm">
+        <div className="flex flex-wrap items-center gap-3 text-body">
           {side === "firm" && canShare && correcting === null && (
             <label className="flex items-center gap-2">
               <input
@@ -331,14 +331,14 @@ export function CommentThread({
               Share with client
             </label>
           )}
-          <span className="text-xs text-muted">
+          <span className="text-meta text-muted">
             {visibility === "shared"
               ? side === "firm"
                 ? "The client will see this."
                 : "Your auditor will see this."
               : "Internal note: only your team sees this."}
           </span>
-          <span className="ml-auto text-xs text-muted tabular-nums">
+          <span className="ml-auto text-meta text-muted tabular-nums">
             {text.length} / {LIMIT}
           </span>
           {correcting !== null && (
@@ -357,7 +357,7 @@ export function CommentThread({
           </Button>
         </div>
         {post.isError && (
-          <p role="alert" className="text-sm text-danger">
+          <p role="alert" className="text-body text-danger">
             {refusal(post.error)}
           </p>
         )}
@@ -369,7 +369,7 @@ export function CommentThread({
         }}
         title="Redact comment"
       >
-        <div className="flex flex-col gap-3 text-sm">
+        <div className="flex flex-col gap-3 text-body">
           <p>
             The text will be hidden from everyone and replaced by your name, the date and this
             reason. This can&apos;t be undone.

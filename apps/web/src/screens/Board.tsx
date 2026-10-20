@@ -467,7 +467,7 @@ function HiddenFromClient({ item }: { item: RequestItemOut }): JSX.Element {
   });
   const hidden = item.client_visible === false;
   return (
-    <label className="ml-auto flex items-center gap-2 text-sm text-muted">
+    <label className="ml-auto flex items-center gap-2 text-body text-muted">
       <input
         type="checkbox"
         checked={hidden}
@@ -616,12 +616,12 @@ function Retrieve({
         <Spinner label={queuedLabel(run.data?.estimated_start_at ?? null)} />
       )}
       {status === "failed_validation" && (
-        <span className="text-sm text-danger">The trial balance didn't pass validation.</span>
+        <span className="text-body text-danger">The trial balance didn't pass validation.</span>
       )}
       {status === "failed" && (
-        <span className="text-sm text-danger">Retrieval failed. Try again.</span>
+        <span className="text-body text-danger">Retrieval failed. Try again.</span>
       )}
-      {start.isError && <span className="text-sm text-danger">{errorMessage(start.error)}</span>}
+      {start.isError && <span className="text-body text-danger">{errorMessage(start.error)}</span>}
     </div>
   );
 }
@@ -822,10 +822,10 @@ function SummaryStrip({ engagementId }: { engagementId: string }): JSX.Element |
 
 function TierChip({ item }: { item: RequestItemOut }): JSX.Element {
   const tier = item.retrievability_tier;
-  if (tier == null) return <span className="text-xs">Unclassified</span>;
+  if (tier == null) return <span className="text-meta">Unclassified</span>;
   const unavailable = tier === "A" && item.dataset != null && item.available !== true;
   return (
-    <span className="inline-flex items-center gap-1 text-xs">
+    <span className="inline-flex items-center gap-1 text-meta">
       <span
         title={TIER_MEANING[tier]}
         className="rounded-[4px] bg-nested px-1.5 py-px font-medium text-ink-2"
@@ -851,7 +851,7 @@ function TierOverride({ item }: { item: RequestItemOut }): JSX.Element {
   });
   const value = item.tier_source === "override" ? (item.retrievability_tier ?? "") : "";
   return (
-    <label className="flex items-center gap-2 text-sm text-muted">
+    <label className="flex items-center gap-2 text-body text-muted">
       Tier
       <select
         aria-label={`Tier for ${item.description}`}
