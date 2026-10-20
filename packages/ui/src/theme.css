@@ -12,6 +12,10 @@
 @import "@fontsource/geist-mono/latin-500.css";
 
 @theme {
+  /* Only the plan's tokens exist: Tailwind's default palette and shadows compile to nothing
+     (SPEC-048). Type sizes stay mapped onto the plan's roles until the F-05-T06 codemod. */
+  --color-*: initial;
+  --shadow-*: initial;
   /* Surfaces, light to dark */
   --color-card: #ffffff;
   --color-band-hd: #fbfbfa;
@@ -22,11 +26,11 @@
   --color-chip: #e1dfd9;
   --color-tonal-hover: #d9d6cf;
 
-  /* Ink: espresso on a fixed alpha ladder. ink-3 at .64 is the lightest that meets AA (4.5:1) for
-     small text on card, surface, shell, nav-fill and nested (worst 4.57 on nested); DEC-115. */
+  /* Ink: espresso on the plan's AA alpha ladder (DEC-11): ink-2 .70 and ink-3 .66 meet
+     4.5:1 for small text on card, surface, shell, nav-fill and nested. */
   --color-ink: rgba(43, 31, 23, 0.95);
-  --color-ink-2: rgba(43, 31, 23, 0.66);
-  --color-ink-3: rgba(43, 31, 23, 0.64);
+  --color-ink-2: rgba(43, 31, 23, 0.7);
+  --color-ink-3: rgba(43, 31, 23, 0.66);
   --color-ink-4: rgba(43, 31, 23, 0.3);
   --color-hair: rgba(43, 31, 23, 0.1);
   --color-rule: rgba(43, 31, 23, 0.14);
@@ -54,7 +58,7 @@
   /* Source tracing only, never a status */
   --color-match-bg: #ecd9f0;
   --color-match-line: #bf99c8;
-  --color-match-ink: #9253a2;
+  --color-match-ink: #7e4590; /* AA match text (DEC-11) */
 
   /* SPEC-016 aliases */
   --color-ground: #f8f8f6;
@@ -210,11 +214,11 @@
   ::selection {
     background: var(--color-sel-bg);
   }
+  /* The plan's focus outline (SPEC-048 AC-3): an outline, not a box-shadow, so it survives
+     forced-colors mode. */
   :focus-visible {
-    outline: none;
-    box-shadow:
-      0 0 0 2px var(--color-card),
-      0 0 0 3.5px var(--color-espresso);
+    outline: 2px solid rgba(43, 31, 23, 0.55);
+    outline-offset: 2px;
   }
   @media (prefers-reduced-motion: reduce) {
     *,

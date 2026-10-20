@@ -143,3 +143,4 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-152](ADR-152-unauthenticated-operational-routes.md) | Unauthenticated operational routes - /healthz and portal branding on an explicit allowlist | red | proposed |
 | [ADR-153](ADR-153-malware-scanning-service.md) | Malware scanning service - ClamAV clamd, synchronous, fail closed | red | proposed |
 | [ADR-154](ADR-154-observability-on-call-vendors.md) | Observability and on-call vendors - CloudWatch, X-Ray, Sentry and Better Stack | red | proposed |
+| [ADR-155](ADR-155-design-system.md) | packages/ui is the Accrued design system - Tailwind v4 tokens, self-hosted fonts, Radix for behaviour, the AA ink ladder | amber | accepted |

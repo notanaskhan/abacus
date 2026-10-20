@@ -12,7 +12,7 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 |---|---|---|---|---|---|---|---|
 | P-01 | Product naming | amber | F-02 | ADR-133 | Fri 23 Oct | DEC-01 | accepted |
 | P-02 | Two-founder governance and decision rights | amber | — | — | Wed 21 Oct | DEC-02 | n/a, solo edition |
-| P-03 | Accrued design system in `packages/ui` | amber | F-05 | next free | Fri 23 Oct | DEC-04, DEC-11, DEC-15 | to draft |
+| P-03 | Accrued design system in `packages/ui` | amber | F-05 | ADR-155 | Fri 23 Oct | DEC-04, DEC-11, DEC-15 | accepted |
 | P-04 | Engagement + work items + server-enforced gates | red | F-03 | ADR-136 | Fri 23 Oct | DEC-07, DEC-39 | accepted |
 | P-05 | Module map (29 modules) | amber | F-03 | ADR-137 | Fri 23 Oct | DEC-13 | accepted |
 | P-06 | Generalised `visible()` | red | F-03 | ADR-145 | Fri 6 Nov | DEC-33 | accepted |

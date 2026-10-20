@@ -4,7 +4,7 @@ title: "F-05-T01 · ADR P-03 and SPEC-1NN Accrued design system; seed tokens/DEC
 spec: SPEC-048
 acceptance_criteria: [AC-12]
 risk_zone: amber
-status: todo
+status: done
 epic: F-05
 plan_key: F-05-T01
 branch: task-127-design-system-adr-spec
@@ -85,6 +85,7 @@ make check
 Append-only. Newest at the bottom.
 
 - `2026-10-20` — task file written from the epic (SU-14); nothing built yet.
+- 2026-10-20 (SU-24): ADR-155 (P-03) accepted; SPEC-048 records that it supersedes SPEC-016 §4 (SPEC-016 not edited); packages/ui/src/tokens/DECISIONS.md seeded with DEC-11, DEC-15, DEC-109 and the open line-height item.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

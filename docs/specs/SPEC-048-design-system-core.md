@@ -4,7 +4,7 @@ title: "Accrued design system, setup tier (F-05 sprint 0): tokens, AA ladder, se
 status: approved
 owner: founder
 risk_zone: amber
-related_adrs: [ADR-011, ADR-078, ADR-089]
+related_adrs: [ADR-011, ADR-078, ADR-089, ADR-155]
 related_specs: [SPEC-016]
 created: 2026-10-20
 updated: 2026-10-20
@@ -18,6 +18,8 @@ updated: 2026-10-20
 
 ## 1. Summary
 This is the sprint-0 slice of epic F-05 (`docs/plan/epics/F-05.md`): rows F-05-T01 to T09 of `F-05.tasks.csv`. It lays the Accrued design-system foundation that every screen epic builds on: one token source, the AA ink ladder, self-hosted fonts, base/motion/utility CSS, ESLint and compiled-CSS rules that fail off-system styling, and the `/components` gallery skeleton with the tokens page.
+
+**Supersedes SPEC-016 §4** (the Atelier design system); the rest of SPEC-016 stands, and SPEC-016 itself is not edited. ADR-155 (P-03) is the binding decision. Covered by shipped work: TASK-091 (tokens and Geist), TASK-101 (components and the gallery); SU-24 added the AA ladder, the palette and shadow reset, the focus outline and `tokens/DECISIONS.md`.
 
 Anas already shipped part of this in TASK-091..101 (tokens, Geist, components). This spec asks the sessions to verify what exists and fill gaps only. Primitives, formatting, status, shell, overlays and templates (F-05-T10 onward) are later specs.
 

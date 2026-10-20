@@ -25,7 +25,7 @@ export function ClientBell(): JSX.Element {
         )}
       </button>
       {open && (
-        <div className="absolute right-0 z-10 mt-2 rounded-[var(--radius-control)] border border-line bg-surface shadow-lg">
+        <div className="absolute right-0 z-10 mt-2 rounded-[var(--radius-control)] border border-line bg-surface shadow-pop">
           <NotificationPanel
             portal="client"
             onClose={() => {

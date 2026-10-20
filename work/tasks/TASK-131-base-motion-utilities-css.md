@@ -82,6 +82,7 @@ make check
 Append-only. Newest at the bottom.
 
 - `2026-10-20` — task file written from the epic (SU-14); nothing built yet.
+- 2026-10-20 (SU-24): open for the builder: the plan's body line height is 15.6px (1.2); the app ships 13px/1.45. Changing it moves every screen; decide here and record in tokens/DECISIONS.md.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

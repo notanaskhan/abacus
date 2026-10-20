@@ -86,6 +86,7 @@ make check
 Append-only. Newest at the bottom.
 
 - `2026-10-20` — task file written from the epic (SU-14); nothing built yet.
+- 2026-10-20 (SU-24): default palette and shadows are already reset (no uses left). Tailwind's text-* sizes are still used 318 times in 56 files, mapped onto the plan's roles; the codemod replaces them with role utilities before the --text-* reset.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

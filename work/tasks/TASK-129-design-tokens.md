@@ -4,7 +4,7 @@ title: "F-05-T03 · Tokens: tokens.ts, theme.css (@theme static with namespace r
 spec: SPEC-048
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-14]
 risk_zone: green
-status: todo
+status: in-progress
 epic: F-05
 plan_key: F-05-T03
 branch: task-129-design-tokens
@@ -93,6 +93,7 @@ make check
 Append-only. Newest at the bottom.
 
 - `2026-10-20` — task file written from the epic (SU-14); nothing built yet.
+- 2026-10-20 (SU-24): tests first in apps/web/src/lint/tokens.test.ts, then fixed: ink-2 .70 and ink-3 .66 (AA on every surface), match text #7E4590, focus outline 2px rgba(43,31,23,.55), Tailwind's default palette and shadows reset; ClientBell shadow-lg -> shadow-pop. Still to do here: the typed tokens.ts mirror and root.css.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
