@@ -32,6 +32,7 @@ from abacus.modules.fieldwork.models import (
     SelectionRow,
     WorkpaperVersion,
 )
+from abacus.modules.fieldwork.notes import NotesOpen, open_note_targets
 from abacus.modules.fieldwork.repository import (
     all_items,
     approval_of,
@@ -618,8 +619,11 @@ async def sign_reviewed(
         raise ChangedSinceReady(str(procedure_id))
     async with tenant_session(ctx.tenant) as session:
         reviewed = await rows_signed(session, inputs.selection.id, inputs.results, "reviewed")
+        noted = await open_note_targets(session, procedure_id)
     if len(reviewed) < len(inputs.results):
         raise RowsNotReviewed(str(procedure_id))  # SPEC-040 AC-10
+    if noted:
+        raise NotesOpen(str(procedure_id))  # SPEC-041 AC-5
     role = await engagement_role_of(ctx.tenant, engagement_id, ctx.user_id) or "firm"
     async with uow(ctx.tenant) as tx:
         locked = await lock_ref(tx, engagement_id)

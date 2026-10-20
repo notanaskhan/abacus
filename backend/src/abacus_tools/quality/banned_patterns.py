@@ -794,6 +794,9 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/fieldwork/repository.py", "results_by_id"),
         ("src/abacus/modules/fieldwork/repository.py", "support_requested"),
         ("src/abacus/modules/fieldwork/repository.py", "signoffs_of"),  # SPEC-040 (TASK-100)
+        # SPEC-041 (TASK-103): one procedure's review notes and their events, after `authorise`.
+        ("src/abacus/modules/fieldwork/repository.py", "notes_of"),
+        ("src/abacus/modules/fieldwork/repository.py", "note_events_of"),
         # TASK-102: the person's own engagement memberships ("waiting on you"), own rows only.
         ("src/abacus/modules/identity/repository.py", "my_engagement_roles"),
         # SPEC-040: an insert that returns the new rows' ids, not a list read.

@@ -20,6 +20,8 @@ from abacus.modules.fieldwork.models import (
     PopulationRow,
     Procedure,
     ProcedureConclusion,
+    ReviewNote,
+    ReviewNoteEvent,
     SelectedItem,
     SelectionApproval,
     SelectionRow,
@@ -438,3 +440,55 @@ async def insert_signoffs(session: AsyncSession, rows: list[dict[str, object]]) 
         pg_insert(ItemSignoff).values(rows).on_conflict_do_nothing().returning(ItemSignoff.id)
     )
     return len(made.scalars().all())
+
+
+# --- Review notes (SPEC-041; TASK-103) ----------------------------------------------------------
+
+
+async def insert_note(session: AsyncSession, **values: object) -> UUID:
+    made = await session.execute(insert(ReviewNote).values(**values).returning(ReviewNote.id))
+    return made.scalar_one()
+
+
+async def insert_note_event(session: AsyncSession, **values: object) -> None:
+    await session.execute(insert(ReviewNoteEvent).values(**values))
+
+
+async def get_note(session: AsyncSession, note_id: UUID) -> ReviewNote | None:
+    return (
+        await session.execute(select(ReviewNote).where(ReviewNote.id == note_id))
+    ).scalar_one_or_none()
+
+
+async def notes_of(session: AsyncSession, procedure_id: UUID) -> Sequence[ReviewNote]:
+    """The procedure's notes, oldest first (LIST_EXEMPT: one procedure, after `authorise`)."""
+    return (
+        (
+            await session.execute(
+                select(ReviewNote)
+                .where(ReviewNote.procedure_id == procedure_id)
+                .order_by(ReviewNote.created_at)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def note_events_of(
+    session: AsyncSession, note_ids: Sequence[UUID]
+) -> Sequence[ReviewNoteEvent]:
+    """Those notes' events, oldest first (LIST_EXEMPT, as above)."""
+    if not note_ids:
+        return []
+    return (
+        (
+            await session.execute(
+                select(ReviewNoteEvent)
+                .where(ReviewNoteEvent.review_note_id.in_(note_ids))
+                .order_by(ReviewNoteEvent.created_at)
+            )
+        )
+        .scalars()
+        .all()
+    )

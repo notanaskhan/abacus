@@ -21,6 +21,7 @@ from abacus.modules.fieldwork.flow import (
     sign_items,
     waiting_for,
 )
+from abacus.modules.fieldwork.notes import NoteView, clear, notes_for, raise_note, respond
 from abacus.modules.fieldwork.service import (
     AccountsView,
     Defaults,
@@ -746,7 +747,8 @@ class WaitingOut(BaseModel):
     procedure_id: Annotated[UUID, classified("internal")]
     definition: Annotated[str, classified("internal")]
     kind: Annotated[
-        Literal["approve_sample", "prepare_rows", "review_rows"], classified("internal")
+        Literal["approve_sample", "prepare_rows", "review_rows", "respond_notes", "clear_notes"],
+        classified("internal"),
     ]
     count: Annotated[int, classified("internal")]
 
@@ -758,3 +760,98 @@ Member = Annotated[AuthContext, Depends(current_member)]
 async def fieldwork_waiting_route(ctx: Member) -> list[WaitingOut]:
     """TASK-102: samples to approve and rows to sign, on the caller's engagements."""
     return [WaitingOut.model_validate(asdict(w)) for w in await waiting_for(ctx)]
+
+
+# --- Review notes (SPEC-041; TASK-103) ----------------------------------------------------------
+
+
+class NoteEntryOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    kind: Annotated[Literal["raised", "responded", "reopened", "cleared"], classified("internal")]
+    body: Annotated[str | None, classified("confidential")]
+    by: Annotated[UUID, classified("internal")]
+    name: Annotated[str, classified("internal")]
+    at: Annotated[datetime, classified("internal")]
+
+
+class NoteOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    item_id: Annotated[UUID | None, classified("internal")]
+    state: Annotated[Literal["open", "responded", "cleared"], classified("internal")]
+    raised_by: Annotated[UUID, classified("internal")]
+    raised_by_name: Annotated[str, classified("internal")]
+    raised_at: Annotated[datetime, classified("internal")]
+    thread: Annotated[list[NoteEntryOut], classified("confidential")]
+
+
+def _notes_out(notes: list[NoteView]) -> list[NoteOut]:
+    return [NoteOut.model_validate(asdict(n)) for n in notes]
+
+
+@router.get(
+    "/procedures/{procedure_id}/notes", action="procedure.read", response_model=list[NoteOut]
+)
+async def notes_route(engagement_id: UUID, procedure_id: UUID, ctx: Ctx) -> list[NoteOut]:
+    """SPEC-041 AC-7: the procedure's review notes with their threads."""
+    return _notes_out(await notes_for(ctx, engagement_id, procedure_id))
+
+
+class NoteIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    item_id: Annotated[UUID | None, Field(default=None), classified("internal")]
+    body: Annotated[str, Field(min_length=1, max_length=2000), classified("confidential")]
+
+
+@router.post(
+    "/procedures/{procedure_id}/notes",
+    action="review_note.raise",
+    response_model=list[NoteOut],
+    status_code=201,
+    errors=(409,),
+)
+async def raise_note_route(
+    engagement_id: UUID, procedure_id: UUID, body: NoteIn, ctx: Ctx
+) -> list[NoteOut]:
+    """SPEC-041 AC-1: a reviewer's note on a row, or on the workpaper."""
+    await raise_note(ctx, engagement_id, procedure_id, body.item_id, body.body)
+    return _notes_out(await notes_for(ctx, engagement_id, procedure_id))
+
+
+class ReplyIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    body: Annotated[str, Field(min_length=1, max_length=2000), classified("confidential")]
+
+
+@router.post(
+    "/procedures/{procedure_id}/notes/{note_id}/respond",
+    action="review_note.respond",
+    response_model=list[NoteOut],
+    status_code=201,
+    errors=(409,),
+)
+async def respond_note_route(
+    engagement_id: UUID, procedure_id: UUID, note_id: UUID, body: ReplyIn, ctx: Ctx
+) -> list[NoteOut]:
+    """SPEC-041 AC-2: the preparer responds; the raiser's reply reopens it."""
+    await respond(ctx, engagement_id, procedure_id, note_id, body.body)
+    return _notes_out(await notes_for(ctx, engagement_id, procedure_id))
+
+
+@router.post(
+    "/procedures/{procedure_id}/notes/{note_id}/clear",
+    action="review_note.clear",
+    response_model=list[NoteOut],
+    status_code=201,
+    errors=(409,),
+)
+async def clear_note_route(
+    engagement_id: UUID, procedure_id: UUID, note_id: UUID, ctx: Ctx
+) -> list[NoteOut]:
+    """SPEC-041 AC-3: the raiser clears it."""
+    await clear(ctx, engagement_id, procedure_id, note_id)
+    return _notes_out(await notes_for(ctx, engagement_id, procedure_id))

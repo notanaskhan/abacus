@@ -5,7 +5,7 @@ export interface FieldworkWaiting {
   engagement_id: string;
   procedure_id: string;
   definition: string;
-  kind: "approve_sample" | "prepare_rows" | "review_rows";
+  kind: "approve_sample" | "prepare_rows" | "review_rows" | "respond_notes" | "clear_notes";
   count: number;
 }
 
@@ -70,6 +70,22 @@ export function queueRows(
         what: `Approve the sample for ${procedure} (${plural(w.count, "item", "items")})`,
         action: "Approve",
         rank: 0,
+      });
+    } else if (w.kind === "respond_notes") {
+      rows.push({
+        ...common,
+        key: `${w.procedure_id}-respond`,
+        what: `Respond to ${plural(w.count, "review note", "review notes")} on ${procedure}`,
+        action: "Respond",
+        rank: 1,
+      });
+    } else if (w.kind === "clear_notes") {
+      rows.push({
+        ...common,
+        key: `${w.procedure_id}-clear`,
+        what: `Clear ${plural(w.count, "answered review note", "answered review notes")} on ${procedure}`,
+        action: "Clear",
+        rank: 1,
       });
     } else if (w.kind === "review_rows") {
       rows.push({

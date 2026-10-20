@@ -209,3 +209,32 @@ class ItemSignoff(Base):
     level: Mapped[str]
     signed_by: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class ReviewNote(Base):
+    """A reviewer's note on a row or the workpaper (SPEC-041; TASK-103). Insert-only."""
+
+    __tablename__ = "review_notes"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    procedure_id: Mapped[UUID]
+    selected_item_id: Mapped[UUID | None]
+    body: Mapped[str]
+    raised_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class ReviewNoteEvent(Base):
+    """A response, reopening or clearing of a note (SPEC-041). Insert-only; the newest counts."""
+
+    __tablename__ = "review_note_events"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    review_note_id: Mapped[UUID]
+    kind: Mapped[str]
+    body: Mapped[str | None]
+    by_user: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

@@ -84,6 +84,7 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"entry_assessments"}  # SPEC-037 Q4 (TASK-085): proposals, as made
     | {"engagement_accounts"}  # SPEC-038 (TASK-086): confirmations, as made
     | {"selection_approvals", "item_signoffs"}  # SPEC-040 (TASK-100): decisions, as made
+    | {"review_notes", "review_note_events"}  # SPEC-041 (TASK-103): notes, as written
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -171,6 +172,12 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"verdict", "shown_verdict", "rationale", "citations"}
     ),
     # Fieldwork results and workpapers (SPEC-037; TASK-084; ADR-131).
+    "review_notes": frozenset(
+        {"tenant_id", "engagement_id", "procedure_id", "selected_item_id", "body", "raised_by"}
+    ),  # SPEC-041 (TASK-103)
+    "review_note_events": frozenset(
+        {"tenant_id", "review_note_id", "kind", "body", "by_user"}
+    ),  # SPEC-041 (TASK-103)
     "selection_approvals": frozenset(
         {"tenant_id", "selection_id", "approved_by", "note"}
     ),  # SPEC-040 (TASK-100)
@@ -485,6 +492,8 @@ TABLE_OWNERS: dict[str, str] = {
     "engagement_accounts": "fieldwork",  # SPEC-038 (TASK-086)
     "item_results": "fieldwork",  # SPEC-037 (TASK-084)
     "selection_approvals": "fieldwork",  # SPEC-040 (TASK-100)
+    "review_notes": "fieldwork",  # SPEC-041 (TASK-103)
+    "review_note_events": "fieldwork",
     "item_signoffs": "fieldwork",  # SPEC-040 (TASK-100)
     "item_support_requests": "fieldwork",
     "procedure_conclusions": "fieldwork",

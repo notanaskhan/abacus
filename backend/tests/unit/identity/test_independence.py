@@ -134,6 +134,9 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "review.assign",
         "review.read",
         "review.take",
+        "review_note.clear",  # SPEC-041 (TASK-103)
+        "review_note.raise",
+        "review_note.respond",
         "sample.approve",  # SPEC-040 (TASK-100)
         "screening.request",
         "upload_review.read",  # SPEC-030 (TASK-059 D1)
