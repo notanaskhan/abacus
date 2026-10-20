@@ -124,6 +124,8 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "guidance_draft.request",
         "inbox_match.read",  # SPEC-033 (TASK-066)
         "inbox_match.request",
+        "item.sign_prepared",  # SPEC-040 (TASK-100)
+        "item.sign_reviewed",
         "ledger_import.upload",  # SPEC-028 (TASK-052)
         "materiality.set",  # SPEC-037 (TASK-083)
         "procedure.configure",
@@ -132,6 +134,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "review.assign",
         "review.read",
         "review.take",
+        "sample.approve",  # SPEC-040 (TASK-100)
         "screening.request",
         "upload_review.read",  # SPEC-030 (TASK-059 D1)
         "upload_review.request",  # SPEC-030 (TASK-058)

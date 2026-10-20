@@ -18,6 +18,8 @@ from decimal import Decimal
 from typing import Final, cast
 from uuid import UUID
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, uow
@@ -32,6 +34,7 @@ from abacus.modules.fieldwork.models import (
 )
 from abacus.modules.fieldwork.repository import (
     all_items,
+    approval_of,
     get_conclusion,
     get_item,
     get_population,
@@ -49,6 +52,7 @@ from abacus.modules.fieldwork.repository import (
     results_by_id,
     rule_counts,
     signatures_of,
+    signoffs_of,
     support_request_ids,
     support_requested,
     workpaper_versions,
@@ -151,6 +155,45 @@ class OwnWork(DomainConflict):
     code = "reviewer_is_preparer"
 
 
+class SampleNotApproved(DomainConflict):
+    """SPEC-040 AC-3: a manager or the partner approves the sample before anyone tests it, asks
+    the client for support, or signs a row."""
+
+    code = "sample_not_approved"
+
+
+class RowsNotPrepared(DomainConflict):
+    """SPEC-040 AC-10: every row is signed by a preparer, on its current result, first."""
+
+    code = "rows_not_prepared"
+
+
+class RowsNotReviewed(DomainConflict):
+    """SPEC-040 AC-10: every row is signed by a reviewer, on its current result, first."""
+
+    code = "rows_not_reviewed"
+
+
+async def require_approved(session: AsyncSession, selection_id: UUID) -> None:
+    """SPEC-040 AC-3."""
+    if await approval_of(session, selection_id) is None:
+        raise SampleNotApproved(str(selection_id))
+
+
+async def rows_signed(
+    session: AsyncSession, selection_id: UUID, results: dict[UUID, ItemResult], level: str
+) -> set[UUID]:
+    """SPEC-040 AC-8: the rows with a sign-off at `level` on their newest result (a sign-off on
+    an older result is stale and doesn't count)."""
+    return {
+        s.selected_item_id
+        for s in await signoffs_of(session, selection_id)
+        if s.level == level
+        and (current := results.get(s.selected_item_id)) is not None
+        and current.id == s.item_result_id
+    }
+
+
 class FingerprintMismatch(DomainConflict):
     """A signed version no longer renders to the bytes that were signed."""
 
@@ -204,6 +247,7 @@ async def record_result(
         item = await get_item(tx.session, item_id)
         if item is None or item.selection_id != selection.id:
             raise NotFound("selected_item")
+        await require_approved(tx.session, selection.id)
         await insert_result(
             tx.session,
             tenant_id=ctx.tenant_id,
@@ -241,6 +285,8 @@ async def request_support(
     await authorise(ctx, "procedure.run", ref.resource())
     async with tenant_session(ctx.tenant) as session:
         item = await get_item(session, item_id)
+        if item is not None and item.selection_id == selection.id:
+            await require_approved(session, selection.id)
     if item is None or item.selection_id != selection.id:
         raise NotFound("selected_item")
     made = await add_request_item(
@@ -511,8 +557,11 @@ async def sign_ready(ctx: AuthContext, engagement_id: UUID, procedure_id: UUID) 
         raise NotReadyToSign(str(procedure_id))
     async with tenant_session(ctx.tenant) as session:
         entries = len(await all_items(session, inputs.selection.id))
+        prepared = await rows_signed(session, inputs.selection.id, inputs.results, "prepared")
     if len(inputs.results) < entries:
         raise NotReadyToSign(str(procedure_id))
+    if len(prepared) < entries:
+        raise RowsNotPrepared(str(procedure_id))  # SPEC-040 AC-10
     versions, _signed = await _versions(ctx, procedure)
     if versions and _same(inputs, versions[-1]):
         raise AlreadySigned(str(procedure_id))
@@ -567,6 +616,10 @@ async def sign_reviewed(
     inputs = await _inputs_now(ctx, procedure)
     if inputs is None or not _same(inputs, latest):
         raise ChangedSinceReady(str(procedure_id))
+    async with tenant_session(ctx.tenant) as session:
+        reviewed = await rows_signed(session, inputs.selection.id, inputs.results, "reviewed")
+    if len(reviewed) < len(inputs.results):
+        raise RowsNotReviewed(str(procedure_id))  # SPEC-040 AC-10
     role = await engagement_role_of(ctx.tenant, engagement_id, ctx.user_id) or "firm"
     async with uow(ctx.tenant) as tx:
         locked = await lock_ref(tx, engagement_id)

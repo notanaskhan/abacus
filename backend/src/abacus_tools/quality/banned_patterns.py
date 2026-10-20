@@ -793,6 +793,9 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/fieldwork/repository.py", "newest_results"),
         ("src/abacus/modules/fieldwork/repository.py", "results_by_id"),
         ("src/abacus/modules/fieldwork/repository.py", "support_requested"),
+        ("src/abacus/modules/fieldwork/repository.py", "signoffs_of"),  # SPEC-040 (TASK-100)
+        # SPEC-040: an insert that returns the new rows' ids, not a list read.
+        ("src/abacus/modules/fieldwork/repository.py", "insert_signoffs"),
         ("src/abacus/modules/fieldwork/repository.py", "workpaper_versions"),
         ("src/abacus/modules/fieldwork/repository.py", "signatures_of"),
         ("src/abacus/modules/fieldwork/repository.py", "support_request_ids"),  # TASK-085

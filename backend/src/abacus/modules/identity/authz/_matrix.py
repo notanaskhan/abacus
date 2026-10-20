@@ -531,6 +531,26 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
     },
+    "sample.approve": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "agent": "deny",
+        "independence": "required",
+    },
+    "item.sign_prepared": {
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "agent": "deny",
+        "independence": "required",
+    },
+    "item.sign_reviewed": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "agent": "deny",
+        "independence": "required",
+    },
     "message.send": {
         "engagement_partner": "allow",
         "manager": "allow",

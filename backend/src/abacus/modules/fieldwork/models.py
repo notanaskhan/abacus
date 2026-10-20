@@ -181,3 +181,31 @@ class EngagementAccount(Base):
     account_codes: Mapped[list[str]] = mapped_column(ARRAY(String))
     confirmed_by: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class SelectionApproval(Base):
+    """A manager's or partner's approval of one selection (SPEC-040; TASK-100). Insert-only."""
+
+    __tablename__ = "selection_approvals"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    selection_id: Mapped[UUID]
+    approved_by: Mapped[UUID]
+    note: Mapped[str | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class ItemSignoff(Base):
+    """A preparer's or reviewer's sign-off on one row, bound to the result it signed (SPEC-040;
+    TASK-100). Insert-only; stale when a newer result exists."""
+
+    __tablename__ = "item_signoffs"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    selected_item_id: Mapped[UUID]
+    item_result_id: Mapped[UUID]
+    level: Mapped[str]
+    signed_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

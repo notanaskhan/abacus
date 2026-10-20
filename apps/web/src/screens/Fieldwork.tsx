@@ -1,4 +1,11 @@
-import type { AssessmentOut, ItemOut, ProcedureOut } from "@abacus/api-client";
+import type {
+  AssessmentOut,
+  FlowOut,
+  ItemOut,
+  ProcedureOut,
+  RowSignOut,
+  RowStateOut,
+} from "@abacus/api-client";
 import { workpaperFile } from "@abacus/api-client";
 import {
   assessMutation,
@@ -24,6 +31,12 @@ import {
   startProcedureMutation,
   teamOptions,
   workpaperOptions,
+  approveMutation,
+  flowOptions,
+  flowQueryKey,
+  requestSelectionSupportMutation,
+  signPreparedMutation,
+  signReviewedItemsMutation,
   workpaperQueryKey,
 } from "@abacus/api-client/query";
 import {
@@ -44,6 +57,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
+import { systemName } from "../board/join";
 import { Accounts, Bands, SubsequentLedger } from "./UnrecordedLiabilities";
 
 // SPEC-037 (TASK-083, TASK-084): journal entry testing. Code builds the population and selects
@@ -68,6 +82,12 @@ const MESSAGES: Record<string, string> = {
   ai_assessor_unavailable: "AI assessment isn't available here.",
   accounts_missing: "Confirm the bank and payables accounts first.",
   no_subsequent_ledger: "Upload the general ledger after year end first.",
+  sample_not_approved: "A manager or the engagement partner approves the sample first.",
+  sample_already_approved: "This sample is already approved.",
+  already_requested: "Every item already has a support request.",
+  rows_not_prepared: "Every row needs a preparer's sign-off on its current result first.",
+  rows_not_reviewed: "Every row needs a reviewer's sign-off on its current result first.",
+  signoff_invalid: "Only rows with a result can be signed.",
 };
 
 const RULES: Record<string, string> = {
@@ -278,6 +298,10 @@ function EntryRow({
   evidence,
   canRun,
   assessment,
+  approved,
+  sign,
+  selected,
+  onToggle,
 }: {
   engagementId: string;
   procedureId: string;
@@ -285,6 +309,10 @@ function EntryRow({
   evidence: { id: string; label: string }[];
   canRun: boolean;
   assessment: AssessmentOut | undefined;
+  approved: boolean;
+  sign: RowStateOut | undefined;
+  selected: boolean;
+  onToggle: () => void;
 }): JSX.Element {
   const queryClient = useQueryClient();
   const [result, setResult] = useState(item.result ?? "");
@@ -304,11 +332,25 @@ function EntryRow({
         path: { engagement_id: engagementId, procedure_id: procedureId },
       }),
     });
+    void queryClient.invalidateQueries({
+      queryKey: flowQueryKey({
+        path: { engagement_id: engagementId, procedure_id: procedureId },
+      }),
+    });
   };
   const save = useMutation({ ...resultMutation(), onSuccess: refresh });
   const ask = useMutation({ ...requestSupportMutation(), onSuccess: refresh });
   return (
-    <tr>
+    <tr className={selected ? "bg-shell" : undefined}>
+      <Td className="w-8 pr-0">
+        <input
+          type="checkbox"
+          aria-label={`Select ${item.reference || item.posted_on}`}
+          checked={selected}
+          disabled={item.result == null}
+          onChange={onToggle}
+        />
+      </Td>
       <Td className="tabular-nums">{item.posted_on}</Td>
       <Td>
         {item.reference || "—"}
@@ -383,7 +425,8 @@ function EntryRow({
                 onChange={(e) => {
                   setLinked(Array.from(e.target.selectedOptions, (o) => o.value));
                 }}
-                className="rounded-[var(--radius-control)] border border-line bg-surface p-1 text-xs"
+                size={Math.min(evidence.length, 2)}
+                className="max-h-[46px] rounded-[var(--radius-control)] border border-line bg-surface p-1 text-xs"
               >
                 {evidence.map((v) => (
                   <option key={v.id} value={v.id}>
@@ -395,7 +438,7 @@ function EntryRow({
             <div className="flex flex-wrap gap-2">
               <Button
                 size="sm"
-                disabled={result === "" || save.isPending}
+                disabled={!approved || result === "" || save.isPending}
                 onClick={() => {
                   save.mutate({
                     path,
@@ -414,7 +457,7 @@ function EntryRow({
               <Button
                 size="sm"
                 variant="ghost"
-                disabled={item.support_requested || ask.isPending}
+                disabled={!approved || item.support_requested || ask.isPending}
                 onClick={() => {
                   ask.mutate({ path });
                 }}
@@ -434,7 +477,77 @@ function EntryRow({
           </span>
         )}
       </Td>
+      <Td>
+        <span className="flex items-center gap-1">
+          <SignSlot label="P" sign={sign?.prepared} />
+          <SignSlot label="R" sign={sign?.reviewed} />
+        </span>
+      </Td>
     </tr>
+  );
+}
+
+/** SPEC-040 AC-12: a row's preparer or reviewer slot: the signer's initials, or empty; a sign-off
+ * on an older result shows as changed (AC-8). */
+function SignSlot({
+  label,
+  sign,
+}: {
+  label: string;
+  sign: RowSignOut | null | undefined;
+}): JSX.Element {
+  const title =
+    sign == null
+      ? `${label === "P" ? "Preparer" : "Reviewer"}: not signed`
+      : `${label === "P" ? "Prepared" : "Reviewed"} by ${sign.name}${sign.stale ? " · changed after sign-off" : ""}`;
+  return (
+    <span
+      title={title}
+      aria-label={title}
+      className={`flex h-[22px] min-w-[26px] items-center justify-center rounded-[5px] px-1 text-[10.5px] font-medium ${
+        sign == null
+          ? "border border-dashed border-stroke text-ink-4"
+          : sign.stale
+            ? "bg-amber-tint text-amber-ink line-through"
+            : "bg-green-tint text-green-ink"
+      }`}
+    >
+      {sign == null ? label : sign.initials}
+    </span>
+  );
+}
+
+/** SPEC-040 AC-11: the procedure's steps, worked out by code. */
+function Steps({ flow }: { flow: FlowOut | undefined }): JSX.Element | null {
+  if (flow === undefined) return null;
+  return (
+    <ol aria-label="Steps" className="flex flex-wrap items-center gap-1.5 px-1">
+      {flow.steps.map((s, n) => (
+        <li key={s.key} className="flex items-center gap-1.5">
+          <span
+            className={`flex h-[24px] items-center gap-1.5 rounded-[6px] px-2 text-[12px] ${
+              s.state === "done"
+                ? "bg-green-tint text-green-ink"
+                : s.state === "current"
+                  ? "bg-card font-medium text-ink shadow-e1"
+                  : "text-ink-3"
+            }`}
+          >
+            <span
+              aria-hidden="true"
+              className={`flex size-[14px] items-center justify-center rounded-full text-[9px] ${
+                s.state === "done" ? "bg-green text-on-dark" : "bg-chip text-ink-2"
+              }`}
+            >
+              {s.state === "done" ? "✓" : String(n + 1)}
+            </span>
+            {s.label}
+            <span className="sr-only">{` (${s.state})`}</span>
+          </span>
+          {n < flow.steps.length - 1 && <span aria-hidden="true" className="h-px w-2 bg-stroke" />}
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -585,6 +698,7 @@ function ProcedurePanel({
   const detail = useQuery({
     ...procedureOptions(path),
     initialData: procedure,
+    initialDataUpdatedAt: 0, // the list's copy has no selection: fetch the detail on mount (TASK-100)
     refetchInterval: (q) => (q.state.data?.status === "selecting" ? 3000 : false),
   });
   const items = useQuery({
@@ -609,10 +723,45 @@ function ProcedurePanel({
     },
   });
   const byItem = new Map((assessments.data ?? []).map((a) => [a.selected_item_id, a]));
+  // SPEC-040 (TASK-100): approval, one request, row sign-offs and the steps.
+  const flow = useQuery({ ...flowOptions(path), retry: false });
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const refreshFlow = (): void => {
+    void queryClient.invalidateQueries({ queryKey: flowQueryKey(path) });
+    void queryClient.invalidateQueries({
+      queryKey: proceduresQueryKey({ path: { engagement_id: engagementId } }),
+    });
+    void queryClient.invalidateQueries({
+      queryKey: itemsQueryKey({ ...path, query: { limit: 500 } }),
+    });
+    void queryClient.invalidateQueries({ queryKey: workpaperQueryKey(path) });
+  };
+  const approve = useMutation({ ...approveMutation(), onSuccess: refreshFlow });
+  const askAll = useMutation({ ...requestSelectionSupportMutation(), onSuccess: refreshFlow });
+  const signP = useMutation({
+    ...signPreparedMutation(),
+    onSuccess: () => {
+      setPicked(new Set());
+      refreshFlow();
+    },
+  });
+  const signR = useMutation({
+    ...signReviewedItemsMutation(),
+    onSuccess: () => {
+      setPicked(new Set());
+      refreshFlow();
+    },
+  });
+  const signs = new Map((flow.data?.rows ?? []).map((r) => [r.item_id, r]));
+  const approved = flow.data?.approval != null;
   const select = useMutation({
     ...selectMutation(),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: procedureQueryKey(path) });
+      void queryClient.invalidateQueries({ queryKey: flowQueryKey(path) });
+      void queryClient.invalidateQueries({
+        queryKey: proceduresQueryKey({ path: { engagement_id: engagementId } }),
+      });
     },
   });
   const p = detail.data;
@@ -623,12 +772,14 @@ function ProcedurePanel({
   // never the EQR (`reviewer`), who signs only at L5
   const canPrepare = ["manager", "senior", "staff"].includes(role ?? "");
   const canReview = ["engagement_partner", "manager", "senior"].includes(role ?? "");
+  const canApprove = role === "engagement_partner" || role === "manager"; // SPEC-040 Q1
   const choices = (evidence.data ?? []).map((v) => ({
     id: v.id,
-    label: `${v.source} v${String(v.version_no)}`,
+    label: `${systemName(v.source)}, version ${String(v.version_no)}`,
   }));
   return (
     <div className="flex flex-col gap-3">
+      <Steps flow={flow.data} />
       {surl && (
         <div className="grid items-start gap-3 xl:grid-cols-2">
           <SubsequentLedger engagementId={engagementId} canUpload={canRun} />
@@ -699,26 +850,115 @@ function ProcedurePanel({
             </p>
           )}
           {select.isError && <Alert title="Couldn't select">{said(select.error)}</Alert>}
+          {p.selection != null && (
+            <div className="mt-1 flex flex-wrap items-center gap-2 rounded-nested bg-shell px-3 py-2.5">
+              {flow.data?.approval != null ? (
+                <span className="text-[12.5px]">
+                  <StatusPill tone="success">Sample approved</StatusPill>{" "}
+                  <span className="text-ink-2">
+                    {`by ${flow.data.approval.name || "a manager"} on ${new Date(flow.data.approval.approved_at).toLocaleDateString()}`}
+                  </span>
+                </span>
+              ) : canApprove ? (
+                <>
+                  <span className="text-[12.5px] text-ink-2">
+                    Check the selection and its basis, then approve it before the team tests it.
+                  </span>
+                  <Button
+                    size="sm"
+                    disabled={approve.isPending}
+                    onClick={() => {
+                      approve.mutate({ ...path, body: {} });
+                    }}
+                  >
+                    Approve sample
+                  </Button>
+                </>
+              ) : (
+                <span className="text-[12.5px] text-ink-2">
+                  <StatusPill tone="warning">Waiting for approval</StatusPill> A manager or the
+                  engagement partner approves the sample before anyone tests it.
+                </span>
+              )}
+              {approve.isError && (
+                <span className="text-xs text-danger">{said(approve.error)}</span>
+              )}
+            </div>
+          )}
         </div>
       </Panel>
       {p.selection != null && (
         <Panel
           title={surl ? "Selected payments" : "Selected entries"}
           action={
-            canRun && !surl ? (
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={assess.isPending}
-                onClick={() => {
-                  assess.mutate({ ...path, body: {} });
-                }}
-              >
-                Assess with agent
-              </Button>
+            canRun ? (
+              <span className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!approved || askAll.isPending}
+                  onClick={() => {
+                    askAll.mutate(path);
+                  }}
+                >
+                  Request support for the sample
+                </Button>
+                {!surl && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={assess.isPending}
+                    onClick={() => {
+                      assess.mutate({ ...path, body: {} });
+                    }}
+                  >
+                    Assess with agent
+                  </Button>
+                )}
+              </span>
             ) : undefined
           }
         >
+          {askAll.isSuccess && (
+            <p className="text-xs text-muted">
+              {`One request sent to the client for ${String(askAll.data.items)} items.`}
+            </p>
+          )}
+          {askAll.isError && <Alert title="Couldn't request support">{said(askAll.error)}</Alert>}
+          {flow.data !== undefined && (
+            <div className="flex flex-wrap items-center gap-2" aria-label="Triage">
+              <Badge tone="danger">{`Exceptions ${String(flow.data.exceptions)}`}</Badge>
+              <Badge tone="warning">{`Needs input ${String(flow.data.needs_input)}`}</Badge>
+              <Badge tone="success">{`Passed ${String(flow.data.passed)}`}</Badge>
+              <span className="flex-1" />
+              {picked.size > 0 && canPrepare && (
+                <Button
+                  size="sm"
+                  disabled={signP.isPending}
+                  onClick={() => {
+                    signP.mutate({ ...path, body: { item_ids: [...picked] } });
+                  }}
+                >
+                  {`Sign ${String(picked.size)} as preparer`}
+                </Button>
+              )}
+              {picked.size > 0 && canReview && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={signR.isPending}
+                  onClick={() => {
+                    signR.mutate({ ...path, body: { item_ids: [...picked] } });
+                  }}
+                >
+                  {`Sign ${String(picked.size)} as reviewer`}
+                </Button>
+              )}
+            </div>
+          )}
+          {(signP.isError || signR.isError) && (
+            <Alert title="Couldn't sign">{said(signP.error ?? signR.error)}</Alert>
+          )}
           {assess.isError && <Alert title="Couldn't start">{said(assess.error)}</Alert>}
           {assess.isSuccess && (
             <p className="text-xs text-muted">
@@ -734,11 +974,15 @@ function ProcedurePanel({
               <Table className="min-w-[760px]">
                 <thead>
                   <tr>
+                    <Th className="w-8 pr-0">
+                      <span className="sr-only">Select</span>
+                    </Th>
                     <Th>Date</Th>
                     <Th>Entry</Th>
                     <Th className="text-right">Amount</Th>
                     <Th>Why selected</Th>
                     <Th>Result</Th>
+                    <Th>Sign-off</Th>
                   </tr>
                 </thead>
                 <tbody>
@@ -751,6 +995,19 @@ function ProcedurePanel({
                       evidence={choices}
                       canRun={canRun}
                       assessment={item.id != null ? byItem.get(item.id) : undefined}
+                      approved={approved}
+                      sign={item.id != null ? signs.get(item.id) : undefined}
+                      selected={item.id != null && picked.has(item.id)}
+                      onToggle={() => {
+                        const id = item.id;
+                        if (id == null) return;
+                        setPicked((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(id)) next.delete(id);
+                          else next.add(id);
+                          return next;
+                        });
+                      }}
                     />
                   ))}
                 </tbody>

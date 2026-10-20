@@ -190,6 +190,10 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/picks",
         # SPEC-037 (TASK-084): a support request, and each signature, are created.
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/items/{item_id}/request-support",
+        "/v1/engagements/{engagement_id}/procedures/{procedure_id}/approve",  # SPEC-040
+        "/v1/engagements/{engagement_id}/procedures/{procedure_id}/request-support",
+        "/v1/engagements/{engagement_id}/procedures/{procedure_id}/items/sign-prepared",
+        "/v1/engagements/{engagement_id}/procedures/{procedure_id}/items/sign-reviewed",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper/sign-ready",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper/sign-reviewed",
     }
