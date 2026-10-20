@@ -6,3 +6,8 @@ declare module "node:child_process" {
     options: { cwd: string; stdio: "pipe" },
   ): unknown;
 }
+
+// The font spec reads vite.config.ts to prove the CSP meta is unchanged.
+declare module "node:fs" {
+  export function readFileSync(path: string, encoding: "utf8"): string;
+}

@@ -4,7 +4,7 @@ title: "F-05-T08 · Independent AC tests for the font and lint tasks (ADR-078)"
 spec: SPEC-048
 acceptance_criteria: [AC-5, AC-7]
 risk_zone: amber
-status: todo
+status: in-progress
 epic: F-05
 plan_key: F-05-T08
 branch: task-134-independent-ac-tests
@@ -40,12 +40,12 @@ A separate session's tests cover every accept and reject case of the lint AC and
 - Prior work: TASK-091..101 (Anas: tokens, Geist, components)
 
 ## Plan
-- [ ] Plan written in this file (required for amber and red)
+- [x] Plan written in this file (required for amber and red)
 
 Steps:
-1. [ ] Under the solo amendment ADR-078's separate author is void: write these tests from SPEC-048 first, then confirm T04 and T07 pass them, without editing the tests to fit
-2. [ ] List each accept and reject string from AC-5 as a case
-3. [ ] Add the font request-log test (ds-fonts.spec.ts)
+1. [x] Under the solo amendment ADR-078's separate author is void: write these tests from SPEC-048 first, then confirm T04 and T07 pass them, without editing the tests to fit
+2. [x] List each accept and reject string from AC-5 as a case
+3. [x] Add the font request-log test (ds-fonts.spec.ts)
 
 Files to create or change:
 - apps/web/src/lint/eslint-rules.test.ts (extend only)
@@ -82,6 +82,16 @@ make check
 Append-only. Newest at the bottom.
 
 - `2026-10-20` — task file written from the epic (SU-14); nothing built yet.
+- `2026-10-20` — AC-5: appended about 90 cases to apps/web/src/lint/eslint-rules.test.ts (existing tests untouched), written from
+  SPEC-048 before the rules: every string of the AC (bg-neutral-100, #7a4e12, font-semibold, text-lg, toLocaleDateString,
+  emoji, Accrual reject; bg-green-tint, text-red-ink accept), every theme.css colour token under every colour prefix, the
+  packages/ui tokens/ and brand/ exemption, the format.ts and clock.tsx exemptions, test-file exemption. `text-lg` runs
+  against the switched-off type-scale set (see T07). Not edited to fit the rules afterwards, except two environment fixes
+  (uiDir from cwd; arbitrary-colour strings built from parts so Tailwind does not compile them).
+- `2026-10-20` — AC-7: apps/web/e2e/ds-fonts.spec.ts (no Google Fonts requests, `document.fonts.check('500 13px Geist')`,
+  a loaded Geist face served from this origin, no Arimo or Gelasio in the shell, CSP policy lines frozen). Ran it against
+  `VITE_FIXTURES=1 pnpm dev`: 2 pass; the loaded-Geist test fails because no Fontsource faces load yet. That is F-05-T04's
+  work; it should turn green when T04 lands. Not run in CI by this task.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -95,8 +105,8 @@ Append-only. Newest at the bottom.
 - [ ] 
 
 ## Handoff
-- **Current state:** not started
-- **Exact next step:** step 1 of the plan
+- **Current state:** AC-5 cases green; AC-7 spec written, waiting for F-05-T04
+- **Exact next step:** after F-05-T04 and F-05-T06 land, run `make dev-fixtures` and `make e2e` (ds-fonts.spec.ts), flip the type-scale flag, mark done
 - **Uncommitted or partial work:** none
-- **Known failing checks:** none
+- **Known failing checks:** ds-fonts.spec.ts, 'Geist is served from this origin', until F-05-T04
 - **Open issues:** none
