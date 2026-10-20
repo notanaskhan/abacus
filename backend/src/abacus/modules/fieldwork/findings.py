@@ -19,6 +19,7 @@ from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import get_ref, lock_ref
+from abacus.modules.fieldwork.completion import Deficiency, deficiencies_for
 from abacus.modules.fieldwork.models import Finding, Misstatement
 from abacus.modules.fieldwork.repository import (
     findings_of,
@@ -59,6 +60,7 @@ class FindingView:
     raised_by_name: str
     raised_at: datetime
     misstatement: MisstatementView | None
+    deficiency: Deficiency | None = None  # SPEC-301 (TASK-302)
 
 
 @dataclass(frozen=True)
@@ -200,6 +202,7 @@ async def findings_for(ctx: AuthContext, engagement_id: UUID) -> list[FindingVie
     """AC-5: the register, oldest first."""
     found, newest = await _read(ctx, engagement_id)
     names = {m.user_id: m.display_name for m in await engagement_team(ctx, engagement_id)}
+    deficiencies = await deficiencies_for(ctx, [f.id for f in found], names)
     views: list[FindingView] = []
     for f in found:
         m = newest.get(f.id)
@@ -222,6 +225,7 @@ async def findings_for(ctx: AuthContext, engagement_id: UUID) -> list[FindingVie
                 )
                 if m is not None
                 else None,
+                deficiencies.get(f.id),
             )
         )
     return views

@@ -89,6 +89,8 @@ INSERT_ONLY_TABLES: frozenset[str] = frozenset(
     | {"findings", "misstatements"}  # SPEC-043 (TASK-107): as raised and recorded
     | {"procedure_session_events"}  # SPEC-044 (TASK-109): plan approvals, as given
     | {"materiality_decisions", "risks", "risk_versions", "risk_approvals"}  # SPEC-300 (TASK-301)
+    | {"finding_severities", "finding_communications", "adjustments", "adjustment_lines"}
+    | {"adjustment_events", "representations", "representation_removals"}  # SPEC-301
 )
 # Columns the app may supply on insert; everything else is server-set (TASK-006, TASK-008).
 APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -158,6 +160,24 @@ APP_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"significant", "fraud", "rationale", "recorded_by"}
     ),
     "risk_approvals": frozenset({"tenant_id", "risk_version_id", "rationale", "approved_by"}),
+    # Completion (SPEC-301; TASK-302): severity, proposed entries and representations.
+    "finding_severities": frozenset(
+        {"tenant_id", "finding_id", "stage", "severity", "rationale", "set_by"}
+    ),
+    "finding_communications": frozenset(
+        {"tenant_id", "finding_id", "communicated_on", "recipients", "recorded_by"}
+    ),
+    "adjustments": frozenset(
+        {"tenant_id", "engagement_id", "kind", "number", "finding_id", "description", "raised_by"}
+    ),
+    "adjustment_lines": frozenset(
+        {"tenant_id", "adjustment_id", "position", "account_code", "debit", "credit"}
+    ),
+    "adjustment_events": frozenset({"tenant_id", "adjustment_id", "kind", "note", "by_user"}),
+    "representations": frozenset(
+        {"tenant_id", "engagement_id", "body", "finding_id", "adjustment_id", "raised_by"}
+    ),
+    "representation_removals": frozenset({"tenant_id", "representation_id", "removed_by"}),
     "fieldwork_settings": frozenset({"tenant_id", "settings", "set_by"}),
     "procedures": frozenset(
         {"id", "tenant_id", "engagement_id", "definition", "definition_version", "parameters"}
@@ -536,6 +556,13 @@ TABLE_OWNERS: dict[str, str] = {
     "risks": "fieldwork",
     "risk_versions": "fieldwork",
     "risk_approvals": "fieldwork",
+    "finding_severities": "fieldwork",  # SPEC-301 (TASK-302)
+    "finding_communications": "fieldwork",
+    "adjustments": "fieldwork",
+    "adjustment_lines": "fieldwork",
+    "adjustment_events": "fieldwork",
+    "representations": "fieldwork",
+    "representation_removals": "fieldwork",
     "client_list_done": "requests",
     "review_note_events": "fieldwork",
     "item_signoffs": "fieldwork",  # SPEC-040 (TASK-100)

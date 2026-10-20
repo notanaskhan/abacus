@@ -4,7 +4,7 @@ selecting; reads follow `procedure.read`."""
 from __future__ import annotations
 
 from dataclasses import asdict
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal
 from uuid import UUID
@@ -13,6 +13,19 @@ from fastapi import Depends, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
+from abacus.modules.fieldwork.completion import (
+    AdjustmentView,
+    LineIn,
+    RepresentationList,
+    add_representation,
+    adjustments_for,
+    propose_adjustment,
+    record_adjustment_event,
+    record_communication,
+    remove_representation,
+    representations_for,
+    set_severity,
+)
 from abacus.modules.fieldwork.findings import (
     FindingView,
     Summary,
@@ -912,6 +925,23 @@ class MisstatementOut(BaseModel):
     recorded_at: Annotated[datetime, classified("internal")]
 
 
+Severity = Literal["deficiency", "significant_deficiency", "material_weakness"]
+
+
+class DeficiencyOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    status: Annotated[Literal["proposed", "concluded", "communicated"], classified("internal")]
+    proposed: Annotated[Severity | None, classified("confidential")]
+    proposed_by_name: Annotated[str | None, classified("internal")]
+    concluded: Annotated[Severity | None, classified("confidential")]
+    concluded_by_name: Annotated[str | None, classified("internal")]
+    concluded_at: Annotated[datetime | None, classified("internal")]
+    conclusion_rationale: Annotated[str | None, classified("confidential")]
+    communicated_on: Annotated[date | None, classified("internal")]
+    communicated_to: Annotated[str | None, classified("confidential")]
+
+
 class FindingOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -923,6 +953,7 @@ class FindingOut(BaseModel):
     raised_by_name: Annotated[str, classified("internal")]
     raised_at: Annotated[datetime, classified("internal")]
     misstatement: Annotated[MisstatementOut | None, classified("confidential")]
+    deficiency: Annotated[DeficiencyOut | None, classified("confidential")]  # SPEC-301
 
 
 def _findings_out(found: list[FindingView]) -> list[FindingOut]:
@@ -1015,6 +1046,259 @@ async def findings_summary_route(engagement_id: UUID, ctx: Ctx) -> SummaryOut:
     """SPEC-043 AC-3: the summary of uncorrected misstatements, computed by code."""
     found: Summary = await summary_for(ctx, engagement_id)
     return SummaryOut.model_validate(asdict(found))
+
+
+# --- Completion: severity, proposed entries, representations (SPEC-301; TASK-302) ---------------
+
+
+class SeverityIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    severity: Annotated[Severity, classified("confidential")]
+    rationale: Annotated[
+        str | None, Field(default=None, max_length=2000), classified("confidential")
+    ]
+
+
+@router.post(
+    "/findings/{finding_id}/severity/propose",
+    action="finding.propose_severity",
+    response_model=list[FindingOut],
+    status_code=201,
+)
+async def propose_severity_route(
+    engagement_id: UUID, finding_id: UUID, body: SeverityIn, ctx: Ctx
+) -> list[FindingOut]:
+    """SPEC-301 AC-1: propose a deficiency's severity."""
+    await set_severity(ctx, engagement_id, finding_id, "proposed", body.severity, body.rationale)
+    return _findings_out(await findings_for(ctx, engagement_id))
+
+
+@router.post(
+    "/findings/{finding_id}/severity/conclude",
+    action="finding.conclude_severity",
+    response_model=list[FindingOut],
+    status_code=201,
+)
+async def conclude_severity_route(
+    engagement_id: UUID, finding_id: UUID, body: SeverityIn, ctx: Ctx
+) -> list[FindingOut]:
+    """SPEC-301 AC-2: the engagement partner concludes the severity, with a rationale."""
+    await set_severity(ctx, engagement_id, finding_id, "concluded", body.severity, body.rationale)
+    return _findings_out(await findings_for(ctx, engagement_id))
+
+
+class CommunicationIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    communicated_on: Annotated[date, classified("internal")]
+    recipients: Annotated[str, Field(min_length=1, max_length=300), classified("confidential")]
+
+
+@router.post(
+    "/findings/{finding_id}/communicated",
+    action="finding.communicate",
+    response_model=list[FindingOut],
+    status_code=201,
+)
+async def communicated_route(
+    engagement_id: UUID, finding_id: UUID, body: CommunicationIn, ctx: Ctx
+) -> list[FindingOut]:
+    """SPEC-301 AC-3: record when and to whom a concluded deficiency was communicated."""
+    await record_communication(
+        ctx, engagement_id, finding_id, body.communicated_on, body.recipients
+    )
+    return _findings_out(await findings_for(ctx, engagement_id))
+
+
+Amount = Annotated[Decimal, Field(ge=0, max_digits=18, decimal_places=2)]
+
+
+class LineBody(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    account_code: Annotated[str, Field(min_length=1, max_length=64), classified("confidential")]
+    debit: Annotated[Amount, Field(default=Decimal(0)), classified("confidential")]
+    credit: Annotated[Amount, Field(default=Decimal(0)), classified("confidential")]
+
+
+class AdjustmentIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    kind: Annotated[Literal["aje", "rje"], classified("internal")]
+    description: Annotated[str, Field(min_length=1, max_length=500), classified("confidential")]
+    finding_id: Annotated[UUID | None, Field(default=None), classified("internal")]
+    lines: Annotated[
+        list[LineBody], Field(min_length=2, max_length=50), classified("confidential")
+    ]
+
+
+class LineOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    account_code: Annotated[str, classified("confidential")]
+    debit: Annotated[Decimal, classified("confidential")]
+    credit: Annotated[Decimal, classified("confidential")]
+
+
+class AdjustmentOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    ref: Annotated[str, classified("internal")]
+    kind: Annotated[Literal["aje", "rje"], classified("internal")]
+    description: Annotated[str, classified("confidential")]
+    finding_id: Annotated[UUID | None, classified("internal")]
+    lines: Annotated[list[LineOut], classified("confidential")]
+    total: Annotated[Decimal, classified("confidential")]
+    status: Annotated[
+        Literal["proposed", "approved", "client_accepted", "client_declined"],
+        classified("internal"),
+    ]
+    raised_by_name: Annotated[str, classified("internal")]
+    raised_at: Annotated[datetime, classified("internal")]
+    approved_by_name: Annotated[str | None, classified("internal")]
+    response_note: Annotated[str | None, classified("confidential")]
+
+
+def _adjustments_out(found: list[AdjustmentView]) -> list[AdjustmentOut]:
+    return [AdjustmentOut.model_validate(asdict(a)) for a in found]
+
+
+@router.get("/adjustments", action="procedure.read", response_model=list[AdjustmentOut])
+async def adjustments_route(engagement_id: UUID, ctx: Ctx) -> list[AdjustmentOut]:
+    """SPEC-301 AC-6: the proposed entries."""
+    return _adjustments_out(await adjustments_for(ctx, engagement_id))
+
+
+@router.post(
+    "/adjustments",
+    action="adjustment.propose",
+    response_model=list[AdjustmentOut],
+    status_code=201,
+)
+async def propose_adjustment_route(
+    engagement_id: UUID, body: AdjustmentIn, ctx: Ctx
+) -> list[AdjustmentOut]:
+    """SPEC-301 AC-4: propose an entry; debits equal credits."""
+    await propose_adjustment(
+        ctx,
+        engagement_id,
+        body.kind,
+        body.description,
+        body.finding_id,
+        [LineIn(x.account_code, x.debit, x.credit) for x in body.lines],
+    )
+    return _adjustments_out(await adjustments_for(ctx, engagement_id))
+
+
+@router.post(
+    "/adjustments/{adjustment_id}/approve",
+    action="adjustment.approve",
+    response_model=list[AdjustmentOut],
+    status_code=201,
+)
+async def approve_adjustment_route(
+    engagement_id: UUID, adjustment_id: UUID, ctx: Ctx
+) -> list[AdjustmentOut]:
+    """SPEC-301 AC-5: a manager or the partner approves the entry."""
+    await record_adjustment_event(ctx, engagement_id, adjustment_id, "approved", None)
+    return _adjustments_out(await adjustments_for(ctx, engagement_id))
+
+
+class ClientAnswerIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    accepted: Annotated[bool, classified("internal")]
+    note: Annotated[str | None, Field(default=None, max_length=1000), classified("confidential")]
+
+
+@router.post(
+    "/adjustments/{adjustment_id}/client-answer",
+    action="adjustment.record_response",
+    response_model=list[AdjustmentOut],
+    status_code=201,
+)
+async def client_answer_route(
+    engagement_id: UUID, adjustment_id: UUID, body: ClientAnswerIn, ctx: Ctx
+) -> list[AdjustmentOut]:
+    """SPEC-301 AC-5: the client accepted the entry, or declined it (passed)."""
+    kind = "client_accepted" if body.accepted else "client_declined"
+    await record_adjustment_event(ctx, engagement_id, adjustment_id, kind, body.note)
+    return _adjustments_out(await adjustments_for(ctx, engagement_id))
+
+
+class RepresentationOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    body: Annotated[str, classified("confidential")]
+    finding_id: Annotated[UUID | None, classified("internal")]
+    adjustment_id: Annotated[UUID | None, classified("internal")]
+    raised_by_name: Annotated[str, classified("internal")]
+    raised_at: Annotated[datetime, classified("internal")]
+
+
+class RepresentationGapOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    kind: Annotated[Literal["finding", "adjustment"], classified("internal")]
+    id: Annotated[UUID, classified("internal")]
+    label: Annotated[str, classified("confidential")]
+
+
+class RepresentationListOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    items: Annotated[list[RepresentationOut], classified("confidential")]
+    passed: Annotated[list[str], classified("internal")]
+    gaps: Annotated[list[RepresentationGapOut], classified("confidential")]
+
+
+def _reps_out(found: RepresentationList) -> RepresentationListOut:
+    return RepresentationListOut.model_validate(asdict(found))
+
+
+@router.get("/representations", action="procedure.read", response_model=RepresentationListOut)
+async def representations_route(engagement_id: UUID, ctx: Ctx) -> RepresentationListOut:
+    """SPEC-301 AC-7, AC-8: the representation list and what still lacks one."""
+    return _reps_out(await representations_for(ctx, engagement_id))
+
+
+class RepresentationIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    body: Annotated[str, Field(min_length=1, max_length=2000), classified("confidential")]
+    finding_id: Annotated[UUID | None, Field(default=None), classified("internal")]
+    adjustment_id: Annotated[UUID | None, Field(default=None), classified("internal")]
+
+
+@router.post(
+    "/representations",
+    action="representation.edit",
+    response_model=RepresentationListOut,
+    status_code=201,
+)
+async def add_representation_route(
+    engagement_id: UUID, body: RepresentationIn, ctx: Ctx
+) -> RepresentationListOut:
+    """SPEC-301 AC-7: add a specific representation."""
+    await add_representation(ctx, engagement_id, body.body, body.finding_id, body.adjustment_id)
+    return _reps_out(await representations_for(ctx, engagement_id))
+
+
+@router.post(
+    "/representations/{representation_id}/remove",
+    action="representation.edit",
+    response_model=RepresentationListOut,
+    status_code=201,
+)
+async def remove_representation_route(
+    engagement_id: UUID, representation_id: UUID, ctx: Ctx
+) -> RepresentationListOut:
+    """SPEC-301 AC-7: take a representation off the list (the record stays)."""
+    await remove_representation(ctx, engagement_id, representation_id)
+    return _reps_out(await representations_for(ctx, engagement_id))
 
 
 # --- Planning: materiality decision and risks (SPEC-300; TASK-301) ------------------------------

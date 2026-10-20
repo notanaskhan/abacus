@@ -27,6 +27,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
+import { Adjustments, DeficiencyFieldset, Representations, SeverityBadge } from "./Completion";
 
 // SPEC-043 (TASK-107): the findings register and the summary of uncorrected misstatements.
 // Code totals; people judge (ADR-050, ADR-005).
@@ -68,6 +69,7 @@ export function Findings({ engagementId }: { engagementId: string }): JSX.Elemen
   const role = team.data?.find((m) => m.user_id === me.data?.user_id)?.role;
   const [creating, setCreating] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
+  const [view, setView] = useState<"findings" | "entries" | "representations">("findings");
   if (findings.isPending) return <Skeleton className="h-40" />;
   if (findings.isError) {
     return (
@@ -94,6 +96,11 @@ export function Findings({ engagementId }: { engagementId: string }): JSX.Elemen
         </span>
       ),
       sortValue: (f) => f.title,
+    },
+    {
+      key: "severity",
+      header: "Severity",
+      cell: (f) => <SeverityBadge finding={f} />,
     },
     {
       key: "kind",
@@ -130,8 +137,49 @@ export function Findings({ engagementId }: { engagementId: string }): JSX.Elemen
         ),
     },
   ];
+  const views = [
+    ["findings", "Findings"],
+    ["entries", "Proposed entries"],
+    ["representations", "Representations"],
+  ] as const;
+  const switcher = (
+    <div
+      role="group"
+      aria-label="Completion views"
+      className="flex gap-1 self-start rounded-tile bg-nested p-0.5"
+    >
+      {views.map(([key, label]) => (
+        <button
+          key={key}
+          type="button"
+          aria-pressed={view === key}
+          onClick={() => {
+            setView(key);
+          }}
+          className={`rounded-[var(--radius-control)] px-3 py-1 text-[12.5px] ${view === key ? "bg-card font-medium shadow-e1" : "text-ink-2"}`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+  if (view === "entries")
+    return (
+      <div className="flex flex-col gap-3">
+        {switcher}
+        <Adjustments engagementId={engagementId} role={role ?? ""} findings={rows} />
+      </div>
+    );
+  if (view === "representations")
+    return (
+      <div className="flex flex-col gap-3">
+        {switcher}
+        <Representations engagementId={engagementId} role={role ?? ""} />
+      </div>
+    );
   return (
     <div className="flex flex-col gap-3">
+      {switcher}
       <SummaryCard summary={summary.data} />
       <section
         aria-labelledby="findings-heading"
@@ -183,6 +231,7 @@ export function Findings({ engagementId }: { engagementId: string }): JSX.Elemen
           engagementId={engagementId}
           finding={viewing}
           canRecord={RECORDERS.has(role ?? "")}
+          role={role ?? ""}
           onClose={() => {
             setOpen(null);
           }}
@@ -298,11 +347,13 @@ function FindingDrawer({
   engagementId,
   finding,
   canRecord,
+  role,
   onClose,
 }: {
   engagementId: string;
   finding: FindingOut;
   canRecord: boolean;
+  role: string;
   onClose: () => void;
 }): JSX.Element {
   const queryClient = useQueryClient();
@@ -461,6 +512,7 @@ function FindingDrawer({
           </p>
         )}
       </Fieldset>
+      <DeficiencyFieldset engagementId={engagementId} finding={finding} role={role} />
     </Drawer>
   );
 }

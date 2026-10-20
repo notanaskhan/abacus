@@ -206,6 +206,15 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/risks",
         "/v1/engagements/{engagement_id}/risks/{risk_id}/versions",
         "/v1/engagements/{engagement_id}/risks/{risk_id}/approve",
+        # SPEC-301 (TASK-302): severity, communication, proposed entries, representations
+        "/v1/engagements/{engagement_id}/findings/{finding_id}/severity/propose",
+        "/v1/engagements/{engagement_id}/findings/{finding_id}/severity/conclude",
+        "/v1/engagements/{engagement_id}/findings/{finding_id}/communicated",
+        "/v1/engagements/{engagement_id}/adjustments",
+        "/v1/engagements/{engagement_id}/adjustments/{adjustment_id}/approve",
+        "/v1/engagements/{engagement_id}/adjustments/{adjustment_id}/client-answer",
+        "/v1/engagements/{engagement_id}/representations",
+        "/v1/engagements/{engagement_id}/representations/{representation_id}/remove",
         # SPEC-044 (TASK-109): the session's plan approval and adopting the agent's proposals
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/session/approve-plan",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/adopt",

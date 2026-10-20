@@ -10,11 +10,17 @@ from sqlalchemy import func, insert, select, update
 from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from abacus.kernel.db import Base
 from abacus.modules.fieldwork.models import (
+    Adjustment,
+    AdjustmentEvent,
+    AdjustmentLine,
     EngagementAccount,
     EngagementMateriality,
     FieldworkSettings,
     Finding,
+    FindingCommunication,
+    FindingSeverity,
     ItemResult,
     ItemSignoff,
     ItemSupportRequest,
@@ -24,6 +30,8 @@ from abacus.modules.fieldwork.models import (
     Procedure,
     ProcedureConclusion,
     ProcedureSessionEvent,
+    Representation,
+    RepresentationRemoval,
     ReviewNote,
     ReviewNoteEvent,
     Risk,
@@ -706,3 +714,149 @@ async def risk_approvals(
 
 async def insert_risk_approval(session: AsyncSession, **values: object) -> None:
     await session.execute(insert(RiskApproval).values(**values))
+
+
+# --- Completion: severity, adjustments, representations (SPEC-301; TASK-302) -------------------
+
+
+async def insert_row(session: AsyncSession, model: type[Base], **values: object) -> UUID:
+    made = await session.execute(insert(model).values(**values).returning(model.__table__.c.id))
+    return made.scalar_one()
+
+
+async def severities_of(
+    session: AsyncSession, finding_ids: Sequence[UUID]
+) -> Sequence[FindingSeverity]:
+    """Newest first (LIST_EXEMPT: findings read through `visible()`)."""
+    if not finding_ids:
+        return []
+    return (
+        (
+            await session.execute(
+                select(FindingSeverity)
+                .where(FindingSeverity.finding_id.in_(finding_ids))
+                .order_by(FindingSeverity.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def communications_of(
+    session: AsyncSession, finding_ids: Sequence[UUID]
+) -> Sequence[FindingCommunication]:
+    """Newest first (LIST_EXEMPT: findings read through `visible()`)."""
+    if not finding_ids:
+        return []
+    return (
+        (
+            await session.execute(
+                select(FindingCommunication)
+                .where(FindingCommunication.finding_id.in_(finding_ids))
+                .order_by(FindingCommunication.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def adjustments_of(
+    session: AsyncSession, ctx: AuthContext, engagement_id: UUID
+) -> Sequence[Adjustment]:
+    """The engagement's proposed entries, oldest first, through `visible()`."""
+    return (
+        (
+            await session.execute(
+                select(Adjustment)
+                .where(
+                    Adjustment.engagement_id == engagement_id,
+                    visible(ctx, "procedure.read", Adjustment.engagement_id),
+                )
+                .order_by(Adjustment.created_at)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def get_adjustment(session: AsyncSession, adjustment_id: UUID) -> Adjustment | None:
+    return (
+        await session.execute(select(Adjustment).where(Adjustment.id == adjustment_id))
+    ).scalar_one_or_none()
+
+
+async def next_adjustment_number(session: AsyncSession, engagement_id: UUID, kind: str) -> int:
+    """Under the engagement's lock."""
+    top = await session.scalar(
+        select(func.max(Adjustment.number)).where(
+            Adjustment.engagement_id == engagement_id, Adjustment.kind == kind
+        )
+    )
+    return int(top or 0) + 1
+
+
+async def adjustment_lines_of(
+    session: AsyncSession, adjustment_ids: Sequence[UUID]
+) -> Sequence[AdjustmentLine]:
+    """LIST_EXEMPT: adjustments read through `visible()`."""
+    if not adjustment_ids:
+        return []
+    return (
+        (
+            await session.execute(
+                select(AdjustmentLine)
+                .where(AdjustmentLine.adjustment_id.in_(adjustment_ids))
+                .order_by(AdjustmentLine.adjustment_id, AdjustmentLine.position)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def adjustment_events_of(
+    session: AsyncSession, adjustment_ids: Sequence[UUID]
+) -> Sequence[AdjustmentEvent]:
+    """LIST_EXEMPT: adjustments read through `visible()`."""
+    if not adjustment_ids:
+        return []
+    return (
+        (
+            await session.execute(
+                select(AdjustmentEvent).where(AdjustmentEvent.adjustment_id.in_(adjustment_ids))
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def representations_of(
+    session: AsyncSession, ctx: AuthContext, engagement_id: UUID
+) -> Sequence[Representation]:
+    """The engagement's representations still on the list, oldest first, through `visible()`."""
+    removed = select(RepresentationRemoval.representation_id)
+    return (
+        (
+            await session.execute(
+                select(Representation)
+                .where(
+                    Representation.engagement_id == engagement_id,
+                    visible(ctx, "procedure.read", Representation.engagement_id),
+                    Representation.id.not_in(removed),
+                )
+                .order_by(Representation.created_at)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def get_representation(session: AsyncSession, rep_id: UUID) -> Representation | None:
+    return (
+        await session.execute(select(Representation).where(Representation.id == rep_id))
+    ).scalar_one_or_none()

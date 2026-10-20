@@ -15,6 +15,7 @@ const FINDING: FindingOut = {
   item_id: "i1",
   raised_by_name: "Sam Staff",
   raised_at: "2026-10-20T10:00:00Z",
+  deficiency: null,
   misstatement: {
     kind: "factual",
     amount: "-12000.00",
