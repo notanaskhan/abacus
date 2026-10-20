@@ -655,3 +655,43 @@ async def newest_list_done(session: AsyncSession, engagement_id: UUID) -> Client
 
 async def insert_list_done(session: AsyncSession, **values: object) -> None:
     await session.execute(insert(ClientListDone).values(**values))
+
+
+# --- Search (SPEC-302; TASK-303) ----------------------------------------------------------------
+
+
+def like_pattern(q: str) -> str:
+    """A case-insensitive substring pattern with `%`, `_` and `\\` taken literally."""
+    escaped = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
+async def search_items(
+    session: AsyncSession, ctx: AuthContext, q: str, limit: int
+) -> Sequence[RequestItem]:
+    """Items whose description or area contains `q`, newest first, through `visible_items()`."""
+    pattern = like_pattern(q)
+    return (
+        (
+            await session.execute(
+                select(RequestItem)
+                .where(
+                    or_(
+                        RequestItem.description.ilike(pattern, escape="\\"),
+                        RequestItem.audit_area.ilike(pattern, escape="\\"),
+                    ),
+                    visible_items(
+                        ctx,
+                        "request_item.read",
+                        RequestItem.engagement_id,
+                        RequestItem.client_visible,
+                        RequestItem.client_assignee_user_id,
+                    ),
+                )
+                .order_by(RequestItem.created_at.desc())
+                .limit(limit)
+            )
+        )
+        .scalars()
+        .all()
+    )

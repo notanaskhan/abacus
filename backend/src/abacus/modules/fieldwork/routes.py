@@ -34,6 +34,9 @@ from abacus.modules.fieldwork.findings import (
     record_misstatement,
     summary_for,
 )
+from abacus.modules.fieldwork.findings import (
+    search as search_findings,
+)
 from abacus.modules.fieldwork.flow import (
     FlowState,
     approve_sample,
@@ -1525,3 +1528,23 @@ async def approve_plan_route(engagement_id: UUID, procedure_id: UUID, ctx: Ctx) 
     if await approve_plan(ctx, engagement_id, procedure_id):
         await request_selection(ctx, engagement_id, procedure_id)
     return await _session_out(ctx, engagement_id, procedure_id)
+
+
+class FindingHitOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    title: Annotated[str, classified("confidential")]
+
+
+@firm_router.get("/search/findings", action=OWN, response_model=list[FindingHitOut])
+async def search_findings_route(
+    ctx: Annotated[AuthContext, Depends(current_member)],
+    q: Annotated[str, Query(max_length=100)] = "",
+) -> list[FindingHitOut]:
+    """SPEC-302 AC-2: the command palette's findings, newest first."""
+    return [
+        FindingHitOut(id=f.id, engagement_id=f.engagement_id, title=f.title)
+        for f in await search_findings(ctx, q)
+    ]

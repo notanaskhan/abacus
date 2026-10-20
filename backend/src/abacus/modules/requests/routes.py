@@ -50,6 +50,7 @@ from abacus.modules.requests.service import (
     overdue_mine,
     preview_request_list,
     request_items_for,
+    search_request_items,
     set_client_visibility,
     set_item_document_kind,
     set_item_due_dates,
@@ -720,4 +721,32 @@ async def overdue_waiting_route(
     """Client items past due, per engagement on the caller's team."""
     return [
         OverdueCountOut(engagement_id=e, count=n) for e, n in await overdue_mine(ctx, date.today())
+    ]
+
+
+class ItemHitOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    description: Annotated[str, classified("confidential")]
+    audit_area: Annotated[str, classified("internal")]
+    status: Annotated[str, classified("internal")]
+
+
+@firm_router.get("/search/request-items", action=OWN, response_model=list[ItemHitOut])
+async def search_request_items_route(
+    ctx: Annotated[AuthContext, Depends(current_member)],
+    q: Annotated[str, Query(max_length=100)] = "",
+) -> list[ItemHitOut]:
+    """SPEC-302 AC-2: the command palette's request items, newest first."""
+    return [
+        ItemHitOut(
+            id=i.id,
+            engagement_id=i.engagement_id,
+            description=i.description,
+            audit_area=i.audit_area,
+            status=i.status,
+        )
+        for i in await search_request_items(ctx, q)
     ]
