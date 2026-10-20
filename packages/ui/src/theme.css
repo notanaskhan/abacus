@@ -22,10 +22,11 @@
   --color-chip: #e1dfd9;
   --color-tonal-hover: #d9d6cf;
 
-  /* Ink: espresso on a fixed alpha ladder (ink-2 and ink-3 meet AA on card, shell and nested) */
+  /* Ink: espresso on a fixed alpha ladder. ink-3 at .64 is the lightest that meets AA (4.5:1) for
+     small text on card, surface, shell, nav-fill and nested (worst 4.57 on nested); DEC-115. */
   --color-ink: rgba(43, 31, 23, 0.95);
   --color-ink-2: rgba(43, 31, 23, 0.66);
-  --color-ink-3: rgba(43, 31, 23, 0.6);
+  --color-ink-3: rgba(43, 31, 23, 0.64);
   --color-ink-4: rgba(43, 31, 23, 0.3);
   --color-hair: rgba(43, 31, 23, 0.1);
   --color-rule: rgba(43, 31, 23, 0.14);
