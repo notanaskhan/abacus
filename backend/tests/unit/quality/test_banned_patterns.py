@@ -1476,7 +1476,7 @@ def test_ac20_list_001_exempts_only_the_reviewed_lookups(tmp_path: Path) -> None
 BOUND2_VIOLATING = [
     ("identity", "from abacus.modules.engagements.api import router\n"),
     ("identity", "from abacus.modules.organisations.api import create_client\n"),
-    ("organisations", "from abacus.modules.identity.api import AuthContext\n"),
+    ("organisations", "from abacus.modules.requests.api import x\n"),  # F-03-T08: identity is in
     ("organisations", "from abacus.modules.engagements.api import get_ref\n"),
     ("engagements", "from abacus.modules.requests.api import router\n"),
     ("engagements", "from abacus.modules.ledger.api import x\n"),
@@ -1524,14 +1524,16 @@ def test_ac20_bound_002_applies_only_inside_modules(tmp_path: Path, rel: str) ->
 @pytest.mark.parametrize(
     ("module", "allowed"),
     [
+        # F-03-T08: the plan's graph (chapter 03 section 2.3); identity and platform under all.
         ("identity", set[str]()),
-        ("organisations", set[str]()),
-        ("engagements", {"identity", "organisations"}),
-        ("requests", {"identity", "engagements"}),
+        ("organisations", {"identity", "platform"}),
+        ("engagements", {"identity", "platform", "organisations", "methodology"}),
+        ("requests", {"identity", "platform", "engagements"}),
         ("ledger", set[str]()),
         (
             "connections",
-            {"identity", "engagements", "organisations", "ledger", "evidence", "requests"},
+            {"identity", "platform", "engagements", "organisations", "ledger", "evidence"}
+            | {"requests"},
         ),
     ],
 )
@@ -1781,6 +1783,7 @@ def test_ac20_bound_002_evidence_may_depend_on_identity_engagements_and_requests
     # (upload cross-checks, SPEC-029).
     assert set(bp.MODULE_DEPENDENCIES["evidence"]) == {
         "identity",
+        "platform",  # F-03-T08
         "engagements",
         "requests",
         "ledger",
@@ -2136,7 +2139,7 @@ BOUND2_REV1_VIOLATING = [
     ("connections", "from abacus.modules.agents.api import x\n"),
     ("connections", "from abacus.modules.communications.api import x\n"),
     ("connections", "from abacus.modules.audit_trail.api import x\n"),
-    ("connections", "from abacus.modules.platform.api import x\n"),
+    ("connections", "from abacus.modules.agents.api import x\n"),  # F-03-T08: platform is in
     ("identity", "from abacus.modules.connections.api import x\n"),
     ("organisations", "from abacus.modules.connections.api import x\n"),
     ("engagements", "from abacus.modules.connections.api import x\n"),
@@ -2186,13 +2189,21 @@ def test_ac20_bound_002_only_named_modules_may_depend_on_ledger() -> None:
     # reads the engagement graph's accounts (SPEC-008, TASK-023 D1); evidence cross-checks
     # uploads against the year end's snapshot (SPEC-029, TASK-055 D2).
     # SPEC-037 (TASK-083): sampling builds populations, and fieldwork finds the ledger.
+    # F-03-T08: the plan's graph adds the engines and service lines that read the ledger.
     assert sorted(m for m, deps in bp.MODULE_DEPENDENCIES.items() if "ledger" in deps) == [
+        "adjustments",
         "agents",
+        "assurance",
+        "closes",
         "communications",
         "connections",
         "evidence",
         "fieldwork",
+        "integrations",
+        "reporting",
         "sampling",
+        "tax",
+        "workpapers",
     ]
 
 

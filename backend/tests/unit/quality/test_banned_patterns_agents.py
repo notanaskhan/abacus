@@ -432,7 +432,7 @@ def test_ac17_bound_002_lets_agents_depend_on_its_seven_modules(
     "module",
     # ledger is allowed since SPEC-008 (the engagement graph's accounts, TASK-023 D1), and
     # communications since SPEC-027 (TASK-051 D3: the engagement agent's reminders).
-    ["connections", "sampling", "audit_trail", "platform"],
+    ["connections", "sampling", "audit_trail", "portal"],  # F-03-T08: platform is under all
 )
 def test_ac17_bound_002_keeps_agents_off_every_other_module(tmp_path: Path, module: str) -> None:
     source = f"from abacus.modules.{module}.api import x\n"
