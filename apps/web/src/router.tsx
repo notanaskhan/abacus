@@ -41,6 +41,7 @@ import { Overview } from "./screens/Overview";
 import { DefaultToSetup, Setup } from "./screens/Setup";
 import { Review } from "./screens/Review";
 import { SignInCallback } from "./screens/SignInCallback";
+import { Gallery } from "./gallery/Gallery";
 import { Signup } from "./screens/Signup";
 
 // Code-based routes (no file-router plugin): the firm workspace and the client portal (ADR-011).
@@ -300,6 +301,13 @@ const acceptRoute = createRoute({
   component: Accept,
 });
 
+// TASK-101: the component gallery, in dev builds only.
+const galleryRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/_ds",
+  component: Gallery,
+});
+
 const routeTree = rootRoute.addChildren([
   callbackRoute,
   clientRoute,
@@ -322,6 +330,7 @@ const routeTree = rootRoute.addChildren([
       fieldworkRoute,
     ]),
     knowledgeRoute,
+    ...(import.meta.env.DEV ? [galleryRoute] : []),
     adminRoute.addChildren([
       methodologyRoute,
       methodologyVersionRoute,

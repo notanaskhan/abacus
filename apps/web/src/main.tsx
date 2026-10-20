@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
+import { Toaster, TooltipProvider } from "@abacus/ui";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { configureClient, shouldRetry } from "./api";
@@ -19,7 +20,10 @@ if (root === null) {
 createRoot(root).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <TooltipProvider>
+        <RouterProvider router={router} />
+        <Toaster />
+      </TooltipProvider>
     </QueryClientProvider>
   </StrictMode>,
 );
