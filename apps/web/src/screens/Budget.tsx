@@ -13,6 +13,15 @@ import { errorMessage } from "../api";
 import { ConfirmItsYou, isForbidden } from "../shell/mfa";
 import { AcknowledgeStep } from "./AcknowledgeStep";
 
+// What each agent capability does, in words (TASK-098); the id stays on hover.
+const AGENT_WORK: Record<string, string> = {
+  "evidence.screener": "Evidence screening",
+  "evidence.upload_reviewer": "Upload review",
+  "evidence.matcher": "Inbox matching",
+  "requests.guidance_drafter": "Client guidance drafting",
+  "fieldwork.entry_assessor": "Entry assessment",
+};
+
 function usd(value: string | number): string {
   const n = Number(value);
   return Number.isFinite(n)
@@ -263,7 +272,9 @@ function Metering(): JSX.Element {
               {rows.map((r) => (
                 <tr key={`${r.engagement_id ?? "firm"}-${r.agent_id ?? "none"}`}>
                   <Td>{label(r.engagement_id)}</Td>
-                  <Td className="text-muted">{r.agent_id ?? "—"}</Td>
+                  <Td className="text-muted" title={r.agent_id ?? undefined}>
+                    {r.agent_id == null ? "—" : (AGENT_WORK[r.agent_id] ?? r.agent_id)}
+                  </Td>
                   <Td className="text-right tabular-nums">{usd(r.cost_usd)}</Td>
                 </tr>
               ))}

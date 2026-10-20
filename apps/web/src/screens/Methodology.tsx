@@ -30,7 +30,7 @@ export function Methodology(): JSX.Element {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h2 className="text-2xl">Methodology</h2>
+        <h2 className="px-1 text-[15px] font-medium tracking-[-0.012em]">Methodology</h2>
         <p className="text-sm text-muted">
           Your firm&apos;s audit areas, standard requests and account rules. Each upload becomes a
           new version; engagements keep the version they started with.

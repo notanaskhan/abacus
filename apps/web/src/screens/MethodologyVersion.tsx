@@ -45,7 +45,7 @@ export function MethodologyVersion({ versionId }: { versionId: string }): JSX.El
         </Link>{" "}
         / {v.summary.template_name} v{v.summary.version}
       </nav>
-      <h1 className="text-3xl">
+      <h1 className="text-[15px] font-medium tracking-[-0.012em]">
         {v.summary.template_name} <span className="text-muted">v{v.summary.version}</span>
       </h1>
       <div className="grid gap-4 lg:grid-cols-2">
