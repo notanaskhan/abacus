@@ -251,6 +251,82 @@ export type ActivityOut = {
 };
 
 /**
+ * AdjustmentIn
+ */
+export type AdjustmentIn = {
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Finding Id
+     */
+    finding_id?: string | null;
+    /**
+     * Kind
+     */
+    kind: 'aje' | 'rje';
+    /**
+     * Lines
+     */
+    lines: Array<LineBody>;
+};
+
+/**
+ * AdjustmentOut
+ */
+export type AdjustmentOut = {
+    /**
+     * Approved By Name
+     */
+    approved_by_name: string | null;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Finding Id
+     */
+    finding_id: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'aje' | 'rje';
+    /**
+     * Lines
+     */
+    lines: Array<LineOut>;
+    /**
+     * Raised At
+     */
+    raised_at: string;
+    /**
+     * Raised By Name
+     */
+    raised_by_name: string;
+    /**
+     * Ref
+     */
+    ref: string;
+    /**
+     * Response Note
+     */
+    response_note: string | null;
+    /**
+     * Status
+     */
+    status: 'proposed' | 'approved' | 'client_accepted' | 'client_declined';
+    /**
+     * Total
+     */
+    total: string;
+};
+
+/**
  * AdoptIn
  */
 export type AdoptIn = {
@@ -750,6 +826,20 @@ export type CheckOut = {
 };
 
 /**
+ * ClientAnswerIn
+ */
+export type ClientAnswerIn = {
+    /**
+     * Accepted
+     */
+    accepted: boolean;
+    /**
+     * Note
+     */
+    note?: string | null;
+};
+
+/**
  * ClientAssigneeIn
  */
 export type ClientAssigneeIn = {
@@ -972,6 +1062,20 @@ export type CommentOut = {
      * Visibility
      */
     visibility: 'internal' | 'shared';
+};
+
+/**
+ * CommunicationIn
+ */
+export type CommunicationIn = {
+    /**
+     * Communicated On
+     */
+    communicated_on: string;
+    /**
+     * Recipients
+     */
+    recipients: string;
 };
 
 /**
@@ -1280,6 +1384,48 @@ export type DefaultDueDate = {
      * Due On
      */
     due_on: string | null;
+};
+
+/**
+ * DeficiencyOut
+ */
+export type DeficiencyOut = {
+    /**
+     * Communicated On
+     */
+    communicated_on: string | null;
+    /**
+     * Communicated To
+     */
+    communicated_to: string | null;
+    /**
+     * Concluded
+     */
+    concluded: 'deficiency' | 'significant_deficiency' | 'material_weakness' | null;
+    /**
+     * Concluded At
+     */
+    concluded_at: string | null;
+    /**
+     * Concluded By Name
+     */
+    concluded_by_name: string | null;
+    /**
+     * Conclusion Rationale
+     */
+    conclusion_rationale: string | null;
+    /**
+     * Proposed
+     */
+    proposed: 'deficiency' | 'significant_deficiency' | 'material_weakness' | null;
+    /**
+     * Proposed By Name
+     */
+    proposed_by_name: string | null;
+    /**
+     * Status
+     */
+    status: 'proposed' | 'concluded' | 'communicated';
 };
 
 /**
@@ -1816,6 +1962,7 @@ export type FindingIn = {
  * FindingOut
  */
 export type FindingOut = {
+    deficiency: DeficiencyOut | null;
     /**
      * Description
      */
@@ -2842,6 +2989,42 @@ export type LetterPolicyOut = {
 };
 
 /**
+ * LineBody
+ */
+export type LineBody = {
+    /**
+     * Account Code
+     */
+    account_code: string;
+    /**
+     * Credit
+     */
+    credit?: number | string;
+    /**
+     * Debit
+     */
+    debit?: number | string;
+};
+
+/**
+ * LineOut
+ */
+export type LineOut = {
+    /**
+     * Account Code
+     */
+    account_code: string;
+    /**
+     * Credit
+     */
+    credit: string;
+    /**
+     * Debit
+     */
+    debit: string;
+};
+
+/**
  * ListDoneOut
  */
 export type ListDoneOut = {
@@ -3860,6 +4043,90 @@ export type ReplyIn = {
 };
 
 /**
+ * RepresentationGapOut
+ */
+export type RepresentationGapOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'finding' | 'adjustment';
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
+ * RepresentationIn
+ */
+export type RepresentationIn = {
+    /**
+     * Adjustment Id
+     */
+    adjustment_id?: string | null;
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Finding Id
+     */
+    finding_id?: string | null;
+};
+
+/**
+ * RepresentationListOut
+ */
+export type RepresentationListOut = {
+    /**
+     * Gaps
+     */
+    gaps: Array<RepresentationGapOut>;
+    /**
+     * Items
+     */
+    items: Array<RepresentationOut>;
+    /**
+     * Passed
+     */
+    passed: Array<string>;
+};
+
+/**
+ * RepresentationOut
+ */
+export type RepresentationOut = {
+    /**
+     * Adjustment Id
+     */
+    adjustment_id: string | null;
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Finding Id
+     */
+    finding_id: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Raised At
+     */
+    raised_at: string;
+    /**
+     * Raised By Name
+     */
+    raised_by_name: string;
+};
+
+/**
  * RequestItemIn
  */
 export type RequestItemIn = {
@@ -4619,6 +4886,20 @@ export type SetupStepOut = {
      * State
      */
     state: 'done' | 'waiting' | 'blocked' | 'warning' | 'not_needed';
+};
+
+/**
+ * SeverityIn
+ */
+export type SeverityIn = {
+    /**
+     * Rationale
+     */
+    rationale?: string | null;
+    /**
+     * Severity
+     */
+    severity: 'deficiency' | 'significant_deficiency' | 'material_weakness';
 };
 
 /**
@@ -6088,6 +6369,230 @@ export type ActivityResponses = {
 };
 
 export type ActivityResponse = ActivityResponses[keyof ActivityResponses];
+
+export type AdjustmentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/adjustments';
+};
+
+export type AdjustmentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AdjustmentsError = AdjustmentsErrors[keyof AdjustmentsErrors];
+
+export type AdjustmentsResponses = {
+    /**
+     * Response Adjustments
+     *
+     * Successful Response
+     */
+    200: Array<AdjustmentOut>;
+};
+
+export type AdjustmentsResponse = AdjustmentsResponses[keyof AdjustmentsResponses];
+
+export type ProposeAdjustmentData = {
+    body: AdjustmentIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/adjustments';
+};
+
+export type ProposeAdjustmentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ProposeAdjustmentError = ProposeAdjustmentErrors[keyof ProposeAdjustmentErrors];
+
+export type ProposeAdjustmentResponses = {
+    /**
+     * Response Propose Adjustment
+     *
+     * Successful Response
+     */
+    201: Array<AdjustmentOut>;
+};
+
+export type ProposeAdjustmentResponse = ProposeAdjustmentResponses[keyof ProposeAdjustmentResponses];
+
+export type ApproveAdjustmentData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Adjustment Id
+         */
+        adjustment_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/adjustments/{adjustment_id}/approve';
+};
+
+export type ApproveAdjustmentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ApproveAdjustmentError = ApproveAdjustmentErrors[keyof ApproveAdjustmentErrors];
+
+export type ApproveAdjustmentResponses = {
+    /**
+     * Response Approve Adjustment
+     *
+     * Successful Response
+     */
+    201: Array<AdjustmentOut>;
+};
+
+export type ApproveAdjustmentResponse = ApproveAdjustmentResponses[keyof ApproveAdjustmentResponses];
+
+export type ClientAnswerData = {
+    body: ClientAnswerIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Adjustment Id
+         */
+        adjustment_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/adjustments/{adjustment_id}/client-answer';
+};
+
+export type ClientAnswerErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ClientAnswerError = ClientAnswerErrors[keyof ClientAnswerErrors];
+
+export type ClientAnswerResponses = {
+    /**
+     * Response Client Answer
+     *
+     * Successful Response
+     */
+    201: Array<AdjustmentOut>;
+};
+
+export type ClientAnswerResponse = ClientAnswerResponses[keyof ClientAnswerResponses];
 
 export type AgentData = {
     body?: never;
@@ -8053,6 +8558,64 @@ export type FindingsSummaryResponses = {
 
 export type FindingsSummaryResponse = FindingsSummaryResponses[keyof FindingsSummaryResponses];
 
+export type CommunicatedData = {
+    body: CommunicationIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Finding Id
+         */
+        finding_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/findings/{finding_id}/communicated';
+};
+
+export type CommunicatedErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type CommunicatedError = CommunicatedErrors[keyof CommunicatedErrors];
+
+export type CommunicatedResponses = {
+    /**
+     * Response Communicated
+     *
+     * Successful Response
+     */
+    201: Array<FindingOut>;
+};
+
+export type CommunicatedResponse = CommunicatedResponses[keyof CommunicatedResponses];
+
 export type MisstatementData = {
     body: MisstatementIn;
     headers?: {
@@ -8110,6 +8673,122 @@ export type MisstatementResponses = {
 };
 
 export type MisstatementResponse = MisstatementResponses[keyof MisstatementResponses];
+
+export type ConcludeSeverityData = {
+    body: SeverityIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Finding Id
+         */
+        finding_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/findings/{finding_id}/severity/conclude';
+};
+
+export type ConcludeSeverityErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ConcludeSeverityError = ConcludeSeverityErrors[keyof ConcludeSeverityErrors];
+
+export type ConcludeSeverityResponses = {
+    /**
+     * Response Conclude Severity
+     *
+     * Successful Response
+     */
+    201: Array<FindingOut>;
+};
+
+export type ConcludeSeverityResponse = ConcludeSeverityResponses[keyof ConcludeSeverityResponses];
+
+export type ProposeSeverityData = {
+    body: SeverityIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Finding Id
+         */
+        finding_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/findings/{finding_id}/severity/propose';
+};
+
+export type ProposeSeverityErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ProposeSeverityError = ProposeSeverityErrors[keyof ProposeSeverityErrors];
+
+export type ProposeSeverityResponses = {
+    /**
+     * Response Propose Severity
+     *
+     * Successful Response
+     */
+    201: Array<FindingOut>;
+};
+
+export type ProposeSeverityResponse = ProposeSeverityResponses[keyof ProposeSeverityResponses];
 
 export type EngagementGraphData = {
     body?: never;
@@ -11249,6 +11928,166 @@ export type SendDraftResponses = {
 };
 
 export type SendDraftResponse = SendDraftResponses[keyof SendDraftResponses];
+
+export type RepresentationsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/representations';
+};
+
+export type RepresentationsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RepresentationsError = RepresentationsErrors[keyof RepresentationsErrors];
+
+export type RepresentationsResponses = {
+    /**
+     * Successful Response
+     */
+    200: RepresentationListOut;
+};
+
+export type RepresentationsResponse = RepresentationsResponses[keyof RepresentationsResponses];
+
+export type AddRepresentationData = {
+    body: RepresentationIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/representations';
+};
+
+export type AddRepresentationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AddRepresentationError = AddRepresentationErrors[keyof AddRepresentationErrors];
+
+export type AddRepresentationResponses = {
+    /**
+     * Successful Response
+     */
+    201: RepresentationListOut;
+};
+
+export type AddRepresentationResponse = AddRepresentationResponses[keyof AddRepresentationResponses];
+
+export type RemoveRepresentationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Representation Id
+         */
+        representation_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/representations/{representation_id}/remove';
+};
+
+export type RemoveRepresentationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RemoveRepresentationError = RemoveRepresentationErrors[keyof RemoveRepresentationErrors];
+
+export type RemoveRepresentationResponses = {
+    /**
+     * Successful Response
+     */
+    201: RepresentationListOut;
+};
+
+export type RemoveRepresentationResponse = RemoveRepresentationResponses[keyof RemoveRepresentationResponses];
 
 export type ListRequestItemsData = {
     body?: never;

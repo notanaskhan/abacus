@@ -110,6 +110,9 @@ def _sql(expression: ColumnElement[bool]) -> str:
 
 def test_ac7_the_client_data_actions_are_marked() -> None:
     assert MARKED == [
+        "adjustment.approve",  # SPEC-301 (TASK-302)
+        "adjustment.propose",
+        "adjustment.record_response",
         "comment.create",  # SPEC-032 (TASK-062)
         "comment.read",
         "comment.share",
@@ -120,6 +123,9 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "evidence.read",
         "evidence.reject",
         "evidence.upload",
+        "finding.communicate",  # SPEC-301 (TASK-302)
+        "finding.conclude_severity",
+        "finding.propose_severity",
         "finding.raise",  # SPEC-043 (TASK-107)
         "guidance_draft.decide",  # SPEC-035 (TASK-073)
         "guidance_draft.read",
@@ -135,6 +141,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "procedure.configure",
         "procedure.read",
         "procedure.run",
+        "representation.edit",  # SPEC-301 (TASK-302)
         "review.assign",
         "review.read",
         "review.take",

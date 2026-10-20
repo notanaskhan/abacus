@@ -349,3 +349,103 @@ class RiskApproval(Base):
     rationale: Mapped[str | None]
     approved_by: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class FindingSeverity(Base):
+    """A severity proposed on a finding, or concluded by the partner (SPEC-301; TASK-302)."""
+
+    __tablename__ = "finding_severities"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    finding_id: Mapped[UUID]
+    stage: Mapped[str]
+    severity: Mapped[str]
+    rationale: Mapped[str | None]
+    set_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class FindingCommunication(Base):
+    """A concluded deficiency communicated, when and to whom (SPEC-301). Insert-only."""
+
+    __tablename__ = "finding_communications"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    finding_id: Mapped[UUID]
+    communicated_on: Mapped[date]
+    recipients: Mapped[str]
+    recorded_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class Adjustment(Base):
+    """A proposed entry, AJE-n or RJE-n (SPEC-301). Insert-only."""
+
+    __tablename__ = "adjustments"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    kind: Mapped[str]
+    number: Mapped[int]
+    finding_id: Mapped[UUID | None]
+    description: Mapped[str]
+    raised_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class AdjustmentLine(Base):
+    """One line of a proposed entry (SPEC-301). Insert-only."""
+
+    __tablename__ = "adjustment_lines"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    adjustment_id: Mapped[UUID]
+    position: Mapped[int]
+    account_code: Mapped[str]
+    debit: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    credit: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+
+
+class AdjustmentEvent(Base):
+    """Approved, or the client's answer (SPEC-301). Insert-only; one of each kind."""
+
+    __tablename__ = "adjustment_events"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    adjustment_id: Mapped[UUID]
+    kind: Mapped[str]
+    note: Mapped[str | None]
+    by_user: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class Representation(Base):
+    """A specific representation for the letter (SPEC-301). Insert-only."""
+
+    __tablename__ = "representations"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    body: Mapped[str]
+    finding_id: Mapped[UUID | None]
+    adjustment_id: Mapped[UUID | None]
+    raised_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class RepresentationRemoval(Base):
+    """A representation taken off the list (SPEC-301). Insert-only."""
+
+    __tablename__ = "representation_removals"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    representation_id: Mapped[UUID]
+    removed_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

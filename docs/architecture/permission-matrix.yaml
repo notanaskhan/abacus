@@ -241,6 +241,13 @@ actions:
   materiality.decide:       {engagement_partner: allow, agent: deny, independence: required}   # SPEC-300 (TASK-301) AC-2: only the engagement partner decides materiality
   risk.assess:              {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # SPEC-300 AC-4: the team records and revises risks
   risk.approve:             {engagement_partner: allow, agent: deny, independence: required}   # SPEC-300 AC-5: the partner approves significant risks and rebuttals
+  finding.propose_severity: {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # SPEC-301 (TASK-302) AC-1
+  finding.conclude_severity: {engagement_partner: allow, agent: deny, independence: required}   # SPEC-301 AC-2: only the engagement partner concludes severity
+  finding.communicate:      {engagement_partner: allow, manager: allow, agent: deny, independence: required}   # SPEC-301 AC-3
+  adjustment.propose:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # SPEC-301 AC-4
+  adjustment.approve:       {engagement_partner: allow, manager: allow, agent: deny, independence: required}   # SPEC-301 AC-5
+  adjustment.record_response: {engagement_partner: allow, manager: allow, agent: deny, independence: required}   # SPEC-301 AC-5: the client's answer, as told to the firm
+  representation.edit:      {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # SPEC-301 AC-7
 
   # --- Communications (SPEC-006 Q4; TASK-021) ---
   message.send:             {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny}

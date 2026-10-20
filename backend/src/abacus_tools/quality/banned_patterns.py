@@ -802,6 +802,11 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/fieldwork/repository.py", "materiality_decisions"),
         ("src/abacus/modules/fieldwork/repository.py", "newest_risk_versions"),
         ("src/abacus/modules/fieldwork/repository.py", "risk_approvals"),
+        # SPEC-301 (TASK-302): records of findings and entries already read through `visible()`.
+        ("src/abacus/modules/fieldwork/repository.py", "severities_of"),
+        ("src/abacus/modules/fieldwork/repository.py", "communications_of"),
+        ("src/abacus/modules/fieldwork/repository.py", "adjustment_lines_of"),
+        ("src/abacus/modules/fieldwork/repository.py", "adjustment_events_of"),
         # SPEC-041 (TASK-103): one procedure's review notes and their events, after `authorise`.
         ("src/abacus/modules/fieldwork/repository.py", "notes_of"),
         ("src/abacus/modules/fieldwork/repository.py", "note_events_of"),
