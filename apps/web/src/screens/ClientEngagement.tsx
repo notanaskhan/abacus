@@ -28,6 +28,7 @@ import { Link } from "@tanstack/react-router";
 import { type JSX, useEffect, useState } from "react";
 import { errorMessage } from "../api";
 import { ClientBell } from "../shell/ClientBell";
+import { PortalBrand } from "../shell/PortalBrand";
 import { accessToken, signIn } from "../auth/session";
 import { ClientUploadChecks } from "./CheckResults";
 import { CommentThread } from "./CommentThread";
@@ -94,8 +95,8 @@ export function ClientEngagement({ engagementId }: { engagementId: string }): JS
 
   return (
     <div className="min-h-screen bg-ground">
-      <header className="flex items-center justify-between border-b border-line bg-surface px-6 py-3">
-        <span className="font-display text-lg font-semibold">Abacus</span>
+      <header className="flex h-[46px] items-center justify-between border-b-[0.5px] border-hair bg-card px-4">
+        <PortalBrand />
         <span className="flex items-center gap-3">
           <ClientBell />
           <Link to="/client" className="text-sm text-accent hover:underline">

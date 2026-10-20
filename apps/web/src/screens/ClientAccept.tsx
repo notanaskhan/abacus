@@ -3,6 +3,7 @@ import { Card, Spinner } from "@abacus/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { type JSX, type ReactNode, useEffect, useRef } from "react";
+import { PortalBrand } from "../shell/PortalBrand";
 import { accessToken, signIn } from "../auth/session";
 
 const TOKEN_KEY = "abacus.invitation";
@@ -73,7 +74,7 @@ function Shell({ children }: { children: ReactNode }): JSX.Element {
   return (
     <main className="flex min-h-screen items-center justify-center bg-ground p-6">
       <Card className="flex w-full max-w-md flex-col gap-3 p-6">
-        <p className="font-display text-lg font-semibold">Abacus</p>
+        <PortalBrand />
         {children}
       </Card>
     </main>
