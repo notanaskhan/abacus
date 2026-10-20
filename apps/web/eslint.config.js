@@ -21,6 +21,7 @@ const NETWORK_GLOBALS = [
 // switched on (F-05-T07). Neither fix is a token swap: they need format.ts and clock.tsx, which
 // F-05-T10 builds. New code is not exempt; delete a file from these lists as it moves over. Recorded in packages/ui/src/tokens/DECISIONS.md.
 const LEGACY_FORMATTING = [
+  "src/shell/NotificationDrawer.tsx", // TASK-306, until format.ts (F-05-T10)
   "src/board/filters.ts",
   "src/gallery/Gallery.tsx",
   "src/screens/AgentActivity.tsx",
