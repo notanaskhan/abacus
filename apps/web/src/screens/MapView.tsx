@@ -34,10 +34,10 @@ export function MapView({ engagementId }: { engagementId: string }): JSX.Element
         </EmptyState>
       )}
       {hasGaps && (
-        <Panel title="Gaps" className="border-warn/40 bg-warn-soft">
+        <Panel title="Gaps" action={<StatusPill tone="warning">Needs attention</StatusPill>}>
           {g.gaps.unmapped_accounts.length > 0 && (
             <div className="flex flex-col gap-1">
-              <h3 className="font-sans text-sm font-semibold">Accounts no area covers</h3>
+              <h3 className="text-[12.5px] font-medium text-ink-2">Accounts no area covers</h3>
               <AccountList accounts={g.gaps.unmapped_accounts} />
             </div>
           )}

@@ -68,7 +68,7 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
     <div className="flex flex-col gap-4">
       {g.methodology === null && <ApplyMethodology engagementId={engagementId} />}
       <ConnectionPanel engagementId={engagementId} firmName="" canConnect={false} />
-      <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
+      <div className="grid items-start gap-3 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
         <Panel
           title="Audit areas"
           action={
@@ -96,7 +96,7 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
                       onClick={() => {
                         setSelected(a.name);
                       }}
-                      className={`flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-2 text-left text-sm hover:bg-sunken ${current ? "bg-accent-soft font-semibold" : ""}`}
+                      className={`flex w-full items-center gap-2 rounded-tile px-2.5 py-2 text-left text-[13px] hover:bg-nav-fill ${current ? "bg-sel-bg font-medium" : ""}`}
                     >
                       <span className="flex-1">{a.name}</span>
                       {gap && <StatusPill tone="warning">No requests</StatusPill>}
@@ -110,8 +110,8 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
         </Panel>
 
         <section aria-labelledby="area-heading" className="flex min-w-0 flex-col gap-3">
-          <div className="flex flex-wrap items-baseline gap-3">
-            <h2 id="area-heading" className="text-2xl">
+          <div className="flex flex-wrap items-baseline gap-3 px-1 pt-3">
+            <h2 id="area-heading" className="text-[15px] font-medium tracking-[-0.012em]">
               {area?.name ?? "Requests"}
             </h2>
             {area !== undefined && (
@@ -196,15 +196,15 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
             <dl className="grid grid-cols-3 gap-2 text-sm">
               <div className="rounded-[var(--radius-control)] bg-ok-soft p-2.5 text-ok">
                 <dt className="text-xs">Ready for review</dt>
-                <dd className="text-xl font-semibold tabular-nums">{ready}</dd>
+                <dd className="text-[15px] font-medium tabular-nums">{ready}</dd>
               </div>
               <div className="rounded-[var(--radius-control)] bg-warn-soft p-2.5 text-warn">
                 <dt className="text-xs">Needs revision</dt>
-                <dd className="text-xl font-semibold tabular-nums">{revise}</dd>
+                <dd className="text-[15px] font-medium tabular-nums">{revise}</dd>
               </div>
               <div className="rounded-[var(--radius-control)] bg-sunken p-2.5">
                 <dt className="text-xs">Not screened</dt>
-                <dd className="text-xl font-semibold tabular-nums">{unscreened}</dd>
+                <dd className="text-[15px] font-medium tabular-nums">{unscreened}</dd>
               </div>
             </dl>
           </Panel>
