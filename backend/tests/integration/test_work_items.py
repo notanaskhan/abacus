@@ -161,3 +161,34 @@ async def test_t12_a_tax_engagement_has_no_assurance_item_but_its_primary_entity
         e=tax,
     )
     assert rows == [("tax", 0, 1)]
+
+
+async def test_t14_a_work_item_holds_a_second_binder_and_lists_join_their_work_item(
+    migrated_db: Migrated,
+) -> None:
+    ctx, engagement = await _engagement(migrated_db.superuser_dsn)
+    for part in (1, 2):
+        await _value(
+            migrated_db.superuser_dsn,
+            "INSERT INTO request_lists (tenant_id, engagement_id, name, part) "
+            "SELECT tenant_id, id, $2, $3 FROM engagements WHERE id = $1",
+            engagement,
+            f"2025 Binder pt {part}",
+            part,
+        )
+    rows = await _rows(
+        ctx,
+        "SELECT l.part, l.status, w.kind FROM request_lists l "
+        "JOIN work_items w ON w.id = l.work_item_id WHERE l.engagement_id = :e ORDER BY l.part",
+        e=engagement,
+    )
+    assert rows == [(1, "draft", "assurance"), (2, "draft", "assurance")]
+    with pytest.raises(DBAPIError, match="request_lists_binder_key"):
+        async with tenant_session(ctx) as session:
+            await session.execute(
+                text(
+                    "INSERT INTO request_lists (id, tenant_id, engagement_id, part) "
+                    "SELECT gen_random_uuid(), tenant_id, id, 2 FROM engagements WHERE id = :e"
+                ),
+                {"e": engagement},
+            )

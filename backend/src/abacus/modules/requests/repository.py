@@ -30,30 +30,31 @@ from abacus.modules.requests.models import (
 async def request_list_for(
     session: AsyncSession, tenant_id: UUID, engagement_id: UUID
 ) -> tuple[UUID, bool]:
-    """The engagement's request list and whether this call created it (TASK-008 Q5). Concurrent
-    first items both end up with the same list (one per engagement, enforced by the database)."""
-    existing = (
-        await session.execute(
-            select(RequestList.id).where(RequestList.engagement_id == engagement_id)
-        )
-    ).scalar_one_or_none()
+    """The engagement's first PBC binder and whether this call created it (TASK-008 Q5). Concurrent
+    first items both end up with the same binder (one per work item, kind and part, enforced by
+    the database; the work item is the engagement's assurance item, filled by the database)."""
+    first = (
+        RequestList.engagement_id == engagement_id,
+        RequestList.kind == "pbc",
+        RequestList.part == 1,
+    )
+    existing = (await session.execute(select(RequestList.id).where(*first))).scalar_one_or_none()
     if existing is not None:
         return existing, False
     created = (
         await session.execute(
             pg_insert(RequestList)
-            .values(id=uuid4(), tenant_id=tenant_id, engagement_id=engagement_id)
-            .on_conflict_do_nothing(index_elements=["tenant_id", "engagement_id"])
+            # Published at once: the publish flow (BND-01) isn't built yet.
+            .values(
+                id=uuid4(), tenant_id=tenant_id, engagement_id=engagement_id, status="published"
+            )
+            .on_conflict_do_nothing(constraint="request_lists_binder_key")
             .returning(RequestList.id)
         )
     ).scalar_one_or_none()
     if created is not None:
         return created, True
-    winner = (
-        await session.execute(
-            select(RequestList.id).where(RequestList.engagement_id == engagement_id)
-        )
-    ).scalar_one()
+    winner = (await session.execute(select(RequestList.id).where(*first))).scalar_one()
     return winner, False
 
 
@@ -382,7 +383,11 @@ async def set_due_dates(
 
 async def default_due_on(session: AsyncSession, engagement_id: UUID) -> date | None:
     return await session.scalar(
-        select(RequestList.default_due_on).where(RequestList.engagement_id == engagement_id)
+        select(RequestList.default_due_on).where(
+            RequestList.engagement_id == engagement_id,
+            RequestList.kind == "pbc",
+            RequestList.part == 1,
+        )
     )
 
 

@@ -20,6 +20,12 @@ class RequestList(Base):
     created_at: Mapped[datetime]
     # SPEC-027 (TASK-051): the date an item without its own is due.
     default_due_on: Mapped[date | None]
+    # F-03-T14 (0070): a binder on a work item; one per (work item, kind, part).
+    work_item_id: Mapped[UUID] = mapped_column(server_default=FetchedValue())
+    name: Mapped[str] = mapped_column(server_default=FetchedValue())
+    kind: Mapped[str] = mapped_column(server_default=FetchedValue())
+    part: Mapped[int] = mapped_column(server_default=FetchedValue())
+    status: Mapped[str] = mapped_column(server_default=FetchedValue())
 
 
 class RequestItem(Base):
