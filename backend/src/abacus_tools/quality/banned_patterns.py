@@ -973,46 +973,80 @@ def _check_list_visible(src: SourceFile) -> Iterator[Finding]:
 
 # Which other modules each module may import (ADR-008: one-way dependencies). Modules not listed
 # may use identity only. Identity and organisations depend on no module.
+# The module graph (F-03-T08; docs/plan/03-backend-architecture.md section 2.3): a module imports
+# only these modules' api.py. `identity` and `platform` are reachable from everything above them.
+# Rules: nothing imports portal, notifications, practice, workbench or audit_trail; shared
+# engines never import a service line (they learn of targets through registration slots); upward
+# state changes travel as outbox events. Edges marked "today" predate the plan's split.
+_BASE = frozenset({"identity", "platform"})
 MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "identity": frozenset(),
-    "organisations": frozenset(),
-    "engagements": frozenset({"identity", "organisations"}),
-    "requests": frozenset({"identity", "engagements"}),
-    # evidence reads which versions fulfil which items, and moves items after a review decision
-    # (SPEC-004 Q4, TASK-019); requests never imports evidence. SPEC-029 (TASK-055 D2): upload
-    # cross-checks read the year end's trial balance snapshot (ledger imports nothing).
-    "evidence": frozenset({"identity", "engagements", "requests", "ledger"}),
-    "ledger": frozenset(),
-    "connections": frozenset(
-        {"identity", "engagements", "organisations", "ledger", "evidence", "requests"}
-    ),
-    # The engagement graph reads the latest snapshot's accounts (SPEC-008, TASK-023 D1).
-    # SPEC-027 (TASK-051 D3): the engagement agent works out overdue reminders; communications
-    # sends them (the only sender, COMM-001).
-    "agents": frozenset(
-        {"identity", "engagements", "organisations", "evidence", "requests", "ledger"}
-        | {"communications"}
-        | {"fieldwork"}  # SPEC-037 Q4 (TASK-085 D3): the entry assessor reads selected entries
-    ),
-    # The outbound scope checker reads each owner's facts through its API (SPEC-006, TASK-021 D2).
-    # SPEC-032 (TASK-062 D1): it registers itself as the check on comments shared with a client.
-    "communications": frozenset(
-        {"identity", "engagements", "organisations", "ledger", "evidence", "requests"}
-    ),
-    # Notifications subscribes to events and resolves recipients through identity (SPEC-013);
-    # nothing imports it.
-    "notifications": frozenset({"identity"}),
+    "platform": frozenset({"identity"}),
+    "notifications": _BASE,
     # SPEC-002 AC-5, DEC-121: the audit explorer hides events about engagements the reader may not
     # see; each owner registers which engagement its targets belong to (kernel.audit_owners),
     # so this reads the registry and depends only on identity and engagements; nothing imports it.
     "audit_trail": frozenset({"identity", "engagements"}),
+    "organisations": _BASE,
+    "ledger": frozenset(),
+    "methodology": _BASE,
+    "engagements": _BASE | {"organisations", "methodology"},
+    "requests": _BASE | {"engagements"},
+    # evidence reads which versions fulfil which items, and moves items after a review decision
+    # (SPEC-004 Q4, TASK-019); requests never imports evidence. SPEC-029 (TASK-055 D2): upload
+    # cross-checks read the year end's trial balance snapshot (ledger imports nothing).
+    "evidence": _BASE | {"engagements", "requests", "ledger"},
+    "review": _BASE | {"engagements"},
+    "collaboration": _BASE | {"engagements"},
+    "signatures": _BASE | {"engagements", "organisations", "evidence"},
     # SPEC-037 (TASK-083): populations and selection are pure functions over ledger snapshots.
-    "sampling": frozenset({"ledger"}),
-    # Procedures read engagements and ledger snapshots, and select through sampling; TASK-084
-    # adds evidence (support) and requests (asking the client for it).
-    "fieldwork": frozenset(
-        {"identity", "engagements", "ledger", "sampling", "evidence", "requests"}
-    ),
+    "sampling": _BASE | {"engagements", "ledger", "evidence"},
+    "connections": _BASE | {"engagements", "organisations", "ledger", "evidence", "requests"},
+    # The outbound scope checker reads each owner's facts through its API (SPEC-006, TASK-021 D2).
+    # SPEC-032 (TASK-062 D1): it registers itself as the check on comments shared with a client.
+    "communications": _BASE | {"engagements", "organisations", "ledger", "evidence", "requests"},
+    "integrations": _BASE | {"organisations", "engagements", "evidence", "ledger"},
+    # The engagement graph reads the latest snapshot's accounts (SPEC-008, TASK-023 D1).
+    # SPEC-027 (TASK-051 D3): the engagement agent works out overdue reminders; communications
+    # sends them (the only sender, COMM-001).
+    "agents": _BASE
+    | {"engagements", "organisations", "evidence", "requests", "ledger", "communications"}
+    | {"methodology", "review"}
+    | {"fieldwork"},  # today: SPEC-037 Q4 (TASK-085 D3), the entry assessor reads selected entries
+    # Today's fieldwork (procedures, workpapers, findings) splits into workpapers and assurance.
+    # TASK-084 adds evidence (support) and requests (asking the client for it).
+    "fieldwork": _BASE | {"engagements", "ledger", "sampling", "evidence", "requests"},
+    "workpapers": _BASE
+    | {"engagements", "methodology", "evidence", "requests", "ledger", "sampling", "review"}
+    | {"agents"},
+    "adjustments": _BASE
+    | {"engagements", "ledger", "methodology", "review", "agents", "integrations"},
+    "reporting": _BASE
+    | {"engagements", "methodology", "evidence", "ledger", "review", "adjustments"},
+    "assurance": _BASE
+    | {"organisations", "engagements", "methodology", "requests", "evidence", "ledger"}
+    | {"sampling", "review", "collaboration", "workpapers", "adjustments", "reporting"}
+    | {"signatures", "communications", "agents"},
+    "attest": _BASE
+    | {"organisations", "engagements", "methodology", "requests", "evidence", "sampling"}
+    | {"review", "workpapers", "reporting", "signatures", "communications", "agents"}
+    | {"integrations", "assurance"},
+    "tax": _BASE
+    | {"organisations", "engagements", "methodology", "requests", "evidence", "ledger"}
+    | {"review", "workpapers", "adjustments", "reporting", "signatures", "communications"}
+    | {"agents", "integrations"},
+    "closes": _BASE
+    | {"organisations", "engagements", "methodology", "requests", "evidence", "ledger"}
+    | {"review", "workpapers", "adjustments", "reporting", "communications", "agents"}
+    | {"integrations"},
+    "notices": _BASE
+    | {"organisations", "engagements", "requests", "evidence", "review", "signatures"}
+    | {"communications", "agents", "tax"},
+    "workbench": _BASE | {"organisations", "engagements", "methodology", "agents", "integrations"},
+    "practice": _BASE | {"organisations", "engagements", "integrations"},
+    "portal": _BASE
+    | {"organisations", "engagements", "requests", "evidence", "signatures", "communications"}
+    | {"collaboration", "review", "assurance", "attest", "tax", "closes", "notices"},
 }
 
 

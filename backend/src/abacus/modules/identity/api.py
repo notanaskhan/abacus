@@ -114,6 +114,13 @@ from abacus.modules.identity.service import (
     team_of,
     walled_from,
 )
+from abacus.modules.identity.slots import (
+    ScopeFacts,
+    consent_given,
+    register_consent_check,
+    register_scope_resolver,
+    resolve_scope,
+)
 from abacus.modules.identity.staff import issue_staff_invitation_token
 from abacus.modules.identity.team import (
     Candidate,
@@ -187,6 +194,7 @@ __all__ = [
     "LevelNotAvailable",
     "NoActiveTenant",
     "Resource",
+    "ScopeFacts",
     "StaffInvitationIssued",
     "StaffRole",
     "SystemContext",
@@ -213,6 +221,7 @@ __all__ = [
     "client_admins",
     "configure_staff_verifier",
     "configure_verifier",
+    "consent_given",
     "contact_emails",
     "contacts",
     "could",
@@ -247,14 +256,17 @@ __all__ = [
     "policy_agent_may_hold",
     "register_active_engagements",
     "register_ai_assistants",
+    "register_consent_check",
     "register_engagement_client",
     "register_independence",
     "register_member_added",
     "register_member_removed",
+    "register_scope_resolver",
     "remove_client",
     "remove_member",
     "resend_invitation",
     "reset_verifier",
+    "resolve_scope",
     "revoke_invitation",
     "router",
     "serving_request",
