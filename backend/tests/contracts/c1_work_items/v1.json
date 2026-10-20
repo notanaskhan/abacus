@@ -1,0 +1,381 @@
+{
+  "EngagementOut": {
+    "properties": {
+      "client_entity_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Client Entity Id",
+        "type": "string"
+      },
+      "client_entity_name": {
+        "cls": "confidential",
+        "maxLength": 200,
+        "minLength": 1,
+        "title": "Client Entity Name",
+        "type": "string"
+      },
+      "client_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Client Id",
+        "type": "string"
+      },
+      "client_name": {
+        "cls": "confidential",
+        "maxLength": 200,
+        "minLength": 1,
+        "title": "Client Name",
+        "type": "string"
+      },
+      "created_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Created At",
+        "type": "string"
+      },
+      "fiscal_period_end": {
+        "cls": "confidential",
+        "format": "date",
+        "title": "Fiscal Period End",
+        "type": "string"
+      },
+      "fiscal_period_start": {
+        "cls": "confidential",
+        "format": "date",
+        "title": "Fiscal Period Start",
+        "type": "string"
+      },
+      "gates": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/GateOut"
+        },
+        "title": "Gates",
+        "type": "array"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "name": {
+        "cls": "confidential",
+        "maxLength": 200,
+        "minLength": 1,
+        "title": "Name",
+        "type": "string"
+      },
+      "service_line": {
+        "cls": "internal",
+        "enum": [
+          "audit",
+          "tax",
+          "cas",
+          "advisory"
+        ],
+        "title": "Service Line",
+        "type": "string"
+      },
+      "status": {
+        "$ref": "#/components/schemas/EngagementStatus",
+        "cls": "internal"
+      },
+      "team": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/TeamMemberOut"
+        },
+        "title": "Team",
+        "type": "array"
+      },
+      "type": {
+        "cls": "internal",
+        "enum": [
+          "fs_audit",
+          "ebp_audit",
+          "review",
+          "compilation",
+          "preparation",
+          "agreed_upon_procedures",
+          "soc1",
+          "soc2",
+          "readiness",
+          "internal_audit",
+          "tax_compliance",
+          "cas_monthly_close",
+          "notice_response",
+          "advisory"
+        ],
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "type",
+      "status",
+      "service_line",
+      "client_name",
+      "client_entity_name",
+      "fiscal_period_start",
+      "fiscal_period_end",
+      "created_at",
+      "client_id",
+      "client_entity_id",
+      "team"
+    ],
+    "title": "EngagementOut",
+    "type": "object"
+  },
+  "EngagementSummaryOut": {
+    "properties": {
+      "client_entity_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Client Entity Id",
+        "type": "string"
+      },
+      "client_entity_name": {
+        "cls": "confidential",
+        "maxLength": 200,
+        "minLength": 1,
+        "title": "Client Entity Name",
+        "type": "string"
+      },
+      "client_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Client Id",
+        "type": "string"
+      },
+      "client_name": {
+        "cls": "confidential",
+        "maxLength": 200,
+        "minLength": 1,
+        "title": "Client Name",
+        "type": "string"
+      },
+      "created_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Created At",
+        "type": "string"
+      },
+      "fiscal_period_end": {
+        "cls": "confidential",
+        "format": "date",
+        "title": "Fiscal Period End",
+        "type": "string"
+      },
+      "fiscal_period_start": {
+        "cls": "confidential",
+        "format": "date",
+        "title": "Fiscal Period Start",
+        "type": "string"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "name": {
+        "cls": "confidential",
+        "maxLength": 200,
+        "minLength": 1,
+        "title": "Name",
+        "type": "string"
+      },
+      "service_line": {
+        "cls": "internal",
+        "enum": [
+          "audit",
+          "tax",
+          "cas",
+          "advisory"
+        ],
+        "title": "Service Line",
+        "type": "string"
+      },
+      "status": {
+        "$ref": "#/components/schemas/EngagementStatus",
+        "cls": "internal"
+      },
+      "type": {
+        "cls": "internal",
+        "enum": [
+          "fs_audit",
+          "ebp_audit",
+          "review",
+          "compilation",
+          "preparation",
+          "agreed_upon_procedures",
+          "soc1",
+          "soc2",
+          "readiness",
+          "internal_audit",
+          "tax_compliance",
+          "cas_monthly_close",
+          "notice_response",
+          "advisory"
+        ],
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "type",
+      "status",
+      "service_line",
+      "client_name",
+      "client_entity_name",
+      "fiscal_period_start",
+      "fiscal_period_end",
+      "created_at",
+      "client_id",
+      "client_entity_id"
+    ],
+    "title": "EngagementSummaryOut",
+    "type": "object"
+  },
+  "GateOut": {
+    "properties": {
+      "blockers": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Blockers",
+        "type": "array"
+      },
+      "gate": {
+        "cls": "internal",
+        "enum": [
+          "G1",
+          "G2",
+          "G3"
+        ],
+        "title": "Gate",
+        "type": "string"
+      },
+      "met": {
+        "cls": "internal",
+        "title": "Met",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "gate",
+      "met",
+      "blockers"
+    ],
+    "title": "GateOut",
+    "type": "object"
+  },
+  "WorkItemOut": {
+    "properties": {
+      "due_on": {
+        "anyOf": [
+          {
+            "format": "date",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Due On"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "assurance",
+          "tax_return",
+          "close",
+          "notice",
+          "advisory_project"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "name": {
+        "cls": "confidential",
+        "maxLength": 200,
+        "minLength": 1,
+        "title": "Name",
+        "type": "string"
+      },
+      "period_end": {
+        "anyOf": [
+          {
+            "format": "date",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Period End"
+      },
+      "period_start": {
+        "anyOf": [
+          {
+            "format": "date",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Period Start"
+      },
+      "phase": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Phase"
+      },
+      "status": {
+        "cls": "internal",
+        "enum": [
+          "active",
+          "archived"
+        ],
+        "title": "Status",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "kind",
+      "name",
+      "status",
+      "period_start",
+      "period_end",
+      "due_on",
+      "phase"
+    ],
+    "title": "WorkItemOut",
+    "type": "object"
+  }
+}

@@ -37,6 +37,7 @@ ENGAGEMENT_KEYS = {
     "client_id",  # SPEC-303 (TASK-304)
     "client_entity_id",
     "service_line",  # F-03-T12
+    "gates",  # C1 v1 (F-03-T19)
     "id",
     "name",
     "type",
@@ -653,8 +654,8 @@ async def test_ac5_list_rows_are_summaries_without_team(api: Api, firm: Firm) ->
     who = await firm.person("firm_admin")
     created = await api.create_ok(who)
     [row] = cast(list[Json], (await api.list(who)).json())
-    assert set(row) == ENGAGEMENT_KEYS - {"team"}
-    assert row == {key: value for key, value in created.items() if key != "team"}
+    assert set(row) == ENGAGEMENT_KEYS - {"team", "gates"}  # C1: gates are on the single read
+    assert row == {key: value for key, value in created.items() if key not in ("team", "gates")}
 
 
 async def test_ac5_get_returns_metadata_and_team(api: Api, firm: Firm, seed: Seeder) -> None:
