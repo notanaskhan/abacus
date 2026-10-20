@@ -18,6 +18,15 @@ const REASONS: Record<string, string> = {
   empty: "This file has no pages.",
 };
 
+/** "C9" (or "Sheet1!C9") as 0-based column and 1-based sheet row; null if it isn't a cell. */
+export function parseCell(ref: string): { col: number; row: number } | null {
+  const m = /^(?:.*!)?\$?([A-Z]{1,3})\$?(\d{1,7})$/.exec(ref.trim().toUpperCase());
+  if (m === null) return null;
+  let col = 0;
+  for (const ch of m[1] ?? "") col = col * 26 + (ch.charCodeAt(0) - 64);
+  return { col: col - 1, row: Number(m[2]) };
+}
+
 // A figure, aligned right as in a ledger (TASK-095); the text itself is never changed.
 const NUMERIC = /^\(?-?[\d,]+(\.\d+)?\)?$/;
 
@@ -110,10 +119,13 @@ function PageImage({ source, page }: { source: PreviewSource; page: number }): J
 export function EvidencePreview({
   source,
   openAtPage,
+  highlightCell,
 }: {
   source: PreviewSource;
   // SPEC-030 (TASK-059): an AI flag's quote opens the preview at its page.
   openAtPage?: number | undefined;
+  // TASK-110: a citation's cell, highlighted in the source colours and scrolled into view.
+  highlightCell?: string | undefined;
 }): JSX.Element {
   const preview = usePreview(source);
   const [page, setPage] = useState(openAtPage ?? 1);
@@ -121,6 +133,18 @@ export function EvidencePreview({
     if (openAtPage !== undefined) setPage(openAtPage);
   }, [openAtPage]);
   const [sheet, setSheet] = useState(0);
+  const target = highlightCell !== undefined ? parseCell(highlightCell) : null;
+  useEffect(() => {
+    if (target === null) return;
+    const id = window.setTimeout(() => {
+      document
+        .querySelector(`[data-cell="${String(target.row)}-${String(target.col)}"]`)
+        ?.scrollIntoView({ block: "center", inline: "center", behavior: "smooth" });
+    }, 150);
+    return () => {
+      window.clearTimeout(id);
+    };
+  }, [target?.row, target?.col, preview.data]);
 
   if (preview.isPending) return <Skeleton className="h-64" />;
   if (preview.isError) {
@@ -173,7 +197,17 @@ export function EvidencePreview({
             <thead className="sticky top-0 bg-surface">
               <tr>
                 {(rows[0] ?? []).map((cell, n) => (
-                  <Th key={n}>{cell}</Th>
+                  <Th
+                    key={n}
+                    data-cell={`1-${String(n)}`}
+                    className={
+                      target?.row === 1 && target.col === n
+                        ? "bg-match-bg text-match-ink inset-shadow-[inset_0_0_0_1.5px_var(--color-match-line)]"
+                        : undefined
+                    }
+                  >
+                    {cell}
+                  </Th>
                 ))}
               </tr>
             </thead>
@@ -183,9 +217,15 @@ export function EvidencePreview({
                   {row.map((cell, n) => (
                     <Td
                       key={n}
-                      className={
+                      data-cell={`${String(r + 2)}-${String(n)}`}
+                      aria-current={target?.row === r + 2 && target.col === n ? "true" : undefined}
+                      className={`${
                         NUMERIC.test(cell) ? "text-right tabular-nums" : "whitespace-pre-wrap"
-                      }
+                      } ${
+                        target?.row === r + 2 && target.col === n
+                          ? "bg-match-bg font-medium text-match-ink inset-shadow-[inset_0_0_0_1.5px_var(--color-match-line)]"
+                          : ""
+                      }`}
                     >
                       {cell}
                     </Td>

@@ -535,3 +535,14 @@ describe("TASK-105 status counts and the quick view", () => {
     expect(within(drawer).getByRole("link", { name: "Open the full page" })).toBeTruthy();
   });
 });
+
+describe("TASK-110 citations open the source", () => {
+  it("opens the evidence beside the list at a verified citation's cell", async () => {
+    api();
+    renderRoutes([{ path: "/", component: () => <Board engagementId={E} /> }]);
+    const [chip] = await screen.findAllByRole("button", { name: /^Open the source at cell / });
+    fireEvent.click(chip as HTMLElement);
+    const drawer = await screen.findByRole("dialog");
+    expect(within(drawer).getByText(/is highlighted/)).toBeTruthy();
+  });
+});

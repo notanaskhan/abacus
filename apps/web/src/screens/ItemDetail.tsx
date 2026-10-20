@@ -24,6 +24,7 @@ import {
   EmptyState,
   Panel,
   Skeleton,
+  CitationChip,
   StatusPill,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -88,6 +89,7 @@ export function ItemDetail({
   const me = useQuery(meOptions());
   const [selected, setSelected] = useState<string | null>(null);
   const [previewPage, setPreviewPage] = useState<number | undefined>(undefined);
+  const [previewCell, setPreviewCell] = useState<string | undefined>(undefined);
 
   const item = items.data?.find((i) => i.id === itemId);
   const team = engagement.data?.team ?? [];
@@ -191,7 +193,7 @@ export function ItemDetail({
           {shown !== undefined && (
             <>
               {/* SPEC-029 AC-12 (TASK-056): look without downloading. */}
-              <Panel title="Preview">
+              <Panel title="Preview" id="evidence-preview">
                 <EvidencePreview
                   source={{
                     kind: "upload",
@@ -200,6 +202,7 @@ export function ItemDetail({
                     versionId: shown.id,
                   }}
                   openAtPage={previewPage}
+                  highlightCell={previewCell}
                 />
               </Panel>
             </>
@@ -232,6 +235,12 @@ export function ItemDetail({
               )}
             </Panel>
             <Screening
+              onOpenCell={(cell) => {
+                setPreviewCell(cell);
+                document
+                  .getElementById("evidence-preview")
+                  ?.scrollIntoView({ block: "start", behavior: "smooth" });
+              }}
               result={resultFor(shown.id)}
               loading={screening.isPending}
               screenNow={
@@ -399,10 +408,13 @@ function Screening({
   result,
   loading,
   screenNow,
+  onOpenCell,
 }: {
   result: ScreeningResultOut | undefined;
   loading: boolean;
   screenNow: JSX.Element | null;
+  /** TASK-110: highlight a cited cell in the preview. */
+  onOpenCell: (cell: string) => void;
 }): JSX.Element {
   return (
     <Panel title="Screening" action={result !== undefined ? <AiTag /> : undefined}>
@@ -427,6 +439,14 @@ function Screening({
                   key={`${c.cell}-${String(index)}`}
                   className="flex flex-wrap items-center gap-2"
                 >
+                  <CitationChip
+                    n={index + 1}
+                    label={`cell ${c.cell}`}
+                    verified={c.verified}
+                    onOpen={() => {
+                      onOpenCell(c.cell);
+                    }}
+                  />
                   <span className="font-mono text-xs">{c.cell}</span>
                   {c.verified ? (
                     <StatusPill tone="success">Verified</StatusPill>

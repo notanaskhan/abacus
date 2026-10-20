@@ -27,6 +27,7 @@ import {
   EmptyState,
   Input,
   Label,
+  CitationChip,
   Drawer,
   Fieldset,
   PanelRight,
@@ -43,6 +44,7 @@ import { errorMessage } from "../api";
 import { DueDatesBar, ItemDue, useDefaultDue } from "./DueDates";
 import { CommentThread } from "./CommentThread";
 import { FollowUps } from "./FollowUps";
+import { SourceDrawer } from "./SourceDrawer";
 import { GuidanceDrafts } from "./GuidanceDrafts";
 import { InboxPanel } from "./InboxPanel";
 import { type BoardFilters, TIER_MEANING, applyFilters, readFilters } from "../board/filters";
@@ -334,6 +336,7 @@ function RequestItemCard({
   clientSaid: string | undefined;
 }): JSX.Element {
   const { item, evidence, screening } = row;
+  const [source, setSource] = useState<{ versionId: string; cell: string } | null>(null);
   return (
     <div className="flex flex-col gap-2 px-4 py-3 transition-colors hover:bg-shell/60">
       <div className={`grid grid-cols-1 items-start gap-x-4 gap-y-2 ${ROW_GRID}`}>
@@ -412,13 +415,34 @@ function RequestItemCard({
               <Spinner label="Screening…" />
             )
           ) : (
-            <ScreeningSummary result={screening.result} />
+            <ScreeningSummary
+              result={screening.result}
+              {...(evidence !== null
+                ? {
+                    onOpenCell: (cell: string) => {
+                      setSource({ versionId: evidence.id, cell });
+                    },
+                  }
+                : {})}
+            />
           )}
         </div>
         <div className="text-[12.5px]">
           <ItemDue item={item} fallback={fallbackDue} />
         </div>
       </div>
+      {source !== null && (
+        <SourceDrawer
+          engagementId={item.engagement_id}
+          itemId={item.id}
+          versionId={source.versionId}
+          cell={source.cell}
+          title={item.description}
+          onClose={() => {
+            setSource(null);
+          }}
+        />
+      )}
       <div className="flex flex-wrap items-center gap-3 text-[12px]">
         {(item.status === "open" || item.status === "received") && (
           <Retrieve item={item} engagement={engagement} />
@@ -466,7 +490,14 @@ function HiddenFromClient({ item }: { item: RequestItemOut }): JSX.Element {
 }
 
 /** The agent's proposal: labelled as one, model text shown only through AgentText (ADR-065). */
-function ScreeningSummary({ result }: { result: ScreeningResultOut }): JSX.Element {
+function ScreeningSummary({
+  result,
+  onOpenCell,
+}: {
+  result: ScreeningResultOut;
+  /** TASK-110: open the evidence at a cited cell. */
+  onOpenCell?: (cell: string) => void;
+}): JSX.Element {
   return (
     <div className="flex flex-col gap-1.5" aria-label="Screening result">
       <p className="flex flex-wrap items-center gap-1.5">
@@ -482,8 +513,20 @@ function ScreeningSummary({ result }: { result: ScreeningResultOut }): JSX.Eleme
       <AgentText text={result.rationale} className="text-[12.5px] leading-[1.45] text-ink-2" />
       {result.citations.length > 0 && (
         <ul className="flex flex-wrap gap-x-3 gap-y-1" aria-label="Citations">
-          {result.citations.map((c) => (
+          {result.citations.map((c, index) => (
             <li key={c.cell} className="flex items-center gap-1.5 text-[12px]">
+              <CitationChip
+                n={index + 1}
+                label={`cell ${c.cell}`}
+                verified={c.verified}
+                {...(onOpenCell !== undefined
+                  ? {
+                      onOpen: () => {
+                        onOpenCell(c.cell);
+                      },
+                    }
+                  : {})}
+              />
               <Badge tone={c.verified ? "success" : "danger"}>
                 {c.verified ? "Verified" : "Unverified"}
               </Badge>
