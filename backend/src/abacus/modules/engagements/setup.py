@@ -170,7 +170,7 @@ class OpenConfirmation:
 async def my_confirmations(ctx: AuthContext) -> list[OpenConfirmation]:
     """The person's own requests still to answer (or declined), across the firm."""
     async with tenant_session(ctx.tenant) as session:
-        rows = await my_open_confirmations(session, ctx.user_id)
+        rows = await my_open_confirmations(session, ctx)
         names = await client_names(session, [e.client_entity_id for _, e in rows])
     result: list[OpenConfirmation] = []
     for confirmation, engagement in rows:

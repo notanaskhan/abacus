@@ -466,15 +466,17 @@ async def confirmations_of(
 
 
 async def my_open_confirmations(
-    session: AsyncSession, user_id: UUID
+    session: AsyncSession, ctx: AuthContext
 ) -> Sequence[tuple[IndependenceConfirmation, Engagement]]:
-    """The person's own unanswered requests in the session's firm (LIST_EXEMPT: own rows)."""
+    """The person's own unanswered requests in the session's firm, through `visible()`: a wall
+    hides the engagement and its client from its own team member (SPEC-002 AC-5)."""
     rows = await session.execute(
         select(IndependenceConfirmation, Engagement)
         .join(Engagement, Engagement.id == IndependenceConfirmation.engagement_id)
         .where(
-            IndependenceConfirmation.user_id == user_id,
+            IndependenceConfirmation.user_id == ctx.user_id,
             IndependenceConfirmation.status != "confirmed",
+            visible(ctx, "engagement.read_metadata", Engagement.id),
         )
         .order_by(IndependenceConfirmation.requested_at)
     )

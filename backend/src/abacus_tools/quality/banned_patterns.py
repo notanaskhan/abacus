@@ -827,10 +827,8 @@ LIST_EXEMPT = frozenset(
         # SPEC-025 (TASK-043): the client picker, firm-level after `authorise(client.read)`; the
         # service drops clients the person is walled off from.
         ("src/abacus/modules/organisations/repository.py", "clients_matching"),
-        # SPEC-025 (TASK-044): one engagement's confirmations after `authorise(setup.read)`, and
-        # the person's own open requests (their own rows only).
+        # SPEC-025 (TASK-044): one engagement's confirmations after `authorise(setup.read)`.
         ("src/abacus/modules/engagements/repository.py", "confirmations_of"),
-        ("src/abacus/modules/engagements/repository.py", "my_open_confirmations"),
         # SPEC-027 (TASK-050): the engagement agent's own reads, for the engagement it serves (its
         # pause replays), and the firm's open engagements when the firm resumes every agent.
         ("src/abacus/modules/agents/repository.py", "screenings_skipped_while_paused"),
@@ -1450,6 +1448,8 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_retrieval_api.py",
             "tests/integration/agent_tests/support.py",
             "tests/integration/agent_tests/test_work_slots_db.py",  # the ledger, as the app
+            "tests/integration/backfill/support.py",  # Q-03 acceptance tests seed as the superuser
+            "tests/security/support.py",  # the security suite seeds as the superuser
             "tests/integration/test_seed_dev.py",
             # Records replay fixtures against throwaway containers (seeds as the superuser).
             "src/abacus_tools/workflows/record_retrieval.py",
@@ -1542,6 +1542,7 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/kernel/slots.py",  # see UOW-001
             "src/abacus/ai_gateway/admission.py",  # see UOW-001
             "tests/integration/*",
+            "tests/security/conftest.py",  # the suite's database (as integration's conftest)
         ),
     ),
     Rule(
@@ -1572,6 +1573,8 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/kernel/config.py",
             "src/abacus/modules/identity/repository.py",
             "tests/integration/conftest.py",
+            "tests/integration/backfill/conftest.py",
+            "tests/security/conftest.py",
             "tests/unit/kernel/test_config.py",
             "tests/integration/test_identity.py",
             "src/abacus_tools/workflows/record_retrieval.py",
