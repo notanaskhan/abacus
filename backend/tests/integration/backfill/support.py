@@ -117,7 +117,9 @@ class Seeder:
                 )
         return Person(user_id, tenant_id, subject)
 
-    async def site(self, tenant_id: uuid.UUID, created_by: uuid.UUID, label: str) -> Site:
+    async def site(
+        self, tenant_id: uuid.UUID, created_by: uuid.UUID, label: str, *, opened: bool = True
+    ) -> Site:
         """A client named `label` with an open engagement, a request item and an evidence
         version; `label` (unique per call) is the text no other firm or client may ever see."""
         marker = f"{label}-{uuid.uuid4().hex[:8]}"
@@ -152,15 +154,16 @@ class Seeder:
                 created_by,
             ),
         )
-        # SPEC-025 AC-7: open to client data (accepted, independence concluded).
-        await self.run(
-            "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
-            "decided_by, documented_at, independence_concluded_by, independence_concluded_at, "
-            "independence_documented_at) VALUES ($1, $2, 'continuance', 'accepted', 'test-seed', "
-            "'Seeded', 'test-seed', clock_timestamp(), 'Seeded')",
-            tenant_id,
-            engagement_id,
-        )
+        if opened:  # SPEC-025 AC-7: open to client data (accepted, independence concluded)
+            await self.run(
+                "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
+                "decided_by, documented_at, independence_concluded_by, "
+                "independence_concluded_at, independence_documented_at) VALUES ($1, $2, "
+                "'continuance', 'accepted', 'test-seed', 'Seeded', 'test-seed', "
+                "clock_timestamp(), 'Seeded')",
+                tenant_id,
+                engagement_id,
+            )
         list_id = await self.value(
             "INSERT INTO request_lists (tenant_id, engagement_id) VALUES ($1, $2) RETURNING id",
             tenant_id,
