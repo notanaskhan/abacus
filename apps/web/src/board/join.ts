@@ -39,6 +39,21 @@ export function awaitingScreening(rows: readonly BoardRow[]): boolean {
   return rows.some((row) => row.screening.kind === "pending");
 }
 
+const SYSTEMS: [string, string][] = [
+  ["import_qbo_", "a QuickBooks Online export"],
+  ["import_qbd_", "a QuickBooks Desktop export"],
+  ["import_xero_", "a Xero export"],
+  ["import_netsuite_", "a NetSuite export"],
+  ["import_intacct_", "a Sage Intacct export"],
+];
+
+/** Where evidence came from, in words a person reads (TASK-097), never a source code. */
+export function systemName(source: string): string {
+  const known = SYSTEMS.find(([prefix]) => source.startsWith(prefix));
+  if (known !== undefined) return known[1];
+  return source.startsWith("import_") ? "an accounting system export" : source;
+}
+
 /** How the evidence came in, as SPEC-000 words it ("Retrieved", "Uploaded"). */
 export function sourceLabel(evidence: EvidenceVersionOut): string {
   return evidence.method === "retrieved" ? "Retrieved" : "Uploaded";

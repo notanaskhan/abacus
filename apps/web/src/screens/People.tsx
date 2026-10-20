@@ -62,7 +62,7 @@ function Team({ engagementId }: { engagementId: string }): JSX.Element {
     <section aria-labelledby="team-heading" className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 id="team-heading" className="text-2xl">
+          <h2 id="team-heading" className="text-[15px] font-medium tracking-[-0.012em]">
             Team
           </h2>
           <p className="text-sm text-muted">

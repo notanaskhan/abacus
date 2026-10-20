@@ -69,7 +69,7 @@ export function Contacts({ engagementId }: { engagementId: string }): JSX.Elemen
     <section aria-labelledby="contacts-heading" className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 id="contacts-heading" className="text-2xl">
+          <h2 id="contacts-heading" className="text-[15px] font-medium tracking-[-0.012em]">
             Client contacts
           </h2>
           <p className="text-sm text-muted">

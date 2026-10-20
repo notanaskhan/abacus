@@ -11,7 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import type { JSX } from "react";
 import { errorMessage } from "../api";
-import { confidencePercent, sourceLabel } from "../board/join";
+import { confidencePercent, sourceLabel, systemName } from "../board/join";
 import { DecisionActions } from "./DecisionActions";
 
 /** The review queue for one engagement (SPEC-004 AC-1 to AC-8, Q6): take an item and decide.
@@ -22,7 +22,7 @@ export function Review({ engagementId }: { engagementId: string }): JSX.Element 
   const me = useQuery(meOptions());
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">Review queue</h1>
+      <h1 className="px-1 text-[15px] font-medium tracking-[-0.012em]">Review queue</h1>
       {queue.isPending ? (
         <Skeleton className="h-24 w-full" />
       ) : queue.isError ? (
@@ -123,7 +123,7 @@ function ReviewEntry({
             {item}
           </Link>
           <p className="text-sm text-muted">
-            {entry.item_audit_area} · {sourceLabel(version)} from {version.source}
+            {entry.item_audit_area} · {sourceLabel(version)} from {systemName(version.source)}
             {version.period_start !== null &&
               ` · ${version.period_start} to ${version.period_end ?? ""}`}{" "}
             · version {String(version.version_no)}

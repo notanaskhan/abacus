@@ -33,6 +33,8 @@ const ACTION: Record<string, string> = {
   "reminders.check": "Remind about overdue items",
   "reminders.restarted": "Due dates changed: reminders start again",
   "digest.sent": "Told the team about overdue items",
+  "upload_review.start": "Review an upload",
+  "inbox_match.start": "Match a file in the inbox",
 };
 const REASON: Record<string, string> = {
   paused: "the agent is paused on this engagement",
@@ -48,6 +50,10 @@ const REASON: Record<string, string> = {
   malformed_event: "the event couldn't be read",
   self_paused: "the engagement has no active partner",
   no_partner: "the engagement has no active partner",
+  no_real_model: "no AI model is available here",
+  matching_off: "inbox matching is off for your firm",
+  upload_review_off: "upload review is off for your firm",
+  not_due: "nothing was due yet",
 };
 
 function describe(row: ActivityOut): string {
@@ -94,12 +100,21 @@ export function AgentActivity({ engagementId }: { engagementId: string }): JSX.E
     <Panel title="Activity">
       <ol className="flex flex-col divide-y divide-line">
         {feed.data.map((row) => (
-          <li key={row.id} className="flex flex-wrap items-center gap-3 py-2 text-sm">
-            <span className="w-36 shrink-0 text-xs text-muted tabular-nums">
-              {new Date(row.created_at).toLocaleString()}
+          <li key={row.id} className="flex flex-wrap items-center gap-3 py-2 text-[13px]">
+            <span className="w-[132px] shrink-0 text-[12px] whitespace-nowrap text-ink-3 tabular-nums">
+              {new Date(row.created_at).toLocaleString(undefined, {
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              })}
             </span>
-            <StatusPill tone={TONE[row.outcome]}>{row.policy}</StatusPill>
-            <span>{describe(row)}</span>
+            <StatusPill tone={TONE[row.outcome]}>
+              <span className="font-mono text-[10.5px]" title="The policy that acted (SPEC-027)">
+                {row.policy}
+              </span>
+            </StatusPill>
+            <span className={row.outcome === "skipped" ? "text-ink-2" : ""}>{describe(row)}</span>
           </li>
         ))}
       </ol>
