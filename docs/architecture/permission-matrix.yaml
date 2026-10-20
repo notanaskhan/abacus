@@ -251,7 +251,7 @@ actions:
     engagement_partner: allow
     manager: allow
     senior: allow
-    agent: firm_setting(autonomy_policy)   # routine reminders only, per autonomy policy
+    agent: firm_setting(autonomy_policy)   # routine reminders only, per autonomy policy. TASK-104: the agent no longer sends (it only drafts); the deny follows with the agent-spec change (DEC-74)
 
   # --- Sampling ---
   sample_set.create:        {engagement_partner: allow, manager: allow, senior: allow}

@@ -540,6 +540,16 @@ async def reminder_history(
     return [(i, d, n, at) for i, d, n, at in rows.all()]
 
 
+async def drafted_item_ids(session: AsyncSession, engagement_id: UUID) -> set[UUID]:
+    """TASK-104: items already in a follow-up waiting for a person (LIST_EXEMPT, as above)."""
+    rows = await session.execute(
+        select(ReminderItem.request_item_id)
+        .join(Reminder, Reminder.id == ReminderItem.reminder_id)
+        .where(Reminder.engagement_id == engagement_id, Reminder.status == "drafted")
+    )
+    return set(rows.scalars().all())
+
+
 async def insert_reminder(
     session: AsyncSession,
     *,

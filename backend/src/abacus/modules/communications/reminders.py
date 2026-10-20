@@ -39,6 +39,25 @@ def _creator(ctx: Actor) -> UUID:
     raise TypeError("a reminder is sent by a person or the engagement agent")
 
 
+async def render_reminder(
+    tenant_id: UUID, engagement_id: UUID, descriptions: Sequence[str], note: str | None
+) -> tuple[str, str]:
+    """The subject and body exactly as `send_reminder` sends them (TASK-104: the preview a
+    person reads before sending)."""
+    names = await firm_wording(tenant_id, engagement_id)
+    count = len(descriptions)
+    lines = "\n".join(f"- {d}" for d in descriptions)
+    kept = (note or "").strip()[:500]
+    body = TEMPLATE.format(
+        lines=lines,
+        note=f"{kept}\n\n" if kept else "",
+        link=f"{settings().app_base_url}/client/engagements/{engagement_id}",
+        **names,
+    )
+    subject = SUBJECT.format(count=count, items="item" if count == 1 else "items", **names)
+    return subject, body
+
+
 async def send_reminder(
     ctx: AuthContext | AgentContext,
     engagement_id: UUID,
@@ -53,16 +72,7 @@ async def send_reminder(
     if email is None:
         raise NotFound("recipient")
     names = await firm_wording(ctx.tenant_id, engagement_id)
-    count = len(descriptions)
-    lines = "\n".join(f"- {d}" for d in descriptions)
-    kept = (note or "").strip()[:500]
-    body = TEMPLATE.format(
-        lines=lines,
-        note=f"{kept}\n\n" if kept else "",
-        link=f"{settings().app_base_url}/client/engagements/{engagement_id}",
-        **names,
-    )
-    subject = SUBJECT.format(count=count, items="item" if count == 1 else "items", **names)
+    subject, body = await render_reminder(ctx.tenant_id, engagement_id, descriptions, note)
     await asyncio.to_thread(
         transport().send, to=email, subject=subject, body=body, sender_name=names["firm"]
     )

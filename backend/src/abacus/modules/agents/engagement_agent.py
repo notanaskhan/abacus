@@ -40,7 +40,7 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import OutboxEvent, Target, uow
 from abacus.modules.agents.engagement_agent_workflow import HANDLE, NEXT_TICK, EngagementAgent
 from abacus.modules.agents.models import AgentActivity
-from abacus.modules.agents.reminders import remind, seconds_to_next_tick
+from abacus.modules.agents.reminders import draft_now, remind, seconds_to_next_tick
 from abacus.modules.agents.repository import (
     activity_page,
     agent_state,
@@ -61,7 +61,7 @@ from abacus.modules.agents.workflow_types import (
     NextTickInput,
     ScreeningInput,
 )
-from abacus.modules.communications.api import send_reminder
+from abacus.modules.communications.api import render_reminder, send_reminder
 from abacus.modules.engagements.api import (
     get_ref,
     is_archived,
@@ -605,3 +605,27 @@ async def settle_draft(
         await send_reminder(
             ctx, engagement_id, draft.recipient_user_id, [d for _, d in items], kept
         )
+
+
+# --- Follow-ups v2 (TASK-104; the plan's DEC-74) ----------------------------------------------
+
+
+async def draft_follow_ups(ctx: AuthContext, engagement_id: UUID) -> int:
+    """A person asks for follow-ups on everything overdue now (one draft per contact)."""
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "follow_up.draft", ref.resource())
+    return await draft_now(ctx.tenant, engagement_id, await firm_time_zone(ctx.tenant))
+
+
+async def preview_follow_up(
+    ctx: AuthContext, engagement_id: UUID, reminder_id: UUID, note: str | None
+) -> tuple[str, str]:
+    """The email a person is about to send: subject and body, from the fixed template."""
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "follow_up.draft", ref.resource())
+    found = [d for d in await drafts(ctx, engagement_id) if d.id == reminder_id]
+    if not found:
+        raise NotFound("reminder")
+    return await render_reminder(
+        ctx.tenant_id, engagement_id, [t for _, t in found[0].items], note
+    )

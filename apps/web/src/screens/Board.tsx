@@ -34,6 +34,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { type JSX, type ReactNode, type SyntheticEvent, useEffect, useState } from "react";
 import { errorMessage } from "../api";
 import { DueDatesBar, ItemDue, useDefaultDue } from "./DueDates";
+import { FollowUps } from "./FollowUps";
 import { GuidanceDrafts } from "./GuidanceDrafts";
 import { InboxPanel } from "./InboxPanel";
 import { type BoardFilters, TIER_MEANING, applyFilters, readFilters } from "../board/filters";
@@ -165,6 +166,7 @@ export function Board({
           canDraft={myRole !== undefined && DRAFTERS.has(myRole)}
         />
       </div>
+      <FollowUps engagementId={engagementId} />
       {/* One pane for the list (TASK-094): summary and the list's due date, filters, the rows
           in columns, and a row to add a request. */}
       <div className="flex flex-col overflow-hidden rounded-pane bg-card shadow-e2">
