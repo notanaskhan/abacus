@@ -109,7 +109,8 @@ check-heads:
 
 check: check-fast
 	cd backend && uv run pytest $(UNIT_TESTS) --cov --cov-fail-under=0
-	cd backend && uv run pytest $(INTEGRATION_TESTS) --cov --cov-append
+	cd backend && uv run pytest $(INTEGRATION_TESTS) --cov --cov-append --cov-fail-under=0
+	cd backend && uv run python -m abacus_tools.ci.coverage_floor
 	$(MAKE) ci-contracts ci-frontend
 
 # CI stage 2 runs `check` as parallel jobs (TASK-017). Each suite is split into SHARDS by recorded
@@ -132,8 +133,9 @@ ci-integration:
 		test -n "$$files" && COVERAGE_FILE=.coverage.integration-$(SHARD) \
 		uv run pytest --cov --cov-report= --cov-fail-under=0 $$files
 
+# The floor (95) with DEC-10's dated exception, if any: backend/coverage-exception.toml.
 ci-coverage:
-	cd backend && uv run coverage combine && uv run coverage report
+	cd backend && uv run coverage combine && uv run python -m abacus_tools.ci.coverage_floor
 
 ci-contracts:
 	cd backend && uv run python -m abacus_tools.quality.schema_check

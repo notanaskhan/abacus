@@ -1,0 +1,13 @@
+# The one coverage exception DEC-10 allows (F-01-T05). The floor stays fail_under = 95 in
+# pyproject.toml. Measured 70% on 2026-10-20 (main at bef9ed4); the acceptance-test back-fill
+# tranches (S0-10, Q-03) raise it: tranche 1 now, tranche 2 by Fri Nov 6, tranche 3 by Fri Nov 20.
+# Steps only ratchet up; the exception expires on Dec 1, 2026, and the full floor applies. Delete
+# this file once coverage holds at 95. Read by abacus_tools.ci.coverage_floor.
+decision = "DEC-10"
+reason = "Measured 70% against the 95 floor; back-fill in tranches."
+expires = 2026-12-01
+steps = [
+  { from = 2026-10-20, min = 70 },
+  { from = 2026-11-06, min = 78 },
+  { from = 2026-11-20, min = 87 },
+]
