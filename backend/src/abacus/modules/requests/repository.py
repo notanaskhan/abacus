@@ -413,6 +413,28 @@ async def overdue_items(
     return [(item, d) for item, d in rows.all()]
 
 
+async def overdue_counts(
+    session: AsyncSession, ctx: AuthContext, engagement_ids: Sequence[UUID], today: date
+) -> dict[UUID, int]:
+    """TASK-102: per engagement, open or sent-back items past due, in one query, through
+    `visible()` (walls and independence apply)."""
+    if not engagement_ids:
+        return {}
+    due = func.coalesce(RequestItem.due_on, RequestList.default_due_on)
+    rows = await session.execute(
+        select(RequestItem.engagement_id, func.count())
+        .join(RequestList, RequestList.id == RequestItem.request_list_id)
+        .where(
+            RequestItem.engagement_id.in_(engagement_ids),
+            RequestItem.status.in_(("open", "needs_revision")),
+            due < today,
+            visible(ctx, "request_item.read", RequestItem.engagement_id),
+        )
+        .group_by(RequestItem.engagement_id)
+    )
+    return {e: int(n) for e, n in rows.all()}
+
+
 # --- Comments (SPEC-032; TASK-062; ADR-109) ------------------------------------------------------
 
 

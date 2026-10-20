@@ -134,6 +134,19 @@ async def engagement_role(
     return cast(EngagementRole | ClientRole | None, role)
 
 
+async def my_engagement_roles(tenant: TenantContext, user_id: UUID) -> dict[UUID, EngagementRole]:
+    """TASK-102: the person's own firm roles on engagements in the tenant (their own rows)."""
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                select(engagement_members.c.engagement_id, engagement_members.c.role)
+                .where(engagement_members.c.user_id == user_id)
+                .where(engagement_members.c.role.in_(sorted(ENGAGEMENT_ROLES)))
+            )
+        ).all()
+    return {cast(UUID, r.engagement_id): cast(EngagementRole, r.role) for r in rows}
+
+
 async def engagement_roles_in_firm(
     tenant: TenantContext, user_id: UUID, active: Select[UUID]
 ) -> frozenset[str]:

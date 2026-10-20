@@ -19,6 +19,7 @@ from abacus.modules.fieldwork.flow import (
     flow_state,
     request_selection_support,
     sign_items,
+    waiting_for,
 )
 from abacus.modules.fieldwork.service import (
     AccountsView,
@@ -51,7 +52,13 @@ from abacus.modules.fieldwork.workpapers import (
     workpaper_file,
     workpaper_state,
 )
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.identity.api import (
+    OWN,
+    AbacusRouter,
+    AuthContext,
+    current_context,
+    current_member,
+)
 
 router = AbacusRouter(prefix="/v1/engagements/{engagement_id}", tags=["fieldwork"])
 firm_router = AbacusRouter(prefix="/v1/firm", tags=["fieldwork"])
@@ -730,3 +737,24 @@ async def sign_reviewed_items_route(
     return SignedOut(
         rows=await sign_items(ctx, engagement_id, procedure_id, "reviewed", body.item_ids)
     )
+
+
+class WaitingOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    procedure_id: Annotated[UUID, classified("internal")]
+    definition: Annotated[str, classified("internal")]
+    kind: Annotated[
+        Literal["approve_sample", "prepare_rows", "review_rows"], classified("internal")
+    ]
+    count: Annotated[int, classified("internal")]
+
+
+Member = Annotated[AuthContext, Depends(current_member)]
+
+
+@firm_router.get("/waiting/fieldwork", action=OWN, response_model=list[WaitingOut])
+async def fieldwork_waiting_route(ctx: Member) -> list[WaitingOut]:
+    """TASK-102: samples to approve and rows to sign, on the caller's engagements."""
+    return [WaitingOut.model_validate(asdict(w)) for w in await waiting_for(ctx)]

@@ -27,6 +27,7 @@ import { type SyntheticEvent, type JSX, useState } from "react";
 import { errorMessage } from "../api";
 import { MyConfirmations } from "./MyConfirmations";
 import { Onboarding } from "./Onboarding";
+import { WaitingOnYou } from "../home/WaitingOnYou";
 import { RollForwardReview } from "./RollForward";
 import { type EngagementType, ENGAGEMENT_TYPES, typeLabel } from "./engagementTypes";
 
@@ -66,6 +67,7 @@ export function Engagements(): JSX.Element {
   return (
     <section aria-labelledby="engagements-heading" className="flex flex-col gap-3">
       <Onboarding />
+      <WaitingOnYou />
       <MyConfirmations />
       <div className="flex flex-col overflow-hidden rounded-pane bg-card shadow-e2">
         <div className="flex min-h-[50px] flex-wrap items-center gap-2 border-b-[0.5px] border-hair px-3 py-2">

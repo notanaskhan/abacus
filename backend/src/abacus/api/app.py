@@ -45,6 +45,7 @@ ROUTERS = (
     engagements.methodology_router,
     engagements.firm_router,
     requests.router,
+    requests.firm_router,  # TASK-102
     requests.methodology_router,
     connections.router,
     connections.connection_router,  # SPEC-020 (TASK-036)
@@ -56,6 +57,7 @@ ROUTERS = (
     agents.template_drafts_router,  # SPEC-035 Q3 (TASK-074)
     fieldwork.router,  # SPEC-037 (TASK-083)
     fieldwork.firm_router,
+    evidence.firm_router,  # TASK-102
     platform.router,
     notifications.router,
 )
