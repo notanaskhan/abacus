@@ -17,7 +17,7 @@ export function Knowledge(): JSX.Element {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-3xl">Knowledge</h1>
+        <h1 className="px-1 text-[20px] font-medium tracking-[-0.015em]">Knowledge</h1>
         <p className="text-sm text-muted">Search your firm&apos;s methodology documents.</p>
       </div>
       <form className="flex flex-wrap items-end gap-3" onSubmit={submit}>

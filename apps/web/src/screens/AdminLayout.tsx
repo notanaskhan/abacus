@@ -1,36 +1,85 @@
 import { listSupportSessionsOptions, meOptions } from "@abacus/api-client/query";
 import { Alert } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
-import { Link, Outlet } from "@tanstack/react-router";
+import { Link, type LinkProps, Outlet } from "@tanstack/react-router";
 import type { JSX } from "react";
-import { type TabItem, Tabs } from "../shell/Tabs";
 
-/** Firm admin (SPEC-019 Q1): tabs by role; the API stays the authority. */
+interface Section {
+  label: string;
+  to: NonNullable<LinkProps["to"]>;
+}
+
+/** Firm settings (SPEC-019 Q1; TASK-098, the plan's T12): a section list in groups on the left,
+ * the section on the right. Sections by role; the API stays the authority. */
 export function AdminLayout(): JSX.Element {
   const me = useQuery(meOptions());
   const tenant = me.data?.active_tenant_id ?? null;
   const role = me.data?.memberships.find((m) => m.tenant_id === tenant)?.firm_role ?? null;
   const isAdmin = role === "firm_admin";
-  const tabs: TabItem[] = [
-    { label: "Methodology", to: "/admin/methodology", params: {} },
-    { label: "Knowledge documents", to: "/admin/knowledge", params: {} },
-    { label: "Budget", to: "/admin/budget", params: {} },
-    { label: "Autonomy", to: "/admin/autonomy", params: {} },
-    { label: "Setup", to: "/admin/setup", params: {} },
+  const groups: [string, Section[]][] = [
+    [
+      "Firm",
+      [
+        { label: "Setup", to: "/admin/setup" },
+        ...(isAdmin
+          ? [
+              { label: "People", to: "/admin/people" } as Section,
+              { label: "Walls", to: "/admin/walls" } as Section,
+            ]
+          : []),
+      ],
+    ],
+    [
+      "Methodology",
+      [
+        { label: "Methodology", to: "/admin/methodology" },
+        { label: "Knowledge documents", to: "/admin/knowledge" },
+      ],
+    ],
+    [
+      "AI and automation",
+      [
+        { label: "Autonomy", to: "/admin/autonomy" },
+        { label: "Budget", to: "/admin/budget" },
+      ],
+    ],
     ...(isAdmin
-      ? ([
-          { label: "People", to: "/admin/people", params: {} },
-          { label: "Support access", to: "/admin/support", params: {} },
-          { label: "Walls", to: "/admin/walls", params: {} },
-        ] satisfies TabItem[])
+      ? ([["Security", [{ label: "Support access", to: "/admin/support" }]]] as [
+          string,
+          Section[],
+        ][])
       : []),
   ];
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-3xl">Firm admin</h1>
-      {isAdmin && <EmergencyBanner />}
-      <Tabs label="Firm admin" items={tabs} />
-      <Outlet />
+    <div className="grid items-start gap-3 lg:grid-cols-[240px_minmax(0,1fr)]">
+      <nav
+        aria-label="Firm settings"
+        className="flex flex-col gap-3 rounded-pane bg-card p-2 shadow-e2 lg:sticky lg:top-[58px]"
+      >
+        <h1 className="px-2.5 pt-1.5 text-[15px] font-medium tracking-[-0.012em]">
+          Firm settings
+        </h1>
+        {groups.map(([group, sections]) => (
+          <div key={group} className="flex flex-col gap-px">
+            <p className="px-2.5 pb-1 text-[10px] font-medium tracking-[0.07em] text-ink-3 uppercase">
+              {group}
+            </p>
+            {sections.map((section) => (
+              <Link
+                key={section.to}
+                to={section.to}
+                className="flex h-[30px] items-center rounded-tile px-2.5 text-[13px] text-ink-2 hover:bg-nav-fill hover:text-ink hover:no-underline data-[status=active]:bg-sel-bg data-[status=active]:font-medium data-[status=active]:text-ink"
+              >
+                {section.label}
+              </Link>
+            ))}
+          </div>
+        ))}
+      </nav>
+      <div className="flex min-w-0 flex-col gap-3">
+        {isAdmin && <EmergencyBanner />}
+        <Outlet />
+      </div>
     </div>
   );
 }
@@ -44,7 +93,7 @@ function EmergencyBanner(): JSX.Element | null {
     <Alert
       title="Emergency support access needs your review"
       action={
-        <Link to="/admin/support" className="text-sm font-semibold text-accent hover:underline">
+        <Link to="/admin/support" className="text-[12.5px] font-medium text-ink underline">
           Review
         </Link>
       }
