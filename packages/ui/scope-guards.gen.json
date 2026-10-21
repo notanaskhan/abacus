@@ -1,0 +1,119 @@
+{
+  "nav": [
+    "Home",
+    "Engagements",
+    "Tax Returns",
+    "Files",
+    "Knowledge",
+    "Workbench",
+    "Inbox",
+    "Clients",
+    "Binders",
+    "Notices",
+    "Audits",
+    "Closes",
+    "Signatures"
+  ],
+  "bannedTerms": [
+    {
+      "term": "Approved by Accrued Agent",
+      "use": "\u2039person\u203a via Agent",
+      "rule": "L5"
+    },
+    {
+      "term": "Signed off by Accrued Agent",
+      "use": "\u2039person\u203a via Agent",
+      "rule": "L5"
+    },
+    {
+      "term": "Planner Agent",
+      "use": "the Agent (one agent, D7)",
+      "rule": "L6"
+    },
+    {
+      "term": "Auditor Agent",
+      "use": "the Agent (one agent, D7)",
+      "rule": "L6"
+    },
+    {
+      "term": "Reviewer Agent",
+      "use": "the Agent (one agent, D7)",
+      "rule": "L6"
+    },
+    {
+      "term": "Financials Agent",
+      "use": "the Agent (one agent, D7)",
+      "rule": "L6"
+    },
+    {
+      "term": "Orchestrator Agent",
+      "use": "the Agent (one agent, D7)",
+      "rule": "L6"
+    },
+    {
+      "term": "testing agent",
+      "use": "the Agent (one agent, D7)",
+      "rule": "L6"
+    },
+    {
+      "term": "Field Board",
+      "use": "Board",
+      "rule": "D7"
+    },
+    {
+      "term": "AI Actions",
+      "use": "Agent column / Draft with agent",
+      "rule": "D7"
+    },
+    {
+      "term": "Prompt Library",
+      "use": "Saved prompts",
+      "rule": "D7"
+    },
+    {
+      "term": "Agent Knowledge",
+      "use": "Learned context",
+      "rule": "D7"
+    },
+    {
+      "term": "Today's Focus",
+      "use": "Today",
+      "rule": "D7"
+    },
+    {
+      "term": "Field Financials",
+      "use": "Statements studio",
+      "rule": "D7"
+    },
+    {
+      "term": "Request Analysis",
+      "use": "Evidence screening",
+      "rule": "D7"
+    },
+    {
+      "term": "Tax Export",
+      "use": "Hand off to tax",
+      "rule": "D7"
+    },
+    {
+      "term": "Departments",
+      "use": "Service lines",
+      "rule": "D7"
+    },
+    {
+      "term": "Evidence check",
+      "use": "Evidence screening",
+      "rule": "naming map"
+    },
+    {
+      "term": "hidden by an ethical wall",
+      "use": "nothing (404 semantics, DEC-43)",
+      "rule": "DEC-43"
+    },
+    {
+      "term": "ACME",
+      "use": "a Brightwater Hale client name",
+      "rule": "L1"
+    }
+  ]
+}

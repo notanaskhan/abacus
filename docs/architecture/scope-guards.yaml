@@ -1,0 +1,63 @@
+# Scope guards (F-02-T08; DEC-19): D1-D10 and X-01..X-08 as build rules. Read by
+# backend/src/abacus_tools/quality/scope_guards.py (make check-fast) and generated into
+# apps/web/src/lint/scope-guards.gen.json for the nav test and the banned-terms lint (F-02-T09).
+# Change it deliberately, with a decision-log row (a D4 revisit for the nav).
+
+# The firm bar: exactly these 13, in this order (chapter 04 section 2.2; SHL-01; D4).
+nav:
+  - Home
+  - Engagements
+  - Tax Returns
+  - Files
+  - Knowledge
+  - Workbench
+  - Inbox
+  - Clients
+  - Binders
+  - Notices
+  - Audits
+  - Closes
+  - Signatures
+
+# Whole identifiers and framework keys that must not exist (not substrings: "agricultural" never
+# matches `gri`). Scanned in migrations, Python constants, enums and Literals, the matrix, flags,
+# the status registry, seed scenarios and fixtures, prompts and eval suites.
+excluded_identifiers:
+  D10 governmental: [yellow_book, gagas, sefa, compliance_supplement, sf_sac, fund_accounting, interfund]
+  X-01 bank regulators: [ffiec, nydfs]
+  X-02 ESG: [esg, ghg, sasb, gri, issb]
+  X-03 forensics: [forensic, chain_of_custody, expert_report]
+  X-04 FedRAMP: [fedramp, emass, govcloud, cui]
+  X-05 AIUC: [aiuc]
+  X-07 PCAOB: [pcaob, icfr_integrated, critical_audit_matter, form_ap]
+  X-08 in-house: [company_tenant]
+  D6 benchmarks: [peer_benchmark]
+
+# D9: single audit exists only as the Coming soon catalogue entry (P-07, ENG-03f).
+single_audit:
+  identifier: single_audit
+  allowed_in: []   # the engagement-type catalogue file joins when P-07 builds it
+
+# UI and product-text terms (rule IDs from chapter 09 section 9.5.7). Found in string literals,
+# JSX text and templates by ESLint, and in backend constants, prompts and seed by scope_guards.py.
+banned_terms:
+  - {term: "Approved by Accrued Agent", use: "‹person› via Agent", rule: L5}
+  - {term: "Signed off by Accrued Agent", use: "‹person› via Agent", rule: L5}
+  - {term: "Planner Agent", use: "the Agent (one agent, D7)", rule: L6}
+  - {term: "Auditor Agent", use: "the Agent (one agent, D7)", rule: L6}
+  - {term: "Reviewer Agent", use: "the Agent (one agent, D7)", rule: L6}
+  - {term: "Financials Agent", use: "the Agent (one agent, D7)", rule: L6}
+  - {term: "Orchestrator Agent", use: "the Agent (one agent, D7)", rule: L6}
+  - {term: "testing agent", use: "the Agent (one agent, D7)", rule: L6}
+  - {term: "Field Board", use: "Board", rule: D7}
+  - {term: "AI Actions", use: "Agent column / Draft with agent", rule: D7}
+  - {term: "Prompt Library", use: "Saved prompts", rule: D7}
+  - {term: "Agent Knowledge", use: "Learned context", rule: D7}
+  - {term: "Today's Focus", use: "Today", rule: D7}
+  - {term: "Field Financials", use: "Statements studio", rule: D7}
+  - {term: "Request Analysis", use: "Evidence screening", rule: D7}
+  - {term: "Tax Export", use: "Hand off to tax", rule: D7}
+  - {term: "Departments", use: "Service lines", rule: D7}
+  - {term: "Evidence check", use: "Evidence screening", rule: naming map}
+  - {term: "hidden by an ethical wall", use: "nothing (404 semantics, DEC-43)", rule: DEC-43}
+  - {term: "ACME", use: "a Brightwater Hale client name", rule: L1}

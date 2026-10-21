@@ -8,6 +8,7 @@ import {
   intlGlobal,
   restrictedProperties,
 } from "@abacus/ui/eslint-design-rules";
+import { scopeTermSyntax } from "@abacus/ui/eslint-scope-rules";
 
 // The design-system rules (SPEC-048 AC-5: palette that admits only Accrued tokens, colour
 // literals, banned utilities, formatting and clock, brand strings) are defined once in
@@ -143,6 +144,7 @@ export default defineConfig(
         "error",
         // SPEC-016 AC-1, SPEC-048 AC-5: design tokens only (packages/ui/eslint-design-rules.js).
         ...designSyntaxFor(),
+        ...scopeTermSyntax(), // F-02-T09: banned product terms (scope-guards.yaml)
         {
           selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
           message: "Never render HTML (ADR-065).",

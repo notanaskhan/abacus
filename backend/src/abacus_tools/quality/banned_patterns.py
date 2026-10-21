@@ -1433,6 +1433,97 @@ def _check_retired_request_codes(src: SourceFile) -> Iterator[Finding]:
             )
 
 
+# L12 (F-02-T07; glossary rule 3): identifiers the glossary's "Don't use" columns ban, generated
+# from docs/product/glossary.md so the two can't drift. Checked on what names a concept in code:
+# class names (as snake_case), top-level function names and table names (whole, singular or first
+# word). Locals stay out: the bans name concepts, and words like `email` are fine as variables.
+GLOSSARY = BACKEND.parent / "docs" / "product" / "glossary.md"
+_BAN_CELL = re.compile(r"`([a-z_][a-z0-9_]*)`")
+
+
+def glossary_bans(text: str | None = None) -> dict[str, str]:
+    """Banned identifier -> the glossary's code name for the concept."""
+    source = text if text is not None else GLOSSARY.read_text(encoding="utf-8")
+    bans: dict[str, str] = {}
+    for line in source.splitlines():
+        if not line.startswith("| ") or line.startswith(("|---", "| Term ")):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) < 4:
+            continue
+        code = _BAN_CELL.findall(cells[2])
+        for banned in _BAN_CELL.findall(cells[3]):
+            bans.setdefault(banned, code[0] if code else cells[0])
+    return bans
+
+
+# Names in use before the glossary bound identifiers (2026-10-21), each with the task that renames
+# it. A new use of a banned name fails; these may stay until their rename lands.
+L12_LEGACY: dict[tuple[str, str], str] = {
+    ("src/abacus/modules/agents/models.py", "Reminder"): "F-03-T16 renames to follow_up_schedules",
+    ("src/abacus/modules/agents/models.py", "reminders"): "F-03-T16",
+    ("src/abacus/modules/agents/models.py", "reminder_items"): "F-03-T16",
+    ("src/abacus/modules/communications/models.py", "Message"): "P-06 message threads",
+    ("src/abacus/modules/communications/models.py", "messages"): "P-06 message threads",
+    ("src/abacus/modules/engagements/setup_steps.py", "Member"): "P-07 engagement_member views",
+    ("src/abacus/modules/engagements/roll_forward.py", "Proposal"): "P-07 roll-forward v2",
+    ("src/abacus/modules/evidence/service.py", "Proposal"): "P-04 suggestions",
+    ("src/abacus/modules/evidence/cross_checks.py", "Account"): "A-02 ledger accounts",
+    ("src/abacus/modules/evidence/checks.py", "CheckResult"): "P-03 trust kit",
+    ("src/abacus/modules/evidence/uploads.py", "upload"): "P-06 fulfilments",
+    ("src/abacus/modules/identity/service.py", "TeamMember"): "G-01 teams",
+    ("src/abacus/modules/agents/inbox_match.py", "match"): "N-01 inbox",
+    ("src/abacus/modules/agents/entry_assess.py", "ask"): "A-08 entry assessor",
+    ("src/abacus/modules/agents/knowledge.py", "document"): "K-01 knowledge items",
+    ("src/abacus/modules/fieldwork/models.py", "SelectionRow"): "A-03 sample_sets",
+    ("src/abacus/modules/fieldwork/models.py", "selections"): "A-03 sample_sets",
+    ("src/abacus/modules/fieldwork/models.py", "selection_approvals"): "A-03 sample_sets",
+    ("src/abacus/modules/fieldwork/models.py", "selection_rows"): "A-03 sample_sets",
+    ("src/abacus/modules/evidence/models.py", "upload_checks"): "P-06 fulfilments",
+    ("src/abacus/modules/evidence/models.py", "upload_extractions"): "P-06 fulfilments",
+    ("src/abacus/modules/evidence/models.py", "upload_previews"): "P-06 fulfilments",
+    ("src/abacus/modules/evidence/models.py", "upload_preview_pages"): "P-06 fulfilments",
+    ("src/abacus/modules/agents/models.py", "upload_reviews"): "P-06 fulfilments",
+    ("src/abacus/modules/agents/models.py", "upload_review_flags"): "P-06 fulfilments",
+    ("src/abacus/modules/connections/models.py", "sync_runs"): "W-01 integrations",
+}
+
+
+def _snake(name: str) -> str:
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+
+
+def _l12_candidates(tree: ast.Module) -> Iterator[tuple[int, str, list[str]]]:
+    """(line, name as written, the forms checked against the ban list)."""
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            yield node.lineno, node.name, [node.name]
+        elif isinstance(node, ast.ClassDef):
+            yield node.lineno, node.name, [_snake(node.name)]
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Assign)
+            and any(isinstance(t, ast.Name) and t.id == "__tablename__" for t in node.targets)
+            and isinstance(node.value, ast.Constant)
+            and isinstance(node.value.value, str)
+        ):
+            table = node.value.value
+            first = table.split("_")[0]
+            forms = [table, table.removesuffix("s"), first, first.removesuffix("s")]
+            yield node.lineno, table, forms
+
+
+def _check_glossary_identifiers(src: SourceFile) -> Iterator[Finding]:
+    bans = glossary_bans()
+    for line, name, forms in _l12_candidates(src.tree):
+        hit = next((f for f in forms if f in bans), None)
+        if hit is None or (src.rel, name) in L12_LEGACY:
+            continue
+        yield Finding(
+            line, f"{name!r} uses the glossary's banned {hit!r}: the code name is {bans[hit]!r}"
+        )
+
+
 RULES: list[Rule | TreeRule] = [
     Rule(
         id="UOW-001",
@@ -1495,6 +1586,13 @@ RULES: list[Rule | TreeRule] = [
             # Seeds the local stack as its superuser (local only; TASK-012).
             "src/abacus_tools/local/seed_dev.py",
         ),
+    ),
+    Rule(
+        id="L12",
+        description="Glossary-banned identifiers (the Don't use columns)",
+        adr="DEC-14",
+        check=_check_glossary_identifiers,
+        include=("src/abacus/modules/*",),
     ),
     Rule(
         id="REQ-002",

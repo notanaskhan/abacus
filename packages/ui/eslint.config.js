@@ -11,6 +11,7 @@ import {
   intlGlobal,
   restrictedProperties,
 } from "./eslint-design-rules.js";
+import { scopeTermSyntax } from "./eslint-scope-rules.js";
 
 const NETWORK_GLOBALS = [
   { name: "fetch", message: "Components never call the network (ADR-011)." },
@@ -42,7 +43,12 @@ export default defineConfig(
     files: ["src/**/*.{ts,tsx}"],
     ignores: ["src/**/*.test.{ts,tsx}"],
     rules: {
-      "no-restricted-syntax": ["error", ...HTML_SYNTAX, ...designSyntaxFor()],
+      "no-restricted-syntax": [
+        "error",
+        ...HTML_SYNTAX,
+        ...designSyntaxFor(),
+        ...scopeTermSyntax(),
+      ],
       "no-restricted-properties": ["error", ...restrictedProperties()],
       "no-restricted-globals": ["error", ...NETWORK_GLOBALS, intlGlobal],
     },

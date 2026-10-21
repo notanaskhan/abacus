@@ -67,6 +67,7 @@ check-fast:
 	cd backend && uv run ruff format --check . && uv run ruff check . && uv run pyright && uv run lint-imports
 	cd backend && uv run python -m abacus_tools.quality.banned_patterns
 	cd backend && uv run python -m abacus_tools.quality.validate_docs
+	cd backend && uv run python -m abacus_tools.quality.scope_guards
 	$(MAKE) check-generated check-heads
 	cd backend && uv run python -m abacus_tools.quality.secrets_scan
 	cd backend && uv run python -m abacus_tools.quality.check_dependencies
