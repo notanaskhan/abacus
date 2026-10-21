@@ -1,4 +1,16 @@
-import { EmptyState } from "@abacus/ui";
+import {
+  AgentMonogram,
+  AtomMark,
+  EmptyState,
+  HANDOFF_IN_KITS,
+  HANDOFF_MISSING,
+  HalfDisc,
+  ICON_NAMES,
+  ICON_SUBSTITUTES,
+  Icon,
+  VENDOR_TONES,
+  VendorTile,
+} from "@abacus/ui";
 import { SPECIMENS } from "@abacus/ui/specimens";
 import { Link, Outlet, useParams, useSearch } from "@tanstack/react-router";
 import { type JSX, useEffect } from "react";
@@ -37,6 +49,9 @@ export function GalleryLayout(): JSX.Element {
         </Link>
         <Link to={"/components/tokens" as never} className="underline">
           Tokens
+        </Link>
+        <Link to={"/components/icons" as never} className="underline">
+          Icons
         </Link>
       </nav>
       <Outlet />
@@ -136,6 +151,79 @@ export function TokensPage(): JSX.Element {
               <tr key={`${t.group}-${t.name}`} data-token={`${t.group}-${t.name}`}>
                 <th scope="row">{`${t.group}-${t.name}`}</th>
                 <td>{t.value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+    </div>
+  );
+}
+
+/** Where a registered name came from: the handoff's own set, its missing-icons table, or kit data. */
+function iconGroup(name: (typeof ICON_NAMES)[number]): string {
+  if ((HANDOFF_MISSING as readonly string[]).includes(name)) return "Missing from accrued-ui.js";
+  if ((HANDOFF_IN_KITS as readonly string[]).includes(name)) return "Found in kit data";
+  return "accrued-ui.js";
+}
+
+// F-05-T13 (SPEC-048 B3): every registered icon name with its glyph, and the custom glyphs.
+export function IconsPage(): JSX.Element {
+  return (
+    <div className="flex flex-col gap-3">
+      <section aria-label="Custom glyphs" className="rounded-pane bg-card p-4 shadow-e2">
+        <h2 className="pb-2 text-[14.5px] font-medium">Custom glyphs</h2>
+        <ul className="flex flex-wrap items-center gap-4">
+          <li data-glyph-name="agent-monogram" className="flex items-center gap-2">
+            <AgentMonogram size={16} />
+            <AgentMonogram size={34} />
+            <span>Agent monogram</span>
+          </li>
+          <li data-glyph-name="atom-mark" className="flex items-center gap-2 text-ink-2">
+            <AtomMark size={12} />
+            <AtomMark size={22} />
+            <span>Atom mark</span>
+          </li>
+          <li data-glyph-name="half-disc" className="flex items-center gap-2 text-ink">
+            <HalfDisc size={15} />
+            <HalfDisc size={22} />
+            <span>Half disc</span>
+          </li>
+          <li data-glyph-name="vendor-tile" className="flex items-center gap-2">
+            {VENDOR_TONES.map((tone) => (
+              <VendorTile key={tone} name="Quick Books" tone={tone} size={32} />
+            ))}
+            <span>Vendor monogram tiles</span>
+          </li>
+        </ul>
+      </section>
+      <section aria-label="Registered icons" className="rounded-pane bg-card p-4 shadow-e2">
+        <h2 className="pb-2 text-[14.5px] font-medium">{`Icons (${String(ICON_NAMES.length)})`}</h2>
+        <table className="w-full text-left">
+          <caption className="sr-only">
+            Every registered icon name at 14 and 22, with the lucide name it renders as
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">14</th>
+              <th scope="col">22</th>
+              <th scope="col">Lucide name</th>
+              <th scope="col">Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ICON_NAMES.map((name) => (
+              <tr key={name} data-icon-name={name}>
+                <th scope="row">{name}</th>
+                <td className="text-ink">
+                  <Icon name={name} size={14} />
+                </td>
+                <td className="text-ink">
+                  <Icon name={name} size={22} />
+                </td>
+                <td>{ICON_SUBSTITUTES[name] ?? name}</td>
+                <td>{iconGroup(name)}</td>
               </tr>
             ))}
           </tbody>

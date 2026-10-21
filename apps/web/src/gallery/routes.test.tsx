@@ -1,7 +1,7 @@
 // F-05-T09 (SPEC-048): the /components subtree renders from fixtures with no API calls, the
 // tokens page lists every token under both ladders, /components/screens/:id passes its query
 // parameters through, and /_ds no longer routes. Axe on /components/** is in e2e/components.spec.ts.
-import { TooltipProvider } from "@abacus/ui";
+import { ICON_NAMES, TooltipProvider } from "@abacus/ui";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import { cleanup, render, screen, within } from "@testing-library/react";
@@ -92,6 +92,26 @@ describe("ac11 tokens page", () => {
     expect(by("match-ink")?.contrast.reference.card).toBeLessThan(
       by("match-ink")?.contrast.aa.card ?? 0,
     );
+  });
+});
+
+describe("F-05-T13 icons page", () => {
+  it("lists every registered icon name with its glyph, and the custom glyphs, with no API calls", async () => {
+    await visit("/components/icons");
+    const table = await screen.findByRole("table", { name: /Every registered icon name/ });
+    expect(ICON_NAMES).toHaveLength(252);
+    for (const name of ICON_NAMES) {
+      const row = table.querySelector(`tr[data-icon-name="${name}"]`);
+      expect(row, name).not.toBeNull();
+      expect(row?.querySelectorAll(`svg[data-icon="${name}"]`)).toHaveLength(2);
+    }
+    expect(table.querySelectorAll("tbody tr")).toHaveLength(ICON_NAMES.length);
+    const custom = screen.getByRole("region", { name: "Custom glyphs" });
+    for (const id of ["agent-monogram", "atom-mark", "half-disc", "vendor-tile"]) {
+      expect(custom.querySelector(`svg[data-glyph="${id}"]`), id).not.toBeNull();
+    }
+    expect(screen.getByRole("link", { name: "Icons" })).toBeTruthy();
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
 

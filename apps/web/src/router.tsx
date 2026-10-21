@@ -11,8 +11,9 @@ import { appRoute, callbackRoute, rootRoute } from "./routes/root";
 // nor the lazy chunk behind them reach `dist/`. It sits outside the app shell and calls no API.
 const GALLERY = import.meta.env.VITE_UI_GALLERY === "1";
 function galleryRoutes() {
-  const pages = (name: "GalleryLayout" | "GalleryIndex" | "TokensPage" | "ScreenPage") =>
-    lazyRouteComponent(() => import("./gallery/pages"), name);
+  const pages = (
+    name: "GalleryLayout" | "GalleryIndex" | "TokensPage" | "IconsPage" | "ScreenPage",
+  ) => lazyRouteComponent(() => import("./gallery/pages"), name);
   const layout = createRoute({
     getParentRoute: () => rootRoute,
     path: "/components",
@@ -26,6 +27,11 @@ function galleryRoutes() {
         getParentRoute: () => layout,
         path: "tokens",
         component: pages("TokensPage"),
+      }),
+      createRoute({
+        getParentRoute: () => layout,
+        path: "icons",
+        component: pages("IconsPage"),
       }),
       createRoute({
         getParentRoute: () => layout,

@@ -22,6 +22,10 @@ test("ac3: axe finds nothing serious on /components/**", async ({ page }) => {
   await expect(page.getByRole("table", { name: /Every colour token/ })).toBeVisible();
   await expectNoSeriousViolations(page);
 
+  await page.goto("/components/icons");
+  await expect(page.getByRole("table", { name: /Every registered icon name/ })).toBeVisible();
+  await expectNoSeriousViolations(page);
+
   await page.goto("/components/screens/NO-SUCH-SCREEN");
   await expect(page.getByText("Not built")).toBeVisible();
   await expectNoSeriousViolations(page);
