@@ -61,9 +61,66 @@ export {
   type TickCode,
 } from "./components/status";
 export { Table, Td, Th } from "./components/table";
-export { Drawer, Fieldset, Sheet } from "./components/overlays";
+export { Drawer, Sheet } from "./components/overlays";
+// Inputs and tabs (F-05-T15): the C-05 Tabs kit, the pill inputs, switches and boxes, the
+// fieldset and its value rows, the menu and the tooltip.
+export { Fieldset, FieldsetAdd, type FieldsetProps } from "./components/fieldset";
+export {
+  FilterChip,
+  type FilterChipProps,
+  Picker,
+  type PickerOption,
+  type PickerProps,
+  type PickerVariant,
+  SearchField,
+  type SearchFieldProps,
+  ValueRow,
+  type ValueRowProps,
+} from "./components/inputs";
+export {
+  Checkbox,
+  type CheckboxProps,
+  Radio,
+  RadioGroup,
+  type RadioGroupProps,
+  type RadioOption,
+  type RadioProps,
+  type RadioSize,
+  Toggle,
+  type ToggleProps,
+  type ToggleSize,
+} from "./components/toggles";
+export {
+  DEFAULT_VIEWS,
+  MAX_OPTIONS_PER_TRACK,
+  type Opt,
+  Segmented,
+  SegmentedGroup,
+  type SegmentedGroupProps,
+  type SegmentedProps,
+  SheetTabs,
+  type SheetTabsProps,
+  type TabForceState,
+  type TabOption,
+  UnderlineTabs,
+  type UnderlineTabsProps,
+  type ViewOption,
+  ViewToggle,
+  type ViewToggleProps,
+  nextTab,
+} from "./components/tabs";
+export { HIT, MIN_TARGET } from "./components/hit-area";
 export { Toaster, UNDO_MS, toast } from "./components/toast";
-export { Menu, type MenuItem, Popover, Tooltip, TooltipProvider } from "./components/popover";
+export {
+  Menu,
+  type MenuItem,
+  type MenuProps,
+  Popover,
+  TOOLTIP_DELAY_MS,
+  Tooltip,
+  type TooltipProps,
+  TooltipProvider,
+} from "./components/popover";
 export { type Column, DataTable } from "./components/data-table";
 export { CitationChip } from "./components/citation";
 export {

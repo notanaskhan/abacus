@@ -45,3 +45,13 @@ export function Row({
     </div>
   );
 }
+
+/** A specimen with its state named under it (hover, focus, open ...). */
+export function Held({ name, children }: { name: string; children: ReactNode }): JSX.Element {
+  return (
+    <span className="flex flex-col items-start gap-1.5">
+      {children}
+      <span className="text-meta text-ink-3">{name}</span>
+    </span>
+  );
+}

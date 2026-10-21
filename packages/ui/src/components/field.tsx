@@ -2,6 +2,10 @@ import * as LabelPrimitive from "@radix-ui/react-label";
 import type { ComponentProps, InputHTMLAttributes, JSX } from "react";
 import { cn } from "../cn";
 
+// The legacy boxed field (Atelier, TASK-091). The design system has no boxed input: a search is
+// `SearchField`, a choice is `Picker`, and a form value is a `ValueRow` (F-05-T15). This one stays
+// only for the screens that still import it, none of them new, and is deleted with the other
+// Atelier exports at M3 (plan 04, section M3).
 /** A recessed field: nested greige with an inset hair ring, white and ringed on focus. */
 export function Input({
   className,

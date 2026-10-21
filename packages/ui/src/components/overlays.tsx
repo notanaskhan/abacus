@@ -127,23 +127,3 @@ export function Sheet({
     </DialogPrimitive.Root>
   );
 }
-
-/** A fieldset card inside a drawer or sheet (r10, e1). */
-export function Fieldset({
-  title,
-  className,
-  children,
-}: {
-  title?: string;
-  className?: string;
-  children: ReactNode;
-}): JSX.Element {
-  return (
-    <section className={cn("mb-2.5 rounded-nested bg-card p-3 shadow-e1", className)}>
-      {title !== undefined && (
-        <h3 className="mb-2 text-[12.5px] font-medium text-ink-2">{title}</h3>
-      )}
-      {children}
-    </section>
-  );
-}

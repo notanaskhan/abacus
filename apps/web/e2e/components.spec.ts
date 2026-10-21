@@ -94,3 +94,79 @@ test.describe("motion", () => {
     });
   });
 });
+
+// F-05-T15 (Component Sheet F, C-05): the inputs and tabs in a real browser. A control under 24px
+// keeps a 24px hit area, which jsdom cannot lay out; Segmented wraps with the arrow keys; a menu
+// opens with the arrow and returns focus on Escape; a tooltip opens on keyboard focus.
+test.describe("inputs and tabs", () => {
+  test("hit areas: a pointer just past a small control's box still lands on it", async ({
+    page,
+  }) => {
+    await page.goto("/components");
+    await expect(page.locator("#f-checkbox")).toBeVisible();
+    const result = await page.evaluate(() => {
+      // [selector, accessible name, offset of the probe from the control's centre in px]
+      const probes: [string, string, number, number][] = [
+        ["#f-checkbox [role=checkbox]", "Off", -(15 / 2 + 4), 0],
+        ["#f-radio [role=radio]", "Off", 17 / 2 + 3, 0],
+        ["#f-radio [role=radio]", "Open issue", 0, -(13 / 2 + 5)],
+        ["#f-toggle [role=switch]", "Off 38 × 22", 0, 11 + 0.5],
+        ["#f-toggle [role=switch]", "Off 34 × 20", 0, 10 + 1.5],
+      ];
+      return probes.map(([selector, name, dx, dy]) => {
+        const el = [...document.querySelectorAll(selector)].find(
+          (e) => e.getAttribute("aria-label") === name,
+        );
+        if (el === undefined) return `${name}: missing`;
+        el.scrollIntoView({ block: "center" });
+        const r = el.getBoundingClientRect();
+        const hit = document.elementFromPoint(
+          r.left + r.width / 2 + dx,
+          r.top + r.height / 2 + dy,
+        );
+        return hit === el ? "hit" : `${name}: missed`;
+      });
+    });
+    expect(result).toEqual(["hit", "hit", "hit", "hit", "hit"]);
+  });
+
+  test("Segmented wraps with the arrow keys", async ({ page }) => {
+    await page.goto("/components");
+    const tabs = page.locator('#c-05-segmented [role=tablist][aria-label="Workbench"]');
+    await tabs.getByRole("tab", { name: "Sessions" }).focus();
+    await page.keyboard.press("ArrowLeft");
+    await expect(tabs.getByRole("tab", { name: "Connect" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(tabs.getByRole("tab", { name: "Connect" })).toBeFocused();
+    await page.keyboard.press("ArrowRight");
+    await expect(tabs.getByRole("tab", { name: "Sessions" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  });
+
+  test("ViewToggle opens with ArrowDown, and Escape returns focus to the button", async ({
+    page,
+  }) => {
+    await page.goto("/components");
+    const toggle = page
+      .locator("#c-05-view-toggle")
+      .getByRole("button", { name: "View: Grid" })
+      .first();
+    await toggle.focus();
+    await page.keyboard.press("ArrowDown");
+    await expect(page.getByRole("menuitemradio", { name: "Grid" })).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(toggle).toBeFocused();
+  });
+
+  test("a tooltip opens on keyboard focus", async ({ page }) => {
+    await page.goto("/components");
+    await page.locator("#c-00-tooltip").getByRole("button", { name: "Prepared" }).first().focus();
+    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("tooltip").first()).toContainText("Prepared by Sam Staff");
+  });
+});

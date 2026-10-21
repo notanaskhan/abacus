@@ -10,6 +10,14 @@ import {
 } from "./controls";
 import { FirmMarkSpecimen, MonogramSpecimen, PersonSpecimen, WordmarkSpecimen } from "./identity";
 import { PulseSpecimen, RevealSpecimen, SpinnerSpecimen, TypingDotsSpecimen } from "./motion";
+import {
+  FieldsetSpecimen,
+  FilterChipSpecimen,
+  PickerSpecimen,
+  SearchFieldSpecimen,
+  ValueRowSpecimen,
+} from "./inputs";
+import { MenuSpecimen, TooltipSpecimen } from "./menus";
 import { Overview } from "./overview";
 import {
   StatusDiscSpecimen,
@@ -20,6 +28,14 @@ import {
   TallyPillSpecimen,
   TickSpecimen,
 } from "./status";
+import {
+  SegmentedGroupSpecimen,
+  SegmentedSpecimen,
+  SheetTabsSpecimen,
+  UnderlineTabsSpecimen,
+  ViewToggleSpecimen,
+} from "./tabs";
+import { CheckboxSpecimen, RadioSpecimen, ToggleSpecimen } from "./toggles";
 
 // The specimen registry behind the /components gallery (SPEC-048, F-05-T09). This entry is
 // "@abacus/ui/specimens": only the gallery subtree, which a production build does not compile,
@@ -64,6 +80,32 @@ export const SPECIMENS: readonly Specimen[] = [
   },
   { id: "c-00-firm-mark", kit: "C-00", title: "Firm mark", Component: FirmMarkSpecimen },
   { id: "c-28-person", kit: "C-28", title: "People", Component: PersonSpecimen },
+  // Inputs and tabs (F-05-T15)
+  { id: "c-05-segmented", kit: "C-05", title: "Segmented", Component: SegmentedSpecimen },
+  {
+    id: "c-05-segmented-group",
+    kit: "C-05",
+    title: "SegmentedGroup",
+    Component: SegmentedGroupSpecimen,
+  },
+  {
+    id: "c-05-underline-tabs",
+    kit: "C-05",
+    title: "UnderlineTabs",
+    Component: UnderlineTabsSpecimen,
+  },
+  { id: "c-05-sheet-tabs", kit: "C-05", title: "SheetTabs", Component: SheetTabsSpecimen },
+  { id: "c-05-view-toggle", kit: "C-05", title: "ViewToggle", Component: ViewToggleSpecimen },
+  { id: "f-search-field", kit: "F", title: "SearchField", Component: SearchFieldSpecimen },
+  { id: "f-picker", kit: "F", title: "Picker", Component: PickerSpecimen },
+  { id: "f-filter-chip", kit: "F", title: "FilterChip", Component: FilterChipSpecimen },
+  { id: "f-toggle", kit: "F", title: "Toggle", Component: ToggleSpecimen },
+  { id: "f-radio", kit: "F", title: "Radio", Component: RadioSpecimen },
+  { id: "f-checkbox", kit: "F", title: "Checkbox", Component: CheckboxSpecimen },
+  { id: "c-13-value-row", kit: "C-13", title: "ValueRow", Component: ValueRowSpecimen },
+  { id: "c-13-fieldset", kit: "C-13", title: "Fieldset", Component: FieldsetSpecimen },
+  { id: "c-00-menu", kit: "C-00", title: "Menu", Component: MenuSpecimen },
+  { id: "c-00-tooltip", kit: "C-00", title: "Tooltip", Component: TooltipSpecimen },
 ];
 
 export function specimenById(id: string): Specimen | undefined {

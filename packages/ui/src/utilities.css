@@ -84,3 +84,11 @@
   transform: scale(0.985);
   filter: brightness(0.97);
 }
+
+/* Form controls (F-05-T15): colours vanish under forced colors, so a control drawn by a fill (a
+   switch track, a checkbox, a radio, a segmented track) keeps a CanvasText edge there. */
+@utility forced-edge {
+  @media (forced-colors: active) {
+    border: 1px solid CanvasText;
+  }
+}
