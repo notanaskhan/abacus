@@ -39,3 +39,7 @@ test-results/
 
 # Claude Code agent worktrees (local only)
 .claude/worktrees/
+
+# Visual-parity harness (F-05-T16): fetched handoff baselines, base-commit regression baselines, report
+.visual/
+parity-report/

@@ -8,7 +8,12 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "visual": "ABACUS_VISUAL=1 playwright test --project=visual",
+    "visual:update": "ABACUS_VISUAL=1 playwright test --project=visual regression --update-snapshots=all",
+    "visual:crop": "uv run --project ../../backend python -m abacus_tools.parity.crop_handoff \"$ACCRUED_HANDOFF_DIR\" \"$ACCRUED_BASELINES_SOURCE\"",
+    "visual:baselines": "uv run --project ../../backend python -m abacus_tools.parity.baselines",
+    "visual:ci": "node scripts/visual-ci.mjs"
   },
   "dependencies": {
     "@abacus/api-client": "workspace:*",

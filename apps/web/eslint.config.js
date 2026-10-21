@@ -166,5 +166,5 @@ export default defineConfig(
   },
   // The OIDC token endpoint is the identity provider, not our API (src/auth/session.ts).
   { files: ["src/auth/session.ts"], rules: { "no-restricted-globals": "off" } },
-  { files: ["**/*.js"], extends: [tseslint.configs.disableTypeChecked] },
+  { files: ["**/*.js", "**/*.mjs"], extends: [tseslint.configs.disableTypeChecked] },
 );
