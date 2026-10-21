@@ -20,6 +20,24 @@ import {
 import { MenuSpecimen, TooltipSpecimen } from "./menus";
 import { Overview } from "./overview";
 import {
+  KpiTileSpecimen,
+  ProgressBarSpecimen,
+  RatioStatSpecimen,
+  StatusTileSpecimen,
+  StepCounterSpecimen,
+  UploadRingSpecimen,
+} from "./progress";
+import {
+  AgentRunningRowSpecimen,
+  EmptyStateSpecimen,
+  FlagOffStateSpecimen,
+  ForcedStatesSpecimen,
+  OfflineBannerSpecimen,
+  RestrictedStateSpecimen,
+  SkeletonSpecimen,
+  ViewStateSpecimen,
+} from "./states";
+import {
   StatusDiscSpecimen,
   StatusMapSpecimen,
   StatusPillSpecimen,
@@ -133,6 +151,41 @@ export const SPECIMENS: readonly Specimen[] = [
   { id: "c-00-pane", kit: "C-00", title: "Pane and PaneHeader", Component: PaneSpecimen },
   { id: "c-23-timeline", kit: "C-23", title: "Timeline", Component: TimelineSpecimen },
   { id: "c-00-app-shell", kit: "C-00", title: "AppShell", Component: AppShellSpecimen },
+  // View states and feedback (F-05-T19): C-20 States kit and C-19 Progress kit
+  { id: "c-20-view-states", kit: "C-20", title: "ViewState panes", Component: ViewStateSpecimen },
+  {
+    id: "c-20-forced-states",
+    kit: "C-20",
+    title: "Forced states",
+    Component: ForcedStatesSpecimen,
+  },
+  { id: "c-20-empty-state", kit: "C-20", title: "EmptyState", Component: EmptyStateSpecimen },
+  { id: "c-20-skeleton", kit: "C-20", title: "Skeleton", Component: SkeletonSpecimen },
+  {
+    id: "c-20-agent-running-row",
+    kit: "C-20",
+    title: "AgentRunningRow",
+    Component: AgentRunningRowSpecimen,
+  },
+  {
+    id: "c-20-offline-banner",
+    kit: "C-20",
+    title: "OfflineBanner and fieldset empty",
+    Component: OfflineBannerSpecimen,
+  },
+  {
+    id: "c-20-restricted",
+    kit: "C-20",
+    title: "Restricted state",
+    Component: RestrictedStateSpecimen,
+  },
+  { id: "c-20-flag-off", kit: "C-20", title: "Flag-off state", Component: FlagOffStateSpecimen },
+  { id: "c-19-progress-bar", kit: "C-19", title: "ProgressBar", Component: ProgressBarSpecimen },
+  { id: "c-19-ratio-stat", kit: "C-19", title: "RatioStat", Component: RatioStatSpecimen },
+  { id: "c-19-upload-ring", kit: "C-19", title: "UploadRing", Component: UploadRingSpecimen },
+  { id: "c-19-step-counter", kit: "C-19", title: "StepCounter", Component: StepCounterSpecimen },
+  { id: "c-19-kpi-tile", kit: "C-19", title: "KPI tile", Component: KpiTileSpecimen },
+  { id: "c-19-status-tile", kit: "C-19", title: "StatusTile", Component: StatusTileSpecimen },
 ];
 
 export function specimenById(id: string): Specimen | undefined {

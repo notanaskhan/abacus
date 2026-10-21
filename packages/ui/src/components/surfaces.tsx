@@ -1,4 +1,4 @@
-import { CircleX, Inbox } from "lucide-react";
+import { CircleX } from "lucide-react";
 import type { HTMLAttributes, JSX, ReactNode } from "react";
 import { cn } from "../cn";
 
@@ -33,19 +33,9 @@ export function Badge({
   );
 }
 
-/** Loading bars: 9px, nested greige, pulsing after a short delay so fast loads never flash. */
-export function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>): JSX.Element {
-  return (
-    <div
-      aria-hidden="true"
-      className={cn(
-        "min-h-[9px] animate-pulse rounded-[4.5px] bg-nested [animation-delay:200ms]",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+// Skeleton and EmptyState moved to components/states.tsx (F-05-T19), built on Pulse and the
+// kit's 200ms wait; they are re-exported so every call site is unchanged.
+export { EmptyState, Skeleton } from "./states";
 
 // The spinner moved to components/motion.tsx (F-05-T14), where it honours reduced motion.
 export { Spinner } from "./motion";
@@ -71,30 +61,6 @@ export function Alert({
         <p className="font-medium text-red-ink">{title}</p>
         {children !== undefined && <div className="text-ink-2">{children}</div>}
       </div>
-      {action}
-    </div>
-  );
-}
-
-/** An empty state: a small recessed tile, a title, one line of help and at most one action. */
-export function EmptyState({
-  title,
-  children,
-  action,
-}: {
-  title: string;
-  children?: ReactNode;
-  action?: ReactNode;
-}): JSX.Element {
-  return (
-    <div className="flex flex-col items-center gap-2 px-6 py-8 text-center">
-      <span className="flex size-[34px] items-center justify-center rounded-tile bg-nested">
-        <Inbox aria-hidden="true" className="size-[17px] text-ink-3" />
-      </span>
-      <p className="text-[14px] font-medium">{title}</p>
-      {children !== undefined && (
-        <div className="max-w-[300px] text-[12.5px] leading-[1.5] text-ink-2">{children}</div>
-      )}
       {action}
     </div>
   );

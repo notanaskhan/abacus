@@ -68,6 +68,22 @@
   }
 }
 
+@keyframes ac-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(334%);
+  }
+}
+
+/* Tailwind's `animate-pulse` is the skeleton's pulse, 1, .55, 1 over 1.2s, so the Skeleton and any
+   older caller of the class never draw the 2s default (F-05-T19). Kept out of theme.css, whose
+   block tokens.ts mirrors. */
+@theme {
+  --animate-pulse: ac-pulse 1.2s ease-in-out infinite;
+}
+
 @utility motion-spin {
   animation: ac-spin var(--motion-spin) infinite;
 }
@@ -79,6 +95,9 @@
 }
 @utility motion-breathe {
   animation: ac-breathe 2400ms ease-in-out infinite;
+}
+@utility motion-slide {
+  animation: ac-slide 1400ms ease-in-out infinite;
 }
 @utility motion-typing {
   animation: ac-typing 1100ms ease-in-out infinite backwards;

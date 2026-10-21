@@ -170,3 +170,72 @@ test.describe("inputs and tabs", () => {
     await expect(page.getByRole("tooltip").first()).toContainText("Prepared by Sam Staff");
   });
 });
+
+// F-05-T19 (C-20): a pane keeps its frame in every mode. The header, the table head and the rows
+// are measured in a real layout, which jsdom cannot do: Loaded, Loading, Empty and Error of the
+// Files pane, and the Sessions pane, have the same pane, header and row heights.
+test.describe("view states", () => {
+  const MODES = ["Loaded", "Loading", "Empty", "Error"] as const;
+
+  for (const [kind, row, rowHeight] of [
+    ["files", "table", 40],
+    ["sessions", "list", 48],
+  ] as const) {
+    test(`c-20: the ${kind} pane keeps its header and row heights in every mode`, async ({
+      page,
+    }) => {
+      await page.goto("/components");
+      const pane = page.locator(`#c-20-view-states [data-pane="${kind}"]`);
+      await pane.scrollIntoViewIfNeeded();
+      const frame = async (): Promise<{
+        pane: number;
+        header: number;
+        head: number | null;
+        rows: number[];
+      }> =>
+        pane.evaluate((el, rowName) => {
+          const h = (e: Element | null): number =>
+            e === null ? 0 : e.getBoundingClientRect().height;
+          const head = el.querySelector("[data-row='table-head']");
+          return {
+            pane: h(el),
+            header: h(el.querySelector("[data-pane-header]")),
+            head: head === null ? null : h(head),
+            rows: [...el.querySelectorAll(`[data-row='${rowName}']`)].map(h),
+          };
+        }, row);
+      const loaded = await frame();
+      expect(loaded.header).toBe(46);
+      if (kind === "files") expect(loaded.head).toBe(30);
+      expect(loaded.rows.length).toBeGreaterThan(0);
+      for (const height of loaded.rows) expect(height).toBeGreaterThanOrEqual(rowHeight);
+      for (const mode of MODES) {
+        await pane.getByRole("tab", { name: mode }).click();
+        // The skeleton is drawn after 200ms; wait it out so its rows are measured.
+        await page.waitForTimeout(350);
+        const now = await frame();
+        expect(now.pane, mode).toBe(loaded.pane);
+        expect(now.header, mode).toBe(46);
+        expect(now.head, mode).toBe(loaded.head);
+        if (mode === "Loading") {
+          for (const height of now.rows) expect(height, mode).toBeGreaterThanOrEqual(rowHeight);
+          expect(now.rows.length).toBe(6);
+        }
+        if (mode === "Empty" || mode === "Error") expect(now.rows).toEqual([]);
+      }
+    });
+  }
+
+  test("c-20: a restricted pane shows no record data, and flag-off is a designed state", async ({
+    page,
+  }) => {
+    await page.goto("/components");
+    await expect(page.locator("#c-20-restricted [data-restricted]")).toHaveCount(8);
+    await expect(page.locator("#c-20-flag-off")).toContainText(
+      "Insights is not turned on for this firm.",
+    );
+    await expect(page.locator("#c-20-flag-off [data-flag-off]").first()).not.toContainText(
+      /404|not found/i,
+    );
+  });
+});
