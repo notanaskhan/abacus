@@ -3977,6 +3977,32 @@ export type OverdueCountOut = {
 };
 
 /**
+ * PassedEntryOut
+ */
+export type PassedEntryOut = {
+    /**
+     * Accounts
+     */
+    accounts: Array<string>;
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Ref
+     */
+    ref: string;
+};
+
+/**
  * PauseIn
  */
 export type PauseIn = {
@@ -5867,6 +5893,10 @@ export type TbLineOut = {
      */
     account_name: string;
     /**
+     * Aje
+     */
+    aje: string | null;
+    /**
      * Area
      */
     area: string | null;
@@ -5890,6 +5920,18 @@ export type TbLineOut = {
      * Eoy
      */
     eoy: string;
+    /**
+     * Final
+     */
+    final: string | null;
+    /**
+     * Refs
+     */
+    refs: Array<string>;
+    /**
+     * Rje
+     */
+    rje: string | null;
     /**
      * Wp Ref
      */
@@ -6377,10 +6419,19 @@ export type TotalsOut = {
 export type TrialBalanceDetailOut = {
     boy: TotalsOut | null;
     eoy: TotalsOut;
+    final: TotalsOut | null;
+    /**
+     * Layers Available
+     */
+    layers_available: boolean;
     /**
      * Lines
      */
     lines: Array<TbLineOut>;
+    /**
+     * Pending Entries
+     */
+    pending_entries: number;
     trial_balance: TrialBalanceOut;
     version: TbVersionOut;
     /**
@@ -6431,6 +6482,44 @@ export type TrialBalancesOut = {
      * Trial Balances
      */
     trial_balances: Array<TrialBalanceOut>;
+};
+
+/**
+ * UncorrectedOut
+ */
+export type UncorrectedOut = {
+    /**
+     * Aggregate
+     */
+    aggregate: string;
+    /**
+     * Band
+     */
+    band: 'clearly_trivial' | 'below_performance' | 'below_overall' | 'above_overall' | null;
+    /**
+     * Entries
+     */
+    entries: Array<PassedEntryOut>;
+    /**
+     * Headroom
+     */
+    headroom: string | null;
+    /**
+     * Materiality Decided
+     */
+    materiality_decided: boolean;
+    /**
+     * Overall
+     */
+    overall: string | null;
+    /**
+     * Performance
+     */
+    performance: string | null;
+    /**
+     * Trivial
+     */
+    trivial: string | null;
 };
 
 /**
@@ -16741,6 +16830,10 @@ export type LeadsheetsData = {
          * Version
          */
         version?: number | null;
+        /**
+         * Layer
+         */
+        layer?: 'unadjusted' | 'final';
     };
     url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/leadsheets';
 };
@@ -16832,6 +16925,58 @@ export type AdoptTbVersionResponses = {
 };
 
 export type AdoptTbVersionResponse = AdoptTbVersionResponses[keyof AdoptTbVersionResponses];
+
+export type UncorrectedData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/uncorrected-misstatements';
+};
+
+export type UncorrectedErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type UncorrectedError = UncorrectedErrors[keyof UncorrectedErrors];
+
+export type UncorrectedResponses = {
+    /**
+     * Successful Response
+     */
+    200: UncorrectedOut;
+};
+
+export type UncorrectedResponse = UncorrectedResponses[keyof UncorrectedResponses];
 
 export type WorkItemsData = {
     body?: never;

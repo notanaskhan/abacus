@@ -275,6 +275,7 @@ function TrialBalanceCard({
   const detail = useQuery({ ...trialBalanceOptions(path), retry: false });
   const candidates = useQuery({ ...tbCandidatesOptions(path), retry: false });
   const [mode, setMode] = useState<"accounts" | "leadsheets">("accounts");
+  const [layer, setLayer] = useState<"unadjusted" | "final">("unadjusted");
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [annotating, setAnnotating] = useState(false);
   const [upgrading, setUpgrading] = useState<SnapshotOut | null>(null);
@@ -298,6 +299,7 @@ function TrialBalanceCard({
       c.pulled_at > d.version.pulled_at,
   );
   const hasPrior = d.boy !== null;
+  const showFinal = layer === "final" && d.final != null;
   return (
     <section
       aria-labelledby="tb-heading"
@@ -307,16 +309,37 @@ function TrialBalanceCard({
         <h2 id="tb-heading" className="text-[15px] font-medium tracking-[-0.012em]">
           Trial balance
         </h2>
-        <StatusPill tone="neutral">{`Unadjusted · TB: ${LABEL[d.trial_balance.label]}`}</StatusPill>
+        <StatusPill tone="neutral">{`${showFinal ? "Final" : "Unadjusted"} · TB: ${LABEL[d.trial_balance.label]}`}</StatusPill>
         <span className="text-[12.5px] text-ink-3 tabular-nums">
           {`${d.trial_balance.period_end} · v${String(d.version.version_no)}`}
         </span>
-        {d.eoy.balanced ? (
+        {(showFinal ? d.final : d.eoy)?.balanced !== false ? (
           <StatusPill tone="success">Balanced</StatusPill>
         ) : (
-          <StatusPill tone="danger">{`Off ${amount(d.eoy.difference)}`}</StatusPill>
+          <StatusPill tone="danger">{`Off ${amount((showFinal ? d.final : d.eoy)?.difference)}`}</StatusPill>
         )}
         <span className="flex-1" />
+        <div role="group" aria-label="Layer" className="flex gap-1">
+          {(["unadjusted", "final"] as const).map((x) => (
+            <Button
+              key={x}
+              size="sm"
+              variant={layer === x ? "default" : "outline"}
+              aria-pressed={layer === x}
+              disabled={x === "final" && !d.layers_available}
+              title={
+                x === "final" && !d.layers_available
+                  ? "Adjustments arrive with Findings & adjustments"
+                  : undefined
+              }
+              onClick={() => {
+                setLayer(x);
+              }}
+            >
+              {x === "unadjusted" ? "Unadjusted" : "Final"}
+            </Button>
+          ))}
+        </div>
         <div role="group" aria-label="View" className="flex gap-1">
           {(["accounts", "leadsheets"] as const).map((m) => (
             <Button
@@ -337,6 +360,11 @@ function TrialBalanceCard({
         {`Adopted by ${d.version.adopted_by_name} from ${sourceWord(d.version.source)}, pulled ${day(d.version.pulled_at)}`}
         {d.version.reason != null && ` · ${d.version.reason}`}
       </p>
+      {showFinal && d.pending_entries > 0 && (
+        <p className="border-b-[0.5px] border-hair px-4 py-1.5 text-[12px] text-ink-3">
+          {`${String(d.pending_entries)} proposed ${d.pending_entries === 1 ? "entry isn't" : "entries aren't"} in Final until approved.`}
+        </p>
+      )}
       <CheckStrip
         engagementId={engagementId}
         tbId={tb.id}
@@ -426,6 +454,19 @@ function TrialBalanceCard({
                   <th scope="col" className="px-2 py-1.5 text-right font-medium">
                     End of year
                   </th>
+                  {showFinal && (
+                    <>
+                      <th scope="col" className="px-2 py-1.5 text-right font-medium">
+                        AJE
+                      </th>
+                      <th scope="col" className="px-2 py-1.5 text-right font-medium">
+                        RJE
+                      </th>
+                      <th scope="col" className="px-2 py-1.5 text-right font-medium">
+                        Final
+                      </th>
+                    </>
+                  )}
                   {hasPrior && (
                     <th scope="col" className="px-2 py-1.5 text-right font-medium">
                       Change
@@ -467,6 +508,24 @@ function TrialBalanceCard({
                     <td className="px-2 py-1 text-right tabular-nums">{amount(l.debit, unit)}</td>
                     <td className="px-2 py-1 text-right tabular-nums">{amount(l.credit, unit)}</td>
                     <td className="px-2 py-1 text-right tabular-nums">{amount(l.eoy, unit)}</td>
+                    {showFinal && (
+                      <>
+                        <td className="px-2 py-1 text-right tabular-nums">
+                          {l.aje != null && l.aje !== "0.00" ? amount(l.aje, unit) : ""}
+                          {l.refs.length > 0 && (
+                            <span className="ml-1.5 text-[10.5px] font-medium text-accent">
+                              {l.refs.join(" ")}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-2 py-1 text-right tabular-nums">
+                          {l.rje != null && l.rje !== "0.00" ? amount(l.rje, unit) : ""}
+                        </td>
+                        <td className="px-2 py-1 text-right font-medium tabular-nums">
+                          {amount(l.final, unit)}
+                        </td>
+                      </>
+                    )}
                     {hasPrior && (
                       <td className="px-2 py-1 text-right tabular-nums">
                         {amount(l.change, unit)}
@@ -491,6 +550,18 @@ function TrialBalanceCard({
                   <td className="px-2 py-1.5 text-right tabular-nums">
                     {amount(d.eoy.difference, unit)}
                   </td>
+                  {showFinal && (
+                    <>
+                      <td />
+                      <td />
+                      <td
+                        className="px-2 py-1.5 text-right tabular-nums"
+                        title={`Final debits ${amount(d.final?.debit, unit)} · credits ${amount(d.final?.credit, unit)}`}
+                      >
+                        {amount(d.final?.difference, unit)}
+                      </td>
+                    </>
+                  )}
                   {hasPrior && <td />}
                 </tr>
               </tfoot>
@@ -498,7 +569,12 @@ function TrialBalanceCard({
           </div>
         </>
       ) : (
-        <Leadsheets engagementId={engagementId} tbId={tb.id} unit={unit} />
+        <Leadsheets
+          engagementId={engagementId}
+          tbId={tb.id}
+          unit={unit}
+          layer={showFinal ? "final" : "unadjusted"}
+        />
       )}
       {d.versions.length > 1 && (
         <div className="border-t-[0.5px] border-hair px-4 py-2">
@@ -552,13 +628,18 @@ function Leadsheets({
   engagementId,
   tbId,
   unit,
+  layer,
 }: {
   engagementId: string;
   tbId: string;
   unit: string;
+  layer: "unadjusted" | "final";
 }): JSX.Element {
   const sheets = useQuery({
-    ...leadsheetsOptions({ path: { engagement_id: engagementId, tb_id: tbId } }),
+    ...leadsheetsOptions({
+      path: { engagement_id: engagementId, tb_id: tbId },
+      query: { layer },
+    }),
     retry: false,
   });
   if (sheets.isPending) return <Skeleton className="m-4 h-40" />;

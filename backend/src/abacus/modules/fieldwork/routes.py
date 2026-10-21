@@ -45,6 +45,7 @@ from abacus.modules.fieldwork.flow import (
     sign_items,
     waiting_for,
 )
+from abacus.modules.fieldwork.misstatements import uncorrected_for
 from abacus.modules.fieldwork.notes import NoteView, clear, notes_for, raise_note, respond
 from abacus.modules.fieldwork.planning import (
     MaterialityVersionView,
@@ -1548,3 +1549,48 @@ async def search_findings_route(
         FindingHitOut(id=f.id, engagement_id=f.engagement_id, title=f.title)
         for f in await search_findings(ctx, q)
     ]
+
+
+# --- The summary of uncorrected misstatements (SPEC-311; TASK-322) ---------------------------
+
+
+class PassedEntryOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    ref: Annotated[str, classified("internal")]
+    description: Annotated[str, classified("confidential")]
+    amount: Annotated[Decimal, classified("confidential")]
+    accounts: Annotated[list[str], classified("confidential")]
+
+
+class UncorrectedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    entries: Annotated[list[PassedEntryOut], classified("confidential")]
+    aggregate: Annotated[Decimal, classified("confidential")]
+    overall: Annotated[Decimal | None, classified("confidential")]
+    performance: Annotated[Decimal | None, classified("confidential")]
+    trivial: Annotated[Decimal | None, classified("confidential")]
+    materiality_decided: Annotated[bool, classified("internal")]
+    band: Annotated[
+        Literal["clearly_trivial", "below_performance", "below_overall", "above_overall"] | None,
+        classified("internal"),
+    ]
+    headroom: Annotated[Decimal | None, classified("confidential")]
+
+
+@router.get("/uncorrected-misstatements", action="procedure.read", response_model=UncorrectedOut)
+async def uncorrected_route(engagement_id: UUID, ctx: Ctx) -> UncorrectedOut:
+    """SPEC-311 AC-4: passed entries and their aggregate against materiality."""
+    found = await uncorrected_for(ctx, engagement_id)
+    return UncorrectedOut(
+        entries=[PassedEntryOut.model_validate(e, from_attributes=True) for e in found.entries],
+        aggregate=found.aggregate,
+        overall=found.overall,
+        performance=found.performance,
+        trivial=found.trivial,
+        materiality_decided=found.materiality_decided,
+        band=found.band,
+        headroom=found.headroom,
+    )

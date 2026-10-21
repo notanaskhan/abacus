@@ -13,7 +13,7 @@ nothing but identifiers. Only the unadjusted layer exists until an adjustment so
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Callable, Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import ROUND_HALF_EVEN, Decimal
@@ -79,16 +79,55 @@ class LayerUnavailable(DomainConflict):
     code = "layer_unavailable"
 
 
-# The adjustment slot (A-06 fills it): fails closed, so AJE, RJE and Final are refused until then.
-_ADJUSTMENT_SOURCES: list[Callable[..., object]] = []
+@dataclass(frozen=True)
+class EntryLine:
+    account_code: str
+    debit: Decimal
+    credit: Decimal
 
 
-def register_adjustment_source(source: Callable[..., object]) -> None:
-    _ADJUSTMENT_SOURCES.append(source)
+@dataclass(frozen=True)
+class AdjustmentEntry:
+    """A recorded entry an adjustment source offers the layers (SPEC-311): `kind` aje or rje;
+    only entries the source counts as recorded (approved, or accepted by the client) belong."""
+
+    ref: str
+    kind: Literal["aje", "rje"]
+    lines: tuple[EntryLine, ...]
+
+
+@dataclass(frozen=True)
+class EntrySet:
+    recorded: tuple[AdjustmentEntry, ...]
+    pending: int  # proposed and not yet approved; shown as a count, never in a layer
+
+
+AdjustmentSource = Callable[[TenantContext, UUID], Awaitable[EntrySet]]
+
+# The adjustment slot (fieldwork fills it, SPEC-311): fails closed, so AJE, RJE and Final are
+# refused while nothing is registered.
+_ADJUSTMENT_SOURCES: list[AdjustmentSource] = []
+
+
+def register_adjustment_source(source: AdjustmentSource) -> None:
+    if source not in _ADJUSTMENT_SOURCES:
+        _ADJUSTMENT_SOURCES.append(source)
 
 
 def layer_available(layer: str) -> bool:
     return layer == "unadjusted" or bool(_ADJUSTMENT_SOURCES)
+
+
+async def _entries(tenant: TenantContext, engagement_id: UUID) -> EntrySet | None:
+    if not _ADJUSTMENT_SOURCES:
+        return None
+    recorded: list[AdjustmentEntry] = []
+    pending = 0
+    for source in _ADJUSTMENT_SOURCES:
+        found = await source(tenant, engagement_id)
+        recorded.extend(found.recorded)
+        pending += found.pending
+    return EntrySet(tuple(recorded), pending)
 
 
 @dataclass(frozen=True)
@@ -114,6 +153,10 @@ class TbLine:
     change: Decimal | None
     area: str | None
     wp_ref: str | None
+    aje: Decimal | None = None  # None without an adjustment source (SPEC-311)
+    rje: Decimal | None = None
+    final: Decimal | None = None
+    refs: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -154,6 +197,8 @@ class TrialBalanceView:
     lines: list[TbLine]
     eoy: Totals
     boy: Totals | None
+    final: Totals | None = None  # None without an adjustment source
+    pending_entries: int = 0
 
 
 @dataclass(frozen=True)
@@ -241,8 +286,63 @@ def build_lines(
     return lines
 
 
-def leadsheets(lines: Sequence[TbLine]) -> list[Leadsheet]:
-    """One leadsheet per audit area, alphabetical, with Unassigned last; never drops a line."""
+def apply_entries(lines: Sequence[TbLine], entries: Sequence[AdjustmentEntry]) -> list[TbLine]:
+    """AJE, RJE and Final per account, by code; an entry's account the trial balance doesn't
+    hold appears as a new line with no unadjusted balance."""
+    names = {line.account_code: line for line in lines}
+    aje: dict[str, Decimal] = {}
+    rje: dict[str, Decimal] = {}
+    refs: dict[str, list[str]] = {}
+    for e in entries:
+        bucket = aje if e.kind == "aje" else rje
+        for x in e.lines:
+            bucket[x.account_code] = bucket.get(x.account_code, _ZERO) + x.debit - x.credit
+            if e.ref not in refs.setdefault(x.account_code, []):
+                refs[x.account_code].append(e.ref)
+    out: list[TbLine] = []
+    for code in sorted(set(names) | set(aje) | set(rje)):
+        base = names.get(code)
+        if base is None:
+            base = TbLine(code, code, None, _ZERO, _ZERO, _ZERO, None, None, None)
+        a, r = aje.get(code, _ZERO), rje.get(code, _ZERO)
+        out.append(
+            TbLine(
+                base.account_code,
+                base.account_name,
+                base.boy,
+                base.debit,
+                base.credit,
+                base.eoy,
+                base.change,
+                base.area,
+                base.wp_ref,
+                a,
+                r,
+                base.eoy + a + r,
+                tuple(refs.get(code, ())),
+            )
+        )
+    return out
+
+
+def cy_of(line: TbLine, layer: str) -> Decimal:
+    if layer == "final" and line.final is not None:
+        return line.final
+    return line.eoy
+
+
+def final_totals(lines: Sequence[TbLine]) -> Totals:
+    """Debits and credits of the Final column: each account's final net on its own side."""
+    debit = sum((line.final for line in lines if line.final is not None and line.final > 0), _ZERO)
+    credit = -sum(
+        (line.final for line in lines if line.final is not None and line.final < 0), _ZERO
+    )
+    return totals(debit, credit)
+
+
+def leadsheets(lines: Sequence[TbLine], layer: str = "unadjusted") -> list[Leadsheet]:
+    """One leadsheet per audit area, alphabetical, with Unassigned last; never drops a line.
+    CY is the unadjusted or the final balance."""
     has_prior = any(line.boy is not None for line in lines)
     groups: dict[str, list[TbLine]] = {}
     for line in lines:
@@ -257,9 +357,9 @@ def leadsheets(lines: Sequence[TbLine]) -> list[Leadsheet]:
                 line.account_code,
                 line.account_name,
                 line.boy,
-                line.eoy,
-                line.change,
-                pct(line.change, line.boy) if line.change is not None else None,
+                cy_of(line, layer),
+                None if line.boy is None else cy_of(line, layer) - line.boy,
+                None if line.boy is None else pct(cy_of(line, layer) - line.boy, line.boy),
             )
             for line in groups[area]
         ]
@@ -539,6 +639,9 @@ async def trial_balance_view(
         else None
     )
     lines = build_lines(current, prior, {a.account_code: (a.area, a.wp_ref) for a in notes})
+    entries = await _entries(tenant, engagement_id)
+    if entries is not None:
+        lines = apply_entries(lines, entries.recorded)
 
     def info(v: TrialBalanceVersion) -> VersionInfo:
         s = snaps[v.snapshot_id]
@@ -567,6 +670,8 @@ async def trial_balance_view(
         lines,
         totals(debit, credit),
         boy,
+        final_totals(lines) if entries is not None else None,
+        entries.pending if entries is not None else 0,
     )
 
 

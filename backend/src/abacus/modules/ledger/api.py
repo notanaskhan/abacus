@@ -46,8 +46,12 @@ from abacus.modules.ledger.service import (
     snapshot_view,
 )
 from abacus.modules.ledger.trial_balances import (
+    AdjustmentEntry,
+    AdjustmentSource,
     AnnotationEdit,
     Candidate,
+    EntryLine,
+    EntrySet,
     LayerUnavailable,
     LeadRow,
     Leadsheet,
@@ -82,9 +86,13 @@ register_entity_owners(AUDIT_KINDS, audit_entities)
 
 __all__ = [
     "ROUTERS",
+    "AdjustmentEntry",
+    "AdjustmentSource",
     "AnnotationEdit",
     "Balance",
     "Candidate",
+    "EntryLine",
+    "EntrySet",
     "GlAccount",
     "GlCheck",
     "GlEntry",

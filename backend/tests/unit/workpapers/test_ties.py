@@ -127,3 +127,9 @@ def test_ac4_a_new_trial_balance_version_changes_a_linked_papers_hash() -> None:
     v2 = TbLink(tb_id, "standard", None, 2, TB, [])  # type: ignore[arg-type]  # date unused
     assert content_hash(content_of(cells, [], v1)) != content_hash(content_of(cells, [], v2))  # type: ignore[arg-type]  # SimpleNamespace rows
     assert content_hash(content_of(plain, [], v1)) == content_hash(content_of(plain, [], v2))  # type: ignore[arg-type]  # SimpleNamespace rows
+
+
+def test_spec311_tb_final_reads_the_adjusted_balance() -> None:
+    tb = TbSource({"1000": D("10.00")}, None, {"1000": D("12.50")})
+    assert formula({"A1": '=TB("1000","FINAL")'}, tb)["A1"] == D("12.50")
+    assert formula({"A1": '=TB("1000","FINAL")'}, TB)["A1"] == "#TB!"  # no adjustment source
