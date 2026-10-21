@@ -13,6 +13,7 @@ from alembic import context
 from sqlalchemy import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
+from abacus.kernel.clock import check_startup as check_clock
 from abacus.kernel.config import settings
 
 LOCK_TIMEOUT = "5s"
@@ -20,6 +21,7 @@ STATEMENT_TIMEOUT = "60s"
 
 
 def _url() -> str:
+    check_clock()  # F-04-T02: the migration job refuses a demo clock in production too
     override = context.get_x_argument(as_dictionary=True).get("url")
     if override:
         return override

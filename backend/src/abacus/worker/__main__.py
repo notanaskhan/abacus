@@ -39,6 +39,7 @@ from temporalio.worker import Worker
 
 from abacus.ai_gateway import FakeModel, check_provider_limits, configure_provider
 from abacus.ai_gateway.budgets import run_anomaly_job
+from abacus.kernel.clock import check_startup as check_clock
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import key_service
 from abacus.kernel.db import ping, ping_relay
@@ -98,6 +99,7 @@ def _worker(client: Client, task_queue: str, work_class: WorkClass | None) -> Wo
 async def build_workers(classes: Sequence[WorkClass] = WORK_CLASSES) -> list[Worker]:
     """One pool per work class served (ADR-071), plus the legacy single queue while workflows
     started before the class queues may still be open on it (SPEC-003 AC-16)."""
+    check_clock()  # F-04-T02: no demo clock in production
     configure_tracing("abacus-worker")
     configure_metrics("abacus-worker")
     configure_error_tracking("abacus-worker")
