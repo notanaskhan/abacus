@@ -9,7 +9,7 @@ import {
   procedureQueryKey,
   setAccountsMutation,
 } from "@abacus/api-client/query";
-import { Alert, Button, Label, Panel, Skeleton, StatusPill } from "@abacus/ui";
+import { Alert, Button, count, Label, Panel, prose, Skeleton, StatusPill } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
@@ -96,7 +96,7 @@ export function SubsequentLedger({
           date). Payments in it are what the search tests.
         </p>
         {s?.status === "reconciled" && (
-          <p>{`${(s.line_count ?? 0).toLocaleString()} ledger lines checked.`}</p>
+          <p>{`${count(s.line_count ?? 0)} ledger lines checked.`}</p>
         )}
         {s?.status === "failed" && (
           <Alert title="Not accepted">
@@ -315,7 +315,7 @@ export function Bands({
                 />
                 <span>% of performance materiality</span>
                 {thresholds[n] !== undefined && edited === null && (
-                  <span className="text-muted tabular-nums">{`= ${Number(thresholds[n]).toLocaleString("en-US", { minimumFractionDigits: 2 })}`}</span>
+                  <span className="text-muted tabular-nums">{`= ${prose(thresholds[n], "cents")}`}</span>
                 )}
               </li>
             );

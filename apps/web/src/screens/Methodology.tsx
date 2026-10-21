@@ -3,6 +3,7 @@ import { listTemplatesOptions, listTemplatesQueryKey, meOptions } from "@abacus/
 import {
   Alert,
   Button,
+  DateText,
   EmptyState,
   Input,
   Label,
@@ -77,7 +78,9 @@ export function Methodology(): JSX.Element {
                     </Link>
                   </Td>
                   <Td className="tabular-nums">v{t.version}</Td>
-                  <Td className="text-muted">{new Date(t.created_at).toLocaleDateString()}</Td>
+                  <Td className="text-muted">
+                    <DateText value={t.created_at} />
+                  </Td>
                 </tr>
               ))}
             </tbody>

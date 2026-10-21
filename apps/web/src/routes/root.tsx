@@ -1,6 +1,7 @@
-import { Alert, Button, EmptyState } from "@abacus/ui";
-import { Link, createRootRoute, createRoute } from "@tanstack/react-router";
+import { Alert, Button, ClockProvider, EmptyState } from "@abacus/ui";
+import { Link, Outlet, createRootRoute, createRoute } from "@tanstack/react-router";
 import { type ComponentType, type JSX, Suspense, lazy } from "react";
+import { nowMs } from "../app-core/clock";
 import { CALLBACK_PATH } from "../auth/session";
 import { Layout } from "../screens/Layout";
 import { SignInCallback } from "../screens/SignInCallback";
@@ -8,9 +9,20 @@ import { SignInCallback } from "../screens/SignInCallback";
 // Code-based routes (no file-router plugin): the firm workspace and the client portal (ADR-011).
 // F-03-T17: the tree is split by area (routes/firm, routes/portal); each screen is its own chunk.
 export const rootRoute = createRootRoute({
+  component: RootShell,
   notFoundComponent: NotFound,
   errorComponent: RouteError,
 });
+
+/** F-05-T10: the design system's ClockProvider reads business time from the browser clock
+ * (app-core/clock.tsx), so screens read time only through useNow, useToday and useFormat. */
+function RootShell(): JSX.Element {
+  return (
+    <ClockProvider now={nowMs}>
+      <Outlet />
+    </ClockProvider>
+  );
+}
 
 function NotFound(): JSX.Element {
   return (

@@ -5,7 +5,7 @@ import {
   raiseNoteMutation,
   respondNoteMutation,
 } from "@abacus/api-client/query";
-import { Badge, Button, Drawer, Fieldset, StatusPill, toast } from "@abacus/ui";
+import { Badge, Button, DateText, Drawer, Fieldset, StatusPill, toast } from "@abacus/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
@@ -184,7 +184,7 @@ function NoteCard({
       <div className="mb-2 flex items-center gap-2">
         <StatusPill tone={state.tone}>{state.label}</StatusPill>
         <span className="text-[11.5px] text-ink-3">
-          {`Raised by ${note.raised_by_name || "a reviewer"} · ${new Date(note.raised_at).toLocaleDateString()}`}
+          Raised by {note.raised_by_name || "a reviewer"} · <DateText value={note.raised_at} />
         </span>
       </div>
       <ol className="flex flex-col gap-2" aria-label="Thread">

@@ -1,6 +1,6 @@
 import type { KnowledgeHitOut } from "@abacus/api-client";
 import { searchMutation } from "@abacus/api-client/query";
-import { Button, EmptyState, Input, Label, Panel } from "@abacus/ui";
+import { Button, EmptyState, Input, Label, Panel, ratio } from "@abacus/ui";
 import { useMutation } from "@tanstack/react-query";
 import { type JSX, type SyntheticEvent, useState } from "react";
 import { errorMessage } from "../api";
@@ -56,7 +56,7 @@ export function Knowledge(): JSX.Element {
                 <p className="text-meta text-muted">{hit.heading_path}</p>
               )}
               <p className="text-body whitespace-pre-line">{hit.text}</p>
-              <p className="text-meta text-muted tabular-nums">Match {hit.score.toFixed(2)}</p>
+              <p className="text-meta text-muted tabular-nums">Match {ratio(hit.score)}</p>
             </Panel>
           </li>
         ))}

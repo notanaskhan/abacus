@@ -24,18 +24,19 @@ import {
   Alert,
   Badge,
   Button,
-  EmptyState,
-  Input,
-  Label,
   CitationChip,
   Drawer,
+  EmptyState,
   Fieldset,
+  Input,
+  Label,
   PanelRight,
   Skeleton,
   Spinner,
   Status,
   StatusPill,
   statusWord,
+  useFormat,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
@@ -563,6 +564,7 @@ function Retrieve({
   item: RequestItemOut;
   engagement: EngagementOut;
 }): JSX.Element {
+  const fmt = useFormat();
   const queryClient = useQueryClient();
   const engagementId = engagement.id;
   const path = { engagement_id: engagementId };
@@ -613,7 +615,7 @@ function Retrieve({
       </Button>
       {running && status !== "queued" && <Spinner label="Retrieving…" />}
       {status === "queued" && (
-        <Spinner label={queuedLabel(run.data?.estimated_start_at ?? null)} />
+        <Spinner label={queuedLabel(run.data?.estimated_start_at ?? null, fmt.time)} />
       )}
       {status === "failed_validation" && (
         <span className="text-body text-danger">The trial balance didn't pass validation.</span>
@@ -631,13 +633,9 @@ function isActive(status: string | undefined | null): boolean {
 }
 
 // Waiting for capacity, in plain words: never names another firm (SPEC-003 §17).
-function queuedLabel(estimatedStartAt: string | null): string {
+function queuedLabel(estimatedStartAt: string | null, time: (v: string) => string): string {
   if (estimatedStartAt === null) return "Queued: waiting for capacity";
-  const time = new Date(estimatedStartAt).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  return `Queued: expected to start by ${time}`;
+  return `Queued: expected to start by ${time(estimatedStartAt)}`;
 }
 
 function AddRequestItem({ engagementId }: { engagementId: string }): JSX.Element {

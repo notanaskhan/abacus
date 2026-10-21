@@ -10,7 +10,18 @@ import {
   revokeMutation,
   startMutation,
 } from "@abacus/api-client/query";
-import { Alert, Button, Dialog, Panel, Skeleton, StatusPill, Table, Td, Th } from "@abacus/ui";
+import {
+  Alert,
+  Button,
+  Dialog,
+  Panel,
+  Skeleton,
+  StatusPill,
+  Table,
+  Td,
+  Th,
+  useFormat,
+} from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
@@ -26,8 +37,9 @@ const RUN_STATUS: Record<string, string> = {
   failed: "Failed",
 };
 
-function when(value: string | null | undefined): string {
-  return value === null || value === undefined ? "Never" : new Date(value).toLocaleString();
+function useWhen(): (value: string | null | undefined) => string {
+  const f = useFormat();
+  return (value) => (value === null || value === undefined ? "Never" : f.dateTime(value));
 }
 
 /** SPEC-020 AC-2 to AC-6: the engagement's ledger connection, for the client admin (who may
@@ -43,6 +55,7 @@ export function ConnectionPanel({
   firmName: string;
   canConnect: boolean;
 }): JSX.Element {
+  const when = useWhen();
   const queryClient = useQueryClient();
   const path = { path: { engagement_id: engagementId } };
   const connection = useQuery({ ...connectionOptions(path), retry: false });
@@ -361,6 +374,7 @@ function Providers({
 }
 
 function AccessLog({ engagementId }: { engagementId: string }): JSX.Element {
+  const when = useWhen();
   const [page, setPage] = useState(0);
   const log = useQuery(logOptions({ path: { engagement_id: engagementId }, query: { page } }));
   if (log.isPending) return <Skeleton className="h-24" />;
@@ -422,6 +436,7 @@ function AccessLog({ engagementId }: { engagementId: string }): JSX.Element {
 
 /** SPEC-028 §4.7, AC-6: the latest export, with the same plain-words reason the client saw. */
 function LatestImport({ latest }: { latest: ImportOut }): JSX.Element {
+  const when = useWhen();
   const outcome = importOutcome({ ...latest, duplicate: false }, latest.system);
   return (
     <dl className="grid grid-cols-[10rem_1fr] gap-x-3 gap-y-1 text-body">

@@ -17,6 +17,7 @@ import {
   Td,
   Th,
   type Tone,
+  useFormat,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
@@ -46,12 +47,14 @@ const STATUS: Record<SupportSessionOut["status"], { text: string; tone: Tone }> 
   expired: { text: "Expired", tone: "neutral" },
 };
 
-function when(value: string | null): string {
-  return value === null ? "—" : new Date(value).toLocaleString();
+function useWhen(): (value: string | null) => string {
+  const f = useFormat();
+  return (value) => f.dateTime(value);
 }
 
 /** SPEC-019 AC-5: break-glass sessions, with approve (fresh MFA), revoke and acknowledge. */
 export function SupportAccess(): JSX.Element {
+  const when = useWhen();
   const queryClient = useQueryClient();
   const sessions = useQuery(listSupportSessionsOptions());
   const [pending, setPending] = useState<{ action: Action; session: SupportSessionOut } | null>(

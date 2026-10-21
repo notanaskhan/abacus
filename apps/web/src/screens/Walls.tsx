@@ -7,7 +7,18 @@ import {
   listWallsQueryKey,
   removeWallMutation,
 } from "@abacus/api-client/query";
-import { Alert, Button, Dialog, Label, Panel, Skeleton, Table, Td, Th } from "@abacus/ui";
+import {
+  Alert,
+  Button,
+  DateText,
+  Dialog,
+  Label,
+  Panel,
+  Skeleton,
+  Table,
+  Td,
+  Th,
+} from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, type SyntheticEvent, useEffect, useState } from "react";
 import { errorMessage } from "../api";
@@ -200,7 +211,9 @@ function WallList({
                   <tr key={w.id}>
                     <Td>{person(w.user_id)}</Td>
                     <Td>{client(w.client_id)}</Td>
-                    <Td className="tabular-nums">{new Date(w.created_at).toLocaleDateString()}</Td>
+                    <Td>
+                      <DateText value={w.created_at} />
+                    </Td>
                     <Td>
                       <Button
                         size="sm"

@@ -12,7 +12,7 @@ const TIERS = new Set(["A", "B", "C", "D", "E"]);
 
 /** The same normalisation the server uses (SPEC-018 Q2, Q3; TASK-033 D2). */
 function normalise(text: string): string {
-  return text.replace(/\s+/g, " ").trim().toLocaleLowerCase();
+  return text.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
 type Step = "file" | "map" | "done";

@@ -8,7 +8,16 @@ import {
   previewFollowUpMutation,
   sendDraftMutation,
 } from "@abacus/api-client/query";
-import { Button, type Column, DataTable, EmptyState, Fieldset, Sheet, toast } from "@abacus/ui";
+import {
+  Button,
+  type Column,
+  DataTable,
+  DateText,
+  EmptyState,
+  Fieldset,
+  Sheet,
+  toast,
+} from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useEffect, useState } from "react";
 import { errorMessage } from "../api";
@@ -71,11 +80,7 @@ export function FollowUps({ engagementId }: { engagementId: string }): JSX.Eleme
     {
       key: "when",
       header: "Drafted",
-      cell: (d) => (
-        <span className="text-ink-3 tabular-nums">
-          {new Date(d.created_at).toLocaleDateString()}
-        </span>
-      ),
+      cell: (d) => <DateText value={d.created_at} className="text-ink-3" />,
       sortValue: (d) => d.created_at,
     },
     {

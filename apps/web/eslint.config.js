@@ -18,49 +18,16 @@ const NETWORK_GLOBALS = [
   { name: "XMLHttpRequest", message: "Call the backend only through @abacus/api-client." },
 ];
 
-// Existing offenders of the formatting and clock bans (SPEC-048 AC-5), found when the rules were
-// switched on (F-05-T07). Neither fix is a token swap: they need format.ts and clock.tsx, which
-// F-05-T10 builds. New code is not exempt; delete a file from these lists as it moves over. Recorded in packages/ui/src/tokens/DECISIONS.md.
-const LEGACY_FORMATTING = [
-  "src/shell/NotificationDrawer.tsx", // TASK-306, until format.ts (F-05-T10)
-  "src/board/filters.ts",
-  "src/gallery/Gallery.tsx",
-  "src/screens/AgentActivity.tsx",
-  "src/screens/AuditLog.tsx",
-  "src/screens/Autonomy.tsx",
-  "src/screens/Board.tsx",
-  "src/screens/Budget.tsx",
-  "src/screens/ClientEngagement.tsx",
-  "src/screens/CommentThread.tsx",
-  "src/screens/Completion.tsx",
-  "src/screens/ConnectionPanel.tsx",
-  "src/screens/Contacts.tsx",
-  "src/screens/EngagementRecords.tsx",
-  "src/screens/Fieldwork.tsx",
-  "src/screens/Findings.tsx",
-  "src/screens/FirmPeople.tsx",
-  "src/screens/FollowUps.tsx",
-  "src/screens/ImportRequestList.tsx",
-  "src/screens/ItemDetail.tsx",
-  "src/screens/Knowledge.tsx",
-  "src/screens/Methodology.tsx",
-  "src/screens/Planning.tsx",
-  "src/screens/ReviewNotes.tsx",
-  "src/screens/SupportAccess.tsx",
-  "src/screens/UnrecordedLiabilities.tsx",
-  "src/screens/Walls.tsx",
-  "src/screens/engagementLabels.ts",
-  "src/screens/glMessages.ts",
-  "src/screens/importMessages.ts",
-  "src/shell/NotificationPanel.tsx",
-];
+// Files still allowed to read the wall clock (SPEC-048 AC-5). Formatting has no exceptions any
+// more: F-05-T10 moved every call site onto packages/ui/src/format.ts. Each file below measures
+// elapsed time or token lifetime, which is not business time (that is useNow, useToday and
+// clock.tsx), so it has no fixture clock to read. Recorded in packages/ui/src/tokens/DECISIONS.md.
 const LEGACY_CLOCK = [
-  "src/auth/session.ts",
-  "src/screens/Board.tsx",
-  "src/screens/CheckResults.tsx",
-  "src/testing/support.tsx",
+  "src/auth/session.ts", // token lifetime against the device's clock (OIDC), not business time
+  "src/screens/Board.tsx", // elapsed time of a polling window for a screening run
+  "src/screens/CheckResults.tsx", // elapsed time of a polling window after an upload
+  "src/testing/support.tsx", // test helper: backdates a sign-in
 ];
-const LEGACY_BOTH = LEGACY_FORMATTING.filter((f) => LEGACY_CLOCK.includes(f));
 
 export default defineConfig(
   { ignores: ["dist"] },
@@ -194,16 +161,9 @@ export default defineConfig(
     rules: { "no-restricted-properties": ["error", ...restrictedProperties({ clock: false })] },
   },
   {
-    files: LEGACY_FORMATTING,
-    rules: {
-      "no-restricted-properties": ["error", ...restrictedProperties({ formatting: false })],
-    },
-  },
-  {
     files: LEGACY_CLOCK,
     rules: { "no-restricted-properties": ["error", ...restrictedProperties({ clock: false })] },
   },
-  { files: LEGACY_BOTH, rules: { "no-restricted-properties": "off" } },
   // The OIDC token endpoint is the identity provider, not our API (src/auth/session.ts).
   { files: ["src/auth/session.ts"], rules: { "no-restricted-globals": "off" } },
   { files: ["**/*.js"], extends: [tseslint.configs.disableTypeChecked] },

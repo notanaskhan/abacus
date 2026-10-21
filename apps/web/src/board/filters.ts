@@ -35,7 +35,7 @@ export function applyFilters(
   f: BoardFilters,
   aiFlags: ReadonlyMap<string, number> = new Map(),
 ): BoardRow[] {
-  const text = f.q?.toLocaleLowerCase();
+  const text = f.q?.toLowerCase();
   return rows.filter(
     (row) =>
       (f.status === undefined || row.item.status === f.status) &&
@@ -53,7 +53,7 @@ export function applyFilters(
               ? row.item.unread_comments === true
               : source(row) === f.source)) &&
       (f.assignee === undefined || assigned(row.item) === f.assignee) &&
-      (text === undefined || row.item.description.toLocaleLowerCase().includes(text)),
+      (text === undefined || row.item.description.toLowerCase().includes(text)),
   );
 }
 

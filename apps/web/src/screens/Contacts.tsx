@@ -10,6 +10,7 @@ import {
 import {
   Alert,
   Button,
+  DateText,
   Dialog,
   EmptyState,
   Input,
@@ -123,7 +124,7 @@ export function Contacts({ engagementId }: { engagementId: string }): JSX.Elemen
                         <StatusPill tone="info">Invited</StatusPill>
                         {c.expires_at !== null && (
                           <span className="text-meta text-muted">
-                            until {new Date(c.expires_at).toLocaleDateString()}
+                            until <DateText value={c.expires_at} />
                           </span>
                         )}
                       </span>

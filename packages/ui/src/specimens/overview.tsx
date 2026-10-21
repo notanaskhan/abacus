@@ -1,4 +1,5 @@
 import { type JSX, useState } from "react";
+import { Amount } from "../components/amount";
 import { Button } from "../components/button";
 import { type Column, DataTable } from "../components/data-table";
 import { Drawer, Fieldset, Sheet } from "../components/overlays";
@@ -42,8 +43,7 @@ const COLUMNS: Column<Row>[] = [
     key: "amount",
     header: "Amount",
     align: "right",
-    // eslint-disable-next-line no-restricted-properties -- TODO(F-05-T10): format.ts money formatter
-    cell: (r) => r.amount.toLocaleString("en-US", { minimumFractionDigits: 2 }),
+    cell: (r) => <Amount value={r.amount} style="cents" zero="explicit" />,
     sortValue: (r) => r.amount,
   },
 ];

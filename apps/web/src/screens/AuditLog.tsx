@@ -1,7 +1,7 @@
 import type { AuditEventsData, EventOut } from "@abacus/api-client";
 import { auditEvents } from "@abacus/api-client";
 import { auditFacetsOptions } from "@abacus/api-client/query";
-import { Alert, Badge, Button, EmptyState, Skeleton } from "@abacus/ui";
+import { Alert, Badge, Button, DateText, EmptyState, Skeleton } from "@abacus/ui";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
@@ -296,7 +296,7 @@ export function AuditLog(): JSX.Element {
               {rows.map((e) => (
                 <tr key={e.seq} className="align-top">
                   <td className="px-4 py-2 whitespace-nowrap text-ink-2 tabular-nums">
-                    {new Date(e.occurred_at).toLocaleString()}
+                    <DateText value={e.occurred_at} kind="dateTime" seconds />
                   </td>
                   <td className="px-2 py-2">
                     <span className="flex items-center gap-1.5">

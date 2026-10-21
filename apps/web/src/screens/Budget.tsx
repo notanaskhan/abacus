@@ -6,7 +6,7 @@ import {
   meteringOptions,
   putBudgetMutation,
 } from "@abacus/api-client/query";
-import { Alert, Button, Input, Label, Panel, Skeleton, Table, Td, Th } from "@abacus/ui";
+import { Alert, Button, Input, Label, Panel, prose, Skeleton, Table, Td, Th } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, type SyntheticEvent, useState } from "react";
 import { errorMessage } from "../api";
@@ -23,10 +23,11 @@ const AGENT_WORK: Record<string, string> = {
 };
 
 function usd(value: string | number): string {
-  const n = Number(value);
-  return Number.isFinite(n)
-    ? n.toLocaleString(undefined, { style: "currency", currency: "USD" })
-    : String(value);
+  try {
+    return prose(value);
+  } catch {
+    return String(value);
+  }
 }
 
 /** SPEC-019 AC-3, AC-4: the firm's budget against spend, and spend by engagement and agent. */

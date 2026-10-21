@@ -6,7 +6,7 @@ import {
   readAllMutation,
   readNotificationMutation,
 } from "@abacus/api-client/query";
-import { Alert, Button, Drawer, EmptyState, Skeleton } from "@abacus/ui";
+import { Alert, Button, Drawer, EmptyState, Skeleton, useFormat, useNow } from "@abacus/ui";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { type JSX, useState } from "react";
@@ -41,6 +41,8 @@ export function NotificationDrawer({
 }): JSX.Element {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const f = useFormat();
+  const now = useNow();
   const [tab, setTab] = useState<Category | "all">("all");
   const [unreadOnly, setUnreadOnly] = useState(false);
   const pages = useInfiniteQuery({
@@ -80,7 +82,7 @@ export function NotificationDrawer({
   const shown = all.filter((n) => tab === "all" || categoryOf(n.kind) === tab);
   const groups: [string, NotificationOut[]][] = [];
   for (const n of shown) {
-    const label = dayGroup(n.created_at);
+    const label = dayGroup(n.created_at, now);
     const last = groups[groups.length - 1];
     if (last?.[0] === label) last[1].push(n);
     else groups.push([label, [n]]);
@@ -188,15 +190,7 @@ export function NotificationDrawer({
                             {text}
                           </span>
                           <span className="truncate text-[11.5px] text-ink-3">
-                            {[
-                              where,
-                              new Date(n.created_at).toLocaleTimeString([], {
-                                hour: "numeric",
-                                minute: "2-digit",
-                              }),
-                            ]
-                              .filter(Boolean)
-                              .join(" · ")}
+                            {[where, f.time(n.created_at)].filter(Boolean).join(" · ")}
                           </span>
                         </span>
                         {!n.read && <span className="sr-only">Unread</span>}

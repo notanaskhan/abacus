@@ -53,10 +53,18 @@ Every change to a design token adds a row here: what changed, why, and the decis
 | 2026-10-20 | lint: text-xs to text-3xl                            | ban written, switched off (`TYPE_SCALE_BAN_ENABLED`)                                                                                                      | The F-05-T06 codemod lands in parallel; flip the flag when it has                                                                                | open, F-05-T06         |
 | 2026-10-20 | lint: scrims and spinner track                       | `bg-espresso/22`, `/12`, `/28`, `bg-on-dark/14`, `/22`, `stroke-rule`                                                                                     | Token swaps for `rgba(…)` literals; same colour and alpha                                                                                        | SPEC-048               |
 | 2026-10-20 | lint: `font-semibold`, `font-bold`                   | `font-medium` in 18 screens                                                                                                                               | theme.css already mapped both to 500, so nothing changes on screen                                                                               | ADR-155                |
+| 2026-10-21 | format.ts: handoff `formatters.ts` vs the plan       | the plan's: bigint decimals, half away from zero, firm-zone dates, `amount()` returning `{text, tone}`                                                    | The handoff's reference rounds through `Number`/`toFixed` and reads dates in the device zone; the plan wins (section 3.7)                        | F-05-T10, plan 04 3.7  |
+| 2026-10-21 | format.ts path                                       | `packages/ui/src/format.ts` (not `src/lib/format.ts`)                                                                                                     | packages/ui has no `lib/` yet; `FORMAT_FILES` is `src/**/format.ts`, so the lint rule covers either path                                         | F-05-T10               |
 
-### Lint allow-list (F-05-T07)
+### Lint allow-list (F-05-T07, updated by F-05-T10)
 
-`toLocale*`, `toFixed` and `Date.now()` are refused outside `format.ts` and `clock.tsx`. Neither
-file exists yet, so 30 files that format with `toLocale*` or `toFixed` and 4 that read
-`Date.now()` are listed in `LEGACY_FORMATTING` and `LEGACY_CLOCK` in `apps/web/eslint.config.js`.
-New code is not exempt. Remove a file from the list when it moves to `format.ts` or `clock.tsx`.
+`toLocale*`, `toFixed`, `Intl` and `Date.now()` are refused outside `format.ts` and `clock.tsx`.
+`format.ts` now exists (F-05-T10), and `LEGACY_FORMATTING` is gone: every call site moved to it
+(the dates through `<DateText>` and `useFormat()`, the amounts through `amount`, `prose`, `count`
+and `ratio`, sizes through `bytes`). `src/screens/amounts.ts` stays as a thin wrapper over
+`format.ts` for the trial balance and working-paper screens; it keeps their zero as `0.00`, not an
+em dash, which is those screens' decision to change.
+
+Four files stay in `LEGACY_CLOCK` in `apps/web/eslint.config.js`, each with its reason there: they
+read `Date.now()` for token lifetime or an elapsed polling window, which is not business time.
+Business time comes from `useNow`, `useToday` and `useFormat`, fed by `ClockProvider`.

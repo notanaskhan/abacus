@@ -18,14 +18,16 @@ import {
   Alert,
   Badge,
   Button,
+  bytes,
+  CitationChip,
   Dialog,
+  EmptyState,
   Input,
   Label,
-  EmptyState,
   Panel,
   Skeleton,
-  CitationChip,
   StatusPill,
+  useFormat,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
@@ -61,15 +63,9 @@ const NOT_VERIFIED: Record<string, string> = {
   quote_mismatch: "the quote doesn't match the cell",
 };
 
-function size(bytes: number): string {
-  if (bytes < 1024) return `${String(bytes)} B`;
-  return bytes < 1024 * 1024
-    ? `${String(Math.round(bytes / 1024))} KB`
-    : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function when(value: string | null): string {
-  return value === null ? "—" : new Date(value).toLocaleString();
+function useWhen(): (value: string | null) => string {
+  const f = useFormat();
+  return (value) => f.dateTime(value);
 }
 
 /** SPEC-021: one request item with every evidence version, its screening and the decision. */
@@ -80,6 +76,7 @@ export function ItemDetail({
   engagementId: string;
   itemId: string;
 }): JSX.Element {
+  const when = useWhen();
   const queryClient = useQueryClient();
   const path = { path: { engagement_id: engagementId } };
   const items = useQuery(listRequestItemsOptions(path));
@@ -340,6 +337,7 @@ function VersionCard({
   selected: boolean;
   onSelect: () => void;
 }): JSX.Element {
+  const when = useWhen();
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const save = async (): Promise<void> => {
@@ -400,7 +398,7 @@ function VersionCard({
       {v.note != null && <p className="text-meta text-muted">{v.note}</p>}
       {v.file_name !== null && <p className="break-all">{v.file_name}</p>}
       <p className="text-[11.5px] text-ink-3 tabular-nums">
-        {when(v.created_at)} · {size(v.size_bytes)} · {fileKind(v.media_type)} ·{" "}
+        {when(v.created_at)} · {bytes(v.size_bytes)} · {fileKind(v.media_type)} ·{" "}
         <span className="font-mono" title={`SHA-256 ${v.fingerprint}`}>
           {v.fingerprint.slice(0, 12)}
         </span>

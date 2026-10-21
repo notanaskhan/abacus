@@ -328,11 +328,8 @@ describe("ac18 Board screen", () => {
     it("says Queued with the expected time when there is an estimate, and keeps Retrieve disabled", async () => {
       openItemApi(() => json(queuedRun({ estimated_start_at: "2025-01-06T09:30:00Z" })));
       await startRetrieval();
-      const expected = new Date("2025-01-06T09:30:00Z").toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-      expect(await screen.findByText(`Queued: expected to start by ${expected}`)).toBeTruthy();
+      // 09:30 UTC is 3:30 AM in the firm's zone (Chicago, CST), whatever the device's.
+      expect(await screen.findByText("Queued: expected to start by 3:30 AM")).toBeTruthy();
       expect(
         screen.getByRole("button", { name: "Retrieve trial balance" }).hasAttribute("disabled"),
       ).toBe(true);

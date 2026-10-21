@@ -4,7 +4,7 @@ import {
   readAllMutation,
   readNotificationMutation,
 } from "@abacus/api-client/query";
-import { Alert, Button, EmptyState, Spinner } from "@abacus/ui";
+import { Alert, Button, DateText, EmptyState, Spinner } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import type { JSX } from "react";
@@ -92,9 +92,11 @@ export function NotificationPanel({
                       {text}
                     </Link>
                   )}
-                  <time dateTime={n.created_at} className="text-meta text-muted">
-                    {new Date(n.created_at).toLocaleString()}
-                  </time>
+                  <DateText
+                    value={n.created_at}
+                    kind="dateTime"
+                    className="text-meta text-muted"
+                  />
                 </div>
                 {!n.read && (
                   <Button

@@ -21,10 +21,12 @@ import {
   DataTable,
   EmptyState,
   Fieldset,
+  prose,
   Sheet,
   Skeleton,
   StatusPill,
   toast,
+  useFormat,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
@@ -62,8 +64,10 @@ const LEVEL: Record<string, string> = {
   assertion: "Assertion",
 };
 
+// Materiality reads as whole dollars unless it has cents ($252,200, $1,234.50): a planning figure,
+// not a ledger cell, so the plan's two decimals on every cell does not apply (SPEC-300).
 function money(value: string | number | null | undefined): string {
-  return `$${Number(value ?? 0).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+  return prose(value ?? 0).replace(/\.00$/, "");
 }
 
 function pct(value: string | null | undefined): string {
@@ -108,6 +112,7 @@ function MaterialityCard({
   engagementId: string;
   role: string;
 }): JSX.Element {
+  const fmt = useFormat();
   const path = { path: { engagement_id: engagementId } };
   const versions = useQuery({ ...materialityVersionsOptions(path), retry: false });
   const [proposing, setProposing] = useState(false);
@@ -182,7 +187,7 @@ function MaterialityCard({
           {current.decision_rationale != null && (
             <p className="text-[12.5px] leading-[1.5]">
               <span className="text-ink-3">
-                {`Decided by ${current.decided_by_name ?? "the partner"} on ${new Date(current.decided_at ?? "").toLocaleDateString()}: `}
+                {`Decided by ${current.decided_by_name ?? "the partner"} on ${fmt.date(current.decided_at)}: `}
               </span>
               {current.decision_rationale}
             </p>
@@ -196,7 +201,7 @@ function MaterialityCard({
                     <span className="w-8 text-ink-3">{`v${String(v.version)}`}</span>
                     <span>{`${money(v.overall)} overall · ${money(v.performance)} performance`}</span>
                     <span className="text-ink-3">
-                      {`${v.decided_at != null ? "Decided" : "Proposed"} · ${v.set_by_name || "the team"} · ${new Date(v.set_at).toLocaleDateString()}`}
+                      {`${v.decided_at != null ? "Decided" : "Proposed"} · ${v.set_by_name || "the team"} · ${fmt.date(v.set_at)}`}
                     </span>
                   </li>
                 ))}
@@ -228,6 +233,7 @@ function MaterialityCard({
 }
 
 function Amounts({ version: v }: { version: MaterialityVersionOut }): JSX.Element {
+  const fmt = useFormat();
   const proposerWhy = v.rationale; // a person's words, not the agent's
   return (
     <>
@@ -256,7 +262,7 @@ function Amounts({ version: v }: { version: MaterialityVersionOut }): JSX.Elemen
         {v.basis_amount != null
           ? `Benchmark: ${v.benchmark}, ${money(v.basis_amount)}`
           : `Benchmark: ${v.benchmark}`}
-        <span className="text-ink-3">{` · proposed by ${v.set_by_name || "the team"} on ${new Date(v.set_at).toLocaleDateString()}`}</span>
+        <span className="text-ink-3">{` · proposed by ${v.set_by_name || "the team"} on ${fmt.date(v.set_at)}`}</span>
       </p>
       {proposerWhy != null && <p className="text-[12.5px] leading-[1.5]">{proposerWhy}</p>}
     </>

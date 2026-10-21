@@ -10,6 +10,7 @@ import {
   Icon,
   VENDOR_TONES,
   VendorTile,
+  ratio,
 } from "@abacus/ui";
 import { SPECIMENS } from "@abacus/ui/specimens";
 import { Link, Outlet, useParams, useSearch } from "@tanstack/react-router";
@@ -80,8 +81,7 @@ export function GalleryIndex(): JSX.Element {
   );
 }
 
-// eslint-disable-next-line no-restricted-properties -- TODO(F-05-T10): format.ts ratio formatter
-const RATIO = (n: number): string => n.toFixed(2);
+const RATIO = (n: number): string => ratio(n);
 
 export function TokensPage(): JSX.Element {
   const tokens = parseTokens();

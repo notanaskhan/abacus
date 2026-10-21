@@ -28,6 +28,8 @@ import {
   Alert,
   Badge,
   Button,
+  bytes,
+  DateText,
   Dialog,
   EmptyState,
   Label,
@@ -68,12 +70,6 @@ const ACCEPT = ".pdf,.xlsx,.xls,.docx,.doc,.csv,.png,.jpg,.jpeg";
 function uploadError(error: unknown): string {
   const code = errorMessage(error);
   return UPLOAD_ERRORS[code] ?? code;
-}
-
-function size(bytes: number): string {
-  return bytes < 1024 * 1024
-    ? `${String(Math.max(1, Math.round(bytes / 1024)))} KB`
-    : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 /** SPEC-020 AC-1: a client's view of one engagement — its requests by area, with uploads. */
@@ -425,19 +421,21 @@ function ClientItem({
             {fromSystem.map((h) => (
               <li key={h.evidence_version_id} className="flex flex-wrap gap-x-2 text-muted">
                 <span className="text-ink">{providedBy(provided)}</span>
-                <span>· {new Date(h.added_at).toLocaleString()}</span>
+                <span>
+                  · <DateText value={h.added_at} kind="dateTime" />
+                </span>
                 <Outcome entry={h} />
               </li>
             ))}
             {uploads.data.map((u) => (
               <li key={u.evidence_version_id} className="flex flex-wrap gap-x-2 text-muted">
                 <span className="text-ink">{u.file_name}</span>
-                <span className="tabular-nums">{size(u.size_bytes)}</span>
+                <span className="tabular-nums">{bytes(u.size_bytes)}</span>
                 <span>
                   {u.on_behalf === true
                     ? "Added by your auditor"
                     : u.uploaded_by_name || "Someone"}{" "}
-                  · {new Date(u.uploaded_at).toLocaleString()}
+                  · <DateText value={u.uploaded_at} kind="dateTime" />
                 </span>
                 <Outcome entry={history.get(u.evidence_version_id)} />
                 <button

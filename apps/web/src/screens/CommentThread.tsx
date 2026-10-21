@@ -11,7 +11,7 @@ import {
   versionCommentsOptions,
   versionCommentsQueryKey,
 } from "@abacus/api-client/query";
-import { Alert, Button, Dialog, Label, Skeleton } from "@abacus/ui";
+import { Alert, Button, DateText, Dialog, Label, Skeleton } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useEffect, useRef, useState } from "react";
 import { errorMessage } from "../api";
@@ -62,7 +62,7 @@ function Comment({
       <div className="flex flex-wrap items-center gap-x-2 text-meta text-muted">
         <span className="font-medium text-ink">{comment.author_name || "Someone"}</span>
         <span>{comment.author_side === "client" ? "Client" : "Audit team"}</span>
-        <time dateTime={comment.created_at}>{new Date(comment.created_at).toLocaleString()}</time>
+        <DateText value={comment.created_at} kind="dateTime" />
         {internal && <span className="text-warn">Internal: the client can&apos;t see this</span>}
       </div>
       {comment.corrects != null && (

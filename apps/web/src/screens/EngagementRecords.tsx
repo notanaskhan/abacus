@@ -7,7 +7,7 @@ import {
   setupOptions,
   setupQueryKey,
 } from "@abacus/api-client/query";
-import { Alert, Button, Input, Label, Panel, Skeleton, StatusPill } from "@abacus/ui";
+import { Alert, Button, Input, Label, Panel, Skeleton, StatusPill, useFormat } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, type SyntheticEvent, useState } from "react";
 import { errorMessage } from "../api";
@@ -21,8 +21,9 @@ const LETTER_LABEL: Record<string, string> = {
 };
 const SELECT = "h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-body";
 
-function when(value: string | null | undefined): string {
-  return value == null ? "" : new Date(value).toLocaleDateString();
+function useWhen(): (value: string | null | undefined) => string {
+  const f = useFormat();
+  return (value) => (value == null ? "" : f.date(value));
 }
 
 /** SPEC-025 AC-4 to AC-6: acceptance, the letter and independence for one engagement. Recorded
@@ -81,6 +82,7 @@ function AcceptancePanel({
   data: SetupOut;
   isPartner: boolean;
 }): JSX.Element {
+  const when = useWhen();
   const refresh = useRefresh(engagementId);
   const a = data.acceptance;
   const [editing, setEditing] = useState(false);
@@ -345,6 +347,7 @@ function LetterPanel({
   data: SetupOut;
   canRecord: boolean;
 }): JSX.Element {
+  const when = useWhen();
   const refresh = useRefresh(engagementId);
   const l = data.letter;
   const [editing, setEditing] = useState(false);

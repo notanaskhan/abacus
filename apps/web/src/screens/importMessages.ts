@@ -1,6 +1,7 @@
 // SPEC-028 §4.8 (TASK-053): what went wrong with an uploaded export, in plain words. Every
 // message is a fixed template (ADR-111); the only values in them are computed by code on the
 // server (the difference, the period end found) or come from the format list.
+import { longDate as formatLongDate, prose } from "@abacus/ui";
 
 export type ImportFailure = {
   code: string;
@@ -13,18 +14,12 @@ export type ImportFailure = {
 const SYSTEMS: Record<string, string> = { qbo: "QuickBooks Online", xero: "Xero" };
 
 export function longDate(iso: string): string {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(Date.UTC(y ?? 1970, (m ?? 1) - 1, d ?? 1)).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    timeZone: "UTC",
-  });
+  return formatLongDate(iso);
 }
 
+/** The size of a difference: dollars and cents, no sign. */
 export function usd(decimal: string): string {
-  const value = Math.abs(Number(decimal));
-  return value.toLocaleString("en-US", { style: "currency", currency: "USD" });
+  return prose(decimal.trim().replace(/^[-+]/, ""));
 }
 
 export function importFailureMessage(f: ImportFailure): string {

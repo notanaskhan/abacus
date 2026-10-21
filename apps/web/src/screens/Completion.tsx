@@ -22,10 +22,12 @@ import {
   DataTable,
   EmptyState,
   Fieldset,
+  prose,
   Sheet,
   Skeleton,
   StatusPill,
   toast,
+  useToday,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
@@ -56,10 +58,7 @@ const PROPOSERS = new Set(["engagement_partner", "manager", "senior"]);
 const APPROVERS = new Set(["engagement_partner", "manager"]);
 
 function amount(value: string | number): string {
-  return Number(value).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  return prose(value, "cents");
 }
 
 const field =
@@ -88,11 +87,12 @@ export function DeficiencyFieldset({
   role: string;
 }): JSX.Element {
   const queryClient = useQueryClient();
+  const today = useToday();
   const d = finding.deficiency;
   const path = { path: { engagement_id: engagementId, finding_id: finding.id } };
   const [severity, setSeverity] = useState<Severity>(d?.concluded ?? d?.proposed ?? "deficiency");
   const [why, setWhy] = useState("");
-  const [on, setOn] = useState(new Date().toISOString().slice(0, 10));
+  const [on, setOn] = useState(today);
   const [to, setTo] = useState("");
   const done = (message: string) => (data: FindingOut[]) => {
     queryClient.setQueryData(findingsQueryKey({ path: { engagement_id: engagementId } }), data);

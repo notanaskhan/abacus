@@ -47,15 +47,18 @@ import {
   Alert,
   Badge,
   Button,
+  count,
   Label,
   Panel,
+  prose,
   Skeleton,
   StatusPill,
   Table,
   Td,
   Th,
-  type Tone,
   toast,
+  type Tone,
+  useFormat,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -172,10 +175,7 @@ function said(error: unknown): string {
 }
 
 function money(value: string | number): string {
-  return Number(value).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  return prose(value, "cents");
 }
 
 function useRole(engagementId: string): string | undefined {
@@ -681,6 +681,7 @@ function ProcedurePanel({
   procedure: ProcedureOut;
   role: string | undefined;
 }): JSX.Element {
+  const fmt = useFormat();
   const queryClient = useQueryClient();
   const path = { path: { engagement_id: engagementId, procedure_id: procedure.id } };
   const detail = useQuery({
@@ -824,8 +825,8 @@ function ProcedurePanel({
           {p.population != null && (
             <p>
               {surl
-                ? `${p.population.entry_count.toLocaleString()} payments after year end, ${Number(p.population.total_debit).toLocaleString("en-US", { minimumFractionDigits: 2 })} in total, `
-                : `${p.population.entry_count.toLocaleString()} journal entries (${p.population.line_count.toLocaleString()} ledger lines) `}
+                ? `${count(p.population.entry_count)} payments after year end, ${money(p.population.total_debit)} in total, `
+                : `${count(p.population.entry_count)} journal entries (${count(p.population.line_count)} ledger lines) `}
               {p.population.tied
                 ? surl
                   ? "agree to the bank-account credits in the export."
@@ -859,7 +860,7 @@ function ProcedurePanel({
                 <span className="text-[12.5px]">
                   <StatusPill tone="success">Sample approved</StatusPill>{" "}
                   <span className="text-ink-2">
-                    {`by ${flow.data.approval.name || "a manager"} on ${new Date(flow.data.approval.approved_at).toLocaleDateString()}`}
+                    {`by ${flow.data.approval.name || "a manager"} on ${fmt.date(flow.data.approval.approved_at)}`}
                   </span>
                 </span>
               ) : canApprove ? (

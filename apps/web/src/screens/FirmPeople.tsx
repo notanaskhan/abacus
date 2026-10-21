@@ -12,6 +12,7 @@ import {
 import {
   Alert,
   Button,
+  DateText,
   Dialog,
   Input,
   Label,
@@ -204,7 +205,7 @@ export function FirmPeople(): JSX.Element {
                     <span>
                       {i.email} · {roleLabel(i.firm_role)}
                       <span className="block text-meta text-muted">
-                        Expires {new Date(i.expires_at).toLocaleDateString()}
+                        Expires <DateText value={i.expires_at} />
                       </span>
                     </span>
                     <span className="flex gap-2">

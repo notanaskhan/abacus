@@ -6,7 +6,7 @@ import {
   listRequestItemsQueryKey,
   setDefaultDueDateMutation,
 } from "@abacus/api-client/query";
-import { Badge, Button, Input, Label } from "@abacus/ui";
+import { Badge, Button, Input, Label, useToday } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
@@ -24,10 +24,6 @@ export function isOverdue(item: RequestItemOut, due: string | null, today: strin
   return (
     due !== null && due < today && (item.status === "requested" || item.status === "returned")
   );
-}
-
-export function today(): string {
-  return new Date().toISOString().slice(0, 10);
 }
 
 export function useDefaultDue(engagementId: string): string | null | undefined {
@@ -56,7 +52,7 @@ export function DueDatesBar({
     void queryClient.invalidateQueries({ queryKey: listRequestItemsQueryKey(path) });
   };
   const save = useMutation({ ...setDefaultDueDateMutation(), onSuccess: refresh });
-  const now = today();
+  const now = useToday();
   const overdue = items.filter((i) => isOverdue(i, effectiveDue(i, fallback), now)).length;
   return (
     <div className="flex flex-wrap items-center gap-2 text-[12.5px]">
@@ -110,6 +106,7 @@ export function ItemDue({
     },
   });
   const due = effectiveDue(item, fallback);
+  const today = useToday();
   return (
     <span className="flex flex-wrap items-center gap-2">
       <Input
@@ -128,7 +125,7 @@ export function ItemDue({
       {item.due_on == null && fallback != null && (
         <span className="text-meta text-muted">{`List default: ${fallback}`}</span>
       )}
-      {isOverdue(item, due, today()) && <Badge tone="warning">Overdue</Badge>}
+      {isOverdue(item, due, today) && <Badge tone="warning">Overdue</Badge>}
     </span>
   );
 }

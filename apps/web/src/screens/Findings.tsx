@@ -12,6 +12,7 @@ import {
 } from "@abacus/api-client/query";
 import {
   Alert,
+  amount,
   Badge,
   Button,
   type Column,
@@ -23,6 +24,7 @@ import {
   Skeleton,
   StatusPill,
   toast,
+  useFormat,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
@@ -50,12 +52,7 @@ const POSITION: Record<
 };
 
 function money(value: string | number): string {
-  const n = Number(value);
-  const text = Math.abs(n).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-  return n < 0 ? `(${text})` : text;
+  return amount(value, "cents", { zero: "explicit" }).text;
 }
 
 const RAISERS = new Set(["engagement_partner", "manager", "senior", "staff"]);
@@ -358,6 +355,7 @@ function FindingDrawer({
   role: string;
   onClose: () => void;
 }): JSX.Element {
+  const fmt = useFormat();
   const queryClient = useQueryClient();
   const path = { path: { engagement_id: engagementId } };
   const graph = useQuery({ ...engagementGraphOptions(path), retry: false });
@@ -407,13 +405,13 @@ function FindingDrawer({
           {finding.description ?? "No description."}
         </p>
         <p className="mt-2 text-[11.5px] text-ink-3">
-          {`Raised by ${finding.raised_by_name || "the team"} on ${new Date(finding.raised_at).toLocaleDateString()}`}
+          {`Raised by ${finding.raised_by_name || "the team"} on ${fmt.date(finding.raised_at)}`}
         </p>
       </Fieldset>
       <Fieldset title="Misstatement">
         {m != null && (
           <p className="mb-2 text-[12px] text-ink-3">
-            {`Last recorded by ${m.recorded_by_name || "the team"} on ${new Date(m.recorded_at).toLocaleDateString()}`}
+            {`Last recorded by ${m.recorded_by_name || "the team"} on ${fmt.date(m.recorded_at)}`}
           </p>
         )}
         {canRecord ? (

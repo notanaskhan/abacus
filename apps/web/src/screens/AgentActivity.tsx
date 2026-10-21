@@ -9,7 +9,16 @@ import {
   resumeAgentMutation,
   teamOptions,
 } from "@abacus/api-client/query";
-import { Alert, Button, EmptyState, Input, Panel, Skeleton, StatusPill } from "@abacus/ui";
+import {
+  Alert,
+  Button,
+  EmptyState,
+  Input,
+  Panel,
+  Skeleton,
+  StatusPill,
+  useFormat,
+} from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
@@ -79,6 +88,7 @@ const TONE = { done: "success", skipped: "neutral", failed: "danger" } as const;
 
 /** SPEC-027 AC-7: what happened automatically on this engagement, by which policy and why. */
 export function AgentActivity({ engagementId }: { engagementId: string }): JSX.Element {
+  const fmt = useFormat();
   const path = { path: { engagement_id: engagementId } };
   const feed = useQuery({ ...activityOptions(path), retry: false });
   if (feed.isPending) return <Skeleton className="h-48" />;
@@ -102,12 +112,7 @@ export function AgentActivity({ engagementId }: { engagementId: string }): JSX.E
         {feed.data.map((row) => (
           <li key={row.id} className="flex flex-wrap items-center gap-3 py-2 text-[13px]">
             <span className="w-[132px] shrink-0 text-[12px] whitespace-nowrap text-ink-3 tabular-nums">
-              {new Date(row.created_at).toLocaleString(undefined, {
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-              })}
+              {`${fmt.date(row.created_at)} ${fmt.time(row.created_at)}`}
             </span>
             <StatusPill tone={TONE[row.outcome]}>
               <span className="font-mono text-[10.5px]" title="The policy that acted (SPEC-027)">

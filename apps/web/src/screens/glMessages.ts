@@ -1,17 +1,13 @@
 // SPEC-034 (TASK-070): what became of a general ledger upload, in plain words. Fixed templates
 // (ADR-111); the only values are code-computed amounts, account codes, months and counts.
 import type { GlImportOut } from "@abacus/api-client";
+import { count, monthYear } from "@abacus/ui";
 import { usd } from "./importMessages";
 
 const SYSTEMS: Record<string, string> = { qbo: "QuickBooks Online", xero: "Xero" };
 
 function month(value: string): string {
-  const [y, m] = value.split("-").map(Number);
-  return new Date(Date.UTC(y ?? 1970, (m ?? 1) - 1, 1)).toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+  return monthYear(value);
 }
 
 function accounts(gl: GlImportOut): string {
@@ -72,7 +68,7 @@ export function glStatusMessage(
     case "reconciled":
       return {
         tone: "ok",
-        text: `Received: ${(gl.line_count ?? 0).toLocaleString("en-US")} transactions, reconciled to your trial balance.`,
+        text: `Received: ${count(gl.line_count ?? 0)} transactions, reconciled to your trial balance.`,
       };
     default:
       return { tone: "danger", text: glFailureMessage(gl, system) };

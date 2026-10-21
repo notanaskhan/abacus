@@ -16,7 +16,7 @@ import {
   pauseFirmAgentsMutation,
   resumeFirmAgentsMutation,
 } from "@abacus/api-client/query";
-import { Alert, Button, Panel, Skeleton, StatusPill } from "@abacus/ui";
+import { Alert, Button, DateText, Panel, Skeleton, StatusPill } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
@@ -123,7 +123,7 @@ export function Autonomy({ canSet }: { canSet: boolean }): JSX.Element {
           </Button>
           {current.data.set_at !== null && (
             <span className="text-meta text-muted">
-              Last set {new Date(current.data.set_at).toLocaleString()}
+              Last set <DateText value={current.data.set_at} kind="dateTime" />
             </span>
           )}
         </div>
