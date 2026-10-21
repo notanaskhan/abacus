@@ -1,0 +1,10 @@
+# The review module's actions (ADR-027; P-39, F-03-T07). Compiled with every other
+# module's file into identity/authz/_matrix.py by `make regenerate`.
+
+actions:
+  # --- Sign-offs, the P-04 review grammar (SPEC-308; TASK-319) ---
+  sign_off.prepare:         {manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # L1 preparer
+  sign_off.review:          {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # L2 reviewer; never the L1 signer (the service refuses)
+  sign_off.manager:         {engagement_partner: allow, manager: allow, agent: deny, independence: required}   # L3 manager
+  sign_off.partner:         {engagement_partner: allow, agent: deny, independence: required}   # L4 partner
+  sign_off.eqr:             {reviewer: allow, agent: deny, independence: required}   # L5 engagement quality reviewer

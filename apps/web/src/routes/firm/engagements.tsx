@@ -25,6 +25,8 @@ const screens = {
   Findings: lazyScreen(async () => (await import("../../screens/Findings")).Findings),
   Fieldwork: lazyScreen(async () => (await import("../../screens/Fieldwork")).Fieldwork),
   Review: lazyScreen(async () => (await import("../../screens/Review")).Review),
+  Workpapers: lazyScreen(async () => (await import("../../screens/Workpapers")).Workpapers),
+  Workpaper: lazyScreen(async () => (await import("../../screens/Workpaper")).Workpaper),
 };
 
 export const engagementRoute = createRoute({
@@ -143,6 +145,26 @@ const planningRoute = createRoute({
   },
 });
 
+// SPEC-308 (TASK-319): working papers and one paper's grid.
+const workpapersRoute = createRoute({
+  getParentRoute: () => engagementRoute,
+  path: "/workpapers",
+  component: function WorkpapersPage(): JSX.Element {
+    const engagementId = useParam("engagementId");
+    return <screens.Workpapers engagementId={engagementId} />;
+  },
+});
+
+const workpaperRoute = createRoute({
+  getParentRoute: () => engagementRoute,
+  path: "/workpapers/$workpaperId",
+  component: function WorkpaperPage(): JSX.Element {
+    const engagementId = useParam("engagementId");
+    const workpaperId = useParam("workpaperId");
+    return <screens.Workpaper engagementId={engagementId} workpaperId={workpaperId} />;
+  },
+});
+
 export const engagementRoutes = [
   engagementRoute.addChildren([
     overviewRoute,
@@ -156,5 +178,7 @@ export const engagementRoutes = [
     fieldworkRoute,
     findingsRoute,
     planningRoute,
+    workpapersRoute,
+    workpaperRoute,
   ]),
 ] as const;

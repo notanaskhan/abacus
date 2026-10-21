@@ -1093,7 +1093,17 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"document_kind", "document_kind_source"}  # SPEC-029 (TASK-055)
             | {"why", "good_looks_like", "still_needed", "blocks_fieldwork", "effort"}  # TASK-060
             | {"guidance_source", "guidance_approved_by"}  # SPEC-035 (TASK-073)
+            | {"sent_at", "client_ignored_at"}  # request lifecycle v2 (F-05)
+            | {"incorporation_state", "incorporated_at", "incorporated_by"}
+            | {"na_reason", "na_note", "na_at", "na_by"}
         ),
+        "request_lists": frozenset(  # F-05: the binder's list is published and marked done
+            {"status", "default_due_on", "published_at", "published_by"}
+            | {"marked_done_at", "marked_done_by"}
+        ),
+        # F-03-T05 (migration 0068): work items and the assurance item's phase.
+        "work_items": frozenset({"name", "status", "due_on", "archived_at", "archive_locked_at"}),
+        "assurance_work_items": frozenset({"phase", "auto_mode"}),
         # TASK-019: who has taken a queued version (take, release, reassign).
         "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
         # SPEC-020 (TASK-036): checking and revoking a connection; a state is spent once.
@@ -1209,6 +1219,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         | {"fiscal_period_start", "fiscal_period_end", "created_by"}
         | {"type"}  # SPEC-024: the engagement's type
         | {"prior_engagement_id"}  # SPEC-025 (TASK-048): roll-forward, set at creation only
+        | {"office_id", "standards_set_id"}  # F-03-T12 (migration 0069)
     )
     assert sc.APP_INSERT_COLUMNS["clients"] == frozenset({"id", "tenant_id", "name"})
     assert sc.APP_INSERT_COLUMNS["request_items"] == frozenset(

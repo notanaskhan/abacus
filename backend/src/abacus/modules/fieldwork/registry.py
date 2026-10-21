@@ -37,8 +37,8 @@ TABLES: frozenset[str] = frozenset(
         "item_signoffs",  # SPEC-040 (TASK-100)
         "item_support_requests",
         "procedure_conclusions",
-        "workpaper_versions",
-        "workpaper_signatures",
+        "procedure_workpaper_versions",
+        "procedure_workpaper_signatures",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -71,8 +71,8 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "item_signoffs",  # SPEC-040 (TASK-100): decisions, as made
         "item_support_requests",  # TASK-084
         "procedure_conclusions",  # TASK-084
-        "workpaper_versions",  # SPEC-037 (TASK-084): ADR-131
-        "workpaper_signatures",  # SPEC-037 (TASK-084): ADR-131
+        "procedure_workpaper_versions",  # SPEC-037 (TASK-084): ADR-131
+        "procedure_workpaper_signatures",  # SPEC-037 (TASK-084): ADR-131
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
@@ -168,11 +168,11 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "selected_item_id", "request_item_id", "requested_by"}
     ),
     "procedure_conclusions": frozenset({"tenant_id", "procedure_id", "text", "written_by"}),
-    "workpaper_versions": frozenset(
+    "procedure_workpaper_versions": frozenset(
         {"id", "tenant_id", "procedure_id", "version", "selection_id", "result_ids"}
         | {"conclusion_id", "materiality_id", "sha256"}
     ),
-    "workpaper_signatures": frozenset(
+    "procedure_workpaper_signatures": frozenset(
         {"tenant_id", "workpaper_version_id", "kind", "signed_by", "role"}
     ),
 }

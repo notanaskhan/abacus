@@ -35,14 +35,23 @@ NEW = {
     "practice",
     "portal",
 }
+# Pre-registered modules whose first epic has landed: they still import and register, but now
+# own tables and routes (SPEC-308, TASK-319).
+LANDED = {"review", "workpapers"}
 TENANT = TenantContext(uuid.uuid4(), "system", "test")
 
 
 def test_t08_every_new_module_imports_and_is_registered() -> None:
     assert set(MODULES) >= NEW
     for name in NEW:
-        assert importlib.import_module(f"abacus.modules.{name}.api").ROUTERS == ()
-        assert frozenset() == importlib.import_module(f"abacus.modules.{name}.registry").TABLES
+        api = importlib.import_module(f"abacus.modules.{name}.api")
+        registry = importlib.import_module(f"abacus.modules.{name}.registry")
+        routers: object = api.ROUTERS
+        tables: object = registry.TABLES
+        assert isinstance(routers, tuple) and isinstance(tables, frozenset)
+        if name not in LANDED:
+            assert routers == ()
+            assert frozenset() == tables
 
 
 def test_t08_the_graph_covers_every_module_and_is_acyclic() -> None:

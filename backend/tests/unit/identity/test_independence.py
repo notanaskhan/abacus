@@ -152,8 +152,15 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "risk.assess",
         "sample.approve",  # SPEC-040 (TASK-100)
         "screening.request",
+        "sign_off.eqr",  # SPEC-308 (TASK-319)
+        "sign_off.manager",
+        "sign_off.partner",
+        "sign_off.prepare",
+        "sign_off.review",
         "upload_review.read",  # SPEC-030 (TASK-059 D1)
         "upload_review.request",  # SPEC-030 (TASK-058)
+        "workpaper.edit",  # SPEC-308 (TASK-319)
+        "workpaper.read",
         "workpaper.sign_ready",  # SPEC-037 (TASK-084)
         "workpaper.sign_reviewed",
     ]

@@ -223,6 +223,14 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/notes/{note_id}/clear",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper/sign-ready",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper/sign-reviewed",
+        # SPEC-308 (TASK-319): working papers, citations and sign-offs
+        "/v1/engagements/{engagement_id}/workpapers",
+        "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/cells/{cell_key}/citations",
+        "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/sign-offs/prepare",
+        "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/sign-offs/review",
+        "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/sign-offs/manager",
+        "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/sign-offs/partner",
+        "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/sign-offs/eqr",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

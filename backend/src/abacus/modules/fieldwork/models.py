@@ -150,7 +150,7 @@ class ProcedureConclusion(Base):
 
 
 class WorkpaperVersion(Base):
-    __tablename__ = "workpaper_versions"
+    __tablename__ = "procedure_workpaper_versions"  # renamed in 0072 (TASK-319)
 
     id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
     tenant_id: Mapped[UUID]
@@ -165,7 +165,7 @@ class WorkpaperVersion(Base):
 
 
 class WorkpaperSignature(Base):
-    __tablename__ = "workpaper_signatures"
+    __tablename__ = "procedure_workpaper_signatures"
 
     tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
     workpaper_version_id: Mapped[UUID] = mapped_column(primary_key=True)

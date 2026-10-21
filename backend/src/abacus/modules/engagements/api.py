@@ -59,6 +59,7 @@ from abacus.modules.engagements.slots import (
     register_work_item_kind,
     work_item_provider,
 )
+from abacus.modules.engagements.work_items import assurance_item_id
 from abacus.modules.engagements.workbook import (
     AccountRule,
     Area,
@@ -119,6 +120,7 @@ __all__ = [
     "VersionNotLatest",
     "WorkItemProvider",
     "area_for",
+    "assurance_item_id",
     "attach_acceptance_file",
     "attach_letter_file",
     "audit_engagements",

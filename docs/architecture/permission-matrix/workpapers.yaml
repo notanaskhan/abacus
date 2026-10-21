@@ -1,0 +1,7 @@
+# The workpapers module's actions (ADR-027; P-39, F-03-T07). Compiled with every other
+# module's file into identity/authz/_matrix.py by `make regenerate`.
+
+actions:
+  # --- Working papers (SPEC-308; TASK-319) ---
+  workpaper.read:           {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # firm roles only; the agent reads through its own tasks later
+  workpaper.edit:           {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # create, cells, citations; the agent proposes through its own channel (ADR-005)

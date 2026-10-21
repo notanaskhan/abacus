@@ -1259,6 +1259,26 @@
         "title": "AssistantOut",
         "type": "object"
       },
+      "AuditSectionStatus": {
+        "enum": [
+          "not_started",
+          "queued",
+          "waiting_on_inputs",
+          "ready_to_run",
+          "in_progress",
+          "running",
+          "blocked_on_decision",
+          "draft_ready",
+          "prepared",
+          "reviewed",
+          "signed_off",
+          "locked",
+          "failed",
+          "changed_after_signoff"
+        ],
+        "title": "AuditSectionStatus",
+        "type": "string"
+      },
       "AutonomyIn": {
         "additionalProperties": false,
         "properties": {
@@ -1588,6 +1608,218 @@
         "title": "CandidateOut",
         "type": "object"
       },
+      "CellBody": {
+        "additionalProperties": false,
+        "properties": {
+          "cell_key": {
+            "cls": "internal",
+            "pattern": "^[A-Z]{1,2}[1-9][0-9]{0,3}$",
+            "title": "Cell Key",
+            "type": "string"
+          },
+          "raw": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Raw"
+          },
+          "tickmarks": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "enum": [
+                "agreed",
+                "footed",
+                "cross_footed",
+                "recalculated",
+                "traced",
+                "vouched",
+                "exception"
+              ],
+              "type": "string"
+            },
+            "maxItems": 7,
+            "title": "Tickmarks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cell_key"
+        ],
+        "title": "CellBody",
+        "type": "object"
+      },
+      "CellCitationOut": {
+        "properties": {
+          "added_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Added At",
+            "type": "string"
+          },
+          "added_by_name": {
+            "cls": "internal",
+            "title": "Added By Name",
+            "type": "string"
+          },
+          "cell_key": {
+            "cls": "internal",
+            "title": "Cell Key",
+            "type": "string"
+          },
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "locator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Locator"
+          }
+        },
+        "required": [
+          "cell_key",
+          "evidence_version_id",
+          "locator",
+          "added_by_name",
+          "added_at"
+        ],
+        "title": "CellCitationOut",
+        "type": "object"
+      },
+      "CellOut": {
+        "properties": {
+          "cell_key": {
+            "cls": "internal",
+            "title": "Cell Key",
+            "type": "string"
+          },
+          "error": {
+            "cls": "internal",
+            "title": "Error",
+            "type": "boolean"
+          },
+          "formula": {
+            "cls": "internal",
+            "title": "Formula",
+            "type": "boolean"
+          },
+          "raw": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Raw"
+          },
+          "set_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Set At",
+            "type": "string"
+          },
+          "set_by_name": {
+            "cls": "internal",
+            "title": "Set By Name",
+            "type": "string"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Text"
+          },
+          "tickmarks": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "agreed",
+                "footed",
+                "cross_footed",
+                "recalculated",
+                "traced",
+                "vouched",
+                "exception"
+              ],
+              "type": "string"
+            },
+            "title": "Tickmarks",
+            "type": "array"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Value"
+          }
+        },
+        "required": [
+          "cell_key",
+          "raw",
+          "value",
+          "text",
+          "error",
+          "formula",
+          "tickmarks",
+          "set_by_name",
+          "set_at"
+        ],
+        "title": "CellOut",
+        "type": "object"
+      },
+      "CellsBody": {
+        "additionalProperties": false,
+        "properties": {
+          "cells": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/CellBody"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Cells",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cells"
+        ],
+        "title": "CellsBody",
+        "type": "object"
+      },
       "CheckOut": {
         "properties": {
           "account_code": {
@@ -1730,6 +1962,35 @@
           "ref_item_id"
         ],
         "title": "CheckOut",
+        "type": "object"
+      },
+      "CitationBody": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "locator": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Locator"
+          }
+        },
+        "required": [
+          "evidence_version_id"
+        ],
+        "title": "CitationBody",
         "type": "object"
       },
       "ClientAnswerIn": {
@@ -10608,6 +10869,66 @@
         "title": "SignItemsIn",
         "type": "object"
       },
+      "SignOffLevelOut": {
+        "properties": {
+          "level": {
+            "cls": "internal",
+            "title": "Level",
+            "type": "integer"
+          },
+          "name": {
+            "cls": "internal",
+            "enum": [
+              "preparer",
+              "reviewer",
+              "manager",
+              "partner",
+              "eqr"
+            ],
+            "title": "Name",
+            "type": "string"
+          },
+          "signed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Signed At"
+          },
+          "signed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Signed By Name"
+          },
+          "stale": {
+            "cls": "internal",
+            "title": "Stale",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "level",
+          "name",
+          "signed_by_name",
+          "signed_at",
+          "stale"
+        ],
+        "title": "SignOffLevelOut",
+        "type": "object"
+      },
       "SignatureOut": {
         "properties": {
           "kind": {
@@ -12173,6 +12494,196 @@
           "phase"
         ],
         "title": "WorkItemOut",
+        "type": "object"
+      },
+      "WorkingPaperOut": {
+        "properties": {
+          "audit_area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Audit Area"
+          },
+          "cells": {
+            "cls": "internal",
+            "title": "Cells",
+            "type": "integer"
+          },
+          "citations": {
+            "cls": "internal",
+            "title": "Citations",
+            "type": "integer"
+          },
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "levels": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/SignOffLevelOut"
+            },
+            "title": "Levels",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AuditSectionStatus",
+            "cls": "internal"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "title",
+          "audit_area",
+          "status",
+          "levels",
+          "cells",
+          "citations",
+          "created_at"
+        ],
+        "title": "WorkingPaperOut",
+        "type": "object"
+      },
+      "WorkingPaperVersionOut": {
+        "properties": {
+          "content_hash": {
+            "cls": "internal",
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by_name": {
+            "cls": "internal",
+            "title": "Created By Name",
+            "type": "string"
+          },
+          "version_no": {
+            "cls": "internal",
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version_no",
+          "content_hash",
+          "created_by_name",
+          "created_at"
+        ],
+        "title": "WorkingPaperVersionOut",
+        "type": "object"
+      },
+      "WorkpaperBody": {
+        "additionalProperties": false,
+        "properties": {
+          "audit_area": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Audit Area"
+          },
+          "code": {
+            "cls": "internal",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Code",
+            "type": "string"
+          },
+          "title": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "title"
+        ],
+        "title": "WorkpaperBody",
+        "type": "object"
+      },
+      "WorkpaperDetailOut": {
+        "properties": {
+          "cells": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/CellOut"
+            },
+            "title": "Cells",
+            "type": "array"
+          },
+          "citations": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/CellCitationOut"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "content_hash": {
+            "cls": "internal",
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "versions": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/WorkingPaperVersionOut"
+            },
+            "title": "Versions",
+            "type": "array"
+          },
+          "workpaper": {
+            "$ref": "#/components/schemas/WorkingPaperOut",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "workpaper",
+          "content_hash",
+          "cells",
+          "citations",
+          "versions"
+        ],
+        "title": "WorkpaperDetailOut",
         "type": "object"
       },
       "WorkpaperOut": {
@@ -32792,6 +33303,1197 @@
           "engagements"
         ],
         "x-abacus-action": "work_item.read_metadata"
+      }
+    },
+    "/v1/engagements/{engagement_id}/workpapers": {
+      "get": {
+        "description": "SPEC-308 AC-1: the engagement's working papers.",
+        "operationId": "workpapers",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WorkingPaperOut"
+                  },
+                  "title": "Response Workpapers",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Workpapers Route",
+        "tags": [
+          "workpapers"
+        ],
+        "x-abacus-action": "workpaper.read"
+      },
+      "post": {
+        "description": "SPEC-308 AC-2: a new working paper.",
+        "operationId": "create_workpaper",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkpaperBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkpaperDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Create Workpaper Route",
+        "tags": [
+          "workpapers"
+        ],
+        "x-abacus-action": "workpaper.edit"
+      }
+    },
+    "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}": {
+      "get": {
+        "description": "SPEC-308 AC-3: the grid, citations, sign-offs and versions.",
+        "operationId": "workpaper_detail",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workpaper_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workpaper Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkpaperDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Workpaper Detail Route",
+        "tags": [
+          "workpapers"
+        ],
+        "x-abacus-action": "workpaper.read"
+      }
+    },
+    "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/cells": {
+      "put": {
+        "description": "SPEC-308 AC-3: set cells (appended; unchanged cells write nothing).",
+        "operationId": "set_cells",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workpaper_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workpaper Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CellsBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkpaperDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Set Cells Route",
+        "tags": [
+          "workpapers"
+        ],
+        "x-abacus-action": "workpaper.edit"
+      }
+    },
+    "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/cells/{cell_key}/citations": {
+      "post": {
+        "description": "SPEC-308 AC-4: cite an evidence version on a cell.",
+        "operationId": "cite",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workpaper_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workpaper Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "cell_key",
+            "required": true,
+            "schema": {
+              "title": "Cell Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CitationBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkpaperDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Cite Route",
+        "tags": [
+          "workpapers"
+        ],
+        "x-abacus-action": "workpaper.edit"
+      }
+    },
+    "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/sign-offs/eqr": {
+      "post": {
+        "description": "SPEC-308 AC-5: the L5 engagement quality reviewer signs the current content.",
+        "operationId": "sign_off_eqr",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workpaper_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workpaper Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkpaperDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Sign Off Eqr Route",
+        "tags": [
+          "workpapers"
+        ],
+        "x-abacus-action": "sign_off.eqr"
+      }
+    },
+    "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/sign-offs/manager": {
+      "post": {
+        "description": "SPEC-308 AC-5: the L3 manager signs the current content.",
+        "operationId": "sign_off_manager",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workpaper_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workpaper Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkpaperDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Sign Off Manager Route",
+        "tags": [
+          "workpapers"
+        ],
+        "x-abacus-action": "sign_off.manager"
+      }
+    },
+    "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/sign-offs/partner": {
+      "post": {
+        "description": "SPEC-308 AC-5: the L4 partner signs the current content.",
+        "operationId": "sign_off_partner",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workpaper_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workpaper Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkpaperDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Sign Off Partner Route",
+        "tags": [
+          "workpapers"
+        ],
+        "x-abacus-action": "sign_off.partner"
+      }
+    },
+    "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/sign-offs/prepare": {
+      "post": {
+        "description": "SPEC-308 AC-5: the L1 preparer signs the current content.",
+        "operationId": "sign_off_prepare",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workpaper_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workpaper Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkpaperDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Sign Off Prepare Route",
+        "tags": [
+          "workpapers"
+        ],
+        "x-abacus-action": "sign_off.prepare"
+      }
+    },
+    "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/sign-offs/review": {
+      "post": {
+        "description": "SPEC-308 AC-5: the L2 reviewer signs the current content.",
+        "operationId": "sign_off_review",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workpaper_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workpaper Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkpaperDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Sign Off Review Route",
+        "tags": [
+          "workpapers"
+        ],
+        "x-abacus-action": "sign_off.review"
       }
     },
     "/v1/engagements/{engagement_id}/{which}/file": {
