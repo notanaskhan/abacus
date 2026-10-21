@@ -1,6 +1,6 @@
-import { Check, ChevronDown, RefreshCw, TriangleAlert, X } from "lucide-react";
+import { Check, RefreshCw, TriangleAlert, X } from "lucide-react";
 import type { ButtonHTMLAttributes, HTMLAttributes, JSX, ReactNode } from "react";
-import { clsx } from "clsx";
+import { cn } from "../cn";
 import {
   DISC_LABEL,
   type DiscSize,
@@ -16,73 +16,18 @@ import {
   status,
   statusWord,
 } from "../status";
+import { Pill, type PillProps, PillBody, Ring, pillClasses } from "./pill";
 import type { Tone } from "./surfaces";
 
 // The Status kit (C-06; F-05-T12). Pills, discs, the sub-line beside a disc, the sync chip, ticks
 // and the tally pill. Every word, tone and disc comes from status() over the C2 registry; nothing
 // here chooses a status colour by hand. Words plus colour, never colour alone. DEC-124: a pill is
-// radius 999 (`rounded-pill`), the same token the controls take.
-//
-// Classes are joined with clsx, not cn(): tailwind-merge does not know the type-role classes
-// (`text-pill`, `text-meta`) and reads them as colours, so cn("text-pill", "text-amber-ink") drops
-// one. Nothing here depends on a caller's class overriding the kit's.
+// radius 999 (`rounded-pill`), the same token the controls take. The pill itself (variants, sizes,
+// the ring) is components/pill.tsx; StatusPill is Pill plus the earlier `tone` prop and the sync
+// chip's glyph. Classes are joined with cn(), which knows the type roles (F-05-T14), so a caller's
+// class overrides the kit's.
 
 // ---- Pills -------------------------------------------------------------------------------------
-
-// The colours of each variant, all tokens. The ink follows the AA ladder (DEC-11), so `muted` and
-// `soon` are ink-3 where the bundle has .54 and .30; see tokens/DECISIONS.md, "Status kit".
-const VARIANT: Record<PillVariant, string> = {
-  amber: "bg-amber-tint text-amber-ink",
-  green: "bg-green text-on-dark shadow-lift",
-  "green-tint": "bg-green-tint text-green-ink",
-  red: "bg-red text-on-dark shadow-lift",
-  "red-tint": "bg-red-tint text-red-ink",
-  neutral: "bg-chip text-ink-2",
-  muted: "bg-nested font-normal text-ink-3 inset-shadow-hair",
-  soon: "bg-nested text-ink-3",
-  outline: "bg-card text-ink-2 shadow-e1",
-  tag: "bg-nested text-ink-2 inset-shadow-hair",
-};
-
-interface SizeSpec {
-  /** Height, padding and type role. */
-  box: string;
-  /** The check icon: size and stroke. */
-  check: readonly [number, number];
-}
-
-// Height, padding and type role per kit size. The type roles carry the font size, the letter
-// spacing (−0.005em above 11.5px) and weight 500; the base never sets them.
-const SIZE: Record<PillSize, SizeSpec> = {
-  state: { box: "gap-[4px] h-[21px] px-[8px] text-pill", check: [11, 2.4] },
-  "card-state": { box: "gap-[4px] h-[21px] px-[9px] text-pill-card", check: [10, 2.4] },
-  sm: { box: "gap-[4px] h-[19px] px-[8px] text-pill-sm", check: [10, 2.4] },
-  micro: { box: "h-[18px] gap-[3px] pr-[6px] pl-[5px] text-micro", check: [9, 2.8] },
-  status: {
-    box: "gap-[4px] h-[25px] pr-[11px] pl-[13px] text-dense font-medium",
-    check: [11, 2.4],
-  },
-  outline: { box: "gap-[4px] h-[22px] px-[9px] text-pill-card", check: [10, 2.4] },
-  tally: { box: "gap-[4px] h-[17px] px-[6px] text-micro", check: [9, 2.8] },
-  tag: { box: "gap-[4px] h-[23px] px-[9px] text-pill-card", check: [10, 2.4] },
-  count: {
-    box: "gap-[4px] h-[19px] min-w-[19px] justify-center px-[5px] text-count",
-    check: [10, 2.4],
-  },
-  done: { box: "gap-[4px] h-[21px] px-[8px] text-pill-card", check: [10, 2.4] },
-  check: { box: "h-[21px] gap-[3px] pr-[7px] pl-[5px] text-pill-sm", check: [11, 2.2] },
-  chip: { box: "h-[29px] gap-[6px] pr-[9px] pl-[8px] text-body font-normal", check: [10, 2.4] },
-};
-
-const PILL_BASE = "inline-flex items-center rounded-pill whitespace-nowrap";
-
-/** The classes of a pill: the base, the variant's colours and the size. The sync chip's word is
- * ink, not the outline variant's ink-2 (C-06 `chip`). */
-function pillClasses(variant: PillVariant, size: PillSize, className?: string): string {
-  const colours =
-    size === "chip" ? VARIANT[variant].replace("text-ink-2", "text-ink") : VARIANT[variant];
-  return clsx(PILL_BASE, colours, SIZE[size].box, className);
-}
 
 // A tone from before the kit reads as the variant that looks nearest to it.
 const TONE_VARIANT: Record<Tone, PillVariant> = {
@@ -93,68 +38,11 @@ const TONE_VARIANT: Record<Tone, PillVariant> = {
   info: "amber",
 };
 
-/** A ring that turns: ink arc on a faint track, 820ms a turn. Never shown under reduced motion
- * beyond one turn (motion.css). */
-function Ring({
-  size,
-  width,
-  track,
-  rotate = 0,
-  className,
-}: {
-  size: number;
-  width: number;
-  track: string;
-  rotate?: number;
-  className?: string;
-}): JSX.Element {
-  const r = (size - width) / 2;
-  const c = size / 2;
-  const circumference = 2 * Math.PI * r;
-  return (
-    <svg
-      aria-hidden="true"
-      width={size}
-      height={size}
-      viewBox={`0 0 ${String(size)} ${String(size)}`}
-      className={clsx("block shrink-0 motion-spin", className)}
-    >
-      <circle cx={c} cy={c} r={r} fill="none" className={track} strokeWidth={width} />
-      <circle
-        cx={c}
-        cy={c}
-        r={r}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={width}
-        strokeLinecap="round"
-        strokeDasharray={`${String(circumference * 0.28)} ${String(circumference)}`}
-        transform={`rotate(${String(rotate)} ${String(c)} ${String(c)})`}
-      />
-    </svg>
-  );
-}
-
-interface PillBase {
-  /** A pill variant. Purple `match` is source tracing and is never a status. */
-  variant?: PillVariant;
-  size?: PillSize;
-  /** A check before the label: a finished state. */
-  check?: boolean;
-  /** The 10px spinner before the label: work in flight. */
-  spin?: boolean;
-  /** The picker's chevron (the `status` size has one unless this is false). */
-  chevron?: boolean;
-  /** The sync chip's leading glyph. */
-  glyph?: SyncGlyph;
-  /** The word is bold (a material weakness). */
-  bold?: boolean;
-}
-
-export interface StatusPillProps
-  extends PillBase, Omit<HTMLAttributes<HTMLSpanElement>, "children"> {
+export interface StatusPillProps extends Omit<PillProps, "lead" | "children"> {
   /** A tone from before the kit: success, warning, danger, info, neutral. Prefer `variant`. */
   tone?: Tone;
+  /** The sync chip's leading glyph. */
+  glyph?: SyncGlyph;
   /** The word. One to three words, no uppercase. */
   children: ReactNode;
 }
@@ -178,73 +66,25 @@ function Glyph({ glyph }: { glyph: SyncGlyph }): JSX.Element {
   }
 }
 
-/** The pill's contents: a check, a spinner or a glyph, then the word, then a chevron. */
-function PillBody({
-  size,
-  check,
-  spin,
-  chevron,
-  glyph,
-  children,
-}: {
-  size: PillSize;
-  check?: boolean | undefined;
-  spin?: boolean | undefined;
-  chevron?: boolean | undefined;
-  glyph?: SyncGlyph | undefined;
-  children: ReactNode;
-}): JSX.Element {
-  const [checkSize, checkStroke] = SIZE[size].check;
-  const showChevron = chevron ?? (size === "status" || size === "chip");
-  return (
-    <>
-      {check === true && (
-        <Check
-          aria-hidden="true"
-          size={checkSize}
-          strokeWidth={checkStroke}
-          className="shrink-0"
-        />
-      )}
-      {spin === true && <Ring size={10} width={1.4} track="stroke-rule" />}
-      {glyph !== undefined && <Glyph glyph={glyph} />}
-      {children}
-      {showChevron && (
-        <ChevronDown
-          aria-hidden="true"
-          size={12}
-          className={clsx("shrink-0", size === "chip" ? "text-ink-3" : "opacity-55")}
-        />
-      )}
-    </>
-  );
-}
-
 /** A state as a pill (C-06): the word on its variant's colours at one of the kit's sizes. The
- * pieces that are not words are the check and the spinner only. */
+ * pieces that are not words are the check and the spinner only. A `Pill` that also reads the
+ * earlier `tone` prop and draws the sync chip's glyph. */
 export function StatusPill({
   variant,
   tone,
-  size = "state",
-  check,
-  spin,
-  chevron,
   glyph,
-  bold,
-  className,
   children,
   ...props
 }: StatusPillProps): JSX.Element {
   const resolved = variant ?? TONE_VARIANT[tone ?? "neutral"];
   return (
-    <span
-      className={pillClasses(resolved, size, clsx(bold === true && "font-medium", className))}
+    <Pill
+      variant={resolved}
+      {...(glyph === undefined ? {} : { lead: <Glyph glyph={glyph} /> })}
       {...props}
     >
-      <PillBody size={size} check={check} spin={spin} chevron={chevron} glyph={glyph}>
-        {children}
-      </PillBody>
-    </span>
+      {children}
+    </Pill>
   );
 }
 
@@ -274,12 +114,12 @@ export interface StatusDiscProps {
 export function StatusDisc({ state, size = 15, className }: StatusDiscProps): JSX.Element {
   const glyph = discGlyphSize(size);
   const label = DISC_LABEL[state];
-  const box = clsx("inline-flex shrink-0 items-center justify-center", DISC_BOX[size], className);
-  const round = clsx(box, "rounded-full");
+  const box = cn("inline-flex shrink-0 items-center justify-center", DISC_BOX[size], className);
+  const round = cn(box, "rounded-full");
   switch (state) {
     case "done":
       return (
-        <span role="img" aria-label={label} className={clsx(round, "bg-green text-on-dark")}>
+        <span role="img" aria-label={label} className={cn(round, "bg-green text-on-dark")}>
           <Check aria-hidden="true" size={glyph} strokeWidth={1.9} />
         </span>
       );
@@ -288,7 +128,7 @@ export function StatusDisc({ state, size = 15, className }: StatusDiscProps): JS
         <span
           role="img"
           aria-label={label}
-          className={clsx(round, "text-ink-3 inset-ring-[1.3px] inset-ring-ink-4")}
+          className={cn(round, "text-ink-3 inset-ring-[1.3px] inset-ring-ink-4")}
         >
           <Check aria-hidden="true" size={glyph} strokeWidth={1.9} />
         </span>
@@ -298,7 +138,7 @@ export function StatusDisc({ state, size = 15, className }: StatusDiscProps): JS
         <span
           role="img"
           aria-label={label}
-          className={clsx(round, "inset-ring-[1.3px] inset-ring-ink-4")}
+          className={cn(round, "inset-ring-[1.3px] inset-ring-ink-4")}
         />
       );
     case "half": {
@@ -335,24 +175,24 @@ export function StatusDisc({ state, size = 15, className }: StatusDiscProps): JS
       );
     case "warn":
       return (
-        <span role="img" aria-label={label} className={clsx(box, "text-amber")}>
+        <span role="img" aria-label={label} className={cn(box, "text-amber")}>
           <TriangleAlert aria-hidden="true" size={size} strokeWidth={2} />
         </span>
       );
     case "fail":
       return (
-        <span role="img" aria-label={label} className={clsx(round, "bg-red text-on-dark")}>
+        <span role="img" aria-label={label} className={cn(round, "bg-red text-on-dark")}>
           <X aria-hidden="true" size={glyph} strokeWidth={1.9} />
         </span>
       );
     case "off":
       return (
-        <span role="img" aria-label={label} className={clsx(round, "bg-ink-4 text-on-dark")}>
+        <span role="img" aria-label={label} className={cn(round, "bg-ink-4 text-on-dark")}>
           <X aria-hidden="true" size={glyph} strokeWidth={1.9} />
         </span>
       );
     case "wait":
-      return <span role="img" aria-label={label} className={clsx(round, "bg-amber")} />;
+      return <span role="img" aria-label={label} className={cn(round, "bg-amber")} />;
   }
 }
 
@@ -386,13 +226,13 @@ export function SubLine({
 }: SubLineProps): JSX.Element {
   return (
     <span
-      className={clsx("inline-flex items-center gap-[6px] text-meta", LINE[tone], className)}
+      className={cn("inline-flex items-center gap-[6px] text-meta", LINE[tone], className)}
       {...props}
     >
       {disc !== undefined && (
         <StatusDisc state={disc} {...(discSize === undefined ? {} : { size: discSize })} />
       )}
-      <span className={clsx(bold === true && "font-medium")}>{children}</span>
+      <span className={cn(bold === true && "font-medium")}>{children}</span>
     </span>
   );
 }
@@ -426,7 +266,10 @@ export function SyncChip({
   });
   const classes = pillClasses("outline", "chip", className);
   const body = (
-    <PillBody size="chip" glyph={resolved.glyph ?? undefined}>
+    <PillBody
+      size="chip"
+      lead={resolved.glyph === null ? undefined : <Glyph glyph={resolved.glyph} />}
+    >
       {resolved.label}
     </PillBody>
   );

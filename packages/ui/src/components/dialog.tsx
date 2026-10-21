@@ -33,7 +33,7 @@ export function Dialog({
             </DialogPrimitive.Title>
             <DialogPrimitive.Close
               aria-label="Close"
-              className="absolute top-1/2 right-3 flex size-[30px] -translate-y-1/2 items-center justify-center rounded-[7px] bg-nav-fill text-ink-2 hover:bg-sel-bg hover:text-ink"
+              className="absolute top-1/2 right-3 flex size-[30px] -translate-y-1/2 items-center justify-center rounded-pill bg-nav-fill text-ink-2 hover:bg-sel-bg hover:text-ink"
             >
               <X aria-hidden="true" className="size-3.5" />
             </DialogPrimitive.Close>

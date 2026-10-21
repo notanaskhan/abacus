@@ -136,7 +136,7 @@ export function KnowledgeDocuments(): JSX.Element {
       >
         <div className="flex justify-end gap-2">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               setWithdrawing(null);
             }}
@@ -144,7 +144,7 @@ export function KnowledgeDocuments(): JSX.Element {
             Cancel
           </Button>
           <Button
-            variant="danger"
+            variant="destructive"
             onClick={() => {
               if (withdrawing !== null) withdraw.mutate({ path: { document_id: withdrawing.id } });
               setWithdrawing(null);

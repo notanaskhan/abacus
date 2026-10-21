@@ -80,7 +80,7 @@ export function CheckStrip({
       {canDefine && (
         <Button
           size="sm"
-          variant="outline"
+          variant="secondary"
           onClick={() => {
             setAdding(true);
           }}
@@ -220,7 +220,7 @@ function CheckSheet({
               <Button
                 key={k}
                 size="sm"
-                variant={kind === k ? "default" : "outline"}
+                variant={kind === k ? "primary" : "secondary"}
                 aria-pressed={kind === k}
                 onClick={() => {
                   setKind(k);

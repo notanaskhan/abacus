@@ -145,7 +145,7 @@ function ConfirmationRow({
             />
             <Button
               size="sm"
-              variant="danger"
+              variant="destructive"
               disabled={note.trim() === "" || answer.isPending}
               onClick={() => {
                 send(false);

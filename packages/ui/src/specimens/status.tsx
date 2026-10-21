@@ -24,7 +24,7 @@ import { STATUS_REGISTRY } from "../status.gen";
 // components. Sample words are registry words; a placeholder reads as itself ("Synced {date}"),
 // so no sample data is invented.
 
-function Sheet({
+export function Sheet({
   title,
   meta,
   children,
@@ -44,7 +44,7 @@ function Sheet({
   );
 }
 
-function Row({
+export function Row({
   name,
   meaning,
   spec,

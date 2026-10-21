@@ -72,10 +72,10 @@ export function Overview(): JSX.Element {
       <Section title="Buttons and status">
         <div className="flex flex-wrap items-center gap-2">
           <Button>Primary</Button>
-          <Button variant="outline">Secondary</Button>
+          <Button variant="secondary">Secondary</Button>
           <Button variant="tonal">Tonal</Button>
           <Button variant="ghost">Ghost</Button>
-          <Button variant="danger">Destructive</Button>
+          <Button variant="destructive">Destructive</Button>
           <Button variant="success">Approve</Button>
           <Badge tone="warning">Badge</Badge>
           <Status domain="workpaper" value="ready" />
@@ -85,7 +85,7 @@ export function Overview(): JSX.Element {
       <Section title="Overlays">
         <div className="flex flex-wrap items-center gap-2">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               setDrawer(true);
             }}
@@ -93,21 +93,21 @@ export function Overview(): JSX.Element {
             Open drawer
           </Button>
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               setSheet(true);
             }}
           >
             Open sheet
           </Button>
-          <Popover trigger={<Button variant="outline">Popover</Button>} label="Example">
+          <Popover trigger={<Button variant="secondary">Popover</Button>} label="Example">
             <p className="text-ink-2">
               A card anchored to its trigger, for small forms and detail.
             </p>
           </Popover>
           <Menu
             label="Row actions"
-            trigger={<Button variant="outline">Menu</Button>}
+            trigger={<Button variant="secondary">Menu</Button>}
             sections={[
               [
                 { label: "Open", onSelect: () => undefined },
@@ -120,7 +120,7 @@ export function Overview(): JSX.Element {
             <Button variant="ghost">Tooltip</Button>
           </Tooltip>
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               toast.show("Saved");
             }}
@@ -128,7 +128,7 @@ export function Overview(): JSX.Element {
             Toast
           </Button>
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               toast.deferred("Follow-up sent to 3 contacts", () => {
                 toast.show("Sent");
@@ -149,7 +149,7 @@ export function Overview(): JSX.Element {
           selected={picked}
           onSelectedChange={setPicked}
           bulkActions={(ids) => (
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="secondary">
               {`Remind ${String(ids.length)}`}
             </Button>
           )}

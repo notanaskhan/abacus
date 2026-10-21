@@ -177,7 +177,7 @@ export function DeficiencyFieldset({
           <div className="flex justify-end gap-2">
             <Button
               size="sm"
-              variant={isPartner ? "outline" : "default"}
+              variant={isPartner ? "secondary" : "primary"}
               disabled={propose.isPending}
               onClick={() => {
                 propose.mutate({
@@ -230,7 +230,7 @@ export function DeficiencyFieldset({
           />
           <Button
             size="sm"
-            variant="outline"
+            variant="secondary"
             disabled={to.trim() === "" || on === "" || told.isPending}
             onClick={() => {
               told.mutate({ ...path, body: { communicated_on: on, recipients: to } });
@@ -334,7 +334,7 @@ export function Adjustments({
         !APPROVERS.has(role) ? null : a.status === "proposed" ? (
           <Button
             size="sm"
-            variant="outline"
+            variant="secondary"
             disabled={approve.isPending}
             onClick={() => {
               approve.mutate(at(a));
@@ -346,7 +346,7 @@ export function Adjustments({
           <span className="flex justify-end gap-1.5">
             <Button
               size="sm"
-              variant="outline"
+              variant="secondary"
               disabled={answer.isPending}
               onClick={() => {
                 answer.mutate({ ...at(a), body: { accepted: true } });

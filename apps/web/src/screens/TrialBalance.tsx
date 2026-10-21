@@ -109,7 +109,7 @@ export function TrialBalance({ engagementId }: { engagementId: string }): JSX.El
             <Button
               key={t.id}
               size="sm"
-              variant={t.id === current.id ? "default" : "outline"}
+              variant={t.id === current.id ? "primary" : "secondary"}
               aria-pressed={t.id === current.id}
               onClick={() => {
                 setChosen(t.id);
@@ -324,7 +324,7 @@ function TrialBalanceCard({
             <Button
               key={x}
               size="sm"
-              variant={layer === x ? "default" : "outline"}
+              variant={layer === x ? "primary" : "secondary"}
               aria-pressed={layer === x}
               disabled={x === "final" && !d.layers_available}
               title={
@@ -345,7 +345,7 @@ function TrialBalanceCard({
             <Button
               key={m}
               size="sm"
-              variant={mode === m ? "default" : "outline"}
+              variant={mode === m ? "primary" : "secondary"}
               aria-pressed={mode === m}
               onClick={() => {
                 setMode(m);
@@ -380,7 +380,7 @@ function TrialBalanceCard({
           {canAdopt && (
             <Button
               size="sm"
-              variant="outline"
+              variant="secondary"
               onClick={() => {
                 setUpgrading(newer);
               }}
@@ -401,7 +401,7 @@ function TrialBalanceCard({
               </span>
               <Button
                 size="sm"
-                variant="outline"
+                variant="secondary"
                 disabled={picked.size === 0}
                 onClick={() => {
                   setAnnotating(true);

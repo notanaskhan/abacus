@@ -127,7 +127,7 @@ function AcceptancePanel({
         isPartner && !editing ? (
           <Button
             size="sm"
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               setEditing(true);
             }}
@@ -263,7 +263,7 @@ function AcceptancePanel({
           )}
           <div className="flex justify-end gap-2">
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={() => {
                 setEditing(false);
               }}
@@ -381,7 +381,7 @@ function LetterPanel({
         canRecord && !editing ? (
           <Button
             size="sm"
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               setEditing(true);
             }}
@@ -493,7 +493,7 @@ function LetterPanel({
           )}
           <div className="flex justify-end gap-2">
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={() => {
                 setEditing(false);
               }}

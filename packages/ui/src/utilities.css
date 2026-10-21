@@ -68,3 +68,19 @@
 [data-doc] .doc-bold {
   font-weight: 700;
 }
+
+/* Controls (F-05-T14): the shared press feedback of every pill and button. Colour changes over 180ms,
+   the press over 220ms; `pressed` is the press itself, scale .985 and brightness .97 (the bundle's
+   `.press:active`). A forced state (`data-force`) sets the same classes without a pointer. */
+@utility press {
+  transition:
+    background-color var(--motion-color),
+    color var(--motion-color),
+    box-shadow var(--motion-color),
+    transform var(--motion-press),
+    filter var(--motion-press);
+}
+@utility pressed {
+  transform: scale(0.985);
+  filter: brightness(0.97);
+}

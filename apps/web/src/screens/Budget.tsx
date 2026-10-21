@@ -105,7 +105,7 @@ function BudgetPanel({
             <AcknowledgeStep step="budget" label="Looks right" />
             <Button
               size="sm"
-              variant="outline"
+              variant="secondary"
               onClick={() => {
                 setEditing(true);
               }}
@@ -178,7 +178,7 @@ function BudgetPanel({
             Save
           </Button>
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               setEditing(false);
             }}
@@ -241,7 +241,7 @@ function Metering(): JSX.Element {
             <Button
               key={p}
               size="sm"
-              variant={period === p ? "default" : "outline"}
+              variant={period === p ? "primary" : "secondary"}
               aria-pressed={period === p}
               onClick={() => {
                 setPeriod(p);

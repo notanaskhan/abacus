@@ -181,7 +181,7 @@ export function EvidencePreview({
                 size="sm"
                 role="tab"
                 aria-selected={n === sheet}
-                variant={n === sheet ? "default" : "ghost"}
+                variant={n === sheet ? "primary" : "ghost"}
                 onClick={() => {
                   setSheet(n);
                 }}
@@ -251,7 +251,7 @@ export function EvidencePreview({
         <div className="flex items-center gap-2 text-body">
           <Button
             size="sm"
-            variant="outline"
+            variant="secondary"
             disabled={page <= 1}
             onClick={() => {
               setPage((p) => p - 1);
@@ -264,7 +264,7 @@ export function EvidencePreview({
           </span>
           <Button
             size="sm"
-            variant="outline"
+            variant="secondary"
             disabled={page >= count}
             onClick={() => {
               setPage((p) => p + 1);

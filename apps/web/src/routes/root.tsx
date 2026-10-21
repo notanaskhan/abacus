@@ -47,7 +47,7 @@ function RouteError(): JSX.Element {
         action={
           <Button
             size="sm"
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               window.location.reload();
             }}

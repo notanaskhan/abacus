@@ -139,7 +139,7 @@ function ReviewEntry({
         {assignee === null && (
           <Button
             size="sm"
-            variant="outline"
+            variant="secondary"
             aria-label={`Take ${item}`}
             onClick={() => {
               take.mutate({ path: versionPath });

@@ -187,7 +187,7 @@ export const textRoles = {
   "btn-sm": { size: "12.5px", lineHeight: "1.2" },
 } as const satisfies Record<string, TextRole>;
 
-/** The 13 radii. Controls are pills (DEC-109). */
+/** The 13 radii. Controls are pills (DEC-124, which supersedes DEC-109 and DEC-123). */
 export const radii = {
   pill: "999px",
   pane: "12px",
@@ -204,7 +204,8 @@ export const radii = {
   phone: "28px",
 } as const;
 
-/** SPEC-016 radii, kept until the primitives become pills (F-05-T14). */
+/** SPEC-016 radii for boxed inputs, selects and panels (about 60 call sites; F-05-T15 and the screen
+ * rebuilds move them to nested, tile and pane). Not for buttons: Button is a pill (F-05-T14). */
 export const legacyRadii = {
   control: "8px",
   panel: "12px",

@@ -16,7 +16,7 @@ export function AiTag({ citations, href }: { citations?: number; href?: string }
       {citations !== undefined && citations > 0 && href !== undefined && (
         <a
           href={href}
-          className="rounded-[5px] bg-nested px-1.5 py-px text-[11px] font-medium text-ink-2 hover:bg-sel-bg hover:text-ink"
+          className="rounded-pill bg-nested px-1.5 py-px text-[11px] font-medium text-ink-2 hover:bg-sel-bg hover:text-ink"
         >
           {citations === 1 ? "1 citation" : `${String(citations)} citations`}
         </a>
@@ -25,8 +25,9 @@ export function AiTag({ citations, href }: { citations?: number; href?: string }
   );
 }
 
-/** Done of total, tabular. */
-export function Count({
+/** Done of total as a plain line, tabular ("3 / 5 received"). Was `Count`; the C-06 Count is the
+ * number pill (components/pill.tsx), and the pill for done of total is `DoneCount`. */
+export function Fraction({
   done,
   total,
   label,
@@ -102,7 +103,7 @@ export function RailButton({
       title={label}
       onClick={onClick}
       className={cn(
-        "relative flex size-10 items-center justify-center rounded-[8px] text-ink-2 transition-colors hover:bg-nav-fill hover:text-ink [&_svg]:size-[17px]",
+        "relative flex size-10 items-center justify-center rounded-pill text-ink-2 transition-colors hover:bg-nav-fill hover:text-ink [&_svg]:size-[17px]",
         active && "bg-sel-bg text-ink",
       )}
     >

@@ -154,7 +154,7 @@ export function SupportAccess(): JSX.Element {
                   {(s.status === "requested" || s.status === "active") && (
                     <Button
                       size="sm"
-                      variant="danger"
+                      variant="destructive"
                       onClick={() => {
                         setPending({ action: "revoke", session: s });
                       }}
@@ -165,7 +165,7 @@ export function SupportAccess(): JSX.Element {
                   {s.emergency && !s.acknowledged && (
                     <Button
                       size="sm"
-                      variant="outline"
+                      variant="secondary"
                       onClick={() => {
                         setPending({ action: "acknowledge", session: s });
                       }}
@@ -225,7 +225,7 @@ export function SupportAccess(): JSX.Element {
       >
         <div className="flex justify-end gap-2">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               setPending(null);
             }}
@@ -233,7 +233,7 @@ export function SupportAccess(): JSX.Element {
             Cancel
           </Button>
           <Button
-            variant={pending?.action === "revoke" ? "danger" : "default"}
+            variant={pending?.action === "revoke" ? "destructive" : "primary"}
             disabled={busy}
             onClick={run}
           >

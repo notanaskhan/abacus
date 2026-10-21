@@ -150,7 +150,7 @@ export function AuditLog(): JSX.Element {
           Every change, as recorded. Identifiers only; nothing here can be edited.
         </span>
         <span className="flex-1" />
-        <Button size="sm" variant="outline" disabled={rows.length === 0} onClick={download}>
+        <Button size="sm" variant="secondary" disabled={rows.length === 0} onClick={download}>
           Download CSV
         </Button>
       </div>
@@ -345,7 +345,7 @@ export function AuditLog(): JSX.Element {
             {pages.hasNextPage && (
               <Button
                 size="sm"
-                variant="outline"
+                variant="secondary"
                 disabled={pages.isFetchingNextPage}
                 onClick={() => void pages.fetchNextPage()}
               >

@@ -87,7 +87,7 @@ export function Contacts({ engagementId }: { engagementId: string }): JSX.Elemen
         <Alert
           title="Couldn't load contacts"
           action={
-            <Button size="sm" variant="outline" onClick={() => void contacts.refetch()}>
+            <Button size="sm" variant="secondary" onClick={() => void contacts.refetch()}>
               Retry
             </Button>
           }
@@ -204,14 +204,17 @@ export function Contacts({ engagementId }: { engagementId: string }): JSX.Elemen
       >
         <div className="flex justify-end gap-2">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               setPending(null);
             }}
           >
             Cancel
           </Button>
-          <Button variant={pending?.kind === "resend" ? "default" : "danger"} onClick={confirm}>
+          <Button
+            variant={pending?.kind === "resend" ? "primary" : "destructive"}
+            onClick={confirm}
+          >
             {pending?.kind === "remove"
               ? "Remove"
               : pending?.kind === "revoke"
@@ -302,7 +305,7 @@ function InviteDialog({
           </p>
         )}
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onCancel}>
+          <Button variant="secondary" onClick={onCancel}>
             Cancel
           </Button>
           <Button type="submit" disabled={invite.isPending}>

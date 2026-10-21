@@ -1,4 +1,13 @@
 import type { ComponentType } from "react";
+import {
+  ButtonSpecimen,
+  CheckPillSpecimen,
+  CountSpecimen,
+  DoneCountSpecimen,
+  IconButtonSpecimen,
+  PillSpecimen,
+  TagSpecimen,
+} from "./controls";
 import { Overview } from "./overview";
 import {
   StatusDiscSpecimen,
@@ -25,6 +34,13 @@ export interface Specimen {
 
 export const SPECIMENS: readonly Specimen[] = [
   { id: "c-00-overview", kit: "C-00", title: "Components in use", Component: Overview },
+  { id: "c-00-button", kit: "C-00", title: "Button", Component: ButtonSpecimen },
+  { id: "c-00-icon-button", kit: "C-00", title: "IconButton", Component: IconButtonSpecimen },
+  { id: "c-06-pill", kit: "C-06", title: "Pill", Component: PillSpecimen },
+  { id: "c-06-count", kit: "C-06", title: "Count", Component: CountSpecimen },
+  { id: "c-06-tag", kit: "C-06", title: "Tag", Component: TagSpecimen },
+  { id: "c-06-done-count", kit: "C-06", title: "DoneCount", Component: DoneCountSpecimen },
+  { id: "c-06-check-pill", kit: "C-06", title: "CheckPill", Component: CheckPillSpecimen },
   { id: "c-06-status-pill", kit: "C-06", title: "Status pills", Component: StatusPillSpecimen },
   { id: "c-06-status-disc", kit: "C-06", title: "Status discs", Component: StatusDiscSpecimen },
   { id: "c-06-subline", kit: "C-06", title: "Sub-lines", Component: SubLineSpecimen },

@@ -210,7 +210,7 @@ export function Workpaper({
             <Menu
               label="Tickmarks"
               trigger={
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="secondary">
                   Tickmark
                 </Button>
               }
@@ -235,7 +235,7 @@ export function Workpaper({
           {canEdit && (
             <Button
               size="sm"
-              variant="outline"
+              variant="secondary"
               onClick={() => {
                 setCiting(true);
               }}
@@ -529,7 +529,7 @@ function SignOffRail({
               {allowed && !current && (
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="secondary"
                   disabled={blocked || mutation.isPending}
                   onClick={() => {
                     mutation.mutate({ ...path });

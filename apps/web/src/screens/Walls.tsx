@@ -217,7 +217,7 @@ function WallList({
                     <Td>
                       <Button
                         size="sm"
-                        variant="danger"
+                        variant="destructive"
                         onClick={() => {
                           setRemoving(w);
                         }}
@@ -246,7 +246,7 @@ function WallList({
       >
         <div className="flex justify-end gap-2">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               setRemoving(null);
             }}
@@ -254,7 +254,7 @@ function WallList({
             Cancel
           </Button>
           <Button
-            variant="danger"
+            variant="destructive"
             disabled={remove.isPending}
             onClick={() => {
               if (removing !== null) remove.mutate({ path: { wall_id: removing.id } });

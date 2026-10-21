@@ -378,7 +378,7 @@ function VersionCard({
         >
           Version {v.version_no}
         </button>
-        <Button size="sm" variant="outline" disabled={busy} onClick={() => void save()}>
+        <Button size="sm" variant="secondary" disabled={busy} onClick={() => void save()}>
           {busy ? "Downloading…" : "Download"}
         </Button>
       </div>
@@ -541,7 +541,7 @@ function UploadForClient({
     <>
       <Button
         size="sm"
-        variant="outline"
+        variant="secondary"
         onClick={() => {
           setOpen(true);
         }}
@@ -586,7 +586,7 @@ function UploadForClient({
           )}
           <div className="flex justify-end gap-2">
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={() => {
                 setOpen(false);
               }}
@@ -624,7 +624,7 @@ function ScreenNow({
     <span className="flex items-center gap-2">
       <Button
         size="sm"
-        variant="outline"
+        variant="secondary"
         disabled={screen.isPending || screen.isSuccess}
         onClick={() => {
           screen.mutate({

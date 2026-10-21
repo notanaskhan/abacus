@@ -16,3 +16,7 @@
   outline: none;
   box-shadow: var(--focus-ring);
 }
+[data-contrast="reference"] [data-force="focus"] {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}

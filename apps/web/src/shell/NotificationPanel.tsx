@@ -55,7 +55,7 @@ export function NotificationPanel({
           >
             Mark all read
           </Button>
-          <Button size="sm" variant="outline" onClick={onClose}>
+          <Button size="sm" variant="secondary" onClick={onClose}>
             Close
           </Button>
         </div>

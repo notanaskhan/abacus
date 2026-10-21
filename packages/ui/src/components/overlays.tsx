@@ -23,7 +23,7 @@ function Close(): JSX.Element {
   return (
     <DialogPrimitive.Close
       aria-label="Close"
-      className="flex size-[30px] shrink-0 items-center justify-center rounded-[7px] bg-nav-fill text-ink-2 hover:bg-sel-bg hover:text-ink"
+      className="flex size-[30px] shrink-0 items-center justify-center rounded-pill bg-nav-fill text-ink-2 hover:bg-sel-bg hover:text-ink"
     >
       <X aria-hidden="true" className="size-3.5" />
     </DialogPrimitive.Close>

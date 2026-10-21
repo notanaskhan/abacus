@@ -14,7 +14,7 @@ export function MapView({ engagementId }: { engagementId: string }): JSX.Element
       <Alert
         title="Couldn't load the map"
         action={
-          <Button size="sm" variant="outline" onClick={() => void graph.refetch()}>
+          <Button size="sm" variant="secondary" onClick={() => void graph.refetch()}>
             Retry
           </Button>
         }

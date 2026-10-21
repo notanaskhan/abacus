@@ -161,7 +161,7 @@ function MaterialityCard({
         {PROPOSERS.has(role) && (
           <Button
             size="sm"
-            variant={current?.status === "proposed" && isPartner ? "outline" : "default"}
+            variant={current?.status === "proposed" && isPartner ? "secondary" : "primary"}
             onClick={() => {
               setProposing(true);
             }}
@@ -582,7 +582,7 @@ function RiskRegister({
           isPartner ? (
             <Button
               size="sm"
-              variant="outline"
+              variant="secondary"
               disabled={approve.isPending}
               onClick={(e) => {
                 e.stopPropagation();

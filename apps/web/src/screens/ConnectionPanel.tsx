@@ -122,7 +122,7 @@ export function ConnectionPanel({
               {canExport && (
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="secondary"
                   onClick={() => {
                     setExporting(true);
                   }}
@@ -133,7 +133,7 @@ export function ConnectionPanel({
               {canConnect && <Providers engagementId={engagementId} onPick={setConsent} />}
               <Button
                 size="sm"
-                variant="outline"
+                variant="secondary"
                 aria-expanded={showLog}
                 onClick={() => {
                   setShowLog((s) => !s);
@@ -176,7 +176,7 @@ export function ConnectionPanel({
                   </p>
                   <div>
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       onClick={() => {
                         setExporting(true);
                       }}
@@ -197,7 +197,7 @@ export function ConnectionPanel({
                 <div>
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="secondary"
                     onClick={() => {
                       setExporting(true);
                     }}
@@ -233,7 +233,7 @@ export function ConnectionPanel({
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
-              variant="outline"
+              variant="secondary"
               disabled={check.isPending}
               onClick={() => {
                 check.mutate(path);
@@ -243,7 +243,7 @@ export function ConnectionPanel({
             </Button>
             <Button
               size="sm"
-              variant="outline"
+              variant="secondary"
               aria-expanded={showLog}
               onClick={() => {
                 setShowLog((s) => !s);
@@ -253,7 +253,7 @@ export function ConnectionPanel({
             </Button>
             <Button
               size="sm"
-              variant="danger"
+              variant="destructive"
               onClick={() => {
                 setConfirmRevoke(true);
               }}
@@ -293,7 +293,7 @@ export function ConnectionPanel({
         </p>
         <div className="flex justify-end gap-2">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               setConsent(null);
             }}
@@ -318,7 +318,7 @@ export function ConnectionPanel({
       >
         <div className="flex justify-end gap-2">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               setConfirmRevoke(false);
             }}
@@ -326,7 +326,7 @@ export function ConnectionPanel({
             Cancel
           </Button>
           <Button
-            variant="danger"
+            variant="destructive"
             disabled={revoke.isPending}
             onClick={() => {
               revoke.mutate(path);

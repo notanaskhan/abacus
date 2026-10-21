@@ -612,7 +612,7 @@ function WorkpaperPanel({
           {canRun && (
             <Button
               size="sm"
-              variant="outline"
+              variant="secondary"
               disabled={conclusion.trim() === "" || conclude.isPending}
               onClick={() => {
                 conclude.mutate({ ...path, body: { text: conclusion } });
@@ -899,7 +899,7 @@ function ProcedurePanel({
               <span className="flex items-center gap-2">
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="secondary"
                   disabled={!approved || askAll.isPending}
                   onClick={() => {
                     askAll.mutate(path);
@@ -910,7 +910,7 @@ function ProcedurePanel({
                 {!surl && (
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="secondary"
                     disabled={assess.isPending}
                     onClick={() => {
                       assess.mutate({ ...path, body: {} });
@@ -949,7 +949,7 @@ function ProcedurePanel({
               {picked.size > 0 && canReview && (
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="secondary"
                   disabled={signR.isPending}
                   onClick={() => {
                     signR.mutate({ ...path, body: { item_ids: [...picked] } });
@@ -1032,7 +1032,7 @@ function ProcedurePanel({
         <div className="flex items-center justify-end gap-2 px-1">
           <Button
             size="sm"
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               setNoting({ itemId: null, title: "Review notes · workpaper" });
             }}

@@ -23,7 +23,7 @@ export function ImportRequestList({ engagementId }: { engagementId: string }): J
   return (
     <>
       <Button
-        variant="outline"
+        variant="secondary"
         onClick={() => {
           setOpen(true);
         }}
@@ -218,7 +218,7 @@ function ImportDialog({
             />
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="secondary" onClick={onClose}>
               Cancel
             </Button>
             <Button
@@ -322,7 +322,7 @@ function ImportDialog({
           </div>
           <div className="flex justify-end gap-2">
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={() => {
                 setStep("file");
               }}

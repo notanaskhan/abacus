@@ -171,7 +171,7 @@ export function FirmAgents({ canSet }: { canSet: boolean }): JSX.Element | null 
         {canSet && (
           <Button
             size="sm"
-            variant={paused ? "default" : "ghost"}
+            variant={paused ? "primary" : "ghost"}
             disabled={pause.isPending || resume.isPending}
             onClick={() => {
               if (paused) resume.mutate({});

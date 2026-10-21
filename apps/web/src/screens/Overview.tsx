@@ -10,8 +10,8 @@ import {
   AiTag,
   Alert,
   Button,
-  Count,
   EmptyState,
+  Fraction,
   Panel,
   Skeleton,
   StatusPill,
@@ -44,7 +44,7 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
       <Alert
         title="Couldn't load the engagement"
         action={
-          <Button size="sm" variant="outline" onClick={() => void graph.refetch()}>
+          <Button size="sm" variant="secondary" onClick={() => void graph.refetch()}>
             Retry
           </Button>
         }
@@ -72,7 +72,7 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
         <Panel
           title="Audit areas"
           action={
-            <Count
+            <Fraction
               done={items.filter((i) => i.status !== "requested" && i.status !== "draft").length}
               total={items.length}
               label="received"
@@ -100,7 +100,7 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
                     >
                       <span className="flex-1">{a.name}</span>
                       {gap && <StatusPill tone="warning">No requests</StatusPill>}
-                      <Count done={done(a)} total={a.items.length} />
+                      <Fraction done={done(a)} total={a.items.length} />
                     </button>
                   </li>
                 );
@@ -115,7 +115,7 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
               {area?.name ?? "Requests"}
             </h2>
             {area !== undefined && (
-              <Count
+              <Fraction
                 done={done(area)}
                 total={area.items.length}
                 label={`received · ${String(area.accounts.length)} accounts`}

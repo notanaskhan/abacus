@@ -91,7 +91,7 @@ export function FollowUps({ engagementId }: { engagementId: string }): JSX.Eleme
       cell: (d) => (
         <Button
           size="sm"
-          variant="outline"
+          variant="secondary"
           onClick={(e) => {
             e.stopPropagation();
             setOpen(d);
@@ -116,7 +116,7 @@ export function FollowUps({ engagementId }: { engagementId: string }): JSX.Eleme
         {draftNow.isError && <span className="text-meta text-danger">{said(draftNow.error)}</span>}
         <Button
           size="sm"
-          variant="outline"
+          variant="secondary"
           disabled={draftNow.isPending}
           onClick={() => {
             draftNow.mutate(path);

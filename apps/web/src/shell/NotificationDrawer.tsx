@@ -204,7 +204,7 @@ export function NotificationDrawer({
           {pages.hasNextPage && (
             <Button
               size="sm"
-              variant="outline"
+              variant="secondary"
               className="self-center"
               disabled={pages.isFetchingNextPage}
               onClick={() => void pages.fetchNextPage()}

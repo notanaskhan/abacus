@@ -235,7 +235,7 @@ function NoteCard({
             )}
             <Button
               size="sm"
-              variant="outline"
+              variant="secondary"
               disabled={reply.trim() === "" || respond.isPending}
               onClick={() => {
                 respond.mutate({ path: { ...path, note_id: note.id }, body: { body: reply } });

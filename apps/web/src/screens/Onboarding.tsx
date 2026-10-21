@@ -145,7 +145,7 @@ export function Onboarding({ always = false }: { always?: boolean }): JSX.Elemen
                     {step.id === "sso" && (
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="secondary"
                         onClick={() => {
                           acknowledge.mutate({ path: { step: "sso" } });
                         }}

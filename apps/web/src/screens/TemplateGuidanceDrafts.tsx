@@ -117,7 +117,7 @@ function DraftCard({
           {!editing && (
             <Button
               size="sm"
-              variant="outline"
+              variant="secondary"
               disabled={busy}
               onClick={() => {
                 setEditing(true);
@@ -196,7 +196,7 @@ export function TemplateGuidanceDrafts({
       action={
         <Button
           size="sm"
-          variant="outline"
+          variant="secondary"
           disabled={start.isPending || without === 0}
           onClick={() => {
             start.mutate({ ...path, body: {} });
@@ -250,7 +250,7 @@ export function TemplateGuidanceDrafts({
               </label>
               <Button
                 size="sm"
-                variant="outline"
+                variant="secondary"
                 disabled={!read || busy}
                 onClick={() => {
                   approve.mutate({

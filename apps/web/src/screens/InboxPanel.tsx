@@ -212,7 +212,7 @@ function InboxRow({
             <li key={s.request_item_id} className="flex flex-wrap items-center gap-2">
               <Button
                 size="sm"
-                variant="outline"
+                variant="secondary"
                 disabled={busy}
                 title={`Matched: ${s.matched.join(", ") || "a known document type"}`}
                 onClick={() => {
@@ -237,7 +237,7 @@ function InboxRow({
                 .map((r) => (
                   <span
                     key={`${r.code}-${r.value ?? ""}`}
-                    className="rounded-[5px] bg-sunken px-2 py-0.5 text-meta text-muted"
+                    className="rounded-pill bg-sunken px-2 py-0.5 text-meta text-muted"
                   >
                     {reasonLabel(r)}
                   </span>

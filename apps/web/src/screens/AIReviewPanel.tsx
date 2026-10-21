@@ -66,7 +66,7 @@ export function AIReviewPanel({
     <span className="inline-flex flex-wrap items-center gap-2">
       <Button
         size="sm"
-        variant="outline"
+        variant="secondary"
         disabled={request.isPending}
         onClick={() => {
           request.mutate(path);

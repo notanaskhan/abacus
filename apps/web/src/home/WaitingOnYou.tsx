@@ -63,7 +63,7 @@ export function WaitingOnYou(): JSX.Element | null {
       cell: (r) => (
         <Button
           size="sm"
-          variant={r.rank === 0 ? "default" : "outline"}
+          variant={r.rank === 0 ? "primary" : "secondary"}
           onClick={(e) => {
             e.stopPropagation();
             open(r);

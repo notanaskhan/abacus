@@ -243,7 +243,7 @@ export function Palette({
         onClick={() => {
           setOpen(true);
         }}
-        className="flex h-[30px] w-[220px] items-center gap-2 rounded-[7px] bg-nav-fill px-2.5 text-[13px] text-ink-3 hover:text-ink-2"
+        className="flex h-[30px] w-[220px] items-center gap-2 rounded-pill bg-nav-fill px-2.5 text-[13px] text-ink-3 hover:text-ink-2"
       >
         <span className="flex-1 text-left">Search</span>
         <kbd className="rounded-[4px] bg-card px-1.5 font-mono text-[11px] shadow-e1">⌘K</kbd>

@@ -229,7 +229,7 @@ export function AgentSession({
               canRun ? (
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="secondary"
                   disabled={assess.isPending}
                   onClick={() => {
                     assess.mutate({ ...path, body: {} });

@@ -83,7 +83,7 @@ export function Engagements(): JSX.Element {
           <div
             role="group"
             aria-label="Status"
-            className="ml-2 flex gap-0.5 rounded-[9px] bg-nav-fill p-[3px]"
+            className="ml-2 flex gap-0.5 rounded-pill bg-nav-fill p-1"
           >
             {(
               [
@@ -130,7 +130,7 @@ export function Engagements(): JSX.Element {
             <Alert
               title="Couldn't load engagements"
               action={
-                <Button size="sm" variant="outline" onClick={() => void engagements.refetch()}>
+                <Button size="sm" variant="secondary" onClick={() => void engagements.refetch()}>
                   Retry
                 </Button>
               }

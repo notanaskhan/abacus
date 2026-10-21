@@ -23,7 +23,7 @@ export function EngagementLayout({ engagementId }: { engagementId: string }): JS
       <header className="flex min-h-[42px] flex-wrap items-center gap-x-3 gap-y-2">
         <Link
           to="/"
-          className="flex h-[29px] items-center gap-1 rounded-[7px] bg-card pr-3 pl-2 text-[13px] text-ink-2 shadow-e1 hover:bg-nav-fill hover:text-ink hover:no-underline"
+          className="flex h-[29px] items-center gap-1 rounded-pill bg-card pr-3 pl-2 text-[13px] text-ink-2 shadow-e1 hover:bg-nav-fill hover:text-ink hover:no-underline"
         >
           <ChevronLeft aria-hidden="true" className="size-3.5" />
           Engagements
@@ -114,7 +114,7 @@ function AgentMenu({ engagementId }: { engagementId: string }): JSX.Element | nu
         onClick={() => {
           setOpen((o) => !o);
         }}
-        className="flex h-[29px] items-center gap-1.5 rounded-[7px] bg-card pr-2.5 pl-3 text-[13px] shadow-e1 hover:bg-nav-fill"
+        className="flex h-[29px] items-center gap-1.5 rounded-pill bg-card pr-2.5 pl-3 text-[13px] shadow-e1 hover:bg-nav-fill"
       >
         <span
           aria-hidden="true"

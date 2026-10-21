@@ -1,7 +1,36 @@
 // The design system (ADR-011): every screen builds from these. Agent text goes through AgentText.
 export { AGENT_TEXT_LIMIT, AgentText, type AgentTextProps, sanitiseAgentText } from "./agent-text";
 export { cn } from "./cn";
-export { Button, type ButtonProps } from "./components/button";
+// The T0 controls and pills (F-05-T14): Button, IconButton, and the Pill family.
+export {
+  BUTTON_SIZES,
+  BUTTON_VARIANTS,
+  Button,
+  type ButtonForceState,
+  type ButtonProps,
+  type ButtonSize,
+  type ButtonVariant,
+  ICON_BUTTON_VARIANTS,
+  IconButton,
+  type IconButtonProps,
+  type IconButtonVariant,
+} from "./components/button";
+export {
+  CheckPill,
+  type CheckPillProps,
+  Count,
+  type CountProps,
+  type CountTone,
+  DoneCount,
+  type DoneCountProps,
+  PILL_SIZES,
+  PILL_VARIANTS,
+  Pill,
+  type PillProps,
+  Tag,
+  type TagProps,
+} from "./components/pill";
+export { type ForceState } from "./force-state";
 export { Dialog } from "./components/dialog";
 export { Input, Label } from "./components/field";
 export {
@@ -13,7 +42,7 @@ export {
   Spinner,
   type Tone,
 } from "./components/surfaces";
-export { AiTag, Count, Panel, Rail, RailButton } from "./components/workspace";
+export { AiTag, Fraction, Panel, Rail, RailButton } from "./components/workspace";
 export {
   RegistryStatus,
   type RegistryStatusProps,

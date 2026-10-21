@@ -135,7 +135,7 @@ export function AiClientDataSetting({ canSet }: { canSet: boolean }): JSX.Elemen
                 <div>
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="secondary"
                     disabled={change.isPending}
                     onClick={() => {
                       change.mutate({ body: { on: false } });

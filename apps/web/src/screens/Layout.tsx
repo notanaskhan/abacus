@@ -48,7 +48,7 @@ function SignedIn(): JSX.Element {
         <Alert
           title="Couldn't load your account"
           action={
-            <Button size="sm" variant="outline" onClick={() => void me.refetch()}>
+            <Button size="sm" variant="secondary" onClick={() => void me.refetch()}>
               Retry
             </Button>
           }
@@ -74,7 +74,7 @@ function SignedIn(): JSX.Element {
             {staff.map((m) => (
               <li key={m.tenant_id}>
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   className="w-full"
                   onClick={() => {
                     chooseTenant(m.tenant_id);
@@ -99,7 +99,7 @@ function SignedIn(): JSX.Element {
         <Link
           to="/"
           aria-label="Abacus home"
-          className="mr-1 flex items-center gap-2 rounded-[7px] pr-2 text-[14.5px] font-medium tracking-[-0.02em] text-ink hover:no-underline"
+          className="mr-1 flex items-center gap-2 rounded-pill pr-2 text-[14.5px] font-medium tracking-[-0.02em] text-ink hover:no-underline"
         >
           <span
             aria-hidden="true"
@@ -155,10 +155,10 @@ function SignedIn(): JSX.Element {
             setPanel((open) => !open);
           }}
         />
-        <span className="flex h-[30px] items-center gap-2 rounded-[7px] bg-nav-fill pr-3 pl-1 text-[13px] shadow-e1">
+        <span className="flex h-[30px] items-center gap-2 rounded-pill bg-nav-fill pr-3 pl-1 text-[13px] shadow-e1">
           <span
             aria-hidden="true"
-            className="flex size-[22px] items-center justify-center rounded-[5px] bg-chip text-[10.5px] font-medium text-ink-2"
+            className="flex size-[22px] items-center justify-center rounded-full bg-chip text-[10.5px] font-medium text-ink-2"
           >
             {initials(me.data.display_name)}
           </span>
@@ -175,7 +175,7 @@ function SignedIn(): JSX.Element {
             queryClient.clear();
             void signIn("/");
           }}
-          className="flex size-[30px] items-center justify-center rounded-[7px] text-ink-2 hover:bg-nav-fill hover:text-ink"
+          className="flex size-[30px] items-center justify-center rounded-pill text-ink-2 hover:bg-nav-fill hover:text-ink"
         >
           <LogOut aria-hidden="true" className="size-[15px]" />
         </button>
@@ -191,7 +191,7 @@ function SignedIn(): JSX.Element {
 }
 
 const NAV_LINK =
-  "flex h-8 items-center rounded-[7px] px-3 text-[13.5px] tracking-[-0.005em] text-ink-2 hover:bg-sel-bg hover:text-ink hover:no-underline data-[current=true]:bg-nav-fill data-[current=true]:font-medium data-[current=true]:text-ink";
+  "flex h-8 items-center rounded-pill px-3 text-[13.5px] tracking-[-0.005em] text-ink-2 hover:bg-sel-bg hover:text-ink hover:no-underline data-[current=true]:bg-nav-fill data-[current=true]:font-medium data-[current=true]:text-ink";
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -217,7 +217,7 @@ function NotificationsButton({
       aria-pressed={active}
       title="Notifications"
       onClick={onToggle}
-      className="relative flex size-[30px] items-center justify-center rounded-[7px] bg-nav-fill text-ink-2 shadow-e1 hover:bg-sel-bg hover:text-ink aria-pressed:bg-sel-bg aria-pressed:text-ink"
+      className="relative flex size-[30px] items-center justify-center rounded-pill bg-nav-fill text-ink-2 shadow-e1 hover:bg-sel-bg hover:text-ink aria-pressed:bg-sel-bg aria-pressed:text-ink"
     >
       <Bell aria-hidden="true" className="size-[15px]" />
       {unread > 0 && (

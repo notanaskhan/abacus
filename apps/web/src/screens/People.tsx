@@ -177,7 +177,7 @@ function Team({ engagementId }: { engagementId: string }): JSX.Element {
       >
         <div className="flex justify-end gap-2">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               setPending(null);
             }}
@@ -185,7 +185,7 @@ function Team({ engagementId }: { engagementId: string }): JSX.Element {
             Cancel
           </Button>
           <Button
-            variant="danger"
+            variant="destructive"
             onClick={() => {
               if (pending !== null) remove.mutate({ path: { ...path, user_id: pending.userId } });
               setPending(null);
@@ -297,7 +297,7 @@ function AddPerson({
           </p>
         )}
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button type="submit" disabled={person === "" || add.isPending}>

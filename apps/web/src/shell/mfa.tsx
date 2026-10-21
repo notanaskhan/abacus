@@ -28,7 +28,7 @@ export function ConfirmItsYou({
     >
       <div className="flex justify-end gap-2">
         <Button
-          variant="outline"
+          variant="secondary"
           onClick={() => {
             onOpenChange(false);
           }}

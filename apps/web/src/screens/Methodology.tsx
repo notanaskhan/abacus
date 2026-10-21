@@ -44,7 +44,7 @@ export function Methodology(): JSX.Element {
         <Alert
           title="Couldn't load templates"
           action={
-            <Button size="sm" variant="outline" onClick={() => void templates.refetch()}>
+            <Button size="sm" variant="secondary" onClick={() => void templates.refetch()}>
               Retry
             </Button>
           }

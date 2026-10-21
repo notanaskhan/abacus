@@ -139,7 +139,7 @@ export function ClientGuidance({
           <div>
             <Button
               size="sm"
-              variant="outline"
+              variant="secondary"
               onClick={() => {
                 setDraft(draftOf(item));
               }}

@@ -177,7 +177,7 @@ export function FirmPeople(): JSX.Element {
                         {m.status === "active" && m.user_id !== me.data?.user_id && (
                           <Button
                             size="sm"
-                            variant="danger"
+                            variant="destructive"
                             onClick={() => {
                               setRevoking(m);
                             }}
@@ -211,7 +211,7 @@ export function FirmPeople(): JSX.Element {
                     <span className="flex gap-2">
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="secondary"
                         onClick={() => {
                           resend.mutate({ path: { invitation_id: i.id } });
                         }}
@@ -245,7 +245,7 @@ export function FirmPeople(): JSX.Element {
       >
         <div className="flex justify-end gap-2">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               setRevoking(null);
             }}
@@ -253,7 +253,7 @@ export function FirmPeople(): JSX.Element {
             Cancel
           </Button>
           <Button
-            variant="danger"
+            variant="destructive"
             disabled={revoke.isPending}
             onClick={() => {
               if (revoking !== null) revoke.mutate({ path: { user_id: revoking.user_id } });

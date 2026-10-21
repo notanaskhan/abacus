@@ -141,7 +141,7 @@ export function Board({
       <Alert
         title="Couldn't load the evidence board"
         action={
-          <Button size="sm" variant="outline" onClick={() => void failed.refetch()}>
+          <Button size="sm" variant="secondary" onClick={() => void failed.refetch()}>
             Retry
           </Button>
         }
@@ -220,7 +220,7 @@ export function Board({
                   onClick={() => {
                     setFilter("status", on ? "" : s);
                   }}
-                  className={`flex h-[26px] items-center gap-1.5 rounded-[7px] px-2.5 text-[12.5px] transition-colors ${
+                  className={`flex h-[26px] items-center gap-1.5 rounded-pill px-2.5 text-[12.5px] transition-colors ${
                     on ? "bg-sel-bg font-medium text-ink" : "text-ink-2 hover:bg-nav-fill"
                   }`}
                 >
@@ -597,7 +597,7 @@ function Retrieve({
   return (
     <div className="flex items-center gap-3">
       <Button
-        variant="outline"
+        variant="secondary"
         size="sm"
         disabled={running}
         onClick={() => {
@@ -690,7 +690,7 @@ function AddRequestItem({ engagementId }: { engagementId: string }): JSX.Element
           <Label htmlFor="audit_area">Audit area</Label>
           <Input id="audit_area" name="audit_area" required placeholder="General" />
         </div>
-        <Button type="submit" variant="outline" disabled={mutation.isPending}>
+        <Button type="submit" variant="secondary" disabled={mutation.isPending}>
           Add request item
         </Button>
       </form>
