@@ -14,9 +14,11 @@ TABLES: frozenset[str] = frozenset(
         "workpaper_cells",
         "workpaper_cell_citations",
         "workpaper_versions",
+        "tie_out_checks",  # SPEC-310 (TASK-321)
+        "tie_out_check_versions",
     }
 )
-INSERT_ONLY: frozenset[str] = TABLES
+INSERT_ONLY: frozenset[str] = TABLES - {"tie_out_checks"}
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "workpapers": frozenset(
         {"tenant_id", "engagement_id", "work_item_id", "code", "title", "audit_area"}
@@ -36,5 +38,14 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "workpaper_versions": frozenset(
         {"tenant_id", "workpaper_id", "version_no", "content_hash", "content", "created_by"}
     ),
+    "tie_out_checks": frozenset(
+        {"tenant_id", "engagement_id", "target_type", "target_id", "key", "kind", "created_by"}
+    ),
+    "tie_out_check_versions": frozenset(
+        {"tenant_id", "check_id", "version_no", "label", "actual_selector", "expected"}
+        | {"citation_ids", "tolerance", "reason", "created_by", "actor_kind"}
+    ),
 }
-UPDATE_COLUMNS: dict[str, frozenset[str]] = {}
+UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    "tie_out_checks": frozenset({"current_version_no"}),  # SPEC-310: the current definition
+}

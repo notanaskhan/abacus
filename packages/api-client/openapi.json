@@ -7150,6 +7150,47 @@
         "title": "LineOut",
         "type": "object"
       },
+      "LinkedAccountOut": {
+        "properties": {
+          "account_code": {
+            "cls": "confidential",
+            "title": "Account Code",
+            "type": "string"
+          },
+          "account_name": {
+            "cls": "confidential",
+            "title": "Account Name",
+            "type": "string"
+          },
+          "boy": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Boy"
+          },
+          "eoy": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Eoy",
+            "type": "string"
+          }
+        },
+        "required": [
+          "account_code",
+          "account_name",
+          "boy",
+          "eoy"
+        ],
+        "title": "LinkedAccountOut",
+        "type": "object"
+      },
       "ListDoneOut": {
         "properties": {
           "at": {
@@ -10488,6 +10529,74 @@
         "title": "RollForwardProposalOut",
         "type": "object"
       },
+      "RollforwardComponentBody": {
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "cls": "confidential",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "sign": {
+            "cls": "internal",
+            "enum": [
+              1,
+              -1
+            ],
+            "title": "Sign",
+            "type": "integer"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Value"
+          }
+        },
+        "required": [
+          "label",
+          "sign",
+          "value"
+        ],
+        "title": "RollforwardComponentBody",
+        "type": "object"
+      },
+      "RollforwardComponentOut": {
+        "properties": {
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "sign": {
+            "cls": "internal",
+            "title": "Sign",
+            "type": "integer"
+          },
+          "value": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "sign",
+          "value"
+        ],
+        "title": "RollforwardComponentOut",
+        "type": "object"
+      },
       "RowSignOut": {
         "properties": {
           "initials": {
@@ -12129,6 +12238,40 @@
         "title": "TbLineOut",
         "type": "object"
       },
+      "TbLinkOut": {
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          },
+          "period_end": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Period End",
+            "type": "string"
+          },
+          "version_no": {
+            "cls": "internal",
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "period_end",
+          "version_no"
+        ],
+        "title": "TbLinkOut",
+        "type": "object"
+      },
       "TbVersionOut": {
         "properties": {
           "adopted_at": {
@@ -12595,6 +12738,447 @@
           }
         },
         "title": "ThreadReadOut",
+        "type": "object"
+      },
+      "TieOutCheckBody": {
+        "additionalProperties": false,
+        "properties": {
+          "accounts": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Accounts",
+            "type": "array"
+          },
+          "citation_ids": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "column": {
+            "cls": "internal",
+            "default": "eoy",
+            "enum": [
+              "eoy",
+              "boy"
+            ],
+            "title": "Column",
+            "type": "string"
+          },
+          "components": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RollforwardComponentBody"
+            },
+            "maxItems": 12,
+            "title": "Components",
+            "type": "array"
+          },
+          "expected": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Expected"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "balanced",
+              "tie",
+              "rollforward"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "negate": {
+            "cls": "internal",
+            "default": false,
+            "title": "Negate",
+            "type": "boolean"
+          },
+          "tolerance": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "default": "0.00",
+            "title": "Tolerance"
+          }
+        },
+        "required": [
+          "label",
+          "kind"
+        ],
+        "title": "TieOutCheckBody",
+        "type": "object"
+      },
+      "TieOutCheckEditBody": {
+        "additionalProperties": false,
+        "properties": {
+          "accounts": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Accounts",
+            "type": "array"
+          },
+          "citation_ids": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "column": {
+            "cls": "internal",
+            "default": "eoy",
+            "enum": [
+              "eoy",
+              "boy"
+            ],
+            "title": "Column",
+            "type": "string"
+          },
+          "components": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RollforwardComponentBody"
+            },
+            "maxItems": 12,
+            "title": "Components",
+            "type": "array"
+          },
+          "expected": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Expected"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "balanced",
+              "tie",
+              "rollforward"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "negate": {
+            "cls": "internal",
+            "default": false,
+            "title": "Negate",
+            "type": "boolean"
+          },
+          "reason": {
+            "cls": "confidential",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seen Version",
+            "type": "integer"
+          },
+          "tolerance": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "default": "0.00",
+            "title": "Tolerance"
+          }
+        },
+        "required": [
+          "label",
+          "kind",
+          "reason",
+          "seen_version"
+        ],
+        "title": "TieOutCheckEditBody",
+        "type": "object"
+      },
+      "TieOutCheckOut": {
+        "properties": {
+          "accounts": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Accounts",
+            "type": "array"
+          },
+          "citation_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "column": {
+            "cls": "internal",
+            "enum": [
+              "eoy",
+              "boy"
+            ],
+            "title": "Column",
+            "type": "string"
+          },
+          "components": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/RollforwardComponentOut"
+            },
+            "title": "Components",
+            "type": "array"
+          },
+          "defined_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Defined At",
+            "type": "string"
+          },
+          "defined_by_name": {
+            "cls": "internal",
+            "title": "Defined By Name",
+            "type": "string"
+          },
+          "expected": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Expected"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "balanced",
+              "tie",
+              "rollforward"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "negate": {
+            "cls": "internal",
+            "title": "Negate",
+            "type": "boolean"
+          },
+          "result": {
+            "$ref": "#/components/schemas/TieResultOut",
+            "cls": "confidential"
+          },
+          "tolerance": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Tolerance",
+            "type": "string"
+          },
+          "version_no": {
+            "cls": "internal",
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "label",
+          "kind",
+          "accounts",
+          "column",
+          "negate",
+          "expected",
+          "components",
+          "citation_ids",
+          "tolerance",
+          "version_no",
+          "defined_by_name",
+          "defined_at",
+          "result"
+        ],
+        "title": "TieOutCheckOut",
+        "type": "object"
+      },
+      "TieResultOut": {
+        "properties": {
+          "actual": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Actual"
+          },
+          "difference": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Difference"
+          },
+          "expected": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Expected"
+          },
+          "formula": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Formula"
+          },
+          "missing": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing",
+            "type": "array"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "tie",
+              "off",
+              "pending"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "actual",
+          "expected",
+          "difference",
+          "formula",
+          "missing"
+        ],
+        "title": "TieResultOut",
         "type": "object"
       },
       "TierIn": {
@@ -13406,6 +13990,25 @@
             "title": "Content Hash",
             "type": "string"
           },
+          "tb_accounts": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/LinkedAccountOut"
+            },
+            "title": "Tb Accounts",
+            "type": "array"
+          },
+          "trial_balance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TbLinkOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
           "versions": {
             "cls": "internal",
             "items": {
@@ -13424,7 +14027,9 @@
           "content_hash",
           "cells",
           "citations",
-          "versions"
+          "versions",
+          "trial_balance",
+          "tb_accounts"
         ],
         "title": "WorkpaperDetailOut",
         "type": "object"
@@ -34555,6 +35160,397 @@
           "trial balance"
         ],
         "x-abacus-action": "trial_balance.read"
+      }
+    },
+    "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/checks": {
+      "get": {
+        "description": "SPEC-310 AC-1: the trial balance's checks with results computed now.",
+        "operationId": "tie_out_checks",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tb_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tb Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TieOutCheckOut"
+                  },
+                  "title": "Response Tie Out Checks",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Tie Out Checks Route",
+        "tags": [
+          "workpapers"
+        ],
+        "x-abacus-action": "trial_balance.read"
+      },
+      "post": {
+        "description": "SPEC-310 AC-2: define a check.",
+        "operationId": "define_check",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tb_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tb Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TieOutCheckBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TieOutCheckOut"
+                  },
+                  "title": "Response Define Check",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Define Check Route",
+        "tags": [
+          "workpapers"
+        ],
+        "x-abacus-action": "tie_out_check.define"
+      }
+    },
+    "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/checks/{check_id}": {
+      "put": {
+        "description": "SPEC-310 AC-3: change a check (a new version, with a reason).",
+        "operationId": "edit_check",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tb_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tb Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "check_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Check Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TieOutCheckEditBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TieOutCheckOut"
+                  },
+                  "title": "Response Edit Check",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Edit Check Route",
+        "tags": [
+          "workpapers"
+        ],
+        "x-abacus-action": "tie_out_check.define"
       }
     },
     "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/leadsheets": {

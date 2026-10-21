@@ -32,6 +32,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
 import { amount } from "./amounts";
+import { CheckStrip } from "./TieChecks";
 
 // SPEC-309 (TASK-320): the trial balance of record (AUD-06, first slice). The server computes
 // every figure, total, the balance check, leadsheets and Δ% (ADR-050); this screen only shows
@@ -336,6 +337,12 @@ function TrialBalanceCard({
         {`Adopted by ${d.version.adopted_by_name} from ${sourceWord(d.version.source)}, pulled ${day(d.version.pulled_at)}`}
         {d.version.reason != null && ` · ${d.version.reason}`}
       </p>
+      <CheckStrip
+        engagementId={engagementId}
+        tbId={tb.id}
+        canDefine={canAdopt}
+        selected={[...picked]}
+      />
       {newer !== undefined && (
         <div className="flex items-center gap-2 border-b-[0.5px] border-hair bg-amber-tint px-4 py-2 text-[12.5px]">
           <span>

@@ -14,20 +14,21 @@ import json
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Final
 from uuid import UUID
 
 from abacus.kernel._statuses import AuditSectionStatus
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import assurance_item_id, get_ref, lock_ref
 from abacus.modules.evidence.api import version_view
 from abacus.modules.identity.api import AuthContext, authorise, engagement_team
+from abacus.modules.ledger.api import TbLine, engagement_trial_balances, trial_balance_view
 from abacus.modules.review.api import LevelState, record_sign_off, sign_off_states
-from abacus.modules.workpapers.formulas import evaluate, is_formula
+from abacus.modules.workpapers.formulas import TbSource, evaluate, is_formula
 from abacus.modules.workpapers.models import Workpaper, WorkpaperCell, WorkpaperCellCitation
 from abacus.modules.workpapers.repository import (
     citations_of,
@@ -127,19 +128,37 @@ class WorkpaperSummary:
 
 
 @dataclass(frozen=True)
+class TbLink:
+    """The trial balance TB() reads (SPEC-310): the engagement's Standard trial balance with the
+    latest period end (or its only one), at its current version."""
+
+    id: UUID
+    label: str
+    period_end: date
+    version_no: int
+    source: TbSource
+    accounts: list[TbLine]
+
+
+@dataclass(frozen=True)
 class WorkpaperDetail:
     summary: WorkpaperSummary
     content_hash: str
     cells: list[CellView]
     citations: list[CitationView]
     versions: list[VersionView]
+    tb: TbLink | None
+    tb_accounts: list[TbLine]  # the trial balance's accounts whose WP ref is this paper's code
 
 
 def content_of(
-    cells: Sequence[WorkpaperCell], citations: Sequence[WorkpaperCellCitation]
+    cells: Sequence[WorkpaperCell],
+    citations: Sequence[WorkpaperCellCitation],
+    tb: TbLink | None = None,
 ) -> dict[str, object]:
-    """What a sign-off approves: each filled cell's raw text and tickmarks, and the citations."""
-    return {
+    """What a sign-off approves: each filled cell's raw text and tickmarks, the citations, and
+    which trial balance version TB() read when any cell uses it (so a new version is a change)."""
+    content: dict[str, object] = {
         "cells": {
             c.cell_key: {"raw": c.raw, "tickmarks": sorted(c.tickmarks)}
             for c in sorted(cells, key=lambda c: c.cell_key)
@@ -149,6 +168,28 @@ def content_of(
             [c.cell_key, str(c.evidence_version_id), c.locator or ""] for c in citations
         ),
     }
+    if tb is not None and any(tb.source.uses(c.raw) for c in cells):
+        content["tb"] = {"id": str(tb.id), "version_no": tb.version_no}
+    return content
+
+
+async def tb_link(tenant: TenantContext, engagement_id: UUID) -> TbLink | None:
+    """For callers authorised on the engagement (`workpaper.read` implies the team)."""
+    found = await engagement_trial_balances(tenant, engagement_id)
+    if not found:
+        return None
+    standard = [t for t in found if t.label == "standard"] or found
+    tb = max(standard, key=lambda t: t.period_end)
+    view = await trial_balance_view(tenant, engagement_id, tb.id)
+    eoy = {line.account_code.upper(): line.eoy for line in view.lines}
+    boy = (
+        {line.account_code.upper(): line.boy or Decimal(0) for line in view.lines}
+        if view.boy is not None
+        else None
+    )
+    return TbLink(
+        tb.id, tb.label, tb.period_end, tb.current_version_no, TbSource(eoy, boy), view.lines
+    )
 
 
 def content_hash(content: dict[str, object]) -> str:
@@ -169,6 +210,10 @@ def status_of(has_content: bool, levels: Sequence[LevelState]) -> AuditSectionSt
     if 1 in current:
         return AuditSectionStatus.PREPARED
     return AuditSectionStatus.IN_PROGRESS if has_content else AuditSectionStatus.NOT_STARTED
+
+
+def _uses_tb(raw: str | None) -> bool:
+    return TbSource({}, None).uses(raw)
 
 
 def clean_edits(edits: Sequence[CellEdit]) -> list[CellEdit]:
@@ -222,11 +267,13 @@ async def workpapers_for(ctx: AuthContext, engagement_id: UUID) -> list[Workpape
         ids = [p.id for p in papers]
         cells = await newest_cells(session, ids)
         citations = await citations_of(session, ids)
+    tb = await tb_link(ctx.tenant, engagement_id) if papers else None
     hashes = {
         p.id: content_hash(
             content_of(
                 [c for c in cells if c.workpaper_id == p.id],
                 [c for c in citations if c.workpaper_id == p.id],
+                tb,
             )
         )
         for p in papers
@@ -296,10 +343,11 @@ async def workpaper_detail(
         cells = [c for c in await newest_cells(session, [paper.id]) if c.raw or c.tickmarks]
         citations = await citations_of(session, [paper.id])
         versions = await versions_of(session, paper.id)
-    digest = content_hash(content_of(cells, citations))
+    tb = await tb_link(ctx.tenant, engagement_id)
+    digest = content_hash(content_of(cells, citations, tb))
     states = (await sign_off_states(ctx.tenant, TARGET, [paper.id], {paper.id: digest}))[paper.id]
     names = await _names(ctx, engagement_id)
-    values = evaluate({c.cell_key: c.raw for c in cells})
+    values = evaluate({c.cell_key: c.raw for c in cells}, tb.source if tb else None)
     cell_views: list[CellView] = []
     for c in cells:
         v = values.get(c.cell_key, "")
@@ -352,6 +400,8 @@ async def workpaper_detail(
             )
             for v in versions
         ],
+        tb,
+        [a for a in tb.accounts if a.wp_ref == paper.code] if tb else [],
     )
 
 
@@ -383,7 +433,13 @@ async def set_cells(
                     "sheet_key": SHEET,
                     "cell_key": e.cell_key,
                     "raw": e.raw,
-                    "value_source": "formula" if is_formula(e.raw) else "human",
+                    "value_source": (
+                        "tb_linked"
+                        if _uses_tb(e.raw)
+                        else "formula"
+                        if is_formula(e.raw)
+                        else "human"
+                    ),
                     "tickmarks": list(e.tickmarks),
                     "set_by": ctx.user_id,
                 }
@@ -434,12 +490,13 @@ async def cite(
 
 async def sign_off(ctx: AuthContext, engagement_id: UUID, workpaper_id: UUID, level: int) -> None:
     """AC-5: sign the paper's current content at a level; snapshots a numbered version."""
+    tb = await tb_link(ctx.tenant, engagement_id)
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         paper = _paper(await get_workpaper(tx.session, workpaper_id), engagement_id)
         cells = await newest_cells(tx.session, [paper.id])
         citations = await citations_of(tx.session, [paper.id])
-        content = content_of(cells, citations)
+        content = content_of(cells, citations, tb)
         if not content["cells"] and not content["citations"]:
             raise WorkpaperInvalid("empty")
         digest = content_hash(content)

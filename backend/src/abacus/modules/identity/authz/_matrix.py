@@ -732,6 +732,14 @@ ACTIONS: dict[str, dict[str, str]] = {
         "firm_admin": "allow",
         "practice_leader": "allow",
     },
+    "tie_out_check.define": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "agent": "deny",
+        "independence": "required",
+    },
     "trial_balance.adopt": {
         "engagement_partner": "allow",
         "manager": "allow",
