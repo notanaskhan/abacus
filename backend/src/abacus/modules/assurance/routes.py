@@ -20,6 +20,8 @@ from abacus.modules.assurance.trial_balance import (
     overview,
     set_annotations,
     sheets,
+    sign_off_tb,
+    tb_levels,
     view,
 )
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
@@ -94,6 +96,18 @@ class TotalsOut(BaseModel):
     balanced: Annotated[bool, classified("internal")]
 
 
+class TbLevelOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    level: Annotated[int, classified("internal")]
+    name: Annotated[
+        Literal["preparer", "reviewer", "manager", "partner", "eqr"], classified("internal")
+    ]
+    signed_by_name: Annotated[str | None, classified("internal")]
+    signed_at: Annotated[datetime | None, classified("internal")]
+    stale: Annotated[bool, classified("internal")]
+
+
 class TbVersionOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -119,6 +133,7 @@ class TrialBalanceDetailOut(BaseModel):
     final: Annotated[TotalsOut | None, classified("confidential")]
     layers_available: Annotated[bool, classified("internal")]
     pending_entries: Annotated[int, classified("internal")]
+    sign_offs: Annotated[list[TbLevelOut], classified("internal")]
 
 
 class LeadRowOut(BaseModel):
@@ -239,6 +254,16 @@ async def _detail(
         final=None if v.final is None else _totals(v.final),
         layers_available=v.final is not None,
         pending_entries=v.pending_entries,
+        sign_offs=[
+            TbLevelOut(
+                level=s.level,
+                name=s.name,  # type: ignore[arg-type]  # LEVELS holds exactly these names
+                signed_by_name=names.get(s.signed_by, "Former member") if s.signed_by else None,
+                signed_at=s.signed_at,
+                stale=s.stale,
+            )
+            for s in await tb_levels(ctx, engagement_id, tb_id)
+        ],
     )
 
 
@@ -331,4 +356,74 @@ async def annotate_tb_route(
     """SPEC-309 AC-6: set accounts' audit areas and working-paper references."""
     edits = [AnnotationEdit(a.account_code, a.area, a.wp_ref) for a in body.accounts]
     await set_annotations(ctx, engagement_id, tb_id, edits, body.reason)
+    return await _detail(ctx, engagement_id, tb_id, None, "unadjusted")
+
+
+@router.post(
+    "/{tb_id}/sign-offs/prepare",
+    action="sign_off.prepare",
+    response_model=TrialBalanceDetailOut,
+    status_code=201,
+)
+async def tb_sign_off_prepare_route(
+    engagement_id: UUID, tb_id: UUID, ctx: Ctx
+) -> TrialBalanceDetailOut:
+    """SPEC-313 AC-6: the L1 preparer signs the trial balance's current version."""
+    await sign_off_tb(ctx, engagement_id, tb_id, 1)
+    return await _detail(ctx, engagement_id, tb_id, None, "unadjusted")
+
+
+@router.post(
+    "/{tb_id}/sign-offs/review",
+    action="sign_off.review",
+    response_model=TrialBalanceDetailOut,
+    status_code=201,
+)
+async def tb_sign_off_review_route(
+    engagement_id: UUID, tb_id: UUID, ctx: Ctx
+) -> TrialBalanceDetailOut:
+    """SPEC-313 AC-6: the L2 reviewer signs the trial balance's current version."""
+    await sign_off_tb(ctx, engagement_id, tb_id, 2)
+    return await _detail(ctx, engagement_id, tb_id, None, "unadjusted")
+
+
+@router.post(
+    "/{tb_id}/sign-offs/manager",
+    action="sign_off.manager",
+    response_model=TrialBalanceDetailOut,
+    status_code=201,
+)
+async def tb_sign_off_manager_route(
+    engagement_id: UUID, tb_id: UUID, ctx: Ctx
+) -> TrialBalanceDetailOut:
+    """SPEC-313 AC-6: the L3 manager signs the trial balance's current version."""
+    await sign_off_tb(ctx, engagement_id, tb_id, 3)
+    return await _detail(ctx, engagement_id, tb_id, None, "unadjusted")
+
+
+@router.post(
+    "/{tb_id}/sign-offs/partner",
+    action="sign_off.partner",
+    response_model=TrialBalanceDetailOut,
+    status_code=201,
+)
+async def tb_sign_off_partner_route(
+    engagement_id: UUID, tb_id: UUID, ctx: Ctx
+) -> TrialBalanceDetailOut:
+    """SPEC-313 AC-6: the L4 partner signs the trial balance's current version."""
+    await sign_off_tb(ctx, engagement_id, tb_id, 4)
+    return await _detail(ctx, engagement_id, tb_id, None, "unadjusted")
+
+
+@router.post(
+    "/{tb_id}/sign-offs/eqr",
+    action="sign_off.eqr",
+    response_model=TrialBalanceDetailOut,
+    status_code=201,
+)
+async def tb_sign_off_eqr_route(
+    engagement_id: UUID, tb_id: UUID, ctx: Ctx
+) -> TrialBalanceDetailOut:
+    """SPEC-313 AC-6: the L5 quality reviewer signs the trial balance's current version."""
+    await sign_off_tb(ctx, engagement_id, tb_id, 5)
     return await _detail(ctx, engagement_id, tb_id, None, "unadjusted")

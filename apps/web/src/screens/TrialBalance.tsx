@@ -12,6 +12,11 @@ import {
   leadsheetsQueryKey,
   meOptions,
   tbCandidatesOptions,
+  tbSignOffEqrMutation,
+  tbSignOffManagerMutation,
+  tbSignOffPartnerMutation,
+  tbSignOffPrepareMutation,
+  tbSignOffReviewMutation,
   teamOptions,
   trialBalanceOptions,
   trialBalanceQueryKey,
@@ -32,7 +37,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
 import { amount } from "./amounts";
+import { ReviewableNotes } from "./ReviewableNotes";
 import { CheckStrip } from "./TieChecks";
+import { LEVEL_SHORT } from "./Workpapers";
 
 // SPEC-309 (TASK-320): the trial balance of record (AUD-06, first slice). The server computes
 // every figure, total, the balance check, leadsheets and Δ% (ADR-050); this screen only shows
@@ -125,6 +132,7 @@ export function TrialBalance({ engagementId }: { engagementId: string }): JSX.El
         tb={current}
         canAdopt={ADOPTERS.has(role)}
         snapshots={list.data.snapshots}
+        role={role}
       />
     </div>
   );
@@ -264,11 +272,13 @@ function TrialBalanceCard({
   tb,
   canAdopt,
   snapshots,
+  role,
 }: {
   engagementId: string;
   tb: TrialBalanceOut;
   canAdopt: boolean;
   snapshots: SnapshotOut[];
+  role: string;
 }): JSX.Element {
   const queryClient = useQueryClient();
   const path = { path: { engagement_id: engagementId, tb_id: tb.id } };
@@ -576,6 +586,20 @@ function TrialBalanceCard({
           layer={showFinal ? "final" : "unadjusted"}
         />
       )}
+      <div className="grid gap-3 border-t-[0.5px] border-hair p-4 lg:grid-cols-2">
+        <TbSignOffs path={path} detail={d} role={role} onDone={fresh} />
+        <div>
+          <h3 className="mb-1 text-[13px] font-medium">Review notes</h3>
+          <ReviewableNotes
+            engagementId={engagementId}
+            targetType="trial_balance"
+            targetId={tb.id}
+            anchor={picked.size === 1 ? [...picked][0] : null}
+            anchorLabel={picked.size === 1 ? `account ${[...picked][0] ?? ""}` : undefined}
+            role={role}
+          />
+        </div>
+      </div>
       {d.versions.length > 1 && (
         <div className="border-t-[0.5px] border-hair px-4 py-2">
           <h3 className="mb-1 text-[12.5px] font-medium text-ink-2">Versions</h3>
@@ -623,6 +647,107 @@ function TrialBalanceCard({
 }
 
 type TbPath = { path: { engagement_id: string; tb_id: string } };
+
+const LEVEL_ROLES: Record<number, readonly string[]> = {
+  1: ["manager", "senior", "staff"],
+  2: ["engagement_partner", "manager", "senior"],
+  3: ["engagement_partner", "manager"],
+  4: ["engagement_partner"],
+  5: ["reviewer"],
+};
+const LEVEL_TITLE: Record<number, string> = {
+  1: "Preparer",
+  2: "Reviewer",
+  3: "Manager",
+  4: "Partner",
+  5: "Quality reviewer",
+};
+
+/** SPEC-313 (TASK-325): sign the trial balance's current version and annotations. */
+function TbSignOffs({
+  path,
+  detail,
+  role,
+  onDone,
+}: {
+  path: TbPath;
+  detail: TrialBalanceDetailOut;
+  role: string;
+  onDone: (d: TrialBalanceDetailOut) => void;
+}): JSX.Element {
+  const opts = {
+    onSuccess: onDone,
+    onError: (e: unknown) => {
+      const code = errorMessage(e);
+      toast.show(
+        code === "review_notes_open"
+          ? "Clear the open review notes before signing as a reviewer."
+          : code === "not_prepared"
+            ? "The preparer signs first."
+            : code === "preparer_cannot_review"
+              ? "Someone other than the preparer reviews."
+              : code,
+      );
+    },
+  };
+  const sign = {
+    1: useMutation({ ...tbSignOffPrepareMutation(), ...opts }),
+    2: useMutation({ ...tbSignOffReviewMutation(), ...opts }),
+    3: useMutation({ ...tbSignOffManagerMutation(), ...opts }),
+    4: useMutation({ ...tbSignOffPartnerMutation(), ...opts }),
+    5: useMutation({ ...tbSignOffEqrMutation(), ...opts }),
+  } as const;
+  const preparer = detail.sign_offs.find((l) => l.level === 1);
+  const prepared = preparer?.signed_by_name != null && !preparer.stale;
+  return (
+    <div>
+      <h3 className="mb-1 text-[13px] font-medium">Sign-offs</h3>
+      <ul className="flex flex-col gap-1 text-[12.5px]">
+        {detail.sign_offs.map((l) => {
+          const signed = l.signed_by_name != null;
+          const current = signed && !l.stale;
+          const mutation = sign[l.level as 1 | 2 | 3 | 4 | 5];
+          return (
+            <li key={l.level} className="flex items-center gap-2">
+              <span
+                aria-hidden="true"
+                className={
+                  "inline-flex h-[20px] min-w-[28px] items-center justify-center rounded-[3px] text-[10.5px] font-medium " +
+                  (signed
+                    ? l.stale
+                      ? "bg-amber-tint text-ink-2 line-through"
+                      : "bg-green-tint text-ink"
+                    : "bg-nested text-ink-4 inset-shadow-hair")
+                }
+              >
+                {LEVEL_SHORT[l.name]}
+              </span>
+              <span>{LEVEL_TITLE[l.level]}</span>
+              <span className="text-ink-3">
+                {signed
+                  ? `${l.signed_by_name ?? ""}${l.stale ? " · changed since" : ""}`
+                  : "Not signed"}
+              </span>
+              <span className="flex-1" />
+              {(LEVEL_ROLES[l.level] ?? []).includes(role) && !current && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={(l.level > 1 && !prepared) || mutation.isPending}
+                  onClick={() => {
+                    mutation.mutate({ ...path });
+                  }}
+                >
+                  {l.stale ? "Sign again" : "Sign off"}
+                </Button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
 
 function Leadsheets({
   engagementId,

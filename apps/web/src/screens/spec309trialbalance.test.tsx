@@ -86,6 +86,13 @@ const DETAIL: TrialBalanceDetailOut = {
   final: null,
   layers_available: false,
   pending_entries: 0,
+  sign_offs: (["preparer", "reviewer", "manager", "partner", "eqr"] as const).map((name, i) => ({
+    level: i + 1,
+    name,
+    signed_by_name: null,
+    signed_at: null,
+    stale: false,
+  })),
 };
 
 // SPEC-311: the same trial balance with AJE-1 recorded and one entry still proposed.

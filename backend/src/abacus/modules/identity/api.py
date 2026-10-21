@@ -91,6 +91,7 @@ from abacus.modules.identity.routing import (
     declared_action,
 )
 from abacus.modules.identity.service import (
+    PARTNER_ROLES,
     AlreadyMember,
     TeamMember,
     add_creator_as_partner,
@@ -166,6 +167,7 @@ __all__ = [
     "IDENTITY",
     "MFA_RECENT",
     "OWN",
+    "PARTNER_ROLES",
     "ROUTERS",
     "SELF",
     "STAFF",

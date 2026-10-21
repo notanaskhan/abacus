@@ -52,9 +52,16 @@ def work_item_provider(kind: str) -> WorkItemProvider:
         raise UnknownWorkItemKind(kind) from None
 
 
+def _same(a: Callable[..., object], b: Callable[..., object]) -> bool:
+    """The same provider, also after its module is reloaded (a new function object)."""
+    return (a.__module__, a.__qualname__) == (b.__module__, b.__qualname__)
+
+
 def register_gate_provider(gate: str, provider: GateProvider) -> None:
-    if gate not in GATES or gate in _GATES:
-        raise ValueError(f"gate {gate!r} is unknown or already registered")
+    if gate not in GATES:
+        raise ValueError(f"gate {gate!r} is unknown")
+    if gate in _GATES and not _same(_GATES[gate], provider):
+        raise ValueError(f"gate {gate!r} is already registered")
     _GATES[gate] = provider
 
 

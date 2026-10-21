@@ -51,7 +51,10 @@ export function statusWord(w: WorkingPaperOut): ReturnType<typeof registryWord> 
   return registryWord("audit_section", w.status, { fill: { initials: initials(who) } });
 }
 
-export function SignOffSquares({ levels }: { levels: SignOffLevelOut[] }): JSX.Element {
+/** The five levels as squares; anything with a level's name, signer and staleness. */
+export type LevelLike = Pick<SignOffLevelOut, "level" | "name" | "signed_by_name" | "stale">;
+
+export function SignOffSquares({ levels }: { levels: LevelLike[] }): JSX.Element {
   return (
     <span className="inline-flex items-center gap-1" aria-label="Sign-offs">
       {levels.map((l) => {

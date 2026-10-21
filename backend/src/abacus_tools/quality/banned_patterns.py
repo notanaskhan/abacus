@@ -933,6 +933,12 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/fieldwork/repository.py", "engagement_adjustments"),
         # SPEC-312 (TASK-324): one approved statement's lines, after `evidence.read` on its item.
         ("src/abacus/modules/evidence/statement_repository.py", "transactions_of"),
+        # SPEC-313 (TASK-325): an engagement's notes and events, a target's notes inside its
+        # sign-off, and its papers for the matrix and G5, each after authorising on it.
+        ("src/abacus/modules/review/repository.py", "notes_of"),
+        ("src/abacus/modules/review/repository.py", "note_events_of"),
+        ("src/abacus/modules/review/repository.py", "notes_of_target"),
+        ("src/abacus/modules/workpapers/repository.py", "engagement_papers"),
     }
 )
 

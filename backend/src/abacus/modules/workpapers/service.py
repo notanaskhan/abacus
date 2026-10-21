@@ -27,12 +27,13 @@ from abacus.modules.engagements.api import assurance_item_id, get_ref, lock_ref
 from abacus.modules.evidence.api import version_view
 from abacus.modules.identity.api import AuthContext, authorise, engagement_team
 from abacus.modules.ledger.api import TbLine, engagement_trial_balances, trial_balance_view
-from abacus.modules.review.api import LevelState, record_sign_off, sign_off_states
+from abacus.modules.review.api import LevelState, Reviewable, record_sign_off, sign_off_states
 from abacus.modules.workpapers.formulas import TbSource, evaluate, is_formula
 from abacus.modules.workpapers.models import Workpaper, WorkpaperCell, WorkpaperCellCitation
 from abacus.modules.workpapers.repository import (
     citations_of,
     code_taken,
+    engagement_papers,
     get_workpaper,
     insert_cells,
     insert_citation,
@@ -530,3 +531,31 @@ async def sign_off(ctx: AuthContext, engagement_id: UUID, workpaper_id: UUID, le
             content=content,
             created_by=ctx.user_id,
         )
+
+
+async def workpaper_reviewables(tenant: TenantContext, engagement_id: UUID) -> list[Reviewable]:
+    """SPEC-313: each paper with its current content hash, for the matrix and G5."""
+    async with tenant_session(tenant) as session:
+        papers = await engagement_papers(session, engagement_id)
+        ids = [p.id for p in papers]
+        cells = await newest_cells(session, ids)
+        citations = await citations_of(session, ids)
+    if not papers:
+        return []
+    tb = await tb_link(tenant, engagement_id)
+    out: list[Reviewable] = []
+    for p in papers:
+        mine = [c for c in cells if c.workpaper_id == p.id]
+        cited = [c for c in citations if c.workpaper_id == p.id]
+        content = content_of(mine, cited, tb)
+        out.append(
+            Reviewable(
+                TARGET,
+                p.id,
+                p.code,
+                p.title,
+                content_hash(content),
+                bool(content["cells"]) or bool(content["citations"]),
+            )
+        )
+    return out
