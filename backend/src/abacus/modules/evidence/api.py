@@ -24,6 +24,7 @@ from abacus.modules.evidence.processing import (
     ReviewMaterial,
     process_upload,
     review_material,
+    stale_pdfs,
 )
 from abacus.modules.evidence.processing import check_upload as check_upload_content
 from abacus.modules.evidence.render import (
@@ -148,6 +149,7 @@ __all__ = [
     "review_material",
     "router",
     "stage_content",
+    "stale_pdfs",
     "suggest_by_name",
     "upload",
     "version_view",
