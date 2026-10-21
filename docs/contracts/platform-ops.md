@@ -185,13 +185,13 @@ def control_active(
 
 `control_active` is the one reader of the switches. It returns true when a platform-wide row for the control is active, or a firm row for `tenant_id` is active; for `model_route_block` it also requires a matching `route`. It reads `platform_control_state()` through a 10-second in-process cache (setting `platform_controls_cache_seconds`). It never writes, never raises for an unknown tenant, and has no agent-callable form.
 
-| Control (stored value) | API name | Scope | Effect | Enforced by |
+| Control (stored value) | `control_active` name | Scope | Effect | Enforced by |
 |---|---|---|---|---|
 | `ai_pause` | `ai_pause` | platform or firm | `ai_gateway` refuses every call before any network call; runs end in the existing degraded state | `ai_gateway` |
 | `model_route_block` | `model_route_block` | platform, with `route` | route selection skips the route as if an outage block had fired; client data is not rerouted off Bedrock | `ai_gateway` |
 | `email_pause` | `email_pause` | platform or firm | the transport records the message `blocked` with violation `platform_paused`; the SES configuration-set pause is the second line | `communications.transport` |
 | `read_only` | `read_only` | platform or firm | every non-GET route answers 503 `read_only`, except sign-in, support-session and operational routes | `AbacusRoute` |
-| `portal_sign_in_disabled` | `portal_sign_in` | firm | P-08's BFF refuses `start` with the neutral branding card | P-08 BFF |
+| `portal_sign_in` (the plan's epic text says `portal_sign_in_disabled`; see section 11) | `portal_sign_in` | firm | P-08's BFF refuses `start` with the neutral branding card | P-08 BFF |
 
 Tables behind it (owned by `platform`, no app privileges): `platform_controls`, insert-only `platform_control_changes`, and the definers `platform_control_state()` (EXECUTE to the app role) and `set_platform_control(...)` (EXECUTE to `abacus_ops` only). A switch is changed only through `abacus_tools.platform_control` (section 3.5). Existing pauses stay as they are: `firms.agents_paused_at`, per-engagement pause, feature flags.
 
@@ -332,7 +332,7 @@ Additive changes (a new optional `runtime-config.json` key, a new readiness chec
 ## 11. Open points
 
 - Behaviour of `control_active` when `platform_control_state()` cannot be read beyond the cache window (stop or carry on): decided in ADR-157 (P-66), proposed there as fail closed for `ai_pause` and `read_only` and carry on for the rest.
-- The API name `portal_sign_in` against the stored value `portal_sign_in_disabled`: ADR-157 fixes one spelling; until then both appear in section 3.7.
+- The stored value `portal_sign_in_disabled` in the Q-01 epic text against the reader name `portal_sign_in`: ADR-157 proposes `portal_sign_in` for both, and the Q-01-T19 migration (not yet written) would use it.
 - Region of record for the tenant key, the multi-Region layout and the dual-control rule for key deletion: ADR-156 (P-65). This contract fixes only the result fields in section 3.6.
 - WorkOS port method signatures are final at Q-01-T17; this stub types them from the epic text (discovery and JWKS, code exchange, user lookup, session revoke).
 - DEC-22 (authentication vendor) and DEC-03 (AWS foundation) are recorded in `docs/product/decision-log.md`.

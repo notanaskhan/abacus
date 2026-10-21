@@ -4,7 +4,7 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 
 - **P-ID.** The proposal ID from [`docs/plan/09-decisions-adrs.md`](../plan/09-decisions-adrs.md) section 9.4.2. P-64 to P-69 were added from the backlog tasks that draft them.
 - **Epic.** The epic whose backlog task first drafts the ADR (from `docs/plan/backlog.csv`, best match; check the task when drafting starts). Epic keys such as `P-10` are epics, not ADR IDs. A dash means no task names it.
-- **ADR number.** `next free` until drafting starts. Numbers minted so far: P-01 = ADR-133, P-38 = ADR-135, P-04 = ADR-136, P-05 = ADR-137, P-34 = ADR-138, P-36 = ADR-139, P-39 = ADR-140, P-54 = ADR-141, P-55 = ADR-142 (all accepted).
+- **ADR number.** `next free` until drafting starts. Numbers minted so far: P-01 = ADR-133, P-38 = ADR-135, P-04 = ADR-136, P-05 = ADR-137, P-34 = ADR-138, P-36 = ADR-139, P-39 = ADR-140, P-54 = ADR-141, P-55 = ADR-142 (all accepted). Proposed so far: P-45 = ADR-152, P-64 = ADR-153, P-67 = ADR-154, P-65 = ADR-156, P-66 = ADR-157.
 - **DEC row.** The decision it records, in [`docs/product/decision-log.md`](../product/decision-log.md).
 - **Status.** `to draft`, `proposed`, `accepted`, or `n/a, solo edition`.
 
@@ -74,8 +74,8 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 | P-62 | Platform reference data | amber | A-05 | next free | Fri 27 Nov | DEC-76 | to draft |
 | P-63 | Multi-entity engagements and consolidation | red | A-03 | next free | Fri 20 Nov | DEC-65, DEC-66 | to draft |
 | P-64 | Malware scanning service | red | Q-01 | ADR-153 | Fri 13 Nov (draft open Fri 30 Oct) | — | proposed |
-| P-65 | Tenant key provisioning | red | Q-01 | next free | Fri 27 Nov | — | to draft (confirmed 2026-10-20) |
-| P-66 | Platform controls and kill switches | red | Q-01 | next free | Fri 27 Nov | — | to draft (confirmed 2026-10-20) |
+| P-65 | Tenant key provisioning | red | Q-01 | ADR-156 | Fri 27 Nov | — | proposed |
+| P-66 | Platform controls and kill switches | red | Q-01 | ADR-157 | Fri 27 Nov | — | proposed |
 | P-67 | Observability and on-call vendors | red | Q-01 | ADR-154 | Fri 13 Nov (draft open Fri 30 Oct) | — | proposed |
 | P-68 | Tax computation boundary | amber | T-02 | next free | Fri 28 May 2027 (draft S14) | DEC-77 | to draft (confirmed 2026-10-20) |
 | P-69 | Workbook formula engine and the ADR-052 exception for tax workbooks | red | T-05 | next free | Fri 18 Feb 2028 (draft S33) | DEC-84 | to draft (confirmed 2026-10-20) |

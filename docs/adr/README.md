@@ -144,3 +144,5 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-153](ADR-153-malware-scanning-service.md) | Malware scanning service - ClamAV clamd, synchronous, fail closed | red | proposed |
 | [ADR-154](ADR-154-observability-on-call-vendors.md) | Observability and on-call vendors - CloudWatch, X-Ray, Sentry and Better Stack | red | proposed |
 | [ADR-155](ADR-155-design-system.md) | packages/ui is the Accrued design system - Tailwind v4 tokens, self-hosted fonts, Radix for behaviour, the AA ink ladder | amber | accepted |
+| [ADR-156](ADR-156-tenant-key-provisioning.md) | Tenant key provisioning - one multi-Region key per firm, created by a keyops worker | red | proposed |
+| [ADR-157](ADR-157-platform-controls-kill-switches.md) | Platform controls and kill switches - database rows read through one function, changed only by operators | red | proposed |
