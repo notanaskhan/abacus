@@ -11,9 +11,10 @@ If one of these is missing when this skill needs it, stop and report which one a
 - the /components specimen gallery's parity tiers (arrive with F-05)
 
 Input: KIT (for example C-16 Request, T1 Index list, O3 Dialog). Sources, in this order:
-1. The kit's own handoff bundle, when one exists: $ACCRUED_HANDOFF_DIR/kit-handoffs/C-NN */design_handoff_*/ (C-00 to C-14
-   today): README.md, IMPLEMENTATION.md, specs/*.md, CLAUDE.md, then design/*.html (grep, never print whole) and
-   screenshots/*.png (downscale first). These are the newest and most detailed source (Oct 17–18).
+1. The kit's own handoff bundle, when one exists: $ACCRUED_HANDOFF_DIR/kit-handoffs/C-NN */design_handoff_*/ (C-00 to C-39,
+   all but C-38 Milestone; C-37 also covers the Lineage popover; C-15 and C-18 split the File kit): README.md,
+   IMPLEMENTATION.md, specs/*.md, CLAUDE.md, then design/*.html (grep, never print whole) and screenshots/*.png
+   (downscale first). These are the newest and most detailed source (Oct 17–21).
 2. $ACCRUED_HANDOFF_DIR/handoff/kits.md (the kit's section), kits/<Kit>.dc.html (grep the part; read renderVals for derived
    values), handoff/canvases/Component Sheet.md.
 3. design-tokens.md and $ACCRUED_HANDOFF_DIR/kit-handoffs/_foundations/ only for values missing from tokens.ts;
