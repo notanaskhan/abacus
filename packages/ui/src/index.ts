@@ -32,6 +32,8 @@ export {
   statusWord,
 } from "./status";
 export { STATUS_REGISTRY } from "./status.gen";
+// The icon registry (F-05-T13): handoff kebab names, the Icon component and the custom glyphs.
+export * from "./icons";
 // Icons for the shell, so apps use one icon set without depending on it directly.
 export {
   Atom,
