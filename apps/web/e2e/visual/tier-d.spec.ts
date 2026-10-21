@@ -163,3 +163,153 @@ test.describe("tier D: computed styles", () => {
     expect(radius).toBe("12px");
   });
 });
+
+// The shell's geometry (F-05-T18; chapter 04 §9.3): toolbar 46, record header 42, audit bar 59,
+// pane header 46, the close variant's 42 + 50, the tabsbars' 50 / 44 / 60, the nav item 32. And the
+// toolbar's width test: at 1440, 1400 and 1280 the DF-39 fallbacks apply in order, and the nav
+// never wraps or shrinks its type at any width.
+test.describe("tier D: the shell", () => {
+  test.beforeEach(async ({ page }) => {
+    await openGallery(page);
+  });
+
+  const HEIGHTS: readonly { name: string; id: string; selector: string; expected: string }[] = [
+    {
+      name: "toolbar",
+      id: "c-00-toolbar",
+      selector: '[data-shell="toolbar"] >> nth=0',
+      expected: "46px",
+    },
+    {
+      name: "portal toolbar",
+      id: "c-00-portal-toolbar",
+      selector: '[data-shell="portal-toolbar"] >> nth=0',
+      expected: "46px",
+    },
+    {
+      name: "record header (default)",
+      id: "c-00-record-header",
+      selector: '[data-variant="default"] >> nth=0',
+      expected: "42px",
+    },
+    {
+      name: "record header (audit)",
+      id: "c-00-record-header",
+      selector: '[data-variant="audit"] >> nth=0',
+      expected: "59px",
+    },
+    {
+      name: "record header (close), the line",
+      id: "c-00-record-header",
+      selector: '[data-variant="close"] [data-row="line"]',
+      expected: "42px",
+    },
+    {
+      name: "record header (close), the tabs row",
+      id: "c-00-record-header",
+      selector: '[data-variant="close"] [data-row="tabs"]',
+      expected: "50px",
+    },
+    {
+      name: "record header (settings)",
+      id: "c-00-record-header",
+      selector: '[data-variant="settings"]',
+      expected: "42px",
+    },
+    {
+      name: "pane header",
+      id: "c-00-pane",
+      selector: '[data-shell="pane-header"] >> nth=0',
+      expected: "46px",
+    },
+    {
+      name: "tabsbar (default)",
+      id: "c-00-tabsbar",
+      selector: '[data-size="default"]',
+      expected: "50px",
+    },
+    {
+      name: "tabsbar (compact)",
+      id: "c-00-tabsbar",
+      selector: '[data-size="compact"]',
+      expected: "44px",
+    },
+    {
+      name: "tabsbar (workbench)",
+      id: "c-00-tabsbar",
+      selector: '[data-size="workbench"]',
+      expected: "60px",
+    },
+  ];
+
+  for (const { name, id, selector, expected } of HEIGHTS) {
+    test(`${name} is ${expected}`, async ({ page }) => {
+      const height = await specimen(page, id, selector).evaluate(
+        (el) => getComputedStyle(el).height,
+      );
+      expect(height).toBe(expected);
+    });
+  }
+
+  test("a pane header title is 14.5 / 500 Geist", async ({ page }) => {
+    const style = await specimen(
+      page,
+      "c-00-pane",
+      '[data-shell="pane-header"] h2 >> nth=0',
+    ).evaluate((el) => {
+      const c = getComputedStyle(el);
+      return { fontSize: c.fontSize, fontWeight: c.fontWeight, fontFamily: c.fontFamily };
+    });
+    expect(style).toMatchObject({ fontSize: "14.5px", fontWeight: "500" });
+    expect(style.fontFamily).toMatch(/^Geist\b/);
+  });
+
+  // The first four strips of the width test, in the specimen's order.
+  const WIDTHS = [
+    { width: 1440, stage: "none", more: false, home: false },
+    { width: 1400, stage: "firm-short", more: false, home: false },
+    { width: 1280, stage: "signatures-closes-audits", more: true, home: true },
+    { width: 1080, stage: "narrow", more: true, home: true },
+  ] as const;
+
+  WIDTHS.forEach(({ width, stage, more, home }, index) => {
+    test(`the toolbar at ${String(width)} is at step ${stage}`, async ({ page }) => {
+      const bar = specimen(page, "c-00-toolbar", `[data-shell="toolbar"] >> nth=${String(index)}`);
+      const facts = await bar.evaluate((el) => {
+        const nav = el.querySelector("nav");
+        const items = [...(nav?.querySelectorAll("button") ?? [])];
+        return {
+          width: el.getBoundingClientRect().width,
+          stage: el.getAttribute("data-stage"),
+          more: items.some((b) => b.textContent === "More"),
+          home: el.querySelector('button[aria-label="Home"]') !== null,
+          labels: items.map((b) => b.textContent),
+          navClips: nav === null ? true : nav.scrollWidth > nav.clientWidth,
+          itemStyles: items.map((b) => {
+            const c = getComputedStyle(b);
+            return { fontSize: c.fontSize, height: c.height, whiteSpace: c.whiteSpace };
+          }),
+        };
+      });
+      expect(facts.width).toBe(width);
+      expect(facts.stage).toBe(stage);
+      expect(facts.more).toBe(more);
+      expect(facts.home).toBe(home);
+      expect(facts.navClips, "the nav never overflows its space").toBe(false);
+      for (const style of facts.itemStyles) {
+        expect(style, "13.5px, 32 high, on one line, whatever the width").toEqual({
+          fontSize: "13.5px",
+          height: "32px",
+          whiteSpace: "nowrap",
+        });
+      }
+      // What is hidden is a trailing run of the nav order, never a gap.
+      if (stage === "signatures-closes-audits") {
+        const shown = facts.labels;
+        for (const hidden of ["Signatures", "Closes", "Audits"])
+          expect(shown).not.toContain(hidden);
+        expect(shown).toContain("Notices");
+      }
+    });
+  });
+});
