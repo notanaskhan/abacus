@@ -49,3 +49,7 @@ plus `portal-screen` for the portal. Kits and templates use `ui-kit-component`; 
 (F-05-T12, S1; today `packages/ui/src/status.tsx`), `useNow()` and fixture mode (F-04, S1–S4), `domain/<area>/`
 folders (as each epic adds them; today screens use `@abacus/api-client/query` options directly, so new
 code goes into `domain/<area>/` and old screens move there when touched).
+
+## Routes (F-03-T17)
+- The route tree is split by area: `apps/web/src/routes/root.tsx` (root, shell, `lazyScreen`, `useParam`), `routes/firm/<area>.tsx` mounted from `routes/firm/index.ts` in the bar's order, and `routes/portal.tsx`. `router.tsx` only assembles them.
+- A new screen is a `lazyScreen(async () => (await import("../../screens/X")).X)` in its area file, so it builds as its own chunk; read path parameters with `useParam("name")`.
