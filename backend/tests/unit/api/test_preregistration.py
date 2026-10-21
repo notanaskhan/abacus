@@ -13,6 +13,7 @@ import pytest
 from abacus.kernel.db import TenantContext
 from abacus.modules import MODULES
 from abacus.modules.engagements import api as engagements
+from abacus.modules.engagements import slots
 from abacus.modules.identity import api as identity
 from abacus.modules.platform import api as platform
 from abacus_tools.quality.banned_patterns import MODULE_DEPENDENCIES
@@ -106,3 +107,35 @@ def test_t08_a_slot_takes_one_registration() -> None:
 
     with pytest.raises(ValueError, match="unknown"):
         engagements.register_gate_provider("G10", gate)
+
+
+async def test_t08_registering_the_same_gate_provider_again_is_a_no_op(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Re-executing a module (importlib.reload of engagements.api) registers the identical
+    provider again; that must not raise, or one test's reload breaks the import for the rest."""
+    monkeypatch.setattr(slots, "_GATES", {})
+
+    async def gate(_t: TenantContext, _e: uuid.UUID) -> engagements.GateFact:
+        return engagements.GateFact(met=True)
+
+    engagements.register_gate_provider("G4", gate)
+    engagements.register_gate_provider("G4", gate)
+    assert (await engagements.gate_fact(TENANT, uuid.uuid4(), "G4")).met is True
+
+
+async def test_t08_a_different_provider_for_a_registered_gate_is_still_refused(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(slots, "_GATES", {})
+
+    async def first(_t: TenantContext, _e: uuid.UUID) -> engagements.GateFact:
+        return engagements.GateFact(met=True)
+
+    async def other(_t: TenantContext, _e: uuid.UUID) -> engagements.GateFact:
+        return engagements.GateFact(met=False)
+
+    engagements.register_gate_provider("G4", first)
+    with pytest.raises(ValueError, match="already registered"):
+        engagements.register_gate_provider("G4", other)
+    assert (await engagements.gate_fact(TENANT, uuid.uuid4(), "G4")).met is True  # the first stays
