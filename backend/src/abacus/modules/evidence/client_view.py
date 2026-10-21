@@ -19,12 +19,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from abacus.kernel.db import tenant_session
 from abacus.modules.engagements.api import check_facts, get_ref
 from abacus.modules.evidence.cross_checks import Account, cash_accounts
-from abacus.modules.evidence.extraction import EXTRACTOR_VERSION
 from abacus.modules.evidence.models import EvidenceItem, EvidenceVersion, ReviewDecision
 from abacus.modules.evidence.processing import year_end_accounts
 from abacus.modules.evidence.repository import (
-    extraction_for,
     item_versions_with_decisions,
+    newest_extraction,
     reason_codes,
 )
 from abacus.modules.evidence.uploads import ON_BEHALF_SOURCE, item_resource
@@ -106,9 +105,7 @@ async def covered_digits(
             continue
         if decision is not None and decision.decision in _NOT_COVERING:
             continue
-        extraction = await extraction_for(
-            session, evidence_version_id=version.id, extractor_version=EXTRACTOR_VERSION
-        )
+        extraction = await newest_extraction(session, evidence_version_id=version.id)
         found.append(extraction.account_last4 if extraction is not None else None)
     return found
 

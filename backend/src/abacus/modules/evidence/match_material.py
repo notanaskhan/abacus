@@ -14,12 +14,11 @@ from typing import Final
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.modules.evidence.extraction import EXTRACTOR_VERSION
 from abacus.modules.evidence.inbox import inbox_context
 from abacus.modules.evidence.matching import Reason, facts_of, score_all, should_match
 from abacus.modules.evidence.models import InboxFile, UploadExtraction
 from abacus.modules.evidence.processing import document_text, excerpt_of
-from abacus.modules.evidence.repository import extraction_for, get_inbox_file
+from abacus.modules.evidence.repository import get_inbox_file, newest_extraction
 from abacus.modules.identity.api import member_context
 from abacus.modules.requests.api import request_items_for
 
@@ -86,11 +85,7 @@ async def _file_and_extraction(
     async with tenant_session(tenant) as session:
         file = await get_inbox_file(session, inbox_file_id)
         row = (
-            None
-            if file is None
-            else await extraction_for(
-                session, inbox_file_id=inbox_file_id, extractor_version=EXTRACTOR_VERSION
-            )
+            None if file is None else await newest_extraction(session, inbox_file_id=inbox_file_id)
         )
     return None if file is None or row is None else (file, row)
 

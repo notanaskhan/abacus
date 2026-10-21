@@ -23,7 +23,6 @@ from abacus.modules.engagements.api import check_facts, gate_client_data, get_re
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.client_view import covered_digits, statement_gap, year_end_cash
 from abacus.modules.evidence.events import InboxFileAdded
-from abacus.modules.evidence.extraction import EXTRACTOR_VERSION
 from abacus.modules.evidence.matching import (
     MAX_SUGGESTIONS,
     TAKES_EVIDENCE,
@@ -36,11 +35,11 @@ from abacus.modules.evidence.matching import (
 from abacus.modules.evidence.models import InboxFile
 from abacus.modules.evidence.repository import (
     decide_inbox_file,
-    extraction_for,
     get_inbox_file,
     insert_inbox_file,
     item_versions_with_decisions,
     lock_inbox_file,
+    newest_extraction,
     waiting_inbox,
     waiting_with_fingerprint,
 )
@@ -226,11 +225,7 @@ async def _entries(
     content: dict[UUID, ContentFacts | None] = {}
     async with tenant_session(ctx.tenant) as session:
         for r in rows:
-            content[r.id] = facts_of(
-                await extraction_for(
-                    session, inbox_file_id=r.id, extractor_version=EXTRACTOR_VERSION
-                )
-            )
+            content[r.id] = facts_of(await newest_extraction(session, inbox_file_id=r.id))
     return [
         InboxEntry(
             r.id,

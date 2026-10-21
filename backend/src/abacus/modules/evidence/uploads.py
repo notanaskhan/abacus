@@ -26,12 +26,11 @@ from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import gate_client_data, get_ref, lock_ref
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.events import EvidenceUploaded
-from abacus.modules.evidence.extraction import EXTRACTOR_VERSION
 from abacus.modules.evidence.previews import RENDERER_VERSION, TABLE_ROWS
 from abacus.modules.evidence.repository import (
-    extraction_for,
     fingerprint_among,
     latest_checks,
+    newest_extraction,
     preview_for,
     preview_page,
     uploaded_versions,
@@ -458,11 +457,8 @@ async def preview_of(
             inbox_file_id=inbox_file_id,
             renderer_version=RENDERER_VERSION,
         )
-        extracted = await extraction_for(
-            session,
-            evidence_version_id=evidence_version_id,
-            inbox_file_id=inbox_file_id,
-            extractor_version=EXTRACTOR_VERSION,
+        extracted = await newest_extraction(
+            session, evidence_version_id=evidence_version_id, inbox_file_id=inbox_file_id
         )
     if found is None:
         return PreviewView("pending", None, 0, False)
