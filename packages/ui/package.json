@@ -21,6 +21,8 @@
     "./contrast.css": "./src/contrast.css",
     "./tokens": "./src/tokens/tokens.ts",
     "./eslint-design-rules": "./eslint-design-rules.js",
+    "./eslint-scope-rules": "./eslint-scope-rules.js",
+    "./scope-guards.gen.json": "./scope-guards.gen.json",
     "./tokens/*": "./src/tokens/*",
     "./fonts/*": "./src/fonts/*",
     "./specimens": "./src/specimens/index.ts"
