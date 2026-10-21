@@ -27,6 +27,7 @@ const screens = {
   Review: lazyScreen(async () => (await import("../../screens/Review")).Review),
   Workpapers: lazyScreen(async () => (await import("../../screens/Workpapers")).Workpapers),
   Workpaper: lazyScreen(async () => (await import("../../screens/Workpaper")).Workpaper),
+  TrialBalance: lazyScreen(async () => (await import("../../screens/TrialBalance")).TrialBalance),
 };
 
 export const engagementRoute = createRoute({
@@ -165,6 +166,16 @@ const workpaperRoute = createRoute({
   },
 });
 
+// SPEC-309 (TASK-320): the trial balance of record and its leadsheets.
+const trialBalanceRoute = createRoute({
+  getParentRoute: () => engagementRoute,
+  path: "/trial-balance",
+  component: function TrialBalancePage(): JSX.Element {
+    const engagementId = useParam("engagementId");
+    return <screens.TrialBalance engagementId={engagementId} />;
+  },
+});
+
 export const engagementRoutes = [
   engagementRoute.addChildren([
     overviewRoute,
@@ -180,5 +191,6 @@ export const engagementRoutes = [
     planningRoute,
     workpapersRoute,
     workpaperRoute,
+    trialBalanceRoute,
   ]),
 ] as const;

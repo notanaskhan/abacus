@@ -19,6 +19,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { type JSX, type KeyboardEvent, useState } from "react";
 import { errorMessage } from "../api";
+import { groupDigits } from "./amounts";
 import { initials, LEVEL_SHORT, statusWord } from "./Workpapers";
 
 // SPEC-308 (TASK-319): one working paper. A grid (A-H) with a formula bar; the server computes
@@ -58,15 +59,6 @@ const EDITORS = new Set(["engagement_partner", "manager", "senior", "staff"]);
 export function rowCount(cells: { cell_key: string }[]): number {
   const last = Math.max(0, ...cells.map((c) => Number(/\d+$/.exec(c.cell_key)?.[0] ?? 0)));
   return Math.max(MIN_ROWS, last + 5);
-}
-
-/** Thousands separators on the server's exact decimal string; never a float (ADR-050).
- * format.ts (F-05-T10) will own this. */
-export function groupDigits(value: string): string {
-  const [whole = "0", fraction] = value.replace(/^-/, "").split(".");
-  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  const decimals = fraction === undefined ? "" : `.${fraction.padEnd(2, "0").slice(0, 2)}`;
-  return value.startsWith("-") ? `(${grouped}${decimals})` : `${grouped}${decimals}`;
 }
 
 /** What a cell shows: the computed number, text, or the formula's error code. */

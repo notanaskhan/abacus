@@ -1,0 +1,8 @@
+# The assurance module's actions (ADR-027; P-39, F-03-T07). Compiled with every other
+# module's file into identity/authz/_matrix.py by `make regenerate`.
+
+actions:
+  # --- The trial balance of record (SPEC-309; TASK-320; A-02 §4.4) ---
+  trial_balance.read:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # firm roles only; client and agent principals deny
+  trial_balance.adopt:      {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # human only (the database CHECK agrees)
+  trial_balance.annotate:   {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # audit area and WP ref; amounts are never editable

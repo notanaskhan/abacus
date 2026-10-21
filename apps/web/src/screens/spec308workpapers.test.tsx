@@ -4,7 +4,8 @@ import type { WorkingPaperOut, WorkpaperDetailOut } from "@abacus/api-client";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { json, mockApi, renderRoutes, signInForTest } from "../testing/support";
-import { display, groupDigits, rowCount, Workpaper } from "./Workpaper";
+import { groupDigits } from "./amounts";
+import { display, rowCount, Workpaper } from "./Workpaper";
 import { Workpapers } from "./Workpapers";
 
 const BASE = "/v1/engagements/e1";
