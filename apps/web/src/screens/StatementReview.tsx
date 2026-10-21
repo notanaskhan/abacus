@@ -10,6 +10,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useEffect, useState } from "react";
 import { errorMessage } from "../api";
 import { amount } from "./amounts";
+import { SourceHover } from "./SourceHover";
 
 // SPEC-312 phase 2-3 (TASK-324): a statement's transactions, read from the file by the server
 // and reconciled by code (opening + included lines = closing). The reviewer excludes lines with
@@ -105,6 +106,20 @@ export function StatementReview({
   const approved = s.status === "approved";
   const rec = s.reconciliation;
   const included = s.lines.filter((l) => !l.excluded).length;
+  /** A printed balance that points back to where it was printed (TASK-334). */
+  const printed = (field: "opening" | "closing", text: string): JSX.Element | string => {
+    const at = s.sources?.[field];
+    if (at == null) return text;
+    return (
+      <SourceHover
+        engagementId={ids.engagementId}
+        source={{ versionId: ids.versionId, itemId: ids.itemId, page: at.page, box: at.box }}
+        label={`the ${field} balance`}
+      >
+        {text}
+      </SourceHover>
+    );
+  };
   const input =
     "h-[28px] w-[130px] rounded-tile border-0 bg-nested px-2 text-[12.5px] tabular-nums inset-shadow-hair";
   return (
@@ -132,7 +147,7 @@ export function StatementReview({
           <dt className="text-ink-3">Opening balance</dt>
           <dd className="tabular-nums">
             {s.printed_opening || approved ? (
-              amount(s.opening)
+              printed("opening", amount(s.opening))
             ) : (
               <input
                 aria-label="Opening balance"
@@ -158,7 +173,7 @@ export function StatementReview({
           <dt className="text-ink-3">Closing balance</dt>
           <dd className="tabular-nums">
             {s.printed_closing || approved ? (
-              amount(s.closing)
+              printed("closing", amount(s.closing))
             ) : (
               <input
                 aria-label="Closing balance"
@@ -226,7 +241,23 @@ export function StatementReview({
                   </td>
                   <td className="px-2 py-1 tabular-nums text-ink-2">{l.posted_on ?? "—"}</td>
                   <td className="px-2 py-1">
-                    <span className={off ? "text-ink-4 line-through" : ""}>{l.description}</span>
+                    {l.page != null && l.box != null ? (
+                      <SourceHover
+                        engagementId={ids.engagementId}
+                        source={{
+                          versionId: ids.versionId,
+                          itemId: ids.itemId,
+                          page: l.page,
+                          box: l.box,
+                        }}
+                        label={`line ${String(l.position)}`}
+                        className={off ? "text-ink-4 line-through" : ""}
+                      >
+                        {l.description}
+                      </SourceHover>
+                    ) : (
+                      <span className={off ? "text-ink-4 line-through" : ""}>{l.description}</span>
+                    )}
                     {approved && l.exclusion_reason != null && (
                       <span className="block text-[11.5px] text-ink-3">{l.exclusion_reason}</span>
                     )}

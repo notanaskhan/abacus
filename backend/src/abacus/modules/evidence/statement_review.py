@@ -13,7 +13,7 @@ import asyncio
 from dataclasses import dataclass, replace
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
-from typing import Final, Literal
+from typing import Any, Final, Literal, cast
 from uuid import UUID
 
 from abacus.kernel.db import tenant_session
@@ -31,8 +31,10 @@ from abacus.modules.evidence.statement_repository import (
     transactions_of,
 )
 from abacus.modules.evidence.statements import (
+    Box,
     ParsedStatement,
     Reconciliation,
+    Source,
     StatementLine,
     from_pages,
     from_text_file,
@@ -43,7 +45,7 @@ from abacus.modules.identity.api import AuthContext, authorise, names_of
 from abacus.modules.requests.api import read_item
 
 _CENTS: Final = Decimal("0.01")
-Source = Literal["printed", "entered"]
+BalanceSource = Literal["printed", "entered"]
 
 
 class NoTransactions(DomainConflict):
@@ -87,6 +89,7 @@ class ReviewLine:
     page: int | None
     excluded: bool
     exclusion_reason: str | None
+    box: Box | None = None  # TASK-334: where the line was printed on its page
 
 
 @dataclass(frozen=True)
@@ -100,8 +103,8 @@ class StatementView:
     period_end: date | None
     opening: Decimal | None
     closing: Decimal | None
-    opening_source: Source | None
-    closing_source: Source | None
+    opening_source: BalanceSource | None
+    closing_source: BalanceSource | None
     printed_opening: bool
     printed_closing: bool
     signs_inferred: bool
@@ -111,13 +114,17 @@ class StatementView:
     reconciliation: Reconciliation
     approved_by_name: str | None
     approved_at: datetime | None
+    sources: dict[str, Source] | None = None  # TASK-334: where summary values were printed
 
 
 def read_statement(content: bytes, media_type: str) -> ParsedStatement | None:
     """In the isolated child: the file's statement lines, or None."""
     if media_type == PDF:
         found = extract(content, PDF)
-        return from_pages(found.pages) if found.status == "extracted" else None
+        if found.status != "extracted":
+            return None
+        lines = [[(line.text, line.box) for line in page] for page in found.page_lines]
+        return from_pages(found.pages, lines)
     if media_type == CSV:
         return from_text_file(content)
     return None
@@ -158,6 +165,7 @@ def apply(parsed: ParsedStatement, decisions: Decisions) -> StatementView:
             decisions.excluded[line.position].strip()
             if line.position in decisions.excluded
             else None,
+            line.box,
         )
         for line in lines
     ]
@@ -185,7 +193,28 @@ def apply(parsed: ParsedStatement, decisions: Decisions) -> StatementView:
         reconcile(opening, included, closing),
         None,
         None,
+        parsed.sources,
     )
+
+
+def _box(raw: list[float] | None) -> Box | None:
+    if raw is None or len(raw) != 4:
+        return None
+    return (float(raw[0]), float(raw[1]), float(raw[2]), float(raw[3]))
+
+
+def _stored_sources(raw: dict[str, Any] | None) -> dict[str, Source] | None:  # Any: JSON
+    if not raw:
+        return None
+    out: dict[str, Source] = {}
+    for key, value in raw.items():
+        if isinstance(value, dict):
+            entry = cast(dict[str, object], value)
+            box = _box(cast(list[float] | None, entry.get("box")))
+            page = entry.get("page")
+            if box is not None and isinstance(page, int):
+                out[key] = Source(page, box)
+    return out
 
 
 async def _authorised_upload(
@@ -255,12 +284,14 @@ async def _approved(ctx: AuthContext, version_id: UUID) -> StatementView | None:
                 r.page,
                 r.excluded,
                 r.exclusion_reason,
+                _box(r.box),
             )
             for r in rows
         ],
         reconcile(ds.opening, included, ds.closing),
         names.get(ds.approved_by, ""),
         ds.created_at,
+        _stored_sources(ds.field_sources),
     )
 
 
@@ -317,6 +348,11 @@ async def approve_statement(
             line_count=len(view.lines),
             excluded_count=len(view.lines) - len(included),
             signs_flipped=view.signs_flipped,
+            field_sources=(
+                {k: {"page": v.page, "box": list(v.box)} for k, v in view.sources.items()}
+                if view.sources
+                else None
+            ),
             approved_by=ctx.user_id,
             actor_kind=ctx.tenant.actor_kind,
         )
@@ -333,6 +369,7 @@ async def approve_statement(
                     "page": line.page,
                     "excluded": line.excluded,
                     "exclusion_reason": line.exclusion_reason,
+                    "box": list(line.box) if line.box is not None else None,
                 }
                 for line in view.lines
             ],

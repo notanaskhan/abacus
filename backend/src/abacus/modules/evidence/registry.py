@@ -67,10 +67,12 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"account_kind", "issuer", "last4", "period_start", "period_end", "opening", "closing"}
         | {"opening_source", "closing_source", "included_total", "line_count", "excluded_count"}
         | {"signs_flipped", "approved_by", "actor_kind"}
+        | {"field_sources"}  # TASK-334
     ),
     "statement_transactions": frozenset(
         {"tenant_id", "dataset_id", "position", "posted_on", "description", "amount", "page"}
         | {"excluded", "exclusion_reason"}
+        | {"box"}  # TASK-334
     ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.

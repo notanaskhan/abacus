@@ -101,3 +101,18 @@ def test_ac3_decisions_exclude_with_reasons_and_never_replace_a_printed_balance(
 def test_read_statement_takes_pdf_and_text_files_only() -> None:
     assert read_statement(card_statement_pdf(), PDF) is not None
     assert read_statement(b"\x89PNG", "image/png") is None
+
+
+def test_task334_lines_and_summary_values_keep_where_they_were_printed() -> None:
+    parsed = read_statement(card_statement_pdf(pages=2), PDF)
+    assert parsed is not None and parsed.sources is not None
+    assert set(parsed.sources) == {"opening", "closing", "period", "last4"}
+    opening = parsed.sources["opening"]
+    assert opening.page == 1 and 0 < opening.box[0] < opening.box[2] <= 1
+    assert all(line.box is not None and line.page in (1, 2) for line in parsed.lines)
+    # A second-page line points at page 2, below the page's top edge.
+    second = next(line for line in parsed.lines if line.page == 2)
+    assert second.box is not None and second.box[1] > 0
+    view = apply(parsed, NONE)
+    assert view.sources == parsed.sources
+    assert all(line.box is not None for line in view.lines)

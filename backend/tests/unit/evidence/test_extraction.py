@@ -230,3 +230,18 @@ def test_goal3_amounts_are_read_strictly(text: str, expected: Decimal | None) ->
 )
 def test_goal3_dates_are_read_in_us_formats(text: str, expected: date | None) -> None:
     assert parse_date(text) == expected
+
+
+def test_task334_pdf_lines_keep_their_boxes_as_fractions_of_the_page() -> None:
+    from abacus.modules.evidence.uploads import page_lines_of
+
+    found = extract(bank_statement_pdf(), PDF)
+    lines = found.page_lines[0]
+    assert lines and lines[0].text == "First Example Bank"
+    x0, top, x1, bottom = lines[0].box
+    assert 0 <= x0 < x1 <= 1 and 0 <= top < bottom <= 1
+    document: dict[str, object] = {
+        "page_lines": [[{"text": "A", "box": [0.1, 0.2, 0.3, 0.4]}, {"text": "bad"}]]
+    }
+    assert page_lines_of(document) == ((("A", (0.1, 0.2, 0.3, 0.4)),),)
+    assert page_lines_of({}) == ()

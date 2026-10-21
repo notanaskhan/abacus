@@ -16,6 +16,7 @@ import csv
 import io
 import re
 import unicodedata
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from datetime import date
 from decimal import Decimal, InvalidOperation
@@ -77,6 +78,17 @@ _HAS_AMOUNT: Final = re.compile(r"\d\.\d{2}\b")
 _CREDIT_WORDS: Final = re.compile(r"\b(payment|thank you|refund|return|credit|reversal)\b", re.I)
 
 
+Box = tuple[float, float, float, float]  # x0, top, x1, bottom as fractions of the page
+
+
+@dataclass(frozen=True)
+class Source:
+    """Where a value was printed (TASK-334): a page and the line's box on it."""
+
+    page: int
+    box: Box
+
+
 @dataclass(frozen=True)
 class StatementLine:
     position: int
@@ -84,6 +96,7 @@ class StatementLine:
     description: str
     amount: Decimal  # effect on the statement balance
     page: int | None
+    box: Box | None = None
 
 
 @dataclass(frozen=True)
@@ -99,6 +112,7 @@ class ParsedStatement:
     lines: tuple[StatementLine, ...]
     signs_inferred: bool  # a single amount column whose sign convention code had to infer
     truncated: bool
+    sources: dict[str, Source] | None = None  # TASK-334: where the summary values were printed
 
 
 @dataclass(frozen=True)
@@ -172,7 +186,29 @@ def reconcile(
 # --- PDF text ---------------------------------------------------------------------------------
 
 
-def from_pages(pages: tuple[str, ...] | list[str]) -> ParsedStatement:
+def _sources(page_lines: Sequence[Sequence[tuple[str, Box]]]) -> dict[str, Source]:
+    """The first line on which each summary value is printed."""
+    patterns = {
+        "opening": _SUMMARY["opening"],
+        "closing": _SUMMARY["closing"],
+        "period": _PERIOD,
+        "last4": _LAST4,
+    }
+    found: dict[str, Source] = {}
+    for number, lines in enumerate(page_lines, start=1):
+        for text, box in lines:
+            for key, pattern in patterns.items():
+                if key not in found and pattern.search(text):
+                    found[key] = Source(number, box)
+    return found
+
+
+def from_pages(
+    pages: tuple[str, ...] | list[str],
+    page_lines: Sequence[Sequence[tuple[str, Box]]] = (),
+) -> ParsedStatement:
+    """With `page_lines` (text and box per line, TASK-334) every line keeps where it was printed;
+    without them (an older extraction, or PDFium's) the page text is split into lines."""
     text = "\n".join(pages)
     kind: AccountKind = (
         "credit_card"
@@ -192,7 +228,12 @@ def from_pages(pages: tuple[str, ...] | list[str]) -> ParsedStatement:
     truncated = False
     for number, page in enumerate(pages, start=1):
         section: Literal["credit", "charge"] | None = None
-        for raw in page.splitlines():
+        boxed: Sequence[tuple[str, Box | None]] = (
+            page_lines[number - 1]
+            if number - 1 < len(page_lines) and page_lines[number - 1]
+            else [(raw, None) for raw in page.splitlines()]
+        )
+        for raw, box in boxed:
             heading = not _HAS_AMOUNT.search(
                 raw
             )  # a summary line carries its total; a heading doesn't
@@ -221,7 +262,7 @@ def from_pages(pages: tuple[str, ...] | list[str]) -> ParsedStatement:
                 truncated = True
                 break
             posted = date_of(m.group("d2") or m.group("d1"), end)
-            lines.append(StatementLine(len(lines) + 1, posted, description, signed, number))
+            lines.append(StatementLine(len(lines) + 1, posted, description, signed, number, box))
     return ParsedStatement(
         "pdf_text",
         kind,
@@ -234,6 +275,7 @@ def from_pages(pages: tuple[str, ...] | list[str]) -> ParsedStatement:
         tuple(lines),
         False,
         truncated,
+        _sources(page_lines) if page_lines else None,
     )
 
 

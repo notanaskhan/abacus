@@ -1,5 +1,14 @@
-import { inboxPreviewPage, type PreviewOut, uploadPreviewPage } from "@abacus/api-client";
-import { inboxPreviewOptions, uploadPreviewOptions } from "@abacus/api-client/query";
+import {
+  inboxPreviewPage,
+  type PreviewOut,
+  uploadPreviewPage,
+  versionPreviewPage,
+} from "@abacus/api-client";
+import {
+  inboxPreviewOptions,
+  uploadPreviewOptions,
+  versionPreviewOptions,
+} from "@abacus/api-client/query";
 import { Alert, Button, Skeleton, Table, Td, Th } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, useEffect, useState } from "react";
@@ -7,7 +16,24 @@ import { isForbidden } from "../shell/mfa";
 
 export type PreviewSource =
   | { kind: "upload"; engagementId: string; itemId: string; versionId: string }
-  | { kind: "inbox"; engagementId: string; fileId: string };
+  | { kind: "inbox"; engagementId: string; fileId: string }
+  // TASK-334: a version by itself, for screens that don't know its request.
+  | { kind: "version"; engagementId: string; versionId: string };
+
+/** Where a value was printed (TASK-334): a page and a box as fractions of the page. */
+export type Box = [number, number, number, number];
+export type Highlight = { page: number; box: Box };
+
+/** The first printed line on a page that contains the text (case and spacing ignored). */
+export function findLine(
+  lines: { text: string; box: Box }[] | undefined,
+  text: string,
+): Box | null {
+  const want = text.toLowerCase().replace(/\s+/g, " ").trim();
+  if (want === "" || lines === undefined) return null;
+  const hit = lines.find((l) => l.text.toLowerCase().replace(/\s+/g, " ").includes(want));
+  return hit?.box ?? null;
+}
 
 const REASONS: Record<string, string> = {
   encrypted: "This file is password-protected, so it can't be previewed.",
@@ -56,10 +82,23 @@ function usePreview(source: PreviewSource) {
     retry: false,
     refetchInterval: (query) => pending(query.state.data),
   });
-  return source.kind === "upload" ? upload : inbox;
+  const version = useQuery({
+    ...versionPreviewOptions({
+      path: {
+        engagement_id: source.engagementId,
+        version_id: source.kind === "version" ? source.versionId : "",
+      },
+    }),
+    enabled: source.kind === "version",
+    retry: false,
+    refetchInterval: (query) => pending(query.state.data),
+  });
+  return source.kind === "upload" ? upload : source.kind === "version" ? version : inbox;
 }
 
-async function pageBlob(source: PreviewSource, page: number): Promise<Blob> {
+export { usePreview };
+
+export async function pageBlob(source: PreviewSource, page: number): Promise<Blob> {
   if (source.kind === "upload") {
     const { data } = await uploadPreviewPage({
       path: {
@@ -73,6 +112,14 @@ async function pageBlob(source: PreviewSource, page: number): Promise<Blob> {
     });
     return data;
   }
+  if (source.kind === "version") {
+    const { data } = await versionPreviewPage({
+      path: { engagement_id: source.engagementId, version_id: source.versionId, page_no: page },
+      parseAs: "blob",
+      throwOnError: true,
+    });
+    return data;
+  }
   const { data } = await inboxPreviewPage({
     path: { engagement_id: source.engagementId, file_id: source.fileId, page_no: page },
     parseAs: "blob",
@@ -81,7 +128,15 @@ async function pageBlob(source: PreviewSource, page: number): Promise<Blob> {
   return data;
 }
 
-function PageImage({ source, page }: { source: PreviewSource; page: number }): JSX.Element {
+export function PageImage({
+  source,
+  page,
+  boxes = [],
+}: {
+  source: PreviewSource;
+  page: number;
+  boxes?: Box[];
+}): JSX.Element {
   const [url, setUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -106,11 +161,27 @@ function PageImage({ source, page }: { source: PreviewSource; page: number }): J
   if (failed) return <p className="text-body text-danger">This page couldn&apos;t be loaded.</p>;
   if (url === null) return <Skeleton className="h-96" />;
   return (
-    <img
-      src={url}
-      alt={`Page ${String(page)}`}
-      className="w-full rounded-[var(--radius-control)] border border-line bg-surface"
-    />
+    <div className="relative">
+      <img
+        src={url}
+        alt={`Page ${String(page)}`}
+        className="block w-full rounded-[var(--radius-control)] border border-line bg-surface"
+      />
+      {boxes.map((b, i) => (
+        <span
+          key={i}
+          data-highlight="true"
+          aria-hidden="true"
+          className="pointer-events-none absolute rounded-[3px] bg-match-bg/60 inset-shadow-[inset_0_0_0_1.5px_var(--color-match-line)]"
+          style={{
+            left: `${String(Math.max(b[0] * 100 - 0.6, 0))}%`,
+            top: `${String(Math.max(b[1] * 100 - 0.4, 0))}%`,
+            width: `${String((b[2] - b[0]) * 100 + 1.2)}%`,
+            height: `${String((b[3] - b[1]) * 100 + 0.8)}%`,
+          }}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -120,12 +191,18 @@ export function EvidencePreview({
   source,
   openAtPage,
   highlightCell,
+  highlights,
+  findText,
 }: {
   source: PreviewSource;
   // SPEC-030 (TASK-059): an AI flag's quote opens the preview at its page.
   openAtPage?: number | undefined;
   // TASK-110: a citation's cell, highlighted in the source colours and scrolled into view.
   highlightCell?: string | undefined;
+  // TASK-334: boxes on pages where values were printed, outlined on the page image.
+  highlights?: Highlight[] | undefined;
+  // TASK-334: a quote to find among the open page's printed lines and outline.
+  findText?: string | undefined;
 }): JSX.Element {
   const preview = usePreview(source);
   const [page, setPage] = useState(openAtPage ?? 1);
@@ -145,6 +222,19 @@ export function EvidencePreview({
       window.clearTimeout(id);
     };
   }, [target?.row, target?.col, preview.data]);
+
+  const highlightKey = JSON.stringify([highlights, findText, page]);
+  useEffect(() => {
+    if (highlights === undefined && findText === undefined) return;
+    const id = window.setTimeout(() => {
+      document
+        .querySelector('[data-highlight="true"]')
+        ?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 600);
+    return () => {
+      window.clearTimeout(id);
+    };
+  }, [highlightKey, preview.data]);
 
   if (preview.isPending) return <Skeleton className="h-64" />;
   if (preview.isError) {
@@ -244,9 +334,17 @@ export function EvidencePreview({
     );
   }
   const count = Math.max(data.page_count, 1);
+  const shownPage = Math.min(page, count);
+  const pageLines = (data.page_lines ?? [])[shownPage - 1] as
+    { text: string; box: Box }[] | undefined;
+  const found = findText !== undefined ? findLine(pageLines, findText) : null;
+  const boxes: Box[] = [
+    ...(highlights ?? []).filter((h) => h.page === shownPage).map((h) => h.box),
+    ...(found !== null ? [found] : []),
+  ];
   return (
     <div className="flex flex-col gap-2">
-      <PageImage source={source} page={Math.min(page, count)} />
+      <PageImage source={source} page={shownPage} boxes={boxes} />
       {count > 1 && (
         <div className="flex items-center gap-2 text-body">
           <Button

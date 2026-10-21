@@ -4313,6 +4313,25 @@ export type OverdueCountOut = {
 };
 
 /**
+ * PageLineOut
+ */
+export type PageLineOut = {
+    /**
+     * Box
+     */
+    box: [
+        number,
+        number,
+        number,
+        number
+    ];
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
  * PassedEntryOut
  */
 export type PassedEntryOut = {
@@ -4444,6 +4463,10 @@ export type PreviewOut = {
      * Page Count
      */
     page_count: number;
+    /**
+     * Page Lines
+     */
+    page_lines?: Array<Array<PageLineOut>>;
     /**
      * Reason
      */
@@ -6098,6 +6121,25 @@ export type SnapshotOut = {
 };
 
 /**
+ * SourceOut
+ */
+export type SourceOut = {
+    /**
+     * Box
+     */
+    box: [
+        number,
+        number,
+        number,
+        number
+    ];
+    /**
+     * Page
+     */
+    page: number;
+};
+
+/**
  * SpendOut
  */
 export type SpendOut = {
@@ -6246,6 +6288,15 @@ export type StatementLineOut = {
      */
     amount: string;
     /**
+     * Box
+     */
+    box?: [
+        number,
+        number,
+        number,
+        number
+    ] | null;
+    /**
      * Description
      */
     description: string;
@@ -6344,6 +6395,12 @@ export type StatementOut = {
      * Signs Inferred
      */
     signs_inferred: boolean;
+    /**
+     * Sources
+     */
+    sources?: {
+        [key: string]: SourceOut;
+    } | null;
     /**
      * Status
      */
@@ -10454,6 +10511,124 @@ export type SendBackResponses = {
 };
 
 export type SendBackResponse = SendBackResponses[keyof SendBackResponses];
+
+export type VersionPreviewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/evidence-versions/{version_id}/preview';
+};
+
+export type VersionPreviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type VersionPreviewError = VersionPreviewErrors[keyof VersionPreviewErrors];
+
+export type VersionPreviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: PreviewOut;
+};
+
+export type VersionPreviewResponse = VersionPreviewResponses[keyof VersionPreviewResponses];
+
+export type VersionPreviewPageData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+        /**
+         * Page No
+         */
+        page_no: number;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/evidence-versions/{version_id}/preview/pages/{page_no}';
+};
+
+export type VersionPreviewPageErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type VersionPreviewPageError = VersionPreviewPageErrors[keyof VersionPreviewPageErrors];
+
+export type VersionPreviewPageResponses = {
+    /**
+     * Response Version Preview Page
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type VersionPreviewPageResponse = VersionPreviewPageResponses[keyof VersionPreviewPageResponses];
 
 export type UploadReviewData = {
     body?: never;

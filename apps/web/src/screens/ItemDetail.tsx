@@ -36,6 +36,7 @@ import { AIReviewPanel } from "./AIReviewPanel";
 import { ClientGuidance } from "./ClientGuidance";
 import { CommentThread } from "./CommentThread";
 import { FirmChecksPanel } from "./CheckResults";
+import { SourceHover } from "./SourceHover";
 import { StatementReview } from "./StatementReview";
 import { DocumentKindSelect } from "./DocumentKindSelect";
 import { EvidencePreview } from "./EvidencePreview";
@@ -242,6 +243,7 @@ export function ItemDetail({
                   ?.scrollIntoView({ block: "start", behavior: "smooth" });
               }}
               result={resultFor(shown.id)}
+              source={{ engagementId, itemId, versionId: shown.id }}
               loading={screening.isPending}
               screenNow={
                 shown.method === "retrieved" && myRole !== undefined ? (
@@ -420,12 +422,15 @@ function Screening({
   loading,
   screenNow,
   onOpenCell,
+  source,
 }: {
   result: ScreeningResultOut | undefined;
   loading: boolean;
   screenNow: JSX.Element | null;
   /** TASK-110: highlight a cited cell in the preview. */
   onOpenCell: (cell: string) => void;
+  /** TASK-334: the version the citations point into, for hover snippets. */
+  source?: { engagementId: string; itemId: string; versionId: string } | undefined;
 }): JSX.Element {
   return (
     <Panel title="Screening" action={result !== undefined ? <AiTag /> : undefined}>
@@ -468,9 +473,22 @@ function Screening({
                     </StatusPill>
                   )}
                   {c.quote !== null && <AgentText inline text={c.quote} className="text-muted" />}
-                  {c.value !== null && (
-                    <AgentText inline text={c.value} className="tabular-nums" />
-                  )}
+                  {c.value !== null &&
+                    (source !== undefined ? (
+                      <SourceHover
+                        engagementId={source.engagementId}
+                        source={{
+                          versionId: source.versionId,
+                          itemId: source.itemId,
+                          cell: c.cell,
+                        }}
+                        label={`the value in ${c.cell}`}
+                      >
+                        <AgentText inline text={c.value} className="tabular-nums" />
+                      </SourceHover>
+                    ) : (
+                      <AgentText inline text={c.value} className="tabular-nums" />
+                    ))}
                 </li>
               ))}
             </ul>
