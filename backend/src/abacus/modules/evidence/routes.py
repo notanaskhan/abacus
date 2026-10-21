@@ -9,7 +9,7 @@ from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Path, Query, Request, Response
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, StringConstraints
 
 from abacus.kernel._statuses import RequestStatus
 from abacus.kernel.classification import classified
@@ -44,6 +44,7 @@ from abacus.modules.evidence.service import (
     take,
 )
 from abacus.modules.evidence.setup_files import download_setup_file, upload_setup_file
+from abacus.modules.evidence.unlock import unlock_upload
 from abacus.modules.evidence.uploads import (
     MAX_UPLOAD_BYTES,
     PreviewView,
@@ -508,6 +509,33 @@ async def upload_checks_route(
         CheckOut.model_validate(c, from_attributes=True)
         for c in await upload_checks(ctx, engagement_id, item_id, version_id)
     ]
+
+
+class UnlockBody(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    # Used once to open the file; never stored, logged or echoed (TASK-323).
+    password: Annotated[SecretStr, Field(min_length=1, max_length=256), classified("restricted")]
+
+
+@router.post(
+    "/request-items/{item_id}/uploads/{version_id}/unlock",
+    action="evidence.upload",
+    response_model=UploadOut,
+    status_code=201,
+    errors=(409,),
+)
+async def unlock_upload_route(
+    engagement_id: UUID, item_id: UUID, version_id: UUID, body: UnlockBody, ctx: Ctx
+) -> UploadOut:
+    """TASK-323: a password-protected PDF upload, saved again without its password as a new
+    version of the item."""
+    await check_upload(ctx, engagement_id, item_id)
+    return _upload_out(
+        await unlock_upload(
+            ctx, engagement_id, item_id, version_id, body.password.get_secret_value()
+        )
+    )
 
 
 @router.post(

@@ -4,8 +4,11 @@ The file is hostile (ADR-052) and was malware-scanned before it was stored. `ext
 runs `extract` in a short-lived child process with limits (`kernel.isolation`); a crash, a hang
 or a limit hit is `unreadable`, never a worker failure (AC-2).
 
-- PDF (pdfplumber): page text and simple tables, first `MAX_PAGES` pages. No text layer is
-  `unreadable/scanned`; a password-protected file is `unreadable/encrypted` (AC-3).
+- PDF (pdfplumber): page text and simple tables, first `MAX_PAGES` pages. When pdfplumber finds
+  no text, or can't open the file, PDFium (pypdfium2) reads the text a second way: many card and
+  bank e-statements use fonts pdfminer can't map (TASK-323). A file neither reads is
+  `not_extracted/needs_ocr`: kept, never a problem for the client, waiting for OCR (P-32). A
+  password-protected file is `unreadable/encrypted` (AC-3).
 - XLSX: cached values only (`data_only`), read-only, VBA dropped: formulas are never evaluated
   and macros never run (AC-4). CSV: UTF-8 or Windows-1252.
 - Images, Word documents and legacy Excel/Word files: `not_extracted`.
@@ -18,10 +21,11 @@ from __future__ import annotations
 import csv
 import io
 import unicodedata
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
-from typing import Final, Literal, cast
+from typing import Final, Literal, Protocol, cast
 
 from abacus.kernel.isolation import IsolationFailed, run_isolated
 from abacus.modules.evidence.document_fields import (
@@ -33,7 +37,7 @@ from abacus.modules.evidence.document_fields import (
     statement_fields,
 )
 
-EXTRACTOR_VERSION: Final = "v1"
+EXTRACTOR_VERSION: Final = "v2"  # v2 (TASK-323): PDFium text fallback; no text is needs_ocr
 MAX_PAGES: Final = 200
 MAX_ROWS: Final = 60_000
 MAX_CELL: Final = 500
@@ -85,13 +89,77 @@ def _reason(exc: BaseException) -> str:
     return "damaged"
 
 
+class _TextPage(Protocol):  # what pypdfium2's untyped text page offers
+    def get_text_range(self) -> str: ...
+    def close(self) -> None: ...
+
+
+class _Page(Protocol):
+    def get_textpage(self) -> _TextPage: ...
+    def close(self) -> None: ...
+
+
+def _pdfium_pages(content: bytes) -> tuple[int, list[str]] | None:
+    """The page count and each page's text by PDFium, or None when PDFium can't open the file
+    (damaged, or a password it doesn't have)."""
+    import pypdfium2
+
+    try:
+        document = pypdfium2.PdfDocument(content)
+    except Exception:  # a damaged, hostile or password-protected file
+        return None
+    try:
+        count = len(document)
+        pages: list[str] = []
+        for number in range(min(count, MAX_PAGES)):
+            page = cast(_Page, document[number])
+            textpage = page.get_textpage()
+            pages.append(textpage.get_text_range()[:MAX_PAGE_TEXT].replace("\r\n", "\n"))
+            textpage.close()
+            page.close()
+        return count, pages
+    except Exception:
+        return None
+    finally:
+        document.close()
+
+
+def _from_pages(count: int, pages: Sequence[str], tables: Sequence[Table]) -> Extraction:
+    text = "\n".join(pages)
+    return Extraction(
+        "extracted",
+        page_count=count,
+        truncated=count > MAX_PAGES,
+        pages=tuple(pages),
+        tables=tuple(tables),
+        dates=dates_in(text),
+        amounts=amounts_in(text),
+        statement=statement_fields(text),
+    )
+
+
+def _fallback(content: bytes, reason: str, count: int | None) -> Extraction:
+    """PDFium's reading when pdfplumber got nothing; else the file waits for OCR (no text) or is
+    unreadable (encrypted, damaged)."""
+    found = _pdfium_pages(content)
+    if found is not None and any(p.strip() for p in found[1]):
+        return _from_pages(found[0], found[1], ())
+    if reason == "no_text":
+        return Extraction(
+            "not_extracted",
+            "needs_ocr",
+            count if count is not None else (found[0] if found else None),
+        )
+    return Extraction("unreadable", reason, count)
+
+
 def _pdf(content: bytes) -> Extraction:
     import pdfplumber
 
     try:
         pdf = pdfplumber.open(io.BytesIO(content))
     except Exception as exc:  # a damaged or hostile file: pdfminer raises many kinds
-        return Extraction("unreadable", _reason(exc))
+        return _fallback(content, _reason(exc), None)
     with pdf:
         try:
             encrypted = getattr(pdf.doc, "encryption", None) is not None
@@ -104,20 +172,10 @@ def _pdf(content: bytes) -> Extraction:
                     rows = tuple(tuple(_text(c) for c in row) for row in found)
                     tables.append(Table(None, number, rows))
         except Exception as exc:
-            return Extraction("unreadable", _reason(exc))
+            return _fallback(content, _reason(exc), None)
     if not any(p.strip() for p in pages):
-        return Extraction("unreadable", "encrypted" if encrypted else "scanned", count)
-    text = "\n".join(pages)
-    return Extraction(
-        "extracted",
-        page_count=count,
-        truncated=count > MAX_PAGES,
-        pages=tuple(pages),
-        tables=tuple(tables),
-        dates=dates_in(text),
-        amounts=amounts_in(text),
-        statement=statement_fields(text),
-    )
+        return _fallback(content, "encrypted" if encrypted else "no_text", count)
+    return _from_pages(count, pages, tables)
 
 
 def _sheet_rows_xlsx(content: bytes) -> list[tuple[str, list[list[object]]]]:

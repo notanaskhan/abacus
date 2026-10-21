@@ -1,8 +1,9 @@
 import type { CheckOut } from "@abacus/api-client";
-import { uploadChecksOptions } from "@abacus/api-client/query";
-import { Alert, Badge, Skeleton } from "@abacus/ui";
-import { useQuery } from "@tanstack/react-query";
-import type { JSX } from "react";
+import { unlockUploadMutation, uploadChecksOptions } from "@abacus/api-client/query";
+import { Alert, Badge, Button, Skeleton } from "@abacus/ui";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type JSX, useState } from "react";
+import { errorMessage } from "../api";
 import { isForbidden } from "../shell/mfa";
 import { checkName, crossCheckMessage, notCheckedReason, problemMessage } from "./checkMessages";
 
@@ -60,8 +61,75 @@ export function ClientUploadChecks({
           </li>
         ))}
       </ul>
+      {checks.data.some(isLocked) && <UnlockForm ids={ids} />}
       {replace}
     </div>
+  );
+}
+
+/** TASK-323: a password-protected PDF is unlocked by whoever has its password; the server saves
+ * a copy without it as a new version. The password is sent once and never kept. */
+export function UnlockForm({ ids }: { ids: Ids }): JSX.Element {
+  const queryClient = useQueryClient();
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const unlock = useMutation({
+    ...unlockUploadMutation(),
+    onSuccess: () => {
+      setPassword("");
+      void queryClient.invalidateQueries();
+    },
+    onError: (e) => {
+      setError(
+        errorMessage(e) === "wrong_password"
+          ? "That password didn't open the file."
+          : "The file couldn't be unlocked. Please upload a copy without a password.",
+      );
+    },
+  });
+  return (
+    <form
+      className="flex flex-wrap items-center gap-1.5"
+      onSubmit={(e) => {
+        e.preventDefault();
+        setError(null);
+        unlock.mutate({
+          path: {
+            engagement_id: ids.engagementId,
+            item_id: ids.itemId,
+            version_id: ids.versionId,
+          },
+          body: { password },
+        });
+      }}
+    >
+      <input
+        type="password"
+        aria-label="File password"
+        autoComplete="off"
+        value={password}
+        maxLength={256}
+        placeholder="File password"
+        onChange={(e) => {
+          setPassword(e.target.value);
+        }}
+        className="h-[28px] w-[180px] rounded-tile border-0 bg-nested px-2 text-[12.5px] inset-shadow-hair"
+      />
+      <Button size="sm" type="submit" disabled={password === "" || unlock.isPending}>
+        Unlock
+      </Button>
+      {error !== null && (
+        <span role="alert" className="text-meta text-danger">
+          {error}
+        </span>
+      )}
+    </form>
+  );
+}
+
+function isLocked(check: CheckOut): boolean {
+  return (
+    check.code === "unreadable" && check.outcome === "problem" && check.reason === "encrypted"
   );
 }
 
@@ -102,6 +170,7 @@ export function FirmChecksPanel({ ids }: { ids: Ids }): JSX.Element {
             {check.audience === "firm" && <span className="text-meta text-muted">firm only</span>}
           </span>
           {detail(check) !== "" && <span className="text-muted">{detail(check)}</span>}
+          {isLocked(check) && <UnlockForm ids={ids} />}
         </li>
       ))}
     </ul>

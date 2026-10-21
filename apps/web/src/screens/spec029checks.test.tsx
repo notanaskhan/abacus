@@ -236,3 +236,37 @@ describe("ac11 board filter", () => {
     expect(rows.map((r) => r.item.id)).toEqual(["a"]);
   });
 });
+
+describe("TASK-323 password-protected uploads", () => {
+  it("offers the client an unlock and sends the password once", async () => {
+    const UNLOCK = `/v1/engagements/${E}/request-items/i1/uploads/v1/unlock`;
+    const { calls } = mockApi({
+      [`GET ${CHECKS}`]: () =>
+        json([check({ code: "unreadable", outcome: "problem", reason: "encrypted" })]),
+      [`POST ${UNLOCK}`]: () => json({ detail: "wrong_password" }, 422),
+    });
+    renderRoutes([
+      {
+        path: "/",
+        component: () => (
+          <ClientUploadChecks ids={IDS} uploadedAt="2026-10-21T10:00:00Z" replace={null} />
+        ),
+      },
+    ]);
+    expect(await screen.findByText(/Enter its password to unlock it/)).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("File password"), { target: { value: "s3cret" } });
+    fireEvent.click(screen.getByRole("button", { name: "Unlock" }));
+    expect(await screen.findByText("That password didn't open the file.")).toBeTruthy();
+    expect(calls.find((c) => c.path === UNLOCK)?.body).toEqual({ password: "s3cret" });
+  });
+
+  it("tells the firm a scanned file waits for text recognition", async () => {
+    mockApi({
+      [`GET ${CHECKS}`]: () =>
+        json([check({ code: "unreadable", outcome: "not_applicable", reason: "needs_ocr" })]),
+    });
+    renderRoutes([{ path: "/", component: () => <FirmChecksPanel ids={IDS} /> }]);
+    expect(await screen.findByText(/scanned pages wait for text recognition/)).toBeTruthy();
+    expect(screen.queryByLabelText("File password")).toBeNull();
+  });
+});
