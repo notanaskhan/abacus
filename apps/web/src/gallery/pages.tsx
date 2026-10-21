@@ -15,7 +15,12 @@ import {
 import { SPECIMENS } from "@abacus/ui/specimens";
 import { Link, Outlet, useParams, useSearch } from "@tanstack/react-router";
 import { type JSX, useEffect } from "react";
-import { type FixtureParams, parseFixtureParams, screenById } from "./fixture-mode";
+import {
+  type FixtureParams,
+  parseFixtureParams,
+  screenById,
+  useSeedFixtures,
+} from "./fixture-mode";
 import { SURFACES, colorRows, parseTokens } from "./tokens";
 
 // The /components subtree (SPEC-048 AC-10, AC-11): one lazy chunk that only gallery builds
@@ -237,10 +242,12 @@ export function ScreenPage(): JSX.Element {
   const id =
     useParams({ strict: false, select: (p: Record<string, string | undefined>) => p.id }) ?? "";
   const params = useFixtureParams();
+  const seeded = useSeedFixtures(params);
   const entry = screenById(id);
   if (entry === undefined) {
     return <EmptyState title="Not built">{`No screen is registered under ${id}.`}</EmptyState>;
   }
+  if (!seeded) return <div data-screen={id} aria-busy="true" />;
   return (
     <div data-screen={id}>
       <entry.Component params={params} />

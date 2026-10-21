@@ -1,8 +1,10 @@
-import type { ComponentType } from "react";
+import { type ComponentType, useEffect, useState } from "react";
 
-// The pass-through to F-04-T04's fixture mode (SPEC-048 AC-11). Until fixture mode exists this
-// is a stub: the gallery parses the query parameters once, hands them to the registered screen,
-// and F-04-T04 replaces the screen's data source behind them. Gallery builds only.
+// The pass-through to F-04-T04's fixture mode (SPEC-048 AC-11): the gallery parses the query
+// parameters once and hands them to the registered screen. With VITE_FIXTURES=1, the Brightwater
+// Hale seed (F-04-T05) answers the generated client under the screen first, as the persona,
+// clock and latency the parameters name; a screen's own scenario installs over it. Gallery
+// builds only.
 
 export interface FixtureParams {
   /** Artboard state letter (`?st=`). */
@@ -41,6 +43,30 @@ export function parseFixtureParams(search: Record<string, unknown>): FixturePara
   if (latency !== undefined) out.latency = latency;
   if (text(search.contrast) === "reference") out.contrast = "reference";
   return out;
+}
+
+/**
+ * Answers the generated client from the interim seed while the page shows. True once it does (at
+ * once when fixtures are off), so the screen mounts after, and its own scenario wins over the seed.
+ */
+export function useSeedFixtures(params: FixtureParams): boolean {
+  const [ready, setReady] = useState(import.meta.env.VITE_FIXTURES !== "1");
+  const { as, clock, latency } = params;
+  useEffect(() => {
+    if (import.meta.env.VITE_FIXTURES !== "1") return undefined;
+    let cancelled = false;
+    let restore: (() => void) | undefined;
+    void import("../fixtures/install").then(({ installSeedFixtures }) => {
+      if (cancelled) return;
+      restore = installSeedFixtures({ persona: as, clock, latency });
+      setReady(true);
+    });
+    return () => {
+      cancelled = true;
+      restore?.();
+    };
+  }, [as, clock, latency]);
+  return ready;
 }
 
 export interface ScreenEntry {

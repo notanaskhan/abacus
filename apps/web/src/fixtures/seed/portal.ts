@@ -1,0 +1,99 @@
+// The portal minimum (blueprint 01 §9.3; F-04 §2.1): the client-side people of Northwind, Granite
+// Peak and the Feld household, and the third parties on Northwind's PBC list. Names are fictional;
+// every mailbox is on the synthetic sink domain, never a real inbox (SPEC-307 AC-5).
+
+import type { ClientContactOut } from "@abacus/api-client";
+import { stableId } from "./prng";
+import { slugOf } from "./people";
+
+export const SINK_DOMAIN = "sink.brightwaterhale.test";
+
+export type PortalEngagement = "northwind" | "granite-peak" | "feld";
+
+export interface PortalUser {
+  slug: string;
+  name: string;
+  /** Their organisation when they are a third party or hold a title worth showing. */
+  org: string;
+  title: string;
+  engagement: PortalEngagement;
+  /** `tcwg` is the benefits committee (POR-15): it reads, and holds no contact role. */
+  role: "client_admin" | "client_contributor" | "tcwg";
+  thirdParty: boolean;
+  email: string;
+  id: string;
+}
+
+type Row = readonly [
+  name: string,
+  org: string,
+  title: string,
+  engagement: PortalEngagement,
+  role: PortalUser["role"],
+  thirdParty?: true,
+];
+
+const ROWS: readonly Row[] = [
+  [
+    "Dana Kowalski",
+    "Northwind Robotics, Inc.",
+    "HR Director, plan administrator",
+    "northwind",
+    "client_admin",
+  ],
+  [
+    "Victoria Lam",
+    "Northwind Robotics, Inc.",
+    "CFO, benefits committee chair",
+    "northwind",
+    "tcwg",
+  ],
+  ["Robert Haines", "Northwind Robotics, Inc.", "Benefits committee member", "northwind", "tcwg"],
+  [
+    "Sam Ortiz",
+    "Keystone Retirement Services",
+    "Recordkeeper",
+    "northwind",
+    "client_contributor",
+    true,
+  ],
+  ["Luis Ferrante", "Granite Peak Outdoor Supply, Inc.", "CFO", "granite-peak", "client_admin"],
+  ["Claire Feld", "Jonah & Claire Feld", "Primary portal user", "feld", "client_admin"],
+  ["Jonah Feld", "Jonah & Claire Feld", "Household", "feld", "client_contributor"],
+];
+
+export const PORTAL_USERS: readonly PortalUser[] = ROWS.map(
+  ([name, org, title, engagement, role, thirdParty]) => {
+    const slug = slugOf(name);
+    return {
+      slug,
+      name,
+      org,
+      title,
+      engagement,
+      role,
+      thirdParty: thirdParty === true,
+      email: `${slug.replace(/-/g, ".")}@${SINK_DOMAIN}`,
+      id: stableId(`user:${slug}`),
+    };
+  },
+);
+
+/** Third parties who answer Northwind requests but hold no portal user at E0. */
+export const THIRD_PARTIES: readonly string[] = [
+  "Harborline Trust Company",
+  "PayGrid Payroll",
+  "Summit Plan Administrators",
+];
+
+/** `GET /v1/engagements/{id}/client-contacts`: the people who hold a contact role. */
+export function contactsOf(engagement: PortalEngagement): ClientContactOut[] {
+  return PORTAL_USERS.filter((u) => u.engagement === engagement && u.role !== "tcwg").map((u) => ({
+    kind: "member",
+    id: u.id,
+    role: u.role,
+    email: u.email,
+    expires_at: null,
+    display_name: u.name,
+  }));
+}

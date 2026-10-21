@@ -75,7 +75,15 @@ export default defineConfig(({ mode, command }) => {
   const authority = env.VITE_OIDC_AUTHORITY ?? `http://127.0.0.1:${String(9000 + offset)}`;
   return {
     plugins: [react(), tailwindcss(), contentSecurityPolicy(authority), fontPreload()],
-    define: { "import.meta.env.VITE_UI_GALLERY": JSON.stringify(gallery) },
+    define: {
+      "import.meta.env.VITE_UI_GALLERY": JSON.stringify(gallery),
+      // Fixture mode (F-04-T04, T05): `make dev-fixtures` sets VITE_FIXTURES=1. A build folds it
+      // to a constant, as the gallery flag is, so a production build drops the seed; the dev
+      // server and tests read it live.
+      ...(command === "build"
+        ? { "import.meta.env.VITE_FIXTURES": JSON.stringify(env.VITE_FIXTURES ?? "") }
+        : {}),
+    },
     // dist/.vite/manifest.json: scripts/bundle-budget.mjs (F-05-T17) reads the chunk graph from it.
     build: { manifest: true },
     server: {

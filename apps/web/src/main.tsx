@@ -8,6 +8,13 @@ import "./index.css";
 import { router } from "./router";
 
 configureClient();
+// `make dev-fixtures` (VITE_FIXTURES=1): the generated client answers from the Brightwater Hale
+// seed, as the persona in `?as=` at the clock in `?clock=` (F-04-T05). A production build folds
+// the flag to a constant and drops the seed.
+if (import.meta.env.VITE_FIXTURES === "1") {
+  const { installSeedFromSearch } = await import("./fixtures/install");
+  installSeedFromSearch(window.location.search);
+}
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: shouldRetry, staleTime: 10_000 } },
 });
