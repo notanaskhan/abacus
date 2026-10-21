@@ -157,6 +157,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "sign_off.partner",
         "sign_off.prepare",
         "sign_off.review",
+        "statement.approve",  # SPEC-312 (TASK-324)
         "tie_out_check.define",  # SPEC-310 (TASK-321)
         "trial_balance.adopt",  # SPEC-309 (TASK-320)
         "trial_balance.annotate",

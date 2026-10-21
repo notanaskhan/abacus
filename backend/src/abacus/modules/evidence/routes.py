@@ -3,6 +3,7 @@ Provenance only: content is read through `read_version`, never listed."""
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal, cast
@@ -44,6 +45,12 @@ from abacus.modules.evidence.service import (
     take,
 )
 from abacus.modules.evidence.setup_files import download_setup_file, upload_setup_file
+from abacus.modules.evidence.statement_review import (
+    Decisions,
+    StatementView,
+    approve_statement,
+    statement_for,
+)
 from abacus.modules.evidence.unlock import unlock_upload
 from abacus.modules.evidence.uploads import (
     MAX_UPLOAD_BYTES,
@@ -509,6 +516,132 @@ async def upload_checks_route(
         CheckOut.model_validate(c, from_attributes=True)
         for c in await upload_checks(ctx, engagement_id, item_id, version_id)
     ]
+
+
+# --- Statement transactions (SPEC-312; TASK-324) ---------------------------------------------
+
+
+class ExclusionBody(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    position: Annotated[int, Field(ge=1), classified("internal")]
+    reason: Annotated[str, Field(min_length=1, max_length=200), classified("confidential")]
+
+
+class StatementDecisionsBody(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    excluded: Annotated[list[ExclusionBody], Field(max_length=5000), classified("internal")] = []
+    flip_signs: Annotated[bool, classified("internal")] = False
+    opening: Annotated[
+        Decimal | None, Field(max_digits=16, decimal_places=2), classified("confidential")
+    ] = None
+    closing: Annotated[
+        Decimal | None, Field(max_digits=16, decimal_places=2), classified("confidential")
+    ] = None
+
+
+class StatementLineOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    position: Annotated[int, classified("internal")]
+    posted_on: Annotated[date | None, classified("internal")]
+    description: Annotated[str, classified("confidential")]
+    amount: Annotated[Decimal, classified("confidential")]
+    page: Annotated[int | None, classified("internal")]
+    excluded: Annotated[bool, classified("internal")]
+    exclusion_reason: Annotated[str | None, classified("confidential")]
+
+
+class ReconciliationOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    opening: Annotated[Decimal | None, classified("confidential")]
+    lines_total: Annotated[Decimal, classified("confidential")]
+    expected_closing: Annotated[Decimal | None, classified("confidential")]
+    closing: Annotated[Decimal | None, classified("confidential")]
+    difference: Annotated[Decimal | None, classified("confidential")]
+    reconciled: Annotated[bool, classified("internal")]
+
+
+class StatementOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    status: Annotated[Literal["draft", "approved"], classified("internal")]
+    format: Annotated[Literal["pdf_text", "csv", "ofx"], classified("internal")]
+    account_kind: Annotated[Literal["credit_card", "bank", "unknown"], classified("internal")]
+    issuer: Annotated[str | None, classified("confidential")]
+    last4: Annotated[str | None, classified("internal")]
+    period_start: Annotated[date | None, classified("internal")]
+    period_end: Annotated[date | None, classified("internal")]
+    opening: Annotated[Decimal | None, classified("confidential")]
+    closing: Annotated[Decimal | None, classified("confidential")]
+    opening_source: Annotated[Literal["printed", "entered"] | None, classified("internal")]
+    closing_source: Annotated[Literal["printed", "entered"] | None, classified("internal")]
+    printed_opening: Annotated[bool, classified("internal")]
+    printed_closing: Annotated[bool, classified("internal")]
+    signs_inferred: Annotated[bool, classified("internal")]
+    signs_flipped: Annotated[bool, classified("internal")]
+    truncated: Annotated[bool, classified("internal")]
+    lines: Annotated[list[StatementLineOut], classified("confidential")]
+    reconciliation: Annotated[ReconciliationOut, classified("confidential")]
+    approved_by_name: Annotated[str | None, classified("internal")]
+    approved_at: Annotated[datetime | None, classified("internal")]
+
+
+def _decisions(body: StatementDecisionsBody) -> Decisions:
+    return Decisions(
+        {e.position: e.reason for e in body.excluded}, body.flip_signs, body.opening, body.closing
+    )
+
+
+def _statement_out(v: StatementView) -> StatementOut:
+    return StatementOut.model_validate(
+        {
+            **asdict(v),
+            "lines": [asdict(line) for line in v.lines],
+            "reconciliation": asdict(v.reconciliation),
+        }
+    )
+
+
+_STATEMENT = "/request-items/{item_id}/uploads/{version_id}/statement"
+
+
+@router.get(_STATEMENT, action="evidence.read", response_model=StatementOut, errors=(409,))
+async def statement_route(
+    engagement_id: UUID, item_id: UUID, version_id: UUID, ctx: Ctx
+) -> StatementOut:
+    """SPEC-312 AC-5: the statement's transactions: approved, or read from the file."""
+    return _statement_out(await statement_for(ctx, engagement_id, item_id, version_id))
+
+
+@router.post(
+    _STATEMENT + "/preview", action="evidence.read", response_model=StatementOut, errors=(409,)
+)
+async def statement_preview_route(
+    engagement_id: UUID, item_id: UUID, version_id: UUID, body: StatementDecisionsBody, ctx: Ctx
+) -> StatementOut:
+    """SPEC-312 AC-6: the reviewer's decisions applied and reconciled; nothing stored."""
+    return _statement_out(
+        await statement_for(ctx, engagement_id, item_id, version_id, _decisions(body))
+    )
+
+
+@router.post(
+    _STATEMENT + "/approve",
+    action="statement.approve",
+    response_model=StatementOut,
+    status_code=201,
+    errors=(409,),
+)
+async def approve_statement_route(
+    engagement_id: UUID, item_id: UUID, version_id: UUID, body: StatementDecisionsBody, ctx: Ctx
+) -> StatementOut:
+    """SPEC-312 AC-7: a person approves the reconciled transactions."""
+    return _statement_out(
+        await approve_statement(ctx, engagement_id, item_id, version_id, _decisions(body))
+    )
 
 
 class UnlockBody(BaseModel):

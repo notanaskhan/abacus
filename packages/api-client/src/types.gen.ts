@@ -2150,6 +2150,20 @@ export type EvidenceVersionOut = {
 };
 
 /**
+ * ExclusionBody
+ */
+export type ExclusionBody = {
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
  * FacetsOut
  */
 export type FacetsOut = {
@@ -4417,6 +4431,36 @@ export type ReasonOut = {
 };
 
 /**
+ * ReconciliationOut
+ */
+export type ReconciliationOut = {
+    /**
+     * Closing
+     */
+    closing: string | null;
+    /**
+     * Difference
+     */
+    difference: string | null;
+    /**
+     * Expected Closing
+     */
+    expected_closing: string | null;
+    /**
+     * Lines Total
+     */
+    lines_total: string;
+    /**
+     * Opening
+     */
+    opening: string | null;
+    /**
+     * Reconciled
+     */
+    reconciled: boolean;
+};
+
+/**
  * RedactIn
  */
 export type RedactIn = {
@@ -5684,6 +5728,145 @@ export type StartOut = {
      * Authorise Url
      */
     authorise_url: string;
+};
+
+/**
+ * StatementDecisionsBody
+ */
+export type StatementDecisionsBody = {
+    /**
+     * Closing
+     */
+    closing?: number | string | null;
+    /**
+     * Excluded
+     */
+    excluded?: Array<ExclusionBody>;
+    /**
+     * Flip Signs
+     */
+    flip_signs?: boolean;
+    /**
+     * Opening
+     */
+    opening?: number | string | null;
+};
+
+/**
+ * StatementLineOut
+ */
+export type StatementLineOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Excluded
+     */
+    excluded: boolean;
+    /**
+     * Exclusion Reason
+     */
+    exclusion_reason: string | null;
+    /**
+     * Page
+     */
+    page: number | null;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Posted On
+     */
+    posted_on: string | null;
+};
+
+/**
+ * StatementOut
+ */
+export type StatementOut = {
+    /**
+     * Account Kind
+     */
+    account_kind: 'credit_card' | 'bank' | 'unknown';
+    /**
+     * Approved At
+     */
+    approved_at: string | null;
+    /**
+     * Approved By Name
+     */
+    approved_by_name: string | null;
+    /**
+     * Closing
+     */
+    closing: string | null;
+    /**
+     * Closing Source
+     */
+    closing_source: 'printed' | 'entered' | null;
+    /**
+     * Format
+     */
+    format: 'pdf_text' | 'csv' | 'ofx';
+    /**
+     * Issuer
+     */
+    issuer: string | null;
+    /**
+     * Last4
+     */
+    last4: string | null;
+    /**
+     * Lines
+     */
+    lines: Array<StatementLineOut>;
+    /**
+     * Opening
+     */
+    opening: string | null;
+    /**
+     * Opening Source
+     */
+    opening_source: 'printed' | 'entered' | null;
+    /**
+     * Period End
+     */
+    period_end: string | null;
+    /**
+     * Period Start
+     */
+    period_start: string | null;
+    /**
+     * Printed Closing
+     */
+    printed_closing: boolean;
+    /**
+     * Printed Opening
+     */
+    printed_opening: boolean;
+    reconciliation: ReconciliationOut;
+    /**
+     * Signs Flipped
+     */
+    signs_flipped: boolean;
+    /**
+     * Signs Inferred
+     */
+    signs_inferred: boolean;
+    /**
+     * Status
+     */
+    status: 'draft' | 'approved';
+    /**
+     * Truncated
+     */
+    truncated: boolean;
 };
 
 /**
@@ -14985,6 +15168,198 @@ export type UploadPreviewPageResponses = {
 };
 
 export type UploadPreviewPageResponse = UploadPreviewPageResponses[keyof UploadPreviewPageResponses];
+
+export type StatementData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/statement';
+};
+
+export type StatementErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type StatementError = StatementErrors[keyof StatementErrors];
+
+export type StatementResponses = {
+    /**
+     * Successful Response
+     */
+    200: StatementOut;
+};
+
+export type StatementResponse = StatementResponses[keyof StatementResponses];
+
+export type ApproveStatementData = {
+    body: StatementDecisionsBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/statement/approve';
+};
+
+export type ApproveStatementErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ApproveStatementError = ApproveStatementErrors[keyof ApproveStatementErrors];
+
+export type ApproveStatementResponses = {
+    /**
+     * Successful Response
+     */
+    201: StatementOut;
+};
+
+export type ApproveStatementResponse = ApproveStatementResponses[keyof ApproveStatementResponses];
+
+export type StatementPreviewData = {
+    body: StatementDecisionsBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/statement/preview';
+};
+
+export type StatementPreviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type StatementPreviewError = StatementPreviewErrors[keyof StatementPreviewErrors];
+
+export type StatementPreviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: StatementOut;
+};
+
+export type StatementPreviewResponse = StatementPreviewResponses[keyof StatementPreviewResponses];
 
 export type UnlockUploadData = {
     body: UnlockBody;

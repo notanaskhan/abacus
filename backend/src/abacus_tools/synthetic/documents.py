@@ -480,3 +480,50 @@ def payroll_register_xlsx(*, period_end: date = date(2026, 12, 31)) -> bytes:
             ["C. Patel", 6100.0, 950.0, 466.65, 4683.35],
         ],
     )
+
+
+CardLine = tuple[date, str, Decimal]  # posted date, description, amount (+ charge, - credit)
+
+
+def card_statement_pdf(
+    *,
+    issuer: str = "Example Card Services",
+    last4: str = "4471",
+    start: date = date(2026, 11, 22),
+    end: date = date(2026, 12, 21),
+    previous: Decimal = Decimal("1250.00"),
+    lines: Sequence[CardLine] = (
+        (date(2026, 11, 24), "PAYMENT THANK YOU", Decimal("-1250.00")),
+        (date(2026, 11, 28), "OFFICE SUPPLY CO #221", Decimal("184.37")),
+        (date(2026, 12, 2), "CLOUD HOSTING INC", Decimal("612.00")),
+        (date(2026, 12, 9), "RETURN OFFICE SUPPLY CO", Decimal("-24.99")),
+        (date(2026, 12, 15), "AIRLINE 0167 SEATTLE", Decimal("438.20")),
+    ),
+    new_balance: Decimal | None = None,
+    pages: int = 1,
+) -> bytes:
+    """A credit card e-statement as US issuers print it (summary, then payments and credits,
+    then purchases). `new_balance` defaults to what the lines add up to; pass another to make
+    it not reconcile. With `pages=2` the purchases continue on a second page."""
+    credits = [line for line in lines if line[2] < 0]
+    charges = [line for line in lines if line[2] >= 0]
+    total = previous + sum((line[2] for line in lines), Decimal(0))
+    ending = new_balance if new_balance is not None else total
+    head = [
+        issuer,
+        f"Card ending in {last4}",
+        f"Opening/Closing Date {start:%m/%d/%y} - {end:%m/%d/%y}",
+        f"Previous Balance {_money(previous)}",
+        f"Payments, Credits -{_money(-sum((c[2] for c in credits), Decimal(0)))}",
+        f"Purchases +{_money(sum((c[2] for c in charges), Decimal(0)))}",
+        f"New Balance {_money(ending)}",
+        "Minimum Payment Due $35.00",
+        "PAYMENTS AND OTHER CREDITS",
+        *(f"{d:%m/%d} {text} -{abs(amount):,.2f}" for d, text, amount in credits),
+        "PURCHASES",
+    ]
+    rows = [f"{d:%m/%d} {text} {amount:,.2f}" for d, text, amount in charges]
+    if pages == 1:
+        return _pdf([_text_page([*head, *rows])])
+    half = len(rows) // 2
+    return _pdf([_text_page([*head, *rows[:half]]), _text_page(["PURCHASES", *rows[half:]])])

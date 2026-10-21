@@ -19,6 +19,8 @@ TABLES: frozenset[str] = frozenset(
         "review_decisions",
         "review_assignments",
         "review_reason_codes",
+        "statement_datasets",  # SPEC-312 (TASK-324)
+        "statement_transactions",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -30,6 +32,8 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "upload_previews",  # SPEC-029 (TASK-056): server-made, kept
         "upload_preview_pages",  # SPEC-029 (TASK-056): server-made, kept
         "review_decisions",
+        "statement_datasets",  # SPEC-312 (TASK-324): an approval, as approved
+        "statement_transactions",
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
@@ -56,6 +60,17 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "review_assignments": frozenset(
         {"tenant_id", "evidence_version_id", "engagement_id", "assignee_user_id"} | {"assigned_by"}
+    ),
+    # SPEC-312 (TASK-324): approved statement transactions.
+    "statement_datasets": frozenset(
+        {"tenant_id", "engagement_id", "request_item_id", "evidence_version_id", "format"}
+        | {"account_kind", "issuer", "last4", "period_start", "period_end", "opening", "closing"}
+        | {"opening_source", "closing_source", "included_total", "line_count", "excluded_count"}
+        | {"signs_flipped", "approved_by", "actor_kind"}
+    ),
+    "statement_transactions": frozenset(
+        {"tenant_id", "dataset_id", "position", "posted_on", "description", "amount", "page"}
+        | {"excluded", "exclusion_reason"}
     ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.

@@ -197,3 +197,47 @@ class UploadPreviewPage(Base):
     size_bytes: Mapped[int]
     width: Mapped[int]
     height: Mapped[int]
+
+
+class StatementDataset(Base):
+    """An approved statement's transactions (SPEC-312; TASK-324). Insert-only."""
+
+    __tablename__ = "statement_datasets"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    request_item_id: Mapped[UUID]
+    evidence_version_id: Mapped[UUID]
+    format: Mapped[str]
+    account_kind: Mapped[str]
+    issuer: Mapped[str | None]
+    last4: Mapped[str | None]
+    period_start: Mapped[date | None]
+    period_end: Mapped[date | None]
+    opening: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    closing: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    opening_source: Mapped[str]
+    closing_source: Mapped[str]
+    included_total: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    line_count: Mapped[int]
+    excluded_count: Mapped[int]
+    signs_flipped: Mapped[bool]
+    approved_by: Mapped[UUID]
+    actor_kind: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class StatementTransaction(Base):
+    __tablename__ = "statement_transactions"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    dataset_id: Mapped[UUID]
+    position: Mapped[int]
+    posted_on: Mapped[date | None]
+    description: Mapped[str]
+    amount: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    page: Mapped[int | None]
+    excluded: Mapped[bool]
+    exclusion_reason: Mapped[str | None]
