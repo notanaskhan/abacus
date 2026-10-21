@@ -6,3 +6,11 @@ actions:
   trial_balance.read:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # firm roles only; client and agent principals deny
   trial_balance.adopt:      {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # human only (the database CHECK agrees)
   trial_balance.annotate:   {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # audit area and WP ref; amounts are never editable
+  # --- Completion, release and archive (SPEC-314; TASK-332; A-07 record mode) ---
+  completion.read:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}
+  completion.record:        {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # the report record and the signed representation letter (documents and dates)
+  completion.decide:        {engagement_partner: allow, agent: deny, independence: required}   # going concern, reserved to the engagement partner
+  eqr.concur:               {reviewer: allow, agent: deny, independence: required}   # only the assigned EQR (the service checks), never on the team that performed it
+  report.approve:           {engagement_partner: allow, agent: deny, independence: required}
+  report.release:           {engagement_partner: allow, agent: deny, independence: required}   # G8; the server re-checks G5-G7 in the same unit. A-07 adds fresh MFA with the step-up flow
+  archive.lock:             {engagement_partner: allow, manager: allow, agent: deny, independence: required}   # G9; afterwards the engagement is archived and read-only

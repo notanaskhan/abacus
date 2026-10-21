@@ -8,7 +8,7 @@ import { errorMessage } from "../api";
 import { ReviewableNotes } from "./ReviewableNotes";
 import { SignOffSquares } from "./Workpapers";
 
-// SPEC-313 (TASK-325): the sign-off matrix. Every working paper and trial balance with its five
+// SPEC-313 (TASK-331): the sign-off matrix. Every working paper and trial balance with its five
 // levels, open notes and status, and the review gate (G5): met only when every one has L1 and
 // L2 signed on its current content and no open notes. Computed by the server.
 

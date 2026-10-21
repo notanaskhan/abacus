@@ -1215,6 +1215,39 @@
         "title": "ApproveIn",
         "type": "object"
       },
+      "ArchiveOut": {
+        "properties": {
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "leaf_count": {
+            "cls": "internal",
+            "title": "Leaf Count",
+            "type": "integer"
+          },
+          "locked_by_name": {
+            "cls": "internal",
+            "title": "Locked By Name",
+            "type": "string"
+          },
+          "seal": {
+            "cls": "internal",
+            "title": "Seal",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seal",
+          "leaf_count",
+          "locked_by_name",
+          "at"
+        ],
+        "title": "ArchiveOut",
+        "type": "object"
+      },
       "AreaOut": {
         "properties": {
           "code": {
@@ -1385,6 +1418,21 @@
           "stage"
         ],
         "title": "AssistantOut",
+        "type": "object"
+      },
+      "AttestBody": {
+        "additionalProperties": false,
+        "properties": {
+          "attest": {
+            "cls": "internal",
+            "title": "Attest",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "attest"
+        ],
+        "title": "AttestBody",
         "type": "object"
       },
       "AuditSectionStatus": {
@@ -2092,6 +2140,66 @@
         "title": "CheckOut",
         "type": "object"
       },
+      "ChecklistItemOut": {
+        "properties": {
+          "applicable": {
+            "cls": "internal",
+            "title": "Applicable",
+            "type": "boolean"
+          },
+          "blockers": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "done": {
+            "cls": "internal",
+            "title": "Done",
+            "type": "boolean"
+          },
+          "gate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Gate"
+          },
+          "key": {
+            "cls": "internal",
+            "enum": [
+              "accepted",
+              "independence",
+              "engagement_letter",
+              "review_complete",
+              "eqr_concurred",
+              "going_concern",
+              "report_approved",
+              "rep_letter",
+              "released",
+              "archived"
+            ],
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "done",
+          "applicable",
+          "gate",
+          "blockers"
+        ],
+        "title": "ChecklistItemOut",
+        "type": "object"
+      },
       "CitationBody": {
         "additionalProperties": false,
         "properties": {
@@ -2702,6 +2810,213 @@
         "title": "CompleteOut",
         "type": "object"
       },
+      "CompletionOut": {
+        "properties": {
+          "archive": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArchiveOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "can_lock": {
+            "cls": "internal",
+            "title": "Can Lock",
+            "type": "boolean"
+          },
+          "can_release": {
+            "cls": "internal",
+            "title": "Can Release",
+            "type": "boolean"
+          },
+          "checklist": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ChecklistItemOut"
+            },
+            "title": "Checklist",
+            "type": "array"
+          },
+          "eqr": {
+            "$ref": "#/components/schemas/EqrOut",
+            "cls": "confidential"
+          },
+          "going_concern": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompletionRecordOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "lock_blockers": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Lock Blockers",
+            "type": "array"
+          },
+          "release": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReleaseOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "release_blockers": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Release Blockers",
+            "type": "array"
+          },
+          "rep_letter": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompletionRecordOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "report": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "checklist",
+          "eqr",
+          "going_concern",
+          "report",
+          "rep_letter",
+          "release",
+          "archive",
+          "can_release",
+          "release_blockers",
+          "can_lock",
+          "lock_blockers"
+        ],
+        "title": "CompletionOut",
+        "type": "object"
+      },
+      "CompletionRecordOut": {
+        "properties": {
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "by_name": {
+            "cls": "internal",
+            "title": "By Name",
+            "type": "string"
+          },
+          "choice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Choice"
+          },
+          "document_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Document Date"
+          },
+          "emphasis": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Emphasis"
+          },
+          "evidence_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Evidence Version Id"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Rationale"
+          }
+        },
+        "required": [
+          "id",
+          "choice",
+          "emphasis",
+          "document_date",
+          "evidence_version_id",
+          "rationale",
+          "by_name",
+          "at"
+        ],
+        "title": "CompletionRecordOut",
+        "type": "object"
+      },
       "ConclusionIn": {
         "additionalProperties": false,
         "properties": {
@@ -2717,6 +3032,48 @@
           "text"
         ],
         "title": "ConclusionIn",
+        "type": "object"
+      },
+      "ConcurBody": {
+        "additionalProperties": false,
+        "properties": {
+          "not_involved": {
+            "cls": "internal",
+            "title": "Not Involved",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "not_involved"
+        ],
+        "title": "ConcurBody",
+        "type": "object"
+      },
+      "ConcurrenceOut": {
+        "properties": {
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "by_name": {
+            "cls": "internal",
+            "title": "By Name",
+            "type": "string"
+          },
+          "current": {
+            "cls": "internal",
+            "title": "Current",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "by_name",
+          "at",
+          "current"
+        ],
+        "title": "ConcurrenceOut",
         "type": "object"
       },
       "ConfirmationOut": {
@@ -3422,6 +3779,51 @@
           "communicated_to"
         ],
         "title": "DeficiencyOut",
+        "type": "object"
+      },
+      "DigestCardOut": {
+        "properties": {
+          "decided": {
+            "cls": "internal",
+            "title": "Decided",
+            "type": "boolean"
+          },
+          "facts": {
+            "cls": "confidential",
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            "title": "Facts",
+            "type": "array"
+          },
+          "kind": {
+            "cls": "internal",
+            "title": "Kind",
+            "type": "string"
+          },
+          "title": {
+            "cls": "internal",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "title",
+          "facts",
+          "decided"
+        ],
+        "title": "DigestCardOut",
         "type": "object"
       },
       "DiscardedOut": {
@@ -4314,6 +4716,68 @@
           "verified"
         ],
         "title": "EntryCitationOut",
+        "type": "object"
+      },
+      "EqrOut": {
+        "properties": {
+          "concurrence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConcurrenceOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "digest": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/DigestCardOut"
+            },
+            "title": "Digest",
+            "type": "array"
+          },
+          "digest_hash": {
+            "cls": "internal",
+            "title": "Digest Hash",
+            "type": "string"
+          },
+          "eqr_names": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Eqr Names",
+            "type": "array"
+          },
+          "is_me": {
+            "cls": "internal",
+            "title": "Is Me",
+            "type": "boolean"
+          },
+          "open_notes": {
+            "cls": "internal",
+            "title": "Open Notes",
+            "type": "integer"
+          },
+          "required": {
+            "cls": "internal",
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "required",
+          "eqr_names",
+          "is_me",
+          "digest",
+          "digest_hash",
+          "concurrence",
+          "open_notes"
+        ],
+        "title": "EqrOut",
         "type": "object"
       },
       "ErrorOut": {
@@ -5375,6 +5839,39 @@
           "created_at"
         ],
         "title": "GlImportOut",
+        "type": "object"
+      },
+      "GoingConcernBody": {
+        "additionalProperties": false,
+        "properties": {
+          "choice": {
+            "cls": "internal",
+            "enum": [
+              "no_substantial_doubt",
+              "doubt_alleviated",
+              "doubt_exists"
+            ],
+            "title": "Choice",
+            "type": "string"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Rationale"
+          }
+        },
+        "required": [
+          "choice"
+        ],
+        "title": "GoingConcernBody",
         "type": "object"
       },
       "GraphAccountOut": {
@@ -9503,6 +10000,41 @@
         "title": "RejectIn",
         "type": "object"
       },
+      "ReleaseOut": {
+        "properties": {
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "documentation_due": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Documentation Due",
+            "type": "string"
+          },
+          "released_by_name": {
+            "cls": "internal",
+            "title": "Released By Name",
+            "type": "string"
+          },
+          "report_date": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Report Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "report_date",
+          "documentation_due",
+          "released_by_name",
+          "at"
+        ],
+        "title": "ReleaseOut",
+        "type": "object"
+      },
       "RemovedOut": {
         "properties": {
           "user_id": {
@@ -9516,6 +10048,29 @@
           "user_id"
         ],
         "title": "RemovedOut",
+        "type": "object"
+      },
+      "RepLetterBody": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "letter_date": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Letter Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "letter_date",
+          "evidence_version_id"
+        ],
+        "title": "RepLetterBody",
         "type": "object"
       },
       "ReplyIn": {
@@ -9533,6 +10088,87 @@
           "body"
         ],
         "title": "ReplyIn",
+        "type": "object"
+      },
+      "ReportBody": {
+        "additionalProperties": false,
+        "properties": {
+          "emphasis": {
+            "cls": "internal",
+            "default": false,
+            "title": "Emphasis",
+            "type": "boolean"
+          },
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "opinion": {
+            "cls": "internal",
+            "enum": [
+              "unmodified",
+              "qualified",
+              "adverse",
+              "disclaimer"
+            ],
+            "title": "Opinion",
+            "type": "string"
+          },
+          "report_date": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Report Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "opinion",
+          "report_date",
+          "evidence_version_id"
+        ],
+        "title": "ReportBody",
+        "type": "object"
+      },
+      "ReportOut": {
+        "properties": {
+          "approved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approved At"
+          },
+          "approved_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approved By Name"
+          },
+          "record": {
+            "$ref": "#/components/schemas/CompletionRecordOut",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "record",
+          "approved_by_name",
+          "approved_at"
+        ],
+        "title": "ReportOut",
         "type": "object"
       },
       "RepresentationGapOut": {
@@ -18373,6 +19009,922 @@
           "engagements"
         ],
         "x-abacus-action": "client_contact.invite"
+      }
+    },
+    "/v1/engagements/{engagement_id}/completion": {
+      "get": {
+        "description": "SPEC-314 AC-1: the checklist, the EQR digest, the records and what blocks release.",
+        "operationId": "completion_state",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompletionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Completion State Route",
+        "tags": [
+          "completion"
+        ],
+        "x-abacus-action": "completion.read"
+      }
+    },
+    "/v1/engagements/{engagement_id}/completion/archive/lock": {
+      "post": {
+        "description": "SPEC-314 AC-7: lock and seal the archive (G9).",
+        "operationId": "lock_archive",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttestBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompletionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Lock Archive Route",
+        "tags": [
+          "completion"
+        ],
+        "x-abacus-action": "archive.lock"
+      }
+    },
+    "/v1/engagements/{engagement_id}/completion/eqr/concur": {
+      "post": {
+        "description": "SPEC-314 AC-2: the engagement quality reviewer concurs (G6).",
+        "operationId": "concur_eqr",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConcurBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompletionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Concur Eqr Route",
+        "tags": [
+          "completion"
+        ],
+        "x-abacus-action": "eqr.concur"
+      }
+    },
+    "/v1/engagements/{engagement_id}/completion/going-concern": {
+      "post": {
+        "description": "SPEC-314 AC-3: the partner decides going concern.",
+        "operationId": "going_concern",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoingConcernBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompletionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Going Concern Route",
+        "tags": [
+          "completion"
+        ],
+        "x-abacus-action": "completion.decide"
+      }
+    },
+    "/v1/engagements/{engagement_id}/completion/release": {
+      "post": {
+        "description": "SPEC-314 AC-6: the partner releases the report (G8).",
+        "operationId": "release_report",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttestBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompletionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Release Report Route",
+        "tags": [
+          "completion"
+        ],
+        "x-abacus-action": "report.release"
+      }
+    },
+    "/v1/engagements/{engagement_id}/completion/rep-letter": {
+      "post": {
+        "description": "SPEC-314 AC-5: record the signed representation letter (G7 needs the report date).",
+        "operationId": "rep_letter",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RepLetterBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompletionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Rep Letter Route",
+        "tags": [
+          "completion"
+        ],
+        "x-abacus-action": "completion.record"
+      }
+    },
+    "/v1/engagements/{engagement_id}/completion/report": {
+      "post": {
+        "description": "SPEC-314 AC-4: record the report: opinion form, date and the final document.",
+        "operationId": "record_report",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompletionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Record Report Route",
+        "tags": [
+          "completion"
+        ],
+        "x-abacus-action": "completion.record"
+      }
+    },
+    "/v1/engagements/{engagement_id}/completion/report/approve": {
+      "post": {
+        "description": "SPEC-314 AC-4: the partner approves the report record.",
+        "operationId": "approve_report",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompletionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Approve Report Route",
+        "tags": [
+          "completion"
+        ],
+        "x-abacus-action": "report.approve"
       }
     },
     "/v1/engagements/{engagement_id}/connection": {

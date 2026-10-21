@@ -8,13 +8,14 @@ projects) register with their modules as they arrive.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.modules.engagements.models import AssuranceWorkItem, WorkItem
+from abacus.kernel.uow import UnitOfWork
+from abacus.modules.engagements.models import AssuranceWorkItem, Engagement, WorkItem
 from abacus.modules.engagements.service import get_ref
 from abacus.modules.identity.api import AuthContext, authorise, visible
 
@@ -62,3 +63,31 @@ async def assurance_item_id(tenant: TenantContext, engagement_id: UUID) -> UUID 
                 WorkItem.engagement_id == engagement_id, WorkItem.kind == "assurance"
             )
         )
+
+
+async def set_assurance_phase(tx: UnitOfWork, engagement_id: UUID, phase: str) -> None:
+    """SPEC-314: the assurance work item's phase (released, archived), in the caller's unit."""
+    item = await tx.session.scalar(
+        select(WorkItem.id).where(
+            WorkItem.engagement_id == engagement_id, WorkItem.kind == "assurance"
+        )
+    )
+    if item is not None:
+        await tx.session.execute(
+            update(AssuranceWorkItem)
+            .where(AssuranceWorkItem.work_item_id == item)
+            .values(phase=phase)
+        )
+
+
+async def lock_engagement(tx: UnitOfWork, engagement_id: UUID, at: datetime) -> None:
+    """SPEC-314 (G9): the archive is locked: the engagement becomes archived (read-only through
+    `authorise`, AUTHZ-003) and its work items record when."""
+    await tx.session.execute(
+        update(WorkItem)
+        .where(WorkItem.engagement_id == engagement_id)
+        .values(archive_locked_at=at, archived_at=at)
+    )
+    await tx.session.execute(
+        update(Engagement).where(Engagement.id == engagement_id).values(status="archived")
+    )

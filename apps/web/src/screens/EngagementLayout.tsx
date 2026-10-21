@@ -59,6 +59,7 @@ export function EngagementLayout({ engagementId }: { engagementId: string }): JS
           { label: "Working papers", to: "/engagements/$engagementId/workpapers", params },
           { label: "Fieldwork", to: "/engagements/$engagementId/fieldwork", params },
           { label: "Sign-offs", to: "/engagements/$engagementId/sign-offs", params },
+          { label: "Completion", to: "/engagements/$engagementId/completion", params },
           { label: "Findings", to: "/engagements/$engagementId/findings", params },
           { label: "Map", to: "/engagements/$engagementId/map", params },
           { label: "People", to: "/engagements/$engagementId/people", params },

@@ -5,7 +5,7 @@ The tables it owns (ADR-103) and what the app role may do with them.
 
 from __future__ import annotations
 
-# SPEC-308 (TASK-319): sign-offs; SPEC-313 (TASK-325): notes on any reviewable.
+# SPEC-308 (TASK-319): sign-offs; SPEC-313 (TASK-331): notes on any reviewable.
 TABLES: frozenset[str] = frozenset({"sign_offs", "reviewable_notes", "reviewable_note_events"})
 INSERT_ONLY: frozenset[str] = TABLES
 INSERT_COLUMNS: dict[str, frozenset[str]] = {

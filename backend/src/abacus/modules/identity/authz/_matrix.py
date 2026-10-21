@@ -57,6 +57,12 @@ ACTIONS: dict[str, dict[str, str]] = {
         "engagement_partner": "allow",
         "manager": "allow",
     },
+    "archive.lock": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "agent": "deny",
+        "independence": "required",
+    },
     "audit.read": {
         "firm_admin": "allow",
         "practice_leader": "allow",
@@ -143,6 +149,26 @@ ACTIONS: dict[str, dict[str, str]] = {
         "manager": "allow",
         "senior": "allow",
         "staff": "allow",
+        "independence": "required",
+    },
+    "completion.decide": {
+        "engagement_partner": "allow",
+        "agent": "deny",
+        "independence": "required",
+    },
+    "completion.read": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "reviewer": "allow",
+        "independence": "required",
+    },
+    "completion.record": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "agent": "deny",
         "independence": "required",
     },
     "connection.check": {
@@ -244,6 +270,11 @@ ACTIONS: dict[str, dict[str, str]] = {
     "entry_assessment.run": {
         "system": "allow",
         "agent": "task_scope",
+    },
+    "eqr.concur": {
+        "reviewer": "allow",
+        "agent": "deny",
+        "independence": "required",
     },
     "evidence.accept": {
         "independence": "required",
@@ -522,6 +553,16 @@ ACTIONS: dict[str, dict[str, str]] = {
         "manager": "allow",
         "senior": "allow",
         "staff": "allow",
+        "independence": "required",
+    },
+    "report.approve": {
+        "engagement_partner": "allow",
+        "agent": "deny",
+        "independence": "required",
+    },
+    "report.release": {
+        "engagement_partner": "allow",
+        "agent": "deny",
         "independence": "required",
     },
     "representation.edit": {

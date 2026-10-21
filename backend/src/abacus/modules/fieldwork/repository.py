@@ -899,3 +899,16 @@ async def engagement_adjustments(
         .scalars()
         .all()
     )
+
+
+async def engagement_risks(session: AsyncSession, engagement_id: UUID) -> Sequence[Risk]:
+    """R1 first (LIST_EXEMPT: for the EQR digest, after the caller authorised on it)."""
+    return (
+        (
+            await session.execute(
+                select(Risk).where(Risk.engagement_id == engagement_id).order_by(Risk.number)
+            )
+        )
+        .scalars()
+        .all()
+    )
