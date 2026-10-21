@@ -6523,6 +6523,16 @@ export type UncorrectedOut = {
 };
 
 /**
+ * UnlockBody
+ */
+export type UnlockBody = {
+    /**
+     * Password
+     */
+    password: string;
+};
+
+/**
  * UploadOut
  */
 export type UploadOut = {
@@ -14975,6 +14985,70 @@ export type UploadPreviewPageResponses = {
 };
 
 export type UploadPreviewPageResponse = UploadPreviewPageResponses[keyof UploadPreviewPageResponses];
+
+export type UnlockUploadData = {
+    body: UnlockBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/unlock';
+};
+
+export type UnlockUploadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type UnlockUploadError = UnlockUploadErrors[keyof UnlockUploadErrors];
+
+export type UnlockUploadResponses = {
+    /**
+     * Successful Response
+     */
+    201: UploadOut;
+};
+
+export type UnlockUploadResponse = UnlockUploadResponses[keyof UnlockUploadResponses];
 
 export type ItemVersionsData = {
     body?: never;

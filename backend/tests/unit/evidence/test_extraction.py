@@ -97,9 +97,23 @@ def test_ac2_a_damaged_pdf_is_unreadable_not_an_error() -> None:
 # --- AC-3: scanned and encrypted PDFs ----------------------------------------------------------
 
 
-def test_ac3_a_scanned_pdf_is_unreadable_as_scanned() -> None:
+def test_ac3_a_scanned_pdf_is_kept_waiting_for_ocr() -> None:
+    # TASK-323 amends AC-3: no text is not a client problem; the file waits for OCR (P-32).
     found = extract(scanned_pdf(pages=2), PDF)
-    assert (found.status, found.reason, found.page_count) == ("unreadable", "scanned", 2)
+    assert (found.status, found.reason, found.page_count) == ("not_extracted", "needs_ocr", 2)
+
+
+def test_task323_pdfium_reads_text_pdfplumber_misses(monkeypatch: pytest.MonkeyPatch) -> None:
+    import pdfplumber.page
+
+    def no_text(*_args: object, **_kwargs: object) -> str:
+        return ""
+
+    monkeypatch.setattr(pdfplumber.page.Page, "extract_text", no_text)
+    found = extract(bank_statement_pdf(opening=Decimal("10000.00")), PDF)
+    assert found.status == "extracted"
+    assert found.statement is not None and found.statement.opening == Decimal("10000.00")
+    assert found.tables == ()  # PDFium reads text, not tables
 
 
 def test_ac3_a_password_protected_pdf_is_unreadable_as_encrypted() -> None:

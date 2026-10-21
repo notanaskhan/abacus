@@ -6,7 +6,8 @@ import { longDate, usd } from "./importMessages";
 const UNREADABLE: Record<string, string> = {
   scanned:
     "This looks like a scanned copy, so we can't read it. Please upload the statement you download from your bank's website.",
-  encrypted: "This file is password-protected. Please upload a copy without a password.",
+  encrypted:
+    "This file is password-protected. Enter its password to unlock it, or upload a copy without a password.",
   damaged: "This file couldn't be opened. Please save it again and upload the new copy.",
   too_large: "This file is too large to read. Please upload a shorter export.",
   crashed: "This file couldn't be opened. Please save it again and upload the new copy.",
@@ -112,6 +113,7 @@ const NOT_CHECKED: Record<string, string> = {
   no_total_row: "no total row",
   not_extracted: "this kind of file isn't read",
   legacy_format: "older file format",
+  needs_ocr: "no readable text yet (scanned pages wait for text recognition)",
   no_running_balance: "no running balance column",
   stated_once: "closing balance stated once",
 };
