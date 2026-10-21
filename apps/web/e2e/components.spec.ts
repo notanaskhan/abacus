@@ -43,3 +43,54 @@ test("ac15: /_ds no longer routes", async ({ page }) => {
   await page.goto("/_ds");
   await expect(page.getByText("Page not found")).toBeVisible();
 });
+
+// F-05-T14 (SPEC-048 AC-8): reduced motion leaves document.getAnimations() empty. The CSS block in
+// motion.css cuts what a media query can; useReducedMotion() makes the kit's own components render
+// no animation at all. The gallery calls no API, so only the dev server is needed.
+async function runningAnimations(page: Page): Promise<string[]> {
+  return page.evaluate(() =>
+    document.getAnimations().map((a) => {
+      const named = a as Animation & { animationName?: string; transitionProperty?: string };
+      return named.animationName ?? named.transitionProperty ?? a.id;
+    }),
+  );
+}
+
+test.describe("motion", () => {
+  test.describe("with reduced motion", () => {
+    test.use({ reducedMotion: "reduce" });
+
+    test("ac8: no animation runs on /components/**", async ({ page }) => {
+      for (const path of ["/components", "/components/tokens", "/components/icons"]) {
+        await page.goto(path);
+        await expect(page.getByRole("heading", { name: "Components", level: 1 })).toBeVisible();
+        await page.evaluate(() => document.fonts.ready);
+        await expect.poll(() => runningAnimations(page), { message: path }).toEqual([]);
+      }
+    });
+
+    test("ac8: the motion specimens draw their still form", async ({ page }) => {
+      await page.goto("/components");
+      await expect(page.getByTestId("reduced-motion-state")).toContainText("Reduced motion is on");
+      await expect(page.locator("[data-spinner='turning']")).toHaveCount(0);
+      await expect(page.locator("[data-typing='beating']")).toHaveCount(0);
+      await expect(page.locator("[data-reveal='rising']")).toHaveCount(0);
+      await expect(page.locator("[data-pulse='skeleton'], [data-pulse='breathe']")).toHaveCount(0);
+      await expect.poll(() => runningAnimations(page)).toEqual([]);
+    });
+  });
+
+  test.describe("with motion allowed", () => {
+    test.use({ reducedMotion: "no-preference" });
+
+    test("ac8: the same specimens do animate, so the check above bites", async ({ page }) => {
+      await page.goto("/components");
+      await expect(page.getByTestId("reduced-motion-state")).toContainText("Motion is on");
+      await expect.poll(async () => (await runningAnimations(page)).length).toBeGreaterThan(0);
+      const names = new Set(await runningAnimations(page));
+      for (const name of ["ac-spin", "ac-pulse", "ac-breathe", "ac-typing"]) {
+        expect(names, name).toContain(name);
+      }
+    });
+  });
+});

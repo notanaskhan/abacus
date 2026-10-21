@@ -47,31 +47,8 @@ export function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>
   );
 }
 
-/** An arc spinner: ink-2 on a faint track, 820ms a turn. */
-export function Spinner({ label }: { label: string }): JSX.Element {
-  return (
-    <span role="status" className="inline-flex items-center gap-2 text-[12.5px] text-ink-2">
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 16 16"
-        className="size-3.5 animate-spin [animation-duration:820ms]"
-      >
-        <circle cx="8" cy="8" r="6.25" fill="none" className="stroke-rule" strokeWidth="1.5" />
-        <circle
-          cx="8"
-          cy="8"
-          r="6.25"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeDasharray="11 40"
-        />
-      </svg>
-      {label}
-    </span>
-  );
-}
+// The spinner moved to components/motion.tsx (F-05-T14), where it honours reduced motion.
+export { Spinner } from "./motion";
 
 /** An error row: a brick disc, the title in brick ink, the cause in ink-2, and the way out.
  * Never a full red background. */

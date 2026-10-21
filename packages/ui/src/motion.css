@@ -1,6 +1,7 @@
 /* Motion (SPEC-048 AC-8, F-05-T05): keyframes and the reduced-motion block. Durations and easing
    are the tokens in root.css and theme.css. No bounces, no shimmer. The Web Animations API loops
-   are stopped separately by useReducedMotion() (F-05-T13), which a media query cannot do. */
+   are stopped separately by useReducedMotion() (motion.ts, F-05-T14): the kit's animated components
+   render no animation class under the preference, which a media query cannot do. */
 @keyframes drawer-in {
   from {
     opacity: 0;
@@ -33,10 +34,19 @@
 @keyframes ac-pulse {
   0%,
   100% {
-    opacity: 0.55;
+    opacity: 1;
   }
   50% {
+    opacity: 0.55;
+  }
+}
+@keyframes ac-breathe {
+  0%,
+  100% {
     opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
   }
 }
 @keyframes ac-reveal {
@@ -47,11 +57,14 @@
 }
 @keyframes ac-typing {
   0%,
+  80%,
   100% {
-    opacity: 0.25;
+    opacity: 0.3;
+    transform: none;
   }
-  50% {
+  40% {
     opacity: 1;
+    transform: translateY(-2px);
   }
 }
 
@@ -64,8 +77,11 @@
 @utility motion-reveal {
   animation: ac-reveal var(--motion-reveal) both;
 }
+@utility motion-breathe {
+  animation: ac-breathe 2400ms ease-in-out infinite;
+}
 @utility motion-typing {
-  animation: ac-typing 1100ms ease-in-out infinite;
+  animation: ac-typing 1100ms ease-in-out infinite backwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -73,6 +89,7 @@
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
