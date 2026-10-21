@@ -121,7 +121,7 @@ check: check-fast
 # its own coverage data, and ci-coverage combines them and applies the floor. Refresh the timings
 # after large test changes: pytest --durations=0 --durations-min=0 > report.txt, then
 # python -m abacus_tools.ci.shard --record report.txt
-UNIT_TESTS = tests/unit tests/property
+UNIT_TESTS = tests/unit tests/property tests/acceptance
 INTEGRATION_TESTS = tests/integration tests/security tests/workflows
 SHARD ?= 1
 SHARDS ?= 1
