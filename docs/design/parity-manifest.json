@@ -1,0 +1,181 @@
+{
+  "schema": 1,
+  "_comment": "Parity manifest (F-05-T16; chapter 04 9.3). key = <specimen id>.<part>. selector = CSS inside that specimen's section on /components. source = a PNG under $ACCRUED_HANDOFF_DIR. crop = [x0, y0, x1, y1] in the PNG's own pixels (2x), or \"window\". sha256 pins the source (python -m abacus_tools.parity.crop_handoff --pin). tier = A to D. deviation = a known, recorded difference: reported, not blocking. locked = blocking at tier B. The PNGs are never committed.",
+  "entries": {
+    "c-06-status-disc.done-15": {
+      "selector": "[role=\"img\"][aria-label=\"Done\"] >> nth=1",
+      "source": "kit-handoffs/C-06 Status Kit Handoff/design_handoff_c06_status_kit/screenshots/04-status-discs.png",
+      "sha256": "7df1437f9e0a4de9f17154f2961412fc647fc147aee01a67911214c7ee63c9bf",
+      "crop": [
+        436,
+        192,
+        468,
+        224
+      ],
+      "tier": "A"
+    },
+    "c-06-status-disc.half-15": {
+      "selector": "[role=\"img\"][aria-label=\"In progress\"] >> nth=1",
+      "source": "kit-handoffs/C-06 Status Kit Handoff/design_handoff_c06_status_kit/screenshots/04-status-discs.png",
+      "sha256": "7df1437f9e0a4de9f17154f2961412fc647fc147aee01a67911214c7ee63c9bf",
+      "crop": [
+        436,
+        486,
+        468,
+        518
+      ],
+      "tier": "A"
+    },
+    "c-06-status-disc.warn-15": {
+      "selector": "[role=\"img\"][aria-label=\"Warning\"] >> nth=1",
+      "source": "kit-handoffs/C-06 Status Kit Handoff/design_handoff_c06_status_kit/screenshots/04-status-discs.png",
+      "sha256": "7df1437f9e0a4de9f17154f2961412fc647fc147aee01a67911214c7ee63c9bf",
+      "crop": [
+        436,
+        682,
+        468,
+        714
+      ],
+      "tier": "A"
+    },
+    "c-06-status-disc.fail-15": {
+      "selector": "[role=\"img\"][aria-label=\"Failed\"] >> nth=1",
+      "source": "kit-handoffs/C-06 Status Kit Handoff/design_handoff_c06_status_kit/screenshots/04-status-discs.png",
+      "sha256": "7df1437f9e0a4de9f17154f2961412fc647fc147aee01a67911214c7ee63c9bf",
+      "crop": [
+        436,
+        778,
+        468,
+        810
+      ],
+      "tier": "A"
+    },
+    "c-06-status-disc.wait-15": {
+      "selector": "[role=\"img\"][aria-label=\"Waiting\"] >> nth=1",
+      "source": "kit-handoffs/C-06 Status Kit Handoff/design_handoff_c06_status_kit/screenshots/04-status-discs.png",
+      "sha256": "7df1437f9e0a4de9f17154f2961412fc647fc147aee01a67911214c7ee63c9bf",
+      "crop": [
+        436,
+        974,
+        468,
+        1006
+      ],
+      "tier": "A"
+    },
+    "c-06-tick.ms": {
+      "selector": "span:text-is(\"MS\") >> nth=0",
+      "source": "kit-handoffs/C-06 Status Kit Handoff/design_handoff_c06_status_kit/screenshots/03-counts-ticks-tags.png",
+      "sha256": "c599e48d6707ec237bbaff6b18b444872e9814280e9991ed2e43cda16ca3aaa8",
+      "crop": [
+        455,
+        286,
+        535,
+        324
+      ],
+      "tier": "A",
+      "deviation": "Text edges differ by fractions of a pixel from the handoff's glyph advances (1.22 % at the first calibration run); probably the Geist build (plan risk R3), not yet investigated"
+    },
+    "c-06-tick.received": {
+      "selector": "span:text-is(\"Received\") >> nth=0",
+      "source": "kit-handoffs/C-06 Status Kit Handoff/design_handoff_c06_status_kit/screenshots/03-counts-ticks-tags.png",
+      "sha256": "c599e48d6707ec237bbaff6b18b444872e9814280e9991ed2e43cda16ca3aaa8",
+      "crop": [
+        549,
+        285,
+        687,
+        323
+      ],
+      "tier": "A",
+      "deviation": "Text edges differ by fractions of a pixel from the handoff's glyph advances (7.28 % at the first calibration run); probably the Geist build (plan risk R3), not yet investigated"
+    },
+    "c-06-tick.cf": {
+      "selector": "span:text-is(\"CF\") >> nth=0",
+      "source": "kit-handoffs/C-06 Status Kit Handoff/design_handoff_c06_status_kit/screenshots/03-counts-ticks-tags.png",
+      "sha256": "c599e48d6707ec237bbaff6b18b444872e9814280e9991ed2e43cda16ca3aaa8",
+      "crop": [
+        790,
+        286,
+        842,
+        324
+      ],
+      "tier": "A",
+      "deviation": "Text edges differ by fractions of a pixel from the handoff's glyph advances (1.11 % at the first calibration run); probably the Geist build (plan risk R3), not yet investigated"
+    },
+    "c-06-status-pill.rejected": {
+      "selector": "span:text-is(\"Rejected\") >> nth=0",
+      "source": "kit-handoffs/C-06 Status Kit Handoff/design_handoff_c06_status_kit/screenshots/01-pill-variants.png",
+      "sha256": "0ef43cdd1c168bcc9c4b8600f5c6e2efd60076b79a1217e2348bd75e478ac341",
+      "crop": [
+        455,
+        592,
+        589,
+        636
+      ],
+      "tier": "A"
+    },
+    "c-06-status-pill.available": {
+      "selector": "span:text-is(\"Available\") >> nth=0",
+      "source": "kit-handoffs/C-06 Status Kit Handoff/design_handoff_c06_status_kit/screenshots/01-pill-variants.png",
+      "sha256": "0ef43cdd1c168bcc9c4b8600f5c6e2efd60076b79a1217e2348bd75e478ac341",
+      "crop": [
+        456,
+        1000,
+        590,
+        1046
+      ],
+      "tier": "A",
+      "deviation": "Text edges differ by fractions of a pixel from the handoff's glyph advances (1.51 % at the first calibration run); probably the Geist build (plan risk R3), not yet investigated"
+    },
+    "c-06-status-pill.not-started": {
+      "selector": "span:text-is(\"Not started\") >> nth=0",
+      "source": "kit-handoffs/C-06 Status Kit Handoff/design_handoff_c06_status_kit/screenshots/01-pill-variants.png",
+      "sha256": "0ef43cdd1c168bcc9c4b8600f5c6e2efd60076b79a1217e2348bd75e478ac341",
+      "crop": [
+        455,
+        706,
+        615,
+        750
+      ],
+      "tier": "A",
+      "deviation": "Text edges differ by fractions of a pixel from the handoff's glyph advances (7.73 % at the first calibration run); probably the Geist build (plan risk R3), not yet investigated"
+    },
+    "c-06-status-pill.coming-soon": {
+      "selector": "span:text-is(\"Coming soon\") >> nth=0",
+      "source": "kit-handoffs/C-06 Status Kit Handoff/design_handoff_c06_status_kit/screenshots/01-pill-variants.png",
+      "sha256": "0ef43cdd1c168bcc9c4b8600f5c6e2efd60076b79a1217e2348bd75e478ac341",
+      "crop": [
+        465,
+        906,
+        633,
+        946
+      ],
+      "tier": "A",
+      "deviation": "The soon pill's word is ink-3 under both ladders (DEC-11); the bundle draws it at ink-4 (.30)"
+    },
+    "fnd-01-wordmark.hero-76": {
+      "selector": "[data-brand=\"wordmark\"] >> nth=0",
+      "source": "kit-handoffs/_foundations/design_handoff_foundations/screenshots/01-brand.png",
+      "sha256": "164f0844180f5b13ff829b000aeb007a685fbe04fb4aeaa2d37bfb8e774ea0af",
+      "crop": [
+        516,
+        354,
+        1102,
+        508
+      ],
+      "tier": "A"
+    },
+    "fnd-01-monogram.m28": {
+      "selector": "[data-brand=\"monogram\"] >> nth=2",
+      "source": "kit-handoffs/_foundations/design_handoff_foundations/screenshots/01-brand.png",
+      "sha256": "164f0844180f5b13ff829b000aeb007a685fbe04fb4aeaa2d37bfb8e774ea0af",
+      "crop": [
+        604,
+        1254,
+        662,
+        1312
+      ],
+      "tier": "A",
+      "deviation": "The handoff's posted dot is larger and its 'a' sits lower than the monogram specimen draws them"
+    }
+  }
+}
