@@ -12,13 +12,20 @@ from sqlalchemy import select
 from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.modules.evidence.models import EvidenceItem, EvidenceVersion, InboxFile, ReviewDecision
+from abacus.modules.evidence.models import (
+    EvidenceItem,
+    EvidenceVersion,
+    InboxFile,
+    ReviewDecision,
+    StatementDataset,
+)
 
 _OWNERS: dict[str, tuple[QueryableAttribute[UUID], QueryableAttribute[UUID | None]]] = {
     "evidence_version": (EvidenceVersion.id, EvidenceVersion.engagement_id),
     "evidence_item": (EvidenceItem.id, EvidenceItem.engagement_id),
     "inbox_file": (InboxFile.id, InboxFile.engagement_id),
     "review_decision": (ReviewDecision.id, ReviewDecision.engagement_id),
+    "statement_dataset": (StatementDataset.id, StatementDataset.engagement_id),  # SPEC-312
 }
 AUDIT_KINDS = frozenset(_OWNERS)
 
