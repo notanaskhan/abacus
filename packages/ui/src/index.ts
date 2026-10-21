@@ -149,6 +149,32 @@ export {
   type SyncGlyph,
 } from "./status";
 export { HANDOFF_WORDS, STATUS_REGISTRY } from "./status.gen";
+// Motion (F-05-T14): the reduced-motion hook, the word reveal and the animated primitives.
+export {
+  REDUCED_MOTION_QUERY,
+  type WordReveal,
+  WORD_REVEAL_MS,
+  useMotion,
+  useReducedMotion,
+  useWordReveal,
+  wordsOf,
+} from "./motion";
+export {
+  LiveDot,
+  type LiveDotProps,
+  PULSE_STAGGER_MS,
+  Pulse,
+  type PulseProps,
+  Reveal,
+  type RevealProps,
+  SPINNER_SIZES,
+  type SpinnerProps,
+  type SpinnerSize,
+  TypingDots,
+  type TypingDotsProps,
+} from "./components/motion";
+// Identity (F-05-T14): wordmark, monogram, the Agent's avatar, the firm's mark and people.
+export * from "./brand";
 // The icon registry (F-05-T13): handoff kebab names, the Icon component and the custom glyphs.
 export * from "./icons";
 // Icons for the shell, so apps use one icon set without depending on it directly.

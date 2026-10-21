@@ -8,6 +8,8 @@ import {
   PillSpecimen,
   TagSpecimen,
 } from "./controls";
+import { FirmMarkSpecimen, MonogramSpecimen, PersonSpecimen, WordmarkSpecimen } from "./identity";
+import { PulseSpecimen, RevealSpecimen, SpinnerSpecimen, TypingDotsSpecimen } from "./motion";
 import { Overview } from "./overview";
 import {
   StatusDiscSpecimen,
@@ -48,6 +50,20 @@ export const SPECIMENS: readonly Specimen[] = [
   { id: "c-06-tick", kit: "C-06", title: "Ticks", Component: TickSpecimen },
   { id: "c-06-tally-pill", kit: "C-06", title: "Tally pills", Component: TallyPillSpecimen },
   { id: "c-06-status-map", kit: "C-06", title: "Status map", Component: StatusMapSpecimen },
+  // T0 motion and identity (F-05-T14)
+  { id: "c-20-spinner", kit: "C-20", title: "Spinners", Component: SpinnerSpecimen },
+  { id: "c-20-pulse", kit: "C-20", title: "Pulse", Component: PulseSpecimen },
+  { id: "c-10-reveal", kit: "C-10", title: "Reveal", Component: RevealSpecimen },
+  { id: "c-10-typing-dots", kit: "C-10", title: "Typing dots", Component: TypingDotsSpecimen },
+  { id: "fnd-01-wordmark", kit: "FND-01", title: "Wordmark", Component: WordmarkSpecimen },
+  {
+    id: "fnd-01-monogram",
+    kit: "FND-01",
+    title: "Monogram and Agent avatar",
+    Component: MonogramSpecimen,
+  },
+  { id: "c-00-firm-mark", kit: "C-00", title: "Firm mark", Component: FirmMarkSpecimen },
+  { id: "c-28-person", kit: "C-28", title: "People", Component: PersonSpecimen },
 ];
 
 export function specimenById(id: string): Specimen | undefined {
