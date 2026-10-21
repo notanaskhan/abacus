@@ -35,7 +35,7 @@ from abacus.modules.evidence.repository import (
     preview_page,
     uploaded_versions,
 )
-from abacus.modules.evidence.service import NewItem, Provenance, add_version
+from abacus.modules.evidence.service import NewItem, Provenance, add_version, version_view
 from abacus.modules.identity.api import (
     AuthContext,
     Resource,
@@ -49,6 +49,7 @@ from abacus.modules.requests.api import (
     fulfil_by_upload,
     item_ref,
     item_versions,
+    items_of_version,
     read_item,
     read_item_versions,
 )
@@ -432,6 +433,8 @@ class PreviewView:
     page_count: int
     truncated: bool
     sheets: tuple[tuple[str, tuple[tuple[str, ...], ...]], ...] = ()
+    # TASK-334: each PDF page's printed lines and their boxes, to point at where a value was.
+    page_lines: tuple[tuple[tuple[str, tuple[float, float, float, float]], ...], ...] = ()
 
 
 async def _authorised_version(
@@ -464,6 +467,17 @@ async def preview_of(
         return PreviewView("pending", None, 0, False)
     sheets: tuple[tuple[str, tuple[tuple[str, ...], ...]], ...] = ()
     truncated = found.truncated
+    if found.kind == "pages" and extracted is not None and extracted.storage_key is not None:
+        stored = storage.StoredObject(
+            extracted.storage_key,
+            extracted.storage_version_id or "",
+            extracted.fingerprint or "",
+            extracted.size_bytes or 0,
+        )
+        document = json.loads(await storage.get(tenant.tenant_id, stored))
+        return PreviewView(
+            found.kind, found.reason, found.page_count, truncated, (), page_lines_of(document)
+        )
     if found.kind == "table" and extracted is not None and extracted.storage_key is not None:
         stored = storage.StoredObject(
             extracted.storage_key,
@@ -485,6 +499,22 @@ async def preview_of(
             )
         sheets = tuple(built)
     return PreviewView(found.kind, found.reason, found.page_count, truncated, sheets)
+
+
+def page_lines_of(
+    document: dict[str, object],
+) -> tuple[tuple[tuple[str, tuple[float, float, float, float]], ...], ...]:
+    """The extraction's line boxes (v3 and later); earlier extractions have none."""
+    pages = cast(list[list[dict[str, object]]], document.get("page_lines") or [])
+    out: list[tuple[tuple[str, tuple[float, float, float, float]], ...]] = []
+    for lines in pages:
+        kept: list[tuple[str, tuple[float, float, float, float]]] = []
+        for line in lines:
+            box = cast(list[float], line.get("box") or [])
+            if len(box) == 4:
+                kept.append((str(line.get("text") or ""), (box[0], box[1], box[2], box[3])))
+        out.append(tuple(kept))
+    return tuple(out)
 
 
 async def preview_page_of(
@@ -522,6 +552,36 @@ async def upload_preview_page(
     ctx: AuthContext, engagement_id: UUID, item_id: UUID, version_id: UUID, page_no: int
 ) -> bytes:
     await _authorised_version(ctx, engagement_id, item_id, version_id)
+    return await preview_page_of(
+        ctx.tenant, evidence_version_id=version_id, inbox_file_id=None, page_no=page_no
+    )
+
+
+# --- A version's preview without its request (TASK-334) ---------------------------------------
+
+
+async def _authorised_any_version(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> None:
+    """`evidence.read` through a request item the version fulfils, or on the engagement for a
+    version no item holds (retrieved ledgers); the version must be the engagement's."""
+    items = await items_of_version(ctx.tenant, version_id)
+    if items:
+        await _authorised_version(ctx, engagement_id, items[0].id, version_id)
+        return
+    engagement = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "evidence.read", engagement.resource())
+    if (await version_view(ctx.tenant, version_id)).engagement_id != engagement_id:
+        raise NotFound("evidence_version")
+
+
+async def version_preview(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> PreviewView:
+    await _authorised_any_version(ctx, engagement_id, version_id)
+    return await preview_of(ctx.tenant, evidence_version_id=version_id, inbox_file_id=None)
+
+
+async def version_preview_page(
+    ctx: AuthContext, engagement_id: UUID, version_id: UUID, page_no: int
+) -> bytes:
+    await _authorised_any_version(ctx, engagement_id, version_id)
     return await preview_page_of(
         ctx.tenant, evidence_version_id=version_id, inbox_file_id=None, page_no=page_no
     )

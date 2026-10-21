@@ -8979,6 +8979,42 @@
         "title": "OverdueCountOut",
         "type": "object"
       },
+      "PageLineOut": {
+        "properties": {
+          "box": {
+            "cls": "internal",
+            "maxItems": 4,
+            "minItems": 4,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Box",
+            "type": "array"
+          },
+          "text": {
+            "cls": "restricted",
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "box"
+        ],
+        "title": "PageLineOut",
+        "type": "object"
+      },
       "PassedEntryOut": {
         "properties": {
           "accounts": {
@@ -9204,6 +9240,18 @@
             "cls": "internal",
             "title": "Page Count",
             "type": "integer"
+          },
+          "page_lines": {
+            "cls": "restricted",
+            "default": [],
+            "items": {
+              "items": {
+                "$ref": "#/components/schemas/PageLineOut"
+              },
+              "type": "array"
+            },
+            "title": "Page Lines",
+            "type": "array"
           },
           "reason": {
             "anyOf": [
@@ -12636,6 +12684,42 @@
         "title": "SnapshotOut",
         "type": "object"
       },
+      "SourceOut": {
+        "properties": {
+          "box": {
+            "cls": "internal",
+            "maxItems": 4,
+            "minItems": 4,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Box",
+            "type": "array"
+          },
+          "page": {
+            "cls": "internal",
+            "title": "Page",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "page",
+          "box"
+        ],
+        "title": "SourceOut",
+        "type": "object"
+      },
       "SpendOut": {
         "properties": {
           "agent_id": {
@@ -12938,6 +13022,34 @@
             "title": "Amount",
             "type": "string"
           },
+          "box": {
+            "anyOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Box"
+          },
           "description": {
             "cls": "confidential",
             "title": "Description",
@@ -13189,6 +13301,21 @@
             "cls": "internal",
             "title": "Signs Inferred",
             "type": "boolean"
+          },
+          "sources": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/SourceOut"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Sources"
           },
           "status": {
             "cls": "internal",
@@ -22061,6 +22188,252 @@
           "evidence"
         ],
         "x-abacus-action": "evidence.reject"
+      }
+    },
+    "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/preview": {
+      "get": {
+        "description": "TASK-334: a version's preview without naming its request, so any screen can show where a\nvalue came from.",
+        "operationId": "version_preview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Version Preview Route",
+        "tags": [
+          "evidence"
+        ],
+        "x-abacus-action": "evidence.read"
+      }
+    },
+    "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/preview/pages/{page_no}": {
+      "get": {
+        "operationId": "version_preview_page",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "page_no",
+            "required": true,
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Page No",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Version Preview Page",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Version Preview Page Route",
+        "tags": [
+          "evidence"
+        ],
+        "x-abacus-action": "evidence.read"
       }
     },
     "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/review": {

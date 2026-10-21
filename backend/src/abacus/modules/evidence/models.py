@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import FetchedValue, Numeric
+from sqlalchemy import FetchedValue, Float, Numeric
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from abacus.kernel.db import Base
@@ -223,6 +225,7 @@ class StatementDataset(Base):
     line_count: Mapped[int]
     excluded_count: Mapped[int]
     signs_flipped: Mapped[bool]
+    field_sources: Mapped[dict[str, Any] | None] = mapped_column(JSONB)  # Any: JSON
     approved_by: Mapped[UUID]
     actor_kind: Mapped[str]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
@@ -241,3 +244,4 @@ class StatementTransaction(Base):
     page: Mapped[int | None]
     excluded: Mapped[bool]
     exclusion_reason: Mapped[str | None]
+    box: Mapped[list[float] | None] = mapped_column(ARRAY(Float(asdecimal=False)))  # TASK-334

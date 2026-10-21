@@ -63,6 +63,8 @@ from abacus.modules.evidence.uploads import (
     upload_preview,
     upload_preview_page,
     uploads_for,
+    version_preview,
+    version_preview_page,
 )
 from abacus.modules.identity.api import (
     OWN,
@@ -423,6 +425,13 @@ class SheetOut(BaseModel):
     rows: Annotated[list[list[str]], classified("restricted")]
 
 
+class PageLineOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    text: Annotated[str, classified("restricted")]
+    box: Annotated[tuple[float, float, float, float], classified("internal")]
+
+
 class PreviewOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -431,6 +440,8 @@ class PreviewOut(BaseModel):
     page_count: Annotated[int, classified("internal")]
     truncated: Annotated[bool, classified("internal")]
     sheets: Annotated[list[SheetOut], classified("restricted")]
+    # TASK-334: each PDF page's printed lines and boxes (fractions of the page), from v3 on.
+    page_lines: Annotated[list[list[PageLineOut]], classified("restricted")] = []
 
 
 def _preview_out(view: PreviewView) -> PreviewOut:
@@ -440,6 +451,9 @@ def _preview_out(view: PreviewView) -> PreviewOut:
         page_count=view.page_count,
         truncated=view.truncated,
         sheets=[SheetOut(name=n, rows=[list(r) for r in rows]) for n, rows in view.sheets],
+        page_lines=[
+            [PageLineOut(text=text, box=box) for text, box in page] for page in view.page_lines
+        ],
     )
 
 
@@ -483,6 +497,29 @@ async def upload_preview_page_route(
     return _png_response(
         await upload_preview_page(ctx, engagement_id, item_id, version_id, page_no)
     )
+
+
+@router.get(
+    "/evidence-versions/{version_id}/preview", action="evidence.read", response_model=PreviewOut
+)
+async def version_preview_route(engagement_id: UUID, version_id: UUID, ctx: Ctx) -> PreviewOut:
+    """TASK-334: a version's preview without naming its request, so any screen can show where a
+    value came from."""
+    return _preview_out(await version_preview(ctx, engagement_id, version_id))
+
+
+@router.get(
+    "/evidence-versions/{version_id}/preview/pages/{page_no}",
+    action="evidence.read",
+    response_model=bytes,
+)
+async def version_preview_page_route(
+    engagement_id: UUID,
+    version_id: UUID,
+    page_no: Annotated[int, Path(ge=1, le=50)],
+    ctx: Ctx,
+) -> Response:
+    return _png_response(await version_preview_page(ctx, engagement_id, version_id, page_no))
 
 
 @router.get("/inbox/{file_id}/preview", action="evidence.upload", response_model=PreviewOut)
@@ -551,6 +588,14 @@ class StatementLineOut(BaseModel):
     page: Annotated[int | None, classified("internal")]
     excluded: Annotated[bool, classified("internal")]
     exclusion_reason: Annotated[str | None, classified("confidential")]
+    box: Annotated[tuple[float, float, float, float] | None, classified("internal")] = None
+
+
+class SourceOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    page: Annotated[int, classified("internal")]
+    box: Annotated[tuple[float, float, float, float], classified("internal")]
 
 
 class ReconciliationOut(BaseModel):
@@ -587,6 +632,7 @@ class StatementOut(BaseModel):
     reconciliation: Annotated[ReconciliationOut, classified("confidential")]
     approved_by_name: Annotated[str | None, classified("internal")]
     approved_at: Annotated[datetime | None, classified("internal")]
+    sources: Annotated[dict[str, SourceOut] | None, classified("internal")] = None
 
 
 def _decisions(body: StatementDecisionsBody) -> Decisions:

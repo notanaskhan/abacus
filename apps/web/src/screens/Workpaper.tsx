@@ -21,6 +21,7 @@ import { Link } from "@tanstack/react-router";
 import { type JSX, type KeyboardEvent, useState } from "react";
 import { errorMessage } from "../api";
 import { groupDigits } from "./amounts";
+import { SourceHover } from "./SourceHover";
 import { openAnchors, ReviewableNotes } from "./ReviewableNotes";
 import { initials, LEVEL_SHORT, statusWord } from "./Workpapers";
 
@@ -61,6 +62,12 @@ const EDITORS = new Set(["engagement_partner", "manager", "senior", "staff"]);
 export function rowCount(cells: { cell_key: string }[]): number {
   const last = Math.max(0, ...cells.map((c) => Number(/\d+$/.exec(c.cell_key)?.[0] ?? 0)));
   return Math.max(MIN_ROWS, last + 5);
+}
+
+/** "Page 2" (or "p. 2") in a typed locator, so the source opens there (TASK-334). */
+export function pageOf(locator: string | null | undefined): number | undefined {
+  const m = /\bp(?:age|\.)?\s*(\d{1,3})\b/i.exec(locator ?? "");
+  return m !== null ? Number(m[1]) : undefined;
 }
 
 /** What a cell shows: the computed number, text, or the formula's error code. */
@@ -392,7 +399,13 @@ export function Workpaper({
                   <span className="mr-1.5 inline-flex size-[16px] items-center justify-center rounded-full bg-accent-soft text-[10.5px] font-medium tabular-nums">
                     {i + 1}
                   </span>
-                  {c.locator ?? "Source document"}
+                  <SourceHover
+                    engagementId={engagementId}
+                    source={{ versionId: c.evidence_version_id, page: pageOf(c.locator) }}
+                    label={c.locator ?? "the source document"}
+                  >
+                    {c.locator ?? "Source document"}
+                  </SourceHover>
                   <span className="text-ink-3">{` · ${c.added_by_name}`}</span>
                 </li>
               ))}

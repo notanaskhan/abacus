@@ -37,7 +37,10 @@ from abacus.modules.evidence.document_fields import (
     statement_fields,
 )
 
-EXTRACTOR_VERSION: Final = "v2"  # v2 (TASK-323): PDFium text fallback; no text is needs_ocr
+# v2 (TASK-323): PDFium text fallback; no text is needs_ocr. v3 (TASK-334): each PDF text line's
+# box on its page, so a value can point back to where it was printed.
+EXTRACTOR_VERSION: Final = "v3"
+MAX_PAGE_LINES: Final = 2000
 MAX_PAGES: Final = 200
 MAX_ROWS: Final = 60_000
 MAX_CELL: Final = 500
@@ -58,6 +61,15 @@ class Table:
 
 
 @dataclass(frozen=True)
+class TextLine:
+    """A printed line and its box on the page as fractions of the page (x0, top, x1, bottom),
+    so it maps onto the page image at any size."""
+
+    text: str
+    box: tuple[float, float, float, float]
+
+
+@dataclass(frozen=True)
 class Extraction:
     status: Status
     reason: str | None = None  # scanned, encrypted, damaged, too_large, crashed, legacy_format…
@@ -69,6 +81,9 @@ class Extraction:
     amounts: tuple[Decimal, ...] = field(default=())
     statement: Statement | None = None
     aging: Aging | None = None
+    page_lines: tuple[
+        tuple[TextLine, ...], ...
+    ] = ()  # TASK-334: PDF only, when pdfplumber read it
 
 
 def _text(value: object) -> str:
@@ -124,7 +139,12 @@ def _pdfium_pages(content: bytes) -> tuple[int, list[str]] | None:
         document.close()
 
 
-def _from_pages(count: int, pages: Sequence[str], tables: Sequence[Table]) -> Extraction:
+def _from_pages(
+    count: int,
+    pages: Sequence[str],
+    tables: Sequence[Table],
+    page_lines: Sequence[tuple[TextLine, ...]] = (),
+) -> Extraction:
     text = "\n".join(pages)
     return Extraction(
         "extracted",
@@ -135,7 +155,29 @@ def _from_pages(count: int, pages: Sequence[str], tables: Sequence[Table]) -> Ex
         dates=dates_in(text),
         amounts=amounts_in(text),
         statement=statement_fields(text),
+        page_lines=tuple(page_lines),
     )
+
+
+def _lines_of(page: object) -> tuple[TextLine, ...]:
+    """pdfplumber's text lines with their boxes as fractions of the page."""
+    width = float(getattr(page, "width", 0) or 0)
+    height = float(getattr(page, "height", 0) or 0)
+    if width <= 0 or height <= 0:
+        return ()
+    found = cast(list[dict[str, object]], page.extract_text_lines())  # type: ignore[attr-defined]  # pdfplumber Page
+    out: list[TextLine] = []
+    for line in found[:MAX_PAGE_LINES]:
+        x0, top = float(cast(float, line["x0"])), float(cast(float, line["top"]))
+        x1, bottom = float(cast(float, line["x1"])), float(cast(float, line["bottom"]))
+        box = (
+            round(max(0.0, x0 / width), 4),
+            round(max(0.0, top / height), 4),
+            round(min(1.0, x1 / width), 4),
+            round(min(1.0, bottom / height), 4),
+        )
+        out.append(TextLine(_text(line.get("text")), box))
+    return tuple(out)
 
 
 def _fallback(content: bytes, reason: str, count: int | None) -> Extraction:
@@ -166,8 +208,10 @@ def _pdf(content: bytes) -> Extraction:
             count = len(pdf.pages)
             pages: list[str] = []
             tables: list[Table] = []
+            lines: list[tuple[TextLine, ...]] = []
             for number, page in enumerate(pdf.pages[:MAX_PAGES], start=1):
                 pages.append((page.extract_text() or "")[:MAX_PAGE_TEXT])
+                lines.append(_lines_of(page))
                 for found in page.extract_tables():
                     rows = tuple(tuple(_text(c) for c in row) for row in found)
                     tables.append(Table(None, number, rows))
@@ -175,7 +219,7 @@ def _pdf(content: bytes) -> Extraction:
             return _fallback(content, _reason(exc), None)
     if not any(p.strip() for p in pages):
         return _fallback(content, "encrypted" if encrypted else "no_text", count)
-    return _from_pages(count, pages, tables)
+    return _from_pages(count, pages, tables, lines)
 
 
 def _sheet_rows_xlsx(content: bytes) -> list[tuple[str, list[list[object]]]]:
