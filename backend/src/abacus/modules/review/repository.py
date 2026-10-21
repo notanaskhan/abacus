@@ -8,7 +8,7 @@ from uuid import UUID
 from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from abacus.modules.review.models import SignOff
+from abacus.modules.review.models import ReviewableNote, ReviewableNoteEvent, SignOff
 
 
 async def sign_offs_of(
@@ -32,3 +32,68 @@ async def sign_offs_of(
 
 async def insert_sign_off(session: AsyncSession, **values: object) -> None:
     await session.execute(insert(SignOff).values(**values))
+
+
+async def notes_of(
+    session: AsyncSession,
+    engagement_id: UUID,
+    target_type: str | None = None,
+    target_id: UUID | None = None,
+) -> Sequence[ReviewableNote]:
+    """Oldest first (LIST_EXEMPT: the caller authorised on the engagement)."""
+    query = select(ReviewableNote).where(ReviewableNote.engagement_id == engagement_id)
+    if target_type is not None:
+        query = query.where(ReviewableNote.target_type == target_type)
+    if target_id is not None:
+        query = query.where(ReviewableNote.target_id == target_id)
+    return (
+        (await session.execute(query.order_by(ReviewableNote.created_at, ReviewableNote.id)))
+        .scalars()
+        .all()
+    )
+
+
+async def note_events_of(
+    session: AsyncSession, note_ids: Sequence[UUID]
+) -> Sequence[ReviewableNoteEvent]:
+    """Oldest first (LIST_EXEMPT: notes read after authorising on their engagement)."""
+    if not note_ids:
+        return []
+    return (
+        (
+            await session.execute(
+                select(ReviewableNoteEvent)
+                .where(ReviewableNoteEvent.note_id.in_(note_ids))
+                .order_by(ReviewableNoteEvent.created_at, ReviewableNoteEvent.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def get_note(session: AsyncSession, note_id: UUID) -> ReviewableNote | None:
+    return await session.get(ReviewableNote, note_id)
+
+
+async def insert_note(session: AsyncSession, **values: object) -> UUID:
+    return (
+        await session.execute(insert(ReviewableNote).values(**values).returning(ReviewableNote.id))
+    ).scalar_one()
+
+
+async def insert_note_event(session: AsyncSession, **values: object) -> None:
+    await session.execute(insert(ReviewableNoteEvent).values(**values))
+
+
+async def notes_of_target(session: AsyncSession, target_id: UUID) -> Sequence[ReviewableNote]:
+    """LIST_EXEMPT: inside the owner's unit of work, after it authorised the sign-off."""
+    return (
+        (
+            await session.execute(
+                select(ReviewableNote).where(ReviewableNote.target_id == target_id)
+            )
+        )
+        .scalars()
+        .all()
+    )

@@ -10,6 +10,7 @@ import {
   signOffPrepareMutation,
   signOffReviewMutation,
   teamOptions,
+  reviewNotesOptions,
   workpaperDetailOptions,
   workpaperDetailQueryKey,
   workpapersQueryKey,
@@ -20,6 +21,7 @@ import { Link } from "@tanstack/react-router";
 import { type JSX, type KeyboardEvent, useState } from "react";
 import { errorMessage } from "../api";
 import { groupDigits } from "./amounts";
+import { openAnchors, ReviewableNotes } from "./ReviewableNotes";
 import { initials, LEVEL_SHORT, statusWord } from "./Workpapers";
 
 // SPEC-308 (TASK-319): one working paper. A grid (A-H) with a formula bar; the server computes
@@ -96,18 +98,29 @@ export function Workpaper({
   const fail = (e: unknown): void => {
     const code = errorMessage(e);
     toast.show(
-      code === "not_prepared"
-        ? "The preparer signs first."
-        : code === "preparer_cannot_review"
-          ? "Someone other than the preparer reviews."
-          : code === "already_signed"
-            ? "You already signed this content at that level."
-            : code === "forbidden"
-              ? "Your role can't do that on this paper."
-              : code,
+      code === "review_notes_open"
+        ? "Clear the open review notes before signing as a reviewer."
+        : code === "not_prepared"
+          ? "The preparer signs first."
+          : code === "preparer_cannot_review"
+            ? "Someone other than the preparer reviews."
+            : code === "already_signed"
+              ? "You already signed this content at that level."
+              : code === "forbidden"
+                ? "Your role can't do that on this paper."
+                : code,
     );
   };
   const save = useMutation({ ...setCellsMutation(), onSuccess: fresh, onError: fail });
+  // SPEC-313: cells with an open review note get a marker (shares the panel's query).
+  const notes = useQuery({
+    ...reviewNotesOptions({
+      path: { engagement_id: engagementId },
+      query: { target_type: "workpaper", target_id: workpaperId },
+    }),
+    retry: false,
+  });
+  const noted = openAnchors(notes.data);
   if (detail.isPending) return <Skeleton className="h-96" />;
   if (detail.isError) {
     return <Alert title="This working paper isn't available">{errorMessage(detail.error)}</Alert>;
@@ -333,6 +346,12 @@ export function Workpaper({
                                 {cell?.tickmarks.map((t) => MARK[t]).join(" ")}
                               </span>
                             )}
+                            {noted.has(key) && (
+                              <span
+                                aria-label="Has an open review note"
+                                className="absolute top-0 left-0 size-0 border-t-[6px] border-r-[6px] border-t-danger border-r-transparent"
+                              />
+                            )}
                             {cited && (
                               <span
                                 aria-label="Has a source"
@@ -379,6 +398,18 @@ export function Workpaper({
               ))}
             </ul>
           )}
+        </section>
+        <section aria-labelledby="wp-notes" className="rounded-pane bg-card p-3 shadow-e2">
+          <h3 id="wp-notes" className="mb-1 text-[13px] font-medium">
+            Review notes
+          </h3>
+          <ReviewableNotes
+            engagementId={engagementId}
+            targetType="workpaper"
+            targetId={workpaperId}
+            anchor={selected}
+            role={role}
+          />
         </section>
         <section aria-labelledby="wp-tb" className="rounded-pane bg-card p-3 shadow-e2">
           <h3 id="wp-tb" className="mb-1 text-[13px] font-medium">

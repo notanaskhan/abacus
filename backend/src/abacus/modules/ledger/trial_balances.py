@@ -713,3 +713,31 @@ async def candidates(
         changed, net = compare_lines(current_rows, mine)
         out.append(Candidate(_summary(s), changed, net))
     return out
+
+
+@dataclass(frozen=True)
+class TbDigest:
+    """What a trial balance sign-off approves (SPEC-313): the current version's fingerprint and
+    every account's area and WP ref. Tie-out definitions are not in it yet."""
+
+    summary: TrialBalanceSummary
+    digest: str
+
+
+async def review_digests(tenant: TenantContext, engagement_id: UUID) -> list[TbDigest]:
+    async with tenant_session(tenant) as session:
+        out: list[TbDigest] = []
+        for tb in await trial_balances_of(session, engagement_id):
+            current = next(
+                v
+                for v in await versions_of(session, tb.id)
+                if v.version_no == tb.current_version_no
+            )
+            notes = sorted(
+                (a.account_code, a.area or "", a.wp_ref or "")
+                for a in await newest_annotations(session, tb.id)
+                if a.area or a.wp_ref
+            )
+            text = current.content_fingerprint + "|" + "|".join(":".join(n) for n in notes)
+            out.append(TbDigest(_tb_summary(tb), hashlib.sha256(text.encode()).hexdigest()))
+    return out

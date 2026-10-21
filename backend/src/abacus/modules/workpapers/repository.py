@@ -139,3 +139,18 @@ async def next_version_no(session: AsyncSession, workpaper_id: UUID) -> int:
 
 async def insert_version(session: AsyncSession, **values: object) -> None:
     await session.execute(insert(WorkpaperVersion).values(**values))
+
+
+async def engagement_papers(session: AsyncSession, engagement_id: UUID) -> Sequence[Workpaper]:
+    """By code (LIST_EXEMPT: for the review matrix and G5, after the caller authorised)."""
+    return (
+        (
+            await session.execute(
+                select(Workpaper)
+                .where(Workpaper.engagement_id == engagement_id)
+                .order_by(Workpaper.code)
+            )
+        )
+        .scalars()
+        .all()
+    )

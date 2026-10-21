@@ -19,7 +19,12 @@ from abacus.kernel.errors import DomainConflict, DomainInvalid
 from abacus.kernel.uow import Ref, Target, UnitOfWork
 from abacus.modules.identity.api import AuthContext, Resource, authorise
 from abacus.modules.review.models import SignOff
-from abacus.modules.review.repository import insert_sign_off, sign_offs_of
+from abacus.modules.review.repository import (
+    insert_sign_off,
+    note_events_of,
+    notes_of_target,
+    sign_offs_of,
+)
 
 LEVELS: Final = {1: "preparer", 2: "reviewer", 3: "manager", 4: "partner", 5: "eqr"}
 _ACTIONS: Final = {
@@ -43,6 +48,12 @@ class NotPrepared(DomainConflict):
 
 class PreparerCannotReview(DomainConflict):
     code = "preparer_cannot_review"
+
+
+class NotesOpen(DomainConflict):
+    """A reviewer signs (L2 and above) only when the target's notes are cleared."""
+
+    code = "review_notes_open"
 
 
 class AlreadySigned(DomainConflict):
@@ -88,6 +99,16 @@ async def sign_off_states(
     }
 
 
+async def _open_notes(tx: UnitOfWork, target_id: UUID) -> bool:
+    notes = await notes_of_target(tx.session, target_id)
+    events = await note_events_of(tx.session, [n.id for n in notes])
+    for n in notes:
+        mine = [e for e in events if e.note_id == n.id]
+        if not mine or mine[-1].kind != "cleared":
+            return True
+    return False
+
+
 async def record_sign_off(
     tx: UnitOfWork,
     ctx: AuthContext,
@@ -106,6 +127,8 @@ async def record_sign_off(
     mine = current[level - 1]
     if mine.signed_by is not None and not mine.stale and mine.signed_by == ctx.user_id:
         raise AlreadySigned(str(level))
+    if level > 1 and await _open_notes(tx, target_id):
+        raise NotesOpen(str(target_id))
     if level > 1:
         preparer = current[0]
         if preparer.signed_by is None or preparer.stale:

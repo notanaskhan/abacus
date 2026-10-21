@@ -13,7 +13,8 @@ from dataclasses import dataclass
 from typing import Final
 from uuid import UUID
 
-from abacus.kernel.errors import DomainConflict, DomainInvalid
+from abacus.kernel.db import TenantContext
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import uow
 from abacus.modules.engagements.api import assurance_item_id, get_ref, lock_ref
 from abacus.modules.identity.api import AuthContext, authorise, engagement_team
@@ -29,8 +30,10 @@ from abacus.modules.ledger.api import (
     candidates,
     engagement_trial_balances,
     leadsheets,
+    review_digests,
     trial_balance_view,
 )
+from abacus.modules.review.api import LevelState, Reviewable, record_sign_off, sign_off_states
 
 _WP_REF: Final = re.compile(r"^[A-Z0-9][A-Z0-9.-]{0,19}$")
 
@@ -183,4 +186,43 @@ async def set_annotations(
             edits=clean,
             reason=note,
             user_id=ctx.user_id,
+        )
+
+
+# --- Review (SPEC-313; TASK-325) --------------------------------------------------------------
+
+TARGET = "trial_balance"
+
+
+async def tb_reviewables(tenant: TenantContext, engagement_id: UUID) -> list[Reviewable]:
+    """Each trial balance with what a sign-off approves, for the matrix and G5."""
+    return [
+        Reviewable(
+            TARGET,
+            d.summary.id,
+            f"TB {d.summary.period_end.isoformat()}",
+            f"Trial balance ({d.summary.label}, v{d.summary.current_version_no})",
+            d.digest,
+            True,
+        )
+        for d in await review_digests(tenant, engagement_id)
+    ]
+
+
+async def tb_levels(ctx: AuthContext, engagement_id: UUID, tb_id: UUID) -> list[LevelState]:
+    digests = {d.summary.id: d.digest for d in await review_digests(ctx.tenant, engagement_id)}
+    if tb_id not in digests:
+        raise NotFound("trial_balance")
+    return (await sign_off_states(ctx.tenant, TARGET, [tb_id], {tb_id: digests[tb_id]}))[tb_id]
+
+
+async def sign_off_tb(ctx: AuthContext, engagement_id: UUID, tb_id: UUID, level: int) -> None:
+    """Sign the trial balance's current version and annotations at a level."""
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        digests = {d.summary.id: d.digest for d in await review_digests(ctx.tenant, engagement_id)}
+        if tb_id not in digests:
+            raise NotFound("trial_balance")
+        await record_sign_off(
+            tx, ctx, ref.resource(), engagement_id, TARGET, tb_id, level, digests[tb_id]
         )

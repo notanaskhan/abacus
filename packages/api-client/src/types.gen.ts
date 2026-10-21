@@ -3674,6 +3674,70 @@ export type MaterialityVersionOut = {
 };
 
 /**
+ * MatrixLevelOut
+ */
+export type MatrixLevelOut = {
+    /**
+     * Level
+     */
+    level: number;
+    /**
+     * Name
+     */
+    name: 'preparer' | 'reviewer' | 'manager' | 'partner' | 'eqr';
+    /**
+     * Required
+     */
+    required: boolean;
+    /**
+     * Signed By Name
+     */
+    signed_by_name: string | null;
+    /**
+     * Stale
+     */
+    stale: boolean;
+};
+
+/**
+ * MatrixRowOut
+ */
+export type MatrixRowOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Levels
+     */
+    levels: Array<MatrixLevelOut>;
+    /**
+     * Missing
+     */
+    missing: Array<number>;
+    /**
+     * Open Notes
+     */
+    open_notes: number;
+    /**
+     * Status
+     */
+    status: 'not_started' | 'needs_sign_off' | 'changed_after_signoff' | 'open_notes' | 'complete';
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Target Type
+     */
+    target_type: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * MeOut
  */
 export type MeOut = {
@@ -3834,6 +3898,38 @@ export type NoteEntryOut = {
      * Name
      */
     name: string;
+};
+
+/**
+ * NoteEventBody
+ */
+export type NoteEventBody = {
+    /**
+     * Body
+     */
+    body?: string | null;
+};
+
+/**
+ * NoteEventOut
+ */
+export type NoteEventOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Body
+     */
+    body: string | null;
+    /**
+     * By Name
+     */
+    by_name: string;
+    /**
+     * Kind
+     */
+    kind: 'responded' | 'cleared' | 'reopened';
 };
 
 /**
@@ -4385,6 +4481,28 @@ export type QueueEntryOut = {
 };
 
 /**
+ * RaiseNoteBody
+ */
+export type RaiseNoteBody = {
+    /**
+     * Anchor
+     */
+    anchor?: string | null;
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Target Type
+     */
+    target_type: string;
+};
+
+/**
  * ReadAllOut
  */
 export type ReadAllOut = {
@@ -4874,6 +4992,74 @@ export type ReviewFlagOut = {
      * Rationale
      */
     rationale: string;
+};
+
+/**
+ * ReviewMatrixOut
+ */
+export type ReviewMatrixOut = {
+    /**
+     * Blockers
+     */
+    blockers: Array<string>;
+    /**
+     * Gate Met
+     */
+    gate_met: boolean;
+    /**
+     * Rows
+     */
+    rows: Array<MatrixRowOut>;
+};
+
+/**
+ * ReviewNoteOut
+ */
+export type ReviewNoteOut = {
+    /**
+     * Anchor
+     */
+    anchor: string | null;
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Events
+     */
+    events: Array<NoteEventOut>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Raised At
+     */
+    raised_at: string;
+    /**
+     * Raised By Me
+     */
+    raised_by_me: boolean;
+    /**
+     * Raised By Name
+     */
+    raised_by_name: string;
+    /**
+     * Status
+     */
+    status: 'open' | 'responded' | 'cleared';
+    /**
+     * Target Code
+     */
+    target_code: string | null;
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Target Type
+     */
+    target_type: string;
 };
 
 /**
@@ -6064,6 +6250,32 @@ export type TakenOut = {
 };
 
 /**
+ * TbLevelOut
+ */
+export type TbLevelOut = {
+    /**
+     * Level
+     */
+    level: number;
+    /**
+     * Name
+     */
+    name: 'preparer' | 'reviewer' | 'manager' | 'partner' | 'eqr';
+    /**
+     * Signed At
+     */
+    signed_at: string | null;
+    /**
+     * Signed By Name
+     */
+    signed_by_name: string | null;
+    /**
+     * Stale
+     */
+    stale: boolean;
+};
+
+/**
  * TbLineOut
  */
 export type TbLineOut = {
@@ -6615,6 +6827,10 @@ export type TrialBalanceDetailOut = {
      * Pending Entries
      */
     pending_entries: number;
+    /**
+     * Sign Offs
+     */
+    sign_offs: Array<TbLevelOut>;
     trial_balance: TrialBalanceOut;
     version: TbVersionOut;
     /**
@@ -15775,6 +15991,349 @@ export type ReviewFlagsResponses = {
 
 export type ReviewFlagsResponse = ReviewFlagsResponses[keyof ReviewFlagsResponses];
 
+export type ReviewMatrixData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/review-matrix';
+};
+
+export type ReviewMatrixErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ReviewMatrixError = ReviewMatrixErrors[keyof ReviewMatrixErrors];
+
+export type ReviewMatrixResponses = {
+    /**
+     * Successful Response
+     */
+    200: ReviewMatrixOut;
+};
+
+export type ReviewMatrixResponse = ReviewMatrixResponses[keyof ReviewMatrixResponses];
+
+export type ReviewNotesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: {
+        /**
+         * Target Type
+         */
+        target_type?: string | null;
+        /**
+         * Target Id
+         */
+        target_id?: string | null;
+    };
+    url: '/v1/engagements/{engagement_id}/review-notes';
+};
+
+export type ReviewNotesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ReviewNotesError = ReviewNotesErrors[keyof ReviewNotesErrors];
+
+export type ReviewNotesResponses = {
+    /**
+     * Response Review Notes
+     *
+     * Successful Response
+     */
+    200: Array<ReviewNoteOut>;
+};
+
+export type ReviewNotesResponse = ReviewNotesResponses[keyof ReviewNotesResponses];
+
+export type RaiseReviewNoteData = {
+    body: RaiseNoteBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/review-notes';
+};
+
+export type RaiseReviewNoteErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RaiseReviewNoteError = RaiseReviewNoteErrors[keyof RaiseReviewNoteErrors];
+
+export type RaiseReviewNoteResponses = {
+    /**
+     * Response Raise Review Note
+     *
+     * Successful Response
+     */
+    201: Array<ReviewNoteOut>;
+};
+
+export type RaiseReviewNoteResponse = RaiseReviewNoteResponses[keyof RaiseReviewNoteResponses];
+
+export type ClearReviewNoteData = {
+    body: NoteEventBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Note Id
+         */
+        note_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/review-notes/{note_id}/clear';
+};
+
+export type ClearReviewNoteErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ClearReviewNoteError = ClearReviewNoteErrors[keyof ClearReviewNoteErrors];
+
+export type ClearReviewNoteResponses = {
+    /**
+     * Response Clear Review Note
+     *
+     * Successful Response
+     */
+    201: Array<ReviewNoteOut>;
+};
+
+export type ClearReviewNoteResponse = ClearReviewNoteResponses[keyof ClearReviewNoteResponses];
+
+export type ReopenReviewNoteData = {
+    body: NoteEventBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Note Id
+         */
+        note_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/review-notes/{note_id}/reopen';
+};
+
+export type ReopenReviewNoteErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ReopenReviewNoteError = ReopenReviewNoteErrors[keyof ReopenReviewNoteErrors];
+
+export type ReopenReviewNoteResponses = {
+    /**
+     * Response Reopen Review Note
+     *
+     * Successful Response
+     */
+    201: Array<ReviewNoteOut>;
+};
+
+export type ReopenReviewNoteResponse = ReopenReviewNoteResponses[keyof ReopenReviewNoteResponses];
+
+export type RespondReviewNoteData = {
+    body: NoteEventBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Note Id
+         */
+        note_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/review-notes/{note_id}/respond';
+};
+
+export type RespondReviewNoteErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RespondReviewNoteError = RespondReviewNoteErrors[keyof RespondReviewNoteErrors];
+
+export type RespondReviewNoteResponses = {
+    /**
+     * Response Respond Review Note
+     *
+     * Successful Response
+     */
+    201: Array<ReviewNoteOut>;
+};
+
+export type RespondReviewNoteResponse = RespondReviewNoteResponses[keyof RespondReviewNoteResponses];
+
 export type ReviewQueueData = {
     body?: never;
     headers?: {
@@ -17318,6 +17877,286 @@ export type LeadsheetsResponses = {
 };
 
 export type LeadsheetsResponse = LeadsheetsResponses[keyof LeadsheetsResponses];
+
+export type TbSignOffEqrData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/sign-offs/eqr';
+};
+
+export type TbSignOffEqrErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type TbSignOffEqrError = TbSignOffEqrErrors[keyof TbSignOffEqrErrors];
+
+export type TbSignOffEqrResponses = {
+    /**
+     * Successful Response
+     */
+    201: TrialBalanceDetailOut;
+};
+
+export type TbSignOffEqrResponse = TbSignOffEqrResponses[keyof TbSignOffEqrResponses];
+
+export type TbSignOffManagerData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/sign-offs/manager';
+};
+
+export type TbSignOffManagerErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type TbSignOffManagerError = TbSignOffManagerErrors[keyof TbSignOffManagerErrors];
+
+export type TbSignOffManagerResponses = {
+    /**
+     * Successful Response
+     */
+    201: TrialBalanceDetailOut;
+};
+
+export type TbSignOffManagerResponse = TbSignOffManagerResponses[keyof TbSignOffManagerResponses];
+
+export type TbSignOffPartnerData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/sign-offs/partner';
+};
+
+export type TbSignOffPartnerErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type TbSignOffPartnerError = TbSignOffPartnerErrors[keyof TbSignOffPartnerErrors];
+
+export type TbSignOffPartnerResponses = {
+    /**
+     * Successful Response
+     */
+    201: TrialBalanceDetailOut;
+};
+
+export type TbSignOffPartnerResponse = TbSignOffPartnerResponses[keyof TbSignOffPartnerResponses];
+
+export type TbSignOffPrepareData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/sign-offs/prepare';
+};
+
+export type TbSignOffPrepareErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type TbSignOffPrepareError = TbSignOffPrepareErrors[keyof TbSignOffPrepareErrors];
+
+export type TbSignOffPrepareResponses = {
+    /**
+     * Successful Response
+     */
+    201: TrialBalanceDetailOut;
+};
+
+export type TbSignOffPrepareResponse = TbSignOffPrepareResponses[keyof TbSignOffPrepareResponses];
+
+export type TbSignOffReviewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/sign-offs/review';
+};
+
+export type TbSignOffReviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type TbSignOffReviewError = TbSignOffReviewErrors[keyof TbSignOffReviewErrors];
+
+export type TbSignOffReviewResponses = {
+    /**
+     * Successful Response
+     */
+    201: TrialBalanceDetailOut;
+};
+
+export type TbSignOffReviewResponse = TbSignOffReviewResponses[keyof TbSignOffReviewResponses];
 
 export type AdoptTbVersionData = {
     body: VersionBody;
