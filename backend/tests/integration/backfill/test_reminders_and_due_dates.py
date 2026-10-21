@@ -110,9 +110,7 @@ async def test_ac3_each_contact_gets_one_draft_listing_their_overdue_items(
 ) -> None:
     site = chase.site
     first = await seed.item(site, "Bank statement", due_on=chase.days_ago(10))
-    second = await seed.item(
-        site, "Debt schedule", status="needs_revision", due_on=chase.days_ago(3)
-    )
+    second = await seed.item(site, "Debt schedule", status="returned", due_on=chase.days_ago(3))
     mine = await seed.item(
         site, "Payroll register", due_on=chase.days_ago(5), assignee=chase.contributor
     )
@@ -131,7 +129,7 @@ async def test_ac3_each_contact_gets_one_draft_listing_their_overdue_items(
     assert mailbox.sent == []  # nothing goes out by itself
 
 
-@pytest.mark.parametrize("status", ["received", "ready_for_review", "accepted"])
+@pytest.mark.parametrize("status", ["uploaded", "received"])  # v2: ready_for_review -> uploaded
 async def test_ac3_an_item_that_is_not_open_or_sent_back_is_never_chased(
     chase: Engagement, seed: Seeder, status: str
 ) -> None:

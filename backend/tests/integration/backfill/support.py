@@ -231,7 +231,7 @@ class Seeder:
         site: Site,
         description: str,
         *,
-        status: str = "open",
+        status: str = "requested",  # F-03-T15: asked of the client (was `open`)
         due_on: date | None = None,
         assignee: Person | None = None,
     ) -> uuid.UUID:
