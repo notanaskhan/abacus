@@ -35,6 +35,15 @@ import {
   UnderlineTabsSpecimen,
   ViewToggleSpecimen,
 } from "./tabs";
+import {
+  AppShellSpecimen,
+  PaneSpecimen,
+  PortalToolbarSpecimen,
+  RecordHeaderSpecimen,
+  TabsbarSpecimen,
+  TimelineSpecimen,
+  ToolbarSpecimen,
+} from "./shell";
 import { CheckboxSpecimen, RadioSpecimen, ToggleSpecimen } from "./toggles";
 
 // The specimen registry behind the /components gallery (SPEC-048, F-05-T09). This entry is
@@ -106,6 +115,24 @@ export const SPECIMENS: readonly Specimen[] = [
   { id: "c-13-fieldset", kit: "C-13", title: "Fieldset", Component: FieldsetSpecimen },
   { id: "c-00-menu", kit: "C-00", title: "Menu", Component: MenuSpecimen },
   { id: "c-00-tooltip", kit: "C-00", title: "Tooltip", Component: TooltipSpecimen },
+  // Shell L1 (F-05-T18)
+  { id: "c-00-toolbar", kit: "C-00", title: "Toolbar", Component: ToolbarSpecimen },
+  {
+    id: "c-00-portal-toolbar",
+    kit: "C-00",
+    title: "PortalToolbar",
+    Component: PortalToolbarSpecimen,
+  },
+  {
+    id: "c-00-record-header",
+    kit: "C-00",
+    title: "RecordHeader",
+    Component: RecordHeaderSpecimen,
+  },
+  { id: "c-00-tabsbar", kit: "C-00", title: "Tabsbar", Component: TabsbarSpecimen },
+  { id: "c-00-pane", kit: "C-00", title: "Pane and PaneHeader", Component: PaneSpecimen },
+  { id: "c-23-timeline", kit: "C-23", title: "Timeline", Component: TimelineSpecimen },
+  { id: "c-00-app-shell", kit: "C-00", title: "AppShell", Component: AppShellSpecimen },
 ];
 
 export function specimenById(id: string): Specimen | undefined {

@@ -174,6 +174,9 @@ export {
   viaAgent,
 } from "./format";
 export { CommandPalette, type PaletteGroup, type PaletteItem } from "./components/command-palette";
+// The shell's L1 (F-05-T18): AppShell, Toolbar and its nav overflow, PortalToolbar, RecordHeader,
+// Tabsbar, Pane and PaneHeader, Timeline.
+export * from "./layout";
 export {
   DISC_LABEL,
   DISC_STATES,
