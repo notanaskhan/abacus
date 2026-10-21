@@ -34,6 +34,7 @@ import { AIReviewPanel } from "./AIReviewPanel";
 import { ClientGuidance } from "./ClientGuidance";
 import { CommentThread } from "./CommentThread";
 import { FirmChecksPanel } from "./CheckResults";
+import { StatementReview } from "./StatementReview";
 import { DocumentKindSelect } from "./DocumentKindSelect";
 import { EvidencePreview } from "./EvidencePreview";
 import { confidencePercent } from "../board/join";
@@ -42,6 +43,8 @@ import { DecisionActions } from "./DecisionActions";
 import { statusOf } from "./engagementLabels";
 
 const DECIDERS = new Set(["engagement_partner", "manager", "senior"]);
+// SPEC-312 (TASK-324): who approves statement transactions (the server decides; this hides the button).
+const APPROVERS = new Set(["engagement_partner", "manager", "senior", "staff"]);
 const SHARERS = new Set(["engagement_partner", "manager", "senior", "staff"]);
 const DECISION_LABEL: Record<string, string> = {
   accept: "Accepted",
@@ -260,6 +263,16 @@ export function ItemDetail({
             >
               <FirmChecksPanel ids={{ engagementId, itemId, versionId: shown.id }} />
             </Panel>
+            {/* SPEC-312 (TASK-324): a statement's transactions, reconciled, for approval. */}
+            {shown.method === "uploaded" && (
+              <Panel title="Transactions">
+                <StatementReview
+                  key={shown.id}
+                  ids={{ engagementId, itemId, versionId: shown.id }}
+                  canApprove={myRole !== undefined && APPROVERS.has(myRole)}
+                />
+              </Panel>
+            )}
             {/* SPEC-030 AC-6 (TASK-059): the upload reviewer's flags, firm only. */}
             <Panel title="AI review">
               <AIReviewPanel

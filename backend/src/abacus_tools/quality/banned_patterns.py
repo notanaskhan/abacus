@@ -931,6 +931,8 @@ LIST_EXEMPT = frozenset(
         # SPEC-311 (TASK-322): an engagement's entries for the trial balance's layers (the
         # caller authorised `trial_balance.read`) and the SUM (`procedure.read`).
         ("src/abacus/modules/fieldwork/repository.py", "engagement_adjustments"),
+        # SPEC-312 (TASK-324): one approved statement's lines, after `evidence.read` on its item.
+        ("src/abacus/modules/evidence/statement_repository.py", "transactions_of"),
     }
 )
 

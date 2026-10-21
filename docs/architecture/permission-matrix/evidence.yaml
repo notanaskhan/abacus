@@ -61,3 +61,5 @@ actions:
     agent: deny               # ADR-005
   review.assign:           {engagement_partner: allow, manager: allow, agent: deny, independence: required}
   export.create:            {engagement_partner: allow, manager: allow, mfa_recent: required}
+  # --- Statement transactions (SPEC-312; TASK-324) ---
+  statement.approve:        {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # a person approves the reconciled transactions (ADR-005; a database CHECK agrees); reading them follows evidence.read

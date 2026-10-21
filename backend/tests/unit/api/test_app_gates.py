@@ -123,6 +123,8 @@ NOT_CREATING = {
     "/v1/firm/onboarding/dismiss",
     "/v1/engagements/{engagement_id}/independence",  # SPEC-025: returns the setup state
     "/v1/engagements/proposal",  # SPEC-025 (TASK-048): a proposal, nothing stored
+    # SPEC-312 (TASK-324): a statement review's decisions applied, nothing stored
+    "/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/statement/preview",
     # SPEC-027 (TASK-050): pausing and resuming return the agent's state.
     "/v1/engagements/{engagement_id}/agent/pause",
     "/v1/engagements/{engagement_id}/agent/resume",
@@ -238,6 +240,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/checks",  # SPEC-310
         # TASK-323: a password-protected upload saved again without its password
         "/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/unlock",
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/statement/approve",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING
