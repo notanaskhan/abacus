@@ -71,7 +71,7 @@ def test_ac17_staging_may_hold_an_anthropic_api_key(monkeypatch: pytest.MonkeyPa
     strict=True,
     reason="Q-01 bug: SPEC-050 AC-17 says production refuses a `fake` model route, but production "
     "starts on the default route list (TASK-343 deferred it to the first production model "
-    "route, Q-02) (TASK-346 #346)",
+    "route, Q-02) (TASK-352 #205)",
 )
 def test_ac17_production_refuses_a_fake_model_route(monkeypatch: pytest.MonkeyPatch) -> None:
     use_staging(monkeypatch, ABACUS_ENVIRONMENT="production", ABACUS_MODEL_ROUTES='["fake"]')

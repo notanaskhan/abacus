@@ -61,7 +61,7 @@ Observations that are not failures:
 
 ## Open item for the builder
 
-SKIP-001 (ADR-079) requires an issue reference in every `skip` and `xfail` reason. No issue was filed (filing is a public write, not done here), so the three marks cite `#346`, the task number, which is not a real issue. File one issue per finding and replace `#346` in `test_q01_clamd_scanner.py` and `test_q01_settings_validators.py`. SUPPRESS-001 forbids `# noqa: S106`, so the throwaway test credentials for the stubbed AWS clients are a per-file ignore in `backend/pyproject.toml`.
+SKIP-001 (ADR-079) requires an issue reference in every `skip` and `xfail` reason: the clamd tests that need a real scanner cite #204, and the AC-17 fake-route refusal cites #205. The clamd verdict finding (a reply ending in OK read as clean) was fixed in this batch and its xfail removed. SUPPRESS-001 forbids `# noqa: S106`, so the throwaway test credentials for the stubbed AWS clients are a per-file ignore in `backend/pyproject.toml`.
 
 ## Definition of done
 

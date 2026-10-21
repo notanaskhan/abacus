@@ -269,7 +269,7 @@ def test_ac16_the_local_scanner_still_refuses_eicar_and_bombs() -> None:
 
 real_clamd = pytest.mark.skipif(
     not REAL_CLAMD,
-    reason="needs a real clamd: set ABACUS_SCANNER_ENDPOINT=host:port (TASK-346 #346)",
+    reason="needs a real clamd: set ABACUS_SCANNER_ENDPOINT=host:port (TASK-352 #204)",
 )
 
 
