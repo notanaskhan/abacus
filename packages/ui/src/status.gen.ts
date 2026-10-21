@@ -1,5 +1,5 @@
 // GENERATED from docs/product/status-vocabulary.yaml. Do not edit.
-// Regenerate: python -m abacus_tools.codegen.status_vocabulary (C2; F-03-T09).
+// Regenerate: python -m abacus_tools.codegen.status_vocabulary (C2; F-03-T09, F-05-T12).
 
 export const STATUS_REGISTRY = {
   "engagement": {
@@ -82,7 +82,10 @@ export const STATUS_REGISTRY = {
       "label": "Prepared",
       "variant": "neutral",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "contextVariants": {
+        "subbar": "state"
+      }
     },
     "in_review": {
       "label": "In review",
@@ -631,7 +634,8 @@ export const STATUS_REGISTRY = {
       "label": "Material weakness",
       "variant": "red",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "emphasis": "bold"
     }
   },
   "misstatement": {
@@ -847,7 +851,8 @@ export const STATUS_REGISTRY = {
       "variant": null,
       "terminal": false,
       "derived": false,
-      "disc": "ring"
+      "disc": "ring",
+      "textTone": "amber"
     },
     "approved": {
       "label": "Approved",
@@ -916,7 +921,8 @@ export const STATUS_REGISTRY = {
       "variant": null,
       "terminal": false,
       "derived": false,
-      "disc": "conic_dot_amber"
+      "disc": "conic_dot_amber",
+      "textTone": "amber"
     },
     "reconciled": {
       "label": "Reconciled",
@@ -1997,5 +2003,758 @@ export const STATUS_REGISTRY = {
       },
       "disc": "amber_tint_relink"
     }
+  }
+} as const;
+
+// Where each word of the handoff status.js went: a registry code, or retired.
+export const HANDOFF_WORDS = {
+  "Engagement": {
+    "Draft": {
+      "retired": true,
+      "reason": "no Draft engagement state in 3.3.1; nearest is engagement.prospect, which is a pre-contract state",
+      "replacement": "engagement.prospect"
+    },
+    "Letter sent": {
+      "object": "envelope",
+      "code": "sent"
+    },
+    "Active": {
+      "object": "engagement",
+      "code": "active"
+    },
+    "On hold": {
+      "object": "engagement",
+      "code": "on_hold"
+    },
+    "Complete": {
+      "object": "engagement",
+      "code": "delivered"
+    },
+    "Archived": {
+      "object": "engagement",
+      "code": "archived"
+    }
+  },
+  "Tax return": {
+    "Not started": {
+      "object": "return",
+      "code": "not_started"
+    },
+    "Waiting on client": {
+      "object": "card_overlay",
+      "code": "waiting_on_client"
+    },
+    "Preparing": {
+      "object": "return",
+      "code": "preparing"
+    },
+    "Working": {
+      "object": "return",
+      "code": "preparing"
+    },
+    "Processing": {
+      "object": "agent_run",
+      "code": "running"
+    },
+    "In review": {
+      "object": "return",
+      "code": "in_review"
+    },
+    "Ready to file": {
+      "object": "return",
+      "code": "approved"
+    },
+    "Transmitted": {
+      "object": "return",
+      "code": "filed"
+    },
+    "Accepted": {
+      "object": "return",
+      "code": "accepted"
+    },
+    "Rejected": {
+      "object": "return",
+      "code": "rejected"
+    },
+    "Filed": {
+      "object": "return",
+      "code": "filed"
+    },
+    "Extended": {
+      "object": "return_flag",
+      "code": "extended"
+    }
+  },
+  "Return sync chip": {
+    "Not yet exported": {
+      "object": "return_sync_chip",
+      "code": "not_yet_exported"
+    },
+    "Ready for export": {
+      "object": "return_sync_chip",
+      "code": "ready_for_export"
+    },
+    "Exporting": {
+      "object": "return_sync_chip",
+      "code": "exporting"
+    },
+    "Synced": {
+      "object": "return_sync_chip",
+      "code": "synced"
+    },
+    "Out of sync": {
+      "object": "return_sync_chip",
+      "code": "out_of_sync"
+    },
+    "Import pending approval": {
+      "object": "return_sync_chip",
+      "code": "import_pending_approval"
+    },
+    "Export failed": {
+      "object": "return_sync_chip",
+      "code": "failed"
+    }
+  },
+  "Document": {
+    "Requested": {
+      "object": "request",
+      "code": "requested"
+    },
+    "Received": {
+      "object": "request",
+      "code": "uploaded"
+    },
+    "Processing": {
+      "object": "document",
+      "code": "processing"
+    },
+    "Needs review": {
+      "object": "document",
+      "code": "classified"
+    },
+    "Approved": {
+      "object": "document",
+      "code": "approved"
+    },
+    "Rejected": {
+      "object": "document",
+      "code": "rejected"
+    },
+    "Duplicate": {
+      "retired": true,
+      "reason": "no Duplicate state in 3.3.1; a duplicate is a flag on a document, not a lifecycle state",
+      "replacement": null
+    },
+    "Superseded": {
+      "object": "document",
+      "code": "superseded"
+    }
+  },
+  "Audit": {
+    "Not started": {
+      "retired": true,
+      "reason": "no pre-Planning state on the audit engagement record in 3.3.1",
+      "replacement": null
+    },
+    "Planning": {
+      "object": "audit_engagement",
+      "code": "planning"
+    },
+    "Processing": {
+      "object": "audit_engagement",
+      "code": "processing"
+    },
+    "Fieldwork": {
+      "object": "audit_engagement",
+      "code": "fieldwork"
+    },
+    "Completion": {
+      "object": "audit_engagement",
+      "code": "completion"
+    },
+    "In review": {
+      "object": "audit_engagement",
+      "code": "in_review"
+    },
+    "Ready to issue": {
+      "object": "audit_engagement",
+      "code": "ready_to_release"
+    },
+    "Issued": {
+      "object": "audit_engagement",
+      "code": "released"
+    },
+    "Archived": {
+      "object": "audit_engagement",
+      "code": "archived"
+    }
+  },
+  "Audit section": {
+    "Queued": {
+      "object": "audit_section",
+      "code": "queued"
+    },
+    "Running": {
+      "object": "audit_section",
+      "code": "running"
+    },
+    "In progress": {
+      "object": "audit_section",
+      "code": "in_progress"
+    },
+    "Waiting on inputs": {
+      "object": "audit_section",
+      "code": "waiting_on_inputs"
+    },
+    "Blocked": {
+      "object": "audit_section",
+      "code": "blocked_on_decision"
+    },
+    "Ready": {
+      "object": "audit_section",
+      "code": "ready_to_run"
+    },
+    "Complete": {
+      "object": "audit_section",
+      "code": "draft_ready"
+    },
+    "Exceptions": {
+      "retired": true,
+      "reason": "a count line ({n} exceptions found), not a state; exceptions live on control_test_result / issue",
+      "replacement": null
+    },
+    "Failed": {
+      "object": "audit_section",
+      "code": "failed"
+    },
+    "Skipped": {
+      "retired": true,
+      "reason": "no Skipped state in 3.3.1",
+      "replacement": null
+    }
+  },
+  "Workpaper": {
+    "Not started": {
+      "object": "audit_section",
+      "code": "not_started"
+    },
+    "In progress": {
+      "object": "audit_section",
+      "code": "in_progress"
+    },
+    "Prepared": {
+      "object": "audit_section",
+      "code": "prepared"
+    },
+    "Review notes": {
+      "object": "review_note",
+      "code": "open"
+    },
+    "Reviewed": {
+      "object": "audit_section",
+      "code": "reviewed"
+    },
+    "Not applicable": {
+      "retired": true,
+      "reason": "no Not applicable state on a section or workpaper in 3.3.1",
+      "replacement": null
+    }
+  },
+  "Close": {
+    "Not started": {
+      "object": "close",
+      "code": "not_started"
+    },
+    "In progress": {
+      "object": "close",
+      "code": "in_progress"
+    },
+    "In review": {
+      "object": "close",
+      "code": "in_review"
+    },
+    "Reopened": {
+      "retired": true,
+      "reason": "3.3.1 has no reopen state; Locked is final (Approved, Delivered, Locked)",
+      "replacement": null
+    },
+    "Closed": {
+      "object": "close",
+      "code": "locked"
+    }
+  },
+  "Close task": {
+    "Queued": {
+      "object": "close_task",
+      "code": "queued"
+    },
+    "Running": {
+      "object": "close_task",
+      "code": "running"
+    },
+    "Waiting on client": {
+      "object": "card_overlay",
+      "code": "waiting_on_client"
+    },
+    "Issues found": {
+      "object": "close_task",
+      "code": "needs_attention"
+    },
+    "No issues": {
+      "object": "close_task",
+      "code": "done"
+    },
+    "Reconciled": {
+      "object": "close_task",
+      "code": "done"
+    },
+    "Failed": {
+      "object": "close_task",
+      "code": "failed"
+    },
+    "Skipped": {
+      "retired": true,
+      "reason": "no Skipped state in 3.3.1",
+      "replacement": null
+    }
+  },
+  "Request": {
+    "Draft": {
+      "object": "request",
+      "code": "draft"
+    },
+    "Sent": {
+      "object": "request",
+      "code": "requested"
+    },
+    "Viewed": {
+      "retired": true,
+      "reason": "a client view event, not a request state in 3.3.1",
+      "replacement": null
+    },
+    "Answered": {
+      "object": "request",
+      "code": "uploaded"
+    },
+    "Overdue": {
+      "object": "request",
+      "code": "overdue"
+    },
+    "Closed": {
+      "object": "request",
+      "code": "received"
+    },
+    "Cancelled": {
+      "retired": true,
+      "reason": "no Cancelled state in 3.3.1; not_applicable means the request does not apply, not that it was cancelled",
+      "replacement": null
+    }
+  },
+  "Inbox item": {
+    "Unprocessed": {
+      "object": "inbox_item",
+      "code": "new"
+    },
+    "Waiting": {
+      "object": "inbox_item",
+      "code": "waiting"
+    },
+    "Filed": {
+      "object": "inbox_item",
+      "code": "filed"
+    },
+    "Ignored": {
+      "object": "inbox_item",
+      "code": "ignored"
+    }
+  },
+  "Issue": {
+    "Open": {
+      "object": "issue",
+      "code": "open"
+    },
+    "Review point": {
+      "retired": true,
+      "reason": "a kind line on an open issue (3.3.1), not a state",
+      "replacement": null
+    },
+    "Waiting on client": {
+      "retired": true,
+      "reason": "a kind line on an open issue (3.3.1); the Board overlay is card_overlay.waiting_on_client",
+      "replacement": "card_overlay.waiting_on_client"
+    },
+    "Resolved": {
+      "object": "issue",
+      "code": "resolved"
+    },
+    "Dismissed": {
+      "object": "issue",
+      "code": "not_applicable"
+    }
+  },
+  "Audit finding": {
+    "Observation": {
+      "retired": true,
+      "reason": "no Observation state in 3.3.1",
+      "replacement": null
+    },
+    "Deficiency": {
+      "object": "deficiency_severity",
+      "code": "deficiency"
+    },
+    "Significant deficiency": {
+      "object": "deficiency_severity",
+      "code": "significant_deficiency"
+    },
+    "Material weakness": {
+      "object": "deficiency_severity",
+      "code": "material_weakness"
+    },
+    "Corrected": {
+      "object": "misstatement",
+      "code": "booked"
+    },
+    "Uncorrected": {
+      "object": "misstatement",
+      "code": "confirmed"
+    },
+    "Passed": {
+      "object": "misstatement",
+      "code": "passed_on_sum"
+    }
+  },
+  "Agent run": {
+    "Queued": {
+      "object": "agent_run",
+      "code": "queued"
+    },
+    "Running": {
+      "object": "agent_run",
+      "code": "running"
+    },
+    "Waiting on you": {
+      "object": "agent_run",
+      "code": "needs_input"
+    },
+    "Complete": {
+      "object": "agent_run",
+      "code": "succeeded"
+    },
+    "Exceptions": {
+      "retired": true,
+      "reason": "an outcome count on a succeeded run, not a run state in 3.3.1",
+      "replacement": null
+    },
+    "Failed": {
+      "object": "agent_run",
+      "code": "failed"
+    },
+    "Cancelled": {
+      "object": "agent_run",
+      "code": "cancelled"
+    }
+  },
+  "AJE": {
+    "Proposed": {
+      "object": "proposed_entry",
+      "code": "proposed"
+    },
+    "In review": {
+      "object": "proposed_entry",
+      "code": "review_required"
+    },
+    "Approved": {
+      "object": "proposed_entry",
+      "code": "approved"
+    },
+    "Posted": {
+      "object": "proposed_entry",
+      "code": "posted"
+    },
+    "Passed": {
+      "object": "misstatement",
+      "code": "passed_on_sum"
+    },
+    "Rejected": {
+      "retired": true,
+      "reason": "proposed_entry has Failed post but no Rejected in 3.3.1",
+      "replacement": null
+    },
+    "Reversed": {
+      "object": "proposed_entry",
+      "code": "reversed"
+    }
+  },
+  "Session": {
+    "Running": {
+      "object": "workbench_session",
+      "code": "running"
+    },
+    "Waiting on you": {
+      "object": "workbench_session",
+      "code": "awaiting_answer"
+    },
+    "Paused": {
+      "retired": true,
+      "reason": "no Paused session state in 3.3.1",
+      "replacement": null
+    },
+    "Done": {
+      "object": "workbench_session",
+      "code": "complete"
+    },
+    "Failed": {
+      "object": "workbench_session",
+      "code": "failed"
+    },
+    "Archived": {
+      "retired": true,
+      "reason": "no Archived session state in 3.3.1",
+      "replacement": null
+    }
+  },
+  "Agent template": {
+    "Available": {
+      "object": "agent_template",
+      "code": "available"
+    },
+    "Installed": {
+      "object": "agent_template",
+      "code": "installed"
+    },
+    "Update available": {
+      "object": "agent_template",
+      "code": "update_available"
+    },
+    "Draft": {
+      "retired": true,
+      "reason": "agent_template has no Draft in 3.3.1 (template_version.draft is a different object)",
+      "replacement": null
+    },
+    "Coming soon": {
+      "object": "agent_template",
+      "code": "coming_soon"
+    },
+    "Deprecated": {
+      "retired": true,
+      "reason": "agent_template has no Deprecated in 3.3.1 (template_version.deprecated is a different object)",
+      "replacement": null
+    }
+  },
+  "Integration": {
+    "Available": {
+      "object": "integration",
+      "code": "available"
+    },
+    "Connecting": {
+      "object": "integration",
+      "code": "connecting"
+    },
+    "Connected": {
+      "object": "integration",
+      "code": "connected"
+    },
+    "Syncing": {
+      "retired": true,
+      "reason": "an activity on a connected integration, not a state in 3.3.1",
+      "replacement": null
+    },
+    "Disconnected": {
+      "object": "integration",
+      "code": "disconnected"
+    },
+    "Coming soon": {
+      "object": "integration",
+      "code": "coming_soon"
+    }
+  },
+  "Signature": {
+    "Draft": {
+      "object": "envelope",
+      "code": "draft"
+    },
+    "Sent": {
+      "object": "envelope",
+      "code": "sent"
+    },
+    "Viewed": {
+      "object": "envelope",
+      "code": "viewed"
+    },
+    "Partially signed": {
+      "object": "envelope",
+      "code": "partially_signed"
+    },
+    "Signed": {
+      "object": "envelope",
+      "code": "completed"
+    },
+    "Declined": {
+      "object": "envelope",
+      "code": "declined"
+    },
+    "Expired": {
+      "object": "envelope",
+      "code": "expired"
+    },
+    "Voided": {
+      "object": "envelope",
+      "code": "voided"
+    }
+  },
+  "Notice": {
+    "New": {
+      "object": "notice",
+      "code": "received"
+    },
+    "Researching": {
+      "object": "notice",
+      "code": "analyzing"
+    },
+    "Response drafted": {
+      "object": "notice",
+      "code": "response_drafted"
+    },
+    "Responded": {
+      "object": "notice",
+      "code": "sent"
+    },
+    "Resolved": {
+      "object": "notice",
+      "code": "closed"
+    },
+    "Response overdue": {
+      "retired": true,
+      "reason": "overdue is derived from the respond-by date and never stored; notice has no overdue state",
+      "replacement": null
+    }
+  },
+  "Tally": {
+    "Ties": {
+      "object": "tie_out_tally",
+      "code": "tie"
+    },
+    "Off": {
+      "object": "tie_out_tally",
+      "code": "off"
+    },
+    "Check": {
+      "object": "tie_out_tally",
+      "code": "check"
+    },
+    "Pending": {
+      "object": "tie_out_tally",
+      "code": "pending"
+    }
+  }
+} as const;
+
+// Codes and words retired from the repo and the design sources, with replacements.
+export const RETIRED_CODES = {
+  "request_item.open": {
+    "replacement": [
+      "request.draft",
+      "request.requested"
+    ],
+    "note": "draft while firm-only; requested once sent to the client"
+  },
+  "request_item.received": {
+    "replacement": [
+      "request.uploaded"
+    ],
+    "note": "INVERSION: repo received meant uploaded; screening sub-state not_screened"
+  },
+  "request_item.ready_for_review": {
+    "replacement": [
+      "request.uploaded"
+    ],
+    "note": "screening sub-state passed"
+  },
+  "request_item.needs_revision": {
+    "replacement": [
+      "request.returned"
+    ]
+  },
+  "request_item.accepted": {
+    "replacement": [
+      "request.received"
+    ],
+    "note": "Accrued received means accepted"
+  },
+  "engagement.active": {
+    "replacement": [
+      "engagement.active"
+    ],
+    "note": "unchanged"
+  },
+  "engagement.archived": {
+    "replacement": [
+      "engagement.archived"
+    ],
+    "note": "unchanged; display adds a lock"
+  },
+  "connection.active": {
+    "replacement": [
+      "integration.connected"
+    ]
+  },
+  "connection.needs_attention": {
+    "replacement": [
+      "integration.needs_attention",
+      "integration.needs_reauth"
+    ],
+    "note": "split on failure code token_expired / invalid_grant"
+  },
+  "connection.revoked": {
+    "replacement": [
+      "integration.disconnected"
+    ],
+    "note": "neutral, not red"
+  },
+  "agent_run.completed": {
+    "replacement": [
+      "agent_run.succeeded"
+    ],
+    "note": "display Ready for review"
+  },
+  "agent_run.escalated": {
+    "replacement": [
+      "agent_run.needs_input"
+    ],
+    "note": "reason: escalated"
+  },
+  "ui.workpaper.draft": {
+    "replacement": [
+      "audit_section.in_progress"
+    ],
+    "note": "inferred"
+  },
+  "ui.workpaper.ready": {
+    "replacement": [
+      "audit_section.prepared"
+    ],
+    "note": "inferred; app label Prepared"
+  },
+  "ui.result.supported": {
+    "replacement": [
+      "control_test_result.no_exceptions_noted"
+    ],
+    "note": "inferred"
+  },
+  "ui.result.exception": {
+    "replacement": [
+      "control_test_result.exceptions_noted"
+    ],
+    "note": "inferred"
+  },
+  "ui.decision.accept": {
+    "replacement": [],
+    "note": "a decision value, not a status; no registry home yet (accept/reject)"
+  },
+  "ui.decision.reject": {
+    "replacement": [
+      "card_overlay.sent_back"
+    ],
+    "note": "inferred from the label Sent back; confirm"
   }
 } as const;

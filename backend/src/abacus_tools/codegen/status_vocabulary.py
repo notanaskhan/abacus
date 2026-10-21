@@ -5,7 +5,9 @@ Run: python -m abacus_tools.codegen.status_vocabulary [--check]
 Source: docs/product/status-vocabulary.yaml (ADR-138, DEC-08). Outputs:
 - `abacus.kernel._statuses`: one StrEnum per object with its stored codes (derived codes such as
   `overdue` are never stored), and the SQL CHECK list for each.
-- `packages/ui/src/status.gen.ts`: every code's label, variant and flags for the UI runtime.
+- `packages/ui/src/status.gen.ts`: every code's label, variant and flags for the UI runtime, the
+  retired codes, and where each of the 144 words in the handoff's `lib/status.js` went
+  (`HANDOFF_WORDS`: a registry code, or retired with its reason and replacement; F-05-T12).
 
 `--check` (in `make check-fast`) fails when either output is stale or the registry is invalid.
 """
@@ -28,6 +30,7 @@ SOURCE = ROOT / "docs" / "product" / "status-vocabulary.yaml"
 PY_TARGET = BACKEND / "src" / "abacus" / "kernel" / "_statuses.py"
 TS_TARGET = ROOT / "packages" / "ui" / "src" / "status.gen.ts"
 _CODE = re.compile(r"^[a-z][a-z0-9_]*$")
+_RETIRED_CODE = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*){1,2}$")
 _VARIANTS = {
     "state",
     "amber",
@@ -43,6 +46,9 @@ _VARIANTS = {
 }
 _REQUIRED = ("label", "variant", "terminal", "derived")
 _OPTIONAL = {"disc", "context_labels", "client_label", "text_tone", "context_variants", "emphasis"}
+# The handoff's lib/status.js is closed: 21 objects and 144 words (F-05-T12).
+HANDOFF_OBJECT_COUNT = 21
+HANDOFF_WORD_COUNT = 144
 
 
 class RegistryError(ValueError):
@@ -100,6 +106,70 @@ def parse(source: str) -> list[StatusObject]:
     return objects
 
 
+def parse_handoff(
+    source: str, objects: list[StatusObject]
+) -> dict[str, dict[str, dict[str, object]]]:
+    """Where every handoff status word went: a registry code, or retired with its reason.
+
+    Each of the 144 words is either `{object, code}` naming a registry code that exists, or
+    `{status: false, reason, replacement?}` (retired; `replacement` is an `object.code` when one
+    exists). Nothing else, so a word cannot be dropped without a decision (F-05-T12).
+    """
+    document = cast(dict[str, object], yaml.safe_load(source) or {})
+    raw = cast(dict[str, dict[str, dict[str, object]]], document.get("handoff_words") or {})
+    known = {obj.name: {c.code for c in obj.codes} for obj in objects}
+    words: dict[str, dict[str, dict[str, object]]] = {}
+    for handoff_object, entries in raw.items():
+        words[handoff_object] = {}
+        for word, entry in entries.items():
+            where = f"handoff_words.{handoff_object}.{word}"
+            if entry.get("status") is False:
+                reason = entry.get("reason")
+                if not isinstance(reason, str) or not reason.strip():
+                    raise RegistryError(f"{where}: a retired word gives its reason")
+                replacement = entry.get("replacement")
+                if replacement is not None:
+                    obj_name, _, code = str(replacement).partition(".")
+                    if code not in known.get(obj_name, set()):
+                        raise RegistryError(f"{where}: replacement {replacement!r} is not a code")
+                words[handoff_object][word] = {
+                    "retired": True,
+                    "reason": reason,
+                    "replacement": replacement,
+                }
+                continue
+            target, code = str(entry.get("object")), str(entry.get("code"))
+            if code not in known.get(target, set()):
+                raise RegistryError(f"{where}: {target}.{code} is not in the registry")
+            words[handoff_object][word] = {"object": target, "code": code}
+    count = sum(len(entries) for entries in words.values())
+    if len(words) != HANDOFF_OBJECT_COUNT or count != HANDOFF_WORD_COUNT:
+        raise RegistryError(
+            f"handoff_words: {len(words)} objects and {count} words, "
+            f"expected {HANDOFF_OBJECT_COUNT} and {HANDOFF_WORD_COUNT}"
+        )
+    return words
+
+
+def parse_retired(source: str) -> dict[str, dict[str, object]]:
+    """The retired codes, key -> {replacement: [...], note?}.
+
+    Keys like `request_item.open` or `ui.workpaper.draft` are codes. The block also lists retired
+    words and tables (`label.Evidence check`, `handoff.lib/status.js`); those stay in the YAML as
+    prose and are not emitted, because the UI never looks them up (and a banned term in a key
+    would trip the scope guards).
+    """
+    document = cast(dict[str, object], yaml.safe_load(source) or {})
+    raw = cast(dict[str, dict[str, object]], document.get("retired") or {})
+    retired: dict[str, dict[str, object]] = {}
+    for key, entry in raw.items():
+        if not isinstance(entry.get("replacement"), list):
+            raise RegistryError(f"retired.{key}: replacement is a list")
+        if _RETIRED_CODE.fullmatch(key):
+            retired[key] = {k: v for k, v in entry.items() if k in {"replacement", "note"}}
+    return retired
+
+
 def _class(name: str) -> str:
     return "".join(part.capitalize() for part in name.split("_")) + "Status"
 
@@ -138,18 +208,47 @@ def render_py(objects: list[StatusObject]) -> str:
 
 
 def _ts_fields(fields: dict[str, object]) -> dict[str, object]:
-    rename = {"client_label": "clientLabel", "context_labels": "contextLabels"}
-    keep = ("label", "variant", "terminal", "derived", "client_label", "context_labels", "disc")
+    rename = {
+        "client_label": "clientLabel",
+        "context_labels": "contextLabels",
+        "context_variants": "contextVariants",
+        "text_tone": "textTone",
+    }
+    keep = (
+        "label",
+        "variant",
+        "terminal",
+        "derived",
+        "client_label",
+        "context_labels",
+        "context_variants",
+        "disc",
+        "text_tone",
+        "emphasis",
+    )
     return {rename.get(k, k): fields[k] for k in keep if k in fields}
 
 
-def render_ts(objects: list[StatusObject]) -> str:
+def _ts_const(name: str, value: object) -> str:
+    body = json.dumps(value, indent=2, ensure_ascii=False)
+    return f"export const {name} = {body} as const;\n"
+
+
+def render_ts(
+    objects: list[StatusObject],
+    handoff: dict[str, dict[str, dict[str, object]]],
+    retired: dict[str, dict[str, object]],
+) -> str:
     registry = {obj.name: {c.code: _ts_fields(c.fields) for c in obj.codes} for obj in objects}
-    body = json.dumps(registry, indent=2, ensure_ascii=False)
     return (
         "// GENERATED from docs/product/status-vocabulary.yaml. Do not edit.\n"
-        "// Regenerate: python -m abacus_tools.codegen.status_vocabulary (C2; F-03-T09).\n\n"
-        f"export const STATUS_REGISTRY = {body} as const;\n"
+        "// Regenerate: python -m abacus_tools.codegen.status_vocabulary "
+        "(C2; F-03-T09, F-05-T12).\n\n"
+        + _ts_const("STATUS_REGISTRY", registry)
+        + "\n// Where each word of the handoff status.js went: a registry code, or retired.\n"
+        + _ts_const("HANDOFF_WORDS", handoff)
+        + "\n// Codes and words retired from the repo and the design sources, with replacements.\n"
+        + _ts_const("RETIRED_CODES", retired)
     )
 
 
@@ -158,11 +257,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args(argv)
     try:
-        objects = parse(SOURCE.read_text(encoding="utf-8"))
+        source = SOURCE.read_text(encoding="utf-8")
+        objects = parse(source)
+        handoff = parse_handoff(source, objects)
+        retired = parse_retired(source)
     except RegistryError as exc:
         print(f"status-vocabulary.yaml: {exc}", file=sys.stderr)
         return 1
-    outputs = {PY_TARGET: render_py(objects), TS_TARGET: render_ts(objects)}
+    outputs = {PY_TARGET: render_py(objects), TS_TARGET: render_ts(objects, handoff, retired)}
     if args.check:
         stale = [p for p, text in outputs.items() if not p.exists() or p.read_text() != text]
         for path in stale:

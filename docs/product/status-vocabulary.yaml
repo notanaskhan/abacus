@@ -591,7 +591,7 @@ retired:
 handoff_words:
 
   "Engagement":   # 6
-    "Draft":       {status: false, reason: "no Draft engagement state in 3.3.1; nearest is engagement.prospect, which is a pre-contract state"}
+    "Draft":       {status: false, reason: "no Draft engagement state in 3.3.1; nearest is engagement.prospect, which is a pre-contract state", replacement: engagement.prospect}
     "Letter sent": {object: envelope, code: sent}   # the engagement letter is an envelope; the engagement stays accepted until contracted
     "Active":      {object: engagement, code: active}
     "On hold":     {object: engagement, code: on_hold}
@@ -697,7 +697,7 @@ handoff_words:
   "Issue":   # 5
     "Open":              {object: issue, code: open}
     "Review point":      {status: false, reason: "a kind line on an open issue (3.3.1), not a state"}
-    "Waiting on client": {status: false, reason: "a kind line on an open issue (3.3.1); the Board overlay is card_overlay.waiting_on_client"}
+    "Waiting on client": {status: false, reason: "a kind line on an open issue (3.3.1); the Board overlay is card_overlay.waiting_on_client", replacement: card_overlay.waiting_on_client}
     "Resolved":          {object: issue, code: resolved}
     "Dismissed":         {object: issue, code: not_applicable}
 
