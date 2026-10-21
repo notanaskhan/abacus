@@ -1018,6 +1018,8 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/fieldwork/repository.py", "engagement_risks"),
         # SPEC-314 (TASK-332): an engagement's completion records, after authorising on it.
         ("src/abacus/modules/assurance/completion_repository.py", "records_of"),
+        # TASK-344: PDFs the current extractor hasn't read, for the system re-read tool.
+        ("src/abacus/modules/evidence/repository.py", "stale_pdf_uploads"),
     }
 )
 

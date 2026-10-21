@@ -68,6 +68,7 @@ from abacus.modules.evidence.repository import (
     newest_extraction,
     other_version_with_fingerprint,
     preview_for,
+    stale_pdf_uploads,
 )
 from abacus.modules.evidence.service import engagement_snapshots
 from abacus.modules.evidence.workflow_types import INBOX, VERSION, UploadInput
@@ -562,3 +563,14 @@ def excerpt_of(
 
 def _strings(value: object) -> list[str]:
     return [str(v) for v in cast(list[object], value)] if isinstance(value, list) else []
+
+
+async def stale_pdfs(tenant_id: UUID, limit: int = 500) -> list[UploadInput]:
+    """TASK-344: the tenant's PDF uploads and inbox files the current extractor hasn't read, as
+    inputs for `process_upload` (the system acting on the firm's own uploads)."""
+    async with tenant_session(_system(tenant_id)) as session:
+        found = await stale_pdf_uploads(session, EXTRACTOR_VERSION, limit)
+    return [
+        UploadInput(str(tenant_id), VERSION if kind == "version" else INBOX, str(source))
+        for kind, source in found
+    ]

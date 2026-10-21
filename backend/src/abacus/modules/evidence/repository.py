@@ -728,3 +728,48 @@ async def problem_counts(
             continue
         counts[row.evidence_version_id] = counts.get(row.evidence_version_id, 0) + 1
     return counts
+
+
+async def stale_pdf_uploads(
+    session: AsyncSession, extractor_version: str, limit: int
+) -> list[tuple[str, UUID]]:
+    """TASK-344: PDF uploads and inbox files with no extraction by this version, oldest first
+    (LIST_EXEMPT: for the system re-read tool, never for a person)."""
+    has_version = (
+        select(UploadExtraction.id)
+        .where(UploadExtraction.extractor_version == extractor_version)
+        .correlate_except(UploadExtraction)
+    )
+    versions = (
+        (
+            await session.execute(
+                select(EvidenceVersion.id)
+                .where(
+                    EvidenceVersion.media_type == "application/pdf",
+                    ~has_version.where(
+                        UploadExtraction.evidence_version_id == EvidenceVersion.id
+                    ).exists(),
+                )
+                .order_by(EvidenceVersion.created_at)
+                .limit(limit)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    inbox = (
+        (
+            await session.execute(
+                select(InboxFile.id)
+                .where(
+                    InboxFile.media_type == "application/pdf",
+                    ~has_version.where(UploadExtraction.inbox_file_id == InboxFile.id).exists(),
+                )
+                .order_by(InboxFile.created_at)
+                .limit(max(limit - len(versions), 0))
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [("version", v) for v in versions] + [("inbox", i) for i in inbox]
