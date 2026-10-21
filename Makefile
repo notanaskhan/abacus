@@ -149,7 +149,7 @@ ci-contracts:
 
 # The SPA's tests (F-01-T07: their own CI job, run when the frontend changes; vite build is stage 1).
 ci-frontend:
-	pnpm -C packages/ui exec vitest run
+	pnpm -C packages/ui test
 	pnpm -C apps/web exec vitest run
 
 test:

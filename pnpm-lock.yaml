@@ -309,6 +309,12 @@ importers:
         specifier: ^3.7.0
         version: 3.7.0
     devDependencies:
+      '@testing-library/dom':
+        specifier: ^10.4.2
+        version: 10.4.2
+      '@testing-library/react':
+        specifier: ^16.3.3
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@types/react':
         specifier: ^19.3.0
         version: 19.3.0
@@ -318,6 +324,9 @@ importers:
       eslint:
         specifier: ^10.12.0
         version: 10.12.0(jiti@2.7.0)
+      jsdom:
+        specifier: ^30.1.2
+        version: 30.1.2
       prettier:
         specifier: ^3.9.9
         version: 3.9.9
