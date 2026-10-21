@@ -34,6 +34,7 @@ export function AdminLayout(): JSX.Element {
       [
         { label: "Methodology", to: "/admin/methodology" },
         { label: "Knowledge documents", to: "/admin/knowledge" },
+        { label: "FS groupings", to: "/admin/fs-groupings" }, // SPEC-316 (TASK-345)
       ],
     ],
     [

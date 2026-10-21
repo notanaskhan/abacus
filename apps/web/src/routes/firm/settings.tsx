@@ -9,6 +9,7 @@ import { appRoute, lazyScreen } from "../root";
 // move to /settings with redirects in G-01-T07 (DEC-113); today's URLs are kept.
 const screens = {
   Methodology: lazyScreen(async () => (await import("../../screens/Methodology")).Methodology),
+  GroupingSets: lazyScreen(async () => (await import("../../screens/GroupingSets")).GroupingSets),
   MethodologyVersion: lazyScreen(
     async () => (await import("../../screens/MethodologyVersion")).MethodologyVersion,
   ),
@@ -70,6 +71,7 @@ export const settingsRoutes = [
     section("/admin/methodology", () => <screens.Methodology />),
     methodologyVersionRoute,
     section("/admin/knowledge", () => <screens.KnowledgeDocuments />),
+    section("/admin/fs-groupings", () => <screens.GroupingSets />), // SPEC-316 (TASK-345)
     section("/admin/budget", () => <screens.Budget />),
     section("/admin/autonomy", function AutonomyPage(): JSX.Element {
       const me = useQuery(meOptions());

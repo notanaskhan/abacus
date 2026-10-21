@@ -397,6 +397,16 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "task_scope",
         "system": "allow",
     },
+    "grouping_set.import": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
+        "quality_partner": "allow",
+    },
+    "grouping_set.publish": {
+        "practice_leader": "allow",
+        "quality_partner": "allow",
+        "mfa_recent": "required",
+    },
     "guidance_draft.decide": {
         "engagement_partner": "allow",
         "manager": "allow",
@@ -495,6 +505,13 @@ ACTIONS: dict[str, dict[str, str]] = {
     "letter.record": {
         "engagement_partner": "allow",
         "manager": "allow",
+    },
+    "mapping_set.edit": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "agent": "deny",
+        "independence": "required",
     },
     "materiality.decide": {
         "engagement_partner": "allow",

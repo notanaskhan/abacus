@@ -45,7 +45,7 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Request list | One or more per work item. UI label **"Binder"** (firm) or "PBC list". Kinds: organizer, PBC, close intake, intake, third party. | `request_list` | `pbc_list`, `checklist` |
 | Request item | One thing asked for. UI label "Request" or "PBC request". Status codes follow the status bridge (SPEC-022, §3.3.1). Never a bare `request`. | `request_item` | `pbc_item`, `ask`, `task` |
 | Retrievability tier | Classification of a request item, A to E, by whether it can be retrieved or must be requested (SPEC-022): **A** a standard report the connected system produces as is; **B** derivable by code from retrieved ledger data; **C** a document attached to records in the connected system; **D** held by the client, not in the connected system; **E** from third parties or physical records. A to C are *retrievable*. | `retrievability_tier` | `type`, `source_type` |
-| Fulfilment | The link between a request item and an evidence item that satisfies it, plus `confidence` and `created_by_kind`. Agent fulfilments stay proposals until a person confirms. May cross engagements within one client (P-40). UI may say "Matched" or "Linked". | `fulfilment` | `match`, `link`, `mapping` |
+| Fulfilment | The link between a request item and an evidence item that satisfies it, plus `confidence` and `created_by_kind`. Agent fulfilments stay proposals until a person confirms. May cross engagements within one client (P-40). UI may say "Matched" or "Linked". | `fulfilment` | `match`, `link`, `evidence_mapping`, `request_mapping` |
 | Evidence item | The stable concept of a piece of evidence, e.g. "AR aging at 31 Dec". Client-scoped files are allowed (`engagement_id` nullable). UI says **"Document"** in Files and the portal and **"Evidence"** on audit and attest screens. `document` is allowed in code only in compounds (see Reserved words). | `evidence_item` | `document`, `file`, `artifact`, `attachment` |
 | Evidence version | One immutable snapshot of an evidence item. | `evidence_version` | `revision`, `copy`, `upload` |
 | Provenance | Where an evidence version came from: source, method, time, period, entity, fingerprint. | `provenance` | `metadata`, `origin` |
@@ -229,6 +229,10 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
 | Consolidation / elimination | Q-15. Eliminations are `proposed_entries(kind='elimination')`. | `consolidations`, `consolidation_entities` | — |
+| Grouping set | A firm's FS taxonomy, versioned: imported as a draft, published once by a person (A-03). Firm content, never seeded. | `grouping_set`, `grouping_set_versions` | `taxonomy` |
+| Grouping | A heading of the statements (Cash and equivalents) with its class: assets, liabilities, equity, revenue or expenses. | `grouping` | — |
+| FS line | A line of the statements under a grouping, with its normal balance; account-number ranges map accounts to it. | `fs_line`, `fs_line_range_rules` | `caption` |
+| Mapping set | One trial balance of record's mapping to a published grouping set: rules from the ranges, people's edits on top (`mapping_set_edits`). "Mapping" names only this; request ↔ evidence links are fulfilments. | `mapping_set`, `mapping_set_edits` | `account_map` |
 
 ## New terms: reporting
 

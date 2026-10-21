@@ -2653,6 +2653,130 @@ export type FormatOut = {
 };
 
 /**
+ * FsLineOut
+ */
+export type FsLineOut = {
+    /**
+     * Grouping Key
+     */
+    grouping_key: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Normal Balance
+     */
+    normal_balance: 'debit' | 'credit';
+};
+
+/**
+ * FsStatementGroupOut
+ */
+export type FsStatementGroupOut = {
+    /**
+     * Class
+     */
+    class: 'assets' | 'liabilities' | 'equity' | 'revenue' | 'expenses';
+    /**
+     * Cy
+     */
+    cy: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Lines
+     */
+    lines: Array<FsStatementLineOut>;
+    /**
+     * Py
+     */
+    py: string | null;
+};
+
+/**
+ * FsStatementLineOut
+ */
+export type FsStatementLineOut = {
+    /**
+     * Cy
+     */
+    cy: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Py
+     */
+    py: string | null;
+};
+
+/**
+ * FsStatementsOut
+ */
+export type FsStatementsOut = {
+    /**
+     * Balanced
+     */
+    balanced: boolean;
+    /**
+     * Difference
+     */
+    difference: string;
+    /**
+     * Groups
+     */
+    groups: Array<FsStatementGroupOut>;
+    /**
+     * Layer
+     */
+    layer: 'unadjusted' | 'final';
+    /**
+     * Net Income
+     */
+    net_income: string;
+    /**
+     * Py Net Income
+     */
+    py_net_income: string | null;
+    /**
+     * Py Totals
+     */
+    py_totals: {
+        [key: string]: string;
+    } | null;
+    /**
+     * Totals
+     */
+    totals: {
+        [key: string]: string;
+    };
+    /**
+     * Unmapped
+     */
+    unmapped: number;
+};
+
+/**
  * GapOut
  */
 export type GapOut = {
@@ -2922,6 +3046,106 @@ export type GraphTeamMemberOut = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * GroupingImportBody
+ */
+export type GroupingImportBody = {
+    /**
+     * Csv
+     */
+    csv: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * GroupingOut
+ */
+export type GroupingOut = {
+    /**
+     * Class
+     */
+    class: 'assets' | 'liabilities' | 'equity' | 'revenue' | 'expenses';
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Lines
+     */
+    lines: Array<FsLineOut>;
+};
+
+/**
+ * GroupingProblemOut
+ */
+export type GroupingProblemOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Detail
+     */
+    detail: string;
+    /**
+     * Row
+     */
+    row: number;
+};
+
+/**
+ * GroupingVersionOut
+ */
+export type GroupingVersionOut = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Problems
+     */
+    problems: Array<GroupingProblemOut>;
+    /**
+     * Published At
+     */
+    published_at: string | null;
+    /**
+     * Set Key
+     */
+    set_key: string;
+    /**
+     * Set Name
+     */
+    set_name: string;
+    /**
+     * Status
+     */
+    status: 'draft' | 'published';
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -3734,6 +3958,111 @@ export type LogEntryOut = {
      * Status
      */
     status: 'running' | 'succeeded' | 'failed_validation' | 'failed';
+};
+
+/**
+ * MappedAccountOut
+ */
+export type MappedAccountOut = {
+    /**
+     * Account Code
+     */
+    account_code: string;
+    /**
+     * Account Name
+     */
+    account_name: string;
+    /**
+     * Boy
+     */
+    boy: string | null;
+    /**
+     * Edited At
+     */
+    edited_at: string | null;
+    /**
+     * Edited By
+     */
+    edited_by: string | null;
+    /**
+     * Eoy
+     */
+    eoy: string;
+    /**
+     * Final
+     */
+    final: string | null;
+    /**
+     * Fs Line Id
+     */
+    fs_line_id: string | null;
+    /**
+     * Method
+     */
+    method: 'manual' | 'number_range' | null;
+};
+
+/**
+ * MappingEditBody
+ */
+export type MappingEditBody = {
+    /**
+     * Account Code
+     */
+    account_code: string;
+    /**
+     * Fs Line Id
+     */
+    fs_line_id?: string | null;
+};
+
+/**
+ * MappingEditsBody
+ */
+export type MappingEditsBody = {
+    /**
+     * Accounts
+     */
+    accounts: Array<MappingEditBody>;
+};
+
+/**
+ * MappingOut
+ */
+export type MappingOut = {
+    /**
+     * Accounts
+     */
+    accounts: Array<MappedAccountOut>;
+    /**
+     * Content Hash
+     */
+    content_hash: string | null;
+    /**
+     * Groupings
+     */
+    groupings: Array<GroupingOut>;
+    /**
+     * Manual
+     */
+    manual: number;
+    /**
+     * Mapped
+     */
+    mapped: number;
+    /**
+     * Mapping Set Id
+     */
+    mapping_set_id: string | null;
+    /**
+     * Published Versions
+     */
+    published_versions: Array<GroupingVersionOut>;
+    /**
+     * Unmapped
+     */
+    unmapped: number;
+    version: GroupingVersionOut | null;
 };
 
 /**
@@ -6245,6 +6574,16 @@ export type StaffMemberOut = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * StartMappingBody
+ */
+export type StartMappingBody = {
+    /**
+     * Grouping Set Version Id
+     */
+    grouping_set_version_id: string;
 };
 
 /**
@@ -18768,6 +19107,286 @@ export type LeadsheetsResponses = {
 
 export type LeadsheetsResponse = LeadsheetsResponses[keyof LeadsheetsResponses];
 
+export type MappingData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/mapping';
+};
+
+export type MappingErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type MappingError = MappingErrors[keyof MappingErrors];
+
+export type MappingResponses = {
+    /**
+     * Successful Response
+     */
+    200: MappingOut;
+};
+
+export type MappingResponse = MappingResponses[keyof MappingResponses];
+
+export type StartMappingData = {
+    body: StartMappingBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/mapping';
+};
+
+export type StartMappingErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type StartMappingError = StartMappingErrors[keyof StartMappingErrors];
+
+export type StartMappingResponses = {
+    /**
+     * Successful Response
+     */
+    201: MappingOut;
+};
+
+export type StartMappingResponse = StartMappingResponses[keyof StartMappingResponses];
+
+export type EditMappingData = {
+    body: MappingEditsBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/mapping/accounts';
+};
+
+export type EditMappingErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EditMappingError = EditMappingErrors[keyof EditMappingErrors];
+
+export type EditMappingResponses = {
+    /**
+     * Successful Response
+     */
+    200: MappingOut;
+};
+
+export type EditMappingResponse = EditMappingResponses[keyof EditMappingResponses];
+
+export type PrepareMappingData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/mapping/sign-offs/prepare';
+};
+
+export type PrepareMappingErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PrepareMappingError = PrepareMappingErrors[keyof PrepareMappingErrors];
+
+export type PrepareMappingResponses = {
+    /**
+     * Successful Response
+     */
+    201: MappingOut;
+};
+
+export type PrepareMappingResponse = PrepareMappingResponses[keyof PrepareMappingResponses];
+
+export type ReviewMappingData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/mapping/sign-offs/review';
+};
+
+export type ReviewMappingErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ReviewMappingError = ReviewMappingErrors[keyof ReviewMappingErrors];
+
+export type ReviewMappingResponses = {
+    /**
+     * Successful Response
+     */
+    201: MappingOut;
+};
+
+export type ReviewMappingResponse = ReviewMappingResponses[keyof ReviewMappingResponses];
+
 export type TbSignOffEqrData = {
     body?: never;
     headers?: {
@@ -19047,6 +19666,69 @@ export type TbSignOffReviewResponses = {
 };
 
 export type TbSignOffReviewResponse = TbSignOffReviewResponses[keyof TbSignOffReviewResponses];
+
+export type StatementsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+    };
+    query?: {
+        /**
+         * Layer
+         */
+        layer?: 'unadjusted' | 'final';
+    };
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/statements';
+};
+
+export type StatementsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type StatementsError = StatementsErrors[keyof StatementsErrors];
+
+export type StatementsResponses = {
+    /**
+     * Response Statements
+     *
+     * Successful Response
+     */
+    200: FsStatementsOut | null;
+};
+
+export type StatementsResponse = StatementsResponses[keyof StatementsResponses];
 
 export type AdoptTbVersionData = {
     body: VersionBody;
@@ -21589,6 +22271,158 @@ export type ReviewWaitingResponses = {
 };
 
 export type ReviewWaitingResponse = ReviewWaitingResponses[keyof ReviewWaitingResponses];
+
+export type GroupingSetVersionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/grouping-sets';
+};
+
+export type GroupingSetVersionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type GroupingSetVersionsError = GroupingSetVersionsErrors[keyof GroupingSetVersionsErrors];
+
+export type GroupingSetVersionsResponses = {
+    /**
+     * Response Grouping Set Versions
+     *
+     * Successful Response
+     */
+    200: Array<GroupingVersionOut>;
+};
+
+export type GroupingSetVersionsResponse = GroupingSetVersionsResponses[keyof GroupingSetVersionsResponses];
+
+export type ImportGroupingSetData = {
+    body: GroupingImportBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/grouping-sets/imports';
+};
+
+export type ImportGroupingSetErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ImportGroupingSetError = ImportGroupingSetErrors[keyof ImportGroupingSetErrors];
+
+export type ImportGroupingSetResponses = {
+    /**
+     * Response Import Grouping Set
+     *
+     * Successful Response
+     */
+    201: Array<GroupingVersionOut>;
+};
+
+export type ImportGroupingSetResponse = ImportGroupingSetResponses[keyof ImportGroupingSetResponses];
+
+export type PublishGroupingSetData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/grouping-sets/versions/{version_id}/publish';
+};
+
+export type PublishGroupingSetErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PublishGroupingSetError = PublishGroupingSetErrors[keyof PublishGroupingSetErrors];
+
+export type PublishGroupingSetResponses = {
+    /**
+     * Response Publish Grouping Set
+     *
+     * Successful Response
+     */
+    201: Array<GroupingVersionOut>;
+};
+
+export type PublishGroupingSetResponse = PublishGroupingSetResponses[keyof PublishGroupingSetResponses];
 
 export type AcceptInvitationData = {
     body: AcceptInvitationIn;
