@@ -76,6 +76,8 @@ export default defineConfig(({ mode, command }) => {
   return {
     plugins: [react(), tailwindcss(), contentSecurityPolicy(authority), fontPreload()],
     define: { "import.meta.env.VITE_UI_GALLERY": JSON.stringify(gallery) },
+    // dist/.vite/manifest.json: scripts/bundle-budget.mjs (F-05-T17) reads the chunk graph from it.
+    build: { manifest: true },
     server: {
       port: 5173 + offset,
       strictPort: true,

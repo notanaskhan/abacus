@@ -30,7 +30,7 @@ const LEGACY_CLOCK = [
 ];
 
 export default defineConfig(
-  { ignores: ["dist"] },
+  { ignores: ["dist", "test-results", "playwright-report", "parity-report"] },
   tseslint.configs.strictTypeChecked,
   {
     languageOptions: {

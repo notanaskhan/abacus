@@ -1,1 +1,5 @@
 dist
+test-results
+playwright-report
+parity-report
+.visual

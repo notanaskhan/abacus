@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend test test-integration evals generate migrate loadtest seed-staging route-parity flag access-review
+.PHONY: setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals generate migrate loadtest seed-staging route-parity flag access-review
 
 setup:
 	cd backend && uv sync --locked
@@ -60,7 +60,7 @@ seed: db-guard
 
 # The Playwright journey (needs `make dev` running and `make seed` done); nightly in CI.
 e2e:
-	pnpm -C apps/web exec playwright test
+	pnpm -C apps/web exec playwright test --project=chromium
 
 check-fast:
 	cd backend && uv lock --check
@@ -75,6 +75,7 @@ check-fast:
 	pnpm -C packages/ui exec tsc --noEmit && pnpm -C packages/ui exec eslint . && pnpm -C packages/ui exec prettier --check .
 	pnpm -C apps/web exec vite build --logLevel warn
 	pnpm -C apps/web exec node scripts/check-compiled-css.js dist
+	pnpm -C apps/web exec node scripts/bundle-budget.mjs dist
 
 # Generated files match their sources; never hand-edit one (F-01-T06). The API client's drift
 # check stays in ci-contracts, which needs the OpenAPI export.
@@ -151,6 +152,12 @@ ci-contracts:
 ci-frontend:
 	pnpm -C packages/ui test
 	pnpm -C apps/web exec vitest run
+
+# The gallery's visual run (F-05-T17): the specimen screenshot regression against $(BASE_SHA), parity
+# Tier A and D. Needs a Playwright browser (pnpm -C apps/web exec playwright install chromium).
+# Not part of `check`: CI's gallery job runs it when packages/ui or the gallery change.
+ci-visual:
+	pnpm -C apps/web run visual:ci
 
 test:
 	cd backend && uv run pytest

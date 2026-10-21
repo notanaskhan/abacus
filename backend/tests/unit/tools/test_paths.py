@@ -10,34 +10,51 @@ import pytest
 
 from abacus_tools.ci import paths
 
-ALL = {"backend": True, "frontend": True, "agents": True}
+ALL = {"backend": True, "frontend": True, "gallery": True, "agents": True}
 
 
 @pytest.mark.parametrize(
-    ("changed", "backend", "frontend", "agents"),
+    ("changed", "backend", "frontend", "gallery", "agents"),
     [
-        (["apps/web/src/screens/Board.tsx"], False, True, False),
-        (["packages/ui/src/Button.tsx", "apps/web/src/router.tsx"], False, True, False),
-        (["docs/adr/ADR-131-workpapers.md", "work/tasks/TASK-079-x.md"], False, False, False),
-        (["backend/src/abacus/modules/ledger/README.md"], False, False, False),
-        (["apps/web/src/x.tsx", "docs/specs/SPEC-037-x.md"], False, True, False),
-        (["backend/src/abacus/kernel/uow.py"], True, False, False),
-        (["backend/src/abacus/modules/agents/service.py"], True, False, True),
-        (["evals/screener/suite.yaml"], True, False, True),
-        (["backend/src/abacus/ai_gateway/call.py"], True, False, True),
-        (["packages/api-client/openapi.json"], True, True, False),
-        (["docs/architecture/permission-matrix/requests.yaml"], True, False, False),
-        (["docs/product/failure-taxonomy.md"], True, False, False),
-        (["Makefile"], True, False, False),
-        ([".github/workflows/ci.yml"], True, False, False),
-        (["pnpm-lock.yaml"], True, True, False),
-        ([], False, False, False),
+        (["apps/web/src/screens/Board.tsx"], False, True, False, False),
+        (["packages/ui/src/Button.tsx", "apps/web/src/router.tsx"], False, True, True, False),
+        (
+            ["docs/adr/ADR-131-workpapers.md", "work/tasks/TASK-079-x.md"],
+            False,
+            False,
+            False,
+            False,
+        ),
+        (["backend/src/abacus/modules/ledger/README.md"], False, False, False, False),
+        (["apps/web/src/x.tsx", "docs/specs/SPEC-037-x.md"], False, True, False, False),
+        (["backend/src/abacus/kernel/uow.py"], True, False, False, False),
+        (["backend/src/abacus/modules/agents/service.py"], True, False, False, True),
+        (["evals/screener/suite.yaml"], True, False, False, True),
+        (["backend/src/abacus/ai_gateway/call.py"], True, False, False, True),
+        (["packages/api-client/openapi.json"], True, True, False, False),
+        (["docs/architecture/permission-matrix/requests.yaml"], True, False, False, False),
+        (["docs/product/failure-taxonomy.md"], True, False, False, False),
+        (["Makefile"], True, False, False, False),
+        ([".github/workflows/ci.yml"], True, False, False, False),
+        (["pnpm-lock.yaml"], True, True, True, False),
+        ([], False, False, False, False),
+        # The gallery's visual run (F-05-T17): library, gallery, harness and manifest.
+        (["apps/web/src/gallery/pages.tsx"], False, True, True, False),
+        (["apps/web/e2e/visual/parity.spec.ts"], False, True, True, False),
+        (["apps/web/playwright.config.ts"], False, True, True, False),
+        (["docs/design/parity-manifest.json"], True, False, True, False),
+        (["backend/src/abacus_tools/parity/crop_handoff.py"], True, False, True, False),
     ],
 )
 def test_changes_are_classified(
-    changed: list[str], backend: bool, frontend: bool, agents: bool
+    changed: list[str], backend: bool, frontend: bool, gallery: bool, agents: bool
 ) -> None:
-    assert paths.classify(changed) == {"backend": backend, "frontend": frontend, "agents": agents}
+    assert paths.classify(changed) == {
+        "backend": backend,
+        "frontend": frontend,
+        "gallery": gallery,
+        "agents": agents,
+    }
 
 
 def test_unknown_changes_run_everything() -> None:
@@ -83,7 +100,12 @@ def test_a_base_git_does_not_know_is_unknown(repo: Path) -> None:
 
 def test_main_prints_github_outputs(repo: Path, capsys: pytest.CaptureFixture[str]) -> None:
     assert paths.main(["", "HEAD"]) == 0
-    assert capsys.readouterr().out.splitlines() == ["backend=true", "frontend=true", "agents=true"]
+    assert capsys.readouterr().out.splitlines() == [
+        "backend=true",
+        "frontend=true",
+        "gallery=true",
+        "agents=true",
+    ]
 
 
 def test_main_needs_two_arguments() -> None:

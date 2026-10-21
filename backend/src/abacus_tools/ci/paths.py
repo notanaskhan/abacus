@@ -2,10 +2,10 @@
 
 Run: python -m abacus_tools.ci.paths <base> <head>
 
-Prints `backend=…`, `frontend=…` and `agents=…` (`true` or `false`) for `$GITHUB_OUTPUT`. The
-single source for every path filter in `ci.yml`. Standard library only, so the filter job needs
-no environment. Anything it can't classify counts as backend: a skipped suite must be provably
-irrelevant, and an unknown base (a new branch) runs everything.
+Prints `backend=…`, `frontend=…`, `gallery=…` and `agents=…` (`true` or `false`) for
+`$GITHUB_OUTPUT`. The single source for every path filter in `ci.yml`. Standard library only, so
+the filter job needs no environment. Anything it can't classify counts as backend: a skipped
+suite must be provably irrelevant, and an unknown base (a new branch) runs everything.
 """
 
 from __future__ import annotations
@@ -30,6 +30,19 @@ FRONTEND = (
     "pnpm-workspace.yaml",
     ".npmrc",
 )
+# What the gallery's visual run (parity Tier A and D, screenshot regression, axe) depends on
+# (F-05-T17): the component library, the gallery, the harness, its manifest and its crop tools.
+GALLERY = (
+    "packages/ui/**",
+    "apps/web/src/gallery/**",
+    "apps/web/e2e/**",
+    "apps/web/scripts/visual-ci.mjs",
+    "apps/web/playwright.config.ts",
+    "apps/web/vite.config.ts",
+    "docs/design/**",
+    "backend/src/abacus_tools/parity/**",
+    "pnpm-lock.yaml",
+)
 # What an agent's behaviour depends on (stage 3, the fast evaluation subset).
 AGENTS = (
     "backend/src/abacus/ai_gateway/**",
@@ -48,10 +61,11 @@ def _matches(path: str, patterns: tuple[str, ...]) -> bool:
 def classify(paths: list[str] | None) -> dict[str, bool]:
     """`None` means the changed paths are unknown: every job runs."""
     if paths is None:
-        return {"backend": True, "frontend": True, "agents": True}
+        return {"backend": True, "frontend": True, "gallery": True, "agents": True}
     return {
         "backend": any(not _matches(p, FRONTEND_ONLY + DOCS_ONLY) for p in paths),
         "frontend": any(_matches(p, FRONTEND) for p in paths),
+        "gallery": any(_matches(p, GALLERY) for p in paths),
         "agents": any(_matches(p, AGENTS) for p in paths),
     }
 
