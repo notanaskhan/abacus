@@ -259,6 +259,12 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/completion/rep-letter",
         "/v1/engagements/{engagement_id}/completion/release",
         "/v1/engagements/{engagement_id}/completion/archive/lock",
+        # SPEC-316 (TASK-345): grouping sets, mapping and its sign-offs
+        "/v1/grouping-sets/imports",
+        "/v1/grouping-sets/versions/{version_id}/publish",
+        "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/mapping",
+        "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/mapping/sign-offs/prepare",
+        "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/mapping/sign-offs/review",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

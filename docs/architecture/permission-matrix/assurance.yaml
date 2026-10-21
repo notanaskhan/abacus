@@ -14,3 +14,7 @@ actions:
   report.approve:           {engagement_partner: allow, agent: deny, independence: required}
   report.release:           {engagement_partner: allow, agent: deny, independence: required}   # G8; the server re-checks G5-G7 in the same unit. A-07 adds fresh MFA with the step-up flow
   archive.lock:             {engagement_partner: allow, manager: allow, agent: deny, independence: required}   # G9; afterwards the engagement is archived and read-only
+  # --- Account mapping and draft statements (SPEC-316; TASK-345; A-03) ---
+  grouping_set.import:      {firm_admin: allow, practice_leader: allow, quality_partner: allow}   # firm content through the import endpoint (never seeded); lists versions too
+  grouping_set.publish:     {practice_leader: allow, quality_partner: allow, mfa_recent: required}   # a draft with no problems; frozen once published
+  mapping_set.edit:         {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # start the mapping and map accounts; the agent's suggestions arrive with A-09

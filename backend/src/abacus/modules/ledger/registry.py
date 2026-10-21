@@ -17,6 +17,14 @@ TABLES: frozenset[str] = frozenset(
         "trial_balances",  # SPEC-309 (TASK-320): the trial balance of record
         "trial_balance_versions",
         "trial_balance_annotations",
+        # SPEC-316 (TASK-345): grouping sets (firm content) and account mapping.
+        "grouping_sets",
+        "grouping_set_versions",
+        "groupings",
+        "fs_lines",
+        "fs_line_range_rules",
+        "mapping_sets",
+        "mapping_set_edits",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -29,6 +37,12 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "trial_balance_lines",
         "trial_balance_versions",  # SPEC-309 (TASK-320)
         "trial_balance_annotations",
+        "grouping_sets",  # SPEC-316
+        "groupings",
+        "fs_lines",
+        "fs_line_range_rules",
+        "mapping_sets",
+        "mapping_set_edits",
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
@@ -69,6 +83,34 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.
+INSERT_COLUMNS.update(
+    {
+        "grouping_sets": frozenset({"tenant_id", "key", "name", "created_by"}),
+        "grouping_set_versions": frozenset(
+            {"tenant_id", "grouping_set_id", "version", "payload_hash", "problems", "created_by"}
+        ),
+        "groupings": frozenset({"tenant_id", "version_id", "key", "label", "class", "position"}),
+        "fs_lines": frozenset(
+            {"tenant_id", "version_id", "grouping_id", "key", "label", "normal_balance"}
+            | {"position"}
+        ),
+        "fs_line_range_rules": frozenset(
+            {"tenant_id", "version_id", "position", "account_from", "account_to", "fs_line_id"}
+        ),
+        "mapping_sets": frozenset(
+            {"tenant_id", "engagement_id", "trial_balance_id", "grouping_set_version_id"}
+            | {"created_by"}
+        ),
+        "mapping_set_edits": frozenset(
+            {"tenant_id", "mapping_set_id", "account_code", "fs_line_id", "edited_by"}
+            | {"actor_kind"}
+        ),
+    }
+)
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "trial_balances": frozenset({"current_version_no"}),  # SPEC-309: the current version
+    # SPEC-316: a draft version is published once (a trigger freezes it afterwards).
+    "grouping_set_versions": frozenset(
+        {"status", "published_by", "published_at", "published_actor_kind"}
+    ),
 }

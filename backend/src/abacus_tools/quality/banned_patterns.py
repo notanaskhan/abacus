@@ -1020,6 +1020,12 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/assurance/completion_repository.py", "records_of"),
         # TASK-344: PDFs the current extractor hasn't read, for the system re-read tool.
         ("src/abacus/modules/evidence/repository.py", "stale_pdf_uploads"),
+        # SPEC-316 (TASK-345): firm taxonomy content (after a firm-level check) and a mapping
+        # set's edits (after authorising on its engagement).
+        ("src/abacus/modules/ledger/mapping_repository.py", "grouping_sets"),
+        ("src/abacus/modules/ledger/mapping_repository.py", "versions_of_sets"),
+        ("src/abacus/modules/ledger/mapping_repository.py", "catalogue_rows"),
+        ("src/abacus/modules/ledger/mapping_repository.py", "newest_edits"),
     }
 )
 

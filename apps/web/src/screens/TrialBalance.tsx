@@ -38,6 +38,7 @@ import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
 import { amount } from "./amounts";
 import { ReviewableNotes } from "./ReviewableNotes";
+import { TbMapping, TbStatements } from "./TbMapping";
 import { CheckStrip } from "./TieChecks";
 import { LEVEL_SHORT } from "./Workpapers";
 
@@ -284,7 +285,9 @@ function TrialBalanceCard({
   const path = { path: { engagement_id: engagementId, tb_id: tb.id } };
   const detail = useQuery({ ...trialBalanceOptions(path), retry: false });
   const candidates = useQuery({ ...tbCandidatesOptions(path), retry: false });
-  const [mode, setMode] = useState<"accounts" | "leadsheets">("accounts");
+  const [mode, setMode] = useState<"accounts" | "leadsheets" | "mapping" | "statements">(
+    "accounts",
+  );
   const [layer, setLayer] = useState<"unadjusted" | "final">("unadjusted");
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [annotating, setAnnotating] = useState(false);
@@ -351,7 +354,7 @@ function TrialBalanceCard({
           ))}
         </div>
         <div role="group" aria-label="View" className="flex gap-1">
-          {(["accounts", "leadsheets"] as const).map((m) => (
+          {(["accounts", "leadsheets", "mapping", "statements"] as const).map((m) => (
             <Button
               key={m}
               size="sm"
@@ -361,7 +364,14 @@ function TrialBalanceCard({
                 setMode(m);
               }}
             >
-              {m === "accounts" ? "Accounts" : "Leadsheets"}
+              {
+                {
+                  accounts: "Accounts",
+                  leadsheets: "Leadsheets",
+                  mapping: "Mapping",
+                  statements: "Statements",
+                }[m]
+              }
             </Button>
           ))}
         </div>
@@ -400,7 +410,11 @@ function TrialBalanceCard({
           )}
         </div>
       )}
-      {mode === "accounts" ? (
+      {mode === "mapping" ? (
+        <TbMapping path={path} role={role} unit={unit} />
+      ) : mode === "statements" ? (
+        <TbStatements path={path} layer={showFinal ? "final" : "unadjusted"} unit={unit} />
+      ) : mode === "accounts" ? (
         <>
           {canAdopt && (
             <div className="flex items-center gap-2 px-4 py-2">

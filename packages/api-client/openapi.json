@@ -5625,6 +5625,247 @@
         "title": "FormatOut",
         "type": "object"
       },
+      "FsLineOut": {
+        "properties": {
+          "grouping_key": {
+            "cls": "internal",
+            "title": "Grouping Key",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          },
+          "normal_balance": {
+            "cls": "internal",
+            "enum": [
+              "debit",
+              "credit"
+            ],
+            "title": "Normal Balance",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "label",
+          "normal_balance",
+          "grouping_key"
+        ],
+        "title": "FsLineOut",
+        "type": "object"
+      },
+      "FsStatementGroupOut": {
+        "properties": {
+          "class": {
+            "cls": "internal",
+            "enum": [
+              "assets",
+              "liabilities",
+              "equity",
+              "revenue",
+              "expenses"
+            ],
+            "title": "Class",
+            "type": "string"
+          },
+          "cy": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Cy",
+            "type": "string"
+          },
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          },
+          "lines": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/FsStatementLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "py": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Py"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "class",
+          "lines",
+          "cy",
+          "py"
+        ],
+        "title": "FsStatementGroupOut",
+        "type": "object"
+      },
+      "FsStatementLineOut": {
+        "properties": {
+          "cy": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Cy",
+            "type": "string"
+          },
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          },
+          "py": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Py"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "cy",
+          "py"
+        ],
+        "title": "FsStatementLineOut",
+        "type": "object"
+      },
+      "FsStatementsOut": {
+        "properties": {
+          "balanced": {
+            "cls": "internal",
+            "title": "Balanced",
+            "type": "boolean"
+          },
+          "difference": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Difference",
+            "type": "string"
+          },
+          "groups": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/FsStatementGroupOut"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "layer": {
+            "cls": "internal",
+            "enum": [
+              "unadjusted",
+              "final"
+            ],
+            "title": "Layer",
+            "type": "string"
+          },
+          "net_income": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Net Income",
+            "type": "string"
+          },
+          "py_net_income": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Py Net Income"
+          },
+          "py_totals": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Py Totals"
+          },
+          "totals": {
+            "additionalProperties": {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            "cls": "confidential",
+            "title": "Totals",
+            "type": "object"
+          },
+          "unmapped": {
+            "cls": "internal",
+            "title": "Unmapped",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "layer",
+          "groups",
+          "totals",
+          "py_totals",
+          "net_income",
+          "py_net_income",
+          "difference",
+          "balanced",
+          "unmapped"
+        ],
+        "title": "FsStatementsOut",
+        "type": "object"
+      },
       "GapOut": {
         "properties": {
           "covered": {
@@ -6125,6 +6366,186 @@
           "role"
         ],
         "title": "GraphTeamMemberOut",
+        "type": "object"
+      },
+      "GroupingImportBody": {
+        "additionalProperties": false,
+        "properties": {
+          "csv": {
+            "cls": "internal",
+            "maxLength": 500000,
+            "minLength": 1,
+            "title": "Csv",
+            "type": "string"
+          },
+          "key": {
+            "cls": "internal",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,39}$",
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "cls": "internal",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "csv"
+        ],
+        "title": "GroupingImportBody",
+        "type": "object"
+      },
+      "GroupingOut": {
+        "properties": {
+          "class": {
+            "cls": "internal",
+            "enum": [
+              "assets",
+              "liabilities",
+              "equity",
+              "revenue",
+              "expenses"
+            ],
+            "title": "Class",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          },
+          "lines": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/FsLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "label",
+          "class",
+          "lines"
+        ],
+        "title": "GroupingOut",
+        "type": "object"
+      },
+      "GroupingProblemOut": {
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "cls": "internal",
+            "title": "Detail",
+            "type": "string"
+          },
+          "row": {
+            "cls": "internal",
+            "title": "Row",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "row",
+          "code",
+          "detail"
+        ],
+        "title": "GroupingProblemOut",
+        "type": "object"
+      },
+      "GroupingVersionOut": {
+        "properties": {
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "problems": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/GroupingProblemOut"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Published At"
+          },
+          "set_key": {
+            "cls": "internal",
+            "title": "Set Key",
+            "type": "string"
+          },
+          "set_name": {
+            "cls": "internal",
+            "title": "Set Name",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "set_key",
+          "set_name",
+          "version",
+          "status",
+          "problems",
+          "created_at",
+          "published_at"
+        ],
+        "title": "GroupingVersionOut",
         "type": "object"
       },
       "GuidanceDraftOut": {
@@ -7812,6 +8233,262 @@
           "started_by"
         ],
         "title": "LogEntryOut",
+        "type": "object"
+      },
+      "MappedAccountOut": {
+        "properties": {
+          "account_code": {
+            "cls": "confidential",
+            "title": "Account Code",
+            "type": "string"
+          },
+          "account_name": {
+            "cls": "confidential",
+            "title": "Account Name",
+            "type": "string"
+          },
+          "boy": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Boy"
+          },
+          "edited_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Edited At"
+          },
+          "edited_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Edited By"
+          },
+          "eoy": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Eoy",
+            "type": "string"
+          },
+          "final": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Final"
+          },
+          "fs_line_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Fs Line Id"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "enum": [
+                  "manual",
+                  "number_range"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Method"
+          }
+        },
+        "required": [
+          "account_code",
+          "account_name",
+          "eoy",
+          "final",
+          "boy",
+          "fs_line_id",
+          "method",
+          "edited_by",
+          "edited_at"
+        ],
+        "title": "MappedAccountOut",
+        "type": "object"
+      },
+      "MappingEditBody": {
+        "additionalProperties": false,
+        "properties": {
+          "account_code": {
+            "cls": "confidential",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Account Code",
+            "type": "string"
+          },
+          "fs_line_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Fs Line Id"
+          }
+        },
+        "required": [
+          "account_code"
+        ],
+        "title": "MappingEditBody",
+        "type": "object"
+      },
+      "MappingEditsBody": {
+        "additionalProperties": false,
+        "properties": {
+          "accounts": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/MappingEditBody"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Accounts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "accounts"
+        ],
+        "title": "MappingEditsBody",
+        "type": "object"
+      },
+      "MappingOut": {
+        "properties": {
+          "accounts": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/MappedAccountOut"
+            },
+            "title": "Accounts",
+            "type": "array"
+          },
+          "content_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Content Hash"
+          },
+          "groupings": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/GroupingOut"
+            },
+            "title": "Groupings",
+            "type": "array"
+          },
+          "manual": {
+            "cls": "internal",
+            "title": "Manual",
+            "type": "integer"
+          },
+          "mapped": {
+            "cls": "internal",
+            "title": "Mapped",
+            "type": "integer"
+          },
+          "mapping_set_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Mapping Set Id"
+          },
+          "published_versions": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/GroupingVersionOut"
+            },
+            "title": "Published Versions",
+            "type": "array"
+          },
+          "unmapped": {
+            "cls": "internal",
+            "title": "Unmapped",
+            "type": "integer"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GroupingVersionOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "mapping_set_id",
+          "version",
+          "groupings",
+          "accounts",
+          "mapped",
+          "unmapped",
+          "manual",
+          "content_hash",
+          "published_versions"
+        ],
+        "title": "MappingOut",
         "type": "object"
       },
       "MatchProposalOut": {
@@ -12943,6 +13620,22 @@
           "status"
         ],
         "title": "StaffMemberOut",
+        "type": "object"
+      },
+      "StartMappingBody": {
+        "additionalProperties": false,
+        "properties": {
+          "grouping_set_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Grouping Set Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "grouping_set_version_id"
+        ],
+        "title": "StartMappingBody",
         "type": "object"
       },
       "StartOut": {
@@ -40101,6 +40794,609 @@
         "x-abacus-action": "trial_balance.read"
       }
     },
+    "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/mapping": {
+      "get": {
+        "description": "SPEC-316 AC-3: every account's FS line (edited, by rule, or unmapped) and the tallies.",
+        "operationId": "mapping",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tb_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tb Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MappingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Mapping Route",
+        "tags": [
+          "mapping"
+        ],
+        "x-abacus-action": "trial_balance.read"
+      },
+      "post": {
+        "description": "SPEC-316 AC-3: map the trial balance with a published grouping set.",
+        "operationId": "start_mapping",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tb_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tb Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartMappingBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MappingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Start Mapping Route",
+        "tags": [
+          "mapping"
+        ],
+        "x-abacus-action": "mapping_set.edit"
+      }
+    },
+    "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/mapping/accounts": {
+      "put": {
+        "description": "SPEC-316 AC-4: map accounts to FS lines, or back to the rules.",
+        "operationId": "edit_mapping",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tb_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tb Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MappingEditsBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MappingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Edit Mapping Route",
+        "tags": [
+          "mapping"
+        ],
+        "x-abacus-action": "mapping_set.edit"
+      }
+    },
+    "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/mapping/sign-offs/prepare": {
+      "post": {
+        "description": "SPEC-316 AC-5: the preparer signs the mapping (every account mapped).",
+        "operationId": "prepare_mapping",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tb_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tb Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MappingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Prepare Mapping Route",
+        "tags": [
+          "mapping"
+        ],
+        "x-abacus-action": "sign_off.prepare"
+      }
+    },
+    "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/mapping/sign-offs/review": {
+      "post": {
+        "description": "SPEC-316 AC-5: the reviewer signs the mapping.",
+        "operationId": "review_mapping",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tb_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tb Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MappingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Review Mapping Route",
+        "tags": [
+          "mapping"
+        ],
+        "x-abacus-action": "sign_off.review"
+      }
+    },
     "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/sign-offs/eqr": {
       "post": {
         "description": "SPEC-313 AC-6: the L5 quality reviewer signs the trial balance's current version.",
@@ -40684,6 +41980,145 @@
           "trial balance"
         ],
         "x-abacus-action": "sign_off.review"
+      }
+    },
+    "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/statements": {
+      "get": {
+        "description": "SPEC-316 AC-6: the draft balance sheet and income statement from the mapping.",
+        "operationId": "statements",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tb_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tb Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "layer",
+            "required": false,
+            "schema": {
+              "default": "unadjusted",
+              "enum": [
+                "unadjusted",
+                "final"
+              ],
+              "title": "Layer",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/FsStatementsOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Statements"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Statements Route",
+        "tags": [
+          "mapping"
+        ],
+        "x-abacus-action": "trial_balance.read"
       }
     },
     "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/versions": {
@@ -46125,6 +47560,329 @@
           "evidence"
         ],
         "x-abacus-action": "own"
+      }
+    },
+    "/v1/grouping-sets": {
+      "get": {
+        "description": "SPEC-316 AC-1: the firm's grouping-set versions, newest first, with their problems.",
+        "operationId": "grouping_set_versions",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GroupingVersionOut"
+                  },
+                  "title": "Response Grouping Set Versions",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Grouping Set Versions Route",
+        "tags": [
+          "mapping"
+        ],
+        "x-abacus-action": "grouping_set.import"
+      }
+    },
+    "/v1/grouping-sets/imports": {
+      "post": {
+        "description": "SPEC-316 AC-1: import the firm's taxonomy (CSV) as a draft version.",
+        "operationId": "import_grouping_set",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupingImportBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GroupingVersionOut"
+                  },
+                  "title": "Response Import Grouping Set",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Import Grouping Set Route",
+        "tags": [
+          "mapping"
+        ],
+        "x-abacus-action": "grouping_set.import"
+      }
+    },
+    "/v1/grouping-sets/versions/{version_id}/publish": {
+      "post": {
+        "description": "SPEC-316 AC-2: publish a draft with no problems.",
+        "operationId": "publish_grouping_set",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GroupingVersionOut"
+                  },
+                  "title": "Response Publish Grouping Set",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Publish Grouping Set Route",
+        "tags": [
+          "mapping"
+        ],
+        "x-abacus-action": "grouping_set.publish"
       }
     },
     "/v1/invitations/accept": {

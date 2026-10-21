@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import FetchedValue, Numeric
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from abacus.kernel.db import Base
@@ -143,4 +145,97 @@ class TrialBalanceAnnotation(Base):
     wp_ref: Mapped[str | None]
     reason: Mapped[str | None]
     set_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+# --- Account mapping (SPEC-316; TASK-345; A-03) -------------------------------------------------
+
+
+class GroupingSet(Base):
+    __tablename__ = "grouping_sets"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    key: Mapped[str]
+    name: Mapped[str]
+    created_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class GroupingSetVersion(Base):
+    __tablename__ = "grouping_set_versions"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    grouping_set_id: Mapped[UUID]
+    version: Mapped[int]
+    status: Mapped[str] = mapped_column(server_default=FetchedValue())
+    payload_hash: Mapped[str]
+    problems: Mapped[list[dict[str, Any]]] = mapped_column(JSONB)  # Any: JSON
+    created_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    published_by: Mapped[UUID | None]
+    published_at: Mapped[datetime | None]
+    published_actor_kind: Mapped[str | None]
+
+
+class Grouping(Base):
+    __tablename__ = "groupings"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    version_id: Mapped[UUID]
+    key: Mapped[str]
+    label: Mapped[str]
+    class_: Mapped[str] = mapped_column("class")
+    position: Mapped[int]
+
+
+class FsLine(Base):
+    __tablename__ = "fs_lines"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    version_id: Mapped[UUID]
+    grouping_id: Mapped[UUID]
+    key: Mapped[str]
+    label: Mapped[str]
+    normal_balance: Mapped[str]
+    position: Mapped[int]
+
+
+class FsLineRangeRule(Base):
+    __tablename__ = "fs_line_range_rules"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    version_id: Mapped[UUID]
+    position: Mapped[int]
+    account_from: Mapped[str]
+    account_to: Mapped[str]
+    fs_line_id: Mapped[UUID]
+
+
+class MappingSet(Base):
+    __tablename__ = "mapping_sets"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    trial_balance_id: Mapped[UUID]
+    grouping_set_version_id: Mapped[UUID]
+    created_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class MappingSetEdit(Base):
+    __tablename__ = "mapping_set_edits"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    mapping_set_id: Mapped[UUID]
+    account_code: Mapped[str]
+    fs_line_id: Mapped[UUID | None]
+    edited_by: Mapped[UUID]
+    actor_kind: Mapped[str]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

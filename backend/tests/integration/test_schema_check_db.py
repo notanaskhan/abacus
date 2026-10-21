@@ -1106,6 +1106,9 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "assurance_work_items": frozenset({"phase", "auto_mode"}),
         "trial_balances": frozenset({"current_version_no"}),  # SPEC-309 (TASK-320)
         "tie_out_checks": frozenset({"current_version_no"}),  # SPEC-310 (TASK-321)
+        "grouping_set_versions": frozenset(  # SPEC-316 (TASK-345): published once
+            {"status", "published_by", "published_at", "published_actor_kind"}
+        ),
         # TASK-019: who has taken a queued version (take, release, reassign).
         "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
         # SPEC-020 (TASK-036): checking and revoking a connection; a state is spent once.
