@@ -20,6 +20,7 @@ from fastapi.routing import APIRoute
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from starlette.types import Receive, Scope, Send
 
+from abacus.kernel.clock import check_startup as check_clock
 from abacus.kernel.config import settings
 from abacus.kernel.error_tracking import configure_error_tracking, flush_errors, report
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, ServiceUnavailable
@@ -130,6 +131,7 @@ def create_app() -> FastAPI:
     if settings().environment == "production" and not identity.WALL_SAFE:
         # Founder decision 2026-10-06: ethical walls (ADR-026) gate the first real firm.
         raise RuntimeError("ethical walls are not implemented: refusing to serve production")
+    check_clock()  # F-04-T02: no demo clock in production
     identity.token_verifier()  # a misconfigured identity provider fails here, not per request
     payload_codec()  # and so does a bad workflow payload key, before any run is recorded
     app = _Abacus(

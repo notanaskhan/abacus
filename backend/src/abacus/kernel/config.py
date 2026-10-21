@@ -160,6 +160,9 @@ class Settings(BaseSettings):
     )
 
     environment: Annotated[Environment, classified("internal")] = "local"
+    # F-04-T02 (ADR-143): the process demo clock, "demo" or an ISO instant; local and staging
+    # only (kernel.clock refuses it in production).
+    demo_clock: Annotated[str | None, classified("internal")] = None
     database_url: Annotated[SecretStr | None, classified("restricted")] = None
     migrations_database_url: Annotated[SecretStr | None, classified("restricted")] = None
     relay_database_url: Annotated[SecretStr | None, classified("restricted")] = None
