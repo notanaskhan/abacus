@@ -54,6 +54,8 @@ const DETAIL: WorkpaperDetailOut = {
   ],
   citations: [],
   versions: [],
+  trial_balance: null,
+  tb_accounts: [],
 };
 
 function page(role: string, ui: "index" | "grid", extra = {}, detail = DETAIL) {
@@ -120,6 +122,27 @@ describe("SPEC-308 working papers", () => {
     await waitFor(() => {
       expect(calls.find((c) => c.method === "PUT")?.body).toEqual({
         cells: [{ cell_key: "A1", raw: "Payroll account", tickmarks: [] }],
+      });
+    });
+  });
+
+  it("links a cell to a trial balance account carrying this paper's WP ref (SPEC-310 ac4)", async () => {
+    const linked = {
+      ...DETAIL,
+      trial_balance: { id: "tb1", label: "standard", period_end: "2026-12-31", version_no: 2 },
+      tb_accounts: [{ account_code: "1000", account_name: "Cash", boy: null, eoy: "120000.00" }],
+    };
+    const { calls } = page(
+      "senior",
+      "grid",
+      { [`PUT ${BASE}/workpapers/w1/cells`]: () => json(linked) },
+      linked,
+    );
+    expect(await screen.findByText(/2026-12-31 · v2/)).toBeTruthy();
+    fireEvent.click(screen.getByTitle("Link A1 to account 1000"));
+    await waitFor(() => {
+      expect(calls.find((c) => c.method === "PUT")?.body).toEqual({
+        cells: [{ cell_key: "A1", raw: '=TB("1000")', tickmarks: [] }],
       });
     });
   });

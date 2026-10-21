@@ -235,6 +235,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/trial-balances",
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/versions",
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/annotations",
+        "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/checks",  # SPEC-310
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

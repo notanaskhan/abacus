@@ -1,24 +1,55 @@
 """The working-paper formula engine (SPEC-308 AC-3; ADR-050: code computes).
 
 A cell whose raw text starts with `=` is a formula: decimal arithmetic (`+ - * /`, unary minus,
-parentheses), cell references (`B4`) and `SUM(B2:B9)`, which counts only numeric cells in the
-range. Errors are values, as in a spreadsheet: `#REF!` (a bad reference), `#CYCLE!` (a cell that
-depends on itself), `#DIV/0!` and `#ERR!` (anything that doesn't parse). No floats anywhere.
+parentheses), cell references (`B4`), `SUM(B2:B9)`, which counts only numeric cells in the
+range, and `TB("1000")` (SPEC-310): an account's net on the engagement's trial balance of record,
+end of year, or `TB("1000", "BOY")`; `TB("1000:1099")` sums a code range. Errors are values, as
+in a spreadsheet: `#REF!` (a bad reference), `#CYCLE!` (a cell that depends on itself),
+`#DIV/0!`, `#TB!` (no trial balance, or an account it doesn't hold) and `#ERR!` (anything that
+doesn't parse). No floats anywhere.
 """
 
 from __future__ import annotations
 
 import re
 from collections.abc import Mapping
+from dataclasses import dataclass
 from decimal import Decimal, DivisionByZero, InvalidOperation
 from typing import Final
 
-_TOKEN: Final = re.compile(r"\s*(?:(\d+(?:\.\d+)?)|([A-Z]{1,2}[1-9][0-9]{0,3})|(SUM)|(.))")
+_TOKEN: Final = re.compile(
+    r'\s*(?:(\d+(?:\.\d+)?)|"([^"]{0,64})"|(SUM|TB)\b|([A-Z]{1,2}[1-9][0-9]{0,3})|(.))'
+)
 _CELL: Final = re.compile(r"^([A-Z]{1,2})([1-9][0-9]{0,3})$")
 _NUMBER: Final = re.compile(r"^\s*\(?-?\$?[0-9,]*\.?[0-9]+\)?\s*$")
 MAX_RANGE: Final = 2000
 
 Value = Decimal | str  # a number, plain text, or an error code
+
+
+@dataclass(frozen=True)
+class TbSource:
+    """A trial balance's nets by account code (upper case) for the TB() function."""
+
+    eoy: Mapping[str, Decimal]
+    boy: Mapping[str, Decimal] | None
+
+    def total(self, selector: str, column: str) -> Decimal:
+        nets = self.eoy if column == "EOY" else self.boy
+        if nets is None:
+            raise FormulaError("#TB!")
+        lo, _, hi = selector.strip().upper().partition(":")
+        if not hi:
+            if lo not in nets:
+                raise FormulaError("#TB!")
+            return nets[lo]
+        codes = [c for c in nets if lo <= c <= hi]
+        if not codes:
+            raise FormulaError("#TB!")
+        return sum((nets[c] for c in codes), Decimal(0))
+
+    def uses(self, raw: str | None) -> bool:
+        return raw is not None and raw.startswith("=") and "TB(" in raw.upper().replace(" ", "")
 
 
 class FormulaError(Exception):
@@ -70,12 +101,14 @@ class _Parser:
         for m in _TOKEN.finditer(text):
             if m.group(1):
                 self.tokens.append(("num", m.group(1)))
+            elif m.group(2) is not None:
+                self.tokens.append(("str", m.group(2)))
             elif m.group(3):
-                self.tokens.append(("sum", "SUM"))
-            elif m.group(2):
-                self.tokens.append(("ref", m.group(2)))
-            elif m.group(4) and not m.group(4).isspace():
-                self.tokens.append(("op", m.group(4)))
+                self.tokens.append(("fn", m.group(3)))
+            elif m.group(4):
+                self.tokens.append(("ref", m.group(4)))
+            elif m.group(5) and not m.group(5).isspace():
+                self.tokens.append(("op", m.group(5)))
         self.pos = 0
         self.resolve = resolve
 
@@ -133,7 +166,9 @@ class _Parser:
             return Decimal(text)
         if kind == "ref":
             return self.number(self.resolve.value(text))
-        if kind == "sum":
+        if kind == "fn" and text == "TB":
+            return self.tb()
+        if kind == "fn":
             self.take("(")
             start = self.take()
             self.take(":")
@@ -147,6 +182,22 @@ class _Parser:
             self.take(")")
             return value
         raise FormulaError("#ERR!")
+
+    def tb(self) -> Decimal:
+        self.take("(")
+        kind, selector = self.take()
+        if kind != "str":
+            raise FormulaError("#ERR!")
+        column = "EOY"
+        if (t := self.peek()) is not None and t[1] == ",":
+            self.take(",")
+            kind, column = self.take()
+            if kind != "str" or column not in ("EOY", "BOY"):
+                raise FormulaError("#ERR!")
+        self.take(")")
+        if self.resolve.tb is None:
+            raise FormulaError("#TB!")
+        return self.resolve.tb.total(selector, column)
 
     def total(self, start: str, end: str) -> Decimal:
         (c1, r1), (c2, r2) = split_key(start), split_key(end)
@@ -176,8 +227,9 @@ class _Parser:
 
 
 class _Resolver:
-    def __init__(self, raws: Mapping[str, str | None]) -> None:
+    def __init__(self, raws: Mapping[str, str | None], tb: TbSource | None = None) -> None:
         self.raws = raws
+        self.tb = tb
         self.done: dict[str, Value] = {}
         self.active: set[str] = set()
 
@@ -202,9 +254,9 @@ class _Resolver:
         return result
 
 
-def evaluate(raws: Mapping[str, str | None]) -> dict[str, Value]:
-    """Every cell's value, computed from the raw texts of one sheet."""
-    resolver = _Resolver(raws)
+def evaluate(raws: Mapping[str, str | None], tb: TbSource | None = None) -> dict[str, Value]:
+    """Every cell's value, computed from the raw texts of one sheet (and the trial balance)."""
+    resolver = _Resolver(raws, tb)
     return {key: resolver.value(key) for key in raws}
 
 

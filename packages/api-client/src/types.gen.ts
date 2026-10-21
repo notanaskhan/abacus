@@ -3419,6 +3419,28 @@ export type LineOut = {
 };
 
 /**
+ * LinkedAccountOut
+ */
+export type LinkedAccountOut = {
+    /**
+     * Account Code
+     */
+    account_code: string;
+    /**
+     * Account Name
+     */
+    account_name: string;
+    /**
+     * Boy
+     */
+    boy: string | null;
+    /**
+     * Eoy
+     */
+    eoy: string;
+};
+
+/**
  * ListDoneOut
  */
 export type ListDoneOut = {
@@ -5037,6 +5059,42 @@ export type RollForwardProposalOut = {
 };
 
 /**
+ * RollforwardComponentBody
+ */
+export type RollforwardComponentBody = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Sign
+     */
+    sign: 1 | -1;
+    /**
+     * Value
+     */
+    value: number | string;
+};
+
+/**
+ * RollforwardComponentOut
+ */
+export type RollforwardComponentOut = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Sign
+     */
+    sign: number;
+    /**
+     * Value
+     */
+    value: string;
+};
+
+/**
  * RowSignOut
  */
 export type RowSignOut = {
@@ -5839,6 +5897,28 @@ export type TbLineOut = {
 };
 
 /**
+ * TbLinkOut
+ */
+export type TbLinkOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Period End
+     */
+    period_end: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
  * TbVersionOut
  */
 export type TbVersionOut = {
@@ -6060,6 +6140,191 @@ export type ThreadReadOut = {
      * Read
      */
     read?: boolean;
+};
+
+/**
+ * TieOutCheckBody
+ */
+export type TieOutCheckBody = {
+    /**
+     * Accounts
+     */
+    accounts?: Array<string>;
+    /**
+     * Citation Ids
+     */
+    citation_ids?: Array<string>;
+    /**
+     * Column
+     */
+    column?: 'eoy' | 'boy';
+    /**
+     * Components
+     */
+    components?: Array<RollforwardComponentBody>;
+    /**
+     * Expected
+     */
+    expected?: number | string | null;
+    /**
+     * Kind
+     */
+    kind: 'balanced' | 'tie' | 'rollforward';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Negate
+     */
+    negate?: boolean;
+    /**
+     * Tolerance
+     */
+    tolerance?: number | string;
+};
+
+/**
+ * TieOutCheckEditBody
+ */
+export type TieOutCheckEditBody = {
+    /**
+     * Accounts
+     */
+    accounts?: Array<string>;
+    /**
+     * Citation Ids
+     */
+    citation_ids?: Array<string>;
+    /**
+     * Column
+     */
+    column?: 'eoy' | 'boy';
+    /**
+     * Components
+     */
+    components?: Array<RollforwardComponentBody>;
+    /**
+     * Expected
+     */
+    expected?: number | string | null;
+    /**
+     * Kind
+     */
+    kind: 'balanced' | 'tie' | 'rollforward';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Negate
+     */
+    negate?: boolean;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+    /**
+     * Tolerance
+     */
+    tolerance?: number | string;
+};
+
+/**
+ * TieOutCheckOut
+ */
+export type TieOutCheckOut = {
+    /**
+     * Accounts
+     */
+    accounts: Array<string>;
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Column
+     */
+    column: 'eoy' | 'boy';
+    /**
+     * Components
+     */
+    components: Array<RollforwardComponentOut>;
+    /**
+     * Defined At
+     */
+    defined_at: string;
+    /**
+     * Defined By Name
+     */
+    defined_by_name: string;
+    /**
+     * Expected
+     */
+    expected: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Kind
+     */
+    kind: 'balanced' | 'tie' | 'rollforward';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Negate
+     */
+    negate: boolean;
+    result: TieResultOut;
+    /**
+     * Tolerance
+     */
+    tolerance: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
+ * TieResultOut
+ */
+export type TieResultOut = {
+    /**
+     * Actual
+     */
+    actual: string | null;
+    /**
+     * Difference
+     */
+    difference: string | null;
+    /**
+     * Expected
+     */
+    expected: string | null;
+    /**
+     * Formula
+     */
+    formula: string | null;
+    /**
+     * Missing
+     */
+    missing: Array<string>;
+    /**
+     * Status
+     */
+    status: 'tie' | 'off' | 'pending';
 };
 
 /**
@@ -6475,6 +6740,11 @@ export type WorkpaperDetailOut = {
      * Content Hash
      */
     content_hash: string;
+    /**
+     * Tb Accounts
+     */
+    tb_accounts: Array<LinkedAccountOut>;
+    trial_balance: TbLinkOut | null;
     /**
      * Versions
      */
@@ -16265,6 +16535,184 @@ export type TbCandidatesResponses = {
 };
 
 export type TbCandidatesResponse = TbCandidatesResponses[keyof TbCandidatesResponses];
+
+export type TieOutChecksData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/checks';
+};
+
+export type TieOutChecksErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type TieOutChecksError = TieOutChecksErrors[keyof TieOutChecksErrors];
+
+export type TieOutChecksResponses = {
+    /**
+     * Response Tie Out Checks
+     *
+     * Successful Response
+     */
+    200: Array<TieOutCheckOut>;
+};
+
+export type TieOutChecksResponse = TieOutChecksResponses[keyof TieOutChecksResponses];
+
+export type DefineCheckData = {
+    body: TieOutCheckBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/checks';
+};
+
+export type DefineCheckErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DefineCheckError = DefineCheckErrors[keyof DefineCheckErrors];
+
+export type DefineCheckResponses = {
+    /**
+     * Response Define Check
+     *
+     * Successful Response
+     */
+    201: Array<TieOutCheckOut>;
+};
+
+export type DefineCheckResponse = DefineCheckResponses[keyof DefineCheckResponses];
+
+export type EditCheckData = {
+    body: TieOutCheckEditBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+        /**
+         * Check Id
+         */
+        check_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/checks/{check_id}';
+};
+
+export type EditCheckErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EditCheckError = EditCheckErrors[keyof EditCheckErrors];
+
+export type EditCheckResponses = {
+    /**
+     * Response Edit Check
+     *
+     * Successful Response
+     */
+    200: Array<TieOutCheckOut>;
+};
+
+export type EditCheckResponse = EditCheckResponses[keyof EditCheckResponses];
 
 export type LeadsheetsData = {
     body?: never;

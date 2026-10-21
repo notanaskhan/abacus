@@ -924,6 +924,10 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/ledger/tb_repository.py", "trial_balances_of"),
         ("src/abacus/modules/ledger/tb_repository.py", "versions_of"),
         ("src/abacus/modules/ledger/tb_repository.py", "newest_annotations"),
+        # SPEC-310 (TASK-321): a trial balance's checks and their current definitions, after
+        # `authorise(trial_balance.read)` on its engagement.
+        ("src/abacus/modules/workpapers/tie_repository.py", "checks_of"),
+        ("src/abacus/modules/workpapers/tie_repository.py", "current_versions"),
     }
 )
 

@@ -5,6 +5,7 @@ import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { json, mockApi, renderRoutes, signInForTest } from "../testing/support";
 import { amount, wholeDollars } from "./amounts";
+import { checkBody, checkWord } from "./TieChecks";
 import { sourceWord, TrialBalance } from "./TrialBalance";
 
 const BASE = "/v1/engagements/e1/trial-balances";
@@ -98,6 +99,72 @@ afterEach(() => {
   sessionStorage.clear();
 });
 
+const CHECK = {
+  id: "k1",
+  key: "net-assets",
+  label: "Net assets ↔ trust report",
+  kind: "tie" as const,
+  accounts: ["3000"],
+  column: "eoy" as const,
+  negate: true,
+  expected: "16812400.00",
+  components: [],
+  citation_ids: ["v1"],
+  tolerance: "0.00",
+  version_no: 1,
+  defined_by_name: "Marcus Delaney",
+  defined_at: "2026-09-14T14:00:00Z",
+  result: {
+    status: "off" as const,
+    actual: "16813960.00",
+    expected: "16812400.00",
+    difference: "1560.00",
+    formula: null,
+    missing: [],
+  },
+};
+
+describe("SPEC-310 tie-out checks", () => {
+  it("words results and builds bodies per kind (ac1, ac2)", () => {
+    expect(checkWord(CHECK)).toEqual({ label: "off 1,560.00", tone: "warning" });
+    expect(checkWord({ ...CHECK, result: { ...CHECK.result, status: "pending" } }).label).toBe(
+      "Pending",
+    );
+    const form = {
+      label: "Loan rollforward",
+      kind: "rollforward" as const,
+      accounts: "2500, 2510",
+      column: "eoy" as const,
+      negate: true,
+      expected: "",
+      rows: [
+        { label: "Beginning", sign: 1 as const, value: "288,500.00" },
+        { label: "Repayments", sign: -1 as const, value: "57450" },
+      ],
+      citation: "v1",
+    };
+    expect(checkBody(form)).toEqual({
+      label: "Loan rollforward",
+      kind: "rollforward",
+      accounts: ["2500", "2510"],
+      column: "eoy",
+      negate: true,
+      citation_ids: ["v1"],
+      components: [
+        { label: "Beginning", sign: 1, value: "288500.00" },
+        { label: "Repayments", sign: -1, value: "57450" },
+      ],
+    });
+    expect(checkBody({ ...form, citation: "" })).toBeNull(); // the source is required
+    expect(checkBody({ ...form, kind: "balanced", citation: "" })).toEqual({
+      label: "Loan rollforward",
+      kind: "balanced",
+      column: "eoy",
+    });
+    expect(checkBody({ ...form, kind: "tie", expected: "12x" })).toBeNull();
+  });
+});
+
 describe("SPEC-309 trial balance", () => {
   it("formats exact amounts and names sources (ac2)", () => {
     expect(amount("-68600.00")).toBe("(68,600.00)");
@@ -132,6 +199,7 @@ describe("SPEC-309 trial balance", () => {
       [`GET ${BASE}/tb1`]: () => json(DETAIL),
       [`GET ${BASE}/tb1/candidates`]: () =>
         json([{ ...SNAP, id: "s2", pulled_at: "2026-09-14T14:15:00Z", lines_changed: 3 }]),
+      [`GET ${BASE}/tb1/checks`]: () => json([CHECK]),
     });
     expect(await screen.findByText("Balanced")).toBeTruthy();
     expect(screen.getByText("(68,600.00)")).toBeTruthy();
@@ -139,6 +207,7 @@ describe("SPEC-309 trial balance", () => {
     expect(screen.getByText(/Adopted by Simone Baptiste from a NetSuite export/)).toBeTruthy();
     expect(await screen.findByText(/3 lines changed/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Use v2…" })).toBeTruthy();
+    expect(await screen.findByText("off 1,560.00")).toBeTruthy(); // SPEC-310: computed by the server
   });
 
   it("sets an area and WP ref on selected accounts (ac6)", async () => {

@@ -380,6 +380,49 @@ export function Workpaper({
             </ul>
           )}
         </section>
+        <section aria-labelledby="wp-tb" className="rounded-pane bg-card p-3 shadow-e2">
+          <h3 id="wp-tb" className="mb-1 text-[13px] font-medium">
+            Trial balance
+          </h3>
+          {d.trial_balance == null ? (
+            <p className="text-[12.5px] text-ink-3">
+              No trial balance adopted yet; TB() cells show #TB!.
+            </p>
+          ) : (
+            <>
+              <p className="text-[12px] text-ink-3 tabular-nums">
+                {`${d.trial_balance.period_end} · v${String(d.trial_balance.version_no)} · type =TB("1000") in a cell`}
+              </p>
+              {d.tb_accounts.length === 0 ? (
+                <p className="mt-1 text-[12.5px] text-ink-3">
+                  {`No accounts carry WP ref ${d.workpaper.code} yet.`}
+                </p>
+              ) : (
+                <ul className="mt-1.5 flex flex-col gap-0.5 text-[12.5px]">
+                  {d.tb_accounts.map((a) => (
+                    <li key={a.account_code}>
+                      <button
+                        type="button"
+                        disabled={!canEdit}
+                        title={
+                          canEdit ? `Link ${selected} to account ${a.account_code}` : undefined
+                        }
+                        onClick={() => {
+                          commit(selected, `=TB("${a.account_code}")`);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-tile px-1 py-0.5 text-left hover:bg-nested disabled:hover:bg-transparent"
+                      >
+                        <span className="tabular-nums text-ink-3">{a.account_code}</span>
+                        <span className="flex-1 truncate">{a.account_name}</span>
+                        <span className="tabular-nums">{groupDigits(a.eoy)}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+        </section>
         <section className="rounded-pane bg-card p-3 shadow-e2">
           <h3 className="mb-2 text-[13px] font-medium">Versions</h3>
           {d.versions.length === 0 ? (
