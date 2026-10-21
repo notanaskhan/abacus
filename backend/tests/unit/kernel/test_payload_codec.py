@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import uuid
 from collections.abc import Iterator
@@ -73,6 +74,13 @@ def _explicit_env(
     }
     if key:
         values["temporal_payload_key"] = REAL_KEY
+        # Staging and production take the keyring and the other adapter settings (SPEC-050 AC-17).
+        values["temporal_payload_keys"] = json.dumps({"platform-v1": REAL_KEY})
+        values["temporal_payload_current"] = "platform-v1"
+    values["kms_platform_key_alias"] = "alias/abacus/platform"
+    values["scanner_endpoint"] = "scanner.abacus.internal:3310"
+    values["ses_configuration_set"] = "abacus-staging"
+    values["ses_from_address"] = "notifications@mail.example.test"
     if tls:
         values["temporal_tls"] = "true"
         values["temporal_api_key"] = "test-temporal-api-key"

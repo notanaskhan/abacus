@@ -14,11 +14,12 @@ Envelope format v1 (all lengths big-endian):
 
 from __future__ import annotations
 
+import asyncio
 import os
 import struct
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 from urllib.parse import urlsplit
 from uuid import UUID
 
@@ -27,7 +28,15 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
-from abacus.kernel.config import settings
+from abacus.kernel.config import LOCAL_STACK, settings
+from abacus.kernel.errors import ServiceUnavailable
+from abacus.kernel.logging import get_logger
+from abacus.kernel.storage import AwsError, error_code, kms_client
+
+if TYPE_CHECKING:
+    from types_boto3_kms import KMSClient
+
+_log = get_logger(__name__)
 
 MAGIC = b"ABE1"
 _NONCE = 12
@@ -91,6 +100,103 @@ class LocalKeyService:
             raise DecryptionError("data key can't be unwrapped") from None
 
 
+class KeyServiceUnavailable(ServiceUnavailable):
+    """The key service can't be reached or failed: sealing and opening fail closed (503). Not a
+    `DecryptionError`: callers treat that as "this object does not open" and move on, which an
+    outage must never look like."""
+
+
+# KMS answers that mean this ciphertext can't be opened with this key and context, now: wrong
+# encryption context (another tenant), wrong or disabled key, a key scheduled for deletion or gone
+# (a crypto-shredded tenant), or a policy refusing the caller. Every other error is an outage.
+_KMS_REFUSALS = frozenset(
+    {"InvalidCiphertextException", "IncorrectKeyException", "InvalidKeyUsageException"}
+    | {"AccessDeniedException", "DisabledException", "KMSInvalidStateException"}
+    | {"NotFoundException"}
+)
+_DEK_PURPOSE = "dek"
+_PROBE_PURPOSE = "readyz"
+
+
+class KmsKeyService:
+    """AWS KMS, one key per tenant (ADR-035, ADR-104; SPEC-050 AC-13). Each per-object data key is
+    wrapped by KMS `Encrypt` under the tenant's key with the encryption context
+    `{"abacus:tenant": <tenant id>, "abacus:purpose": "dek"}`, so KMS itself refuses an unwrap
+    under another tenant's context (and `Decrypt` names the key, so it refuses another key too).
+    `key_id` is the tenant's deterministic alias, `<alias_prefix><tenant id>`; the key behind the
+    alias is made by the tenant key workflow, not here. Any error fails closed: there is no
+    fallback to `LocalKeyService`, and a refusal is a `DecryptionError` where an outage is a
+    `KeyServiceUnavailable`.
+
+    `client` is a boto3 KMS client; its calls are blocking, so they run in a thread."""
+
+    def __init__(self, client: KMSClient, *, alias_prefix: str, platform_key: str | None) -> None:
+        self._client = client
+        self._prefix = alias_prefix
+        self._platform_key = platform_key
+
+    def key_id(self, tenant_id: UUID) -> str:
+        return f"{self._prefix}{tenant_id}"
+
+    @staticmethod
+    def _context(tenant_id: UUID) -> dict[str, str]:
+        return {"abacus:tenant": str(tenant_id), "abacus:purpose": _DEK_PURPOSE}
+
+    async def wrap(self, tenant_id: UUID, data_key: bytes) -> bytes:
+        try:
+            response = await asyncio.to_thread(
+                self._client.encrypt,
+                KeyId=self.key_id(tenant_id),
+                Plaintext=data_key,
+                EncryptionContext=self._context(tenant_id),
+            )
+        except AwsError as exc:
+            code = error_code(exc)
+            _log.warning("kms.wrap_failed", kms_error=code, error_type=type(exc).__name__)
+            raise KeyServiceUnavailable("the data key can't be wrapped") from None
+        wrapped = response.get("CiphertextBlob")
+        if not wrapped:
+            raise KeyServiceUnavailable("the data key can't be wrapped")
+        return wrapped
+
+    async def unwrap(self, tenant_id: UUID, key_id: str, wrapped: bytes) -> bytes:
+        if key_id != self.key_id(tenant_id):
+            raise DecryptionError("key does not belong to this tenant")
+        try:
+            response = await asyncio.to_thread(
+                self._client.decrypt,
+                CiphertextBlob=wrapped,
+                KeyId=key_id,
+                EncryptionContext=self._context(tenant_id),
+            )
+        except AwsError as exc:
+            code = error_code(exc)
+            _log.warning("kms.unwrap_failed", kms_error=code, error_type=type(exc).__name__)
+            if code in _KMS_REFUSALS:
+                raise DecryptionError("data key can't be unwrapped") from None
+            raise KeyServiceUnavailable("the data key can't be unwrapped") from None
+        data_key = response.get("Plaintext")
+        if not data_key:
+            raise KeyServiceUnavailable("the data key can't be unwrapped")
+        return data_key
+
+    async def check_platform_key(self) -> None:
+        """Readiness (`/readyz`): the platform key is usable (an `Encrypt` of a probe value)."""
+        if not self._platform_key:
+            raise KeyServiceUnavailable("no platform key is configured")
+        try:
+            await asyncio.to_thread(
+                self._client.encrypt,
+                KeyId=self._platform_key,
+                Plaintext=b"readyz",
+                EncryptionContext={"abacus:purpose": _PROBE_PURPOSE},
+            )
+        except AwsError as exc:
+            code = error_code(exc)
+            _log.warning("kms.probe_failed", kms_error=code, error_type=type(exc).__name__)
+            raise KeyServiceUnavailable("the platform key is not usable") from None
+
+
 _service: KeyService | None = None
 
 
@@ -116,7 +222,15 @@ def _from_settings() -> KeyService:
         and _is_loopback(s.s3_endpoint_url)
     ):
         return LocalKeyService(s.local_master_key.get_secret_value().encode())
-    # AWS environments need the KMS key service (TASK-014): refuse rather than fall back.
+    # Staging and production use KMS (SPEC-050 AC-13), which settings validation guarantees is
+    # configured there. Anywhere else, refuse rather than fall back to a key service that is
+    # not meant for the data (the local one is for loopback storage only).
+    if s.environment not in LOCAL_STACK:
+        return KmsKeyService(
+            kms_client(region=s.kms_region),
+            alias_prefix=s.kms_alias_prefix,
+            platform_key=s.kms_platform_key_alias,
+        )
     raise RuntimeError("no key service configured for this environment (ADR-104)")
 
 
@@ -241,6 +355,8 @@ async def open_sealed(tenant_id: UUID, sealed: bytes, fingerprint: str) -> bytes
 __all__ = [
     "DecryptionError",
     "KeyService",
+    "KeyServiceUnavailable",
+    "KmsKeyService",
     "LocalKeyService",
     "PlatformKeyProbe",
     "check_platform_key",

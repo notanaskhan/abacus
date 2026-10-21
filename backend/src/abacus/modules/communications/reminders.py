@@ -73,10 +73,16 @@ async def send_reminder(
         raise NotFound("recipient")
     names = await firm_wording(ctx.tenant_id, engagement_id)
     subject, body = await render_reminder(ctx.tenant_id, engagement_id, descriptions, note)
-    await asyncio.to_thread(
-        transport().send, to=email, subject=subject, body=body, sender_name=names["firm"]
-    )
     message_id = uuid4()
+    await asyncio.to_thread(
+        transport().send,
+        to=email,
+        subject=subject,
+        body=body,
+        sender_name=names["firm"],
+        tenant_id=ctx.tenant_id,
+        message_id=message_id,
+    )
     system = TenantContext(ctx.tenant_id, "system", f"reminder:{engagement_id}")
     async with uow(system) as tx:
         await insert_message(

@@ -46,7 +46,6 @@ _CONNECTIONS = (
     "s3_secret_key",
     "evidence_bucket",
     "temporal_target",
-    "temporal_payload_key",
     "trusted_hosts",
 )
 _LOCAL_DEFAULTS: dict[str, object] = {
@@ -91,6 +90,20 @@ class WorkClassLimits(BaseModel):
     admission_reserve_pct: Annotated[int, Field(ge=0, le=99), classified("internal")]
 
 
+_US_REGIONS = ("us-east-2", "us-west-2")  # the primary and the DR region (ADR-142)
+_KEY_ID = re.compile(r"^[a-z0-9][a-z0-9._-]{0,62}$")
+_HOST_PORT = re.compile(r"^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?:\d{1,5}$")
+_EMAIL = re.compile(r"^[^@\s<>,;]+@[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?\.[A-Za-z]{2,}$")
+# Settings a staging or production process needs for its AWS adapters (SPEC-050 AC-17). The
+# WorkOS ones join when its adapter is built (Q-01-T17).
+_ADAPTER_SETTINGS = (
+    "kms_platform_key_alias",
+    "temporal_payload_keys",
+    "temporal_payload_current",
+    "scanner_endpoint",
+    "ses_configuration_set",
+    "ses_from_address",
+)
 _DOMAIN = re.compile(r"^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$")
 Route = Literal["fake", "direct", "bedrock"]
 ModelTier = Literal["small", "medium", "large"]
@@ -243,8 +256,29 @@ class Settings(BaseSettings):
     # Temporal Cloud needs TLS and an API key; both are required outside local and test.
     temporal_tls: Annotated[bool, classified("internal")] = False
     temporal_api_key: Annotated[SecretStr | None, classified("restricted")] = None
-    # Encrypts every workflow payload before it leaves the process (ADR-017). KMS in TASK-014.
+    # Encrypts every workflow payload before it leaves the process (ADR-017). Local and test use
+    # this one key (id `platform-v1`); staging and production use the keyring below instead.
     temporal_payload_key: Annotated[SecretStr | None, classified("restricted")] = None
+    # The payload keyring (SPEC-050 AC-14; P2): key ID to secret, as a JSON object, from the
+    # `abacus/<env>/temporal/payload-keyring` secret. Payloads are sealed under
+    # `temporal_payload_current` and opened under any ID present, so a key can be added and then
+    # retired without stranding recorded histories. Never remove an ID histories still use (RB-09).
+    temporal_payload_keys: Annotated[dict[str, SecretStr] | None, classified("restricted")] = None
+    temporal_payload_current: Annotated[str | None, classified("internal")] = None
+    # AWS adapters (SPEC-050; ADR-142, ADR-104, ADR-153). Chosen by configuration, never by default
+    # in local development or tests. KMS: each tenant's key is the alias `<prefix><tenant id>`
+    # (P1); the platform key is the one `/readyz` probes. Regions are the primary or the DR one.
+    kms_alias_prefix: Annotated[str, classified("internal")] = "alias/abacus/tenant/"
+    kms_region: Annotated[str, classified("internal")] = "us-east-2"
+    kms_platform_key_alias: Annotated[str | None, classified("internal")] = None
+    # The ClamAV scanner service, `host:port` (P4). Unset: the local scanner (synthetic only).
+    scanner_endpoint: Annotated[str | None, classified("internal")] = None
+    scanner_timeout_seconds: Annotated[int, Field(ge=1, le=120), classified("internal")] = 30
+    # SES (P3): the environment's configuration set and the platform's sending address. Unset:
+    # the local mailbox (synthetic only).
+    ses_region: Annotated[str, classified("internal")] = "us-east-2"
+    ses_configuration_set: Annotated[str | None, classified("internal")] = None
+    ses_from_address: Annotated[str | None, classified("internal")] = None
     # Observability (ADR-022; TASK-013). Traces export over OTLP only when an endpoint is set;
     # errors go to Sentry only when a DSN is set. Neither is required locally.
     # None: debug locally and in tests, info elsewhere.
@@ -396,6 +430,38 @@ class Settings(BaseSettings):
         return self
 
     @model_validator(mode="after")
+    def _keyring(self) -> Self:
+        keys = self.temporal_payload_keys
+        if keys is None and self.temporal_payload_current is None:
+            return self
+        if not keys or self.temporal_payload_current not in keys:
+            raise ValueError("temporal_payload_current must be one of the temporal_payload_keys")
+        for key_id, secret in keys.items():
+            if not _KEY_ID.fullmatch(key_id):
+                raise ValueError("temporal_payload_keys ids are short lower-case names")
+            value = secret.get_secret_value()
+            if len(value) < 32 or len(set(value)) < 8:
+                raise ValueError("every temporal_payload_keys secret needs 32 varied characters")
+            if self.environment not in LOCAL_STACK and value.startswith("example-"):
+                raise ValueError("temporal_payload_keys must be real secrets outside local/test")
+        return self
+
+    @model_validator(mode="after")
+    def _adapter_values(self) -> Self:
+        if not (
+            self.kms_alias_prefix.startswith("alias/") and self.kms_alias_prefix.endswith("/")
+        ):
+            raise ValueError("kms_alias_prefix looks like 'alias/abacus/tenant/'")
+        for name in ("kms_region", "ses_region"):
+            if getattr(self, name) not in _US_REGIONS:
+                raise ValueError(f"{name} must be one of {', '.join(_US_REGIONS)} (ADR-142)")
+        if self.scanner_endpoint is not None and not _HOST_PORT.fullmatch(self.scanner_endpoint):
+            raise ValueError("scanner_endpoint is host:port")
+        if self.ses_from_address is not None and not _EMAIL.fullmatch(self.ses_from_address):
+            raise ValueError("ses_from_address is an email address")
+        return self
+
+    @model_validator(mode="after")
     def _every_work_class(self) -> Self:
         # Limits for exactly the four classes: an override names all of them.
         if set(self.work_classes) != set(WORK_CLASSES):
@@ -456,6 +522,25 @@ class Settings(BaseSettings):
             raise ValueError(
                 f"{', '.join(missing)} must be set explicitly in environment {self.environment!r}"
             )
+        return self
+
+    @model_validator(mode="after")
+    def _adapters_outside_local(self) -> Self:
+        """SPEC-050 AC-17: staging and production start only with the real adapters configured,
+        so a deployment can't run on a local fallback; production also refuses a direct
+        Anthropic key (ADR-113: Bedrock only for client data). The second half of AC-17, refusing
+        the `fake` model route in production, is not enforced yet: SPEC-036's settings tests load
+        production on the default route, and the register that lets Bedrock run (ADR-114) is
+        empty. It lands with the first production model route (Q-02)."""
+        if self.environment in LOCAL_STACK:
+            return self
+        missing = [name for name in _ADAPTER_SETTINGS if getattr(self, name) is None]
+        if missing:
+            raise ValueError(
+                f"{', '.join(missing)} must be set explicitly in environment {self.environment!r}"
+            )
+        if self.environment == "production" and self.anthropic_api_key is not None:
+            raise ValueError("production refuses anthropic_api_key (ADR-113)")
         return self
 
 

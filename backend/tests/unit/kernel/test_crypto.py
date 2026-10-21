@@ -14,6 +14,7 @@ from abacus.kernel.config import settings
 from abacus.kernel.crypto import (
     DecryptionError,
     KeyService,
+    KmsKeyService,
     LocalKeyService,
     configure_key_service,
     key_service,
@@ -40,6 +41,12 @@ CONNECTIONS = {
     "ABACUS_EVIDENCE_BUCKET": "evidence-bucket",
     "ABACUS_TEMPORAL_TARGET": "temporal.example.test:7233",
     "ABACUS_TRUSTED_HOSTS": "api.example.test",
+    "ABACUS_KMS_PLATFORM_KEY_ALIAS": "alias/abacus/platform",
+    "ABACUS_TEMPORAL_PAYLOAD_KEYS": '{"platform-v1": "test-payload-key-Zq8Xv2Lm9Wd4Rt7Bn3Hs"}',
+    "ABACUS_TEMPORAL_PAYLOAD_CURRENT": "platform-v1",
+    "ABACUS_SCANNER_ENDPOINT": "scanner.abacus.internal:3310",
+    "ABACUS_SES_CONFIGURATION_SET": "abacus-staging",
+    "ABACUS_SES_FROM_ADDRESS": "notifications@mail.example.test",
     "ABACUS_TEMPORAL_PAYLOAD_KEY": "test-payload-key-Zq8Xv2Lm9Wd4Rt7Bn3Hs",
     "ABACUS_TEMPORAL_TLS": "true",
     "ABACUS_TEMPORAL_API_KEY": "test-temporal-api-key",
@@ -279,11 +286,22 @@ def test_ac13_default_key_service_is_local_in_local_and_test(
 
 
 @pytest.mark.parametrize("name", ["staging", "production"])
-def test_ac13_default_key_service_refuses_to_start_in_aws_environments(
+def test_ac13_default_key_service_is_kms_in_aws_environments(
+    environment: pytest.MonkeyPatch, name: str
+) -> None:
+    # Q-01-T08: the placeholder that refused to start here is replaced by the KMS adapter.
+    _staging(environment, name)
+    assert isinstance(key_service(), KmsKeyService)
+
+
+@pytest.mark.parametrize("name", ["staging", "production"])
+def test_ac13_aws_environments_do_not_start_without_kms_settings(
     environment: pytest.MonkeyPatch, name: str
 ) -> None:
     _staging(environment, name)
-    with pytest.raises(RuntimeError):
+    environment.delenv("ABACUS_KMS_PLATFORM_KEY_ALIAS")
+    settings.cache_clear()
+    with pytest.raises(ValueError):
         key_service()
 
 

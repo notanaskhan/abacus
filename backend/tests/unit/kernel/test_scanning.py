@@ -68,6 +68,7 @@ def test_adr110_no_scanner_outside_synthetic_environments_fails_closed(
 ) -> None:
     class Production:
         environment = "production"
+        scanner_endpoint = None  # none configured
 
     monkeypatch.setattr(scanning, "settings", lambda: Production())
     with pytest.raises(RuntimeError):

@@ -60,6 +60,21 @@ services:
       timeout: 5s
       retries: 30
 
+  scanner:
+    # ClamAV clamd, the real malware scanner for the adapter tests (ADR-153, Q-01-T09). Not part of
+    # `make dev` (the profile keeps `docker compose up` from starting it): local runs use
+    # LocalScanner. The image is linux/amd64 only, so Apple silicon runs it emulated (about 30 s
+    # to a ready socket). Signatures ship in the image and freshclam updates them on start.
+    image: clamav/clamav:stable@sha256:e19130cdebaeacc71fa46eab3ed6f69941f2f22aa5e08d55e9197f8edf43ce5e
+    platform: linux/amd64
+    profiles: ["scanner"]
+    environment:
+      CLAMD_CONF_StreamMaxLength: 60M
+      CLAMD_CONF_MaxFileSize: 60M
+      CLAMD_CONF_MaxScanSize: 200M
+    ports:
+      - "127.0.0.1:${ABACUS_SCANNER_PORT:-3310}:3310"
+
 volumes:
   db-data:
   s3-data:

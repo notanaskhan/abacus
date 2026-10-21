@@ -25,7 +25,21 @@ _client: Client | None = None
 
 
 def payload_codec() -> PayloadEncryptionCodec:
-    key = settings().temporal_payload_key
+    """The payload codec: the keyring when one is configured (staging and production, where
+    settings validation requires it), else the single local key. Sealing uses the current ID;
+    opening accepts any ID present, so a retired key still decodes what it sealed."""
+    s = settings()
+    if s.temporal_payload_keys:
+        if s.temporal_payload_current is None:  # settings validation makes this unreachable
+            raise RuntimeError("temporal_payload_current is not configured")
+        return PayloadEncryptionCodec(
+            {
+                key_id: secret.get_secret_value().encode()
+                for key_id, secret in s.temporal_payload_keys.items()
+            },
+            current=s.temporal_payload_current,
+        )
+    key = s.temporal_payload_key
     if key is None:  # settings validation makes this unreachable outside local and test
         raise RuntimeError("temporal_payload_key is not configured")
     return PayloadEncryptionCodec(

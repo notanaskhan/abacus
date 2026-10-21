@@ -33,7 +33,18 @@ FORBIDDEN = {"detail": "forbidden"}
 class Mailbox:
     sent: list[dict[str, str | None]] = field(default_factory=list[dict[str, str | None]])
 
-    def send(self, *, to: str, subject: str, body: str, sender_name: str | None = None) -> None:
+    def send(
+        self,
+        *,
+        to: str,
+        subject: str,
+        body: str,
+        sender_name: str | None = None,
+        reply_to: str | None = None,
+        tenant_id: uuid.UUID | None = None,
+        message_id: uuid.UUID | None = None,
+    ) -> None:
+        # Q-01-T09: the transport protocol also carries the Reply-To and the IDs SES tags use.
         self.sent.append({"to": to, "subject": subject, "body": body, "sender_name": sender_name})
 
 

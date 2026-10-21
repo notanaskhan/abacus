@@ -54,14 +54,16 @@ async def deliver_invitation(event: OutboxEvent) -> None:
     expires = f"{issued.expires_at:%d %B %Y}"
     link = f"{settings().app_base_url}/client/accept#token={issued.token}"
     names = await firm_wording(event.tenant_id, issued.engagement_id)
+    message_id = uuid4()
     await asyncio.to_thread(
         transport().send,
         to=issued.email,
         subject=SUBJECT.format(**names),
         body=TEMPLATE.format(link=link, expires=expires, **names),
         sender_name=names["firm"],
+        tenant_id=event.tenant_id,
+        message_id=message_id,
     )
-    message_id = uuid4()
     ctx = TenantContext(event.tenant_id, "system", f"invitation:{invitation_id}")
     async with uow(ctx) as tx:
         await insert_message(
@@ -104,5 +106,7 @@ async def deliver_staff_invitation(event: OutboxEvent) -> None:
         subject=STAFF_SUBJECT.format(firm=firm),
         body=STAFF_TEMPLATE.format(firm=firm, link=link, expires=f"{issued.expires_at:%d %B %Y}"),
         sender_name=firm,
+        tenant_id=event.tenant_id,
+        message_id=uuid4(),  # no message is recorded for a staff invitation; the ID is for events
     )
     _log.info("staff_invitation.email_sent", invitation_id=invitation_id)
