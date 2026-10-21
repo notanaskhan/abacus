@@ -101,6 +101,7 @@ Strings and numbers are the epic's (`F-05.md` §3 and `F-05.tasks.csv`).
 | F-05-T07 | TASK-133 | AC-5, AC-6 |
 | F-05-T08 | TASK-134 | AC-5, AC-7 |
 | F-05-T09 | TASK-135 | AC-3, AC-4, AC-10, AC-11, AC-15 |
+| F-05-T12 | TASK-328 | AC-3, AC-14 |
 
 ## 6. Behaviour and flows
 **Happy path**

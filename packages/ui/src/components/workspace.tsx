@@ -1,26 +1,8 @@
 import { Atom } from "lucide-react";
 import { type HTMLAttributes, type JSX, type ReactNode, useId } from "react";
 import { cn } from "../cn";
-import { Badge, type Tone } from "./surfaces";
 
-/** A status with its word, never colour alone (SPEC-016): a pill with a leading disc. */
-export function StatusPill({ tone, children }: { tone: Tone; children: ReactNode }): JSX.Element {
-  return (
-    <Badge tone={tone} className="gap-1.5 whitespace-nowrap">
-      <span
-        aria-hidden="true"
-        className={cn(
-          "size-1.5 rounded-full",
-          tone === "success" && "bg-green",
-          (tone === "warning" || tone === "info") && "bg-amber",
-          tone === "danger" && "bg-red",
-          tone === "neutral" && "bg-ink-4",
-        )}
-      />
-      {children}
-    </Badge>
-  );
-}
+// StatusPill moved to components/status.tsx with the rest of the Status kit (F-05-T12).
 
 /** Marks agent output (ADR-065, the plan's AgentMark): the atom glyph, never a boxed "AI" tag or
  * a sparkle; the citations link goes to their verified sources. Screen readers hear "AI". */

@@ -13,7 +13,24 @@ export {
   Spinner,
   type Tone,
 } from "./components/surfaces";
-export { AiTag, Count, Panel, Rail, RailButton, StatusPill } from "./components/workspace";
+export { AiTag, Count, Panel, Rail, RailButton } from "./components/workspace";
+export {
+  RegistryStatus,
+  type RegistryStatusProps,
+  Status,
+  StatusDisc,
+  type StatusDiscProps,
+  StatusPill,
+  type StatusPillProps,
+  SubLine,
+  type SubLineProps,
+  SyncChip,
+  type SyncChipProps,
+  TallyPill,
+  type TallyPillProps,
+  Tick,
+  type TickCode,
+} from "./components/status";
 export { Table, Td, Th } from "./components/table";
 export { Drawer, Fieldset, Sheet } from "./components/overlays";
 export { Toaster, UNDO_MS, toast } from "./components/toast";
@@ -72,16 +89,37 @@ export {
 } from "./format";
 export { CommandPalette, type PaletteGroup, type PaletteItem } from "./components/command-palette";
 export {
+  DISC_LABEL,
+  DISC_STATES,
+  type DiscSize,
+  type DiscState,
+  type EnumCovered,
+  HANDOFF_OBJECTS,
+  type HandoffObject,
+  handoffStatus,
+  type LineTone,
+  type PillSize,
+  type PillVariant,
   type RegistryCode,
+  type RegistryContext,
+  type RegistryDisc,
   type RegistryObject,
+  type RegistryVariant,
   registryWord,
+  RETIRED,
+  RETIRED_CODES,
+  type RetiredWord,
+  type ResolvedStatus,
   STATUS,
-  Status,
+  status,
   type StatusDomain,
+  type StatusOptions,
   type StatusWord,
   statusWord,
+  type StoredCode,
+  type SyncGlyph,
 } from "./status";
-export { STATUS_REGISTRY } from "./status.gen";
+export { HANDOFF_WORDS, STATUS_REGISTRY } from "./status.gen";
 // The icon registry (F-05-T13): handoff kebab names, the Icon component and the custom glyphs.
 export * from "./icons";
 // Icons for the shell, so apps use one icon set without depending on it directly.

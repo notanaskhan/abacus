@@ -6,7 +6,7 @@ import { Drawer, Fieldset, Sheet } from "../components/overlays";
 import { Menu, Popover, Tooltip } from "../components/popover";
 import { Badge } from "../components/surfaces";
 import { toast } from "../components/toast";
-import { Status } from "../status";
+import { Status } from "../components/status";
 
 // The component gallery's first specimen (TASK-101, moved here by F-05-T09): every shared
 // component in one place, for building and for checking the look. Reached only through
