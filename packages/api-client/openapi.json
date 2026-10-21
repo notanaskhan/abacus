@@ -8271,6 +8271,49 @@
         "title": "OverdueCountOut",
         "type": "object"
       },
+      "PassedEntryOut": {
+        "properties": {
+          "accounts": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Accounts",
+            "type": "array"
+          },
+          "amount": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "description": {
+            "cls": "confidential",
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "ref": {
+            "cls": "internal",
+            "title": "Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "ref",
+          "description",
+          "amount",
+          "accounts"
+        ],
+        "title": "PassedEntryOut",
+        "type": "object"
+      },
       "PauseIn": {
         "additionalProperties": false,
         "properties": {
@@ -12155,6 +12198,19 @@
             "title": "Account Name",
             "type": "string"
           },
+          "aje": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Aje"
+          },
           "area": {
             "anyOf": [
               {
@@ -12211,6 +12267,40 @@
             "title": "Eoy",
             "type": "string"
           },
+          "final": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Final"
+          },
+          "refs": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Refs",
+            "type": "array"
+          },
+          "rje": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Rje"
+          },
           "wp_ref": {
             "anyOf": [
               {
@@ -12233,7 +12323,11 @@
           "eoy",
           "change",
           "area",
-          "wp_ref"
+          "wp_ref",
+          "aje",
+          "rje",
+          "final",
+          "refs"
         ],
         "title": "TbLineOut",
         "type": "object"
@@ -13280,6 +13374,22 @@
             "$ref": "#/components/schemas/TotalsOut",
             "cls": "confidential"
           },
+          "final": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TotalsOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
+          "layers_available": {
+            "cls": "internal",
+            "title": "Layers Available",
+            "type": "boolean"
+          },
           "lines": {
             "cls": "confidential",
             "items": {
@@ -13287,6 +13397,11 @@
             },
             "title": "Lines",
             "type": "array"
+          },
+          "pending_entries": {
+            "cls": "internal",
+            "title": "Pending Entries",
+            "type": "integer"
           },
           "trial_balance": {
             "$ref": "#/components/schemas/TrialBalanceOut",
@@ -13311,7 +13426,10 @@
           "versions",
           "lines",
           "eoy",
-          "boy"
+          "boy",
+          "final",
+          "layers_available",
+          "pending_entries"
         ],
         "title": "TrialBalanceDetailOut",
         "type": "object"
@@ -13398,6 +13516,111 @@
           "snapshots"
         ],
         "title": "TrialBalancesOut",
+        "type": "object"
+      },
+      "UncorrectedOut": {
+        "properties": {
+          "aggregate": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Aggregate",
+            "type": "string"
+          },
+          "band": {
+            "anyOf": [
+              {
+                "enum": [
+                  "clearly_trivial",
+                  "below_performance",
+                  "below_overall",
+                  "above_overall"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Band"
+          },
+          "entries": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/PassedEntryOut"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "headroom": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Headroom"
+          },
+          "materiality_decided": {
+            "cls": "internal",
+            "title": "Materiality Decided",
+            "type": "boolean"
+          },
+          "overall": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Overall"
+          },
+          "performance": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Performance"
+          },
+          "trivial": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Trivial"
+          }
+        },
+        "required": [
+          "entries",
+          "aggregate",
+          "overall",
+          "performance",
+          "trivial",
+          "materiality_decided",
+          "band",
+          "headroom"
+        ],
+        "title": "UncorrectedOut",
         "type": "object"
       },
       "UploadOut": {
@@ -35555,7 +35778,7 @@
     },
     "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/leadsheets": {
       "get": {
-        "description": "SPEC-309 AC-5: leadsheets by audit area (PY, CY, \u0394, \u0394%).",
+        "description": "SPEC-309 AC-5: leadsheets by audit area (PY, CY, \u0394, \u0394%); SPEC-311: CY final or not.",
         "operationId": "leadsheets",
         "parameters": [
           {
@@ -35593,6 +35816,20 @@
                 }
               ],
               "title": "Version"
+            }
+          },
+          {
+            "in": "query",
+            "name": "layer",
+            "required": false,
+            "schema": {
+              "default": "unadjusted",
+              "enum": [
+                "unadjusted",
+                "final"
+              ],
+              "title": "Layer",
+              "type": "string"
             }
           },
           {
@@ -35816,6 +36053,113 @@
           "trial balance"
         ],
         "x-abacus-action": "trial_balance.adopt"
+      }
+    },
+    "/v1/engagements/{engagement_id}/uncorrected-misstatements": {
+      "get": {
+        "description": "SPEC-311 AC-4: passed entries and their aggregate against materiality.",
+        "operationId": "uncorrected",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UncorrectedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Uncorrected Route",
+        "tags": [
+          "fieldwork"
+        ],
+        "x-abacus-action": "procedure.read"
       }
     },
     "/v1/engagements/{engagement_id}/work-items": {

@@ -7,11 +7,19 @@ from decimal import Decimal
 from types import SimpleNamespace
 from uuid import uuid4
 
+import pytest
+
 from abacus.modules.identity.authz.matrix import RULES
+from abacus.modules.ledger import trial_balances as tb_module
 from abacus.modules.ledger.trial_balances import (
     UNASSIGNED,
+    AdjustmentEntry,
+    EntryLine,
+    EntrySet,
+    apply_entries,
     build_lines,
     compare_lines,
+    final_totals,
     layer_available,
     leadsheets,
     pct,
@@ -19,6 +27,7 @@ from abacus.modules.ledger.trial_balances import (
 )
 
 CY_SNAP, PY_SNAP = uuid4(), uuid4()
+D = Decimal
 
 
 def _row(snap: object, code: str, name: str, debit: str, credit: str) -> SimpleNamespace:
@@ -93,9 +102,42 @@ def test_ac7_candidates_count_changed_accounts() -> None:
     assert compare_lines(CY, CY) == (0, Decimal("0.00"))  # type: ignore[arg-type]  # SimpleNamespace rows
 
 
-def test_ac4_adjusted_layers_fail_closed_until_a_source_registers() -> None:
+def test_ac4_adjusted_layers_fail_closed_until_a_source_registers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(tb_module, "_ADJUSTMENT_SOURCES", [])
     assert layer_available("unadjusted")
     assert not layer_available("final") and not layer_available("aje")
+
+    async def source(_tenant: object, _engagement: object) -> EntrySet:
+        return EntrySet((), 0)
+
+    tb_module.register_adjustment_source(source)
+    assert layer_available("final")
+
+
+def test_spec311_recorded_entries_make_aje_rje_and_final() -> None:
+    lines = build_lines(CY, PY, {"1200": ("Receivables", None)})  # type: ignore[arg-type]  # SimpleNamespace rows
+    aje1 = AdjustmentEntry(
+        "AJE-1",
+        "aje",
+        (EntryLine("1200", D("15060.00"), D("0.00")), EntryLine("4000", D("0.00"), D("15060.00"))),
+    )
+    rje1 = AdjustmentEntry(
+        "RJE-1",
+        "rje",
+        (EntryLine("2000", D("500.00"), D("0.00")), EntryLine("2100", D("0.00"), D("500.00"))),
+    )
+    out = {line.account_code: line for line in apply_entries(lines, [aje1, rje1])}
+    assert out["1200"].final == D("63660.00") and out["1200"].refs == ("AJE-1",)
+    assert out["4000"].aje == D("-15060.00") and out["4000"].final == D("-115060.00")
+    assert out["2100"].eoy == D("0.00") and out["2100"].rje == D("-500.00")  # a new account
+    assert out["1000"].final == out["1000"].eoy and out["1000"].refs == ()
+    balanced = final_totals(list(out.values()))
+    assert balanced.balanced and balanced.debit == D("183660.00")
+    sheets = leadsheets(list(out.values()), "final")
+    assert sheets[0].area == "Receivables" and sheets[0].cy == D("63660.00")
+    assert leadsheets(list(out.values()))[0].cy == D("48600.00")
 
 
 def test_ac1_only_people_adopt_or_annotate() -> None:

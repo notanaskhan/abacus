@@ -7,6 +7,7 @@ people, journal entry testing's population and selection by code (`sampling`).
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.fieldwork.activities import ACTIVITIES
 from abacus.modules.fieldwork.audit_targets import AUDIT_KINDS, audit_owners
+from abacus.modules.fieldwork.misstatements import adjustment_entries
 from abacus.modules.fieldwork.routes import firm_router, router
 from abacus.modules.fieldwork.service import WORKFLOWS
 from abacus.modules.fieldwork.workflow_types import ProcedureSelectInput
@@ -20,6 +21,7 @@ from abacus.modules.fieldwork.workpapers import (
     selection_item_ids,
 )
 from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.ledger.api import register_adjustment_source
 
 SUBSCRIPTIONS: dict[str, object] = {}
 
@@ -31,6 +33,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
+# SPEC-311 (TASK-322): recorded entries feed the trial balance's AJE, RJE and Final layers.
+register_adjustment_source(adjustment_entries)
 
 __all__ = [
     "ACTIVITIES",

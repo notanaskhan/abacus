@@ -27,6 +27,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
+import { UncorrectedSummary } from "./Uncorrected";
 import { Adjustments, DeficiencyFieldset, Representations, SeverityBadge } from "./Completion";
 
 // SPEC-043 (TASK-107): the findings register and the summary of uncorrected misstatements.
@@ -168,6 +169,7 @@ export function Findings({ engagementId }: { engagementId: string }): JSX.Elemen
       <div className="flex flex-col gap-3">
         {switcher}
         <Adjustments engagementId={engagementId} role={role ?? ""} findings={rows} />
+        <UncorrectedSummary engagementId={engagementId} />
       </div>
     );
   if (view === "representations")

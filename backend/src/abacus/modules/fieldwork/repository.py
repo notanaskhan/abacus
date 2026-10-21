@@ -881,3 +881,21 @@ async def search_findings(
         .scalars()
         .all()
     )
+
+
+async def engagement_adjustments(
+    session: AsyncSession, engagement_id: UUID
+) -> Sequence[Adjustment]:
+    """Oldest first (LIST_EXEMPT: for the trial balance's layers and the summary of uncorrected
+    misstatements, after the caller authorised on the engagement)."""
+    return (
+        (
+            await session.execute(
+                select(Adjustment)
+                .where(Adjustment.engagement_id == engagement_id)
+                .order_by(Adjustment.created_at)
+            )
+        )
+        .scalars()
+        .all()
+    )

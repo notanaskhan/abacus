@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal
@@ -78,6 +79,10 @@ class TbLineOut(BaseModel):
     change: Annotated[Decimal | None, classified("confidential")]
     area: Annotated[str | None, classified("confidential")]
     wp_ref: Annotated[str | None, classified("internal")]
+    aje: Annotated[Decimal | None, classified("confidential")]
+    rje: Annotated[Decimal | None, classified("confidential")]
+    final: Annotated[Decimal | None, classified("confidential")]
+    refs: Annotated[list[str], classified("internal")]
 
 
 class TotalsOut(BaseModel):
@@ -111,6 +116,9 @@ class TrialBalanceDetailOut(BaseModel):
     lines: Annotated[list[TbLineOut], classified("confidential")]
     eoy: Annotated[TotalsOut, classified("confidential")]
     boy: Annotated[TotalsOut | None, classified("confidential")]
+    final: Annotated[TotalsOut | None, classified("confidential")]
+    layers_available: Annotated[bool, classified("internal")]
+    pending_entries: Annotated[int, classified("internal")]
 
 
 class LeadRowOut(BaseModel):
@@ -223,9 +231,14 @@ async def _detail(
         trial_balance=TrialBalanceOut.model_validate(v.summary, from_attributes=True),
         version=version_out(v.version),
         versions=[version_out(x) for x in v.versions],
-        lines=[TbLineOut.model_validate(line, from_attributes=True) for line in v.lines],
+        lines=[
+            TbLineOut.model_validate({**asdict(line), "refs": list(line.refs)}) for line in v.lines
+        ],
         eoy=_totals(v.eoy),
         boy=None if v.boy is None else _totals(v.boy),
+        final=None if v.final is None else _totals(v.final),
+        layers_available=v.final is not None,
+        pending_entries=v.pending_entries,
     )
 
 
@@ -300,9 +313,10 @@ async def leadsheets_route(
     tb_id: UUID,
     ctx: Ctx,
     version: Annotated[int | None, Query(ge=1)] = None,
+    layer: Literal["unadjusted", "final"] = "unadjusted",
 ) -> list[LeadsheetOut]:
-    """SPEC-309 AC-5: leadsheets by audit area (PY, CY, Δ, Δ%)."""
-    return [_sheet(s) for s in await sheets(ctx, engagement_id, tb_id, version)]
+    """SPEC-309 AC-5: leadsheets by audit area (PY, CY, Δ, Δ%); SPEC-311: CY final or not."""
+    return [_sheet(s) for s in await sheets(ctx, engagement_id, tb_id, version, layer)]
 
 
 @router.post(

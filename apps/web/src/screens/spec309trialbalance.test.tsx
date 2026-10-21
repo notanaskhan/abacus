@@ -60,6 +60,10 @@ const DETAIL: TrialBalanceDetailOut = {
       change: "20000.00",
       area: "Cash",
       wp_ref: "C-100",
+      aje: null,
+      rje: null,
+      final: null,
+      refs: [],
     },
     {
       account_code: "2000",
@@ -71,10 +75,30 @@ const DETAIL: TrialBalanceDetailOut = {
       change: "-8600.00",
       area: null,
       wp_ref: null,
+      aje: null,
+      rje: null,
+      final: null,
+      refs: [],
     },
   ],
   eoy: { debit: "168600.00", credit: "168600.00", difference: "0.00", balanced: true },
   boy: { debit: "100000.00", credit: "100000.00", difference: "0.00", balanced: true },
+  final: null,
+  layers_available: false,
+  pending_entries: 0,
+};
+
+// SPEC-311: the same trial balance with AJE-1 recorded and one entry still proposed.
+const ADJUSTED: TrialBalanceDetailOut = {
+  ...DETAIL,
+  lines: DETAIL.lines.map((l) =>
+    l.account_code === "1000"
+      ? { ...l, aje: "15060.00", rje: "0.00", final: "135060.00", refs: ["AJE-1"] }
+      : { ...l, aje: "-15060.00", rje: "0.00", final: "-83660.00", refs: ["AJE-1"] },
+  ),
+  final: { debit: "135060.00", credit: "83660.00", difference: "51400.00", balanced: false },
+  layers_available: true,
+  pending_entries: 1,
 };
 
 function page(role: string, routes: Record<string, () => Response>) {
@@ -123,6 +147,35 @@ const CHECK = {
     missing: [],
   },
 };
+
+describe("SPEC-311 adjusted layers", () => {
+  it("Final is off until adjustments exist, then shows AJE, RJE and Final (ac1)", async () => {
+    page("staff", {
+      [`GET ${BASE}`]: () => json({ trial_balances: [TB], snapshots: [SNAP] }),
+      [`GET ${BASE}/tb1`]: () => json(ADJUSTED),
+      [`GET ${BASE}/tb1/candidates`]: () => json([]),
+      [`GET ${BASE}/tb1/checks`]: () => json([]),
+    });
+    const final = await screen.findByRole("button", { name: "Final" });
+    expect(final.hasAttribute("disabled")).toBe(false);
+    fireEvent.click(final);
+    expect(await screen.findByText("135,060.00")).toBeTruthy();
+    expect(screen.getAllByText("AJE-1")).toHaveLength(2);
+    expect(screen.getByText("Off 51,400.00")).toBeTruthy(); // the server's Final balance
+    expect(screen.getByText("1 proposed entry isn't in Final until approved.")).toBeTruthy();
+  });
+
+  it("disables Final without an adjustment source", async () => {
+    page("staff", {
+      [`GET ${BASE}`]: () => json({ trial_balances: [TB], snapshots: [SNAP] }),
+      [`GET ${BASE}/tb1`]: () => json(DETAIL),
+      [`GET ${BASE}/tb1/candidates`]: () => json([]),
+      [`GET ${BASE}/tb1/checks`]: () => json([]),
+    });
+    const final = await screen.findByRole("button", { name: "Final" });
+    expect(final.hasAttribute("disabled")).toBe(true);
+  });
+});
 
 describe("SPEC-310 tie-out checks", () => {
   it("words results and builds bodies per kind (ac1, ac2)", () => {

@@ -134,11 +134,12 @@ async def view(
 
 
 async def sheets(
-    ctx: AuthContext, engagement_id: UUID, tb_id: UUID, version_no: int | None
+    ctx: AuthContext, engagement_id: UUID, tb_id: UUID, version_no: int | None, layer: str
 ) -> list[Leadsheet]:
-    """AC-5: leadsheets by audit area; accounts without an area are under Unassigned."""
-    found = await view(ctx, engagement_id, tb_id, version_no, "unadjusted")
-    return leadsheets(found.view.lines)
+    """AC-5: leadsheets by audit area; accounts without an area are under Unassigned. Final
+    needs an adjustment source (`layer_unavailable` otherwise)."""
+    found = await view(ctx, engagement_id, tb_id, version_no, layer)
+    return leadsheets(found.view.lines, layer)
 
 
 async def newer(ctx: AuthContext, engagement_id: UUID, tb_id: UUID) -> list[Candidate]:

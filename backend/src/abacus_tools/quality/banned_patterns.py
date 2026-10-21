@@ -928,6 +928,9 @@ LIST_EXEMPT = frozenset(
         # `authorise(trial_balance.read)` on its engagement.
         ("src/abacus/modules/workpapers/tie_repository.py", "checks_of"),
         ("src/abacus/modules/workpapers/tie_repository.py", "current_versions"),
+        # SPEC-311 (TASK-322): an engagement's entries for the trial balance's layers (the
+        # caller authorised `trial_balance.read`) and the SUM (`procedure.read`).
+        ("src/abacus/modules/fieldwork/repository.py", "engagement_adjustments"),
     }
 )
 

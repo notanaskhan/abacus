@@ -3,7 +3,8 @@
 A cell whose raw text starts with `=` is a formula: decimal arithmetic (`+ - * /`, unary minus,
 parentheses), cell references (`B4`), `SUM(B2:B9)`, which counts only numeric cells in the
 range, and `TB("1000")` (SPEC-310): an account's net on the engagement's trial balance of record,
-end of year, or `TB("1000", "BOY")`; `TB("1000:1099")` sums a code range. Errors are values, as
+end of year, `TB("1000", "BOY")` or `TB("1000", "FINAL")` (after recorded adjustments);
+`TB("1000:1099")` sums a code range. Errors are values, as
 in a spreadsheet: `#REF!` (a bad reference), `#CYCLE!` (a cell that depends on itself),
 `#DIV/0!`, `#TB!` (no trial balance, or an account it doesn't hold) and `#ERR!` (anything that
 doesn't parse). No floats anywhere.
@@ -33,9 +34,10 @@ class TbSource:
 
     eoy: Mapping[str, Decimal]
     boy: Mapping[str, Decimal] | None
+    final: Mapping[str, Decimal] | None = None  # SPEC-311: with recorded adjustments
 
     def total(self, selector: str, column: str) -> Decimal:
-        nets = self.eoy if column == "EOY" else self.boy
+        nets = {"EOY": self.eoy, "BOY": self.boy, "FINAL": self.final}[column]
         if nets is None:
             raise FormulaError("#TB!")
         lo, _, hi = selector.strip().upper().partition(":")
@@ -192,7 +194,7 @@ class _Parser:
         if (t := self.peek()) is not None and t[1] == ",":
             self.take(",")
             kind, column = self.take()
-            if kind != "str" or column not in ("EOY", "BOY"):
+            if kind != "str" or column not in ("EOY", "BOY", "FINAL"):
                 raise FormulaError("#ERR!")
         self.take(")")
         if self.resolve.tb is None:

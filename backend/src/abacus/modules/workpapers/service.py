@@ -138,6 +138,7 @@ class TbLink:
     version_no: int
     source: TbSource
     accounts: list[TbLine]
+    entries: frozenset[str] = frozenset()  # refs of the recorded entries in Final
 
 
 @dataclass(frozen=True)
@@ -170,6 +171,8 @@ def content_of(
     }
     if tb is not None and any(tb.source.uses(c.raw) for c in cells):
         content["tb"] = {"id": str(tb.id), "version_no": tb.version_no}
+        if any(_uses_final(c.raw) for c in cells):  # SPEC-311: a newly recorded entry is a change
+            content["tb"] = {**content["tb"], "entries": sorted(tb.entries)}
     return content
 
 
@@ -187,8 +190,19 @@ async def tb_link(tenant: TenantContext, engagement_id: UUID) -> TbLink | None:
         if view.boy is not None
         else None
     )
+    final = (
+        {line.account_code.upper(): line.final for line in view.lines if line.final is not None}
+        if view.final is not None
+        else None
+    )
     return TbLink(
-        tb.id, tb.label, tb.period_end, tb.current_version_no, TbSource(eoy, boy), view.lines
+        tb.id,
+        tb.label,
+        tb.period_end,
+        tb.current_version_no,
+        TbSource(eoy, boy, final),
+        view.lines,
+        frozenset(ref for line in view.lines for ref in line.refs),
     )
 
 
@@ -210,6 +224,10 @@ def status_of(has_content: bool, levels: Sequence[LevelState]) -> AuditSectionSt
     if 1 in current:
         return AuditSectionStatus.PREPARED
     return AuditSectionStatus.IN_PROGRESS if has_content else AuditSectionStatus.NOT_STARTED
+
+
+def _uses_final(raw: str | None) -> bool:
+    return _uses_tb(raw) and '"FINAL"' in (raw or "").upper()
 
 
 def _uses_tb(raw: str | None) -> bool:
