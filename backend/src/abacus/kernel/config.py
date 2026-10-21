@@ -6,14 +6,15 @@ must be set explicitly, or startup fails: production can never run on a local de
 
 from __future__ import annotations
 
+import json
 import re
 from datetime import date
 from decimal import Decimal
 from functools import lru_cache
 from typing import Annotated, Literal, Self, cast
 
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 from abacus.kernel import provider_terms
 from abacus.kernel.classification import classified
@@ -46,6 +47,7 @@ _CONNECTIONS = (
     "evidence_bucket",
     "temporal_target",
     "temporal_payload_key",
+    "trusted_hosts",
 )
 _LOCAL_DEFAULTS: dict[str, object] = {
     "database_url": _LOCAL_DB,
@@ -66,6 +68,8 @@ _LOCAL_DEFAULTS: dict[str, object] = {
     "temporal_target": "127.0.0.1:7233",
     # Local and test only: workflow payloads are encrypted with a key derived from this (public).
     "temporal_payload_key": "example-temporal-payload-key-public-not-secret",
+    # The API answers to any Host locally and in tests (httpx's test clients send `test`).
+    "trusted_hosts": ("*",),
 }
 
 
@@ -87,6 +91,7 @@ class WorkClassLimits(BaseModel):
     admission_reserve_pct: Annotated[int, Field(ge=0, le=99), classified("internal")]
 
 
+_DOMAIN = re.compile(r"^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$")
 Route = Literal["fake", "direct", "bedrock"]
 ModelTier = Literal["small", "medium", "large"]
 # ADR-074: an exact model version, e.g. `claude-haiku-4-5-20251001`; Bedrock IDs carry a provider
@@ -249,6 +254,27 @@ class Settings(BaseSettings):
     otlp_endpoint: Annotated[str | None, classified("internal")] = None
     sentry_dsn: Annotated[SecretStr | None, classified("restricted")] = None
     release: Annotated[str | None, classified("internal")] = None
+    # HTTP edge (ADR-152, P-45; Q-01-T16). The Host values the API answers to: exact names, `*.`
+    # suffixes, IP addresses or CIDR networks (a load balancer probes by target IP). A comma
+    # separated list or a JSON array. Explicit outside local and test, never `*`.
+    trusted_hosts: Annotated[tuple[str, ...] | None, NoDecode, classified("internal")] = None
+    # The neutral domain portals are served under: `<slug>.<portal_base_domain>` is a trusted
+    # host. Only a branding hint; tenant resolution never reads the Host header (INV-4).
+    portal_base_domain: Annotated[str | None, classified("internal")] = None
+    # Peers whose X-Forwarded-For and X-Forwarded-Proto are believed (the load balancer's subnets,
+    # as addresses or CIDR networks). Empty: proxy headers are ignored.
+    proxy_trusted_hosts: Annotated[tuple[str, ...], NoDecode, classified("internal")] = ()
+
+    @field_validator("trusted_hosts", "proxy_trusted_hosts", mode="before")
+    @classmethod
+    def _list_from_text(cls, value: object) -> object:
+        """A comma separated list or a JSON array in the environment."""
+        if not isinstance(value, str):
+            return value
+        text = value.strip()
+        if text.startswith("["):
+            return json.loads(text)
+        return [part.strip() for part in text.split(",") if part.strip()]
 
     @model_validator(mode="before")
     @classmethod
@@ -354,6 +380,20 @@ class Settings(BaseSettings):
         "fake-large": ProviderLimits(rpm=600, tpm=1_000_000),
         "fake-embed": ProviderLimits(rpm=600, tpm=1_000_000),
     }
+
+    @model_validator(mode="after")
+    def _edge_hosts(self) -> Self:
+        if self.portal_base_domain is not None and not _DOMAIN.fullmatch(self.portal_base_domain):
+            raise ValueError("portal_base_domain must be a lower-case DNS name")
+        if self.environment not in LOCAL_STACK:
+            # Unset is reported by `_explicit_outside_local`; a bad value is reported here.
+            if self.trusted_hosts is not None and (
+                not self.trusted_hosts or "*" in self.trusted_hosts
+            ):
+                raise ValueError(f"trusted_hosts must name the hosts in {self.environment!r}")
+            if "*" in self.proxy_trusted_hosts:
+                raise ValueError("proxy_trusted_hosts must name the load balancer, not '*'")
+        return self
 
     @model_validator(mode="after")
     def _every_work_class(self) -> Self:

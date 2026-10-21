@@ -10,6 +10,7 @@ Tests may substitute a connected client with `configure_temporal_client`.
 from __future__ import annotations
 
 import dataclasses
+from datetime import timedelta
 
 from temporalio.client import Client
 from temporalio.contrib.opentelemetry import TracingInterceptor
@@ -64,3 +65,10 @@ async def temporal_client() -> Client:
             api_key=s.temporal_api_key.get_secret_value() if s.temporal_api_key else None,
         )
     return _client
+
+
+async def ping_temporal(timeout: timedelta = timedelta(seconds=2)) -> None:
+    """Readiness check (`/readyz`): Temporal answers a health check. Raises if it doesn't."""
+    client = await temporal_client()
+    if not await client.service_client.check_health(timeout=timeout):
+        raise RuntimeError("temporal is not serving")

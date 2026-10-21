@@ -68,6 +68,7 @@ def _explicit_env(
         "identity_audience": "abacus-api",
         "identity_jwks": '{"keys": []}',
         "temporal_target": "temporal.example.test:7233",
+        "trusted_hosts": "api.example.test",
         "evidence_bucket": "test-evidence-bucket",
     }
     if key:

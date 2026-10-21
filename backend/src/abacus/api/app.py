@@ -1,8 +1,11 @@
 """The HTTP application (ADR-012). PROTECTED. TASK-007 design §6, TASK-008 design §3-6.
 
 Every route comes from a module router built with `AbacusRouter`, so each one authenticates and
-declares exactly one action. There are no unauthenticated routes: no docs UI and no served OpenAPI
+declares exactly one action. The only unauthenticated routes are the ones on the public-route list
+(`api/public_routes.py`, ADR-152): `/healthz` and `/readyz`. No docs UI and no served OpenAPI
 document (the API client is generated from `app.openapi()` in code, ADR-013; `export_openapi`).
+The HTTP edge is middleware: trusted hosts, body-size limits and proxy headers from the load
+balancer only (`api/middleware.py`, P-45).
 """
 
 from __future__ import annotations
@@ -19,7 +22,10 @@ from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from starlette.types import Receive, Scope, Send
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
+from abacus.api.middleware import BodyLimit, TrustedHosts
+from abacus.api.public_routes import PUBLIC_ROUTES
 from abacus.kernel.clock import check_startup as check_clock
 from abacus.kernel.config import settings
 from abacus.kernel.error_tracking import configure_error_tracking, flush_errors, report
@@ -28,6 +34,7 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.telemetry import configure_tracing, shutdown_tracing
 from abacus.kernel.temporal import payload_codec
 from abacus.modules import MODULES
+from abacus.modules.evidence.api import MAX_CONTENT_BYTES
 from abacus.modules.identity import api as identity
 
 # Every module's routers, in MODULES order (P-39; F-03-T07): adding a router edits only that
@@ -127,6 +134,19 @@ async def _lifespan(_app: FastAPI) -> AsyncGenerator[None]:
     flush_errors()
 
 
+def _add_edge_middleware(app: FastAPI) -> None:
+    """Innermost first (the last one added is outermost): proxy headers are corrected for the
+    trusted load balancer, then the Host is checked, then the body is bounded."""
+    s = settings()
+    app.add_middleware(BodyLimit, upload_bytes=MAX_CONTENT_BYTES)
+    hosts = list(s.trusted_hosts or ())
+    if s.portal_base_domain:
+        hosts.append(f"*.{s.portal_base_domain}")  # portal hosts: a branding hint only (INV-4)
+    app.add_middleware(TrustedHosts, allowed=hosts)
+    if s.proxy_trusted_hosts:
+        app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=list(s.proxy_trusted_hosts))
+
+
 def create_app() -> FastAPI:
     if settings().environment == "production" and not identity.WALL_SAFE:
         # Founder decision 2026-10-06: ethical walls (ADR-026) gate the first real firm.
@@ -145,6 +165,10 @@ def create_app() -> FastAPI:
     )
     for router in ROUTERS:
         app.include_router(router)
+    # The public-route list, and nothing else, answers without a token (ADR-152). GET only, and
+    # out of the OpenAPI document: these are not part of the API contract.
+    for path, handler in PUBLIC_ROUTES.items():
+        app.add_api_route(path, handler, methods=["GET"], include_in_schema=False)
     app.add_exception_handler(identity.Forbidden, _forbidden)
     app.add_exception_handler(NotFound, _not_found)
     app.add_exception_handler(DomainConflict, _conflict)
@@ -153,6 +177,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(RequestValidationError, _invalid)
     app.add_exception_handler(Exception, _unexpected)
     app.openapi = lambda: _openapi(app)  # type-safe override of FastAPI's generator
+    _add_edge_middleware(app)
     # One server span per request, named by route template (TASK-013). The scrubbing exporter
     # keeps only route, method and status: never URL, query, client address or user agent.
     configure_tracing("abacus-api")

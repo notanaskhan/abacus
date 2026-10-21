@@ -13,11 +13,11 @@ if [ "$#" -gt 0 ]; then shift; fi
 
 case "$command_name" in
   api)
-    # Proxy headers are honoured only from the addresses in ABACUS_FORWARDED_ALLOW_IPS (the ALB's
-    # subnets); the default trusts nothing but loopback.
+    # Proxy headers are handled by the app (create_app), only from ABACUS_PROXY_TRUSTED_HOSTS (the
+    # load balancer's subnets); uvicorn's own handling, which trusts loopback, is off.
     exec uvicorn --factory abacus.api.app:create_app \
       --host 0.0.0.0 --port "${ABACUS_API_PORT:-8000}" \
-      --proxy-headers --forwarded-allow-ips "${ABACUS_FORWARDED_ALLOW_IPS:-127.0.0.1}" \
+      --no-proxy-headers \
       --no-server-header "$@"
     ;;
   worker)

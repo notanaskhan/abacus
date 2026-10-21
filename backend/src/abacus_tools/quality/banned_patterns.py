@@ -573,7 +573,82 @@ _WEB_METHODS = frozenset(
 )
 
 
+# The protected exception list (ADR-152, P-45): the only unauthenticated paths. `create_app()`
+# registers exactly `public_routes.PUBLIC_ROUTES`, and every path there must be listed here, so a
+# new public route is a deliberate edit to this protected file, with an ADR behind it. P-08 adds
+# `/v1/portal/branding` and P-01 adds `/v1/auth/{sign-in,callback,refresh}` through their own ADRs.
+PUBLIC_ROUTE_EXCEPTIONS = frozenset({"/healthz", "/readyz"})
+_PUBLIC_ROUTES_FILE = "src/abacus/api/public_routes.py"
+_APP_FILE = "src/abacus/api/app.py"
+_APP_ADD_METHODS = frozenset(
+    {"add_api_route", "add_route", "add_websocket_route", "add_api_websocket_route", "websocket"}
+    | {"mount"}
+)
+_APP_VERB_METHODS = frozenset(
+    {"get", "post", "put", "patch", "delete", "head", "options", "route", "api_route"}
+)
+
+
+def _check_public_route_list(src: SourceFile) -> Iterator[Finding]:
+    """`PUBLIC_ROUTES` is a literal dict whose keys are all on the protected exception list."""
+    for node in src.tree.body:
+        targets: list[ast.expr] = []
+        value: ast.expr | None = None
+        if isinstance(node, ast.Assign):
+            targets, value = node.targets, node.value
+        elif isinstance(node, ast.AnnAssign):
+            targets, value = [node.target], node.value
+        if not any(isinstance(t, ast.Name) and t.id == "PUBLIC_ROUTES" for t in targets):
+            continue
+        if not isinstance(value, ast.Dict):
+            yield Finding(node.lineno, "PUBLIC_ROUTES must be a literal dict of path to handler")
+            return
+        for key in value.keys:
+            if not (isinstance(key, ast.Constant) and isinstance(key.value, str)):
+                yield Finding(node.lineno, "PUBLIC_ROUTES keys must be string literals")
+            elif key.value not in PUBLIC_ROUTE_EXCEPTIONS:
+                yield Finding(
+                    key.lineno,
+                    f"{key.value!r} is not on the public-route exception list (ADR-152): "
+                    "propose an ADR and extend PUBLIC_ROUTE_EXCEPTIONS",
+                )
+        return
+    yield Finding(1, "public_routes.py must define PUBLIC_ROUTES")
+
+
+def _check_app_registers_no_path(src: SourceFile) -> Iterator[Finding]:
+    """app.py may build the app, include routers and add middleware, but never register a path
+    of its own: unauthenticated routes come only from PUBLIC_ROUTES."""
+    for node in ast.walk(src.tree):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and (
+                node.func.attr in _APP_ADD_METHODS
+                or (
+                    node.func.attr
+                    in _APP_VERB_METHODS  # `app.get("/x")`, not `scope.get("route")`
+                    and isinstance(node.func.value, ast.Name)
+                    and node.func.value.id == "app"
+                )
+            )
+            and node.args
+            and isinstance(node.args[0], ast.Constant)
+            and isinstance(node.args[0].value, str)
+        ):
+            yield Finding(
+                node.lineno,
+                f"{node.func.attr}: register a path only through public_routes.PUBLIC_ROUTES",
+            )
+
+
 def _check_route_bypass(src: SourceFile) -> Iterator[Finding]:
+    if src.rel == _PUBLIC_ROUTES_FILE:
+        yield from _check_public_route_list(src)
+    elif src.rel == _APP_FILE:
+        yield from _check_app_registers_no_path(src)
+        return  # app.py builds the app, so the class and method bans below do not apply to it
+
     def finding(line: int, name: str) -> Finding:
         return Finding(line, f"{name}: serve routes only through identity's AbacusRouter")
 
@@ -1800,11 +1875,11 @@ RULES: list[Rule | TreeRule] = [
     ),
     Rule(
         id="ROUTE-001",
-        description="HTTP routes are served only through AbacusRouter",
-        adr="ADR-012, ADR-027",
+        description="HTTP routes are served only through AbacusRouter, or are on the public list",
+        adr="ADR-012, ADR-027, ADR-152",
         check=_check_route_bypass,
         include=("src/abacus/*",),
-        exclude=("src/abacus/modules/identity/routing.py", "src/abacus/api/app.py"),
+        exclude=("src/abacus/modules/identity/routing.py",),
     ),
     Rule(
         id="ROUTE-002",

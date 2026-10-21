@@ -18,7 +18,7 @@ import os
 import struct
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 from urllib.parse import urlsplit
 from uuid import UUID
 
@@ -131,6 +131,27 @@ def key_service() -> KeyService:
     return _service if _service is not None else _from_settings()
 
 
+@runtime_checkable
+class PlatformKeyProbe(Protocol):
+    """A key service that can say whether the platform key is usable (AWS: KMS Encrypt)."""
+
+    async def check_platform_key(self) -> None: ...
+
+
+async def check_platform_key() -> None:
+    """Readiness (`/readyz`): the configured key service works. Raises if it doesn't. A service
+    with its own probe is asked; any other wraps and unwraps a throwaway key for a probe tenant."""
+    service = key_service()
+    if isinstance(service, PlatformKeyProbe):
+        await service.check_platform_key()
+        return
+    probe_tenant = UUID(int=0)
+    data_key = os.urandom(32)
+    wrapped = await service.wrap(probe_tenant, data_key)
+    if await service.unwrap(probe_tenant, service.key_id(probe_tenant), wrapped) != data_key:
+        raise DecryptionError("key service round trip failed")
+
+
 def _aad(tenant_id: UUID, fingerprint: str, key_id: str) -> bytes:
     return b"|".join(
         [b"abacus-evidence-v1", tenant_id.bytes, fingerprint.encode(), key_id.encode()]
@@ -221,6 +242,8 @@ __all__ = [
     "DecryptionError",
     "KeyService",
     "LocalKeyService",
+    "PlatformKeyProbe",
+    "check_platform_key",
     "configure_key_service",
     "key_service",
     "open_sealed",

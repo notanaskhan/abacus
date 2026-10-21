@@ -25,6 +25,7 @@ from sqlalchemy import Uuid, column
 import abacus.api.app as app_module
 import abacus.modules.identity.api as identity_api
 from abacus.api import create_app
+from abacus.api.public_routes import PUBLIC_ROUTES
 from abacus.kernel.db import TenantContext
 from abacus.modules.identity.api import (
     ACTION_KEY,
@@ -188,11 +189,13 @@ class _Included(Protocol):
 
 
 def _routes() -> list[APIRoute]:
-    """Every route of `create_app()`; newer FastAPI wraps included routers in `app.routes`."""
+    """Every authenticated route of `create_app()`; newer FastAPI wraps included routers in
+    `app.routes`. The public-route list (ADR-152) is the one exception: see `_public_routes`."""
     found: list[APIRoute] = []
     for item in create_app().routes:
         if isinstance(item, APIRoute):
-            found.append(item)
+            if item.path not in PUBLIC_ROUTES:
+                found.append(item)
         elif hasattr(item, "effective_route_contexts"):
             for context in cast(_Included, item).effective_route_contexts():
                 assert isinstance(context.original_route, APIRoute), context.original_route
@@ -200,6 +203,16 @@ def _routes() -> list[APIRoute]:
         else:
             raise AssertionError(f"unexpected route type {type(item)}")
     return found
+
+
+def test_adr152_only_the_public_list_is_outside_the_router() -> None:
+    """ADR-152: the routes registered directly on the app are exactly the public-route list, GET
+    only, and none of them is an AbacusRoute (which would demand a token)."""
+    direct = [r for r in create_app().routes if isinstance(r, APIRoute)]
+    assert {r.path for r in direct} == set(PUBLIC_ROUTES)
+    for route in direct:
+        assert route.methods == {"GET"}, route.path
+        assert not isinstance(route, AbacusRoute), route.path
 
 
 def test_ac20_the_app_has_routes() -> None:

@@ -13,7 +13,7 @@ from __future__ import annotations
 import io
 import zipfile
 from dataclasses import dataclass
-from typing import Final, Literal, Protocol
+from typing import Final, Literal, Protocol, runtime_checkable
 
 from abacus.kernel.config import SYNTHETIC_ENVIRONMENTS, settings
 
@@ -34,6 +34,13 @@ class ScanResult:
 
 class Scanner(Protocol):
     def scan(self, content: bytes) -> ScanResult: ...
+
+
+@runtime_checkable
+class Pingable(Protocol):
+    """A scanner that can say whether its service is reachable (clamd answers PING)."""
+
+    def ping(self) -> None: ...
 
 
 class LocalScanner:
@@ -87,11 +94,21 @@ def scan(content: bytes) -> ScanResult:
     return scanner().scan(content)
 
 
+def check_scanner() -> None:
+    """Readiness (`/readyz`): a scanner is configured and, if it is a service, reachable.
+    Raises if not."""
+    configured = scanner()
+    if isinstance(configured, Pingable):
+        configured.ping()
+
+
 __all__ = [
     "EICAR",
     "LocalScanner",
+    "Pingable",
     "ScanResult",
     "Scanner",
+    "check_scanner",
     "configure_scanner",
     "scan",
     "scanner",

@@ -311,6 +311,7 @@ PRODUCTION_SETTINGS = {
     "S3_ACCESS_KEY": "k",
     "S3_SECRET_KEY": "s",
     "TEMPORAL_TARGET": "t:7233",
+    "TRUSTED_HOSTS": "api.example.test",
     "TEMPORAL_PAYLOAD_KEY": "test-payload-key-Zq8Xv2Lm9Wd4Rt7Bn3Hs",
     "TEMPORAL_TLS": "true",
     "TEMPORAL_API_KEY": "test-temporal-api-key",
