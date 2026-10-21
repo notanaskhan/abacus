@@ -65,6 +65,7 @@ from abacus.modules.evidence.repository import (
     insert_preview,
     insert_preview_pages,
     latest_checks,
+    newest_extraction,
     other_version_with_fingerprint,
     preview_for,
 )
@@ -300,9 +301,7 @@ async def check_upload(given: UploadInput) -> int:
     async with tenant_session(tenant) as session:
         if await checks_exist(session, version_id, CHECKER_VERSION, kind):
             return 0
-        row = await extraction_for(
-            session, evidence_version_id=version_id, extractor_version=EXTRACTOR_VERSION
-        )
+        row = await newest_extraction(session, evidence_version_id=version_id)
         version = await get_version(session, version_id)
         if row is None or version is None:
             raise NotFound("upload_extraction")
@@ -511,9 +510,7 @@ def _excerpt(
 async def review_material(tenant: TenantContext, version_id: UUID) -> ReviewMaterial | None:
     """For an agent run authorised on the version's engagement; None without an extraction."""
     async with tenant_session(tenant) as session:
-        row = await extraction_for(
-            session, evidence_version_id=version_id, extractor_version=EXTRACTOR_VERSION
-        )
+        row = await newest_extraction(session, evidence_version_id=version_id)
         checks = await latest_checks(session, version_id)
     if row is None:
         return None

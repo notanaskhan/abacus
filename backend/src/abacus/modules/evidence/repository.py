@@ -494,6 +494,30 @@ async def extraction_for(
     ).scalar_one_or_none()
 
 
+async def newest_extraction(
+    session: AsyncSession,
+    *,
+    evidence_version_id: UUID | None = None,
+    inbox_file_id: UUID | None = None,
+) -> UploadExtraction | None:
+    """TASK-333: the upload's newest extraction by any extractor version. Readers use this: an
+    extraction made by an earlier version stays valid data after the extractor improves (bumping
+    the version must not make earlier uploads look empty)."""
+    source = (
+        UploadExtraction.evidence_version_id == evidence_version_id
+        if evidence_version_id is not None
+        else UploadExtraction.inbox_file_id == inbox_file_id
+    )
+    return (
+        await session.execute(
+            select(UploadExtraction)
+            .where(source)
+            .order_by(UploadExtraction.created_at.desc(), UploadExtraction.id.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
 async def insert_extraction(session: AsyncSession, **values: object) -> UploadExtraction | None:
     """The new extraction, or None when this source already has one by this version."""
     by_version = values.get("evidence_version_id") is not None
