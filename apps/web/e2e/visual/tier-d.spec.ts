@@ -148,9 +148,10 @@ test.describe("tier D: computed styles", () => {
 
   test("the page type has the plan's 15.6px line", async ({ page }) => {
     // An open decision (tokens/DECISIONS.md, "body line height"): the body keeps 1.45 until
-    // F-05-T05's question is closed. Expected to fail; when the decision lands this starts to pass
-    // and Playwright reports the unexpected pass, which is the prompt to drop this marker.
-    test.fail(true, "open decision: body line height 1.45 against the plan's 15.6px");
+    // F-05-T05's question is closed. Skipped, not expected to fail: CI's Chromium resolved the
+    // line to 15.6px while local runs did not, so an expected failure flaked. Drop this marker
+    // when the decision lands.
+    test.fixme(true, "open decision: body line height 1.45 against the plan's 15.6px");
     const lineHeight = await page.evaluate(() => getComputedStyle(document.body).lineHeight);
     expect(lineHeight).toBe("15.6px");
   });

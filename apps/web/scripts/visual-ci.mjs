@@ -7,7 +7,7 @@
 // this runner (so fonts and anti-aliasing match), restores the head, and compares. A specimen the
 // base does not have is new and is listed, not failed. Without a usable base (a push, a base that
 // predates the gallery) there is nothing to compare, and the run is Tier D and parity only.
-// Tier A (parity and regression) and Tier D block: any failure fails the run.
+// Tier A parity and Tier D block; the regression blocks unless VISUAL_REGRESSION_BLOCKING=false (pushes).
 //
 // Node only, no dependencies. Git commands touch only packages/ui and apps/web/src, and refuse a
 // dirty tree there unless CI is set.
@@ -74,4 +74,18 @@ if (usableBase) {
   console.log("visual-ci: no usable base commit; skipping the regression comparison");
 }
 
-playwright(...(regression ? [] : ["tier-d", "parity"]), "--update-snapshots=none");
+// A regression diff blocks a pull request or the merge queue, where someone reviews the change. On a
+// direct push to main the builder has already chosen the change, so the diff is reported (the
+// artifact holds it) and only Tier D and parity block.
+const blocking = process.env.VISUAL_REGRESSION_BLOCKING !== "false";
+if (regression) {
+  try {
+    playwright("regression", "--update-snapshots=none");
+  } catch (error) {
+    if (blocking) throw error;
+    console.log(
+      "::warning::visual-ci: specimens changed against the base; see gallery-visual-report",
+    );
+  }
+}
+playwright("tier-d", "parity", "--update-snapshots=none");
