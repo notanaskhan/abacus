@@ -912,6 +912,12 @@ LIST_EXEMPT = frozenset(
         # own walls; listing every wall needs `wall.list`, authorised by the service first.
         ("src/abacus/modules/identity/repository.py", "walled_clients"),
         ("src/abacus/modules/identity/repository.py", "all_walls"),
+        # SPEC-308 (TASK-319): one paper's cells, citations and versions, and a target's
+        # sign-offs, after `authorise(workpaper.read)` (or the sign-off action) on its engagement.
+        ("src/abacus/modules/workpapers/repository.py", "newest_cells"),
+        ("src/abacus/modules/workpapers/repository.py", "citations_of"),
+        ("src/abacus/modules/workpapers/repository.py", "versions_of"),
+        ("src/abacus/modules/review/repository.py", "sign_offs_of"),
     }
 )
 

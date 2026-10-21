@@ -13,7 +13,7 @@ from uuid import UUID
 
 from sqlalchemy import select
 
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.engagements.models import AssuranceWorkItem, WorkItem
 from abacus.modules.engagements.service import get_ref
 from abacus.modules.identity.api import AuthContext, authorise, visible
@@ -51,3 +51,14 @@ async def work_items_of(ctx: AuthContext, engagement_id: UUID) -> list[WorkItemV
         WorkItemView(w.id, w.kind, w.name, w.status, w.period_start, w.period_end, w.due_on, phase)
         for w, phase in rows
     ]
+
+
+async def assurance_item_id(tenant: TenantContext, engagement_id: UUID) -> UUID | None:
+    """The engagement's assurance work item (one per attest engagement, migration 0068). For a
+    caller that has authorised on the engagement."""
+    async with tenant_session(tenant) as session:
+        return await session.scalar(
+            select(WorkItem.id).where(
+                WorkItem.engagement_id == engagement_id, WorkItem.kind == "assurance"
+            )
+        )

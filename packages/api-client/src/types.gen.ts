@@ -618,6 +618,11 @@ export type AssistantOut = {
 };
 
 /**
+ * AuditSectionStatus
+ */
+export type AuditSectionStatus = 'not_started' | 'queued' | 'waiting_on_inputs' | 'ready_to_run' | 'in_progress' | 'running' | 'blocked_on_decision' | 'draft_ready' | 'prepared' | 'reviewed' | 'signed_off' | 'locked' | 'failed' | 'changed_after_signoff';
+
+/**
  * AutonomyIn
  */
 export type AutonomyIn = {
@@ -776,6 +781,102 @@ export type CandidateOut = {
 };
 
 /**
+ * CellBody
+ */
+export type CellBody = {
+    /**
+     * Cell Key
+     */
+    cell_key: string;
+    /**
+     * Raw
+     */
+    raw?: string | null;
+    /**
+     * Tickmarks
+     */
+    tickmarks?: Array<'agreed' | 'footed' | 'cross_footed' | 'recalculated' | 'traced' | 'vouched' | 'exception'>;
+};
+
+/**
+ * CellCitationOut
+ */
+export type CellCitationOut = {
+    /**
+     * Added At
+     */
+    added_at: string;
+    /**
+     * Added By Name
+     */
+    added_by_name: string;
+    /**
+     * Cell Key
+     */
+    cell_key: string;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Locator
+     */
+    locator: string | null;
+};
+
+/**
+ * CellOut
+ */
+export type CellOut = {
+    /**
+     * Cell Key
+     */
+    cell_key: string;
+    /**
+     * Error
+     */
+    error: boolean;
+    /**
+     * Formula
+     */
+    formula: boolean;
+    /**
+     * Raw
+     */
+    raw: string | null;
+    /**
+     * Set At
+     */
+    set_at: string;
+    /**
+     * Set By Name
+     */
+    set_by_name: string;
+    /**
+     * Text
+     */
+    text: string | null;
+    /**
+     * Tickmarks
+     */
+    tickmarks: Array<'agreed' | 'footed' | 'cross_footed' | 'recalculated' | 'traced' | 'vouched' | 'exception'>;
+    /**
+     * Value
+     */
+    value: string | null;
+};
+
+/**
+ * CellsBody
+ */
+export type CellsBody = {
+    /**
+     * Cells
+     */
+    cells: Array<CellBody>;
+};
+
+/**
  * CheckOut
  */
 export type CheckOut = {
@@ -823,6 +924,20 @@ export type CheckOut = {
      * Ref Item Id
      */
     ref_item_id: string | null;
+};
+
+/**
+ * CitationBody
+ */
+export type CitationBody = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Locator
+     */
+    locator?: string | null;
 };
 
 /**
@@ -5124,6 +5239,32 @@ export type SignItemsIn = {
 };
 
 /**
+ * SignOffLevelOut
+ */
+export type SignOffLevelOut = {
+    /**
+     * Level
+     */
+    level: number;
+    /**
+     * Name
+     */
+    name: 'preparer' | 'reviewer' | 'manager' | 'partner' | 'eqr';
+    /**
+     * Signed At
+     */
+    signed_at: string | null;
+    /**
+     * Signed By Name
+     */
+    signed_by_name: string | null;
+    /**
+     * Stale
+     */
+    stale: boolean;
+};
+
+/**
  * SignatureOut
  */
 export type SignatureOut = {
@@ -5891,6 +6032,108 @@ export type WorkItemOut = {
      * Status
      */
     status: 'active' | 'archived';
+};
+
+/**
+ * WorkingPaperOut
+ */
+export type WorkingPaperOut = {
+    /**
+     * Audit Area
+     */
+    audit_area: string | null;
+    /**
+     * Cells
+     */
+    cells: number;
+    /**
+     * Citations
+     */
+    citations: number;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Levels
+     */
+    levels: Array<SignOffLevelOut>;
+    status: AuditSectionStatus;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * WorkingPaperVersionOut
+ */
+export type WorkingPaperVersionOut = {
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Created By Name
+     */
+    created_by_name: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
+ * WorkpaperBody
+ */
+export type WorkpaperBody = {
+    /**
+     * Audit Area
+     */
+    audit_area?: string | null;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * WorkpaperDetailOut
+ */
+export type WorkpaperDetailOut = {
+    /**
+     * Cells
+     */
+    cells: Array<CellOut>;
+    /**
+     * Citations
+     */
+    citations: Array<CellCitationOut>;
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Versions
+     */
+    versions: Array<WorkingPaperVersionOut>;
+    workpaper: WorkingPaperOut;
 };
 
 /**
@@ -15447,6 +15690,564 @@ export type WorkItemsResponses = {
 };
 
 export type WorkItemsResponse = WorkItemsResponses[keyof WorkItemsResponses];
+
+export type WorkpapersData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/workpapers';
+};
+
+export type WorkpapersErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type WorkpapersError = WorkpapersErrors[keyof WorkpapersErrors];
+
+export type WorkpapersResponses = {
+    /**
+     * Response Workpapers
+     *
+     * Successful Response
+     */
+    200: Array<WorkingPaperOut>;
+};
+
+export type WorkpapersResponse = WorkpapersResponses[keyof WorkpapersResponses];
+
+export type CreateWorkpaperData = {
+    body: WorkpaperBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/workpapers';
+};
+
+export type CreateWorkpaperErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type CreateWorkpaperError = CreateWorkpaperErrors[keyof CreateWorkpaperErrors];
+
+export type CreateWorkpaperResponses = {
+    /**
+     * Successful Response
+     */
+    201: WorkpaperDetailOut;
+};
+
+export type CreateWorkpaperResponse = CreateWorkpaperResponses[keyof CreateWorkpaperResponses];
+
+export type WorkpaperDetailData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Workpaper Id
+         */
+        workpaper_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/workpapers/{workpaper_id}';
+};
+
+export type WorkpaperDetailErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type WorkpaperDetailError = WorkpaperDetailErrors[keyof WorkpaperDetailErrors];
+
+export type WorkpaperDetailResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkpaperDetailOut;
+};
+
+export type WorkpaperDetailResponse = WorkpaperDetailResponses[keyof WorkpaperDetailResponses];
+
+export type SetCellsData = {
+    body: CellsBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Workpaper Id
+         */
+        workpaper_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/cells';
+};
+
+export type SetCellsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SetCellsError = SetCellsErrors[keyof SetCellsErrors];
+
+export type SetCellsResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkpaperDetailOut;
+};
+
+export type SetCellsResponse = SetCellsResponses[keyof SetCellsResponses];
+
+export type CiteData = {
+    body: CitationBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Workpaper Id
+         */
+        workpaper_id: string;
+        /**
+         * Cell Key
+         */
+        cell_key: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/cells/{cell_key}/citations';
+};
+
+export type CiteErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type CiteError = CiteErrors[keyof CiteErrors];
+
+export type CiteResponses = {
+    /**
+     * Successful Response
+     */
+    201: WorkpaperDetailOut;
+};
+
+export type CiteResponse = CiteResponses[keyof CiteResponses];
+
+export type SignOffEqrData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Workpaper Id
+         */
+        workpaper_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/sign-offs/eqr';
+};
+
+export type SignOffEqrErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SignOffEqrError = SignOffEqrErrors[keyof SignOffEqrErrors];
+
+export type SignOffEqrResponses = {
+    /**
+     * Successful Response
+     */
+    201: WorkpaperDetailOut;
+};
+
+export type SignOffEqrResponse = SignOffEqrResponses[keyof SignOffEqrResponses];
+
+export type SignOffManagerData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Workpaper Id
+         */
+        workpaper_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/sign-offs/manager';
+};
+
+export type SignOffManagerErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SignOffManagerError = SignOffManagerErrors[keyof SignOffManagerErrors];
+
+export type SignOffManagerResponses = {
+    /**
+     * Successful Response
+     */
+    201: WorkpaperDetailOut;
+};
+
+export type SignOffManagerResponse = SignOffManagerResponses[keyof SignOffManagerResponses];
+
+export type SignOffPartnerData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Workpaper Id
+         */
+        workpaper_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/sign-offs/partner';
+};
+
+export type SignOffPartnerErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SignOffPartnerError = SignOffPartnerErrors[keyof SignOffPartnerErrors];
+
+export type SignOffPartnerResponses = {
+    /**
+     * Successful Response
+     */
+    201: WorkpaperDetailOut;
+};
+
+export type SignOffPartnerResponse = SignOffPartnerResponses[keyof SignOffPartnerResponses];
+
+export type SignOffPrepareData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Workpaper Id
+         */
+        workpaper_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/sign-offs/prepare';
+};
+
+export type SignOffPrepareErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SignOffPrepareError = SignOffPrepareErrors[keyof SignOffPrepareErrors];
+
+export type SignOffPrepareResponses = {
+    /**
+     * Successful Response
+     */
+    201: WorkpaperDetailOut;
+};
+
+export type SignOffPrepareResponse = SignOffPrepareResponses[keyof SignOffPrepareResponses];
+
+export type SignOffReviewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Workpaper Id
+         */
+        workpaper_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/sign-offs/review';
+};
+
+export type SignOffReviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SignOffReviewError = SignOffReviewErrors[keyof SignOffReviewErrors];
+
+export type SignOffReviewResponses = {
+    /**
+     * Successful Response
+     */
+    201: WorkpaperDetailOut;
+};
+
+export type SignOffReviewResponse = SignOffReviewResponses[keyof SignOffReviewResponses];
 
 export type SetupFileData = {
     body?: never;
