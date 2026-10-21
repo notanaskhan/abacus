@@ -36,6 +36,14 @@ C1 milestones: stub F-03-T06 (S0), freeze F-03-T19 (by Fri 2026-11-13, M2), live
 
 File names above are the planned names; a contract's file is created by its stub task, and the register row is updated in the same commit.
 
+## Platform interfaces (unnumbered)
+
+Interfaces that Q-01 provides to the product modules but that are not among the 21 cross-module contracts above. Same file rules, same frozen-contract rule. Source: `docs/plan/epics/Q-01.md` section 8 and SPEC-050 AC-21.
+
+| Interface set | File | Provider (epic) | Consumers | Freeze sprint | Freeze starts | Version | Status |
+|---|---|---|---|---|---|---|---|
+| Platform operations: WorkOS adapter port, `runtime-config.json` schema, public routes and readiness, deploy lock, ops-task commands, `TenantProvisioningWorkflow`, `platform.api.control_active` and the kill-switch rule, SES identity port, the live AWS adapters | `platform-ops.md` | Q-01 (Q-01-T13) | P-01, P-08, F-04, G-04, R-01, F-01 `db_guard`, Q-04 | S5 (Q-01-T57) | 2026-12-28 | v1 | stub (Q-01-T13, 2026-10-22) |
+
 ## The handshake (chapter 01 §1.3.2, solo edition)
 
 1. **Request.** The consumer states the screen IDs and artboard states the contract must serve, the seed figures that must foot and the human-only gates, and writes the contract tests (pytest against the stub, TypeScript fixture assertions). Solo: this is a note in the task file; there is no issue template.
