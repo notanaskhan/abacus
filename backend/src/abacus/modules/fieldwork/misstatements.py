@@ -17,13 +17,18 @@ from typing import Final, Literal
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.modules.engagements.api import get_ref
+from abacus.modules.engagements.api import Judgment, get_ref
 from abacus.modules.fieldwork.completion import status_of
 from abacus.modules.fieldwork.planning import materiality_history
 from abacus.modules.fieldwork.repository import (
     adjustment_events_of,
     adjustment_lines_of,
     engagement_adjustments,
+    engagement_risks,
+    materiality_decisions,
+    materiality_versions,
+    newest_risk_versions,
+    risk_approvals,
 )
 from abacus.modules.identity.api import AuthContext, authorise
 from abacus.modules.ledger.api import AdjustmentEntry, EntryLine, EntrySet
@@ -137,3 +142,80 @@ async def uncorrected_for(ctx: AuthContext, engagement_id: UUID) -> Summary:
         band_of(aggregate, chosen.overall, chosen.performance, chosen.trivial),
         chosen.overall - aggregate,
     )
+
+
+# --- Judgments for the EQR digest (SPEC-314; TASK-332) ----------------------------------------
+
+
+async def judgments(tenant: TenantContext, engagement_id: UUID) -> list[Judgment]:
+    """Materiality, significant risks and the uncorrected misstatements, stated by code."""
+    async with tenant_session(tenant) as session:
+        versions = await materiality_versions(session, engagement_id)
+        decisions = await materiality_decisions(session, [v.id for v in versions[:1]])
+        risks = await engagement_risks(session, engagement_id)
+        risk_versions = await newest_risk_versions(session, [r.id for r in risks])
+        approvals = await risk_approvals(session, [v.id for v in risk_versions.values()])
+        entries = await engagement_adjustments(session, engagement_id)
+        ids = [a.id for a in entries]
+        lines = await adjustment_lines_of(session, ids)
+        events = await adjustment_events_of(session, ids)
+    out: list[Judgment] = []
+    current = versions[0] if versions else None
+    decided = current is not None and current.id in decisions
+    if current is not None:
+        out.append(
+            Judgment(
+                "materiality",
+                "Materiality",
+                (
+                    ("Overall", f"{current.overall:,.2f}"),
+                    ("Performance", f"{current.performance:,.2f}"),
+                    ("Clearly trivial", f"{current.trivial:,.2f}"),
+                    ("Benchmark", current.benchmark),
+                    ("Status", "Decided by the partner" if decided else "Proposed"),
+                ),
+                decided,
+            )
+        )
+    significant = [v for v in risk_versions.values() if v.significant]
+    rebuttals = [v for v in risk_versions.values() if v.fraud == "rebuttal"]
+    asking = significant + [v for v in rebuttals if v not in significant]
+    approved = [v for v in asking if v.id in approvals]
+    out.append(
+        Judgment(
+            "significant_risks",
+            "Significant risks",
+            (
+                ("Risks assessed", str(len(risk_versions))),
+                ("Significant", str(len(significant))),
+                ("Fraud presumption rebutted", str(len(rebuttals))),
+                ("Approved by the partner", f"{len(approved)} of {len(asking)}"),
+            ),
+            len(approved) == len(asking),
+        )
+    )
+    passed = [
+        a
+        for a in entries
+        if status_of([e for e in events if e.adjustment_id == a.id]) == "client_declined"
+    ]
+    aggregate = sum((x.debit for x in lines if x.adjustment_id in {a.id for a in passed}), _ZERO)
+    facts: list[tuple[str, str]] = [
+        ("Passed entries", str(len(passed))),
+        ("Aggregate", f"{aggregate:,.2f}"),
+    ]
+    if current is not None:
+        band = band_of(aggregate, current.overall, current.performance, current.trivial)
+        facts.append(("Against materiality", BAND_WORDS[band]))
+    out.append(
+        Judgment("uncorrected_misstatements", "Uncorrected misstatements", tuple(facts), True)
+    )
+    return out
+
+
+BAND_WORDS: Final = {
+    "clearly_trivial": "Clearly trivial",
+    "below_performance": "Below performance materiality",
+    "below_overall": "Above performance materiality",
+    "above_overall": "At or above overall materiality",
+}

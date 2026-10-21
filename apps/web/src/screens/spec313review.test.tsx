@@ -1,4 +1,4 @@
-// SPEC-313 (TASK-325): review notes on a reviewable and the sign-off matrix with the G5 gate.
+// SPEC-313 (TASK-331): review notes on a reviewable and the sign-off matrix with the G5 gate.
 import type { ReviewMatrixOut, ReviewNoteOut } from "@abacus/api-client";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

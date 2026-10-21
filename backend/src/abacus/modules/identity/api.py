@@ -91,6 +91,7 @@ from abacus.modules.identity.routing import (
     declared_action,
 )
 from abacus.modules.identity.service import (
+    EQR_ROLES,
     PARTNER_ROLES,
     AlreadyMember,
     TeamMember,
@@ -102,6 +103,7 @@ from abacus.modules.identity.service import (
     contact_emails,
     could,
     earliest_partner,
+    engagement_eqrs,
     engagement_leads,
     engagement_partners,
     engagement_role_of,
@@ -164,6 +166,7 @@ register_engagement_owners(AUDIT_KINDS, audit_owners)
 
 __all__ = [
     "ACTION_KEY",
+    "EQR_ROLES",
     "IDENTITY",
     "MFA_RECENT",
     "OWN",
@@ -236,6 +239,7 @@ __all__ = [
     "declared_action",
     "drafted_guidance_to_clients",
     "earliest_partner",
+    "engagement_eqrs",
     "engagement_leads",
     "engagement_partners",
     "engagement_role_of",

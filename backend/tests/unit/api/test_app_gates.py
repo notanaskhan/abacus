@@ -241,7 +241,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         # TASK-323: a password-protected upload saved again without its password
         "/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/unlock",
         "/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/statement/approve",
-        # SPEC-313 (TASK-325): review notes and their events; trial balance sign-offs
+        # SPEC-313 (TASK-331): review notes and their events; trial balance sign-offs
         "/v1/engagements/{engagement_id}/review-notes",
         "/v1/engagements/{engagement_id}/review-notes/{note_id}/respond",
         "/v1/engagements/{engagement_id}/review-notes/{note_id}/clear",
@@ -251,6 +251,14 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/sign-offs/manager",
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/sign-offs/partner",
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/sign-offs/eqr",
+        # SPEC-314 (TASK-332): completion, release and archive records
+        "/v1/engagements/{engagement_id}/completion/eqr/concur",
+        "/v1/engagements/{engagement_id}/completion/going-concern",
+        "/v1/engagements/{engagement_id}/completion/report",
+        "/v1/engagements/{engagement_id}/completion/report/approve",
+        "/v1/engagements/{engagement_id}/completion/rep-letter",
+        "/v1/engagements/{engagement_id}/completion/release",
+        "/v1/engagements/{engagement_id}/completion/archive/lock",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

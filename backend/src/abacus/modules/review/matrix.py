@@ -1,4 +1,4 @@
-"""The sign-off matrix and the review gate, G5 (P-04; SPEC-313; TASK-325).
+"""The sign-off matrix and the review gate, G5 (P-04; SPEC-313; TASK-331).
 
 For every registered reviewable on an engagement: its five levels (who signed, stale or not),
 its open notes, and a status computed by code. G5 is met when there is at least one reviewable

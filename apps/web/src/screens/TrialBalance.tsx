@@ -663,7 +663,7 @@ const LEVEL_TITLE: Record<number, string> = {
   5: "Quality reviewer",
 };
 
-/** SPEC-313 (TASK-325): sign the trial balance's current version and annotations. */
+/** SPEC-313 (TASK-331): sign the trial balance's current version and annotations. */
 function TbSignOffs({
   path,
   detail,
@@ -732,7 +732,7 @@ function TbSignOffs({
               {(LEVEL_ROLES[l.level] ?? []).includes(role) && !current && (
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="secondary"
                   disabled={(l.level > 1 && !prepared) || mutation.isPending}
                   onClick={() => {
                     mutation.mutate({ ...path });

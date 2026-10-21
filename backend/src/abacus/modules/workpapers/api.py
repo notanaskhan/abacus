@@ -16,7 +16,7 @@ from abacus.modules.workpapers.service import (
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (router, checks_router)
 
-# SPEC-313 (TASK-325): papers appear in the sign-off matrix and count toward G5.
+# SPEC-313 (TASK-331): papers appear in the sign-off matrix and count toward G5.
 register_reviewable("workpaper", workpaper_reviewables)
 
 __all__ = [

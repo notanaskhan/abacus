@@ -113,12 +113,17 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "adjustment.approve",  # SPEC-301 (TASK-302)
         "adjustment.propose",
         "adjustment.record_response",
+        "archive.lock",  # SPEC-314 (TASK-332)
         "comment.create",  # SPEC-032 (TASK-062)
         "comment.read",
         "comment.share",
+        "completion.decide",  # SPEC-314 (TASK-332)
+        "completion.read",  # SPEC-314 (TASK-332)
+        "completion.record",  # SPEC-314 (TASK-332)
         "connection.read_log",
         "entry_assessment.adopt",  # SPEC-044 (TASK-109)
         "entry_assessment.request",  # SPEC-037 Q4 (TASK-085)
+        "eqr.concur",  # SPEC-314 (TASK-332)
         "evidence.accept",
         "evidence.read",
         "evidence.reject",
@@ -141,6 +146,8 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "procedure.configure",
         "procedure.read",
         "procedure.run",
+        "report.approve",  # SPEC-314 (TASK-332)
+        "report.release",  # SPEC-314 (TASK-332)
         "representation.edit",  # SPEC-301 (TASK-302)
         "review.assign",
         "review.read",

@@ -27,6 +27,9 @@ const screens = {
   Review: lazyScreen(async () => (await import("../../screens/Review")).Review),
   Workpapers: lazyScreen(async () => (await import("../../screens/Workpapers")).Workpapers),
   Workpaper: lazyScreen(async () => (await import("../../screens/Workpaper")).Workpaper),
+  CompletionRelease: lazyScreen(
+    async () => (await import("../../screens/CompletionRelease")).CompletionRelease,
+  ),
   ReviewMatrix: lazyScreen(async () => (await import("../../screens/ReviewMatrix")).ReviewMatrix),
   TrialBalance: lazyScreen(async () => (await import("../../screens/TrialBalance")).TrialBalance),
 };
@@ -177,13 +180,23 @@ const trialBalanceRoute = createRoute({
   },
 });
 
-// SPEC-313 (TASK-325): the sign-off matrix, the review gate and every review note.
+// SPEC-313 (TASK-331): the sign-off matrix, the review gate and every review note.
 const signOffsRoute = createRoute({
   getParentRoute: () => engagementRoute,
   path: "/sign-offs",
   component: function SignOffsPage(): JSX.Element {
     const engagementId = useParam("engagementId");
     return <screens.ReviewMatrix engagementId={engagementId} />;
+  },
+});
+
+// SPEC-314 (TASK-332): EQR, going concern, report, representation letter, release, archive.
+const completionRoute = createRoute({
+  getParentRoute: () => engagementRoute,
+  path: "/completion",
+  component: function CompletionPage(): JSX.Element {
+    const engagementId = useParam("engagementId");
+    return <screens.CompletionRelease engagementId={engagementId} />;
   },
 });
 
@@ -204,5 +217,6 @@ export const engagementRoutes = [
     workpaperRoute,
     trialBalanceRoute,
     signOffsRoute,
+    completionRoute,
   ]),
 ] as const;

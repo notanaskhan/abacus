@@ -224,6 +224,15 @@ async def engagement_partners(tenant_id: UUID, engagement_id: UUID) -> list[UUID
     return sorted({user for user, role in team if role in PARTNER_ROLES})
 
 
+EQR_ROLES: frozenset[EngagementRole] = frozenset({"reviewer"})
+
+
+async def engagement_eqrs(tenant_id: UUID, engagement_id: UUID) -> list[UUID]:
+    """SPEC-314 (TASK-332): the engagement quality reviewer(s), who alone concur (G6)."""
+    team = await team_of(tenant_id, engagement_id)
+    return sorted({user for user, role in team if role in EQR_ROLES})
+
+
 async def earliest_partner(tenant: TenantContext, engagement_id: UUID) -> UUID | None:
     """SPEC-027 (TASK-051): whom the engagement agent acts for (ADR-025)."""
     async with tenant_session(tenant) as session:

@@ -52,14 +52,22 @@ from abacus.modules.engagements.setup import (
 )
 from abacus.modules.engagements.slots import (
     GateFact,
+    Judgment,
+    JudgmentSource,
     UnknownWorkItemKind,
     WorkItemProvider,
     gate_fact,
+    judgments_of,
     register_gate_provider,
+    register_judgment_source,
     register_work_item_kind,
     work_item_provider,
 )
-from abacus.modules.engagements.work_items import assurance_item_id
+from abacus.modules.engagements.work_items import (
+    assurance_item_id,
+    lock_engagement,
+    set_assurance_phase,
+)
 from abacus.modules.engagements.workbook import (
     AccountRule,
     Area,
@@ -109,6 +117,8 @@ __all__ = [
     "EngagementRef",
     "GateFact",
     "IndependenceRequested",
+    "Judgment",
+    "JudgmentSource",
     "MethodologyAlreadyApplied",
     "MethodologyVersionView",
     "PriorItem",
@@ -133,6 +143,8 @@ __all__ = [
     "gate_fact",
     "get_ref",
     "is_archived",
+    "judgments_of",
+    "lock_engagement",
     "lock_ref",
     "methodology_router",
     "methodology_version",
@@ -141,11 +153,13 @@ __all__ = [
     "publish_drafted_version",
     "register_auto_retrieval",
     "register_gate_provider",
+    "register_judgment_source",
     "register_roll_forward_items",
     "register_work_item_kind",
     "require_open",
     "router",
     "run_auto_retrieval",
+    "set_assurance_phase",
     "stored_file",
     "version_detail",
     "visible_among",

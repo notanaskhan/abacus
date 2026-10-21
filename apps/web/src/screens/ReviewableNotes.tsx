@@ -13,7 +13,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
 
-// SPEC-313 (TASK-325): review notes on a working paper or a trial balance, optionally on a cell
+// SPEC-313 (TASK-331): review notes on a working paper or a trial balance, optionally on a cell
 // or an account. Reviewers raise; anyone on the team answers; the raiser (or the partner)
 // clears or reopens. An open or answered note blocks reviewer sign-offs and completion (G5).
 
@@ -225,7 +225,7 @@ function NoteItem({
             />
             <Button
               size="sm"
-              variant="outline"
+              variant="secondary"
               disabled={reply.trim() === "" || respond.isPending}
               onClick={() => {
                 respond.mutate({ ...path, body: { body: reply.trim() } });
@@ -238,7 +238,7 @@ function NoteItem({
         {note.status !== "cleared" && canClose && (
           <Button
             size="sm"
-            variant="outline"
+            variant="secondary"
             disabled={clear.isPending}
             onClick={() => {
               clear.mutate({ ...path, body: {} });

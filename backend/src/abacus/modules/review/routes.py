@@ -1,4 +1,4 @@
-"""Review routes (SPEC-313; TASK-325): notes on any reviewable, and the sign-off matrix with
+"""Review routes (SPEC-313; TASK-331): notes on any reviewable, and the sign-off matrix with
 the G5 gate. Reads follow `workpaper.read`; notes `review_note.raise|respond|clear`."""
 
 from __future__ import annotations

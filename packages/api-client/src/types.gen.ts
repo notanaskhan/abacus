@@ -574,6 +574,28 @@ export type ApproveIn = {
 };
 
 /**
+ * ArchiveOut
+ */
+export type ArchiveOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Leaf Count
+     */
+    leaf_count: number;
+    /**
+     * Locked By Name
+     */
+    locked_by_name: string;
+    /**
+     * Seal
+     */
+    seal: string;
+};
+
+/**
  * AreaOut
  */
 export type AreaOut = {
@@ -669,6 +691,16 @@ export type AssistantOut = {
      * Stage
      */
     stage: 'shadow' | 'live' | 'off';
+};
+
+/**
+ * AttestBody
+ */
+export type AttestBody = {
+    /**
+     * Attest
+     */
+    attest: boolean;
 };
 
 /**
@@ -981,6 +1013,32 @@ export type CheckOut = {
 };
 
 /**
+ * ChecklistItemOut
+ */
+export type ChecklistItemOut = {
+    /**
+     * Applicable
+     */
+    applicable: boolean;
+    /**
+     * Blockers
+     */
+    blockers: Array<string>;
+    /**
+     * Done
+     */
+    done: boolean;
+    /**
+     * Gate
+     */
+    gate: string | null;
+    /**
+     * Key
+     */
+    key: 'accepted' | 'independence' | 'engagement_letter' | 'review_complete' | 'eqr_concurred' | 'going_concern' | 'report_approved' | 'rep_letter' | 'released' | 'archived';
+};
+
+/**
  * CitationBody
  */
 export type CitationBody = {
@@ -1272,6 +1330,76 @@ export type CompleteOut = {
 };
 
 /**
+ * CompletionOut
+ */
+export type CompletionOut = {
+    archive: ArchiveOut | null;
+    /**
+     * Can Lock
+     */
+    can_lock: boolean;
+    /**
+     * Can Release
+     */
+    can_release: boolean;
+    /**
+     * Checklist
+     */
+    checklist: Array<ChecklistItemOut>;
+    eqr: EqrOut;
+    going_concern: CompletionRecordOut | null;
+    /**
+     * Lock Blockers
+     */
+    lock_blockers: Array<string>;
+    release: ReleaseOut | null;
+    /**
+     * Release Blockers
+     */
+    release_blockers: Array<string>;
+    rep_letter: CompletionRecordOut | null;
+    report: ReportOut | null;
+};
+
+/**
+ * CompletionRecordOut
+ */
+export type CompletionRecordOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * By Name
+     */
+    by_name: string;
+    /**
+     * Choice
+     */
+    choice: string | null;
+    /**
+     * Document Date
+     */
+    document_date: string | null;
+    /**
+     * Emphasis
+     */
+    emphasis: boolean | null;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Rationale
+     */
+    rationale: string | null;
+};
+
+/**
  * ConclusionIn
  */
 export type ConclusionIn = {
@@ -1279,6 +1407,34 @@ export type ConclusionIn = {
      * Text
      */
     text: string;
+};
+
+/**
+ * ConcurBody
+ */
+export type ConcurBody = {
+    /**
+     * Not Involved
+     */
+    not_involved: boolean;
+};
+
+/**
+ * ConcurrenceOut
+ */
+export type ConcurrenceOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * By Name
+     */
+    by_name: string;
+    /**
+     * Current
+     */
+    current: boolean;
 };
 
 /**
@@ -1592,6 +1748,31 @@ export type DeficiencyOut = {
      * Status
      */
     status: 'proposed' | 'concluded' | 'communicated';
+};
+
+/**
+ * DigestCardOut
+ */
+export type DigestCardOut = {
+    /**
+     * Decided
+     */
+    decided: boolean;
+    /**
+     * Facts
+     */
+    facts: Array<[
+        string,
+        string
+    ]>;
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Title
+     */
+    title: string;
 };
 
 /**
@@ -2023,6 +2204,37 @@ export type EntryCitationOut = {
      * Verified
      */
     verified: boolean;
+};
+
+/**
+ * EqrOut
+ */
+export type EqrOut = {
+    concurrence: ConcurrenceOut | null;
+    /**
+     * Digest
+     */
+    digest: Array<DigestCardOut>;
+    /**
+     * Digest Hash
+     */
+    digest_hash: string;
+    /**
+     * Eqr Names
+     */
+    eqr_names: Array<string>;
+    /**
+     * Is Me
+     */
+    is_me: boolean;
+    /**
+     * Open Notes
+     */
+    open_notes: number;
+    /**
+     * Required
+     */
+    required: boolean;
 };
 
 /**
@@ -2552,6 +2764,20 @@ export type GlImportOut = {
      * Status
      */
     status: 'processing' | 'waiting_for_tb' | 'reconciled' | 'failed';
+};
+
+/**
+ * GoingConcernBody
+ */
+export type GoingConcernBody = {
+    /**
+     * Choice
+     */
+    choice: 'no_substantial_doubt' | 'doubt_alleviated' | 'doubt_exists';
+    /**
+     * Rationale
+     */
+    rationale?: string | null;
 };
 
 /**
@@ -4627,6 +4853,28 @@ export type RejectIn = {
 };
 
 /**
+ * ReleaseOut
+ */
+export type ReleaseOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Documentation Due
+     */
+    documentation_due: string;
+    /**
+     * Released By Name
+     */
+    released_by_name: string;
+    /**
+     * Report Date
+     */
+    report_date: string;
+};
+
+/**
  * RemovedOut
  */
 export type RemovedOut = {
@@ -4637,6 +4885,20 @@ export type RemovedOut = {
 };
 
 /**
+ * RepLetterBody
+ */
+export type RepLetterBody = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Letter Date
+     */
+    letter_date: string;
+};
+
+/**
  * ReplyIn
  */
 export type ReplyIn = {
@@ -4644,6 +4906,43 @@ export type ReplyIn = {
      * Body
      */
     body: string;
+};
+
+/**
+ * ReportBody
+ */
+export type ReportBody = {
+    /**
+     * Emphasis
+     */
+    emphasis?: boolean;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Opinion
+     */
+    opinion: 'unmodified' | 'qualified' | 'adverse' | 'disclaimer';
+    /**
+     * Report Date
+     */
+    report_date: string;
+};
+
+/**
+ * ReportOut
+ */
+export type ReportOut = {
+    /**
+     * Approved At
+     */
+    approved_at: string | null;
+    /**
+     * Approved By Name
+     */
+    approved_by_name: string | null;
+    record: CompletionRecordOut;
 };
 
 /**
@@ -8745,6 +9044,422 @@ export type RevokeClientInvitationResponses = {
 };
 
 export type RevokeClientInvitationResponse = RevokeClientInvitationResponses[keyof RevokeClientInvitationResponses];
+
+export type CompletionStateData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/completion';
+};
+
+export type CompletionStateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type CompletionStateError = CompletionStateErrors[keyof CompletionStateErrors];
+
+export type CompletionStateResponses = {
+    /**
+     * Successful Response
+     */
+    200: CompletionOut;
+};
+
+export type CompletionStateResponse = CompletionStateResponses[keyof CompletionStateResponses];
+
+export type LockArchiveData = {
+    body: AttestBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/completion/archive/lock';
+};
+
+export type LockArchiveErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type LockArchiveError = LockArchiveErrors[keyof LockArchiveErrors];
+
+export type LockArchiveResponses = {
+    /**
+     * Successful Response
+     */
+    201: CompletionOut;
+};
+
+export type LockArchiveResponse = LockArchiveResponses[keyof LockArchiveResponses];
+
+export type ConcurEqrData = {
+    body: ConcurBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/completion/eqr/concur';
+};
+
+export type ConcurEqrErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ConcurEqrError = ConcurEqrErrors[keyof ConcurEqrErrors];
+
+export type ConcurEqrResponses = {
+    /**
+     * Successful Response
+     */
+    201: CompletionOut;
+};
+
+export type ConcurEqrResponse = ConcurEqrResponses[keyof ConcurEqrResponses];
+
+export type GoingConcernData = {
+    body: GoingConcernBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/completion/going-concern';
+};
+
+export type GoingConcernErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type GoingConcernError = GoingConcernErrors[keyof GoingConcernErrors];
+
+export type GoingConcernResponses = {
+    /**
+     * Successful Response
+     */
+    201: CompletionOut;
+};
+
+export type GoingConcernResponse = GoingConcernResponses[keyof GoingConcernResponses];
+
+export type ReleaseReportData = {
+    body: AttestBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/completion/release';
+};
+
+export type ReleaseReportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ReleaseReportError = ReleaseReportErrors[keyof ReleaseReportErrors];
+
+export type ReleaseReportResponses = {
+    /**
+     * Successful Response
+     */
+    201: CompletionOut;
+};
+
+export type ReleaseReportResponse = ReleaseReportResponses[keyof ReleaseReportResponses];
+
+export type RepLetterData = {
+    body: RepLetterBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/completion/rep-letter';
+};
+
+export type RepLetterErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RepLetterError = RepLetterErrors[keyof RepLetterErrors];
+
+export type RepLetterResponses = {
+    /**
+     * Successful Response
+     */
+    201: CompletionOut;
+};
+
+export type RepLetterResponse = RepLetterResponses[keyof RepLetterResponses];
+
+export type RecordReportData = {
+    body: ReportBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/completion/report';
+};
+
+export type RecordReportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RecordReportError = RecordReportErrors[keyof RecordReportErrors];
+
+export type RecordReportResponses = {
+    /**
+     * Successful Response
+     */
+    201: CompletionOut;
+};
+
+export type RecordReportResponse = RecordReportResponses[keyof RecordReportResponses];
+
+export type ApproveReportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/completion/report/approve';
+};
+
+export type ApproveReportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ApproveReportError = ApproveReportErrors[keyof ApproveReportErrors];
+
+export type ApproveReportResponses = {
+    /**
+     * Successful Response
+     */
+    201: CompletionOut;
+};
+
+export type ApproveReportResponse = ApproveReportResponses[keyof ApproveReportResponses];
 
 export type ConnectionData = {
     body?: never;

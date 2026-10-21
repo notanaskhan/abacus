@@ -1,4 +1,4 @@
-"""SPEC-313 (TASK-325): note states, matrix row status and the G5 gate, by code."""
+"""SPEC-313 (TASK-331): note states, matrix row status and the G5 gate, by code."""
 
 from __future__ import annotations
 

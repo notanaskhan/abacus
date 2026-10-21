@@ -1,5 +1,5 @@
 ---
-id: TASK-325
+id: TASK-331
 title: "P-04 / AUD-17: review notes on any reviewable, trial balance sign-offs, the sign-off matrix and G5"
 spec: SPEC-313
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7]
@@ -26,6 +26,7 @@ updated: 2026-10-21
 - **Web:** `ReviewableNotes.tsx` and `ReviewMatrix.tsx`; the Workpaper and TrialBalance panels; the `/sign-offs` route and tab.
 
 ## Progress log
+- Renumbered from TASK-325 after merge (PR #198), because the other stream took TASK-325 to TASK-330 in parallel. Migration 0076's docstring keeps the old number, since it's already on main.
 - A mistake to make into a check: writing the new notes component to `src/screens/ReviewNotes.tsx` replaced fieldwork's file of the same name. `tsc` caught it, and the original was restored from git. New screen files should check the path is free before writing.
 
 - A test that had failed since TASK-315 (`test_ac20_importing_the_engagements_api_registers_the_lookup`): reloading the engagements api re-registered G1–G3 and the slot refused. It is fixed here: re-registering the same provider (same module and name) is a no-op. The reviewable slot follows the same rule.

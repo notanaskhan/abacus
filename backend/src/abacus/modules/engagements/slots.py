@@ -71,3 +71,36 @@ async def gate_fact(tenant: TenantContext, engagement_id: UUID, gate: str) -> Ga
     if provider is None:
         return GateFact(met=False, blockers=("no_gate_provider",))
     return await provider(tenant, engagement_id)
+
+
+# --- Judgments for the EQR digest (SPEC-314; TASK-332) ----------------------------------------
+
+
+@dataclass(frozen=True)
+class Judgment:
+    """A significant judgment as its owner states it, by code: a kind, a title and facts
+    (label, value) the owner computed. The EQR digest is built from these; never model text."""
+
+    kind: str
+    title: str
+    facts: tuple[tuple[str, str], ...]
+    decided: bool
+
+
+JudgmentSource = Callable[[TenantContext, UUID], Awaitable[list[Judgment]]]
+_JUDGMENTS: dict[str, JudgmentSource] = {}
+
+
+def register_judgment_source(name: str, source: JudgmentSource) -> None:
+    known = _JUDGMENTS.get(name)
+    if known is not None and not _same(known, source):
+        raise ValueError(f"judgment source {name!r} is already registered")
+    _JUDGMENTS[name] = source
+
+
+async def judgments_of(tenant: TenantContext, engagement_id: UUID) -> list[Judgment]:
+    """Every registered source's judgments, by source name (callers authorised first)."""
+    out: list[Judgment] = []
+    for name in sorted(_JUDGMENTS):
+        out.extend(await _JUDGMENTS[name](tenant, engagement_id))
+    return out

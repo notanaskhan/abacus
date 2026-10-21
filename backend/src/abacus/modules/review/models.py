@@ -29,7 +29,7 @@ class SignOff(Base):
 
 
 class ReviewableNote(Base):
-    """A review note on a registered reviewable (SPEC-313; TASK-325). Insert-only."""
+    """A review note on a registered reviewable (SPEC-313; TASK-331). Insert-only."""
 
     __tablename__ = "reviewable_notes"
 
