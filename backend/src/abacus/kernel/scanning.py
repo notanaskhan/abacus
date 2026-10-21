@@ -117,9 +117,11 @@ class ClamdScanner:
             reply = self._instream(content)
         except (OSError, ValueError):  # refused, reset, timed out (socket.timeout is an OSError)
             return ScanResult(False, "unscannable")
-        if reply.endswith(b"OK"):
+        # Only clamd's exact clean verdict is clean (AC-16, ADR-153): `stream: NOT OK` and other
+        # replies that merely end in OK are unscannable. `_reply` has already dropped `stream: `.
+        if reply == b"OK":
             return ScanResult(True)
-        if reply.endswith(b"FOUND"):
+        if reply.endswith(b" FOUND"):
             return ScanResult(False, "malware")
         return ScanResult(False, "unscannable")
 

@@ -174,12 +174,6 @@ def test_ac16_an_unexpected_reply_is_unscannable(reply: bytes) -> None:
     assert result == UNSCANNABLE
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Q-01 bug: a reply that merely ends in OK (here `stream: NOT OK`) is read as clean; "
-    "SPEC-050 AC-16 and ADR-153 make every reply other than the clean verdict unscannable "
-    "(TASK-346 #346)",
-)
 @pytest.mark.parametrize("reply", [b"stream: NOT OK\0", b"stream: scan error: not OK\0"])
 def test_ac16_only_the_clean_verdict_is_clean(reply: bytes) -> None:
     with FakeClamd(mode="reply", reply=reply) as clamd:
