@@ -692,6 +692,58 @@
         "title": "AdjustmentOut",
         "type": "object"
       },
+      "AdoptBody": {
+        "additionalProperties": false,
+        "properties": {
+          "display_unit": {
+            "cls": "internal",
+            "default": "cents",
+            "enum": [
+              "cents",
+              "whole_dollars"
+            ],
+            "title": "Display Unit",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "default": "standard",
+            "enum": [
+              "standard",
+              "interim",
+              "prior",
+              "budget",
+              "preliminary"
+            ],
+            "title": "Label",
+            "type": "string"
+          },
+          "prior_snapshot_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Prior Snapshot Id"
+          },
+          "snapshot_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Snapshot Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "snapshot_id"
+        ],
+        "title": "AdoptBody",
+        "type": "object"
+      },
       "AdoptIn": {
         "additionalProperties": false,
         "properties": {
@@ -987,6 +1039,82 @@
           "excluded"
         ],
         "title": "AiExclusionOut",
+        "type": "object"
+      },
+      "AnnotationBody": {
+        "additionalProperties": false,
+        "properties": {
+          "account_code": {
+            "cls": "confidential",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Account Code",
+            "type": "string"
+          },
+          "area": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Area"
+          },
+          "wp_ref": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Wp Ref"
+          }
+        },
+        "required": [
+          "account_code"
+        ],
+        "title": "AnnotationBody",
+        "type": "object"
+      },
+      "AnnotationsBody": {
+        "additionalProperties": false,
+        "properties": {
+          "accounts": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/AnnotationBody"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Accounts",
+            "type": "array"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "accounts"
+        ],
+        "title": "AnnotationsBody",
         "type": "object"
       },
       "AppliedMethodologyOut": {
@@ -6658,6 +6786,147 @@
         "title": "KnowledgeSearchIn",
         "type": "object"
       },
+      "LeadRowOut": {
+        "properties": {
+          "account_code": {
+            "cls": "confidential",
+            "title": "Account Code",
+            "type": "string"
+          },
+          "account_name": {
+            "cls": "confidential",
+            "title": "Account Name",
+            "type": "string"
+          },
+          "change": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Change"
+          },
+          "change_pct": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Change Pct"
+          },
+          "cy": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Cy",
+            "type": "string"
+          },
+          "py": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Py"
+          }
+        },
+        "required": [
+          "account_code",
+          "account_name",
+          "py",
+          "cy",
+          "change",
+          "change_pct"
+        ],
+        "title": "LeadRowOut",
+        "type": "object"
+      },
+      "LeadsheetOut": {
+        "properties": {
+          "area": {
+            "cls": "confidential",
+            "title": "Area",
+            "type": "string"
+          },
+          "change": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Change"
+          },
+          "change_pct": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Change Pct"
+          },
+          "cy": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Cy",
+            "type": "string"
+          },
+          "py": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Py"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/LeadRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "area",
+          "rows",
+          "py",
+          "cy",
+          "change",
+          "change_pct"
+        ],
+        "title": "LeadsheetOut",
+        "type": "object"
+      },
       "LetterIn": {
         "additionalProperties": false,
         "properties": {
@@ -11027,6 +11296,95 @@
         "title": "SignupOut",
         "type": "object"
       },
+      "SnapshotOut": {
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "line_count": {
+            "cls": "internal",
+            "title": "Line Count",
+            "type": "integer"
+          },
+          "lines_changed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Lines Changed"
+          },
+          "net_change": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Net Change"
+          },
+          "period_end": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Period End",
+            "type": "string"
+          },
+          "period_start": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Period Start",
+            "type": "string"
+          },
+          "pulled_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Pulled At",
+            "type": "string"
+          },
+          "source": {
+            "cls": "internal",
+            "title": "Source",
+            "type": "string"
+          },
+          "total_credit": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total Credit",
+            "type": "string"
+          },
+          "total_debit": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total Debit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "period_start",
+          "period_end",
+          "source",
+          "pulled_at",
+          "line_count",
+          "total_debit",
+          "total_credit",
+          "lines_changed",
+          "net_change"
+        ],
+        "title": "SnapshotOut",
+        "type": "object"
+      },
       "SpendOut": {
         "properties": {
           "agent_id": {
@@ -11676,6 +12034,175 @@
         "title": "TakenOut",
         "type": "object"
       },
+      "TbLineOut": {
+        "properties": {
+          "account_code": {
+            "cls": "confidential",
+            "title": "Account Code",
+            "type": "string"
+          },
+          "account_name": {
+            "cls": "confidential",
+            "title": "Account Name",
+            "type": "string"
+          },
+          "area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Area"
+          },
+          "boy": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Boy"
+          },
+          "change": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Change"
+          },
+          "credit": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Credit",
+            "type": "string"
+          },
+          "debit": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Debit",
+            "type": "string"
+          },
+          "eoy": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Eoy",
+            "type": "string"
+          },
+          "wp_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Wp Ref"
+          }
+        },
+        "required": [
+          "account_code",
+          "account_name",
+          "boy",
+          "debit",
+          "credit",
+          "eoy",
+          "change",
+          "area",
+          "wp_ref"
+        ],
+        "title": "TbLineOut",
+        "type": "object"
+      },
+      "TbVersionOut": {
+        "properties": {
+          "adopted_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Adopted At",
+            "type": "string"
+          },
+          "adopted_by_name": {
+            "cls": "internal",
+            "title": "Adopted By Name",
+            "type": "string"
+          },
+          "prior_snapshot_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Prior Snapshot Id"
+          },
+          "pulled_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Pulled At",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Reason"
+          },
+          "snapshot_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Snapshot Id",
+            "type": "string"
+          },
+          "source": {
+            "cls": "internal",
+            "title": "Source",
+            "type": "string"
+          },
+          "version_no": {
+            "cls": "internal",
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version_no",
+          "snapshot_id",
+          "prior_snapshot_id",
+          "adopted_by_name",
+          "reason",
+          "adopted_at",
+          "source",
+          "pulled_at"
+        ],
+        "title": "TbVersionOut",
+        "type": "object"
+      },
       "TeamMemberIn": {
         "additionalProperties": false,
         "properties": {
@@ -12117,6 +12644,178 @@
         "title": "TimeZoneIO",
         "type": "object"
       },
+      "TotalsOut": {
+        "properties": {
+          "balanced": {
+            "cls": "internal",
+            "title": "Balanced",
+            "type": "boolean"
+          },
+          "credit": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Credit",
+            "type": "string"
+          },
+          "debit": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Debit",
+            "type": "string"
+          },
+          "difference": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Difference",
+            "type": "string"
+          }
+        },
+        "required": [
+          "debit",
+          "credit",
+          "difference",
+          "balanced"
+        ],
+        "title": "TotalsOut",
+        "type": "object"
+      },
+      "TrialBalanceDetailOut": {
+        "properties": {
+          "boy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TotalsOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
+          "eoy": {
+            "$ref": "#/components/schemas/TotalsOut",
+            "cls": "confidential"
+          },
+          "lines": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/TbLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "trial_balance": {
+            "$ref": "#/components/schemas/TrialBalanceOut",
+            "cls": "internal"
+          },
+          "version": {
+            "$ref": "#/components/schemas/TbVersionOut",
+            "cls": "internal"
+          },
+          "versions": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/TbVersionOut"
+            },
+            "title": "Versions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "trial_balance",
+          "version",
+          "versions",
+          "lines",
+          "eoy",
+          "boy"
+        ],
+        "title": "TrialBalanceDetailOut",
+        "type": "object"
+      },
+      "TrialBalanceOut": {
+        "properties": {
+          "current_version_no": {
+            "cls": "internal",
+            "title": "Current Version No",
+            "type": "integer"
+          },
+          "display_unit": {
+            "cls": "internal",
+            "enum": [
+              "cents",
+              "whole_dollars"
+            ],
+            "title": "Display Unit",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "enum": [
+              "standard",
+              "interim",
+              "prior",
+              "budget",
+              "preliminary"
+            ],
+            "title": "Label",
+            "type": "string"
+          },
+          "period_end": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Period End",
+            "type": "string"
+          },
+          "period_start": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Period Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "period_start",
+          "period_end",
+          "display_unit",
+          "current_version_no"
+        ],
+        "title": "TrialBalanceOut",
+        "type": "object"
+      },
+      "TrialBalancesOut": {
+        "properties": {
+          "snapshots": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/SnapshotOut"
+            },
+            "title": "Snapshots",
+            "type": "array"
+          },
+          "trial_balances": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/TrialBalanceOut"
+            },
+            "title": "Trial Balances",
+            "type": "array"
+          }
+        },
+        "required": [
+          "trial_balances",
+          "snapshots"
+        ],
+        "title": "TrialBalancesOut",
+        "type": "object"
+      },
       "UploadOut": {
         "properties": {
           "evidence_version_id": {
@@ -12211,6 +12910,50 @@
           "detail"
         ],
         "title": "ValidationErrorOut",
+        "type": "object"
+      },
+      "VersionBody": {
+        "additionalProperties": false,
+        "properties": {
+          "prior_snapshot_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Prior Snapshot Id"
+          },
+          "reason": {
+            "cls": "confidential",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seen Version",
+            "type": "integer"
+          },
+          "snapshot_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Snapshot Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "snapshot_id",
+          "reason",
+          "seen_version"
+        ],
+        "title": "VersionBody",
         "type": "object"
       },
       "VersionOut": {
@@ -33192,6 +33935,891 @@
           "engagements"
         ],
         "x-abacus-action": "engagement.member_add"
+      }
+    },
+    "/v1/engagements/{engagement_id}/trial-balances": {
+      "get": {
+        "description": "SPEC-309 AC-1: the engagement's trial balances and the snapshots to adopt from.",
+        "operationId": "trial_balances",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrialBalancesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Trial Balances Route",
+        "tags": [
+          "trial balance"
+        ],
+        "x-abacus-action": "trial_balance.read"
+      },
+      "post": {
+        "description": "SPEC-309 AC-1: adopt a snapshot as the trial balance of record (version 1).",
+        "operationId": "adopt_trial_balance",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdoptBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrialBalanceDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Adopt Trial Balance Route",
+        "tags": [
+          "trial balance"
+        ],
+        "x-abacus-action": "trial_balance.adopt"
+      }
+    },
+    "/v1/engagements/{engagement_id}/trial-balances/{tb_id}": {
+      "get": {
+        "description": "SPEC-309 AC-2, AC-4: a version's lines, totals and balance.",
+        "operationId": "trial_balance",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tb_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tb Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
+            }
+          },
+          {
+            "in": "query",
+            "name": "layer",
+            "required": false,
+            "schema": {
+              "default": "unadjusted",
+              "enum": [
+                "unadjusted",
+                "aje",
+                "rje",
+                "final"
+              ],
+              "title": "Layer",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrialBalanceDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Trial Balance Route",
+        "tags": [
+          "trial balance"
+        ],
+        "x-abacus-action": "trial_balance.read"
+      }
+    },
+    "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/annotations": {
+      "post": {
+        "description": "SPEC-309 AC-6: set accounts' audit areas and working-paper references.",
+        "operationId": "annotate_tb",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tb_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tb Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnotationsBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrialBalanceDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Annotate Tb Route",
+        "tags": [
+          "trial balance"
+        ],
+        "x-abacus-action": "trial_balance.annotate"
+      }
+    },
+    "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/candidates": {
+      "get": {
+        "description": "SPEC-309 AC-7: snapshots with the difference from the current version.",
+        "operationId": "tb_candidates",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tb_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tb Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SnapshotOut"
+                  },
+                  "title": "Response Tb Candidates",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Tb Candidates Route",
+        "tags": [
+          "trial balance"
+        ],
+        "x-abacus-action": "trial_balance.read"
+      }
+    },
+    "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/leadsheets": {
+      "get": {
+        "description": "SPEC-309 AC-5: leadsheets by audit area (PY, CY, \u0394, \u0394%).",
+        "operationId": "leadsheets",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tb_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tb Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LeadsheetOut"
+                  },
+                  "title": "Response Leadsheets",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Leadsheets Route",
+        "tags": [
+          "trial balance"
+        ],
+        "x-abacus-action": "trial_balance.read"
+      }
+    },
+    "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/versions": {
+      "post": {
+        "description": "SPEC-309 AC-7: adopt a newer snapshot as the next version.",
+        "operationId": "adopt_tb_version",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tb_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tb Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrialBalanceDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Adopt Tb Version Route",
+        "tags": [
+          "trial balance"
+        ],
+        "x-abacus-action": "trial_balance.adopt"
       }
     },
     "/v1/engagements/{engagement_id}/work-items": {

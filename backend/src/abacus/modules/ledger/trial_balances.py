@@ -1,0 +1,610 @@
+"""The trial balance of record (SPEC-309; TASK-320; A-02 §3.1-3.5, 3.7).
+
+An engagement adopts an immutable ledger snapshot as its trial balance for a label and period,
+paired with a prior-year snapshot for the beginning-of-year column. Re-adopting a newer snapshot
+makes a new version; nothing earlier is touched (ADR-004). Code computes every total, the
+balance check, leadsheets and Δ% (ADR-050); the browser never sums a column.
+
+Ledger stays dependency-free: callers authorise, pass the actor and the work item, and supply
+nothing but identifiers. Only the unadjusted layer exists until an adjustment source registers
+(A-06); asking for another layer is refused, never answered with unadjusted figures.
+"""
+
+from __future__ import annotations
+
+import hashlib
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
+from datetime import date, datetime
+from decimal import ROUND_HALF_EVEN, Decimal
+from typing import Final, Literal
+from uuid import UUID
+
+from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.uow import Ref, Target, UnitOfWork
+from abacus.modules.ledger.models import (
+    LedgerSnapshot,
+    TrialBalance,
+    TrialBalanceLineRow,
+    TrialBalanceVersion,
+)
+from abacus.modules.ledger.repository import get_snapshot, lines_of_snapshots
+from abacus.modules.ledger.tb_repository import (
+    find_trial_balance,
+    get_trial_balance,
+    insert_annotations,
+    insert_trial_balance,
+    insert_version,
+    lock_trial_balance,
+    newest_annotations,
+    set_current_version,
+    snapshots_of_entity,
+    trial_balances_of,
+    versions_of,
+)
+
+Label = Literal["standard", "interim", "prior", "budget", "preliminary"]
+Unit = Literal["cents", "whole_dollars"]
+Layer = Literal["unadjusted", "aje", "rje", "final"]
+LABELS: Final = ("standard", "interim", "prior", "budget", "preliminary")
+UNASSIGNED: Final = "Unassigned"
+_ZERO: Final = Decimal("0.00")
+_PCT: Final = Decimal("0.1")
+
+
+class SnapshotEntityMismatch(DomainInvalid):
+    code = "snapshot_entity_mismatch"
+
+
+class TrialBalanceInvalid(DomainInvalid):
+    code = "trial_balance_invalid"
+
+
+class TrialBalanceExists(DomainConflict):
+    code = "trial_balance_exists"
+
+
+class VersionStale(DomainConflict):
+    """Someone adopted another version since the caller looked."""
+
+    code = "tb_version_stale"
+
+
+class SameSnapshot(DomainConflict):
+    code = "tb_same_snapshot"
+
+
+class LayerUnavailable(DomainConflict):
+    code = "layer_unavailable"
+
+
+# The adjustment slot (A-06 fills it): fails closed, so AJE, RJE and Final are refused until then.
+_ADJUSTMENT_SOURCES: list[Callable[..., object]] = []
+
+
+def register_adjustment_source(source: Callable[..., object]) -> None:
+    _ADJUSTMENT_SOURCES.append(source)
+
+
+def layer_available(layer: str) -> bool:
+    return layer == "unadjusted" or bool(_ADJUSTMENT_SOURCES)
+
+
+@dataclass(frozen=True)
+class SnapshotSummary:
+    id: UUID
+    period_start: date
+    period_end: date
+    source: str
+    pulled_at: datetime
+    line_count: int
+    total_debit: Decimal
+    total_credit: Decimal
+
+
+@dataclass(frozen=True)
+class TbLine:
+    account_code: str
+    account_name: str
+    boy: Decimal | None  # the prior snapshot's net (debit - credit); None without a prior
+    debit: Decimal
+    credit: Decimal
+    eoy: Decimal  # net, debit - credit
+    change: Decimal | None
+    area: str | None
+    wp_ref: str | None
+
+
+@dataclass(frozen=True)
+class Totals:
+    debit: Decimal
+    credit: Decimal
+    difference: Decimal
+    balanced: bool
+
+
+@dataclass(frozen=True)
+class VersionInfo:
+    version_no: int
+    snapshot_id: UUID
+    prior_snapshot_id: UUID | None
+    adopted_by: UUID
+    reason: str | None
+    adopted_at: datetime
+    source: str
+    pulled_at: datetime
+
+
+@dataclass(frozen=True)
+class TrialBalanceSummary:
+    id: UUID
+    label: str
+    period_start: date
+    period_end: date
+    display_unit: str
+    current_version_no: int
+
+
+@dataclass(frozen=True)
+class TrialBalanceView:
+    summary: TrialBalanceSummary
+    version: VersionInfo
+    versions: list[VersionInfo]
+    lines: list[TbLine]
+    eoy: Totals
+    boy: Totals | None
+
+
+@dataclass(frozen=True)
+class LeadRow:
+    account_code: str
+    account_name: str
+    py: Decimal | None
+    cy: Decimal
+    change: Decimal | None
+    change_pct: Decimal | None
+
+
+@dataclass(frozen=True)
+class Leadsheet:
+    area: str
+    rows: list[LeadRow]
+    py: Decimal | None
+    cy: Decimal
+    change: Decimal | None
+    change_pct: Decimal | None
+
+
+@dataclass(frozen=True)
+class Candidate:
+    snapshot: SnapshotSummary
+    lines_changed: int | None  # against the current version; None when nothing is adopted
+    net_change: Decimal | None
+
+
+@dataclass(frozen=True)
+class AnnotationEdit:
+    account_code: str
+    area: str | None
+    wp_ref: str | None
+
+
+# --- compute (pure) ---------------------------------------------------------------------------
+
+
+def _net(rows: Sequence[TrialBalanceLineRow]) -> dict[str, tuple[str, Decimal, Decimal]]:
+    out: dict[str, tuple[str, Decimal, Decimal]] = {}
+    for r in rows:
+        name, debit, credit = out.get(r.account_code, (r.account_name, _ZERO, _ZERO))
+        out[r.account_code] = (name, debit + r.debit, credit + r.credit)
+    return out
+
+
+def totals(debit: Decimal, credit: Decimal) -> Totals:
+    return Totals(debit, credit, debit - credit, debit == credit)
+
+
+def pct(change: Decimal, base: Decimal | None) -> Decimal | None:
+    """Δ% to 0.1, half-even, against the magnitude of the base; None when the base is 0."""
+    if base is None or base == 0:
+        return None
+    return (change * 100 / abs(base)).quantize(_PCT, rounding=ROUND_HALF_EVEN)
+
+
+def build_lines(
+    current: Sequence[TrialBalanceLineRow],
+    prior: Sequence[TrialBalanceLineRow] | None,
+    annotations: dict[str, tuple[str | None, str | None]],
+) -> list[TbLine]:
+    cy = _net(current)
+    py = _net(prior) if prior is not None else {}
+    lines: list[TbLine] = []
+    for code in sorted(set(cy) | set(py)):
+        name, debit, credit = cy.get(code, (py[code][0] if code in py else code, _ZERO, _ZERO))
+        boy = (py[code][1] - py[code][2]) if code in py else (_ZERO if prior is not None else None)
+        eoy = debit - credit
+        area, wp_ref = annotations.get(code, (None, None))
+        lines.append(
+            TbLine(
+                code,
+                name,
+                boy,
+                debit,
+                credit,
+                eoy,
+                None if boy is None else eoy - boy,
+                area,
+                wp_ref,
+            )
+        )
+    return lines
+
+
+def leadsheets(lines: Sequence[TbLine]) -> list[Leadsheet]:
+    """One leadsheet per audit area, alphabetical, with Unassigned last; never drops a line."""
+    has_prior = any(line.boy is not None for line in lines)
+    groups: dict[str, list[TbLine]] = {}
+    for line in lines:
+        groups.setdefault(line.area or UNASSIGNED, []).append(line)
+    order = sorted((a for a in groups if a != UNASSIGNED), key=str.lower)
+    if UNASSIGNED in groups:
+        order.append(UNASSIGNED)
+    out: list[Leadsheet] = []
+    for area in order:
+        rows = [
+            LeadRow(
+                line.account_code,
+                line.account_name,
+                line.boy,
+                line.eoy,
+                line.change,
+                pct(line.change, line.boy) if line.change is not None else None,
+            )
+            for line in groups[area]
+        ]
+        cy = sum((r.cy for r in rows), _ZERO)
+        py = sum((r.py or _ZERO for r in rows), _ZERO) if has_prior else None
+        change = None if py is None else cy - py
+        out.append(
+            Leadsheet(area, rows, py, cy, change, None if change is None else pct(change, py))
+        )
+    return out
+
+
+def compare_lines(
+    current: Sequence[TrialBalanceLineRow], candidate: Sequence[TrialBalanceLineRow]
+) -> tuple[int, Decimal]:
+    """How many accounts differ (added, removed or a changed net) and the net change."""
+    a, b = _net(current), _net(candidate)
+    changed = 0
+    net = _ZERO
+    for code in set(a) | set(b):
+        old = a[code][1] - a[code][2] if code in a else None
+        new = b[code][1] - b[code][2] if code in b else None
+        if old != new:
+            changed += 1
+            net += abs((new or _ZERO) - (old or _ZERO))
+    return changed, net
+
+
+def fingerprint(snapshot: LedgerSnapshot, prior: LedgerSnapshot | None) -> str:
+    text = f"{snapshot.raw_fingerprint}:{prior.raw_fingerprint if prior else ''}"
+    return hashlib.sha256(text.encode()).hexdigest()
+
+
+def _summary(s: LedgerSnapshot) -> SnapshotSummary:
+    return SnapshotSummary(
+        s.id,
+        s.period_start,
+        s.period_end,
+        s.source,
+        s.pulled_at,
+        s.line_count,
+        s.total_debit,
+        s.total_credit,
+    )
+
+
+def _tb_summary(tb: TrialBalance) -> TrialBalanceSummary:
+    return TrialBalanceSummary(
+        tb.id, tb.label, tb.period_start, tb.period_end, tb.display_unit, tb.current_version_no
+    )
+
+
+# --- service (callers authorise first) --------------------------------------------------------
+
+
+async def entity_snapshots(tenant: TenantContext, client_entity_id: UUID) -> list[SnapshotSummary]:
+    async with tenant_session(tenant) as session:
+        return [_summary(s) for s in await snapshots_of_entity(session, client_entity_id)]
+
+
+async def engagement_trial_balances(
+    tenant: TenantContext, engagement_id: UUID
+) -> list[TrialBalanceSummary]:
+    async with tenant_session(tenant) as session:
+        return [_tb_summary(tb) for tb in await trial_balances_of(session, engagement_id)]
+
+
+async def _snapshots(
+    tx: UnitOfWork, client_entity_id: UUID, snapshot_id: UUID, prior_snapshot_id: UUID | None
+) -> tuple[LedgerSnapshot, LedgerSnapshot | None]:
+    snapshot = await get_snapshot(tx.session, snapshot_id)
+    if snapshot is None:
+        raise NotFound("ledger_snapshot")
+    if snapshot.client_entity_id != client_entity_id:
+        raise SnapshotEntityMismatch(str(snapshot_id))
+    prior = None
+    if prior_snapshot_id is not None:
+        if prior_snapshot_id == snapshot_id:
+            raise TrialBalanceInvalid("prior")
+        prior = await get_snapshot(tx.session, prior_snapshot_id)
+        if prior is None:
+            raise NotFound("ledger_snapshot")
+        if prior.client_entity_id != client_entity_id:
+            raise SnapshotEntityMismatch(str(prior_snapshot_id))
+        if prior.period_end >= snapshot.period_end:
+            raise TrialBalanceInvalid("prior_period")
+    return snapshot, prior
+
+
+async def adopt_trial_balance(
+    tx: UnitOfWork,
+    *,
+    tenant_id: UUID,
+    engagement_id: UUID,
+    work_item_id: UUID,
+    client_entity_id: UUID,
+    snapshot_id: UUID,
+    prior_snapshot_id: UUID | None,
+    label: str,
+    display_unit: str,
+    user_id: UUID,
+    actor_kind: str,
+) -> UUID:
+    """AC-1: version 1 of a new trial balance of record, inside the caller's unit of work."""
+    if label not in LABELS or display_unit not in ("cents", "whole_dollars"):
+        raise TrialBalanceInvalid("label")
+    snapshot, prior = await _snapshots(tx, client_entity_id, snapshot_id, prior_snapshot_id)
+    if await find_trial_balance(
+        tx.session, work_item_id, client_entity_id, label, snapshot.period_end
+    ):
+        raise TrialBalanceExists(label)
+    tb_id = await insert_trial_balance(
+        tx.session,
+        tenant_id=tenant_id,
+        engagement_id=engagement_id,
+        work_item_id=work_item_id,
+        client_entity_id=client_entity_id,
+        label=label,
+        period_start=snapshot.period_start,
+        period_end=snapshot.period_end,
+        display_unit=display_unit,
+        created_by=user_id,
+    )
+    await insert_version(
+        tx.session,
+        tenant_id=tenant_id,
+        trial_balance_id=tb_id,
+        client_entity_id=client_entity_id,
+        version_no=1,
+        snapshot_id=snapshot.id,
+        prior_snapshot_id=prior.id if prior else None,
+        adopted_by=user_id,
+        actor_kind=actor_kind,
+        reason=None,
+        content_fingerprint=fingerprint(snapshot, prior),
+    )
+    tx.record(
+        "trial_balance.version_adopted",
+        target=Target("trial_balance", tb_id),
+        after=Ref(version_no=1, snapshot=snapshot.id),
+    )
+    return tb_id
+
+
+async def adopt_version(
+    tx: UnitOfWork,
+    *,
+    tenant_id: UUID,
+    engagement_id: UUID,
+    tb_id: UUID,
+    snapshot_id: UUID,
+    prior_snapshot_id: UUID | None,
+    reason: str,
+    seen_version: int,
+    user_id: UUID,
+    actor_kind: str,
+) -> int:
+    """AC-7: a newer snapshot becomes the next version; earlier versions stay as they were."""
+    reason = reason.strip()
+    if not 1 <= len(reason) <= 500:
+        raise TrialBalanceInvalid("reason")
+    tb = await lock_trial_balance(tx.session, tb_id)
+    if tb is None or tb.engagement_id != engagement_id:
+        raise NotFound("trial_balance")
+    if tb.current_version_no != seen_version:
+        raise VersionStale(str(tb_id))
+    snapshot, prior = await _snapshots(tx, tb.client_entity_id, snapshot_id, prior_snapshot_id)
+    current = (await versions_of(tx.session, tb.id))[0]
+    if current.snapshot_id == snapshot.id and current.prior_snapshot_id == (
+        prior.id if prior else None
+    ):
+        raise SameSnapshot(str(snapshot_id))
+    if (snapshot.period_start, snapshot.period_end) != (tb.period_start, tb.period_end):
+        raise TrialBalanceInvalid("period")
+    version_no = tb.current_version_no + 1
+    await insert_version(
+        tx.session,
+        tenant_id=tenant_id,
+        trial_balance_id=tb.id,
+        client_entity_id=tb.client_entity_id,
+        version_no=version_no,
+        snapshot_id=snapshot.id,
+        prior_snapshot_id=prior.id if prior else None,
+        adopted_by=user_id,
+        actor_kind=actor_kind,
+        reason=reason,
+        content_fingerprint=fingerprint(snapshot, prior),
+    )
+    await set_current_version(tx.session, tb.id, version_no)
+    tx.record(
+        "trial_balance.version_created",
+        target=Target("trial_balance", tb.id),
+        before=Ref(version_no=tb.current_version_no),
+        after=Ref(version_no=version_no, snapshot=snapshot.id),
+    )
+    return version_no
+
+
+async def annotate(
+    tx: UnitOfWork,
+    *,
+    tenant_id: UUID,
+    engagement_id: UUID,
+    tb_id: UUID,
+    edits: Sequence[AnnotationEdit],
+    reason: str | None,
+    user_id: UUID,
+) -> int:
+    """An account's audit area and working-paper reference (amounts are never editable)."""
+    if not edits or len(edits) > 500:
+        raise TrialBalanceInvalid("edits")
+    tb = await get_trial_balance(tx.session, tb_id)
+    if tb is None or tb.engagement_id != engagement_id:
+        raise NotFound("trial_balance")
+    current = {a.account_code: a for a in await newest_annotations(tx.session, tb.id)}
+    rows: list[dict[str, object]] = []
+    for e in edits:
+        old = current.get(e.account_code)
+        if old is not None and (old.area, old.wp_ref) == (e.area, e.wp_ref):
+            continue
+        if old is None and e.area is None and e.wp_ref is None:
+            continue
+        rows.append(
+            {
+                "tenant_id": tenant_id,
+                "trial_balance_id": tb.id,
+                "account_code": e.account_code,
+                "area": e.area,
+                "wp_ref": e.wp_ref,
+                "reason": reason,
+                "set_by": user_id,
+            }
+        )
+    await insert_annotations(tx.session, rows)
+    if rows:
+        tx.record(
+            "trial_balance.annotated",
+            target=Target("trial_balance", tb.id),
+            after=Ref(accounts=len(rows)),
+        )
+    return len(rows)
+
+
+async def trial_balance_view(
+    tenant: TenantContext,
+    engagement_id: UUID,
+    tb_id: UUID,
+    version_no: int | None = None,
+    layer: str = "unadjusted",
+) -> TrialBalanceView:
+    """AC-2, AC-4: a version's lines (BOY, debit, credit, EOY, change), totals and balance."""
+    if not layer_available(layer):
+        raise LayerUnavailable(layer)
+    async with tenant_session(tenant) as session:
+        tb = await get_trial_balance(session, tb_id)
+        if tb is None or tb.engagement_id != engagement_id:
+            raise NotFound("trial_balance")
+        versions = await versions_of(session, tb.id)
+        chosen = next(
+            (v for v in versions if v.version_no == (version_no or tb.current_version_no)), None
+        )
+        if chosen is None:
+            raise NotFound("trial_balance_version")
+        snap_ids = {v.snapshot_id for v in versions} | {
+            v.prior_snapshot_id for v in versions if v.prior_snapshot_id
+        }
+        snaps = {sid: await get_snapshot(session, sid) for sid in snap_ids}
+        wanted = [chosen.snapshot_id] + (
+            [chosen.prior_snapshot_id] if chosen.prior_snapshot_id else []
+        )
+        rows = await lines_of_snapshots(session, wanted)
+        notes = await newest_annotations(session, tb.id)
+    current = [r for r in rows if r.snapshot_id == chosen.snapshot_id]
+    prior = (
+        [r for r in rows if r.snapshot_id == chosen.prior_snapshot_id]
+        if chosen.prior_snapshot_id
+        else None
+    )
+    lines = build_lines(current, prior, {a.account_code: (a.area, a.wp_ref) for a in notes})
+
+    def info(v: TrialBalanceVersion) -> VersionInfo:
+        s = snaps[v.snapshot_id]
+        if s is None:
+            raise NotFound("ledger_snapshot")
+        return VersionInfo(
+            v.version_no,
+            v.snapshot_id,
+            v.prior_snapshot_id,
+            v.adopted_by,
+            v.reason,
+            v.created_at,
+            s.source,
+            s.pulled_at,
+        )
+
+    debit = sum((line.debit for line in lines), _ZERO)
+    credit = sum((line.credit for line in lines), _ZERO)
+    boy = None
+    if prior is not None:
+        boy = totals(sum((r.debit for r in prior), _ZERO), sum((r.credit for r in prior), _ZERO))
+    return TrialBalanceView(
+        _tb_summary(tb),
+        info(chosen),
+        [info(v) for v in versions],
+        lines,
+        totals(debit, credit),
+        boy,
+    )
+
+
+async def candidates(
+    tenant: TenantContext, engagement_id: UUID, client_entity_id: UUID, tb_id: UUID | None
+) -> list[Candidate]:
+    """AC-7: the entity's snapshots, each with a code-computed difference from the current
+    version (lines changed, net change); newest first."""
+    async with tenant_session(tenant) as session:
+        snaps = await snapshots_of_entity(session, client_entity_id)
+        current_rows: Sequence[TrialBalanceLineRow] | None = None
+        if tb_id is not None:
+            tb = await get_trial_balance(session, tb_id)
+            if tb is None or tb.engagement_id != engagement_id:
+                raise NotFound("trial_balance")
+            current = next(
+                v
+                for v in await versions_of(session, tb.id)
+                if v.version_no == tb.current_version_no
+            )
+            current_rows = await lines_of_snapshots(session, [current.snapshot_id])
+            same_period = [
+                s
+                for s in snaps
+                if (s.period_start, s.period_end) == (tb.period_start, tb.period_end)
+            ]
+            others = await lines_of_snapshots(session, [s.id for s in same_period])
+        else:
+            others: Sequence[TrialBalanceLineRow] = []
+    out: list[Candidate] = []
+    for s in snaps:
+        if current_rows is None:
+            out.append(Candidate(_summary(s), None, None))
+            continue
+        mine = [r for r in others if r.snapshot_id == s.id]
+        if not mine:
+            out.append(Candidate(_summary(s), None, None))
+            continue
+        changed, net = compare_lines(current_rows, mine)
+        out.append(Candidate(_summary(s), changed, net))
+    return out

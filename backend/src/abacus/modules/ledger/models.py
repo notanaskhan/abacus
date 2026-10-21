@@ -93,3 +93,54 @@ class GlEntryRow(Base):
     debit: Mapped[Decimal] = mapped_column(Numeric(20, 2))
     credit: Mapped[Decimal] = mapped_column(Numeric(20, 2))
     source_ref: Mapped[str]
+
+
+# --- The trial balance of record (SPEC-309; TASK-320; A-02) -------------------------------------
+
+
+class TrialBalance(Base):
+    __tablename__ = "trial_balances"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    work_item_id: Mapped[UUID]
+    client_entity_id: Mapped[UUID]
+    label: Mapped[str]
+    period_start: Mapped[date]
+    period_end: Mapped[date]
+    display_unit: Mapped[str]
+    current_version_no: Mapped[int] = mapped_column(server_default=FetchedValue())
+    created_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class TrialBalanceVersion(Base):
+    __tablename__ = "trial_balance_versions"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    trial_balance_id: Mapped[UUID]
+    client_entity_id: Mapped[UUID]
+    version_no: Mapped[int]
+    snapshot_id: Mapped[UUID]
+    prior_snapshot_id: Mapped[UUID | None]
+    adopted_by: Mapped[UUID]
+    actor_kind: Mapped[str]
+    reason: Mapped[str | None]
+    content_fingerprint: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class TrialBalanceAnnotation(Base):
+    __tablename__ = "trial_balance_annotations"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    trial_balance_id: Mapped[UUID]
+    account_code: Mapped[str]
+    area: Mapped[str | None]
+    wp_ref: Mapped[str | None]
+    reason: Mapped[str | None]
+    set_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

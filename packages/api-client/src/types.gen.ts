@@ -327,6 +327,28 @@ export type AdjustmentOut = {
 };
 
 /**
+ * AdoptBody
+ */
+export type AdoptBody = {
+    /**
+     * Display Unit
+     */
+    display_unit?: 'cents' | 'whole_dollars';
+    /**
+     * Label
+     */
+    label?: 'standard' | 'interim' | 'prior' | 'budget' | 'preliminary';
+    /**
+     * Prior Snapshot Id
+     */
+    prior_snapshot_id?: string | null;
+    /**
+     * Snapshot Id
+     */
+    snapshot_id: string;
+};
+
+/**
  * AdoptIn
  */
 export type AdoptIn = {
@@ -457,6 +479,38 @@ export type AiExclusionOut = {
      * Excluded By
      */
     excluded_by?: string | null;
+    /**
+     * Reason
+     */
+    reason?: string | null;
+};
+
+/**
+ * AnnotationBody
+ */
+export type AnnotationBody = {
+    /**
+     * Account Code
+     */
+    account_code: string;
+    /**
+     * Area
+     */
+    area?: string | null;
+    /**
+     * Wp Ref
+     */
+    wp_ref?: string | null;
+};
+
+/**
+ * AnnotationsBody
+ */
+export type AnnotationsBody = {
+    /**
+     * Accounts
+     */
+    accounts: Array<AnnotationBody>;
     /**
      * Reason
      */
@@ -3207,6 +3261,66 @@ export type KnowledgeSearchIn = {
 };
 
 /**
+ * LeadRowOut
+ */
+export type LeadRowOut = {
+    /**
+     * Account Code
+     */
+    account_code: string;
+    /**
+     * Account Name
+     */
+    account_name: string;
+    /**
+     * Change
+     */
+    change: string | null;
+    /**
+     * Change Pct
+     */
+    change_pct: string | null;
+    /**
+     * Cy
+     */
+    cy: string;
+    /**
+     * Py
+     */
+    py: string | null;
+};
+
+/**
+ * LeadsheetOut
+ */
+export type LeadsheetOut = {
+    /**
+     * Area
+     */
+    area: string;
+    /**
+     * Change
+     */
+    change: string | null;
+    /**
+     * Change Pct
+     */
+    change_pct: string | null;
+    /**
+     * Cy
+     */
+    cy: string;
+    /**
+     * Py
+     */
+    py: string | null;
+    /**
+     * Rows
+     */
+    rows: Array<LeadRowOut>;
+};
+
+/**
  * LetterIn
  */
 export type LetterIn = {
@@ -5325,6 +5439,52 @@ export type SignupOut = {
 };
 
 /**
+ * SnapshotOut
+ */
+export type SnapshotOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Line Count
+     */
+    line_count: number;
+    /**
+     * Lines Changed
+     */
+    lines_changed: number | null;
+    /**
+     * Net Change
+     */
+    net_change: string | null;
+    /**
+     * Period End
+     */
+    period_end: string;
+    /**
+     * Period Start
+     */
+    period_start: string;
+    /**
+     * Pulled At
+     */
+    pulled_at: string;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Total Credit
+     */
+    total_credit: string;
+    /**
+     * Total Debit
+     */
+    total_debit: string;
+};
+
+/**
  * SpendOut
  */
 export type SpendOut = {
@@ -5637,6 +5797,86 @@ export type TakenOut = {
 };
 
 /**
+ * TbLineOut
+ */
+export type TbLineOut = {
+    /**
+     * Account Code
+     */
+    account_code: string;
+    /**
+     * Account Name
+     */
+    account_name: string;
+    /**
+     * Area
+     */
+    area: string | null;
+    /**
+     * Boy
+     */
+    boy: string | null;
+    /**
+     * Change
+     */
+    change: string | null;
+    /**
+     * Credit
+     */
+    credit: string;
+    /**
+     * Debit
+     */
+    debit: string;
+    /**
+     * Eoy
+     */
+    eoy: string;
+    /**
+     * Wp Ref
+     */
+    wp_ref: string | null;
+};
+
+/**
+ * TbVersionOut
+ */
+export type TbVersionOut = {
+    /**
+     * Adopted At
+     */
+    adopted_at: string;
+    /**
+     * Adopted By Name
+     */
+    adopted_by_name: string;
+    /**
+     * Prior Snapshot Id
+     */
+    prior_snapshot_id: string | null;
+    /**
+     * Pulled At
+     */
+    pulled_at: string;
+    /**
+     * Reason
+     */
+    reason: string | null;
+    /**
+     * Snapshot Id
+     */
+    snapshot_id: string;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
  * TeamMemberIn
  */
 export type TeamMemberIn = {
@@ -5845,6 +6085,90 @@ export type TimeZoneIo = {
 };
 
 /**
+ * TotalsOut
+ */
+export type TotalsOut = {
+    /**
+     * Balanced
+     */
+    balanced: boolean;
+    /**
+     * Credit
+     */
+    credit: string;
+    /**
+     * Debit
+     */
+    debit: string;
+    /**
+     * Difference
+     */
+    difference: string;
+};
+
+/**
+ * TrialBalanceDetailOut
+ */
+export type TrialBalanceDetailOut = {
+    boy: TotalsOut | null;
+    eoy: TotalsOut;
+    /**
+     * Lines
+     */
+    lines: Array<TbLineOut>;
+    trial_balance: TrialBalanceOut;
+    version: TbVersionOut;
+    /**
+     * Versions
+     */
+    versions: Array<TbVersionOut>;
+};
+
+/**
+ * TrialBalanceOut
+ */
+export type TrialBalanceOut = {
+    /**
+     * Current Version No
+     */
+    current_version_no: number;
+    /**
+     * Display Unit
+     */
+    display_unit: 'cents' | 'whole_dollars';
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Label
+     */
+    label: 'standard' | 'interim' | 'prior' | 'budget' | 'preliminary';
+    /**
+     * Period End
+     */
+    period_end: string;
+    /**
+     * Period Start
+     */
+    period_start: string;
+};
+
+/**
+ * TrialBalancesOut
+ */
+export type TrialBalancesOut = {
+    /**
+     * Snapshots
+     */
+    snapshots: Array<SnapshotOut>;
+    /**
+     * Trial Balances
+     */
+    trial_balances: Array<TrialBalanceOut>;
+};
+
+/**
  * UploadOut
  */
 export type UploadOut = {
@@ -5896,6 +6220,28 @@ export type ValidationErrorOut = {
      * Detail
      */
     detail: Array<FieldErrorOut>;
+};
+
+/**
+ * VersionBody
+ */
+export type VersionBody = {
+    /**
+     * Prior Snapshot Id
+     */
+    prior_snapshot_id?: string | null;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+    /**
+     * Snapshot Id
+     */
+    snapshot_id: string;
 };
 
 /**
@@ -15636,6 +15982,408 @@ export type ChangeTeamRoleResponses = {
 };
 
 export type ChangeTeamRoleResponse = ChangeTeamRoleResponses[keyof ChangeTeamRoleResponses];
+
+export type TrialBalancesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/trial-balances';
+};
+
+export type TrialBalancesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type TrialBalancesError = TrialBalancesErrors[keyof TrialBalancesErrors];
+
+export type TrialBalancesResponses = {
+    /**
+     * Successful Response
+     */
+    200: TrialBalancesOut;
+};
+
+export type TrialBalancesResponse = TrialBalancesResponses[keyof TrialBalancesResponses];
+
+export type AdoptTrialBalanceData = {
+    body: AdoptBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/trial-balances';
+};
+
+export type AdoptTrialBalanceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AdoptTrialBalanceError = AdoptTrialBalanceErrors[keyof AdoptTrialBalanceErrors];
+
+export type AdoptTrialBalanceResponses = {
+    /**
+     * Successful Response
+     */
+    201: TrialBalanceDetailOut;
+};
+
+export type AdoptTrialBalanceResponse = AdoptTrialBalanceResponses[keyof AdoptTrialBalanceResponses];
+
+export type TrialBalanceData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+    };
+    query?: {
+        /**
+         * Version
+         */
+        version?: number | null;
+        /**
+         * Layer
+         */
+        layer?: 'unadjusted' | 'aje' | 'rje' | 'final';
+    };
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}';
+};
+
+export type TrialBalanceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type TrialBalanceError = TrialBalanceErrors[keyof TrialBalanceErrors];
+
+export type TrialBalanceResponses = {
+    /**
+     * Successful Response
+     */
+    200: TrialBalanceDetailOut;
+};
+
+export type TrialBalanceResponse = TrialBalanceResponses[keyof TrialBalanceResponses];
+
+export type AnnotateTbData = {
+    body: AnnotationsBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/annotations';
+};
+
+export type AnnotateTbErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AnnotateTbError = AnnotateTbErrors[keyof AnnotateTbErrors];
+
+export type AnnotateTbResponses = {
+    /**
+     * Successful Response
+     */
+    201: TrialBalanceDetailOut;
+};
+
+export type AnnotateTbResponse = AnnotateTbResponses[keyof AnnotateTbResponses];
+
+export type TbCandidatesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/candidates';
+};
+
+export type TbCandidatesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type TbCandidatesError = TbCandidatesErrors[keyof TbCandidatesErrors];
+
+export type TbCandidatesResponses = {
+    /**
+     * Response Tb Candidates
+     *
+     * Successful Response
+     */
+    200: Array<SnapshotOut>;
+};
+
+export type TbCandidatesResponse = TbCandidatesResponses[keyof TbCandidatesResponses];
+
+export type LeadsheetsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+    };
+    query?: {
+        /**
+         * Version
+         */
+        version?: number | null;
+    };
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/leadsheets';
+};
+
+export type LeadsheetsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type LeadsheetsError = LeadsheetsErrors[keyof LeadsheetsErrors];
+
+export type LeadsheetsResponses = {
+    /**
+     * Response Leadsheets
+     *
+     * Successful Response
+     */
+    200: Array<LeadsheetOut>;
+};
+
+export type LeadsheetsResponse = LeadsheetsResponses[keyof LeadsheetsResponses];
+
+export type AdoptTbVersionData = {
+    body: VersionBody;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/versions';
+};
+
+export type AdoptTbVersionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AdoptTbVersionError = AdoptTbVersionErrors[keyof AdoptTbVersionErrors];
+
+export type AdoptTbVersionResponses = {
+    /**
+     * Successful Response
+     */
+    201: TrialBalanceDetailOut;
+};
+
+export type AdoptTbVersionResponse = AdoptTbVersionResponses[keyof AdoptTbVersionResponses];
 
 export type WorkItemsData = {
     body?: never;
