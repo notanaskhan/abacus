@@ -58,6 +58,29 @@ jobs:
           exit-code: "1"
           hide-progress: true
 
+  # Assertions that need no credentials (Q-01-T24, SPEC-050 AC-32): the landing-zone policies and
+  # the Terraform source against the spec, and the plan assertions against hand-made plans. The same
+  # assertions run on a real environment plan when ABACUS_TF_PLANS points at its
+  # `terraform show -json` output; wiring that to the plan job waits for the environment
+  # resources (Q-01-T14).
+  assertions:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: infra assertions
+        working-directory: backend
+        run: |
+          uv sync --locked
+          uv run pytest --import-mode=importlib -q ../infra/tests
+
   plan:
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     needs: checks
