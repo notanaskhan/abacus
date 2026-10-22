@@ -92,7 +92,7 @@ For Lena Park (CLI-01 c) the same request has the same keys, Ashford is not a ro
 
 ## 9. Consumer contract tests
 - Stub: `backend/tests/contracts/clients/test_clients_stub.py` (SPEC-321 AC-1 to AC-5).
-- Consumers (P-07-T06): `backend/tests/contracts/clients/` and the TypeScript fixture assertions in `apps/web/src/fixtures/contracts/`.
+- Consumers (P-07-T06): `backend/tests/contracts/clients/test_clients_consumer.py` (SPEC-321 AC-20 to AC-22: envelope, no wall field anywhere, masked TIN only, registry codes) and `apps/web/src/fixtures/contracts/clients-engagements.test.ts` (typed CLI-01 a/c and CLI-02 a frames).
 
 ## 10. Versioning
 Additive changes in place. Breaking changes ship as v2 with one sprint of overlap (see `docs/contracts/README.md`).
