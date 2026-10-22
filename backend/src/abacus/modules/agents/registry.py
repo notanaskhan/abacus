@@ -21,8 +21,8 @@ TABLES: frozenset[str] = frozenset(
         "agent_stages",  # SPEC-036 (TASK-076): owner-written, app reads only
         "template_guidance_decisions",  # SPEC-035 Q3 (TASK-074)
         "inbox_match_proposals",
-        "reminders",  # SPEC-027 (TASK-051)
-        "reminder_items",
+        "follow_up_schedules",  # SPEC-027 (TASK-051); renamed by F-03-T16
+        "follow_up_items",
         "agent_runs",
         "screening_results",
         "knowledge_documents",  # SPEC-009 Q5
@@ -42,7 +42,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "entry_assessments",  # SPEC-037 Q4 (TASK-085): proposals, as made
         "template_guidance_decisions",  # SPEC-035 Q3 (TASK-074)
         "inbox_match_proposals",  # SPEC-033 (TASK-065): proposals, as made
-        "reminder_items",  # SPEC-027 (TASK-051)
+        "follow_up_items",  # SPEC-027 (TASK-051)
         "screening_results",
     }
 )
@@ -109,7 +109,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     ),
     # SPEC-028 (TASK-052): an import's scan result and what became of it.
     # SPEC-027 (TASK-051): a drafted reminder is sent or dismissed by a person.
-    "reminders": frozenset({"status", "note", "decided_by", "decided_at"}),
+    "follow_up_schedules": frozenset({"status", "note", "decided_by", "decided_at"}),
     "agent_runs": frozenset(
         {"status", "context_hash", "output", "failure_code", "finished_at"}
         | {"queued_reason", "estimated_start_at"}

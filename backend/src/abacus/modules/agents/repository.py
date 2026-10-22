@@ -20,14 +20,14 @@ from abacus.modules.agents.models import (
     AgentStage,
     EngagementAgentState,
     EntryAssessmentRow,
+    FollowUpItem,
+    FollowUpSchedule,
     GuidanceDraftDecision,
     GuidanceDraftRow,
     InboxMatchProposal,
     InboxMatchRun,
     KnowledgeChunk,
     KnowledgeDocument,
-    Reminder,
-    ReminderItem,
     ScreeningResult,
     TemplateGuidanceDecision,
     TemplateGuidanceDraft,
@@ -520,7 +520,7 @@ async def screenings_skipped_while_paused(
 # --- Reminders (SPEC-027 P-4; TASK-051) ----------------------------------------------------------
 
 
-async def reminder_history(
+async def follow_up_history(
     session: AsyncSession, item_ids: Sequence[UUID]
 ) -> Sequence[tuple[UUID, date, int, datetime]]:
     """Each item's reminders that weren't dismissed: (item, due date then, sequence, when), for the
@@ -529,13 +529,13 @@ async def reminder_history(
         return []
     rows = await session.execute(
         select(
-            ReminderItem.request_item_id,
-            ReminderItem.due_on,
-            ReminderItem.sequence,
-            Reminder.created_at,
+            FollowUpItem.request_item_id,
+            FollowUpItem.due_on,
+            FollowUpItem.sequence,
+            FollowUpSchedule.created_at,
         )
-        .join(Reminder, Reminder.id == ReminderItem.reminder_id)
-        .where(ReminderItem.request_item_id.in_(item_ids), Reminder.status != "dismissed")
+        .join(FollowUpSchedule, FollowUpSchedule.id == FollowUpItem.follow_up_id)
+        .where(FollowUpItem.request_item_id.in_(item_ids), FollowUpSchedule.status != "dismissed")
     )
     return [(i, d, n, at) for i, d, n, at in rows.all()]
 
@@ -543,14 +543,16 @@ async def reminder_history(
 async def drafted_item_ids(session: AsyncSession, engagement_id: UUID) -> set[UUID]:
     """TASK-104: items already in a follow-up waiting for a person (LIST_EXEMPT, as above)."""
     rows = await session.execute(
-        select(ReminderItem.request_item_id)
-        .join(Reminder, Reminder.id == ReminderItem.reminder_id)
-        .where(Reminder.engagement_id == engagement_id, Reminder.status == "drafted")
+        select(FollowUpItem.request_item_id)
+        .join(FollowUpSchedule, FollowUpSchedule.id == FollowUpItem.follow_up_id)
+        .where(
+            FollowUpSchedule.engagement_id == engagement_id, FollowUpSchedule.status == "drafted"
+        )
     )
     return set(rows.scalars().all())
 
 
-async def insert_reminder(
+async def insert_follow_up(
     session: AsyncSession,
     *,
     tenant_id: UUID,
@@ -560,9 +562,9 @@ async def insert_reminder(
     agent_run_id: UUID | None,
     items: Sequence[tuple[UUID, date, int]],
 ) -> UUID:
-    reminder_id = (
+    follow_up_id = (
         await session.execute(
-            insert(Reminder)
+            insert(FollowUpSchedule)
             .values(
                 tenant_id=tenant_id,
                 engagement_id=engagement_id,
@@ -570,43 +572,46 @@ async def insert_reminder(
                 status=status,
                 agent_run_id=agent_run_id,
             )
-            .returning(Reminder.id)
+            .returning(FollowUpSchedule.id)
         )
     ).scalar_one()
     for item_id, due_on, sequence in items:
         await session.execute(
-            insert(ReminderItem).values(
+            insert(FollowUpItem).values(
                 tenant_id=tenant_id,
-                reminder_id=reminder_id,
+                follow_up_id=follow_up_id,
                 request_item_id=item_id,
                 due_on=due_on,
                 sequence=sequence,
             )
         )
-    return reminder_id
+    return follow_up_id
 
 
-async def drafted_reminders(
+async def drafted_follow_ups(
     session: AsyncSession, engagement_id: UUID
-) -> Sequence[tuple[Reminder, Sequence[UUID]]]:
+) -> Sequence[tuple[FollowUpSchedule, Sequence[UUID]]]:
     """One engagement's drafts, after `authorise(follow_up.draft)` on it (LIST_EXEMPT)."""
     rows = (
         (
             await session.execute(
-                select(Reminder)
-                .where(Reminder.engagement_id == engagement_id, Reminder.status == "drafted")
-                .order_by(Reminder.created_at, Reminder.id)
+                select(FollowUpSchedule)
+                .where(
+                    FollowUpSchedule.engagement_id == engagement_id,
+                    FollowUpSchedule.status == "drafted",
+                )
+                .order_by(FollowUpSchedule.created_at, FollowUpSchedule.id)
             )
         )
         .scalars()
         .all()
     )
-    found: list[tuple[Reminder, Sequence[UUID]]] = []
+    found: list[tuple[FollowUpSchedule, Sequence[UUID]]] = []
     for row in rows:
         items = (
             (
                 await session.execute(
-                    select(ReminderItem.request_item_id).where(ReminderItem.reminder_id == row.id)
+                    select(FollowUpItem.request_item_id).where(FollowUpItem.follow_up_id == row.id)
                 )
             )
             .scalars()
@@ -616,24 +621,27 @@ async def drafted_reminders(
     return found
 
 
-async def lock_reminder(
-    session: AsyncSession, engagement_id: UUID, reminder_id: UUID
-) -> Reminder | None:
+async def lock_follow_up(
+    session: AsyncSession, engagement_id: UUID, follow_up_id: UUID
+) -> FollowUpSchedule | None:
     return (
         await session.execute(
-            select(Reminder)
-            .where(Reminder.id == reminder_id, Reminder.engagement_id == engagement_id)
+            select(FollowUpSchedule)
+            .where(
+                FollowUpSchedule.id == follow_up_id,
+                FollowUpSchedule.engagement_id == engagement_id,
+            )
             .with_for_update()
         )
     ).scalar_one_or_none()
 
 
-async def settle_reminder(
-    session: AsyncSession, reminder_id: UUID, *, status: str, by: UUID | None, note: str | None
+async def settle_follow_up(
+    session: AsyncSession, follow_up_id: UUID, *, status: str, by: UUID | None, note: str | None
 ) -> None:
     await session.execute(
-        update(Reminder)
-        .where(Reminder.id == reminder_id)
+        update(FollowUpSchedule)
+        .where(FollowUpSchedule.id == follow_up_id)
         .values(status=status, decided_by=by, decided_at=datetime.now(UTC), note=note)
     )
 

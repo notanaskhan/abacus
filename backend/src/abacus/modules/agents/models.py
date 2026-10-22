@@ -127,10 +127,10 @@ class AgentActivity(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
 
 
-class Reminder(Base):
+class FollowUpSchedule(Base):
     """SPEC-027 P-4 (TASK-051): one reminder sent or drafted to one client contact."""
 
-    __tablename__ = "reminders"
+    __tablename__ = "follow_up_schedules"
 
     id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
     tenant_id: Mapped[UUID]
@@ -144,13 +144,13 @@ class Reminder(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
 
 
-class ReminderItem(Base):
+class FollowUpItem(Base):
     """An item a reminder named, with its due date then and its place in the sequence (1-3)."""
 
-    __tablename__ = "reminder_items"
+    __tablename__ = "follow_up_items"
 
     tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
-    reminder_id: Mapped[UUID] = mapped_column(primary_key=True)
+    follow_up_id: Mapped[UUID] = mapped_column(primary_key=True)
     request_item_id: Mapped[UUID] = mapped_column(primary_key=True)
     due_on: Mapped[date]
     sequence: Mapped[int]

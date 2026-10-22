@@ -1326,6 +1326,96 @@ export const proposeSeverityMutation = (options?: Partial<Options<ProposeSeverit
     return mutationOptions;
 };
 
+export const draftsQueryKey = (options: Options<DraftsData>) => createQueryKey('drafts', options);
+
+/**
+ * Drafts Route
+ */
+export const draftsOptions = (options: Options<DraftsData>) => queryOptions<DraftsResponse, DraftsError, DraftsResponse, ReturnType<typeof draftsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await drafts({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: draftsQueryKey(options)
+});
+
+/**
+ * Draft Follow Ups Route
+ *
+ * TASK-104: follow-ups for everything overdue now, one per contact, for a person to send.
+ */
+export const draftFollowUpsMutation = (options?: Partial<Options<DraftFollowUpsData>>): UseMutationOptions<DraftFollowUpsResponse, DraftFollowUpsError, Options<DraftFollowUpsData>> => {
+    const mutationOptions: UseMutationOptions<DraftFollowUpsResponse, DraftFollowUpsError, Options<DraftFollowUpsData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await draftFollowUps({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Dismiss Draft Route
+ */
+export const dismissDraftMutation = (options?: Partial<Options<DismissDraftData>>): UseMutationOptions<DismissDraftResponse, DismissDraftError, Options<DismissDraftData>> => {
+    const mutationOptions: UseMutationOptions<DismissDraftResponse, DismissDraftError, Options<DismissDraftData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await dismissDraft({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Preview Follow Up Route
+ *
+ * TASK-104: the email exactly as it will be sent (fixed template; no model text).
+ */
+export const previewFollowUpMutation = (options?: Partial<Options<PreviewFollowUpData>>): UseMutationOptions<PreviewFollowUpResponse, PreviewFollowUpError, Options<PreviewFollowUpData>> => {
+    const mutationOptions: UseMutationOptions<PreviewFollowUpResponse, PreviewFollowUpError, Options<PreviewFollowUpData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await previewFollowUp({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Send Draft Route
+ */
+export const sendDraftMutation = (options?: Partial<Options<SendDraftData>>): UseMutationOptions<SendDraftResponse, SendDraftError, Options<SendDraftData>> => {
+    const mutationOptions: UseMutationOptions<SendDraftResponse, SendDraftError, Options<SendDraftData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await sendDraft({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
 export const engagementGraphQueryKey = (options: Options<EngagementGraphData>) => createQueryKey('engagementGraph', options);
 
 /**
@@ -2274,96 +2364,6 @@ export const signReviewedMutation = (options?: Partial<Options<SignReviewedData>
     const mutationOptions: UseMutationOptions<SignReviewedResponse, SignReviewedError, Options<SignReviewedData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await signReviewed({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
-
-export const draftsQueryKey = (options: Options<DraftsData>) => createQueryKey('drafts', options);
-
-/**
- * Drafts Route
- */
-export const draftsOptions = (options: Options<DraftsData>) => queryOptions<DraftsResponse, DraftsError, DraftsResponse, ReturnType<typeof draftsQueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await drafts({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: draftsQueryKey(options)
-});
-
-/**
- * Draft Follow Ups Route
- *
- * TASK-104: follow-ups for everything overdue now, one per contact, for a person to send.
- */
-export const draftFollowUpsMutation = (options?: Partial<Options<DraftFollowUpsData>>): UseMutationOptions<DraftFollowUpsResponse, DraftFollowUpsError, Options<DraftFollowUpsData>> => {
-    const mutationOptions: UseMutationOptions<DraftFollowUpsResponse, DraftFollowUpsError, Options<DraftFollowUpsData>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await draftFollowUps({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
-
-/**
- * Dismiss Draft Route
- */
-export const dismissDraftMutation = (options?: Partial<Options<DismissDraftData>>): UseMutationOptions<DismissDraftResponse, DismissDraftError, Options<DismissDraftData>> => {
-    const mutationOptions: UseMutationOptions<DismissDraftResponse, DismissDraftError, Options<DismissDraftData>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await dismissDraft({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
-
-/**
- * Preview Follow Up Route
- *
- * TASK-104: the email exactly as it will be sent (fixed template; no model text).
- */
-export const previewFollowUpMutation = (options?: Partial<Options<PreviewFollowUpData>>): UseMutationOptions<PreviewFollowUpResponse, PreviewFollowUpError, Options<PreviewFollowUpData>> => {
-    const mutationOptions: UseMutationOptions<PreviewFollowUpResponse, PreviewFollowUpError, Options<PreviewFollowUpData>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await previewFollowUp({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
-
-/**
- * Send Draft Route
- */
-export const sendDraftMutation = (options?: Partial<Options<SendDraftData>>): UseMutationOptions<SendDraftResponse, SendDraftError, Options<SendDraftData>> => {
-    const mutationOptions: UseMutationOptions<SendDraftResponse, SendDraftError, Options<SendDraftData>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await sendDraft({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

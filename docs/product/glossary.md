@@ -327,7 +327,7 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 
 | Identifier | Problem | Action | When |
 |---|---|---|---|
-| `reminders`, `reminder_items` (migration 0040), `/reminders` routes, `reminders.py` | Violate the glossary's own `follow_up` rule | Rename to `follow_up_schedules` and `follow_up_items`; routes become `/follow-ups` | In the P-44 migration window (S1) |
+| `reminders`, `reminder_items` (migration 0040), `/reminders` routes, `reminders.py` | Violate the glossary's own `follow_up` rule | Renamed to `follow_up_schedules` and `follow_up_items` (migration 0087); routes are `/follow-ups`; modules `follow_ups.py` | Done (F-03-T16, 2026-10-22) |
 | `request_items.status` codes | The `received` inversion | Migrate (status code bridge, §9.5.6) | P-44 (S1) |
 | `engagements.type = 'audit'` | Collides with the reserved word and the new taxonomy | Rewrite to `fs_audit`, with no alias | P-04 migration (S1) |
 | `agent_runs.status` (`running`, `completed`, `escalated`, `failed`) | Four states vs 14 canonical ones | Migrate per §9.5.6 | P-47 (S1–S2) |

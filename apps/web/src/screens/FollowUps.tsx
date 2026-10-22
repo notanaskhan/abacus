@@ -28,7 +28,7 @@ import { errorMessage } from "../api";
 
 const SAID: Record<string, string> = {
   engagement_not_open: "Nothing goes to the client before the engagement is open.",
-  reminder_gone: "Someone already sent or dismissed this follow-up.",
+  follow_up_gone: "Someone already sent or dismissed this follow-up.",
 };
 
 function said(error: unknown): string {
@@ -163,7 +163,7 @@ function SendSheet({
   onClose: () => void;
   onSettled: () => void;
 }): JSX.Element {
-  const path = { path: { engagement_id: engagementId, reminder_id: draft.id } };
+  const path = { path: { engagement_id: engagementId, follow_up_id: draft.id } };
   const [note, setNote] = useState("");
   const preview = useMutation(previewFollowUpMutation());
   const send = useMutation({ ...sendDraftMutation(), onSettled });

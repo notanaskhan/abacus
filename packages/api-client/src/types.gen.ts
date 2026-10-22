@@ -11589,6 +11589,284 @@ export type ProposeSeverityResponses = {
 
 export type ProposeSeverityResponse = ProposeSeverityResponses[keyof ProposeSeverityResponses];
 
+export type DraftsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/follow-ups';
+};
+
+export type DraftsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DraftsError = DraftsErrors[keyof DraftsErrors];
+
+export type DraftsResponses = {
+    /**
+     * Response Drafts
+     *
+     * Successful Response
+     */
+    200: Array<DraftOut>;
+};
+
+export type DraftsResponse = DraftsResponses[keyof DraftsResponses];
+
+export type DraftFollowUpsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/follow-ups/draft';
+};
+
+export type DraftFollowUpsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DraftFollowUpsError = DraftFollowUpsErrors[keyof DraftFollowUpsErrors];
+
+export type DraftFollowUpsResponses = {
+    /**
+     * Successful Response
+     */
+    201: DraftedOut;
+};
+
+export type DraftFollowUpsResponse = DraftFollowUpsResponses[keyof DraftFollowUpsResponses];
+
+export type DismissDraftData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Follow Up Id
+         */
+        follow_up_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/follow-ups/{follow_up_id}/dismiss';
+};
+
+export type DismissDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DismissDraftError = DismissDraftErrors[keyof DismissDraftErrors];
+
+export type DismissDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: SettledOut;
+};
+
+export type DismissDraftResponse = DismissDraftResponses[keyof DismissDraftResponses];
+
+export type PreviewFollowUpData = {
+    body: FollowUpPreviewIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Follow Up Id
+         */
+        follow_up_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/follow-ups/{follow_up_id}/preview';
+};
+
+export type PreviewFollowUpErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PreviewFollowUpError = PreviewFollowUpErrors[keyof PreviewFollowUpErrors];
+
+export type PreviewFollowUpResponses = {
+    /**
+     * Successful Response
+     */
+    200: FollowUpPreviewOut;
+};
+
+export type PreviewFollowUpResponse = PreviewFollowUpResponses[keyof PreviewFollowUpResponses];
+
+export type SendDraftData = {
+    body: SendDraftIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Follow Up Id
+         */
+        follow_up_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/follow-ups/{follow_up_id}/send';
+};
+
+export type SendDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SendDraftError = SendDraftErrors[keyof SendDraftErrors];
+
+export type SendDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: SettledOut;
+};
+
+export type SendDraftResponse = SendDraftResponses[keyof SendDraftResponses];
+
 export type EngagementGraphData = {
     body?: never;
     headers?: {
@@ -14449,284 +14727,6 @@ export type SignReviewedResponses = {
 };
 
 export type SignReviewedResponse = SignReviewedResponses[keyof SignReviewedResponses];
-
-export type DraftsData = {
-    body?: never;
-    headers?: {
-        /**
-         * Authorization
-         */
-        authorization?: string | null;
-        /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-    };
-    path: {
-        /**
-         * Engagement Id
-         */
-        engagement_id: string;
-    };
-    query?: never;
-    url: '/v1/engagements/{engagement_id}/reminders';
-};
-
-export type DraftsErrors = {
-    /**
-     * Not authenticated
-     */
-    401: ErrorOut;
-    /**
-     * Forbidden
-     */
-    403: ErrorOut;
-    /**
-     * Not found
-     */
-    404: ErrorOut;
-    /**
-     * Invalid request
-     */
-    422: ValidationErrorOut;
-};
-
-export type DraftsError = DraftsErrors[keyof DraftsErrors];
-
-export type DraftsResponses = {
-    /**
-     * Response Drafts
-     *
-     * Successful Response
-     */
-    200: Array<DraftOut>;
-};
-
-export type DraftsResponse = DraftsResponses[keyof DraftsResponses];
-
-export type DraftFollowUpsData = {
-    body?: never;
-    headers?: {
-        /**
-         * Authorization
-         */
-        authorization?: string | null;
-        /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-    };
-    path: {
-        /**
-         * Engagement Id
-         */
-        engagement_id: string;
-    };
-    query?: never;
-    url: '/v1/engagements/{engagement_id}/reminders/draft';
-};
-
-export type DraftFollowUpsErrors = {
-    /**
-     * Not authenticated
-     */
-    401: ErrorOut;
-    /**
-     * Forbidden
-     */
-    403: ErrorOut;
-    /**
-     * Not found
-     */
-    404: ErrorOut;
-    /**
-     * Conflict with the resource's state
-     */
-    409: ErrorOut;
-    /**
-     * Invalid request
-     */
-    422: ValidationErrorOut;
-};
-
-export type DraftFollowUpsError = DraftFollowUpsErrors[keyof DraftFollowUpsErrors];
-
-export type DraftFollowUpsResponses = {
-    /**
-     * Successful Response
-     */
-    201: DraftedOut;
-};
-
-export type DraftFollowUpsResponse = DraftFollowUpsResponses[keyof DraftFollowUpsResponses];
-
-export type DismissDraftData = {
-    body?: never;
-    headers?: {
-        /**
-         * Authorization
-         */
-        authorization?: string | null;
-        /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-    };
-    path: {
-        /**
-         * Engagement Id
-         */
-        engagement_id: string;
-        /**
-         * Reminder Id
-         */
-        reminder_id: string;
-    };
-    query?: never;
-    url: '/v1/engagements/{engagement_id}/reminders/{reminder_id}/dismiss';
-};
-
-export type DismissDraftErrors = {
-    /**
-     * Not authenticated
-     */
-    401: ErrorOut;
-    /**
-     * Forbidden
-     */
-    403: ErrorOut;
-    /**
-     * Not found
-     */
-    404: ErrorOut;
-    /**
-     * Invalid request
-     */
-    422: ValidationErrorOut;
-};
-
-export type DismissDraftError = DismissDraftErrors[keyof DismissDraftErrors];
-
-export type DismissDraftResponses = {
-    /**
-     * Successful Response
-     */
-    200: SettledOut;
-};
-
-export type DismissDraftResponse = DismissDraftResponses[keyof DismissDraftResponses];
-
-export type PreviewFollowUpData = {
-    body: FollowUpPreviewIn;
-    headers?: {
-        /**
-         * Authorization
-         */
-        authorization?: string | null;
-        /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-    };
-    path: {
-        /**
-         * Engagement Id
-         */
-        engagement_id: string;
-        /**
-         * Reminder Id
-         */
-        reminder_id: string;
-    };
-    query?: never;
-    url: '/v1/engagements/{engagement_id}/reminders/{reminder_id}/preview';
-};
-
-export type PreviewFollowUpErrors = {
-    /**
-     * Not authenticated
-     */
-    401: ErrorOut;
-    /**
-     * Forbidden
-     */
-    403: ErrorOut;
-    /**
-     * Not found
-     */
-    404: ErrorOut;
-    /**
-     * Invalid request
-     */
-    422: ValidationErrorOut;
-};
-
-export type PreviewFollowUpError = PreviewFollowUpErrors[keyof PreviewFollowUpErrors];
-
-export type PreviewFollowUpResponses = {
-    /**
-     * Successful Response
-     */
-    200: FollowUpPreviewOut;
-};
-
-export type PreviewFollowUpResponse = PreviewFollowUpResponses[keyof PreviewFollowUpResponses];
-
-export type SendDraftData = {
-    body: SendDraftIn;
-    headers?: {
-        /**
-         * Authorization
-         */
-        authorization?: string | null;
-        /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-    };
-    path: {
-        /**
-         * Engagement Id
-         */
-        engagement_id: string;
-        /**
-         * Reminder Id
-         */
-        reminder_id: string;
-    };
-    query?: never;
-    url: '/v1/engagements/{engagement_id}/reminders/{reminder_id}/send';
-};
-
-export type SendDraftErrors = {
-    /**
-     * Not authenticated
-     */
-    401: ErrorOut;
-    /**
-     * Forbidden
-     */
-    403: ErrorOut;
-    /**
-     * Not found
-     */
-    404: ErrorOut;
-    /**
-     * Invalid request
-     */
-    422: ValidationErrorOut;
-};
-
-export type SendDraftError = SendDraftErrors[keyof SendDraftErrors];
-
-export type SendDraftResponses = {
-    /**
-     * Successful Response
-     */
-    200: SettledOut;
-};
-
-export type SendDraftResponse = SendDraftResponses[keyof SendDraftResponses];
 
 export type RepresentationsData = {
     body?: never;

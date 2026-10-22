@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { json, mockApi, renderRoutes, signInForTest } from "../testing/support";
 import { FollowUps } from "./FollowUps";
 
-const BASE = "/v1/engagements/e1/reminders";
+const BASE = "/v1/engagements/e1/follow-ups";
 const DRAFT: DraftOut = {
   id: "r1",
   recipient_user_id: "u-c",
@@ -42,7 +42,7 @@ describe("follow-ups", () => {
     expect(screen.getByText(/and 1 more/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Draft follow-ups for overdue items" }));
     await waitFor(() => {
-      expect(calls.some((c) => c.method === "POST" && c.path.endsWith("/reminders/draft"))).toBe(
+      expect(calls.some((c) => c.method === "POST" && c.path.endsWith("/follow-ups/draft"))).toBe(
         true,
       );
     });

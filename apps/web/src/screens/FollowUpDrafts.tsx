@@ -12,7 +12,7 @@ import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
 
 /** SPEC-027 AC-4: at Advise, the reminders the agent drafted, for a person to send or dismiss. */
-export function ReminderDrafts({ engagementId }: { engagementId: string }): JSX.Element | null {
+export function FollowUpDrafts({ engagementId }: { engagementId: string }): JSX.Element | null {
   const path = { path: { engagement_id: engagementId } };
   const drafts = useQuery({ ...draftsOptions(path), retry: false });
   if (drafts.data === undefined || drafts.data.length === 0) return null;
@@ -35,7 +35,7 @@ function DraftRow({
   draft: DraftOut;
 }): JSX.Element {
   const queryClient = useQueryClient();
-  const path = { path: { engagement_id: engagementId, reminder_id: draft.id } };
+  const path = { path: { engagement_id: engagementId, follow_up_id: draft.id } };
   const [note, setNote] = useState("");
   const done = (): void => {
     const engagement = { path: { engagement_id: engagementId } };

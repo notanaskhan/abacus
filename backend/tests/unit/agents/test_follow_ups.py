@@ -10,8 +10,8 @@ from typing import cast
 import pytest
 
 from abacus.kernel.db import TenantContext
-from abacus.modules.agents import reminders
-from abacus.modules.agents.reminders import (
+from abacus.modules.agents import follow_ups
+from abacus.modules.agents.follow_ups import (
     Sent,
     business_days_between,
     next_sequence,
@@ -100,7 +100,7 @@ class _World:
 
         async def require_open(*_: object) -> None:
             if not self.open:
-                raise reminders.EngagementNotOpen("x")
+                raise follow_ups.EngagementNotOpen("x")
 
         async def history(*_: object) -> list[object]:
             return []
@@ -115,8 +115,8 @@ class _World:
             return len(batches)
 
         async def digest(
-            tenant: object, engagement: object, outcome: reminders.Outcome
-        ) -> reminders.Outcome:
+            tenant: object, engagement: object, outcome: follow_ups.Outcome
+        ) -> follow_ups.Outcome:
             self.digests.append(outcome)
             return outcome
 
@@ -127,22 +127,22 @@ class _World:
             async def __aexit__(self, *_: object) -> None:
                 return None
 
-        monkeypatch.setattr(reminders, "overdue_for", overdue_for)
-        monkeypatch.setattr(reminders, "require_open", require_open)
-        monkeypatch.setattr(reminders, "reminder_history", history)
+        monkeypatch.setattr(follow_ups, "overdue_for", overdue_for)
+        monkeypatch.setattr(follow_ups, "require_open", require_open)
+        monkeypatch.setattr(follow_ups, "follow_up_history", history)
 
         def session(tenant: object) -> _Session:
             return _Session()
 
-        monkeypatch.setattr(reminders, "tenant_session", session)
-        monkeypatch.setattr(reminders, "client_admins", admins)
-        monkeypatch.setattr(reminders, "_draft", draft)
-        monkeypatch.setattr(reminders, "_digest", digest)
+        monkeypatch.setattr(follow_ups, "tenant_session", session)
+        monkeypatch.setattr(follow_ups, "client_admins", admins)
+        monkeypatch.setattr(follow_ups, "_draft", draft)
+        monkeypatch.setattr(follow_ups, "_digest", digest)
 
 
-async def _tick(world: _World) -> reminders.Outcome:
+async def _tick(world: _World) -> follow_ups.Outcome:
     tenant = TenantContext(uuid.uuid4(), "system", "test")
-    return await reminders.remind(tenant, uuid.uuid4(), "America/New_York", uuid.uuid4())
+    return await follow_ups.chase_overdue(tenant, uuid.uuid4(), "America/New_York", uuid.uuid4())
 
 
 async def test_dec74_the_agent_drafts_even_at_routine(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -186,5 +186,5 @@ async def test_ac8_no_active_partner_still_drafts_and_sends_nothing(
 async def test_nothing_overdue_is_silent(monkeypatch: pytest.MonkeyPatch) -> None:
     world = _World(monkeypatch)
     world.overdue = []
-    assert await _tick(world) == reminders.Outcome(0)
+    assert await _tick(world) == follow_ups.Outcome(0)
     assert world.digests == []

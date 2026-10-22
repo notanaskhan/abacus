@@ -39,6 +39,8 @@ def test_t10_locals_and_allowed_names_pass(tmp_path: Path) -> None:
     assert "L12" not in _ids(tmp_path, "src/abacus/modules/requests/z.py", source)
 
 
-def test_t07_legacy_names_pass_until_their_rename(tmp_path: Path) -> None:
+def test_t16_the_renamed_reminder_names_now_fail_where_they_lived(tmp_path: Path) -> None:
+    # F-03-T16 renamed them (follow_up_schedules, follow_up_items, /follow-ups), so the legacy
+    # allowance is gone and L12 refuses them everywhere.
     source = 'class Reminder:\n    __tablename__ = "reminders"\n'
-    assert "L12" not in _ids(tmp_path, "src/abacus/modules/agents/models.py", source)
+    assert "L12" in _ids(tmp_path, "src/abacus/modules/agents/models.py", source)
