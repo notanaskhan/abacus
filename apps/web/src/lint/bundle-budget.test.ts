@@ -36,7 +36,7 @@ const MANIFEST: Record<string, Chunk> = {
   "index.html": { file: "assets/index.js", isEntry: true, imports: ["_vendor.js"] },
   "_vendor.js": { file: "assets/vendor.js" },
   "_shared.js": { file: "assets/shared.js", imports: ["_vendor.js"] },
-  "src/screens/Board.tsx": {
+  "src/legacy/Board.tsx": {
     file: "assets/Board.js",
     isDynamicEntry: true,
     imports: ["_shared.js", "_vendor.js"],
@@ -88,7 +88,7 @@ describe("F-05-T17 bundle budgets", () => {
       "assets/shared.js": 61 * KB,
       "assets/vendor.js": 10 * KB,
     });
-    expect(names).toEqual(["route src/screens/Board.tsx"]);
+    expect(names).toEqual(["route src/legacy/Board.tsx"]);
   });
 
   it("does not charge a route for chunks the initial load already has", () => {

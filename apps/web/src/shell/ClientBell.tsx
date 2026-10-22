@@ -2,7 +2,9 @@ import { Bell } from "@abacus/ui";
 import { type JSX, useState } from "react";
 import { NotificationPanel, useUnreadCount } from "./NotificationPanel";
 
-/** SPEC-032 Q2 (TASK-063): the client portal's notifications, in its header. */
+/** SPEC-032 Q2 (TASK-063): the client portal's notifications. Retired from the portal header by
+ * F-05-T23 (DEC-58 (d): no portal bell; email and the Home "your part" list instead); kept, with
+ * its test, until P-08's portal shell replaces client notifications. */
 export function ClientBell(): JSX.Element {
   const [open, setOpen] = useState(false);
   const unread = useUnreadCount();

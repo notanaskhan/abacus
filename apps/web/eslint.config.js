@@ -24,8 +24,8 @@ const NETWORK_GLOBALS = [
 // clock.tsx), so it has no fixture clock to read. Recorded in packages/ui/src/tokens/DECISIONS.md.
 const LEGACY_CLOCK = [
   "src/auth/session.ts", // token lifetime against the device's clock (OIDC), not business time
-  "src/screens/Board.tsx", // elapsed time of a polling window for a screening run
-  "src/screens/CheckResults.tsx", // elapsed time of a polling window after an upload
+  "src/legacy/Board.tsx", // elapsed time of a polling window for a screening run
+  "src/legacy/CheckResults.tsx", // elapsed time of a polling window after an upload
   "src/testing/support.tsx", // test helper: backdates a sign-in
 ];
 

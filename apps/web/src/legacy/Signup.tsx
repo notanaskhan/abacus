@@ -9,7 +9,7 @@ import { accessToken, chooseTenant, signIn } from "../auth/session";
 const REFUSALS: Record<string, string> = {
   signup_code_invalid: "That sign-up code isn't valid. It may have been used or have expired.",
   signup_already_staff:
-    "You already belong to a firm on Abacus. Ask your administrator if you need another.",
+    "You already belong to a firm on Accrued. Ask your administrator if you need another.",
   signup_rate_limited: "Too many attempts. Please wait an hour and try again.",
   signup_invalid: "Your sign-in has no verified email, or the firm name isn't valid.",
 };
@@ -102,7 +102,7 @@ export function NoFirm(): JSX.Element {
   return (
     <main className="mx-auto max-w-md p-8">
       <Alert title="You're not part of a firm yet">
-        If your firm already uses Abacus, ask its administrator to invite you. Setting up a new
+        If your firm already uses Accrued, ask its administrator to invite you. Setting up a new
         firm?{" "}
         <Link to="/signup" className="font-medium text-accent hover:underline">
           Set up your firm

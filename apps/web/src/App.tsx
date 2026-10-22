@@ -5,7 +5,7 @@ import type { JSX } from "react";
 export function App({ status }: { status?: string }): JSX.Element {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-3">
-      <h1 className="text-dashboard font-medium">Abacus</h1>
+      <h1 className="text-dashboard font-medium">Accrued</h1>
       {status !== undefined && <Spinner label={status} />}
     </main>
   );

@@ -4,8 +4,8 @@ import { type ComponentType, type JSX, Suspense, lazy } from "react";
 import { nowMs } from "../app-core/clock";
 import { OverlayHost } from "../app-core/overlay-host";
 import { CALLBACK_PATH } from "../auth/session";
-import { Layout } from "../screens/Layout";
-import { SignInCallback } from "../screens/SignInCallback";
+import { Layout } from "../legacy/Layout";
+import { SignInCallback } from "../legacy/SignInCallback";
 
 // Code-based routes (no file-router plugin): the firm workspace and the client portal (ADR-011).
 // F-03-T17: the tree is split by area (routes/firm, routes/portal); each screen is its own chunk.

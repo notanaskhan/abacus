@@ -35,9 +35,10 @@ describe("ac1 Layout, sign out", () => {
     const { assign } = stubLocation();
     mockApi({ "GET /v1/me": () => json(ME) });
     renderRoutes(ROUTES, { root: Layout });
-    await screen.findByText(/Dev firm/);
+    // SHL-03 (F-05-T23): Sign out is in the firm pill's menu.
+    fireEvent.click(await screen.findByRole("button", { name: "Dev firm" }));
     expect(accessToken()).toBe("tok");
-    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Sign out" }));
     expect(accessToken()).toBeNull();
     await waitFor(() => {
       expect(assign).toHaveBeenCalled();

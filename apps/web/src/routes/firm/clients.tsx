@@ -4,8 +4,8 @@ import { useParam } from "../params";
 import { appRoute, lazyScreen } from "../root";
 
 // SPEC-303 (TASK-304): clients, joined from the engagements the person can see.
-const Clients = lazyScreen(async () => (await import("../../screens/Clients")).Clients);
-const ClientRecord = lazyScreen(async () => (await import("../../screens/Clients")).ClientRecord);
+const Clients = lazyScreen(async () => (await import("../../legacy/Clients")).Clients);
+const ClientRecord = lazyScreen(async () => (await import("../../legacy/Clients")).ClientRecord);
 
 const clientsRoute = createRoute({
   getParentRoute: () => appRoute,

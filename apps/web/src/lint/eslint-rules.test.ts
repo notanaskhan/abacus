@@ -25,7 +25,7 @@ describe("ac18 ESLint architecture rules", () => {
   it("bans dangerouslySetInnerHTML", async () => {
     const found = await violations(
       "export const A = ({ h }: { h: string }) => <div dangerouslySetInnerHTML={{ __html: h }} />;",
-      "src/screens/Example.tsx",
+      "src/legacy/Example.tsx",
     );
     expect(found.some((m) => m.includes("Never render HTML"))).toBe(true);
   });
@@ -41,7 +41,7 @@ describe("ac18 ESLint architecture rules", () => {
   it("bans fetch outside src/auth/session.ts", async () => {
     const found = await violations(
       "export const load = () => fetch('/v1/me');",
-      "src/screens/Example.tsx",
+      "src/legacy/Example.tsx",
     );
     expect(found.some((m) => m.startsWith("no-restricted-globals"))).toBe(true);
   });
@@ -49,7 +49,7 @@ describe("ac18 ESLint architecture rules", () => {
   it("bans XMLHttpRequest outside src/auth/session.ts", async () => {
     const found = await violations(
       "export const x = new XMLHttpRequest();",
-      "src/screens/Example.tsx",
+      "src/legacy/Example.tsx",
     );
     expect(found.some((m) => m.startsWith("no-restricted-globals"))).toBe(true);
   });
@@ -63,7 +63,7 @@ describe("ac18 ESLint architecture rules", () => {
   it("bans importing axios", async () => {
     const found = await violations(
       "import axios from 'axios';\nexport const x = axios;",
-      "src/screens/Example.tsx",
+      "src/legacy/Example.tsx",
     );
     expect(found.some((m) => m.startsWith("no-restricted-imports"))).toBe(true);
   });
@@ -71,7 +71,7 @@ describe("ac18 ESLint architecture rules", () => {
   it("bans .rationale rendered outside AgentText", async () => {
     const found = await violations(
       "export const A = ({ r }: { r: { rationale: string } }) => <p>{r.rationale}</p>;",
-      "src/screens/Example.tsx",
+      "src/legacy/Example.tsx",
     );
     expect(found.some((m) => m.includes("AgentText"))).toBe(true);
   });
@@ -79,7 +79,7 @@ describe("ac18 ESLint architecture rules", () => {
   it("bans .quote rendered outside AgentText", async () => {
     const found = await violations(
       "export const A = ({ c }: { c: { quote: string } }) => <q>{c.quote}</q>;",
-      "src/screens/Example.tsx",
+      "src/legacy/Example.tsx",
     );
     expect(found.some((m) => m.includes("AgentText"))).toBe(true);
   });
@@ -87,11 +87,11 @@ describe("ac18 ESLint architecture rules", () => {
   it("bans model text behind && and ?: inside JSX", async () => {
     const and = await violations(
       "export const A = ({ c }: { c: { quote: string | null } }) => <p>{c.quote && c.quote}</p>;",
-      "src/screens/Example.tsx",
+      "src/legacy/Example.tsx",
     );
     const cond = await violations(
       "export const A = ({ c }: { c: { rationale: string } }) => <p>{c.rationale ? c.rationale : null}</p>;",
-      "src/screens/Example.tsx",
+      "src/legacy/Example.tsx",
     );
     expect(and.length).toBeGreaterThan(0);
     expect(cond.length).toBeGreaterThan(0);
@@ -100,7 +100,7 @@ describe("ac18 ESLint architecture rules", () => {
   it("bans model text passed to an element other than AgentText", async () => {
     const found = await violations(
       "export const A = ({ r }: { r: { rationale: string } }) => <p title={r.rationale}>x</p>;",
-      "src/screens/Example.tsx",
+      "src/legacy/Example.tsx",
     );
     expect(found.length).toBeGreaterThan(0);
   });
@@ -110,7 +110,7 @@ describe("ac18 ESLint architecture rules", () => {
       "export const A = ({ r }: { r: { rationale: string; quote: string } }) => (\n" +
         "  <div><AgentText text={r.rationale} /><AgentText inline text={r.quote} /></div>\n" +
         ");",
-      "src/screens/Example.tsx",
+      "src/legacy/Example.tsx",
     );
     expect(found).toEqual([]);
   });
@@ -123,7 +123,7 @@ describe("ac18 ESLint architecture rules", () => {
       "export const f = (r: Range, h: string) => r.createContextualFragment(h);",
     ];
     for (const code of snippets) {
-      const found = await violations(code, "src/screens/Example.tsx");
+      const found = await violations(code, "src/legacy/Example.tsx");
       expect(found.length, code).toBeGreaterThan(0);
     }
   });
@@ -131,7 +131,7 @@ describe("ac18 ESLint architecture rules", () => {
   it("bans dangerouslySetInnerHTML passed as an object property", async () => {
     const found = await violations(
       "const props = { dangerouslySetInnerHTML: { __html: 'x' } };\nexport const A = () => <p {...props} />;",
-      "src/screens/Example.tsx",
+      "src/legacy/Example.tsx",
     );
     expect(found.length).toBeGreaterThan(0);
   });
@@ -140,14 +140,14 @@ describe("ac18 ESLint architecture rules", () => {
     const code =
       "export const f = (e: HTMLElement) => { e.innerHTML = '<b>x</b>'; };\n" +
       "export const A = ({ r }: { r: { rationale: string } }) => <p>{r.rationale}</p>;";
-    expect(await violations(code, "src/screens/Example.test.tsx")).toEqual([]);
-    expect((await violations(code, "src/screens/Example.tsx")).length).toBeGreaterThan(0);
+    expect(await violations(code, "src/legacy/Example.test.tsx")).toEqual([]);
+    expect((await violations(code, "src/legacy/Example.tsx")).length).toBeGreaterThan(0);
   });
 
   it("still bans fetch and axios in test files", async () => {
     const found = await violations(
       "import axios from 'axios';\nexport const x = [axios, fetch];",
-      "src/screens/Example.test.ts",
+      "src/legacy/Example.test.ts",
     );
     expect(found.some((m) => m.startsWith("no-restricted-imports"))).toBe(true);
     expect(found.some((m) => m.startsWith("no-restricted-globals"))).toBe(true);
@@ -156,7 +156,7 @@ describe("ac18 ESLint architecture rules", () => {
   it("does not object to ordinary JSX and fields with other names", async () => {
     const found = await violations(
       "export const A = ({ e }: { e: { name: string } }) => <p>{e.name}</p>;",
-      "src/screens/Example.tsx",
+      "src/legacy/Example.tsx",
     );
     expect(found).toEqual([]);
   });
@@ -166,20 +166,20 @@ describe("SPEC-016 design tokens", () => {
   it("ac1 bans Tailwind palette colours in screens", async () => {
     const found = await violations(
       'export const A = () => <p className="bg-neutral-100 text-red-700">x</p>;',
-      "src/screens/Example.tsx",
+      "src/legacy/Example.tsx",
     );
     expect(found.some((m) => m.includes("design tokens"))).toBe(true);
   });
 
   it("ac1 bans raw hex colours in screens", async () => {
-    const found = await violations('export const c = "#7a4e12";', "src/screens/Example.tsx");
+    const found = await violations('export const c = "#7a4e12";', "src/legacy/Example.tsx");
     expect(found.some((m) => m.includes("raw hex"))).toBe(true);
   });
 
   it("ac1 allows the tokens", async () => {
     const found = await violations(
       'export const A = () => <p className="bg-surface text-muted border-line">x</p>;',
-      "src/screens/Example.tsx",
+      "src/legacy/Example.tsx",
     );
     expect(found).toEqual([]);
   });
@@ -236,7 +236,7 @@ async function uiViolations(code: string, filePath: string): Promise<string[]> {
   return restricted(result?.messages ?? []);
 }
 
-const SCREEN = "src/screens/Example.tsx";
+const SCREEN = "src/legacy/Example.tsx";
 const cls = (value: string): string => `export const A = () => <p className="${value}">x</p>;`;
 
 describe("SPEC-048 ac5 palette: only Accrued token utilities", () => {
@@ -323,7 +323,7 @@ describe("SPEC-048 ac5 palette: only Accrued token utilities", () => {
     const code = cls("bg-neutral-100");
     expect((await violations(code, "src/components/Example.tsx")).length).toBeGreaterThan(0);
     expect((await uiViolations(code, "src/components/example.tsx")).length).toBeGreaterThan(0);
-    expect(await violations(code, "src/screens/Example.test.tsx")).toEqual([]);
+    expect(await violations(code, "src/legacy/Example.test.tsx")).toEqual([]);
   });
 });
 
@@ -548,9 +548,9 @@ describe("SPEC-048 ac5 L1 brand strings", () => {
     expect(
       (await uiViolations('export const t = "Accrual";', "src/components/a.tsx")).length,
     ).toBeGreaterThan(0);
-    expect(
-      await violations('export const t = "Accrual";', "src/screens/Example.test.tsx"),
-    ).toEqual([]);
+    expect(await violations('export const t = "Accrual";', "src/legacy/Example.test.tsx")).toEqual(
+      [],
+    );
   });
 });
 
