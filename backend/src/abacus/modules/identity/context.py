@@ -116,7 +116,7 @@ def system_context_for_run(
     read the run from the database under the tenant's row-level security and passes its
     recorded values: the run row is the proof, never a workflow's input."""
     return SystemContext(
-        TenantContext(tenant_id, "system", f"run:{run_id}"),
+        TenantContext(tenant_id, "system", f"run:{run_id}", on_behalf_of),
         on_behalf_of,
         run_id,
         engagement_id,
@@ -156,7 +156,7 @@ async def agent_context_for_run(
         mfa_at=None,
     )
     return AgentContext(
-        TenantContext(tenant_id, "agent", f"agent:{agent_id}:{run_id}"),
+        TenantContext(tenant_id, "agent", f"agent:{agent_id}:{run_id}", initiator_user_id),
         agent_id,
         run_id,
         engagement_id,
