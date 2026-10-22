@@ -28,7 +28,13 @@ updated: 2026-10-22
   - the trace has 4 rows (start by Dana Leader, one model call, "Proposed ready for review" with 2 citations, finish);
   - the canonical bytes are stable across reads.
 
+- Rebased onto main at 44aea4e. Fixed pins that main had left stale: MARKED gained the five C3 stub actions (TASK-413), and the email-template import went into NOT_CREATING (TASK-401, idempotent, 200). Regenerated `error-codes.yaml`.
+- Main still has the other stream's breakage, which I didn't touch:
+  - validate_docs (TASK-391–398);
+  - a pyright error in `tests/unit/tools/test_review_status_registry.py`;
+  - web tsc errors (ReviewNoteOut, CapabilitiesOut.nav, status.ts).
+
 ## Definition of done
 - [x] tests/unit/agents/test_runs.py (9), plus the independence, app-gates and matrix pins, pass.
 - [x] spec318runs (4) and spec027agent pass.
-- [x] check-fast passes, apart from the other stream's known validate_docs failures.
+- [x] check-fast passes for this change's files; the other stream's failures on main are listed above.

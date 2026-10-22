@@ -157,16 +157,21 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "review.take",
         "review_note.clear",  # SPEC-041 (TASK-103)
         "review_note.raise",
+        "review_note.read",  # P-04-T07 (TASK-413)
         "review_note.respond",
+        "review_note.withdraw",  # P-04-T07 (TASK-413)
         "risk.approve",  # SPEC-300 (TASK-301)
         "risk.assess",
         "run_trace.export",  # SPEC-318 (TASK-461)
         "sample.approve",  # SPEC-040 (TASK-100)
         "screening.request",
+        "sign_off.bulk",  # P-04-T07 (TASK-413)
+        "sign_off.create",  # P-04-T07 (TASK-413)
         "sign_off.eqr",  # SPEC-308 (TASK-319)
         "sign_off.manager",
         "sign_off.partner",
         "sign_off.prepare",
+        "sign_off.read",  # P-04-T07 (TASK-413)
         "sign_off.review",
         "statement.approve",  # SPEC-312 (TASK-324)
         "tie_out_check.define",  # SPEC-310 (TASK-321)
