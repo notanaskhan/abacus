@@ -319,6 +319,14 @@ async def _engagement_roles_in_firm(ctx: AuthContext) -> frozenset[str]:
     return found
 
 
+FIRM_PARTNER = "firm_partner"
+
+
+async def _partner_level(ctx: AuthContext) -> bool:
+    member = await member_facts(ctx.tenant, ctx.user_id)
+    return member is not None and not member.client and member.level == "partner"
+
+
 async def _roles(ctx: Actor, resource: Resource, rule: Rule) -> set[str]:
     if isinstance(ctx, AgentContext):
         # The run's engagement only; a firm-level run (no engagement) the firm only.
@@ -330,6 +338,13 @@ async def _roles(ctx: Actor, resource: Resource, rule: Rule) -> set[str]:
     roles: set[str] = set()
     if ctx.firm_role is not None:
         roles.add(ctx.firm_role)
+    if (
+        resource.engagement_id is None
+        and FIRM_PARTNER in rule.decisions
+        and not ctx.is_support
+        and await _partner_level(ctx)
+    ):
+        roles.add(FIRM_PARTNER)  # P-01-T04 (DEC-132): derived from the membership level
     if resource.engagement_id is not None:
         role = await _engagement_role_once(ctx, resource.engagement_id)
         if role is not None:

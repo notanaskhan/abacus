@@ -8,7 +8,7 @@ from uuid import UUID
 from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from abacus.modules.organisations.models import Client, ClientEntity, Contact
+from abacus.modules.organisations.models import Client, ClientEntity, Contact, Office
 
 
 async def insert_client(
@@ -149,3 +149,9 @@ async def get_contact(session: AsyncSession, contact_id: UUID) -> Contact | None
     return (
         await session.execute(select(Contact).where(Contact.id == contact_id))
     ).scalar_one_or_none()
+
+
+async def offices_in_firm(session: AsyncSession) -> list[tuple[UUID, str]]:
+    """The firm's offices by name (LIST_EXEMPT: firm structure, a filter only, DEC-30)."""
+    rows = await session.execute(select(Office.id, Office.name).order_by(Office.name))
+    return [(r.id, r.name) for r in rows]

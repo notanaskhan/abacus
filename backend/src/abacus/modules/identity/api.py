@@ -162,6 +162,7 @@ from abacus.modules.identity.slots import (
     engagement_resource,
     register_consent_check,
     register_engagement_resource,
+    register_office_list,
     register_scope_resolver,
     resolve_scope,
 )
@@ -337,6 +338,7 @@ __all__ = [
     "register_independence",
     "register_member_added",
     "register_member_removed",
+    "register_office_list",
     "register_scope_resolver",
     "register_work_item_functions",
     "remove_client",

@@ -1853,6 +1853,19 @@
             "cls": "internal",
             "title": "Mfa Recent Until"
           },
+          "nav": {
+            "additionalProperties": {
+              "enum": [
+                "write",
+                "read",
+                "none"
+              ],
+              "type": "string"
+            },
+            "cls": "internal",
+            "title": "Nav",
+            "type": "object"
+          },
           "office_id": {
             "anyOf": [
               {
@@ -1908,7 +1921,8 @@
           "mfa_recent_until",
           "server_now",
           "clock_mode",
-          "portal"
+          "portal",
+          "nav"
         ],
         "title": "CapabilitiesOut",
         "type": "object"
@@ -5596,6 +5610,53 @@
           "name"
         ],
         "title": "FirmClientOut",
+        "type": "object"
+      },
+      "FirmFactsOut": {
+        "description": "P-01-T04 (SHL-03): what the firm switcher shows for a membership.",
+        "properties": {
+          "is_sandbox": {
+            "cls": "internal",
+            "title": "Is Sandbox",
+            "type": "boolean"
+          },
+          "region": {
+            "cls": "internal",
+            "title": "Region",
+            "type": "string"
+          },
+          "sandbox_of": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Sandbox Of"
+          },
+          "seats_total": {
+            "cls": "internal",
+            "title": "Seats Total",
+            "type": "integer"
+          },
+          "time_zone": {
+            "cls": "internal",
+            "title": "Time Zone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "region",
+          "time_zone",
+          "seats_total",
+          "is_sandbox",
+          "sandbox_of"
+        ],
+        "title": "FirmFactsOut",
         "type": "object"
       },
       "FirmMemberOut": {
@@ -9321,6 +9382,19 @@
             "title": "Clock Mode",
             "type": "string"
           },
+          "default_office_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Default Office Id"
+          },
           "display_name": {
             "cls": "confidential",
             "title": "Display Name",
@@ -9331,12 +9405,45 @@
             "title": "Email",
             "type": "string"
           },
+          "initials": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Initials"
+          },
+          "job_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Job Title"
+          },
           "memberships": {
             "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/MembershipOut"
             },
             "title": "Memberships",
+            "type": "array"
+          },
+          "offices": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/OfficeOut"
+            },
+            "title": "Offices",
             "type": "array"
           },
           "server_now": {
@@ -9366,6 +9473,17 @@
       },
       "MembershipOut": {
         "properties": {
+          "firm": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FirmFactsOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
           "firm_name": {
             "cls": "confidential",
             "title": "Firm Name",
@@ -10249,6 +10367,27 @@
         "title": "ObjectRefOut",
         "type": "object"
       },
+      "OfficeOut": {
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "cls": "internal",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "OfficeOut",
+        "type": "object"
+      },
       "OnboardingOut": {
         "properties": {
           "complete": {
@@ -10612,6 +10751,51 @@
           "scopes"
         ],
         "title": "PortalOut",
+        "type": "object"
+      },
+      "PreferencesIn": {
+        "additionalProperties": false,
+        "properties": {
+          "default_office_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Default Office Id"
+          }
+        },
+        "required": [
+          "default_office_id"
+        ],
+        "title": "PreferencesIn",
+        "type": "object"
+      },
+      "PreferencesOut": {
+        "properties": {
+          "default_office_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Default Office Id"
+          }
+        },
+        "required": [
+          "default_office_id"
+        ],
+        "title": "PreferencesOut",
         "type": "object"
       },
       "PreviewOut": {
@@ -49627,6 +49811,22 @@
               ],
               "title": "Authorization"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
           }
         ],
         "responses": {
@@ -50018,6 +50218,113 @@
         "summary": "Set Notification Preferences Route",
         "tags": [
           "notifications"
+        ],
+        "x-abacus-action": "own"
+      }
+    },
+    "/v1/me/preferences": {
+      "put": {
+        "description": "AC 2.1.3: the default office filter (an office of the active firm, or none); audited.",
+        "operationId": "set_preferences",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreferencesIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Set Preferences Route",
+        "tags": [
+          "identity"
         ],
         "x-abacus-action": "own"
       }

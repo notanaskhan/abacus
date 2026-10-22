@@ -27,6 +27,7 @@ from abacus.modules.organisations.repository import (
     insert_contact,
     names_in_firm,
     names_of,
+    offices_in_firm,
     update_client,
     update_entity,
 )
@@ -394,3 +395,9 @@ async def client_exists(tenant: TenantContext, client_id: UUID) -> bool:
     """Whether the client is the firm's (for the `client` scope resolver, F-03-T26)."""
     async with tenant_session(tenant) as session:
         return await get_client(session, client_id) is not None
+
+
+async def firm_offices(tenant: TenantContext) -> list[tuple[UUID, str]]:
+    """P-01-T04: the firm's offices for identity's `/v1/me` (registered as its office list)."""
+    async with tenant_session(tenant) as session:
+        return await offices_in_firm(session)

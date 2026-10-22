@@ -897,6 +897,12 @@ export type CapabilitiesOut = {
      */
     mfa_recent_until: string | null;
     /**
+     * Nav
+     */
+    nav: {
+        [key: string]: 'write' | 'read' | 'none';
+    };
+    /**
      * Office Id
      */
     office_id: string | null;
@@ -2614,6 +2620,34 @@ export type FirmClientOut = {
      * Name
      */
     name: string;
+};
+
+/**
+ * FirmFactsOut
+ *
+ * P-01-T04 (SHL-03): what the firm switcher shows for a membership.
+ */
+export type FirmFactsOut = {
+    /**
+     * Is Sandbox
+     */
+    is_sandbox: boolean;
+    /**
+     * Region
+     */
+    region: string;
+    /**
+     * Sandbox Of
+     */
+    sandbox_of: string | null;
+    /**
+     * Seats Total
+     */
+    seats_total: number;
+    /**
+     * Time Zone
+     */
+    time_zone: string;
 };
 
 /**
@@ -4464,6 +4498,10 @@ export type MeOut = {
      */
     clock_mode: 'real' | 'offset' | 'frozen';
     /**
+     * Default Office Id
+     */
+    default_office_id?: string | null;
+    /**
      * Display Name
      */
     display_name: string;
@@ -4472,9 +4510,21 @@ export type MeOut = {
      */
     email: string;
     /**
+     * Initials
+     */
+    initials?: string | null;
+    /**
+     * Job Title
+     */
+    job_title?: string | null;
+    /**
      * Memberships
      */
     memberships: Array<MembershipOut>;
+    /**
+     * Offices
+     */
+    offices?: Array<OfficeOut>;
     /**
      * Server Now
      */
@@ -4489,6 +4539,7 @@ export type MeOut = {
  * MembershipOut
  */
 export type MembershipOut = {
+    firm?: FirmFactsOut | null;
     /**
      * Firm Name
      */
@@ -4931,6 +4982,20 @@ export type ObjectRefOut = {
 };
 
 /**
+ * OfficeOut
+ */
+export type OfficeOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
  * OnboardingOut
  */
 export type OnboardingOut = {
@@ -5139,6 +5204,26 @@ export type PortalOut = {
      * Shell
      */
     shell: 'full' | 'k1' | 'limited' | 'none';
+};
+
+/**
+ * PreferencesIn
+ */
+export type PreferencesIn = {
+    /**
+     * Default Office Id
+     */
+    default_office_id: string | null;
+};
+
+/**
+ * PreferencesOut
+ */
+export type PreferencesOut = {
+    /**
+     * Default Office Id
+     */
+    default_office_id: string | null;
 };
 
 /**
@@ -23269,6 +23354,10 @@ export type MeData = {
          * Authorization
          */
         authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
     };
     path?: never;
     query?: never;
@@ -23458,6 +23547,53 @@ export type SetNotificationPreferencesResponses = {
 };
 
 export type SetNotificationPreferencesResponse = SetNotificationPreferencesResponses[keyof SetNotificationPreferencesResponses];
+
+export type SetPreferencesData = {
+    body: PreferencesIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/me/preferences';
+};
+
+export type SetPreferencesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SetPreferencesError = SetPreferencesErrors[keyof SetPreferencesErrors];
+
+export type SetPreferencesResponses = {
+    /**
+     * Successful Response
+     */
+    200: PreferencesOut;
+};
+
+export type SetPreferencesResponse = SetPreferencesResponses[keyof SetPreferencesResponses];
 
 export type MeteringData = {
     body?: never;
