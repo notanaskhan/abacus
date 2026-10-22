@@ -101,6 +101,8 @@ TABLES: tuple[str, ...] = (
     "methodology_versions",
     "misstatements",
     "notices",
+    "notification_deliveries",
+    "notification_preferences",
     "notifications",
     "offices",
     "outbox",

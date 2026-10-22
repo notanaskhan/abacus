@@ -23,8 +23,8 @@ function page() {
       json({
         items: [
           note("n1", "materiality.proposed", 0),
-          note("n2", "comment.mentioned", 1),
-          note("n3", "evidence.uploaded", 10, true),
+          note("n2", "mention", 1),
+          note("n3", "client_uploaded", 10, true),
         ],
         unread_count: 2,
       }),
@@ -62,7 +62,7 @@ afterEach(() => {
 describe("SPEC-305 notifications drawer", () => {
   it("sorts kinds into tabs and days into groups (ac1, ac2)", () => {
     expect(categoryOf("risk.approval_requested")).toBe("needs_you");
-    expect(categoryOf("comment.mentioned")).toBe("mentions");
+    expect(categoryOf("mention")).toBe("mentions");
     expect(categoryOf("connection.created")).toBe("client");
     expect(categoryOf("agent.digest")).toBe("updates");
     const now = new Date("2026-10-20T15:00:00");

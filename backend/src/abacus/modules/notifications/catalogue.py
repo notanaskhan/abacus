@@ -96,7 +96,7 @@ async def _partners(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
 
 @dataclass(frozen=True)
 class Kind:
-    kind: str
+    kind: str  # the stored code; new codes are undotted (C16); the key is the event type
     recipients: Recipients
     subject_type: str
     subject_key: str | None  # payload key of the subject; None: the firm itself
@@ -121,10 +121,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
         "engagement_member.added", _added_member, "engagement", "engagement_id"
     ),
     "review.assigned": Kind(
-        "review.assigned", _assignee, "evidence_version", "evidence_version_id"
+        "review_assigned", _assignee, "evidence_version", "evidence_version_id"
     ),
     "evidence.uploaded": Kind(
-        "evidence.uploaded", _staff_team, "evidence_version", "evidence_version_id"
+        "client_uploaded", _staff_team, "evidence_version", "evidence_version_id"
     ),
     "connection.created": Kind("connection.created", _leads, "connection", "connection_id"),
     "connection.revoked": Kind("connection.revoked", _leads, "connection", "connection_id"),
@@ -136,7 +136,7 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "reminders.drafted": Kind("reminders.drafted", _leads, "engagement", "engagement_id"),
     "agent.digest": Kind("agent.digest", _leads, "engagement", "engagement_id"),
     # SPEC-032 (TASK-062): a person mentioned in a comment, on the request it's about.
-    "comment.mentioned": Kind("comment.mentioned", _mentioned, "request_item", "request_item_id"),
+    "comment.mentioned": Kind("mention", _mentioned, "request_item", "request_item_id"),
     # SPEC-305 (TASK-306): decisions reserved to the engagement partner.
     "materiality.proposed": Kind("materiality.proposed", _partners, "engagement", "engagement_id"),
     "risk.approval_requested": Kind("risk.approval_requested", _partners, "risk", "risk_id"),
