@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C5 in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | stub (BND-01, BND-02, SHL-14 family incl. portal mark-done, ignore, upload intents and withdraw: P-06-T01, 2026-10-22). The SHL-20 family (screening, follow-ups) is added by P-06-T15 without a breaking change. The portal-scopes half is P-08's |
+| Status | stub (BND-01, BND-02, SHL-14 family incl. portal mark-done, ignore, upload intents and withdraw: P-06-T01, 2026-10-22). The SHL-20 family (screening, follow-ups) is added by P-06-T15 without a breaking change. The portal-scopes half is P-08's: `portal-identity.md` (v1.1, P-08-T01, 2026-10-23) |
 | Provider epic | P-06 (binders and requests half); P-08 (portal scopes). Schema half: F-03-T14, F-03-T15, F-03-T26 |
 | Consumers | A-01 (AUD-03), R-01 (POR-03, POR-04, POR-14, POR-20), T-02, C-01 (CLS-03), K-01, N-01, A-03, N-03, K-04, I-01. Screens: BND-01, BND-02, SHL-14 |
 | Freeze sprint | S3 (starts 2026-11-30); freeze Fri 2026-12-11 |
@@ -171,8 +171,9 @@ Additive changes in place. Breaking changes ship as v2 with one sprint of overla
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
 | v1 | (planned 2026-12-11) | | stub 2026-10-22 (P-06-T01); SHL-20 family additive in P-06-T15 |
+| v1.1 | (planned 2026-12-11) | | additive, 2026-10-23 (P-08-T01): the portal half (portal identity and home, POR-01 and POR-02) in `docs/contracts/portal-identity.md`; nothing in this half changes |
 
 ## 11. Open points
 - DEC-136: OQ-1 mechanism (preparer publish on tax-return binders), firm-setting key names, portal ignore vs SPEC-042, staff create deferred to P-06-T10.
 - ADR-162 (P-31, the plan's "ADR-137") is accepted; the withdraw route follows it.
-- P-08 owns the portal principal; until it lands the `/v1/portal` routes take the firm context.
+- P-08 owns the portal principal; until it lands the `/v1/portal` routes take the firm context. The portal half is `docs/contracts/portal-identity.md` (C5 v1.1, P-08-T01).

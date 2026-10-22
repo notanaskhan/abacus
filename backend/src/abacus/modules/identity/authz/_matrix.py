@@ -269,6 +269,21 @@ ACTIONS: dict[str, dict[str, str]] = {
         "engagement_partner": "allow",
         "manager": "allow",
     },
+    "contact.mfa_reset": {
+        "security_admin": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "mfa_recent": "required",
+    },
+    "contact.unlock": {
+        "firm_admin": "allow",
+        "security_admin": "allow",
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "client_service": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
     "dashboard.read": {
         "engagement_partner": "allow",
         "manager": "allow",
@@ -711,6 +726,19 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
         "independence": "required",
+    },
+    "portal_home.read": {
+        "client_admin": "allow",
+        "client_contributor": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "scope_only": "required",
+    },
+    "portal_preferences.update": {
+        "client_admin": "allow",
+        "client_contributor": "allow",
+        "agent": "deny",
+        "system": "deny",
     },
     "procedure.configure": {
         "engagement_partner": "allow",

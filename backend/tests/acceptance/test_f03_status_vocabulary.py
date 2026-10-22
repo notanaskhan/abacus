@@ -582,6 +582,9 @@ NOT_A_STATUS = {
     "FlowStepOut.state": "position of a step in a flow (done, current, todo)",
     "SetupStepOut.state": "progress of a set-up step (done, waiting, blocked, warning)",
     "CompleteIn.state": "free-text input, not a vocabulary",
+    # C5 v1.1 portal half (P-08-T01): client-side card states, never a firm object's status.
+    "PortalHomeTodoOut.state": "a to-do card's state on POR-02 (open, none, overdue)",
+    "PortalHomeStageOut.state": "a client stage's place in the tracker (done, current, upcoming)",
 }
 # The 3.3.1 object a field's literals must all belong to (named from the sources: Deficiency,
 # Review note, Tie-out tally, Integration / connection, Proposed entry (AJE), Audit section /
@@ -600,6 +603,8 @@ OBJECT_OF_FIELD = {
     "RequestItemOut.status": "request",
     "ItemHitOut.status": "request",
     "DecisionOut.item_status": "request",
+    # P-08-T01: contacts.portal_state, the DF-31 invitation words.
+    "ContactPortalStatusOut.portal_status": "invitation",
 }
 
 # Findings: fields whose literals have no YAML entry anywhere. The reason names the literals.

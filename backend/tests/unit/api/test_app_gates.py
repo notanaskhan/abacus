@@ -164,6 +164,9 @@ NOT_CREATING = {
     "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/withdraw",
     "/v1/portal/binders/{binder_id}/mark-done",
     "/v1/portal/request-items/{item_id}/ignore",
+    # P-08-T01 (C5 v1.1 portal half): firm-side recovery returns the contact's portal access.
+    "/v1/clients/{client_id}/contacts/{contact_id}/portal-unlock",
+    "/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset",
 }
 
 

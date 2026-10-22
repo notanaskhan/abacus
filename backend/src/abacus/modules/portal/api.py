@@ -1,7 +1,13 @@
 """Public interface of the portal module; other modules import only this (ADR-008).
 
-Pre-registered (F-03-T08; ADR-140): empty until its first epic lands.
+Pre-registered (F-03-T08; ADR-140). The C5 v1.1 portal-half stub (P-08-T01) adds the home and
+preferences routes; branding, the home read model and preferences land with P-08-T05 and T13.
 """
 
+from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.portal.contract import router
+
 # The routers the API mounts, in order (P-39; F-03-T07).
-ROUTERS: tuple[()] = ()
+ROUTERS: tuple[AbacusRouter, ...] = (router,)
+
+__all__ = ["ROUTERS"]

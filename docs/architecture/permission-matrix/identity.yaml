@@ -19,3 +19,7 @@ actions:
   client_access.grant:      {firm_admin: allow, engagement_partner: allow, manager: allow, client_service: allow, agent: deny, mfa_recent: required}
   client_access.revoke:     {firm_admin: allow, engagement_partner: allow, manager: allow, client_service: allow, agent: deny, mfa_recent: required}
   firm.ai_client_data:      {firm_admin: allow, mfa_recent: required}   # SPEC-036 (TASK-076): opt in to AI on clients' data, against the disclosure
+  # --- C5 v1.1 portal half (P-08-T01 stub; P-08 §4.3, §4.9): firm-side recovery of a client's
+  # portal sign-in. Human-only: the agent and system principals are denied (INV-1).
+  contact.unlock:           {firm_admin: allow, security_admin: allow, engagement_partner: allow, manager: allow, client_service: allow, agent: deny, system: deny}   # Story 7.1: clear a sign-in lock
+  contact.mfa_reset:        {security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # Story 7.2: remove the factor, backup codes and trusted devices (OQ-1)

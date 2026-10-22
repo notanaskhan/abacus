@@ -61,6 +61,16 @@ NOTIFICATIONS_V2 = Flag(
     kind="boolean",
     default="false",
 )
+PORTAL_HOME_V2 = Flag(
+    name="portal.home_v2",
+    kind="boolean",
+    default="false",
+)
+PORTAL_SIGN_IN_V2 = Flag(
+    name="portal.sign_in_v2",
+    kind="boolean",
+    default="false",
+)
 PROMPT_EVIDENCE_SCREENER = Flag(
     name="prompt.evidence.screener",
     kind="variant",
@@ -102,6 +112,8 @@ FLAGS: dict[str, Flag] = {
     "matching.enabled": MATCHING_ENABLED,
     "notifications.email": NOTIFICATIONS_EMAIL,
     "notifications.v2": NOTIFICATIONS_V2,
+    "portal.home_v2": PORTAL_HOME_V2,
+    "portal.sign_in_v2": PORTAL_SIGN_IN_V2,
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
     "retrieval.auto": RETRIEVAL_AUTO,
     "review.grammar_api": REVIEW_GRAMMAR_API,

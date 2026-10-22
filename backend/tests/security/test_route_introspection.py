@@ -230,6 +230,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/methodology/versions/{version_id}/guidance-drafts", "template_guidance.read"),
     ("GET", "/v1/notifications", "own"),
     ("GET", "/v1/notifications/feed", "own"),
+    ("GET", "/v1/portal/home", "portal_home.read"),
     ("GET", "/v1/proposals/{ref}", "proposal.read"),
     ("GET", "/v1/review-notes", "review_note.read"),
     ("GET", "/v1/review-notes/{note_id}", "review_note.read"),
@@ -245,6 +246,8 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/binders/{binder_id}/publish", "binder.publish"),
     ("POST", "/v1/binders/{binder_id}/publish/undo", "binder.publish"),
     ("POST", "/v1/binders/{binder_id}/unpublish", "binder.publish"),
+    ("POST", "/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset", "contact.mfa_reset"),
+    ("POST", "/v1/clients/{client_id}/contacts/{contact_id}/portal-unlock", "contact.unlock"),
     ("POST", "/v1/connections/complete", "connection.create"),
     ("POST", "/v1/decision-cards/{card_id}/analysis-requests", "decision.request_analysis"),
     ("POST", "/v1/decision-cards/{card_id}/decide", "decision.decide"),
@@ -745,6 +748,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("PUT", "/v1/firm/time-zone", "firm.manage_settings"),
     ("PUT", "/v1/me/notification-preferences", "own"),
     ("PUT", "/v1/me/preferences", "own"),
+    ("PUT", "/v1/portal/preferences", "portal_preferences.update"),
 )
 UNAUTHENTICATED: tuple[tuple[str, str], ...] = (
     ("GET", "/healthz"),

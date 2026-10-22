@@ -31,6 +31,7 @@ from abacus.modules.identity.firm_settings import (
 )
 from abacus.modules.identity.invitations import accept_invitation
 from abacus.modules.identity.me import FirmFacts, firm_facts, me_details, set_default_office
+from abacus.modules.identity.portal_contract import MeMfaOut, MePortalOut
 from abacus.modules.identity.repository import FirmRole
 from abacus.modules.identity.routing import (
     IDENTITY,
@@ -127,6 +128,10 @@ class MeOut(BaseModel):
     job_title: Annotated[str | None, classified("confidential")] = None
     default_office_id: Annotated[UUID | None, classified("internal")] = None
     offices: Annotated[list[OfficeOut], classified("internal")] = []
+    # C5 v1.1 portal half (P-08-T01, additive): the portal shell and the second step, for client
+    # users. Null until P-08-T07 (`portal`) and P-08-T17 (`mfa`) fill them.
+    portal: Annotated[MePortalOut | None, classified("internal")] = None
+    mfa: Annotated[MeMfaOut | None, classified("internal")] = None
 
 
 def _firm_out(facts: FirmFacts | None) -> FirmFactsOut | None:

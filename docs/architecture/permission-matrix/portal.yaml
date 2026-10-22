@@ -1,0 +1,12 @@
+# The portal module's actions (ADR-027; P-39, F-03-T07). Compiled with every other module's
+# file into identity/authz/_matrix.py by `make regenerate`.
+#
+# C5 v1.1 portal half (P-08-T01 stub; P-08 §4.3, §4.9). Client actions: no firm role, the agent
+# and system principals denied. The home reads one scope (`scope_only`: a grant must cover it,
+# INV-4); the service also refuses grants that do not open the full shell (third party, K-1 only).
+# The plan's `portal.home.read` and `portal.preferences.update` are spelt `portal_home.read` and
+# `portal_preferences.update`: an action is `<entity>.<verb>` with one dot (DEC-139).
+
+actions:
+  portal_home.read:         {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # POR-02, GET /v1/portal/home
+  portal_preferences.update: {client_admin: allow, client_contributor: allow, agent: deny, system: deny}   # POR-02 b, the person's own per-scope preferences
