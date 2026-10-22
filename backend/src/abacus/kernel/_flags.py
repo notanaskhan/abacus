@@ -6,6 +6,11 @@ Regenerate: python -m abacus_tools.codegen.feature_flags
 from abacus.kernel.flags import Flag
 
 # fmt: off
+BINDERS_ENGINE = Flag(
+    name="binders.engine",
+    kind="boolean",
+    default="false",
+)
 ENGAGEMENT_AGENT_ENABLED = Flag(
     name="engagement_agent.enabled",
     kind="boolean",
@@ -86,6 +91,7 @@ UPLOADS_PROCESSING = Flag(
 )
 
 FLAGS: dict[str, Flag] = {
+    "binders.engine": BINDERS_ENGINE,
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
     "engagements.work_items_api": ENGAGEMENTS_WORK_ITEMS_API,
     "fieldwork.assessor": FIELDWORK_ASSESSOR,
