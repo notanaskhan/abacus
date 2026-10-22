@@ -8412,7 +8412,7 @@ export type ReviewNoteOut = {
     /**
      * Status
      */
-    status: 'open' | 'responded' | 'cleared';
+    status: 'open' | 'responded' | 'cleared' | 'closed' | 'withdrawn';
     /**
      * Target Code
      */
@@ -10594,7 +10594,7 @@ export type TraceRowOut = {
     /**
      * State
      */
-    state: 'done' | 'failed' | 'waiting' | 'running' | 'info';
+    state: 'done' | 'failed' | 'waiting' | 'running';
     /**
      * Title
      */

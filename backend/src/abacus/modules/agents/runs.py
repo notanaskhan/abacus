@@ -63,7 +63,7 @@ class TraceRow:
     at: datetime
     kind: RowKind
     title: str
-    state: Literal["done", "failed", "waiting", "running", "info"]
+    state: Literal["done", "failed", "waiting", "running"]
     detail: str | None  # code words only
     actor: str | None
 

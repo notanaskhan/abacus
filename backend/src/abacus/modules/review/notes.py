@@ -2,14 +2,15 @@
 
 A reviewer raises a note on a reviewable, optionally anchored to a cell or an account; anyone on
 the team responds; only the person who raised it (or the engagement partner) clears it, and
-clearing can be undone by reopening with a reason. Notes and events are appended, never edited
-(ADR-004); a note's state is its newest event's. An open or answered note blocks completion
-(G5) until it is cleared. The agent raises, answers and clears nothing (the matrix denies it).
+clearing can be undone by reopening with a reason. Notes and events are appended (ADR-004);
+only the note's `status` changes. That column is authoritative (ADR-160 clause 6, migration
+0093) and is written in the same unit of work as each event, raising included; reopening sets
+it back to open. An open or answered note blocks completion (G5) until it is cleared. The agent
+raises, answers and clears nothing (the matrix denies it).
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Final, Literal
@@ -20,17 +21,17 @@ from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.identity.api import PARTNER_ROLES, AuthContext, authorise, engagement_team
-from abacus.modules.review.models import ReviewableNoteEvent
 from abacus.modules.review.repository import (
-    get_note,
     insert_note,
     insert_note_event,
+    lock_note,
     note_events_of,
     notes_of,
+    set_note_status,
 )
 from abacus.modules.review.slots import reviewables_of
 
-NoteStatus = Literal["open", "responded", "cleared"]
+NoteStatus = Literal["open", "responded", "cleared", "closed", "withdrawn"]
 OPEN: Final = frozenset({"open", "responded"})
 
 
@@ -71,11 +72,19 @@ class NoteView:
     events: list[NoteEventView]
 
 
-def status_of(events: Sequence[ReviewableNoteEvent]) -> NoteStatus:
-    if not events:
-        return "open"
-    last = events[-1].kind
-    return "cleared" if last == "cleared" else "responded" if last == "responded" else "open"
+# What each event leaves the note as (C3 adds closed and withdrawn).
+AFTER: Final[dict[str, NoteStatus]] = {
+    "raised": "open",
+    "responded": "responded",
+    "cleared": "cleared",
+    "reopened": "open",
+    "closed": "closed",
+    "withdrawn": "withdrawn",
+}
+
+
+def status_of(status: str) -> NoteStatus:
+    return status if status in AFTER.values() else "open"  # type: ignore[return-value]  # the CHECK's codes
 
 
 def _text(value: str | None, limit: int, *, required: bool) -> str | None:
@@ -93,10 +102,9 @@ async def open_note_counts(tenant: TenantContext, engagement_id: UUID) -> dict[U
     """Open or answered notes per target (for the matrix and G5; callers authorised)."""
     async with tenant_session(tenant) as session:
         notes = await notes_of(session, engagement_id)
-        events = await note_events_of(session, [n.id for n in notes])
     counts: dict[UUID, int] = {}
     for n in notes:
-        if status_of([e for e in events if e.note_id == n.id]) in OPEN:
+        if n.status in OPEN:
             counts[n.target_id] = counts.get(n.target_id, 0) + 1
     return counts
 
@@ -116,7 +124,8 @@ async def notes_for(
     names = {m.user_id: m.display_name for m in await engagement_team(ctx, engagement_id)}
     out: list[NoteView] = []
     for n in notes:
-        mine = [e for e in events if e.note_id == n.id]
+        # The raise itself shows as raised_by and raised_at, not as an event row.
+        mine = [e for e in events if e.note_id == n.id and e.kind != "raised"]
         out.append(
             NoteView(
                 n.id,
@@ -125,7 +134,7 @@ async def notes_for(
                 codes.get(n.target_id),
                 n.anchor,
                 n.body,
-                status_of(mine),
+                status_of(n.status),
                 names.get(n.raised_by, "Former member"),
                 n.created_at,
                 n.raised_by == ctx.user_id,
@@ -168,6 +177,14 @@ async def raise_note(
             body=text,
             raised_by=ctx.user_id,
         )
+        await insert_note_event(
+            tx.session,
+            tenant_id=ctx.tenant_id,
+            note_id=note_id,
+            kind="raised",
+            body=text,  # migration 0076: every event but a clear carries a body
+            by_user=ctx.user_id,
+        )
         tx.record("review_note.raised", target=Target("review_note", note_id))
     return note_id
 
@@ -189,13 +206,11 @@ async def add_event(
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, action, ref.resource())
-        note = await get_note(tx.session, note_id)
+        note = await lock_note(tx.session, note_id)
         if note is None or note.engagement_id != engagement_id:
             raise NotFound("review_note")
-        status = status_of(await note_events_of(tx.session, [note.id]))
-        if kind == "responded" and status == "cleared":
-            raise NoteState(status)
-        if kind == "cleared" and status == "cleared":
+        status = status_of(note.status)
+        if kind in ("responded", "cleared") and status not in OPEN:
             raise NoteState(status)
         if kind == "reopened" and status != "cleared":
             raise NoteState(status)
@@ -211,6 +226,7 @@ async def add_event(
             body=text,
             by_user=ctx.user_id,
         )
+        await set_note_status(tx.session, note.id, AFTER[kind])
         tx.record(
             f"review_note.{kind}",
             target=Target("review_note", note.id),

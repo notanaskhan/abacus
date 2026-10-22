@@ -38,7 +38,9 @@ class ReviewNoteOut(BaseModel):
     target_code: Annotated[str | None, classified("internal")]
     anchor: Annotated[str | None, classified("confidential")]
     body: Annotated[str, classified("confidential")]
-    status: Annotated[Literal["open", "responded", "cleared"], classified("internal")]
+    status: Annotated[
+        Literal["open", "responded", "cleared", "closed", "withdrawn"], classified("internal")
+    ]
     raised_by_name: Annotated[str, classified("internal")]
     raised_at: Annotated[datetime, classified("internal")]
     raised_by_me: Annotated[bool, classified("internal")]
