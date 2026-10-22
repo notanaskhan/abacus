@@ -241,6 +241,43 @@ describe("rule 4: record keys map to record routes", () => {
   });
 });
 
+/** Screen IDs in the "To" column of each docs/screens/<ID>.md "## Links" table, by contract ID. */
+function contractTargets(): Map<string, Set<string>> {
+  const dir = join(REPO, "docs", "screens");
+  const byScreen = new Map<string, Set<string>>();
+  for (const name of readdirSync(dir)) {
+    if (!/^[A-Z]+-\d+\.md$/.test(name)) continue;
+    const text = readFileSync(join(dir, name), "utf8");
+    const section = text.split("\n## Links")[1]?.split("\n## ")[0] ?? "";
+    const targets = new Set<string>();
+    for (const line of section.split("\n")) {
+      if (!line.startsWith("|") || line.startsWith("|---") || line.startsWith("| From")) continue;
+      const to = line.split("|")[2] ?? "";
+      for (const m of to.matchAll(/\b([A-Z]{2,4}-\d{2})\b/g)) targets.add(m[1] ?? "");
+    }
+    byScreen.set(name.replace(/\.md$/, ""), targets);
+  }
+  return byScreen;
+}
+
+describe("rule 5: screen contracts and the link graph agree (P-06-T03)", () => {
+  const contracts = contractTargets();
+
+  it("every target a screen contract's Links table names is a manifest screen", () => {
+    const unknown = [...contracts].flatMap(([id, targets]) =>
+      [...targets].filter((t) => ENTRIES[t] === undefined).map((t) => `${id} → ${t}`),
+    );
+    expect(unknown).toEqual([]);
+  });
+
+  it("a screen contract names every designed link of its screen", () => {
+    const missing = GRAPH.links
+      .filter((l) => contracts.has(l.from) && !contracts.get(l.from)?.has(l.to))
+      .map((l) => `${l.from} → ${l.to} (${l.via ?? l.type})`);
+    expect(missing).toEqual([]);
+  });
+});
+
 describe("seed-manifest.mjs adds new IDs only", () => {
   const existing: Screen[] = [{ id: "CLS-01", name: "Closes index", entry: false }];
 
