@@ -1,0 +1,12 @@
+# The organisations module's flags (ADR-089; P-39, F-03-T07). Compiled with every other module's
+# file into kernel/_flags.py by `make regenerate`.
+
+flags:
+  - name: clients.v2
+    description: 'The clients family (P-07): GET /v1/clients, the client record, overview, PATCH and relationships, the TIN reveal (POST /v1/client-entities/{id}/tin/reveal), and the CLI-01, CLI-02, CLI-04 and CLI-06 screens. When off, those routes answer 404 and the screens show the flag-off ViewState. Off until a founder switches it on per firm; the local seed turns it on for Brightwater Hale. Renewal is due in the S9 protected bundle; retired with the legacy screens (P-07 §0).'
+    owner: notanaskhan
+    created: 2026-10-23
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false

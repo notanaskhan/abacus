@@ -46,6 +46,14 @@ Interfaces that Q-01 provides to the product modules but that are not among the 
 |---|---|---|---|---|---|---|---|
 | Platform operations: WorkOS adapter port, `runtime-config.json` schema, public routes and readiness, deploy lock, ops-task commands, `TenantProvisioningWorkflow`, `platform.api.control_active` and the kill-switch rule, SES identity port, the live AWS adapters | `platform-ops.md` | Q-01 (Q-01-T13) | P-01, P-08, F-04, G-04, R-01, F-01 `db_guard`, Q-04 | S5 (Q-01-T57) | 2026-12-28 | v1 | stub (Q-01-T13, 2026-10-22) |
 
+## Screen-family contracts (unnumbered)
+
+Contracts one screen family needs that are not among C1 to C21 (P-07 owns no C-number; P-07 §8.1). Same file rules, same frozen-contract rule. Each freezes at the sprint review after its stub.
+
+| Family | File | Provider (epic) | Consumers | Version | Status |
+|---|---|---|---|---|---|
+| Clients: CLI-01 index, CLI-02 record, overview, relationships, PATCH, TIN reveal | `clients.md` | P-07 (P-07-T04) | CLI-01, CLI-02, T-01, T-06, P-02 | v1 | stub (P-07-T04, 2026-10-23) |
+
 ## The handshake (chapter 01 §1.3.2, solo edition)
 
 1. **Request.** The consumer states the screen IDs and artboard states the contract must serve, the seed figures that must foot and the human-only gates, and writes the contract tests (pytest against the stub, TypeScript fixture assertions). Solo: this is a note in the task file; there is no issue template.

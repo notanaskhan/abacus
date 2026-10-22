@@ -4314,6 +4314,137 @@
         "title": "ClientContactOut",
         "type": "object"
       },
+      "ClientEngagementBriefOut": {
+        "description": "The \"2 active engagements \u2304\" menu: visible engagements only.",
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "service_line": {
+            "cls": "internal",
+            "enum": [
+              "audit",
+              "tax",
+              "cas",
+              "advisory"
+            ],
+            "title": "Service Line",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EngagementStatus",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "service_line"
+        ],
+        "title": "ClientEngagementBriefOut",
+        "type": "object"
+      },
+      "ClientEntityBriefOut": {
+        "properties": {
+          "entity_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "individual",
+                  "household_mfj",
+                  "c_corp",
+                  "s_corp",
+                  "llc",
+                  "partnership",
+                  "trust",
+                  "estate",
+                  "ebp_plan",
+                  "exempt_org"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Entity Type"
+          },
+          "fye_month_day": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Fye Month Day"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "plan_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Plan Number"
+          },
+          "state_of_formation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "State Of Formation"
+          },
+          "tin": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MaskedTinOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "ClientEntityBriefOut",
+        "type": "object"
+      },
       "ClientInvitationIn": {
         "additionalProperties": false,
         "properties": {
@@ -4354,6 +4485,287 @@
           "invitation_id"
         ],
         "title": "ClientInvitationOut",
+        "type": "object"
+      },
+      "ClientObjectRefOut": {
+        "description": "An opaque reference an overview row links to (an engagement, a work item, a binder).",
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "cls": "internal",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ],
+        "title": "ClientObjectRefOut",
+        "type": "object"
+      },
+      "ClientOverviewItemOut": {
+        "description": "One stat, KV row, table row, key date or activity line. Numbers are decimal strings\ncomputed in code (ADR-050); `pill_object` and `pill_code` name a C2 status the UI words.",
+        "properties": {
+          "at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "At"
+          },
+          "figure": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Figure"
+          },
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "On"
+          },
+          "pill_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Pill Code"
+          },
+          "pill_object": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Pill Object"
+          },
+          "ref": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClientObjectRefOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Text"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "ClientOverviewItemOut",
+        "type": "object"
+      },
+      "ClientOverviewOut": {
+        "properties": {
+          "client_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Id",
+            "type": "string"
+          },
+          "profile": {
+            "cls": "internal",
+            "enum": [
+              "business",
+              "household",
+              "plan_sponsor",
+              "empty"
+            ],
+            "title": "Profile",
+            "type": "string"
+          },
+          "sections": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ClientOverviewSectionOut"
+            },
+            "title": "Sections",
+            "type": "array"
+          }
+        },
+        "required": [
+          "client_id",
+          "profile",
+          "sections"
+        ],
+        "title": "ClientOverviewOut",
+        "type": "object"
+      },
+      "ClientOverviewSectionOut": {
+        "description": "A section from one registered provider, present only when the caller holds the\nprovider's own read action (a metadata-only role gets metadata sections; ADR-024).",
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "items": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ClientOverviewItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "stats",
+              "details",
+              "table",
+              "key_dates",
+              "activity"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "read_action": {
+            "cls": "internal",
+            "title": "Read Action",
+            "type": "string"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Total"
+          }
+        },
+        "required": [
+          "code",
+          "kind",
+          "read_action",
+          "items"
+        ],
+        "title": "ClientOverviewSectionOut",
+        "type": "object"
+      },
+      "ClientPatchIn": {
+        "additionalProperties": false,
+        "description": "Absent fields are unchanged; `status_change` is absent unless the status moves.",
+        "properties": {
+          "descriptor": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Descriptor"
+          },
+          "primary_office_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Primary Office Id"
+          },
+          "relationship_partner_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Relationship Partner Id"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Seen Version",
+            "type": "integer"
+          },
+          "status_change": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClientStatusChangeIn"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "seen_version"
+        ],
+        "title": "ClientPatchIn",
         "type": "object"
       },
       "ClientPreviewItemOut": {
@@ -4419,6 +4831,294 @@
           "client_ignored"
         ],
         "title": "ClientPreviewItemOut",
+        "type": "object"
+      },
+      "ClientRecordOut": {
+        "description": "CLI-02's subbar facts, rail Details and Team, and tab counts. The Team band's Partner is\nthe stored relationship partner; Manager and Preparer are derived (DEC-62, DEC-138).",
+        "properties": {
+          "active_engagements": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ClientEngagementBriefOut"
+            },
+            "title": "Active Engagements",
+            "type": "array"
+          },
+          "allowed_actions": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "descriptor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Descriptor"
+          },
+          "entities": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/ClientEntityBriefOut"
+            },
+            "title": "Entities",
+            "type": "array"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_attest_client": {
+            "cls": "internal",
+            "title": "Is Attest Client",
+            "type": "boolean"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "household",
+                  "business",
+                  "plan_sponsor",
+                  "nonprofit",
+                  "trust_family"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Kind"
+          },
+          "manager_user_ids": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Manager User Ids",
+            "type": "array"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "office_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Office Name"
+          },
+          "portal_status": {
+            "$ref": "#/components/schemas/InvitationStatus",
+            "cls": "internal"
+          },
+          "preparer_user_ids": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Preparer User Ids",
+            "type": "array"
+          },
+          "primary_office_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Primary Office Id"
+          },
+          "relationship_partner_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Relationship Partner Id"
+          },
+          "risk_tier": {
+            "anyOf": [
+              {
+                "enum": [
+                  "low",
+                  "moderate",
+                  "high"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Risk Tier"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ClientStatus",
+            "cls": "internal"
+          },
+          "tab_counts": {
+            "$ref": "#/components/schemas/ClientTabCountsOut",
+            "cls": "internal"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "status",
+          "is_attest_client",
+          "portal_status",
+          "entities",
+          "tab_counts",
+          "version"
+        ],
+        "title": "ClientRecordOut",
+        "type": "object"
+      },
+      "ClientRelationshipOut": {
+        "description": "One `entity_relationships` edge. An edge into a walled client is omitted, never\nredacted (INV-3).",
+        "properties": {
+          "effective_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Effective From"
+          },
+          "effective_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Effective To"
+          },
+          "from_entity_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "From Entity Id",
+            "type": "string"
+          },
+          "from_entity_name": {
+            "cls": "confidential",
+            "title": "From Entity Name",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "spouse",
+              "owner_of",
+              "trustee_of",
+              "beneficiary_of",
+              "sponsor_of",
+              "upper_tier_of",
+              "executor_of",
+              "gp_of",
+              "lp_of",
+              "estate_of"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "percent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Percent"
+          },
+          "to_client_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "To Client Id",
+            "type": "string"
+          },
+          "to_entity_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "To Entity Id",
+            "type": "string"
+          },
+          "to_entity_name": {
+            "cls": "confidential",
+            "title": "To Entity Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "from_entity_id",
+          "from_entity_name",
+          "to_entity_id",
+          "to_entity_name",
+          "to_client_id"
+        ],
+        "title": "ClientRelationshipOut",
         "type": "object"
       },
       "ClientResponseIn": {
@@ -4511,6 +5211,269 @@
           "at"
         ],
         "title": "ClientResponseOut",
+        "type": "object"
+      },
+      "ClientRowOut": {
+        "description": "A CLI-01 row: metadata only, after `visible(scope=client)` (INV-3). No TIN, no hidden\ncount; a walled client is simply not a row.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "binder_draft_only": {
+            "cls": "internal",
+            "default": false,
+            "title": "Binder Draft Only",
+            "type": "boolean"
+          },
+          "descriptor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Descriptor"
+          },
+          "entity_count": {
+            "cls": "internal",
+            "title": "Entity Count",
+            "type": "integer"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_attest_client": {
+            "cls": "internal",
+            "title": "Is Attest Client",
+            "type": "boolean"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "household",
+                  "business",
+                  "plan_sponsor",
+                  "nonprofit",
+                  "trust_family"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Kind"
+          },
+          "last_activity_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Last Activity At"
+          },
+          "last_activity_event_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Last Activity Event Type"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "office_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Office Id"
+          },
+          "office_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Office Name"
+          },
+          "open_request_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Open Request Count"
+          },
+          "portal_status": {
+            "$ref": "#/components/schemas/InvitationStatus",
+            "cls": "internal"
+          },
+          "relationship_partner_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Relationship Partner Id"
+          },
+          "relationship_partner_initials": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Relationship Partner Initials"
+          },
+          "service_lines": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "audit",
+                "tax",
+                "cas",
+                "advisory"
+              ],
+              "type": "string"
+            },
+            "title": "Service Lines",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ClientStatus",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "status",
+          "entity_count",
+          "service_lines",
+          "is_attest_client",
+          "portal_status"
+        ],
+        "title": "ClientRowOut",
+        "type": "object"
+      },
+      "ClientStatus": {
+        "enum": [
+          "prospect",
+          "active",
+          "inactive",
+          "former"
+        ],
+        "title": "ClientStatus",
+        "type": "string"
+      },
+      "ClientStatusChangeIn": {
+        "additionalProperties": false,
+        "description": "A person may move a client to inactive or former, and back to active; prospect to active\nis a system transition (409 `illegal_transition`).",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/ClientStatus",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "ClientStatusChangeIn",
+        "type": "object"
+      },
+      "ClientTabCountsOut": {
+        "description": "CLI-02 tab counts; null where the tab's owner registers no count (the tab shows none).",
+        "properties": {
+          "contacts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Contacts"
+          },
+          "engagements": {
+            "cls": "internal",
+            "title": "Engagements",
+            "type": "integer"
+          },
+          "messages": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Messages"
+          },
+          "relationships": {
+            "cls": "internal",
+            "title": "Relationships",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "engagements",
+          "relationships"
+        ],
+        "title": "ClientTabCountsOut",
         "type": "object"
       },
       "ClientViewOut": {
@@ -11784,6 +12747,126 @@
         "title": "ListPage[BinderRowOut]",
         "type": "object"
       },
+      "ListPage_ClientRelationshipOut_": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ClientRelationshipOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListPage[ClientRelationshipOut]",
+        "type": "object"
+      },
+      "ListPage_ClientRowOut_": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ClientRowOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListPage[ClientRowOut]",
+        "type": "object"
+      },
       "ListPage_DecisionCardItemOut_": {
         "properties": {
           "counts": {
@@ -12385,6 +13468,49 @@
           "published_versions"
         ],
         "title": "MappingOut",
+        "type": "object"
+      },
+      "MaskedTinOut": {
+        "description": "A taxpayer ID as every payload but the reveal carries it: kind and last four digits\n(`XX-XXX0287`, `\u2022\u2022\u2022-\u2022\u2022-2208`). Restricted; never in a list (ADR-031, P-12).",
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "ssn",
+              "ein",
+              "itin"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "last4": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{4}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Last4"
+          },
+          "presence": {
+            "cls": "internal",
+            "enum": [
+              "on_file",
+              "applied_for"
+            ],
+            "title": "Presence",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "presence"
+        ],
+        "title": "MaskedTinOut",
         "type": "object"
       },
       "MatchProposalOut": {
@@ -23095,6 +24221,67 @@
         "title": "TimeZoneIO",
         "type": "object"
       },
+      "TinRevealIn": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "cls": "internal",
+            "enum": [
+              "prepare_return",
+              "review_return",
+              "file_or_correct_filing",
+              "respond_to_notice",
+              "verify_identity"
+            ],
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "TinRevealIn",
+        "type": "object"
+      },
+      "TinRevealOut": {
+        "description": "The plain value, once, `Cache-Control: no-store`, for the 10-second reveal. The only\npayload that carries a TIN; one `tin.revealed` audit event names the reason, never the\nvalue (P-07 Story 1.3; DEC-141).",
+        "properties": {
+          "entity_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "ssn",
+              "ein",
+              "itin"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "remask_after_seconds": {
+            "cls": "internal",
+            "default": 10,
+            "title": "Remask After Seconds",
+            "type": "integer"
+          },
+          "value": {
+            "cls": "restricted",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entity_id",
+          "kind",
+          "value"
+        ],
+        "title": "TinRevealOut",
+        "type": "object"
+      },
       "TotalsOut": {
         "properties": {
           "balanced": {
@@ -27456,6 +28643,656 @@
         "x-abacus-action": "budget.manage"
       }
     },
+    "/v1/client-entities/{entity_id}/tin/reveal": {
+      "post": {
+        "description": "Human-only: a live, onshore person with recent MFA and a reason; one `tin.revealed`\naudit event in the same unit of work (reason code, never the value).",
+        "operationId": "reveal_tin",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Entity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TinRevealIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TinRevealOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Reveal Tin Route",
+        "tags": [
+          "clients"
+        ],
+        "x-abacus-action": "tin.reveal"
+      }
+    },
+    "/v1/clients": {
+      "get": {
+        "description": "CLI-01: rows, `counts` per client status and, on request, `facets` (kind, office,\npartner, service line), after `visible(scope=client)`. `total` is exact (DEC-47); `q` is\nnever logged.",
+        "operationId": "list_clients",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "household",
+                    "business",
+                    "plan_sponsor",
+                    "nonprofit",
+                    "trust_family"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "office_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Office Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "partner_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Partner Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "service_line",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "audit",
+                    "tax",
+                    "cas",
+                    "advisory"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Service Line"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ClientStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "last_activity",
+              "enum": [
+                "last_activity",
+                "name"
+              ],
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "facets",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Facets",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPage_ClientRowOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "List Clients Route",
+        "tags": [
+          "clients"
+        ],
+        "x-abacus-action": "client.read"
+      }
+    },
+    "/v1/clients/{client_id}": {
+      "get": {
+        "operationId": "get_client",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientRecordOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Get Client Route",
+        "tags": [
+          "clients"
+        ],
+        "x-abacus-action": "client.read"
+      },
+      "patch": {
+        "description": "Descriptor, office, relationship partner and status; 409 `stale_version`, 409\n`illegal_transition`; one `client.updated` audit event.",
+        "operationId": "update_client",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientRecordOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Update Client Route",
+        "tags": [
+          "clients"
+        ],
+        "x-abacus-action": "client.update"
+      }
+    },
     "/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset": {
       "post": {
         "description": "Remove the factor, the backup codes and the trusted devices; email the client in the\nfirm's name. Needs fresh MFA. Audited as `portal.mfa.reset`.",
@@ -27719,6 +29556,256 @@
           "identity"
         ],
         "x-abacus-action": "contact.unlock"
+      }
+    },
+    "/v1/clients/{client_id}/overview": {
+      "get": {
+        "description": "Per-kind profile from registered section providers, each filtered by its own read action;\nan unregistered section is absent and an unregistered column renders \"\u2014\" (fail closed).",
+        "operationId": "client_overview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientOverviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Client Overview Route",
+        "tags": [
+          "clients"
+        ],
+        "x-abacus-action": "client.read"
+      }
+    },
+    "/v1/clients/{client_id}/relationships": {
+      "get": {
+        "operationId": "client_relationships",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPage_ClientRelationshipOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Client Relationships Route",
+        "tags": [
+          "clients"
+        ],
+        "x-abacus-action": "client.read"
       }
     },
     "/v1/connections/complete": {

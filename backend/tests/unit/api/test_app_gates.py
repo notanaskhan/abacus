@@ -170,6 +170,8 @@ NOT_CREATING = {
     # P-01-T09 (ADR-165): a refresh rotates the cookie; sign-out ends the session.
     "/v1/auth/refresh",
     "/v1/auth/sign-out",
+    # P-07-T04 (clients stub): a reveal returns the value once and stores nothing but its audit.
+    "/v1/client-entities/{entity_id}/tin/reveal",
 }
 
 

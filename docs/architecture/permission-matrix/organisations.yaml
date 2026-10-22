@@ -1,0 +1,35 @@
+# The organisations module's actions (ADR-027; P-39, F-03-T07). Compiled with every other
+# module's file into identity/authz/_matrix.py by `make regenerate`.
+
+actions:
+  # --- Clients family contract, v1 (P-07-T04 stub; P-07 §4.4; DEC-141) ---
+  # `client.read` moved here from engagements.yaml and widened to every firm role (metadata only;
+  # walls in `visible(scope=client)`, 404 semantics, DEC-43). It also guards the live client
+  # picker, GET /v1/firm/clients/search, which already drops walled clients (SPEC-025). A partner
+  # reads through their engagement roles (SPEC-014); the derived `firm_partner` cell (a partner
+  # with no active engagement) lands with the live index, P-07-T08 (DEC-141).
+  client.read:
+    firm_admin: allow
+    practice_leader: allow
+    quality_partner: allow
+    security_admin: allow
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    staff: allow
+    reviewer: allow
+    eqr_reviewer: allow
+    specialist: allow
+    client_service: allow
+    agent: deny
+    system: deny
+  # §4.4 names `firm_admin + level_in(partner, manager)`, but conditions only narrow (DEC-132),
+  # so the stub ships firm_admin and the derived `firm_partner`; the manager path is added the
+  # DEC-132 way when the route goes live (P-07-T09, DEC-141).
+  client.update:            {firm_admin: allow, firm_partner: allow, agent: deny, system: deny}
+  # Blueprint §2.4 and P-07 §4.3: a live person with recent MFA and a reason code. `not_offshore`
+  # is added with the live route (P-07-T10), as DEC-136 did for binders: a condition needs its
+  # member facts registered, and fails closed without them. The senior/staff preparer path
+  # (`function_in(preparer, first_level_reviewer)`) can't widen the action (DEC-132); P-07-T10
+  # adds it as a derived grant (DEC-141).
+  tin.reveal:               {engagement_partner: allow, manager: allow, eqr_reviewer: allow, agent: deny, system: deny, mfa_recent: required, requires: reason}
