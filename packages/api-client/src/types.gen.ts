@@ -395,6 +395,48 @@ export type AgentOut = {
 };
 
 /**
+ * AgentRunOut
+ */
+export type AgentRunOut = {
+    /**
+     * Agent
+     */
+    agent: string;
+    /**
+     * Agent Label
+     */
+    agent_label: string;
+    /**
+     * Duration Ms
+     */
+    duration_ms: number | null;
+    /**
+     * Finished At
+     */
+    finished_at: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Initiator Name
+     */
+    initiator_name: string;
+    /**
+     * Started At
+     */
+    started_at: string;
+    /**
+     * State
+     */
+    state: 'queued' | 'running' | 'succeeded' | 'needs_input' | 'failed';
+    /**
+     * Subject
+     */
+    subject: string | null;
+};
+
+/**
  * AgentsStateOut
  *
  * SPEC-027 (TASK-050): the firm-wide switch for every engagement agent.
@@ -5368,6 +5410,20 @@ export type OpenConfirmationOut = {
 };
 
 /**
+ * OutputCountOut
+ */
+export type OutputCountOut = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Kind
+     */
+    kind: string;
+};
+
+/**
  * OverdueCountOut
  */
 export type OverdueCountOut = {
@@ -5951,6 +6007,20 @@ export type ReconciliationOut = {
      * Reconciled
      */
     reconciled: boolean;
+};
+
+/**
+ * RecordsReadOut
+ */
+export type RecordsReadOut = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Source
+     */
+    source: string;
 };
 
 /**
@@ -6886,6 +6956,53 @@ export type RowStateOut = {
     item_id: string;
     prepared: RowSignOut | null;
     reviewed: RowSignOut | null;
+};
+
+/**
+ * RunTraceOut
+ */
+export type RunTraceOut = {
+    /**
+     * Attempts
+     */
+    attempts: number;
+    /**
+     * Model Text
+     */
+    model_text: string | null;
+    /**
+     * Output Counts
+     */
+    output_counts: Array<OutputCountOut>;
+    /**
+     * Records Read
+     */
+    records_read: Array<RecordsReadOut>;
+    /**
+     * Region
+     */
+    region: string;
+    /**
+     * Rows
+     */
+    rows: Array<TraceRowOut>;
+    run: AgentRunOut;
+    /**
+     * Runtime
+     */
+    runtime: string;
+    /**
+     * Tokens In
+     */
+    tokens_in: number;
+    /**
+     * Tokens Out
+     */
+    tokens_out: number;
+    /**
+     * Training
+     */
+    training: string;
 };
 
 /**
@@ -8582,6 +8699,76 @@ export type TotalsOut = {
 };
 
 /**
+ * TraceExportIn
+ */
+export type TraceExportIn = {
+    /**
+     * Format
+     */
+    format?: 'json';
+};
+
+/**
+ * TraceExportOut
+ */
+export type TraceExportOut = {
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * Filename
+     */
+    filename: string;
+    /**
+     * Renderer Version
+     */
+    renderer_version: string;
+    /**
+     * Rows
+     */
+    rows: number;
+    /**
+     * Sha256
+     */
+    sha256: string;
+};
+
+/**
+ * TraceRowOut
+ */
+export type TraceRowOut = {
+    /**
+     * Actor
+     */
+    actor: string | null;
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Detail
+     */
+    detail: string | null;
+    /**
+     * Kind
+     */
+    kind: 'start' | 'queued' | 'attempt' | 'output' | 'decision' | 'finish';
+    /**
+     * Seq
+     */
+    seq: number;
+    /**
+     * State
+     */
+    state: 'done' | 'failed' | 'waiting' | 'running' | 'info';
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * TrialBalanceDetailOut
  */
 export type TrialBalanceDetailOut = {
@@ -9285,6 +9472,110 @@ export type AbacusModulesReviewRoutesReviewNoteOut = {
      */
     target_type: string;
 };
+
+export type AgentRunTraceData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/v1/agent-runs/{run_id}/trace';
+};
+
+export type AgentRunTraceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AgentRunTraceError = AgentRunTraceErrors[keyof AgentRunTraceErrors];
+
+export type AgentRunTraceResponses = {
+    /**
+     * Successful Response
+     */
+    200: RunTraceOut;
+};
+
+export type AgentRunTraceResponse = AgentRunTraceResponses[keyof AgentRunTraceResponses];
+
+export type ExportRunTraceData = {
+    body: TraceExportIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/v1/agent-runs/{run_id}/trace-exports';
+};
+
+export type ExportRunTraceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ExportRunTraceError = ExportRunTraceErrors[keyof ExportRunTraceErrors];
+
+export type ExportRunTraceResponses = {
+    /**
+     * Successful Response
+     */
+    201: TraceExportOut;
+};
+
+export type ExportRunTraceResponse = ExportRunTraceResponses[keyof ExportRunTraceResponses];
 
 export type GetBudgetData = {
     body?: never;
@@ -10085,6 +10376,69 @@ export type AgentResponses = {
 };
 
 export type AgentResponse = AgentResponses[keyof AgentResponses];
+
+export type ListAgentRunsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: {
+        /**
+         * State
+         */
+        state?: 'active' | 'recent';
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/engagements/{engagement_id}/agent-runs';
+};
+
+export type ListAgentRunsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ListAgentRunsError = ListAgentRunsErrors[keyof ListAgentRunsErrors];
+
+export type ListAgentRunsResponses = {
+    /**
+     * Response List Agent Runs
+     *
+     * Successful Response
+     */
+    200: Array<AgentRunOut>;
+};
+
+export type ListAgentRunsResponse = ListAgentRunsResponses[keyof ListAgentRunsResponses];
 
 export type PauseAgentData = {
     body: PauseIn;

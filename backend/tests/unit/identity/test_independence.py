@@ -113,6 +113,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "adjustment.approve",  # SPEC-301 (TASK-302)
         "adjustment.propose",
         "adjustment.record_response",
+        "agent_run.read",  # SPEC-318 (TASK-461)
         "archive.lock",  # SPEC-314 (TASK-332)
         "comment.create",  # SPEC-032 (TASK-062)
         "comment.read",
@@ -159,6 +160,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "review_note.respond",
         "risk.approve",  # SPEC-300 (TASK-301)
         "risk.assess",
+        "run_trace.export",  # SPEC-318 (TASK-461)
         "sample.approve",  # SPEC-040 (TASK-100)
         "screening.request",
         "sign_off.eqr",  # SPEC-308 (TASK-319)

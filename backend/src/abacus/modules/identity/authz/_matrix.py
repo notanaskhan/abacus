@@ -62,6 +62,16 @@ ACTIONS: dict[str, dict[str, str]] = {
         "engagement_partner": "allow",
         "manager": "allow",
     },
+    "agent_run.read": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "reviewer": "allow",
+        "independence": "required",
+    },
     "archive.lock": {
         "engagement_partner": "allow",
         "manager": "allow",
@@ -778,6 +788,13 @@ ACTIONS: dict[str, dict[str, str]] = {
     "roll_forward.read": {
         "firm_admin": "allow",
         "practice_leader": "allow",
+    },
+    "run_trace.export": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "agent": "deny",
+        "independence": "required",
     },
     "sample.approve": {
         "engagement_partner": "allow",

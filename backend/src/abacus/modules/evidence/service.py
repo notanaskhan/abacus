@@ -37,6 +37,7 @@ from abacus.modules.evidence.repository import (
     assignment_for,
     clear_assignment,
     decision_for,
+    decisions_for_screenings,
     get_item,
     get_version,
     insert_decision,
@@ -774,3 +775,29 @@ async def review_waiting(ctx: AuthContext) -> list[tuple[UUID, int]]:
     for start in range(0, len(ids), 8):  # a few at a time, to spare the pool
         counted += await asyncio.gather(*(one(e) for e in ids[start : start + 8]))
     return [(e, n) for e, n in counted if n > 0]
+
+
+@dataclass(frozen=True)
+class ScreeningDecision:
+    """TASK-461: a person's decision on a version a screening proposed for (the run trace)."""
+
+    screening_result_id: UUID
+    decision: str
+    actor_kind: str
+    actor_id: str
+    at: datetime
+
+
+async def decisions_on_screenings(
+    tenant: TenantContext, screening_result_ids: list[UUID]
+) -> list[ScreeningDecision]:
+    """For a caller that has authorised on the run's engagement."""
+    async with tenant_session(tenant) as session:
+        rows = await decisions_for_screenings(session, screening_result_ids)
+    return [
+        ScreeningDecision(
+            r.screening_result_id, r.decision, r.actor_kind, r.actor_id, r.created_at
+        )
+        for r in rows
+        if r.screening_result_id is not None
+    ]

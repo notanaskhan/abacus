@@ -859,6 +859,10 @@ _SCOPE_KINDS = frozenset({"engagement", "work_item", "client", "client_entity", 
 # lookups for rows the caller has already authorised, or sign-in before a tenant exists.
 LIST_EXEMPT = frozenset(
     {
+        # SPEC-318 (TASK-461): one run's results and their decisions, read after
+        # `authorise(agent_run.read)` on the run's engagement.
+        ("src/abacus/modules/agents/repository.py", "screening_results_of_run"),
+        ("src/abacus/modules/evidence/repository.py", "decisions_for_screenings"),
         # SPEC-035 Q3 (TASK-074): a template version's drafts are firm-wide, read after
         # `authorise(template_guidance.read)` on the firm; no engagement rows.
         ("src/abacus/modules/agents/repository.py", "template_drafts"),

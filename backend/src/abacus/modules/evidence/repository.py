@@ -773,3 +773,22 @@ async def stale_pdf_uploads(
         .all()
     )
     return [("version", v) for v in versions] + [("inbox", i) for i in inbox]
+
+
+async def decisions_for_screenings(
+    session: AsyncSession, screening_result_ids: Sequence[UUID]
+) -> Sequence[ReviewDecision]:
+    """Oldest first (LIST_EXEMPT: for the run trace, after authorising on the engagement)."""
+    if not screening_result_ids:
+        return []
+    return (
+        (
+            await session.execute(
+                select(ReviewDecision)
+                .where(ReviewDecision.screening_result_id.in_(screening_result_ids))
+                .order_by(ReviewDecision.created_at)
+            )
+        )
+        .scalars()
+        .all()
+    )

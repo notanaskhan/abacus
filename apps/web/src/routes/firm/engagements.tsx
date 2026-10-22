@@ -11,6 +11,7 @@ const screens = {
   Overview: lazyScreen(async () => (await import("../../legacy/Overview")).Overview),
   DefaultToSetup: lazyScreen(async () => (await import("../../legacy/Setup")).DefaultToSetup),
   Setup: lazyScreen(async () => (await import("../../legacy/Setup")).Setup),
+  AgentRuns: lazyScreen(async () => (await import("../../legacy/AgentRuns")).AgentRuns),
   AgentActivity: lazyScreen(
     async () => (await import("../../legacy/AgentActivity")).AgentActivity,
   ),
@@ -104,7 +105,12 @@ const activityRoute = createRoute({
   path: "/activity",
   component: function ActivityPage(): JSX.Element {
     const engagementId = useParam("engagementId");
-    return <screens.AgentActivity engagementId={engagementId} />;
+    return (
+      <div className="flex flex-col gap-4">
+        <screens.AgentRuns engagementId={engagementId} />
+        <screens.AgentActivity engagementId={engagementId} />
+      </div>
+    );
   },
 });
 

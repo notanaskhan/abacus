@@ -1016,3 +1016,40 @@ async def newest_assessments(
         .scalars()
         .all()
     )
+
+
+async def engagement_runs(
+    session: AsyncSession, ctx: AuthContext, engagement_id: UUID, limit: int
+) -> Sequence[AgentRun]:
+    """TASK-461: the engagement's runs, newest first, through `visible()`; shadow runs never."""
+    return (
+        (
+            await session.execute(
+                select(AgentRun)
+                .where(
+                    AgentRun.engagement_id == engagement_id,
+                    AgentRun.shadow.is_(False),
+                    visible(ctx, "agent_run.read", _RUN_ENGAGEMENT),
+                )
+                .order_by(AgentRun.started_at.desc(), AgentRun.id.desc())
+                .limit(limit)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def screening_results_of_run(
+    session: AsyncSession, run_id: UUID
+) -> Sequence[ScreeningResult]:
+    """LIST_EXEMPT: one run's results, after authorising on its engagement."""
+    return (
+        (
+            await session.execute(
+                select(ScreeningResult).where(ScreeningResult.agent_run_id == run_id)
+            )
+        )
+        .scalars()
+        .all()
+    )
