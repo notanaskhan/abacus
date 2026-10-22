@@ -89,6 +89,10 @@ _PLATFORM_INSERT_COLUMNS: dict[str, frozenset[str]] = {
 IMMUTABLE_TABLES: dict[str, str] = {
     "email_template_versions": "email_template_versions_immutable",  # 0092 (P-01-T05)
     "field_value_versions": "field_value_versions_immutable",  # 0093 (P-04-T03)
+    "decisions": "review_rows_immutable",  # 0094 (P-04-T04)
+    "checkpoint_diffs": "review_rows_immutable",  # 0094 (P-04-T04)
+    "checkpoint_decisions": "review_rows_immutable",  # 0094 (P-04-T04)
+    "issue_events": "review_rows_immutable",  # 0094 (P-04-T04)
     "evidence_versions": "evidence_versions_immutable",
     "review_decisions": "review_decisions_immutable",
     "eval_case_results": "eval_case_results_immutable",
