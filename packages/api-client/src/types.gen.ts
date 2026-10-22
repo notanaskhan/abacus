@@ -113,6 +113,28 @@ export type AcceptanceOut = {
 };
 
 /**
+ * AcceptanceStartedOut
+ *
+ * "Start acceptance": the draft is saved, a Prospect engagement and an acceptance record
+ * exist, and CLI-07 opens on the record.
+ */
+export type AcceptanceStartedOut = {
+    /**
+     * Acceptance Record Id
+     */
+    acceptance_record_id: string;
+    /**
+     * Draft Id
+     */
+    draft_id: string;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    engagement_status: EngagementStatus;
+};
+
+/**
  * AcceptedInvitationOut
  */
 export type AcceptedInvitationOut = {
@@ -3557,6 +3579,30 @@ export type DoneOut = {
 };
 
 /**
+ * DraftCreateIn
+ */
+export type DraftCreateIn = {
+    /**
+     * Confirm Duplicate
+     */
+    confirm_duplicate?: boolean;
+};
+
+/**
+ * DraftDeadlineIn
+ */
+export type DraftDeadlineIn = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * On
+     */
+    on: string;
+};
+
+/**
  * DraftGuidanceIn
  */
 export type DraftGuidanceIn = {
@@ -3609,6 +3655,20 @@ export type DraftOut = {
 };
 
 /**
+ * DraftProblemOut
+ */
+export type DraftProblemOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Field
+     */
+    field: string;
+};
+
+/**
  * DraftStartedOut
  */
 export type DraftStartedOut = {
@@ -3623,6 +3683,20 @@ export type DraftStartedOut = {
 };
 
 /**
+ * DraftTeamMemberIn
+ */
+export type DraftTeamMemberIn = {
+    /**
+     * Role
+     */
+    role: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
  * DraftTemplateGuidanceIn
  */
 export type DraftTemplateGuidanceIn = {
@@ -3630,6 +3704,16 @@ export type DraftTemplateGuidanceIn = {
      * Positions
      */
     positions?: Array<number> | null;
+};
+
+/**
+ * DraftValidateIn
+ */
+export type DraftValidateIn = {
+    /**
+     * Step
+     */
+    step: 'client_type' | 'standards_methodology' | 'period_deadlines' | 'team_independence' | 'binder_portal' | 'letter_review';
 };
 
 /**
@@ -3762,6 +3846,289 @@ export type EngagementCountOut = {
 };
 
 /**
+ * EngagementDesignationOut
+ *
+ * ENG-02's contacts block: approver of record, SKE designee (DEC-63).
+ */
+export type EngagementDesignationOut = {
+    /**
+     * Contact Id
+     */
+    contact_id: string;
+    /**
+     * Designation
+     */
+    designation: 'approver_of_record' | 'ske_designee' | 'signing_officer' | 'plan_administrator' | 'tcwg_member' | 'primary_contact';
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * EngagementDraftDiscardedOut
+ */
+export type EngagementDraftDiscardedOut = {
+    /**
+     * Discarded At
+     */
+    discarded_at: string;
+    /**
+     * Draft Id
+     */
+    draft_id: string;
+};
+
+/**
+ * EngagementDraftIn
+ */
+export type EngagementDraftIn = {
+    /**
+     * Client Entity Id
+     */
+    client_entity_id?: string | null;
+    /**
+     * Client Id
+     */
+    client_id?: string | null;
+    payload?: EngagementDraftPayload | null;
+    /**
+     * Step
+     */
+    step?: 'client_type' | 'standards_methodology' | 'period_deadlines' | 'team_independence' | 'binder_portal' | 'letter_review';
+    /**
+     * Type Code
+     */
+    type_code?: string | null;
+};
+
+/**
+ * EngagementDraftOut
+ *
+ * A draft, its owner's only (scope own, OQ-17); "Draft · saved 9:39 AM" is `saved_at`.
+ */
+export type EngagementDraftOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Client Entity Id
+     */
+    client_entity_id?: string | null;
+    /**
+     * Client Id
+     */
+    client_id?: string | null;
+    /**
+     * Created By
+     */
+    created_by: string;
+    /**
+     * Gates
+     */
+    gates?: Array<EngagementGateOut>;
+    /**
+     * Id
+     */
+    id: string;
+    payload: EngagementDraftPayload;
+    /**
+     * Prospect Engagement Id
+     */
+    prospect_engagement_id?: string | null;
+    /**
+     * Saved At
+     */
+    saved_at: string;
+    /**
+     * Step
+     */
+    step: 'client_type' | 'standards_methodology' | 'period_deadlines' | 'team_independence' | 'binder_portal' | 'letter_review';
+    /**
+     * Type Code
+     */
+    type_code?: 'form_1040' | 'form_1041' | 'form_1065' | 'form_1120s' | 'form_1120' | 'form_990' | 'forms_706_709' | 'notice_response' | 'ebp_audit' | 'fs_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'cas_monthly_close' | 'advisory' | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * EngagementDraftPatchIn
+ *
+ * Autosave: absent fields are unchanged; `seen_version` behind answers 409 `stale_version`.
+ */
+export type EngagementDraftPatchIn = {
+    /**
+     * Client Entity Id
+     */
+    client_entity_id?: string | null;
+    /**
+     * Client Id
+     */
+    client_id?: string | null;
+    payload?: EngagementDraftPayload | null;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+    /**
+     * Step
+     */
+    step?: 'client_type' | 'standards_methodology' | 'period_deadlines' | 'team_independence' | 'binder_portal' | 'letter_review' | null;
+    /**
+     * Type Code
+     */
+    type_code?: string | null;
+};
+
+/**
+ * EngagementDraftPayload
+ *
+ * Identifiers and typed values only: no TIN and no free text beyond the engagement name
+ * (P-07 §4.2 M2). Absent fields are not chosen yet.
+ */
+export type EngagementDraftPayload = {
+    /**
+     * Deadlines
+     */
+    deadlines?: Array<DraftDeadlineIn>;
+    /**
+     * Eqr User Id
+     */
+    eqr_user_id?: string | null;
+    /**
+     * Fiscal Period End
+     */
+    fiscal_period_end?: string | null;
+    /**
+     * Fiscal Period Start
+     */
+    fiscal_period_start?: string | null;
+    /**
+     * Group Audit
+     */
+    group_audit?: boolean;
+    /**
+     * Methodology Version Id
+     */
+    methodology_version_id?: string | null;
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Period Label
+     */
+    period_label?: string | null;
+    /**
+     * Portal Contact Ids
+     */
+    portal_contact_ids?: Array<string>;
+    /**
+     * Prior Engagement Id
+     */
+    prior_engagement_id?: string | null;
+    /**
+     * Scope Code
+     */
+    scope_code?: string | null;
+    /**
+     * Standards Code
+     */
+    standards_code?: string | null;
+    /**
+     * Team
+     */
+    team?: Array<DraftTeamMemberIn>;
+};
+
+/**
+ * EngagementDraftValidationOut
+ *
+ * Per-step validation; G1 unmet on step 1 disables Next (ENG-03 d).
+ */
+export type EngagementDraftValidationOut = {
+    /**
+     * Draft Id
+     */
+    draft_id: string;
+    /**
+     * Gates
+     */
+    gates?: Array<EngagementGateOut>;
+    /**
+     * Problems
+     */
+    problems?: Array<DraftProblemOut>;
+    /**
+     * Step
+     */
+    step: 'client_type' | 'standards_methodology' | 'period_deadlines' | 'team_independence' | 'binder_portal' | 'letter_review';
+    /**
+     * Valid
+     */
+    valid: boolean;
+};
+
+/**
+ * EngagementFromDraftOut
+ *
+ * One unit of work: the engagement (Accepted), its work items by type cardinality, the team
+ * and independence requests, the methodology pin and `engagement.created`.
+ */
+export type EngagementFromDraftOut = {
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    engagement_status: EngagementStatus;
+    /**
+     * Independence Requested User Ids
+     */
+    independence_requested_user_ids?: Array<string>;
+    /**
+     * Methodology Version Id
+     */
+    methodology_version_id?: string | null;
+    /**
+     * Work Item Ids
+     */
+    work_item_ids: Array<string>;
+};
+
+/**
+ * EngagementGateOut
+ *
+ * One gate from its registered provider (G1, G2 and the interim G3 in P-07; G4 to G9 when
+ * A-04, A-06 and A-07 register). Met, blocked (blockers) or not started (neither).
+ */
+export type EngagementGateOut = {
+    /**
+     * Blockers
+     */
+    blockers?: Array<GateBlockerRefOut>;
+    /**
+     * Gate
+     */
+    gate: 'G1' | 'G2' | 'G3' | 'G4' | 'G5' | 'G6' | 'G7' | 'G8' | 'G9';
+    /**
+     * Met
+     */
+    met: boolean;
+    /**
+     * Met At
+     */
+    met_at?: string | null;
+    /**
+     * Met By User Id
+     */
+    met_by_user_id?: string | null;
+};
+
+/**
  * EngagementGraphOut
  */
 export type EngagementGraphOut = {
@@ -3830,6 +4197,239 @@ export type EngagementIn = {
 };
 
 /**
+ * EngagementIndexPage
+ *
+ * The P-36 envelope: `counts` per engagement status minus the selected tile (the seven tiles;
+ * `declined` never shows), `facets.service_line` the segments; both from one grouped query. The
+ * tiles sum to `total`.
+ */
+export type EngagementIndexPage = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<EngagementIndexRowOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    summary: EngagementIndexSummaryOut;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * EngagementIndexRowOut
+ *
+ * An ENG-01 row: metadata only, after `visible()` (INV-3).
+ */
+export type EngagementIndexRowOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Fiscal Period End
+     */
+    fiscal_period_end: string;
+    /**
+     * Fiscal Period Start
+     */
+    fiscal_period_start: string;
+    /**
+     * Id
+     */
+    id: string;
+    letter: EngagementLetterSummaryOut;
+    /**
+     * Name
+     */
+    name: string;
+    next_due?: EngagementNextDueOut | null;
+    /**
+     * Office Id
+     */
+    office_id?: string | null;
+    /**
+     * Office Name
+     */
+    office_name?: string | null;
+    /**
+     * Partner Initials
+     */
+    partner_initials?: string | null;
+    /**
+     * Partner User Id
+     */
+    partner_user_id?: string | null;
+    /**
+     * Period Label
+     */
+    period_label?: string | null;
+    /**
+     * Service Line
+     */
+    service_line: 'audit' | 'tax' | 'cas' | 'advisory';
+    status: EngagementStatus;
+    /**
+     * Type
+     */
+    type: 'fs_audit' | 'ebp_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'readiness' | 'internal_audit' | 'tax_compliance' | 'cas_monthly_close' | 'notice_response' | 'advisory';
+    /**
+     * Work Items
+     */
+    work_items?: Array<EngagementWorkItemLineOut>;
+};
+
+/**
+ * EngagementIndexSummaryOut
+ *
+ * The ENG-01 summary line, over the same `visible()` predicate as the rows.
+ */
+export type EngagementIndexSummaryOut = {
+    /**
+     * Awaiting Letter
+     */
+    awaiting_letter: number;
+    /**
+     * Past Due
+     */
+    past_due: number;
+    /**
+     * Prospect
+     */
+    prospect: number;
+};
+
+/**
+ * EngagementLetterRecordOut
+ */
+export type EngagementLetterRecordOut = {
+    /**
+     * Acceptance Decided At
+     */
+    acceptance_decided_at: string;
+    /**
+     * Client Signed On
+     */
+    client_signed_on?: string | null;
+    /**
+     * Client Signer Contact Id
+     */
+    client_signer_contact_id?: string | null;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    engagement_status: EngagementStatus;
+    /**
+     * Firm Signed On
+     */
+    firm_signed_on?: string | null;
+    /**
+     * Firm Signer User Id
+     */
+    firm_signer_user_id?: string | null;
+    /**
+     * Mode
+     */
+    mode: 'signed' | 'not_required_this_year';
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
+    /**
+     * Recorded By
+     */
+    recorded_by: string;
+    /**
+     * Signed Copy Version Id
+     */
+    signed_copy_version_id?: string | null;
+    status: LetterRecordStatus;
+};
+
+/**
+ * EngagementLetterSummaryOut
+ *
+ * ENG-01's Letter column and ENG-02's summary: "✓ Signed {date}", "Sent {date} · 1 of 2".
+ */
+export type EngagementLetterSummaryOut = {
+    /**
+     * Last Event
+     */
+    last_event?: 'sent' | 'viewed' | null;
+    /**
+     * Last Event On
+     */
+    last_event_on?: string | null;
+    /**
+     * Not Required This Year
+     */
+    not_required_this_year?: boolean;
+    /**
+     * Signed Count
+     */
+    signed_count?: number;
+    /**
+     * Signed On
+     */
+    signed_on?: string | null;
+    /**
+     * Signer Count
+     */
+    signer_count?: number;
+    status: LetterRecordStatus;
+};
+
+/**
+ * EngagementNextDueOut
+ */
+export type EngagementNextDueOut = {
+    /**
+     * Label
+     */
+    label?: string | null;
+    /**
+     * On
+     */
+    on: string;
+    /**
+     * Tone
+     */
+    tone: 'past_due' | 'soon' | 'normal';
+};
+
+/**
  * EngagementOut
  */
 export type EngagementOut = {
@@ -3893,6 +4493,132 @@ export type EngagementOut = {
 };
 
 /**
+ * EngagementRailBandOut
+ *
+ * A rail band. Content bands need `engagement.read`; a metadata-only role gets the others.
+ */
+export type EngagementRailBandOut = {
+    /**
+     * Band
+     */
+    band: 'details' | 'review_delivery' | 'client_portal';
+    /**
+     * Rows
+     */
+    rows: Array<EngagementRailRowOut>;
+};
+
+/**
+ * EngagementRailRowOut
+ */
+export type EngagementRailRowOut = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * On
+     */
+    on?: string | null;
+    /**
+     * Pill Code
+     */
+    pill_code?: string | null;
+    /**
+     * Pill Object
+     */
+    pill_object?: string | null;
+    /**
+     * Text
+     */
+    text?: string | null;
+    /**
+     * User Id
+     */
+    user_id?: string | null;
+};
+
+/**
+ * EngagementRecordOut
+ *
+ * The extended C1 projection (C1 v1.1): subbar facts, rail bands, contacts, letter summary,
+ * gates, tab counts and why it is read-only.
+ */
+export type EngagementRecordOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Bands
+     */
+    bands: Array<EngagementRailBandOut>;
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Client Entity Name
+     */
+    client_entity_name: string;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Contacts
+     */
+    contacts?: Array<EngagementDesignationOut>;
+    /**
+     * Fiscal Period End
+     */
+    fiscal_period_end: string;
+    /**
+     * Fiscal Period Start
+     */
+    fiscal_period_start: string;
+    /**
+     * Gates
+     */
+    gates: Array<EngagementGateOut>;
+    /**
+     * Id
+     */
+    id: string;
+    letter: EngagementLetterSummaryOut;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Period Label
+     */
+    period_label?: string | null;
+    /**
+     * Read Only Reason
+     */
+    read_only_reason?: 'archived' | null;
+    /**
+     * Service Line
+     */
+    service_line: 'audit' | 'tax' | 'cas' | 'advisory';
+    status: EngagementStatus;
+    tab_counts: EngagementTabCountsOut;
+    /**
+     * Type
+     */
+    type: 'fs_audit' | 'ebp_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'readiness' | 'internal_audit' | 'tax_compliance' | 'cas_monthly_close' | 'notice_response' | 'advisory';
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * EngagementStatus
  */
 export type EngagementStatus = 'prospect' | 'accepted' | 'declined' | 'contracted' | 'active' | 'on_hold' | 'delivered' | 'archived';
@@ -3946,6 +4672,120 @@ export type EngagementSummaryOut = {
      * Type
      */
     type: 'fs_audit' | 'ebp_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'readiness' | 'internal_audit' | 'tax_compliance' | 'cas_monthly_close' | 'notice_response' | 'advisory';
+};
+
+/**
+ * EngagementTabCountsOut
+ */
+export type EngagementTabCountsOut = {
+    /**
+     * Team
+     */
+    team: number;
+    /**
+     * Work Items
+     */
+    work_items: number;
+};
+
+/**
+ * EngagementTypeCatalogueOut
+ */
+export type EngagementTypeCatalogueOut = {
+    /**
+     * Items
+     */
+    items: Array<EngagementTypeEntryOut>;
+};
+
+/**
+ * EngagementTypeEntryOut
+ *
+ * One TypeCard. Labels are the copy registry's (OQ-15), held with the code catalogue.
+ */
+export type EngagementTypeEntryOut = {
+    /**
+     * Availability
+     */
+    availability: 'available' | 'needs_entitlement';
+    /**
+     * Code
+     */
+    code: 'form_1040' | 'form_1041' | 'form_1065' | 'form_1120s' | 'form_1120' | 'form_990' | 'forms_706_709' | 'notice_response' | 'ebp_audit' | 'fs_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'cas_monthly_close' | 'advisory';
+    /**
+     * Engagement Type
+     */
+    engagement_type: 'fs_audit' | 'ebp_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'readiness' | 'internal_audit' | 'tax_compliance' | 'cas_monthly_close' | 'notice_response' | 'advisory';
+    /**
+     * Entitlement
+     */
+    entitlement?: 'attest' | 'group_audit' | null;
+    /**
+     * Family
+     */
+    family: 'tax' | 'audit_assurance' | 'cas_advisory';
+    /**
+     * Group Audit Allowed
+     */
+    group_audit_allowed?: boolean;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Standard Line
+     */
+    standard_line: string;
+    /**
+     * Steps
+     */
+    steps: Array<EngagementTypeStepOut>;
+    /**
+     * Work Item Kind
+     */
+    work_item_kind: 'assurance' | 'tax_return' | 'close' | 'notice' | 'advisory_project';
+};
+
+/**
+ * EngagementTypeStepOut
+ */
+export type EngagementTypeStepOut = {
+    /**
+     * Field Codes
+     */
+    field_codes: Array<string>;
+    /**
+     * Step
+     */
+    step: 'client_type' | 'standards_methodology' | 'period_deadlines' | 'team_independence' | 'binder_portal' | 'letter_review';
+};
+
+/**
+ * EngagementWorkItemLineOut
+ *
+ * A work-item sub-line from its kind's provider, in the kind's own status words.
+ */
+export type EngagementWorkItemLineOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'assurance' | 'tax_return' | 'close' | 'notice' | 'advisory_project';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Pill Code
+     */
+    pill_code?: string | null;
+    /**
+     * Pill Object
+     */
+    pill_object?: string | null;
 };
 
 /**
@@ -4672,6 +5512,26 @@ export type GapOut = {
      * Needed
      */
     needed: Array<string>;
+};
+
+/**
+ * GateBlockerRefOut
+ *
+ * What blocks a gate: an opaque reference and a registered reason code, never prose.
+ */
+export type GateBlockerRefOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Reason Code
+     */
+    reason_code: string;
+    /**
+     * Type
+     */
+    type: string;
 };
 
 /**
@@ -5871,6 +6731,49 @@ export type LetterPolicyOut = {
      */
     required: boolean;
 };
+
+/**
+ * LetterRecordIn
+ *
+ * "Record signed letter…": both parties' dates on or after the G1 decision (409
+ * `letter_before_acceptance`); or the EP's "Not required this year" with a reason, only while
+ * the firm setting `allow_letter_exceptions` is on.
+ */
+export type LetterRecordIn = {
+    /**
+     * Client Signed On
+     */
+    client_signed_on?: string | null;
+    /**
+     * Client Signer Contact Id
+     */
+    client_signer_contact_id?: string | null;
+    /**
+     * Firm Signed On
+     */
+    firm_signed_on?: string | null;
+    /**
+     * Firm Signer User Id
+     */
+    firm_signer_user_id?: string | null;
+    /**
+     * Mode
+     */
+    mode: 'signed' | 'not_required_this_year';
+    /**
+     * Not Required Reason
+     */
+    not_required_reason?: string | null;
+    /**
+     * Signed Copy Version Id
+     */
+    signed_copy_version_id?: string | null;
+};
+
+/**
+ * LetterRecordStatus
+ */
+export type LetterRecordStatus = 'not_signed' | 'signed';
 
 /**
  * LineBody
@@ -14496,6 +15399,460 @@ export type DecisionCardReassessResponses = {
 
 export type DecisionCardReassessResponse = DecisionCardReassessResponses[keyof DecisionCardReassessResponses];
 
+export type CreateEngagementDraftData = {
+    body: EngagementDraftIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/engagement-drafts';
+};
+
+export type CreateEngagementDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CreateEngagementDraftError = CreateEngagementDraftErrors[keyof CreateEngagementDraftErrors];
+
+export type CreateEngagementDraftResponses = {
+    /**
+     * Successful Response
+     */
+    201: EngagementDraftOut;
+};
+
+export type CreateEngagementDraftResponse = CreateEngagementDraftResponses[keyof CreateEngagementDraftResponses];
+
+export type DiscardEngagementDraftData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Draft Id
+         */
+        draft_id: string;
+    };
+    query?: never;
+    url: '/v1/engagement-drafts/{draft_id}';
+};
+
+export type DiscardEngagementDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DiscardEngagementDraftError = DiscardEngagementDraftErrors[keyof DiscardEngagementDraftErrors];
+
+export type DiscardEngagementDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: EngagementDraftDiscardedOut;
+};
+
+export type DiscardEngagementDraftResponse = DiscardEngagementDraftResponses[keyof DiscardEngagementDraftResponses];
+
+export type GetEngagementDraftData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Draft Id
+         */
+        draft_id: string;
+    };
+    query?: never;
+    url: '/v1/engagement-drafts/{draft_id}';
+};
+
+export type GetEngagementDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetEngagementDraftError = GetEngagementDraftErrors[keyof GetEngagementDraftErrors];
+
+export type GetEngagementDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: EngagementDraftOut;
+};
+
+export type GetEngagementDraftResponse = GetEngagementDraftResponses[keyof GetEngagementDraftResponses];
+
+export type UpdateEngagementDraftData = {
+    body: EngagementDraftPatchIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Draft Id
+         */
+        draft_id: string;
+    };
+    query?: never;
+    url: '/v1/engagement-drafts/{draft_id}';
+};
+
+export type UpdateEngagementDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UpdateEngagementDraftError = UpdateEngagementDraftErrors[keyof UpdateEngagementDraftErrors];
+
+export type UpdateEngagementDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: EngagementDraftOut;
+};
+
+export type UpdateEngagementDraftResponse = UpdateEngagementDraftResponses[keyof UpdateEngagementDraftResponses];
+
+export type CreateEngagementFromDraftData = {
+    body: DraftCreateIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Draft Id
+         */
+        draft_id: string;
+    };
+    query?: never;
+    url: '/v1/engagement-drafts/{draft_id}/create';
+};
+
+export type CreateEngagementFromDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CreateEngagementFromDraftError = CreateEngagementFromDraftErrors[keyof CreateEngagementFromDraftErrors];
+
+export type CreateEngagementFromDraftResponses = {
+    /**
+     * Successful Response
+     */
+    201: EngagementFromDraftOut;
+};
+
+export type CreateEngagementFromDraftResponse = CreateEngagementFromDraftResponses[keyof CreateEngagementFromDraftResponses];
+
+export type StartAcceptanceFromDraftData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Draft Id
+         */
+        draft_id: string;
+    };
+    query?: never;
+    url: '/v1/engagement-drafts/{draft_id}/start-acceptance';
+};
+
+export type StartAcceptanceFromDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type StartAcceptanceFromDraftError = StartAcceptanceFromDraftErrors[keyof StartAcceptanceFromDraftErrors];
+
+export type StartAcceptanceFromDraftResponses = {
+    /**
+     * Successful Response
+     */
+    201: AcceptanceStartedOut;
+};
+
+export type StartAcceptanceFromDraftResponse = StartAcceptanceFromDraftResponses[keyof StartAcceptanceFromDraftResponses];
+
+export type ValidateEngagementDraftData = {
+    body: DraftValidateIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Draft Id
+         */
+        draft_id: string;
+    };
+    query?: never;
+    url: '/v1/engagement-drafts/{draft_id}/validate';
+};
+
+export type ValidateEngagementDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ValidateEngagementDraftError = ValidateEngagementDraftErrors[keyof ValidateEngagementDraftErrors];
+
+export type ValidateEngagementDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: EngagementDraftValidationOut;
+};
+
+export type ValidateEngagementDraftResponse = ValidateEngagementDraftResponses[keyof ValidateEngagementDraftResponses];
+
+export type EngagementTypesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/engagement-types';
+};
+
+export type EngagementTypesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EngagementTypesError = EngagementTypesErrors[keyof EngagementTypesErrors];
+
+export type EngagementTypesResponses = {
+    /**
+     * Successful Response
+     */
+    200: EngagementTypeCatalogueOut;
+};
+
+export type EngagementTypesResponse = EngagementTypesResponses[keyof EngagementTypesResponses];
+
 export type ListEngagementsData = {
     body?: never;
     headers?: {
@@ -14595,6 +15952,106 @@ export type CreateEngagementResponses = {
 };
 
 export type CreateEngagementResponse = CreateEngagementResponses[keyof CreateEngagementResponses];
+
+export type EngagementIndexData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Service Line
+         */
+        service_line?: 'audit' | 'tax' | 'cas' | 'advisory' | null;
+        /**
+         * Status
+         */
+        status?: EngagementStatus | null;
+        /**
+         * Tile
+         */
+        tile?: EngagementStatus | null;
+        /**
+         * Office Id
+         */
+        office_id?: string | null;
+        /**
+         * Partner Id
+         */
+        partner_id?: string | null;
+        /**
+         * Letter
+         */
+        letter?: LetterRecordStatus | null;
+        /**
+         * Next Due
+         */
+        next_due?: 'past_due' | 'within_7_days' | 'within_30_days' | null;
+        /**
+         * Period
+         */
+        period?: 'current' | 'prior' | 'all';
+        /**
+         * Client Id
+         */
+        client_id?: string | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/engagements/index';
+};
+
+export type EngagementIndexErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EngagementIndexError = EngagementIndexErrors[keyof EngagementIndexErrors];
+
+export type EngagementIndexResponses = {
+    /**
+     * Successful Response
+     */
+    200: EngagementIndexPage;
+};
+
+export type EngagementIndexResponse = EngagementIndexResponses[keyof EngagementIndexResponses];
 
 export type ProposalData = {
     body: RollForwardProposalIn;
@@ -18290,6 +19747,64 @@ export type SendDraftResponses = {
 
 export type SendDraftResponse = SendDraftResponses[keyof SendDraftResponses];
 
+export type EngagementGatesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/gates';
+};
+
+export type EngagementGatesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EngagementGatesError = EngagementGatesErrors[keyof EngagementGatesErrors];
+
+export type EngagementGatesResponses = {
+    /**
+     * Response Engagement Gates
+     *
+     * Successful Response
+     */
+    200: Array<EngagementGateOut>;
+};
+
+export type EngagementGatesResponse = EngagementGatesResponses[keyof EngagementGatesResponses];
+
 export type EngagementGraphData = {
     body?: never;
     headers?: {
@@ -19143,6 +20658,66 @@ export type LetterFileResponses = {
 };
 
 export type LetterFileResponse = LetterFileResponses[keyof LetterFileResponses];
+
+export type RecordEngagementLetterData = {
+    body: LetterRecordIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/letter/record';
+};
+
+export type RecordEngagementLetterErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RecordEngagementLetterError = RecordEngagementLetterErrors[keyof RecordEngagementLetterErrors];
+
+export type RecordEngagementLetterResponses = {
+    /**
+     * Successful Response
+     */
+    200: EngagementLetterRecordOut;
+};
+
+export type RecordEngagementLetterResponse = RecordEngagementLetterResponses[keyof RecordEngagementLetterResponses];
 
 export type MaterialityData = {
     body?: never;
@@ -21150,6 +22725,62 @@ export type SignReviewedResponses = {
 };
 
 export type SignReviewedResponse = SignReviewedResponses[keyof SignReviewedResponses];
+
+export type EngagementRecordData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/record';
+};
+
+export type EngagementRecordErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EngagementRecordError = EngagementRecordErrors[keyof EngagementRecordErrors];
+
+export type EngagementRecordResponses = {
+    /**
+     * Successful Response
+     */
+    200: EngagementRecordOut;
+};
+
+export type EngagementRecordResponse = EngagementRecordResponses[keyof EngagementRecordResponses];
 
 export type RepresentationsData = {
     body?: never;

@@ -16,6 +16,7 @@ from abacus_tools.codegen.security_tests import served
 from .route_checks import app, openapi_problems, public_problems, route_problems
 
 ROUTES: tuple[tuple[str, str, str], ...] = (
+    ("DELETE", "/v1/engagement-drafts/{draft_id}", "engagement.create"),
     (
         "DELETE",
         "/v1/engagements/{engagement_id}/client-contacts/{user_id}",
@@ -39,7 +40,10 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/clients/{client_id}/relationships", "client.read"),
     ("GET", "/v1/decision-cards", "decision.read"),
     ("GET", "/v1/decision-cards/{card_id}", "decision.read"),
+    ("GET", "/v1/engagement-drafts/{draft_id}", "engagement.create"),
+    ("GET", "/v1/engagement-types", "engagement.create"),
     ("GET", "/v1/engagements", "engagement.read_metadata"),
+    ("GET", "/v1/engagements/index", "engagement.read_metadata"),
     ("GET", "/v1/engagements/{engagement_id}", "engagement.read_metadata"),
     ("GET", "/v1/engagements/{engagement_id}/activity", "activity.read"),
     ("GET", "/v1/engagements/{engagement_id}/adjustments", "procedure.read"),
@@ -86,6 +90,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/engagements/{engagement_id}/findings", "procedure.read"),
     ("GET", "/v1/engagements/{engagement_id}/findings/summary", "procedure.read"),
     ("GET", "/v1/engagements/{engagement_id}/follow-ups", "follow_up.draft"),
+    ("GET", "/v1/engagements/{engagement_id}/gates", "engagement.read_metadata"),
     ("GET", "/v1/engagements/{engagement_id}/graph", "engagement.read"),
     ("GET", "/v1/engagements/{engagement_id}/guidance-drafts", "guidance_draft.read"),
     ("GET", "/v1/engagements/{engagement_id}/inbox", "evidence.upload"),
@@ -119,6 +124,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper/file",
         "procedure.read",
     ),
+    ("GET", "/v1/engagements/{engagement_id}/record", "engagement.read_metadata"),
     ("GET", "/v1/engagements/{engagement_id}/representations", "procedure.read"),
     ("GET", "/v1/engagements/{engagement_id}/request-items", "request_item.read"),
     ("GET", "/v1/engagements/{engagement_id}/request-items/client-done", "request_item.read"),
@@ -246,6 +252,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/walls", "wall.list"),
     ("GET", "/v1/work-items", "work_item.read_metadata"),
     ("PATCH", "/v1/clients/{client_id}", "client.update"),
+    ("PATCH", "/v1/engagement-drafts/{draft_id}", "engagement.create"),
     ("PATCH", "/v1/engagements/{engagement_id}/request-items/{item_id}", "request_item.update"),
     ("POST", "/v1/agent-runs/{run_id}/trace-exports", "run_trace.export"),
     ("POST", "/v1/auth/refresh", "pre_session"),
@@ -263,6 +270,10 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/decision-cards/{card_id}/decide", "decision.decide"),
     ("POST", "/v1/decision-cards/{card_id}/notify", "decision.notify"),
     ("POST", "/v1/decision-cards/{card_id}/reassess", "decision.reassess"),
+    ("POST", "/v1/engagement-drafts", "engagement.create"),
+    ("POST", "/v1/engagement-drafts/{draft_id}/create", "engagement.create"),
+    ("POST", "/v1/engagement-drafts/{draft_id}/start-acceptance", "client.intake"),
+    ("POST", "/v1/engagement-drafts/{draft_id}/validate", "engagement.create"),
     ("POST", "/v1/engagements", "engagement.create"),
     ("POST", "/v1/engagements/proposal", "engagement.create"),
     ("POST", "/v1/engagements/{engagement_id}/acceptance/file", "acceptance.record"),
@@ -689,6 +700,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("PUT", "/v1/engagements/{engagement_id}/ai-exclusion", "engagement.ai_exclude"),
     ("PUT", "/v1/engagements/{engagement_id}/fieldwork/accounts", "procedure.configure"),
     ("PUT", "/v1/engagements/{engagement_id}/letter", "letter.record"),
+    ("PUT", "/v1/engagements/{engagement_id}/letter/record", "letter.record"),
     ("PUT", "/v1/engagements/{engagement_id}/materiality", "materiality.set"),
     (
         "PUT",

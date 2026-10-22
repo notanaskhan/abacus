@@ -1,5 +1,5 @@
 ---
-id: TASK-434
+id: TASK-470
 title: Clients family contract stub v1 (organisations) - classified models, 501 routes for the clients index, record, overview, PATCH, relationships and TIN reveal, matrix rows, clients.v2 flag, import ban, contract doc (P-07-T04)
 spec: SPEC-321
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5]
@@ -30,6 +30,7 @@ updated: 2026-10-23
 
 ## Progress log
 - 2026-10-23: built on origin/main at acda5f2. `make regenerate`, `make generate`, `make check-generated` clean; no new `abacus__`-prefixed schema; `tests/contracts/clients` 15 passed; `tests/unit/api`, `test_independence`, `test_classification`, `test_f03_status_vocabulary`, `test_permission_matrix_generated`, `test_route_introspection` 4328 passed. A nullable `status` on the PATCH body failed F-03-T10's "every status field is an enum" check (an `anyOf`), so the change is nested as `status_change` (DEC-141) rather than editing the test. `tests/unit/tools/test_feature_flag_override.py` (F-03-T37) refuses any flag expiring before Feb 1, 2027, so `clients.v2` carries DEC-137's override to 2027-04-21. `tests/unit/identity/test_permission_matrix.py` drives every allowed cell through `authorise` without member facts: `not_offshore` denies at the condition layer and `firm_partner` on a read looks up the member's level in the database, so both wait for the live routes (DEC-141).
+- 2026-10-23: renumbered TASK-434 to TASK-470 in P-07-T05's PR: another session merged TASK-434-white-label-isolation at the same time.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

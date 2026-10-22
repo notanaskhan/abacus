@@ -20,6 +20,7 @@ export const ACTIONS = [
   "binder.update",
   "budget.manage",
   "budget.read",
+  "client.intake",
   "client.read",
   "client.update",
   "client_access.grant",

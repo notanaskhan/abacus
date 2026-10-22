@@ -260,6 +260,41 @@
         "title": "AcceptanceOut",
         "type": "object"
       },
+      "AcceptanceStartedOut": {
+        "description": "\"Start acceptance\": the draft is saved, a Prospect engagement and an acceptance record\nexist, and CLI-07 opens on the record.",
+        "properties": {
+          "acceptance_record_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Acceptance Record Id",
+            "type": "string"
+          },
+          "draft_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Draft Id",
+            "type": "string"
+          },
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          },
+          "engagement_status": {
+            "$ref": "#/components/schemas/EngagementStatus",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "draft_id",
+          "engagement_id",
+          "acceptance_record_id",
+          "engagement_status"
+        ],
+        "title": "AcceptanceStartedOut",
+        "type": "object"
+      },
       "AcceptedInvitationOut": {
         "properties": {
           "engagement_id": {
@@ -7646,6 +7681,42 @@
         "title": "DoneOut",
         "type": "object"
       },
+      "DraftCreateIn": {
+        "additionalProperties": false,
+        "properties": {
+          "confirm_duplicate": {
+            "cls": "internal",
+            "default": false,
+            "title": "Confirm Duplicate",
+            "type": "boolean"
+          }
+        },
+        "title": "DraftCreateIn",
+        "type": "object"
+      },
+      "DraftDeadlineIn": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "pattern": "^[a-z0-9_]{1,40}$",
+            "title": "Code",
+            "type": "string"
+          },
+          "on": {
+            "cls": "internal",
+            "format": "date",
+            "title": "On",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "on"
+        ],
+        "title": "DraftDeadlineIn",
+        "type": "object"
+      },
       "DraftGuidanceIn": {
         "additionalProperties": false,
         "properties": {
@@ -7736,6 +7807,26 @@
         "title": "DraftOut",
         "type": "object"
       },
+      "DraftProblemOut": {
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "field": {
+            "cls": "internal",
+            "title": "Field",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "code"
+        ],
+        "title": "DraftProblemOut",
+        "type": "object"
+      },
       "DraftStartedOut": {
         "properties": {
           "items": {
@@ -7764,6 +7855,29 @@
         "title": "DraftStartedOut",
         "type": "object"
       },
+      "DraftTeamMemberIn": {
+        "additionalProperties": false,
+        "properties": {
+          "role": {
+            "cls": "internal",
+            "pattern": "^[a-z_]{1,40}$",
+            "title": "Role",
+            "type": "string"
+          },
+          "user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "role"
+        ],
+        "title": "DraftTeamMemberIn",
+        "type": "object"
+      },
       "DraftTemplateGuidanceIn": {
         "additionalProperties": false,
         "properties": {
@@ -7786,6 +7900,29 @@
           }
         },
         "title": "DraftTemplateGuidanceIn",
+        "type": "object"
+      },
+      "DraftValidateIn": {
+        "additionalProperties": false,
+        "properties": {
+          "step": {
+            "cls": "internal",
+            "enum": [
+              "client_type",
+              "standards_methodology",
+              "period_deadlines",
+              "team_independence",
+              "binder_portal",
+              "letter_review"
+            ],
+            "title": "Step",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step"
+        ],
+        "title": "DraftValidateIn",
         "type": "object"
       },
       "DraftedGuidanceIO": {
@@ -8021,6 +8158,704 @@
         "title": "EngagementCountOut",
         "type": "object"
       },
+      "EngagementDesignationOut": {
+        "description": "ENG-02's contacts block: approver of record, SKE designee (DEC-63).",
+        "properties": {
+          "contact_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Contact Id",
+            "type": "string"
+          },
+          "designation": {
+            "cls": "internal",
+            "enum": [
+              "approver_of_record",
+              "ske_designee",
+              "signing_officer",
+              "plan_administrator",
+              "tcwg_member",
+              "primary_contact"
+            ],
+            "title": "Designation",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "designation",
+          "contact_id",
+          "name"
+        ],
+        "title": "EngagementDesignationOut",
+        "type": "object"
+      },
+      "EngagementDraftDiscardedOut": {
+        "properties": {
+          "discarded_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Discarded At",
+            "type": "string"
+          },
+          "draft_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Draft Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "draft_id",
+          "discarded_at"
+        ],
+        "title": "EngagementDraftDiscardedOut",
+        "type": "object"
+      },
+      "EngagementDraftIn": {
+        "additionalProperties": false,
+        "properties": {
+          "client_entity_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Entity Id"
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Id"
+          },
+          "payload": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EngagementDraftPayload"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
+          "step": {
+            "cls": "internal",
+            "default": "client_type",
+            "enum": [
+              "client_type",
+              "standards_methodology",
+              "period_deadlines",
+              "team_independence",
+              "binder_portal",
+              "letter_review"
+            ],
+            "title": "Step",
+            "type": "string"
+          },
+          "type_code": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z0-9_]{1,40}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Type Code"
+          }
+        },
+        "title": "EngagementDraftIn",
+        "type": "object"
+      },
+      "EngagementDraftOut": {
+        "description": "A draft, its owner's only (scope own, OQ-17); \"Draft \u00b7 saved 9:39 AM\" is `saved_at`.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "client_entity_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Entity Id"
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Id"
+          },
+          "created_by": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Created By",
+            "type": "string"
+          },
+          "gates": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EngagementGateOut"
+            },
+            "title": "Gates",
+            "type": "array"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/EngagementDraftPayload",
+            "cls": "confidential"
+          },
+          "prospect_engagement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Prospect Engagement Id"
+          },
+          "saved_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Saved At",
+            "type": "string"
+          },
+          "step": {
+            "cls": "internal",
+            "enum": [
+              "client_type",
+              "standards_methodology",
+              "period_deadlines",
+              "team_independence",
+              "binder_portal",
+              "letter_review"
+            ],
+            "title": "Step",
+            "type": "string"
+          },
+          "type_code": {
+            "anyOf": [
+              {
+                "enum": [
+                  "form_1040",
+                  "form_1041",
+                  "form_1065",
+                  "form_1120s",
+                  "form_1120",
+                  "form_990",
+                  "forms_706_709",
+                  "notice_response",
+                  "ebp_audit",
+                  "fs_audit",
+                  "review",
+                  "compilation",
+                  "preparation",
+                  "agreed_upon_procedures",
+                  "soc1",
+                  "soc2",
+                  "cas_monthly_close",
+                  "advisory"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Type Code"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "created_by",
+          "step",
+          "payload",
+          "version",
+          "saved_at"
+        ],
+        "title": "EngagementDraftOut",
+        "type": "object"
+      },
+      "EngagementDraftPatchIn": {
+        "additionalProperties": false,
+        "description": "Autosave: absent fields are unchanged; `seen_version` behind answers 409 `stale_version`.",
+        "properties": {
+          "client_entity_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Entity Id"
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Id"
+          },
+          "payload": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EngagementDraftPayload"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Seen Version",
+            "type": "integer"
+          },
+          "step": {
+            "anyOf": [
+              {
+                "enum": [
+                  "client_type",
+                  "standards_methodology",
+                  "period_deadlines",
+                  "team_independence",
+                  "binder_portal",
+                  "letter_review"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Step"
+          },
+          "type_code": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z0-9_]{1,40}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Type Code"
+          }
+        },
+        "required": [
+          "seen_version"
+        ],
+        "title": "EngagementDraftPatchIn",
+        "type": "object"
+      },
+      "EngagementDraftPayload": {
+        "additionalProperties": false,
+        "description": "Identifiers and typed values only: no TIN and no free text beyond the engagement name\n(P-07 \u00a74.2 M2). Absent fields are not chosen yet.",
+        "properties": {
+          "deadlines": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/DraftDeadlineIn"
+            },
+            "maxItems": 20,
+            "title": "Deadlines",
+            "type": "array"
+          },
+          "eqr_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Eqr User Id"
+          },
+          "fiscal_period_end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Fiscal Period End"
+          },
+          "fiscal_period_start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Fiscal Period Start"
+          },
+          "group_audit": {
+            "cls": "internal",
+            "default": false,
+            "title": "Group Audit",
+            "type": "boolean"
+          },
+          "methodology_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Methodology Version Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Name"
+          },
+          "period_label": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Period Label"
+          },
+          "portal_contact_ids": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Portal Contact Ids",
+            "type": "array"
+          },
+          "prior_engagement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Prior Engagement Id"
+          },
+          "scope_code": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Scope Code"
+          },
+          "standards_code": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Standards Code"
+          },
+          "team": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/DraftTeamMemberIn"
+            },
+            "maxItems": 50,
+            "title": "Team",
+            "type": "array"
+          }
+        },
+        "title": "EngagementDraftPayload",
+        "type": "object"
+      },
+      "EngagementDraftValidationOut": {
+        "description": "Per-step validation; G1 unmet on step 1 disables Next (ENG-03 d).",
+        "properties": {
+          "draft_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Draft Id",
+            "type": "string"
+          },
+          "gates": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EngagementGateOut"
+            },
+            "title": "Gates",
+            "type": "array"
+          },
+          "problems": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/DraftProblemOut"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
+          "step": {
+            "cls": "internal",
+            "enum": [
+              "client_type",
+              "standards_methodology",
+              "period_deadlines",
+              "team_independence",
+              "binder_portal",
+              "letter_review"
+            ],
+            "title": "Step",
+            "type": "string"
+          },
+          "valid": {
+            "cls": "internal",
+            "title": "Valid",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "draft_id",
+          "step",
+          "valid"
+        ],
+        "title": "EngagementDraftValidationOut",
+        "type": "object"
+      },
+      "EngagementFromDraftOut": {
+        "description": "One unit of work: the engagement (Accepted), its work items by type cardinality, the team\nand independence requests, the methodology pin and `engagement.created`.",
+        "properties": {
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          },
+          "engagement_status": {
+            "$ref": "#/components/schemas/EngagementStatus",
+            "cls": "internal"
+          },
+          "independence_requested_user_ids": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Independence Requested User Ids",
+            "type": "array"
+          },
+          "methodology_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Methodology Version Id"
+          },
+          "work_item_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Work Item Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "engagement_id",
+          "engagement_status",
+          "work_item_ids"
+        ],
+        "title": "EngagementFromDraftOut",
+        "type": "object"
+      },
+      "EngagementGateOut": {
+        "description": "One gate from its registered provider (G1, G2 and the interim G3 in P-07; G4 to G9 when\nA-04, A-06 and A-07 register). Met, blocked (blockers) or not started (neither).",
+        "properties": {
+          "blockers": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/GateBlockerRefOut"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "gate": {
+            "cls": "internal",
+            "enum": [
+              "G1",
+              "G2",
+              "G3",
+              "G4",
+              "G5",
+              "G6",
+              "G7",
+              "G8",
+              "G9"
+            ],
+            "title": "Gate",
+            "type": "string"
+          },
+          "met": {
+            "cls": "internal",
+            "title": "Met",
+            "type": "boolean"
+          },
+          "met_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Met At"
+          },
+          "met_by_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Met By User Id"
+          }
+        },
+        "required": [
+          "gate",
+          "met"
+        ],
+        "title": "EngagementGateOut",
+        "type": "object"
+      },
       "EngagementGraphOut": {
         "properties": {
           "areas": {
@@ -8204,6 +9039,523 @@
         "title": "EngagementIn",
         "type": "object"
       },
+      "EngagementIndexPage": {
+        "description": "The P-36 envelope: `counts` per engagement status minus the selected tile (the seven tiles;\n`declined` never shows), `facets.service_line` the segments; both from one grouped query. The\ntiles sum to `total`.",
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/EngagementIndexRowOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/EngagementIndexSummaryOut",
+            "cls": "internal"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "summary"
+        ],
+        "title": "EngagementIndexPage",
+        "type": "object"
+      },
+      "EngagementIndexRowOut": {
+        "description": "An ENG-01 row: metadata only, after `visible()` (INV-3).",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "client_entity_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Entity Id",
+            "type": "string"
+          },
+          "client_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Id",
+            "type": "string"
+          },
+          "client_name": {
+            "cls": "confidential",
+            "title": "Client Name",
+            "type": "string"
+          },
+          "fiscal_period_end": {
+            "cls": "confidential",
+            "format": "date",
+            "title": "Fiscal Period End",
+            "type": "string"
+          },
+          "fiscal_period_start": {
+            "cls": "confidential",
+            "format": "date",
+            "title": "Fiscal Period Start",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "letter": {
+            "$ref": "#/components/schemas/EngagementLetterSummaryOut",
+            "cls": "internal"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "next_due": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EngagementNextDueOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
+          "office_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Office Id"
+          },
+          "office_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Office Name"
+          },
+          "partner_initials": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Partner Initials"
+          },
+          "partner_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Partner User Id"
+          },
+          "period_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Period Label"
+          },
+          "service_line": {
+            "cls": "internal",
+            "enum": [
+              "audit",
+              "tax",
+              "cas",
+              "advisory"
+            ],
+            "title": "Service Line",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EngagementStatus",
+            "cls": "internal"
+          },
+          "type": {
+            "cls": "internal",
+            "enum": [
+              "fs_audit",
+              "ebp_audit",
+              "review",
+              "compilation",
+              "preparation",
+              "agreed_upon_procedures",
+              "soc1",
+              "soc2",
+              "readiness",
+              "internal_audit",
+              "tax_compliance",
+              "cas_monthly_close",
+              "notice_response",
+              "advisory"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
+          "work_items": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EngagementWorkItemLineOut"
+            },
+            "title": "Work Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "client_id",
+          "client_name",
+          "client_entity_id",
+          "type",
+          "service_line",
+          "status",
+          "fiscal_period_start",
+          "fiscal_period_end",
+          "letter"
+        ],
+        "title": "EngagementIndexRowOut",
+        "type": "object"
+      },
+      "EngagementIndexSummaryOut": {
+        "description": "The ENG-01 summary line, over the same `visible()` predicate as the rows.",
+        "properties": {
+          "awaiting_letter": {
+            "cls": "internal",
+            "title": "Awaiting Letter",
+            "type": "integer"
+          },
+          "past_due": {
+            "cls": "internal",
+            "title": "Past Due",
+            "type": "integer"
+          },
+          "prospect": {
+            "cls": "internal",
+            "title": "Prospect",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "prospect",
+          "awaiting_letter",
+          "past_due"
+        ],
+        "title": "EngagementIndexSummaryOut",
+        "type": "object"
+      },
+      "EngagementLetterRecordOut": {
+        "properties": {
+          "acceptance_decided_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Acceptance Decided At",
+            "type": "string"
+          },
+          "client_signed_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Signed On"
+          },
+          "client_signer_contact_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Signer Contact Id"
+          },
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          },
+          "engagement_status": {
+            "$ref": "#/components/schemas/EngagementStatus",
+            "cls": "internal"
+          },
+          "firm_signed_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Firm Signed On"
+          },
+          "firm_signer_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Firm Signer User Id"
+          },
+          "mode": {
+            "cls": "internal",
+            "enum": [
+              "signed",
+              "not_required_this_year"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "recorded_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "recorded_by": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Recorded By",
+            "type": "string"
+          },
+          "signed_copy_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Signed Copy Version Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/LetterRecordStatus",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "engagement_id",
+          "status",
+          "mode",
+          "acceptance_decided_at",
+          "recorded_by",
+          "recorded_at",
+          "engagement_status"
+        ],
+        "title": "EngagementLetterRecordOut",
+        "type": "object"
+      },
+      "EngagementLetterSummaryOut": {
+        "description": "ENG-01's Letter column and ENG-02's summary: \"\u2713 Signed {date}\", \"Sent {date} \u00b7 1 of 2\".",
+        "properties": {
+          "last_event": {
+            "anyOf": [
+              {
+                "enum": [
+                  "sent",
+                  "viewed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Last Event"
+          },
+          "last_event_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Last Event On"
+          },
+          "not_required_this_year": {
+            "cls": "internal",
+            "default": false,
+            "title": "Not Required This Year",
+            "type": "boolean"
+          },
+          "signed_count": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Signed Count",
+            "type": "integer"
+          },
+          "signed_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Signed On"
+          },
+          "signer_count": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Signer Count",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/LetterRecordStatus",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "EngagementLetterSummaryOut",
+        "type": "object"
+      },
+      "EngagementNextDueOut": {
+        "properties": {
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Label"
+          },
+          "on": {
+            "cls": "internal",
+            "format": "date",
+            "title": "On",
+            "type": "string"
+          },
+          "tone": {
+            "cls": "internal",
+            "enum": [
+              "past_due",
+              "soon",
+              "normal"
+            ],
+            "title": "Tone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "on",
+          "tone"
+        ],
+        "title": "EngagementNextDueOut",
+        "type": "object"
+      },
       "EngagementOut": {
         "properties": {
           "allowed_actions": {
@@ -8344,6 +9696,289 @@
         "title": "EngagementOut",
         "type": "object"
       },
+      "EngagementRailBandOut": {
+        "description": "A rail band. Content bands need `engagement.read`; a metadata-only role gets the others.",
+        "properties": {
+          "band": {
+            "cls": "internal",
+            "enum": [
+              "details",
+              "review_delivery",
+              "client_portal"
+            ],
+            "title": "Band",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/EngagementRailRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "band",
+          "rows"
+        ],
+        "title": "EngagementRailBandOut",
+        "type": "object"
+      },
+      "EngagementRailRowOut": {
+        "properties": {
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "On"
+          },
+          "pill_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Pill Code"
+          },
+          "pill_object": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Pill Object"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Text"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "EngagementRailRowOut",
+        "type": "object"
+      },
+      "EngagementRecordOut": {
+        "description": "The extended C1 projection (C1 v1.1): subbar facts, rail bands, contacts, letter summary,\ngates, tab counts and why it is read-only.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "bands": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/EngagementRailBandOut"
+            },
+            "title": "Bands",
+            "type": "array"
+          },
+          "client_entity_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Entity Id",
+            "type": "string"
+          },
+          "client_entity_name": {
+            "cls": "confidential",
+            "title": "Client Entity Name",
+            "type": "string"
+          },
+          "client_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Id",
+            "type": "string"
+          },
+          "client_name": {
+            "cls": "confidential",
+            "title": "Client Name",
+            "type": "string"
+          },
+          "contacts": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EngagementDesignationOut"
+            },
+            "title": "Contacts",
+            "type": "array"
+          },
+          "fiscal_period_end": {
+            "cls": "confidential",
+            "format": "date",
+            "title": "Fiscal Period End",
+            "type": "string"
+          },
+          "fiscal_period_start": {
+            "cls": "confidential",
+            "format": "date",
+            "title": "Fiscal Period Start",
+            "type": "string"
+          },
+          "gates": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/EngagementGateOut"
+            },
+            "title": "Gates",
+            "type": "array"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "letter": {
+            "$ref": "#/components/schemas/EngagementLetterSummaryOut",
+            "cls": "internal"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "period_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Period Label"
+          },
+          "read_only_reason": {
+            "anyOf": [
+              {
+                "const": "archived",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Read Only Reason"
+          },
+          "service_line": {
+            "cls": "internal",
+            "enum": [
+              "audit",
+              "tax",
+              "cas",
+              "advisory"
+            ],
+            "title": "Service Line",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EngagementStatus",
+            "cls": "internal"
+          },
+          "tab_counts": {
+            "$ref": "#/components/schemas/EngagementTabCountsOut",
+            "cls": "internal"
+          },
+          "type": {
+            "cls": "internal",
+            "enum": [
+              "fs_audit",
+              "ebp_audit",
+              "review",
+              "compilation",
+              "preparation",
+              "agreed_upon_procedures",
+              "soc1",
+              "soc2",
+              "readiness",
+              "internal_audit",
+              "tax_compliance",
+              "cas_monthly_close",
+              "notice_response",
+              "advisory"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "client_id",
+          "client_name",
+          "client_entity_id",
+          "client_entity_name",
+          "type",
+          "service_line",
+          "status",
+          "fiscal_period_start",
+          "fiscal_period_end",
+          "bands",
+          "letter",
+          "gates",
+          "tab_counts",
+          "version"
+        ],
+        "title": "EngagementRecordOut",
+        "type": "object"
+      },
       "EngagementStatus": {
         "enum": [
           "prospect",
@@ -8469,6 +10104,267 @@
           "client_entity_id"
         ],
         "title": "EngagementSummaryOut",
+        "type": "object"
+      },
+      "EngagementTabCountsOut": {
+        "properties": {
+          "team": {
+            "cls": "internal",
+            "title": "Team",
+            "type": "integer"
+          },
+          "work_items": {
+            "cls": "internal",
+            "title": "Work Items",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "work_items",
+          "team"
+        ],
+        "title": "EngagementTabCountsOut",
+        "type": "object"
+      },
+      "EngagementTypeCatalogueOut": {
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/EngagementTypeEntryOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "EngagementTypeCatalogueOut",
+        "type": "object"
+      },
+      "EngagementTypeEntryOut": {
+        "description": "One TypeCard. Labels are the copy registry's (OQ-15), held with the code catalogue.",
+        "properties": {
+          "availability": {
+            "cls": "internal",
+            "enum": [
+              "available",
+              "needs_entitlement"
+            ],
+            "title": "Availability",
+            "type": "string"
+          },
+          "code": {
+            "cls": "internal",
+            "enum": [
+              "form_1040",
+              "form_1041",
+              "form_1065",
+              "form_1120s",
+              "form_1120",
+              "form_990",
+              "forms_706_709",
+              "notice_response",
+              "ebp_audit",
+              "fs_audit",
+              "review",
+              "compilation",
+              "preparation",
+              "agreed_upon_procedures",
+              "soc1",
+              "soc2",
+              "cas_monthly_close",
+              "advisory"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "engagement_type": {
+            "cls": "internal",
+            "enum": [
+              "fs_audit",
+              "ebp_audit",
+              "review",
+              "compilation",
+              "preparation",
+              "agreed_upon_procedures",
+              "soc1",
+              "soc2",
+              "readiness",
+              "internal_audit",
+              "tax_compliance",
+              "cas_monthly_close",
+              "notice_response",
+              "advisory"
+            ],
+            "title": "Engagement Type",
+            "type": "string"
+          },
+          "entitlement": {
+            "anyOf": [
+              {
+                "enum": [
+                  "attest",
+                  "group_audit"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Entitlement"
+          },
+          "family": {
+            "cls": "internal",
+            "enum": [
+              "tax",
+              "audit_assurance",
+              "cas_advisory"
+            ],
+            "title": "Family",
+            "type": "string"
+          },
+          "group_audit_allowed": {
+            "cls": "internal",
+            "default": false,
+            "title": "Group Audit Allowed",
+            "type": "boolean"
+          },
+          "label": {
+            "cls": "public",
+            "title": "Label",
+            "type": "string"
+          },
+          "standard_line": {
+            "cls": "public",
+            "title": "Standard Line",
+            "type": "string"
+          },
+          "steps": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/EngagementTypeStepOut"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "work_item_kind": {
+            "cls": "internal",
+            "enum": [
+              "assurance",
+              "tax_return",
+              "close",
+              "notice",
+              "advisory_project"
+            ],
+            "title": "Work Item Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "engagement_type",
+          "family",
+          "work_item_kind",
+          "label",
+          "standard_line",
+          "availability",
+          "steps"
+        ],
+        "title": "EngagementTypeEntryOut",
+        "type": "object"
+      },
+      "EngagementTypeStepOut": {
+        "properties": {
+          "field_codes": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Field Codes",
+            "type": "array"
+          },
+          "step": {
+            "cls": "internal",
+            "enum": [
+              "client_type",
+              "standards_methodology",
+              "period_deadlines",
+              "team_independence",
+              "binder_portal",
+              "letter_review"
+            ],
+            "title": "Step",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step",
+          "field_codes"
+        ],
+        "title": "EngagementTypeStepOut",
+        "type": "object"
+      },
+      "EngagementWorkItemLineOut": {
+        "description": "A work-item sub-line from its kind's provider, in the kind's own status words.",
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "assurance",
+              "tax_return",
+              "close",
+              "notice",
+              "advisory_project"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "pill_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Pill Code"
+          },
+          "pill_object": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Pill Object"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "label"
+        ],
+        "title": "EngagementWorkItemLineOut",
         "type": "object"
       },
       "EntityChoiceOut": {
@@ -9910,6 +11806,34 @@
           "needed"
         ],
         "title": "GapOut",
+        "type": "object"
+      },
+      "GateBlockerRefOut": {
+        "description": "What blocks a gate: an opaque reference and a registered reason code, never prose.",
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "reason_code": {
+            "cls": "internal",
+            "title": "Reason Code",
+            "type": "string"
+          },
+          "type": {
+            "cls": "internal",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "reason_code"
+        ],
+        "title": "GateBlockerRefOut",
         "type": "object"
       },
       "GateFactOut": {
@@ -12367,6 +14291,113 @@
         ],
         "title": "LetterPolicyOut",
         "type": "object"
+      },
+      "LetterRecordIn": {
+        "additionalProperties": false,
+        "description": "\"Record signed letter\u2026\": both parties' dates on or after the G1 decision (409\n`letter_before_acceptance`); or the EP's \"Not required this year\" with a reason, only while\nthe firm setting `allow_letter_exceptions` is on.",
+        "properties": {
+          "client_signed_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Signed On"
+          },
+          "client_signer_contact_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Signer Contact Id"
+          },
+          "firm_signed_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Firm Signed On"
+          },
+          "firm_signer_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Firm Signer User Id"
+          },
+          "mode": {
+            "cls": "internal",
+            "enum": [
+              "signed",
+              "not_required_this_year"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "not_required_reason": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Not Required Reason"
+          },
+          "signed_copy_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Signed Copy Version Id"
+          }
+        },
+        "required": [
+          "mode"
+        ],
+        "title": "LetterRecordIn",
+        "type": "object"
+      },
+      "LetterRecordStatus": {
+        "enum": [
+          "not_signed",
+          "signed"
+        ],
+        "title": "LetterRecordStatus",
+        "type": "string"
       },
       "LineBody": {
         "additionalProperties": false,
@@ -30725,6 +32756,997 @@
         "x-abacus-action": "decision.reassess"
       }
     },
+    "/v1/engagement-drafts": {
+      "post": {
+        "description": "422 `unknown_engagement_type` for a code outside the catalogue.",
+        "operationId": "create_engagement_draft",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EngagementDraftIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementDraftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Create Engagement Draft Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "engagement.create"
+      }
+    },
+    "/v1/engagement-drafts/{draft_id}": {
+      "delete": {
+        "description": "\"Discard this draft?\" (purged 30 days later, OQ-17).",
+        "operationId": "discard_engagement_draft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementDraftDiscardedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Discard Engagement Draft Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "engagement.create"
+      },
+      "get": {
+        "description": "The owner's own draft; anyone else's answers 404.",
+        "operationId": "get_engagement_draft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementDraftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Get Engagement Draft Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "engagement.create"
+      },
+      "patch": {
+        "operationId": "update_engagement_draft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EngagementDraftPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementDraftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Update Engagement Draft Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "engagement.create"
+      }
+    },
+    "/v1/engagement-drafts/{draft_id}/create": {
+      "post": {
+        "description": "Human-only, one unit of work: 409 `possible_duplicate` until `confirm_duplicate`, 409\n`gate_unmet` (G1), 422 `unknown_engagement_type`.",
+        "operationId": "create_engagement_from_draft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementFromDraftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Create Engagement From Draft Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "engagement.create"
+      }
+    },
+    "/v1/engagement-drafts/{draft_id}/start-acceptance": {
+      "post": {
+        "description": "Human-only (OQ-2): a Prospect engagement and an acceptance record; nothing is accepted.",
+        "operationId": "start_acceptance_from_draft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptanceStartedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Start Acceptance From Draft Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "client.intake"
+      }
+    },
+    "/v1/engagement-drafts/{draft_id}/validate": {
+      "post": {
+        "operationId": "validate_engagement_draft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftValidateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementDraftValidationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Validate Engagement Draft Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "engagement.create"
+      }
+    },
+    "/v1/engagement-types": {
+      "get": {
+        "description": "The selectable catalogue; an entitlement-gated card (SOC 1, SOC 2) is `needs_entitlement`\nwithout `attest`. Never `single_audit`.",
+        "operationId": "engagement_types",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementTypeCatalogueOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Engagement Types Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "engagement.create"
+      }
+    },
     "/v1/engagements": {
       "get": {
         "operationId": "list_engagements",
@@ -30937,6 +33959,316 @@
           "engagements"
         ],
         "x-abacus-action": "engagement.create"
+      }
+    },
+    "/v1/engagements/index": {
+      "get": {
+        "description": "ENG-01 and CLI-02's Engagements tab: past due first, then by next deadline. \"Letter \u2502 Not\nsigned\" lists Accepted engagements without a recorded letter (never a Prospect).",
+        "operationId": "engagement_index",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "service_line",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "audit",
+                    "tax",
+                    "cas",
+                    "advisory"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Service Line"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/EngagementStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/EngagementStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tile"
+            }
+          },
+          {
+            "in": "query",
+            "name": "office_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Office Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "partner_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Partner Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "letter",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/LetterRecordStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Letter"
+            }
+          },
+          {
+            "in": "query",
+            "name": "next_due",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "past_due",
+                    "within_7_days",
+                    "within_30_days"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Next Due"
+            }
+          },
+          {
+            "in": "query",
+            "name": "period",
+            "required": false,
+            "schema": {
+              "default": "current",
+              "enum": [
+                "current",
+                "prior",
+                "all"
+              ],
+              "title": "Period",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "client_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Client Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementIndexPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Engagement Index Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "engagement.read_metadata"
       }
     },
     "/v1/engagements/proposal": {
@@ -38880,6 +42212,127 @@
         "x-abacus-action": "follow_up.send"
       }
     },
+    "/v1/engagements/{engagement_id}/gates": {
+      "get": {
+        "description": "`[{gate, met, blockers}]` for the registered providers (C1 v1.1).",
+        "operationId": "engagement_gates",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EngagementGateOut"
+                  },
+                  "title": "Response Engagement Gates",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Engagement Gates Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "engagement.read_metadata"
+      }
+    },
     "/v1/engagements/{engagement_id}/graph": {
       "get": {
         "operationId": "engagement_graph",
@@ -40710,6 +44163,143 @@
         "summary": "Letter File Route",
         "tags": [
           "evidence"
+        ],
+        "x-abacus-action": "letter.record"
+      }
+    },
+    "/v1/engagements/{engagement_id}/letter/record": {
+      "put": {
+        "description": "Human-only. The interim G3 provider until C7: 409 `gate_unmet` (G1), 409\n`letter_before_acceptance`, 409 `engagement_archived`; one `letter.recorded` audit event.",
+        "operationId": "record_engagement_letter",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LetterRecordIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementLetterRecordOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Record Engagement Letter Route",
+        "tags": [
+          "engagements"
         ],
         "x-abacus-action": "letter.record"
       }
@@ -45089,6 +48679,122 @@
           "fieldwork"
         ],
         "x-abacus-action": "workpaper.sign_reviewed"
+      }
+    },
+    "/v1/engagements/{engagement_id}/record": {
+      "get": {
+        "operationId": "engagement_record",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementRecordOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Engagement Record Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "engagement.read_metadata"
       }
     },
     "/v1/engagements/{engagement_id}/representations": {

@@ -33,3 +33,7 @@ actions:
   # (`function_in(preparer, first_level_reviewer)`) can't widen the action (DEC-132); P-07-T10
   # adds it as a derived grant (DEC-141).
   tin.reveal:               {engagement_partner: allow, manager: allow, eqr_reviewer: allow, agent: deny, system: deny, mfa_recent: required, requires: reason}
+  # P-07 OQ-2 (DEC-143): Prospect-only engagements from intake and from an ENG-03 draft
+  # ("Start acceptance"); accepting and staffing stay `engagement.create`. The manager path
+  # lands with the live routes the DEC-132 way, as on `client.update`.
+  client.intake:            {firm_admin: allow, firm_partner: allow, agent: deny, system: deny}

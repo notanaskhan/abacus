@@ -224,6 +224,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.fieldwork.findings.FindingInvalid
+  gate_unmet:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.contract.GateUnmet
+    summary: A gate the step or the create requires is not met (C1 gate providers; `facts.gate`).
   grant_exists:
     status: 409
     raised_by:
@@ -348,6 +353,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.connections.ledger_import.ImportOff
+  letter_before_acceptance:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.contract.LetterBeforeAcceptance
+    summary: The letter's date is before the acceptance decision (G1 < letter, R-06).
   letter_missing:
     status: 409
     raised_by:
@@ -645,6 +655,7 @@ codes:
   stale_version:
     status: 409
     raised_by:
+    - abacus.modules.engagements.contract.DraftStaleVersion
     - abacus.modules.organisations.contract.ClientStaleVersion
     summary: 'The client changed since it was read (`seen_version` is behind): read it again.'
   statement_already_approved:
@@ -729,6 +740,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.ledger.trial_balances.TrialBalanceInvalid
+  unknown_engagement_type:
+    status: 422
+    raised_by:
+    - abacus.modules.engagements.contract.UnknownEngagementType
+    summary: The type is not in the engagement-type catalogue (single audit included, DEC-19).
   unknown_firm_setting:
     status: 422
     raised_by:
