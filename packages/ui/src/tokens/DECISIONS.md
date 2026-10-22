@@ -301,3 +301,15 @@ semantics are kept exact; the plan's `toast.undoable` and `toast.running` sit on
 | 2026-10-22 | Discs in forced colors | `forced-color-adjust: none` on `role="img"` discs: their colour is the meaning, and they carry a label                                                                                         |
 | 2026-10-22 | Target size check      | SC 2.5.8 as written: 24px, or points 11.5px out from the centre land on the control (a hit area), or a 24px circle on the centre meets no other target; inline text links are exempt           |
 | 2026-10-22 | Keyboard check         | The first 60 focus stops each show a 2px outline or a ring, and Tab never stays on one stop                                                                                                    |
+
+### DataTable engine (F-05-T27)
+
+| Date       | Item                  | Decision                                                                                                                 |
+| ---------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| 2026-10-22 | Component name        | `DataGrid` (role=grid), beside the TASK-101 `DataTable` its eight list callers still use; T28's IndexList replaces those |
+| 2026-10-22 | Grammars in this task | `ledger` and `statement`; evidence, grid and leadsheet come with their screens                                           |
+| 2026-10-22 | Keyboard              | ↑↓ clamped, Home and End, Enter and double click open; group bands are not stops (they are row headers)                  |
+| 2026-10-22 | Totals                | Rows the server sends (`kind: total, grand`); a source test refuses `reduce`, `sum…(` and `+= Number` in `data/`         |
+| 2026-10-22 | Tick pills            | `bg-green` with `shadow-e1` for the kit's `--e-lift` (no such token); neutral pills `bg-chip`                            |
+| 2026-10-22 | PropChip fill         | `bg-nested` with a 0.5px hair ring, as C-01 spec 01's micro tag                                                          |
+| 2026-10-22 | Virtualisation        | Not yet: E4 virtualises above about 200 rows; the first screen with that many rows adds it                               |
