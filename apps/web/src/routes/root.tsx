@@ -2,6 +2,7 @@ import { Alert, Button, ClockProvider, EmptyState } from "@abacus/ui";
 import { Link, Outlet, createRootRoute, createRoute } from "@tanstack/react-router";
 import { type ComponentType, type JSX, Suspense, lazy } from "react";
 import { nowMs } from "../app-core/clock";
+import { OverlayHost } from "../app-core/overlay-host";
 import { CALLBACK_PATH } from "../auth/session";
 import { Layout } from "../screens/Layout";
 import { SignInCallback } from "../screens/SignInCallback";
@@ -15,11 +16,13 @@ export const rootRoute = createRootRoute({
 });
 
 /** F-05-T10: the design system's ClockProvider reads business time from the browser clock
- * (app-core/clock.tsx), so screens read time only through useNow, useToday and useFormat. */
+ * (app-core/clock.tsx), so screens read time only through useNow, useToday and useFormat.
+ * F-05-T20: OverlayHost draws the `?ov=` layers from the overlay registry (app-core/overlays.ts). */
 function RootShell(): JSX.Element {
   return (
     <ClockProvider now={nowMs}>
       <Outlet />
+      <OverlayHost />
     </ClockProvider>
   );
 }

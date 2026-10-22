@@ -239,3 +239,188 @@ test.describe("view states", () => {
     );
   });
 });
+
+// F-05-T20 (O1 to O6, C-22, C-23): every live layer in a real browser. axe finds nothing serious
+// on the open layer, the page is locked while a modal one is open and released after, Escape
+// closes the topmost layer only, and focus goes back to the button that opened it. The held
+// (in-place) specimens are checked by the axe pass above.
+test.describe("overlays", () => {
+  async function expectLayerClean(page: Page): Promise<void> {
+    const { violations } = await new AxeBuilder({ page }).include("[data-overlay]").analyze();
+    const serious = violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+    expect(
+      serious.map((v) => `${v.id} (${v.impact ?? "?"}): ${v.help}`),
+      "serious or critical accessibility violations on the open layer",
+    ).toEqual([]);
+  }
+
+  const LAYERS = [
+    ["o1-popover", "Assign…", "popover", false],
+    ["c-23-drawer", "Notifications", "drawer", true],
+    ["c-23-drawer", "Peek a record", "peek", false],
+    ["c-23-drawer", "Activity", "drawer", true],
+    ["o3-sheet-modal", "Raise issue…", "sheet", true],
+    ["c-22-dialog", "Open md…", "dialog", true],
+    ["c-22-dialog", "Open sm…", "dialog", true],
+    ["c-22-confirm-dialog", "Delete Schedule 2…", "confirm", true],
+    ["o4-full-sheet", "Allocation structure…", "full-sheet", true],
+    ["o5-command-palette", "Go…", "palette", true],
+    ["o6-wizard", "New engagement…", "wizard", true],
+  ] as const;
+
+  for (const [section, opener, kind, modal] of LAYERS) {
+    test(`${kind}: ${opener} opens it, axe is clean, Escape closes it and focus returns`, async ({
+      page,
+    }) => {
+      await page.goto("/components");
+      // The first match is the live control; a held specimen may repeat its name below it.
+      const button = page
+        .locator(`#${section}`)
+        .getByRole("button", { name: opener, exact: true })
+        .first();
+      await button.scrollIntoViewIfNeeded();
+      await button.click();
+      const layer = page.locator(`[data-overlay="${kind}"]`);
+      await expect(layer).toBeVisible();
+      if (modal) {
+        await expect(page.locator("body")).toHaveCSS("overflow", "hidden");
+        await expect(page.locator("[data-scrim]").first()).toBeVisible();
+      } else {
+        await expect(page.locator("[data-scrim]")).toHaveCount(0);
+      }
+      await expectLayerClean(page);
+      await page.keyboard.press("Escape");
+      await expect(page.locator("[data-overlay]")).toHaveCount(0);
+      await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
+      await expect(button).toBeFocused();
+    });
+  }
+
+  test("a dirty dialog asks before it closes, and Discard closes it", async ({ page }) => {
+    await page.goto("/components");
+    const section = page.locator("#c-22-dialog");
+    const opener = section.getByRole("button", { name: "Open md…", exact: true });
+    await opener.scrollIntoViewIfNeeded();
+    await opener.click();
+    const dialog = page.getByRole("dialog", { name: "Issue" });
+    await expect(dialog.getByRole("textbox", { name: "Title" })).toBeFocused();
+    await dialog.getByRole("textbox", { name: "Title" }).fill("Cash");
+    await page.keyboard.press("Escape");
+    const guard = page.getByRole("alertdialog", { name: "Discard changes?" });
+    await expect(guard).toBeVisible();
+    await expect(guard.getByRole("button", { name: "Keep editing" })).toBeFocused();
+    await expectLayerClean(page);
+    // Escape on the guard keeps editing; the dialog is still there and still dirty.
+    await page.keyboard.press("Escape");
+    await expect(guard).toHaveCount(0);
+    await expect(dialog).toBeVisible();
+    // The scrim asks too.
+    await page.mouse.click(5, 5);
+    await expect(guard).toBeVisible();
+    await guard.getByRole("button", { name: "Discard" }).click();
+    await expect(page.locator("[data-overlay]")).toHaveCount(0);
+    await expect(opener).toBeFocused();
+  });
+
+  test("popover, then dialog, then drawer: one Escape each, focus to each opener", async ({
+    page,
+  }) => {
+    await page.goto("/components");
+    const section = page.locator("#o1-o6-stacking");
+    const drawerButton = section.getByRole("button", { name: "Open the request drawer" });
+    await drawerButton.scrollIntoViewIfNeeded();
+    await drawerButton.click();
+    const drawer = page.getByRole("dialog", { name: "Request" });
+    const dialogButton = drawer.getByRole("button", { name: "Assign…" });
+    await dialogButton.click();
+    const dialog = page.getByRole("dialog", { name: "Assign to" });
+    const popoverButton = dialog.getByRole("button", { name: "Reviewers…" });
+    await popoverButton.click();
+    await expect(page.getByRole("dialog", { name: "Reviewers" })).toBeVisible();
+
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog", { name: "Reviewers" })).toHaveCount(0);
+    await expect(dialog).toBeVisible();
+    await expect(popoverButton).toBeFocused();
+
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(drawer).toBeVisible();
+    await expect(dialogButton).toBeFocused();
+
+    await page.keyboard.press("Escape");
+    await expect(drawer).toHaveCount(0);
+    await expect(drawerButton).toBeFocused();
+  });
+
+  test("never two drawers: opening B replaces A", async ({ page }) => {
+    await page.goto("/components");
+    const section = page.locator("#o1-o6-stacking");
+    const a = section.getByRole("button", { name: "Drawer A" });
+    await a.scrollIntoViewIfNeeded();
+    await a.click();
+    await expect(page.locator('[data-overlay="drawer"]')).toHaveCount(1);
+    // A modal drawer blocks the page, so B is pressed the way a script can: by its element.
+    await section.getByRole("button", { name: "Drawer B" }).dispatchEvent("click");
+    await expect(page.getByRole("dialog", { name: "Drawer B" })).toBeVisible();
+    await expect(page.locator('[data-overlay="drawer"]')).toHaveCount(1);
+  });
+
+  test("geometry: dialog 560 wide, drawer 10px from the edges, sheet from 52, full sheet inset 14", async ({
+    page,
+  }) => {
+    await page.goto("/components");
+    const box = async (
+      kind: string,
+    ): Promise<{ x: number; y: number; width: number; height: number }> => {
+      // The layer enters over 180 to 260ms (a scale, a slide, a rise): measure it once it rests.
+      let last = "";
+      await expect
+        .poll(async () => {
+          const now = JSON.stringify(await page.locator(`[data-overlay="${kind}"]`).boundingBox());
+          const rested = now === last;
+          last = now;
+          return rested;
+        })
+        .toBe(true);
+      const b = await page.locator(`[data-overlay="${kind}"]`).boundingBox();
+      if (b === null) throw new Error(`${kind} has no box`);
+      return b;
+    };
+    const viewport = page.viewportSize();
+    if (viewport === null) throw new Error("no viewport");
+    const open = async (section: string, name: string): Promise<void> => {
+      const b = page.locator(`#${section}`).getByRole("button", { name, exact: true });
+      await b.scrollIntoViewIfNeeded();
+      await b.click();
+    };
+
+    await open("c-22-dialog", "Open md…");
+    expect((await box("dialog")).width).toBe(560);
+    await page.keyboard.press("Escape");
+
+    await open("c-23-drawer", "Notifications");
+    const drawer = await box("drawer");
+    expect([drawer.width, drawer.y, drawer.x + drawer.width, drawer.y + drawer.height]).toEqual([
+      440,
+      10,
+      viewport.width - 10,
+      viewport.height - 10,
+    ]);
+    await page.keyboard.press("Escape");
+
+    await open("o3-sheet-modal", "Raise issue…");
+    const sheet = await box("sheet");
+    expect([sheet.width, sheet.y, sheet.y + sheet.height]).toEqual([500, 52, viewport.height]);
+    await page.keyboard.press("Escape");
+
+    await open("o4-full-sheet", "Allocation structure…");
+    const full = await box("full-sheet");
+    expect([full.x, full.y, full.x + full.width, full.y + full.height]).toEqual([
+      14,
+      60,
+      viewport.width - 14,
+      viewport.height - 14,
+    ]);
+  });
+});
