@@ -351,7 +351,7 @@ def test_a01_the_idempotency_reuse_code_is_the_kernels_422() -> None:
     reason=(
         "TASK-420 finding (C5 §6, ADR-139): 409 bodies carry identifier facts "
         '({"detail": "binder_gate_unmet", "facts": {"gate": "G3"}}) but every 409 is documented '
-        "as ErrorOut {detail} only, so the generated client cannot type them; see #ISSUE"
+        "as ErrorOut {detail} only, so the generated client cannot type them; see #282"
     ),
 )
 def test_a01_the_documented_409_body_carries_identifier_facts() -> None:

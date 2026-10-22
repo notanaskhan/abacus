@@ -209,14 +209,19 @@ def test_r01_every_client_reach_of_the_request_filter_needs_client_visible() -> 
 
 def test_r01_the_store_keeps_every_draft_off_the_client() -> None:
     # F-03-T15 (migration 0071): a request that is not client-visible is a draft and a
-    # client-visible one is requested, so the client filter above never reaches a draft.
-    trigger = (REPO / "backend/migrations/versions/0071_request_status_v2.py").read_text()
-    body = re.search(r"CREATE FUNCTION request_item_requested\(\).*?\$\$(.*?)\$\$", trigger, re.S)
-    assert body is not None
-    assert (
-        "NEW.status := CASE WHEN NEW.client_visible THEN 'requested' ELSE 'draft' END"
-        in body.group(1)
+    # client-visible one is requested, so the client filter above never reaches a draft. The
+    # latest migration that (re)defines the trigger function is the one in force.
+    define = re.compile(
+        r"CREATE (?:OR REPLACE )?FUNCTION request_item_requested\(\).*?\$\$(.*?)\$\$", re.S
     )
+    bodies = [
+        found.group(1)
+        for path in sorted((REPO / "backend/migrations/versions").glob("*.py"))
+        for found in define.finditer(path.read_text())
+    ]
+    assert bodies
+    body = bodies[-1]
+    assert "NEW.status := CASE WHEN NEW.client_visible THEN 'requested' ELSE 'draft' END" in body
 
 
 @pytest.mark.xfail(
@@ -224,8 +229,8 @@ def test_r01_the_store_keeps_every_draft_off_the_client() -> None:
     reason=(
         "TASK-420 finding (C5 §1, P-06 §4.3, SPEC-319 AC-6): publish 'sends draft client-visible "
         "requests', so a draft may be client-visible, but the client read filter checks "
-        "client_visible only and the 0071 trigger forbids a client-visible draft; T05/T10 must "
-        "filter drafts by status when they allow one; see #ISSUE"
+        "client_visible only and the 0071 trigger forbids a client-visible draft; T10 must "
+        "filter drafts by status when it allows one; see #282"
     ),
 )
 def test_r01_the_client_filter_excludes_drafts_by_status_too() -> None:
@@ -349,7 +354,7 @@ def test_r01_not_your_upload_is_a_403_not_a_conflict() -> None:
         "TASK-420 finding (C5 §6, ADR-139): domain 422s answer "
         '{"detail": "reason_required"} (a code string, abacus.api.app._domain_invalid) but '
         "every 422 is documented as ValidationErrorOut, whose detail is a list of field errors; "
-        "see #ISSUE"
+        "see #282"
     ),
 )
 def test_r01_the_documented_422_admits_a_domain_code() -> None:
