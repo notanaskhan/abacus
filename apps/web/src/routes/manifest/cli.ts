@@ -5,6 +5,8 @@ import type { Manifest } from "./types";
 
 export const cliScreens = {
   "CLI-01": { name: "Clients index", status: "planned", path: "/clients", navArea: "Clients" }, // legacy Clients
+  // CLI-02 artboards d (agent dock) and f (responsiveness) are fixture-only until P-09/P-10 and
+  // I-03 register their targets, not missing (docs/screens/CLI-02.md, P-07 §2.1).
   "CLI-02": {
     name: "Client record · Overview",
     status: "planned",
