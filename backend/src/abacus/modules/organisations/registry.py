@@ -16,6 +16,7 @@ TABLES: frozenset[str] = frozenset(
         "teams",
         "team_rosters",
         "contacts",  # F-03-T25 (0082)
+        "entity_relationships",  # P-07-T07 (0103): ended, never deleted
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -31,6 +32,10 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"id", "tenant_id", "client_id", "display_name", "email", "phone", "title"}
         | {"organisation_name", "contact_kind"}
     ),
+    "entity_relationships": frozenset(  # P-07-T07 (0103)
+        {"tenant_id", "from_entity_id", "to_entity_id", "kind", "percent", "effective_from"}
+        | {"effective_to", "created_by"}
+    ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
@@ -39,12 +44,16 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "clients": frozenset(
         {"kind", "status", "primary_office_id", "relationship_partner_id", "risk_tier"}
         | {"portal_status", "practice_mgmt_ref"}
+        | {"descriptor"}  # P-07-T07
     ),
     "client_entities": frozenset(
         {"entity_type", "fye_month_day", "state_of_formation", "plan_number", "date_of_death"}
         | {"grantor_status"}
+        # P-07-T07 (DEC-52): sealed under the firm's key; written only by P-07-T10's sealing.
+        | {"tin_sealed", "tin_last4", "tin_kind", "tin_status", "tin_fingerprint"}
     ),
     "contacts": frozenset(
         {"display_name", "phone", "title", "organisation_name", "user_id", "portal_state"}
     ),
+    "entity_relationships": frozenset({"effective_to"}),  # P-07-T07: a relationship ends
 }

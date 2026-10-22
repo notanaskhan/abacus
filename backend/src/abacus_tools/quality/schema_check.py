@@ -15,6 +15,8 @@ up again (every migration must be reversible), then inspects the catalog. It fai
   - an IMMUTABLE_TABLES table without enabled BEFORE UPDATE/DELETE/TRUNCATE triggers (ADR-004)
   - abacus_relay or abacus_identity (they bypass RLS) holding any privilege not in
     BYPASS_ROLE_GRANTS, or any other non-superuser role with BYPASSRLS
+  - a column that looks like a plaintext taxpayer ID (`tin`, `ssn`, `ein`, `itin`, or a name
+    ending in one of them): TINs are sealed (`tin_sealed`, `tin_last4`; DEC-52, P-07-T07)
   - a SECURITY DEFINER function not in DEFINER_FUNCTIONS, or one not owned by abacus_owner, without
     a pinned `search_path` ending in pg_temp, executable by PUBLIC or a bypass role, or not by the
     app (TASK-018 D3)
@@ -580,6 +582,24 @@ async def _immutability_problems(conn: asyncpg.Connection, table: str, function:
     ]
 
 
+# DEC-52 (P-07-T07): a taxpayer ID is only ever sealed. A column named like a plaintext one fails.
+_PLAINTEXT_TIN = """
+SELECT c.relname AS table_name, a.attname AS column_name
+FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p', 'v', 'm') AND a.attnum > 0
+  AND NOT a.attisdropped AND a.attname ~ '^(.*_)?(tin|ssn|ein|itin)$'
+ORDER BY 1, 2
+"""
+
+
+async def _plaintext_tin_problems(conn: asyncpg.Connection) -> list[str]:
+    return [
+        f"{row['table_name']}: column {row['column_name']} looks like a plaintext TIN (DEC-52)"
+        for row in await conn.fetch(_PLAINTEXT_TIN)
+    ]
+
+
 async def _definer_problems(conn: asyncpg.Connection) -> list[str]:
     problems: list[str] = []
     for function in await conn.fetch(_DEFINERS):
@@ -702,6 +722,7 @@ async def _inspect(owner_dsn: str) -> list[str]:
         for function in await conn.fetch(_LARGE_OBJECT_FUNCTIONS, APP):
             problems.append(f"{APP}: can execute {function['name']}")
         problems += await _definer_problems(conn)
+        problems += await _plaintext_tin_problems(conn)
         for role in await conn.fetch(_BYPASS_ROLES):
             if str(role["rolname"]) not in BYPASS_ROLE_GRANTS:
                 problems.append(f"{role['rolname']}: bypasses row-level security, not reviewed")
