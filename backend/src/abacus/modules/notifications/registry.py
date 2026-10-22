@@ -10,6 +10,8 @@ from __future__ import annotations
 TABLES: frozenset[str] = frozenset(
     {
         "notifications",  # SPEC-013
+        "notification_preferences",  # P-01-T03 (C16)
+        "notification_deliveries",  # P-01-T03 (C16)
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -20,9 +22,14 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "notifications": frozenset(
         {"id", "tenant_id", "recipient_user_id", "kind", "event_id", "engagement_id"}
         | {"subject_type", "subject_id"}
+        | {"category", "actor_user_id", "actor_kind", "client_id", "work_item_id"}  # P-01-T03
     ),
+    "notification_preferences": frozenset({"tenant_id", "user_id", "kind", "in_app", "email"}),
+    "notification_deliveries": frozenset({"tenant_id", "notification_id", "channel", "status"}),
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "notifications": frozenset({"read_at"}),  # SPEC-013
+    "notification_preferences": frozenset({"in_app", "email", "updated_at"}),  # P-01-T03
+    "notification_deliveries": frozenset({"status", "message_ref"}),  # P-01-T03
 }

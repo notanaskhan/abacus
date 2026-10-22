@@ -84,7 +84,7 @@ describe("ac2 notifications", () => {
       items: [
         {
           id: "n1",
-          kind: "review.assigned",
+          kind: "review_assigned",
           engagement_id: E,
           subject_type: "evidence_version",
           subject_id: "v9",

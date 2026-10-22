@@ -259,7 +259,7 @@ describe("ac8 unread on the Board", () => {
 describe("q2 notifications", () => {
   const n = {
     id: "n1",
-    kind: "comment.mentioned",
+    kind: "mention",
     engagement_id: E,
     subject_type: "request_item",
     subject_id: "i1",
@@ -268,7 +268,7 @@ describe("q2 notifications", () => {
   } as NotificationOut;
 
   it("words a mention and leads each side to the request", () => {
-    expect(notificationText("comment.mentioned")).toBe("You were mentioned in a comment.");
+    expect(notificationText("mention")).toBe("You were mentioned in a comment.");
     expect(notificationHref(n)).toEqual({ to: `/engagements/${E}/items/i1` });
     expect(notificationHref(n, "client")).toEqual({
       to: `/client/engagements/${E}`,
@@ -285,7 +285,7 @@ describe("q2 the client's bell", () => {
           items: [
             {
               id: "n1",
-              kind: "comment.mentioned",
+              kind: "mention",
               engagement_id: E,
               subject_type: "request_item",
               subject_id: "i1",

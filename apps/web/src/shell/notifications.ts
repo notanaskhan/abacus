@@ -9,14 +9,14 @@ const TEXT: Record<string, string> = {
   "budget.anomaly": "Unusual model spend on an engagement in the last hour.",
   "engagement.member_self_joined": "A firm admin joined an engagement to view its content.",
   "engagement_member.added": "You were added to an engagement's team.",
-  "review.assigned": "Evidence was assigned to you for review.",
-  "evidence.uploaded": "The client uploaded a file to a request.",
+  review_assigned: "Evidence was assigned to you for review.",
+  client_uploaded: "The client uploaded a file to a request.",
   "connection.created": "The client connected their accounting system.",
   "connection.revoked": "An accounting system connection was ended.",
   "independence.requested": "Confirm your independence for an engagement.",
   "reminders.drafted": "Overdue reminders are waiting for you to send.",
   "agent.digest": "Items are overdue on an engagement: see its activity.",
-  "comment.mentioned": "You were mentioned in a comment.", // SPEC-032 (TASK-063)
+  mention: "You were mentioned in a comment.", // SPEC-032 (TASK-063)
   // SPEC-305 (TASK-306): decisions reserved to the engagement partner.
   "materiality.proposed": "Materiality is waiting for your decision.",
   "risk.approval_requested": "A risk is waiting for your approval.",
@@ -26,15 +26,15 @@ const TEXT: Record<string, string> = {
 export type Category = "needs_you" | "mentions" | "client" | "updates";
 
 const CATEGORY: Record<string, Category> = {
-  "review.assigned": "needs_you",
+  review_assigned: "needs_you",
   "independence.requested": "needs_you",
   "reminders.drafted": "needs_you",
   "support_session.requested": "needs_you",
   "materiality.proposed": "needs_you",
   "risk.approval_requested": "needs_you",
   "finding.severity_proposed": "needs_you",
-  "comment.mentioned": "mentions",
-  "evidence.uploaded": "client",
+  mention: "mentions",
+  client_uploaded: "client",
   "connection.created": "client",
   "connection.revoked": "client",
 };
@@ -73,7 +73,7 @@ export function notificationHref(
       ...(n.subject_type === "request_item" ? { hash: `request-${n.subject_id}` } : {}),
     };
   }
-  if (n.kind === "comment.mentioned") {
+  if (n.kind === "mention") {
     return { to: `/engagements/${n.engagement_id}/items/${n.subject_id}` };
   }
   const to = firmHref(n);
@@ -82,8 +82,8 @@ export function notificationHref(
 
 function firmHref(n: NotificationOut): string | null {
   if (n.engagement_id === null) return null;
-  if (n.kind === "review.assigned") return `/engagements/${n.engagement_id}/review`;
-  if (n.kind === "evidence.uploaded") return `/engagements/${n.engagement_id}/requests`;
+  if (n.kind === "review_assigned") return `/engagements/${n.engagement_id}/review`;
+  if (n.kind === "client_uploaded") return `/engagements/${n.engagement_id}/requests`;
   if (n.kind === "reminders.drafted") return `/engagements/${n.engagement_id}/requests`;
   if (n.kind === "materiality.proposed" || n.kind === "risk.approval_requested")
     return `/engagements/${n.engagement_id}/planning`;
