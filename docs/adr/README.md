@@ -146,3 +146,5 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-155](ADR-155-design-system.md) | packages/ui is the Accrued design system - Tailwind v4 tokens, self-hosted fonts, Radix for behaviour, the AA ink ladder | amber | accepted |
 | [ADR-156](ADR-156-tenant-key-provisioning.md) | Tenant key provisioning - one multi-Region key per firm, created by a keyops worker | red | proposed |
 | [ADR-157](ADR-157-platform-controls-kill-switches.md) | Platform controls and kill switches - database rows read through one function, changed only by operators | red | proposed |
+| [ADR-158](ADR-158-client-scoped-files-cross-engagement-fulfilment.md) | Client-scoped files and cross-engagement fulfilment - evidence with a client and no engagement; reuse by reference, same client only | red | proposed |
+| [ADR-159](ADR-159-archive-seal-immutability-hash-chain-object-lock.md) | Archive seal, database immutability, the audit hash chain and Object Lock modes | red | proposed |
