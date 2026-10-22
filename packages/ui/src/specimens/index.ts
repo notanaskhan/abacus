@@ -19,6 +19,7 @@ import {
 } from "./inputs";
 import { LedgerGridSpecimen, StatementGridSpecimen } from "./data";
 import { MenuSpecimen, TooltipSpecimen } from "./menus";
+import { NestedSplitSpecimen, SplitNarrowSpecimen, SplitPresetsSpecimen } from "./split";
 import { ToastKindsSpecimen, ToastLiveSpecimen } from "./toasts";
 import { Overview } from "./overview";
 import {
@@ -199,6 +200,20 @@ export const SPECIMENS: readonly Specimen[] = [
   { id: "c-19-step-counter", kit: "C-19", title: "StepCounter", Component: StepCounterSpecimen },
   { id: "c-19-kpi-tile", kit: "C-19", title: "KPI tile", Component: KpiTileSpecimen },
   { id: "c-19-status-tile", kit: "C-19", title: "StatusTile", Component: StatusTileSpecimen },
+  // SplitLayout (F-05-T29): C-09
+  {
+    id: "c-09-split-presets",
+    kit: "C-09",
+    title: "SplitLayout presets",
+    Component: SplitPresetsSpecimen,
+  },
+  { id: "c-09-nested-split", kit: "C-09", title: "NestedSplit", Component: NestedSplitSpecimen },
+  {
+    id: "c-09-split-narrow",
+    kit: "C-09",
+    title: "SplitLayout at 1280",
+    Component: SplitNarrowSpecimen,
+  },
   // E4 DataTable engine (F-05-T27): C-01
   { id: "c-01-ledger", kit: "C-01", title: "Ledger grammar", Component: LedgerGridSpecimen },
   {

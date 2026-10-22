@@ -313,3 +313,14 @@ semantics are kept exact; the plan's `toast.undoable` and `toast.running` sit on
 | 2026-10-22 | Tick pills            | `bg-green` with `shadow-e1` for the kit's `--e-lift` (no such token); neutral pills `bg-chip`                            |
 | 2026-10-22 | PropChip fill         | `bg-nested` with a 0.5px hair ring, as C-01 spec 01's micro tag                                                          |
 | 2026-10-22 | Virtualisation        | Not yet: E4 virtualises above about 200 rows; the first screen with that many rows adds it                               |
+
+### SplitLayout (F-05-T29)
+
+| Date       | Item                 | Decision                                                                                                                                                                                                  |
+| ---------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-22 | Preset widths        | Chapter 04 §3.11's numbers (the acceptance); where C-09 draws a column `flex`, it flexes from the plan's width as its basis. `review` is the plan's (C-09 has none); C-09's `close` is not a §3.11 preset |
+| 2026-10-22 | Two-pane flex widths | The flex column's basis is the rest of the 1440 row (workbench 998, agents 1036, inbox 964, portal 1020, library 998)                                                                                     |
+| 2026-10-22 | Drawer width         | 480 for `audit` (C-09 says 490; O2's contract is 420 to 480) and 420 for the flex columns                                                                                                                 |
+| 2026-10-22 | Storage key          | `split.<preset>`, not the kit's `accrued.split.<preset>`: the portal never carries the product name                                                                                                       |
+| 2026-10-22 | Gutter value         | A gutter after a flex pane reports the pane's design width as `aria-valuenow` until resized (axe: a focusable separator needs one)                                                                        |
+| 2026-10-22 | Library              | Not resizable (C-11), so no gutters                                                                                                                                                                       |
