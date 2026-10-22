@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import asyncio
 import re
+import socket
 import time
 import uuid
 from collections.abc import Awaitable, Callable, Iterator
@@ -174,12 +175,22 @@ async def test_ac24_healthz_calls_no_dependency(
         },
     )
     use_checks(monkeypatch, **{f"check_{i}": failing() for i in range(len(READINESS_CHECKS))})
+    # "Calls nothing" asserted directly: any socket the request opens is recorded. (A wall-clock
+    # bound was a proxy for this, and a CI runner's timing made it flaky.)
+    opened: list[object] = []
+    real_connect = socket.socket.connect
+
+    def recording_connect(self: socket.socket, address: object) -> None:
+        opened.append(address)
+        real_connect(self, address)  # type: ignore[arg-type]
+
     async with client(create_app()) as http:
-        started = time.monotonic()  # the request, not app start-up (slow on a CI runner)
+        monkeypatch.setattr(socket.socket, "connect", recording_connect)
         response = await http.get("/healthz")
-        elapsed = time.monotonic() - started
+        monkeypatch.undo()
     assert response.status_code == 200
-    assert elapsed < 2
+    assert response.json() == {"status": "ok"}
+    assert opened == []
 
 
 # --- /readyz ------------------------------------------------------------------------------------
