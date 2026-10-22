@@ -29,6 +29,51 @@ const LEGACY_CLOCK = [
   "src/testing/support.tsx", // test helper: backdates a sign-in
 ];
 
+// Rules for every source file (ADR-065 and the design and scope rules).
+const SCREEN_SYNTAX = [
+  // SPEC-016 AC-1, SPEC-048 AC-5: design tokens only (packages/ui/eslint-design-rules.js).
+  ...designSyntaxFor(),
+  ...scopeTermSyntax(), // F-02-T09: banned product terms (scope-guards.yaml)
+  {
+    selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
+    message: "Never render HTML (ADR-065).",
+  },
+  {
+    selector: "Property[key.name='dangerouslySetInnerHTML']",
+    message: "Never render HTML (ADR-065).",
+  },
+  {
+    selector:
+      "AssignmentExpression > MemberExpression.left[property.name=/^(innerHTML|outerHTML)$/], CallExpression > MemberExpression.callee[property.name=/^(insertAdjacentHTML|createContextualFragment)$/]",
+    message: "Never write HTML into the DOM (ADR-065).",
+  },
+  {
+    // Rendered directly, or as the result of `&&` / `?:` inside JSX.
+    selector:
+      "JSXElement > JSXExpressionContainer > MemberExpression[property.name=/^(rationale|quote)$/], JSXElement > JSXExpressionContainer > LogicalExpression > MemberExpression.right[property.name=/^(rationale|quote)$/], JSXElement > JSXExpressionContainer > ConditionalExpression > MemberExpression[property.name=/^(rationale|quote)$/]",
+    message: "Render model text through <AgentText text={…} /> (ADR-065).",
+  },
+  {
+    selector:
+      "JSXOpeningElement[name.name!='AgentText'] > JSXAttribute > JSXExpressionContainer MemberExpression[property.name=/^(rationale|quote)$/]",
+    message: "Model text goes only to <AgentText text={…} /> (ADR-065).",
+  },
+];
+
+// F-05-T15 / F-05-T23: no native select and no boxed Input outside the legacy screens, which M2
+// replaces screen by screen and M3 deletes with the Atelier `Input` (plan 04, section M2-M3).
+const NEW_CODE_SYNTAX = [
+  {
+    selector: "JSXOpeningElement[name.name='select']",
+    message: "Use the design system's Picker, not a native select (F-05-T15).",
+  },
+  {
+    selector:
+      "ImportDeclaration[source.value='@abacus/ui'] > ImportSpecifier[imported.name='Input']",
+    message: "The boxed Input is legacy: use SearchField, Picker or ValueRow (F-05-T15).",
+  },
+];
+
 export default defineConfig(
   { ignores: ["dist", "test-results", "playwright-report", "parity-report"] },
   tseslint.configs.strictTypeChecked,
@@ -107,36 +152,14 @@ export default defineConfig(
     ignores: ["src/**/*.test.{ts,tsx}"],
     rules: {
       // ADR-065: model output is plain text, rendered only through AgentText.
-      "no-restricted-syntax": [
-        "error",
-        // SPEC-016 AC-1, SPEC-048 AC-5: design tokens only (packages/ui/eslint-design-rules.js).
-        ...designSyntaxFor(),
-        ...scopeTermSyntax(), // F-02-T09: banned product terms (scope-guards.yaml)
-        {
-          selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
-          message: "Never render HTML (ADR-065).",
-        },
-        {
-          selector: "Property[key.name='dangerouslySetInnerHTML']",
-          message: "Never render HTML (ADR-065).",
-        },
-        {
-          selector:
-            "AssignmentExpression > MemberExpression.left[property.name=/^(innerHTML|outerHTML)$/], CallExpression > MemberExpression.callee[property.name=/^(insertAdjacentHTML|createContextualFragment)$/]",
-          message: "Never write HTML into the DOM (ADR-065).",
-        },
-        {
-          // Rendered directly, or as the result of `&&` / `?:` inside JSX.
-          selector:
-            "JSXElement > JSXExpressionContainer > MemberExpression[property.name=/^(rationale|quote)$/], JSXElement > JSXExpressionContainer > LogicalExpression > MemberExpression.right[property.name=/^(rationale|quote)$/], JSXElement > JSXExpressionContainer > ConditionalExpression > MemberExpression[property.name=/^(rationale|quote)$/]",
-          message: "Render model text through <AgentText text={…} /> (ADR-065).",
-        },
-        {
-          selector:
-            "JSXOpeningElement[name.name!='AgentText'] > JSXAttribute > JSXExpressionContainer MemberExpression[property.name=/^(rationale|quote)$/]",
-          message: "Model text goes only to <AgentText text={…} /> (ADR-065).",
-        },
-      ],
+      "no-restricted-syntax": ["error", ...SCREEN_SYNTAX],
+    },
+  },
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/**/*.test.{ts,tsx}", "src/legacy/**"],
+    rules: {
+      "no-restricted-syntax": ["error", ...SCREEN_SYNTAX, ...NEW_CODE_SYNTAX],
     },
   },
   {
