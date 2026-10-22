@@ -55,9 +55,13 @@ function placeholders(text: string): string[] {
 describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
   it("holds every row of the registry", () => {
     // P-04-T02 added decision_card, suggestion, proposal, sign_off_slot and field_value.
-    expect(Object.keys(REGISTRY)).toHaveLength(61);
+    // P-07-T03 added client, invitation, acceptance_record, letter_record, conflict_assessment,
+    // nas_evaluation and independence_conclusion (+7).
+    expect(Object.keys(REGISTRY)).toHaveLength(68);
     // +21: decision_card 3, suggestion 6, proposal 5, sign_off_slot 2, field_value 4, checkpoint saved.
-    expect(ROWS).toHaveLength(311);
+    // +27 (P-07-T03): client 4, invitation 5, acceptance_record 5, letter_record 2,
+    // conflict_assessment 5, nas_evaluation 3, independence_conclusion 3.
+    expect(ROWS).toHaveLength(338);
   });
 
   it("resolves each code to a word, a kit variant or a line, and never to match", () => {

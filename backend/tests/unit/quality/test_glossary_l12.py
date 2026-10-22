@@ -75,3 +75,40 @@ def test_p06_t04_upload_stays_banned_outside_the_compound(tmp_path: Path) -> Non
     assert bp.glossary_bans()["upload"] == "evidence_version"
     source = "class Upload:\n    pass\n"
     assert "L12" in _ids(tmp_path, "src/abacus/modules/requests/u.py", source)
+
+
+# P-07-T03: the P-07 tables and their classes, as P-07-T07, T35, T36, T41, T42 and T52 will
+# name them.
+P07_TABLES = {
+    "acceptance_records": "AcceptanceRecord",
+    "acceptance_conditions": "AcceptanceCondition",
+    "independence_conclusions": "IndependenceConclusion",
+    "nas_evaluations": "NasEvaluation",
+    "independence_breaches": "IndependenceBreach",
+    "conflict_checks": "ConflictCheck",
+    "screening_records": "ScreeningRecord",
+    "client_imports": "ClientImport",
+    "client_import_rows": "ClientImportRow",
+    "client_intake_drafts": "ClientIntakeDraft",
+}
+
+
+def test_p07_t03_the_new_code_names_are_glossary_rows() -> None:
+    text = bp.GLOSSARY.read_text(encoding="utf-8")
+    for table in P07_TABLES:
+        assert f"`{table}`" in text, table
+    assert "estate_of" in text
+
+
+def test_p07_t03_l12_accepts_the_p07_identifiers(tmp_path: Path) -> None:
+    source = "".join(
+        f'class {cls}:\n    __tablename__ = "{table}"\n' for table, cls in P07_TABLES.items()
+    )
+    source += 'ESTATE_OF = "estate_of"\n'
+    assert "L12" not in _ids(tmp_path, "src/abacus/modules/organisations/models.py", source)
+
+
+def test_p07_t03_import_stays_banned_outside_the_compound(tmp_path: Path) -> None:
+    assert "import" in bp.glossary_bans()
+    source = "class Import:\n    pass\n"
+    assert "L12" in _ids(tmp_path, "src/abacus/modules/organisations/i.py", source)

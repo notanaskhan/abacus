@@ -498,6 +498,54 @@ class LinkedValueStatus(StrEnum):
     STALE_OVERRIDE = "stale_override"
 
 
+class ClientStatus(StrEnum):
+    PROSPECT = "prospect"
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    FORMER = "former"
+
+
+class InvitationStatus(StrEnum):
+    NOT_INVITED = "not_invited"
+    INVITED = "invited"
+    ACTIVE = "active"
+    LOCKED = "locked"
+    DEACTIVATED = "deactivated"
+
+
+class AcceptanceRecordStatus(StrEnum):
+    DRAFT = "draft"
+    PRE_SCREENING = "pre_screening"
+    AWAITING_PARTNER = "awaiting_partner"
+    DECIDED = "decided"
+    DECLINED = "declined"
+
+
+class LetterRecordStatus(StrEnum):
+    NOT_SIGNED = "not_signed"
+    SIGNED = "signed"
+
+
+class ConflictAssessmentStatus(StrEnum):
+    PENDING = "pending"
+    CLEAR = "clear"
+    SAME_FAMILY_NOT_ADVERSE = "same_family_not_adverse"
+    NOT_ADVERSE = "not_adverse"
+    COUNTERPARTY_REVIEW = "counterparty_review"
+
+
+class NasEvaluationStatus(StrEnum):
+    PENDING = "pending"
+    CONCLUDED = "concluded"
+    NOT_APPLICABLE = "not_applicable"
+
+
+class IndependenceConclusionStatus(StrEnum):
+    INDEPENDENT = "independent"
+    INDEPENDENT_WITH_SAFEGUARDS = "independent_with_safeguards"
+    NOT_INDEPENDENT = "not_independent"
+
+
 # Each object's stored codes, and their SQL CHECK list.
 STORED: dict[str, tuple[str, ...]] = {
     "engagement": (
@@ -916,6 +964,47 @@ STORED: dict[str, tuple[str, ...]] = {
         "formula",
         "override",
         "stale_override",
+    ),
+    "client": (
+        "prospect",
+        "active",
+        "inactive",
+        "former",
+    ),
+    "invitation": (
+        "not_invited",
+        "invited",
+        "active",
+        "locked",
+        "deactivated",
+    ),
+    "acceptance_record": (
+        "draft",
+        "pre_screening",
+        "awaiting_partner",
+        "decided",
+        "declined",
+    ),
+    "letter_record": (
+        "not_signed",
+        "signed",
+    ),
+    "conflict_assessment": (
+        "pending",
+        "clear",
+        "same_family_not_adverse",
+        "not_adverse",
+        "counterparty_review",
+    ),
+    "nas_evaluation": (
+        "pending",
+        "concluded",
+        "not_applicable",
+    ),
+    "independence_conclusion": (
+        "independent",
+        "independent_with_safeguards",
+        "not_independent",
     ),
 }
 CHECKS: dict[str, str] = {

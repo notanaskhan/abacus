@@ -2179,6 +2179,191 @@ export const STATUS_REGISTRY = {
       },
       "disc": "amber_tint_relink"
     }
+  },
+  "client": {
+    "prospect": {
+      "label": "Prospect",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "active": {
+      "label": "Active",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "inactive": {
+      "label": "Inactive",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "former": {
+      "label": "Former",
+      "variant": null,
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "invitation": {
+    "not_invited": {
+      "label": "Not invited",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "invited": {
+      "label": "Invite pending · expires {date}",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "portal_pill": "Invited"
+      }
+    },
+    "active": {
+      "label": "Active",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "locked": {
+      "label": "Locked",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "deactivated": {
+      "label": "Deactivated {date}",
+      "variant": "tag",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "acceptance_record": {
+    "draft": {
+      "label": "Draft",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "pre_screening": {
+      "label": "Pre-screening",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "awaiting_partner": {
+      "label": "Awaiting partner",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "rail_card": "Blocked on a partner decision"
+      }
+    },
+    "decided": {
+      "label": "Decided",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "declined": {
+      "label": "Declined",
+      "variant": null,
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "letter_record": {
+    "not_signed": {
+      "label": "Not signed",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "signed": {
+      "label": "Letter signed",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "gate_row": "Letter signed by {signers} · {date}"
+      }
+    }
+  },
+  "conflict_assessment": {
+    "pending": {
+      "label": "Pending",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "clear": {
+      "label": "Clear",
+      "variant": "neutral",
+      "terminal": true,
+      "derived": false
+    },
+    "same_family_not_adverse": {
+      "label": "Same family · not adverse",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "not_adverse": {
+      "label": "Not adverse",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "counterparty_review": {
+      "label": "Counterparty · {relationship} — review",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "nas_evaluation": {
+    "pending": {
+      "label": "Pending",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "concluded": {
+      "label": "Concluded",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    },
+    "not_applicable": {
+      "label": "Not applicable",
+      "variant": "neutral",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "independence_conclusion": {
+    "independent": {
+      "label": "Independent",
+      "variant": null,
+      "terminal": true,
+      "derived": false
+    },
+    "independent_with_safeguards": {
+      "label": "Independent with safeguards",
+      "variant": null,
+      "terminal": true,
+      "derived": false
+    },
+    "not_independent": {
+      "label": "Not independent",
+      "variant": null,
+      "terminal": true,
+      "derived": false
+    }
   }
 } as const;
 
