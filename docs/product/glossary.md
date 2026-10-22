@@ -132,6 +132,8 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Binder | One or more per work item (DEC-31). UI label for a request list. | `request_lists` (`kind`, `part`, `work_item_id`) | — |
 | Request category | The binder rail grouping. "category" is allowed only in this compound. | `request_categories` | — |
 | Delegation | Third-party request scope (POR-14). | `request_delegations` | — |
+| Binder recipient | A client contact a binder is visible to (BND-02 rail "Visible to"; `PUT /v1/binders/{id}/recipients`). Binder emails (`binder_published`) go to its recipients. Insert-only: removing a recipient writes a new row with `removed_at`. Not a delegation, which scopes one request item to a third party. | `binder_recipients` (`binder_id`, `contact_id`, `removed_at`) | — |
+| Request upload intent | A short-lived note from the portal that a client is uploading n files to one request item, so BND-02 shows "Uploading 2 files…" by polling (DEC-23). UNLOGGED, 90 s TTL, swept every 60 s; never evidence and never a fulfilment. `upload` is allowed in code only in this compound and the legacy `upload_*` tables; it stays banned as a synonym of evidence version. | `request_upload_intents` (`files_expected`, `expires_at`) | — |
 | Questionnaire / question / answer | Organizers, POR-05, POR-11. | `questionnaires`, `questions`, `answers`, `transaction_questions` | — |
 | Evidence board | The legacy SPEC-022 request-item board (R-07). The component moves from `apps/web/src/screens/Board.tsx` to `apps/web/src/domain/requests/RequestBoard.tsx` (DS-S4); binder surfaces keep the handoff label "Requests". Not the ENG-10 Board (see New terms: workpapers). | `RequestBoard` | — |
 
@@ -144,7 +146,8 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Document class / classification | OCR and classification outputs. `document` appears in code only in these compounds. | `document_class`, `document_classifications`, `extracted_fields`, `evidence_pages` | — |
 | PII region / reveal | Server-masked renditions; logged reveal. | `pii_regions`, `pii_reveals` | — |
 | Annotation | SHL-08 viewer marks; the evidence itself is unchanged. | `annotations` | — |
-| Withdrawal | P-31. | `evidence_withdrawals` | — |
+| Withdrawal | P-31 (ADR-162): a client voids an upload the firm has never accepted. The version is hidden at once from firm reads, agents and exports, and crypto-erased after 30 days unless held. Accepted evidence is never withdrawable (409 `evidence_accepted`). UI **"Withdraw"** for the portal control and its DF-15 copy, never "Remove" or "Delete" (see Copy-level bans). | `evidence_withdrawals`, action `evidence.withdraw` | — |
+| Evidence object key | The wrapped data key of one detached-key evidence version (client-channel uploads, ADR-162), stored apart from the object so destroying it crypto-erases the file. Acceptance stamps `retained_at`, one-way; only the purge's SECURITY DEFINER path nulls `wrapped_key` and stamps `destroyed_at`. Not the S3 object path (`tenants/<tenant>/v/<version_id>`) and not the tenant key. | `evidence_object_keys` (`version_id`, `wrapped_key`, `retained_at`, `destroyed_at`), `evidence_versions.storage_mode` | — |
 | File folder | The Files tree. | `file_folders` | — |
 | Archive / addition | Seal manifests; post-lock additions. | `archives`, `archive_additions`, `audit_checkpoints` | — |
 | Retention policy / legal hold / destruction batch | P-14. | `retention_policies`, `legal_holds`, `hold_objects`, `destruction_batches` | — |
@@ -321,6 +324,7 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Proposal (agent change set) | Groups suggestions (X-14). | `proposals`, `proposal_rows` | — |
 | Learned context | UI label; no "memory", "trained" or "learned" in copy. | `memory_items`, `corrections`, `agent_feedback` | — |
 | Review package | SHL-19. | `review_packages` | — |
+| Screening feedback | A person's thumbs up or down on an evidence screening aggregate (SHL-20f; a `request_batch` screening result). Thumbs down needs a reason code (`wrong_request_match`, `wrong_period`, `unclear_file`, `other`); the note is sealed. Insert-only. It never changes a verdict or a request status, and any learned context it feeds stays a proposal (ADR-068). Distinct from `agent_feedback`. | `screening_feedback` (`thumb`, `reason_code`, `note_sealed`) | — |
 | Today | UI "Today". | `daily_briefings` | — |
 
 ## New terms: workbench
@@ -361,6 +365,7 @@ Lint rules L1–L12 check these against the copy registry.
 | "task" for assignable work | "To-do" (hyphenated) | R6, L2 |
 | "memory", "trained", "learned" for learned context; "overwrite" for template updates; sparkle or wand glyphs | "Learned context"; "Update"; the atom glyph | AVOID lists |
 | "Evidence check" | "Evidence screening" | decision record naming map |
+| "Remove" or "Delete" on a client's unaccepted upload | "Withdraw" ("Withdraw this file? Brightwater Hale's team won't use it. It's kept securely for 30 days, then erased.", with the firm's name) | DF-15, ADR-162 |
 | "n hidden by an ethical wall" | nothing (404 semantics) | DEC-43 |
 | "Accrued" in the portal or client emails (except the optional footer) | The firm's name | L7 white-label crawler |
 | Emoji, "!" in agent or product voice, "..." | "…" (U+2026) on dialog openers | L2/L3 |
