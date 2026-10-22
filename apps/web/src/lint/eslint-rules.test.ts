@@ -572,3 +572,31 @@ describe("SPEC-048 ac5 the design rules extend, never weaken, the architecture r
     expect((await uiViolations(html, "src/components/a.tsx")).length).toBeGreaterThan(0);
   });
 });
+
+describe("F-05-T15 / F-05-T23: no native select or boxed Input in new code", () => {
+  const SELECT = "export const A = () => <select><option>x</option></select>;";
+  const INPUT = 'import { Input } from "@abacus/ui";\nexport const A = () => <Input />;';
+
+  it("refuses a native select outside the legacy screens", async () => {
+    const found = await violations(SELECT, "src/routes/firm/Example.tsx");
+    expect(found.some((m) => m.includes("Picker, not a native select"))).toBe(true);
+  });
+
+  it("refuses the boxed Input outside the legacy screens", async () => {
+    const found = await violations(INPUT, "src/shell/Example.tsx");
+    expect(found.some((m) => m.includes("boxed Input is legacy"))).toBe(true);
+  });
+
+  it("keeps the other rules where it applies", async () => {
+    const found = await violations(
+      "export const A = () => <p dangerouslySetInnerHTML={{ __html: 'x' }} />;",
+      "src/routes/firm/Example.tsx",
+    );
+    expect(found.some((m) => m.includes("Never render HTML"))).toBe(true);
+  });
+
+  it("leaves the legacy screens to M2 and M3", async () => {
+    expect(await violations(SELECT, "src/legacy/Example.tsx")).toEqual([]);
+    expect(await violations(INPUT, "src/legacy/Example.tsx")).toEqual([]);
+  });
+});
