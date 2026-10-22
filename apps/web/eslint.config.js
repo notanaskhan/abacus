@@ -74,6 +74,19 @@ const NEW_CODE_SYNTAX = [
   },
 ];
 
+// F-04-T14: no string route in a screen; link with `{...to.<ID>(params)}` instead.
+const SCREEN_LINK_SYNTAX = [
+  {
+    selector:
+      "JSXAttribute[name.name='to'] > Literal, JSXAttribute[name.name='to'] > JSXExpressionContainer > :matches(Literal, TemplateLiteral)",
+    message: "Link to a screen with {...to.<ID>(params)} from src/routes/to.ts (F-04-T14).",
+  },
+  {
+    selector: "Property[key.name='to'] > :matches(Literal, TemplateLiteral)",
+    message: "Navigate to a screen with to.<ID>(params) from src/routes/to.ts (F-04-T14).",
+  },
+];
+
 export default defineConfig(
   { ignores: ["dist", "test-results", "playwright-report", "parity-report"] },
   tseslint.configs.strictTypeChecked,
@@ -160,6 +173,20 @@ export default defineConfig(
     ignores: ["src/**/*.test.{ts,tsx}", "src/legacy/**"],
     rules: {
       "no-restricted-syntax": ["error", ...SCREEN_SYNTAX, ...NEW_CODE_SYNTAX],
+    },
+  },
+  {
+    // F-04-T14: a screen links to a screen only through its typed builder (src/routes/to.ts), so
+    // link-contract.test.ts sees every designed link.
+    files: ["src/screens/**/*.{ts,tsx}"],
+    ignores: ["src/**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        ...SCREEN_SYNTAX,
+        ...NEW_CODE_SYNTAX,
+        ...SCREEN_LINK_SYNTAX,
+      ],
     },
   },
   {

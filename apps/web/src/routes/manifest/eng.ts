@@ -1,0 +1,42 @@
+// ENG screens of the design handoff (F-04-T14), seeded by scripts/seed-manifest.mjs.
+// It adds new IDs above the marker and never edits an entry; a screen's builder sets status,
+// path and folder when the screen is built.
+import type { Manifest } from "./types";
+
+export const engScreens = {
+  "ENG-01": { name: "Engagements index", status: "planned", path: null },
+  "ENG-02": {
+    name: "Engagement record",
+    status: "planned",
+    path: "/engagements/$engagementId", // legacy EngagementLayout
+  },
+  "ENG-03": {
+    name: "New engagement wizard · Fairhaven Foods 401(k) Plan",
+    status: "planned",
+    path: null,
+  },
+  "ENG-04": {
+    name: "Engagement letter composer · Ridgeline cost segregation & §754 analysis",
+    status: "planned",
+    path: null,
+  },
+  "ENG-05": { name: "Team & roles", status: "planned", path: null },
+  "ENG-06": { name: "Budget, time & AI effort", status: "planned", path: null },
+  "ENG-07": { name: "Season setup / roll-forward", status: "planned", path: null },
+  "ENG-08": { name: "Billing & WIP read-through", status: "planned", path: null, entry: true },
+  "ENG-09": { name: "Proposals & scope builder", status: "planned", path: null },
+  "ENG-10": { name: "Board — Granite Peak FY2026 audit programs", status: "planned", path: null },
+  "ENG-11": { name: "Engagement settings", status: "planned", path: null },
+  "ENG-12": {
+    name: "Engagement dashboard — Granite Peak FY2026 Financial Statement Audit",
+    status: "planned",
+    path: null,
+  },
+  "ENG-13": { name: "Roll forward — Tessellate SOC 2 Type 2", status: "planned", path: null },
+  "ENG-14": {
+    name: "Set up with AI — Harlow & Pike Holdings, Inc.",
+    status: "planned",
+    path: null,
+  },
+  // seed-manifest: new screens are added above this line
+} as const satisfies Manifest;
