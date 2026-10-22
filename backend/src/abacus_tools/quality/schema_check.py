@@ -72,6 +72,7 @@ _PLATFORM_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "audit_events": frozenset(
         {"tenant_id", "actor_kind", "actor_id", "action", "target_type", "target_id"}
         | {"before_ref", "after_ref", "trace_id"}
+        | {"engagement_id", "work_item_id", "on_behalf_of_user_id", "policy_ref"}  # Q-02-T16
     ),
     "outbox": frozenset({"id", "tenant_id", "event_type", "payload", "trace_context"}),
     "usage_records": frozenset(

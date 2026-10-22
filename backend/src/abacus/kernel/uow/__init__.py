@@ -117,11 +117,20 @@ class DomainEvent(BaseModel):
 
 
 @dataclass(frozen=True)
+class Scope:
+    """What an audit event is scoped to (Q-02-T16): the explorer filters on it exactly."""
+
+    engagement_id: UUID | None = None
+    work_item_id: UUID | None = None
+
+
+@dataclass(frozen=True)
 class _AuditEvent:
     action: str
     target: Target
     before: Ref | None
     after: Ref | None
+    scope: Scope | None = None
 
 
 @dataclass
@@ -132,11 +141,17 @@ class UnitOfWork:
     _events: list[DomainEvent] = field(default_factory=list[DomainEvent])
 
     def record(
-        self, action: str, *, target: Target, before: Ref | None = None, after: Ref | None = None
+        self,
+        action: str,
+        *,
+        target: Target,
+        before: Ref | None = None,
+        after: Ref | None = None,
+        scope: Scope | None = None,
     ) -> None:
         if not _ACTION.fullmatch(action):
             raise ValueError(f"audit action {action!r} must look like 'entity.verb_past'")
-        self._audit.append(_AuditEvent(action, target, before, after))
+        self._audit.append(_AuditEvent(action, target, before, after, scope))
 
     def emit(self, event: DomainEvent) -> None:
         sensitive = sensitive_paths(event)
@@ -154,9 +169,10 @@ class UnitOfWork:
             await self._connection.execute(
                 text(
                     "INSERT INTO audit_events (tenant_id, actor_kind, actor_id, action, "
-                    "target_type, target_id, before_ref, after_ref, trace_id) VALUES (:tenant, "
-                    ":kind, :actor, :action, :target_type, :target_id, CAST(:before AS jsonb), "
-                    "CAST(:after AS jsonb), :trace_id)"
+                    "target_type, target_id, before_ref, after_ref, trace_id, engagement_id, "
+                    "work_item_id, on_behalf_of_user_id) VALUES (:tenant, :kind, :actor, "
+                    ":action, :target_type, :target_id, CAST(:before AS jsonb), "
+                    "CAST(:after AS jsonb), :trace_id, :engagement, :work_item, :on_behalf_of)"
                 ),
                 [
                     {
@@ -169,6 +185,9 @@ class UnitOfWork:
                         "before": None if a.before is None else json.dumps(a.before.fields),
                         "after": None if a.after is None else json.dumps(a.after.fields),
                         "trace_id": trace_id,
+                        "engagement": a.scope.engagement_id if a.scope else None,
+                        "work_item": a.scope.work_item_id if a.scope else None,
+                        "on_behalf_of": ctx.on_behalf_of_user_id,
                     }
                     for a in self._audit
                 ],
@@ -309,6 +328,7 @@ __all__ = [
     "MissingAuditEvent",
     "OutboxEvent",
     "Ref",
+    "Scope",
     "Target",
     "UnitOfWork",
     "audit_facets",

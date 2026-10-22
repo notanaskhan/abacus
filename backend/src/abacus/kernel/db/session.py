@@ -40,6 +40,8 @@ class TenantContext:
     tenant_id: UUID
     actor_kind: ActorKind
     actor_id: str
+    # Q-02-T16: the person an agent or the platform acts for; audit rows carry it.
+    on_behalf_of_user_id: UUID | None = None
 
 
 _engine: AsyncEngine | None = None
