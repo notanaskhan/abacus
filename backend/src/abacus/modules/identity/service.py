@@ -449,3 +449,17 @@ async def walled_from(tenant: TenantContext, user_id: UUID) -> frozenset[UUID]:
 async def firm_name(tenant_id: UUID) -> str:
     """The firm's name, for what goes out in its name (SPEC-025 AC-8: invitations)."""
     return await firm_name_of(tenant_id) or "Your auditor"
+
+
+async def role_codes(ctx: AuthContext, engagement_id: UUID | None = None) -> tuple[str, ...]:
+    """F-03-T30: the person's role codes here, for labels: the firm role and the engagement role
+    on `engagement_id` (or every engagement role they hold in the firm)."""
+    codes: set[str] = {ctx.firm_role} if ctx.firm_role else set()
+    held = await my_engagement_roles(ctx.tenant, ctx.user_id)
+    if engagement_id is not None:
+        role = held.get(engagement_id)
+        if role is not None:
+            codes.add(role)
+    else:
+        codes |= set(held.values())
+    return tuple(sorted(codes))
