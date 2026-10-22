@@ -82,7 +82,10 @@ def _reset_provider() -> Iterator[None]:
 def _attribution(world: World, run_id: uuid.UUID | None = None) -> Attribution:
     actor = f"agent:{AGENT_ID}:{run_id or uuid.uuid4()}"
     return Attribution(
-        TenantContext(world.tenant_id, "agent", actor), world.engagement_id, AGENT_ID, run_id
+        TenantContext(world.tenant_id, "agent", actor, uuid.uuid4()),
+        world.engagement_id,
+        AGENT_ID,
+        run_id,
     )
 
 
@@ -360,7 +363,9 @@ def _refusals(world: World) -> list[tuple[str, GatewayCall[Verdict]]]:
             _call(
                 world,
                 attribution=Attribution(
-                    TenantContext(world.tenant_id, "agent", f"agent:{AGENT_ID}:{uuid.uuid4()}"),
+                    TenantContext(
+                        world.tenant_id, "agent", f"agent:{AGENT_ID}:{uuid.uuid4()}", uuid.uuid4()
+                    ),
                     world.engagement_id,
                     "",
                     None,

@@ -624,6 +624,7 @@ async def test_ac3_a_revoked_user_still_gets_me_but_without_the_revoked_firm(
 ME_KEYS = {
     *("user_id", "email", "display_name", "memberships", "active_tenant_id"),
     *("server_now", "clock_mode"),
+    *("initials", "job_title", "default_office_id", "offices"),  # P-01-T04 (v3)
 }
 
 
@@ -641,7 +642,8 @@ async def test_ac1_me_with_one_membership_names_the_active_tenant(
     assert body["active_tenant_id"] == str(who.tenant_id)
     [membership] = body["memberships"]
     # SPEC-015 (TASK-030): staff or client membership.
-    assert set(membership) == {"tenant_id", "firm_name", "firm_role", "kind"}
+    # P-01-T04 (v3): `firm` carries region, time zone, seats and the sandbox marker.
+    assert set(membership) == {"tenant_id", "firm_name", "firm_role", "kind", "firm"}
     assert membership["kind"] == "staff"
     assert membership["tenant_id"] == str(who.tenant_id)
     assert membership["firm_role"] == "firm_admin"

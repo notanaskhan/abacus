@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import uuid
 from collections.abc import AsyncIterator
+from dataclasses import replace
 from typing import Annotated, ClassVar, Protocol, cast
 
 import pytest
@@ -343,6 +344,8 @@ async def test_ac4_a_failed_unit_of_work_does_not_poison_the_next_one() -> None:
 )
 async def test_ac4_audit_rows_carry_the_contexts_tenant_and_actor(kind: str, actor: str) -> None:
     ctx = _ctx(actor_kind=kind, actor_id=actor)
+    if kind == "agent":  # Q-02-T16: an agent's audit rows name the person it acts for
+        ctx = replace(ctx, on_behalf_of_user_id=uuid.uuid4())
     await _commit_one(ctx)
     [row] = await _audit(ctx)
     assert row["tenant_id"] == ctx.tenant_id

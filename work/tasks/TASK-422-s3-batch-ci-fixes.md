@@ -43,3 +43,13 @@ The S3 batch skipped per-PR CI. Before the one CI run, the full unit, acceptance
 - 2026-10-22: two failures are left to TASK-461's session, which is changing those files:
   - `RunTraceOut` has fields without classification tags (`test_classification`);
   - the vocabulary has no entry for `TraceRowOut.state` = `info` (`test_f03_status_vocabulary`).
+- 2026-10-23: the first CI run (39826821208) failed. Fixes in the second pass:
+  - **Agent contexts in tests:** 44 integration failures came from Q-02-T16's check that every agent audit row names its person, because the gateway tests built agent contexts without one. Production builds agent contexts only through `agent_context_for_run`, which always sets the initiator. The tests now pass a person.
+  - **Cursor bug (`kernel.listing.keyset`):** a cursor's text key and id are now bound as text and cast in SQL to the column type. The C1 cursor page had failed with "timestamptz < varchar" (F-03-T31).
+  - **Expectation updates:**
+    - `test_engagements`: `allowed_actions` is on the single read only, not on summaries.
+    - `test_identity`: the `/v1/me` v3 keys and `memberships[].firm`.
+    - `test_retrieval` and `test_screening`: contexts carry their person.
+    - `test_unit_of_work`: the agent case needs a person.
+    - `status.test.ts`: P-04-T02 took the registry to 61 objects and 311 rows.
+  - **Relay test:** `test_idempotency` relays until nothing is due, since the database is shared.

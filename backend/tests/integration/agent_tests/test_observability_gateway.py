@@ -115,7 +115,10 @@ def _call(
         essential=True,
         budget_usd=budget,
         attribution=Attribution(
-            TenantContext(world.tenant_id, "agent", actor), world.engagement_id, AGENT_ID, None
+            TenantContext(world.tenant_id, "agent", actor, uuid.uuid4()),
+            world.engagement_id,
+            AGENT_ID,
+            None,
         ),
         context=ContextBuilder()
         .text("engagement", CONTEXT_MARKER)
