@@ -1,0 +1,11 @@
+# The portal module's flags (ADR-089; P-39, F-03-T07). Compiled with every other module's
+# file into kernel/_flags.py by `make regenerate`.
+
+flags:
+  - name: portal.home_v2
+    description: 'Portal home v2 (C5 v1.1 portal half, P-08): POR-02 over GET /v1/portal/home and PUT /v1/portal/preferences. Off: both routes answer 404 and the portal entry renders the legacy ClientHome. On: 501 not_implemented until P-08-T13 lands. Off by default. Renewal before expiry or retirement with the legacy path is P-08-T28.'
+    owner: ayushkbhatia
+    created: 2026-10-23
+    expires: 2027-01-21
+    kind: boolean
+    default: false

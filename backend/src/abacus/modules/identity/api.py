@@ -100,6 +100,7 @@ from abacus.modules.identity.invitations import (
 )
 from abacus.modules.identity.labels import ROLE_LABELS
 from abacus.modules.identity.member_hooks import register_member_added
+from abacus.modules.identity.portal_contract import contacts_router
 from abacus.modules.identity.repository import (
     EngagementRole,
     MemberFacts,
@@ -202,6 +203,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     firm_support_router,
     invitation_router,
     signup_router,
+    contacts_router,  # C5 v1.1 portal half (P-08-T01 stub)
 )
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.

@@ -2421,6 +2421,55 @@ export type ConnectionOut = {
 };
 
 /**
+ * ContactMfaResetOut
+ *
+ * After a reset the next sign-in goes to two-step setup (POR-01, the setup state).
+ */
+export type ContactMfaResetOut = {
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Contact Id
+     */
+    contact_id: string;
+    /**
+     * Mfa Enrolled
+     */
+    mfa_enrolled: boolean;
+    /**
+     * Reset At
+     */
+    reset_at: string;
+    /**
+     * Trusted Devices Revoked
+     */
+    trusted_devices_revoked: number;
+};
+
+/**
+ * ContactPortalStatusOut
+ *
+ * The contact's portal access after an unlock (CLI-04 badge; `invitation` status words).
+ */
+export type ContactPortalStatusOut = {
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Contact Id
+     */
+    contact_id: string;
+    /**
+     * Locked Until
+     */
+    locked_until?: string | null;
+    portal_status: InvitationStatus;
+};
+
+/**
  * CoverageGapsOut
  */
 export type CoverageGapsOut = {
@@ -4937,6 +4986,11 @@ export type IndependenceIn = {
 };
 
 /**
+ * InvitationStatus
+ */
+export type InvitationStatus = 'not_invited' | 'invited' | 'active' | 'locked' | 'deactivated';
+
+/**
  * ItemHitOut
  */
 export type ItemHitOut = {
@@ -6130,6 +6184,27 @@ export type MatrixRowOut = {
 };
 
 /**
+ * MeMfaOut
+ *
+ * The person's second step: whether the DEC-34 floor requires it and whether a factor and a
+ * trusted device exist. Never the factor, a secret or a backup code.
+ */
+export type MeMfaOut = {
+    /**
+     * Enrolled
+     */
+    enrolled: boolean;
+    /**
+     * Required
+     */
+    required: boolean;
+    /**
+     * Trusted Until
+     */
+    trusted_until?: string | null;
+};
+
+/**
  * MeOut
  */
 export type MeOut = {
@@ -6165,10 +6240,12 @@ export type MeOut = {
      * Memberships
      */
     memberships: Array<MembershipOut>;
+    mfa?: MeMfaOut | null;
     /**
      * Offices
      */
     offices?: Array<OfficeOut>;
+    portal?: MePortalOut | null;
     /**
      * Server Now
      */
@@ -6177,6 +6254,52 @@ export type MeOut = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * MePortalOut
+ *
+ * The portal shell for a client user in the active firm (role union, DEC-129).
+ */
+export type MePortalOut = {
+    /**
+     * Landing
+     */
+    landing: 'home' | 'requests' | 'k1s' | 'governance' | 'intake' | 'component_room' | 'none';
+    /**
+     * Nav
+     */
+    nav: Array<'home' | 'documents' | 'questions' | 'approvals' | 'sign' | 'messages' | 'deliverables'>;
+    /**
+     * Scopes
+     */
+    scopes: Array<MePortalScopeOut>;
+    /**
+     * Shell
+     */
+    shell: 'full' | 'k1' | 'limited' | 'none';
+};
+
+/**
+ * MePortalScopeOut
+ */
+export type MePortalScopeOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'client' | 'client_entity' | 'engagement' | 'work_item' | 'request_item' | 'k1_package' | 'governance_room' | 'component' | 'intake';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Role Label
+     */
+    role_label: string;
 };
 
 /**
@@ -6879,6 +7002,351 @@ export type PopulationOut = {
 };
 
 /**
+ * PortalHomeBinderOut
+ *
+ * Binder progress: "19 of 21 requests done · Brightwater Hale sorted 37 of your files". The
+ * sorted count is firm-attributed; the agent is never named (INV-5, DEC-19).
+ */
+export type PortalHomeBinderOut = {
+    /**
+     * Binder Id
+     */
+    binder_id: string;
+    /**
+     * Done
+     */
+    done: number;
+    /**
+     * Sorted Count
+     */
+    sorted_count: number;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * PortalHomeEarlierOut
+ *
+ * An Earlier row: "2024 Form 1040 filed and accepted".
+ */
+export type PortalHomeEarlierOut = {
+    /**
+     * Date
+     */
+    date?: string | null;
+    /**
+     * Facts
+     */
+    facts?: {
+        [key: string]: string | number | boolean;
+    };
+    /**
+     * Kind
+     */
+    kind: 'return_filed' | 'extension_filed' | 'engagement_letter_signed' | 'deliverable_released';
+    target?: PortalHomeTargetOut | null;
+};
+
+/**
+ * PortalHomeK1Out
+ *
+ * A My K-1s row (T-02 registers the source). `released` only: the firm's package status
+ * ("Draft K-1 · pre-release") never reaches the portal.
+ */
+export type PortalHomeK1Out = {
+    /**
+     * Expected By
+     */
+    expected_by?: string | null;
+    /**
+     * K1 Package Id
+     */
+    k1_package_id: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Released
+     */
+    released: boolean;
+};
+
+/**
+ * PortalHomeNoticeOut
+ *
+ * An information row ("… notice — Brightwater Hale is reviewing it. Nothing needed from
+ * you."); N-04 registers the source.
+ */
+export type PortalHomeNoticeOut = {
+    /**
+     * Code
+     */
+    code: 'agency_notice_in_review';
+    /**
+     * Notice Id
+     */
+    notice_id: string;
+    /**
+     * Subject
+     */
+    subject: string;
+};
+
+/**
+ * PortalHomeOut
+ *
+ * POR-02 for one scope: what the firm needs now, where the work stands, who the team is.
+ */
+export type PortalHomeOut = {
+    /**
+     * All Done
+     */
+    all_done: boolean;
+    binder?: PortalHomeBinderOut | null;
+    /**
+     * Earlier
+     */
+    earlier?: Array<PortalHomeEarlierOut>;
+    /**
+     * First Visit
+     */
+    first_visit: boolean;
+    /**
+     * My K1S
+     */
+    my_k1s?: Array<PortalHomeK1Out>;
+    /**
+     * Notices Info
+     */
+    notices_info?: Array<PortalHomeNoticeOut>;
+    /**
+     * Recent Threads
+     */
+    recent_threads?: Array<PortalHomeThreadOut>;
+    scope: PortalHomeScopeOut;
+    /**
+     * Team
+     */
+    team?: Array<PortalHomeTeamMemberOut>;
+    /**
+     * Todos
+     */
+    todos?: Array<PortalHomeTodoOut>;
+    /**
+     * Welcome Dismissed
+     */
+    welcome_dismissed: boolean;
+    /**
+     * Work Cards
+     */
+    work_cards?: Array<PortalHomeWorkCardOut>;
+};
+
+/**
+ * PortalHomePillOut
+ */
+export type PortalHomePillOut = {
+    /**
+     * Code
+     */
+    code: 'getting_started' | 'preparing_return' | 'reviewing_return' | 'reconciling_accounts' | 'filed_and_accepted' | 'finishing_audit' | 'testing_under_way';
+    /**
+     * Variant
+     */
+    variant: 'state' | 'success' | 'neutral';
+};
+
+/**
+ * PortalHomeScopeOut
+ *
+ * The scope the home is for (one grant's target; `?scope_id=`).
+ */
+export type PortalHomeScopeOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'client' | 'client_entity' | 'engagement' | 'work_item' | 'request_item' | 'k1_package' | 'governance_room' | 'component' | 'intake';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Role Label
+     */
+    role_label: string;
+    /**
+     * Sub
+     */
+    sub?: string | null;
+};
+
+/**
+ * PortalHomeStageOut
+ */
+export type PortalHomeStageOut = {
+    /**
+     * Code
+     */
+    code: 'gather_documents' | 'prepare' | 'review' | 'sign_form_8879' | 'file' | 'requests' | 'reconcile' | 'statements' | 'planning' | 'fieldwork' | 'statements_review' | 'report' | 'scoping' | 'system_description' | 'testing' | 'exceptions';
+    /**
+     * Facts
+     */
+    facts?: {
+        [key: string]: string | number | boolean;
+    };
+    /**
+     * State
+     */
+    state: 'done' | 'current' | 'upcoming';
+};
+
+/**
+ * PortalHomeTargetOut
+ */
+export type PortalHomeTargetOut = {
+    /**
+     * Params
+     */
+    params?: {
+        [key: string]: string;
+    };
+    /**
+     * Screen
+     */
+    screen: 'POR-03' | 'POR-04' | 'POR-05' | 'POR-06' | 'POR-07' | 'POR-08' | 'POR-09' | 'POR-11' | 'POR-12' | 'POR-13' | 'POR-16' | 'POR-21';
+};
+
+/**
+ * PortalHomeTeamMemberOut
+ */
+export type PortalHomeTeamMemberOut = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Role Code
+     */
+    role_code: 'partner_signs_return' | 'partner' | 'engagement_partner' | 'manager_reviews_return' | 'manager' | 'preparer_day_to_day' | 'preparer' | 'close_preparer' | 'day_to_day_contact' | 'client_service';
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * PortalHomeThreadOut
+ *
+ * A Recent messages row (N-03 registers the source).
+ */
+export type PortalHomeThreadOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * From Name
+     */
+    from_name: string;
+    /**
+     * Subject
+     */
+    subject: string;
+    /**
+     * Thread Id
+     */
+    thread_id: string;
+    /**
+     * Unread
+     */
+    unread: boolean;
+};
+
+/**
+ * PortalHomeTodoOut
+ *
+ * A to-do card. `detail` is the source's client-safe line (request titles, the person who
+ * asked), already in the client's words; it never holds a firm status word.
+ */
+export type PortalHomeTodoOut = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Detail
+     */
+    detail?: string | null;
+    /**
+     * Due Date
+     */
+    due_date?: string | null;
+    /**
+     * Facts
+     */
+    facts?: {
+        [key: string]: string | number | boolean;
+    };
+    /**
+     * Kind
+     */
+    kind: 'upload' | 'answer' | 'sign' | 'deliverables' | 'approve' | 'reconnect' | 'review_statements' | 'control_requests' | 'exceptions' | 'description_approved';
+    /**
+     * State
+     */
+    state: 'open' | 'none' | 'overdue';
+    target?: PortalHomeTargetOut | null;
+};
+
+/**
+ * PortalHomeWorkCardOut
+ *
+ * A work item as the client sees it: its client-safe display fields and its stage.
+ */
+export type PortalHomeWorkCardOut = {
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Note Code
+     */
+    note_code?: 'waiting_on_k1' | 'waiting_on_your_k1' | null;
+    /**
+     * Note Date
+     */
+    note_date?: string | null;
+    /**
+     * Note Subject
+     */
+    note_subject?: string | null;
+    pill: PortalHomePillOut;
+    /**
+     * Stages
+     */
+    stages?: Array<PortalHomeStageOut>;
+    /**
+     * Sub
+     */
+    sub?: string | null;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
  * PortalOut
  */
 export type PortalOut = {
@@ -6890,6 +7358,48 @@ export type PortalOut = {
      * Shell
      */
     shell: 'full' | 'k1' | 'limited' | 'none';
+};
+
+/**
+ * PortalPreferencesIn
+ *
+ * The person's own per-scope preferences (Story 6.2). `version` is the row's, for the 409.
+ */
+export type PortalPreferencesIn = {
+    /**
+     * Scope Id
+     */
+    scope_id: string;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Welcome Dismissed
+     */
+    welcome_dismissed: boolean;
+};
+
+/**
+ * PortalPreferencesOut
+ */
+export type PortalPreferencesOut = {
+    /**
+     * Scope Id
+     */
+    scope_id: string;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Welcome Dismissed
+     */
+    welcome_dismissed: boolean;
+    /**
+     * Welcome Dismissed At
+     */
+    welcome_dismissed_at?: string | null;
 };
 
 /**
@@ -12317,6 +12827,130 @@ export type PutBudgetResponses = {
 };
 
 export type PutBudgetResponse = PutBudgetResponses[keyof PutBudgetResponses];
+
+export type ResetContactMfaData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Id
+         */
+        client_id: string;
+        /**
+         * Contact Id
+         */
+        contact_id: string;
+    };
+    query?: never;
+    url: '/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset';
+};
+
+export type ResetContactMfaErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ResetContactMfaError = ResetContactMfaErrors[keyof ResetContactMfaErrors];
+
+export type ResetContactMfaResponses = {
+    /**
+     * Successful Response
+     */
+    200: ContactMfaResetOut;
+};
+
+export type ResetContactMfaResponse = ResetContactMfaResponses[keyof ResetContactMfaResponses];
+
+export type UnlockContactPortalData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Id
+         */
+        client_id: string;
+        /**
+         * Contact Id
+         */
+        contact_id: string;
+    };
+    query?: never;
+    url: '/v1/clients/{client_id}/contacts/{contact_id}/portal-unlock';
+};
+
+export type UnlockContactPortalErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UnlockContactPortalError = UnlockContactPortalErrors[keyof UnlockContactPortalErrors];
+
+export type UnlockContactPortalResponses = {
+    /**
+     * Successful Response
+     */
+    200: ContactPortalStatusOut;
+};
+
+export type UnlockContactPortalResponse = UnlockContactPortalResponses[keyof UnlockContactPortalResponses];
 
 export type CompleteData = {
     body: CompleteIn;
@@ -29156,6 +29790,117 @@ export type MarkBinderDoneResponses = {
 };
 
 export type MarkBinderDoneResponse = MarkBinderDoneResponses[keyof MarkBinderDoneResponses];
+
+export type GetPortalHomeData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Scope Id
+         */
+        scope_id?: string | null;
+    };
+    url: '/v1/portal/home';
+};
+
+export type GetPortalHomeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetPortalHomeError = GetPortalHomeErrors[keyof GetPortalHomeErrors];
+
+export type GetPortalHomeResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalHomeOut;
+};
+
+export type GetPortalHomeResponse = GetPortalHomeResponses[keyof GetPortalHomeResponses];
+
+export type UpdatePortalPreferencesData = {
+    body: PortalPreferencesIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/preferences';
+};
+
+export type UpdatePortalPreferencesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UpdatePortalPreferencesError = UpdatePortalPreferencesErrors[keyof UpdatePortalPreferencesErrors];
+
+export type UpdatePortalPreferencesResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalPreferencesOut;
+};
+
+export type UpdatePortalPreferencesResponse = UpdatePortalPreferencesResponses[keyof UpdatePortalPreferencesResponses];
 
 export type IgnoreRequestItemData = {
     body: IgnoreIn;
