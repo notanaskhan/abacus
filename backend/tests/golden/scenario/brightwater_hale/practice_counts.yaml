@@ -1,0 +1,93 @@
+# F-04.27 (ADR-078): the firm-level practice counts of F-04 §3.2, transcribed from the epic and
+# the blueprint, not from the code. Numbers are read as text and compared as Decimal.
+# `scenario.probe` names a read of the scenario package (abacus_tools.synthetic.scenarios.
+# brightwater_hale) that must return the same parts and total; cases without one are
+# arithmetic-only until the loaded-state golden (F-04-T29) reads them back.
+golden: brightwater_hale/practice_counts
+cases:
+  - id: clients-184
+    kind: sum
+    inputs:
+      terms: {named: 16, roster: 66, filler: 102}
+    expected:
+      total: 184
+    scenario:
+      probe: clients_by_origin
+    source: "F-04 §3.2 F-04.9 (DEC-47): 16 named (blueprint 01 §9.3), 66 roster (§9.7), ~102 filler"
+    reviewed_by: pending (AY)
+
+  - id: seats-46-named-and-generator
+    kind: sum
+    inputs:
+      terms: {named: 14, generator: 32}
+    expected:
+      total: 46
+    scenario:
+      probe: seats_by_kind
+    source: "F-04 §3.2 F-04.8; blueprint 01 §9.1 Headcount (46 Accrued seats, 14 named, 32 from the §9.2 generator list); ADM-02 '46 of 46'"
+    reviewed_by: pending (AY)
+
+  - id: seats-46-by-office
+    kind: sum
+    inputs:
+      terms: {Chicago: 22, Denver: 14, New York: 10}
+    expected:
+      total: 46
+    scenario:
+      probe: seats_by_office
+    source: "F-04 §3.2 F-04.8 (22/14/10 by office); blueprint 01 §9.1 Offices"
+    reviewed_by: pending (AY)
+
+  - id: offices-3
+    kind: sum
+    inputs:
+      terms: {hq: 1, branch: 2}
+    expected:
+      total: 3
+    scenario:
+      probe: offices_by_kind
+    source: "F-04 §3.2 F-04.8 (Chicago HQ, Denver and New York); blueprint 01 §9.1 Offices"
+    reviewed_by: pending (AY)
+
+  - id: holdout-fairhaven-183
+    kind: sum
+    inputs:
+      terms: {before: 184, held_out: -1}
+    expected:
+      total: 183
+    scenario:
+      probe: clients_less_holdout
+      holdout: fairhaven_ebp
+    source: "F-04 §3.2 F-04.11: CLI-01 derives 183 before (Fairhaven Foods 401(k) Plan held out) and 184 after"
+    reviewed_by: pending (AY)
+
+  - id: holdout-copperleaf-183
+    kind: sum
+    inputs:
+      terms: {before: 184, held_out: -1}
+    expected:
+      total: 183
+    scenario:
+      probe: clients_less_holdout
+      holdout: copperleaf
+    source: "F-04 §3.2 F-04.11: --holdout copperleaf starts J02 without Copperleaf Coffee Roasters, Inc."
+    reviewed_by: pending (AY)
+
+  - id: northwind-pbc-11-of-24
+    kind: progress
+    inputs:
+      text: "11 of 24"
+    expected:
+      done: 11
+      of: 24
+    source: "F-04 §3.2 F-04.10 (DF-34: Northwind PBC = 11 of 24); blueprint 01 §9.7 A1 'PBC 11 of 24' and §9.4 'PBC: 24 requests, 11 received'; AUD-02 Overview rail 'Source Documents 11 of 24'. Plan ch. 05 WB-02 still reads '12 of 24': DF-34 settles it at 11"
+    reviewed_by: pending (AY)
+
+  - id: granite-peak-fs-pbc-41
+    kind: sum
+    inputs:
+      terms: {received: 38, overdue: 3}
+    expected:
+      total: 41
+    source: "F-04 §3.2 F-04.10 (Granite Peak's FS PBC has 41 requests); ENG-12 Client responsiveness / client lens: '41 requests · 38 received · 3 overdue'"
+    reviewed_by: pending (AY)

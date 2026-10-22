@@ -1,0 +1,121 @@
+# F-04.27 (ADR-078): Northwind Robotics 401(k) Plan PY2025 figures, transcribed from the epic and
+# blueprint 01 §9.4, not from the code. Numbers are read as text and compared as Decimal.
+# The scenario package does not model these figures yet: every case is an arithmetic identity
+# from its inputs, documenting the source figure for the loaded-state golden (F-04-T29) and the
+# engine goldens (A-04-T17 materiality, A-05-T37 remittance, A-02-T17 tie-outs).
+golden: brightwater_hale/northwind
+cases:
+  - id: net-assets-final
+    kind: sum
+    inputs:
+      terms: {unadjusted_net_assets: 16812400, contributions_receivable: 48600}
+    expected:
+      total: 16861000
+    source: "F-04 §3.6 F-04.27; blueprint 01 §9.4 (net assets available for benefits 16,861,000.00); plan ch. 05 WB-02"
+    reviewed_by: pending (AY)
+
+  - id: net-assets-by-line
+    kind: sum
+    inputs:
+      terms: {investments_at_fair_value: 16500000, notes_receivable_from_participants: 312400, contributions_receivable: 48600}
+    expected:
+      total: 16861000
+    source: "blueprint 01 §9.4 statement of net assets, 12/31/2025 column"
+    reviewed_by: pending (AY)
+
+  - id: investments-at-fair-value
+    kind: sum
+    inputs:
+      terms: {mutual_funds_and_cits: 14895000, self_directed_brokerage: 1605000}
+    expected:
+      total: 16500000
+    source: "blueprint 01 §9.4 statement of net assets, 12/31/2025 column; R-02 AC-22 page 2"
+    reviewed_by: pending (AY)
+
+  - id: net-assets-comparative
+    kind: sum
+    inputs:
+      terms: {investments_at_fair_value: 13940000, notes_receivable_from_participants: 288500, contributions_receivable: 0}
+    expected:
+      total: 14228500
+    source: "F-04 §3.6 F-04.27 (comparative 14,228,500); blueprint 01 §9.4 statement of net assets, 12/31/2024 column; R-02 AC-22"
+    reviewed_by: pending (AY)
+
+  - id: net-increase-unadjusted
+    kind: sum
+    inputs:
+      terms: {unadjusted_net_assets: 16812400, prior_year_net_assets: -14228500}
+    expected:
+      total: 2583900
+    source: "blueprint 01 §9.4 unadjusted (trust basis): net increase 2,583,900 = 16,812,400 − 14,228,500"
+    reviewed_by: pending (AY)
+
+  - id: contributions-receivable
+    kind: sum
+    inputs:
+      terms: {deferrals_principal: 33540, employer_and_other: 15060}
+    expected:
+      total: 48600
+    source: "A-05 remittance engine goldens (receivable 48,600 = 33,540 + 15,060); R-02 seed tests"
+    reviewed_by: pending (AY)
+
+  - id: loan-rollforward
+    kind: sum
+    inputs:
+      terms: {beginning: 288500, new_loans: 96200, repayments: -57450, loan_offsets: -14850}
+    expected:
+      total: 312400
+    source: "F-04 §3.6 F-04.27; blueprint 01 §9.4 Loans and EBP-05 (loan rollforward tied to the trust report)"
+    reviewed_by: pending (AY)
+
+  - id: loan-count-rollforward
+    kind: sum
+    inputs:
+      terms: {beginning: 41, new: 5, repaid: -7, offset: -3}
+    expected:
+      total: 36
+    source: "blueprint 01 §9.4 Loans (41 + 5 − 7 − 3 = 36 loans); A-05 AC (Keystone loan report)"
+    reviewed_by: pending (AY)
+
+  - id: materiality-1-0-percent
+    kind: materiality
+    parameter_set: "BH policy: overall rounded to the nearest 100, half up; PM 75% and CT 5% of the rounded overall"
+    inputs:
+      benchmark: 16812400
+      rate: 0.010
+      increment: 100
+      pm_rate: 0.75
+      ct_rate: 0.05
+    expected:
+      overall: 168100
+    source: "F-04 §3.6 F-04.27 (1.0% = 168,100); blueprint 01 §9.4 AUD-07 options; A-04 AC3.1 (rounding rule)"
+    reviewed_by: pending (AY)
+
+  - id: materiality-1-5-percent-v2
+    kind: materiality
+    parameter_set: "BH policy: overall rounded to the nearest 100, half up; PM 75% and CT 5% of the rounded overall"
+    inputs:
+      benchmark: 16812400
+      rate: 0.015
+      increment: 100
+      pm_rate: 0.75
+      ct_rate: 0.05
+    expected:
+      overall: 252200
+      pm: 189150
+      ct: 12610
+    source: "F-04 §3.6 F-04.27 (1.5% = 252,200; PM 189,150; CT 12,610); blueprint 01 §9.4 (decided by MO, v2); A-04 AC3.1 (16,812,400 × 1.5% = 252,186, rounded to the nearest 100, half up; PM and CT from the rounded overall)"
+    reviewed_by: pending (AY)
+
+  - id: vfcp-lost-earnings
+    kind: lost_earnings
+    parameter_set: "VFCP: IRC §6621(a)(2) underpayment rate 7% (Q4 2025 and Q1 2026), compounded daily on a 365-day year, rounded to the cent half up"
+    inputs:
+      principal: 33540.00
+      annual_rate: 0.07
+      days: 10
+      day_count: 365
+    expected:
+      amount: 64.38
+    source: "F-04 §3.6 F-04.27 (lost earnings $64.38); blueprint 01 §9.4 Lost earnings: 33,540.00 × [(1 + 0.07/365)^10 − 1]; A-05 EBP-04a"
+    reviewed_by: pending (AY)
