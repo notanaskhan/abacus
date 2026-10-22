@@ -33,6 +33,7 @@ from abacus.modules.agents.routes import (
     router,
     template_drafts_router,
 )
+from abacus.modules.agents.runs_routes import engagement_runs_router, runs_router
 from abacus.modules.agents.screenings import (
     SUBSCRIPTIONS,
     WORKFLOWS,
@@ -102,6 +103,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     graph_router,
     knowledge_router,
     template_drafts_router,
+    engagement_runs_router,
+    runs_router,
 )
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.

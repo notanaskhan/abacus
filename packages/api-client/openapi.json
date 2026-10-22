@@ -850,6 +850,99 @@
         "title": "AgentOut",
         "type": "object"
       },
+      "AgentRunOut": {
+        "properties": {
+          "agent": {
+            "cls": "internal",
+            "title": "Agent",
+            "type": "string"
+          },
+          "agent_label": {
+            "cls": "internal",
+            "title": "Agent Label",
+            "type": "string"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Duration Ms"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Finished At"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "initiator_name": {
+            "cls": "internal",
+            "title": "Initiator Name",
+            "type": "string"
+          },
+          "started_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "needs_input",
+              "failed"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Subject"
+          }
+        },
+        "required": [
+          "id",
+          "agent",
+          "agent_label",
+          "state",
+          "started_at",
+          "finished_at",
+          "duration_ms",
+          "initiator_name",
+          "subject"
+        ],
+        "title": "AgentRunOut",
+        "type": "object"
+      },
       "AgentsStateOut": {
         "description": "SPEC-027 (TASK-050): the firm-wide switch for every engagement agent.",
         "properties": {
@@ -11147,6 +11240,26 @@
         "title": "OpenConfirmationOut",
         "type": "object"
       },
+      "OutputCountOut": {
+        "properties": {
+          "count": {
+            "cls": "internal",
+            "title": "Count",
+            "type": "integer"
+          },
+          "kind": {
+            "cls": "internal",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "count"
+        ],
+        "title": "OutputCountOut",
+        "type": "object"
+      },
       "OverdueCountOut": {
         "properties": {
           "count": {
@@ -12276,6 +12389,26 @@
           "reconciled"
         ],
         "title": "ReconciliationOut",
+        "type": "object"
+      },
+      "RecordsReadOut": {
+        "properties": {
+          "count": {
+            "cls": "internal",
+            "title": "Count",
+            "type": "integer"
+          },
+          "source": {
+            "cls": "internal",
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "count"
+        ],
+        "title": "RecordsReadOut",
         "type": "object"
       },
       "RedactIn": {
@@ -14285,6 +14418,91 @@
           "reviewed"
         ],
         "title": "RowStateOut",
+        "type": "object"
+      },
+      "RunTraceOut": {
+        "properties": {
+          "attempts": {
+            "cls": "internal",
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "model_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Model Text"
+          },
+          "output_counts": {
+            "items": {
+              "$ref": "#/components/schemas/OutputCountOut"
+            },
+            "title": "Output Counts",
+            "type": "array"
+          },
+          "records_read": {
+            "items": {
+              "$ref": "#/components/schemas/RecordsReadOut"
+            },
+            "title": "Records Read",
+            "type": "array"
+          },
+          "region": {
+            "cls": "internal",
+            "title": "Region",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/TraceRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "run": {
+            "$ref": "#/components/schemas/AgentRunOut"
+          },
+          "runtime": {
+            "cls": "internal",
+            "title": "Runtime",
+            "type": "string"
+          },
+          "tokens_in": {
+            "cls": "internal",
+            "title": "Tokens In",
+            "type": "integer"
+          },
+          "tokens_out": {
+            "cls": "internal",
+            "title": "Tokens Out",
+            "type": "integer"
+          },
+          "training": {
+            "cls": "internal",
+            "title": "Training",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run",
+          "runtime",
+          "region",
+          "training",
+          "attempts",
+          "tokens_in",
+          "tokens_out",
+          "rows",
+          "records_read",
+          "output_counts",
+          "model_text"
+        ],
+        "title": "RunTraceOut",
         "type": "object"
       },
       "ScreenRequestIn": {
@@ -17857,6 +18075,138 @@
         "title": "TotalsOut",
         "type": "object"
       },
+      "TraceExportIn": {
+        "additionalProperties": false,
+        "properties": {
+          "format": {
+            "cls": "internal",
+            "const": "json",
+            "default": "json",
+            "title": "Format",
+            "type": "string"
+          }
+        },
+        "title": "TraceExportIn",
+        "type": "object"
+      },
+      "TraceExportOut": {
+        "properties": {
+          "content": {
+            "cls": "confidential",
+            "title": "Content",
+            "type": "string"
+          },
+          "filename": {
+            "cls": "internal",
+            "title": "Filename",
+            "type": "string"
+          },
+          "renderer_version": {
+            "cls": "internal",
+            "title": "Renderer Version",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "internal",
+            "title": "Rows",
+            "type": "integer"
+          },
+          "sha256": {
+            "cls": "internal",
+            "title": "Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "filename",
+          "content",
+          "sha256",
+          "rows",
+          "renderer_version"
+        ],
+        "title": "TraceExportOut",
+        "type": "object"
+      },
+      "TraceRowOut": {
+        "properties": {
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Actor"
+          },
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Detail"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "start",
+              "queued",
+              "attempt",
+              "output",
+              "decision",
+              "finish"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "seq": {
+            "cls": "internal",
+            "title": "Seq",
+            "type": "integer"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "done",
+              "failed",
+              "waiting",
+              "running",
+              "info"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "title": {
+            "cls": "internal",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "at",
+          "kind",
+          "title",
+          "state",
+          "detail",
+          "actor"
+        ],
+        "title": "TraceRowOut",
+        "type": "object"
+      },
       "TrialBalanceDetailOut": {
         "properties": {
           "boy": {
@@ -19355,6 +19705,228 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/v1/agent-runs/{run_id}/trace": {
+      "get": {
+        "operationId": "agent_run_trace",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunTraceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Agent Run Trace Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "agent_run.read"
+      }
+    },
+    "/v1/agent-runs/{run_id}/trace-exports": {
+      "post": {
+        "operationId": "export_run_trace",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TraceExportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TraceExportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Export Run Trace Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "run_trace.export"
+      }
+    },
     "/v1/budget": {
       "get": {
         "operationId": "get_budget",
@@ -21081,6 +21653,140 @@
           "agents"
         ],
         "x-abacus-action": "activity.read"
+      }
+    },
+    "/v1/engagements/{engagement_id}/agent-runs": {
+      "get": {
+        "operationId": "list_agent_runs",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "default": "recent",
+              "enum": [
+                "active",
+                "recent"
+              ],
+              "title": "State",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AgentRunOut"
+                  },
+                  "title": "Response List Agent Runs",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "List Agent Runs Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "agent_run.read"
       }
     },
     "/v1/engagements/{engagement_id}/agent/pause": {

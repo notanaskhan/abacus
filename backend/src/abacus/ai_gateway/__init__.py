@@ -44,6 +44,7 @@ from abacus.ai_gateway.admission import (
     block,
     refusal_reason,
 )
+from abacus.ai_gateway.attempts import Attempt, attempts_for
 from abacus.ai_gateway.boundary import (
     CLIENT_DATA_ROUTES,
     Basis,
@@ -804,6 +805,7 @@ __all__ = [
     "MAX_ROWS",
     "MODELS",
     "AssembledContext",
+    "Attempt",
     "Attribution",
     "BudgetExceeded",
     "BudgetExhausted",
@@ -831,6 +833,7 @@ __all__ = [
     "Route",
     "Tier",
     "UnknownPrompt",
+    "attempts_for",
     "call",
     "check_provider_limits",
     "configure_embedder",

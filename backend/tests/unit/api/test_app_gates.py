@@ -273,6 +273,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         # P-04-T07 (C3 stub 1): a sign-off row, a review note
         "/v1/sign-offs",
         "/v1/review-notes",
+        # SPEC-318 (TASK-461): a run trace export
+        "/v1/agent-runs/{run_id}/trace-exports",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING
