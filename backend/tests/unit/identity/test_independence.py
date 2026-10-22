@@ -286,11 +286,13 @@ async def test_ac7_confirming_on_one_engagement_does_not_open_another(fakes: Fak
 def test_ac7_visible_requires_a_confirmation_for_staff_roles(fakes: Fakes) -> None:
     sql = _sql(visible(_person(), "connection.read_log", column("engagement_id", Uuid())))
     assert "independence_confirmed" in sql
-    # Staff roles need the confirmation; client roles reach their rows without one.
-    assert sql.count("engagement_members.role IN") == 2
-    assert sql.startswith("(engagement_id IN (SELECT engagement_members.engagement_id")
-    assert " OR engagement_id IN (SELECT" in sql
-    assert sql.index("independence_confirmed") > sql.index(" OR ")
+    # Staff roles need the confirmation; client roles reach their rows without one, through
+    # their engagement-scope grants (F-03-T26).
+    assert sql.count("engagement_members.role IN") == 1
+    assert sql.count("client_access_grants.role IN") == 1
+    assert sql.startswith("(engagement_id IN (SELECT client_access_grants.scope_id")
+    assert " OR engagement_id IN (SELECT engagement_members.engagement_id" in sql
+    assert sql.index("independence_confirmed") > sql.index("engagement_members.role IN")
 
 
 def test_ac7_visible_unregistered_leaves_only_client_reach(
@@ -299,8 +301,9 @@ def test_ac7_visible_unregistered_leaves_only_client_reach(
     monkeypatch.setattr(authz, "_independence", None)
     expression = visible(_person(), "connection.read_log", column("engagement_id", Uuid()))
     assert "independence_confirmed" not in _sql(expression)
-    assert _sql(expression).count("engagement_members.role IN") == 1
-    assert expression.compile().params["role_1"] == ["client_admin"]
+    assert "engagement_members" not in _sql(expression)
+    assert _sql(expression).count("client_access_grants.role IN") == 1
+    assert expression.compile().params["role_1"] == ["owner"]  # client_admin's grant role
 
 
 def test_ac7_visible_with_only_staff_roles_unregistered_is_false(

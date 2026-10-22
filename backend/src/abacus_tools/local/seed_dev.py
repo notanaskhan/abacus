@@ -82,11 +82,12 @@ async def _seed_people(conn: asyncpg.Connection) -> None:
                 "client" if subject == CLIENT_ADMIN else "staff",
             )
         if subject == CLIENT_ADMIN:
-            # SPEC-015: a client membership; client admin on every engagement of the firm.
+            # SPEC-015: a client membership; client admin (an owner grant, F-03-T26) on every
+            # engagement of the firm.
             await conn.execute(
-                "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
-                "SELECT tenant_id, id, $2, 'client_admin' FROM engagements WHERE tenant_id = $1 "
-                "ON CONFLICT DO NOTHING",
+                "INSERT INTO client_access_grants (tenant_id, user_id, role, scope_kind, "
+                "scope_id) SELECT tenant_id, $2, 'owner', 'engagement', id FROM engagements "
+                "WHERE tenant_id = $1 ON CONFLICT DO NOTHING",
                 FIRM,
                 user,
             )

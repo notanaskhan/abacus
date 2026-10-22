@@ -1,7 +1,8 @@
 """F-03-T26 against Postgres (ADR-146): "every former client_admin/client_contributor row is an
 owner/contributor grant" (migration 0083's backfill, checked down and up on a private
-database), the expand-step mirror keeps new client rows in step, and Meera Shah's grants yield a
-role-union shell limited to her own scopes (story 5.2)."""
+database), and Meera Shah's grants yield a
+role-union shell limited to her own scopes (story 5.2). The contract step (0084) leaves no
+client role on the team table, and removal and re-invitation move the grant."""
 
 from __future__ import annotations
 
@@ -10,12 +11,19 @@ import uuid
 from collections.abc import Iterator
 from datetime import UTC, datetime
 
+import asyncpg
 import pytest
 
 import abacus.modules.engagements.api  # registers the scope resolvers and the client lookup
 from abacus.kernel.db import TenantContext, configure_engine
+from abacus.kernel.uow import Target, uow
 from abacus.modules.identity.api import AuthContext, portal_scopes
 from abacus.modules.identity.client_access import scope_covers
+from abacus.modules.identity.repository import (
+    engagement_role,
+    grant_engagement_role,
+    remove_client_member,
+)
 from abacus_tools.quality import schema_check as sc
 from abacus_tools.quality.schema_check import migrate, provisioned_database
 
@@ -136,6 +144,13 @@ def test_every_former_client_role_row_is_an_owner_or_contributor_grant(
             ("contributor", "engagement", engagement, "active")
         }
         assert await firm.grants(firm.partner) == set()  # staff roles aren't client grants
+        # The contract step (0084): no client role is left on the team table.
+        left = await seed.value(
+            "SELECT count(*) FROM engagement_members WHERE tenant_id = $1 "
+            "AND role IN ('client_admin', 'client_contributor')",
+            firm.tenant,
+        )
+        assert left == 0
         events = await seed.value(
             "SELECT count(*) FROM client_access_events WHERE tenant_id = $1 AND event = 'granted'",
             firm.tenant,
@@ -158,19 +173,62 @@ async def firm(migrated_db: MigratedDatabase) -> _Firm:
 
 
 @pytest.mark.asyncio
-async def test_the_mirror_keeps_new_client_rows_in_step(firm: _Firm) -> None:
+async def test_removal_revokes_the_grant_and_a_new_invitation_restores_it(firm: _Firm) -> None:
     _, _, engagement = await firm.engagement("Probe")
     user = await firm.user("client")
-    await firm.member(engagement, user, "client_contributor")
+    tenant = TenantContext(firm.tenant, "human", str(firm.partner))
+    async with uow(tenant) as tx:
+        await grant_engagement_role(
+            tx.session,
+            tenant_id=firm.tenant,
+            engagement_id=engagement,
+            user_id=user,
+            role="client_contributor",
+            by=firm.partner,
+        )
+        tx.record("client_access.probed", target=Target("engagement", engagement))
     assert await firm.grants(user) == {("contributor", "engagement", engagement, "active")}
-    await firm.seed.run(
-        "DELETE FROM engagement_members WHERE engagement_id = $1 AND user_id = $2",
-        engagement,
-        user,
-    )
+    assert await engagement_role(tenant, user, engagement) == "client_contributor"
+    async with uow(tenant) as tx:
+        assert await remove_client_member(tx.session, engagement, user) is True
+        tx.record("client_access.probed", target=Target("engagement", engagement))
     assert await firm.grants(user) == {("contributor", "engagement", engagement, "revoked")}
-    await firm.member(engagement, user, "client_contributor")  # re-invited
+    assert await engagement_role(tenant, user, engagement) is None
+    async with uow(tenant) as tx:
+        await grant_engagement_role(
+            tx.session,
+            tenant_id=firm.tenant,
+            engagement_id=engagement,
+            user_id=user,
+            role="client_contributor",
+            by=firm.partner,
+        )
+        tx.record("client_access.probed", target=Target("engagement", engagement))
     assert await firm.grants(user) == {("contributor", "engagement", engagement, "active")}
+    events = await firm.seed.rows(
+        "SELECT event FROM client_access_events WHERE tenant_id = $1 ORDER BY id", firm.tenant
+    )
+    assert [r["event"] for r in events] == ["granted", "revoked", "activated"]
+
+
+@pytest.mark.asyncio
+async def test_a_client_role_no_longer_fits_the_team_table(firm: _Firm) -> None:
+    _, _, engagement = await firm.engagement("Probe")
+    user = await firm.user("client")
+    with pytest.raises(asyncpg.CheckViolationError):
+        await firm.member(engagement, user, "client_admin")
+
+
+@pytest.mark.asyncio
+async def test_a_grant_needs_a_client_membership(firm: _Firm) -> None:
+    with pytest.raises(asyncpg.CheckViolationError):
+        await firm.seed.run(
+            "INSERT INTO client_access_grants (tenant_id, user_id, role, scope_kind, scope_id) "
+            "VALUES ($1, $2, 'owner', 'engagement', $3)",
+            firm.tenant,
+            firm.partner,  # staff
+            uuid.uuid4(),
+        )
 
 
 @pytest.mark.asyncio

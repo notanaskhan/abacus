@@ -216,9 +216,11 @@ class Seeder:
             who.tenant_id,
             who.user_id,
         )
+        # F-03-T26: a client role on an engagement is an engagement-scope grant.
         await self.run(
-            "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
-            "VALUES ($1, $2, $3, $4)",
+            "INSERT INTO client_access_grants (tenant_id, user_id, role, scope_kind, scope_id) "
+            "VALUES ($1, $3, CASE $4 WHEN 'client_admin' THEN 'owner' ELSE 'contributor' END, "
+            "'engagement', $2)",
             who.tenant_id,
             site.engagement_id,
             who.user_id,

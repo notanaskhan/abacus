@@ -22,7 +22,11 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, UnitOfWork, uow
 from abacus.modules.identity.authz import Forbidden
 from abacus.modules.identity.context import AuthContext
-from abacus.modules.identity.events import ClientInvitationIssued
+from abacus.modules.identity.events import (
+    AccessChanged,
+    ClientAccessGranted,
+    ClientInvitationIssued,
+)
 from abacus.modules.identity.repository import (
     add_client_membership,
     client_contacts,
@@ -31,7 +35,7 @@ from abacus.modules.identity.repository import (
     extend_invitation,
     find_token,
     get_invitation,
-    insert_engagement_member,
+    grant_engagement_role,
     insert_invitation,
     invitations_today,
     membership_kind,
@@ -174,6 +178,7 @@ async def remove_client(
     await _client_admin_limited(ctx, engagement_id, str(target_role))
     if not await remove_client_member(tx.session, engagement_id, user_id):
         raise NotFound("client_contact")
+    tx.emit(AccessChanged(user_id=user_id))  # F-03-T26: the grant is revoked
     tx.record(
         "client_member.removed",
         target=Target("engagement", engagement_id),
@@ -255,9 +260,18 @@ async def accept_invitation(identity: VerifiedIdentity, token: str) -> AcceptedI
         await add_client_membership(tx.session, user_id)
         engagement_id = row["engagement_id"]
         if await engagement_role(ctx, user_id, engagement_id) is None:
-            await insert_engagement_member(
-                tx.session, tenant_id, engagement_id, user_id, row["role"]
+            # F-03-T26 (ADR-146): a client role on an engagement is a grant.
+            grant_id = await grant_engagement_role(
+                tx.session,
+                tenant_id=tenant_id,
+                engagement_id=engagement_id,
+                user_id=user_id,
+                role=row["role"],
+                by=None,
             )
+            if grant_id is not None:
+                tx.emit(ClientAccessGranted(grant_id=grant_id, user_id=user_id))
+                tx.emit(AccessChanged(user_id=user_id))
         await set_invitation_status(tx.session, invitation_id, "accepted", user_id)
         await set_token_hash(tx.session, invitation_id, None)
         tx.record(
