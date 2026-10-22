@@ -4,7 +4,12 @@
 import type { Manifest } from "./types";
 
 export const clsScreens = {
-  "CLS-01": { name: "Closes index — August 2026", status: "planned", path: null },
+  "CLS-01": {
+    name: "Closes index — August 2026",
+    status: "planned",
+    path: null,
+    navArea: "Closes",
+  },
   "CLS-02": { name: "Close › Overview · run", status: "planned", path: null },
   "CLS-03": { name: "Close › Intake · Copperleaf August 2026", status: "planned", path: null },
   "CLS-04": {

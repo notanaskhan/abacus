@@ -1,3 +1,4 @@
+import { areaRoutes } from "./areas";
 import { clientRoutes } from "./clients";
 import { engagementRoutes } from "./engagements";
 import { homeRoutes } from "./home";
@@ -29,4 +30,6 @@ export const firmRoutes = [
   ...knowledgeRoutes,
   ...clientRoutes,
   ...settingsRoutes,
+  // P-01-T02: the Engagements index and the flag-off landings of planned areas.
+  ...areaRoutes,
 ] as const;

@@ -113,6 +113,71 @@ const ROLE_SYNTAX = [
   },
 ];
 
+// Imports (plan 04 §1.7, F-03-T32). `featureRoots` matches a relative import that reaches across
+// feature roots, two or more levels up, outside the roots the importing file may use.
+function importRestrictions(featureRoots) {
+  return {
+    patterns: [
+      {
+        group: ["**/packages/*/src/**", "@abacus/*/src/**"],
+        message: "Import a package through its public entry point, not its src/.",
+      },
+      {
+        // Two or more levels up, except into app-core: shared plumbing every feature may
+        // import (plan 04, module boundaries; F-03-T32).
+        regex: featureRoots,
+        message: "Do not reach across feature roots; import through a public entry point.",
+      },
+    ],
+    paths: [
+      {
+        name: "axios",
+        message: "Call the backend only through @abacus/api-client (ADR-011).",
+      },
+      {
+        name: "react-markdown",
+        message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+      },
+      {
+        name: "marked",
+        message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+      },
+      {
+        name: "markdown-it",
+        message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+      },
+      {
+        name: "remark",
+        message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+      },
+      {
+        name: "rehype-raw",
+        message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+      },
+      {
+        name: "dompurify",
+        message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+      },
+      {
+        name: "html-react-parser",
+        message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+      },
+      {
+        name: "sanitize-html",
+        message: "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
+      },
+    ],
+  };
+}
+
+/** Two or more levels up, except into app-core: shared plumbing every feature may import. */
+const FEATURE_ROOTS = "^\\.\\./\\.\\./(?:\\.\\./)*(?!\\.\\./|app-core(?:/|$))";
+/** A screen may also import its domain's public index, the typed route builders and the manifest,
+ * the firm shell's parts (the SHL screens draw them; P-01 §4 source layout), and the scenario base
+ * its scenarios.ts starts from (fixture builds and tests only; the dist test holds it out). */
+const SCREEN_ROOTS =
+  "^\\.\\./\\.\\./(?:\\.\\./)*(?!\\.\\./|app-core(?:/|$)|domain/[^/]+$|routes/(?:to|manifest)$|shell/firm/[^/]+$|fixtures/scenario$)";
+
 export default defineConfig(
   { ignores: ["dist", "test-results", "playwright-report", "parity-report"] },
   tseslint.configs.strictTypeChecked,
@@ -121,72 +186,20 @@ export default defineConfig(
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
     },
     rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          patterns: [
-            {
-              group: ["**/packages/*/src/**", "@abacus/*/src/**"],
-              message: "Import a package through its public entry point, not its src/.",
-            },
-            {
-              // Two or more levels up, except into app-core: shared plumbing every feature may
-              // import (plan 04, module boundaries; F-03-T32).
-              regex: "^\\.\\./\\.\\./(?:\\.\\./)*(?!\\.\\./|app-core(?:/|$))",
-              message: "Do not reach across feature roots; import through a public entry point.",
-            },
-          ],
-          paths: [
-            {
-              name: "axios",
-              message: "Call the backend only through @abacus/api-client (ADR-011).",
-            },
-            {
-              name: "react-markdown",
-              message:
-                "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
-            },
-            {
-              name: "marked",
-              message:
-                "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
-            },
-            {
-              name: "markdown-it",
-              message:
-                "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
-            },
-            {
-              name: "remark",
-              message:
-                "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
-            },
-            {
-              name: "rehype-raw",
-              message:
-                "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
-            },
-            {
-              name: "dompurify",
-              message:
-                "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
-            },
-            {
-              name: "html-react-parser",
-              message:
-                "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
-            },
-            {
-              name: "sanitize-html",
-              message:
-                "OUT-001: model text renders as plain text through AgentText only (ADR-065).",
-            },
-          ],
-        },
-      ],
+      "no-restricted-imports": ["error", importRestrictions(FEATURE_ROOTS)],
       // ADR-011: the backend is reached only through the generated client.
       "no-restricted-globals": ["error", ...NETWORK_GLOBALS],
     },
+  },
+  {
+    // Plan 04 §1.7: screens import domain/*, app-core, the route builders and their shell parts.
+    files: ["src/screens/**/*.{ts,tsx}"],
+    rules: { "no-restricted-imports": ["error", importRestrictions(SCREEN_ROOTS)] },
+  },
+  {
+    // Tests drive a feature from outside: the router, the seed, the harness (plan 04 §1.7).
+    files: ["src/**/*.test.{ts,tsx}"],
+    rules: { "no-restricted-imports": ["error", importRestrictions("^$")] },
   },
   {
     files: ["src/**/*.{ts,tsx}"],

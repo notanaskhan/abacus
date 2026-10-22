@@ -4,7 +4,7 @@
 import type { Manifest } from "./types";
 
 export const insScreens = {
-  "INS-01": { name: "Insights — Performance", status: "planned", path: null },
+  "INS-01": { name: "Insights — Performance", status: "planned", path: null, navArea: "Home" },
   "INS-02": { name: "Insights — AI adoption", status: "planned", path: null },
   "INS-03": {
     name: "Insights — Efficiency and benchmarks",

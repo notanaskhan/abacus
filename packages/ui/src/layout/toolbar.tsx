@@ -57,6 +57,15 @@ export interface ToolbarProps {
   minFallback?: FallbackStage;
   /** `none` keeps every item and control at full size (width tests). */
   overflow?: "auto" | "none";
+  /** DF-39 with More first (`fitToolbar`'s `moreFirst`): the order the app's toolbar uses. */
+  moreFirst?: boolean;
+  /** The Go... tooltip's second line, the palette's other actions. Default true; the app holds it
+   * back until those actions exist (SHL-01 R2, P-01 AC 1.1.8). */
+  goDetail?: boolean;
+  /** Each label holds its weight-500 width, so lighting an item never moves its neighbours.
+   * Default true. The app passes false: SHL-01a draws idle labels at their own 400 width, and its
+   * Tier A parity only holds that way (P-01-T02). Overflow is measured at 500 either way. */
+  holdLabelWidth?: boolean;
   onGo?: () => void;
   onNavigate?: (label: string) => void;
   onSupport?: () => void;
@@ -80,6 +89,8 @@ const NAV_ITEM = cn(
 // holds the width, so the active item does not move its neighbours.
 const LABEL =
   "inline-flex flex-col after:invisible after:block after:h-0 after:overflow-hidden after:font-medium after:content-[attr(data-label)]";
+// `holdLabelWidth={false}`: the label at its own width, as SHL-01a draws it.
+const LABEL_OWN = "inline-flex flex-col";
 const GO = cn(
   "inline-flex h-[30px] flex-none items-center gap-[7px] rounded-pill bg-espresso pr-[12px] pl-[10px] text-nav font-normal text-on-dark shadow-e1",
   "hover:bg-cta-hover data-[force=hover]:bg-cta-hover data-[force=pressed]:bg-cta-hover",
@@ -228,6 +239,9 @@ export function Toolbar({
   unread = true,
   minFallback = "none",
   overflow = "auto",
+  moreFirst = false,
+  goDetail = true,
+  holdLabelWidth = true,
   onGo,
   onNavigate,
   onSupport,
@@ -239,7 +253,9 @@ export function Toolbar({
   const { ref, measure } = useMeasure(nav.length);
   const short = firmShort ?? firm.split(" ")[0] ?? firm;
   const fit =
-    measure === null ? NOT_MEASURED : fitToolbar(measure, { min: minFallback, overflow });
+    measure === null
+      ? NOT_MEASURED
+      : fitToolbar(measure, { min: minFallback, overflow, moreFirst });
   const inline = Math.min(fit.inline, nav.length);
   const home = nav[0];
   const from = fit.homePill ? 1 : 0;
@@ -278,7 +294,7 @@ export function Toolbar({
               Go to anything <span className="text-ink-3">⌘K</span>
             </>
           }
-          detail="Also: New to-do… · Load saved prompt… · Open board"
+          {...(goDetail ? { detail: "Also: New to-do… · Load saved prompt… · Open board" } : {})}
           side="bottom"
           {...(forceState?.goTip === true ? { forceState: "open" as const } : {})}
         >
@@ -332,7 +348,7 @@ export function Toolbar({
               className={cn(NAV_ITEM, PRESS)}
               onClick={() => onNavigate?.(item.label)}
             >
-              <span data-label={item.label} className={LABEL}>
+              <span data-label={item.label} className={holdLabelWidth ? LABEL : LABEL_OWN}>
                 {item.label}
               </span>
             </button>

@@ -187,3 +187,54 @@ describe("the DF-39 ladder", () => {
     expect(fitToolbar(measure(0))).toMatchObject({ stage: "none", inline: 13 });
   });
 });
+
+// P-01-T02: the app's toolbar takes DF-39 with More first, as SHL-01a draws it at 1400: the full
+// "Brightwater Hale" pill and More (Signatures) together, then Closes and Audits below 1280.
+describe("DF-39 with More first (moreFirst)", () => {
+  const fit = (width: number) => fitToolbar(measure(width), { moreFirst: true });
+
+  it("shows all 13 at 1440 with the full firm name", () => {
+    expect(fit(1440)).toEqual({ stage: "none", firmShort: false, homePill: false, inline: 13 });
+  });
+
+  it("at 1400 moves only Signatures into More and keeps the full pill and Home in the nav", () => {
+    expect(fit(1400)).toEqual({
+      stage: "signatures",
+      firmShort: false,
+      homePill: false,
+      inline: 12,
+    });
+  });
+
+  it("below 1280 moves Signatures, Closes and Audits into More, still at full size", () => {
+    expect(fit(1279)).toEqual({
+      stage: "signatures-closes-audits",
+      firmShort: false,
+      homePill: false,
+      inline: 10,
+    });
+  });
+
+  it("shortens the pill and draws the house pill only after the three are in More", () => {
+    for (let width = 1700; width >= 700; width -= 2) {
+      const step = fit(width);
+      if (step.firmShort || step.homePill)
+        expect(step.inline, `at ${String(width)}`).toBeLessThan(11);
+    }
+  });
+
+  it("only ever hides a trailing run, and the nav fits the space it is given", () => {
+    for (let width = 1700; width >= 1100; width -= 10) {
+      const m = measure(width);
+      const step = fitToolbar(m, { moreFirst: true });
+      const from = step.homePill ? 1 : 0;
+      const shown = ITEMS.slice(from, step.inline);
+      const more = step.inline < ITEMS.length;
+      const needs =
+        shown.reduce((a, b) => a + b, 0) +
+        (shown.length - 1) * NAV_GAP +
+        (more ? NAV_GAP + m.more : 0);
+      expect(needs, `at ${String(width)}`).toBeLessThanOrEqual(navSpace(m, step));
+    }
+  });
+});

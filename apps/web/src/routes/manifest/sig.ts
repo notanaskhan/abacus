@@ -4,7 +4,12 @@
 import type { Manifest } from "./types";
 
 export const sigScreens = {
-  "SIG-01": { name: "Signatures hub · evidence drawer", status: "planned", path: null },
+  "SIG-01": {
+    name: "Signatures hub · evidence drawer",
+    status: "planned",
+    path: null,
+    navArea: "Signatures",
+  },
   "SIG-02": {
     name: "Envelope builder · Form 8879-PE · Harborview",
     status: "planned",

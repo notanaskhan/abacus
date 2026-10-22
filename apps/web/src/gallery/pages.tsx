@@ -22,6 +22,8 @@ import {
   useSeedFixtures,
 } from "./fixture-mode";
 import { SURFACES, colorRows, parseTokens } from "./tokens";
+// The built screens register themselves for /components/screens/<ID> (P-01-T02: SHL-01).
+import "../screens/gallery";
 
 // The /components subtree (SPEC-048 AC-10, AC-11): one lazy chunk that only gallery builds
 // compile. Everything here renders from fixtures; nothing calls the API.

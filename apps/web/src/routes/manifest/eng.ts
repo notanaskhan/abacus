@@ -4,11 +4,17 @@
 import type { Manifest } from "./types";
 
 export const engScreens = {
-  "ENG-01": { name: "Engagements index", status: "planned", path: null },
+  "ENG-01": {
+    name: "Engagements index",
+    status: "planned",
+    path: "/engagements", // legacy Engagements
+    navArea: "Engagements",
+  },
   "ENG-02": {
     name: "Engagement record",
     status: "planned",
     path: "/engagements/$engagementId", // legacy EngagementLayout
+    navArea: "Engagements",
   },
   "ENG-03": {
     name: "New engagement wizard · Fairhaven Foods 401(k) Plan",
@@ -25,7 +31,12 @@ export const engScreens = {
   "ENG-07": { name: "Season setup / roll-forward", status: "planned", path: null },
   "ENG-08": { name: "Billing & WIP read-through", status: "planned", path: null, entry: true },
   "ENG-09": { name: "Proposals & scope builder", status: "planned", path: null },
-  "ENG-10": { name: "Board — Granite Peak FY2026 audit programs", status: "planned", path: null },
+  "ENG-10": {
+    name: "Board — Granite Peak FY2026 audit programs",
+    status: "planned",
+    path: null,
+    navArea: "Engagements",
+  },
   "ENG-11": { name: "Engagement settings", status: "planned", path: null },
   "ENG-12": {
     name: "Engagement dashboard — Granite Peak FY2026 Financial Statement Audit",

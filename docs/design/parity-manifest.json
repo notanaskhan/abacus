@@ -176,6 +176,19 @@
       ],
       "tier": "A",
       "deviation": "The handoff's posted dot is larger and its 'a' sits lower than the monogram specimen draws them"
+    },
+    "shl-01a.toolbar": {
+      "page": "screens/SHL-01?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"toolbar\"]",
+      "source": "handoff/screens/SHL-01 Firm app shell - toolbar and nav/screenshots/SHL-01a.png",
+      "sha256": "1ad4b4dd5a2f74cf903d7d9c91ceb6134978a97002f1042d0be79847e717cec8",
+      "crop": [
+        40,
+        40,
+        2840,
+        132
+      ],
+      "tier": "A"
     }
   }
 }

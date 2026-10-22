@@ -4,7 +4,12 @@
 import type { Manifest } from "./types";
 
 export const notScreens = {
-  "NOT-01": { name: "Notices index · intake sheet", status: "planned", path: null },
+  "NOT-01": {
+    name: "Notices index · intake sheet",
+    status: "planned",
+    path: null,
+    navArea: "Notices",
+  },
   "NOT-02": {
     name: "Notice workspace · CP2000 · TY2024 · Marcus & Dana Whitley",
     status: "planned",

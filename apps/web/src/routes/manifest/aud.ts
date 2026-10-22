@@ -4,7 +4,12 @@
 import type { Manifest } from "./types";
 
 export const audScreens = {
-  "AUD-01": { name: "Audits index · All Audits", status: "planned", path: null },
+  "AUD-01": {
+    name: "Audits index · All Audits",
+    status: "planned",
+    path: null,
+    navArea: "Audits",
+  },
   "AUD-02": {
     name: "Audit cockpit · Overview, Source Documents, Agent",
     status: "planned",

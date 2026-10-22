@@ -4,7 +4,12 @@
 import type { Manifest } from "./types";
 
 export const taxScreens = {
-  "TAX-01": { name: "Tax Returns · practice board", status: "planned", path: null },
+  "TAX-01": {
+    name: "Tax Returns · practice board",
+    status: "planned",
+    path: null,
+    navArea: "Tax Returns",
+  },
   "TAX-02": { name: "Return › Overview", status: "planned", path: null },
   "TAX-03": { name: "Return › Intake · Feld 2025 Form 1040", status: "planned", path: null },
   "TAX-04": {
