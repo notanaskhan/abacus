@@ -594,6 +594,66 @@ objects:
       override:       {label: "Override", variant: null, disc: dotted_underline_amber, terminal: false, derived: false}
       stale_override: {label: "Stale override", variant: null, disc: amber_tint_relink, terminal: false, derived: false, context_labels: {action: "↺ Relink"}}
 
+  # ---- Clients, acceptance and independence (P-07-T03; DF-31) ----
+  # Codes follow the P-07 schema (epic section 4.2) and the repo's existing enums; labels are the
+  # handoff's words. A code no artboard names is left out until its design lands (see TASK-425).
+
+  client:   # clients.status (DEC-62); CLI-01 "Status │ Active" filter; no client status pill is designed
+    source: "DEC-62; CLI-01"
+    codes:
+      prospect: {label: "Prospect", variant: null, terminal: false, derived: false}   # prospect → active is a system transition
+      active:   {label: "Active",   variant: null, terminal: false, derived: false}
+      inactive: {label: "Inactive", variant: null, terminal: false, derived: false}
+      former:   {label: "Former",   variant: null, terminal: true,  derived: false}
+
+  invitation:   # an invitee's access row: CLI-01/CLI-04 Portal pill (contacts.portal_status) and ADM-02 user rows (DF-31)
+    source: "DF-31; CLI-01; CLI-04; ADM-02 f"
+    codes:
+      not_invited: {label: "Not invited", variant: neutral, terminal: false, derived: false}
+      invited:     {label: "Invite pending · expires {date}", variant: amber, terminal: false, derived: false, context_labels: {portal_pill: "Invited"}}   # ADM-02 f; CLI-04 pill "Invited" with sub-line "Sent {date} · expires {date}" (14 days, DEC-35)
+      active:      {label: "Active", variant: green-tint, terminal: false, derived: false}
+      locked:      {label: "Locked", variant: red-tint, terminal: false, derived: false}   # DF-31 sign-in Locked; CLI-04 d sub-line "3 incorrect codes · {time}" (DEC-35, DF-24); unlock by waiting 15 minutes or a firm admin
+      deactivated: {label: "Deactivated {date}", variant: tag, terminal: true, derived: false}   # ADM-02 user row (#EFEEEB, ink-2)
+
+  acceptance_record:   # acceptance_records.status (P-07 M5); CLI-07; undesigned states per DF-06
+    source: "CLI-07; DF-06; P-07 4.2"
+    codes:
+      draft:            {label: "Draft", variant: neutral, terminal: false, derived: false}   # CLI-07 g record-bar pill
+      pre_screening:    {label: "Pre-screening", variant: null, terminal: false, derived: false}   # reserved; AI pre-screen deferred (DEC-64); CLI-07c "Pre-screening · 4 of 9 sections"
+      awaiting_partner: {label: "Awaiting partner", variant: amber, terminal: false, derived: false, context_labels: {rail_card: "Blocked on a partner decision"}}   # CLI-07a
+      decided:          {label: "Decided", variant: green-tint, terminal: true, derived: false}   # CLI-07d pill "{option} · {person} · {date}", e.g. "Accepted with conditions · Daniel Reyes · Sep 14, 9:46 AM", with a lock
+      declined:         {label: "Declined", variant: null, terminal: true, derived: false}   # CLI-07e; the engagement becomes Declined
+
+  letter_record:   # the interim recorded engagement letter (PUT /v1/engagements/{id}/letter; G3) until N-02's envelopes
+    source: "ENG-01 b; ENG-02 b, c"
+    codes:
+      not_signed: {label: "Not signed", variant: amber, terminal: false, derived: false}   # ENG-01 b filter "Letter │ Not signed"; ENG-02 c amber G3 banner
+      signed:     {label: "Letter signed", variant: green-tint, terminal: true, derived: false, context_labels: {gate_row: "Letter signed by {signers} · {date}"}}   # same words as engagement.contracted; ENG-02 b G3 row
+
+  conflict_assessment:   # conflict_results.assessment (P-07 M6); CLI-06 a, h; CLI-08 c
+    source: "CLI-06; CLI-08 c"
+    codes:
+      pending:                 {label: "Pending", variant: amber, terminal: false, derived: false}   # CLI-06 a "Beneficiaries (from intake)"
+      clear:                   {label: "Clear", variant: neutral, terminal: true, derived: false}
+      same_family_not_adverse: {label: "Same family · not adverse", variant: green-tint, terminal: true, derived: false}
+      not_adverse:             {label: "Not adverse", variant: green-tint, terminal: true, derived: false}   # cleared by a manager or partner with a reason
+      counterparty_review:     {label: "Counterparty · {relationship} — review", variant: amber, terminal: false, derived: false}   # CLI-06 h "Counterparty · custodian for Calloway Family Trust — review"
+
+  nas_evaluation:   # nas_evaluations.status (P-07 M7); CLI-08 b NAS matrix Status column
+    source: "CLI-08 b"
+    codes:
+      pending:        {label: "Pending", variant: amber, terminal: false, derived: false}
+      concluded:      {label: "Concluded", variant: green, terminal: true, derived: false}
+      not_applicable: {label: "Not applicable", variant: neutral, terminal: true, derived: false}
+
+  independence_conclusion:   # independence_conclusions.option (P-07 M7); SHL-11 "Conclude engagement independence?" on CLI-08 f
+    source: "CLI-08 f"
+    codes:
+      independent:                 {label: "Independent", variant: null, terminal: true, derived: false}
+      independent_with_safeguards: {label: "Independent with safeguards", variant: null, terminal: true, derived: false}
+      not_independent:             {label: "Not independent", variant: null, terminal: true, derived: false}
+      # once concluded the state reads green "Concluded · {person} · {date}"; before, amber "Pending {n} team confirmation"
+
 # Retired codes and words. key = "<object>.<code>" (repo object where it differs) -> replacement.
 retired:
   # --- request_item.status (9.5.6, DEC-09; migration P-44) ---
