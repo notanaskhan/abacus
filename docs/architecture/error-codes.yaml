@@ -484,6 +484,11 @@ codes:
     raised_by:
     - abacus.modules.agents.draft_start.NothingToPublish
     summary: No approved drafted guidance on this version yet.
+  office_not_in_firm:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.me.OfficeNotInFirm
+    summary: The default office must be one of the active firm's offices.
   out_of_scope:
     status: 409
     raised_by:
@@ -684,6 +689,11 @@ codes:
     raised_by:
     - abacus.modules.engagements.roll_forward.TeamMemberUnavailable
     summary: Someone confirmed has since left the firm or been walled from the client.
+  template_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.communications.templates.TemplateInvalid
+    summary: The template's key, locale, text or values are malformed.
   template_name_invalid:
     status: 422
     raised_by:
@@ -727,6 +737,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.connections.connect.UnknownProvider
+  unknown_template_variable:
+    status: 422
+    raised_by:
+    - abacus.modules.communications.templates.UnknownTemplateVariable
+    summary: A template or a render used a variable outside the C16 whitelist or its declaration.
   unknown_time_zone:
     status: 422
     raised_by:
@@ -744,6 +759,16 @@ codes:
     raised_by:
     - abacus.modules.assurance.mapping.Unmapped
     summary: The preparer signs a mapping only when every account is mapped.
+  unregistered_kind:
+    status: 422
+    raised_by:
+    - abacus.modules.review.slots.UnregisteredKind
+    summary: A decision kind, gate kind, field owner or fix runner nobody registered.
+  unregistered_target:
+    status: 422
+    raised_by:
+    - abacus.modules.agents.proposal_slots.UnregisteredTarget
+    summary: Nobody accepts suggestions on this target type.
   upload_empty:
     status: 422
     raised_by:

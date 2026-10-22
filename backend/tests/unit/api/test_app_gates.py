@@ -88,6 +88,7 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 # TASK-019: taking, releasing and assigning a review return the assignment, so 200.
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
+    "/v1/platform/email-templates/import",  # TASK-401: idempotent, may write nothing, so 200
     "/v1/walls/{wall_id}/remove",  # TASK-016: returns the removed wall, so 200
     REVIEW_QUEUE + "/take",
     REVIEW_QUEUE + "/release",
