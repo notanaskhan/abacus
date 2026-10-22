@@ -1,0 +1,753 @@
+# The error-code catalogue (ADR-139, P-36; F-03-T29). Every 409 and 422 `detail` code the API can
+# answer with, its HTTP status and the classes that raise it. Facts beside a code are identifiers
+# only (abacus.kernel.errors.check_facts). Rebuild with
+# `python -m abacus_tools.quality.error_codes --write`; `make check-fast` checks it.
+codes:
+  acceptance_declined:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.setup.AcceptanceDeclined
+  acceptance_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.setup.AcceptanceMissing
+  accounts_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.service.AccountsMissing
+    summary: 'SPEC-038 Q3: bank and payables accounts are confirmed before selecting.'
+  action_cap:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.service.ActionCapReached
+    summary: The engagement reached its daily cap for this action (SPEC-007 AC-4).
+  adjustment_state:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.completion.AdjustmentState
+    summary: Approve once; record the client's answer once, after approval.
+  ai_assessor_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.assess_start.AssessorUnavailable
+    summary: The flag is off, or no real model route is enabled here.
+  ai_client_data_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.firm_settings.AiClientDataUnavailable
+    summary: 'No provider terms entry covers Bedrock today (ADR-114): nothing to opt in against.'
+  ai_drafting_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.draft_start.DraftingUnavailable
+    summary: The flag is off, or no real model route is enabled here.
+  ai_exclusion_reason_required:
+    status: 422
+    raised_by:
+    - abacus.modules.engagements.service.AiExclusionReasonRequired
+    summary: Switching AI off for an engagement needs a reason (SPEC-036 §4.6).
+  ai_match_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.match_start.MatchUnavailable
+    summary: No real model route is enabled for the matcher here.
+  ai_review_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.review_start.ReviewUnavailable
+    summary: No real model route is enabled for the reviewer here (TASK-059 D3).
+  already_connected:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.ledger_import.AlreadyConnected
+    summary: The entity's accounting system is connected; an export isn't needed.
+  already_decided:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.service.AlreadyDecided
+    - abacus.modules.fieldwork.planning.AlreadyDecided
+  already_member:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.service.AlreadyMember
+    summary: The caller is already on the engagement's team.
+  already_redacted:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.comments.AlreadyRedacted
+  already_released:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.completion.AlreadyReleased
+  already_requested:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.flow.AlreadyRequested
+    summary: 'AC-4: every item already has a support request.'
+  already_signed:
+    status: 409
+    raised_by:
+    - abacus.modules.review.service.AlreadySigned
+    summary: The same level is already signed on this exact content.
+  already_taken:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.service.AlreadyTaken
+  annotation_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.trial_balance.AnnotationInvalid
+  archive_locked:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.completion.AlreadyLocked
+  budget_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.platform.service.BudgetInvalid
+    summary: Soft must be positive and at most hard; hard at most the plan's limit (Q3).
+  citation_required:
+    status: 422
+    raised_by:
+    - abacus.modules.workpapers.tie_out.CitationRequired
+  client_contact:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.staff.ClientContact
+    summary: Someone who is a client contact of this firm can't also be its staff (SPEC-015 Q5).
+  completion_blocked:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.completion.CompletionBlocked
+    summary: Something the step needs isn't there yet; the detail names it.
+  completion_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.completion.CompletionInvalid
+    - abacus.modules.fieldwork.completion.CompletionInvalid
+  conflict:
+    status: 409
+    raised_by:
+    - abacus.kernel.errors.DomainConflict
+  connection_failed:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.connect.ConnectionFailed
+    summary: The provider refused or failed the exchange (its code, never its text, is logged).
+  correction_not_allowed:
+    status: 422
+    raised_by:
+    - abacus.modules.requests.comments.CorrectionNotAllowed
+  cutoff_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.connections.gl_import.CutoffInvalid
+    summary: 'SPEC-038 Q2: the cut-off is 30 to 366 days after year end.'
+  draft_already_decided:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.draft_start.DraftAlreadyDecided
+  draft_not_waiting:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.engagement_agent.DraftGone
+  drafted_guidance_not_allowed:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.firm_settings.DraftedGuidanceNotAllowed
+    summary: Only synthetic firms may show drafted guidance to clients while the data boundary holds
+      (ADR-112).
+  duplicate_upload:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.uploads.DuplicateUpload
+    summary: The same file (same SHA-256) is already on this item.
+  edited_draft_refused:
+    status: 422
+    raised_by:
+    - abacus.modules.agents.draft_start.EditedDraftRefused
+    summary: The edited text fails the same checks a draft must pass (SPEC-035 §4.3).
+  empty_comment:
+    status: 422
+    raised_by:
+    - abacus.modules.requests.comments.EmptyComment
+  empty_file:
+    status: 422
+    raised_by:
+    - abacus.modules.connections.ledger_import.EmptyFile
+  engagement_archived:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.service.EngagementArchived
+    summary: 'Archived engagements are read-only (`archived_write: deny`).'
+  engagement_not_open:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.setup.EngagementNotOpen
+  entity_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.organisations.service.EntityExists
+    summary: 'The client already has an entity with this name: pick it instead.'
+  fieldwork_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.service.FieldworkUnavailable
+  file_refused:
+    status: 422
+    raised_by:
+    - abacus.modules.connections.ledger_import.FileRefused
+    - abacus.modules.evidence.uploads.UploadRefused
+    summary: The malware scanner refused the file (SPEC-029 AC-1; ADR-110). Nothing is stored.
+  finding_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.fieldwork.findings.FindingInvalid
+  grouping_set_has_problems:
+    status: 409
+    raised_by:
+    - abacus.modules.ledger.mapping.VersionHasProblems
+  grouping_set_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.ledger.mapping.GroupingSetInvalid
+  grouping_set_published:
+    status: 409
+    raised_by:
+    - abacus.modules.ledger.mapping.AlreadyPublished
+  inbox_file_gone:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.inbox.InboxFileGone
+    summary: Already assigned or discarded (someone else got there first).
+  independence_conclusion_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.setup.IndependenceConclusionMissing
+  integrity_failed:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.item_detail.IntegrityFailed
+    summary: The stored content doesn't match its fingerprint, or is missing (ADR-016).
+  invalid:
+    status: 422
+    raised_by:
+    - abacus.kernel.errors.DomainInvalid
+  invalid_reason_code:
+    status: 422
+    raised_by:
+    - abacus.modules.evidence.service.InvalidReason
+    summary: A reason code missing, unknown, retired, not for this decision, or `other` without a note.
+  invalid_state:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.connect.InvalidState
+    summary: 'The state is unknown, someone else''s, already used or expired: nothing is created.'
+  invitation_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.invitations.InvitationInvalid
+  invitation_limit:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.invitations.InvitationLimit
+    summary: 50 invitations per engagement per day (SPEC-015 Q4).
+  item_closed:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.uploads.ItemClosed
+    summary: The item no longer takes evidence (ready for review or further on).
+  item_not_open:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.service.ItemNotFulfillable
+    summary: Only open or received items take new evidence by rule.
+  knowledge_duplicate:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.knowledge.KnowledgeDuplicate
+    summary: The same text is already in the firm's knowledge (not withdrawn).
+  knowledge_empty:
+    status: 422
+    raised_by:
+    - abacus.modules.agents.knowledge.KnowledgeEmpty
+  knowledge_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.agents.knowledge.KnowledgeInvalid
+  knowledge_query_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.agents.knowledge.KnowledgeQueryInvalid
+    summary: An empty query, one over 1,000 characters, or k outside 1 to 20.
+  knowledge_too_large:
+    status: 422
+    raised_by:
+    - abacus.modules.agents.knowledge.KnowledgeTooLarge
+    summary: Over the document's size or chunk limit, or the firm's chunk limit (§7).
+  knowledge_withdrawn:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.knowledge.KnowledgeWithdrawn
+  last_admin:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.staff.LastAdmin
+    summary: The firm must keep at least one active firm administrator (SPEC-024 AC-4).
+  last_partner:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.team.LastPartner
+    summary: An engagement keeps at least one engagement partner (SPEC-017 Q2).
+  layer_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.ledger.trial_balances.LayerUnavailable
+  ledger_import_off:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.ledger_import.ImportOff
+  letter_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.setup.LetterMissing
+  level_not_available:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.firm_settings.LevelNotAvailable
+    summary: Manage and Portfolio come with the engagement agent (SPEC-024 Q3).
+  list_not_done:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.client_responses.ListNotDone
+    summary: 'AC-4: every request is done or doesn''t apply first.'
+  mapping_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.ledger.mapping.MappingInvalid
+  mapping_set_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.ledger.mapping.MappingExists
+  materiality_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.fieldwork.service.MaterialityInvalid
+    summary: Amounts are positive, and trivial <= performance <= overall.
+  materiality_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.service.MaterialityMissing
+    summary: 'AC-3: a procedure can''t select before materiality is set.'
+  materiality_undecided:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.service.MaterialityUndecided
+    summary: 'SPEC-300 AC-2: selection waits for the engagement partner''s materiality decision.'
+  mention_not_allowed:
+    status: 422
+    raised_by:
+    - abacus.modules.requests.comments.MentionNotAllowed
+  methodology_already_applied:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.service.MethodologyAlreadyApplied
+    summary: An engagement is pinned to one methodology version, once (SPEC-008 Q4).
+  no_assurance_item:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.trial_balance.NoAssuranceItem
+    - abacus.modules.workpapers.service.NoAssuranceItem
+    summary: Only an attest engagement (with its assurance work item) holds working papers.
+  no_connection:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.connect.NoLiveConnection
+    - abacus.modules.connections.service.NoConnection
+    summary: The engagement's client entity has no active connection.
+  no_ledger:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.service.NoLedger
+    summary: No reconciled general ledger for the engagement's entity and year end.
+  no_subsequent_ledger:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.service.NoSubsequentLedger
+    summary: 'SPEC-038: the general ledger after year end hasn''t been imported and checked yet.'
+  no_transactions:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.statement_review.NoTransactions
+    summary: Code found no statement lines in this file.
+  not_a_client_contributor:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.service.NotAClientContributor
+    summary: Items are assigned to the engagement's client contributors only (TASK-035 D4).
+  not_concluded:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.completion.NotConcluded
+    summary: A deficiency is communicated only once the partner has concluded its severity.
+  not_locked:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.unlock.NotLocked
+    summary: The file isn't a password-protected PDF.
+  not_note_raiser:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.notes.NotRaiser
+    summary: 'AC-3: only the person who raised a note clears it.'
+  not_prepared:
+    status: 409
+    raised_by:
+    - abacus.modules.review.service.NotPrepared
+    summary: L2 and above need a current preparer sign-off.
+  not_staff:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.uploads.NotStaff
+    summary: Only the firm's team can add files on the client's behalf (SPEC-023 AC-1).
+  not_the_eqr:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.completion.NotTheEqr
+  not_the_raiser:
+    status: 409
+    raised_by:
+    - abacus.modules.review.notes.NotTheRaiser
+    summary: Only the reviewer who raised a note, or the engagement partner, clears it.
+  note_cleared:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.notes.NoteCleared
+    summary: 'AC-3: a cleared note is closed.'
+  note_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.fieldwork.notes.NoteInvalid
+  notes_open:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.notes.NotesOpen
+    summary: 'AC-4, AC-5: clear the review notes before signing as reviewer.'
+  nothing_to_approve:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.planning.NothingToApprove
+    summary: The risk's current version has no significant risk or rebuttal, or it's approved.
+  nothing_to_publish:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.draft_start.NothingToPublish
+    summary: No approved drafted guidance on this version yet.
+  out_of_scope:
+    status: 409
+    raised_by:
+    - abacus.modules.communications.service.OutOfScope
+    - abacus.modules.requests.comments.CommentOutOfScope
+    summary: 'AC-7: the comment names something outside the engagement; it wasn''t posted.'
+  own_wall:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.service.OwnWall
+    summary: 'A firm admin can''t lift a wall on themself: another firm admin must (ADR-026: walls are
+      absolute; TASK-016 security review).'
+  parameters_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.fieldwork.service.ParametersInvalid
+  payload_too_large:
+    status: 422
+    raised_by:
+    - abacus.modules.connections.ledger_import.FileTooLarge
+  planning_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.fieldwork.planning.PlanningInvalid
+  possible_duplicate:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.service.PossibleDuplicate
+    summary: 'A client with this name (normalised) already exists: pick it, or confirm a new one.'
+  preparer_cannot_review:
+    status: 409
+    raised_by:
+    - abacus.modules.review.service.PreparerCannotReview
+  prior_mismatch:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.roll_forward.PriorMismatch
+    summary: The prior engagement isn't this client entity's, or is another type.
+  procedure_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.service.ProcedureExists
+  procedure_selecting:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.service.ProcedureBusy
+  proposal_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.roll_forward.ProposalChanged
+    - abacus.modules.evidence.service.ProposalChanged
+    summary: 'The template''s latest version changed since the proposal: ask for it again.'
+  read_not_confirmed:
+    status: 422
+    raised_by:
+    - abacus.modules.agents.draft_start.ReadNotConfirmed
+    summary: Bulk approval needs the person to confirm they read each draft (SPEC-035 Q5).
+  response_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.requests.client_responses.ResponseInvalid
+  result_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.fieldwork.workpapers.ResultInvalid
+    summary: An exception needs a note, and not tested a reason; evidence must be this engagement's.
+  review_note_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.review.notes.NoteInvalid
+  review_note_state:
+    status: 409
+    raised_by:
+    - abacus.modules.review.notes.NoteState
+  review_notes_open:
+    status: 409
+    raised_by:
+    - abacus.modules.review.service.NotesOpen
+    summary: A reviewer signs (L2 and above) only when the target's notes are cleared.
+  reviewer_is_preparer:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.workpapers.OwnWork
+    summary: 'ADR-131: the reviewer isn''t the preparer.'
+  roll_forward_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.roll_forward.RollForwardUnavailable
+  rows_not_prepared:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.workpapers.RowsNotPrepared
+    summary: 'SPEC-040 AC-10: every row is signed by a preparer, on its current result, first.'
+  rows_not_reviewed:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.workpapers.RowsNotReviewed
+    summary: 'SPEC-040 AC-10: every row is signed by a reviewer, on its current result, first.'
+  sample_already_approved:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.flow.AlreadyApproved
+  sample_not_approved:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.workpapers.SampleNotApproved
+    summary: 'SPEC-040 AC-3: a manager or the partner approves the sample before anyone tests it, asks
+      the client for support, or signs a row.'
+  sharing_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.comments.SharingUnavailable
+    summary: No scope check is registered, so nothing a firm member writes can be shared (D1).
+  sign_off_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.review.service.SignOffInvalid
+  signoff_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.fieldwork.flow.SignoffInvalid
+  signup_already_staff:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.signup.AlreadyStaff
+    summary: 'The person already belongs to a firm''s staff: one firm per sign-up (SPEC-024 §4).'
+  signup_code_invalid:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.signup.SignupCodeInvalid
+    summary: The code is unknown, already used or expired.
+  signup_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.signup.SignupInvalid
+    summary: No provider-verified email, or a firm name that isn't 1 to 200 printable characters.
+  signup_rate_limited:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.signup.SignupRateLimited
+  snapshot_entity_mismatch:
+    status: 422
+    raised_by:
+    - abacus.modules.ledger.trial_balances.SnapshotEntityMismatch
+  staff_invitation_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.staff.StaffInvitationInvalid
+  statement_already_approved:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.statement_review.AlreadyApproved
+  statement_balance_printed:
+    status: 422
+    raised_by:
+    - abacus.modules.evidence.statement_review.BalancePrinted
+    summary: A balance the statement prints can't be replaced by a typed one.
+  statement_not_reconciled:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.statement_review.NotReconciled
+  statement_review_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.evidence.statement_review.ReviewInvalid
+  superseded:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.service.Superseded
+    summary: 'A newer version of the same item has arrived: decide that one.'
+  support_session_conflict:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.support.SupportSessionConflict
+    summary: Not in a state that allows this (already approved, ended, or one already open), or a staff
+      member approving their own request.
+  support_session_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.support.SupportSessionInvalid
+    summary: A reason of 20 to 1,000 characters, a scope, and 1 to 240 minutes (60 in an emergency).
+  tb_same_snapshot:
+    status: 409
+    raised_by:
+    - abacus.modules.ledger.trial_balances.SameSnapshot
+  tb_version_stale:
+    status: 409
+    raised_by:
+    - abacus.modules.ledger.trial_balances.VersionStale
+    summary: Someone adopted another version since the caller looked.
+  team_member_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.roll_forward.TeamMemberUnavailable
+    summary: Someone confirmed has since left the firm or been walled from the client.
+  template_name_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.engagements.service.TemplateNameInvalid
+    summary: A template name is 1 to 100 characters.
+  template_type_mismatch:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.service.TemplateTypeMismatch
+    summary: The template doesn't serve this engagement's type (SPEC-024 AC-6).
+  tie_out_check_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.workpapers.tie_out.CheckInvalid
+  tie_out_check_key_taken:
+    status: 422
+    raised_by:
+    - abacus.modules.workpapers.tie_out.KeyTaken
+  tie_out_check_stale:
+    status: 422
+    raised_by:
+    - abacus.modules.workpapers.tie_out.CheckStale
+  trial_balance_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.ledger.trial_balances.TrialBalanceExists
+  trial_balance_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.ledger.trial_balances.TrialBalanceInvalid
+  unknown_format:
+    status: 422
+    raised_by:
+    - abacus.modules.connections.ledger_import.UnknownFormat
+  unknown_provider:
+    status: 422
+    raised_by:
+    - abacus.modules.connections.connect.UnknownProvider
+  unknown_time_zone:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.firm_settings.UnknownTimeZone
+  unknown_work_item_kind:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.slots.UnknownWorkItemKind
+  unlock_failed:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.unlock.UnlockFailed
+  unmapped_accounts:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.mapping.Unmapped
+    summary: The preparer signs a mapping only when every account is mapped.
+  upload_empty:
+    status: 422
+    raised_by:
+    - abacus.modules.evidence.uploads.UploadEmpty
+  upload_too_large:
+    status: 422
+    raised_by:
+    - abacus.modules.evidence.uploads.UploadTooLarge
+  upload_type_not_allowed:
+    status: 422
+    raised_by:
+    - abacus.modules.evidence.uploads.UploadTypeNotAllowed
+  version_not_latest:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.service.VersionNotLatest
+    summary: Drafted guidance is published onto the template's latest version only (TASK-074 D2).
+  wall_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.service.WallExists
+    summary: The person is already walled off from this client.
+  workpaper_already_signed:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.workpapers.AlreadySigned
+  workpaper_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.workpapers.ChangedSinceReady
+    summary: 'Something changed after the preparer signed: sign as ready again first.'
+  workpaper_code_taken:
+    status: 409
+    raised_by:
+    - abacus.modules.workpapers.service.CodeTaken
+  workpaper_fingerprint_mismatch:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.workpapers.FingerprintMismatch
+    summary: A signed version no longer renders to the bytes that were signed.
+  workpaper_incomplete:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.workpapers.NotReadyToSign
+    summary: Every selected entry needs a result, and the procedure a conclusion.
+  workpaper_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.workpapers.service.WorkpaperInvalid
+  workpaper_not_ready:
+    status: 409
+    raised_by:
+    - abacus.modules.fieldwork.workpapers.NothingToReview
+    summary: No ready version, or it's already reviewed.
+  wrong_password:
+    status: 422
+    raised_by:
+    - abacus.modules.evidence.unlock.WrongPassword

@@ -62,14 +62,21 @@ async def _not_found(_request: Request, _exc: Exception) -> JSONResponse:
     return JSONResponse({"detail": "not found"}, status_code=404)
 
 
+def _coded(exc: DomainConflict | DomainInvalid) -> dict[str, object]:
+    # The class's fixed code and its identifier-only facts (ADR-139): nothing from the request or
+    # the database is echoed as text.
+    body: dict[str, object] = {"detail": exc.code}
+    if exc.facts:
+        body["facts"] = exc.facts
+    return body
+
+
 async def _conflict(_request: Request, exc: Exception) -> JSONResponse:
-    # The class's fixed code: nothing from the request or the database is echoed.
-    return JSONResponse({"detail": cast(DomainConflict, exc).code}, status_code=409)
+    return JSONResponse(_coded(cast(DomainConflict, exc)), status_code=409)
 
 
 async def _domain_invalid(_request: Request, exc: Exception) -> JSONResponse:
-    # The class's fixed code, like a conflict: nothing from the request or the database is echoed.
-    return JSONResponse({"detail": cast(DomainInvalid, exc).code}, status_code=422)
+    return JSONResponse(_coded(cast(DomainInvalid, exc)), status_code=422)
 
 
 async def _unavailable(_request: Request, _exc: Exception) -> JSONResponse:
