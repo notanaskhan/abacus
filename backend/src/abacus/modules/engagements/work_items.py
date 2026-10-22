@@ -7,16 +7,21 @@ projects) register with their modules as they arrive.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date, datetime
+from typing import Final
 from uuid import UUID
 
-from sqlalchemy import select, update
+from sqlalchemy import insert, select, text, update
+from sqlalchemy.exc import IntegrityError
 
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.uow import UnitOfWork
+from abacus.kernel.errors import DomainConflict
+from abacus.kernel.uow import Target, UnitOfWork, uow
 from abacus.modules.engagements.models import AssuranceWorkItem, Engagement, WorkItem
-from abacus.modules.engagements.service import get_ref
+from abacus.modules.engagements.service import get_ref, lock_ref
+from abacus.modules.engagements.slots import NewWorkItem, work_item_provider
 from abacus.modules.identity.api import AuthContext, authorise, visible
 
 
@@ -91,3 +96,105 @@ async def lock_engagement(tx: UnitOfWork, engagement_id: UUID, at: datetime) -> 
     await tx.session.execute(
         update(Engagement).where(Engagement.id == engagement_id).values(status="archived")
     )
+
+
+# --- F-03-T22: creating work items of every kind ------------------------------------------------
+
+_UNIQUE_VIOLATION: Final = "23505"
+
+
+class WorkItemExists(DomainConflict):
+    """The kind allows no second one here: another assurance item on the engagement, another close
+    for the same period (409)."""
+
+    code = "work_item_exists"
+
+
+async def create_work_item(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    kind: str,
+    *,
+    name: str,
+    client_entity_id: UUID | None = None,
+    due_on: date | None = None,
+    details: Mapping[str, str | int | date | None] | None = None,
+) -> UUID:
+    """A new work item of `kind` on the engagement, with its kind's subtype row, in one unit of
+    work. The kind's owner registered it (an unregistered kind is 409 unknown_work_item_kind);
+    its cardinality rule (one assurance item per engagement, one close per period) answers 409
+    `work_item_exists`."""
+    provider = work_item_provider(kind)
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, "work_item.create", ref.resource())
+        try:
+            async with tx.session.begin_nested():
+                created = await tx.session.execute(
+                    insert(WorkItem)
+                    .values(
+                        tenant_id=ctx.tenant_id,
+                        engagement_id=engagement_id,
+                        client_id=ref.client_id,
+                        client_entity_id=client_entity_id,
+                        kind=kind,
+                        name=name,
+                        due_on=due_on,
+                        created_by=ctx.user_id,
+                    )
+                    .returning(WorkItem.id)
+                )
+                work_item_id = created.scalar_one()
+                await provider.create(
+                    tx,
+                    NewWorkItem(
+                        ctx.tenant_id, work_item_id, engagement_id, client_entity_id, details or {}
+                    ),
+                )
+        except IntegrityError as exc:
+            if getattr(exc.orig, "sqlstate", None) == _UNIQUE_VIOLATION:
+                raise WorkItemExists(facts={"kind": kind}) from None
+            raise
+        tx.record("work_item.created", target=Target("engagement", engagement_id))
+    return work_item_id
+
+
+class AssuranceKind:
+    """The `assurance` kind: its subtype row (one per engagement; the trigger makes the first)."""
+
+    async def status(self, tenant: TenantContext, work_item_id: UUID) -> str:
+        return "active"
+
+    async def create(self, tx: UnitOfWork, item: NewWorkItem) -> None:
+        await tx.session.execute(
+            insert(AssuranceWorkItem).values(
+                work_item_id=item.work_item_id,
+                tenant_id=item.tenant_id,
+                engagement_id=item.engagement_id,
+                assurance_type=item.details.get("assurance_type") or "fs_audit",
+            )
+        )
+
+
+_ADVISORY = text(
+    "INSERT INTO advisory_projects (tenant_id, work_item_id, engagement_id, name) "
+    "VALUES (:tenant_id, :work_item_id, :engagement_id, :name)"
+)
+
+
+class AdvisoryProjectKind:
+    """The `advisory_project` kind: a project's name (F-03-T22)."""
+
+    async def status(self, tenant: TenantContext, work_item_id: UUID) -> str:
+        return "active"
+
+    async def create(self, tx: UnitOfWork, item: NewWorkItem) -> None:
+        await tx.session.execute(
+            _ADVISORY,
+            {
+                "tenant_id": item.tenant_id,
+                "work_item_id": item.work_item_id,
+                "engagement_id": item.engagement_id,
+                "name": item.details.get("name") or "Advisory project",
+            },
+        )

@@ -7,13 +7,15 @@ registration fails closed: an unregistered kind can't be created, an unregistere
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
+from datetime import date
 from typing import Final, Protocol
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import DomainConflict
+from abacus.kernel.uow import UnitOfWork
 
 
 class UnknownWorkItemKind(DomainConflict):
@@ -24,6 +26,22 @@ class WorkItemProvider(Protocol):
     """What a work-item kind's owner answers about one of its work items."""
 
     async def status(self, tenant: TenantContext, work_item_id: UUID) -> str: ...
+
+    async def create(self, tx: UnitOfWork, item: NewWorkItem) -> None:
+        """Write the kind's subtype row inside `tx` (F-03-T22). A duplicate the kind forbids
+        (a second close for a period) is a unique violation; `create_work_item` answers 409."""
+        ...
+
+
+@dataclass(frozen=True)
+class NewWorkItem:
+    """A work item being created, for its kind's provider (F-03-T22)."""
+
+    tenant_id: UUID
+    work_item_id: UUID
+    engagement_id: UUID
+    client_entity_id: UUID | None
+    details: Mapping[str, str | int | date | None]
 
 
 @dataclass(frozen=True)
@@ -39,9 +57,10 @@ _GATES: dict[str, GateProvider] = {}
 
 
 def register_work_item_kind(kind: str, provider: WorkItemProvider) -> None:
-    if kind in _KINDS:
+    known = _KINDS.get(kind)
+    if known is not None and not _same(type(known), type(provider)):
         raise ValueError(f"work-item kind {kind!r} is already registered")
-    _KINDS[kind] = provider
+    _KINDS[kind] = provider  # the same provider again (a reloaded module) replaces itself
 
 
 def work_item_provider(kind: str) -> WorkItemProvider:

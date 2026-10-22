@@ -903,6 +903,11 @@ ACTIONS: dict[str, dict[str, str]] = {
         "firm_admin": "allow",
         "mfa_recent": "required",
     },
+    "work_item.create": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "agent": "deny",
+    },
     "work_item.read_metadata": {
         "firm_admin": "allow",
         "practice_leader": "in_scope",

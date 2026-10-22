@@ -66,6 +66,7 @@ from abacus.modules.engagements.slots import (
     GateFact,
     Judgment,
     JudgmentSource,
+    NewWorkItem,
     UnknownWorkItemKind,
     WorkItemProvider,
     gate_fact,
@@ -76,7 +77,11 @@ from abacus.modules.engagements.slots import (
     work_item_provider,
 )
 from abacus.modules.engagements.work_items import (
+    AdvisoryProjectKind,
+    AssuranceKind,
+    WorkItemExists,
     assurance_item_id,
+    create_work_item,
     lock_engagement,
     set_assurance_phase,
 )
@@ -121,6 +126,9 @@ register_engagement_service_line(service_line_of)
 register_attest_client(attest_of)  # F-03-T25: the client's derived attest flag (DEC-128)
 # F-03-T26 (ADR-146): the client-access scope kinds engagements owns.
 register_scope_resolver("work_item", work_item_scope)
+# F-03-T22: the two kinds engagements owns; tax, closes and notices register theirs.
+register_work_item_kind("assurance", AssuranceKind())
+register_work_item_kind("advisory_project", AdvisoryProjectKind())
 register_scope_resolver("client", client_scope)
 # F-03-T27 (ADR-145): the `client` scope kind reads through engagement visibility.
 register_clients_of_engagements(clients_of_engagements)
@@ -154,6 +162,7 @@ __all__ = [
     "JudgmentSource",
     "MethodologyAlreadyApplied",
     "MethodologyVersionView",
+    "NewWorkItem",
     "PriorItem",
     "StoredFile",
     "TemplateItem",
@@ -161,6 +170,7 @@ __all__ = [
     "TemplateVersionSummary",
     "UnknownWorkItemKind",
     "VersionNotLatest",
+    "WorkItemExists",
     "WorkItemProvider",
     "area_for",
     "assurance_item_id",
@@ -168,6 +178,7 @@ __all__ = [
     "attach_letter_file",
     "audit_engagements",
     "check_facts",
+    "create_work_item",
     "designate_contact",
     "engagement_contacts",
     "engagement_label",
