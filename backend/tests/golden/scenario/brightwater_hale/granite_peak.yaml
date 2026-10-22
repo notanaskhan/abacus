@@ -1,0 +1,39 @@
+# F-04.27 (ADR-078): Granite Peak Outdoor Supply FY2026 (FS audit) figures, transcribed from the
+# epic and blueprint 01 §9.8, not from the code. Numbers are read as text and compared as
+# Decimal. The scenario package does not model these figures yet: every case is an arithmetic
+# identity from its inputs, for the loaded-state golden (F-04-T29) and A-04-T17.
+golden: brightwater_hale/granite_peak
+cases:
+  - id: gross-profit
+    kind: sum
+    inputs:
+      terms: {revenue: 48600000, cogs: -29160000}
+    expected:
+      total: 19440000
+    source: "blueprint 01 §9.8 Granite Peak TB summary"
+    reviewed_by: pending (AY)
+
+  - id: pre-tax-income
+    kind: sum
+    inputs:
+      terms: {gross_profit: 19440000, operating_expenses: -15820000, interest: -520000}
+    expected:
+      total: 3100000
+    source: "blueprint 01 §9.8 Granite Peak TB summary (pre-tax income 3,100,000, the materiality benchmark)"
+    reviewed_by: pending (AY)
+
+  - id: materiality-5-percent-v2
+    kind: materiality
+    parameter_set: "BH FS policy: pre-tax income 3%–7%; overall rounded to the nearest 100, half up; PM 75% and CT 5% of the rounded overall"
+    inputs:
+      benchmark: 3100000
+      rate: 0.05
+      increment: 100
+      pm_rate: 0.75
+      ct_rate: 0.05
+    expected:
+      overall: 155000
+      pm: 116250
+      ct: 7750
+    source: "F-04 §3.6 F-04.27 (155,000 / 116,250 / 7,750); blueprint 01 §9.8 (5% of pre-tax income = 155,000 · PM 75% = 116,250 · CT 5% = 7,750); A-04 AC3.8 (decided 10:12 AM)"
+    reviewed_by: pending (AY)

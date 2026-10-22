@@ -1,0 +1,76 @@
+# F-04.27 (ADR-078): the 27 audits and assurance engagements of F-04.10, transcribed from the
+# epic and blueprint 01 §9.5 / §9.7, not from the code. Numbers are read as text and compared as
+# Decimal. The scenario package does not model engagements yet (F-04-T13 adds them), so the
+# tallies are arithmetic over the §9.7 rows; the `audit_engagement_clients` probe checks that
+# every row's client (or plan entity) exists in the scenario with the row's EP and attest flag.
+golden: brightwater_hale/audits
+cases:
+  - id: audits-27-by-type
+    kind: sum
+    inputs:
+      terms: {EBP: 14, FS audit: 6, Review: 4, Compilation/preparation: 3}
+    expected:
+      total: 27
+    source: "F-04 §3.2 F-04.10; blueprint 01 §9.5 'Audits & assurance (27)'"
+    reviewed_by: pending (AY)
+
+  - id: audits-27-by-stage
+    kind: sum
+    inputs:
+      terms: {Planning: 7, Fieldwork: 9, In review: 6, Ready to release: 2, Released: 3}
+    expected:
+      total: 27
+    source: "F-04 §3.2 F-04.10 (stages 7 / 9 / 6 / 2 / 3); blueprint 01 §9.5; AUD-01 count tiles"
+    reviewed_by: pending (AY)
+
+  - id: audits-27-roster-rows
+    kind: tally
+    inputs:
+      # Type as §9.7 prints it → the F-04.10 group; attest groups are the ones AR-C 70/80 are not.
+      groups:
+        "EBP DC §103(a)(3)(C)": EBP
+        "EBP DC": EBP
+        "EBP DC (403(b))": EBP
+        "FS audit": FS audit
+        "Review (AR-C 90)": Review
+        "Compilation (AR-C 80)": Compilation/preparation
+        "Preparation (AR-C 70)": Compilation/preparation
+      attest_groups: [EBP, FS audit, Review]
+      # [ref, engagement, type, phase, EP] — blueprint 01 §9.7 "Audits & assurance (27)", A1 to A27.
+      rows:
+        - [A1, "Northwind Robotics 401(k) Plan", "EBP DC §103(a)(3)(C)", Planning, MO]
+        - [A2, "Granite Peak Outdoor Supply, Inc.", "FS audit", Planning, MO]
+        - [A3, "Lakeshore Literacy Alliance", "Review (AR-C 90)", Fieldwork, CM]
+        - [A4, "Juniper & Oak Interiors, LLC", "Preparation (AR-C 70)", Released, PR]
+        - [A5, "Cobalt Ridge Manufacturing 401(k) Plan", "EBP DC", Ready to release, TW]
+        - [A6, "Halden Health 403(b) Plan", "EBP DC (403(b))", Ready to release, CM]
+        - [A7, "Fairhaven Foods 401(k) Plan", "EBP DC", Planning, MO]
+        - [A8, "Sterling Freight 401(k) Plan", "EBP DC", Fieldwork, TW]
+        - [A9, "Westbrook Engineering 401(k) Plan", "EBP DC", Fieldwork, CM]
+        - [A10, "Arbor Senior Living 401(k) Plan", "EBP DC", Fieldwork, MO]
+        - [A11, "Keel & Compass Marine 401(k) Plan", "EBP DC", In review, TW]
+        - [A12, "Redtail Construction 401(k) Plan", "EBP DC", In review, CM]
+        - [A13, "Clearwater Credit Union 401(k) Plan", "EBP DC", Fieldwork, MO]
+        - [A14, "Granite Peak Outdoor Supply 401(k) Plan", "EBP DC", Fieldwork, MO]
+        - [A15, "Hearthstone Hospitality 401(k) Plan", "EBP DC", In review, TW]
+        - [A16, "Bayside Electric Cooperative 401(k) Plan", "EBP DC", Released, CM]
+        - [A17, "Tamarack Health System 403(b) Plan", "EBP DC (403(b))", Planning, CM]
+        - [A18, "Larimer Cooperative Grocery", "FS audit", Planning, TW]
+        - [A19, "Sable Creek Homeowners Association", "FS audit", Fieldwork, CM]
+        - [A20, "Meridian Tool & Die, Inc.", "FS audit", Released, MO]
+        - [A21, "Halcyon Foods Distribution, Inc.", "FS audit", Planning, TW]
+        - [A22, "Oakline Software, Inc.", "FS audit", In review, CM]
+        - [A23, "Riverbend Community Theater", "Review (AR-C 90)", Planning, CM]
+        - [A24, "Hillcrest Montessori School", "Review (AR-C 90)", Fieldwork, TW]
+        - [A25, "Wildflower Land Trust", "Review (AR-C 90)", In review, CM]
+        - [A26, "Fenwick Family Foundation", "Compilation (AR-C 80)", Fieldwork, PR]
+        - [A27, "Kettle & Kiln Pottery, LLC", "Preparation (AR-C 70)", In review, PR]
+    expected:
+      total: 27
+      by_group: {EBP: 14, FS audit: 6, Review: 4, Compilation/preparation: 3}
+      by_phase: {Planning: 7, Fieldwork: 9, In review: 6, Ready to release: 2, Released: 3}
+    scenario:
+      probe: audit_engagement_clients
+      expected: {resolved: 27, ep_matches: 27, attest_matches: 27}
+    source: "blueprint 01 §9.7 'Audits & assurance (27)' rows A1–A27 and its tile line; F-04 §3.2 F-04.10; AUD-01 index"
+    reviewed_by: pending (AY)
