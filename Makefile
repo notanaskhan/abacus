@@ -80,7 +80,7 @@ check-fast:
 
 # Generated files match their sources; never hand-edit one (F-01-T06). The API client's drift
 # check stays in ci-contracts, which needs the OpenAPI export.
-GENERATORS = permission_matrix feature_flags provider_terms agent_specs eval_suites status_vocabulary
+GENERATORS = permission_matrix feature_flags provider_terms agent_specs eval_suites status_vocabulary security_tests
 check-generated:
 	@cd backend && for g in $(GENERATORS); do \
 		uv run python -m abacus_tools.codegen.$$g --check || { \
