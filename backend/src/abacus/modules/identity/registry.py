@@ -30,6 +30,7 @@ TABLES: frozenset[str] = frozenset(
         "auth_login_states",  # P-01-T09 (ADR-165): global, definers only
         "auth_sessions",
         "auth_session_cookies",
+        "approval_grants",  # P-04-T10 (ADR-161): settled once, by consume or void
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -60,6 +61,10 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "client_access_events": frozenset({"tenant_id", "grant_id", "event", "by_user_id"}),
     "firm_demo_clocks": frozenset({"tenant_id", "mode", "anchor_at", "set_by"}),  # F-04-T06
+    "approval_grants": frozenset(  # P-04-T10
+        {"tenant_id", "subject_type", "subject_id", "action", "approver_user_id"}
+        | {"engagement_id", "work_item_id", "payload_sha256", "not_before", "expires_at"}
+    ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
@@ -89,4 +94,5 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "firm_demo_clocks": frozenset(  # F-04-T07: set or reset by the demo-clock service
         {"mode", "anchor_at", "anchored_real_at", "set_by", "set_at"}
     ),
+    "approval_grants": frozenset({"used_at", "consumer_ref", "voided_at"}),  # P-04-T10
 }

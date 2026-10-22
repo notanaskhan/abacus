@@ -21,7 +21,7 @@ from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Annotated, ClassVar
+from typing import Annotated, ClassVar, cast
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -31,7 +31,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 from abacus.kernel.classification import classified, sensitive_paths
 from abacus.kernel.db import TenantContext, tenant_connection
 from abacus.kernel.telemetry import current_trace_id, current_traceparent
-from abacus.kernel.uow.relay import Handler, OutboxEvent
+from abacus.kernel.uow.relay import Handler, OutboxEvent, payload_sha256
 
 _ACTION = re.compile(r"[a-z][a-z_]*\.[a-z][a-z_]*")
 _TYPE = re.compile(r"[a-z][a-z_]*")
@@ -114,6 +114,12 @@ class DomainEvent(BaseModel):
         super().__pydantic_init_subclass__(**kwargs)
         if not isinstance(cls.__dict__.get("event_type"), str):
             raise TypeError(f"{cls.__name__} must define event_type: ClassVar[str]")
+
+
+def event_sha256(event: DomainEvent) -> str:
+    """The digest a grant-held event is delivered under (P-04-T10): issue its grant with this, and
+    the relay recomputes it from the stored payload."""
+    return payload_sha256(cast(dict[str, object], json.loads(event.model_dump_json())))
 
 
 @dataclass(frozen=True)
@@ -353,6 +359,8 @@ __all__ = [
     "UnitOfWork",
     "audit_facets",
     "audit_page",
+    "event_sha256",
+    "payload_sha256",
     "uow",
 ]
 

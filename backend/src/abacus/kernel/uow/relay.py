@@ -27,6 +27,7 @@ the worker runs (TASK-011 Q4); each pass is bounded by `PASS_TIMEOUT`.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from contextlib import suppress
@@ -69,8 +70,10 @@ _FAILED = text(
 
 # P-06-T06 (ADR-161): a grant-held event is delivered only if its approval grant is consumed at
 # delivery. Identity registers the consumer (`consume_grant`, P-04-T10); until then a held event
-# waits, retried with backoff, and nothing goes out.
-GrantConsumer = Callable[[UUID, UUID], Awaitable[bool]]
+# waits, retried with backoff, and nothing goes out. The consumer gets the tenant, the grant, the
+# event (a retry of the same event stays consumed) and the payload's SHA-256 (the grant is bound
+# to it), and answers whether to deliver. Raising leaves the event for a retry.
+GrantConsumer = Callable[[UUID, UUID, UUID, str], Awaitable[bool]]
 _GRANT_CONSUMER: list[GrantConsumer] = []
 
 
@@ -84,13 +87,21 @@ def register_grant_consumer(consumer: GrantConsumer) -> None:
     _GRANT_CONSUMER[:] = [consumer]
 
 
-async def _grant_allows(tenant: UUID, grant_id: UUID | None) -> bool:
+def payload_sha256(payload: Mapping[str, object]) -> str:
+    """The SHA-256 of an event payload in canonical JSON (sorted keys, no spaces). The issuer of a
+    grant and the relay compute the same digest (`kernel.uow.event_sha256` on the event)."""
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(canonical.encode()).hexdigest()
+
+
+async def _grant_allows(event: OutboxEvent, grant_id: UUID | None) -> bool:
     """True to deliver. A voided or spent grant (an Undo) delivers nothing."""
     if grant_id is None:
         return True
     if not _GRANT_CONSUMER:
         raise GrantConsumerMissing
-    return await _GRANT_CONSUMER[0](tenant, grant_id)
+    digest = payload_sha256(event.payload)
+    return await _GRANT_CONSUMER[0](event.tenant_id, grant_id, event.event_id, digest)
 
 
 @dataclass(frozen=True)
@@ -180,7 +191,7 @@ async def relay_once(publisher: Publisher, batch: int = 25, per_tenant: int = 10
                         record_exception=False,  # the failure is logged below, by class name
                     ),
                 ):
-                    if await _grant_allows(tenant, row.grant_id):
+                    if await _grant_allows(event, row.grant_id):
                         await publisher.publish(event)
                     else:
                         _log.info("outbox.grant_void", event_id=row.id, tenant_id=tenant)

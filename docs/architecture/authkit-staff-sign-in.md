@@ -9,7 +9,7 @@ How the staff session BFF is configured, locally and on a hosted environment. Va
 | `IDENTITY_ISSUER`, `IDENTITY_AUDIENCE`, `IDENTITY_JWKS` | the fake server's (`make dev` sets them) | the WorkOS environment's (Q-01-T17) |
 | `IDENTITY_CLIENT_ID` | `abacus-web` | the WorkOS client ID |
 | `IDENTITY_AUTHORIZE_URL` | `http://127.0.0.1:<9000+offset>/authorize` | the AuthKit authorize endpoint |
-| `IDENTITY_TOKEN_URL` | `http://127.0.0.1:<9000+offset>/token` | the AuthKit token endpoint |
+| `IDENTITY_EXCHANGE_URL` | `http://127.0.0.1:<9000+offset>/token` | the AuthKit token endpoint |
 | `WEB_ORIGIN` | `http://localhost:<5173+offset>` | the firm app's origin, for example the staging app host |
 
 With any of these unset, `/v1/auth/sign-in` answers 503 and the old in-browser PKCE flow keeps working until P-01-T11 switches the SPA.
