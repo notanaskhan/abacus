@@ -361,3 +361,6 @@ export {
   Search,
 } from "lucide-react";
 export * from "./overlays";
+
+// E4 DataTable engine (F-05-T27): the grid on @tanstack/react-table, ledger and statement grammars.
+export * from "./data";

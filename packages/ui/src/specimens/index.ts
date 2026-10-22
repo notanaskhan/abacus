@@ -17,6 +17,7 @@ import {
   SearchFieldSpecimen,
   ValueRowSpecimen,
 } from "./inputs";
+import { LedgerGridSpecimen, StatementGridSpecimen } from "./data";
 import { MenuSpecimen, TooltipSpecimen } from "./menus";
 import { ToastKindsSpecimen, ToastLiveSpecimen } from "./toasts";
 import { Overview } from "./overview";
@@ -198,6 +199,14 @@ export const SPECIMENS: readonly Specimen[] = [
   { id: "c-19-step-counter", kit: "C-19", title: "StepCounter", Component: StepCounterSpecimen },
   { id: "c-19-kpi-tile", kit: "C-19", title: "KPI tile", Component: KpiTileSpecimen },
   { id: "c-19-status-tile", kit: "C-19", title: "StatusTile", Component: StatusTileSpecimen },
+  // E4 DataTable engine (F-05-T27): C-01
+  { id: "c-01-ledger", kit: "C-01", title: "Ledger grammar", Component: LedgerGridSpecimen },
+  {
+    id: "c-01-statement",
+    kit: "C-01",
+    title: "Statement grammar",
+    Component: StatementGridSpecimen,
+  },
   // Toasts E3 (F-05-T21): C-21
   { id: "c-21-toast-kinds", kit: "C-21", title: "Toast kinds", Component: ToastKindsSpecimen },
   { id: "c-21-toast-live", kit: "C-21", title: "Toast live stack", Component: ToastLiveSpecimen },
