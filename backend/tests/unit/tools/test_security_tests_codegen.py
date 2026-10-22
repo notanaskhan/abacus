@@ -14,11 +14,11 @@ def test_the_generated_files_are_current() -> None:
     assert gen.main(["--check"]) == 0
 
 
-@pytest.mark.parametrize("target", ["ISOLATION", "MATRIX"])
+@pytest.mark.parametrize("target", ["ISOLATION", "MATRIX", "INTROSPECTION"])
 def test_a_hand_edit_fails_the_check(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, target: str
 ) -> None:
-    for name in ("ISOLATION", "MATRIX"):
+    for name in ("ISOLATION", "MATRIX", "INTROSPECTION"):
         copy = tmp_path / f"{name}.py"
         copy.write_text(getattr(gen, name).read_text())
         monkeypatch.setattr(gen, name, copy)
