@@ -142,17 +142,17 @@ _TABLES = {
 async def _listed(firm: _Firm, ctx: AuthContext, kind: Kind) -> set[uuid.UUID]:
     """What a list of `kind` returns: for each row, the client or engagement it belongs to."""
     name, key, scoped = _TABLES[kind]
-    key_column = column(key, Uuid())
-    rows = table(name, key_column, column(scoped, Uuid()))
+    # Columns bound to their table: an unbound column would correlate with the wall subquery.
+    rows = table(name, *(column(c, Uuid()) for c in dict.fromkeys((key, scoped))))
     query = (
-        select(key_column)
+        select(rows.c[key])
         .select_from(rows)
         .where(
             visible_scope(
                 ctx,
                 ACTION,
                 kind,
-                column(scoped, Uuid()),
+                rows.c[scoped],
                 grant_kind="work_item" if kind == "portal_scope" else None,
             )
         )
