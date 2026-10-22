@@ -1,7 +1,6 @@
-import { meOptions } from "@abacus/api-client/query";
-import { useQuery } from "@tanstack/react-query";
 import { createRoute } from "@tanstack/react-router";
 import type { JSX } from "react";
+import { useCan } from "../../app-core/can";
 import { useParam } from "../params";
 import { appRoute, lazyScreen } from "../root";
 
@@ -72,10 +71,9 @@ export const settingsRoutes = [
     section("/admin/fs-groupings", () => <screens.GroupingSets />), // SPEC-316 (TASK-345)
     section("/admin/budget", () => <screens.Budget />),
     section("/admin/autonomy", function AutonomyPage(): JSX.Element {
-      const me = useQuery(meOptions());
-      const tenant = me.data?.active_tenant_id ?? null;
-      const role = me.data?.memberships.find((m) => m.tenant_id === tenant)?.firm_role;
-      return <screens.AutonomySettings canSet={role === "firm_admin"} />;
+      // F-03-T32: the matrix decides (identity.yaml: firm admin), not a role comparison.
+      const canSet = useCan("autonomy_policy.update");
+      return <screens.AutonomySettings canSet={canSet} />;
     }),
     section("/admin/setup", () => <screens.Onboarding always />),
     section("/admin/people", () => <screens.FirmPeople />),
