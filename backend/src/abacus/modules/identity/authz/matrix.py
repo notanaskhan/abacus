@@ -34,6 +34,27 @@ _MODIFIERS = {
     # their independence for that engagement.
     "independence": "required",
 }
+# Conditions on an action (chapter 03 §4.4; F-03-T24), evaluated in `authorise` layer 4 against
+# facts the owners register; a condition without its facts denies (fail closed).
+LEVELS: frozenset[str] = frozenset({"partner", "manager", "senior", "staff", "seasonal", "admin"})
+FUNCTIONS: frozenset[str] = frozenset(
+    {
+        "preparer",
+        "first_level_reviewer",
+        "detail_reviewer",
+        "manager_reviewer",
+        "signer",
+        "eqr",
+        "close_preparer",
+        "close_reviewer",
+        "project_lead",
+        "specialist",
+    }
+)
+GATES: tuple[str, ...] = tuple(f"G{n}" for n in range(1, 10))
+CONDITION_KEYS: frozenset[str] = frozenset(
+    {"level_in", "function_in", "not_offshore", "attest_client", "gates_met", "scope_only"}
+)
 _ACTION = re.compile(r"[a-z][a-z_]*\.[a-z][a-z_]*")
 # Verbs that only read: archived engagements still allow them (`archived_write: deny`).
 READ_VERBS = frozenset({"read", "read_metadata", "read_log"})
@@ -50,6 +71,15 @@ class Rule:
     notify: bool
     # SPEC-025 (TASK-045): client data; see `independence` in `authorise`.
     independence: bool = False
+    # F-03-T24 conditions (§4.4); empty or None when the action has none.
+    level_in: frozenset[str] = frozenset()
+    function_in: frozenset[str] = frozenset()
+    not_offshore: bool = False
+    attest_client: Literal["deny", "only"] | None = None
+    gates_met: tuple[str, ...] = ()
+    scope_only: bool = False
+    # The firm setting each `firm_setting(<name>)` role decision names.
+    firm_settings: tuple[tuple[str, str], ...] = ()
 
     @property
     def reads(self) -> bool:
@@ -64,18 +94,50 @@ def _decision(action: str, role: str, value: str) -> Decision:
     raise ValueError(f"permission matrix: {action}.{role}: unknown decision {value!r}")
 
 
+def _listed(
+    action: str, key: str, value: str, allowed: frozenset[str] | tuple[str, ...]
+) -> list[str]:
+    items = [v.strip() for v in value.split(",")]
+    if not items or any(v not in allowed for v in items):
+        raise ValueError(f"permission matrix: {action}.{key}: unknown value {value!r}")
+    return items
+
+
 def _rule(action: str, entries: dict[str, str]) -> Rule:
     if not _ACTION.fullmatch(action):
         raise ValueError(f"permission matrix: action {action!r} must look like 'entity.verb'")
     decisions: dict[str, Decision] = {}
     modifiers: set[str] = set()
+    level_in: frozenset[str] = frozenset()
+    function_in: frozenset[str] = frozenset()
+    gates_met: tuple[str, ...] = ()
+    attest_client: Literal["deny", "only"] | None = None
+    flags: set[str] = set()
+    settings: list[tuple[str, str]] = []
     for key, value in entries.items():
-        if key in _MODIFIERS:
+        if key == "level_in":
+            level_in = frozenset(_listed(action, key, value, LEVELS))
+        elif key == "function_in":
+            function_in = frozenset(_listed(action, key, value, FUNCTIONS))
+        elif key == "gates_met":
+            gates_met = tuple(_listed(action, key, value, GATES))
+        elif key == "attest_client":
+            if value not in ("deny", "only"):
+                raise ValueError(f"permission matrix: {action}.{key}: unknown value {value!r}")
+            attest_client = value
+        elif key in ("not_offshore", "scope_only"):
+            if value != "required":
+                raise ValueError(f"permission matrix: {action}.{key}: unknown value {value!r}")
+            flags.add(key)
+        elif key in _MODIFIERS:
             if value != _MODIFIERS[key]:
                 raise ValueError(f"permission matrix: {action}.{key}: unknown value {value!r}")
             modifiers.add(key)
         elif key in ROLES:
             decisions[key] = _decision(action, key, value)
+            setting = _FIRM_SETTING.fullmatch(value)
+            if setting is not None:
+                settings.append((key, setting.group(1)))
         else:
             raise ValueError(f"permission matrix: {action}: unknown role {key!r}")
     return Rule(
@@ -85,6 +147,13 @@ def _rule(action: str, entries: dict[str, str]) -> Rule:
         requires_reason="requires" in modifiers,
         notify="notify" in modifiers,
         independence="independence" in modifiers,
+        level_in=level_in,
+        function_in=function_in,
+        not_offshore="not_offshore" in flags,
+        attest_client=attest_client,
+        gates_met=gates_met,
+        scope_only="scope_only" in flags,
+        firm_settings=tuple(settings),
     )
 
 

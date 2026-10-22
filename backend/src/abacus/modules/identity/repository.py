@@ -130,6 +130,36 @@ async def active_memberships(user_id: UUID) -> list[MembershipRecord]:
     ]
 
 
+@dataclass(frozen=True)
+class MemberFacts:
+    """What the matrix conditions read about a person's membership (F-03-T24)."""
+
+    level: str | None
+    offshore: bool
+    service_lines: frozenset[str]
+    client: bool
+
+
+_MEMBER_FACTS = text(
+    "SELECT level, offshore, service_lines, kind FROM memberships "
+    "WHERE user_id = :user_id AND status = 'active'"
+)
+
+
+async def member_facts(tenant: TenantContext, user_id: UUID) -> MemberFacts | None:
+    """The person's level, offshore flag, service lines and kind in this firm, or None."""
+    async with tenant_session(tenant) as session:
+        row = (await session.execute(_MEMBER_FACTS, {"user_id": user_id})).one_or_none()
+    if row is None:
+        return None
+    return MemberFacts(
+        level=cast(str | None, row.level),
+        offshore=bool(row.offshore),
+        service_lines=frozenset(cast(list[str], row.service_lines)),
+        client=row.kind == "client",
+    )
+
+
 async def engagement_role(
     tenant: TenantContext, user_id: UUID, engagement_id: UUID
 ) -> EngagementRole | ClientRole | None:

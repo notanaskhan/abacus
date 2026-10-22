@@ -52,15 +52,18 @@ from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.db import TenantContext
 from abacus.kernel.logging import get_logger
+from abacus.modules.identity.authz.conditions import LOOKUPS, ConditionFacts, conditions_hold
 from abacus.modules.identity.authz.matrix import RULES, Rule
 from abacus.modules.identity.context import Actor, AgentContext, AuthContext, SystemContext
 from abacus.modules.identity.repository import (
     CLIENT_ROLES,
     ENGAGEMENT_ROLES,
+    MemberFacts,
     engagement_members,
     engagement_role,
     engagement_roles_in_firm,
     ethical_walls,
+    member_facts,
     walled_clients,
 )
 
@@ -69,7 +72,14 @@ MFA_RECENT = timedelta(minutes=15)
 # production (founder decision 2026-10-06: walls gate the first real firm).
 WALL_SAFE = True
 Layer = Literal[
-    "tenancy", "wall", "relationship", "role", "independence", "attribute", "delegation"
+    "tenancy",
+    "wall",
+    "relationship",
+    "role",
+    "independence",
+    "condition",
+    "attribute",
+    "delegation",
 ]
 
 EngagementColumn = ColumnElement[UUID] | QueryableAttribute[UUID]
@@ -180,6 +190,8 @@ class Resource:
     client_id: UUID | None = None
     # The request item acted on, for `client_visible_only` and `assigned_only`.
     item: ItemFacts | None = None
+    # The work item acted on, for `function_in` and `scope_only` (F-03-T24).
+    work_item_id: UUID | None = None
 
     @classmethod
     def firm(cls, tenant_id: UUID) -> Resource:
@@ -329,6 +341,20 @@ async def authorise(
         raise _deny(ctx, action, "relationship")
     # 3. Roles. For an agent, `task_scope` grants only what its run declared (ADR-025).
     by_role = {role: _on_item(rule.decisions.get(role), ctx, resource) for role in roles}
+    member: MemberFacts | None = None
+    if (
+        isinstance(ctx, AuthContext)
+        and "in_scope" in by_role.values()
+        and not {"allow", "deny"} & set(by_role.values())
+    ):
+        # F-03-T24: a practice leader's or quality partner's service lines include the
+        # engagement's (Q-21). Resolved only when it decides: another role's allow or deny
+        # settles the action without it.
+        for role, decision in by_role.items():
+            if decision == "in_scope":
+                member, scoped = await _in_scope(ctx, role, resource, member)
+                if scoped:
+                    by_role[role] = "allow"
     decisions = set(by_role.values())
     if isinstance(ctx, AgentContext) and "task_scope" in decisions and action in ctx.task_scope:
         decisions = (decisions - {"task_scope"}) | {"allow"}
@@ -359,6 +385,11 @@ async def authorise(
         and not await _confirmed_for(ctx, resource)
     ):
         raise _deny(ctx, action, "independence")
+    # 3c. Conditions (F-03-T24; chapter 03 §4.4): narrow what the roles allowed; fail closed.
+    if has_conditions(rule):
+        facts = await _condition_facts(ctx, resource, rule, roles, member)
+        if not conditions_hold(rule, facts, person=isinstance(ctx, AuthContext)):
+            raise _deny(ctx, action, "condition")
     # An agent never exceeds the person it acts for (ADR-025 intersection), checked live.
     if isinstance(ctx, AgentContext):
         reach = AGENT_ONLY_REACH if resource.engagement_id is not None else AGENT_FIRM_REACH
@@ -398,6 +429,70 @@ async def _autonomy_allows(ctx: AgentContext) -> bool:
     )
 
     return await autonomy_level(ctx.tenant_id) >= 1
+
+
+def has_conditions(rule: Rule) -> bool:
+    return bool(
+        rule.level_in
+        or rule.function_in
+        or rule.not_offshore
+        or rule.attest_client is not None
+        or rule.gates_met
+        or rule.scope_only
+    )
+
+
+_SCOPED_ROLES = frozenset({"practice_leader", "quality_partner"})
+
+
+async def _in_scope(
+    ctx: AuthContext, role: str, resource: Resource, member: MemberFacts | None
+) -> tuple[MemberFacts | None, bool]:
+    """Whether `role`'s `in_scope` holds, and the member facts read on the way (read once)."""
+    lookup = LOOKUPS.service_line
+    if role not in _SCOPED_ROLES or resource.engagement_id is None or lookup is None:
+        return member, False
+    member = member or await member_facts(ctx.tenant, ctx.user_id)
+    if member is None:
+        return member, False
+    line = await lookup(ctx.tenant, resource.engagement_id)
+    return member, line is not None and line in member.service_lines
+
+
+async def _condition_facts(
+    ctx: Actor, resource: Resource, rule: Rule, roles: set[str], member: MemberFacts | None
+) -> ConditionFacts:
+    level: str | None = None
+    offshore: bool | None = None
+    functions: frozenset[str] | None = None
+    scope_covered: bool | None = None
+    client_actor = bool(roles & CLIENT_ROLES)
+    if isinstance(ctx, AuthContext):
+        if rule.level_in or rule.not_offshore:
+            member = member or await member_facts(ctx.tenant, ctx.user_id)
+            if member is not None:
+                level, offshore = member.level, member.offshore
+        if rule.function_in and resource.work_item_id is not None and LOOKUPS.functions:
+            functions = await LOOKUPS.functions(ctx.tenant, resource.work_item_id, ctx.user_id)
+        if rule.scope_only and client_actor and resource.engagement_id and LOOKUPS.scope:
+            scope_covered = await LOOKUPS.scope(
+                ctx.tenant, ctx.user_id, resource.engagement_id, resource.work_item_id
+            )
+    attest: bool | None = None
+    if rule.attest_client is not None and resource.engagement_id and LOOKUPS.attest:
+        attest = await LOOKUPS.attest(ctx.tenant, resource.engagement_id)
+    gates: dict[str, bool] | None = None
+    if rule.gates_met and resource.engagement_id and LOOKUPS.gates:
+        gates = await LOOKUPS.gates(ctx.tenant, resource.engagement_id, rule.gates_met)
+    return ConditionFacts(
+        level=level,
+        offshore=offshore,
+        functions=functions,
+        attest_client=attest,
+        gates=gates,
+        scope_covered=scope_covered,
+        client_actor=client_actor,
+    )
 
 
 def _on_item(decision: str | None, ctx: Actor, resource: Resource) -> str | None:
@@ -482,7 +577,7 @@ def _visible_by_role(
     rule = _rule(action)
     if not rule.reads:
         raise ValueError(f"visible() filters reads; {action!r} is not a read action")
-    if rule.mfa_recent or rule.requires_reason or rule.notify:
+    if rule.mfa_recent or rule.requires_reason or rule.notify or has_conditions(rule):
         raise ValueError(f"visible() can't apply {action!r}'s conditions; use authorise()")
     _record(action)
     if isinstance(ctx, AgentContext):
