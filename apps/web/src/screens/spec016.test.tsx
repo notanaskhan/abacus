@@ -240,6 +240,8 @@ describe("ac8 client users stay in the client portal", () => {
       display_name: "Fay Director",
       email: "fd@northwind.test",
       active_tenant_id: "t1",
+      server_now: "2026-09-14T14:24:00Z",
+      clock_mode: "real",
       memberships: [{ tenant_id: "t1", firm_name: "Dev firm", firm_role: null, kind: "client" }],
     };
     mockApi({ "GET /v1/me": () => json(client) });
@@ -260,6 +262,8 @@ describe("SPEC-017 ac7 people tab", () => {
       display_name: "Max Manager",
       email: "m@dev.test",
       active_tenant_id: "t1",
+      server_now: "2026-09-14T14:24:00Z",
+      clock_mode: "real",
       memberships: [{ tenant_id: "t1", firm_name: "Dev firm", firm_role: null, kind: "staff" }],
     };
     mockApi({

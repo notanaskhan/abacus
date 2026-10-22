@@ -16,6 +16,8 @@ function me(role: "firm_admin" | "practice_leader" | null): MeOut {
     display_name: "Ada Admin",
     email: "a@dev.test",
     active_tenant_id: "t1",
+    server_now: "2026-09-14T14:24:00Z",
+    clock_mode: "real",
     memberships: [{ tenant_id: "t1", firm_name: "Dev firm", firm_role: role, kind: "staff" }],
   };
 }

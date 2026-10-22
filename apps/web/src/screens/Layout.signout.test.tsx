@@ -14,6 +14,8 @@ const ME: MeOut = {
   display_name: "Dana Leader",
   email: "dana@dev.abacus.local",
   active_tenant_id: "t1",
+  server_now: "2026-09-14T14:24:00Z",
+  clock_mode: "real",
   memberships: [{ tenant_id: "t1", firm_name: "Dev firm", firm_role: "practice_leader" }],
 };
 
