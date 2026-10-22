@@ -169,9 +169,20 @@ export const deferredTypeScaleSyntax = [
 ];
 
 /** The syntax bans a config adds: the colour literals, and the type scale once it is enabled. */
+// F-04-T17 (CLOCK-001's frontend half): an argument-less `new Date()` reads the wall clock as
+// surely as `Date.now()` (banned in restrictedProperties); both go through clock.tsx.
+export const CLOCK_SYNTAX = [
+  {
+    selector: "NewExpression[callee.name='Date'][arguments.length=0]",
+    message:
+      "Read the time through clock.tsx (useNow) so tests and fixtures can fix it (F-04-T17, SPEC-048).",
+  },
+];
+
 export function designSyntaxFor({ colourLiterals = true } = {}) {
   return [
     ...designSyntax,
+    ...CLOCK_SYNTAX,
     ...(colourLiterals ? colourLiteralSyntax : []),
     ...(TYPE_SCALE_BAN_ENABLED ? deferredTypeScaleSyntax : []),
   ];

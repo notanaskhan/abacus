@@ -45,7 +45,7 @@ export function categoryOf(kind: string): Category {
 }
 
 /** SPEC-305: the day group a notification falls in, relative to `now`. */
-export function dayGroup(iso: string, now: Date = new Date()): string {
+export function dayGroup(iso: string, now: Date): string {
   const day = (d: Date): number => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
   const days = Math.round((day(now) - day(new Date(iso))) / 86_400_000);
   if (days <= 0) return "Today";

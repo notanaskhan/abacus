@@ -3,6 +3,7 @@ import { defineConfig } from "eslint/config";
 import tseslint from "typescript-eslint";
 import {
   CLOCK_FILES,
+  CLOCK_SYNTAX,
   FORMAT_FILES,
   designSyntaxFor,
   intlGlobal,
@@ -258,7 +259,16 @@ export default defineConfig(
   },
   {
     files: CLOCK_FILES,
-    rules: { "no-restricted-properties": ["error", ...restrictedProperties({ clock: false })] },
+    rules: {
+      "no-restricted-properties": ["error", ...restrictedProperties({ clock: false })],
+      // F-04-T17: the clock files are the one place a bare `new Date()` may read the wall clock.
+      "no-restricted-syntax": [
+        "error",
+        ...SCREEN_SYNTAX.filter((entry) => !CLOCK_SYNTAX.includes(entry)),
+        ...NEW_CODE_SYNTAX,
+        ...ROLE_SYNTAX,
+      ],
+    },
   },
   {
     files: LEGACY_CLOCK,
