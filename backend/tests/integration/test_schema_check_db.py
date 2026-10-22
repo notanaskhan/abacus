@@ -1142,6 +1142,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"sso_skipped_at", "onboarding_dismissed_at"}  # SPEC-024 (TASK-042)
             | {"require_letter"}  # SPEC-025 (TASK-044)
             | {"agents_paused_at", "agents_paused_by"}  # SPEC-027 (TASK-050)
+            | {"kms_key_arn", "kms_key_status", "kms_replica_verified_at"}  # Q-01-T19 (0086)
             | {"time_zone"}  # SPEC-027 (TASK-051)
             | {"drafted_guidance_to_clients"}  # SPEC-035 (TASK-073)
             | {"ai_client_data_at", "ai_client_data_by", "ai_client_data_material"}  # TASK-076
@@ -1689,5 +1690,6 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"staff_invitation_token_set", "staff_invitation_token_find", "add_staff_membership"}
         | {"membership_set_firm_role", "membership_revoke"}
         | {"refresh_attest_client"}  # 0082 (F-03-T25, DEC-128)
+        | {"platform_control_state", "set_platform_control", "provision_firm"}  # 0086 (Q-01-T19)
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []

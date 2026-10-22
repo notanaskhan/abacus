@@ -69,6 +69,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"ai_client_data_at", "ai_client_data_by", "ai_client_data_material"}  # SPEC-036
         | {"agents_paused_at", "agents_paused_by"}  # SPEC-027 (TASK-050): the firm switch
         | {"time_zone"}  # SPEC-027 (TASK-051): the agent's daily tick
+        | {"kms_key_arn", "kms_key_status", "kms_replica_verified_at"}  # Q-01-T19: key workflow
     ),
     "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),
     "support_sessions": frozenset(  # SPEC-012: lifecycle only

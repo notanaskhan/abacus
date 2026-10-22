@@ -58,6 +58,8 @@ NON_TENANT_TABLES = frozenset(
     | {"invitation_tokens", "invitation_failures"}  # SPEC-015: definer functions only
     | {"signup_codes", "signup_attempts"}  # SPEC-024 (TASK-040): `firm_signup` only
     | {"staff_invitation_tokens"}  # SPEC-024 (TASK-041): definer functions only
+    # 0086 (Q-01-T19, ADR-157): platform-wide, reached only through definer functions.
+    | {"platform_controls", "platform_control_changes", "firm_provisioning_requests"}
 )
 # Insert-only tables outside the modules (ADR-004); each module lists its own in registry.py.
 _PLATFORM_INSERT_ONLY: frozenset[str] = frozenset(
@@ -150,6 +152,7 @@ GLOBAL_TABLES = frozenset(
     | {"invitation_tokens", "invitation_failures"}
     | {"signup_codes", "signup_attempts"}  # SPEC-024: founder-issued codes, attempts
     | {"staff_invitation_tokens"}  # SPEC-024 (TASK-041)
+    | {"platform_controls", "platform_control_changes", "firm_provisioning_requests"}  # 0086
 )
 # SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
 DEFINER_FUNCTIONS = frozenset(
@@ -175,10 +178,16 @@ DEFINER_FUNCTIONS = frozenset(
     | {"team_member_set_role", "team_member_remove"}
     # 0082 (F-03-T25, DEC-128): engagements keep the derived `clients.is_attest_client` current.
     | {"refresh_attest_client"}
+    # 0086 (Q-01-T19, ADR-157): the app reads controls; operators set them and provision firms.
+    | {"platform_control_state", "set_platform_control", "provision_firm"}
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).
 OWNER_ONLY_FUNCTIONS = frozenset({"support_sessions_review"})
+# Definer functions for the operator role only (Q-01-T19): `abacus_ops` executes them, the
+# application role must not.
+OPS = "abacus_ops"
+OPS_ONLY_FUNCTIONS = frozenset({"set_platform_control", "provision_firm"})
 _DEFINER_SEARCH_PATH = "search_path=pg_catalog, public, pg_temp"
 _DEFINERS = """
 SELECT p.oid::regprocedure::text AS signature, p.proname AS name,
@@ -561,6 +570,13 @@ async def _definer_problems(conn: asyncpg.Connection) -> list[str]:
         if name in OWNER_ONLY_FUNCTIONS:
             if executable:
                 problems.append(f"{signature}: {APP} must not execute it (owner tooling only)")
+        elif name in OPS_ONLY_FUNCTIONS:
+            if executable:
+                problems.append(f"{signature}: {APP} must not execute it (operators only)")
+            if not await conn.fetchval(
+                "SELECT has_function_privilege($1, $2, 'EXECUTE')", OPS, signature
+            ):
+                problems.append(f"{signature}: {OPS} can't execute it")
         elif not executable:
             problems.append(f"{signature}: {APP} can't execute it")
         public = await conn.fetchval(
