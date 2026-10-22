@@ -11,3 +11,8 @@ Clients and client entities (glossary). Owns `clients` and `client_entities` (AD
 - **One name per client:** an entity name is unique per client (409 `entity_exists`).
 - **Search:** `find_clients` matches by normalised prefix (or exactly, for duplicate checks).
 - **Existing clients:** `client_with_entity` uses an existing client with an existing or new entity.
+
+## Client record and contacts (F-03-T25; DEC-62, DEC-63, DEC-128)
+- **Record:** `set_client_record(tx, client_id, ClientRecordChange(...))` sets kind, status, primary office, relationship partner, risk tier, portal status and practice-management reference (`client.record_changed`); `set_entity_attributes` sets entity type, fiscal year end (`MM-DD`), state of formation, plan number, date of death and grantor status (`client_entity.attributes_changed`). Both run in the caller's unit of work, authorised there. **No TIN column**: taxpayer IDs arrive sealed (P-12), and an integration test fails if one appears.
+- **Attest client:** `is_attest_client` is derived by a database trigger on `engagements` (DEC-128); the app can't set it. `attest_client_of(tenant, client_id)` reads it.
+- **Contacts:** `add_contact(tx, tenant_id, client_id, NewContact(...))` (`contact.created`; 409 `contact_exists` for a second contact with the same email, case-insensitive). `client_record(session, client_id)` returns the record with its contacts. A contact's designations on an engagement (approver of record and the rest) live in engagements' `engagement_contacts`.

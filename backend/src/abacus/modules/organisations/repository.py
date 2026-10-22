@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from uuid import UUID
 
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from abacus.modules.organisations.models import Client, ClientEntity
+from abacus.modules.organisations.models import Client, ClientEntity, Contact
 
 
 async def insert_client(
@@ -105,4 +106,46 @@ async def get_client(session: AsyncSession, client_id: UUID) -> Client | None:
 async def get_entity(session: AsyncSession, entity_id: UUID) -> ClientEntity | None:
     return (
         await session.execute(select(ClientEntity).where(ClientEntity.id == entity_id))
+    ).scalar_one_or_none()
+
+
+async def update_client(
+    session: AsyncSession, client_id: UUID, values: Mapping[str, object]
+) -> bool:
+    """Set client record columns (F-03-T25); whether the client exists in this firm."""
+    done = await session.execute(
+        update(Client).where(Client.id == client_id).values(dict(values)).returning(Client.id)
+    )
+    return done.first() is not None
+
+
+async def update_entity(
+    session: AsyncSession, entity_id: UUID, values: Mapping[str, object]
+) -> bool:
+    done = await session.execute(
+        update(ClientEntity)
+        .where(ClientEntity.id == entity_id)
+        .values(dict(values))
+        .returning(ClientEntity.id)
+    )
+    return done.first() is not None
+
+
+async def insert_contact(session: AsyncSession, values: Mapping[str, object]) -> None:
+    await session.execute(insert(Contact).values(dict(values)))
+
+
+async def contacts_of(session: AsyncSession, client_id: UUID) -> list[Contact]:
+    """One client's contacts, for a caller that authorised the client (F-03-T25)."""
+    rows = await session.execute(
+        select(Contact)
+        .where(Contact.client_id == client_id)
+        .order_by(Contact.display_name, Contact.id)
+    )
+    return list(rows.scalars().all())
+
+
+async def get_contact(session: AsyncSession, contact_id: UUID) -> Contact | None:
+    return (
+        await session.execute(select(Contact).where(Contact.id == contact_id))
     ).scalar_one_or_none()

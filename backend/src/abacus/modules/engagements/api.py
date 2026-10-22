@@ -3,6 +3,13 @@
 from abacus.ai_gateway import register_client_data_facts
 from abacus.modules.engagements.audit_targets import AUDIT_KINDS, audit_engagements, visible_among
 from abacus.modules.engagements.conditions import functions_on, gates_of, service_line_of
+from abacus.modules.engagements.contacts import (
+    Designation,
+    EngagementContact,
+    attest_of,
+    designate_contact,
+    engagement_contacts,
+)
 from abacus.modules.engagements.events import EngagementCreated, IndependenceRequested
 from abacus.modules.engagements.gates import register_gates
 from abacus.modules.engagements.roll_forward import (
@@ -79,6 +86,7 @@ from abacus.modules.engagements.workbook import (
 from abacus.modules.identity.api import (
     AbacusRouter,
     register_active_engagements,
+    register_attest_client,
     register_engagement_client,
     register_engagement_service_line,
     register_independence,
@@ -103,6 +111,7 @@ register_gates()  # C1: G1 to G3 in the fail-closed gate slot
 register_work_item_functions(functions_on)
 register_condition_gates(gates_of)
 register_engagement_service_line(service_line_of)
+register_attest_client(attest_of)  # F-03-T25: the client's derived attest flag (DEC-128)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
@@ -118,7 +127,9 @@ __all__ = [
     "ApprovedGuidance",
     "Area",
     "CheckFacts",
+    "Designation",
     "Effort",
+    "EngagementContact",
     "EngagementCreated",
     "EngagementMetadata",
     "EngagementNotOpen",
@@ -143,6 +154,8 @@ __all__ = [
     "attach_letter_file",
     "audit_engagements",
     "check_facts",
+    "designate_contact",
+    "engagement_contacts",
     "engagement_label",
     "engagement_metadata",
     "entity_of",

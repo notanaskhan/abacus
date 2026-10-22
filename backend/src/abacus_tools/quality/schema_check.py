@@ -173,6 +173,8 @@ DEFINER_FUNCTIONS = frozenset(
     | {"membership_set_firm_role", "membership_revoke"}
     # 0027 (TASK-032 D1): staff role changes and removals, keeping a partner.
     | {"team_member_set_role", "team_member_remove"}
+    # 0082 (F-03-T25, DEC-128): engagements keep the derived `clients.is_attest_client` current.
+    | {"refresh_attest_client"}
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).

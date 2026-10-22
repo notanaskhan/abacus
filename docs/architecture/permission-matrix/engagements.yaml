@@ -42,6 +42,7 @@ actions:
   client_contact.invite:    {engagement_partner: allow, manager: allow, client_admin: allow}   # SPEC-015 Q2 (client admins: contributors only, in the service)
   client_contact.read:      {engagement_partner: allow, manager: allow, senior: allow, client_admin: allow}   # SPEC-015
   client_contact.remove:    {engagement_partner: allow, manager: allow, client_admin: allow}   # SPEC-015 (client admins: contributors only)
+  engagement_contact.designate: {engagement_partner: allow, manager: allow, agent: deny}   # F-03-T25 (DEC-63): approver of record, SKE designee and the rest
   engagement.update:        {engagement_partner: allow, manager: allow}
   engagement.member_add:    {engagement_partner: allow, manager: allow}
   engagement.member_remove: {engagement_partner: allow, manager: allow}

@@ -43,6 +43,7 @@ export const ACTIONS = [
   "engagement.read_metadata",
   "engagement.self_join",
   "engagement.update",
+  "engagement_contact.designate",
   "entry_assessment.adopt",
   "entry_assessment.request",
   "entry_assessment.run",
