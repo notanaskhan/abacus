@@ -23,6 +23,8 @@ import {
   ssnMask,
   time,
   viaAgent,
+  sameDay,
+  weekdayDate,
   zoneName,
 } from "./format";
 
@@ -261,6 +263,17 @@ describe("dates", () => {
     expect(monthYear("2026-03")).toBe("March 2026");
     expect(monthYear("2026-03-15")).toBe("March 2026");
     expect(monthYear("")).toBe("—");
+  });
+  it("heads a day with its weekday (SHL-04 day groups)", () => {
+    const now = "2026-09-14T09:41:00-05:00";
+    expect(weekdayDate("2026-09-11T14:05:00-05:00", { now })).toBe("Friday, September 11");
+    expect(weekdayDate("2026-09-28T11:46:00-05:00", { now })).toBe("Monday, September 28");
+    expect(weekdayDate("2025-12-31T12:00:00-06:00", { now })).toBe("Wednesday, December 31, 2025");
+    // 11 PM in Chicago is still Friday there.
+    expect(weekdayDate("2026-09-12T04:00:00Z", { now })).toBe("Friday, September 11");
+    expect(weekdayDate(null, { now })).toBe("—");
+    expect(sameDay("2026-09-14T00:30:00-05:00", now)).toBe(true);
+    expect(sameDay("2026-09-14T04:30:00Z", now)).toBe(false); // 11:30 PM on the 13th in Chicago
   });
   it("names a firm's time zone in full (SHL-03a)", () => {
     expect(zoneName("America/Chicago")).toBe("Central Time");

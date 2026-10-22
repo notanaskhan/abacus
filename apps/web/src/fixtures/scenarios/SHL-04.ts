@@ -3,8 +3,8 @@
 // stand at Mon Sep 14, 9:41 AM CT (the spec; the README renders them at "Thu Oct 1" for review);
 // g and the settings menu at Thu Oct 1, 11:00 AM CT (R2). Data: fixtures/seed/notifications.ts.
 //
-// They live under fixtures/ (dev and test only, inside the L10 scan; screens may not import across
-// feature roots) until the SHL-04 screen task (P-01-T10) wires them into src/screens/SHL-04/.
+// They live under fixtures/ (dev and test only, inside the L10 scan); src/screens/SHL-04/scenarios.ts
+// re-exports them for the screen's tests and the gallery (P-01-T10).
 
 import {
   type FixtureHandler,
@@ -16,6 +16,8 @@ import {
 } from "../../app-core/fixture-mode";
 import type {
   NotificationItemOut,
+  NotificationPageOut,
+  ReadAllOut,
   NotificationPreferenceOut,
   NotificationPreferencesIn,
   NotificationPreferencesOut,
@@ -59,10 +61,16 @@ interface Data {
 function handlers(data: Data): Record<string, FixtureHandler> {
   let prefs: NotificationPreferenceOut[] = preferences();
   const prefsBody = (): NotificationPreferencesOut => ({ items: prefs });
+  // Reading a row or all of them is the viewer's own state; later pages read it back (P-01-T10).
+  let items = [...data.items];
+  const unreadPage = (): NotificationPageOut => ({
+    items: [],
+    unread_count: items.filter((n) => !n.read).length,
+  });
   const list: FixtureHandler = (request) => {
     if (data.loading === true) return never();
     const tab = tabOf(request);
-    const page = pageOf(data.items, tab);
+    const page = pageOf(items, tab);
     if (data.approvalsEmpty === true) {
       page.counts.approvals = 0;
       if (tab === "approvals") page.items = [];
@@ -78,6 +86,17 @@ function handlers(data: Data): Record<string, FixtureHandler> {
     "GET /v1/me/capabilities": ({ persona }) => json(capabilitiesFor(seed, persona ?? "")),
     // C16 v1: the v2 list sits beside v1 at /feed during the overlap (contract §10).
     "GET /v1/notifications/feed": list,
+    // The bell's dot reads v1's `unread_count` (SHL-01; P-01-T02).
+    "GET /v1/notifications": () => json(unreadPage()),
+    "POST /v1/notifications/{notification_id}/read": ({ params }) => {
+      items = items.map((n) => (n.id === params.notification_id ? { ...n, read: true } : n));
+      return json(unreadPage());
+    },
+    "POST /v1/notifications/read-all": () => {
+      const marked: ReadAllOut = { marked: items.filter((n) => !n.read).length };
+      items = items.map((n) => ({ ...n, read: true }));
+      return json(marked);
+    },
     "GET /v1/me/notification-preferences": () => json(prefsBody()),
     "PUT /v1/me/notification-preferences": ({ body }) => {
       const given = (body as Partial<NotificationPreferencesIn> | null)?.items ?? [];

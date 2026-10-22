@@ -455,6 +455,26 @@ export function zoneName(tz: string): string {
   return name;
 }
 
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+/** A day as a list heading: "Friday, September 11" (SHL-04 day groups), with ", 2025" outside
+ * the current year. The day is the firm's calendar day. */
+export function weekdayDate(v: Instant, options: NowOptions): string {
+  if (blankDate(v)) return DASH;
+  const tz = options.tz ?? DEFAULT_TZ;
+  const c = civilOf(v, tz);
+  const weekday = WEEKDAYS[(dayNumber(c) + 4) % 7] ?? ""; // 1970-01-01 was a Thursday
+  const day = `${weekday}, ${MONTHS_LONG[c.m - 1] ?? ""} ${String(c.d)}`;
+  return c.y === civilAt(msOf(options.now), tz).y ? day : `${day}, ${String(c.y)}`;
+}
+
+/** Whether two instants fall on the same calendar day in the firm's zone. */
+export function sameDay(a: Instant, b: Instant, options: ZoneOptions = {}): boolean {
+  if (blankDate(a) || blankDate(b)) return false;
+  const tz = options.tz ?? DEFAULT_TZ;
+  return dayNumber(civilOf(a, tz)) === dayNumber(civilOf(b, tz));
+}
+
 /** A month: "March 2026", from "2026-03" or any date in it. */
 export function monthYear(v: string | null | undefined, options: ZoneOptions = {}): string {
   if (v === null || v === undefined || v === "") return DASH;

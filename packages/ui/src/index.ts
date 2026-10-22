@@ -279,10 +279,12 @@ export {
   prose,
   ratio,
   relative,
+  sameDay,
   since,
   ssnMask,
   time,
   viaAgent,
+  weekdayDate,
   zoneName,
 } from "./format";
 // The shell's L1 (F-05-T18): AppShell, Toolbar and its nav overflow, PortalToolbar, RecordHeader,

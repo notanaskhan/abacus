@@ -53,6 +53,34 @@ export const FIRM_MENU = {
   },
 } as const;
 
+// SHL-04, verbatim from spec.md (states 1–6) and the R2 revision. The tab track's accessible name
+// is undesigned; the load error reuses the v1 drawer's words (SPEC-305).
+export const NOTIFICATIONS = {
+  title: "Notifications",
+  markAllRead: "Mark all read",
+  tabsLabel: "Notification kinds",
+  tabs: {
+    all: "All",
+    approvals: "Approvals",
+    mentions: "Mentions",
+    client_activity: "Client activity",
+  },
+  openApprovals: "Open approvals queue →",
+  emptyAll: {
+    title: "You're all caught up.",
+    body: "Approvals, mentions, client uploads and finished runs appear here.",
+  },
+  emptyApprovals: {
+    title: "No approvals waiting on you.",
+    body: "Decisions, sign-offs and agent proposals that need you appear here.",
+  },
+  showing: "Showing 30 days",
+  unread: "Unread",
+  loading: "Loading notifications",
+  error: "Couldn't load notifications",
+  retry: "Retry",
+} as const;
+
 export const PROFILE = {
   title: "Your profile",
   note: "Ask your firm admin to change these",
