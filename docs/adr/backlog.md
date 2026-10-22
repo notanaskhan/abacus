@@ -4,7 +4,7 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 
 - **P-ID.** The proposal ID from [`docs/plan/09-decisions-adrs.md`](../plan/09-decisions-adrs.md) section 9.4.2. P-64 to P-69 were added from the backlog tasks that draft them.
 - **Epic.** The epic whose backlog task first drafts the ADR (from `docs/plan/backlog.csv`, best match; check the task when drafting starts). Epic keys such as `P-10` are epics, not ADR IDs. A dash means no task names it.
-- **ADR number.** `next free` until drafting starts. Numbers minted so far: P-01 = ADR-133, P-38 = ADR-135, P-04 = ADR-136, P-05 = ADR-137, P-34 = ADR-138, P-36 = ADR-139, P-39 = ADR-140, P-54 = ADR-141, P-55 = ADR-142, P-07 = ADR-160, P-35 = ADR-161 (all accepted). Proposed so far: P-45 = ADR-152, P-64 = ADR-153, P-67 = ADR-154, P-65 = ADR-156, P-66 = ADR-157, P-40 = ADR-158, P-43 = ADR-159.
+- **ADR number.** `next free` until drafting starts. Numbers minted so far: P-01 = ADR-133, P-38 = ADR-135, P-04 = ADR-136, P-05 = ADR-137, P-34 = ADR-138, P-36 = ADR-139, P-39 = ADR-140, P-54 = ADR-141, P-55 = ADR-142, P-07 = ADR-160, P-35 = ADR-161, P-31 = ADR-162 (all accepted). Proposed so far: P-45 = ADR-152, P-64 = ADR-153, P-67 = ADR-154, P-65 = ADR-156, P-66 = ADR-157, P-40 = ADR-158, P-43 = ADR-159.
 - **DEC row.** The decision it records, in [`docs/product/decision-log.md`](../product/decision-log.md).
 - **Status.** `to draft`, `proposed`, `accepted`, or `n/a, solo edition`.
 
@@ -40,7 +40,7 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 | P-28 | Entitlements, agent-minutes, two-layer budgets | amber | F-03 | ADR-148 | Fri 13 Nov | DEC-51, DEC-55 | accepted |
 | P-29 | Busy-season change policy | amber | F-02 | ADR-151 | Fri 27 Nov | DEC-68 | proposed (acceptance: ayushkbhatia) |
 | P-30 | Peer benchmark network | red | — | next free | Deferred | DEC-99 | to draft |
-| P-31 | Client withdrawal of unaccepted uploads | red | P-06 | next free | Fri 13 Nov; re-dated 2026-10-22: drafted with P-06's first task, owner ayushkbhatia | DEC-58 | to draft (re-dated) |
+| P-31 | Client withdrawal of unaccepted uploads | red | P-06 | ADR-162 (plan alias ADR-137, which is the module map) | Fri 13 Nov; drafted and accepted 2026-10-22 with P-06-T28 | DEC-58 | accepted |
 | P-32 | OCR and document understanding | amber | P-11 | next free | Fri 6 Nov; re-dated 2026-10-22: drafted with P-11's first task, owner ayushkbhatia | DEC-42 | to draft (re-dated) |
 | P-33 | Search in Postgres | amber | P-02 | next free | Fri 6 Nov; re-dated 2026-10-22: drafted with P-02's first task, owner ayushkbhatia | DEC-42, DEC-43 | to draft (re-dated) |
 | P-34 | Status registry and codegen | amber | F-03 | ADR-138 | Fri 23 Oct | DEC-08 | accepted |
