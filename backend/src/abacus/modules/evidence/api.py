@@ -3,6 +3,7 @@
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.evidence.activities import ACTIVITIES
 from abacus.modules.evidence.audit_targets import AUDIT_KINDS, audit_owners
+from abacus.modules.evidence.contract import withdrawal_router
 from abacus.modules.evidence.events import (
     EvidenceVersionCreated,
     InboxFileAdded,
@@ -87,6 +88,7 @@ from abacus.modules.identity.api import AbacusRouter, register_member_removed
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
     firm_router,
+    withdrawal_router,  # C5 v1 stub (P-06-T01; ADR-162)
 )
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.

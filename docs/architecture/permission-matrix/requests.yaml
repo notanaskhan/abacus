@@ -25,6 +25,32 @@ actions:
   client_list.mark_done:    {client_admin: allow}   # SPEC-042 AC-4: the client admin marks their list done
   request_item.waive:       {engagement_partner: allow, manager: allow, requires: reason}
   request_item.mark_ready:  {engagement_partner: allow, manager: allow, senior: allow, staff: allow}
+  # --- C5 v1, BND/SHL-14 family (P-06-T01 stub; P-06 §4.4). Binders are `request_lists` (DEC-31).
+  # Human-only actions (publish, send, return; INV-1, ADR-005) deny the agent explicitly.
+  # Per-kind refinements the grammar can't express (conditions apply to the whole action and only
+  # narrow, DEC-132): `not_offshore` on tax-return binders and the OQ-1 preparer path (DEC-136)
+  # are applied when the routes go live (P-06-T07, T11). `request_item.create` + staff (DEC-38)
+  # lands with the extended create in P-06-T10, not here: that route is live.
+  binder.read:
+    practice_leader: in_scope
+    quality_partner: in_scope
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    staff: allow
+    reviewer: allow
+    client_service: allow     # DEC-20: binders, request status and file names; never content
+    client_admin: client_visible_only
+    client_contributor: assigned_only
+    agent: task_scope
+  binder.create:            {engagement_partner: allow, manager: allow, senior: firm_setting(seniors_can_publish), client_service: firm_setting(client_service_can_publish), agent: deny}   # DEC-38
+  binder.update:            {engagement_partner: allow, manager: allow, senior: firm_setting(seniors_can_publish), client_service: firm_setting(client_service_can_publish), agent: deny}   # DEC-38: recipients, follow-up override
+  binder.publish:           {engagement_partner: allow, manager: allow, senior: firm_setting(seniors_can_publish), client_service: firm_setting(client_service_can_publish), agent: deny}   # DEC-38; publish, Undo, unpublish (422 reason_required without one)
+  binder.mark_done:         {client_admin: client_visible_only, client_contributor: assigned_only, agent: deny}   # the client says the binder is done (Story 1.4)
+  request_item.send:        {engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: deny, independence: required}   # DEC-38; the 10-s Undo uses it too
+  request_item.return:      {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny}   # return a client Ignore to the client
+  request_item.ignore:      {client_admin: client_visible_only, client_contributor: assigned_only, agent: deny, requires: reason}   # the client's Ignore, with a reason (OQ-3: status stays requested)
+  request_item.delegate:    {engagement_partner: allow, manager: allow, senior: allow, agent: deny}   # third-party delegate, one request (P-09)
   # --- Comments (SPEC-032; TASK-062; ADR-109): client roles see shared comments only (service) ---
   comment.read:
     independence: required   # client data, per person

@@ -7,6 +7,7 @@ from abacus.modules.requests.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.requests.availability import register_available_datasets
 from abacus.modules.requests.classification import classify, document_kind
 from abacus.modules.requests.comments import register_comment_scope_check
+from abacus.modules.requests.contract import binders_router, items_router, portal_router
 from abacus.modules.requests.events import (
     DueDatesChanged,
     RequestItemClassified,
@@ -52,6 +53,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     router,
     firm_router,
     methodology_router,
+    binders_router,  # C5 v1 stub (P-06-T01)
+    items_router,
+    portal_router,
 )
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.

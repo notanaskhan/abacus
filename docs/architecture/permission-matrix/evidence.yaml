@@ -32,14 +32,17 @@ actions:
     engagement_partner: allow
     manager: allow
     senior: firm_setting(seniors_can_accept)
+    staff: firm_setting(staff_can_accept_evidence)   # DEC-37 (P-06 §4.4): off unless the firm turns it on
     agent: deny               # ADR-005
   evidence.reject:
     independence: required   # SPEC-025 (TASK-045): client data, per person
     engagement_partner: allow
     manager: allow
     senior: firm_setting(seniors_can_accept)
+    staff: firm_setting(staff_can_accept_evidence)   # DEC-37 (P-06 §4.4)
     agent: deny               # ADR-005
   evidence.void:            {engagement_partner: allow, manager: allow, requires: reason}
+  evidence.withdraw:        {client_admin: client_visible_only, client_contributor: assigned_only, agent: deny, system: deny}   # ADR-162 (P-31): an unaccepted client upload; every firm role denied (C5 stub, P-06-T01)
   # --- Review queues (SPEC-004 Q7, Q8; TASK-019) ---
   review.read:
     independence: required   # SPEC-025 (TASK-045): client data, per person
