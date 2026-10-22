@@ -2527,3 +2527,45 @@ def test_eval_001_flags_evaluation_mode_outside_the_runner(
 )
 def test_eval_001_allows_the_runner_and_the_gateway(tmp_path: Path, path: str) -> None:
     assert not _flags(tmp_path, "EVAL-001", path, EVAL_MODE_VIOLATING[1])
+
+
+# --- CLOCK-001: only abacus.kernel.clock reads the wall clock (F-04-T17) -----------------------
+
+CLOCK_MESSAGE = "read the time through abacus.kernel.clock (now, today or system_now)"
+CLOCK_CALLS = [
+    "datetime.now(UTC)",
+    "datetime.datetime.now()",
+    "datetime.utcnow()",
+    "date.today()",
+    "time.time()",
+]
+
+
+@pytest.mark.parametrize("call", CLOCK_CALLS)
+@pytest.mark.parametrize("rel", [SERVICE, "src/abacus_tools/evals/runner.py"])
+def test_f04_t17_clock_001_flags_a_wall_clock_read_outside_the_clock(
+    tmp_path: Path, rel: str, call: str
+) -> None:
+    _write(tmp_path, rel, f"x = {call}\n")
+    clock = [v for v in bp.scan(tmp_path) if v.rule_id == "CLOCK-001"]
+    assert [(v.path, v.line, v.message) for v in clock] == [(rel, 1, CLOCK_MESSAGE)]
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "src/abacus/kernel/clock.py",
+        "src/abacus/kernel/config.py",
+        "tests/unit/test_something.py",  # tests may build fixed and relative instants
+    ],
+)
+def test_f04_t17_clock_001_leaves_the_clock_its_import_cycle_and_tests_alone(
+    tmp_path: Path, rel: str
+) -> None:
+    _write(tmp_path, rel, "x = datetime.now(UTC)\n")
+    assert [v for v in bp.scan(tmp_path) if v.rule_id == "CLOCK-001"] == []
+
+
+def test_f04_t17_clock_001_allows_the_clock_api_and_unrelated_now(tmp_path: Path) -> None:
+    _write(tmp_path, SERVICE, "a = system_now()\nb = await now(tenant)\nc = frame.now()\n")
+    assert [v for v in bp.scan(tmp_path) if v.rule_id == "CLOCK-001"] == []

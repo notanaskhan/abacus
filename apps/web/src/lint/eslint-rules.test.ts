@@ -711,3 +711,23 @@ describe("F-03-T32: no role-literal comparisons outside app-core", () => {
     }
   });
 });
+
+describe("F-04-T17 the wall clock is read through clock.tsx", () => {
+  it("bans an argument-less new Date() in a screen, domain or shell file", async () => {
+    for (const filePath of ["src/screens/X/index.tsx", "src/domain/x/time.ts", "src/shell/x.ts"]) {
+      const found = await violations("export const t = () => new Date();", filePath);
+      expect(found.some((m) => m.includes("F-04-T17"))).toBe(true);
+    }
+  });
+
+  it("allows new Date(value) and the clock files", async () => {
+    expect(
+      await violations("export const t = (ms: number) => new Date(ms);", "src/shell/x.ts"),
+    ).toEqual([]);
+    const inClock = await violations(
+      "export const t = () => new Date();",
+      "src/app-core/clock.tsx",
+    );
+    expect(inClock.some((m) => m.includes("F-04-T17"))).toBe(false);
+  });
+});

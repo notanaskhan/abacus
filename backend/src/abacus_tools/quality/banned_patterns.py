@@ -413,6 +413,27 @@ def _check_tenant_setting(src: SourceFile) -> Iterator[Finding]:
             )
 
 
+# F-04-T17 (CLOCK-001): the wall clock is read only by kernel.clock, so a demo clock, a frozen
+# replay and the tests can fix business time, and security windows use `system_now` (F-04.4).
+_CLOCK_CALLS = frozenset(
+    {("datetime", "now"), ("datetime", "utcnow"), ("datetime", "today"), ("date", "today")}
+    | {("time", "time")}
+)
+
+
+def _check_clock(src: SourceFile) -> Iterator[Finding]:
+    for node in ast.walk(src.tree):
+        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)):
+            continue
+        owner = node.func.value
+        name = owner.attr if isinstance(owner, ast.Attribute) else getattr(owner, "id", None)
+        if (name, node.func.attr) in _CLOCK_CALLS:
+            yield Finding(
+                node.lineno,
+                "read the time through abacus.kernel.clock (now, today or system_now)",
+            )
+
+
 # The unit of work's own connection, and the relay's BYPASSRLS engine.
 _UOW_ONLY = frozenset({"tenant_connection", "relay_engine", "configure_relay_engine"})
 
@@ -1814,6 +1835,19 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/ai_gateway/admission.py",  # see UOW-001
             "tests/integration/*",
             "tests/security/conftest.py",  # the suite's database (as integration's conftest)
+        ),
+    ),
+    Rule(
+        id="CLOCK-001",
+        description="Only abacus.kernel.clock reads the wall clock",
+        adr="ADR-143 (F-04-T17)",
+        check=_check_clock,
+        include=("src/*",),
+        exclude=(
+            "src/abacus/kernel/clock.py",
+            # kernel.clock imports config, so config's provider-terms check can't import it back.
+            "src/abacus/kernel/config.py",
+            "src/abacus_tools/quality/banned_patterns.py",
         ),
     ),
     Rule(
