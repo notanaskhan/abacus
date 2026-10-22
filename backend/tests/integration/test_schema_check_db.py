@@ -1143,6 +1143,9 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "notification_preferences": frozenset({"in_app", "email", "updated_at"}),
         "notification_deliveries": frozenset({"status", "message_ref"}),
         "memberships": frozenset({"default_office_filter_id"}),  # P-01-T04 (migration 0091)
+        # P-04-T03 (migration 0093): a note's status and assignee; the gates projection.
+        "reviewable_notes": frozenset({"status", "assignee_user_id"}),
+        "human_gates": frozenset({"state", "assignee_user_id", "due_on", "updated_at"}),
         "firms": frozenset(
             {"autonomy_level", "autonomy_set_at", "budget_reviewed_at", "walls_none_needed_at"}
             | {"sso_skipped_at", "onboarding_dismissed_at"}  # SPEC-024 (TASK-042)
@@ -1317,6 +1320,7 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
     assert sc.IMMUTABLE_TABLES == {
         "evidence_versions": IMMUTABLE_FUNCTION,
         "email_template_versions": "email_template_versions_immutable",  # 0092 (P-01-T05)
+        "field_value_versions": "field_value_versions_immutable",  # 0093 (P-04-T03)
         "ledger_snapshots": LEDGER_FUNCTION,
         "trial_balance_lines": LEDGER_FUNCTION,
         "review_decisions": "review_decisions_immutable",  # TASK-019 (ADR-004)
