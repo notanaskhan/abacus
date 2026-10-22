@@ -10,8 +10,8 @@
 }
 @keyframes sheet-in {
   from {
-    opacity: 0.6;
-    transform: translate(-50%, 40px);
+    opacity: 0;
+    transform: translateY(24px);
   }
 }
 @keyframes pop-in {
@@ -68,6 +68,44 @@
   }
 }
 
+/* Overlays (F-05-T20, C-22 and C-23): the scrim fades in 180ms, a dialog scales from .98, a full
+   sheet rises 12px, a drawer slides 24px in 260ms and out in 180ms, a sheet rises 24px in 260ms
+   and out in 200ms. Radix keeps a closing layer mounted while its exit animation runs. */
+@keyframes ac-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes ac-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes ac-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+@keyframes ac-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@keyframes ac-drawer-out {
+  to {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+@keyframes ac-sheet-out {
+  to {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
 @keyframes ac-slide {
   from {
     transform: translateX(-100%);
@@ -95,6 +133,33 @@
 }
 @utility motion-breathe {
   animation: ac-breathe 2400ms ease-in-out infinite;
+}
+@utility motion-fade {
+  animation: ac-fade 180ms ease both;
+}
+@utility motion-fade-out {
+  animation: ac-fade-out 180ms ease both;
+}
+@utility motion-scale-in {
+  animation: ac-scale-in 220ms var(--ease-out) both;
+}
+@utility motion-rise {
+  animation: ac-rise 220ms var(--ease-out) both;
+}
+@utility motion-pop {
+  animation: pop-in 180ms var(--ease-out) both;
+}
+@utility motion-drawer-in {
+  animation: drawer-in 260ms var(--ease-out) both;
+}
+@utility motion-drawer-out {
+  animation: ac-drawer-out 180ms ease both;
+}
+@utility motion-sheet-in {
+  animation: sheet-in 260ms var(--ease-out) both;
+}
+@utility motion-sheet-out {
+  animation: ac-sheet-out 200ms ease both;
 }
 @utility motion-slide {
   animation: ac-slide 1400ms ease-in-out infinite;

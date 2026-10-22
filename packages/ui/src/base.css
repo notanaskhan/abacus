@@ -56,6 +56,12 @@
     outline: 2px solid rgba(43, 31, 23, 0.55);
     outline-offset: 2px;
   }
+  /* Scroll lock (F-05-T20, risk R9). A modal Radix layer sets data-scroll-locked on the body and
+     injects a <style> that hides the overflow; the production CSP (style-src 'self') refuses that
+     element, so the lock is this rule, from our own stylesheet. */
+  body[data-scroll-locked] {
+    overflow: hidden;
+  }
 }
 
 /* Forced colors replace author colours, so the focus outline names a system colour (the .55

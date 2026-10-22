@@ -1,15 +1,15 @@
 import * as DropdownPrimitive from "@radix-ui/react-dropdown-menu";
-import * as PopoverPrimitive from "@radix-ui/react-popover";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { Slot } from "@radix-ui/react-slot";
-import { type JSX, type ReactNode, createContext, useContext, useId } from "react";
+import { type JSX, type ReactNode, createContext, useContext, useId, useState } from "react";
 import { cn } from "../cn";
 import { assertDialogLabel } from "../dev";
 import { Icon, type IconName } from "../icons";
 import { useMotion } from "../motion";
+import { useOverlayLayer } from "../overlays/stack-react";
 
-// Anchored overlays: a popover card, a menu and a tooltip (plan 04 section 4.5; F-05-T15). Radix
-// is the behaviour (focus, keyboard, collision, dismissal, focus return); the look is tokens.
+// Anchored overlays: a menu and a tooltip (plan 04 section 4.5; F-05-T15; the O1 popover is in
+// overlays/popover.tsx). Radix is the behaviour (focus, keyboard, collision, dismissal, focus return); the look is tokens.
 //
 // The menu is the C-00 and C-05 menu: a nested-greige tray of radius 15 around a white body of
 // radius 11, rows 34 high, radius 8, hover and focus on nav-fill, a 260ms reveal. A section whose
@@ -19,51 +19,6 @@ import { useMotion } from "../motion";
 
 /** How long a pointer rests on a trigger before its tooltip opens (C-00 `Go…` tooltip). */
 export const TOOLTIP_DELAY_MS = 450;
-
-// ---- Popover -----------------------------------------------------------------------------------
-
-export function Popover({
-  trigger,
-  children,
-  align = "end",
-  width = 360,
-  open,
-  onOpenChange,
-  label,
-}: {
-  trigger: ReactNode;
-  children: ReactNode;
-  align?: "start" | "center" | "end";
-  width?: number;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  /** The popover's accessible name. */
-  label?: string;
-}): JSX.Element {
-  const animate = useMotion();
-  return (
-    <PopoverPrimitive.Root
-      {...(open !== undefined ? { open } : {})}
-      {...(onOpenChange !== undefined ? { onOpenChange } : {})}
-    >
-      <PopoverPrimitive.Trigger asChild>{trigger}</PopoverPrimitive.Trigger>
-      <PopoverPrimitive.Portal>
-        <PopoverPrimitive.Content
-          align={align}
-          sideOffset={8}
-          aria-label={label}
-          style={{ width }}
-          className={cn(
-            "z-50 max-w-[calc(100vw-24px)] rounded-pane bg-card p-[14px] text-body shadow-pop outline-none",
-            animate && "motion-reveal",
-          )}
-        >
-          {children}
-        </PopoverPrimitive.Content>
-      </PopoverPrimitive.Portal>
-    </PopoverPrimitive.Root>
-  );
-}
 
 // ---- Menu --------------------------------------------------------------------------------------
 
@@ -210,6 +165,20 @@ export function Menu({
   forceState,
 }: MenuProps): JSX.Element {
   const animate = useMotion();
+  // A menu is a layer of the OverlayStack: Escape closes it before the dialog or drawer it is in,
+  // and it sits above every layer that is open, so it is never under the dialog that holds it.
+  const [inner, setInner] = useState(false);
+  const isOpen = open ?? inner;
+  const set = (next: boolean): void => {
+    setInner(next);
+    onOpenChange?.(next);
+  };
+  const layer = useOverlayLayer({
+    kind: "popover",
+    modal: false,
+    open: isOpen && forceState === undefined,
+    onOpenChange: set,
+  });
   if (forceState === "open") {
     return (
       <StaticMenu
@@ -222,10 +191,7 @@ export function Menu({
     );
   }
   return (
-    <DropdownPrimitive.Root
-      {...(open === undefined ? {} : { open })}
-      {...(onOpenChange === undefined ? {} : { onOpenChange })}
-    >
+    <DropdownPrimitive.Root open={isOpen} onOpenChange={layer.onRootOpenChange}>
       <DropdownPrimitive.Trigger asChild disabled={disabled}>
         {trigger}
       </DropdownPrimitive.Trigger>
@@ -236,8 +202,9 @@ export function Menu({
           collisionPadding={8}
           aria-label={label}
           {...(label === undefined ? {} : OWN_NAME)}
-          style={{ width }}
-          className={cn(TRAY, "z-50", animate && "motion-reveal")}
+          style={{ width, zIndex: layer.panelZ }}
+          className={cn(TRAY, animate && "motion-reveal")}
+          onEscapeKeyDown={layer.onEscape}
         >
           {sections.map((items, n) => {
             const radio = items.some((item) => item.checked !== undefined);

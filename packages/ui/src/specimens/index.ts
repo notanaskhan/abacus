@@ -20,6 +20,17 @@ import {
 import { MenuSpecimen, TooltipSpecimen } from "./menus";
 import { Overview } from "./overview";
 import {
+  CommandPaletteSpecimen,
+  ConfirmDialogSpecimen,
+  DialogSpecimen,
+  DrawerSpecimen,
+  FullSheetSpecimen,
+  OverlayStackingSpecimen,
+  PopoverSpecimen,
+  SheetModalSpecimen,
+  WizardSpecimen,
+} from "./overlays";
+import {
   KpiTileSpecimen,
   ProgressBarSpecimen,
   RatioStatSpecimen,
@@ -186,6 +197,31 @@ export const SPECIMENS: readonly Specimen[] = [
   { id: "c-19-step-counter", kit: "C-19", title: "StepCounter", Component: StepCounterSpecimen },
   { id: "c-19-kpi-tile", kit: "C-19", title: "KPI tile", Component: KpiTileSpecimen },
   { id: "c-19-status-tile", kit: "C-19", title: "StatusTile", Component: StatusTileSpecimen },
+  // Overlay stack E3 (F-05-T20): O1 to O6, the C-22 dialogs and the C-23 drawer
+  { id: "o1-popover", kit: "O1", title: "Popover", Component: PopoverSpecimen },
+  { id: "c-23-drawer", kit: "C-23", title: "Drawer", Component: DrawerSpecimen },
+  { id: "o3-sheet-modal", kit: "O3", title: "SheetModal", Component: SheetModalSpecimen },
+  { id: "o4-full-sheet", kit: "O4", title: "FullSheet", Component: FullSheetSpecimen },
+  {
+    id: "o5-command-palette",
+    kit: "O5",
+    title: "CommandPalette",
+    Component: CommandPaletteSpecimen,
+  },
+  { id: "o6-wizard", kit: "O6", title: "Wizard", Component: WizardSpecimen },
+  { id: "c-22-dialog", kit: "C-22", title: "Dialog", Component: DialogSpecimen },
+  {
+    id: "c-22-confirm-dialog",
+    kit: "C-22",
+    title: "ConfirmDialog",
+    Component: ConfirmDialogSpecimen,
+  },
+  {
+    id: "o1-o6-stacking",
+    kit: "O1-O6",
+    title: "Stacking and the OverlayStack",
+    Component: OverlayStackingSpecimen,
+  },
 ];
 
 export function specimenById(id: string): Specimen | undefined {

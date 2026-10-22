@@ -31,7 +31,6 @@ export {
   type TagProps,
 } from "./components/pill";
 export { type ForceState } from "./force-state";
-export { Dialog } from "./components/dialog";
 export { Input, Label } from "./components/field";
 export { Alert, Badge, Card, Spinner, type Tone } from "./components/surfaces";
 // View states and feedback (F-05-T19): ViewState and its body, the C-20 States kit and the C-19
@@ -153,7 +152,6 @@ export {
   type TickCode,
 } from "./components/status";
 export { Table, Td, Th } from "./components/table";
-export { Drawer, Sheet } from "./components/overlays";
 // Inputs and tabs (F-05-T15): the C-05 Tabs kit, the pill inputs, switches and boxes, the
 // fieldset and its value rows, the menu and the tooltip.
 export { Fieldset, FieldsetAdd, type FieldsetProps } from "./components/fieldset";
@@ -207,7 +205,6 @@ export {
   Menu,
   type MenuItem,
   type MenuProps,
-  Popover,
   TOOLTIP_DELAY_MS,
   Tooltip,
   type TooltipProps,
@@ -265,7 +262,6 @@ export {
   time,
   viaAgent,
 } from "./format";
-export { CommandPalette, type PaletteGroup, type PaletteItem } from "./components/command-palette";
 // The shell's L1 (F-05-T18): AppShell, Toolbar and its nav overflow, PortalToolbar, RecordHeader,
 // Tabsbar, Pane and PaneHeader, Timeline.
 export * from "./layout";
@@ -342,3 +338,4 @@ export {
   PanelRight,
   Search,
 } from "lucide-react";
+export * from "./overlays";
