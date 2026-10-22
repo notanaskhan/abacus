@@ -24,4 +24,13 @@ export {
   type PersonTint,
   tintForJoin,
 } from "./person";
+export {
+  PORTAL_BRAND_SLOTS,
+  type PortalBrand,
+  PortalBrandProvider,
+  type PortalBrandProviderProps,
+  SIGN_IN_METHODS,
+  type SignInMethod,
+  usePortalBrand,
+} from "./portal-brand";
 export { WORDMARK_MIN, Wordmark, type WordmarkProps } from "./wordmark";

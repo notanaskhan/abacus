@@ -32,6 +32,14 @@ export {
   type PaneProps,
 } from "./pane";
 export {
+  MOBILE_TABS,
+  MobileHeader,
+  type MobileHeaderProps,
+  MobileTabBar,
+  type MobileTabBarProps,
+  splitMobileNav,
+} from "./mobile-tab-bar";
+export {
   PortalFooter,
   type PortalNavItem,
   PortalToolbar,

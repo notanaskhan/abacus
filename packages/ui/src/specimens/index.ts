@@ -21,6 +21,7 @@ import { LedgerGridSpecimen, StatementGridSpecimen } from "./data";
 import { AgentFilledSpecimen, AttributionSpecimen } from "./attribution";
 import { MenuSpecimen, TooltipSpecimen } from "./menus";
 import { IndexListSpecimen } from "./templates";
+import { PortalLayoutSpecimen } from "./portal";
 import { NestedSplitSpecimen, SplitNarrowSpecimen, SplitPresetsSpecimen } from "./split";
 import { ToastKindsSpecimen, ToastLiveSpecimen } from "./toasts";
 import { Overview } from "./overview";
@@ -217,6 +218,8 @@ export const SPECIMENS: readonly Specimen[] = [
   },
   // Templates (F-05-T28): T1 Index list, artboards T1a to T1e
   { id: "t1-index-list", kit: "T1", title: "Index list", Component: IndexListSpecimen },
+  // T7 PortalLayout (F-05-T35): split, reduced (T7g) and mobile (T7-M) with the bottom tab bar
+  { id: "t7-portal-layout", kit: "T7", title: "Portal layout", Component: PortalLayoutSpecimen },
   // SplitLayout (F-05-T29): C-09
   {
     id: "c-09-split-presets",
