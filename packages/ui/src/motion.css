@@ -23,7 +23,7 @@
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
 }
 @keyframes ac-spin {
@@ -163,6 +163,10 @@
 }
 @utility motion-slide {
   animation: ac-slide 1400ms ease-in-out infinite;
+}
+/* C-21: a toast rises 6px over 260ms; it fades out by transition (the store keeps it 180ms). */
+@utility motion-toast-in {
+  animation: toast-in var(--motion-reveal) backwards;
 }
 @utility motion-typing {
   animation: ac-typing 1100ms ease-in-out infinite backwards;

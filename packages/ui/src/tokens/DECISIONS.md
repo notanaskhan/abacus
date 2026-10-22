@@ -275,3 +275,20 @@ The OverlayStack, Popover (O1), Drawer (O2), SheetModal (O3), FullSheet (O4), Co
 | 2026-10-22 | Back with a dirty overlay   | Back closes the layer without asking; only Escape, the close and the scrim ask                                                                        | A history blocker is the router's to add; the plan's guard is listed against the three      | plan 04 2.4          |
 | 2026-10-22 | `Sheet` alias               | `Sheet` is `SheetModal`; `Popover` moved to overlays/popover.tsx and `Menu` and `Tooltip` stay in components/popover.tsx                              | Every caller keeps its import; the plan names the layer SheetModal                          | plan 04 5.3          |
 | 2026-10-22 | Sample names                | Hannah Leclerc, Priya Raman, Kevin Osei and Accrued Agent for the Assign to list; no "Marcus Bell", "Marco Ruiz" or the invented Whitcombe mention    | C-22 and C-23 README flag them as not in the seed                                           | C-22, C-23 README    |
+
+### Toasts (F-05-T21)
+
+Where the C-21 bundle, the plan (chapter 04 E3) and the repo disagree. The bundle's `lib/toast.js`
+semantics are kept exact; the plan's `toast.undoable` and `toast.running` sit on top of them.
+
+| Date       | Item                             | Decision                                                                                                                         |
+| ---------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-22 | Action colour                    | `on-dark/86` for the bundle's `#E1DFD9`, `on-dark` on hover; no new token                                                        |
+| 2026-10-22 | Action divider                   | A 0.5px `on-dark/18` left border, not the bundle's inset shadow (no literal shadows)                                             |
+| 2026-10-22 | Running spinner                  | Drawn in the toast at 14px with `on-dark/18` track and `on-dark/72` arc; `Spinner`'s track is ink                                |
+| 2026-10-22 | Running toasts that never report | A running toast becomes a warning with a close after 2 minutes (C-21 open question); 0 opts out                                  |
+| 2026-10-22 | Reduced motion                   | No rise and a still spinner (the plan: nothing animates), not the bundle's slower spin                                           |
+| 2026-10-22 | Leaving toasts                   | `aria-hidden` and no pointer events while they fade, so a closed Undo cannot be clicked                                          |
+| 2026-10-22 | `undoable`                       | `commit` is a deferred commit (gates); without it the write has committed and Undo calls only `undo`; `started()` withdraws Undo |
+| 2026-10-22 | Older API                        | `toast.show(text, ms)`, `toast.deferred(text, commit, undo)` and `Toaster` stay as wrappers                                      |
+| 2026-10-22 | Timers                           | `performance.now()` for elapsed time; the business clock is not involved                                                         |

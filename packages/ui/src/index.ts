@@ -200,7 +200,29 @@ export {
   nextTab,
 } from "./components/tabs";
 export { HIT, MIN_TARGET } from "./components/hit-area";
-export { Toaster, UNDO_MS, toast } from "./components/toast";
+export {
+  Toast,
+  ToastHost,
+  Toaster,
+  UNDO_MS,
+  toast,
+  toastStore,
+  useToasts,
+  type ToastHostProps,
+  type ToastItem,
+  type ToastKind,
+  type ToastViewProps,
+} from "./components/toast";
+export {
+  copyProblems,
+  createToast,
+  createToastStore,
+  type RunningHandle,
+  type ToastInput,
+  type ToastStore,
+  type UndoableHandle,
+  type UndoableInput,
+} from "./components/toast-store";
 export {
   Menu,
   type MenuItem,

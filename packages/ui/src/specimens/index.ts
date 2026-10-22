@@ -18,6 +18,7 @@ import {
   ValueRowSpecimen,
 } from "./inputs";
 import { MenuSpecimen, TooltipSpecimen } from "./menus";
+import { ToastKindsSpecimen, ToastLiveSpecimen } from "./toasts";
 import { Overview } from "./overview";
 import {
   CommandPaletteSpecimen,
@@ -197,6 +198,9 @@ export const SPECIMENS: readonly Specimen[] = [
   { id: "c-19-step-counter", kit: "C-19", title: "StepCounter", Component: StepCounterSpecimen },
   { id: "c-19-kpi-tile", kit: "C-19", title: "KPI tile", Component: KpiTileSpecimen },
   { id: "c-19-status-tile", kit: "C-19", title: "StatusTile", Component: StatusTileSpecimen },
+  // Toasts E3 (F-05-T21): C-21
+  { id: "c-21-toast-kinds", kit: "C-21", title: "Toast kinds", Component: ToastKindsSpecimen },
+  { id: "c-21-toast-live", kit: "C-21", title: "Toast live stack", Component: ToastLiveSpecimen },
   // Overlay stack E3 (F-05-T20): O1 to O6, the C-22 dialogs and the C-23 drawer
   { id: "o1-popover", kit: "O1", title: "Popover", Component: PopoverSpecimen },
   { id: "c-23-drawer", kit: "C-23", title: "Drawer", Component: DrawerSpecimen },
