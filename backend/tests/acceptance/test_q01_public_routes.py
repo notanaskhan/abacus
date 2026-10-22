@@ -180,9 +180,9 @@ async def test_ac24_healthz_calls_no_dependency(
     opened: list[object] = []
     real_connect = socket.socket.connect
 
-    def recording_connect(self: socket.socket, address: object) -> None:
+    def recording_connect(self: socket.socket, address: tuple[str, int] | str) -> None:
         opened.append(address)
-        real_connect(self, address)  # type: ignore[arg-type]
+        real_connect(self, address)
 
     async with client(create_app()) as http:
         monkeypatch.setattr(socket.socket, "connect", recording_connect)
