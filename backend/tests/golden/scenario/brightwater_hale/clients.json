@@ -1,0 +1,3161 @@
+{
+ "source": "F-04-T10: the E0 client universe both the TS seed (apps/web/src/fixtures/seed/clients.ts) and the Python scenario (abacus_tools.synthetic.scenarios.brightwater_hale) must produce, row for row (SPEC-307 AC-1; F-04.21).",
+ "clients": [
+  {
+   "slug": "jonah-and-claire-feld",
+   "name": "Jonah & Claire Feld",
+   "kind": "household",
+   "origin": "named",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Jonah & Claire Feld"
+   ],
+   "recency": 1
+  },
+  {
+   "slug": "copperleaf-coffee-roasters-inc",
+   "name": "Copperleaf Coffee Roasters, Inc.",
+   "kind": "business",
+   "origin": "named",
+   "office": "Denver",
+   "partner": "PR",
+   "services": [
+    "cas",
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Copperleaf Coffee Roasters, Inc."
+   ],
+   "recency": 2
+  },
+  {
+   "slug": "meera-shah",
+   "name": "Meera Shah",
+   "kind": "individual",
+   "origin": "named",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Meera Shah"
+   ],
+   "recency": 3
+  },
+  {
+   "slug": "northwind-robotics-inc",
+   "name": "Northwind Robotics, Inc.",
+   "kind": "business",
+   "origin": "named",
+   "office": "Chicago",
+   "partner": "MO",
+   "services": [
+    "audit"
+   ],
+   "attest": true,
+   "portal": "active",
+   "entities": [
+    "Northwind Robotics, Inc.",
+    "Northwind Robotics 401(k) Plan"
+   ],
+   "recency": 4
+  },
+  {
+   "slug": "ridgeline-property-partners-lp",
+   "name": "Ridgeline Property Partners, LP",
+   "kind": "partnership",
+   "origin": "named",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax",
+    "advisory"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Ridgeline Property Partners, LP"
+   ],
+   "recency": 5
+  },
+  {
+   "slug": "granite-peak-outdoor-supply-inc",
+   "name": "Granite Peak Outdoor Supply, Inc.",
+   "kind": "business",
+   "origin": "named",
+   "office": "Denver",
+   "partner": "MO",
+   "services": [
+    "audit"
+   ],
+   "attest": true,
+   "portal": "active",
+   "entities": [
+    "Granite Peak Outdoor Supply, Inc.",
+    "Granite Peak Outdoor Supply 401(k) Plan"
+   ],
+   "recency": 6
+  },
+  {
+   "slug": "harborview-dental-properties-lp",
+   "name": "Harborview Dental Properties, LP",
+   "kind": "partnership",
+   "origin": "named",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Harborview Dental Properties, LP"
+   ],
+   "recency": 7
+  },
+  {
+   "slug": "marcus-and-dana-whitley",
+   "name": "Marcus & Dana Whitley",
+   "kind": "household",
+   "origin": "named",
+   "office": "Denver",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Marcus & Dana Whitley"
+   ],
+   "recency": 8
+  },
+  {
+   "slug": "estate-of-walter-thornbury",
+   "name": "Estate of Walter Thornbury",
+   "kind": "estate",
+   "origin": "named",
+   "office": "Chicago",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Walter Thornbury",
+    "Estate of Walter Thornbury"
+   ],
+   "recency": 9
+  },
+  {
+   "slug": "bluestem-analytics-llc",
+   "name": "Bluestem Analytics, LLC",
+   "kind": "business",
+   "origin": "named",
+   "office": "New York",
+   "partner": "PR",
+   "services": [
+    "tax",
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Bluestem Analytics, LLC"
+   ],
+   "recency": 10
+  },
+  {
+   "slug": "lakeshore-literacy-alliance",
+   "name": "Lakeshore Literacy Alliance",
+   "kind": "exempt_org",
+   "origin": "named",
+   "office": "Chicago",
+   "partner": "CM",
+   "services": [
+    "audit",
+    "tax"
+   ],
+   "attest": true,
+   "portal": "active",
+   "entities": [
+    "Lakeshore Literacy Alliance"
+   ],
+   "recency": 11
+  },
+  {
+   "slug": "elena-varga",
+   "name": "Elena Varga",
+   "kind": "individual",
+   "origin": "named",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Elena Varga"
+   ],
+   "recency": 12
+  },
+  {
+   "slug": "calloway-family-trust",
+   "name": "Calloway Family Trust",
+   "kind": "trust",
+   "origin": "named",
+   "office": "Chicago",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Calloway Family Trust"
+   ],
+   "recency": 13
+  },
+  {
+   "slug": "ashford-manufacturing-co",
+   "name": "Ashford Manufacturing Co.",
+   "kind": "business",
+   "origin": "named",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Ashford Manufacturing Co."
+   ],
+   "recency": 14
+  },
+  {
+   "slug": "juniper-and-oak-interiors-llc",
+   "name": "Juniper & Oak Interiors, LLC",
+   "kind": "business",
+   "origin": "named",
+   "office": "Denver",
+   "partner": "PR",
+   "services": [
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Juniper & Oak Interiors, LLC"
+   ],
+   "recency": 15
+  },
+  {
+   "slug": "daniel-and-ruth-okafor",
+   "name": "Daniel & Ruth Okafor",
+   "kind": "household",
+   "origin": "named",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Daniel & Ruth Okafor"
+   ],
+   "recency": 16
+  },
+  {
+   "slug": "mateo-and-lucia-alvarez",
+   "name": "Mateo & Lucia Alvarez",
+   "kind": "household",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Mateo & Lucia Alvarez"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "priyanka-and-sam-iyer",
+   "name": "Priyanka & Sam Iyer",
+   "kind": "household",
+   "origin": "roster",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "not_invited",
+   "entities": [
+    "Priyanka & Sam Iyer"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "harold-stein",
+   "name": "Harold Stein",
+   "kind": "individual",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Harold Stein"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "wren-and-avery-collins",
+   "name": "Wren & Avery Collins",
+   "kind": "household",
+   "origin": "roster",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Wren & Avery Collins"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "gloria-mendez",
+   "name": "Gloria Mendez",
+   "kind": "individual",
+   "origin": "roster",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "not_invited",
+   "entities": [
+    "Gloria Mendez"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "thomas-and-irene-kowal",
+   "name": "Thomas & Irene Kowal",
+   "kind": "household",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Thomas & Irene Kowal"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "benjamin-osterberg",
+   "name": "Benjamin Osterberg",
+   "kind": "individual",
+   "origin": "roster",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Benjamin Osterberg"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "nina-and-paul-haddox",
+   "name": "Nina & Paul Haddox",
+   "kind": "household",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Nina & Paul Haddox"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "rafael-quintero",
+   "name": "Rafael Quintero",
+   "kind": "individual",
+   "origin": "roster",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Rafael Quintero"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "sunil-and-asha-rao",
+   "name": "Sunil & Asha Rao",
+   "kind": "household",
+   "origin": "roster",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Sunil & Asha Rao"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "cedar-hollow-farms-llc",
+   "name": "Cedar Hollow Farms, LLC",
+   "kind": "partnership",
+   "origin": "roster",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax",
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Cedar Hollow Farms, LLC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "northgate-medical-partners-llp",
+   "name": "Northgate Medical Partners, LLP",
+   "kind": "partnership",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Northgate Medical Partners, LLP"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "marlowe-street-holdings-lp",
+   "name": "Marlowe Street Holdings, LP",
+   "kind": "partnership",
+   "origin": "roster",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Marlowe Street Holdings, LP"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "kestrel-ventures-fund-i-lp",
+   "name": "Kestrel Ventures Fund I, LP",
+   "kind": "partnership",
+   "origin": "roster",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Kestrel Ventures Fund I, LP"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "bramble-and-finch-design-llc",
+   "name": "Bramble & Finch Design, LLC",
+   "kind": "partnership",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax",
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Bramble & Finch Design, LLC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "two-rivers-brewing-co",
+   "name": "Two Rivers Brewing Co.",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax",
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Two Rivers Brewing Co."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "summit-line-logistics-inc",
+   "name": "Summit Line Logistics, Inc.",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax",
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Summit Line Logistics, Inc."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "pinecrest-pediatrics-pc",
+   "name": "Pinecrest Pediatrics, PC",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax",
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Pinecrest Pediatrics, PC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "oakline-software-inc",
+   "name": "Oakline Software, Inc.",
+   "kind": "business",
+   "origin": "roster",
+   "office": "New York",
+   "partner": "CM",
+   "services": [
+    "tax",
+    "audit"
+   ],
+   "attest": true,
+   "portal": "active",
+   "entities": [
+    "Oakline Software, Inc."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "meridian-tool-and-die-inc",
+   "name": "Meridian Tool & Die, Inc.",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "MO",
+   "services": [
+    "tax",
+    "audit"
+   ],
+   "attest": true,
+   "portal": "active",
+   "entities": [
+    "Meridian Tool & Die, Inc."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "fenwick-family-foundation",
+   "name": "Fenwick Family Foundation",
+   "kind": "exempt_org",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "PR",
+   "services": [
+    "tax",
+    "audit"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Fenwick Family Foundation"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "riverbend-community-theater",
+   "name": "Riverbend Community Theater",
+   "kind": "exempt_org",
+   "origin": "roster",
+   "office": "Denver",
+   "partner": "CM",
+   "services": [
+    "tax",
+    "audit"
+   ],
+   "attest": true,
+   "portal": "invited",
+   "entities": [
+    "Riverbend Community Theater"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "pryor-irrevocable-trust",
+   "name": "Pryor Irrevocable Trust",
+   "kind": "trust",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Pryor Irrevocable Trust"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "estate-of-eugene-barlow",
+   "name": "Estate of Eugene Barlow",
+   "kind": "estate",
+   "origin": "roster",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "not_invited",
+   "entities": [
+    "Estate of Eugene Barlow"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "delia-fortune",
+   "name": "Delia Fortune",
+   "kind": "individual",
+   "origin": "roster",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "not_invited",
+   "entities": [
+    "Delia Fortune"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "morgan-and-kai-ferris",
+   "name": "Morgan & Kai Ferris",
+   "kind": "household",
+   "origin": "roster",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Morgan & Kai Ferris"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "aurelio-santos",
+   "name": "Aurelio Santos",
+   "kind": "individual",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Aurelio Santos"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "hollis-creek-veterinary-pc",
+   "name": "Hollis Creek Veterinary, PC",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax",
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Hollis Creek Veterinary, PC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "vantage-point-realty-llc",
+   "name": "Vantage Point Realty, LLC",
+   "kind": "partnership",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "not_invited",
+   "entities": [
+    "Vantage Point Realty, LLC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "juliet-okonjo",
+   "name": "Juliet Okonjo",
+   "kind": "individual",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Juliet Okonjo"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "larkspur-floral-inc",
+   "name": "Larkspur Floral, Inc.",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax",
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Larkspur Floral, Inc."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "alder-and-ash-furniture-co",
+   "name": "Alder & Ash Furniture Co.",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "PR",
+   "services": [
+    "cas"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Alder & Ash Furniture Co."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "bluebird-bakery-co",
+   "name": "Bluebird Bakery Co.",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "PR",
+   "services": [
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Bluebird Bakery Co."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "canyon-pass-climbing-gym-llc",
+   "name": "Canyon Pass Climbing Gym, LLC",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Denver",
+   "partner": "PR",
+   "services": [
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Canyon Pass Climbing Gym, LLC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "foxglove-studio-llc",
+   "name": "Foxglove Studio, LLC",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "PR",
+   "services": [
+    "cas"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Foxglove Studio, LLC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "granary-row-market-inc",
+   "name": "Granary Row Market, Inc.",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "PR",
+   "services": [
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Granary Row Market, Inc."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "ironwood-landscape-co",
+   "name": "Ironwood Landscape Co.",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Denver",
+   "partner": "PR",
+   "services": [
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Ironwood Landscape Co."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "kettle-and-kiln-pottery-llc",
+   "name": "Kettle & Kiln Pottery, LLC",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "PR",
+   "services": [
+    "cas",
+    "audit"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Kettle & Kiln Pottery, LLC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "lumen-dental-lab-inc",
+   "name": "Lumen Dental Lab, Inc.",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Denver",
+   "partner": "PR",
+   "services": [
+    "cas"
+   ],
+   "attest": false,
+   "portal": "not_invited",
+   "entities": [
+    "Lumen Dental Lab, Inc."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "maple-and-main-hardware-inc",
+   "name": "Maple & Main Hardware, Inc.",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "PR",
+   "services": [
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Maple & Main Hardware, Inc."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "northfield-pet-clinic-pc",
+   "name": "Northfield Pet Clinic, PC",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Denver",
+   "partner": "PR",
+   "services": [
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Northfield Pet Clinic, PC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "orchard-lane-wellness-llc",
+   "name": "Orchard Lane Wellness, LLC",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "PR",
+   "services": [
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Orchard Lane Wellness, LLC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "prairie-wind-solar-installers-inc",
+   "name": "Prairie Wind Solar Installers, Inc.",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Denver",
+   "partner": "PR",
+   "services": [
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Prairie Wind Solar Installers, Inc."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "quill-and-press-printing-co",
+   "name": "Quill & Press Printing Co.",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "PR",
+   "services": [
+    "cas"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Quill & Press Printing Co."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "cobalt-ridge-manufacturing-401-k-plan",
+   "name": "Cobalt Ridge Manufacturing 401(k) Plan",
+   "kind": "plan",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "TW",
+   "services": [
+    "audit"
+   ],
+   "attest": true,
+   "portal": "active",
+   "entities": [
+    "Cobalt Ridge Manufacturing 401(k) Plan"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "halden-health-403-b-plan",
+   "name": "Halden Health 403(b) Plan",
+   "kind": "plan",
+   "origin": "roster",
+   "office": "New York",
+   "partner": "CM",
+   "services": [
+    "audit"
+   ],
+   "attest": true,
+   "portal": "active",
+   "entities": [
+    "Halden Health 403(b) Plan"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "fairhaven-foods-401-k-plan",
+   "name": "Fairhaven Foods 401(k) Plan",
+   "kind": "plan",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "MO",
+   "services": [
+    "audit"
+   ],
+   "attest": true,
+   "portal": "not_invited",
+   "entities": [
+    "Fairhaven Foods 401(k) Plan"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "sterling-freight-401-k-plan",
+   "name": "Sterling Freight 401(k) Plan",
+   "kind": "plan",
+   "origin": "roster",
+   "office": "New York",
+   "partner": "TW",
+   "services": [
+    "audit"
+   ],
+   "attest": true,
+   "portal": "not_invited",
+   "entities": [
+    "Sterling Freight 401(k) Plan"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "westbrook-engineering-401-k-plan",
+   "name": "Westbrook Engineering 401(k) Plan",
+   "kind": "plan",
+   "origin": "roster",
+   "office": "Denver",
+   "partner": "CM",
+   "services": [
+    "audit"
+   ],
+   "attest": true,
+   "portal": "active",
+   "entities": [
+    "Westbrook Engineering 401(k) Plan"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "arbor-senior-living-401-k-plan",
+   "name": "Arbor Senior Living 401(k) Plan",
+   "kind": "plan",
+   "origin": "roster",
+   "office": "Denver",
+   "partner": "MO",
+   "services": [
+    "audit"
+   ],
+   "attest": true,
+   "portal": "not_invited",
+   "entities": [
+    "Arbor Senior Living 401(k) Plan"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "keel-and-compass-marine-401-k-plan",
+   "name": "Keel & Compass Marine 401(k) Plan",
+   "kind": "plan",
+   "origin": "roster",
+   "office": "New York",
+   "partner": "TW",
+   "services": [
+    "audit"
+   ],
+   "attest": true,
+   "portal": "invited",
+   "entities": [
+    "Keel & Compass Marine 401(k) Plan"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "redtail-construction-401-k-plan",
+   "name": "Redtail Construction 401(k) Plan",
+   "kind": "plan",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "CM",
+   "services": [
+    "audit"
+   ],
+   "attest": true,
+   "portal": "invited",
+   "entities": [
+    "Redtail Construction 401(k) Plan"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "clearwater-credit-union-401-k-plan",
+   "name": "Clearwater Credit Union 401(k) Plan",
+   "kind": "plan",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "MO",
+   "services": [
+    "audit"
+   ],
+   "attest": true,
+   "portal": "active",
+   "entities": [
+    "Clearwater Credit Union 401(k) Plan"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "hearthstone-hospitality-401-k-plan",
+   "name": "Hearthstone Hospitality 401(k) Plan",
+   "kind": "plan",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "TW",
+   "services": [
+    "audit"
+   ],
+   "attest": true,
+   "portal": "active",
+   "entities": [
+    "Hearthstone Hospitality 401(k) Plan"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "bayside-electric-cooperative-401-k-plan",
+   "name": "Bayside Electric Cooperative 401(k) Plan",
+   "kind": "plan",
+   "origin": "roster",
+   "office": "New York",
+   "partner": "CM",
+   "services": [
+    "audit"
+   ],
+   "attest": true,
+   "portal": "active",
+   "entities": [
+    "Bayside Electric Cooperative 401(k) Plan"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "tamarack-health-system-403-b-plan",
+   "name": "Tamarack Health System 403(b) Plan",
+   "kind": "plan",
+   "origin": "roster",
+   "office": "New York",
+   "partner": "CM",
+   "services": [
+    "audit"
+   ],
+   "attest": true,
+   "portal": "not_invited",
+   "entities": [
+    "Tamarack Health System 403(b) Plan"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "larimer-cooperative-grocery",
+   "name": "Larimer Cooperative Grocery",
+   "kind": "business",
+   "origin": "roster",
+   "office": "New York",
+   "partner": "TW",
+   "services": [
+    "audit"
+   ],
+   "attest": true,
+   "portal": "active",
+   "entities": [
+    "Larimer Cooperative Grocery"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "sable-creek-homeowners-association",
+   "name": "Sable Creek Homeowners Association",
+   "kind": "exempt_org",
+   "origin": "roster",
+   "office": "Denver",
+   "partner": "CM",
+   "services": [
+    "audit"
+   ],
+   "attest": true,
+   "portal": "invited",
+   "entities": [
+    "Sable Creek Homeowners Association"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "halcyon-foods-distribution-inc",
+   "name": "Halcyon Foods Distribution, Inc.",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Denver",
+   "partner": "TW",
+   "services": [
+    "audit"
+   ],
+   "attest": true,
+   "portal": "active",
+   "entities": [
+    "Halcyon Foods Distribution, Inc."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "hillcrest-montessori-school",
+   "name": "Hillcrest Montessori School",
+   "kind": "exempt_org",
+   "origin": "roster",
+   "office": "New York",
+   "partner": "TW",
+   "services": [
+    "audit"
+   ],
+   "attest": true,
+   "portal": "active",
+   "entities": [
+    "Hillcrest Montessori School"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "wildflower-land-trust",
+   "name": "Wildflower Land Trust",
+   "kind": "exempt_org",
+   "origin": "roster",
+   "office": "Denver",
+   "partner": "CM",
+   "services": [
+    "audit"
+   ],
+   "attest": true,
+   "portal": "not_invited",
+   "entities": [
+    "Wildflower Land Trust"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "corinne-abbott",
+   "name": "Corinne Abbott",
+   "kind": "individual",
+   "origin": "roster",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Corinne Abbott"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "dev-and-mira-kapoor",
+   "name": "Dev & Mira Kapoor",
+   "kind": "household",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Dev & Mira Kapoor"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "hugo-brandvold",
+   "name": "Hugo Brandvold",
+   "kind": "individual",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Hugo Brandvold"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "noor-and-adam-farouk",
+   "name": "Noor & Adam Farouk",
+   "kind": "household",
+   "origin": "roster",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Noor & Adam Farouk"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "brightline-optics-inc",
+   "name": "Brightline Optics, Inc.",
+   "kind": "business",
+   "origin": "roster",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Brightline Optics, Inc."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "adrian-and-vesna-underhill",
+   "name": "Adrian & Vesna Underhill",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Adrian & Vesna Underhill"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "birchwood-and-marigold-outfitters-co",
+   "name": "Birchwood & Marigold Outfitters Co.",
+   "kind": "business",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Birchwood & Marigold Outfitters Co."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "tamsin-and-lorna-kingsley",
+   "name": "Tamsin & Lorna Kingsley",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Tamsin & Lorna Kingsley"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "matteo-and-gus-yarborough",
+   "name": "Matteo & Gus Yarborough",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Matteo & Gus Yarborough"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "emeric-and-tamsin-hollander",
+   "name": "Emeric & Tamsin Hollander",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Emeric & Tamsin Hollander"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "milo-and-matteo-jessup",
+   "name": "Milo & Matteo Jessup",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Milo & Matteo Jessup"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "tamsin-and-leontine-jessup",
+   "name": "Tamsin & Leontine Jessup",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Tamsin & Leontine Jessup"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "otis-everhart",
+   "name": "Otis Everhart",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Otis Everhart"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "soren-pritchard",
+   "name": "Soren Pritchard",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Soren Pritchard"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "eddy-cycles-lp",
+   "name": "Eddy Cycles, LP",
+   "kind": "partnership",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Eddy Cycles, LP"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "quentin-and-cyrus-whitaker",
+   "name": "Quentin & Cyrus Whitaker",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Quentin & Cyrus Whitaker"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "saltmarsh-and-ember-salvage-llc",
+   "name": "Saltmarsh & Ember Salvage, LLC",
+   "kind": "business",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Saltmarsh & Ember Salvage, LLC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "freya-and-cyrus-hartwell",
+   "name": "Freya & Cyrus Hartwell",
+   "kind": "household",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Freya & Cyrus Hartwell"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "kaito-and-freya-blackwood",
+   "name": "Kaito & Freya Blackwood",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "not_invited",
+   "entities": [
+    "Kaito & Freya Blackwood"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "josephine-bellamy",
+   "name": "Josephine Bellamy",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Josephine Bellamy"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "dalia-winslow",
+   "name": "Dalia Winslow",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Dalia Winslow"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "kaito-dempsey",
+   "name": "Kaito Dempsey",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Kaito Dempsey"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "bryn-kessler",
+   "name": "Bryn Kessler",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Bryn Kessler"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "ember-fabrication-llc",
+   "name": "Ember Fabrication, LLC",
+   "kind": "business",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax",
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Ember Fabrication, LLC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "ilona-and-gideon-thackeray",
+   "name": "Ilona & Gideon Thackeray",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Ilona & Gideon Thackeray"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "lantern-and-plover-storage-lp",
+   "name": "Lantern & Plover Storage, LP",
+   "kind": "partnership",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Lantern & Plover Storage, LP"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "farah-and-matteo-pemberton",
+   "name": "Farah & Matteo Pemberton",
+   "kind": "household",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Farah & Matteo Pemberton"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "abel-and-honora-tolliver",
+   "name": "Abel & Honora Tolliver",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Abel & Honora Tolliver"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "edmund-and-orson-montrose",
+   "name": "Edmund & Orson Montrose",
+   "kind": "household",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Edmund & Orson Montrose"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "otis-and-gideon-kessler",
+   "name": "Otis & Gideon Kessler",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Otis & Gideon Kessler"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "abel-jernigan",
+   "name": "Abel Jernigan",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Abel Jernigan"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "dalia-underhill",
+   "name": "Dalia Underhill",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Dalia Underhill"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "vesna-sandoval",
+   "name": "Vesna Sandoval",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Vesna Sandoval"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "edmund-and-rowena-grayson",
+   "name": "Edmund & Rowena Grayson",
+   "kind": "household",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Edmund & Rowena Grayson"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "hazel-fabrication-inc",
+   "name": "Hazel Fabrication, Inc.",
+   "kind": "business",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "not_invited",
+   "entities": [
+    "Hazel Fabrication, Inc."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "nimbus-distillers-llc",
+   "name": "Nimbus Distillers, LLC",
+   "kind": "business",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Nimbus Distillers, LLC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "zephyr-and-russet-rentals-pc",
+   "name": "Zephyr & Russet Rentals, PC",
+   "kind": "business",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Zephyr & Russet Rentals, PC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "ignatius-and-josephine-sutherland",
+   "name": "Ignatius & Josephine Sutherland",
+   "kind": "household",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Ignatius & Josephine Sutherland"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "saltmarsh-joinery-lp",
+   "name": "Saltmarsh Joinery, LP",
+   "kind": "partnership",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "not_invited",
+   "entities": [
+    "Saltmarsh Joinery, LP"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "tideway-distillers-llc",
+   "name": "Tideway Distillers, LLC",
+   "kind": "business",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Tideway Distillers, LLC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "gideon-and-gus-haverford",
+   "name": "Gideon & Gus Haverford",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Gideon & Gus Haverford"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "matteo-and-beatrice-haverford",
+   "name": "Matteo & Beatrice Haverford",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "not_invited",
+   "entities": [
+    "Matteo & Beatrice Haverford"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "ilona-and-colin-farnsworth",
+   "name": "Ilona & Colin Farnsworth",
+   "kind": "household",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Ilona & Colin Farnsworth"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "rowena-mortimer",
+   "name": "Rowena Mortimer",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Rowena Mortimer"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "pebble-and-ember-ceramics-lp",
+   "name": "Pebble & Ember Ceramics, LP",
+   "kind": "partnership",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Pebble & Ember Ceramics, LP"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "ilona-and-orson-farnsworth",
+   "name": "Ilona & Orson Farnsworth",
+   "kind": "household",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Ilona & Orson Farnsworth"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "upland-and-saltmarsh-cabinetry-lp",
+   "name": "Upland & Saltmarsh Cabinetry, LP",
+   "kind": "partnership",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Upland & Saltmarsh Cabinetry, LP"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "emeric-and-ignatius-fairbanks",
+   "name": "Emeric & Ignatius Fairbanks",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "not_invited",
+   "entities": [
+    "Emeric & Ignatius Fairbanks"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "soren-hartwell",
+   "name": "Soren Hartwell",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "not_invited",
+   "entities": [
+    "Soren Hartwell"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "honora-and-josephine-mortimer",
+   "name": "Honora & Josephine Mortimer",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Honora & Josephine Mortimer"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "delphine-and-nadira-pritchard",
+   "name": "Delphine & Nadira Pritchard",
+   "kind": "household",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Delphine & Nadira Pritchard"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "soren-and-pia-pemberton",
+   "name": "Soren & Pia Pemberton",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Soren & Pia Pemberton"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "wendell-and-edmund-fontaine",
+   "name": "Wendell & Edmund Fontaine",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Wendell & Edmund Fontaine"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "quentin-and-cyrus-ackerman",
+   "name": "Quentin & Cyrus Ackerman",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Quentin & Cyrus Ackerman"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "yarrow-and-quarry-provisions-inc",
+   "name": "Yarrow & Quarry Provisions, Inc.",
+   "kind": "business",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax",
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Yarrow & Quarry Provisions, Inc."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "philippa-and-neve-jarrett",
+   "name": "Philippa & Neve Jarrett",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "not_invited",
+   "entities": [
+    "Philippa & Neve Jarrett"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "violet-and-tideway-outfitters-lp",
+   "name": "Violet & Tideway Outfitters, LP",
+   "kind": "partnership",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Violet & Tideway Outfitters, LP"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "upland-and-gable-masonry-inc",
+   "name": "Upland & Gable Masonry, Inc.",
+   "kind": "business",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax",
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Upland & Gable Masonry, Inc."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "bryn-and-ulrich-sutherland",
+   "name": "Bryn & Ulrich Sutherland",
+   "kind": "household",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Bryn & Ulrich Sutherland"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "gus-brantley",
+   "name": "Gus Brantley",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Gus Brantley"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "abel-and-jules-fontaine",
+   "name": "Abel & Jules Fontaine",
+   "kind": "household",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Abel & Jules Fontaine"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "inlet-surveying-co",
+   "name": "Inlet Surveying Co.",
+   "kind": "business",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Inlet Surveying Co."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "gilded-and-dovetail-rentals-inc",
+   "name": "Gilded & Dovetail Rentals, Inc.",
+   "kind": "business",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "not_invited",
+   "entities": [
+    "Gilded & Dovetail Rentals, Inc."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "kit-and-dalia-zimmerman",
+   "name": "Kit & Dalia Zimmerman",
+   "kind": "household",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Kit & Dalia Zimmerman"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "linden-and-thistle-distillers-inc",
+   "name": "Linden & Thistle Distillers, Inc.",
+   "kind": "business",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Linden & Thistle Distillers, Inc."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "philippa-and-gus-hollander",
+   "name": "Philippa & Gus Hollander",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Philippa & Gus Hollander"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "sorrel-and-meadow-outfitters-lp",
+   "name": "Sorrel & Meadow Outfitters, LP",
+   "kind": "partnership",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "not_invited",
+   "entities": [
+    "Sorrel & Meadow Outfitters, LP"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "ilona-ulloa",
+   "name": "Ilona Ulloa",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Ilona Ulloa"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "zephyr-and-yarrow-fabrication-pc",
+   "name": "Zephyr & Yarrow Fabrication, PC",
+   "kind": "business",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Zephyr & Yarrow Fabrication, PC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "cinder-and-amber-tailoring-llc",
+   "name": "Cinder & Amber Tailoring, LLC",
+   "kind": "business",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Cinder & Amber Tailoring, LLC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "pia-tennant",
+   "name": "Pia Tennant",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Pia Tennant"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "bryn-and-vesna-sutherland",
+   "name": "Bryn & Vesna Sutherland",
+   "kind": "household",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Bryn & Vesna Sutherland"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "ulrich-and-soren-sutherland",
+   "name": "Ulrich & Soren Sutherland",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Ulrich & Soren Sutherland"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "emeric-ivanov",
+   "name": "Emeric Ivanov",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Emeric Ivanov"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "ulrich-and-gus-oswald",
+   "name": "Ulrich & Gus Oswald",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Ulrich & Gus Oswald"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "umber-plumbing-lp",
+   "name": "Umber Plumbing, LP",
+   "kind": "partnership",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Umber Plumbing, LP"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "dovetail-creamery-lp",
+   "name": "Dovetail Creamery, LP",
+   "kind": "partnership",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Dovetail Creamery, LP"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "ilona-blackwood",
+   "name": "Ilona Blackwood",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "not_invited",
+   "entities": [
+    "Ilona Blackwood"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "driftwood-and-ripple-ceramics-inc",
+   "name": "Driftwood & Ripple Ceramics, Inc.",
+   "kind": "business",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax",
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Driftwood & Ripple Ceramics, Inc."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "violet-and-larch-creamery-co",
+   "name": "Violet & Larch Creamery Co.",
+   "kind": "business",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax",
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Violet & Larch Creamery Co."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "honora-and-beatrice-marchetti",
+   "name": "Honora & Beatrice Marchetti",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Honora & Beatrice Marchetti"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "russet-provisions-lp",
+   "name": "Russet Provisions, LP",
+   "kind": "partnership",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Russet Provisions, LP"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "jules-sandoval",
+   "name": "Jules Sandoval",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Jules Sandoval"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "dalia-ulloa",
+   "name": "Dalia Ulloa",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Dalia Ulloa"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "amber-and-birchwood-ceramics-lp",
+   "name": "Amber & Birchwood Ceramics, LP",
+   "kind": "partnership",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "not_invited",
+   "entities": [
+    "Amber & Birchwood Ceramics, LP"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "ignatius-eastwood",
+   "name": "Ignatius Eastwood",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Ignatius Eastwood"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "yuri-and-nadira-marchetti",
+   "name": "Yuri & Nadira Marchetti",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Yuri & Nadira Marchetti"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "saltmarsh-and-zephyr-milling-inc",
+   "name": "Saltmarsh & Zephyr Milling, Inc.",
+   "kind": "business",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax",
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Saltmarsh & Zephyr Milling, Inc."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "eddy-masonry-pc",
+   "name": "Eddy Masonry, PC",
+   "kind": "business",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax",
+    "cas"
+   ],
+   "attest": false,
+   "portal": "not_invited",
+   "entities": [
+    "Eddy Masonry, PC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "neve-oyelaran",
+   "name": "Neve Oyelaran",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Neve Oyelaran"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "yuri-and-beatrice-grayson",
+   "name": "Yuri & Beatrice Grayson",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Yuri & Beatrice Grayson"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "ripple-and-saltmarsh-kitchens-pc",
+   "name": "Ripple & Saltmarsh Kitchens, PC",
+   "kind": "business",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Ripple & Saltmarsh Kitchens, PC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "cyrus-elmsworth",
+   "name": "Cyrus Elmsworth",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Cyrus Elmsworth"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "ignatius-and-xiomara-pemberton",
+   "name": "Ignatius & Xiomara Pemberton",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Ignatius & Xiomara Pemberton"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "josephine-yarborough",
+   "name": "Josephine Yarborough",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Josephine Yarborough"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "jules-gladstone",
+   "name": "Jules Gladstone",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Jules Gladstone"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "quentin-and-matteo-xavier",
+   "name": "Quentin & Matteo Xavier",
+   "kind": "household",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "invited",
+   "entities": [
+    "Quentin & Matteo Xavier"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "beatrice-and-freya-dempsey",
+   "name": "Beatrice & Freya Dempsey",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Beatrice & Freya Dempsey"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "kindle-cabinetry-co",
+   "name": "Kindle Cabinetry Co.",
+   "kind": "business",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax",
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Kindle Cabinetry Co."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "nadira-pritchard",
+   "name": "Nadira Pritchard",
+   "kind": "individual",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "not_invited",
+   "entities": [
+    "Nadira Pritchard"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "alcove-and-beacon-provisions-lp",
+   "name": "Alcove & Beacon Provisions, LP",
+   "kind": "partnership",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "not_invited",
+   "entities": [
+    "Alcove & Beacon Provisions, LP"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "neve-and-leontine-marchetti",
+   "name": "Neve & Leontine Marchetti",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Chicago",
+   "partner": "NA",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Neve & Leontine Marchetti"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "bryn-and-philippa-vasquez",
+   "name": "Bryn & Philippa Vasquez",
+   "kind": "household",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Bryn & Philippa Vasquez"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "driftwood-and-yarrow-rentals-llc",
+   "name": "Driftwood & Yarrow Rentals, LLC",
+   "kind": "business",
+   "origin": "filler",
+   "office": "New York",
+   "partner": "DR",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Driftwood & Yarrow Rentals, LLC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "tideway-and-pebble-creamery-llc",
+   "name": "Tideway & Pebble Creamery, LLC",
+   "kind": "business",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax",
+    "cas"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Tideway & Pebble Creamery, LLC"
+   ],
+   "recency": null
+  },
+  {
+   "slug": "ember-textiles-inc",
+   "name": "Ember Textiles, Inc.",
+   "kind": "business",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Ember Textiles, Inc."
+   ],
+   "recency": null
+  },
+  {
+   "slug": "lorna-and-orson-delacroix",
+   "name": "Lorna & Orson Delacroix",
+   "kind": "household",
+   "origin": "filler",
+   "office": "Denver",
+   "partner": "VH",
+   "services": [
+    "tax"
+   ],
+   "attest": false,
+   "portal": "active",
+   "entities": [
+    "Lorna & Orson Delacroix"
+   ],
+   "recency": null
+  }
+ ]
+}
