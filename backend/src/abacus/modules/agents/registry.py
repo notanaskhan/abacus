@@ -27,6 +27,12 @@ TABLES: frozenset[str] = frozenset(
         "screening_results",
         "knowledge_documents",  # SPEC-009 Q5
         "knowledge_chunks",
+        # P-04-T05 (migration 0095, ADR-161): suggestions and proposals with their decisions.
+        "suggestions",
+        "suggestion_decisions",
+        "proposals",
+        "proposal_rows",
+        "proposal_decisions",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -44,10 +50,35 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "inbox_match_proposals",  # SPEC-033 (TASK-065): proposals, as made
         "follow_up_items",  # SPEC-027 (TASK-051)
         "screening_results",
+        "suggestion_decisions",  # P-04-T05
+        "proposal_rows",
+        "proposal_decisions",
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    # P-04-T05 (migration 0095)
+    "suggestions": frozenset(
+        {"tenant_id", "engagement_id", "target_type", "target_id", "field_key", "proposed_value"}
+        | {"rationale_ref", "citation_ids", "confidence", "agent_run_id", "proposal_id"}
+    ),
+    "suggestion_decisions": frozenset(
+        {"tenant_id", "suggestion_id", "decision", "edited_value", "citation_note_sealed"}
+        | {"reason_code", "undoes_decision_id", "decided_by"}
+    ),
+    "proposals": frozenset(
+        {"tenant_id", "engagement_id", "kind", "title", "reasoning_ref", "policy_eval"}
+        | {"routed_to_user_id", "set_ref", "checkpoint_id", "agent_run_id"}
+    ),
+    "proposal_rows": frozenset(
+        {"tenant_id", "proposal_id", "n", "suggestion_id", "field_ref", "label", "before"}
+        | {"after", "cause", "citation_ids", "unsupported"}
+    ),
+    "proposal_decisions": frozenset(
+        {"tenant_id", "proposal_id", "decision", "reason_code", "note_sealed", "edits"}
+        | {"seen_version", "routed_to_user_id", "undoes_decision_id", "approval_grant_id"}
+        | {"decided_by"}
+    ),
     # Inbox match proposals (SPEC-033; TASK-065): the matcher's, as made.
     "inbox_match_runs": frozenset(
         {"id", "tenant_id", "engagement_id", "inbox_file_id", "agent_run_id", "prompt_ref"}
@@ -103,6 +134,8 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    "suggestions": frozenset({"status", "version"}),  # P-04-T05
+    "proposals": frozenset({"state", "routed_to_user_id", "version"}),  # P-04-T05
     # SPEC-027 (TASK-050): an engagement's agent paused or resumed.
     "engagement_agents": frozenset(
         {"paused_at", "paused_by", "reason", "updated_at", "self_paused_reason"}

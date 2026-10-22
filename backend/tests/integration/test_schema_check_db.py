@@ -1148,6 +1148,9 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "human_gates": frozenset({"state", "assignee_user_id", "due_on", "updated_at"}),
         # P-04-T04 (migration 0094): card status; checkpoint name, star and status; issues.
         "decision_cards": frozenset({"status"}),
+        # P-04-T05 (migration 0095): suggestion and proposal state.
+        "suggestions": frozenset({"status", "version"}),
+        "proposals": frozenset({"state", "routed_to_user_id", "version"}),
         "checkpoints": frozenset({"name", "starred", "status"}),
         "issues": frozenset(
             {"status", "assignee_user_id", "assignee_agent", "priority", "kind", "title_sealed"}
@@ -1332,6 +1335,9 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "checkpoint_diffs": "review_rows_immutable",  # 0094 (P-04-T04)
         "checkpoint_decisions": "review_rows_immutable",  # 0094 (P-04-T04)
         "issue_events": "review_rows_immutable",  # 0094 (P-04-T04)
+        "suggestion_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
+        "proposal_rows": "agent_decisions_immutable",  # 0095 (P-04-T05)
+        "proposal_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
         "ledger_snapshots": LEDGER_FUNCTION,
         "trial_balance_lines": LEDGER_FUNCTION,
         "review_decisions": "review_decisions_immutable",  # TASK-019 (ADR-004)

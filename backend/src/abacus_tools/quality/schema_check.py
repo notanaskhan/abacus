@@ -93,6 +93,9 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "checkpoint_diffs": "review_rows_immutable",  # 0094 (P-04-T04)
     "checkpoint_decisions": "review_rows_immutable",  # 0094 (P-04-T04)
     "issue_events": "review_rows_immutable",  # 0094 (P-04-T04)
+    "suggestion_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
+    "proposal_rows": "agent_decisions_immutable",  # 0095 (P-04-T05)
+    "proposal_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
     "evidence_versions": "evidence_versions_immutable",
     "review_decisions": "review_decisions_immutable",
     "eval_case_results": "eval_case_results_immutable",

@@ -111,6 +111,31 @@ class Seeder:
         finally:
             await conn.close()
 
+    async def as_actor(
+        self,
+        tenant_id: uuid.UUID,
+        actor: tuple[str, str],
+        sql: str,
+        *args: object,
+        at: str | None = None,
+    ) -> None:
+        """One statement in a transaction carrying a tenant, an actor and (for a synthetic firm)
+        a business time: what the database's actor and clock checks read (P-04-T05)."""
+        conn = await asyncpg.connect(self._dsn)
+        try:
+            async with conn.transaction():
+                settings = (
+                    ("app.tenant_id", str(tenant_id)),
+                    ("app.actor_kind", actor[0]),
+                    ("app.actor_id", actor[1]),
+                    ("app.now", at or ""),
+                )
+                for name, value in settings:
+                    await conn.execute("SELECT set_config($1, $2, true)", name, value)
+                await conn.execute(sql, *args)
+        finally:
+            await conn.close()
+
     async def firm(self) -> uuid.UUID:
         tenant_id = uuid.uuid4()
         await self.run(
