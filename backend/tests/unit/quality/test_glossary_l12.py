@@ -112,3 +112,36 @@ def test_p07_t03_import_stays_banned_outside_the_compound(tmp_path: Path) -> Non
     assert "import" in bp.glossary_bans()
     source = "class Import:\n    pass\n"
     assert "L12" in _ids(tmp_path, "src/abacus/modules/organisations/i.py", source)
+
+
+# P-08-T04: the P-08 tables and their classes, as P-08-T05, T10, T17 and T21 will name them.
+P08_TABLES = {
+    "portal_branding": "PortalBranding",
+    "portal_domains": "PortalDomain",
+    "portal_preferences": "PortalPreferences",
+    "sign_in_challenges": "SignInChallenge",
+    "trusted_devices": "TrustedDevice",
+    "mfa_backup_codes": "MfaBackupCode",
+    "secure_links": "SecureLink",
+}
+
+
+def test_p08_t04_the_new_code_names_are_glossary_rows() -> None:
+    text = bp.GLOSSARY.read_text(encoding="utf-8")
+    for table in P08_TABLES:
+        assert f"`{table}`" in text, table
+    for ui_term in ("| Client portal |", "Sign-in code", "| Two-step verification |"):
+        assert ui_term in text, ui_term
+
+
+def test_p08_t04_l12_accepts_the_p08_identifiers(tmp_path: Path) -> None:
+    source = "".join(
+        f'class {cls}:\n    __tablename__ = "{table}"\n' for table, cls in P08_TABLES.items()
+    )
+    assert "L12" not in _ids(tmp_path, "src/abacus/modules/portal/models.py", source)
+
+
+def test_p08_t04_link_stays_banned_outside_the_compound(tmp_path: Path) -> None:
+    assert bp.glossary_bans()["link"] == "fulfilment"
+    source = "class Link:\n    pass\n"
+    assert "L12" in _ids(tmp_path, "src/abacus/modules/communications/l.py", source)
