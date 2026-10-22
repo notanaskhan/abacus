@@ -2089,6 +2089,10 @@ export type EngagementIn = {
  */
 export type EngagementOut = {
     /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
      * Client Entity Id
      */
     client_entity_id: string;
@@ -2422,6 +2426,24 @@ export type ExclusionBody = {
      * Reason
      */
     reason: string;
+};
+
+/**
+ * Facet
+ */
+export type Facet = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * N
+     */
+    n: number;
+    /**
+     * Value
+     */
+    value: string;
 };
 
 /**
@@ -3987,6 +4009,40 @@ export type ListDoneOut = {
      * Name
      */
     name: string;
+};
+
+/**
+ * ListPage[WorkItemRowOut]
+ */
+export type ListPageWorkItemRowOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<WorkItemRowOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
 };
 
 /**
@@ -7935,6 +7991,44 @@ export type WorkItemOut = {
      * Phase
      */
     phase: string | null;
+    /**
+     * Status
+     */
+    status: 'active' | 'archived';
+};
+
+/**
+ * WorkItemRowOut
+ */
+export type WorkItemRowOut = {
+    /**
+     * Due On
+     */
+    due_on: string | null;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'assurance' | 'tax_return' | 'close' | 'notice' | 'advisory_project';
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Period End
+     */
+    period_end: string | null;
+    /**
+     * Period Start
+     */
+    period_start: string | null;
     /**
      * Status
      */
@@ -24189,3 +24283,71 @@ export type RemoveWallResponses = {
 };
 
 export type RemoveWallResponse = RemoveWallResponses[keyof RemoveWallResponses];
+
+export type ListWorkItemsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Engagement Id
+         */
+        engagement_id?: string | null;
+        /**
+         * Kind
+         */
+        kind?: string | null;
+        /**
+         * Status
+         */
+        status?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number | null;
+    };
+    url: '/v1/work-items';
+};
+
+export type ListWorkItemsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ListWorkItemsError = ListWorkItemsErrors[keyof ListWorkItemsErrors];
+
+export type ListWorkItemsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageWorkItemRowOut;
+};
+
+export type ListWorkItemsResponse = ListWorkItemsResponses[keyof ListWorkItemsResponses];

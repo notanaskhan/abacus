@@ -11,6 +11,11 @@ ENGAGEMENT_AGENT_ENABLED = Flag(
     kind="boolean",
     default="false",
 )
+ENGAGEMENTS_WORK_ITEMS_API = Flag(
+    name="engagements.work_items_api",
+    kind="boolean",
+    default="false",
+)
 FIELDWORK_ASSESSOR = Flag(
     name="fieldwork.assessor",
     kind="boolean",
@@ -67,6 +72,7 @@ UPLOADS_PROCESSING = Flag(
 
 FLAGS: dict[str, Flag] = {
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
+    "engagements.work_items_api": ENGAGEMENTS_WORK_ITEMS_API,
     "fieldwork.assessor": FIELDWORK_ASSESSOR,
     "fieldwork.procedures": FIELDWORK_PROCEDURES,
     "guidance.drafting": GUIDANCE_DRAFTING,

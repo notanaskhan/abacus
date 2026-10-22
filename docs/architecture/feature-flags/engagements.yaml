@@ -1,0 +1,11 @@
+# The engagements module's flags (ADR-089; P-39, F-03-T07). Compiled with every other module's
+# file into kernel/_flags.py by `make regenerate`.
+
+flags:
+  - name: engagements.work_items_api
+    description: The C1 work-item list (GET /v1/work-items, F-03-T31). On for local and test environments and for synthetic firms; off elsewhere until P-07 wires ENG-01 and ENG-02, then retired.
+    owner: ayushkbhatia
+    created: 2026-10-22
+    expires: 2027-01-20
+    kind: boolean
+    default: false

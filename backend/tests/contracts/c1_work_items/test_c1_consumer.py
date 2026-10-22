@@ -58,3 +58,26 @@ def test_c1_per_type_gate_policy_for_g1_to_g3() -> None:
     assert c1("ebp_audit") == ["G1", "G2", "G3"]  # attest: all three
     assert c1("cas_monthly_close") == ["G1", "G3"]  # non-attest CAS: no G2
     assert c1("notice_response") == ["G3"]
+
+
+# --- C1 live (F-03-T31) -------------------------------------------------------------------------
+
+
+def test_c1_live_the_work_item_list_is_the_list_envelope_with_counts() -> None:
+    page = SCHEMAS["ListPage_WorkItemRowOut_"]
+    props = cast(dict[str, object], page["properties"])
+    assert {"items", "next_cursor", "total", "total_capped", "counts"} <= set(props)
+    row = cast(dict[str, object], SCHEMAS["WorkItemRowOut"]["properties"])
+    assert {"id", "engagement_id", "kind", "name", "status"} <= set(row)
+    assert set(_enum("WorkItemRowOut", "kind")) == {
+        "assurance",
+        "tax_return",
+        "close",
+        "notice",
+        "advisory_project",
+    }
+
+
+def test_c1_live_the_projection_carries_allowed_actions() -> None:
+    props = cast(dict[str, object], SCHEMAS["EngagementOut"]["properties"])
+    assert "allowed_actions" in props
