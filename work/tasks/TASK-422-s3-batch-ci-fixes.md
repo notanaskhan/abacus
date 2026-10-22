@@ -53,3 +53,7 @@ The S3 batch skipped per-PR CI. Before the one CI run, the full unit, acceptance
     - `test_unit_of_work`: the agent case needs a person.
     - `status.test.ts`: P-04-T02 took the registry to 61 objects and 311 rows.
   - **Relay test:** `test_idempotency` relays until nothing is due, since the database is shared.
+- 2026-10-23: CI re-run 39854618072 passed 12 of 13 jobs. Integration shard 2 was cancelled at its 20-minute limit with no failures: `tests/durations.json` (Oct 19, `test_identity` at 50 s, now 250 s) had stopped balancing the shards. Fixes:
+  - Re-recorded the durations from a full local run (`abacus_tools.ci.shard --record`); the shards now balance at about 4.6 min each locally.
+  - Gave the integration job 30 minutes of headroom.
+  - `test_entitlements` built its dates with `date.today()` in the host zone, but the check uses the business date (Central). It failed whenever the two differ (UTC+4 at night), so it now uses `kernel.clock.today`.

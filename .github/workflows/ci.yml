@@ -108,7 +108,9 @@ jobs:
     name: stage 2 integration tests (${{ matrix.shard }}/5)
     needs: [changes]
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    # Headroom for a shard's slowest files (TASK-422); the split is balanced by
+    # backend/tests/durations.json, re-recorded when files grow.
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:

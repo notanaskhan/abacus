@@ -4,10 +4,11 @@ date; another firm's row is never read; the app writes none."""
 from __future__ import annotations
 
 import uuid
-from datetime import date, timedelta
+from datetime import timedelta
 
 import pytest
 
+from abacus.kernel.clock import today as clock_today
 from abacus.kernel.db import TenantContext, configure_engine
 from abacus.modules.platform.api import EntitlementRequired, check_entitlement, entitlement
 
@@ -38,7 +39,7 @@ _GRANT = (
 
 async def test_an_enabled_in_date_row_is_the_entitlement(seed: Seeder) -> None:
     firm, other = await _firm(seed), await _firm(seed)
-    today = date.today()
+    today = await clock_today(firm)  # the business date the check uses (Central), not the host's
     await seed.run(_GRANT, firm.tenant_id, "attest", True, today - timedelta(days=1), None)
     await seed.run(_GRANT, other.tenant_id, "insights", True, today, None)
     held = await entitlement(firm, "attest")
@@ -50,7 +51,7 @@ async def test_an_enabled_in_date_row_is_the_entitlement(seed: Seeder) -> None:
 
 async def test_switched_off_or_lapsed_is_no_entitlement(seed: Seeder) -> None:
     firm = await _firm(seed)
-    today = date.today()
+    today = await clock_today(firm)  # the business date the check uses (Central), not the host's
     await seed.run(_GRANT, firm.tenant_id, "attest", False, today, None)
     await seed.run(
         _GRANT,
