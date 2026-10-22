@@ -44,3 +44,34 @@ def test_t16_the_renamed_reminder_names_now_fail_where_they_lived(tmp_path: Path
     # allowance is gone and L12 refuses them everywhere.
     source = 'class Reminder:\n    __tablename__ = "reminders"\n'
     assert "L12" in _ids(tmp_path, "src/abacus/modules/agents/models.py", source)
+
+
+# P-06-T04: the P-06 tables and their classes, as P-06-T05, T18 and T20 will name them.
+P06_TABLES = {
+    "binder_recipients": "BinderRecipient",
+    "request_upload_intents": "RequestUploadIntent",
+    "screening_feedback": "ScreeningFeedback",
+    "evidence_object_keys": "EvidenceObjectKey",
+    "evidence_withdrawals": "EvidenceWithdrawal",
+}
+
+
+def test_p06_t04_the_new_code_names_are_glossary_rows() -> None:
+    text = bp.GLOSSARY.read_text(encoding="utf-8")
+    for table in P06_TABLES:
+        assert f"`{table}`" in text, table
+    assert 'UI **"Withdraw"**' in text
+
+
+def test_p06_t04_l12_accepts_the_p06_identifiers(tmp_path: Path) -> None:
+    source = "".join(
+        f'class {cls}:\n    __tablename__ = "{table}"\n' for table, cls in P06_TABLES.items()
+    )
+    source += "def withdraw_version() -> None:\n    pass\n"
+    assert "L12" not in _ids(tmp_path, "src/abacus/modules/requests/models.py", source)
+
+
+def test_p06_t04_upload_stays_banned_outside_the_compound(tmp_path: Path) -> None:
+    assert bp.glossary_bans()["upload"] == "evidence_version"
+    source = "class Upload:\n    pass\n"
+    assert "L12" in _ids(tmp_path, "src/abacus/modules/requests/u.py", source)
