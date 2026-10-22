@@ -54,6 +54,7 @@ Shadow runs are never shown (SPEC-036). Firm-level runs (no engagement) wait for
   - The Activity tab gains an "Agent runs" panel above the feed, with empty, loading, error and not-allowed states. When not allowed, the panel hides.
   - "Open trace" opens a 480px drawer showing the summary, the timeline, what it proposed, the agent's words and the records read.
 - **AC-6 Export.**
+  - Only the partner, manager or senior may export, and only after a recent sign-in (fresh MFA). Otherwise the screen offers "Confirm it's you".
   - The export is canonical JSON: sorted keys, UTC instants and rows in sequence, so the same trace gives the same bytes.
   - It carries a manifest: SHA-256, row count, renderer version and projection.
   - Each export is audited as `agent_run.trace_exported`, with the digest as a reference.

@@ -11,6 +11,9 @@ created: 2026-10-21
 updated: 2026-10-21
 ---
 
+## Plan keys
+P-11-T36 (related). Recorded in docs/plan/status/status-verified.csv (TASK-901).
+
 ## Plan
 - `evidence.repository.stale_pdf_uploads` (LIST_EXEMPT, system only) and `processing.stale_pdfs`: a firm's PDF uploads and inbox files with no reading by the current `EXTRACTOR_VERSION`.
 - `abacus_tools/reextract.py`: `python -m abacus_tools.reextract <tenant-id> [--dry-run] [--limit N]`. It runs the ordinary `process_upload` on each one:

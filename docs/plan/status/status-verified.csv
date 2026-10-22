@@ -40,3 +40,22 @@ A-06-T07,partial,"TASK-107: fieldwork/findings.py summarise() against materialit
 A-06-T11,partial,"TASK-107: findings.py raise_finding/findings_for, Findings tab, test_findings.py; no review issue, severity bands, agent producers"
 P-04-T18,partial,"TASK-100: fieldwork-only item_signoffs, sign_items, preparer != reviewer, test_flow.py; not the P-04 /v1/sign-offs service"
 P-08-T15,partial,"TASK-099: shell/PortalBrand.tsx firm name, ClientHome.tsx needs-you-first; no rail, household card or TodoCard registry"
+A-02-T07,partial,"TASK-322: ledger/trial_balances.py AdjustmentEntry/EntrySet/apply_entries/final_totals, AJE/RJE/Final layers, fieldwork adjustment source; no prior-snapshot pairing, display unit or leadsheet rollup service"
+A-02-T17,partial,"TASK-321: workpapers/ties.py tie_out.py, tie_out_checks (mig 0074), TB() cells, legacy/TieChecks.tsx; no rollforward kind or issue link"
+A-06-T09,partial,TASK-322: apply_entries per layer (unadjusted/aje/rje/final) and uncorrected_for; no methodology.classify_entry thresholds or proposal flow
+A-06-T25,partial,"TASK-345: ledger/mapping.py build_statements: draft statements from the mapped final TB (SPEC-316); no note templates, C4 lineage or TieOutWorkflow"
+A-03-T06,partial,"TASK-345: mig 0079 grouping_sets, grouping_set_versions (frozen on publish), groupings, fs_lines, fs_line_range_rules, mapping_sets, mapping_set_edits; parse_grouping_set import/publish"
+A-03-T08,partial,"TASK-345: rule_line number-range rules first-rule-wins, human edits (mapping_set.edit), mapping sign-offs; no prior-year match or tallies"
+A-03-T12,partial,TASK-345: legacy/TbMapping.tsx and GroupingSets.tsx on the legacy shell; not the AUD-31 MappingTable/Focus layout
+A-07-T07,partial,"TASK-332: mig 0077 eqr_concurrences (insert-only), completion_records; no eqr_reviews, checklist or digest cards"
+A-07-T09,partial,TASK-332: mig 0077 archives with Merkle seal; no documentation_completion_date clock
+A-07-T15,partial,TASK-332: G6-G9 providers in assurance registered via register_gate_provider; not table-driven per engagement type
+A-07-T30,partial,"TASK-332: completion_routes release (releases table, lock_engagement); no Idempotency-Key, fresh MFA or /v1/audits path"
+A-07-T37,partial,TASK-332: archive lock and Merkle seal (lock_archive); no worker-batch workflow or 9-of-9 checklist
+Q-02-T45,partial,TASK-461: GET /v1/engagements/{id}/agent-runs with the legacy state map (agents/runs_routes.py); no GET /v1/agent-runs/{id}
+P-09-T07,partial,"TASK-461: engagement run list read model, visible() on agent_run.read, shadow excluded; no projection by level, items feed or allowed_actions"
+P-09-T08,partial,"TASK-461: GET /v1/agent-runs/{id}/trace: summary, timeline, records read in one response; no steps/records-read/writes sub-resources or metadata projection"
+P-09-T10,partial,"TASK-461: legacy/AgentRuns.tsx TraceDrawer 480 with summary, timeline, records read, Export JSON; no ?ov= registration, Segmented tabs or Copy link"
+P-09-T11,partial,"TASK-461, TASK-901: POST /v1/agent-runs/{id}/trace-exports canonical JSON + SHA-256 manifest, audited agent_run.trace_exported, fresh MFA; PDF not built (needs C11 run_trace_v1 template)"
+K-04-T33,partial,"TASK-460: assurance/dashboard.py: gates, tiles from progress sources, sign-offs, requests, next-up via could() (SPEC-317, dashboard.read); no lenses, C14 provider, basis strings or health rule"
+K-04-T40,partial,"TASK-460: legacy/EngagementDashboard.tsx tab; not the ENG-12 T21 record variant, lenses or milestones"

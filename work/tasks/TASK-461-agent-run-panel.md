@@ -11,6 +11,9 @@ created: 2026-10-22
 updated: 2026-10-22
 ---
 
+## Plan keys
+Q-02-T45, P-09-T07, P-09-T08, P-09-T10, P-09-T11 (partial). Recorded in docs/plan/status/status-verified.csv (TASK-901).
+
 ## Plan
 - **ai_gateway:** `attempts.py`, with `attempts_for(tenant, run_id)` over `usage_records`.
 - **Evidence:** `decisions_on_screenings`, plus the `decisions_for_screenings` repository read (LIST_EXEMPT).

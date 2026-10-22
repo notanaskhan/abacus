@@ -11,6 +11,9 @@ created: 2026-10-22
 updated: 2026-10-22
 ---
 
+## Plan keys
+K-04-T33, K-04-T40 (partial). Recorded in docs/plan/status/status-verified.csv (TASK-901).
+
 ## Plan
 - **Engagements:** the `register_progress_source` / `progress_of` slot.
 - **Fieldwork:** the `progress` source, plus `engagement_progress_rows` (LIST_EXEMPT).

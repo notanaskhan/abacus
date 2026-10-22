@@ -11,6 +11,9 @@ created: 2026-10-21
 updated: 2026-10-21
 ---
 
+## Plan keys
+P-04-T18, P-04-T21 (partial; DEC-134 makes these the tables C3 extends). Recorded in docs/plan/status/status-verified.csv (TASK-901).
+
 ## Plan
 - **Migration 0076:** `reviewable_notes` and `reviewable_note_events`. Rollback is the downgrade.
 - **Review:**

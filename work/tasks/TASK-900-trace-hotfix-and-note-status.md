@@ -11,6 +11,9 @@ created: 2026-10-22
 updated: 2026-10-22
 ---
 
+## Plan keys
+P-09-T08, P-04-T21 (partial). Recorded in docs/plan/status/status-verified.csv (TASK-901).
+
 ## Plan
 - **Trace hotfix:**
   - classify `RunTraceOut.run`, `rows`, `records_read` and `output_counts` (`test_ac20_every_abacus_model_field_is_classified`);

@@ -41,7 +41,7 @@ export const engScreens = {
   "ENG-12": {
     name: "Engagement dashboard — Granite Peak FY2026 Financial Statement Audit",
     status: "planned",
-    path: null,
+    path: "/engagements/$engagementId/dashboard", // legacy EngagementDashboard (SPEC-317)
   },
   "ENG-13": { name: "Roll forward — Tessellate SOC 2 Type 2", status: "planned", path: null },
   "ENG-14": {

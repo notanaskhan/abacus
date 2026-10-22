@@ -21,7 +21,7 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
-import { isForbidden } from "../shell/mfa";
+import { ConfirmItsYou, isForbidden } from "../shell/mfa";
 
 // SPEC-318 (TASK-461): a run's state in the status words, never a confidence figure (I-12).
 export const STATE: Record<AgentRunOut["state"], { label: string; tone: Tone }> = {
@@ -131,8 +131,12 @@ export function TraceDrawer({
 }): JSX.Element {
   const fmt = useFormat();
   const trace = useQuery({ ...agentRunTraceOptions({ path: { run_id: runId } }), retry: false });
+  const [confirm, setConfirm] = useState(false);
   const exp = useMutation({
     ...exportRunTraceMutation(),
+    onError: (error) => {
+      if (isForbidden(error)) setConfirm(true);
+    },
     onSuccess: (out) => {
       download(out.filename, out.content);
     },
@@ -166,7 +170,10 @@ export function TraceDrawer({
     >
       {trace.isPending && <Skeleton className="h-48" />}
       {trace.isError && <Alert title="Couldn't load the trace">{errorMessage(trace.error)}</Alert>}
-      {exp.isError && <Alert title="Couldn't export the trace">{errorMessage(exp.error)}</Alert>}
+      {exp.isError && !confirm && (
+        <Alert title="Couldn't export the trace">{errorMessage(exp.error)}</Alert>
+      )}
+      <ConfirmItsYou open={confirm} onOpenChange={setConfirm} />
       {t && (
         <>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-[13px]">

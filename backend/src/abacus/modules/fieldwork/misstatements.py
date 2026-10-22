@@ -222,7 +222,7 @@ BAND_WORDS: Final = {
 }
 
 
-# --- Progress for the engagement dashboard (SPEC-317; TASK-346) -------------------------------
+# --- Progress for the engagement dashboard (SPEC-317; TASK-460) -------------------------------
 
 
 async def progress(tenant: TenantContext, engagement_id: UUID) -> list[ProgressFact]:

@@ -11,6 +11,9 @@ created: 2026-10-21
 updated: 2026-10-21
 ---
 
+## Plan keys
+A-02-T07, A-06-T09 (partial). Recorded in docs/plan/status/status-verified.csv (TASK-901).
+
 ## Plan
 - **Ledger:**
   - `AdjustmentEntry`, `EntrySet` and the typed `AdjustmentSource` slot;

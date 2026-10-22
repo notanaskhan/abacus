@@ -27,7 +27,7 @@ export const wbScreens = {
   "WB-09": {
     name: "Run trace drawer · Season Progress Reporter, Sep 14",
     status: "planned",
-    path: null,
+    path: "/engagements/$engagementId/activity", // legacy TraceDrawer on Activity (SPEC-318)
   },
   "WB-10": { name: "Connect · integrations catalogue", status: "planned", path: null },
   "WB-11": {
