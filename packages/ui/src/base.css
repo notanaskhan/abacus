@@ -73,6 +73,30 @@
   }
 }
 
+/* Forced colors drop backgrounds and shadows, so a pane, nested card, menu, pill or dialog would lose its edge
+   (plan 04 section 3.8): each gets a 1px CanvasText line. It is an inset outline, not a border, so
+   nothing moves. Status discs keep their colours: the colour is their meaning, and they carry a
+   label too (F-05-T24). */
+@media (forced-colors: active) {
+  :where(
+    .rounded-pane,
+    .rounded-nested,
+    .rounded-dialog,
+    .rounded-menu,
+    .rounded-pill,
+    [role="dialog"],
+    [role="alertdialog"],
+    [data-toast]
+  ) {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+  [role="img"].rounded-pill,
+  [role="img"] .rounded-pill {
+    forced-color-adjust: none;
+  }
+}
+
 /* A specimen's forced focus (F-05-T14, `forceState="focus"`): the same outline as :focus-visible,
    set by `data-force="focus"`, so the gallery draws focus without moving it. */
 @layer base {
