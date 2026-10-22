@@ -27,7 +27,7 @@ const PERSON = { kind: "human", name: "Hannah Leclerc" } as const;
 // fallbacks, every active state, the held states, the PortalToolbar, the RecordHeader in all four
 // variants and the seven sync states, the Tabsbar at 50, 44 and 60, Pane and PaneHeader, the
 // Timeline, and the AppShell framed for the firm and the portal. The names are the handoff's
-// (Brightwater Hale, Ridgeline Property Partners); nothing here is data a screen may use.
+// (Brightwater Hale, Ridgeline Property Partners, LP); nothing here is data a screen may use.
 
 const NAV = guards.nav.map((label) => ({ label }));
 const FIRM = {

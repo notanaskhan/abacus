@@ -8,7 +8,8 @@ import { slugOf } from "./people";
 
 export const SINK_DOMAIN = "sink.brightwaterhale.test";
 
-export type PortalEngagement = "northwind" | "granite-peak" | "feld";
+/** `whitley` has no engagement in the seed: Dana Whitley exists for T15a sign-in only (F-05-T33). */
+export type PortalEngagement = "northwind" | "granite-peak" | "feld" | "whitley";
 
 export interface PortalUser {
   slug: string;
@@ -60,6 +61,8 @@ const ROWS: readonly Row[] = [
   ["Luis Ferrante", "Granite Peak Outdoor Supply, Inc.", "CFO", "granite-peak", "client_admin"],
   ["Claire Feld", "Jonah & Claire Feld", "Primary portal user", "feld", "client_admin"],
   ["Jonah Feld", "Jonah & Claire Feld", "Household", "feld", "client_contributor"],
+  // F-05-T33: TPL-15's T15a signs in as Dana Whitley; F-04's persona list had no one for it.
+  ["Dana Whitley", "Marcus & Dana Whitley", "Primary portal user", "whitley", "client_admin"],
 ];
 
 export const PORTAL_USERS: readonly PortalUser[] = ROWS.map(

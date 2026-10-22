@@ -32,7 +32,7 @@ const PERSON = { kind: "human", name: "Hannah Leclerc" } as const;
 // layer is drawn twice: held in place (`forceState="open"`, no scrim, no trap, so the page stays a
 // page) inside a frame the size of the artboard, and live, from a button, as the real layer with
 // its scrim, trap, Escape and focus return. Sample names are the handoff's: Hannah Leclerc,
-// Priya Raman, Kevin Osei, Elena Ruiz, Ridgeline Property Partners, LP.
+// Priya Raman, Kevin Osei, Claire Feld, Ridgeline Property Partners, LP.
 
 /** A frame the held layers sit in: a quiet window the size of the artboard's area. */
 function Stage({
@@ -294,7 +294,7 @@ export function DialogSpecimen(): JSX.Element {
           ) : (
             <Fieldset flush className="mb-0">
               <ValueRow kind="info" label="Client contact">
-                Elena Ruiz
+                Claire Feld
               </ValueRow>
               <ValueRow kind="info" label="Due">
                 Sep 30, 2026

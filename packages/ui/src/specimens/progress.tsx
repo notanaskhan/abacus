@@ -105,13 +105,13 @@ export function ProgressBarSpecimen(): JSX.Element {
 export function RatioStatSpecimen(): JSX.Element {
   return (
     <Sheet title="RatioStat" meta="Cells 12 14 · value 15 · caption 12 ink-3 · whole percent">
-      <Row name="Rail stat row" meaning="progress(): 17% (4 / 24)">
+      <Row name="Rail stat row" meaning="progress(): 46% (11 / 24), the seed's Northwind PBC list">
         <RatioStat
           className="w-[520px]"
           items={[
-            { done: 4, total: 24, caption: "Accounts Reconciled" },
-            { done: 13, total: 20, caption: "Documents Received" },
-            { done: 9, total: 13, caption: "Steps Complete" },
+            { done: 11, total: 24, caption: "Northwind Requests Received" },
+            { done: 5, total: 7, caption: "Feld Binder Received" },
+            { done: 0, total: 41, caption: "Granite Peak Requests Sent" },
           ]}
         />
       </Row>

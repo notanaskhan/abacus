@@ -2,88 +2,61 @@ import type { JSX } from "react";
 import { DataGrid } from "../data/data-grid";
 import type { TableColumn, TableRow } from "../data/types";
 import { Sheet } from "./frame";
+import { NORTHWIND_FIGURES, NORTHWIND_PLAN } from "./seed-figures";
 
-// C-01 Data Kit (F-05-T27): the ledger grammar (the kit's bank-rec sample) and the statement
-// grammar (its Schedule L), on the E4 engine. Totals are the sample's own figures, as a server
-// would send them; the grid adds nothing up.
+// C-01 Data Kit (F-05-T27, data from F-05-T33): the ledger and statement grammars on the E4
+// engine, drawing the Brightwater Hale seed's Northwind PY2025 figures (seed-figures.ts), never the
+// kit's sample data. Totals are the seed's own figures, as a server would send them; the grid adds
+// nothing up, and the app's seed test checks that the ledger's footing holds.
 
 const LEDGER_COLUMNS: TableColumn[] = [
-  { key: "date", header: "Date", type: "text", width: 76 },
   { key: "item", header: "Item", type: "label" },
-  { key: "ref", header: "Reference", type: "text", width: 176 },
-  { key: "amount", header: "Amount", width: 132 },
+  { key: "amount", header: "Amount", width: 160 },
 ];
 
 const LEDGER_ROWS: TableRow[] = [
   {
-    id: "bal",
-    label: "Balance per bank",
-    cells: { date: { value: "Aug 31" }, amount: { value: "52410.07" } },
+    id: "unadjusted",
+    label: "Net assets available for benefits, unadjusted",
+    cells: { amount: { value: NORTHWIND_FIGURES.netAssetsUnadjusted } },
   },
-  { id: "out", kind: "group", label: "Outstanding checks", cells: {} },
+  { id: "adj", kind: "group", label: "Adjustments", cells: {} },
   {
-    id: "c1",
-    label: "Check 2214 · Alpine Supply",
+    id: "receivable",
+    label: "Contributions receivable",
     indent: 1,
-    cells: { date: { value: "Aug 28" }, ref: { value: "2214" }, amount: { value: "-810" } },
+    cells: { amount: { value: NORTHWIND_FIGURES.contributionsReceivable } },
   },
   {
-    id: "c2",
-    label: "Check 2215 · Summit Freight",
-    indent: 1,
-    cells: { date: { value: "Aug 29" }, ref: { value: "2215" }, amount: { value: "-2140.5" } },
-  },
-  {
-    id: "c3",
-    label: "Check 2217 · Payroll",
-    indent: 1,
-    cells: { date: { value: "Aug 30" }, ref: { value: "2217" }, amount: { value: "-1249.5" } },
-  },
-  {
-    id: "adj",
+    id: "adjusted",
     kind: "total",
-    label: "Adjusted bank balance",
-    cells: { amount: { value: "48210.07" } },
+    label: "Net assets available for benefits",
+    cells: { amount: { value: NORTHWIND_FIGURES.netAssetsAvailable20251231 } },
   },
 ];
 
 const STATEMENT_COLUMNS: TableColumn[] = [
-  { key: "line", header: "Ridgeline Property Partners, LP", entity: true },
-  { key: "tax", header: "Tax", width: 120 },
-  { key: "book", header: "704(b)", width: 120 },
+  { key: "line", header: NORTHWIND_PLAN, entity: true },
+  { key: "end", header: "Dec 31, 2025", width: 140 },
+  { key: "start", header: "Jan 1, 2025", width: 140 },
 ];
 
 const STATEMENT_ROWS: TableRow[] = [
-  { id: "a", kind: "group", label: "Assets", cells: {} },
+  { id: "g", kind: "group", label: "Statement of net assets available for benefits", cells: {} },
   {
-    id: "cash",
-    label: "Cash",
+    id: "receivable",
+    label: "Contributions receivable",
     indent: 1,
-    cells: { tax: { value: "412880" }, book: { value: "412880" } },
+    cells: { end: { value: NORTHWIND_FIGURES.contributionsReceivable }, start: { value: null } },
   },
   {
-    id: "bld",
-    label: "Buildings and other depreciable assets",
-    indent: 1,
-    cells: { tax: { value: "9840000" }, book: { value: "9840000" } },
-  },
-  {
-    id: "dep",
-    label: "Less accumulated depreciation",
-    indent: 1,
-    cells: { tax: { value: "-1486212" }, book: { value: "-1290400" } },
-  },
-  {
-    id: "oth",
-    label: "Other assets",
-    indent: 1,
-    cells: { tax: { value: "0" }, book: { value: "0" } },
-  },
-  {
-    id: "ta",
+    id: "net",
     kind: "grand",
-    label: "Total assets",
-    cells: { tax: { value: "8766668" }, book: { value: "8962480" } },
+    label: "Net assets available for benefits",
+    cells: {
+      end: { value: NORTHWIND_FIGURES.netAssetsAvailable20251231 },
+      start: { value: NORTHWIND_FIGURES.netAssetsAvailable20250101 },
+    },
   },
 ];
 
@@ -103,7 +76,7 @@ export function StatementGridSpecimen(): JSX.Element {
   return (
     <Sheet title="Statement grammar" meta="th 30 · td 26 · whole dollars · — for zero">
       <DataGrid
-        label="Schedule L"
+        label="Northwind statement of net assets"
         grammar="statement"
         columns={STATEMENT_COLUMNS}
         rows={STATEMENT_ROWS}
