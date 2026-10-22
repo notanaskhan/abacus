@@ -152,7 +152,12 @@ const DOCUMENTS: readonly (readonly [string, string])[] = [
   ["2025 Form 5498-SA From HealthEquity", "Requested Jul 5"],
 ];
 const FILES: readonly (readonly [string, string, string, string])[] = [
-  ["2025 Composite 1099 — Brokerage.pdf", "Whitcombe › 2025 Binder › Income", "Sep 15", "1.2 MB"],
+  [
+    "2025 Composite 1099 — Brokerage.pdf",
+    "Jonah & Claire Feld › 2025 Binder › Income",
+    "Sep 15",
+    "1.2 MB",
+  ],
   [
     "Harborline Net Trust Assets 12-31-2025.pdf",
     "Northwind 401(k) › Investments",
@@ -336,11 +341,10 @@ function ChatRows(): JSX.Element {
   return (
     <div className="flex flex-col">
       <p className="mt-[16px] mr-[16px] max-w-[70%] self-end rounded-dialog bg-espresso px-[14px] py-[10px] text-chat text-on-dark">
-        Show me where every 1065 and 1120-S stands against the September 15 extended deadline.
+        How many TY2025 returns does each office have?
       </p>
       <p className="mx-[16px] mt-[11px] mb-[16px] rounded-dialog bg-card px-[16px] pt-[13px] pb-[14px] text-chat shadow-e2">
-        Discovery is done. 86 of the 119 returns for period 2025 are 1065 or 1120-S, and 52 of them
-        are on extension.
+        There are 224 returns for TY2025: 98 in Chicago, 64 in Denver and 62 in New York.
       </p>
     </div>
   );

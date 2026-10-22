@@ -272,3 +272,6 @@ export const SPECIMENS: readonly Specimen[] = [
 export function specimenById(id: string): Specimen | undefined {
   return SPECIMENS.find((s) => s.id === id);
 }
+
+// The seed names and figures specimens draw (F-05-T33), for the app's footing test.
+export * as SPECIMEN_SEED from "./seed-figures";
