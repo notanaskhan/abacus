@@ -30,3 +30,4 @@ five kinds." (ADR-145, P-06)
 
 ## Progress log
 - 2026-10-22: built. Tests run in the batch's end-of-run CI (S3 batch rule).
+- 2026-10-22: fixed `tests/integration/test_visible_scope_kinds.py`. `_listed` passed an unbound column to `visible_scope`, which correlated with the wall subquery ("more than one row returned by a subquery"), and 5 of the 9 cases failed. The columns are now bound to the table, and all 9 pass. Found by F-03-T33. Product code was unaffected: repositories pass table columns.
