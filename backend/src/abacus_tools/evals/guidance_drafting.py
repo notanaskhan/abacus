@@ -19,7 +19,6 @@ import statistics
 import uuid
 from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass, field
-from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Annotated, Final, cast
@@ -39,6 +38,7 @@ from abacus.ai_gateway import (
     model_id,
 )
 from abacus.ai_gateway.routes import configure_route, route_provider
+from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext
 from abacus.kernel.logging import get_logger
 from abacus.modules.agents.api import DRAFTER, create_draft_run, draft, load_agent_context, spec
@@ -350,7 +350,7 @@ async def evaluate(
     stack: Stack, world: Seeded, suite: DraftSuite, tier: Tier, route: str, out: Path
 ) -> dict[str, object]:
     validate(suite)
-    started = datetime.now(UTC)
+    started = system_now()
     attempts: list[tuple[DraftCase, Seen]] = []
     total, aborted = Decimal(0), False
     budget = spec(DRAFTER).limits.max_cost_usd + Decimal("0.01")
@@ -381,7 +381,7 @@ async def evaluate(
         "metrics": metrics,
         "total_cost_usd": str(total),
         "started_at": started.isoformat(),
-        "finished_at": datetime.now(UTC).isoformat(),
+        "finished_at": system_now().isoformat(),
         "attempts": [
             {
                 **{k: (str(v) if isinstance(v, Decimal) else v) for k, v in asdict(s).items()},

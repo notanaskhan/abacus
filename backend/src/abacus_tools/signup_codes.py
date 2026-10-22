@@ -14,10 +14,11 @@ import asyncio
 import hashlib
 import secrets
 import sys
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 
 import asyncpg
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 
 
@@ -40,7 +41,7 @@ async def issue(url: str, note: str, days: int) -> str:
             "INSERT INTO signup_codes (code_hash, note, expires_at) VALUES ($1, $2, $3)",
             hashlib.sha256(code.encode()).hexdigest(),
             note,
-            datetime.now(UTC) + timedelta(days=days),
+            system_now() + timedelta(days=days),
         )
     finally:
         await connection.close()
@@ -84,7 +85,7 @@ def main(argv: list[str] | None = None) -> int:
         state = (
             "used"
             if row["used_at"]
-            else ("expired" if row["expires_at"] < datetime.now(UTC) else "open")
+            else ("expired" if row["expires_at"] < system_now() else "open")
         )
         print(f"{row['created_at']:%Y-%m-%d}  {state:8}  {row['note']}")
     return 0

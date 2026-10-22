@@ -20,7 +20,6 @@ import os
 import re
 import secrets
 import sys
-import time
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import parse_qs, urlencode
@@ -31,6 +30,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus_tools.fakes.identity import AUDIENCE, ISSUER, FakeIdentityProvider
 from abacus_tools.local.worktree_env import port_offset
@@ -176,7 +176,10 @@ def create_app(idp: FakeIdentityProvider | None = None) -> FastAPI:
             return _error(400, "invalid_request")
         code = secrets.token_urlsafe(32)
         grants[code] = _Grant(
-            subject, redirect_uri, form.get("code_challenge", ""), time.time() + CODE_SECONDS
+            subject,
+            redirect_uri,
+            form.get("code_challenge", ""),
+            system_now().timestamp() + CODE_SECONDS,
         )
         query = urlencode({"code": code, "state": form.get("state", "")})
         return RedirectResponse(f"{redirect_uri}?{query}", status_code=303)
@@ -184,7 +187,7 @@ def create_app(idp: FakeIdentityProvider | None = None) -> FastAPI:
     @app.post("/token")
     async def token(request: Request) -> JSONResponse:
         form = {k: v[0] for k, v in parse_qs((await request.body()).decode()).items()}
-        now = time.time()
+        now = system_now().timestamp()
         for expired in [code for code, g in grants.items() if g.expires < now]:
             del grants[expired]
         grant = grants.pop(form.get("code", ""), None)  # single use, even when it fails
@@ -194,7 +197,7 @@ def create_app(idp: FakeIdentityProvider | None = None) -> FastAPI:
             or not _VERIFIER.fullmatch(verifier)
             or form.get("client_id") != CLIENT_ID
             or grant is None
-            or grant.expires < time.time()
+            or grant.expires < system_now().timestamp()
             or form.get("redirect_uri") != grant.redirect_uri
             or _s256(verifier) != grant.challenge
         ):

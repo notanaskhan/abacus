@@ -17,6 +17,7 @@ from pathlib import Path
 
 import asyncpg
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 
 REPORTS = Path(__file__).resolve().parents[3] / "docs" / "operations" / "access-reviews"
@@ -55,7 +56,7 @@ async def review(url: str, quarter: str) -> dict[str, object]:
     sessions = [{k: _plain(v) for k, v in dict(r).items()} for r in rows]
     return {
         "quarter": quarter,
-        "generated_at": datetime.now(UTC).isoformat(),
+        "generated_at": system_now().isoformat(),
         "sessions": sessions,
         "totals": {
             "sessions": len(sessions),

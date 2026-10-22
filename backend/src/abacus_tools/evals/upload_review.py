@@ -21,7 +21,7 @@ import time
 import uuid
 from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass, field
-from datetime import UTC, date, datetime
+from datetime import date
 from decimal import Decimal
 from pathlib import Path
 from typing import Annotated, Final, cast
@@ -39,6 +39,7 @@ from abacus.ai_gateway import (
     model_id,
 )
 from abacus.ai_gateway.routes import configure_route, route_provider
+from abacus.kernel.clock import system_now
 from abacus.kernel.logging import get_logger
 from abacus.modules.agents.api import REVIEWER, create_review_run, load_agent_context, review, spec
 from abacus.modules.evidence.api import (
@@ -512,7 +513,7 @@ async def evaluate(
 ) -> dict[str, object]:
     """Every case (key cases `repeats` times), stopping before the cost limit; writes a report."""
     validate(suite)
-    started = datetime.now(UTC)
+    started = system_now()
     attempts: list[tuple[ReviewCase, Seen]] = []
     total, aborted = Decimal(0), False
     budget = spec(REVIEWER).limits.max_cost_usd
@@ -542,7 +543,7 @@ async def evaluate(
         "metrics": metrics,
         "total_cost_usd": str(total),
         "started_at": started.isoformat(),
-        "finished_at": datetime.now(UTC).isoformat(),
+        "finished_at": system_now().isoformat(),
         "attempts": [
             {
                 **{k: (str(v) if isinstance(v, Decimal) else v) for k, v in asdict(s).items()},
