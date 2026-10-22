@@ -65,13 +65,15 @@ def test_the_checked_in_manifest_loads() -> None:
     assert len(entries) >= 10
     assert {e.tier for e in entries} <= {"A", "B", "C", "D"}
     assert all(e.sha256 != "0" * 64 for e in entries), "pinned: run crop_handoff --pin"
-    assert read_version() == crop_handoff.VERSION_FILE.read_text(encoding="utf-8").strip()
+    # F-04-T14 pins the screen index's hash after the version: `<version> sha256:<hex>`.
+    assert read_version() == crop_handoff.VERSION_FILE.read_text(encoding="utf-8").split()[0]
 
 
 def test_the_manifest_names_gallery_specimens_that_exist() -> None:
     index = (crop_handoff.REPO / "packages/ui/src/specimens/index.ts").read_text(encoding="utf-8")
     ids = set(re.findall(r'\bid: "([a-z0-9-]+)"', index))
-    missing = {e.specimen for e in load_manifest()} - ids
+    # A screen baseline (P-01-T02) renders its screen route, not a gallery specimen.
+    missing = {e.specimen for e in load_manifest() if e.page is None} - ids
     assert missing == set()
 
 
@@ -146,6 +148,8 @@ def test_a_version_is_one_token(tmp_path: Path) -> None:
     path.write_text("two words", encoding="utf-8")
     with pytest.raises(ManifestError, match="one token"):
         read_version(path)
+    path.write_text("2026-10-21 sha256:" + "a" * 64 + "\n", encoding="utf-8")
+    assert read_version(path) == "2026-10-21"
 
 
 def test_baseline_files_have_no_dots_in_the_stem() -> None:

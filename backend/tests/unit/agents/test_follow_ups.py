@@ -9,6 +9,7 @@ from typing import cast
 
 import pytest
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext
 from abacus.modules.agents import follow_ups
 from abacus.modules.agents.follow_ups import (
@@ -138,6 +139,11 @@ class _World:
         monkeypatch.setattr(follow_ups, "client_admins", admins)
         monkeypatch.setattr(follow_ups, "_draft", draft)
         monkeypatch.setattr(follow_ups, "_digest", digest)
+
+        async def business_now(_tenant: object = None) -> datetime:
+            return system_now()  # F-04-T11: business time; no tenant clock in a unit test
+
+        monkeypatch.setattr(follow_ups, "now", business_now)
 
 
 async def _tick(world: _World) -> follow_ups.Outcome:

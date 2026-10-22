@@ -19,6 +19,7 @@ from .agent_tests.support import Seeder
 from .conftest import MigratedDatabase
 
 pytestmark = pytest.mark.asyncio
+ATTEMPT = "retry-publish-0001"  # an Idempotency-Key value (not a credential)
 
 
 class ProbeSent(DomainEvent):
@@ -38,17 +39,13 @@ async def test_a_retry_replays_and_a_different_request_is_refused(
         return 200, {"binder_id": "b-1", "status": "published"}
 
     body = {"binder_id": "b-1"}
-    first = await idempotent(
-        ctx, route="binder.publish", key="key-00000001", body=body, run=publish
-    )
-    again = await idempotent(
-        ctx, route="binder.publish", key="key-00000001", body=body, run=publish
-    )
+    first = await idempotent(ctx, route="binder.publish", key=ATTEMPT, body=body, run=publish)
+    again = await idempotent(ctx, route="binder.publish", key=ATTEMPT, body=body, run=publish)
     assert (first.replayed, again.replayed) == (False, True)
     assert again.body == first.body and sends == [1]
     with pytest.raises(IdempotencyKeyReused):
         await idempotent(
-            ctx, route="binder.publish", key="key-00000001", body={"binder_id": "b-2"}, run=publish
+            ctx, route="binder.publish", key=ATTEMPT, body={"binder_id": "b-2"}, run=publish
         )
     assert sends == [1]
 

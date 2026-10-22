@@ -36,7 +36,7 @@ class Office:
 class FirmFacts:
     region: str
     time_zone: str
-    seats_total: int
+    seats_total: int | None  # None for a sandbox: it holds no seats of its own
     is_sandbox: bool
     sandbox_of: UUID | None
 
@@ -74,7 +74,7 @@ async def firm_facts(tenant: TenantContext) -> FirmFacts | None:
     return FirmFacts(
         region=str(row.region),
         time_zone=str(row.time_zone),
-        seats_total=int(row.seats),
+        seats_total=None if sandbox_of is not None else int(row.seats),
         is_sandbox=sandbox_of is not None,
         sandbox_of=sandbox_of,
     )

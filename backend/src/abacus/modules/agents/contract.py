@@ -131,7 +131,7 @@ class ProposalDecisionOut(BaseModel):
     undo_until: Annotated[datetime | None, classified("internal")]
 
 
-class ProposalOut(BaseModel):
+class AgentProposalOut(BaseModel):
     """`GET /v1/proposals/{ref}`: the C3 projection SHL-10 renders, for a generic proposal or a
     typed adapter's (screener, upload reviewer, matcher)."""
 
@@ -207,8 +207,10 @@ class UndoProposalIn(BaseModel):
 proposals_router = AbacusRouter(prefix="/v1/proposals", tags=["agents"])
 
 
-@proposals_router.get("/{ref}", action="proposal.read", response_model=ProposalOut, errors=(501,))
-async def proposal_route(ref: ProposalRef, ctx: Ctx) -> ProposalOut:
+@proposals_router.get(
+    "/{ref}", action="proposal.read", response_model=AgentProposalOut, errors=(501,)
+)
+async def agent_proposal_route(ref: ProposalRef, ctx: Ctx) -> AgentProposalOut:
     """SHL-10 a to g: the proposal projection with the caller's allowed actions."""
     await _stub(ctx)
 
@@ -216,12 +218,12 @@ async def proposal_route(ref: ProposalRef, ctx: Ctx) -> ProposalOut:
 @proposals_router.post(
     "/{proposal_id}/approve",
     action="proposal.approve",
-    response_model=ProposalOut,
+    response_model=AgentProposalOut,
     errors=(409, 501),
 )
 async def proposal_approve_route(
     proposal_id: UUID, body: ApproveProposalIn, ctx: Ctx
-) -> ProposalOut:
+) -> AgentProposalOut:
     """Approve, or approve with edits (human only). Over the viewer's limit: 403 with the
     approver to route to."""
     await _stub(ctx)
@@ -230,12 +232,12 @@ async def proposal_approve_route(
 @proposals_router.post(
     "/{proposal_id}/reject",
     action="proposal.reject",
-    response_model=ProposalOut,
+    response_model=AgentProposalOut,
     errors=(409, 501),
 )
 async def proposal_reject_route(
     proposal_id: UUID, body: RejectProposalIn, ctx: Ctx
-) -> ProposalOut:
+) -> AgentProposalOut:
     """SHL-10 f: reject with a reason (human only)."""
     await _stub(ctx)
 
@@ -243,12 +245,12 @@ async def proposal_reject_route(
 @proposals_router.post(
     "/{proposal_id}/route",
     action="proposal.route",
-    response_model=ProposalOut,
+    response_model=AgentProposalOut,
     errors=(409, 501),
 )
 async def proposal_route_to_route(
     proposal_id: UUID, body: RouteProposalIn, ctx: Ctx
-) -> ProposalOut:
+) -> AgentProposalOut:
     """SHL-10 d: send it to a named approver ("Send to Priya Raman for approval")."""
     await _stub(ctx)
 
@@ -256,10 +258,12 @@ async def proposal_route_to_route(
 @proposals_router.post(
     "/{proposal_id}/follow-up",
     action="proposal.follow_up",
-    response_model=ProposalOut,
+    response_model=AgentProposalOut,
     errors=(409, 501),
 )
-async def proposal_follow_up_route(proposal_id: UUID, body: FollowUpIn, ctx: Ctx) -> ProposalOut:
+async def proposal_follow_up_route(
+    proposal_id: UUID, body: FollowUpIn, ctx: Ctx
+) -> AgentProposalOut:
     """ "Ask follow-up": a follow-up recorded for the originating thread or run."""
     await _stub(ctx)
 
@@ -267,10 +271,12 @@ async def proposal_follow_up_route(proposal_id: UUID, body: FollowUpIn, ctx: Ctx
 @proposals_router.post(
     "/{proposal_id}/undo",
     action="proposal.undo",
-    response_model=ProposalOut,
+    response_model=AgentProposalOut,
     errors=(409, 501),
 )
-async def proposal_undo_route(proposal_id: UUID, body: UndoProposalIn, ctx: Ctx) -> ProposalOut:
+async def proposal_undo_route(
+    proposal_id: UUID, body: UndoProposalIn, ctx: Ctx
+) -> AgentProposalOut:
     """Undo inside 10 seconds by the same person: 409 `undo_window_closed` or `effect_started`."""
     await _stub(ctx)
 
@@ -278,7 +284,7 @@ async def proposal_undo_route(proposal_id: UUID, body: UndoProposalIn, ctx: Ctx)
 # --- Suggestions (C-31 Adopt) ------------------------------------------------------------------
 
 
-class SuggestionOut(BaseModel):
+class AgentSuggestionOut(BaseModel):
     """One proposed value for one target, after a person's decision."""
 
     model_config = ConfigDict(frozen=True)
@@ -325,12 +331,12 @@ suggestions_router = AbacusRouter(prefix="/v1/suggestions", tags=["agents"])
 @suggestions_router.post(
     "/{suggestion_id}/adopt",
     action="suggestion.resolve",
-    response_model=SuggestionOut,
+    response_model=AgentSuggestionOut,
     errors=(409, 501),
 )
 async def suggestion_adopt_route(
     suggestion_id: UUID, body: AdoptSuggestionIn, ctx: Ctx
-) -> SuggestionOut:
+) -> AgentSuggestionOut:
     """Adopt through the target's registered applier (human only)."""
     await _stub(ctx)
 
@@ -338,11 +344,11 @@ async def suggestion_adopt_route(
 @suggestions_router.post(
     "/{suggestion_id}/dismiss",
     action="suggestion.resolve",
-    response_model=SuggestionOut,
+    response_model=AgentSuggestionOut,
     errors=(409, 501),
 )
 async def suggestion_dismiss_route(
     suggestion_id: UUID, body: DismissSuggestionIn, ctx: Ctx
-) -> SuggestionOut:
+) -> AgentSuggestionOut:
     """Dismiss (human only)."""
     await _stub(ctx)
