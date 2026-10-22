@@ -252,7 +252,7 @@ jobs:
             sleep 2
           done
           curl -sf http://localhost:5173/components > /dev/null || { tail -50 dev.log; exit 1; }
-          pnpm -C apps/web exec playwright test --project=chromium components.spec.ts a11y.spec.ts
+          pnpm -C apps/web exec playwright test --project=chromium components.spec.ts a11y.spec.ts e3.spec.ts
       - if: needs.changes.outputs.gallery == 'true'
         name: Screenshot regression and parity Tier A and D
         env:
