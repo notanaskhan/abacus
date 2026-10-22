@@ -11,7 +11,9 @@ with no scanner configured, scanning fails closed.
 
 from __future__ import annotations
 
+import hashlib
 import io
+import re
 import socket
 import struct
 import time
@@ -47,15 +49,79 @@ class Pingable(Protocol):
     def ping(self) -> None: ...
 
 
+# F-04-T18 (F-04.25): a scenario artefact may carry an injected verdict, so journeys and tests see
+# every outcome a real scanner gives. Keyed by the content's SHA-256. Synthetic environments only.
+InjectedVerdict = Literal["infected", "error", "timeout", "pending"]
+_VERDICTS: Final[frozenset[str]] = frozenset({"infected", "error", "timeout", "pending"})
+_PENDING: Final = re.compile(r"pending\((\d+(?:\.\d+)?)s\)")
+MAX_INJECTED_DELAY_SECONDS: Final = 10.0
+
+
+@dataclass(frozen=True)
+class _Injected:
+    verdict: InjectedVerdict
+    delay_seconds: float
+
+
+_injected: dict[str, _Injected] = {}
+
+
+class InjectionRefused(RuntimeError):
+    """Verdict injection outside a synthetic environment: the real scanner decides there."""
+
+
+def inject_verdict(
+    content_sha256: str, verdict: InjectedVerdict, *, delay_seconds: float = 0.0
+) -> None:
+    """Make `LocalScanner` answer `verdict` for this content. `pending` and `timeout` wait
+    `delay_seconds` first (the scanning state; scans run off the event loop). Refused outside
+    the synthetic environments, so never in staging or production."""
+    if settings().environment not in SYNTHETIC_ENVIRONMENTS:
+        raise InjectionRefused("scanner verdict injection is for synthetic environments only")
+    if verdict not in _VERDICTS:
+        raise ValueError(f"unknown scanner verdict {verdict!r}")
+    if not (0.0 <= delay_seconds <= MAX_INJECTED_DELAY_SECONDS):
+        raise ValueError("an injected delay is between 0 and 10 seconds")
+    _injected[content_sha256] = _Injected(verdict, delay_seconds)
+
+
+def inject_marked(content_sha256: str, mark: str) -> None:
+    """A scenario artefact's `scan:` mark: `infected`, `error`, `timeout` or `pending(2s)`."""
+    pending = _PENDING.fullmatch(mark)
+    if pending is not None:
+        inject_verdict(content_sha256, "pending", delay_seconds=float(pending.group(1)))
+    elif mark in ("infected", "error", "timeout"):
+        inject_verdict(content_sha256, mark)
+    else:
+        raise ValueError(f"unknown scan mark {mark!r}")
+
+
+def forget_injected() -> None:
+    _injected.clear()
+
+
 class LocalScanner:
-    """Local and test only: the EICAR signature and archive bombs are refused."""
+    """Local and test only: the EICAR signature and archive bombs are refused, as before; then
+    an injected verdict, if the content has one (F-04-T18). EICAR and bombs are checked first,
+    so no injection can clear them."""
 
     def scan(self, content: bytes) -> ScanResult:
         if EICAR in content:
             return ScanResult(False, "malware")
         if content[:4] == b"PK\x03\x04":
-            return _zip_check(content)
-        return ScanResult(True)
+            local = _zip_check(content)
+            if not local.clean:
+                return local
+        injected = _injected.get(hashlib.sha256(content).hexdigest()) if _injected else None
+        if injected is None:
+            return ScanResult(True)
+        if injected.delay_seconds:
+            time.sleep(injected.delay_seconds)
+        if injected.verdict == "infected":
+            return ScanResult(False, "malware")
+        if injected.verdict in ("error", "timeout"):
+            return ScanResult(False, "unscannable")  # as ClamdScanner answers both
+        return ScanResult(True)  # pending: the scanning state, then clean
 
 
 def _zip_check(content: bytes) -> ScanResult:
@@ -208,12 +274,17 @@ __all__ = [
     "EICAR",
     "STREAM_MAX_BYTES",
     "ClamdScanner",
+    "InjectedVerdict",
+    "InjectionRefused",
     "LocalScanner",
     "Pingable",
     "ScanResult",
     "Scanner",
     "check_scanner",
     "configure_scanner",
+    "forget_injected",
+    "inject_marked",
+    "inject_verdict",
     "scan",
     "scanner",
 ]
