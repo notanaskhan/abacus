@@ -4,11 +4,12 @@
 import type { Manifest } from "./types";
 
 export const cliScreens = {
-  "CLI-01": { name: "Clients index", status: "planned", path: "/clients" }, // legacy Clients
+  "CLI-01": { name: "Clients index", status: "planned", path: "/clients", navArea: "Clients" }, // legacy Clients
   "CLI-02": {
     name: "Client record · Overview",
     status: "planned",
     path: "/clients/$clientId", // legacy ClientRecord
+    navArea: "Clients",
   },
   "CLI-04": { name: "Contacts & portal access", status: "planned", path: null },
   "CLI-05": {

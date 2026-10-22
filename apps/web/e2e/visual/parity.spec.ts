@@ -47,8 +47,12 @@ for (const [key, entry] of Object.entries(manifest)) {
       `no baseline for ${key} at ${testInfo.snapshotPath(name)}: run pnpm visual:baselines`,
     );
 
-    await openGallery(page);
-    const target = specimen(page, specimenOf(key), entry.selector).first();
+    await openGallery(page, entry.page);
+    const target = (
+      entry.page === undefined
+        ? specimen(page, specimenOf(key), entry.selector)
+        : page.locator(entry.selector ?? "body")
+    ).first();
     await target.scrollIntoViewIfNeeded();
     const actual = await target.screenshot({ animations: "disabled", caret: "hide" });
 

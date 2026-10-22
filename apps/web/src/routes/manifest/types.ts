@@ -14,6 +14,10 @@ export interface ScreenEntry {
   readonly entry?: true;
   /** The screen's source folder under src/, when it is not `screens/<ID>`. */
   readonly folder?: string;
+  /** The nav item (a label of shell/nav.ts) lit while the screen is open (P-01-T02; SHL-01b, g).
+   * A screen without one lights nothing of its own: the toolbar falls back to the area its path
+   * sits in. Nothing is ever added to the bar for a screen (D4). */
+  readonly navArea?: string;
 }
 
 export type Manifest = Readonly<Record<string, ScreenEntry>>;

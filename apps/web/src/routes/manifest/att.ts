@@ -4,7 +4,12 @@
 import type { Manifest } from "./types";
 
 export const attScreens = {
-  "ATT-01": { name: "Attest cockpit — Tessellate SOC 2 Type 2", status: "planned", path: null },
+  "ATT-01": {
+    name: "Attest cockpit — Tessellate SOC 2 Type 2",
+    status: "planned",
+    path: null,
+    navArea: "Audits",
+  },
   "ATT-02": { name: "Scoping — Tessellate SOC 2 Type 2", status: "planned", path: null },
   "ATT-03": {
     name: "System description — Tessellate Scheduling & Intake",

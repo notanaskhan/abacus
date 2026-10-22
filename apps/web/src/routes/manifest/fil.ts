@@ -4,7 +4,12 @@
 import type { Manifest } from "./types";
 
 export const filScreens = {
-  "FIL-01": { name: "Files browser & document drawer", status: "planned", path: null },
+  "FIL-01": {
+    name: "Files browser & document drawer",
+    status: "planned",
+    path: null,
+    navArea: "Files",
+  },
   "FIL-02": { name: "Retention & legal hold", status: "planned", path: null },
   // seed-manifest: new screens are added above this line
 } as const satisfies Manifest;

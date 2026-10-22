@@ -313,3 +313,64 @@ test.describe("tier D: the shell", () => {
     });
   });
 });
+
+// SHL-01 (P-01-T02; P-01 §5.4): the app's toolbar on its fixture artboard, blocking. Toolbar 46,
+// nav item 32, pills 30, bell 30 x 30, dot 6 px, Geist 13.5 (400, 500 on the lit item); and the
+// 1400 strips of frame b at DF-39's More-first step: Signatures in More, the full firm name, Home
+// in the nav.
+test.describe("tier D: SHL-01 toolbar", () => {
+  const box = (el: Element, sel: string) => {
+    const target = sel === "" ? el : el.querySelector(sel);
+    if (target === null) return null;
+    const c = getComputedStyle(target);
+    return {
+      width: c.width,
+      height: c.height,
+      fontSize: c.fontSize,
+      fontWeight: c.fontWeight,
+      fontFamily: c.fontFamily,
+    };
+  };
+
+  test("frame a: toolbar 46, nav item 32, pills 30, bell 30 x 30, dot 6, Geist 13.5", async ({
+    page,
+  }) => {
+    await openGallery(page, "screens/SHL-01?st=a");
+    const bar = page.locator('[data-artboard="a"] [data-shell="toolbar"]');
+    await expect(bar.getByRole("button", { name: "Notifications, unread" })).toBeVisible();
+    expect((await bar.evaluate(box, ""))?.height).toBe("46px");
+    const item = await bar.evaluate(box, 'nav button[aria-current="page"]');
+    expect(item).toMatchObject({ height: "32px", fontSize: "13.5px", fontWeight: "500" });
+    expect(item?.fontFamily).toMatch(/^Geist\b/);
+    const idle = await bar.evaluate(box, "nav button:not([aria-current])");
+    expect(idle).toMatchObject({ height: "32px", fontSize: "13.5px", fontWeight: "400" });
+    for (const name of ["Go to anything ⌘K", "Brightwater Hale", "Support"]) {
+      const pill = await bar
+        .getByRole("button", { name, exact: true })
+        .evaluate((el) => getComputedStyle(el).height);
+      expect(pill, name).toBe("30px");
+    }
+    const bell = await bar
+      .getByRole("button", { name: "Notifications, unread" })
+      .evaluate((el) => ({ w: getComputedStyle(el).width, h: getComputedStyle(el).height }));
+    expect(bell).toEqual({ w: "30px", h: "30px" });
+    const dot = await bar.evaluate(box, '[data-dot="unread"]');
+    expect(dot).toMatchObject({ width: "6px", height: "6px" });
+  });
+
+  test("frame b: thirteen 1400 strips, Signatures in More, the full firm name", async ({
+    page,
+  }) => {
+    await openGallery(page, "screens/SHL-01?st=b");
+    const bars = page.locator('[data-artboard="b"] [data-shell="toolbar"]');
+    await expect(bars).toHaveCount(13);
+    for (let i = 0; i < 13; i++) {
+      const facts = await bars.nth(i).evaluate((el) => ({
+        width: el.getBoundingClientRect().width,
+        stage: el.getAttribute("data-stage"),
+        firm: el.querySelector('button[aria-haspopup="menu"]')?.textContent ?? "",
+      }));
+      expect(facts).toEqual({ width: 1400, stage: "signatures", firm: "Brightwater Hale" });
+    }
+  });
+});

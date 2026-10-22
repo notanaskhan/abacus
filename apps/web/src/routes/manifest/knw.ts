@@ -4,7 +4,12 @@
 import type { Manifest } from "./types";
 
 export const knwScreens = {
-  "KNW-01": { name: "Knowledge library", status: "planned", path: "/knowledge" }, // legacy Knowledge
+  "KNW-01": {
+    name: "Knowledge library",
+    status: "planned",
+    path: "/knowledge",
+    navArea: "Knowledge",
+  }, // legacy Knowledge
   "KNW-02": {
     name: "Methodology versions & import review · BH Audit Methodology · EBP v3",
     status: "planned",
@@ -25,6 +30,7 @@ export const knwScreens = {
     name: "Engagement template builder — BH Audit Methodology · FS v6 (draft)",
     status: "planned",
     path: null,
+    navArea: "Knowledge",
   },
   "KNW-07": {
     name: "Template versions and rollout — BH Audit Methodology · FS",

@@ -4,7 +4,12 @@
 import type { Manifest } from "./types";
 
 export const fspScreens = {
-  "FSP-01": { name: "Statements studio — Granite Peak FY2026", status: "planned", path: null },
+  "FSP-01": {
+    name: "Statements studio — Granite Peak FY2026",
+    status: "planned",
+    path: null,
+    navArea: "Audits",
+  },
   "FSP-02": { name: "Line items — Granite Peak FY2026 statements", status: "planned", path: null },
   "FSP-03": {
     name: "Roll forward last year’s statements — Granite Peak FY2026",

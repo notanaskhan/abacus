@@ -4,7 +4,7 @@
 import type { Manifest } from "./types";
 
 export const wbScreens = {
-  "WB-01": { name: "Workbench › Sessions", status: "planned", path: null },
+  "WB-01": { name: "Workbench › Sessions", status: "planned", path: null, navArea: "Workbench" },
   "WB-02": { name: "New session & context picker", status: "planned", path: null },
   "WB-03": {
     name: "Run progress & review-ready results · TY2025 season progress by office",
@@ -35,7 +35,12 @@ export const wbScreens = {
     status: "planned",
     path: null,
   },
-  "WB-12": { name: "Workbench › Agents › Saved prompts", status: "planned", path: null },
+  "WB-12": {
+    name: "Workbench › Agents › Saved prompts",
+    status: "planned",
+    path: null,
+    navArea: "Workbench",
+  },
   "WB-13": { name: "Learned context", status: "planned", path: null },
   // seed-manifest: new screens are added above this line
 } as const satisfies Manifest;

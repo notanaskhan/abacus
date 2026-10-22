@@ -4,9 +4,9 @@
 import type { Manifest } from "./types";
 
 export const bndScreens = {
-  "BND-01": { name: "Binders index", status: "planned", path: null },
+  "BND-01": { name: "Binders index", status: "planned", path: null, navArea: "Binders" },
   "BND-02": { name: "Binder builder & tracker · Feld 2025 Binder", status: "planned", path: null },
   "BND-03": { name: "Questionnaire editor", status: "planned", path: null, entry: true },
-  "BND-04": { name: "Request tracker", status: "planned", path: null },
+  "BND-04": { name: "Request tracker", status: "planned", path: null, navArea: "Binders" },
   // seed-manifest: new screens are added above this line
 } as const satisfies Manifest;

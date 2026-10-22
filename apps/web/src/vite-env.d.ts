@@ -8,4 +8,8 @@ interface ImportMetaEnv {
   readonly VITE_UI_GALLERY?: string;
   /** "1" answers the generated client from the Brightwater Hale seed (F-04-T04, T05): `make dev-fixtures`. Production never has it. */
   readonly VITE_FIXTURES?: string;
+  /** The Accrued Support address the interim Support frame shows (P-01-T02, until SHL-05). */
+  readonly VITE_SUPPORT_EMAIL?: string;
+  /** The System status page (Q-01-T41), linked from the interim Support frame. */
+  readonly VITE_STATUS_PAGE_URL?: string;
 }

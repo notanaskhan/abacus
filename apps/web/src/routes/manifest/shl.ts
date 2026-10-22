@@ -6,7 +6,7 @@ import type { Manifest } from "./types";
 export const shlScreens = {
   "SHL-01": {
     name: "Firm app shell · toolbar and nav",
-    status: "planned",
+    status: "fixture", // P-01-T02: chrome over every firm route; the artboard is fixture-only
     path: null,
     entry: true,
   },

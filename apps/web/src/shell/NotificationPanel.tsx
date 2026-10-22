@@ -11,13 +11,15 @@ import type { JSX } from "react";
 import { errorMessage } from "../api";
 import { notificationHref, notificationText } from "./notifications";
 
-const POLL_MS = 60_000;
+export const POLL_MS = 60_000;
 
-/** The unread count for the rail's bell; polled, and refreshed when the window regains focus. */
+/** The unread count for the toolbar's bell: polled every 60 s and refetched whenever the window
+ * regains focus, however fresh the last answer (DEC-23; SHL-01 AC 1.1.6). */
 export function useUnreadCount(): number {
   const page = useQuery({
     ...listNotificationsOptions({ query: { limit: 50 } }),
     refetchInterval: POLL_MS,
+    refetchOnWindowFocus: "always",
   });
   return page.data?.unread_count ?? 0;
 }

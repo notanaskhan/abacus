@@ -1,14 +1,5 @@
 import { meOptions } from "@abacus/api-client/query";
-import {
-  Alert,
-  AppShell,
-  Building2,
-  Button,
-  Card,
-  LogOut,
-  Spinner,
-  type ToolbarNavItem,
-} from "@abacus/ui";
+import { Alert, AppShell, Building2, Button, Card, LogOut, Spinner } from "@abacus/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { type JSX, useEffect, useState } from "react";
@@ -17,9 +8,8 @@ import { isForbidden } from "../shell/mfa";
 import { NoFirm } from "./Signup";
 import { errorMessage } from "../api";
 import { accessToken, chooseTenant, chosenTenant, signIn, signOut } from "../auth/session";
+import { useFirmToolbar } from "../shell/firm/ToolbarData";
 import { NotificationDrawer } from "../shell/NotificationDrawer";
-import { useUnreadCount } from "../shell/NotificationPanel";
-import { Palette } from "../shell/Palette";
 
 /** The signed-in firm workspace (F-05-T23): the design system's AppShell and Toolbar around the
  * legacy screens, the firm pill's menu (SHL-03), notifications, and the page. */
@@ -42,10 +32,22 @@ function SignedIn(): JSX.Element {
   const [picked, setPicked] = useState<string | null>(chosenTenant);
   const [panel, setPanel] = useState(false);
   const [menu, setMenu] = useState(false);
-  const [go, setGo] = useState(false);
   const navigate = useNavigate();
-  const unread = useUnreadCount();
   const path = useRouterState({ select: (r) => r.location.pathname });
+  // P-01-T02: the toolbar's data, routing and hotkeys (SHL-01).
+  const bar = useFirmToolbar({
+    at: { pathname: path },
+    firm: "",
+    firmMenuOpen: menu,
+    bellOpen: panel,
+    onBell: () => {
+      setPanel((open) => !open);
+    },
+    onFirm: () => {
+      setMenu((open) => !open);
+    },
+    navigate: (to) => void navigate({ to }),
+  });
 
   if (me.isPending) {
     return (
@@ -107,41 +109,12 @@ function SignedIn(): JSX.Element {
   }
 
   const isAdmin = firm.firm_role === "firm_admin" || firm.firm_role === "practice_leader";
-  const area = areaOf(path);
   return (
     <AppShell
-      toolbar={{
-        nav: NAV,
-        active: area,
-        firm: firm.firm_name,
-        firmTitle: firm.firm_name,
-        firmPressed: menu || path.startsWith("/admin"),
-        bellPressed: panel,
-        unread: unread > 0,
-        onGo: () => {
-          setGo((open) => !open);
-        },
-        onNavigate: (label) => {
-          const to = NAV_PATHS[label];
-          if (to !== undefined) void navigate({ to });
-        },
-        onBell: () => {
-          setPanel((open) => !open);
-        },
-        onFirm: () => {
-          setMenu((open) => !open);
-        },
-      }}
+      toolbar={{ ...bar.toolbar, firm: firm.firm_name, firmTitle: firm.firm_name }}
       overlay={
         <>
-          <Palette
-            isAdmin={isAdmin}
-            open={go}
-            onOpenChange={setGo}
-            onNotifications={() => {
-              setPanel(true);
-            }}
-          />
+          {bar.overlay}
           {menu && (
             <FirmMenu
               person={me.data.display_name}
@@ -168,25 +141,6 @@ function SignedIn(): JSX.Element {
       </div>
     </AppShell>
   );
-}
-
-// The legacy screens' areas until the toolbar renders from nav.ts (P-01-T02); the first is Home.
-const NAV: readonly ToolbarNavItem[] = [
-  { label: "Home" },
-  { label: "Clients" },
-  { label: "Knowledge" },
-];
-const NAV_PATHS: Readonly<Record<string, string>> = {
-  Home: "/",
-  Clients: "/clients",
-  Knowledge: "/knowledge",
-};
-
-function areaOf(path: string): string {
-  if (path.startsWith("/clients")) return "Clients";
-  if (path.startsWith("/knowledge")) return "Knowledge";
-  if (path.startsWith("/admin")) return "";
-  return "Home";
 }
 
 /** SHL-03: the firm pill's menu (the toolbar has no avatar): the person, the firm, Firm

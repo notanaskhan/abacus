@@ -16,9 +16,16 @@ export const TIERS = {
 } as const;
 export type PixelTier = keyof typeof TIERS;
 
-export async function openGallery(page: Page): Promise<void> {
+/** A gallery screen page (`screens/SHL-01?st=a`) under the same parameters as the index. */
+export function screenUrl(path: string): string {
+  const [route = "", query] = path.split("?");
+  return `/components/${route}?frame=1&static=1&contrast=reference${query === undefined ? "" : `&${query}`}`;
+}
+
+/** The gallery index, or one of its screen pages (`screens/SHL-01?st=a`; P-01-T02). */
+export async function openGallery(page: Page, path?: string): Promise<void> {
   await page.clock.setFixedTime(FIXED_TIME);
-  await page.goto(GALLERY_URL);
+  await page.goto(path === undefined ? GALLERY_URL : screenUrl(path));
   await page.waitForLoadState("networkidle");
   await page.evaluate(() => document.fonts.ready);
 }
@@ -31,6 +38,9 @@ export function specimen(page: Page, id: string, selector?: string): Locator {
 
 export interface ManifestEntry {
   selector?: string;
+  /** A gallery screen page instead of the specimen index (`screens/SHL-01?st=a`); `selector` is
+   * then a CSS selector on that page. */
+  page?: string;
   source: string;
   tier: "A" | "B" | "C" | "D";
   locked?: boolean;

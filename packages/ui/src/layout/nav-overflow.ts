@@ -117,6 +117,10 @@ export interface FitOptions {
   overflow?: "auto" | "none";
   /** How many items the first collapse and the second collapse take (1, then 3). */
   collapse?: readonly [number, number];
+  /** More first (P-01-T02, DF-39 as SHL-01a draws it at 1400): Signatures, then Signatures,
+   * Closes and Audits go into More while the firm pill keeps its full name and Home stays in the
+   * nav; only after that does the pill shorten and Home become the house pill. */
+  moreFirst?: boolean;
 }
 
 /** Apply the DF-39 ladder to measured widths: the first step at which the nav fits. */
@@ -129,7 +133,10 @@ export function fitToolbar(m: ToolbarMeasure, options: FitOptions = {}): Toolbar
     // Not measured, or told to keep everything: forced steps still apply to the controls.
     return min === 0 ? full : { ...ladder(min, n, first, second), inline: n };
   }
-  const steps: ToolbarFit[] = [0, 1, 2, 3, 4].map((i) => ladder(i, n, first, second));
+  const steps: ToolbarFit[] =
+    options.moreFirst === true
+      ? moreFirstSteps(n, first, second)
+      : [0, 1, 2, 3, 4].map((i) => ladder(i, n, first, second));
   for (const step of steps) {
     if (FALLBACK_STAGES.indexOf(step.stage) < min) continue;
     const from = step.homePill ? 1 : 0;
@@ -154,4 +161,18 @@ function ladder(i: number, n: number, first: number, second: number): ToolbarFit
     homePill: i >= 2,
     inline: i === 3 ? Math.max(1, n - first) : i === 4 ? Math.max(1, n - second) : n,
   };
+}
+
+// DF-39 with More first: the nav gives up Signatures, then Closes and Audits, before the controls
+// shrink; the controls then shrink with those three still in More.
+function moreFirstSteps(n: number, first: number, second: number): ToolbarFit[] {
+  const one = Math.max(1, n - first);
+  const three = Math.max(1, n - second);
+  return [
+    { stage: "none", firmShort: false, homePill: false, inline: n },
+    { stage: "signatures", firmShort: false, homePill: false, inline: one },
+    { stage: "signatures-closes-audits", firmShort: false, homePill: false, inline: three },
+    { stage: "signatures-closes-audits", firmShort: true, homePill: false, inline: three },
+    { stage: "signatures-closes-audits", firmShort: true, homePill: true, inline: three },
+  ];
 }
