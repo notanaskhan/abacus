@@ -11,7 +11,11 @@ export const shlScreens = {
     entry: true,
   },
   "SHL-02": { name: "Command palette · Go…", status: "planned", path: null, entry: true },
-  "SHL-03": { name: "Firm switcher & profile menu", status: "planned", path: null },
+  "SHL-03": {
+    name: "Firm switcher & profile menu",
+    status: "fixture", // P-01-T08: the tray under the firm pill; the artboard is fixture-only
+    path: null,
+  },
   "SHL-04": { name: "Notifications panel", status: "planned", path: null, entry: true },
   "SHL-05": { name: "Support panel", status: "planned", path: null, entry: true },
   "SHL-06": { name: "Firm sign-in", status: "planned", path: null, entry: true },

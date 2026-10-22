@@ -23,6 +23,7 @@ import {
   ssnMask,
   time,
   viaAgent,
+  zoneName,
 } from "./format";
 
 // Unit tests for format.ts's own rules (F-05-T10). The independent golden suite is F-05-T11.
@@ -260,6 +261,11 @@ describe("dates", () => {
     expect(monthYear("2026-03")).toBe("March 2026");
     expect(monthYear("2026-03-15")).toBe("March 2026");
     expect(monthYear("")).toBe("—");
+  });
+  it("names a firm's time zone in full (SHL-03a)", () => {
+    expect(zoneName("America/Chicago")).toBe("Central Time");
+    expect(zoneName("America/New_York")).toBe("Eastern Time");
+    expect(zoneName("Not/AZone")).toBe("Not/AZone");
   });
   it("isoDate is the business date in the zone", () => {
     expect(isoDate(NOW)).toBe("2026-09-14");

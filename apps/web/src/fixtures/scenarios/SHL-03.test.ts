@@ -2,7 +2,7 @@
 // Mon 14 Sep 2026, 9:24 AM CT, answering /v1/me v3, the capability nav and the office PUT.
 import { describe, expect, it } from "vitest";
 import type { Scenario } from "../../app-core/fixture-mode";
-import type { CapabilitiesV3Draft, MeV3Draft } from "../contracts/shell";
+import type { CapabilitiesOut, MeOut } from "@abacus/api-client";
 import { officeIdOf } from "../seed/shell";
 import { scenarios } from "./SHL-03";
 
@@ -38,7 +38,7 @@ describe("SHL-03 scenarios", () => {
   });
 
   it("e: Grace holds the training sandbox membership", async () => {
-    const me = await call<MeV3Draft>(scenarios.e, "GET /v1/me");
+    const me = await call<MeOut>(scenarios.e, "GET /v1/me");
     expect(me.memberships.map((m) => m.firm_name)).toEqual([
       "Brightwater Hale",
       "Brightwater Hale LLP — Training sandbox",
@@ -46,7 +46,7 @@ describe("SHL-03 scenarios", () => {
   });
 
   it("c: Daniel's nav is Firm settings read and Audit log", async () => {
-    const caps = await call<CapabilitiesV3Draft>(scenarios.c, "GET /v1/me/capabilities");
+    const caps = await call<CapabilitiesOut>(scenarios.c, "GET /v1/me/capabilities");
     expect(caps.nav).toMatchObject({
       firm_settings: "read",
       audit_log: "read",
@@ -62,7 +62,7 @@ describe("SHL-03 scenarios", () => {
       { default_office_id: chicago },
     );
     expect(put.default_office_id).toBe(chicago);
-    expect((await call<MeV3Draft>(scenarios.f, "GET /v1/me")).default_office_id).toBe(chicago);
+    expect((await call<MeOut>(scenarios.f, "GET /v1/me")).default_office_id).toBe(chicago);
     const refused = await call(scenarios.f, "PUT /v1/me/preferences", {
       default_office_id: "00000000-0000-4000-8000-000000000000",
     });
@@ -70,7 +70,7 @@ describe("SHL-03 scenarios", () => {
   });
 
   it("b: Hannah's default office is Chicago before anything is picked", async () => {
-    const me = await call<MeV3Draft>(scenarios.b, "GET /v1/me");
+    const me = await call<MeOut>(scenarios.b, "GET /v1/me");
     expect(me.default_office_id).toBe(officeIdOf("Chicago"));
   });
 });

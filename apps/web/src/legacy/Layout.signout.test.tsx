@@ -31,15 +31,23 @@ afterEach(() => {
 });
 
 describe("ac1 Layout, sign out", () => {
-  it("drops the token and starts sign-in again", async () => {
+  it("ends the server session, then drops the token and starts sign-in again", async () => {
     const { assign } = stubLocation();
-    mockApi({ "GET /v1/me": () => json(ME) });
+    const { calls } = mockApi({
+      "GET /v1/me": () => json(ME),
+      // P-01 AC 2.1.6 (P-01-T08): the menu ends the staff session first, with the bearer token.
+      "POST /v1/auth/sign-out": () => json({ ended: true }),
+    });
     renderRoutes(ROUTES, { root: Layout });
     // SHL-03 (F-05-T23): Sign out is in the firm pill's menu.
     fireEvent.click(await screen.findByRole("button", { name: "Dev firm" }));
     expect(accessToken()).toBe("tok");
     fireEvent.click(screen.getByRole("menuitem", { name: "Sign out" }));
-    expect(accessToken()).toBeNull();
+    await waitFor(() => {
+      expect(accessToken()).toBeNull();
+    });
+    const signOut = calls.find((c) => c.method === "POST" && c.path === "/v1/auth/sign-out");
+    expect(signOut?.headers.get("authorization")).toBe("Bearer tok");
     await waitFor(() => {
       expect(assign).toHaveBeenCalled();
     });

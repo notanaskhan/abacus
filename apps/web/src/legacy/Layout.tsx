@@ -1,13 +1,14 @@
 import { meOptions } from "@abacus/api-client/query";
-import { Alert, AppShell, Building2, Button, Card, LogOut, Spinner } from "@abacus/ui";
+import { Alert, AppShell, Button, Card, Spinner } from "@abacus/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, Navigate, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Navigate, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { type JSX, useEffect, useState } from "react";
 import { App } from "../App";
 import { isForbidden } from "../shell/mfa";
 import { NoFirm } from "./Signup";
 import { errorMessage } from "../api";
 import { accessToken, chooseTenant, chosenTenant, signIn, signOut } from "../auth/session";
+import { FirmMenu } from "../shell/firm/FirmMenu";
 import { useFirmToolbar } from "../shell/firm/ToolbarData";
 import { NotificationDrawer } from "../shell/NotificationDrawer";
 
@@ -108,28 +109,32 @@ function SignedIn(): JSX.Element {
     );
   }
 
-  const isAdmin = firm.firm_role === "firm_admin" || firm.firm_role === "practice_leader";
   return (
     <AppShell
       toolbar={{ ...bar.toolbar, firm: firm.firm_name, firmTitle: firm.firm_name }}
       overlay={
         <>
           {bar.overlay}
-          {menu && (
-            <FirmMenu
-              person={me.data.display_name}
-              firm={firm.firm_name}
-              isAdmin={isAdmin}
-              onClose={() => {
-                setMenu(false);
-              }}
-              onSignOut={() => {
-                signOut();
-                queryClient.clear();
-                void signIn("/");
-              }}
-            />
-          )}
+          <FirmMenu
+            open={menu}
+            onOpenChange={setMenu}
+            activeTenantId={firm.tenant_id}
+            navigate={(to) => void navigate({ to })}
+            onShortcuts={bar.openGo}
+            onNotificationPreferences={() => {
+              setPanel(true);
+            }}
+            onSwitch={(m) => {
+              chooseTenant(m.tenant_id);
+              setPicked(m.tenant_id);
+            }}
+            onSignedOut={() => {
+              // The SPA's auth client (P-01-T11) moves this to the BFF's hosted sign-in.
+              signOut();
+              queryClient.clear();
+              void signIn("/");
+            }}
+          />
         </>
       }
     >
@@ -141,77 +146,4 @@ function SignedIn(): JSX.Element {
       </div>
     </AppShell>
   );
-}
-
-/** SHL-03: the firm pill's menu (the toolbar has no avatar): the person, the firm, Firm
- * settings for administrators, and Sign out. */
-function FirmMenu({
-  person,
-  firm,
-  isAdmin,
-  onClose,
-  onSignOut,
-}: {
-  person: string;
-  firm: string;
-  isAdmin: boolean;
-  onClose: () => void;
-  onSignOut: () => void;
-}): JSX.Element {
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent): void => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [onClose]);
-  return (
-    <div
-      role="menu"
-      aria-label="Firm and profile"
-      className="fixed top-[50px] right-3 z-50 w-[280px] rounded-menu bg-card p-2 shadow-e3"
-    >
-      <div className="flex items-center gap-2 px-2 py-2">
-        <span
-          aria-hidden="true"
-          className="flex size-[28px] items-center justify-center rounded-full bg-chip text-meta font-medium text-ink-2"
-        >
-          {initials(person)}
-        </span>
-        <span className="truncate text-body">
-          {person} · {firm}
-        </span>
-      </div>
-      {isAdmin && (
-        <Link
-          to="/admin/methodology"
-          role="menuitem"
-          onClick={onClose}
-          className="flex h-8 items-center gap-1.5 rounded-pill px-2 text-body text-ink-2 hover:bg-sel-bg hover:text-ink hover:no-underline"
-        >
-          <Building2 aria-hidden="true" className="size-3.5" />
-          Firm settings
-        </Link>
-      )}
-      <button
-        type="button"
-        role="menuitem"
-        onClick={onSignOut}
-        className="flex h-8 w-full items-center gap-1.5 rounded-pill px-2 text-body text-ink-2 hover:bg-sel-bg hover:text-ink"
-      >
-        <LogOut aria-hidden="true" className="size-3.5" />
-        Sign out
-      </button>
-    </div>
-  );
-}
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  return parts
-    .slice(0, 2)
-    .map((p) => p.charAt(0).toUpperCase())
-    .join("");
 }

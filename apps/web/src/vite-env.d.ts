@@ -12,4 +12,6 @@ interface ImportMetaEnv {
   readonly VITE_SUPPORT_EMAIL?: string;
   /** The System status page (Q-01-T41), linked from the interim Support frame. */
   readonly VITE_STATUS_PAGE_URL?: string;
+  /** The release the firm menu's footer names ("Version 2026.9", SHL-03; P-01-T08). Unset hides it. */
+  readonly VITE_APP_VERSION?: string;
 }

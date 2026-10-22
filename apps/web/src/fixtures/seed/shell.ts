@@ -4,12 +4,13 @@
 // frames); the person lines are what each card shows, not a role name the SPA compares.
 
 import type {
-  CapabilitiesV3Draft,
-  CapabilityNavDraft,
-  MeV3Draft,
-  MembershipV3Draft,
-  OfficeRefDraft,
-} from "../contracts/shell";
+  CapabilitiesOut,
+  MeOut,
+  MembershipOut,
+  OfficeOut,
+  RoleOut,
+} from "@abacus/api-client";
+import type { CapabilityNav } from "../contracts/shell";
 import { DEMO_INSTANT } from "./clock";
 import {
   DEFAULT_OFFICE_FILTERS,
@@ -38,12 +39,12 @@ export function officeIdOf(name: OfficeName): string {
   return stableId(`office:${name}`);
 }
 
-export const OFFICE_REFS: readonly OfficeRefDraft[] = OFFICES.map((o) => ({
+export const OFFICE_REFS: readonly OfficeOut[] = OFFICES.map((o) => ({
   id: officeIdOf(o.name),
   name: o.name,
 }));
 
-const NONE: CapabilityNavDraft = {
+const NONE: CapabilityNav = {
   firm_settings: "none",
   users_roles: "none",
   audit_log: "none",
@@ -56,9 +57,12 @@ export interface ShellPersona {
   initials: string;
   /** The card's second line, verbatim. */
   cardLine: string;
-  nav: CapabilityNavDraft;
+  nav: CapabilityNav;
   /** Holds the training sandbox membership (SHL-03e). */
   sandbox: boolean;
+  /** The firm-wide role `/v1/me/capabilities` lists, with the backend's label (identity
+   * `labels.py`); the card's first segment. Hannah holds none. */
+  role: RoleOut | null;
 }
 
 /**
@@ -74,6 +78,7 @@ export const SHELL_PERSONAS: readonly ShellPersona[] = [
     cardLine: "Firm Admin · Client Service Coordinator · Chicago",
     nav: { ...NONE, firm_settings: "write", users_roles: "write", audit_log: "read" },
     sandbox: true,
+    role: { code: "firm_admin", label: "Firm Admin" },
   },
   {
     slug: "hannah-leclerc",
@@ -81,6 +86,7 @@ export const SHELL_PERSONAS: readonly ShellPersona[] = [
     cardLine: "Audit Senior Manager · Chicago",
     nav: NONE,
     sandbox: false,
+    role: null,
   },
   {
     slug: "daniel-reyes",
@@ -88,6 +94,7 @@ export const SHELL_PERSONAS: readonly ShellPersona[] = [
     cardLine: "Tax Partner · New York",
     nav: { ...NONE, firm_settings: "read", audit_log: "read" },
     sandbox: false,
+    role: { code: "firm_partner", label: "Partner" },
   },
   {
     slug: "felix-andersen",
@@ -95,6 +102,7 @@ export const SHELL_PERSONAS: readonly ShellPersona[] = [
     cardLine: "IT / Security · Qualified Individual · Chicago",
     nav: { ...NONE, security_center: "write", developer_api: "read", audit_log: "read" },
     sandbox: false,
+    role: { code: "security_admin", label: "IT / Security" },
   },
 ];
 
@@ -108,14 +116,14 @@ const seatOf = (slug: string) => SEATS.find((s) => slugOf(s.name) === slug);
 export function meV3For(
   seed: Seed,
   slug: string,
-  options: { defaultOfficeId?: string | null } = {},
-): MeV3Draft | undefined {
+  options: { defaultOfficeId?: string | null; sandbox?: boolean } = {},
+): MeOut | undefined {
   const me = meFor(seed, slug);
   if (me === undefined) return undefined;
   const seat = seatOf(slug);
   const persona = shellPersona(slug);
   const preset = seat === undefined ? undefined : DEFAULT_OFFICE_FILTERS[seat.initials];
-  const live: MembershipV3Draft[] = me.memberships.map((m) => ({
+  const live: MembershipOut[] = me.memberships.map((m) => ({
     ...m,
     firm: {
       region: "US",
@@ -125,8 +133,8 @@ export function meV3For(
       sandbox_of: null,
     },
   }));
-  const sandbox: MembershipV3Draft[] =
-    persona?.sandbox === true
+  const sandbox: MembershipOut[] =
+    (options.sandbox ?? persona?.sandbox) === true
       ? [
           {
             tenant_id: SANDBOX_FIRM_ID,
@@ -145,10 +153,8 @@ export function meV3For(
       : [];
   return {
     ...me,
-    user: {
-      initials: seat?.initials ?? null,
-      job_title: seat === undefined ? null : (JOB_TITLES[seat.initials] ?? null),
-    },
+    initials: seat?.initials ?? null,
+    job_title: seat === undefined ? null : (JOB_TITLES[seat.initials] ?? null),
     default_office_id:
       options.defaultOfficeId !== undefined
         ? options.defaultOfficeId
@@ -160,9 +166,14 @@ export function meV3For(
   };
 }
 
-/** `GET /v1/me/capabilities` with the nav keys; anyone not on SHL-03 a–d reads every key `none`. */
-export function capabilitiesFor(seed: Seed, slug: string): CapabilitiesV3Draft {
+/** `GET /v1/me/capabilities` with the nav keys and the firm-wide role; anyone not on SHL-03 a–d
+ * reads every key `none`. */
+export function capabilitiesFor(
+  seed: Seed,
+  slug: string,
+): CapabilitiesOut & { nav: CapabilityNav } {
   const seat = seatOf(slug);
+  const role = shellPersona(slug)?.role ?? null;
   return {
     capabilities: [],
     clock_mode: "offset",
@@ -172,7 +183,7 @@ export function capabilitiesFor(seed: Seed, slug: string): CapabilitiesV3Draft {
     mfa_recent_until: null,
     office_id: seat === undefined ? null : officeIdOf(seat.office),
     portal: null,
-    roles: [],
+    roles: role === null ? [] : [role],
     server_now: DEMO_INSTANT,
     tz: seed.firm.timeZone,
     nav: shellPersona(slug)?.nav ?? NONE,
