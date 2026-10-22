@@ -380,7 +380,8 @@ async def test_ac5_before_the_engagement_opens_nothing_is_drafted_but_the_team_h
     assert "agent.digest" in await seed.actions(closed.tenant_id)  # the in-app digest still goes
     refused = await net.call("POST", f"{closed.base}/reminders/draft", closed.team["manager"])
     assert refused.status_code == 409
-    assert refused.json() == {"detail": "acceptance_missing"}
+    # F-03-T13: the code, and which gate is unmet (identifier-only facts, ADR-139).
+    assert refused.json() == {"detail": "acceptance_missing", "facts": {"gate": "G1"}}
 
 
 async def test_ac5_an_archived_engagement_neither_drafts_nor_sends(

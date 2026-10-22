@@ -12,6 +12,7 @@ actions:
   acceptance.record:        {engagement_partner: allow, mfa_recent: required}   # decision, documentation, the independence conclusion
   independence.confirm:     {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow}   # for oneself only (the service refuses others)
   letter.record:            {engagement_partner: allow, manager: allow}
+  engagement.hold:          {engagement_partner: allow, manager: allow, mfa_recent: required}   # F-03-T13: on hold and back, a person with a reason code (§3.1.3)
   setup.read:               {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow}
   client.read:              {firm_admin: allow, practice_leader: allow}   # SPEC-025 (TASK-043 D1): the client picker, as engagement.create
   engagement.read_metadata:

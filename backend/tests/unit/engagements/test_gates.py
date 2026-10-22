@@ -9,7 +9,11 @@ from types import SimpleNamespace
 import pytest
 
 from abacus.kernel.db import TenantContext
+from abacus.modules.engagements import api as engagements_api
 from abacus.modules.engagements import gates as subject
+
+# Importing the module's api registers G1 to G3; run alone, nothing else would.
+assert engagements_api.ROUTERS
 
 TENANT = TenantContext(uuid.uuid4(), "system", "test")
 E = uuid.uuid4()

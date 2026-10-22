@@ -210,6 +210,11 @@ ACTIONS: dict[str, dict[str, str]] = {
         "firm_admin": "allow",
         "practice_leader": "allow",
     },
+    "engagement.hold": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "mfa_recent": "required",
+    },
     "engagement.member_add": {
         "engagement_partner": "allow",
         "manager": "allow",

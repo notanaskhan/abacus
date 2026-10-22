@@ -28,7 +28,10 @@ def _letter(status: str) -> EngagementLetter:
 def _code(
     acceptance: EngagementAcceptance | None, letter: EngagementLetter | None, needs_letter: bool
 ) -> str | None:
-    found = _blocked(acceptance, letter, needs_letter)
+    # An attest engagement: G1 to G3 all apply (F-03-T13 made the gates per type).
+    found = _blocked(
+        acceptance, letter, gates=frozenset({"G1", "G2", "G3"}), needs_letter=needs_letter
+    )
     return None if found is None else found.code
 
 
