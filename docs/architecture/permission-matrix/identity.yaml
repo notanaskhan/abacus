@@ -13,4 +13,8 @@ actions:
   wall.remove:              {firm_admin: allow, mfa_recent: required}
   wall.list:                {firm_admin: allow, mfa_recent: required}   # SPEC-002 Q2 (named wall.read there)
   firm_agents.pause:        {firm_admin: allow, mfa_recent: required}   # every agent in the firm
+  # F-03-T26 (ADR-146): client access grants. On an engagement for its scopes; on the firm (firm
+  # admin) for client-wide ones.
+  client_access.grant:      {firm_admin: allow, engagement_partner: allow, manager: allow, client_service: allow, agent: deny, mfa_recent: required}
+  client_access.revoke:     {firm_admin: allow, engagement_partner: allow, manager: allow, client_service: allow, agent: deny, mfa_recent: required}
   firm.ai_client_data:      {firm_admin: allow, mfa_recent: required}   # SPEC-036 (TASK-076): opt in to AI on clients' data, against the disclosure

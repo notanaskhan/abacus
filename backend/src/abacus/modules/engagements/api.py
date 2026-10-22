@@ -7,8 +7,10 @@ from abacus.modules.engagements.contacts import (
     Designation,
     EngagementContact,
     attest_of,
+    client_scope,
     designate_contact,
     engagement_contacts,
+    work_item_scope,
 )
 from abacus.modules.engagements.events import EngagementCreated, IndependenceRequested
 from abacus.modules.engagements.gates import register_gates
@@ -91,6 +93,7 @@ from abacus.modules.identity.api import (
     register_engagement_service_line,
     register_independence,
     register_member_added,
+    register_scope_resolver,
     register_work_item_functions,
 )
 from abacus.modules.identity.api import register_gates as register_condition_gates
@@ -112,6 +115,9 @@ register_work_item_functions(functions_on)
 register_condition_gates(gates_of)
 register_engagement_service_line(service_line_of)
 register_attest_client(attest_of)  # F-03-T25: the client's derived attest flag (DEC-128)
+# F-03-T26 (ADR-146): the client-access scope kinds engagements owns.
+register_scope_resolver("work_item", work_item_scope)
+register_scope_resolver("client", client_scope)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (

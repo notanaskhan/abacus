@@ -24,10 +24,12 @@ TABLES: frozenset[str] = frozenset(
         "staff_invitation_tokens",
         "firm_setting_values",  # F-03-T24
         "firm_policy_overrides",  # F-03-T24: stricter-only, never edited
+        "client_access_grants",  # F-03-T26 (ADR-146)
+        "client_access_events",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
-INSERT_ONLY: frozenset[str] = frozenset({"firm_policy_overrides"})
+INSERT_ONLY: frozenset[str] = frozenset({"firm_policy_overrides", "client_access_events"})
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "engagement_members": frozenset({"tenant_id", "engagement_id", "user_id", "role"}),
@@ -48,6 +50,11 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "firm_policy_overrides": frozenset(  # F-03-T24
         {"tenant_id", "action", "role", "decision", "reason", "set_by"}
     ),
+    "client_access_grants": frozenset(  # F-03-T26
+        {"tenant_id", "user_id", "contact_id", "role", "scope_kind", "scope_id"}
+        | {"document_classes", "granted_by", "expires_at", "status"}
+    ),
+    "client_access_events": frozenset({"tenant_id", "grant_id", "event", "by_user_id"}),
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
@@ -69,4 +76,5 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "client_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
     "staff_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
     "firm_setting_values": frozenset({"value", "version", "set_by", "set_at"}),  # F-03-T24
+    "client_access_grants": frozenset({"status"}),  # F-03-T26: each change is an event row
 }

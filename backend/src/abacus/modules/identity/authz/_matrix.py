@@ -98,6 +98,22 @@ ACTIONS: dict[str, dict[str, str]] = {
         "firm_admin": "allow",
         "practice_leader": "allow",
     },
+    "client_access.grant": {
+        "firm_admin": "allow",
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "client_service": "allow",
+        "agent": "deny",
+        "mfa_recent": "required",
+    },
+    "client_access.revoke": {
+        "firm_admin": "allow",
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "client_service": "allow",
+        "agent": "deny",
+        "mfa_recent": "required",
+    },
     "client_contact.invite": {
         "engagement_partner": "allow",
         "manager": "allow",

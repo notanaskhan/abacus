@@ -388,3 +388,9 @@ async def attest_client_of(tenant: TenantContext, client_id: UUID) -> bool | Non
     async with tenant_session(tenant) as session:
         client = await get_client(session, client_id)
     return None if client is None else client.is_attest_client
+
+
+async def client_exists(tenant: TenantContext, client_id: UUID) -> bool:
+    """Whether the client is the firm's (for the `client` scope resolver, F-03-T26)."""
+    async with tenant_session(tenant) as session:
+        return await get_client(session, client_id) is not None

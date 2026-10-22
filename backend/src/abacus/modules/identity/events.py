@@ -66,3 +66,30 @@ class StaffInvitationIssued(DomainEvent):
     event_type: ClassVar[str] = "staff_invitation.issued"
 
     invitation_id: Annotated[UUID, classified("internal")]
+
+
+class ClientAccessGranted(DomainEvent):
+    """A client access grant became active (F-03-T26; ADR-146)."""
+
+    event_type: ClassVar[str] = "client_access.granted"
+
+    grant_id: Annotated[UUID, classified("internal")]
+    user_id: Annotated[UUID, classified("internal")]
+
+
+class ClientAccessRevoked(DomainEvent):
+    """A client access grant was revoked (F-03-T26)."""
+
+    event_type: ClassVar[str] = "client_access.revoked"
+
+    grant_id: Annotated[UUID, classified("internal")]
+    user_id: Annotated[UUID, classified("internal")]
+
+
+class AccessChanged(DomainEvent):
+    """A person's access changed (a grant here; memberships, walls and roles later): consumers
+    that hold sessions or caches for them drop them (P-01, P-10)."""
+
+    event_type: ClassVar[str] = "access.changed"
+
+    user_id: Annotated[UUID, classified("internal")]

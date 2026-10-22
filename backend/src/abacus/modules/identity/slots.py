@@ -29,8 +29,14 @@ _SCOPES: dict[str, ScopeResolver] = {}
 _CONSENTS: dict[str, ConsentCheck] = {}
 
 
+def _same(a: Callable[..., object], b: Callable[..., object]) -> bool:
+    """The same function, even from a module executed twice (a reloaded `api.py`)."""
+    return (a.__module__, a.__qualname__) == (b.__module__, b.__qualname__)
+
+
 def register_scope_resolver(scope_kind: str, lookup: ScopeResolver) -> None:
-    if scope_kind in _SCOPES:
+    known = _SCOPES.get(scope_kind)
+    if known is not None and not _same(known, lookup):
         raise ValueError(f"scope kind {scope_kind!r} is already registered")
     _SCOPES[scope_kind] = lookup
 

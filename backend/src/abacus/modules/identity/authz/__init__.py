@@ -107,6 +107,14 @@ def register_engagement_client(column: ClientColumn, lookup: ClientLookup) -> No
     _engagement_client = (column, lookup)
 
 
+async def engagement_client(tenant: TenantContext, engagement_id: UUID) -> UUID | None:
+    """The engagement's client through the registered lookup; None when unregistered or unknown
+    (callers fail closed)."""
+    if _engagement_client is None:
+        return None
+    return await _engagement_client[1](tenant, engagement_id)
+
+
 # SPEC-025 (TASK-045 D2): whether a person has confirmed their independence for an engagement,
 # registered by the engagements module (which owns the confirmations). `column` turns an
 # engagement-ID column and a user into an EXISTS (for `visible()`); `lookup` answers for one

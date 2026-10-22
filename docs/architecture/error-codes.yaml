@@ -214,6 +214,16 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.fieldwork.findings.FindingInvalid
+  grant_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.client_access.GrantExists
+    summary: The person already holds this role on this scope.
+  grant_scope_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.client_access.GrantScopeInvalid
+    summary: The scope can't be resolved, or isn't the engagement's (or the firm's) to grant.
   grouping_set_has_problems:
     status: 409
     raised_by:
