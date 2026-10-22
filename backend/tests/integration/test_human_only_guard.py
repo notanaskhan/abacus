@@ -1,0 +1,64 @@
+"""Q-02-T17 against Postgres (migration 0097): "Inserting sign_off.recorded, report.released or
+any listed action with actor_kind agent or policy raises at the database, and the generated list
+matches the YAML." I-AGENT-NEVER at the data layer, independent of the permission matrix."""
+
+from __future__ import annotations
+
+import uuid
+
+import asyncpg
+import pytest
+
+from abacus.kernel._human_only_actions import HUMAN_ONLY_ACTIONS
+from abacus_tools.codegen.human_only_actions import load
+
+from .agent_tests.support import Seeder
+from .conftest import MigratedDatabase
+
+pytestmark = pytest.mark.asyncio
+AUDIT = (
+    "INSERT INTO audit_events (tenant_id, actor_kind, actor_id, action, target_type, target_id, "
+    "on_behalf_of_user_id, policy_ref) VALUES ($1, $2, $3, $4, 'probe', $5, $6, $7)"
+)
+
+
+async def test_the_database_list_matches_the_yaml_and_the_generated_module(
+    migrated_db: MigratedDatabase,
+) -> None:
+    found = await Seeder(migrated_db.superuser_dsn).value("SELECT abacus_human_only_actions()")
+    assert sorted(found) == sorted(HUMAN_ONLY_ACTIONS) == list(load())  # type: ignore[arg-type]  # text[]
+
+
+@pytest.mark.parametrize("action", sorted(HUMAN_ONLY_ACTIONS))
+async def test_an_agent_or_policy_is_refused_every_listed_action(
+    migrated_db: MigratedDatabase, action: str
+) -> None:
+    seed = Seeder(migrated_db.superuser_dsn)
+    tenant = await seed.firm()
+    person = uuid.uuid4()
+    for actor, policy in ((("agent", "agent:probe:run"), None), (("policy", "policy:probe"), "p")):
+        with pytest.raises(asyncpg.InsufficientPrivilegeError, match="human_only_action"):
+            await seed.as_actor(
+                tenant, actor, AUDIT, tenant, *actor, action, str(uuid.uuid4()), person, policy
+            )
+    human = ("human", str(person))
+    await seed.as_actor(
+        tenant, human, AUDIT, tenant, *human, action, str(uuid.uuid4()), None, None
+    )
+
+
+async def test_an_agent_may_still_write_its_own_actions(migrated_db: MigratedDatabase) -> None:
+    seed = Seeder(migrated_db.superuser_dsn)
+    tenant = await seed.firm()
+    agent = ("agent", "agent:probe:run")
+    await seed.as_actor(
+        tenant,
+        agent,
+        AUDIT,
+        tenant,
+        *agent,
+        "risk.recorded",
+        str(uuid.uuid4()),
+        uuid.uuid4(),
+        None,
+    )

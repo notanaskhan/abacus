@@ -36,6 +36,7 @@ GENERATED = [
     ("**/_matrix.py", "python -m abacus_tools.codegen.permission_matrix"),
     ("**/_flags.py", "python -m abacus_tools.codegen.feature_flags"),
     ("**/_provider_terms.py", "python -m abacus_tools.codegen.provider_terms"),
+    ("**/_human_only_actions.py", "python -m abacus_tools.codegen.human_only_actions"),
     ("**/_specs.py", "python -m abacus_tools.codegen.agent_specs"),
     ("**/_eval_suites.py", "python -m abacus_tools.codegen.eval_suites"),
     ("backend/tests/durations.json", "python -m abacus_tools.ci.shard --record <report>"),
