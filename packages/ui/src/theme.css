@@ -8,9 +8,10 @@
    apps/web/src/lint/tokens-mirror.test.ts. Layout sizes, z-index, scrims and motion live in
    root.css; the reference ink ladder in contrast.css.
 
-   The SPEC-016 token names (ground, surface, muted, line, accent, ok, warn, info, danger, ai) stay
-   as aliases so every screen takes the new look at once; new code uses the plan's names (card,
-   shell, nested, ink-2, hair, espresso, green / amber / red …). */
+   The Atelier names ground, muted, line, accent, info and ai are retired (F-05-T34, DS-32) and
+   banned by eslint-design-rules.js; the SPEC-016 names surface, rail, sunken, ok, warn and danger
+   stay as aliases until their screens are replaced. New code uses the plan's names (card, shell,
+   nested, ink-2, hair, espresso, green / amber / red …). */
 @theme static {
   /* Only the plan's tokens exist: Tailwind's default palette, shadows and type sizes compile to
      nothing (SPEC-048); text sizes come from the type roles below (F-05-T06 codemod, done). */
@@ -99,27 +100,16 @@
   --color-hl-sage: #a9c08e;
   --color-hl-slate: #9db2c9;
 
-  /* SPEC-016 aliases */
-  --color-ground: #f8f8f6;
+  /* SPEC-016 aliases still in use (the Atelier names are retired, F-05-T34) */
   --color-surface: #ffffff;
   --color-rail: #f2f1ef;
   --color-sunken: #efeeeb;
-  --color-muted: rgba(43, 31, 23, 0.66);
-  --color-line: rgba(43, 31, 23, 0.1);
-  --color-accent: #2b1f17;
-  --color-accent-hover: #3b2a1f;
-  --color-accent-soft: #e8e6e0;
-  --color-on-accent: #fefefe;
   --color-ok: #47521f;
   --color-ok-soft: #e6ebd8;
   --color-warn: #7c5718;
   --color-warn-soft: #f6eedf;
-  --color-info: #7c5718;
-  --color-info-soft: #f6eedf;
   --color-danger: #8e2418;
   --color-danger-soft: #f7e4e1;
-  --color-ai: rgba(43, 31, 23, 0.6);
-  --color-ai-line: rgba(43, 31, 23, 0.22);
 
   /* Families */
   --font-sans: "Geist", "Inter Tight", -apple-system, "Helvetica Neue", Arial, sans-serif;

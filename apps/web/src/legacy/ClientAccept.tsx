@@ -55,7 +55,7 @@ export function Accept(): JSX.Element {
     return (
       <Shell>
         <h1 className="text-dashboard">This invitation can&apos;t be used</h1>
-        <p className="text-body text-muted">
+        <p className="text-body text-ink-3">
           The link may have expired, been used already, or been sent to a different email address.
           Ask your auditor to send a new invitation.
         </p>
@@ -72,7 +72,7 @@ export function Accept(): JSX.Element {
 
 function Shell({ children }: { children: ReactNode }): JSX.Element {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-ground p-6">
+    <main className="flex min-h-screen items-center justify-center bg-shell p-6">
       <Card className="flex w-full max-w-md flex-col gap-3 p-6">
         <PortalBrand />
         {children}

@@ -60,6 +60,26 @@ const END = "(?![A-Za-z0-9])";
 export const PALETTE_SOURCE =
   `${START}(?:${PREFIX})-(?:${OTHER_FAMILIES.join("|")})${END}` +
   `|${START}(?:${PREFIX})-(?:${TOKEN_FAMILIES.join("|")})-[0-9]{2,3}${END}`;
+// The retired Atelier tokens (F-05-T34, DS-32, F-05 J3). theme.css no longer defines them, so their
+// utilities would compile to nothing; the ban makes a new use fail lint instead of rendering
+// unstyled. The replacements are exact value matches: ground -> shell, muted -> ink-3,
+// line -> hair, accent -> espresso (accent-hover -> cta-hover, accent-soft -> sel-bg,
+// on-accent -> on-dark), info -> amber-ink (info-soft -> amber-tint), ai -> ink-3, ai-line -> stroke.
+export const RETIRED_TOKENS = [
+  "ground",
+  "muted",
+  "line",
+  "accent",
+  "accent-hover",
+  "accent-soft",
+  "on-accent",
+  "info",
+  "info-soft",
+  "ai",
+  "ai-line",
+];
+/** Regex source: a utility on a retired Atelier token, such as `text-muted` or `hover:bg-accent`. */
+export const RETIRED_TOKEN_SOURCE = `${START}(?:${PREFIX})-(?:${RETIRED_TOKENS.join("|")})(?![\\w-])`;
 /** Regex source: an arbitrary colour value such as `bg-[#fff]` or `text-[rgb(0,0,0)]`. */
 export const ARBITRARY_COLOUR_SOURCE = `${START}(?:${PREFIX})-\\[(?:#|(?:rgba?|hsla?|hwb|oklch|oklab|lab|lch|color)\\()`;
 const HEX_SOURCE = "(?<![\\w&])#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3})(?![0-9a-zA-Z])";
@@ -89,7 +109,12 @@ export const designSyntax = [
   {
     selector: textMatching(PALETTE_SOURCE),
     message:
-      "Use the design tokens (bg-surface, text-muted, bg-green-tint, …), not Tailwind's palette (SPEC-016, SPEC-048).",
+      "Use the design tokens (bg-card, text-ink-3, bg-green-tint, …), not Tailwind's palette (SPEC-016, SPEC-048).",
+  },
+  {
+    selector: textMatching(RETIRED_TOKEN_SOURCE),
+    message:
+      "The Atelier tokens are retired (F-05-T34): use bg-shell, text-ink-3, border-hair, bg-espresso, text-amber-ink or text-ink-3.",
   },
   {
     selector: textMatching(ARBITRARY_COLOUR_SOURCE),

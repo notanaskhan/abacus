@@ -95,7 +95,7 @@ export function StatementReview({
   if (statement.isPending) return <Skeleton className="h-24" />;
   if (statement.isError) {
     return (
-      <p className="text-body text-muted">
+      <p className="text-body text-ink-3">
         {errorMessage(statement.error) === "no_transactions"
           ? "No statement transactions found in this file."
           : "The transactions couldn't be read."}

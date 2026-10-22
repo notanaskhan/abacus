@@ -18,7 +18,7 @@ export function FollowUpDrafts({ engagementId }: { engagementId: string }): JSX.
   if (drafts.data === undefined || drafts.data.length === 0) return null;
   return (
     <Panel title="Reminders waiting for you">
-      <ul className="flex flex-col divide-y divide-line">
+      <ul className="flex flex-col divide-y divide-hair">
         {drafts.data.map((d) => (
           <DraftRow key={d.id} engagementId={engagementId} draft={d} />
         ))}
@@ -48,7 +48,7 @@ function DraftRow({
   return (
     <li className="flex flex-col gap-2 py-3 text-body">
       <p className="font-medium">To {draft.recipient_name || "a client contact"}</p>
-      <ul className="list-disc pl-5 text-muted">
+      <ul className="list-disc pl-5 text-ink-3">
         {draft.items.map((i) => (
           <li key={i.request_item_id}>{i.description}</li>
         ))}

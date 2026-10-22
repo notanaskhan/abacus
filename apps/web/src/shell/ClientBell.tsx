@@ -21,13 +21,13 @@ export function ClientBell(): JSX.Element {
       >
         <Bell aria-hidden="true" className="size-5" />
         {unread > 0 && (
-          <span className="absolute -top-1 -right-1 rounded-full bg-accent px-1.5 text-meta text-on-accent tabular-nums">
+          <span className="absolute -top-1 -right-1 rounded-full bg-espresso px-1.5 text-meta text-on-dark tabular-nums">
             {unread}
           </span>
         )}
       </button>
       {open && (
-        <div className="absolute right-0 z-10 mt-2 rounded-[var(--radius-control)] border border-line bg-surface shadow-pop">
+        <div className="absolute right-0 z-10 mt-2 rounded-[var(--radius-control)] border border-hair bg-surface shadow-pop">
           <NotificationPanel
             portal="client"
             onClose={() => {

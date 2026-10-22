@@ -15,7 +15,7 @@ function Guidance({
   item: TemplateItemOut;
   names: Map<string, string>;
 }): JSX.Element {
-  if (!item.why && !item.good_looks_like) return <span className="text-muted">None</span>;
+  if (!item.why && !item.good_looks_like) return <span className="text-ink-3">None</span>;
   if (item.guidance_source !== "drafted") return <span>Written</span>;
   const approver = item.guidance_approved_by
     ? (names.get(item.guidance_approved_by) ?? "your team")
@@ -39,14 +39,14 @@ export function MethodologyVersion({ versionId }: { versionId: string }): JSX.El
   const names = new Map((members.data ?? []).map((m) => [m.user_id, m.display_name]));
   return (
     <div className="flex flex-col gap-4">
-      <nav aria-label="Breadcrumb" className="text-body text-muted">
+      <nav aria-label="Breadcrumb" className="text-body text-ink-3">
         <Link to="/admin/methodology" className="hover:underline">
           Methodology
         </Link>{" "}
         / {v.summary.template_name} v{v.summary.version}
       </nav>
       <h1 className="text-[15px] font-medium tracking-[-0.012em]">
-        {v.summary.template_name} <span className="text-muted">v{v.summary.version}</span>
+        {v.summary.template_name} <span className="text-ink-3">v{v.summary.version}</span>
       </h1>
       <div className="grid gap-4 lg:grid-cols-2">
         <Panel title={`Areas (${String(v.areas.length)})`}>

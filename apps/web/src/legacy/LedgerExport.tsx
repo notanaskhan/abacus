@@ -111,7 +111,7 @@ export function LedgerExport({
           {formats.data.map((f) => (
             <label
               key={f.id}
-              className="flex cursor-pointer items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 has-[:checked]:border-stroke has-[:checked]:bg-sel-bg"
+              className="flex cursor-pointer items-center gap-2 rounded-md border border-hair bg-surface px-3 py-2 has-[:checked]:border-stroke has-[:checked]:bg-sel-bg"
             >
               <input
                 type="radio"
@@ -135,7 +135,7 @@ export function LedgerExport({
               <li key={step}>{step}</li>
             ))}
           </ol>
-          <p className="text-muted">
+          <p className="text-ink-3">
             {periodEnd !== undefined
               ? `The trial balance for the year ending ${longDate(periodEnd)}, as a ${chosen.file_type.toUpperCase()} file.`
               : `A ${chosen.file_type.toUpperCase()} file.`}
@@ -155,7 +155,7 @@ export function LedgerExport({
                 if (file !== undefined) void send(file);
               }}
             />
-            {busy && <span className="text-muted">Checking the file…</span>}
+            {busy && <span className="text-ink-3">Checking the file…</span>}
           </div>
         </>
       )}

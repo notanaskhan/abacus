@@ -537,7 +537,7 @@ function TrialBalanceCard({
                         <td className="px-2 py-1 text-right tabular-nums">
                           {l.aje != null && l.aje !== "0.00" ? amount(l.aje, unit) : ""}
                           {l.refs.length > 0 && (
-                            <span className="ml-1.5 text-[10.5px] font-medium text-accent">
+                            <span className="ml-1.5 text-[10.5px] font-medium text-espresso">
                               {l.refs.join(" ")}
                             </span>
                           )}

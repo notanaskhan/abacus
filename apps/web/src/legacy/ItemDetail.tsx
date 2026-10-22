@@ -222,7 +222,7 @@ export function ItemDetail({
                   {when(shown.decision.decided_at)}
                 </p>
               ) : shown.id !== newest?.id ? (
-                <p className="text-body text-muted">A newer version replaced this one.</p>
+                <p className="text-body text-ink-3">A newer version replaced this one.</p>
               ) : myRole !== undefined && DECIDERS.has(myRole) ? (
                 <DecisionActions
                   engagementId={engagementId}
@@ -232,7 +232,7 @@ export function ItemDetail({
                   onSettled={refresh}
                 />
               ) : (
-                <p className="text-body text-muted">Awaiting review.</p>
+                <p className="text-body text-ink-3">Awaiting review.</p>
               )}
             </Panel>
             <Screening
@@ -369,7 +369,7 @@ function VersionCard({
   return (
     <div
       className={`flex flex-col gap-1 rounded-nested border p-3 text-[12.5px] ${
-        selected ? "border-stroke bg-shell" : "border-line"
+        selected ? "border-stroke bg-shell" : "border-hair"
       }`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -397,7 +397,7 @@ function VersionCard({
               ? `Added for the client by ${v.uploaded_by_name || "the audit team"}`
               : `Uploaded by ${v.uploaded_by_name || "the client"}`}
       </p>
-      {v.note != null && <p className="text-meta text-muted">{v.note}</p>}
+      {v.note != null && <p className="text-meta text-ink-3">{v.note}</p>}
       {v.file_name !== null && <p className="break-all">{v.file_name}</p>}
       <p className="text-[11.5px] text-ink-3 tabular-nums">
         {when(v.created_at)} · {bytes(v.size_bytes)} · {fileKind(v.media_type)} ·{" "}
@@ -438,7 +438,7 @@ function Screening({
         <Skeleton className="h-16" />
       ) : result === undefined ? (
         <div className="flex flex-wrap items-center gap-3">
-          <p className="text-body text-muted">Not screened yet.</p>
+          <p className="text-body text-ink-3">Not screened yet.</p>
           {screenNow}
         </div>
       ) : (
@@ -472,7 +472,7 @@ function Screening({
                       {c.reason !== null ? `: ${NOT_VERIFIED[c.reason] ?? c.reason}` : ""}
                     </StatusPill>
                   )}
-                  {c.quote !== null && <AgentText inline text={c.quote} className="text-muted" />}
+                  {c.quote !== null && <AgentText inline text={c.quote} className="text-ink-3" />}
                   {c.value !== null &&
                     (source !== undefined ? (
                       <SourceHover

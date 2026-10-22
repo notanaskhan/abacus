@@ -41,10 +41,10 @@ export function DocumentKindSelect({
       ? ` (${OPTIONS.find(([v]) => v === item.document_kind)?.[1] ?? item.document_kind})`
       : "";
   return (
-    <label className="flex items-center gap-2 text-meta text-muted">
+    <label className="flex items-center gap-2 text-meta text-ink-3">
       Expects
       <select
-        className="rounded-[var(--radius-control)] border border-line bg-surface px-2 py-1 text-body text-ink"
+        className="rounded-[var(--radius-control)] border border-hair bg-surface px-2 py-1 text-body text-ink"
         value={current(item)}
         disabled={save.isPending}
         onChange={(event) => {

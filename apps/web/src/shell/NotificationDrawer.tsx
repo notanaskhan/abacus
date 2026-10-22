@@ -133,7 +133,7 @@ export function NotificationDrawer({
               >
                 {label}
                 {n > 0 && (
-                  <span className="rounded-[var(--radius-badge)] bg-accent px-1 text-[10.5px] text-on-accent tabular-nums">
+                  <span className="rounded-[var(--radius-badge)] bg-espresso px-1 text-[10.5px] text-on-dark tabular-nums">
                     {n}
                   </span>
                 )}
@@ -183,7 +183,7 @@ export function NotificationDrawer({
                       >
                         <span
                           aria-hidden="true"
-                          className={`mt-1.5 size-2 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-accent"}`}
+                          className={`mt-1.5 size-2 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-espresso"}`}
                         />
                         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                           <span className={`text-[13px] ${n.read ? "text-ink-2" : "font-medium"}`}>

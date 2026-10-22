@@ -143,7 +143,7 @@ export function ConnectionPanel({
               </Button>
             </div>
           )}
-          <p className="text-meta text-muted">
+          <p className="text-meta text-ink-3">
             An export isn't updated automatically. For a later date, upload a new export.
           </p>
         </>
@@ -160,17 +160,17 @@ export function ConnectionPanel({
             />
           ) : canConnect ? (
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="flex flex-col gap-2 rounded-md border border-line p-3">
+              <div className="flex flex-col gap-2 rounded-md border border-hair p-3">
                 <h3 className="font-medium">Connect (fastest)</h3>
-                <p className="text-body text-muted">
+                <p className="text-body text-ink-3">
                   Connect your accounting system so your auditor can retrieve records directly.
                 </p>
                 <Providers engagementId={engagementId} onPick={setConsent} />
               </div>
               {canExport && (
-                <div className="flex flex-col gap-2 rounded-md border border-line p-3">
+                <div className="flex flex-col gap-2 rounded-md border border-hair p-3">
                   <h3 className="font-medium">Export instead</h3>
-                  <p className="text-body text-muted">
+                  <p className="text-body text-ink-3">
                     Export your trial balance from your accounting system and upload the file. No
                     connection needed.
                   </p>
@@ -189,7 +189,7 @@ export function ConnectionPanel({
             </div>
           ) : (
             <>
-              <p className="text-body text-muted">
+              <p className="text-body text-ink-3">
                 Not connected. The client&apos;s administrator can connect their accounting system
                 or upload an export.
               </p>
@@ -212,7 +212,7 @@ export function ConnectionPanel({
       ) : (
         <>
           <dl className="grid grid-cols-[10rem_1fr] gap-x-3 gap-y-1 text-body">
-            <dt className="text-muted">Status</dt>
+            <dt className="text-ink-3">Status</dt>
             <dd>
               {live.status === "active" ? (
                 <StatusPill tone="success">Connected</StatusPill>
@@ -220,14 +220,14 @@ export function ConnectionPanel({
                 <StatusPill tone="warning">Needs attention</StatusPill>
               )}
             </dd>
-            <dt className="text-muted">Connected on</dt>
+            <dt className="text-ink-3">Connected on</dt>
             <dd className="tabular-nums">{when(live.created_at)}</dd>
-            <dt className="text-muted">Last check</dt>
+            <dt className="text-ink-3">Last check</dt>
             <dd className="tabular-nums">
               {when(live.last_checked_at)}
               {live.last_check_ok === false && " · failed"}
             </dd>
-            <dt className="text-muted">Last retrieval</dt>
+            <dt className="text-ink-3">Last retrieval</dt>
             <dd className="tabular-nums">{when(live.last_pull_at)}</dd>
           </dl>
           <div className="flex flex-wrap gap-2">
@@ -287,7 +287,7 @@ export function ConnectionPanel({
           </li>
           <li>You can disconnect at any time. Retrieval stops straight away.</li>
         </ul>
-        <p className="mb-4 text-body text-muted">
+        <p className="mb-4 text-body text-ink-3">
           On the next screen your accounting system will ask you to approve access. The permission
           it asks for may be broader than reading. Abacus still only reads.
         </p>
@@ -355,7 +355,7 @@ function Providers({
   if (providers.isError)
     return <p className="text-body text-danger">{errorMessage(providers.error)}</p>;
   if (providers.data.length === 0) {
-    return <p className="text-body text-muted">No accounting system can be connected yet.</p>;
+    return <p className="text-body text-ink-3">No accounting system can be connected yet.</p>;
   }
   return (
     <div className="flex flex-wrap gap-2">
@@ -380,7 +380,7 @@ function AccessLog({ engagementId }: { engagementId: string }): JSX.Element {
   if (log.isPending) return <Skeleton className="h-24" />;
   if (log.isError) return <p className="text-body text-danger">{errorMessage(log.error)}</p>;
   if (log.data.length === 0 && page === 0) {
-    return <p className="text-body text-muted">No retrievals yet.</p>;
+    return <p className="text-body text-ink-3">No retrievals yet.</p>;
   }
   return (
     <div className="flex flex-col gap-2">
@@ -440,14 +440,14 @@ function LatestImport({ latest }: { latest: ImportOut }): JSX.Element {
   const outcome = importOutcome({ ...latest, duplicate: false }, latest.system);
   return (
     <dl className="grid grid-cols-[10rem_1fr] gap-x-3 gap-y-1 text-body">
-      <dt className="text-muted">Latest export</dt>
+      <dt className="text-ink-3">Latest export</dt>
       <dd>
         {latest.system} · year ending {longDate(latest.period_end)}
         {latest.on_behalf && " · uploaded by the audit team"}
       </dd>
-      <dt className="text-muted">Uploaded</dt>
+      <dt className="text-ink-3">Uploaded</dt>
       <dd className="tabular-nums">{when(latest.uploaded_at)}</dd>
-      <dt className="text-muted">Result</dt>
+      <dt className="text-ink-3">Result</dt>
       <dd>
         {latest.status === "received" ? (
           <StatusPill tone="success">Received</StatusPill>

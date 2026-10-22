@@ -17,7 +17,7 @@ export function ClientHome(): JSX.Element {
   }, [signedIn]);
   const me = useQuery({ ...meOptions(), enabled: signedIn });
   return (
-    <div className="min-h-screen bg-ground">
+    <div className="min-h-screen bg-shell">
       <header className="flex h-[46px] items-center justify-between border-b-[0.5px] border-hair bg-card px-4">
         <PortalBrand />
         <span className="flex items-center gap-2">
@@ -77,7 +77,7 @@ export function ClientHome(): JSX.Element {
               </ul>
             )}
             {me.data.memberships.some((m) => m.kind === "staff") && (
-              <Link to="/" className="text-body text-accent hover:underline">
+              <Link to="/" className="text-body text-espresso hover:underline">
                 Go to your firm workspace
               </Link>
             )}

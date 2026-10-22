@@ -79,7 +79,7 @@ export function KnowledgeDocuments(): JSX.Element {
           Add your methodology so staff can search it.
         </EmptyState>
       ) : (
-        <div className="overflow-x-auto rounded-[var(--radius-panel)] border border-line bg-surface">
+        <div className="overflow-x-auto rounded-[var(--radius-panel)] border border-hair bg-surface">
           <Table className="min-w-[560px]">
             <thead>
               <tr>
@@ -100,7 +100,7 @@ export function KnowledgeDocuments(): JSX.Element {
                     <Td>
                       <StatusPill tone={status.tone}>{status.label}</StatusPill>
                       {d.status === "failed" && d.failure_code !== null && (
-                        <p className="mt-1 text-meta text-muted">
+                        <p className="mt-1 text-meta text-ink-3">
                           {FAILURES[d.failure_code] ?? "Processing failed. Add it again."}
                         </p>
                       )}
@@ -216,7 +216,7 @@ function AddDocument({
               onChange={(event) => {
                 setKind(event.target.value === "public" ? "public" : "firm_own");
               }}
-              className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-body"
+              className="h-9 rounded-[var(--radius-control)] border border-hair bg-surface px-3 text-body"
             >
               <option value="firm_own">Our firm&apos;s own</option>
               <option value="public">Publicly available</option>
@@ -249,7 +249,7 @@ function AddDocument({
             onChange={(event) => {
               setText(event.target.value);
             }}
-            className="rounded-[var(--radius-control)] border border-line bg-surface p-3 text-body"
+            className="rounded-[var(--radius-control)] border border-hair bg-surface p-3 text-body"
           />
         </div>
         <label className="flex items-center gap-2 text-body">

@@ -65,7 +65,7 @@ function Team({ engagementId }: { engagementId: string }): JSX.Element {
           <h2 id="team-heading" className="text-[15px] font-medium tracking-[-0.012em]">
             Team
           </h2>
-          <p className="text-body text-muted">
+          <p className="text-body text-ink-3">
             Firm people working on this engagement. Their engagement role decides what they can see
             and do.
           </p>
@@ -92,7 +92,7 @@ function Team({ engagementId }: { engagementId: string }): JSX.Element {
       ) : team.isError ? (
         <Alert title="Couldn't load the team">{errorMessage(team.error)}</Alert>
       ) : (
-        <div className="overflow-x-auto rounded-[var(--radius-panel)] border border-line bg-surface">
+        <div className="overflow-x-auto rounded-[var(--radius-panel)] border border-hair bg-surface">
           <Table className="min-w-[560px]">
             <thead>
               <tr>
@@ -123,7 +123,7 @@ function Team({ engagementId }: { engagementId: string }): JSX.Element {
                             body: { role: event.target.value as StaffRole },
                           });
                         }}
-                        className="h-8 rounded-[var(--radius-control)] border border-line bg-surface px-2 text-body"
+                        className="h-8 rounded-[var(--radius-control)] border border-hair bg-surface px-2 text-body"
                       >
                         {grantable.map((r) => (
                           <option key={r.value} value={r.value}>
@@ -242,7 +242,7 @@ function AddPerson({
             onChange={(event) => {
               setFilter(event.target.value);
             }}
-            className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-body"
+            className="h-9 rounded-[var(--radius-control)] border border-hair bg-surface px-3 text-body"
           />
         </div>
         {candidates.isPending ? (
@@ -252,7 +252,7 @@ function AddPerson({
             {errorMessage(candidates.error)}
           </p>
         ) : shown.length === 0 ? (
-          <p className="text-body text-muted">No one else can be added.</p>
+          <p className="text-body text-ink-3">No one else can be added.</p>
         ) : (
           <fieldset className="flex max-h-56 flex-col gap-1 overflow-y-auto">
             <legend className="sr-only">Person</legend>
@@ -282,7 +282,7 @@ function AddPerson({
             onChange={(event) => {
               setRole(event.target.value as StaffRole);
             }}
-            className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-body"
+            className="h-9 rounded-[var(--radius-control)] border border-hair bg-surface px-3 text-body"
           >
             {roles.map((r) => (
               <option key={r.value} value={r.value}>

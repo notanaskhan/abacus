@@ -40,11 +40,11 @@ export function ClientUploadChecks({
   replace: JSX.Element | null;
 }): JSX.Element | null {
   const checks = useChecks(ids, uploadedAt);
-  if (checks.isPending) return <span className="text-meta text-muted">Checking…</span>;
+  if (checks.isPending) return <span className="text-meta text-ink-3">Checking…</span>;
   if (checks.isError) return null; // the upload itself is listed; checks are a bonus here
   if (checks.data.length === 0) {
     const fresh = Date.now() - new Date(uploadedAt).getTime() < POLL_FOR_MS;
-    return fresh ? <span className="text-meta text-muted">Checking…</span> : null;
+    return fresh ? <span className="text-meta text-ink-3">Checking…</span> : null;
   }
   const problems = checks.data
     .map((c) => problemMessage(c))
@@ -152,13 +152,13 @@ export function FirmChecksPanel({ ids }: { ids: Ids }): JSX.Element {
   if (checks.isPending) return <Skeleton className="h-24" />;
   if (checks.isError) {
     return isForbidden(checks.error) ? (
-      <p className="text-body text-muted">You can&apos;t see this file&apos;s checks.</p>
+      <p className="text-body text-ink-3">You can&apos;t see this file&apos;s checks.</p>
     ) : (
       <Alert title="Couldn't load the checks">Try again in a moment.</Alert>
     );
   }
   if (checks.data.length === 0) {
-    return <p className="text-body text-muted">Not checked yet.</p>;
+    return <p className="text-body text-ink-3">Not checked yet.</p>;
   }
   return (
     <ul aria-label="Checks" className="flex flex-col gap-2 text-body">
@@ -167,9 +167,9 @@ export function FirmChecksPanel({ ids }: { ids: Ids }): JSX.Element {
           <span className="flex flex-wrap items-center gap-2">
             {outcomeBadge(check)}
             <span className="font-medium">{checkName(check.code)}</span>
-            {check.audience === "firm" && <span className="text-meta text-muted">firm only</span>}
+            {check.audience === "firm" && <span className="text-meta text-ink-3">firm only</span>}
           </span>
-          {detail(check) !== "" && <span className="text-muted">{detail(check)}</span>}
+          {detail(check) !== "" && <span className="text-ink-3">{detail(check)}</span>}
           {isLocked(check) && <UnlockForm ids={ids} />}
         </li>
       ))}

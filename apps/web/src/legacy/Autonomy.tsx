@@ -74,7 +74,7 @@ export function Autonomy({ canSet }: { canSet: boolean }): JSX.Element {
   const chosen = picked ?? current.data.level;
   return (
     <Panel title="Autonomy">
-      <p className="text-body text-muted">
+      <p className="text-body text-ink-3">
         How much the agent may do on its own. People always make the decisions: accepting,
         rejecting and sending back evidence.
       </p>
@@ -84,7 +84,7 @@ export function Autonomy({ canSet }: { canSet: boolean }): JSX.Element {
           <label
             key={l.level}
             className={`flex items-start gap-3 rounded-[var(--radius-control)] border p-3 ${
-              chosen === l.level ? "border-stroke bg-sel-bg" : "border-line"
+              chosen === l.level ? "border-stroke bg-sel-bg" : "border-hair"
             } ${l.available ? "" : "opacity-60"}`}
           >
             <input
@@ -106,7 +106,7 @@ export function Autonomy({ canSet }: { canSet: boolean }): JSX.Element {
                   <StatusPill tone="neutral">Coming with the engagement agent</StatusPill>
                 )}
               </span>
-              <span className="text-body text-muted">{l.may}</span>
+              <span className="text-body text-ink-3">{l.may}</span>
             </span>
           </label>
         ))}
@@ -122,13 +122,13 @@ export function Autonomy({ canSet }: { canSet: boolean }): JSX.Element {
             {current.data.set_at === null && picked === null ? "Confirm Routine" : "Save"}
           </Button>
           {current.data.set_at !== null && (
-            <span className="text-meta text-muted">
+            <span className="text-meta text-ink-3">
               Last set <DateText value={current.data.set_at} kind="dateTime" />
             </span>
           )}
         </div>
       ) : (
-        <p className="text-body text-muted">Only firm administrators can change this.</p>
+        <p className="text-body text-ink-3">Only firm administrators can change this.</p>
       )}
       {save.isError && !isForbidden(save.error) && (
         <p role="alert" className="text-body text-danger">
@@ -165,7 +165,7 @@ export function FirmAgents({ canSet }: { canSet: boolean }): JSX.Element | null 
         <StatusPill tone={paused ? "warning" : "success"}>
           {paused ? "Paused for the whole firm" : "Running"}
         </StatusPill>
-        <span className="text-muted">
+        <span className="text-ink-3">
           Paused, no engagement agent screens, retrieves or suggests anything until resumed.
         </span>
         {canSet && (
@@ -220,7 +220,7 @@ export function FirmTimeZone({ canSet }: { canSet: boolean }): JSX.Element | nul
       <label className="flex flex-wrap items-center gap-3 text-body">
         Your firm&apos;s time zone
         <select
-          className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3"
+          className="h-9 rounded-[var(--radius-control)] border border-hair bg-surface px-3"
           value={zone.data.time_zone}
           disabled={!canSet || save.isPending}
           onChange={(e) => {
@@ -234,7 +234,7 @@ export function FirmTimeZone({ canSet }: { canSet: boolean }): JSX.Element | nul
             </option>
           ))}
         </select>
-        <span className="text-muted">
+        <span className="text-ink-3">
           Engagement agents check for overdue items at 9:00 here, on weekdays.
         </span>
       </label>
@@ -271,7 +271,7 @@ export function LetterPolicy({ canSet }: { canSet: boolean }): JSX.Element | nul
         />
         <span>
           Require the engagement letter before client data
-          <span className="block text-muted">
+          <span className="block text-ink-3">
             Off: a missing letter is flagged but doesn&apos;t block. The standards say the letter
             should be agreed, preferably before the work begins.
           </span>
@@ -313,7 +313,7 @@ export function DraftedGuidanceSetting({ canSet }: { canSet: boolean }): JSX.Ele
         />
         <span>
           Show guidance the agent drafted and your team approved by your team to clients
-          <span className="block text-muted">
+          <span className="block text-ink-3">
             Off: clients see the standard wording, or nothing, until your team writes its own. Your
             team always sees the drafts it approved, labelled.
           </span>

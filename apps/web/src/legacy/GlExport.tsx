@@ -15,7 +15,7 @@ import { glFailureMessage, glStatusMessage } from "./glMessages";
 // balance, and see where it stands. Nothing here without the flag or the permission.
 
 const MAX_BYTES = 50 * 1024 * 1024;
-const TONES = { info: "text-muted", ok: "text-ok", danger: "text-danger" } as const;
+const TONES = { info: "text-ink-3", ok: "text-ok", danger: "text-danger" } as const;
 
 export function GlExport({ engagementId }: { engagementId: string }): JSX.Element | null {
   const queryClient = useQueryClient();
@@ -80,10 +80,10 @@ export function GlExport({ engagementId }: { engagementId: string }): JSX.Elemen
   return (
     <section
       aria-label="General ledger detail"
-      className="flex flex-col gap-3 border-t border-line pt-3 text-body"
+      className="flex flex-col gap-3 border-t border-hair pt-3 text-body"
     >
       <h3 className="font-medium">General ledger detail</h3>
-      <p className="text-muted">
+      <p className="text-ink-3">
         Every transaction for the year, so your auditor can test them. It&apos;s checked against
         your trial balance.
       </p>
@@ -98,7 +98,7 @@ export function GlExport({ engagementId }: { engagementId: string }): JSX.Elemen
           {formats.data.map((f) => (
             <label
               key={f.id}
-              className="flex cursor-pointer items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 has-[:checked]:border-stroke has-[:checked]:bg-sel-bg"
+              className="flex cursor-pointer items-center gap-2 rounded-md border border-hair bg-surface px-3 py-2 has-[:checked]:border-stroke has-[:checked]:bg-sel-bg"
             >
               <input
                 type="radio"
@@ -122,7 +122,7 @@ export function GlExport({ engagementId }: { engagementId: string }): JSX.Elemen
               <li key={step}>{step}</li>
             ))}
           </ol>
-          <p className="text-muted">
+          <p className="text-ink-3">
             {`A ${chosen.file_type.toUpperCase()} file for the whole fiscal year, up to 50 MB.`}
           </p>
           <div className="flex flex-wrap items-center gap-3">
@@ -139,7 +139,7 @@ export function GlExport({ engagementId }: { engagementId: string }): JSX.Elemen
                 if (file !== undefined) void send(file);
               }}
             />
-            {busy && <span className="text-muted">Uploading…</span>}
+            {busy && <span className="text-ink-3">Uploading…</span>}
           </div>
         </>
       )}

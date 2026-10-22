@@ -32,7 +32,7 @@ export function Methodology(): JSX.Element {
     <div className="flex flex-col gap-4">
       <div>
         <h2 className="px-1 text-[15px] font-medium tracking-[-0.012em]">Methodology</h2>
-        <p className="text-body text-muted">
+        <p className="text-body text-ink-3">
           Your firm&apos;s audit areas, standard requests and account rules. Each upload becomes a
           new version; engagements keep the version they started with.
         </p>
@@ -56,7 +56,7 @@ export function Methodology(): JSX.Element {
           Upload your first template workbook with the Areas, Requests and Account rules sheets.
         </EmptyState>
       ) : (
-        <div className="overflow-x-auto rounded-[var(--radius-panel)] border border-line bg-surface">
+        <div className="overflow-x-auto rounded-[var(--radius-panel)] border border-hair bg-surface">
           <Table className="min-w-[560px]">
             <thead>
               <tr>
@@ -72,13 +72,13 @@ export function Methodology(): JSX.Element {
                     <Link
                       to="/admin/methodology/$versionId"
                       params={{ versionId: t.version_id }}
-                      className="font-medium text-accent hover:underline"
+                      className="font-medium text-espresso hover:underline"
                     >
                       {t.template_name}
                     </Link>
                   </Td>
                   <Td className="tabular-nums">v{t.version}</Td>
-                  <Td className="text-muted">
+                  <Td className="text-ink-3">
                     <DateText value={t.created_at} />
                   </Td>
                 </tr>
@@ -143,7 +143,7 @@ function UploadPanel(): JSX.Element {
             onChange={(event) => {
               setFile(event.target.files?.[0] ?? null);
             }}
-            className="text-body file:mr-3 file:rounded-[var(--radius-control)] file:border file:border-line file:bg-surface file:px-3 file:py-1.5 file:text-body"
+            className="text-body file:mr-3 file:rounded-[var(--radius-control)] file:border file:border-hair file:bg-surface file:px-3 file:py-1.5 file:text-body"
           />
         </div>
         <fieldset className="flex flex-col gap-1">

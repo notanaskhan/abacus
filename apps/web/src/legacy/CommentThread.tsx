@@ -56,22 +56,25 @@ function Comment({
     <li
       id={`comment-${comment.id}`}
       className={`flex flex-col gap-1 rounded-[var(--radius-control)] border p-3 text-body ${
-        internal ? "border-line bg-warn-soft" : "border-line bg-surface"
+        internal ? "border-hair bg-warn-soft" : "border-hair bg-surface"
       }`}
     >
-      <div className="flex flex-wrap items-center gap-x-2 text-meta text-muted">
+      <div className="flex flex-wrap items-center gap-x-2 text-meta text-ink-3">
         <span className="font-medium text-ink">{comment.author_name || "Someone"}</span>
         <span>{comment.author_side === "client" ? "Client" : "Audit team"}</span>
         <DateText value={comment.created_at} kind="dateTime" />
         {internal && <span className="text-warn">Internal: the client can&apos;t see this</span>}
       </div>
       {comment.corrects != null && (
-        <a href={`#comment-${comment.corrects}`} className="text-meta text-accent hover:underline">
+        <a
+          href={`#comment-${comment.corrects}`}
+          className="text-meta text-espresso hover:underline"
+        >
           Corrects an earlier comment
         </a>
       )}
       {comment.redaction != null ? (
-        <p className="text-muted italic">
+        <p className="text-ink-3 italic">
           Redacted by {comment.redaction.redacted_by_name || "a firm administrator"} on{" "}
           {longDate(comment.redaction.redacted_at.slice(0, 10))}: {comment.redaction.reason}
         </p>
@@ -81,7 +84,7 @@ function Comment({
       {(comment.corrected_by ?? []).length > 0 && (
         <a
           href={`#comment-${comment.corrected_by?.[0] ?? ""}`}
-          className="text-meta text-accent hover:underline"
+          className="text-meta text-espresso hover:underline"
         >
           Corrected below
         </a>
@@ -89,7 +92,7 @@ function Comment({
       {comment.redaction == null && (mine || canRedact) && (
         <div className="flex gap-3 text-meta">
           {mine && (
-            <button type="button" className="text-accent hover:underline" onClick={onCorrect}>
+            <button type="button" className="text-espresso hover:underline" onClick={onCorrect}>
               Correct
             </button>
           )}
@@ -132,7 +135,7 @@ function Mentions({
   return (
     <ul
       aria-label="People you can mention"
-      className="flex flex-col rounded-[var(--radius-control)] border border-line bg-surface text-body"
+      className="flex flex-col rounded-[var(--radius-control)] border border-hair bg-surface text-body"
     >
       {matches.slice(0, 8).map((c) => (
         <li key={c.user_id}>
@@ -144,7 +147,7 @@ function Mentions({
             }}
           >
             {c.display_name}{" "}
-            <span className="text-meta text-muted">
+            <span className="text-meta text-ink-3">
               {c.side === "client" ? "Client" : "Audit team"}
             </span>
           </button>
@@ -242,7 +245,7 @@ export function CommentThread({
   if (comments.isPending) return <Skeleton className="h-16" />;
   if (comments.isError) {
     return isForbidden(comments.error) ? (
-      <p className="text-body text-muted">You can&apos;t see these comments.</p>
+      <p className="text-body text-ink-3">You can&apos;t see these comments.</p>
     ) : (
       <Alert title="Couldn't load the comments">Try again in a moment.</Alert>
     );
@@ -251,7 +254,7 @@ export function CommentThread({
   return (
     <section aria-label={label} className="flex flex-col gap-3">
       {comments.data.length === 0 ? (
-        <p className="text-body text-muted">No comments yet.</p>
+        <p className="text-body text-ink-3">No comments yet.</p>
       ) : (
         <ol className="flex flex-col gap-2">
           {comments.data.map((c) => (
@@ -283,7 +286,7 @@ export function CommentThread({
             setText(event.target.value);
           }}
           className={`rounded-[var(--radius-control)] border bg-surface p-2 text-body ${
-            visibility === "shared" ? "border-stroke" : "border-line bg-warn-soft"
+            visibility === "shared" ? "border-stroke" : "border-hair bg-warn-soft"
           }`}
         />
         {mention !== null && (
@@ -301,7 +304,7 @@ export function CommentThread({
         {chosen.length > 0 && (
           <p className="flex flex-wrap gap-1 text-meta" aria-label="Will be notified">
             {chosen.map((c) => (
-              <span key={c.user_id} className="rounded-pill bg-accent-soft px-2 py-0.5">
+              <span key={c.user_id} className="rounded-pill bg-sel-bg px-2 py-0.5">
                 {c.display_name}
                 <button
                   type="button"
@@ -331,14 +334,14 @@ export function CommentThread({
               Share with client
             </label>
           )}
-          <span className="text-meta text-muted">
+          <span className="text-meta text-ink-3">
             {visibility === "shared"
               ? side === "firm"
                 ? "The client will see this."
                 : "Your auditor will see this."
               : "Internal note: only your team sees this."}
           </span>
-          <span className="ml-auto text-meta text-muted tabular-nums">
+          <span className="ml-auto text-meta text-ink-3 tabular-nums">
             {text.length} / {LIMIT}
           </span>
           {correcting !== null && (
@@ -383,7 +386,7 @@ export function CommentThread({
             onChange={(event) => {
               setReason(event.target.value);
             }}
-            className="rounded-[var(--radius-control)] border border-line bg-surface p-2"
+            className="rounded-[var(--radius-control)] border border-hair bg-surface p-2"
           />
           <Button
             size="sm"

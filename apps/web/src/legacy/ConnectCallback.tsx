@@ -47,13 +47,13 @@ export function ConnectCallback(): JSX.Element {
       });
   }, [navigate, searchStr]);
   return (
-    <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center gap-4 bg-ground p-6">
+    <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center gap-4 bg-shell p-6">
       {failure === null ? (
         <Spinner label="Finishing the connection…" />
       ) : (
         <Alert title="Not connected">
           {failure}{" "}
-          <Link to="/client" className="text-accent hover:underline">
+          <Link to="/client" className="text-espresso hover:underline">
             Back to your engagements
           </Link>
         </Alert>
