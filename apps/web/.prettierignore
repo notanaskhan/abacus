@@ -3,3 +3,6 @@ test-results
 playwright-report
 parity-report
 .visual
+
+# Written by scripts/seed-manifest.mjs, one link per line (F-04-T14)
+src/routes/handoff-links.json
