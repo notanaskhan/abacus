@@ -19,6 +19,8 @@ from datetime import date
 from pathlib import Path
 from typing import cast
 
+from abacus.kernel.clock import system_now
+
 BACKEND = Path(__file__).resolve().parents[3]
 PYPROJECT = BACKEND / "pyproject.toml"
 EXCEPTION = BACKEND / "coverage-exception.toml"
@@ -89,7 +91,7 @@ def effective_floor(floor: int, exception: CoverageException | None, today: date
 def main() -> int:
     floor = configured_floor()
     exception = load(floor=floor)
-    today_floor = effective_floor(floor, exception, date.today())
+    today_floor = effective_floor(floor, exception, system_now().date())
     if exception is not None and today_floor < floor:
         print(
             f"coverage floor {floor}; exception {exception.decision} until "

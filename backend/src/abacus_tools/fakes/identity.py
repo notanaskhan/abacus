@@ -13,12 +13,12 @@ process.
 from __future__ import annotations
 
 import json
-import time
 
 import jwt
 from cryptography.hazmat.primitives.asymmetric import rsa
 from jwt.algorithms import RSAAlgorithm
 
+from abacus.kernel.clock import system_now
 from abacus.modules.identity.api import JwtVerifier
 
 ISSUER = "https://identity.abacus.local"
@@ -57,7 +57,7 @@ class FakeIdentityProvider:
         **claims: object,
     ) -> str:
         """An access token for `subject`; `claims` override or add claims (tests of bad tokens)."""
-        now = int(time.time())
+        now = int(system_now().timestamp())
         payload: dict[str, object] = {
             "iss": self.issuer,
             "aud": self.audience,

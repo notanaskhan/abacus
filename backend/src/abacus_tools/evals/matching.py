@@ -20,7 +20,7 @@ import time
 import uuid
 from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass
-from datetime import UTC, date, datetime
+from datetime import date
 from decimal import Decimal
 from pathlib import Path
 from typing import Annotated, Final, cast
@@ -30,6 +30,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.ai_gateway import ModelRequest, NotAdmitted, Tier, evaluation, model_id
 from abacus.ai_gateway.routes import configure_route, route_provider
+from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext
 from abacus.kernel.logging import get_logger
 from abacus.modules.agents.api import MATCHER, create_match_run, load_agent_context, match, spec
@@ -480,7 +481,7 @@ async def evaluate(
 ) -> dict[str, object]:
     """Every case (key cases `repeats` times), stopping before the cost limit; writes a report."""
     validate(suite)
-    started = datetime.now(UTC)
+    started = system_now()
     fx = await fixture(world)
     attempts: list[tuple[MatchCase, Seen]] = []
     total, aborted = Decimal(0), False
@@ -511,7 +512,7 @@ async def evaluate(
         "metrics": metrics,
         "total_cost_usd": str(total),
         "started_at": started.isoformat(),
-        "finished_at": datetime.now(UTC).isoformat(),
+        "finished_at": system_now().isoformat(),
         "attempts": [
             {
                 **{k: (str(v) if isinstance(v, Decimal) else v) for k, v in asdict(s).items()},

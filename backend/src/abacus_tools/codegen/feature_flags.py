@@ -14,11 +14,13 @@ import json
 import re
 import sys
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, timedelta
 from pathlib import Path
 from typing import cast
 
 import yaml
+
+from abacus.kernel.clock import system_now
 
 BACKEND = Path(__file__).resolve().parents[3]
 SOURCE_DIR = BACKEND.parent / "docs" / "architecture" / "feature-flags"
@@ -145,7 +147,7 @@ def render(entries: list[Entry]) -> str:
 
 
 def expired(entries: list[Entry], today: date | None = None) -> list[Entry]:
-    today = today or datetime.now(UTC).date()
+    today = today or system_now().date()
     return [e for e in entries if e.expires < today]
 
 

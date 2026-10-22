@@ -21,7 +21,6 @@ import os
 import time
 import uuid
 from collections.abc import Awaitable, Callable, Sequence
-from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Literal, cast
@@ -41,6 +40,7 @@ from abacus.ai_gateway import (
     model_id,
 )
 from abacus.ai_gateway.routes import configure_route, route_enabled, route_provider
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import SYNTHETIC_ENVIRONMENTS, settings
 from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import meter
@@ -425,7 +425,7 @@ def summarise(run: Summary, verdict: Verdict, report: Report | None = None) -> S
                 "calibration": json.loads(json.dumps(verdict.calibration)),
                 "total_cost_usd": verdict.total_cost_usd,
                 "median_case_cost_usd": verdict.median_case_cost_usd,
-                "finished_at": datetime.now(UTC),
+                "finished_at": system_now(),
                 "cases": verdict.case_rows,
                 "report": report.model_dump() if report is not None else None,
             }
@@ -440,7 +440,7 @@ def _errored(run: Summary, error: BaseException) -> Summary:
                 **run.model_dump(),
                 "status": "errored",
                 "reasons": [f"error:{type(error).__name__}"],
-                "finished_at": datetime.now(UTC),
+                "finished_at": system_now(),
             }
         )
     )
@@ -485,8 +485,8 @@ async def evaluate_on(
         calibration={},
         total_cost_usd=Decimal(0),
         median_case_cost_usd=Decimal(0),
-        started_at=datetime.now(UTC),
-        finished_at=datetime.now(UTC),
+        started_at=system_now(),
+        finished_at=system_now(),
         cases=(),
     )
     conn = await connect_db(stack.superuser)

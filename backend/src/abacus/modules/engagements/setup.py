@@ -18,6 +18,7 @@ from uuid import UUID
 from sqlalchemy import ColumnElement, select
 from sqlalchemy.orm import QueryableAttribute
 
+from abacus.kernel.clock import now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
@@ -264,7 +265,7 @@ async def record_acceptance(ctx: AuthContext, engagement_id: UUID, given: Accept
             if new_client
             else None,
             independence_concluded_by=concluded_by,
-            independence_concluded_at=datetime.now().astimezone() if concluded_by else None,
+            independence_concluded_at=(await now(ctx.tenant)) if concluded_by else None,
             independence_documented_at=_clean(given.independence_documented_at, 300)
             if concluded_by
             else None,

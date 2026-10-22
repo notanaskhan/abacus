@@ -17,13 +17,14 @@ import asyncio
 import json
 import sys
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from decimal import Decimal
 from typing import Final, cast
 from uuid import UUID
 
 import asyncpg
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 
 ACTOR: Final = "platform:founder"
@@ -46,7 +47,7 @@ class ShadowReport:
 
     @property
     def days(self) -> int:
-        return (datetime.now(UTC) - self.first).days if self.first else 0
+        return (system_now() - self.first).days if self.first else 0
 
     @property
     def ready(self) -> bool:

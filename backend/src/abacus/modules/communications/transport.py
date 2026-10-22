@@ -15,12 +15,12 @@ last check; the scope check (`scope.py`) has already passed upstream.
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
 from email.utils import formataddr
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol
 from uuid import UUID, uuid4
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import SYNTHETIC_ENVIRONMENTS, settings
 from abacus.kernel.logging import get_logger
 from abacus.kernel.storage import AwsError, error_code, sesv2_client
@@ -72,7 +72,7 @@ class LocalMailbox:
     ) -> None:
         ensure_sendable(subject, body)
         self._dir.mkdir(parents=True, exist_ok=True)
-        sent = datetime.now(UTC)
+        sent = system_now()
         path = self._dir / f"{sent:%Y%m%dT%H%M%S}-{uuid4().hex[:8]}.json"
         record: dict[str, str | None] = {
             "to": to,
