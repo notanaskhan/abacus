@@ -2,6 +2,7 @@
 
 from abacus.ai_gateway import register_client_data_facts
 from abacus.modules.engagements.audit_targets import AUDIT_KINDS, audit_engagements, visible_among
+from abacus.modules.engagements.conditions import functions_on, gates_of, service_line_of
 from abacus.modules.engagements.events import EngagementCreated, IndependenceRequested
 from abacus.modules.engagements.gates import register_gates
 from abacus.modules.engagements.roll_forward import (
@@ -79,9 +80,12 @@ from abacus.modules.identity.api import (
     AbacusRouter,
     register_active_engagements,
     register_engagement_client,
+    register_engagement_service_line,
     register_independence,
     register_member_added,
+    register_work_item_functions,
 )
+from abacus.modules.identity.api import register_gates as register_condition_gates
 
 # Identity owns ethical walls; this module owns which client an engagement belongs to (TASK-016).
 register_engagement_client(client_subquery, client_of)
@@ -95,6 +99,10 @@ register_member_added(request_independence)
 register_independence(confirmed_subquery, confirmed_for)
 
 register_gates()  # C1: G1 to G3 in the fail-closed gate slot
+# F-03-T24: the facts the matrix conditions read (function_in, gates_met, in_scope).
+register_work_item_functions(functions_on)
+register_condition_gates(gates_of)
+register_engagement_service_line(service_line_of)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (

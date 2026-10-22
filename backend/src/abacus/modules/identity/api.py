@@ -21,6 +21,13 @@ from abacus.modules.identity.authz import (
     visible,
     visible_items,
 )
+from abacus.modules.identity.authz.conditions import (
+    register_attest_client,
+    register_client_scope,
+    register_engagement_service_line,
+    register_gates,
+    register_work_item_functions,
+)
 from abacus.modules.identity.context import (
     Actor,
     AgentContext,
@@ -262,12 +269,17 @@ __all__ = [
     "policy_agent_may_hold",
     "register_active_engagements",
     "register_ai_assistants",
+    "register_attest_client",
+    "register_client_scope",
     "register_consent_check",
     "register_engagement_client",
+    "register_engagement_service_line",
+    "register_gates",
     "register_independence",
     "register_member_added",
     "register_member_removed",
     "register_scope_resolver",
+    "register_work_item_functions",
     "remove_client",
     "remove_member",
     "resend_invitation",
