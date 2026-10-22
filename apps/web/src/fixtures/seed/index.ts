@@ -208,6 +208,8 @@ export function meFor(seed: Seed, slug: string): MeOut | undefined {
     email: person.email,
     display_name: person.name,
     active_tenant_id: seed.firm.id,
+    server_now: DEMO_INSTANT,
+    clock_mode: "offset",
     memberships: [
       {
         tenant_id: seed.firm.id,

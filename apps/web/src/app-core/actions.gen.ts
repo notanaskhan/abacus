@@ -34,6 +34,7 @@ export const ACTIONS = [
   "connection.pull",
   "connection.read_log",
   "connection.revoke",
+  "demo_clock.set",
   "engagement.ai_exclude",
   "engagement.apply_methodology",
   "engagement.archive",

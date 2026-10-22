@@ -170,12 +170,26 @@ async def transaction_context(session: AsyncSession) -> TenantContext:
     return TenantContext(UUID(str(row.tenant)), row.kind, str(row.actor))
 
 
+async def _business_now() -> str | None:
+    """`app.now` for a frozen replay or the process demo clock, or None for real time
+    (F-04-T06). A firm's own demo clock is read by `abacus_now()` in the transaction."""
+    from abacus.kernel import clock  # clock imports this package
+
+    at = await clock.now(None)
+    if abs((at - clock.system_now()).total_seconds()) < 1:
+        return None
+    return at.isoformat()
+
+
 async def _begin_tenant(conn: AsyncConnection, ctx: TenantContext) -> None:
-    """Clear stale settings, then set tenant and actor for this transaction only."""
+    """Clear stale settings, then set tenant and actor (and business time, when it isn't the
+    real time) for this transaction only."""
     # Clear anything a previous user of this pooled connection set at session level.
     await conn.execute(text("RESET app.tenant_id"))
     await conn.execute(text("RESET app.actor_kind"))
     await conn.execute(text("RESET app.actor_id"))
+    await conn.execute(text("RESET app.now"))
+    await conn.execute(text("RESET app.demo_clocks"))
     # Transaction-local (`true`): gone when this transaction ends, whatever happens.
     await conn.execute(
         text(
@@ -185,6 +199,13 @@ async def _begin_tenant(conn: AsyncConnection, ctx: TenantContext) -> None:
         ),
         {"tenant": str(ctx.tenant_id), "kind": ctx.actor_kind, "actor": ctx.actor_id},
     )
+    # `abacus_now()` honours both only for a synthetic firm (F-04.3); never a demo clock in
+    # production (F-04.2).
+    business = await _business_now()
+    if business is not None:
+        await conn.execute(text("SELECT set_config('app.now', :now, true)"), {"now": business})
+    if settings().environment != "production":
+        await conn.execute(text("SELECT set_config('app.demo_clocks', 'on', true)"))
 
 
 @asynccontextmanager

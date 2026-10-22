@@ -216,6 +216,11 @@ ACTIONS: dict[str, dict[str, str]] = {
         "engagement_partner": "allow",
         "manager": "allow",
     },
+    "demo_clock.set": {
+        "firm_admin": "allow",
+        "agent": "deny",
+        "mfa_recent": "required",
+    },
     "engagement.ai_exclude": {
         "engagement_partner": "allow",
     },

@@ -12,12 +12,14 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Final, Literal
+from time import monotonic
+from typing import Final, Literal, cast
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from abacus.ai_gateway import forget_boundary_facts
-from abacus.kernel import provider_terms
+from abacus.kernel import clock, provider_terms
+from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
@@ -27,9 +29,11 @@ from abacus.modules.identity.authz.overrides import refusal
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.events import FirmAgentsResumed
 from abacus.modules.identity.repository import (
+    DemoClockRow,
     acknowledge_onboarding,
     agents_paused_since,
     ai_client_data,
+    demo_clock_row,
     drafted_guidance_shown,
     firm_is_synthetic,
     firm_settings,
@@ -39,6 +43,7 @@ from abacus.modules.identity.repository import (
     set_agents_paused,
     set_ai_client_data,
     set_autonomy_level,
+    set_demo_clock_row,
     set_drafted_guidance_shown,
     set_letter_required,
     set_time_zone,
@@ -454,3 +459,85 @@ async def set_policy_override(
         )
         tx.record("firm_policy_override.set", target=Target("firm", ctx.tenant_id))
     return written
+
+
+# --- F-04-T07: the tenant demo clock (ADR-143; synthetic firms outside production) ------------
+
+DemoClockMode = Literal["offset", "frozen"]
+ClockMode = Literal["real", "offset", "frozen"]
+# Each firm's demo clock, read at most once per window per process: the business clock asks on
+# every tenant transaction outside production (F-04-T06).
+_CLOCK_CACHE_SECONDS: Final = 5.0
+_clocks: dict[UUID, tuple[float, DemoClockRow | None]] = {}
+
+
+class DemoClockRefused(DomainConflict):
+    """A demo clock is only for a synthetic firm, and never in production (F-04.2, F-04.3)."""
+
+    code = "demo_clock_refused"
+
+
+def forget_demo_clocks() -> None:
+    """Drop the cached clocks (after a change; tests)."""
+    _clocks.clear()
+
+
+async def _clock_row(tenant: TenantContext) -> DemoClockRow | None:
+    seen = _clocks.get(tenant.tenant_id)
+    now_mono = monotonic()
+    if seen is not None and now_mono - seen[0] < _CLOCK_CACHE_SECONDS:
+        return seen[1]
+    async with tenant_session(tenant) as session:
+        row = await demo_clock_row(session, tenant.tenant_id)
+    _clocks[tenant.tenant_id] = (now_mono, row)
+    return row
+
+
+def _business(row: DemoClockRow) -> datetime:
+    if row.mode == "frozen":
+        return row.anchor_at
+    return row.anchor_at + (clock.system_now() - row.anchored_real_at)
+
+
+async def tenant_demo_time(tenant: TenantContext) -> datetime | None:
+    """The firm's demo time, or None (no demo clock): `kernel.clock`'s tenant provider. The
+    clock never asks in production; the database ignores it for a real firm anyway."""
+    row = await _clock_row(tenant)
+    return None if row is None else _business(row)
+
+
+@dataclass(frozen=True)
+class ClockView:
+    server_now: datetime
+    clock_mode: ClockMode
+
+
+async def clock_view(tenant: TenantContext | None) -> ClockView:
+    """`/v1/me`'s `server_now` and `clock_mode` for the caller's tenant (F-04-T07)."""
+    business = await clock.now(tenant)
+    mode: ClockMode = "real"
+    if tenant is not None and settings().environment != "production":
+        row = await _clock_row(tenant)
+        if row is not None:
+            mode = cast(ClockMode, row.mode)
+    return ClockView(business, mode)
+
+
+async def set_demo_clock(
+    ctx: AuthContext, mode: DemoClockMode | None, anchor_at: datetime | None = None
+) -> ClockView:
+    """Set (`offset` runs from `anchor_at`, `frozen` stands at it) or reset (`mode=None`) the
+    firm's demo clock. Firm administrator; refused in production and for a real firm; audited
+    as `firm.demo_clock_changed`. Called by the scenario loader and the runbook, never HTTP."""
+    await authorise(ctx, "demo_clock.set", Resource.firm(ctx.tenant_id))
+    if settings().environment == "production":
+        raise DemoClockRefused
+    if mode is not None and (anchor_at is None or anchor_at.tzinfo is None):
+        raise DomainInvalid
+    async with uow(ctx.tenant) as tx:
+        if not await firm_is_synthetic(tx.session):
+            raise DemoClockRefused
+        await set_demo_clock_row(tx.session, ctx.tenant_id, mode, anchor_at, str(ctx.user_id))
+        tx.record("firm.demo_clock_changed", target=Target("firm", ctx.tenant_id))
+    forget_demo_clocks()
+    return await clock_view(ctx.tenant)

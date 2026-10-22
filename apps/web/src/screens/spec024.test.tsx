@@ -77,6 +77,8 @@ describe("signed in without a firm", () => {
       display_name: "Fay Director",
       email: "fd@northwind.test",
       active_tenant_id: null,
+      server_now: "2026-09-14T14:24:00Z",
+      clock_mode: "real",
       memberships: [
         { tenant_id: "t1", firm_name: "Firm one", firm_role: null, kind: "client" },
         { tenant_id: "t2", firm_name: "Firm two", firm_role: null, kind: "client" },

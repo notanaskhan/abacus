@@ -4301,6 +4301,10 @@ export type MeOut = {
      */
     active_tenant_id: string | null;
     /**
+     * Clock Mode
+     */
+    clock_mode: 'real' | 'offset' | 'frozen';
+    /**
      * Display Name
      */
     display_name: string;
@@ -4312,6 +4316,10 @@ export type MeOut = {
      * Memberships
      */
     memberships: Array<MembershipOut>;
+    /**
+     * Server Now
+     */
+    server_now: string;
     /**
      * User Id
      */

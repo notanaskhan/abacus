@@ -620,7 +620,11 @@ async def test_ac3_a_revoked_user_still_gets_me_but_without_the_revoked_firm(
 
 # --- /v1/me --------------------------------------------------------------------------------------
 
-ME_KEYS = {"user_id", "email", "display_name", "memberships", "active_tenant_id"}
+# F-04-T07 (ADR-143): business time for the active tenant joined the response.
+ME_KEYS = {
+    *("user_id", "email", "display_name", "memberships", "active_tenant_id"),
+    *("server_now", "clock_mode"),
+}
 
 
 async def test_ac1_me_with_one_membership_names_the_active_tenant(

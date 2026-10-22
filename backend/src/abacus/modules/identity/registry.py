@@ -26,6 +26,7 @@ TABLES: frozenset[str] = frozenset(
         "firm_policy_overrides",  # F-03-T24: stricter-only, never edited
         "client_access_grants",  # F-03-T26 (ADR-146)
         "client_access_events",
+        "firm_demo_clocks",  # F-04-T06: synthetic firms only
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -55,6 +56,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"document_classes", "granted_by", "expires_at", "status"}
     ),
     "client_access_events": frozenset({"tenant_id", "grant_id", "event", "by_user_id"}),
+    "firm_demo_clocks": frozenset({"tenant_id", "mode", "anchor_at", "set_by"}),  # F-04-T06
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
@@ -77,4 +79,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "staff_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
     "firm_setting_values": frozenset({"value", "version", "set_by", "set_at"}),  # F-03-T24
     "client_access_grants": frozenset({"status"}),  # F-03-T26: each change is an event row
+    "firm_demo_clocks": frozenset(  # F-04-T07: set or reset by the demo-clock service
+        {"mode", "anchor_at", "anchored_real_at", "set_by", "set_at"}
+    ),
 }

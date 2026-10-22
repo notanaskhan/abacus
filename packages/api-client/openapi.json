@@ -8996,6 +8996,16 @@
             "cls": "internal",
             "title": "Active Tenant Id"
           },
+          "clock_mode": {
+            "cls": "internal",
+            "enum": [
+              "real",
+              "offset",
+              "frozen"
+            ],
+            "title": "Clock Mode",
+            "type": "string"
+          },
           "display_name": {
             "cls": "confidential",
             "title": "Display Name",
@@ -9014,6 +9024,12 @@
             "title": "Memberships",
             "type": "array"
           },
+          "server_now": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Server Now",
+            "type": "string"
+          },
           "user_id": {
             "cls": "internal",
             "format": "uuid",
@@ -9026,7 +9042,9 @@
           "email",
           "display_name",
           "memberships",
-          "active_tenant_id"
+          "active_tenant_id",
+          "server_now",
+          "clock_mode"
         ],
         "title": "MeOut",
         "type": "object"

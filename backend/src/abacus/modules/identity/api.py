@@ -2,6 +2,7 @@
 
 from abacus.ai_gateway import register_client_data_facts, register_synthetic_tenants
 from abacus.kernel.audit_owners import register_engagement_owners
+from abacus.kernel.clock import register_tenant_clock
 from abacus.modules.identity.audit_targets import AUDIT_KINDS, audit_hidden_walls, audit_owners
 from abacus.modules.identity.authz import (
     MFA_RECENT,
@@ -57,6 +58,8 @@ from abacus.modules.identity.events import (
 from abacus.modules.identity.firm_settings import (
     Assistant,
     AutonomyView,
+    ClockView,
+    DemoClockRefused,
     FirmFacts,
     LevelNotAvailable,
     acknowledge,
@@ -64,6 +67,7 @@ from abacus.modules.identity.firm_settings import (
     ai_client_data_opted_in,
     autonomy,
     autonomy_level,
+    clock_view,
     drafted_guidance_to_clients,
     firm_facts,
     firm_time_zone,
@@ -72,7 +76,9 @@ from abacus.modules.identity.firm_settings import (
     note_budget_reviewed,
     register_ai_assistants,
     set_autonomy,
+    set_demo_clock,
     set_letter_policy,
+    tenant_demo_time,
 )
 from abacus.modules.identity.invitations import (
     ContactView,
@@ -183,6 +189,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
 
+# F-04-T07 (ADR-143): a synthetic firm's demo clock is the business clock's tenant provider.
+register_tenant_clock(tenant_demo_time)
+
 __all__ = [
     "ACTION_KEY",
     "EQR_ROLES",
@@ -204,7 +213,9 @@ __all__ = [
     "AutonomyView",
     "Candidate",
     "ClientInvitationIssued",
+    "ClockView",
     "ContactView",
+    "DemoClockRefused",
     "EngagementRole",
     "FirmAgentsResumed",
     "FirmFacts",
@@ -249,6 +260,7 @@ __all__ = [
     "candidates",
     "change_role",
     "client_admins",
+    "clock_view",
     "configure_staff_verifier",
     "configure_verifier",
     "consent_given",
@@ -310,6 +322,7 @@ __all__ = [
     "router",
     "serving_request",
     "set_autonomy",
+    "set_demo_clock",
     "set_letter_policy",
     "shell_of",
     "signup_router",

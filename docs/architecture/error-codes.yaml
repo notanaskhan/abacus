@@ -154,6 +154,11 @@ codes:
     raised_by:
     - abacus.modules.connections.gl_import.CutoffInvalid
     summary: 'SPEC-038 Q2: the cut-off is 30 to 366 days after year end.'
+  demo_clock_refused:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.firm_settings.DemoClockRefused
+    summary: A demo clock is only for a synthetic firm, and never in production (F-04.2, F-04.3).
   draft_already_decided:
     status: 409
     raised_by:

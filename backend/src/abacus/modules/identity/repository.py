@@ -1264,3 +1264,44 @@ async def set_ai_client_data(session: AsyncSession, by: UUID | None, material: s
         ),
         {"by": by, "material": material},
     )
+
+
+# --- F-04-T07: a synthetic firm's demo clock -------------------------------------------------
+
+_DEMO_CLOCK = text(
+    "SELECT mode, anchor_at, anchored_real_at FROM firm_demo_clocks WHERE tenant_id = :t"
+)
+_SET_DEMO_CLOCK = text(
+    "INSERT INTO firm_demo_clocks (tenant_id, mode, anchor_at, set_by) "
+    "VALUES (:t, :mode, :anchor_at, :set_by) ON CONFLICT (tenant_id) DO UPDATE SET "
+    "mode = EXCLUDED.mode, anchor_at = EXCLUDED.anchor_at, "
+    "anchored_real_at = clock_timestamp(), set_by = EXCLUDED.set_by, set_at = clock_timestamp()"
+)
+_RESET_DEMO_CLOCK = text("DELETE FROM firm_demo_clocks WHERE tenant_id = :t")
+
+
+@dataclass(frozen=True)
+class DemoClockRow:
+    mode: str
+    anchor_at: datetime
+    anchored_real_at: datetime
+
+
+async def demo_clock_row(session: AsyncSession, tenant_id: UUID) -> DemoClockRow | None:
+    row = (await session.execute(_DEMO_CLOCK, {"t": tenant_id})).first()
+    if row is None:
+        return None
+    return DemoClockRow(
+        str(row.mode), cast(datetime, row.anchor_at), cast(datetime, row.anchored_real_at)
+    )
+
+
+async def set_demo_clock_row(
+    session: AsyncSession, tenant_id: UUID, mode: str | None, anchor_at: datetime | None, by: str
+) -> None:
+    if mode is None:
+        await session.execute(_RESET_DEMO_CLOCK, {"t": tenant_id})
+        return
+    await session.execute(
+        _SET_DEMO_CLOCK, {"t": tenant_id, "mode": mode, "anchor_at": anchor_at, "set_by": by}
+    )

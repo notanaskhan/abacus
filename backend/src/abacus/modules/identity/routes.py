@@ -11,10 +11,12 @@ from fastapi import Depends, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
+from abacus.kernel.db import TenantContext
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.firm_settings import (
     AiClientDataView,
     autonomy,
+    clock_view,
     read_agents_state,
     read_ai_client_data,
     read_drafted_guidance_setting,
@@ -93,11 +95,17 @@ class MeOut(BaseModel):
     # Set when the user has exactly one membership; otherwise the client picks one and sends it
     # as X-Abacus-Tenant.
     active_tenant_id: Annotated[UUID | None, classified("internal")]
+    # F-04-T07 (ADR-143): business time for the active tenant, so the SPA can apply its offset.
+    server_now: Annotated[datetime, classified("internal")]
+    clock_mode: Annotated[Literal["real", "offset", "frozen"], classified("internal")]
 
 
 @router.get("/me", action=SELF, response_model=MeOut)
 async def me(signed_in: Annotated[SignedIn, Depends(current_signed_in)]) -> MeOut:
     memberships = signed_in.memberships
+    active = memberships[0].tenant_id if len(memberships) == 1 else None
+    tenant = TenantContext(active, "human", str(signed_in.user.id)) if active is not None else None
+    view = await clock_view(tenant)
     return MeOut(
         user_id=signed_in.user.id,
         email=signed_in.user.email,
@@ -111,7 +119,9 @@ async def me(signed_in: Annotated[SignedIn, Depends(current_signed_in)]) -> MeOu
             )
             for m in memberships
         ],
-        active_tenant_id=memberships[0].tenant_id if len(memberships) == 1 else None,
+        active_tenant_id=active,
+        server_now=view.server_now,
+        clock_mode=view.clock_mode,
     )
 
 
