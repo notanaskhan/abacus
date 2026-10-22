@@ -1,4 +1,5 @@
 import { type JSX, useState } from "react";
+import { HumanAction } from "../attribution/human-action";
 import { Amount } from "../components/amount";
 import { Button } from "../components/button";
 import { type Column, DataTable } from "../components/data-table";
@@ -8,6 +9,9 @@ import { Drawer, Popover, Sheet } from "../overlays";
 import { Badge } from "../components/surfaces";
 import { toast } from "../components/toast";
 import { Status } from "../components/status";
+
+// A named person: human-only verbs render only through HumanAction (INV-1, F-05-T31).
+const PERSON = { kind: "human", name: "Hannah Leclerc" } as const;
 
 // The component gallery's first specimen (TASK-101, moved here by F-05-T09): every shared
 // component in one place, for building and for checking the look. Reached only through
@@ -77,7 +81,7 @@ export function Overview(): JSX.Element {
           <Button variant="tonal">Tonal</Button>
           <Button variant="ghost">Ghost</Button>
           <Button variant="destructive">Destructive</Button>
-          <Button variant="success">Approve</Button>
+          <HumanAction verb="Approve" actor={PERSON} variant="success" />
           <Badge tone="warning">Badge</Badge>
           <Status domain="workpaper" value="ready" />
           <Status domain="result" value="exception" />
@@ -177,7 +181,7 @@ export function Overview(): JSX.Element {
         open={sheet}
         onOpenChange={setSheet}
         title="Draft follow-up"
-        meta={<Button size="sm">Send</Button>}
+        meta={<HumanAction verb="Send" actor={PERSON} size="sm" />}
       >
         <Fieldset title="To">
           <p>Casey Client</p>

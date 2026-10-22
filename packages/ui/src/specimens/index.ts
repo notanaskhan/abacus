@@ -18,6 +18,7 @@ import {
   ValueRowSpecimen,
 } from "./inputs";
 import { LedgerGridSpecimen, StatementGridSpecimen } from "./data";
+import { AgentFilledSpecimen, AttributionSpecimen } from "./attribution";
 import { MenuSpecimen, TooltipSpecimen } from "./menus";
 import { IndexListSpecimen } from "./templates";
 import { NestedSplitSpecimen, SplitNarrowSpecimen, SplitPresetsSpecimen } from "./split";
@@ -201,6 +202,19 @@ export const SPECIMENS: readonly Specimen[] = [
   { id: "c-19-step-counter", kit: "C-19", title: "StepCounter", Component: StepCounterSpecimen },
   { id: "c-19-kpi-tile", kit: "C-19", title: "KPI tile", Component: KpiTileSpecimen },
   { id: "c-19-status-tile", kit: "C-19", title: "StatusTile", Component: StatusTileSpecimen },
+  // Attribution and human verbs (F-05-T30): C-31
+  {
+    id: "f05-attribution",
+    kit: "H1",
+    title: "Attribution and HumanAction",
+    Component: AttributionSpecimen,
+  },
+  {
+    id: "c-31-agent-filled",
+    kit: "C-31",
+    title: "AgentFilledMarker",
+    Component: AgentFilledSpecimen,
+  },
   // Templates (F-05-T28): T1 Index list, artboards T1a to T1e
   { id: "t1-index-list", kit: "T1", title: "Index list", Component: IndexListSpecimen },
   // SplitLayout (F-05-T29): C-09

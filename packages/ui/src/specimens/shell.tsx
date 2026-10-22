@@ -1,4 +1,5 @@
 import { type JSX, type ReactNode, useState } from "react";
+import { HumanAction } from "../attribution/human-action";
 import { Button } from "../components/button";
 import {
   AppShell,
@@ -18,6 +19,9 @@ import {
 import type { Opt } from "../components/tabs";
 import { Row, Sheet } from "./frame";
 import guards from "../../scope-guards.gen.json";
+
+// A named person: human-only verbs render only through HumanAction (INV-1, F-05-T31).
+const PERSON = { kind: "human", name: "Hannah Leclerc" } as const;
 
 // The C-00 Shell kit's specimens (F-05-T18): the Toolbar at 1280, 1400 and 1440 with the DF-39
 // fallbacks, every active state, the held states, the PortalToolbar, the RecordHeader in all four
@@ -387,7 +391,14 @@ export function PaneSpecimen(): JSX.Element {
             right={
               <>
                 <PaneAction icon="pencil" label="Edit" />
-                <PaneAction icon="check" label="Sign off…" opensDialog />
+                <HumanAction
+                  verb="Sign off"
+                  actor={PERSON}
+                  icon="check"
+                  size="sm"
+                  variant="secondary"
+                  opensDialog
+                />
                 <PaneAction icon="file-text" label="Source Docs" />
               </>
             }
@@ -401,7 +412,7 @@ export function PaneSpecimen(): JSX.Element {
                 <FooterAction kind="ghost">Cancel</FooterAction>
                 <FooterSpacer />
                 <FooterAction>Save draft</FooterAction>
-                <FooterAction kind="primary">Send</FooterAction>
+                <HumanAction verb="Send" actor={PERSON} variant="primary" size="md" />
               </>
             }
           />
@@ -427,7 +438,7 @@ export function PaneSpecimen(): JSX.Element {
                 <FooterSpacer />
                 <FooterAction kind="ghost">Cancel</FooterAction>
                 <FooterAction kind="secondary">Save draft</FooterAction>
-                <FooterAction kind="primary">Send</FooterAction>
+                <HumanAction verb="Send" actor={PERSON} variant="primary" size="md" />
               </>
             }
           />

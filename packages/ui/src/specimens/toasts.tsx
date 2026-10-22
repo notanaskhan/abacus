@@ -90,7 +90,7 @@ export function ToastLiveSpecimen(): JSX.Element {
             Show a toast
           </Button>
           <Button variant="secondary" size="sm" onClick={undoable}>
-            Approve with Undo
+            Show an Undo toast
           </Button>
           <Button variant="secondary" size="sm" onClick={upload}>
             Upload 4 files

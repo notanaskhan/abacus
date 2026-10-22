@@ -1,4 +1,5 @@
 import { type JSX, type ReactNode, useState } from "react";
+import { HumanAction } from "../attribution/human-action";
 import { Button } from "../components/button";
 import { Fieldset } from "../components/fieldset";
 import { ValueRow } from "../components/inputs";
@@ -23,6 +24,9 @@ import {
   useOverlayLayers,
 } from "../overlays";
 import { Held, Row, Sheet as Frame } from "./frame";
+
+// A named person: human-only verbs render only through HumanAction (INV-1, F-05-T31).
+const PERSON = { kind: "human", name: "Hannah Leclerc" } as const;
 
 // The overlay specimens (O1 to O6, C-22 Modal, C-23 Drawer, C-00 command palette; F-05-T20). Every
 // layer is drawn twice: held in place (`forceState="open"`, no scrim, no trap, so the page stays a
@@ -257,14 +261,25 @@ export function DialogSpecimen(): JSX.Element {
           size={size ?? "md"}
           dirty={size === "md" && title !== ""}
           action={
-            <Button
-              disabled={size === "md" ? title === "" : size === "sm" ? !agreed : false}
-              onClick={() => {
-                setSize(null);
-              }}
-            >
-              {size === "sm" ? "Sign off" : size === "lg" ? "Send" : "Create"}
-            </Button>
+            size === "md" ? (
+              <Button
+                disabled={title === ""}
+                onClick={() => {
+                  setSize(null);
+                }}
+              >
+                Create
+              </Button>
+            ) : (
+              <HumanAction
+                verb={size === "sm" ? "Sign off" : "Send"}
+                actor={PERSON}
+                disabled={size === "sm" ? !agreed : false}
+                onClick={() => {
+                  setSize(null);
+                }}
+              />
+            )
           }
         >
           {size === "sm" ? (
@@ -309,7 +324,7 @@ export function DialogSpecimen(): JSX.Element {
             onOpenChange={noop}
             title="Sign off"
             size="sm"
-            action={<Button disabled>Sign off</Button>}
+            action={<HumanAction verb="Sign off" actor={PERSON} disabled />}
           >
             <SignOffForm />
           </Dialog>
