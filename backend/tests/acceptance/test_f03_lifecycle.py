@@ -199,11 +199,12 @@ def test_story_1_3_a_firm_override_tightens_and_never_loosens() -> None:
 # --- §2.4 fail-closed registration ---------------------------------------------------------------
 
 
-async def test_an_unregistered_gate_is_unmet() -> None:
+async def test_an_unregistered_gate_is_unmet(monkeypatch: pytest.MonkeyPatch) -> None:
+    # As if no owner had registered G7 (its owner may have, once the app is imported).
+    monkeypatch.setattr(slots, "_GATES", {})
     fact = await slots.gate_fact(TenantContext(uuid.uuid4(), "human", "x"), uuid.uuid4(), "G7")
-    if "G7" not in slots._GATES:  # pyright: ignore[reportPrivateUsage]  # registered later by its owner
-        assert fact.met is False
-        assert fact.blockers == ("no_gate_provider",)
+    assert fact.met is False
+    assert fact.blockers == ("no_gate_provider",)
 
 
 def test_an_unregistered_kind_is_refused_409() -> None:

@@ -32,9 +32,19 @@ from abacus.modules.identity.authz import matrix
 from abacus.modules.identity.authz.matrix import RULES
 from abacus_tools.codegen import permission_matrix as pm
 
-FirmRole = Literal["firm_admin", "practice_leader", "quality_partner"]
+FirmRole = Literal["firm_admin", "practice_leader", "quality_partner", "security_admin"]
 FIRM_ROLES: tuple[FirmRole, ...] = get_args(FirmRole)
-ENGAGEMENT_ROLES = ("engagement_partner", "manager", "senior", "staff", "reviewer")
+ENGAGEMENT_ROLES = (
+    "engagement_partner",
+    "manager",
+    "senior",
+    "staff",
+    "reviewer",
+    # F-03-T23 (chapter 03 §4.2); they hold no allow until F-03-T24 grants them.
+    "eqr_reviewer",
+    "specialist",
+    "client_service",
+)
 # SPEC-020: client users hold an engagement relationship too; `visible` counts them as `authorise`
 # does.
 CLIENT_ROLES = ("client_admin", "client_contributor")

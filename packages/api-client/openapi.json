@@ -9044,7 +9044,8 @@
                 "enum": [
                   "firm_admin",
                   "practice_leader",
-                  "quality_partner"
+                  "quality_partner",
+                  "security_admin"
                 ],
                 "type": "string"
               },
@@ -14817,7 +14818,10 @@
               "manager",
               "senior",
               "staff",
-              "reviewer"
+              "reviewer",
+              "eqr_reviewer",
+              "specialist",
+              "client_service"
             ],
             "title": "Role",
             "type": "string"

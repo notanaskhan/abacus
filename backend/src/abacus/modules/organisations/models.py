@@ -31,3 +31,38 @@ class ClientEntity(Base):
     name: Mapped[str]
     created_at: Mapped[datetime]
     normalised_name: Mapped[str] = mapped_column(server_default=FetchedValue())
+
+
+class Office(Base):
+    """An office of the firm (DEC-30): a filter on lists and dashboards, never an access
+    boundary (Q-21)."""
+
+    __tablename__ = "offices"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    name: Mapped[str]
+    time_zone: Mapped[str] = mapped_column(server_default=FetchedValue())
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class Team(Base):
+    __tablename__ = "teams"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    office_id: Mapped[UUID | None]
+    name: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class TeamRoster(Base):
+    """One person on a team's roster (the glossary's code name for engagement staff is
+    engagement_member, DEC-14, so a team keeps a roster)."""
+
+    __tablename__ = "team_rosters"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    team_id: Mapped[UUID] = mapped_column(primary_key=True)
+    user_id: Mapped[UUID] = mapped_column(primary_key=True)
+    added_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
