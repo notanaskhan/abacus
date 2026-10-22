@@ -645,3 +645,69 @@ describe("F-05-T15 / F-05-T23: no native select or boxed Input in new code", () 
     expect(await violations(INPUT, "src/legacy/Example.tsx")).toEqual([]);
   });
 });
+
+describe("F-03-T32: no role-literal comparisons outside app-core", () => {
+  const ROLE = "Do not compare role codes";
+  const SNIPPETS = [
+    'export const f = (r: string) => r === "firm_admin";',
+    'export const f = (r: string) => "engagement_partner" !== r;',
+    'export const f = (r: string) => r == "client_admin";',
+    'export const f = (r: string) => { switch (r) { case "manager": return 1; default: return 0; } };',
+    'export const f = (roles: string[]) => roles.includes("eqr_reviewer");',
+    'export const f = (r: string) => ["senior", "staff"].includes(r);',
+  ];
+
+  it("refuses a role literal compared in a route or screen", async () => {
+    for (const code of SNIPPETS) {
+      const found = await violations(code, "src/routes/x.tsx");
+      expect(
+        found.some((m) => m.includes(ROLE)),
+        code,
+      ).toBe(true);
+    }
+    const screen = await violations(SNIPPETS[0] ?? "", "src/screens/aud-03/Screen.tsx");
+    expect(screen.some((m) => m.includes(ROLE))).toBe(true);
+  });
+
+  it("keeps the other rules where it applies", async () => {
+    const found = await violations(
+      "export const A = () => <select><option>x</option></select>;",
+      "src/routes/x.tsx",
+    );
+    expect(found.some((m) => m.includes("Picker, not a native select"))).toBe(true);
+  });
+
+  it("allows it in app-core and leaves the legacy screens to M2", async () => {
+    for (const code of SNIPPETS) {
+      expect(await violations(code, "src/app-core/x.ts")).toEqual([]);
+      expect(await violations(code, "src/legacy/x.tsx")).toEqual([]);
+    }
+  });
+
+  it("allows a membership kind and other strings", async () => {
+    const ok = [
+      'export const f = (m: { kind: string }) => m.kind === "staff";',
+      'export const f = (s: string) => s === "firm";',
+      'export const f = (r: string) => r === "managers";',
+    ];
+    for (const code of ok) expect(await violations(code, "src/routes/x.tsx"), code).toEqual([]);
+  });
+
+  it("lets any feature import app-core, and no other feature root", async () => {
+    const core = 'import { useCan } from "../../app-core/can";\nexport const x = useCan;';
+    expect(await violations(core, "src/routes/firm/x.tsx")).toEqual([]);
+    const deep = 'import { useCan } from "../../../app-core/can";\nexport const x = useCan;';
+    expect(await violations(deep, "src/screens/aud/a/x.tsx")).toEqual([]);
+    const other = 'import { appRoute } from "../../routes/root";\nexport const x = appRoute;';
+    const found = await violations(other, "src/screens/aud/x.tsx");
+    expect(found.some((m) => m.startsWith("no-restricted-imports"))).toBe(true);
+    for (const source of ["../../../legacy/Layout", "../../app-core-ish/x", "../../../../app/x"]) {
+      const code = `import { x } from "${source}";\nexport const y = x;`;
+      const refused = await violations(code, "src/screens/aud/a/b/x.tsx");
+      expect(
+        refused.some((m) => m.startsWith("no-restricted-imports")),
+        source,
+      ).toBe(true);
+    }
+  });
+});

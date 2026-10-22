@@ -87,6 +87,32 @@ const SCREEN_LINK_SYNTAX = [
   },
 ];
 
+// F-03-T32 (ADR-145): screens ask `useCan` / `<Can>` (src/app-core/can.tsx) what the person may
+// do; they never compare role codes. Applies outside app-core and the legacy screens, which M2
+// replaces (their checks move with P-01's codemod). A membership `kind` ("staff" / "client") is
+// not a role and stays comparable.
+const ROLE_CODES =
+  "firm_admin|practice_leader|quality_partner|security_admin|engagement_partner|manager|senior|" +
+  "staff|reviewer|eqr_reviewer|specialist|client_service|client_admin|client_contributor";
+const ROLE_LITERAL = `Literal[value=/^(${ROLE_CODES})$/]`;
+const ROLE_MESSAGE =
+  "Do not compare role codes: ask useCan(action) or <Can action=…> from app-core (F-03-T32).";
+const ROLE_SYNTAX = [
+  {
+    selector: `BinaryExpression[operator=/^[!=]==?$/]:not([left.property.name='kind']):not([right.property.name='kind']) > ${ROLE_LITERAL}`,
+    message: ROLE_MESSAGE,
+  },
+  { selector: `SwitchCase > ${ROLE_LITERAL}.test`, message: ROLE_MESSAGE },
+  {
+    selector: `CallExpression[callee.property.name='includes'] > ${ROLE_LITERAL}.arguments`,
+    message: ROLE_MESSAGE,
+  },
+  {
+    selector: `CallExpression[callee.property.name='includes'] > MemberExpression.callee > ArrayExpression.object > ${ROLE_LITERAL}`,
+    message: ROLE_MESSAGE,
+  },
+];
+
 export default defineConfig(
   { ignores: ["dist", "test-results", "playwright-report", "parity-report"] },
   tseslint.configs.strictTypeChecked,
@@ -104,7 +130,9 @@ export default defineConfig(
               message: "Import a package through its public entry point, not its src/.",
             },
             {
-              group: ["../../*"],
+              // Two or more levels up, except into app-core: shared plumbing every feature may
+              // import (plan 04, module boundaries; F-03-T32).
+              regex: "^\\.\\./\\.\\./(?:\\.\\./)*(?!\\.\\./|app-core(?:/|$))",
               message: "Do not reach across feature roots; import through a public entry point.",
             },
           ],
@@ -176,6 +204,14 @@ export default defineConfig(
     },
   },
   {
+    // Flat config replaces no-restricted-syntax per block, so this one repeats the lists above.
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/**/*.test.{ts,tsx}", "src/legacy/**", "src/app-core/**"],
+    rules: {
+      "no-restricted-syntax": ["error", ...SCREEN_SYNTAX, ...NEW_CODE_SYNTAX, ...ROLE_SYNTAX],
+    },
+  },
+  {
     // F-04-T14: a screen links to a screen only through its typed builder (src/routes/to.ts), so
     // link-contract.test.ts sees every designed link.
     files: ["src/screens/**/*.{ts,tsx}"],
@@ -185,6 +221,7 @@ export default defineConfig(
         "error",
         ...SCREEN_SYNTAX,
         ...NEW_CODE_SYNTAX,
+        ...ROLE_SYNTAX,
         ...SCREEN_LINK_SYNTAX,
       ],
     },

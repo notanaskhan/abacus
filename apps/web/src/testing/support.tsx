@@ -21,6 +21,7 @@ import { completeSignIn } from "../auth/session";
 export interface Call {
   method: string;
   path: string;
+  query: URLSearchParams;
   headers: Headers;
   body: unknown;
 }
@@ -48,9 +49,11 @@ export function mockApi(routes: Record<string, Handler>): { calls: Call[] } {
   const calls: Call[] = [];
   const fetchMock = async (input: Request): Promise<Response> => {
     const text = await input.clone().text();
+    const url = new URL(input.url);
     const call: Call = {
       method: input.method,
-      path: new URL(input.url).pathname,
+      path: url.pathname,
+      query: url.searchParams,
       headers: input.headers,
       body: text === "" ? null : parsed(text),
     };
