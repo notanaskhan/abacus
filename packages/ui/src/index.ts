@@ -364,3 +364,6 @@ export * from "./overlays";
 
 // E4 DataTable engine (F-05-T27): the grid on @tanstack/react-table, ledger and statement grammars.
 export * from "./data";
+
+// Templates (F-05-T28): T1 IndexList on the list envelope.
+export * from "./templates";

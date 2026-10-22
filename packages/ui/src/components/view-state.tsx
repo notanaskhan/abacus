@@ -209,6 +209,8 @@ export interface ViewStateBodyProps {
   rows?: SkeletonType;
   /** A table's grid template, so its skeleton matches its real header. */
   columns?: string;
+  /** How many skeleton rows while loading; the row type's default otherwise (T1e draws 8). */
+  skeletonCount?: number;
   /** The column heads. Always drawn, in every mode. */
   head?: ReactNode;
   /** What an empty body says. */
@@ -241,6 +243,7 @@ export function ViewStateBody({
   state,
   rows = "list",
   columns,
+  skeletonCount,
   head,
   empty,
   noun,
@@ -261,6 +264,7 @@ export function ViewStateBody({
           immediate={immediate}
           still={still}
           {...(columns === undefined ? {} : { columns })}
+          {...(skeletonCount === undefined ? {} : { count: skeletonCount })}
         />
       );
       break;

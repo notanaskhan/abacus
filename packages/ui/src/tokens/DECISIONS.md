@@ -324,3 +324,13 @@ semantics are kept exact; the plan's `toast.undoable` and `toast.running` sit on
 | 2026-10-22 | Storage key          | `split.<preset>`, not the kit's `accrued.split.<preset>`: the portal never carries the product name                                                                                                       |
 | 2026-10-22 | Gutter value         | A gutter after a flex pane reports the pane's design width as `aria-valuenow` until resized (axe: a focusable separator needs one)                                                                        |
 | 2026-10-22 | Library              | Not resizable (C-11), so no gutters                                                                                                                                                                       |
+
+### T1 Index list (F-05-T28)
+
+| Date       | Item                         | Decision                                                                                              |
+| ---------- | ---------------------------- | ----------------------------------------------------------------------------------------------------- |
+| 2026-10-22 | Counts                       | Tiles read `counts[code]` and the line reads `total` from the envelope; nothing counts rows on screen |
+| 2026-10-22 | T1c                          | Tiles and the count are hidden; the header, title, New and column heads stay                          |
+| 2026-10-22 | T1e                          | 8 skeleton rows (ViewStateBody gains `skeletonCount`; its list default stays 6)                       |
+| 2026-10-22 | Row chevron                  | A 24px "Open …" button that shows on row hover or focus, so the open action has a keyboard path       |
+| 2026-10-22 | TASK-101 `DataTable` callers | Stay as they are; each screen moves to `IndexList` with its own screen task, not in bulk              |
