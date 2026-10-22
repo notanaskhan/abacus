@@ -10,6 +10,8 @@ import asyncpg
 import pytest
 
 from abacus.kernel._human_only_actions import HUMAN_ONLY_ACTIONS
+from abacus.kernel.db import TenantContext, configure_engine
+from abacus.kernel.uow import Target, uow
 from abacus_tools.codegen.human_only_actions import load
 
 from .agent_tests.support import Seeder
@@ -62,3 +64,17 @@ async def test_an_agent_may_still_write_its_own_actions(migrated_db: MigratedDat
         uuid.uuid4(),
         None,
     )
+
+
+async def test_the_app_role_writes_audit_rows_through_the_guard(
+    migrated_db: MigratedDatabase,
+) -> None:
+    """The trigger runs as the inserting role: the app must be able to evaluate it (0098)."""
+    configure_engine(migrated_db.app_url)
+    tenant = await Seeder(migrated_db.superuser_dsn).firm()
+    async with uow(TenantContext(tenant, "human", str(uuid.uuid4()))) as tx:
+        tx.record("sign_off.recorded", target=Target("probe", uuid.uuid4()))
+    agent = TenantContext(tenant, "agent", "agent:probe:run", uuid.uuid4())
+    with pytest.raises(Exception, match="human_only_action"):
+        async with uow(agent) as tx:
+            tx.record("sign_off.recorded", target=Target("probe", uuid.uuid4()))

@@ -39,3 +39,4 @@ updated: 2026-10-22
   - every listed action is refused for agent and policy and allowed for a person;
   - an agent can still write its own actions.
 - 2026-10-22: `test_schema_check_db` passes. 200 tests in all.
+- 2026-10-22: **fix-up (mistake).** 0097 broke every audit insert by the app role. The trigger calls `abacus_human_only_actions()`, and the app had no EXECUTE on it. The guard test had inserted as the superuser and missed it. Migration 0098 grants EXECUTE, and a new test writes through the unit of work as the app role. **Lesson:** a trigger function that calls other functions needs a test that inserts as the app role.
