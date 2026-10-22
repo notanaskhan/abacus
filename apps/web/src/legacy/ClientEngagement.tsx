@@ -42,7 +42,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { type JSX, useEffect, useState } from "react";
 import { errorMessage } from "../api";
-import { ClientBell } from "../shell/ClientBell";
 import { PortalBrand } from "../shell/PortalBrand";
 import { accessToken, signIn } from "../auth/session";
 import { ClientUploadChecks } from "./CheckResults";
@@ -115,7 +114,6 @@ export function ClientEngagement({ engagementId }: { engagementId: string }): JS
       <header className="flex h-[46px] items-center justify-between border-b-[0.5px] border-hair bg-card px-4">
         <PortalBrand />
         <span className="flex items-center gap-3">
-          <ClientBell />
           <Link to="/client" className="text-body text-accent hover:underline">
             Your engagements
           </Link>

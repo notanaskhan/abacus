@@ -5,7 +5,6 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { type JSX, useEffect, useState } from "react";
 import { errorMessage } from "../api";
-import { ClientBell } from "../shell/ClientBell";
 import { PortalBrand } from "../shell/PortalBrand";
 import { accessToken, chooseTenant, signIn, signOut } from "../auth/session";
 import { yourPartMessage } from "./clientHubMessages";
@@ -22,7 +21,6 @@ export function ClientHome(): JSX.Element {
       <header className="flex h-[46px] items-center justify-between border-b-[0.5px] border-hair bg-card px-4">
         <PortalBrand />
         <span className="flex items-center gap-2">
-          <ClientBell />
           <Button
             size="sm"
             variant="ghost"

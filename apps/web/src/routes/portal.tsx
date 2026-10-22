@@ -6,16 +6,16 @@ import { lazyScreen, rootRoute } from "./root";
 // The client portal and the sign-up and join pages: a tree beside the firm's (ADR-011; SPEC-015,
 // SPEC-016). The portal entry and its own shell come with P-08.
 const screens = {
-  ClientHome: lazyScreen(async () => (await import("../screens/ClientHome")).ClientHome),
+  ClientHome: lazyScreen(async () => (await import("../legacy/ClientHome")).ClientHome),
   ClientEngagement: lazyScreen(
-    async () => (await import("../screens/ClientEngagement")).ClientEngagement,
+    async () => (await import("../legacy/ClientEngagement")).ClientEngagement,
   ),
-  Join: lazyScreen(async () => (await import("../screens/Join")).Join),
-  Signup: lazyScreen(async () => (await import("../screens/Signup")).Signup),
+  Join: lazyScreen(async () => (await import("../legacy/Join")).Join),
+  Signup: lazyScreen(async () => (await import("../legacy/Signup")).Signup),
   ConnectCallback: lazyScreen(
-    async () => (await import("../screens/ConnectCallback")).ConnectCallback,
+    async () => (await import("../legacy/ConnectCallback")).ConnectCallback,
   ),
-  Accept: lazyScreen(async () => (await import("../screens/ClientAccept")).Accept),
+  Accept: lazyScreen(async () => (await import("../legacy/ClientAccept")).Accept),
 };
 
 const clientEngagementRoute = createRoute({

@@ -5,33 +5,33 @@ import { appRoute, lazyScreen } from "../root";
 
 // An engagement (SPEC-016): one header over its tabs; each tab's screen is its own chunk.
 const EngagementLayout = lazyScreen(
-  async () => (await import("../../screens/EngagementLayout")).EngagementLayout,
+  async () => (await import("../../legacy/EngagementLayout")).EngagementLayout,
 );
 const screens = {
-  Overview: lazyScreen(async () => (await import("../../screens/Overview")).Overview),
-  DefaultToSetup: lazyScreen(async () => (await import("../../screens/Setup")).DefaultToSetup),
-  Setup: lazyScreen(async () => (await import("../../screens/Setup")).Setup),
+  Overview: lazyScreen(async () => (await import("../../legacy/Overview")).Overview),
+  DefaultToSetup: lazyScreen(async () => (await import("../../legacy/Setup")).DefaultToSetup),
+  Setup: lazyScreen(async () => (await import("../../legacy/Setup")).Setup),
   AgentActivity: lazyScreen(
-    async () => (await import("../../screens/AgentActivity")).AgentActivity,
+    async () => (await import("../../legacy/AgentActivity")).AgentActivity,
   ),
-  ItemDetail: lazyScreen(async () => (await import("../../screens/ItemDetail")).ItemDetail),
-  Board: lazyScreen(async () => (await import("../../screens/Board")).Board),
+  ItemDetail: lazyScreen(async () => (await import("../../legacy/ItemDetail")).ItemDetail),
+  Board: lazyScreen(async () => (await import("../../legacy/Board")).Board),
   ImportRequestList: lazyScreen(
-    async () => (await import("../../screens/ImportRequestList")).ImportRequestList,
+    async () => (await import("../../legacy/ImportRequestList")).ImportRequestList,
   ),
-  MapView: lazyScreen(async () => (await import("../../screens/MapView")).MapView),
-  People: lazyScreen(async () => (await import("../../screens/People")).People),
-  Planning: lazyScreen(async () => (await import("../../screens/Planning")).Planning),
-  Findings: lazyScreen(async () => (await import("../../screens/Findings")).Findings),
-  Fieldwork: lazyScreen(async () => (await import("../../screens/Fieldwork")).Fieldwork),
-  Review: lazyScreen(async () => (await import("../../screens/Review")).Review),
-  Workpapers: lazyScreen(async () => (await import("../../screens/Workpapers")).Workpapers),
-  Workpaper: lazyScreen(async () => (await import("../../screens/Workpaper")).Workpaper),
+  MapView: lazyScreen(async () => (await import("../../legacy/MapView")).MapView),
+  People: lazyScreen(async () => (await import("../../legacy/People")).People),
+  Planning: lazyScreen(async () => (await import("../../legacy/Planning")).Planning),
+  Findings: lazyScreen(async () => (await import("../../legacy/Findings")).Findings),
+  Fieldwork: lazyScreen(async () => (await import("../../legacy/Fieldwork")).Fieldwork),
+  Review: lazyScreen(async () => (await import("../../legacy/Review")).Review),
+  Workpapers: lazyScreen(async () => (await import("../../legacy/Workpapers")).Workpapers),
+  Workpaper: lazyScreen(async () => (await import("../../legacy/Workpaper")).Workpaper),
   CompletionRelease: lazyScreen(
-    async () => (await import("../../screens/CompletionRelease")).CompletionRelease,
+    async () => (await import("../../legacy/CompletionRelease")).CompletionRelease,
   ),
-  ReviewMatrix: lazyScreen(async () => (await import("../../screens/ReviewMatrix")).ReviewMatrix),
-  TrialBalance: lazyScreen(async () => (await import("../../screens/TrialBalance")).TrialBalance),
+  ReviewMatrix: lazyScreen(async () => (await import("../../legacy/ReviewMatrix")).ReviewMatrix),
+  TrialBalance: lazyScreen(async () => (await import("../../legacy/TrialBalance")).TrialBalance),
 };
 
 export const engagementRoute = createRoute({

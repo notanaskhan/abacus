@@ -73,15 +73,30 @@ function useDebounced(value: string, ms: number): string {
 export function Palette({
   isAdmin,
   onNotifications,
+  open: controlled,
+  onOpenChange,
 }: {
   isAdmin: boolean;
   onNotifications: () => void;
+  /** Held by the shell (F-05-T23): the toolbar's Go… and ⌘K open it, so no own trigger or key. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }): JSX.Element {
-  const [open, setOpen] = useState(false);
+  const [own, setOwn] = useState(false);
+  const held = controlled !== undefined;
+  const open = held ? controlled : own;
+  const setOpen = (next: boolean | ((was: boolean) => boolean)): void => {
+    if (!held) {
+      setOwn(next);
+      return;
+    }
+    onOpenChange?.(typeof next === "function" ? next(open) : next);
+  };
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
   const path = useRouterState({ select: (r) => r.location.pathname });
   useEffect(() => {
+    if (held) return undefined;
     const onKey = (e: KeyboardEvent): void => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
@@ -92,7 +107,7 @@ export function Palette({
     return () => {
       window.removeEventListener("keydown", onKey);
     };
-  }, []);
+  }, [held]);
   useEffect(() => {
     if (!open) setQuery("");
   }, [open]);
@@ -237,17 +252,19 @@ export function Palette({
   const loading = remote && (items.isFetching || findings.isFetching);
   return (
     <>
-      <button
-        type="button"
-        aria-label="Search (⌘K)"
-        onClick={() => {
-          setOpen(true);
-        }}
-        className="flex h-[30px] w-[220px] items-center gap-2 rounded-pill bg-nav-fill px-2.5 text-[13px] text-ink-3 hover:text-ink-2"
-      >
-        <span className="flex-1 text-left">Search</span>
-        <kbd className="rounded-[4px] bg-card px-1.5 font-mono text-[11px] shadow-e1">⌘K</kbd>
-      </button>
+      {!held && (
+        <button
+          type="button"
+          aria-label="Search (⌘K)"
+          onClick={() => {
+            setOpen(true);
+          }}
+          className="flex h-[30px] w-[220px] items-center gap-2 rounded-pill bg-nav-fill px-2.5 text-[13px] text-ink-3 hover:text-ink-2"
+        >
+          <span className="flex-1 text-left">Search</span>
+          <kbd className="rounded-[4px] bg-card px-1.5 font-mono text-[11px] shadow-e1">⌘K</kbd>
+        </button>
+      )}
       <CommandPalette
         open={open}
         onOpenChange={setOpen}

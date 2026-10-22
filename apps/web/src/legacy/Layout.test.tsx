@@ -34,7 +34,7 @@ describe("ac1 Layout, signed out", () => {
     const { assign } = stubLocation("/engagements/e1");
     const { calls } = mockApi({});
     renderRoutes(ROUTES, { root: Layout });
-    expect((await screen.findByRole("heading", { name: "Abacus" })).textContent).toBe("Abacus");
+    expect((await screen.findByRole("heading", { name: "Accrued" })).textContent).toBe("Accrued");
     expect(screen.getByText("Redirecting to sign-in…")).toBeTruthy();
     await waitFor(() => {
       expect(assign).toHaveBeenCalledOnce();
@@ -53,6 +53,8 @@ describe("ac1 Layout, signed in", () => {
   it("shows who is signed in and the firm name, with the page below", async () => {
     mockApi({ "GET /v1/me": () => json(me()) });
     renderRoutes(ROUTES, { root: Layout });
+    // SHL-03 (F-05-T23): the firm pill names the firm; its menu names the person.
+    fireEvent.click(await screen.findByRole("button", { name: "Dev firm" }));
     expect(await screen.findByText(/Dana Leader · Dev firm/)).toBeTruthy();
     expect(screen.getByText("Page body")).toBeTruthy();
   });
@@ -60,7 +62,7 @@ describe("ac1 Layout, signed in", () => {
   it("sends the bearer token and no tenant header when the server picked the firm", async () => {
     const { calls } = mockApi({ "GET /v1/me": () => json(me()) });
     renderRoutes(ROUTES, { root: Layout });
-    await screen.findByText(/Dev firm/);
+    await screen.findByRole("button", { name: "Dev firm" });
     const first = calls[0];
     expect(first?.headers.get("Authorization")).toBe("Bearer tok");
     expect(first?.headers.get("X-Abacus-Tenant")).toBeNull();
@@ -101,6 +103,7 @@ describe("ac1 Layout, signed in", () => {
     mockApi({ "GET /v1/me": () => json(SEVERAL) });
     renderRoutes(ROUTES, { root: Layout });
     fireEvent.click(await screen.findByRole("button", { name: "Beta & Co" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Beta & Co" }));
     expect(await screen.findByText(/Dana Leader · Beta & Co/)).toBeTruthy();
     expect(screen.getByText("Page body")).toBeTruthy();
     expect(screen.queryByText("Choose a firm")).toBeNull();
@@ -118,6 +121,6 @@ describe("ac1 Layout, signed in", () => {
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("Couldn't load your account");
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-    expect(await screen.findByText(/Dev firm/)).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Dev firm" })).toBeTruthy();
   });
 });

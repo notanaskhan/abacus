@@ -8,18 +8,18 @@ import { appRoute, lazyScreen } from "../root";
 // Firm settings (SPEC-016, SPEC-019 Q1): one section list, a section per page. The /admin paths
 // move to /settings with redirects in G-01-T07 (DEC-113); today's URLs are kept.
 const screens = {
-  Methodology: lazyScreen(async () => (await import("../../screens/Methodology")).Methodology),
-  GroupingSets: lazyScreen(async () => (await import("../../screens/GroupingSets")).GroupingSets),
+  Methodology: lazyScreen(async () => (await import("../../legacy/Methodology")).Methodology),
+  GroupingSets: lazyScreen(async () => (await import("../../legacy/GroupingSets")).GroupingSets),
   MethodologyVersion: lazyScreen(
-    async () => (await import("../../screens/MethodologyVersion")).MethodologyVersion,
+    async () => (await import("../../legacy/MethodologyVersion")).MethodologyVersion,
   ),
   KnowledgeDocuments: lazyScreen(
-    async () => (await import("../../screens/KnowledgeDocuments")).KnowledgeDocuments,
+    async () => (await import("../../legacy/KnowledgeDocuments")).KnowledgeDocuments,
   ),
-  Budget: lazyScreen(async () => (await import("../../screens/Budget")).Budget),
+  Budget: lazyScreen(async () => (await import("../../legacy/Budget")).Budget),
   AutonomySettings: lazyScreen(async () => {
-    const m = await import("../../screens/Autonomy");
-    const ai = await import("../../screens/AiClientData");
+    const m = await import("../../legacy/Autonomy");
+    const ai = await import("../../legacy/AiClientData");
     return function AutonomySettings({ canSet }: { canSet: boolean }): JSX.Element {
       return (
         <div className="flex flex-col gap-4">
@@ -33,18 +33,16 @@ const screens = {
       );
     };
   }),
-  Onboarding: lazyScreen(async () => (await import("../../screens/Onboarding")).Onboarding),
-  FirmPeople: lazyScreen(async () => (await import("../../screens/FirmPeople")).FirmPeople),
-  AuditLog: lazyScreen(async () => (await import("../../screens/AuditLog")).AuditLog),
+  Onboarding: lazyScreen(async () => (await import("../../legacy/Onboarding")).Onboarding),
+  FirmPeople: lazyScreen(async () => (await import("../../legacy/FirmPeople")).FirmPeople),
+  AuditLog: lazyScreen(async () => (await import("../../legacy/AuditLog")).AuditLog),
   SupportAccess: lazyScreen(
-    async () => (await import("../../screens/SupportAccess")).SupportAccess,
+    async () => (await import("../../legacy/SupportAccess")).SupportAccess,
   ),
-  Walls: lazyScreen(async () => (await import("../../screens/Walls")).Walls),
+  Walls: lazyScreen(async () => (await import("../../legacy/Walls")).Walls),
 };
 
-const AdminLayout = lazyScreen(
-  async () => (await import("../../screens/AdminLayout")).AdminLayout,
-);
+const AdminLayout = lazyScreen(async () => (await import("../../legacy/AdminLayout")).AdminLayout);
 const adminRoute = createRoute({
   getParentRoute: () => appRoute,
   id: "admin",

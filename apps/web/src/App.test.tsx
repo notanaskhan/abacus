@@ -29,6 +29,6 @@ function render(element: React.ReactNode): HTMLElement {
 describe("App", () => {
   it("renders the product name", () => {
     const container = render(<App />);
-    expect(container.querySelector("h1")?.textContent).toBe("Abacus");
+    expect(container.querySelector("h1")?.textContent).toBe("Accrued");
   });
 });
