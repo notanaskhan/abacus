@@ -55,3 +55,23 @@ export {
   type ToolbarNavItem,
   type ToolbarProps,
 } from "./toolbar";
+export {
+  NestedSplit,
+  type NestedSplitProps,
+  ResizeGutter,
+  type ResizeGutterProps,
+  SplitLayout,
+  type SplitLayoutProps,
+  useNarrowLayout,
+} from "./split-layout";
+export {
+  SPLIT,
+  SPLIT_PRESETS,
+  type PresetPane,
+  type SplitPreset,
+  type SplitPresetName,
+  clampWidth,
+  dragTarget,
+  roomFor,
+  splitStorageKey,
+} from "./split-presets";
