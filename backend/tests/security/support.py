@@ -14,6 +14,7 @@ from typing import Final, Literal, Protocol, cast
 import asyncpg
 import httpx
 
+from abacus.kernel.db import TenantContext
 from abacus_tools.fakes.identity import ISSUER, FakeIdentityProvider
 
 Json = dict[str, object]
@@ -59,6 +60,11 @@ class Site:
 class Seeder:
     def __init__(self, dsn: str) -> None:
         self._dsn = dsn
+
+    @property
+    def dsn_key(self) -> str:
+        """Which database this seeds (a cache key; never logged)."""
+        return self._dsn
 
     async def run(self, sql: str, *args: object) -> None:
         conn = await asyncpg.connect(self._dsn)
@@ -296,3 +302,29 @@ class Env:
             )
             if token in body
         ]
+
+
+@dataclass(frozen=True)
+class TwoFirms:
+    """Two firms with a site each, for the generated isolation test (Q-02-T13)."""
+
+    a_ctx: TenantContext
+    b: uuid.UUID
+
+
+_TWO_FIRMS: dict[str, TwoFirms] = {}
+
+
+async def two_firms(seed: Seeder) -> TwoFirms:
+    """Seeded once per database: the generated test reads, it never writes."""
+    known = _TWO_FIRMS.get(seed.dsn_key)
+    if known is not None:
+        return known
+    a, b = await seed.firm(), await seed.firm()
+    admin_a = await seed.person(a, "firm_admin")
+    admin_b = await seed.person(b, "firm_admin")
+    await seed.site(a, admin_a.user_id, "isolation-a")
+    await seed.site(b, admin_b.user_id, "isolation-b")
+    firms = TwoFirms(TenantContext(a, "human", str(admin_a.user_id)), b)
+    _TWO_FIRMS[seed.dsn_key] = firms
+    return firms

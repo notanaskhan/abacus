@@ -29,6 +29,7 @@ from abacus.modules.identity.authz.conditions import (
     register_gates,
     register_work_item_functions,
 )
+from abacus.modules.identity.authz.matrix import RULES, Rule
 from abacus.modules.identity.client_access import (
     GrantExists,
     GrantRole,
@@ -200,6 +201,7 @@ __all__ = [
     "OWN",
     "PARTNER_ROLES",
     "ROUTERS",
+    "RULES",  # the parsed matrix, for the generated security tests (Q-02-T13)
     "SELF",
     "STAFF",
     "WALL_SAFE",
@@ -234,6 +236,7 @@ __all__ = [
     "NoActiveTenant",
     "PortalScopes",
     "Resource",
+    "Rule",
     "ScopeFacts",
     "ScopeKind",
     "StaffInvitationIssued",
