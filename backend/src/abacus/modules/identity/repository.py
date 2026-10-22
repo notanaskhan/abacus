@@ -25,6 +25,7 @@ from sqlalchemy import (
     bindparam,
     func,
     insert,
+    or_,
     select,
     text,
     update,
@@ -63,6 +64,47 @@ engagement_members = Table(
     Column("user_id", PgUUID(as_uuid=True), nullable=False),
     Column("role", String, nullable=False),
 )
+# F-03-T26 (ADR-146): client access lives in grants. An engagement-scope `owner` or
+# `contributor` grant is what the matrix calls `client_admin` or `client_contributor`; the other
+# grant roles have no matrix cells yet (P-08).
+client_access_grants = Table(
+    "client_access_grants",
+    _metadata,
+    Column("id", PgUUID(as_uuid=True), primary_key=True),
+    Column("tenant_id", PgUUID(as_uuid=True), nullable=False),
+    Column("user_id", PgUUID(as_uuid=True), nullable=False),
+    Column("role", String, nullable=False),
+    Column("scope_kind", String, nullable=False),
+    Column("scope_id", PgUUID(as_uuid=True), nullable=False),
+    Column("status", String, nullable=False),
+    Column("expires_at", DateTime(timezone=True), nullable=True),
+    Column("created_at", DateTime(timezone=True), nullable=False),
+)
+GRANT_ROLE_OF: dict[str, str] = {"client_admin": "owner", "client_contributor": "contributor"}
+MATRIX_ROLE_OF: dict[str, ClientRole] = {
+    "owner": "client_admin",
+    "contributor": "client_contributor",
+}
+
+
+def client_grant_engagements(
+    tenant_id: UUID, user_id: UUID, roles: Sequence[str]
+) -> Select[tuple[UUID]]:
+    """The engagements where the person holds one of these client matrix roles: an active,
+    unexpired engagement-scope grant of the matching grant role."""
+    return select(client_access_grants.c.scope_id).where(
+        client_access_grants.c.tenant_id == tenant_id,
+        client_access_grants.c.user_id == user_id,
+        client_access_grants.c.scope_kind == "engagement",
+        client_access_grants.c.role.in_([GRANT_ROLE_OF[r] for r in roles]),
+        client_access_grants.c.status == "active",
+        or_(
+            client_access_grants.c.expires_at.is_(None),
+            client_access_grants.c.expires_at > func.clock_timestamp(),
+        ),
+    )
+
+
 # Ethical walls (migration 0012; SPEC-002): `authorise` and `visible()` read active ones.
 ethical_walls = Table(
     "ethical_walls",
@@ -328,6 +370,8 @@ async def insert_grant_event(
 async def engagement_role(
     tenant: TenantContext, user_id: UUID, engagement_id: UUID
 ) -> EngagementRole | ClientRole | None:
+    """The person's role on the engagement: a staff row, or (F-03-T26) a client grant on it,
+    owner before contributor."""
     async with tenant_session(tenant) as session:
         role = (
             await session.execute(
@@ -337,7 +381,28 @@ async def engagement_role(
                 )
             )
         ).scalar_one_or_none()
-    return cast(EngagementRole | ClientRole | None, role)
+        if role is not None:
+            return cast(EngagementRole, role)
+        granted = set(
+            (
+                await session.execute(
+                    select(client_access_grants.c.role).where(
+                        client_access_grants.c.user_id == user_id,
+                        client_access_grants.c.scope_kind == "engagement",
+                        client_access_grants.c.scope_id == engagement_id,
+                        client_access_grants.c.status == "active",
+                        or_(
+                            client_access_grants.c.expires_at.is_(None),
+                            client_access_grants.c.expires_at > func.clock_timestamp(),
+                        ),
+                    )
+                )
+            ).scalars()
+        )
+    for grant_role in ("owner", "contributor"):
+        if grant_role in granted:
+            return MATRIX_ROLE_OF[grant_role]
+    return None
 
 
 async def my_engagement_roles(tenant: TenantContext, user_id: UUID) -> dict[UUID, EngagementRole]:
@@ -403,11 +468,14 @@ async def earliest_partner_of(session: AsyncSession, engagement_id: UUID) -> UUI
 
 
 async def client_admin_ids(session: AsyncSession, engagement_id: UUID) -> list[UUID]:
-    """The engagement's client admins (SPEC-027 P-4: who is reminded when no one is assigned)."""
+    """The engagement's client admins (SPEC-027 P-4: who is reminded when no one is assigned):
+    its active owner grants (F-03-T26)."""
     rows = await session.execute(
         text(
-            "SELECT user_id FROM engagement_members WHERE engagement_id = :e "
-            "AND role = 'client_admin' ORDER BY created_at, user_id"
+            "SELECT user_id FROM client_access_grants WHERE scope_kind = 'engagement' "
+            "AND scope_id = :e AND role = 'owner' AND status = 'active' "
+            "AND (expires_at IS NULL OR expires_at > clock_timestamp()) "
+            "ORDER BY created_at, user_id"
         ),
         {"e": engagement_id},
     )
@@ -769,6 +837,48 @@ async def add_client_membership(session: AsyncSession, user_id: UUID) -> None:
     await session.execute(text("SELECT add_client_membership(:u)"), {"u": user_id})
 
 
+_ENGAGEMENT_GRANT = text(
+    "INSERT INTO client_access_grants (tenant_id, user_id, role, scope_kind, scope_id, "
+    "granted_by) VALUES (:tenant_id, :user_id, :role, 'engagement', :engagement_id, :by) "
+    "ON CONFLICT (tenant_id, user_id, role, scope_kind, scope_id) DO NOTHING RETURNING id"
+)
+_REACTIVATE = text(
+    "UPDATE client_access_grants SET status = 'active' WHERE user_id = :user_id "
+    "AND role = :role AND scope_kind = 'engagement' AND scope_id = :engagement_id "
+    "AND status <> 'active' RETURNING id"
+)
+
+
+async def grant_engagement_role(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    engagement_id: UUID,
+    user_id: UUID,
+    role: ClientRole,
+    by: UUID | None,
+) -> UUID | None:
+    """A client role on an engagement as its grant (F-03-T26): new, or reactivated after a
+    removal. The grant's id when it changed, with its `client_access_events` row."""
+    values = {
+        "tenant_id": tenant_id,
+        "user_id": user_id,
+        "role": GRANT_ROLE_OF[role],
+        "engagement_id": engagement_id,
+        "by": by,
+    }
+    row = (await session.execute(_ENGAGEMENT_GRANT, values)).first()
+    event = "granted"
+    if row is None:
+        row = (await session.execute(_REACTIVATE, values)).first()
+        event = "activated"
+    if row is None:
+        return None
+    grant_id = cast(UUID, row.id)
+    await insert_grant_event(session, tenant_id=tenant_id, grant_id=grant_id, event=event, by=by)
+    return grant_id
+
+
 async def remove_client_member(session: AsyncSession, engagement_id: UUID, user_id: UUID) -> bool:
     removed = await session.scalar(
         text("SELECT remove_client_member(:e, :u)"), {"e": engagement_id, "u": user_id}
@@ -780,9 +890,15 @@ async def client_contacts(session: AsyncSession, engagement_id: UUID) -> Sequenc
     """The engagement's client members (with their names) and pending invitations."""
     result = await session.execute(
         text(
-            "SELECT 'member' AS kind, em.user_id AS id, em.role, NULL::text AS email, "
-            "NULL::timestamptz AS expires_at FROM engagement_members em "
-            "WHERE em.engagement_id = :e AND em.role IN ('client_admin', 'client_contributor') "
+            "SELECT 'member' AS kind, g.user_id AS id, "
+            "CASE g.role WHEN 'owner' THEN 'client_admin' ELSE 'client_contributor' END AS role, "
+            "NULL::text AS email, NULL::timestamptz AS expires_at FROM client_access_grants g "
+            "WHERE g.scope_kind = 'engagement' AND g.scope_id = :e "
+            "AND g.role IN ('owner', 'contributor') AND g.status = 'active' "
+            "AND (g.expires_at IS NULL OR g.expires_at > clock_timestamp()) "
+            "AND NOT (g.role = 'contributor' AND EXISTS (SELECT 1 FROM client_access_grants o "
+            "WHERE o.scope_kind = 'engagement' AND o.scope_id = g.scope_id "
+            "AND o.user_id = g.user_id AND o.role = 'owner' AND o.status = 'active')) "
             "UNION ALL SELECT 'invitation', ci.id, ci.role, ci.email, ci.expires_at "
             "FROM client_invitations ci WHERE ci.engagement_id = :e AND ci.status = 'pending' "
             "AND ci.expires_at > clock_timestamp() ORDER BY 1, 3, 2"

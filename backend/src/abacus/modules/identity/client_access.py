@@ -17,8 +17,9 @@ built in. An unregistered kind covers nothing (fail closed).
   `.revoke`), an audit event, an insert-only `client_access_events` row and the
   `client_access.*` and `access.changed` events.
 
-Expand step: `engagement_members` client rows are mirrored into grants by a database trigger
-until the readers move (ADR-146's one release of dual-read).
+The matrix keeps two client role names: an engagement-scope `owner` grant is `client_admin`, a
+`contributor` grant `client_contributor` (`repository.MATRIX_ROLE_OF`). `engagement_members`
+holds staff roles only (migration 0084, TASK-373).
 """
 
 from __future__ import annotations

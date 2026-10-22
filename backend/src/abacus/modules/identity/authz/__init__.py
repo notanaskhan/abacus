@@ -62,6 +62,7 @@ from abacus.modules.identity.repository import (
     ENGAGEMENT_ROLES,
     FirmPolicy,
     MemberFacts,
+    client_grant_engagements,
     engagement_members,
     engagement_role,
     engagement_roles_in_firm,
@@ -659,12 +660,23 @@ def _visible_by_role(
 def _member_of(
     ctx: AuthContext, engagement_id: EngagementColumn, roles: list[str]
 ) -> ColumnElement[bool]:
-    member_of = select(engagement_members.c.engagement_id).where(
-        engagement_members.c.tenant_id == ctx.tenant_id,
-        engagement_members.c.user_id == ctx.user_id,
-        engagement_members.c.role.in_(roles),
-    )
-    return engagement_id.in_(member_of)
+    """Engagements where the person holds one of `roles`: staff roles from the team, client
+    roles from their engagement-scope grants (F-03-T26)."""
+    staff = [role for role in roles if role not in CLIENT_ROLES]
+    client = [role for role in roles if role in CLIENT_ROLES]
+    reach: list[ColumnElement[bool]] = []
+    if staff:
+        member_of = select(engagement_members.c.engagement_id).where(
+            engagement_members.c.tenant_id == ctx.tenant_id,
+            engagement_members.c.user_id == ctx.user_id,
+            engagement_members.c.role.in_(staff),
+        )
+        reach.append(engagement_id.in_(member_of))
+    if client:
+        reach.append(
+            engagement_id.in_(client_grant_engagements(ctx.tenant_id, ctx.user_id, client))
+        )
+    return or_(*reach) if reach else false()
 
 
 async def authorise_items(ctx: Actor, action: str, resource: Resource) -> None:
@@ -702,11 +714,7 @@ def visible_items(
     for role, decision in rule.decisions.items():
         if decision not in _CLIENT_CONDITIONS or role not in CLIENT_ROLES:
             continue
-        member_of = select(engagement_members.c.engagement_id).where(
-            engagement_members.c.tenant_id == ctx.tenant_id,
-            engagement_members.c.user_id == ctx.user_id,
-            engagement_members.c.role == role,
-        )
+        member_of = client_grant_engagements(ctx.tenant_id, ctx.user_id, [role])
         rows = (
             client_visible.is_(True)
             if decision == "client_visible_only"

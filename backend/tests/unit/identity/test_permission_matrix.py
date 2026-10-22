@@ -30,6 +30,7 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.identity.authz import matrix
 from abacus.modules.identity.authz.matrix import RULES
+from abacus.modules.identity.repository import GRANT_ROLE_OF
 from abacus_tools.codegen import permission_matrix as pm
 
 FirmRole = Literal["firm_admin", "practice_leader", "quality_partner", "security_admin"]
@@ -695,17 +696,31 @@ def test_ac20_visible_for_a_firm_level_read_without_a_firm_role_is_false(action:
 def test_ac20_visible_without_a_firm_allow_filters_on_engagement_membership(action: str) -> None:
     ctx = _ctx()
     expression = visible(ctx, action, column("engagement_id", Uuid()))
-    roles = sorted(r for r in MEMBER_ROLES if YAML_ACTIONS[action].get(r) == "allow")
+    staff = sorted(r for r in ENGAGEMENT_ROLES if YAML_ACTIONS[action].get(r) == "allow")
+    client = sorted(r for r in CLIENT_ROLES if YAML_ACTIONS[action].get(r) == "allow")
     compiled = expression.compile()
-    assert _sql(expression).startswith(
-        "engagement_id IN (SELECT engagement_members.engagement_id FROM engagement_members WHERE "
-    )
-    assert "engagement_members.tenant_id = :tenant_id_1" in _sql(expression)
-    assert "engagement_members.user_id = :user_id_1" in _sql(expression)
-    assert "engagement_members.role IN" in _sql(expression)
-    assert compiled.params["tenant_id_1"] == ctx.tenant_id
-    assert compiled.params["user_id_1"] == ctx.user_id
-    assert sorted(compiled.params["role_1"]) == roles
+    sql = _sql(expression)
+    assert staff or client
+    # Staff roles from the team; client roles from engagement-scope grants (F-03-T26), each
+    # filtered on the person and the tenant.
+    n = 1
+    if staff:
+        assert (
+            "engagement_id IN (SELECT engagement_members.engagement_id FROM engagement_members "
+            in (sql)
+        )
+        assert sorted(compiled.params["role_1"]) == staff
+        n = 2
+    else:
+        assert "engagement_members" not in sql
+    if client:
+        assert "engagement_id IN (SELECT client_access_grants.scope_id" in sql
+        assert sorted(compiled.params[f"role_{n}"]) == sorted(GRANT_ROLE_OF[r] for r in client)
+    else:
+        assert "client_access_grants" not in sql
+    for i in range(1, n + (1 if client else 0)):
+        assert compiled.params[f"tenant_id_{i}"] == ctx.tenant_id
+        assert compiled.params[f"user_id_{i}"] == ctx.user_id
 
 
 def test_ac20_visible_with_no_engagement_role_allowed_is_false(
@@ -723,8 +738,10 @@ def test_spec020_visible_counts_a_client_role_allowed_by_the_matrix(
 ) -> None:
     monkeypatch.setitem(RULES, "probe.read", make_rule("probe.read", {"client_admin": "allow"}))
     expression = visible(_ctx(), "probe.read", column("engagement_id", Uuid()))
-    assert "engagement_members.role IN" in _sql(expression)
-    assert list(expression.compile().params["role_1"]) == ["client_admin"]
+    # F-03-T26: a client role reaches through its engagement-scope grant.
+    assert "client_access_grants.role IN" in _sql(expression)
+    assert "engagement_members" not in _sql(expression)
+    assert list(expression.compile().params["role_1"]) == ["owner"]
 
 
 @pytest.mark.parametrize(
@@ -1088,8 +1105,9 @@ def test_spec020_ac1_visible_items_adds_client_reach_by_role() -> None:
     assert "client_visible IS true" in sql
     assert "client_assignee_user_id = " in sql
     params = expression.compile().params
-    roles = {v for k, v in params.items() if k.startswith("role_") and isinstance(v, str)}
-    assert roles >= {
-        "client_admin",
-        "client_contributor",
-    }
+    # F-03-T26: each client role reaches through its engagement-scope grant role.
+    roles: set[str] = set()
+    for k, v in params.items():
+        if k.startswith("role_") and isinstance(v, list):
+            roles |= {str(role) for role in cast(list[object], v)}
+    assert roles >= {"owner", "contributor"}
