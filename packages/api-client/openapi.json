@@ -9749,6 +9749,223 @@
         "title": "NoteOut",
         "type": "object"
       },
+      "NotificationActorOut": {
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "human",
+              "agent",
+              "system",
+              "policy"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "NotificationActorOut",
+        "type": "object"
+      },
+      "NotificationCountsOut": {
+        "properties": {
+          "approvals": {
+            "cls": "internal",
+            "title": "Approvals",
+            "type": "integer"
+          },
+          "client_activity": {
+            "cls": "internal",
+            "title": "Client Activity",
+            "type": "integer"
+          },
+          "mentions": {
+            "cls": "internal",
+            "title": "Mentions",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "approvals",
+          "mentions",
+          "client_activity"
+        ],
+        "title": "NotificationCountsOut",
+        "type": "object"
+      },
+      "NotificationFeedOut": {
+        "description": "The P-36 list envelope plus the tab counts and the bell's unread count.",
+        "properties": {
+          "counts": {
+            "$ref": "#/components/schemas/NotificationCountsOut",
+            "cls": "internal"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/NotificationItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "unread_count": {
+            "cls": "internal",
+            "title": "Unread Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor",
+          "counts",
+          "unread_count"
+        ],
+        "title": "NotificationFeedOut",
+        "type": "object"
+      },
+      "NotificationItemOut": {
+        "description": "A row as the drawer shows it. Rows store identifiers and codes only; `facts` are\nresolved at read time and may hold client content, so they are Restricted and never logged.",
+        "properties": {
+          "actor": {
+            "$ref": "#/components/schemas/NotificationActorOut",
+            "cls": "internal"
+          },
+          "category": {
+            "cls": "internal",
+            "enum": [
+              "approval",
+              "mention",
+              "client_activity",
+              "run",
+              "deadline",
+              "system",
+              "other"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "engagement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engagement Id"
+          },
+          "facts": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "cls": "restricted",
+            "title": "Facts",
+            "type": "object"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "inline_actions": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "accept_document",
+                "return_document",
+                "open_sign_off"
+              ],
+              "type": "string"
+            },
+            "title": "Inline Actions",
+            "type": "array"
+          },
+          "kind": {
+            "cls": "internal",
+            "title": "Kind",
+            "type": "string"
+          },
+          "pending": {
+            "cls": "internal",
+            "title": "Pending",
+            "type": "boolean"
+          },
+          "read": {
+            "cls": "internal",
+            "title": "Read",
+            "type": "boolean"
+          },
+          "subject": {
+            "$ref": "#/components/schemas/ObjectRefOut",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "category",
+          "created_at",
+          "read",
+          "actor",
+          "subject",
+          "engagement_id",
+          "facts",
+          "inline_actions",
+          "pending"
+        ],
+        "title": "NotificationItemOut",
+        "type": "object"
+      },
       "NotificationOut": {
         "properties": {
           "created_at": {
@@ -9831,6 +10048,88 @@
           "unread_count"
         ],
         "title": "NotificationPageOut",
+        "type": "object"
+      },
+      "NotificationPreferenceOut": {
+        "properties": {
+          "email": {
+            "cls": "internal",
+            "title": "Email",
+            "type": "boolean"
+          },
+          "in_app": {
+            "cls": "internal",
+            "title": "In App",
+            "type": "boolean"
+          },
+          "kind": {
+            "cls": "internal",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "in_app",
+          "email"
+        ],
+        "title": "NotificationPreferenceOut",
+        "type": "object"
+      },
+      "NotificationPreferencesIn": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/NotificationPreferenceOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "NotificationPreferencesIn",
+        "type": "object"
+      },
+      "NotificationPreferencesOut": {
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/NotificationPreferenceOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "NotificationPreferencesOut",
+        "type": "object"
+      },
+      "ObjectRefOut": {
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "cls": "internal",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ],
+        "title": "ObjectRefOut",
         "type": "object"
       },
       "OnboardingOut": {
@@ -49234,6 +49533,226 @@
         "x-abacus-action": "own"
       }
     },
+    "/v1/me/notification-preferences": {
+      "get": {
+        "operationId": "notification_preferences",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferencesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Notification Preferences Route",
+        "tags": [
+          "notifications"
+        ],
+        "x-abacus-action": "own"
+      },
+      "put": {
+        "operationId": "set_notification_preferences",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationPreferencesIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferencesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Set Notification Preferences Route",
+        "tags": [
+          "notifications"
+        ],
+        "x-abacus-action": "own"
+      }
+    },
     "/v1/metering": {
       "get": {
         "operationId": "metering",
@@ -50445,6 +50964,168 @@
           }
         },
         "summary": "List Notifications Route",
+        "tags": [
+          "notifications"
+        ],
+        "x-abacus-action": "own"
+      }
+    },
+    "/v1/notifications/feed": {
+      "get": {
+        "operationId": "notification_feed",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "tab",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "enum": [
+                "all",
+                "approvals",
+                "mentions",
+                "client_activity"
+              ],
+              "title": "Tab",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 30,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationFeedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Notification Feed Route",
         "tags": [
           "notifications"
         ],

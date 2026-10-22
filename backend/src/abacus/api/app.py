@@ -34,6 +34,7 @@ from abacus.kernel.errors import (
     DomainForbidden,
     DomainInvalid,
     NotFound,
+    NotImplementedYet,
     ServiceUnavailable,
 )
 from abacus.kernel.logging import get_logger
@@ -91,6 +92,10 @@ async def _domain_invalid(_request: Request, exc: Exception) -> JSONResponse:
 
 async def _unavailable(_request: Request, _exc: Exception) -> JSONResponse:
     return JSONResponse({"detail": "service unavailable"}, status_code=503)
+
+
+async def _not_implemented(_request: Request, _exc: Exception) -> JSONResponse:
+    return JSONResponse({"detail": "not_implemented"}, status_code=501)
 
 
 async def _invalid(_request: Request, exc: Exception) -> JSONResponse:
@@ -192,6 +197,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(DomainForbidden, _domain_forbidden)
     app.add_exception_handler(DomainInvalid, _domain_invalid)
     app.add_exception_handler(ServiceUnavailable, _unavailable)
+    app.add_exception_handler(NotImplementedYet, _not_implemented)
     app.add_exception_handler(RequestValidationError, _invalid)
     app.add_exception_handler(Exception, _unexpected)
     app.openapi = lambda: _openapi(app)  # type-safe override of FastAPI's generator

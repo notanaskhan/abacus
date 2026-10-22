@@ -4667,6 +4667,108 @@ export type NoteOut = {
 };
 
 /**
+ * NotificationActorOut
+ */
+export type NotificationActorOut = {
+    /**
+     * Kind
+     */
+    kind: 'human' | 'agent' | 'system' | 'policy';
+    /**
+     * User Id
+     */
+    user_id?: string | null;
+};
+
+/**
+ * NotificationCountsOut
+ */
+export type NotificationCountsOut = {
+    /**
+     * Approvals
+     */
+    approvals: number;
+    /**
+     * Client Activity
+     */
+    client_activity: number;
+    /**
+     * Mentions
+     */
+    mentions: number;
+};
+
+/**
+ * NotificationFeedOut
+ *
+ * The P-36 list envelope plus the tab counts and the bell's unread count.
+ */
+export type NotificationFeedOut = {
+    counts: NotificationCountsOut;
+    /**
+     * Items
+     */
+    items: Array<NotificationItemOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor: string | null;
+    /**
+     * Unread Count
+     */
+    unread_count: number;
+};
+
+/**
+ * NotificationItemOut
+ *
+ * A row as the drawer shows it. Rows store identifiers and codes only; `facts` are
+ * resolved at read time and may hold client content, so they are Restricted and never logged.
+ */
+export type NotificationItemOut = {
+    actor: NotificationActorOut;
+    /**
+     * Category
+     */
+    category: 'approval' | 'mention' | 'client_activity' | 'run' | 'deadline' | 'system' | 'other';
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string | null;
+    /**
+     * Facts
+     */
+    facts: {
+        [key: string]: string | number | boolean | null;
+    };
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Inline Actions
+     */
+    inline_actions: Array<'accept_document' | 'return_document' | 'open_sign_off'>;
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Pending
+     */
+    pending: boolean;
+    /**
+     * Read
+     */
+    read: boolean;
+    subject: ObjectRefOut;
+};
+
+/**
  * NotificationOut
  */
 export type NotificationOut = {
@@ -4712,6 +4814,58 @@ export type NotificationPageOut = {
      * Unread Count
      */
     unread_count: number;
+};
+
+/**
+ * NotificationPreferenceOut
+ */
+export type NotificationPreferenceOut = {
+    /**
+     * Email
+     */
+    email: boolean;
+    /**
+     * In App
+     */
+    in_app: boolean;
+    /**
+     * Kind
+     */
+    kind: string;
+};
+
+/**
+ * NotificationPreferencesIn
+ */
+export type NotificationPreferencesIn = {
+    /**
+     * Items
+     */
+    items: Array<NotificationPreferenceOut>;
+};
+
+/**
+ * NotificationPreferencesOut
+ */
+export type NotificationPreferencesOut = {
+    /**
+     * Items
+     */
+    items: Array<NotificationPreferenceOut>;
+};
+
+/**
+ * ObjectRefOut
+ */
+export type ObjectRefOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Type
+     */
+    type: string;
 };
 
 /**
@@ -23063,6 +23217,108 @@ export type MyCapabilitiesResponses = {
 
 export type MyCapabilitiesResponse = MyCapabilitiesResponses[keyof MyCapabilitiesResponses];
 
+export type NotificationPreferencesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/me/notification-preferences';
+};
+
+export type NotificationPreferencesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type NotificationPreferencesError = NotificationPreferencesErrors[keyof NotificationPreferencesErrors];
+
+export type NotificationPreferencesResponses = {
+    /**
+     * Successful Response
+     */
+    200: NotificationPreferencesOut;
+};
+
+export type NotificationPreferencesResponse = NotificationPreferencesResponses[keyof NotificationPreferencesResponses];
+
+export type SetNotificationPreferencesData = {
+    body: NotificationPreferencesIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/me/notification-preferences';
+};
+
+export type SetNotificationPreferencesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SetNotificationPreferencesError = SetNotificationPreferencesErrors[keyof SetNotificationPreferencesErrors];
+
+export type SetNotificationPreferencesResponses = {
+    /**
+     * Successful Response
+     */
+    200: NotificationPreferencesOut;
+};
+
+export type SetNotificationPreferencesResponse = SetNotificationPreferencesResponses[keyof SetNotificationPreferencesResponses];
+
 export type MeteringData = {
     body?: never;
     headers?: {
@@ -23617,6 +23873,74 @@ export type ListNotificationsResponses = {
 };
 
 export type ListNotificationsResponse = ListNotificationsResponses[keyof ListNotificationsResponses];
+
+export type NotificationFeedData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Tab
+         */
+        tab?: 'all' | 'approvals' | 'mentions' | 'client_activity';
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Days
+         */
+        days?: number;
+    };
+    url: '/v1/notifications/feed';
+};
+
+export type NotificationFeedErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type NotificationFeedError = NotificationFeedErrors[keyof NotificationFeedErrors];
+
+export type NotificationFeedResponses = {
+    /**
+     * Successful Response
+     */
+    200: NotificationFeedOut;
+};
+
+export type NotificationFeedResponse = NotificationFeedResponses[keyof NotificationFeedResponses];
 
 export type ReadAllData = {
     body?: never;

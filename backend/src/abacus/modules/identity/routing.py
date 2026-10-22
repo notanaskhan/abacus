@@ -86,9 +86,11 @@ _RESPONSES: dict[int | str, dict[str, object]] = {
     422: {"model": ValidationErrorOut, "description": "Invalid request"},
 }
 # Further errors a route may declare (`errors=`): conflicts with the resource's state, and an
-# unavailable dependency (kernel.errors.DomainConflict, ServiceUnavailable).
+# unavailable dependency (kernel.errors.DomainConflict, ServiceUnavailable), and a contract stub
+# not implemented yet (NotImplementedYet).
 _OPTIONAL_RESPONSES: dict[int, dict[str, object]] = {
     409: {"model": ErrorOut, "description": "Conflict with the resource's state"},
+    501: {"model": ErrorOut, "description": "Contract stub: not implemented yet"},
     503: {"model": ErrorOut, "description": "Service unavailable"},
 }
 ACTION_KEY: Final = "x-abacus-action"
