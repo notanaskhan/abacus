@@ -85,6 +85,7 @@ TABLES: tuple[str, ...] = (
     "guidance_draft_decisions",
     "guidance_drafts",
     "human_gates",
+    "idempotency_keys",
     "inbox_files",
     "inbox_match_proposals",
     "inbox_match_runs",

@@ -139,6 +139,10 @@ class UnitOfWork:
     _connection: AsyncConnection
     _audit: list[_AuditEvent] = field(default_factory=list[_AuditEvent])
     _events: list[DomainEvent] = field(default_factory=list[DomainEvent])
+    # P-06-T06: per event, when it may be delivered and the approval grant that holds it.
+    _held: dict[UUID, tuple[datetime | None, UUID | None]] = field(
+        default_factory=dict[UUID, tuple[datetime | None, UUID | None]]
+    )
 
     def record(
         self,
@@ -153,7 +157,20 @@ class UnitOfWork:
             raise ValueError(f"audit action {action!r} must look like 'entity.verb_past'")
         self._audit.append(_AuditEvent(action, target, before, after, scope))
 
-    def emit(self, event: DomainEvent) -> None:
+    def emit(
+        self,
+        event: DomainEvent,
+        *,
+        not_before: datetime | None = None,
+        grant_id: UUID | None = None,
+    ) -> None:
+        """Queue `event` for the relay. `not_before` holds delivery until then (an Undo window);
+        `grant_id` makes it a grant-held effect, delivered only if the grant is consumed at
+        delivery (ADR-161; P-06-T06)."""
+        if not_before is not None and not_before.tzinfo is None:
+            raise ValueError("not_before needs a time zone")
+        if not_before is not None or grant_id is not None:
+            self._held[event.event_id] = (not_before, grant_id)
         sensitive = sensitive_paths(event)
         if sensitive:
             raise ValueError(
@@ -195,8 +212,9 @@ class UnitOfWork:
         if self._events:
             await self._connection.execute(
                 text(
-                    "INSERT INTO outbox (id, tenant_id, event_type, payload, trace_context) "
-                    "VALUES (:id, :tenant, :event_type, CAST(:payload AS jsonb), :trace_context)"
+                    "INSERT INTO outbox (id, tenant_id, event_type, payload, trace_context, "
+                    "not_before, grant_id) VALUES (:id, :tenant, :event_type, "
+                    "CAST(:payload AS jsonb), :trace_context, :not_before, :grant_id)"
                 ),
                 [
                     {
@@ -205,6 +223,8 @@ class UnitOfWork:
                         "event_type": e.event_type,
                         "payload": e.model_dump_json(),
                         "trace_context": current_traceparent(),
+                        "not_before": self._held.get(e.event_id, (None, None))[0],
+                        "grant_id": self._held.get(e.event_id, (None, None))[1],
                     }
                     for e in self._events
                 ],
