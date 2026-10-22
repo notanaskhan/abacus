@@ -1,4 +1,5 @@
 import { type DragEvent, type JSX, useMemo, useRef, useState } from "react";
+import type { Actor } from "../attribution";
 import { cn } from "../cn";
 import { PRESS } from "../components/control-classes";
 import { StatusDisc } from "../components/status";
@@ -69,6 +70,8 @@ export interface RequestBinderProps {
   onUndoIgnore?: (id: string) => void;
   onRemove?: (id: string) => void;
   onReply?: (id: string, text: string) => void;
+  /** The signed-in client: the person a reply is sent as (Send is a HumanAction, INV-1). */
+  viewer?: Actor;
   onMarkDone?: () => void;
   onUndoDone?: () => void;
   /** Mark as Done clicked while requests are open: the screen toasts the count. */
@@ -396,6 +399,7 @@ export function RequestDocuments({
                 item={r}
                 firm={props.firm}
                 today={props.today}
+                {...(props.viewer === undefined ? {} : { viewer: props.viewer })}
                 ignoreOpen={props.openIgnore === r.id}
                 onUpload={(id) => {
                   binder.choose(id);

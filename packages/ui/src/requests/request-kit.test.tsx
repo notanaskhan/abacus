@@ -302,6 +302,7 @@ function Binder(props: Partial<RequestBinderProps>): React.JSX.Element {
     firm: "Brightwater Hale",
     today: "Sep 14",
     binder: "2025 Binder",
+    viewer: { kind: "human", name: "Claire Feld" },
     requests: ITEMS,
     sections: SECTIONS,
     ...props,
@@ -366,6 +367,10 @@ describe("the binder's behaviour", () => {
     const box = screen.getByRole("textbox", { name: "Reply to Brightwater Hale" });
     expect(document.activeElement).toBe(box);
     expect(screen.getByRole("button", { name: "Send" }).hasAttribute("disabled")).toBe(true);
+    // Send is a human verb (INV-1): the reply goes out through HumanAction for the viewer.
+    expect(screen.getByRole("button", { name: "Send" }).getAttribute("data-human-verb")).toBe(
+      "Send",
+    );
     fireEvent.change(box, { target: { value: "Uploading the 2025 form now." } });
     fireEvent.keyDown(box, { key: "Enter", metaKey: true });
     expect(onReply).toHaveBeenCalledWith("int", "Uploading the 2025 form now.");

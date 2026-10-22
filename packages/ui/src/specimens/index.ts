@@ -22,6 +22,7 @@ import { AgentFilledSpecimen, AttributionSpecimen } from "./attribution";
 import { MenuSpecimen, TooltipSpecimen } from "./menus";
 import { IndexListSpecimen } from "./templates";
 import { PortalLayoutSpecimen } from "./portal";
+import { T15Specimen, Tpl15Specimen } from "./auth";
 import { RequestRowsSpecimen, T7Specimen, Tpl07Specimen } from "./requests";
 import { NestedSplitSpecimen, SplitNarrowSpecimen, SplitPresetsSpecimen } from "./split";
 import { ToastKindsSpecimen, ToastLiveSpecimen } from "./toasts";
@@ -225,6 +226,9 @@ export const SPECIMENS: readonly Specimen[] = [
   { id: "c-16-request-rows", kit: "C-16", title: "RequestRow", Component: RequestRowsSpecimen },
   { id: "t7-client-portal", kit: "T7", title: "Client portal", Component: T7Specimen },
   { id: "tpl-07", kit: "TPL-07", title: "Client portal specimen", Component: Tpl07Specimen },
+  // T15 AuthCard (F-05-T37): T15a to T15c and TPL-15a to TPL-15j
+  { id: "t15-auth-card", kit: "T15", title: "Auth card", Component: T15Specimen },
+  { id: "tpl-15", kit: "TPL-15", title: "Auth card specimen", Component: Tpl15Specimen },
   // SplitLayout (F-05-T29): C-09
   {
     id: "c-09-split-presets",

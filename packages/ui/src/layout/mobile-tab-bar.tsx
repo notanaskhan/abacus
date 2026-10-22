@@ -11,6 +11,7 @@ import { FirmMark, type FirmMarkProps } from "../brand";
 import { cn } from "../cn";
 import { PRESS } from "../components/control-classes";
 import { Icon } from "../icons";
+import { useMotion } from "../motion";
 import type { PortalNavItem } from "./portal-toolbar";
 
 // The portal at 390 (T7-M; DEC-45, D-DS-8): the 56px MobileHeader and the 64px MobileTabBar with
@@ -131,6 +132,8 @@ export function MobileTabBar({
   const { tabs, more } = splitMobileNav(nav);
   const [ownOpen, setOwnOpen] = useState(false);
   const held = forceState === "open";
+  // The 260ms reveal, only for a sheet the person opens with motion allowed.
+  const animate = useMotion(held);
   const open = held || (moreOpen ?? ownOpen);
   const setOpen = useCallback(
     (next: boolean) => {
@@ -190,7 +193,10 @@ export function MobileTabBar({
             aria-label="More"
             data-shell="more-sheet"
             onKeyDown={onSheetKey}
-            className="absolute right-[10px] bottom-[72px] z-(--z-menu) w-[200px] rounded-menu bg-nested p-[4px] shadow-menu motion-reveal"
+            className={cn(
+              "absolute right-[10px] bottom-[72px] z-(--z-menu) w-[200px] rounded-menu bg-nested p-[4px] shadow-menu",
+              animate && "motion-reveal",
+            )}
           >
             <div className="flex flex-col gap-px rounded-menu-inner bg-card p-[4px]">
               {more.map((item, i) => (

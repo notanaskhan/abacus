@@ -306,6 +306,108 @@
       ],
       "tier": "B",
       "deviation": "The phone frame uses the 28 radius token (the T7-M spec) where the canvas draws 36"
+    },
+    "t15-auth-card.t15a": {
+      "selector": "[data-artboard=\"t15a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T15 Auth card/screenshots/T15a.png",
+      "sha256": "ad9613e0d108a24c7c9532a98a5df35f5d71d2c264bacf94828453251ed4a736",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t15-auth-card.t15b": {
+      "selector": "[data-artboard=\"t15b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T15 Auth card/screenshots/T15b.png",
+      "sha256": "74f42d6479fc2646d0f7a07acbff3485232e4af63aea0b2d073029ac294a744e",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t15-auth-card.t15c": {
+      "selector": "[data-artboard=\"t15c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T15 Auth card/screenshots/T15c.png",
+      "sha256": "1e7f2d4fe30c377319bb756e6c078f69c554fc09d9736113e5806cd3dffcc09d",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-15.a": {
+      "selector": "[data-artboard=\"tpl-15a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-15 Auth card specimen - portal sign-in and confirmation response/screenshots/TPL-15a.png",
+      "sha256": "2d77824571610190ca80000483259d701e8fc66d2e930cef18fa21fea9e0e096",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-15.b": {
+      "selector": "[data-artboard=\"tpl-15b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-15 Auth card specimen - portal sign-in and confirmation response/screenshots/TPL-15b.png",
+      "sha256": "3d5f6c64685d206720beed6cc816a3f017b0bd28e4166045ba243d5d565d559b",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-15.c": {
+      "selector": "[data-artboard=\"tpl-15c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-15 Auth card specimen - portal sign-in and confirmation response/screenshots/TPL-15c.png",
+      "sha256": "7dc179bcb9d9e6156b6cf62d0490186023798120920bd57ba0860f5a3311370d",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "The second-step radios are the design system's olive disc with a check (Component Sheet F), where the canvas draws a ring with a dot"
+    },
+    "tpl-15.d": {
+      "selector": "[data-artboard=\"tpl-15d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-15 Auth card specimen - portal sign-in and confirmation response/screenshots/TPL-15d.png",
+      "sha256": "4e73e63c8603cedc8bfdd837b3f8ce28641ae6c87da54f291eec4205cb83286d",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-15.e": {
+      "selector": "[data-artboard=\"tpl-15e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-15 Auth card specimen - portal sign-in and confirmation response/screenshots/TPL-15e.png",
+      "sha256": "523fbff4b965f74efccc913ebcc83750171cae6ed3ef409c944dbe2babdc4b97",
+      "crop": [
+        50,
+        56,
+        830,
+        1744
+      ],
+      "tier": "B"
+    },
+    "tpl-15.f": {
+      "selector": "[data-artboard=\"tpl-15f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-15 Auth card specimen - portal sign-in and confirmation response/screenshots/TPL-15f.png",
+      "sha256": "6814895585017813bd2109257b163381fac60989593ea88fee0e0e34c59b0b16",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-15.g": {
+      "selector": "[data-artboard=\"tpl-15g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-15 Auth card specimen - portal sign-in and confirmation response/screenshots/TPL-15g.png",
+      "sha256": "5036b84bae7128faaaf0c1296e356a16918da5b6e8e3ef03c99a2042f211bfdb",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-15.h": {
+      "selector": "[data-artboard=\"tpl-15h\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-15 Auth card specimen - portal sign-in and confirmation response/screenshots/TPL-15h.png",
+      "sha256": "9df10985c118745cecad470a36ca9cafa5d6bd5e249af2a1b2ef796d39bd340e",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-15.i": {
+      "selector": "[data-artboard=\"tpl-15i\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-15 Auth card specimen - portal sign-in and confirmation response/screenshots/TPL-15i.png",
+      "sha256": "98cb4e3698e5701d1b6aa5b7166a7bfc66c3c6b6d457d7bf3f56eb3176e94541",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-15.j": {
+      "selector": "[data-artboard=\"tpl-15j\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-15 Auth card specimen - portal sign-in and confirmation response/screenshots/TPL-15j.png",
+      "sha256": "b5151562d3feb53c0b7d99c14ca2de3f659e241901a987fa68622e196742b087",
+      "crop": [
+        50,
+        56,
+        830,
+        1744
+      ],
+      "tier": "B"
     }
   }
 }

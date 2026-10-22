@@ -294,6 +294,7 @@ function PortalBoard({ user, variant = "split", ...binderProps }: BoardProps): J
     firm: FIRM,
     today: TODAY,
     binder: "2025 Binder",
+    viewer: { kind: "human", name: user },
     ...binderProps,
   });
   const [active, setActive] = useState("Documents");
@@ -321,6 +322,7 @@ function MobileBoard({ user, ...binderProps }: BoardProps): JSX.Element {
     firm: FIRM,
     today: TODAY,
     binder: "2025 Binder",
+    viewer: { kind: "human", name: user },
     ...binderProps,
   });
   const [active, setActive] = useState("Documents");
@@ -580,7 +582,13 @@ function StateSection({ row }: { row: (typeof STATE_ROWS)[number] }): JSX.Elemen
   const section = row.sections.find((x) => x.key === row.item.sec);
   return (
     <RequestSection title={section?.title ?? ""} icon={section?.icon ?? "file-text"}>
-      <RequestRow item={row.item} firm={FIRM} today={TODAY} hover={row.hover ?? false} />
+      <RequestRow
+        item={row.item}
+        firm={FIRM}
+        today={TODAY}
+        hover={row.hover ?? false}
+        viewer={{ kind: "human", name: "Dana Whitley" }}
+      />
     </RequestSection>
   );
 }
