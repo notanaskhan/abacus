@@ -11,7 +11,8 @@ updated: 2026-10-23
 ---
 
 > **Outline.** Written with the clients contract stub (P-07-T04, TASK-470); Stories 3 and 4 added
-> with the engagements contract stub (P-07-T05, TASK-471). The epic is the source
+> with the engagements contract stub (P-07-T05, TASK-471); Story 5 with the consumer tests (P-07-T06,
+> TASK-472). The epic is the source
 > until this spec is final: `docs/plan/epics/P-07.md` §3.1 and §3.6 (stories), §4 (backend), §8
 > (contracts). The contracts are `docs/contracts/clients.md` and, from P-07-T05,
 > `docs/contracts/engagements-v2.md`. Story 1 holds for the clients stub; Story 2 is the behaviour
@@ -70,6 +71,14 @@ on the model gateway and agents for `organisations`.
 - **AC-18** A draft or create naming `single_audit` (or any code outside the catalogue) answers 422 `unknown_engagement_type`; the catalogue response never contains it.
 - **AC-19** Create is one unit of work and idempotent on `Idempotency-Key`; a duplicate answers 409 `possible_duplicate` until `confirm_duplicate`; drafts are own-scope.
 
+### Story 5: consumer contract tests (P-07-T06)
+- **AC-20** The clients index is the P-36 envelope with an exact integer `total`, its row and record carry what CLI-01 and CLI-02 render, and client and portal statuses are exactly the registry's `client` and `invitation` codes.
+- **AC-21** No schema in the OpenAPI document has a hidden-by-wall field, and the clients list takes no wall parameter (DEC-43).
+- **AC-22** Every TIN-named field in the document is `MaskedTinOut` by reference; the masked shape is kind, presence and four Restricted digits; the list row has no Restricted field; the plain value is only in `TinRevealOut`, reached only by the reveal route.
+- **AC-23** The engagements index is the envelope plus the summary; its tiles are the registry's `engagement` codes and its segments the four service lines.
+- **AC-24** The record carries rail bands, contacts, letter, gates, tab counts and `read_only_reason`; gates are G1 to G9 with object-reference blockers.
+- **AC-25** F-02-T11's C1 check still holds; `single_audit` is absent from the catalogue; a draft takes a code string, so naming `single_audit` is the server's 422 `unknown_engagement_type`, which the catalogue lists and the draft and create routes document.
+
 ## 6. Behaviour and flows
 | From | Event | To | Who can trigger |
 |---|---|---|---|
@@ -124,6 +133,8 @@ CLI-01 and CLI-02 screen contracts (`docs/screens/`); flag off shows F-05's flag
 | AC-6 to AC-9 | integration | P-07-T13 (independent suite) |
 | AC-10 to AC-15 | unit (contract) | `backend/tests/contracts/engagements_v2/test_engagements_v2_stub.py` |
 | AC-16 to AC-19 | integration | P-07-T14 (independent suite) |
+| AC-20 to AC-22 | contract (consumer) | `backend/tests/contracts/clients/test_clients_consumer.py`; `apps/web/src/fixtures/contracts/clients-engagements.test.ts` |
+| AC-23 to AC-25 | contract (consumer) | `backend/tests/contracts/engagements_v2/test_engagements_v2_consumer.py`; the same TypeScript file |
 
 ## 19. Rollout
 - **Feature flag:** `engagements.v2` (default off, created 2026-10-23, expires 2027-04-21 under DEC-137).

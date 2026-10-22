@@ -97,7 +97,7 @@ Brightwater Hale, synthetic; ids are placeholders.
 
 ## 9. Consumer contract tests
 - Stub: `backend/tests/contracts/engagements_v2/test_engagements_v2_stub.py` (SPEC-321 AC-10 to AC-15).
-- Consumers (P-07-T06): `backend/tests/contracts/engagements_v2/` and the TypeScript fixture assertions in `apps/web/src/fixtures/contracts/`. F-02-T11's C1 check (`tests/contracts/c1_work_items/`) keeps holding that C1's `EngagementType` has no excluded type.
+- Consumers (P-07-T06): `backend/tests/contracts/engagements_v2/test_engagements_v2_consumer.py` (SPEC-321 AC-23 to AC-25, reusing F-02-T11's module) and `apps/web/src/fixtures/contracts/clients-engagements.test.ts` (typed ENG-01 b, ENG-02 b gates and the 18-card catalogue). F-02-T11's C1 check (`tests/contracts/c1_work_items/`) keeps holding that C1's `EngagementType` has no excluded type.
 
 ## 10. Versioning
 Additive to C1 v1 (new operations and models; no C1 field changes). Moving the index and record to the plain paths in P-07-T15 is a breaking change for the v1 list's consumers: it ships with one sprint of overlap.
