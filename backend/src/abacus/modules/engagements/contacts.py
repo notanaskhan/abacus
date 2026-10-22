@@ -17,8 +17,8 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Target, uow
 from abacus.modules.engagements.service import client_of, get_ref, lock_ref
-from abacus.modules.identity.api import AuthContext, authorise
-from abacus.modules.organisations.api import attest_client_of, contact_client
+from abacus.modules.identity.api import AuthContext, ScopeFacts, authorise
+from abacus.modules.organisations.api import attest_client_of, client_exists, contact_client
 
 Designation = Literal[
     "approver_of_record",
@@ -94,3 +94,22 @@ async def attest_of(tenant: TenantContext, engagement_id: UUID) -> bool | None:
     """F-03-T24 `attest_client`: whether the engagement's client is an attest client (DEC-128)."""
     client = await client_of(tenant, engagement_id)
     return None if client is None else await attest_client_of(tenant, client)
+
+
+# --- F-03-T26: the client-access scopes engagements resolves (ADR-146) -------------------------
+
+_WORK_ITEM = text("SELECT client_id, engagement_id FROM work_items WHERE id = :id")
+
+
+async def work_item_scope(tenant: TenantContext, work_item_id: UUID) -> ScopeFacts | None:
+    """A `work_item` grant's scope: the work item, inside its engagement and client."""
+    async with tenant_session(tenant) as session:
+        row = (await session.execute(_WORK_ITEM, {"id": work_item_id})).first()
+    if row is None:
+        return None
+    return ScopeFacts(row.client_id, engagement_id=row.engagement_id, work_item_id=work_item_id)
+
+
+async def client_scope(tenant: TenantContext, client_id: UUID) -> ScopeFacts | None:
+    """A `client` grant's scope: every engagement of the client."""
+    return ScopeFacts(client_id) if await client_exists(tenant, client_id) else None

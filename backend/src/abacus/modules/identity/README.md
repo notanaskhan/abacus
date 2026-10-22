@@ -146,3 +146,9 @@ On removal, the hook that evidence registers (`register_member_removed`) release
 ## Member-added hook and the letter policy (SPEC-025; TASK-044)
 - **Hook:** `member_hooks.register_member_added` is called from every way a person joins a team (engagements asks them to confirm independence).
 - **Letter policy:** `firms.require_letter`, read with `GET` and set with `PUT /v1/firm/letter-policy` (`firm.manage_settings`), makes the engagement letter block client data.
+
+## Client access grants (F-03-T26; ADR-146, DEC-129)
+- `client_access_grants`: 12 client roles on 9 scope kinds, `document_classes`, `expires_at`, `status`; every status change is also an insert-only `client_access_events` row. `grant_client_access` / `revoke_client_access` (`client_access.grant`, `.revoke`; fresh MFA) take the scope's engagement resource, built by the caller from its row, or the firm for client-wide scopes, and emit `client_access.granted`/`.revoked` and `access.changed`.
+- `portal_scopes(ctx)`: the role union. Shell "full" with any full-client role, "k1" with only K-1 recipient grants, "limited" otherwise, "none" without grants.
+- `scope_only`: `client_access.scope_covers` answers for the target's own scope only. Scope kinds resolve through `slots.register_scope_resolver` (engagements: `work_item`, `client`); `engagement` is built in; an unregistered kind covers nothing.
+- Expand step: a trigger mirrors `engagement_members` client rows into grants until the readers move to grants and the CHECK narrows (the contract step).

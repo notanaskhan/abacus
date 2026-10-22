@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Literal, cast, get_args
+from typing import Any, Literal, cast, get_args
 from uuid import UUID
 
 from sqlalchemy import (
@@ -30,7 +30,7 @@ from sqlalchemy import (
     update,
 )
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
-from sqlalchemy.engine import RowMapping
+from sqlalchemy.engine import Row, RowMapping
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.db import TenantContext, identity_engine, tenant_session
@@ -232,6 +232,97 @@ async def upsert_firm_setting(
         _UPSERT_SETTING, {"tenant_id": tenant_id, "key": key, "value": value, "set_by": set_by}
     )
     return int(row.scalar_one())
+
+
+@dataclass(frozen=True)
+class GrantRow:
+    """A client access grant (F-03-T26)."""
+
+    id: UUID
+    user_id: UUID
+    role: str
+    scope_kind: str
+    scope_id: UUID
+    document_classes: tuple[str, ...] | None
+    status: str
+
+
+_ACTIVE_GRANTS = text(
+    "SELECT id, user_id, role, scope_kind, scope_id, document_classes, status "
+    "FROM client_access_grants WHERE user_id = :user_id AND status = 'active' "
+    "AND (expires_at IS NULL OR expires_at > clock_timestamp()) "
+    "ORDER BY scope_kind, scope_id, role"
+)
+_GRANT = text(
+    "SELECT id, user_id, role, scope_kind, scope_id, document_classes, status "
+    "FROM client_access_grants WHERE id = :id"
+)
+
+
+def _grant(row: Row[Any]) -> GrantRow:  # Any: a text() row's columns are untyped
+    classes = cast(list[str] | None, row.document_classes)
+    return GrantRow(
+        cast(UUID, row.id),
+        cast(UUID, row.user_id),
+        str(row.role),
+        str(row.scope_kind),
+        cast(UUID, row.scope_id),
+        None if classes is None else tuple(classes),
+        str(row.status),
+    )
+
+
+async def active_grants(tenant: TenantContext, user_id: UUID) -> list[GrantRow]:
+    """The person's active, unexpired client access grants in this firm."""
+    async with tenant_session(tenant) as session:
+        rows = (await session.execute(_ACTIVE_GRANTS, {"user_id": user_id})).all()
+    return [_grant(row) for row in rows]
+
+
+async def get_grant(session: AsyncSession, grant_id: UUID) -> GrantRow | None:
+    row = (await session.execute(_GRANT, {"id": grant_id})).first()
+    return None if row is None else _grant(row)
+
+
+_INSERT_GRANT = text(
+    "INSERT INTO client_access_grants (tenant_id, user_id, contact_id, role, scope_kind, "
+    "scope_id, document_classes, granted_by, expires_at) "
+    "VALUES (:tenant_id, :user_id, :contact_id, :role, :scope_kind, :scope_id, "
+    ":document_classes, :granted_by, :expires_at) "
+    "ON CONFLICT (tenant_id, user_id, role, scope_kind, scope_id) DO NOTHING RETURNING id"
+)
+
+
+async def insert_grant(session: AsyncSession, values: dict[str, object]) -> UUID | None:
+    """The new grant's id, or None when the person already holds that role on that scope."""
+    row = (await session.execute(_INSERT_GRANT, values)).first()
+    return None if row is None else cast(UUID, row.id)
+
+
+_SET_GRANT_STATUS = text(
+    "UPDATE client_access_grants SET status = :status "
+    "WHERE id = :id AND status <> :status RETURNING id"
+)
+
+
+async def set_grant_status(session: AsyncSession, grant_id: UUID, status: str) -> bool:
+    row = (await session.execute(_SET_GRANT_STATUS, {"id": grant_id, "status": status})).first()
+    return row is not None
+
+
+_GRANT_EVENT = text(
+    "INSERT INTO client_access_events (tenant_id, grant_id, event, by_user_id) "
+    "VALUES (:tenant_id, :grant_id, :event, :by_user_id)"
+)
+
+
+async def insert_grant_event(
+    session: AsyncSession, *, tenant_id: UUID, grant_id: UUID, event: str, by: UUID | None
+) -> None:
+    await session.execute(
+        _GRANT_EVENT,
+        {"tenant_id": tenant_id, "grant_id": grant_id, "event": event, "by_user_id": by},
+    )
 
 
 async def engagement_role(

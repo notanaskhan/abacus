@@ -15,6 +15,8 @@ export const ACTIONS = [
   "budget.manage",
   "budget.read",
   "client.read",
+  "client_access.grant",
+  "client_access.revoke",
   "client_contact.invite",
   "client_contact.read",
   "client_contact.remove",
