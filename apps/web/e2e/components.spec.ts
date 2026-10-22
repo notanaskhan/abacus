@@ -360,8 +360,11 @@ test.describe("overlays", () => {
     await a.scrollIntoViewIfNeeded();
     await a.click();
     await expect(page.locator('[data-overlay="drawer"]')).toHaveCount(1);
-    // A modal drawer blocks the page, so B is pressed the way a script can: by its element.
-    await section.getByRole("button", { name: "Drawer B" }).dispatchEvent("click");
+    // A modal drawer blocks the page and hides it from the accessibility tree, so B is found with
+    // hidden elements included and pressed the way a script can: by its element.
+    await section
+      .getByRole("button", { name: "Drawer B", includeHidden: true })
+      .dispatchEvent("click");
     await expect(page.getByRole("dialog", { name: "Drawer B" })).toBeVisible();
     await expect(page.locator('[data-overlay="drawer"]')).toHaveCount(1);
   });
