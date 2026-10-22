@@ -182,12 +182,24 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
 | Sign-off (L1–L5) | Approval of reviewable content. Insert-only; staleness computed. Distinct from `review_decision`. | `sign_offs` (`level`, `content_hash`) | — |
-| Review note | Blocks L2+; a comment never does. | `review_notes`, `review_note_events` | — |
+| Review note | Blocks L2+; a comment never does. Status `open`, `responded`, `cleared`, `closed` or `withdrawn`; only a person clears. The plan's `review_notes` and `review_note_events` are the existing `reviewable_*` tables, extended in place (DEC-134). | `reviewable_notes`, `reviewable_note_events` | — |
 | Issue | One service for tax, close, audit and attest. | `issues`, `issue_events`, `issue_links` | — |
 | Decision card / decision | Reserved roles; rationale required; agents raise cards (X-13). | `decision_cards`, `decisions` | — |
 | Checkpoint | Returns and workbooks. | `checkpoints`, `checkpoint_diffs`, `checkpoint_decisions` | — |
 | Field history | SHL-09 provenance. | `field_value_versions` | — |
 | Approvals (Home queue) | A projection; "Approvals" is a UI label only. | `human_gates` (projection; `kind`) | — |
+| Sign-off kind and level | `kind` is `ladder`, `field_tick` or `final_approval`. `level` is 1 to 5: L1 preparer, L2 reviewer, L3 manager, L4 partner, L5 EQR (stored as a number, DEC-134). Level names are fixed; which levels a target needs comes from firm standards (ADR-160). | `sign_offs.kind`, `sign_offs.level` | — |
+| Field tick | A sign-off on one field at L1 or L2 (SHL-09 "✓ KO"). Not a separate table. | `sign_offs` (`kind = 'field_tick'`) | — |
+| Final approval | The signer's approval of a tax return (SHL-12 h). It is a sign-off, and open issues block it. | `sign_offs` (`kind = 'final_approval'`) | — |
+| Sign-off slot | One level on a target's ladder, or one field tick, shown as signed or stale (DF-31). Stale means the sign-off's `content_hash` differs from the target's current hash. It is computed and never stored; re-signing writes a new row. UI "Changed after sign-off". | `sign_off_slot` (status registry, derived) | — |
+| Reviewable | A target that can be signed off. Its owner registers it with a content hash, a version, its preparers and the levels it requires. | `register_reviewable`, `Reviewable` (ADR-160 `ReviewableFacts`) | — |
+| Field flag | A review note anchored to one field (SHL-09 "⚑ SI"). Not a comment and not an issue. | `reviewable_notes` (`anchor_ref`) | — |
+| Fix instructions / fix runner | A person's instructions on an issue, and the registered capability that turns them into a proposal. There is no direct-edit mode (DEC-53). | `issue_events.fix_instructions_sealed`, `register_fix_runner` | — |
+| Checkpoint restore | Restoring creates a new checkpoint as a copy of an older one. Nothing is deleted. | `checkpoints.restored_from_id` | — |
+| Suggestion decision | A person's insert-only, human-only act on a suggestion: `adopted`, `edited`, `dismissed` or `undone` (ADR-161; owned by `agents`). A decision card's agent recommendation is a suggestion; the compound column `recommendation_suggestion_id` is allowed, while a bare `recommendation` stays banned. | `suggestion_decisions` | — |
+| Proposal decision | A person's insert-only, human-only act on a proposal: `approved`, `approved_with_edits`, `rejected`, `routed`, `follow_up` or `undone` (ADR-161; owned by `agents`). | `proposal_decisions` | — |
+| Undo | A compensating `undone` row written by the same person within 10 seconds, which voids the decision's approval grant. Never a delete and never a browser-side delay. | `undone` (decision value), `undoes_decision_id` | — |
+| Effect hold | The wait between a decision and the effect it allows. A grant holds any effect that leaves the firm until `not_before`, and the effect runs only when `consume_grant` succeeds. | `effect_hold` (workflow), `approval_grants.not_before` | — |
 
 ## New terms: collaboration
 
@@ -283,7 +295,7 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
 | Deadlines | Statutory due dates; rules are platform reference data (DEC-76). Not a milestone. | `filing_deadlines`, `due_date_rules` | — |
-| Fee proposal (ENG-09) | Not a bare `proposal` (X-14). | `fee_proposals` | `proposal` |
+| Fee proposal (ENG-09) | Never a bare `proposal` (X-14): a bare `proposal` is the agent change set (`proposals`, see New terms: agents), so it is not in the L12 ban list. | `fee_proposals` | — |
 | Insight | Metadata and counts only (R9). | `insight_metrics` | — |
 
 ## New terms: attest

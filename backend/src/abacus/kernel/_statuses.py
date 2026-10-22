@@ -276,6 +276,22 @@ class ReviewNoteStatus(StrEnum):
     WITHDRAWN = "withdrawn"
 
 
+class SignOffSlotStatus(StrEnum):
+    pass
+    # derived, never stored: signed, stale
+
+
+class DecisionCardStatus(StrEnum):
+    AWAITING_ROLE = "awaiting_role"
+    DECIDED = "decided"
+    SUPERSEDED = "superseded"
+
+
+class FieldValueStatus(StrEnum):
+    pass
+    # derived, never stored: updated, edited, estimate, unsupported
+
+
 class CommentThreadStatus(StrEnum):
     OPEN = "open"
     RESOLVED = "resolved"
@@ -339,6 +355,23 @@ class AgentRunStatus(StrEnum):
     FAILED = "failed"
     CANCELLED = "cancelled"
     # derived, never stored: approved, partially_approved, rejected
+
+
+class SuggestionStatus(StrEnum):
+    PENDING = "pending"
+    ADOPTED = "adopted"
+    EDITED = "edited"
+    DISMISSED = "dismissed"
+    SUPERSEDED = "superseded"
+    EXPIRED = "expired"
+
+
+class ProposalStatus(StrEnum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    APPROVED_WITH_EDITS = "approved_with_edits"
+    REJECTED = "rejected"
+    SUPERSEDED = "superseded"
 
 
 class WorkbenchSessionStatus(StrEnum):
@@ -417,7 +450,8 @@ class CheckpointStatus(StrEnum):
     PROPOSED = "proposed"
     APPROVED = "approved"
     REJECTED = "rejected"
-    CURRENT = "current"
+    SAVED = "saved"
+    # derived, never stored: current
 
 
 class ProjectStatus(StrEnum):
@@ -699,6 +733,15 @@ STORED: dict[str, tuple[str, ...]] = {
         "closed",
         "withdrawn",
     ),
+    "sign_off_slot": (
+    ),
+    "decision_card": (
+        "awaiting_role",
+        "decided",
+        "superseded",
+    ),
+    "field_value": (
+    ),
     "comment_thread": (
         "open",
         "resolved",
@@ -754,6 +797,21 @@ STORED: dict[str, tuple[str, ...]] = {
         "succeeded",
         "failed",
         "cancelled",
+    ),
+    "suggestion": (
+        "pending",
+        "adopted",
+        "edited",
+        "dismissed",
+        "superseded",
+        "expired",
+    ),
+    "proposal": (
+        "pending",
+        "approved",
+        "approved_with_edits",
+        "rejected",
+        "superseded",
     ),
     "workbench_session": (
         "live",
@@ -821,7 +879,7 @@ STORED: dict[str, tuple[str, ...]] = {
         "proposed",
         "approved",
         "rejected",
-        "current",
+        "saved",
     ),
     "project": (
         "scoping",

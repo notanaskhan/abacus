@@ -609,7 +609,6 @@ NO_YAML_ENTRY = {
     "KnowledgeDocumentOut.status": "ready, stale",
     "LetterIn.status": "not_required_this_year",
     "LogEntryOut.status": "failed_validation",
-    "MaterialityVersionOut.status": "decided",
     "MatrixRowOut.status": "needs_sign_off, open_notes",
     "RetrievalOut.status": "failed_validation",
     "SupportSessionOut.status": "ended",
