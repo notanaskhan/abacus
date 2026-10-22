@@ -1238,6 +1238,87 @@ export const STATUS_REGISTRY = {
       "derived": false
     }
   },
+  "sign_off_slot": {
+    "signed": {
+      "label": "✓ {initials}",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": true,
+      "contextLabels": {
+        "with_date": "✓ {initials} · {date}"
+      }
+    },
+    "stale": {
+      "label": "Changed after sign-off",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true,
+      "contextLabels": {
+        "struck_chip": "✓ {initials} · {date} (before this change)"
+      }
+    }
+  },
+  "decision_card": {
+    "awaiting_role": {
+      "label": "Waiting on {person}",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "banner": "Waiting on {person} · requested {time}",
+        "history": "Proposed"
+      },
+      "contextVariants": {
+        "history": "state"
+      }
+    },
+    "decided": {
+      "label": "Decided",
+      "variant": "green",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "history_reassessed": "No change"
+      },
+      "contextVariants": {
+        "history": "green-tint",
+        "history_reassessed": "neutral"
+      }
+    },
+    "superseded": {
+      "label": "Superseded by v{n}",
+      "variant": "soon",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "field_value": {
+    "updated": {
+      "label": "Updated",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "edited": {
+      "label": "Edited",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "estimate": {
+      "label": "≈",
+      "variant": null,
+      "terminal": false,
+      "derived": true,
+      "disc": "estimate_badge"
+    },
+    "unsupported": {
+      "label": "Unsupported",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": true
+    }
+  },
   "comment_thread": {
     "open": {
       "label": "Open",
@@ -1532,6 +1613,89 @@ export const STATUS_REGISTRY = {
     "cancelled": {
       "label": "Cancelled",
       "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "suggestion": {
+    "pending": {
+      "label": "Suggestion",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "atom"
+    },
+    "adopted": {
+      "label": "Adopted by {initials}",
+      "variant": null,
+      "terminal": true,
+      "derived": false,
+      "disc": "atom_olive"
+    },
+    "edited": {
+      "label": "Edited by {initials}",
+      "variant": null,
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "with_prior": "Edited by {initials} · was {value}"
+      },
+      "disc": "atom_olive"
+    },
+    "dismissed": {
+      "label": "Dismissed",
+      "variant": null,
+      "terminal": true,
+      "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "soon",
+      "terminal": true,
+      "derived": false
+    },
+    "expired": {
+      "label": "Expired",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "proposal": {
+    "pending": {
+      "label": "Ready for review",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "attribution": "Approved by {person}",
+        "under_policy": "✓ Approved by {person} under {policy} · {time}"
+      }
+    },
+    "approved_with_edits": {
+      "label": "Approved with edits",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    },
+    "rejected": {
+      "label": "Rejected",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "attribution": "Rejected by {person} · reason: {reason}"
+      }
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "soon",
       "terminal": true,
       "derived": false
     }
@@ -1832,19 +1996,31 @@ export const STATUS_REGISTRY = {
       "label": "Approved",
       "variant": "green",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "contextLabels": {
+        "attribution": "Approved · {person} · {time}"
+      }
     },
     "rejected": {
       "label": "Rejected",
       "variant": "red-tint",
       "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "attribution": "{person} · reason: {reason}"
+      }
+    },
+    "saved": {
+      "label": "Saved",
+      "variant": null,
+      "terminal": false,
       "derived": false
     },
     "current": {
       "label": "Current",
       "variant": "tag",
       "terminal": false,
-      "derived": false
+      "derived": true
     }
   },
   "project": {
