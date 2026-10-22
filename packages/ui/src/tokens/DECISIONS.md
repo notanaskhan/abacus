@@ -374,3 +374,16 @@ semantics are kept exact; the plan's `toast.undoable` and `toast.running` sit on
 | 2026-10-23 | Narrow header    | The under-760 collapse of "Upload something else" is not built; the reduced pane (T7g) reads "Upload…" as the kit does                                                                           |
 | 2026-10-23 | 390 binder       | T7-M follows TPL-07-M's column (binder picker, n to do, 96 tap card, 56 rows with a 32 Upload… pill in a 44 target), not the T7-M board's Mark as Done bar                                       |
 | 2026-10-23 | Captions         | Gallery captions say "the nested fill" where the canvas notes name `#EFEEEB`: hex is banned in package source                                                                                    |
+
+### T15 AuthCard (F-05-T37)
+
+| Date       | Item               | Decision                                                                                                                                                                                            |
+| ---------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-23 | Brand placement    | `brand="inside"` draws the 34 mark in the card over a centred title (T15a, T15b); `"above"` puts the mark and name over the card (TPL-15, POR-01)                                                   |
+| 2026-10-23 | Card position      | T15 centres the card; TPL-15 starts its block 133 from the top (`AuthFrame top`), as the canvas does                                                                                                |
+| 2026-10-23 | Code boxes         | Six inputs, one digit each: typing moves on, Backspace on an empty box moves back, ← → move, a paste or an autofill fills from the box it lands in; the focused box is white with a 2px stroke ring |
+| 2026-10-23 | Second-step radios | The design system's olive disc with a check (Component Sheet F), where TPL-15 draws a ring with a dot (recorded on `tpl-15.c`)                                                                      |
+| 2026-10-23 | Sign-in methods    | The second steps render from `PortalBrand.signInMethods`; labels are the screen's (TPL-15c's two in the specimen)                                                                                   |
+| 2026-10-23 | Legal heading      | Gelasio at 700 only under `[data-doc]` (`doc-bold`), the compiled-CSS rule's one exception                                                                                                          |
+| 2026-10-23 | Difference         | Computed in cents from the decimal strings (ADR-050) and formatted by `amount()`; red-ink, never a float                                                                                            |
+| 2026-10-23 | Footer links       | Privacy and Help take the branding URLs (ADR-163); Terms has no branding slot yet and renders without a link                                                                                        |

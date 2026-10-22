@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { type Actor, HumanAction, isPerson } from "../attribution";
 import { cn } from "../cn";
 import { PRESS } from "../components/control-classes";
 import { StatusDisc } from "../components/status";
@@ -81,6 +82,8 @@ export function SimpleMenu({
   const box = useRef<HTMLDivElement>(null);
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const radio = items.some((i) => i.checked !== undefined);
+  // The 260ms reveal, only for a menu the person opens with motion allowed (a held menu is still).
+  const animate = useMotion(held);
 
   useEffect(() => {
     if (!open || held) return undefined;
@@ -129,7 +132,8 @@ export function SimpleMenu({
       onKeyDown={onKey}
       style={{ width }}
       className={cn(
-        "absolute top-[calc(100%+4px)] z-(--z-menu) rounded-menu bg-nested p-[4px] text-left shadow-menu motion-reveal",
+        "absolute top-[calc(100%+4px)] z-(--z-menu) rounded-menu bg-nested p-[4px] text-left shadow-menu",
+        animate && "motion-reveal",
         align === "start" ? "left-0" : "right-0",
       )}
     >
@@ -496,6 +500,9 @@ export interface RequestRowProps {
   onUndoIgnore?: (id: string) => void;
   onRemove?: (id: string) => void;
   onReply?: (id: string, text: string) => void;
+  /** The signed-in client. Send is a human verb (INV-1): the reply composer is offered only to a
+   * named person, and its Send is a HumanAction. */
+  viewer?: Actor;
 }
 
 /** One request, client side (C-16 spec 6): the document glyph, the title and its lines, and at the
@@ -510,6 +517,7 @@ export function RequestRow({
   onUndoIgnore,
   onRemove,
   onReply,
+  viewer,
 }: RequestRowProps): JSX.Element {
   const view = rowView(item, firm);
   const [menu, setMenu] = useState<"ignore" | "remove" | null>(ignoreOpen ? "ignore" : null);
@@ -580,7 +588,7 @@ export function RequestRow({
                 {view.followUp.replied}
               </span>
             )}
-            {view.followUp.reply && !replying && (
+            {view.followUp.reply && !replying && viewer !== undefined && isPerson(viewer) && (
               <button
                 type="button"
                 className={cn("text-body font-medium text-espresso hover:underline", LINK_HIT)}
@@ -613,14 +621,15 @@ export function RequestRow({
                   }}
                   className="min-w-0 flex-1 resize-none rounded-tile bg-card px-[10px] py-[7px] text-body leading-[1.45] inset-ring-[0.5px] inset-ring-stroke outline-none placeholder:text-ink-3"
                 />
-                <button
-                  type="button"
-                  disabled={reply.trim() === ""}
-                  onClick={sendReply}
-                  className="h-[28px] flex-none rounded-pill bg-espresso px-[12px] text-dense font-medium text-on-dark disabled:bg-nested disabled:text-ink-4"
-                >
-                  Send
-                </button>
+                {viewer !== undefined && (
+                  <HumanAction
+                    verb="Send"
+                    actor={viewer}
+                    size="sm"
+                    disabled={reply.trim() === ""}
+                    onClick={sendReply}
+                  />
+                )}
               </span>
             )}
           </span>

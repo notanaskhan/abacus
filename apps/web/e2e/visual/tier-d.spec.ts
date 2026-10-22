@@ -386,3 +386,60 @@ test.describe("tier D: SHL-01 toolbar", () => {
     }
   });
 });
+
+// T15 AuthCard (F-05-T37): the 400 card (radius 14, padding 28 28 24), the 44 × 52 code boxes, the
+// 720 page; and TPL-15e and TPL-15j at 390 with no horizontal scroll.
+test.describe("tier D: T15 auth card", () => {
+  test.beforeEach(async ({ page }) => {
+    await openGallery(page);
+  });
+
+  test("the card is 400 wide, radius 14, padding 28 28 24; code boxes 44 x 52", async ({
+    page,
+  }) => {
+    const card = await specimen(
+      page,
+      "tpl-15",
+      '[data-artboard="tpl-15b"] [data-auth="card"]',
+    ).evaluate((el) => {
+      const c = getComputedStyle(el);
+      return {
+        width: c.width,
+        radius: c.borderRadius,
+        padding: [c.paddingTop, c.paddingRight, c.paddingBottom, c.paddingLeft].join(" "),
+      };
+    });
+    expect(card).toEqual({ width: "400px", radius: "14px", padding: "28px 28px 24px 28px" });
+    const box = await specimen(
+      page,
+      "tpl-15",
+      '[data-artboard="tpl-15b"] [data-auth="code"] input',
+    )
+      .first()
+      .evaluate((el) => ({ w: getComputedStyle(el).width, h: getComputedStyle(el).height }));
+    expect(box).toEqual({ w: "44px", h: "52px" });
+    const paper = await specimen(
+      page,
+      "tpl-15",
+      '[data-artboard="tpl-15f"] [data-auth="page"]',
+    ).evaluate((el) => getComputedStyle(el).width);
+    expect(paper).toBe("720px");
+  });
+
+  for (const id of ["tpl-15e", "tpl-15j"]) {
+    test(`${id} renders at 390 with no horizontal scroll`, async ({ page }) => {
+      const facts = await specimen(
+        page,
+        "tpl-15",
+        `[data-artboard="${id}"] [data-variant="auth-mobile"]`,
+      ).evaluate((el) => {
+        const body = el.querySelector("main") as HTMLElement;
+        return {
+          width: el.getBoundingClientRect().width,
+          overflow: body.scrollWidth - body.clientWidth,
+        };
+      });
+      expect(facts).toEqual({ width: 390, overflow: 0 });
+    });
+  }
+});

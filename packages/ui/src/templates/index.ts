@@ -17,3 +17,20 @@ export {
   type PortalVariant,
   portalNav,
 } from "./portal-layout";
+// T15 AuthCard (F-05-T37): the 400 card, the 720 single page and the six code boxes.
+export {
+  AUTH_FIELD,
+  AuthBrand,
+  AuthButton,
+  AuthCard,
+  type AuthCardProps,
+  type AuthChoice,
+  AuthChoices,
+  AuthFooter,
+  AuthFrame,
+  type AuthFrameProps,
+  AuthPage,
+  type AuthPageProps,
+  CodeInput,
+  type CodeInputProps,
+} from "./auth-card";
