@@ -15,6 +15,7 @@ TABLES: frozenset[str] = frozenset(
         "offices",
         "teams",
         "team_rosters",
+        "contacts",  # F-03-T25 (0082)
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -26,6 +27,24 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "offices": frozenset({"tenant_id", "name", "time_zone"}),
     "teams": frozenset({"tenant_id", "office_id", "name"}),
     "team_rosters": frozenset({"tenant_id", "team_id", "user_id"}),
+    "contacts": frozenset(  # F-03-T25 (0082)
+        {"id", "tenant_id", "client_id", "display_name", "email", "phone", "title"}
+        | {"organisation_name", "contact_kind"}
+    ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.
-UPDATE_COLUMNS: dict[str, frozenset[str]] = {}
+UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    # F-03-T25 (0082): the client record (DEC-62). `is_attest_client` is the database's to
+    # derive (DEC-128), never the app's.
+    "clients": frozenset(
+        {"kind", "status", "primary_office_id", "relationship_partner_id", "risk_tier"}
+        | {"portal_status", "practice_mgmt_ref"}
+    ),
+    "client_entities": frozenset(
+        {"entity_type", "fye_month_day", "state_of_formation", "plan_number", "date_of_death"}
+        | {"grantor_status"}
+    ),
+    "contacts": frozenset(
+        {"display_name", "phone", "title", "organisation_name", "user_id", "portal_state"}
+    ),
+}

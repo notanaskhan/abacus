@@ -1,8 +1,9 @@
 """Matrix conditions (F-03-T24; chapter 03 §4.4), evaluated in `authorise` layer 4. PROTECTED.
 
 A condition narrows an allowed action; it never grants one. Each reads facts its owner registers
-here (identity never imports another module): work-item functions and gates from engagements,
-the attest flag from organisations, client scopes from the client grants. A condition whose facts
+here (identity never imports another module): work-item functions, gates and the engagement's
+client's attest flag (organisations' derived `is_attest_client`, DEC-128) from engagements, client
+scopes from the client grants. A condition whose facts
 are not registered, or not known for this resource, denies (fail closed).
 
 - `level_in(...)`         the actor's membership level is one of these
@@ -108,7 +109,7 @@ def register_work_item_functions(lookup: FunctionsLookup) -> None:
 
 
 def register_attest_client(lookup: AttestLookup) -> None:
-    """organisations: (tenant, engagement_id) -> whether its client is an attest client."""
+    """engagements: (tenant, engagement_id) -> whether its client is an attest client."""
     _once("attest", lookup)
     LOOKUPS.attest = lookup
 

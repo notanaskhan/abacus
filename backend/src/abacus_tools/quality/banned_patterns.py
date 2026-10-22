@@ -905,6 +905,9 @@ LIST_EXEMPT = frozenset(
         # SPEC-025 (TASK-043): the client picker, firm-level after `authorise(client.read)`; the
         # service drops clients the person is walled off from.
         ("src/abacus/modules/organisations/repository.py", "clients_matching"),
+        # F-03-T25: one client's contacts, inside `client_record` for a caller that authorised
+        # reading that client; no engagement rows.
+        ("src/abacus/modules/organisations/repository.py", "contacts_of"),
         # SPEC-025 (TASK-044): one engagement's confirmations after `authorise(setup.read)`.
         ("src/abacus/modules/engagements/repository.py", "confirmations_of"),
         # SPEC-027 (TASK-050): the engagement agent's own reads, for the engagement it serves (its

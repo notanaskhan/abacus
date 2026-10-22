@@ -261,6 +261,11 @@ ACTIONS: dict[str, dict[str, str]] = {
         "engagement_partner": "allow",
         "manager": "allow",
     },
+    "engagement_contact.designate": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "agent": "deny",
+    },
     "entry_assessment.adopt": {
         "engagement_partner": "allow",
         "manager": "allow",

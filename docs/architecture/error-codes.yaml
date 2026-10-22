@@ -115,6 +115,12 @@ codes:
     raised_by:
     - abacus.modules.identity.staff.ClientContact
     summary: Someone who is a client contact of this firm can't also be its staff (SPEC-015 Q5).
+  client_record_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.organisations.service.ClientRecordInvalid
+    summary: A value the client record's constraints refuse (an office or partner of another firm, a
+      malformed fiscal year end).
   completion_blocked:
     status: 409
     raised_by:
@@ -134,6 +140,11 @@ codes:
     raised_by:
     - abacus.modules.connections.connect.ConnectionFailed
     summary: The provider refused or failed the exchange (its code, never its text, is logged).
+  contact_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.organisations.service.ContactExists
+    summary: A client has one contact per email address.
   correction_not_allowed:
     status: 422
     raised_by:

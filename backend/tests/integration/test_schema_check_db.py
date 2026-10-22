@@ -1118,6 +1118,19 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "connection_states": frozenset({"used_at"}),
         # SPEC-024 (TASK-041): staff invitations.
         "staff_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
+        # F-03-T25 (migration 0082): the client record, entity attributes and contacts; the
+        # attest flag is derived by the database (DEC-128).
+        "clients": frozenset(
+            {"kind", "status", "primary_office_id", "relationship_partner_id", "risk_tier"}
+            | {"portal_status", "practice_mgmt_ref"}
+        ),
+        "client_entities": frozenset(
+            {"entity_type", "fye_month_day", "state_of_formation", "plan_number"}
+            | {"date_of_death", "grantor_status"}
+        ),
+        "contacts": frozenset(
+            {"display_name", "phone", "title", "organisation_name", "user_id", "portal_state"}
+        ),
         # F-03-T24 (migration 0081): a firm setting's value; overrides are never edited.
         "firm_setting_values": frozenset({"value", "version", "set_by", "set_at"}),
         "firms": frozenset(
@@ -1671,5 +1684,6 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         # 0033 (TASK-041): staff invitations, memberships, firm roles and revocation.
         | {"staff_invitation_token_set", "staff_invitation_token_find", "add_staff_membership"}
         | {"membership_set_firm_role", "membership_revoke"}
+        | {"refresh_attest_client"}  # 0082 (F-03-T25, DEC-128)
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
