@@ -23,11 +23,11 @@ from zoneinfo import ZoneInfo
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import Target, uow
-from abacus.modules.agents.events import AgentDigest, RemindersDrafted
+from abacus.modules.agents.events import AgentDigest, FollowUpsDrafted
 from abacus.modules.agents.repository import (
     drafted_item_ids,
-    insert_reminder,
-    reminder_history,
+    follow_up_history,
+    insert_follow_up,
 )
 from abacus.modules.engagements.api import EngagementNotOpen, require_open
 from abacus.modules.identity.api import client_admins
@@ -115,7 +115,9 @@ class Outcome:
     reason: str | None = None  # why nothing client-facing happened
 
 
-async def remind(tenant: TenantContext, engagement_id: UUID, zone: str, tick_id: UUID) -> Outcome:
+async def chase_overdue(
+    tenant: TenantContext, engagement_id: UUID, zone: str, tick_id: UUID
+) -> Outcome:
     """P-4 for one tick, then P-5's digest event."""
     today = today_in(zone)
     overdue = await overdue_for(tenant, engagement_id, today)
@@ -126,7 +128,7 @@ async def remind(tenant: TenantContext, engagement_id: UUID, zone: str, tick_id:
     except EngagementNotOpen:
         return await _digest(tenant, engagement_id, Outcome(len(overdue), reason="not_open"))
     async with tenant_session(tenant) as session:
-        history = await reminder_history(session, [i.id for i in overdue])
+        history = await follow_up_history(session, [i.id for i in overdue])
     batches = plan(overdue, history, await client_admins(tenant, engagement_id), today, zone)
     if not batches:
         return await _digest(tenant, engagement_id, Outcome(len(overdue), reason="not_due"))
@@ -139,7 +141,7 @@ async def _draft(
 ) -> int:
     async with uow(tenant) as tx:
         for recipient, items in batches.items():
-            reminder_id = await insert_reminder(
+            follow_up_id = await insert_follow_up(
                 tx.session,
                 tenant_id=tenant.tenant_id,
                 engagement_id=engagement_id,
@@ -148,8 +150,8 @@ async def _draft(
                 agent_run_id=None,
                 items=[(i.id, i.due_on, n) for i, n in items],
             )
-            tx.record("reminder.drafted", target=Target("reminder", reminder_id))
-        tx.emit(RemindersDrafted(engagement_id=engagement_id, count=len(batches)))
+            tx.record("reminder.drafted", target=Target("reminder", follow_up_id))
+        tx.emit(FollowUpsDrafted(engagement_id=engagement_id, count=len(batches)))
     return len(batches)
 
 
@@ -179,7 +181,7 @@ async def draft_now(tenant: TenantContext, engagement_id: UUID, zone: str) -> in
         return 0
     await require_open(tenant, engagement_id)
     async with tenant_session(tenant) as session:
-        history = await reminder_history(session, [i.id for i in overdue])
+        history = await follow_up_history(session, [i.id for i in overdue])
         waiting = await drafted_item_ids(session, engagement_id)
     admins = await client_admins(tenant, engagement_id)
     batches: dict[UUID, list[tuple[OverdueItem, int]]] = defaultdict(list)

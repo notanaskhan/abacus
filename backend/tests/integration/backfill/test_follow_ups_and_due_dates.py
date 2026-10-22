@@ -19,7 +19,7 @@ import pytest
 
 from abacus.kernel.db import TenantContext
 from abacus.modules.agents.engagement_agent import TICK, handle
-from abacus.modules.agents.reminders import MAX_PER_ITEM, Outcome, remind, today_in
+from abacus.modules.agents.follow_ups import MAX_PER_ITEM, Outcome, chase_overdue, today_in
 from abacus.modules.agents.workflow_types import HandleInput
 from abacus.modules.communications.transport import configure_transport
 
@@ -78,13 +78,16 @@ class Engagement:
         return today_in(ZONE) - timedelta(days=days)
 
     async def tick(self) -> Outcome:
-        return await remind(self.system, self.site.engagement_id, ZONE, uuid.uuid4())
+        return await chase_overdue(self.system, self.site.engagement_id, ZONE, uuid.uuid4())
 
-    async def reminders(self, status: str | None = None) -> list[tuple[uuid.UUID, str, list[str]]]:
+    async def follow_ups(
+        self, status: str | None = None
+    ) -> list[tuple[uuid.UUID, str, list[str]]]:
         """(recipient, status, item descriptions) of the engagement's reminders."""
         rows = await self.net.seed.rows(
             "SELECT r.recipient_user_id, r.status, array_agg(i.description ORDER BY i.description)"
-            " AS items FROM reminders r JOIN reminder_items ri ON ri.reminder_id = r.id "
+            " AS items FROM follow_up_schedules r "
+            "JOIN follow_up_items ri ON ri.follow_up_id = r.id "
             "JOIN request_items i ON i.id = ri.request_item_id WHERE r.engagement_id = $1 "
             "AND ($2::text IS NULL OR r.status = $2) GROUP BY r.id ORDER BY 1, 2",
             self.site.engagement_id,
@@ -130,7 +133,7 @@ async def test_ac3_each_contact_gets_one_draft_listing_their_overdue_items(
     # The seeded item (no due date) is not overdue; the four above: three overdue, one not due.
     outcome = await chase.tick()
     assert (outcome.overdue, outcome.drafted, outcome.sent) == (3, 3, 0)
-    found = await chase.reminders()
+    found = await chase.follow_ups()
     by_recipient = {recipient: items for recipient, _, items in found}
     admins = chase.client_admins
     assert by_recipient[admins[0].user_id] == ["Bank statement", "Debt schedule"]
@@ -147,7 +150,7 @@ async def test_ac3_an_item_that_is_not_open_or_sent_back_is_never_chased(
     await seed.item(chase.site, "Settled item", status=status, due_on=chase.days_ago(20))
     outcome = await chase.tick()
     assert outcome.overdue == 0
-    assert await chase.reminders() == []
+    assert await chase.follow_ups() == []
 
 
 async def test_ac3_an_item_reminded_today_is_not_reminded_again_today(
@@ -158,7 +161,7 @@ async def test_ac3_an_item_reminded_today_is_not_reminded_again_today(
     again = await chase.tick()
     assert first.drafted == 2
     assert (again.drafted, again.reason) == (0, "not_due")
-    assert len(await chase.reminders()) == 2
+    assert len(await chase.follow_ups()) == 2
 
 
 async def test_ac3_an_item_is_chased_at_most_the_capped_number_of_times(
@@ -168,8 +171,9 @@ async def test_ac3_an_item_is_chased_at_most_the_capped_number_of_times(
     item = await seed.item(chase.site, "Bank statement", due_on=due)
     admin = chase.client_admins[0]
     for sequence in range(1, MAX_PER_ITEM + 1):  # sent long ago, a month apart
-        reminder_id = await seed.value(
-            "INSERT INTO reminders (tenant_id, engagement_id, recipient_user_id, status, "
+        follow_up_id = await seed.value(
+            "INSERT INTO follow_up_schedules "
+            "(tenant_id, engagement_id, recipient_user_id, status, "
             "created_at) VALUES ($1, $2, $3, 'sent', now() - make_interval(days => $4)) "
             "RETURNING id",
             chase.tenant_id,
@@ -178,17 +182,17 @@ async def test_ac3_an_item_is_chased_at_most_the_capped_number_of_times(
             50 - sequence * 10,
         )
         await seed.run(
-            "INSERT INTO reminder_items (tenant_id, reminder_id, request_item_id, due_on, "
+            "INSERT INTO follow_up_items (tenant_id, follow_up_id, request_item_id, due_on, "
             "sequence) VALUES ($1, $2, $3, $4, $5)",
             chase.tenant_id,
-            reminder_id,
+            follow_up_id,
             item,
             due,
             sequence,
         )
     outcome = await chase.tick()
     assert outcome.drafted == 0
-    assert len(await chase.reminders()) == MAX_PER_ITEM  # no new draft beyond the three
+    assert len(await chase.follow_ups()) == MAX_PER_ITEM  # no new draft beyond the three
 
 
 async def test_ac3_a_changed_due_date_starts_the_sequence_again(
@@ -212,15 +216,16 @@ async def test_ac3_a_changed_due_date_starts_the_sequence_again(
 async def _drafted(chase: Engagement, seed: Seeder) -> uuid.UUID:
     await seed.item(chase.site, "Bank statement", due_on=chase.days_ago(6))
     await chase.tick()
-    [(reminder_id,)] = [
+    [(follow_up_id,)] = [
         (r["id"],)
         for r in await seed.rows(
-            "SELECT id FROM reminders WHERE engagement_id = $1 AND recipient_user_id = $2",
+            "SELECT id FROM follow_up_schedules "
+            "WHERE engagement_id = $1 AND recipient_user_id = $2",
             chase.site.engagement_id,
             chase.client_admins[0].user_id,
         )
     ]
-    return cast(uuid.UUID, reminder_id)
+    return cast(uuid.UUID, follow_up_id)
 
 
 @pytest.mark.parametrize("role", ["engagement_partner", "manager", "senior", "staff"])
@@ -228,7 +233,7 @@ async def test_ac4_the_team_sees_the_drafts_waiting_for_them(
     chase: Engagement, seed: Seeder, net: Net, role: str
 ) -> None:
     await _drafted(chase, seed)
-    response = await net.call("GET", f"{chase.base}/reminders", chase.team[role])
+    response = await net.call("GET", f"{chase.base}/follow-ups", chase.team[role])
     assert response.status_code == 200, response.text
     assert len(response.json()) == 2
 
@@ -237,11 +242,11 @@ async def test_ac4_the_team_sees_the_drafts_waiting_for_them(
 async def test_ac4_a_person_sends_a_draft_with_their_note_and_it_goes_out_once(
     chase: Engagement, seed: Seeder, net: Net, mailbox: Mailbox, role: str
 ) -> None:
-    reminder_id = await _drafted(chase, seed)
+    follow_up_id = await _drafted(chase, seed)
     assert mailbox.sent == []
     sent = await net.call(
         "POST",
-        f"{chase.base}/reminders/{reminder_id}/send",
+        f"{chase.base}/follow-ups/{follow_up_id}/send",
         chase.team[role],
         body={"note": "Could you send these by Friday?"},
     )
@@ -252,7 +257,7 @@ async def test_ac4_a_person_sends_a_draft_with_their_note_and_it_goes_out_once(
     assert "Could you send these by Friday?" in str(message["body"])
     row = (
         await seed.rows(
-            "SELECT status, decided_by, note FROM reminders WHERE id = $1", reminder_id
+            "SELECT status, decided_by, note FROM follow_up_schedules WHERE id = $1", follow_up_id
         )
     )[0]
     assert (row["status"], row["decided_by"], row["note"]) == (
@@ -262,7 +267,7 @@ async def test_ac4_a_person_sends_a_draft_with_their_note_and_it_goes_out_once(
     )
     assert {"reminder.sent", "message.sent"} <= set(await seed.actions(chase.tenant_id))
     again = await net.call(
-        "POST", f"{chase.base}/reminders/{reminder_id}/send", chase.team[role], body={}
+        "POST", f"{chase.base}/follow-ups/{follow_up_id}/send", chase.team[role], body={}
     )
     assert again.status_code == 409  # it is settled: it cannot go out twice
     assert len(mailbox.sent) == 1
@@ -275,17 +280,17 @@ async def _subject(seed: Seeder, who: Person) -> str:
 async def test_ac4_the_preview_is_the_email_that_goes_out(
     chase: Engagement, seed: Seeder, net: Net, mailbox: Mailbox
 ) -> None:
-    reminder_id = await _drafted(chase, seed)
+    follow_up_id = await _drafted(chase, seed)
     preview = await net.call(
         "POST",
-        f"{chase.base}/reminders/{reminder_id}/preview",
+        f"{chase.base}/follow-ups/{follow_up_id}/preview",
         chase.team["manager"],
         body={"note": "Thanks."},
     )
     assert preview.status_code == 200, preview.text
     await net.call(
         "POST",
-        f"{chase.base}/reminders/{reminder_id}/send",
+        f"{chase.base}/follow-ups/{follow_up_id}/send",
         chase.team["manager"],
         body={"note": "Thanks."},
     )
@@ -299,42 +304,44 @@ async def test_ac4_the_preview_is_the_email_that_goes_out(
 async def test_ac4_a_person_dismisses_a_draft_and_nothing_is_sent(
     chase: Engagement, seed: Seeder, net: Net, mailbox: Mailbox
 ) -> None:
-    reminder_id = await _drafted(chase, seed)
+    follow_up_id = await _drafted(chase, seed)
     dismissed = await net.call(
-        "POST", f"{chase.base}/reminders/{reminder_id}/dismiss", chase.team["manager"]
+        "POST", f"{chase.base}/follow-ups/{follow_up_id}/dismiss", chase.team["manager"]
     )
     assert dismissed.status_code == 200, dismissed.text
     assert mailbox.sent == []
     assert (
-        await seed.value("SELECT status FROM reminders WHERE id = $1", reminder_id) == "dismissed"
+        await seed.value("SELECT status FROM follow_up_schedules WHERE id = $1", follow_up_id)
+        == "dismissed"
     )
     assert "reminder.dismissed" in await seed.actions(chase.tenant_id)
     # While the other contact's draft waits, the item has been reminded once; dismiss it too and
     # a dismissed draft leaves the sequence where it was: the next tick drafts both again.
     other = await seed.value(
-        "SELECT id FROM reminders WHERE engagement_id = $1 AND status = 'drafted'",
+        "SELECT id FROM follow_up_schedules WHERE engagement_id = $1 AND status = 'drafted'",
         chase.site.engagement_id,
     )
-    await net.call("POST", f"{chase.base}/reminders/{other}/dismiss", chase.team["manager"])
+    await net.call("POST", f"{chase.base}/follow-ups/{other}/dismiss", chase.team["manager"])
     assert (await chase.tick()).drafted == 2
 
 
 async def test_ac4_when_nothing_in_a_draft_is_overdue_any_more_sending_dismisses_it(
     chase: Engagement, seed: Seeder, net: Net, mailbox: Mailbox
 ) -> None:
-    reminder_id = await _drafted(chase, seed)
+    follow_up_id = await _drafted(chase, seed)
     await seed.run(
         "UPDATE request_items SET status = 'received' WHERE engagement_id = $1 "
         "AND description = 'Bank statement'",
         chase.site.engagement_id,
     )
     sent = await net.call(
-        "POST", f"{chase.base}/reminders/{reminder_id}/send", chase.team["manager"], body={}
+        "POST", f"{chase.base}/follow-ups/{follow_up_id}/send", chase.team["manager"], body={}
     )
     assert sent.status_code == 200, sent.text
     assert mailbox.sent == []
     assert (
-        await seed.value("SELECT status FROM reminders WHERE id = $1", reminder_id) == "dismissed"
+        await seed.value("SELECT status FROM follow_up_schedules WHERE id = $1", follow_up_id)
+        == "dismissed"
     )
 
 
@@ -342,25 +349,28 @@ async def test_ac4_when_nothing_in_a_draft_is_overdue_any_more_sending_dismisses
 async def test_ac4_only_a_partner_manager_or_senior_may_send_or_dismiss(
     chase: Engagement, seed: Seeder, net: Net, mailbox: Mailbox, role: str
 ) -> None:
-    reminder_id = await _drafted(chase, seed)
+    follow_up_id = await _drafted(chase, seed)
     for action in ("send", "dismiss"):
         response = await net.call(
-            "POST", f"{chase.base}/reminders/{reminder_id}/{action}", chase.team[role], body={}
+            "POST", f"{chase.base}/follow-ups/{follow_up_id}/{action}", chase.team[role], body={}
         )
         assert response.status_code == 403, response.text
         assert response.json() == FORBIDDEN
     assert mailbox.sent == []
-    assert await seed.value("SELECT status FROM reminders WHERE id = $1", reminder_id) == "drafted"
+    assert (
+        await seed.value("SELECT status FROM follow_up_schedules WHERE id = $1", follow_up_id)
+        == "drafted"
+    )
 
 
 async def test_ac4_a_person_can_ask_for_follow_ups_now_and_they_are_drafts_too(
     chase: Engagement, seed: Seeder, net: Net, mailbox: Mailbox
 ) -> None:
     await seed.item(chase.site, "Bank statement", due_on=chase.days_ago(1))
-    asked = await net.call("POST", f"{chase.base}/reminders/draft", chase.team["senior"])
+    asked = await net.call("POST", f"{chase.base}/follow-ups/draft", chase.team["senior"])
     assert asked.status_code == 201, asked.text
     assert asked.json() == {"drafted": 2}
-    again = await net.call("POST", f"{chase.base}/reminders/draft", chase.team["senior"])
+    again = await net.call("POST", f"{chase.base}/follow-ups/draft", chase.team["senior"])
     assert again.json() == {"drafted": 0}  # already waiting for a person
     assert mailbox.sent == []
 
@@ -375,10 +385,10 @@ async def test_ac5_before_the_engagement_opens_nothing_is_drafted_but_the_team_h
     await seed.item(closed.site, "Bank statement", due_on=closed.days_ago(8))
     outcome = await closed.tick()
     assert (outcome.drafted, outcome.sent, outcome.reason) == (0, 0, "not_open")
-    assert await closed.reminders() == []
+    assert await closed.follow_ups() == []
     assert mailbox.sent == []
     assert "agent.digest" in await seed.actions(closed.tenant_id)  # the in-app digest still goes
-    refused = await net.call("POST", f"{closed.base}/reminders/draft", closed.team["manager"])
+    refused = await net.call("POST", f"{closed.base}/follow-ups/draft", closed.team["manager"])
     assert refused.status_code == 409
     # F-03-T13: the code, and which gate is unmet (identifier-only facts, ADR-139).
     assert refused.json() == {"detail": "acceptance_missing", "facts": {"gate": "G1"}}
@@ -387,20 +397,23 @@ async def test_ac5_before_the_engagement_opens_nothing_is_drafted_but_the_team_h
 async def test_ac5_an_archived_engagement_neither_drafts_nor_sends(
     chase: Engagement, seed: Seeder, net: Net, mailbox: Mailbox
 ) -> None:
-    reminder_id = await _drafted(chase, seed)
+    follow_up_id = await _drafted(chase, seed)
     await seed.run(
         "UPDATE engagements SET status = 'archived' WHERE id = $1", chase.site.engagement_id
     )
     attempts: tuple[tuple[str, dict[str, str] | None], ...] = (
-        (f"/reminders/{reminder_id}/send", {}),
-        (f"/reminders/{reminder_id}/dismiss", None),
-        ("/reminders/draft", None),
+        (f"/follow-ups/{follow_up_id}/send", {}),
+        (f"/follow-ups/{follow_up_id}/dismiss", None),
+        ("/follow-ups/draft", None),
     )
     for path, body in attempts:
         response = await net.call("POST", chase.base + path, chase.team["manager"], body=body)
         assert response.status_code == 403, (path, response.text)
     assert mailbox.sent == []
-    assert await seed.value("SELECT status FROM reminders WHERE id = $1", reminder_id) == "drafted"
+    assert (
+        await seed.value("SELECT status FROM follow_up_schedules WHERE id = $1", follow_up_id)
+        == "drafted"
+    )
     # and the agent's daily tick ends rather than acting
     ended = await handle(
         HandleInput(
@@ -457,11 +470,11 @@ async def test_ac8_with_no_active_partner_the_agent_pauses_itself_and_resumes_wi
     feed = await _tick_event(chase)
     assert ("agent.self_paused", "done", "no_partner") in feed
     assert ("agent.tick", "skipped", "self_paused") in feed
-    assert await chase.reminders() == []  # no policy acted
+    assert await chase.follow_ups() == []  # no policy acted
     assert "engagement_agent.self_paused" in await seed.actions(chase.tenant_id)
     partner = await seed.person(chase.tenant_id)
     await seed.member(chase.site, partner, "engagement_partner")
     after = await _tick_event(chase)
     assert ("agent.self_resumed", "done", None) in after
-    assert len(await chase.reminders()) == 2  # and it works again
+    assert len(await chase.follow_ups()) == 2  # and it works again
     assert "engagement_agent.self_resumed" in await seed.actions(chase.tenant_id)

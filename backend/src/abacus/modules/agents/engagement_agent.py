@@ -39,19 +39,19 @@ from abacus.kernel.flags import flag_enabled
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import OutboxEvent, Target, uow
 from abacus.modules.agents.engagement_agent_workflow import HANDLE, NEXT_TICK, EngagementAgent
+from abacus.modules.agents.follow_ups import chase_overdue, draft_now, seconds_to_next_tick
 from abacus.modules.agents.models import AgentActivity
-from abacus.modules.agents.reminders import draft_now, remind, seconds_to_next_tick
 from abacus.modules.agents.repository import (
     activity_page,
     agent_state,
-    drafted_reminders,
+    drafted_follow_ups,
     last_resume_check,
-    lock_reminder,
+    lock_follow_up,
     record_activity,
     screenings_skipped_while_paused,
     set_agent_paused,
     set_self_paused,
-    settle_reminder,
+    settle_follow_up,
 )
 from abacus.modules.agents.workflow_types import (
     AgentEvent,
@@ -61,7 +61,7 @@ from abacus.modules.agents.workflow_types import (
     NextTickInput,
     ScreeningInput,
 )
-from abacus.modules.communications.api import render_reminder, send_reminder
+from abacus.modules.communications.api import render_follow_up, send_follow_up
 from abacus.modules.engagements.api import (
     get_ref,
     is_archived,
@@ -239,7 +239,7 @@ async def _tick(tenant: TenantContext, engagement_id: UUID, tick_id: UUID) -> li
     found = await run_auto_retrieval(tenant.tenant_id, engagement_id, None)
     if found == "done":
         rows.append(_Row("P-2", "retrieval.start", "done"))
-    outcome = await remind(tenant, engagement_id, await firm_time_zone(tenant), tick_id)
+    outcome = await chase_overdue(tenant, engagement_id, await firm_time_zone(tenant), tick_id)
     if outcome.sent:
         rows.append(_Row("P-4", "reminders.sent", "done", None, None, None, outcome.sent))
     elif outcome.drafted:
@@ -555,7 +555,7 @@ async def drafts(ctx: AuthContext, engagement_id: UUID) -> list[DraftView]:
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, "follow_up.draft", ref.resource())
     async with tenant_session(ctx.tenant) as session:
-        rows = await drafted_reminders(session, engagement_id)
+        rows = await drafted_follow_ups(session, engagement_id)
     names = await names_of(sorted({r.recipient_user_id for r, _ in rows}, key=str))
     overdue = {
         i.id: i.description
@@ -580,7 +580,7 @@ class DraftGone(DomainConflict):
 async def settle_draft(
     ctx: AuthContext,
     engagement_id: UUID,
-    reminder_id: UUID,
+    follow_up_id: UUID,
     *,
     send: bool,
     note: str | None = None,
@@ -591,18 +591,18 @@ async def settle_draft(
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "follow_up.send", ref.resource())
-        draft = await lock_reminder(tx.session, engagement_id, reminder_id)
+        draft = await lock_follow_up(tx.session, engagement_id, follow_up_id)
         if draft is None:
             raise NotFound("reminder")
         if draft.status != "drafted":
-            raise DraftGone(str(reminder_id))
-        found = [d for d in await drafts(ctx, engagement_id) if d.id == reminder_id]
+            raise DraftGone(str(follow_up_id))
+        found = [d for d in await drafts(ctx, engagement_id) if d.id == follow_up_id]
         items = found[0].items if found else []
         outcome = "sent" if send and items else "dismissed"
-        await settle_reminder(tx.session, reminder_id, status=outcome, by=ctx.user_id, note=kept)
-        tx.record(f"reminder.{outcome}", target=Target("reminder", reminder_id))
+        await settle_follow_up(tx.session, follow_up_id, status=outcome, by=ctx.user_id, note=kept)
+        tx.record(f"reminder.{outcome}", target=Target("reminder", follow_up_id))
     if outcome == "sent":
-        await send_reminder(
+        await send_follow_up(
             ctx, engagement_id, draft.recipient_user_id, [d for _, d in items], kept
         )
 
@@ -618,14 +618,14 @@ async def draft_follow_ups(ctx: AuthContext, engagement_id: UUID) -> int:
 
 
 async def preview_follow_up(
-    ctx: AuthContext, engagement_id: UUID, reminder_id: UUID, note: str | None
+    ctx: AuthContext, engagement_id: UUID, follow_up_id: UUID, note: str | None
 ) -> tuple[str, str]:
     """The email a person is about to send: subject and body, from the fixed template."""
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, "follow_up.draft", ref.resource())
-    found = [d for d in await drafts(ctx, engagement_id) if d.id == reminder_id]
+    found = [d for d in await drafts(ctx, engagement_id) if d.id == follow_up_id]
     if not found:
         raise NotFound("reminder")
-    return await render_reminder(
+    return await render_follow_up(
         ctx.tenant_id, engagement_id, [t for _, t in found[0].items], note
     )

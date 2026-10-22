@@ -39,10 +39,10 @@ def _creator(ctx: Actor) -> UUID:
     raise TypeError("a reminder is sent by a person or the engagement agent")
 
 
-async def render_reminder(
+async def render_follow_up(
     tenant_id: UUID, engagement_id: UUID, descriptions: Sequence[str], note: str | None
 ) -> tuple[str, str]:
-    """The subject and body exactly as `send_reminder` sends them (TASK-104: the preview a
+    """The subject and body exactly as `send_follow_up` sends them (TASK-104: the preview a
     person reads before sending)."""
     names = await firm_wording(tenant_id, engagement_id)
     count = len(descriptions)
@@ -58,7 +58,7 @@ async def render_reminder(
     return subject, body
 
 
-async def send_reminder(
+async def send_follow_up(
     ctx: AuthContext | AgentContext,
     engagement_id: UUID,
     recipient_user_id: UUID,
@@ -72,7 +72,7 @@ async def send_reminder(
     if email is None:
         raise NotFound("recipient")
     names = await firm_wording(ctx.tenant_id, engagement_id)
-    subject, body = await render_reminder(ctx.tenant_id, engagement_id, descriptions, note)
+    subject, body = await render_follow_up(ctx.tenant_id, engagement_id, descriptions, note)
     message_id = uuid4()
     await asyncio.to_thread(
         transport().send,

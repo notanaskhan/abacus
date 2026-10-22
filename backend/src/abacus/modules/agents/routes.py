@@ -530,7 +530,7 @@ class SettledOut(BaseModel):
     id: Annotated[UUID, classified("internal")]
 
 
-@router.get("/reminders", action="follow_up.draft", response_model=list[DraftOut])
+@router.get("/follow-ups", action="follow_up.draft", response_model=list[DraftOut])
 async def drafts_route(engagement_id: UUID, ctx: Ctx) -> list[DraftOut]:
     return [
         DraftOut(
@@ -544,20 +544,20 @@ async def drafts_route(engagement_id: UUID, ctx: Ctx) -> list[DraftOut]:
     ]
 
 
-@router.post("/reminders/{reminder_id}/send", action="follow_up.send", response_model=SettledOut)
+@router.post("/follow-ups/{follow_up_id}/send", action="follow_up.send", response_model=SettledOut)
 async def send_draft_route(
-    engagement_id: UUID, reminder_id: UUID, body: SendDraftIn, ctx: Ctx
+    engagement_id: UUID, follow_up_id: UUID, body: SendDraftIn, ctx: Ctx
 ) -> SettledOut:
-    await settle_draft(ctx, engagement_id, reminder_id, send=True, note=body.note)
-    return SettledOut(id=reminder_id)
+    await settle_draft(ctx, engagement_id, follow_up_id, send=True, note=body.note)
+    return SettledOut(id=follow_up_id)
 
 
 @router.post(
-    "/reminders/{reminder_id}/dismiss", action="follow_up.send", response_model=SettledOut
+    "/follow-ups/{follow_up_id}/dismiss", action="follow_up.send", response_model=SettledOut
 )
-async def dismiss_draft_route(engagement_id: UUID, reminder_id: UUID, ctx: Ctx) -> SettledOut:
-    await settle_draft(ctx, engagement_id, reminder_id, send=False)
-    return SettledOut(id=reminder_id)
+async def dismiss_draft_route(engagement_id: UUID, follow_up_id: UUID, ctx: Ctx) -> SettledOut:
+    await settle_draft(ctx, engagement_id, follow_up_id, send=False)
+    return SettledOut(id=follow_up_id)
 
 
 class DraftedOut(BaseModel):
@@ -567,7 +567,7 @@ class DraftedOut(BaseModel):
 
 
 @router.post(
-    "/reminders/draft",
+    "/follow-ups/draft",
     action="follow_up.draft",
     response_model=DraftedOut,
     status_code=201,
@@ -592,13 +592,15 @@ class FollowUpPreviewOut(BaseModel):
 
 
 @router.post(
-    "/reminders/{reminder_id}/preview", action="follow_up.draft", response_model=FollowUpPreviewOut
+    "/follow-ups/{follow_up_id}/preview",
+    action="follow_up.draft",
+    response_model=FollowUpPreviewOut,
 )
 async def preview_follow_up_route(
-    engagement_id: UUID, reminder_id: UUID, body: FollowUpPreviewIn, ctx: Ctx
+    engagement_id: UUID, follow_up_id: UUID, body: FollowUpPreviewIn, ctx: Ctx
 ) -> FollowUpPreviewOut:
     """TASK-104: the email exactly as it will be sent (fixed template; no model text)."""
-    subject, text = await preview_follow_up(ctx, engagement_id, reminder_id, body.note)
+    subject, text = await preview_follow_up(ctx, engagement_id, follow_up_id, body.note)
     return FollowUpPreviewOut(subject=subject, body=text)
 
 

@@ -131,9 +131,9 @@ NOT_CREATING = {
     "/v1/firm/agents/pause",
     "/v1/firm/agents/resume",
     # SPEC-027 (TASK-051): sending or dismissing a draft returns its id.
-    "/v1/engagements/{engagement_id}/reminders/{reminder_id}/send",
-    "/v1/engagements/{engagement_id}/reminders/{reminder_id}/dismiss",
-    "/v1/engagements/{engagement_id}/reminders/{reminder_id}/preview",  # TASK-104: a read
+    "/v1/engagements/{engagement_id}/follow-ups/{follow_up_id}/send",
+    "/v1/engagements/{engagement_id}/follow-ups/{follow_up_id}/dismiss",
+    "/v1/engagements/{engagement_id}/follow-ups/{follow_up_id}/preview",  # TASK-104: a read
     "/v1/engagements/{engagement_id}/request-items/{item_id}/comments/read",  # SPEC-032: a mark
 }
 
@@ -198,7 +198,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/items/sign-prepared",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/items/sign-reviewed",
         "/v1/engagements/{engagement_id}/procedures/{procedure_id}/notes",  # SPEC-041
-        "/v1/engagements/{engagement_id}/reminders/draft",  # TASK-104
+        "/v1/engagements/{engagement_id}/follow-ups/draft",  # TASK-104
         "/v1/engagements/{engagement_id}/request-items/{item_id}/client-response",  # SPEC-042
         "/v1/engagements/{engagement_id}/request-items/{item_id}/client-response/withdraw",
         "/v1/engagements/{engagement_id}/request-items/client-done",

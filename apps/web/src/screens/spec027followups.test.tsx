@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { json, mockApi, renderRoutes } from "../testing/support";
 import { FirmTimeZone } from "./Autonomy";
 import { DueDatesBar, ItemDue, effectiveDue, isOverdue } from "./DueDates";
-import { ReminderDrafts } from "./ReminderDrafts";
+import { FollowUpDrafts } from "./FollowUpDrafts";
 
 const E = "e1";
 
@@ -87,13 +87,13 @@ describe("SPEC-027 drafted reminders (TASK-051)", () => {
   it("test_ac4_a_person_sends_a_draft_with_a_note", async () => {
     let drafts = [DRAFT];
     const api = mockApi({
-      [`GET /v1/engagements/${E}/reminders`]: () => json(drafts),
-      [`POST /v1/engagements/${E}/reminders/r1/send`]: () => {
+      [`GET /v1/engagements/${E}/follow-ups`]: () => json(drafts),
+      [`POST /v1/engagements/${E}/follow-ups/r1/send`]: () => {
         drafts = [];
         return json({ id: "r1" });
       },
     });
-    renderOne(() => <ReminderDrafts engagementId={E} />);
+    renderOne(() => <FollowUpDrafts engagementId={E} />);
     expect(await screen.findByText("To Rachel")).toBeTruthy();
     expect(screen.getByText("Bank statements")).toBeTruthy();
     fireEvent.change(screen.getByLabelText("A note for Rachel (optional)"), {
@@ -108,17 +108,17 @@ describe("SPEC-027 drafted reminders (TASK-051)", () => {
 
   it("test_ac4_a_draft_can_be_dismissed_and_nothing_shows_without_drafts", async () => {
     const api = mockApi({
-      [`GET /v1/engagements/${E}/reminders`]: () => json([DRAFT]),
-      [`POST /v1/engagements/${E}/reminders/r1/dismiss`]: () => json({ id: "r1" }),
+      [`GET /v1/engagements/${E}/follow-ups`]: () => json([DRAFT]),
+      [`POST /v1/engagements/${E}/follow-ups/r1/dismiss`]: () => json({ id: "r1" }),
     });
-    renderOne(() => <ReminderDrafts engagementId={E} />);
+    renderOne(() => <FollowUpDrafts engagementId={E} />);
     fireEvent.click(await screen.findByRole("button", { name: "Dismiss" }));
     await waitFor(() => {
       expect(api.calls.some((c) => c.path.endsWith("/dismiss"))).toBe(true);
     });
     cleanup();
-    mockApi({ [`GET /v1/engagements/${E}/reminders`]: () => json([]) });
-    renderOne(() => <ReminderDrafts engagementId={E} />);
+    mockApi({ [`GET /v1/engagements/${E}/follow-ups`]: () => json([]) });
+    renderOne(() => <FollowUpDrafts engagementId={E} />);
     await waitFor(() => {
       expect(screen.queryByText("Reminders waiting for you")).toBeNull();
     });

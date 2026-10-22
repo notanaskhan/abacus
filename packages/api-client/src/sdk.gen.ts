@@ -788,6 +788,63 @@ export const proposeSeverity = <ThrowOnError extends boolean = false>(options: O
 });
 
 /**
+ * Drafts Route
+ */
+export const drafts = <ThrowOnError extends boolean = false>(options: Options<DraftsData, ThrowOnError>): RequestResult<DraftsResponses, DraftsErrors, ThrowOnError> => (options.client ?? client).get<DraftsResponses, DraftsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/follow-ups',
+    ...options
+});
+
+/**
+ * Draft Follow Ups Route
+ *
+ * TASK-104: follow-ups for everything overdue now, one per contact, for a person to send.
+ */
+export const draftFollowUps = <ThrowOnError extends boolean = false>(options: Options<DraftFollowUpsData, ThrowOnError>): RequestResult<DraftFollowUpsResponses, DraftFollowUpsErrors, ThrowOnError> => (options.client ?? client).post<DraftFollowUpsResponses, DraftFollowUpsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/follow-ups/draft',
+    ...options
+});
+
+/**
+ * Dismiss Draft Route
+ */
+export const dismissDraft = <ThrowOnError extends boolean = false>(options: Options<DismissDraftData, ThrowOnError>): RequestResult<DismissDraftResponses, DismissDraftErrors, ThrowOnError> => (options.client ?? client).post<DismissDraftResponses, DismissDraftErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/follow-ups/{follow_up_id}/dismiss',
+    ...options
+});
+
+/**
+ * Preview Follow Up Route
+ *
+ * TASK-104: the email exactly as it will be sent (fixed template; no model text).
+ */
+export const previewFollowUp = <ThrowOnError extends boolean = false>(options: Options<PreviewFollowUpData, ThrowOnError>): RequestResult<PreviewFollowUpResponses, PreviewFollowUpErrors, ThrowOnError> => (options.client ?? client).post<PreviewFollowUpResponses, PreviewFollowUpErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/follow-ups/{follow_up_id}/preview',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Send Draft Route
+ */
+export const sendDraft = <ThrowOnError extends boolean = false>(options: Options<SendDraftData, ThrowOnError>): RequestResult<SendDraftResponses, SendDraftErrors, ThrowOnError> => (options.client ?? client).post<SendDraftResponses, SendDraftErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/engagements/{engagement_id}/follow-ups/{follow_up_id}/send',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Engagement Graph Route
  */
 export const engagementGraph = <ThrowOnError extends boolean = false>(options: Options<EngagementGraphData, ThrowOnError>): RequestResult<EngagementGraphResponses, EngagementGraphErrors, ThrowOnError> => (options.client ?? client).get<EngagementGraphResponses, EngagementGraphErrors, ThrowOnError>({
@@ -1388,63 +1445,6 @@ export const signReviewed = <ThrowOnError extends boolean = false>(options: Opti
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/engagements/{engagement_id}/procedures/{procedure_id}/workpaper/sign-reviewed',
     ...options
-});
-
-/**
- * Drafts Route
- */
-export const drafts = <ThrowOnError extends boolean = false>(options: Options<DraftsData, ThrowOnError>): RequestResult<DraftsResponses, DraftsErrors, ThrowOnError> => (options.client ?? client).get<DraftsResponses, DraftsErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/v1/engagements/{engagement_id}/reminders',
-    ...options
-});
-
-/**
- * Draft Follow Ups Route
- *
- * TASK-104: follow-ups for everything overdue now, one per contact, for a person to send.
- */
-export const draftFollowUps = <ThrowOnError extends boolean = false>(options: Options<DraftFollowUpsData, ThrowOnError>): RequestResult<DraftFollowUpsResponses, DraftFollowUpsErrors, ThrowOnError> => (options.client ?? client).post<DraftFollowUpsResponses, DraftFollowUpsErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/v1/engagements/{engagement_id}/reminders/draft',
-    ...options
-});
-
-/**
- * Dismiss Draft Route
- */
-export const dismissDraft = <ThrowOnError extends boolean = false>(options: Options<DismissDraftData, ThrowOnError>): RequestResult<DismissDraftResponses, DismissDraftErrors, ThrowOnError> => (options.client ?? client).post<DismissDraftResponses, DismissDraftErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/v1/engagements/{engagement_id}/reminders/{reminder_id}/dismiss',
-    ...options
-});
-
-/**
- * Preview Follow Up Route
- *
- * TASK-104: the email exactly as it will be sent (fixed template; no model text).
- */
-export const previewFollowUp = <ThrowOnError extends boolean = false>(options: Options<PreviewFollowUpData, ThrowOnError>): RequestResult<PreviewFollowUpResponses, PreviewFollowUpErrors, ThrowOnError> => (options.client ?? client).post<PreviewFollowUpResponses, PreviewFollowUpErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/v1/engagements/{engagement_id}/reminders/{reminder_id}/preview',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Send Draft Route
- */
-export const sendDraft = <ThrowOnError extends boolean = false>(options: Options<SendDraftData, ThrowOnError>): RequestResult<SendDraftResponses, SendDraftErrors, ThrowOnError> => (options.client ?? client).post<SendDraftResponses, SendDraftErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/v1/engagements/{engagement_id}/reminders/{reminder_id}/send',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
 });
 
 /**

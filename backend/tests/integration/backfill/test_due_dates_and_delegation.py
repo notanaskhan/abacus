@@ -13,7 +13,7 @@ from typing import cast
 
 import pytest
 
-from abacus.modules.agents.reminders import today_in
+from abacus.modules.agents.follow_ups import today_in
 from abacus.modules.identity.api import (
     AgentContext,
     Forbidden,

@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 import pytest
 
 from abacus.modules.agents import engagement_agent as agent
-from abacus.modules.agents import reminders
+from abacus.modules.agents import follow_ups
 from abacus.modules.agents.models import AgentActivity
 from abacus.modules.agents.workflow_types import HandleInput
 
@@ -227,10 +227,10 @@ async def test_an_unknown_event_records_nothing(world: World) -> None:
 
 
 @pytest.fixture
-def ticking(world: World, monkeypatch: pytest.MonkeyPatch) -> list[reminders.Outcome]:
-    outcomes: list[reminders.Outcome] = []
+def ticking(world: World, monkeypatch: pytest.MonkeyPatch) -> list[follow_ups.Outcome]:
+    outcomes: list[follow_ups.Outcome] = []
 
-    async def remind(*_: object) -> reminders.Outcome:
+    async def chase_overdue(*_: object) -> follow_ups.Outcome:
         return outcomes.pop(0)
 
     async def zone(*_: object) -> str:
@@ -239,17 +239,17 @@ def ticking(world: World, monkeypatch: pytest.MonkeyPatch) -> list[reminders.Out
     async def no_change(*_: object) -> None:
         return None
 
-    monkeypatch.setattr(agent, "remind", remind)
+    monkeypatch.setattr(agent, "chase_overdue", chase_overdue)
     monkeypatch.setattr(agent, "firm_time_zone", zone)
     monkeypatch.setattr(agent, "_self_pause", no_change)
     return outcomes
 
 
 async def test_ac3_a_tick_records_reminders_sent_and_the_digest(
-    world: World, ticking: list[reminders.Outcome]
+    world: World, ticking: list[follow_ups.Outcome]
 ) -> None:
     world.retrieval = "nothing"
-    ticking.append(reminders.Outcome(overdue=4, sent=2))
+    ticking.append(follow_ups.Outcome(overdue=4, sent=2))
     rows, end = await agent.apply_policy(_event(agent.TICK))
     assert [(r.policy, r.action, r.item_count) for r in rows] == [
         ("P-4", "reminders.sent", 2),
@@ -259,9 +259,9 @@ async def test_ac3_a_tick_records_reminders_sent_and_the_digest(
 
 
 async def test_ac4_a_tick_at_advise_records_the_drafts(
-    world: World, ticking: list[reminders.Outcome]
+    world: World, ticking: list[follow_ups.Outcome]
 ) -> None:
-    ticking.append(reminders.Outcome(overdue=1, drafted=1))
+    ticking.append(follow_ups.Outcome(overdue=1, drafted=1))
     rows, _ = await agent.apply_policy(_event(agent.TICK))
     assert [(r.policy, r.action) for r in rows] == [
         ("P-2", "retrieval.start"),
@@ -271,10 +271,10 @@ async def test_ac4_a_tick_at_advise_records_the_drafts(
 
 
 async def test_ac5_a_tick_before_the_engagement_opens_says_why(
-    world: World, ticking: list[reminders.Outcome]
+    world: World, ticking: list[follow_ups.Outcome]
 ) -> None:
     world.retrieval = "not_open"
-    ticking.append(reminders.Outcome(overdue=3, reason="not_open"))
+    ticking.append(follow_ups.Outcome(overdue=3, reason="not_open"))
     rows, _ = await agent.apply_policy(_event(agent.TICK))
     assert [(r.policy, r.outcome, r.reason) for r in rows] == [
         ("P-4", "skipped", "not_open"),
@@ -283,7 +283,7 @@ async def test_ac5_a_tick_before_the_engagement_opens_says_why(
 
 
 async def test_ac6_a_paused_agent_s_tick_does_nothing(
-    world: World, ticking: list[reminders.Outcome]
+    world: World, ticking: list[follow_ups.Outcome]
 ) -> None:
     world.paused = "paused"
     [row], _ = await agent.apply_policy(_event(agent.TICK))

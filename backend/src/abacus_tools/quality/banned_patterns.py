@@ -920,11 +920,11 @@ LIST_EXEMPT = frozenset(
         # SPEC-027 (TASK-051): the items the engagement agent reminds about, and its own
         # reminder records (caps and drafts).
         ("src/abacus/modules/requests/repository.py", "overdue_items"),
-        ("src/abacus/modules/agents/repository.py", "reminder_history"),
+        ("src/abacus/modules/agents/repository.py", "follow_up_history"),
         # SPEC-033 (TASK-066 D1): the matcher's shown picks for inbox files evidence's listing
         # already authorised (request IDs only); client roles can't read matches themselves.
         ("src/abacus/modules/agents/repository.py", "shown_picks"),
-        ("src/abacus/modules/agents/repository.py", "drafted_reminders"),
+        ("src/abacus/modules/agents/repository.py", "drafted_follow_ups"),
         # Recipients' addresses and the engagement's client admins (one engagement, read for a
         # reminder after `follow_up.send` or by the agent); the items whose due date was set.
         ("src/abacus/modules/identity/repository.py", "emails_of"),
@@ -1583,9 +1583,6 @@ def glossary_bans(text: str | None = None) -> dict[str, str]:
 # Names in use before the glossary bound identifiers (2026-10-21), each with the task that renames
 # it. A new use of a banned name fails; these may stay until their rename lands.
 L12_LEGACY: dict[tuple[str, str], str] = {
-    ("src/abacus/modules/agents/models.py", "Reminder"): "F-03-T16 renames to follow_up_schedules",
-    ("src/abacus/modules/agents/models.py", "reminders"): "F-03-T16",
-    ("src/abacus/modules/agents/models.py", "reminder_items"): "F-03-T16",
     ("src/abacus/modules/communications/models.py", "Message"): "P-06 message threads",
     ("src/abacus/modules/communications/models.py", "messages"): "P-06 message threads",
     ("src/abacus/modules/engagements/setup_steps.py", "Member"): "P-07 engagement_member views",
