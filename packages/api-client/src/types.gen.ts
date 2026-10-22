@@ -867,6 +867,55 @@ export type CandidateOut = {
 };
 
 /**
+ * CapabilitiesOut
+ */
+export type CapabilitiesOut = {
+    /**
+     * Capabilities
+     */
+    capabilities: Array<string>;
+    /**
+     * Clock Mode
+     */
+    clock_mode: 'real' | 'offset' | 'frozen';
+    /**
+     * Engagement Id
+     */
+    engagement_id: string | null;
+    /**
+     * Entitlements
+     */
+    entitlements: Array<string>;
+    /**
+     * Flags
+     */
+    flags: {
+        [key: string]: boolean | string;
+    };
+    /**
+     * Mfa Recent Until
+     */
+    mfa_recent_until: string | null;
+    /**
+     * Office Id
+     */
+    office_id: string | null;
+    portal: PortalOut | null;
+    /**
+     * Roles
+     */
+    roles: Array<RoleOut>;
+    /**
+     * Server Now
+     */
+    server_now: string;
+    /**
+     * Tz
+     */
+    tz: string;
+};
+
+/**
  * CellBody
  */
 export type CellBody = {
@@ -2905,6 +2954,24 @@ export type GoingConcernBody = {
 };
 
 /**
+ * GrantScopeOut
+ */
+export type GrantScopeOut = {
+    /**
+     * Role
+     */
+    role: string;
+    /**
+     * Scope Id
+     */
+    scope_id: string;
+    /**
+     * Scope Kind
+     */
+    scope_kind: string;
+};
+
+/**
  * GraphAccountOut
  */
 export type GraphAccountOut = {
@@ -4789,6 +4856,20 @@ export type PopulationOut = {
 };
 
 /**
+ * PortalOut
+ */
+export type PortalOut = {
+    /**
+     * Scopes
+     */
+    scopes: Array<GrantScopeOut>;
+    /**
+     * Shell
+     */
+    shell: 'full' | 'k1' | 'limited' | 'none';
+};
+
+/**
  * PreviewOut
  */
 export type PreviewOut = {
@@ -5885,6 +5966,20 @@ export type RiskOut = {
      * Title
      */
     title: string;
+};
+
+/**
+ * RoleOut
+ */
+export type RoleOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Label
+     */
+    label: string;
 };
 
 /**
@@ -22821,6 +22916,58 @@ export type MeResponses = {
 };
 
 export type MeResponse = MeResponses[keyof MeResponses];
+
+export type MyCapabilitiesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Engagement Id
+         */
+        engagement_id?: string | null;
+    };
+    url: '/v1/me/capabilities';
+};
+
+export type MyCapabilitiesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type MyCapabilitiesError = MyCapabilitiesErrors[keyof MyCapabilitiesErrors];
+
+export type MyCapabilitiesResponses = {
+    /**
+     * Successful Response
+     */
+    200: CapabilitiesOut;
+};
+
+export type MyCapabilitiesResponse = MyCapabilitiesResponses[keyof MyCapabilitiesResponses];
 
 export type MeteringData = {
     body?: never;

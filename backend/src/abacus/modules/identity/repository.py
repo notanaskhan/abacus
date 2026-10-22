@@ -180,10 +180,11 @@ class MemberFacts:
     offshore: bool
     service_lines: frozenset[str]
     client: bool
+    office_id: UUID | None = None  # F-03-T30: `/v1/me/capabilities`
 
 
 _MEMBER_FACTS = text(
-    "SELECT level, offshore, service_lines, kind FROM memberships "
+    "SELECT level, offshore, service_lines, kind, office_id FROM memberships "
     "WHERE user_id = :user_id AND status = 'active'"
 )
 
@@ -199,6 +200,7 @@ async def member_facts(tenant: TenantContext, user_id: UUID) -> MemberFacts | No
         offshore=bool(row.offshore),
         service_lines=frozenset(cast(list[str], row.service_lines)),
         client=row.kind == "client",
+        office_id=cast(UUID | None, row.office_id),
     )
 
 

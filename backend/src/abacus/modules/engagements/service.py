@@ -214,6 +214,15 @@ async def get_ref(ctx: Actor, engagement_id: UUID) -> EngagementRef:
     return _ref(engagement)
 
 
+async def engagement_resource_of(tenant: TenantContext, engagement_id: UUID) -> Resource:
+    """The engagement as an authorisation resource (F-03-T30), or `NotFound`."""
+    async with tenant_session(tenant) as session:
+        engagement = await get_engagement(session, engagement_id)
+    if engagement is None:
+        raise NotFound("engagement")
+    return _ref(engagement).resource()
+
+
 async def lock_ref(tx: UnitOfWork, engagement_id: UUID) -> EngagementRef:
     """For writes: resolve and share-lock the engagement inside the caller's unit of work, then
     authorise against it there, so the check and the write see the same row. `NotFound` (404)

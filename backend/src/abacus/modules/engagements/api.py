@@ -37,6 +37,7 @@ from abacus.modules.engagements.service import (
     clients_of_engagements,
     engagement_label,
     engagement_metadata,
+    engagement_resource_of,
     entity_of,
     gate_client_data,
     get_ref,
@@ -92,6 +93,7 @@ from abacus.modules.identity.api import (
     register_attest_client,
     register_clients_of_engagements,
     register_engagement_client,
+    register_engagement_resource,
     register_engagement_service_line,
     register_independence,
     register_member_added,
@@ -122,6 +124,8 @@ register_scope_resolver("work_item", work_item_scope)
 register_scope_resolver("client", client_scope)
 # F-03-T27 (ADR-145): the `client` scope kind reads through engagement visibility.
 register_clients_of_engagements(clients_of_engagements)
+# F-03-T30: an engagement's Resource for platform's capabilities (archived from the row).
+register_engagement_resource(engagement_resource_of)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
