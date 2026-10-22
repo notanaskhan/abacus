@@ -1712,6 +1712,8 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus_tools/stack.py",  # the recorders' and evals' stack (connect_db)
             # Seeds the local stack as its superuser (local only; TASK-012).
             "src/abacus_tools/local/seed_dev.py",
+            # Bootstraps the scenario firm, offices and people as the owner (F-04-T13).
+            "src/abacus_tools/synthetic/scenarios/brightwater_hale/loader.py",
         ),
     ),
     Rule(
@@ -1819,6 +1821,8 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus_tools/quality/banned_patterns.py",
             # SPEC-036 (TASK-076 D1): writes a stage and its audit event as the platform.
             "src/abacus_tools/agent_stage.py",
+            # F-04-T13: bootstrap writes carry the event's tenant, actor and business time.
+            "src/abacus_tools/synthetic/scenarios/brightwater_hale/loader.py",
             "tests/integration/test_tenancy.py",
             "tests/integration/test_schema_check_db.py",
             "tests/integration/agent_tests/test_work_slots_db.py",  # calls the ledger functions
