@@ -400,6 +400,26 @@ export type AdoptIn = {
 };
 
 /**
+ * AdoptSuggestionIn
+ *
+ * Adopt as proposed, or with an edited value and its citation note (decision `edited`).
+ */
+export type AdoptSuggestionIn = {
+    /**
+     * Citation Note
+     */
+    citation_note?: string | null;
+    /**
+     * Edited Value
+     */
+    edited_value?: string | null;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
  * AdoptedOut
  */
 export type AdoptedOut = {
@@ -569,6 +589,40 @@ export type AiExclusionOut = {
 };
 
 /**
+ * AnalysisRequestIn
+ */
+export type AnalysisRequestIn = {
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * AnalysisRequestOut
+ *
+ * A recorded request for the run that raised the card (P-10 delivers it).
+ */
+export type AnalysisRequestOut = {
+    /**
+     * Card Id
+     */
+    card_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Requested At
+     */
+    requested_at: string;
+    /**
+     * Requested By User Id
+     */
+    requested_by_user_id: string;
+};
+
+/**
  * AnnotationBody
  */
 export type AnnotationBody = {
@@ -654,6 +708,20 @@ export type ApproveIn = {
      * Note
      */
     note?: string | null;
+};
+
+/**
+ * ApproveProposalIn
+ */
+export type ApproveProposalIn = {
+    /**
+     * Edits
+     */
+    edits?: Array<ProposalEditIn>;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
 };
 
 /**
@@ -2270,20 +2338,6 @@ export type DashboardOut = {
 };
 
 /**
- * DecideIn
- */
-export type DecideIn = {
-    /**
-     * Approvals
-     */
-    approvals: Array<AbacusModulesAgentsRoutesApprovalIn>;
-    /**
-     * Confirmed Read
-     */
-    confirmed_read?: boolean;
-};
-
-/**
  * DecidedOut
  */
 export type DecidedOut = {
@@ -2291,6 +2345,204 @@ export type DecidedOut = {
      * Decided
      */
     decided: number;
+};
+
+/**
+ * DecisionCardItemOut
+ *
+ * A card in a list (HOME-02, the AUD-02 rail). No question text, options or rationale.
+ */
+export type DecisionCardItemOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Blocking Count
+     */
+    blocking_count: number;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Requested At
+     */
+    requested_at: string;
+    /**
+     * Reserved Role
+     */
+    reserved_role: 'engagement_partner' | 'manager' | 'eqr_reviewer' | 'signer';
+    /**
+     * Reserved User Id
+     */
+    reserved_user_id: string | null;
+    /**
+     * Reserved User Name
+     */
+    reserved_user_name: string | null;
+    status: DecisionCardStatus;
+    /**
+     * Superseded By Version
+     */
+    superseded_by_version: number | null;
+    /**
+     * Version No
+     */
+    version_no: number;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string | null;
+};
+
+/**
+ * DecisionCardOut
+ *
+ * One card: the question, context, code-computed options, factors and, once decided, the
+ * decision. A viewer outside the reserved role gets the same card with no decide action.
+ */
+export type DecisionCardOut = {
+    /**
+     * Blocking Refs
+     */
+    blocking_refs: Array<ObjectRefOut>;
+    card: DecisionCardItemOut;
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Context
+     */
+    context: Array<DecisionContextOut>;
+    decision: AbacusModulesReviewContractDecisionOut | null;
+    /**
+     * Factors
+     */
+    factors: Array<DecisionFactorOut>;
+    /**
+     * History
+     */
+    history: Array<DecisionCardVersionOut>;
+    /**
+     * Note
+     */
+    note: string | null;
+    /**
+     * Options
+     */
+    options: Array<DecisionOptionOut>;
+    /**
+     * Question
+     */
+    question: string;
+    recommendation: DecisionRecommendationOut | null;
+};
+
+/**
+ * DecisionCardStatus
+ */
+export type DecisionCardStatus = 'awaiting_role' | 'decided' | 'superseded';
+
+/**
+ * DecisionCardVersionOut
+ *
+ * One history row: v1 proposed, v2 decided, v3 reassessed with no change (SHL-11 d).
+ */
+export type DecisionCardVersionOut = {
+    /**
+     * Actor Initials
+     */
+    actor_initials: string | null;
+    /**
+     * Actor Kind
+     */
+    actor_kind: 'human' | 'agent' | 'system';
+    /**
+     * Actor User Id
+     */
+    actor_user_id: string | null;
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Changed
+     */
+    changed: boolean | null;
+    /**
+     * Event
+     */
+    event: 'proposed' | 'decided' | 'reassessed';
+    /**
+     * Figures
+     */
+    figures: {
+        [key: string]: string;
+    };
+    /**
+     * Option Key
+     */
+    option_key: string | null;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
+ * DecisionContextOut
+ *
+ * One context row ("Benchmark", "Amount", "Firm range", "Prior year"), from the owner.
+ */
+export type DecisionContextOut = {
+    /**
+     * Citation Id
+     */
+    citation_id: string | null;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Value
+     */
+    value: string;
+};
+
+/**
+ * DecisionFactorOut
+ */
+export type DecisionFactorOut = {
+    /**
+     * Applicable
+     */
+    applicable: boolean;
+    /**
+     * Checked
+     */
+    checked: boolean;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
 };
 
 /**
@@ -2304,34 +2556,73 @@ export type DecisionIn = {
 };
 
 /**
- * DecisionOut
+ * DecisionNotifyOut
  */
-export type DecisionOut = {
+export type DecisionNotifyOut = {
     /**
-     * Corrects Proposal
+     * Card Id
      */
-    corrects_proposal: boolean;
+    card_id: string;
     /**
-     * Decision
+     * Notified At
      */
-    decision: 'accept' | 'reject' | 'send_back';
+    notified_at: string;
     /**
-     * Evidence Version Id
+     * Notified User Id
      */
-    evidence_version_id: string;
+    notified_user_id: string;
+};
+
+/**
+ * DecisionOptionOut
+ *
+ * An option computed by the kind's provider in code, never by a model (ADR-050). Money is
+ * a decimal string; `figures` are what the label and detail line show.
+ */
+export type DecisionOptionOut = {
     /**
-     * Id
+     * Detail
      */
-    id: string;
-    item_status: RequestStatus;
+    detail: string | null;
     /**
-     * Reason Code
+     * Figures
      */
-    reason_code: string | null;
+    figures: {
+        [key: string]: string;
+    };
     /**
-     * Request Item Ids
+     * Key
      */
-    request_item_ids: Array<string>;
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Recommended
+     */
+    recommended: boolean;
+};
+
+/**
+ * DecisionRecommendationOut
+ *
+ * The agent's recommendation (`decision_cards.recommendation_suggestion_id`). `reasons` are
+ * agent text: the web app renders them only through AgentText.
+ */
+export type DecisionRecommendationOut = {
+    /**
+     * Option Key
+     */
+    option_key: string;
+    /**
+     * Reasons
+     */
+    reasons: Array<string>;
+    /**
+     * Suggestion Id
+     */
+    suggestion_id: string;
 };
 
 /**
@@ -2511,6 +2802,20 @@ export type DisclosureOut = {
      * Subprocessors
      */
     subprocessors: Array<string>;
+};
+
+/**
+ * DismissSuggestionIn
+ */
+export type DismissSuggestionIn = {
+    /**
+     * Reason Code
+     */
+    reason_code?: 'wrong_treatment' | 'unsupported_value' | 'needs_client_input' | 'other' | null;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
 };
 
 /**
@@ -3437,6 +3742,16 @@ export type FlowStepOut = {
 };
 
 /**
+ * FollowUpIn
+ */
+export type FollowUpIn = {
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
  * FollowUpOverride
  *
  * The per-binder follow-up cadence R-01's scheduler reads (DEC-74; POR-20 at most 4).
@@ -4352,7 +4667,7 @@ export type InboxFileOut = {
     /**
      * Suggestions
      */
-    suggestions: Array<SuggestionOut>;
+    suggestions: Array<AbacusModulesEvidenceRoutesSuggestionOut>;
     /**
      * Uploaded By
      */
@@ -5032,6 +5347,40 @@ export type ListPageBinderRowOut = {
      * Items
      */
     items: Array<BinderRowOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * ListPage[DecisionCardItemOut]
+ */
+export type ListPageDecisionCardItemOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<DecisionCardItemOut>;
     /**
      * Next Cursor
      */
@@ -6414,35 +6763,213 @@ export type ProcedureOut = {
 };
 
 /**
- * ProposalOut
+ * ProposalDecisionOut
  *
- * The agent's proposal. Rationale and quotes are model text: shown as plain text (ADR-065).
+ * The latest insert-only, human-only `proposal_decisions` row. `undo_until` is the end of
+ * the 10-second window (ADR-161 clause 6); null once an effect has started or for none.
  */
-export type ProposalOut = {
+export type ProposalDecisionOut = {
     /**
-     * Action
+     * Decided At
      */
-    action: 'ready_for_review' | 'needs_revision';
+    decided_at: string;
     /**
-     * Citations
+     * Decided By Name
      */
-    citations: Array<AbacusModulesEvidenceRoutesCitationOut>;
+    decided_by_name: string;
     /**
-     * Confidence
+     * Decided By User Id
      */
-    confidence: string;
+    decided_by_user_id: string;
     /**
-     * Rationale
+     * Decision
      */
-    rationale: string;
+    decision: 'approved' | 'approved_with_edits' | 'rejected' | 'routed' | 'follow_up' | 'undone';
     /**
-     * Screening Result Id
+     * Id
      */
-    screening_result_id: string;
+    id: string;
     /**
-     * Unverified
+     * Note
      */
-    unverified: Array<string>;
+    note: string | null;
+    /**
+     * Reason Code
+     */
+    reason_code: 'wrong_treatment' | 'unsupported_value' | 'needs_client_input' | 'other' | null;
+    /**
+     * Routed To User Id
+     */
+    routed_to_user_id: string | null;
+    /**
+     * Undo Until
+     */
+    undo_until: string | null;
+};
+
+/**
+ * ProposalEditIn
+ *
+ * An edited After value with its citation note (SHL-10 "Approve with edits").
+ */
+export type ProposalEditIn = {
+    /**
+     * After
+     */
+    after: string;
+    /**
+     * Citation Note
+     */
+    citation_note: string;
+    /**
+     * N
+     */
+    n: number;
+};
+
+/**
+ * ProposalEvidenceOut
+ */
+export type ProposalEvidenceOut = {
+    /**
+     * Citation Count
+     */
+    citation_count: number;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
+ * ProposalPolicyOut
+ *
+ * `proposals.policy_eval` and the policy note. While P-08 is dormant the approver is always
+ * a named person, never "Policy" or the agent (INV-5).
+ */
+export type ProposalPolicyOut = {
+    /**
+     * Note
+     */
+    note: string | null;
+    /**
+     * Policy Name
+     */
+    policy_name: string | null;
+    /**
+     * Result
+     */
+    result: 'within_threshold' | 'review_required' | null;
+    /**
+     * Routed To Name
+     */
+    routed_to_name: string | null;
+    /**
+     * Routed To User Id
+     */
+    routed_to_user_id: string | null;
+};
+
+/**
+ * ProposalRowOut
+ *
+ * One change: Field · Before → After · Cause. A row without a verified citation is
+ * `unsupported` and blocks approval (422 `uncited_change`).
+ */
+export type ProposalRowOut = {
+    /**
+     * After
+     */
+    after: string | null;
+    /**
+     * Before
+     */
+    before: string | null;
+    /**
+     * Cause
+     */
+    cause: string | null;
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Field Key
+     */
+    field_key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * N
+     */
+    n: number;
+    /**
+     * Suggestion Id
+     */
+    suggestion_id: string | null;
+    /**
+     * Unsupported
+     */
+    unsupported: boolean;
+};
+
+/**
+ * ProposalSetOut
+ *
+ * SHL-10 g: the proposal's set. The link row opens SHL-19 and approves nothing.
+ */
+export type ProposalSetOut = {
+    /**
+     * Exceptions
+     */
+    exceptions: number;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Results
+     */
+    results: number;
+    /**
+     * Set Id
+     */
+    set_id: string;
+    /**
+     * Set Type
+     */
+    set_type: string;
+};
+
+/**
+ * ProposalStatus
+ */
+export type ProposalStatus = 'pending' | 'approved' | 'approved_with_edits' | 'rejected' | 'superseded';
+
+/**
+ * ProposalTotalOut
+ *
+ * A totals row computed by code ("Net change to Form 1040 total income · 0 · tie").
+ */
+export type ProposalTotalOut = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Ties
+     */
+    ties: boolean;
+    /**
+     * Value
+     */
+    value: string;
 };
 
 /**
@@ -6594,7 +7121,7 @@ export type QueueEntryOut = {
      * Item Description
      */
     item_description: string;
-    proposal: ProposalOut | null;
+    proposal: AbacusModulesEvidenceRoutesProposalOut | null;
     /**
      * Request Item Id
      */
@@ -6792,6 +7319,24 @@ export type RejectIn = {
      * Seen Proposal
      */
     seen_proposal?: string | null;
+};
+
+/**
+ * RejectProposalIn
+ */
+export type RejectProposalIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Reason Code
+     */
+    reason_code: 'wrong_treatment' | 'unsupported_value' | 'needs_client_input' | 'other';
+    /**
+     * Seen Version
+     */
+    seen_version: number;
 };
 
 /**
@@ -7851,6 +8396,20 @@ export type RollforwardComponentOut = {
 };
 
 /**
+ * RouteProposalIn
+ */
+export type RouteProposalIn = {
+    /**
+     * Approver User Id
+     */
+    approver_user_id: string;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
  * RowSignOut
  */
 export type RowSignOut = {
@@ -8868,30 +9427,9 @@ export type StepOut = {
 };
 
 /**
- * SuggestionOut
+ * SuggestionStatus
  */
-export type SuggestionOut = {
-    /**
-     * Matched
-     */
-    matched: Array<string>;
-    /**
-     * Reasons
-     */
-    reasons?: Array<ReasonOut>;
-    /**
-     * Request Item Id
-     */
-    request_item_id: string;
-    /**
-     * Score
-     */
-    score: number;
-    /**
-     * Source
-     */
-    source?: 'matcher' | 'content' | 'file_name';
-};
+export type SuggestionStatus = 'pending' | 'adopted' | 'edited' | 'dismissed' | 'superseded' | 'expired';
 
 /**
  * SummaryOut
@@ -9812,6 +10350,16 @@ export type UncorrectedOut = {
 };
 
 /**
+ * UndoProposalIn
+ */
+export type UndoProposalIn = {
+    /**
+     * Decision Id
+     */
+    decision_id: string;
+};
+
+/**
  * UnlockBody
  */
 export type UnlockBody = {
@@ -10305,6 +10853,136 @@ export type YourPartOut = {
 };
 
 /**
+ * ProposalOut
+ *
+ * `GET /v1/proposals/{ref}`: the C3 projection SHL-10 renders, for a generic proposal or a
+ * typed adapter's (screener, upload reviewer, matcher).
+ */
+export type AbacusModulesAgentsContractProposalOut = {
+    /**
+     * Agent Run Id
+     */
+    agent_run_id: string | null;
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Change Count
+     */
+    change_count: number;
+    /**
+     * Checkpoint Id
+     */
+    checkpoint_id: string | null;
+    /**
+     * Context Label
+     */
+    context_label: string;
+    decision: ProposalDecisionOut | null;
+    /**
+     * Evidence
+     */
+    evidence: Array<ProposalEvidenceOut>;
+    /**
+     * Kind
+     */
+    kind: string;
+    policy: ProposalPolicyOut | null;
+    /**
+     * Proposed At
+     */
+    proposed_at: string;
+    /**
+     * Reasoning
+     */
+    reasoning: string;
+    /**
+     * Ref
+     */
+    ref: string;
+    /**
+     * Rows
+     */
+    rows: Array<ProposalRowOut>;
+    set: ProposalSetOut | null;
+    state: ProposalStatus;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Totals
+     */
+    totals: Array<ProposalTotalOut>;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * SuggestionOut
+ *
+ * One proposed value for one target, after a person's decision.
+ */
+export type AbacusModulesAgentsContractSuggestionOut = {
+    /**
+     * Agent Run Id
+     */
+    agent_run_id: string | null;
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Decided At
+     */
+    decided_at: string | null;
+    /**
+     * Decided By User Id
+     */
+    decided_by_user_id: string | null;
+    /**
+     * Decision
+     */
+    decision: 'adopted' | 'edited' | 'dismissed' | 'undone' | null;
+    /**
+     * Field Key
+     */
+    field_key: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Proposed Value
+     */
+    proposed_value: string;
+    /**
+     * Rationale
+     */
+    rationale: string | null;
+    status: SuggestionStatus;
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Target Type
+     */
+    target_type: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * ApprovalIn
  */
 export type AbacusModulesAgentsRoutesApprovalIn = {
@@ -10357,6 +11035,20 @@ export type AbacusModulesAgentsRoutesCitationOut = {
 };
 
 /**
+ * DecideIn
+ */
+export type AbacusModulesAgentsRoutesDecideIn = {
+    /**
+     * Approvals
+     */
+    approvals: Array<AbacusModulesAgentsRoutesApprovalIn>;
+    /**
+     * Confirmed Read
+     */
+    confirmed_read?: boolean;
+};
+
+/**
  * StartIn
  */
 export type AbacusModulesConnectionsRoutesStartIn = {
@@ -10395,6 +11087,95 @@ export type AbacusModulesEvidenceRoutesCitationOut = {
 };
 
 /**
+ * DecisionOut
+ */
+export type AbacusModulesEvidenceRoutesDecisionOut = {
+    /**
+     * Corrects Proposal
+     */
+    corrects_proposal: boolean;
+    /**
+     * Decision
+     */
+    decision: 'accept' | 'reject' | 'send_back';
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    item_status: RequestStatus;
+    /**
+     * Reason Code
+     */
+    reason_code: string | null;
+    /**
+     * Request Item Ids
+     */
+    request_item_ids: Array<string>;
+};
+
+/**
+ * ProposalOut
+ *
+ * The agent's proposal. Rationale and quotes are model text: shown as plain text (ADR-065).
+ */
+export type AbacusModulesEvidenceRoutesProposalOut = {
+    /**
+     * Action
+     */
+    action: 'ready_for_review' | 'needs_revision';
+    /**
+     * Citations
+     */
+    citations: Array<AbacusModulesEvidenceRoutesCitationOut>;
+    /**
+     * Confidence
+     */
+    confidence: string;
+    /**
+     * Rationale
+     */
+    rationale: string;
+    /**
+     * Screening Result Id
+     */
+    screening_result_id: string;
+    /**
+     * Unverified
+     */
+    unverified: Array<string>;
+};
+
+/**
+ * SuggestionOut
+ */
+export type AbacusModulesEvidenceRoutesSuggestionOut = {
+    /**
+     * Matched
+     */
+    matched: Array<string>;
+    /**
+     * Reasons
+     */
+    reasons?: Array<ReasonOut>;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+    /**
+     * Score
+     */
+    score: number;
+    /**
+     * Source
+     */
+    source?: 'matcher' | 'content' | 'file_name';
+};
+
+/**
  * ApprovalIn
  */
 export type AbacusModulesFieldworkRoutesApprovalIn = {
@@ -10412,6 +11193,71 @@ export type AbacusModulesFieldworkRoutesStartIn = {
      * Definition
      */
     definition?: 'journal_entry_testing' | 'unrecorded_liabilities';
+};
+
+/**
+ * DecideIn
+ *
+ * `POST /v1/decision-cards/{id}/decide`. No rationale answers 422 `rationale_required`; a
+ * stale `seen_version` answers 409 `recommendation_changed`.
+ */
+export type AbacusModulesReviewContractDecideIn = {
+    /**
+     * Factors
+     */
+    factors?: Array<string>;
+    /**
+     * Option Key
+     */
+    option_key: string;
+    /**
+     * Rationale
+     */
+    rationale?: string | null;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
+ * DecisionOut
+ *
+ * The insert-only, human-only `decisions` row. The rationale is sealed.
+ */
+export type AbacusModulesReviewContractDecisionOut = {
+    /**
+     * Decided At
+     */
+    decided_at: string;
+    /**
+     * Decided By Name
+     */
+    decided_by_name: string;
+    /**
+     * Decided By User Id
+     */
+    decided_by_user_id: string;
+    /**
+     * Factors
+     */
+    factors: Array<string>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Option Key
+     */
+    option_key: string;
+    /**
+     * Rationale
+     */
+    rationale: string;
+    /**
+     * Seen Card Version
+     */
+    seen_card_version: number;
 };
 
 /**
@@ -11522,6 +12368,362 @@ export type CompleteResponses = {
 };
 
 export type CompleteResponse = CompleteResponses[keyof CompleteResponses];
+
+export type DecisionCardListData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Engagement Id
+         */
+        engagement_id?: string | null;
+        /**
+         * State
+         */
+        state?: DecisionCardStatus | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number | null;
+    };
+    url: '/v1/decision-cards';
+};
+
+export type DecisionCardListErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DecisionCardListError = DecisionCardListErrors[keyof DecisionCardListErrors];
+
+export type DecisionCardListResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageDecisionCardItemOut;
+};
+
+export type DecisionCardListResponse = DecisionCardListResponses[keyof DecisionCardListResponses];
+
+export type DecisionCardData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Card Id
+         */
+        card_id: string;
+    };
+    query?: never;
+    url: '/v1/decision-cards/{card_id}';
+};
+
+export type DecisionCardErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DecisionCardError = DecisionCardErrors[keyof DecisionCardErrors];
+
+export type DecisionCardResponses = {
+    /**
+     * Successful Response
+     */
+    200: DecisionCardOut;
+};
+
+export type DecisionCardResponse = DecisionCardResponses[keyof DecisionCardResponses];
+
+export type DecisionCardAnalysisRequestData = {
+    body: AnalysisRequestIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Card Id
+         */
+        card_id: string;
+    };
+    query?: never;
+    url: '/v1/decision-cards/{card_id}/analysis-requests';
+};
+
+export type DecisionCardAnalysisRequestErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DecisionCardAnalysisRequestError = DecisionCardAnalysisRequestErrors[keyof DecisionCardAnalysisRequestErrors];
+
+export type DecisionCardAnalysisRequestResponses = {
+    /**
+     * Successful Response
+     */
+    201: AnalysisRequestOut;
+};
+
+export type DecisionCardAnalysisRequestResponse = DecisionCardAnalysisRequestResponses[keyof DecisionCardAnalysisRequestResponses];
+
+export type DecisionCardDecideData = {
+    body: AbacusModulesReviewContractDecideIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Card Id
+         */
+        card_id: string;
+    };
+    query?: never;
+    url: '/v1/decision-cards/{card_id}/decide';
+};
+
+export type DecisionCardDecideErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DecisionCardDecideError = DecisionCardDecideErrors[keyof DecisionCardDecideErrors];
+
+export type DecisionCardDecideResponses = {
+    /**
+     * Successful Response
+     */
+    200: DecisionCardOut;
+};
+
+export type DecisionCardDecideResponse = DecisionCardDecideResponses[keyof DecisionCardDecideResponses];
+
+export type DecisionCardNotifyData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Card Id
+         */
+        card_id: string;
+    };
+    query?: never;
+    url: '/v1/decision-cards/{card_id}/notify';
+};
+
+export type DecisionCardNotifyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DecisionCardNotifyError = DecisionCardNotifyErrors[keyof DecisionCardNotifyErrors];
+
+export type DecisionCardNotifyResponses = {
+    /**
+     * Successful Response
+     */
+    200: DecisionNotifyOut;
+};
+
+export type DecisionCardNotifyResponse = DecisionCardNotifyResponses[keyof DecisionCardNotifyResponses];
+
+export type DecisionCardReassessData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Card Id
+         */
+        card_id: string;
+    };
+    query?: never;
+    url: '/v1/decision-cards/{card_id}/reassess';
+};
+
+export type DecisionCardReassessErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DecisionCardReassessError = DecisionCardReassessErrors[keyof DecisionCardReassessErrors];
+
+export type DecisionCardReassessResponses = {
+    /**
+     * Successful Response
+     */
+    200: DecisionCardOut;
+};
+
+export type DecisionCardReassessResponse = DecisionCardReassessResponses[keyof DecisionCardReassessResponses];
 
 export type ListEngagementsData = {
     body?: never;
@@ -14108,7 +15310,7 @@ export type AcceptResponses = {
     /**
      * Successful Response
      */
-    201: DecisionOut;
+    201: AbacusModulesEvidenceRoutesDecisionOut;
 };
 
 export type AcceptResponse = AcceptResponses[keyof AcceptResponses];
@@ -14172,7 +15374,7 @@ export type RejectResponses = {
     /**
      * Successful Response
      */
-    201: DecisionOut;
+    201: AbacusModulesEvidenceRoutesDecisionOut;
 };
 
 export type RejectResponse = RejectResponses[keyof RejectResponses];
@@ -14236,7 +15438,7 @@ export type SendBackResponses = {
     /**
      * Successful Response
      */
-    201: DecisionOut;
+    201: AbacusModulesEvidenceRoutesDecisionOut;
 };
 
 export type SendBackResponse = SendBackResponses[keyof SendBackResponses];
@@ -15424,7 +16626,7 @@ export type GuidanceDraftsResponses = {
 export type GuidanceDraftsResponse = GuidanceDraftsResponses[keyof GuidanceDraftsResponses];
 
 export type ApproveDraftsData = {
-    body: DecideIn;
+    body: AbacusModulesAgentsRoutesDecideIn;
     headers?: {
         /**
          * Authorization
@@ -15480,7 +16682,7 @@ export type ApproveDraftsResponses = {
 export type ApproveDraftsResponse = ApproveDraftsResponses[keyof ApproveDraftsResponses];
 
 export type DiscardDraftsData = {
-    body: DecideIn;
+    body: AbacusModulesAgentsRoutesDecideIn;
     headers?: {
         /**
          * Authorization
@@ -27462,7 +28664,7 @@ export type TemplateDraftsResponses = {
 export type TemplateDraftsResponse = TemplateDraftsResponses[keyof TemplateDraftsResponses];
 
 export type ApproveTemplateDraftsData = {
-    body: DecideIn;
+    body: AbacusModulesAgentsRoutesDecideIn;
     headers?: {
         /**
          * Authorization
@@ -27518,7 +28720,7 @@ export type ApproveTemplateDraftsResponses = {
 export type ApproveTemplateDraftsResponse = ApproveTemplateDraftsResponses[keyof ApproveTemplateDraftsResponses];
 
 export type DiscardTemplateDraftsData = {
-    body: DecideIn;
+    body: AbacusModulesAgentsRoutesDecideIn;
     headers?: {
         /**
          * Authorization
@@ -28070,6 +29272,362 @@ export type AnnounceUploadIntentResponses = {
 };
 
 export type AnnounceUploadIntentResponse = AnnounceUploadIntentResponses[keyof AnnounceUploadIntentResponses];
+
+export type ProposalApproveData = {
+    body: ApproveProposalIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Proposal Id
+         */
+        proposal_id: string;
+    };
+    query?: never;
+    url: '/v1/proposals/{proposal_id}/approve';
+};
+
+export type ProposalApproveErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ProposalApproveError = ProposalApproveErrors[keyof ProposalApproveErrors];
+
+export type ProposalApproveResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesAgentsContractProposalOut;
+};
+
+export type ProposalApproveResponse = ProposalApproveResponses[keyof ProposalApproveResponses];
+
+export type ProposalFollowUpData = {
+    body: FollowUpIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Proposal Id
+         */
+        proposal_id: string;
+    };
+    query?: never;
+    url: '/v1/proposals/{proposal_id}/follow-up';
+};
+
+export type ProposalFollowUpErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ProposalFollowUpError = ProposalFollowUpErrors[keyof ProposalFollowUpErrors];
+
+export type ProposalFollowUpResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesAgentsContractProposalOut;
+};
+
+export type ProposalFollowUpResponse = ProposalFollowUpResponses[keyof ProposalFollowUpResponses];
+
+export type ProposalRejectData = {
+    body: RejectProposalIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Proposal Id
+         */
+        proposal_id: string;
+    };
+    query?: never;
+    url: '/v1/proposals/{proposal_id}/reject';
+};
+
+export type ProposalRejectErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ProposalRejectError = ProposalRejectErrors[keyof ProposalRejectErrors];
+
+export type ProposalRejectResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesAgentsContractProposalOut;
+};
+
+export type ProposalRejectResponse = ProposalRejectResponses[keyof ProposalRejectResponses];
+
+export type ProposalRouteToData = {
+    body: RouteProposalIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Proposal Id
+         */
+        proposal_id: string;
+    };
+    query?: never;
+    url: '/v1/proposals/{proposal_id}/route';
+};
+
+export type ProposalRouteToErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ProposalRouteToError = ProposalRouteToErrors[keyof ProposalRouteToErrors];
+
+export type ProposalRouteToResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesAgentsContractProposalOut;
+};
+
+export type ProposalRouteToResponse = ProposalRouteToResponses[keyof ProposalRouteToResponses];
+
+export type ProposalUndoData = {
+    body: UndoProposalIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Proposal Id
+         */
+        proposal_id: string;
+    };
+    query?: never;
+    url: '/v1/proposals/{proposal_id}/undo';
+};
+
+export type ProposalUndoErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ProposalUndoError = ProposalUndoErrors[keyof ProposalUndoErrors];
+
+export type ProposalUndoResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesAgentsContractProposalOut;
+};
+
+export type ProposalUndoResponse = ProposalUndoResponses[keyof ProposalUndoResponses];
+
+export type Proposal2Data = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Ref
+         */
+        ref: string;
+    };
+    query?: never;
+    url: '/v1/proposals/{ref}';
+};
+
+export type Proposal2Errors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type Proposal2Error = Proposal2Errors[keyof Proposal2Errors];
+
+export type Proposal2Responses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesAgentsContractProposalOut;
+};
+
+export type Proposal2Response = Proposal2Responses[keyof Proposal2Responses];
 
 export type ReviewNoteListData = {
     body?: never;
@@ -28718,6 +30276,126 @@ export type SignupResponses = {
 };
 
 export type SignupResponse = SignupResponses[keyof SignupResponses];
+
+export type SuggestionAdoptData = {
+    body: AdoptSuggestionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Suggestion Id
+         */
+        suggestion_id: string;
+    };
+    query?: never;
+    url: '/v1/suggestions/{suggestion_id}/adopt';
+};
+
+export type SuggestionAdoptErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SuggestionAdoptError = SuggestionAdoptErrors[keyof SuggestionAdoptErrors];
+
+export type SuggestionAdoptResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesAgentsContractSuggestionOut;
+};
+
+export type SuggestionAdoptResponse = SuggestionAdoptResponses[keyof SuggestionAdoptResponses];
+
+export type SuggestionDismissData = {
+    body: DismissSuggestionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Suggestion Id
+         */
+        suggestion_id: string;
+    };
+    query?: never;
+    url: '/v1/suggestions/{suggestion_id}/dismiss';
+};
+
+export type SuggestionDismissErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SuggestionDismissError = SuggestionDismissErrors[keyof SuggestionDismissErrors];
+
+export type SuggestionDismissResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesAgentsContractSuggestionOut;
+};
+
+export type SuggestionDismissResponse = SuggestionDismissResponses[keyof SuggestionDismissResponses];
 
 export type ListSupportSessionsData = {
     body?: never;

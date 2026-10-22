@@ -6,6 +6,7 @@ from abacus.modules.agents.activities import ACTIVITIES
 from abacus.modules.agents.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.agents.citations import SheetLayoutError
 from abacus.modules.agents.citations import verify as verify_citations
+from abacus.modules.agents.contract import proposals_router, suggestions_router
 from abacus.modules.agents.engagement_agent import start_agents
 from abacus.modules.agents.engagement_agent_workflow import HANDLE as ENGAGEMENT_AGENT_HANDLE
 from abacus.modules.agents.engagement_agent_workflow import (
@@ -105,6 +106,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     template_drafts_router,
     engagement_runs_router,
     runs_router,
+    # C3 stubs behind `review.grammar_api` (P-04-T08; ADR-161).
+    proposals_router,
+    suggestions_router,
 )
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
