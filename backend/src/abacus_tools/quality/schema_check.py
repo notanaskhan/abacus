@@ -66,6 +66,7 @@ NON_TENANT_TABLES = frozenset(
 # Insert-only tables outside the modules (ADR-004); each module lists its own in registry.py.
 _PLATFORM_INSERT_ONLY: frozenset[str] = frozenset(
     {"audit_events", "eval_case_results", "outbox", "usage_records"}
+    | {"idempotency_keys"}  # P-06-T06
 )
 # Insert columns for tables outside the modules (TASK-006); modules declare theirs.
 _PLATFORM_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -74,7 +75,13 @@ _PLATFORM_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"before_ref", "after_ref", "trace_id"}
         | {"engagement_id", "work_item_id", "on_behalf_of_user_id", "policy_ref"}  # Q-02-T16
     ),
-    "outbox": frozenset({"id", "tenant_id", "event_type", "payload", "trace_context"}),
+    "outbox": frozenset(
+        {"id", "tenant_id", "event_type", "payload", "trace_context"}
+        | {"not_before", "grant_id"}  # P-06-T06 (migration 0099)
+    ),
+    "idempotency_keys": frozenset(  # P-06-T06 (migration 0099)
+        {"tenant_id", "actor_id", "route", "key", "request_sha256", "status_code", "response"}
+    ),
     "usage_records": frozenset(
         {"id", "tenant_id", "engagement_id", "agent_id", "agent_run_id", "prompt_id"}
         | {"prompt_version", "model", "tier", "input_tokens", "output_tokens", "cost_usd"}
@@ -118,6 +125,7 @@ _PLATFORM_TABLE_OWNERS: dict[str, str] = {
     "alembic_version": "migrations",
     "audit_events": "kernel.uow",
     "outbox": "kernel.uow",
+    "idempotency_keys": "kernel.uow",  # P-06-T06 (migration 0099)
     # Evaluation runs (SPEC-005 Q2): written only by the evaluation tooling.
     "eval_runs": "abacus_tools.evals",
     "eval_case_results": "abacus_tools.evals",

@@ -48,10 +48,12 @@ _log = get_logger(__name__)
 _tracer = tracer(__name__)
 
 _CLAIM = text(
-    "SELECT id, tenant_id, event_type, payload, attempts, trace_context FROM outbox WHERE id IN ("
+    "SELECT id, tenant_id, event_type, payload, attempts, trace_context, grant_id FROM outbox "
+    "WHERE id IN ("
     "SELECT id FROM (SELECT id, row_number() OVER (PARTITION BY tenant_id ORDER BY seq) AS n "
     "FROM outbox WHERE published_at IS NULL AND attempts < :max_attempts "
-    "AND (next_attempt_at IS NULL OR next_attempt_at <= clock_timestamp())) AS due "
+    "AND (next_attempt_at IS NULL OR next_attempt_at <= clock_timestamp()) "
+    "AND (not_before IS NULL OR not_before <= clock_timestamp())) AS due "
     "WHERE n <= :per_tenant) "
     "ORDER BY seq LIMIT :batch FOR UPDATE SKIP LOCKED"
 )
@@ -63,6 +65,32 @@ _FAILED = text(
     "next_attempt_at = clock_timestamp() + make_interval(secs => :backoff) "
     "WHERE tenant_id = :tenant AND id = :id"
 )
+
+
+# P-06-T06 (ADR-161): a grant-held event is delivered only if its approval grant is consumed at
+# delivery. Identity registers the consumer (`consume_grant`, P-04-T10); until then a held event
+# waits, retried with backoff, and nothing goes out.
+GrantConsumer = Callable[[UUID, UUID], Awaitable[bool]]
+_GRANT_CONSUMER: list[GrantConsumer] = []
+
+
+class GrantConsumerMissing(RuntimeError):
+    """A grant-held event can't be delivered before a grant consumer is registered."""
+
+
+def register_grant_consumer(consumer: GrantConsumer) -> None:
+    if _GRANT_CONSUMER and _GRANT_CONSUMER[0] is not consumer:
+        raise ValueError("a grant consumer is already registered")
+    _GRANT_CONSUMER[:] = [consumer]
+
+
+async def _grant_allows(tenant: UUID, grant_id: UUID | None) -> bool:
+    """True to deliver. A voided or spent grant (an Undo) delivers nothing."""
+    if grant_id is None:
+        return True
+    if not _GRANT_CONSUMER:
+        raise GrantConsumerMissing
+    return await _GRANT_CONSUMER[0](tenant, grant_id)
 
 
 @dataclass(frozen=True)
@@ -152,7 +180,10 @@ async def relay_once(publisher: Publisher, batch: int = 25, per_tenant: int = 10
                         record_exception=False,  # the failure is logged below, by class name
                     ),
                 ):
-                    await publisher.publish(event)
+                    if await _grant_allows(tenant, row.grant_id):
+                        await publisher.publish(event)
+                    else:
+                        _log.info("outbox.grant_void", event_id=row.id, tenant_id=tenant)
             except Exception as exc:  # stays unpublished; record why (class name only)
                 attempts = int(row.attempts) + 1
                 error = type(exc).__name__
