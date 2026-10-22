@@ -1098,10 +1098,20 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"sent_at", "client_ignored_at"}  # request lifecycle v2 (F-05)
             | {"incorporation_state", "incorporated_at", "incorporated_by"}
             | {"na_reason", "na_note", "na_at", "na_by"}
+            # P-06-T05 (0100): request fields and the soft delete of unsent drafts.
+            | {"title", "category_id", "firm_owner_user_id", "period_start", "period_end"}
+            | {"wave", "supports_ref", "linked_ref", "sent_by", "deleted_at", "deleted_by"}
         ),
         "request_lists": frozenset(  # F-05: the binder's list is published and marked done
             {"status", "default_due_on", "published_at", "published_by"}
             | {"marked_done_at", "marked_done_by"}
+            # P-06-T05 (0100): unpublish, follow-up override and close stamps.
+            | {"unpublished_at", "unpublished_by", "unpublish_reason_sealed"}
+            | {"follow_up_override", "closed_at", "closed_reason"}
+        ),
+        "request_delegations": frozenset({"revoked_at"}),  # P-06-T05 (0100)
+        "binder_activity": frozenset(  # P-06-T05 (0100): a projection
+            {"status", "open_count", "last_client_activity_at", "updated_at"}
         ),
         # F-03-T05 (migration 0068): work items and the assurance item's phase.
         "work_items": frozenset({"name", "status", "due_on", "archived_at", "archive_locked_at"}),
@@ -1275,6 +1285,10 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         | {"document_kind", "document_kind_source"}  # SPEC-029 (TASK-055)
         | {"why", "good_looks_like", "blocks_fieldwork", "effort", "guidance_source"}  # SPEC-031
         | {"guidance_approved_by"}  # SPEC-035 (TASK-074)
+        # P-06-T05 (migration 0100): the binder engine's request fields.
+        | {"title", "category_id", "firm_owner_user_id", "period_start", "period_end", "wave"}
+        | {"kind", "source_tag", "supports_ref", "linked_ref", "drafted_by_run_id"}
+        | {"drafted_wording_source", "drafted_wording_fingerprint"}
     )
     assert sc.APP_INSERT_COLUMNS["engagement_members"] == frozenset(
         {"tenant_id", "engagement_id", "user_id", "role"}
