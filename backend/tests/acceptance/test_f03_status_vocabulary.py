@@ -10,8 +10,8 @@ The sources, restated below as data:
 
 Nothing here is read from the YAML to build an expectation. The YAML is only the thing under test.
 Where the YAML disagrees with a source, the test stays and is `xfail(strict=True)` with a finding
-(`TASK-355 #ISSUE`: SKIP-001 reads the reason literal, so the four marks below carry the
-placeholder and the number is filled in once the issues are filed).
+(`TASK-355`; each of the four marks below cites its issue, #206 to #209, because SKIP-001 reads
+the reason literal).
 
 Rules taken from the sources, not from the YAML header:
 
@@ -699,27 +699,27 @@ def test_every_source_object_has_a_yaml_object(obj: str) -> None:
 
 
 # One mark per finding. SKIP-001 reads the reason as a literal, so each carries its own issue
-# reference; `#ISSUE` is the placeholder until the issue is filed. The detail per field is in
+# reference to its issue. The detail per field is in
 # the dictionaries above and in the assertion message.
 FINDING_LABEL = pytest.mark.xfail(
     strict=True,
     reason='F-03-T10 finding: tie_out_tally.reconciled is "Reconciled" but 3.3.1 displays '
-    '"Reconciled ✓" (TASK-355 #ISSUE)',
+    '"Reconciled ✓" (TASK-355 #206)',
 )
 FINDING_UNTYPED = pytest.mark.xfail(
     strict=True,
     reason="F-03-T10 finding: status field typed as a bare string, no literal to check "
-    "(TASK-355 #ISSUE)",
+    "(TASK-355 #207)",
 )
 FINDING_NO_ENTRY = pytest.mark.xfail(
     strict=True,
     reason="F-03-T10 finding: status literal with no YAML entry in any object, see "
-    "NO_YAML_ENTRY (TASK-355 #ISSUE)",
+    "NO_YAML_ENTRY (TASK-355 #208)",
 )
 FINDING_OUTSIDE = pytest.mark.xfail(
     strict=True,
     reason="F-03-T10 finding: status literal outside the 3.3.1 object its field belongs to, "
-    "see OUTSIDE_ITS_OBJECT (TASK-355 #ISSUE)",
+    "see OUTSIDE_ITS_OBJECT (TASK-355 #209)",
 )
 LABEL_FINDINGS = {("tie_out_tally", "Reconciled ✓")}
 

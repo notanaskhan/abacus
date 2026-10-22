@@ -46,7 +46,7 @@ updated: 2026-10-22
 
 ## Findings (sources against the YAML and the API)
 
-All are `xfail(strict=True)` with `TASK-355 #ISSUE` in the reason (SKIP-001 wants a real number; see the open item).
+All are `xfail(strict=True)` with `TASK-355` and its issue (#206 to #209) in the reason (SKIP-001 wants a real number; see the open item).
 
 | Test | Source says | YAML or API has |
 |---|---|---|
@@ -96,9 +96,9 @@ None.
 
 ## Questions for the human
 
-- [ ] File the GitHub issues for the findings above (grouped: one for the "Reconciled ✓" label, one for the 11 API status fields with no YAML entry, one for `ConnectionOut.status` using a retired code, one for the six untyped status fields), then replace `#ISSUE` in the four `FINDING_*` marks of `backend/tests/acceptance/test_f03_status_vocabulary.py`.
+- [x] Filed: #206 the "Reconciled ✓" label, #207 the six untyped fields, #208 the 11 fields with no YAML entry, #209 `ConnectionOut.status` on a retired code. Originally: file the GitHub issues for the findings above (grouped: one for the "Reconciled ✓" label, one for the 11 API status fields with no YAML entry, one for `ConnectionOut.status` using a retired code, one for the six untyped status fields), then replace `#ISSUE` in the four `FINDING_*` marks of `backend/tests/acceptance/test_f03_status_vocabulary.py`.
 - [ ] Confirm or change the three proposals in "Decisions" when accepting ADR-156 and ADR-157.
 
 ## Handoff
 
-Replace `#ISSUE` in the four `FINDING_*` marks of the test file (SKIP-001 reads each reason as a literal, so there is one per finding group), run `make check-fast`, then decide each finding: add the YAML entries or change the API fields. Accept ADR-156 and ADR-157 by Fri 2026-11-27.
+The four `FINDING_*` marks cite #206 to #209. Decide each finding: add the YAML entries or change the API fields. Accept ADR-156 and ADR-157 by Fri 2026-11-27.
