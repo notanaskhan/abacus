@@ -101,6 +101,10 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Ethical wall | A barrier that hides a client from named users. Added as a term at last (long-requested). | `ethical_walls` | — |
 | Approval grant | Single-use authority for a write after approval. | `approval_grants` | — |
 | Policy principal | The dormant actor kind for policy acceptances (P-08). | `actor_kind='policy'` | — |
+| Sign-in challenge | One passwordless portal sign-in attempt (POR-01 a, b, f, g): an emailed 6-digit sign-in code that expires after 10 minutes, at most 3 wrong codes per email before a 15-minute lock (DEC-35), resend after 60 s without resetting the tries. The email is kept only as a tenant-keyed fingerprint and the code only as a hash; an unknown email gets the same answer and no row names a person. UI "Sign-in code" for the code itself. | `sign_in_challenges` (`email_fingerprint`, `code_hash`, `attempts`, `locked_until`) | — |
+| Trusted device | A browser a portal user chose to trust after two-step verification ("Trust this device for 30 days", POR-01 c): a `__Host-` cookie bound to the user and the tenant, stored as a hash. Lasts 30 days or fewer by firm policy, never more; revoked when access changes or the second factor is reset. | `trusted_devices` (`token_hash`, `expires_at`, `revoked_at`) | — |
+| MFA backup code | One of 8 single-use codes shown once at two-step setup (POR-01 c′, DF-17), stored hashed and marked used on first use; global to the user like the factor itself (ADR-002). UI "Use a backup code". | `mfa_backup_codes` (`code_hash`, `used_at`) | — |
+| Two-step verification | UI term for portal MFA: a code from an authenticator app after the sign-in code, required for owners, signers and approvers (DEC-34 floor) and for every client user when the firm extends it. | `mfa` (`portal_security_policies`, `register_mfa_requirement`) | — |
 
 ## New terms: organisations
 
@@ -179,6 +183,16 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 |---|---|---|---|
 | Inbox (firm mailbox) | Distinct from the engagement drop zone `inbox_files`, which is kept. | `mailboxes`, `inbox_threads`, `inbound_messages`, `inbox_attachments`, `triage_decisions` | — |
 | Portal thread | POR-07. | `message_threads` | — |
+| Secure link | A single-use, 14-day link in a client email (reminder, invitation, signature request, deliverable ready, reconnect), stored as a token hash. An expired link can be renewed only to the address it was sent to (POR-01 e). The token travels in the URL fragment, never a query string. A secure link is not a fulfilment; `link` stays banned on its own and is allowed only in this compound. | `secure_links` (`purpose`, `token_hash`, `expires_at`, `renewed_from_id`) | — |
+
+## New terms: portal
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Client portal | UI term for the white-labelled surface clients use, at the origin root of the firm's portal host (ADR-163). It shows the firm's name and people and never "Accrued". The code module and session surface are `portal`; `client` alone never names the surface. | `portal` (`auth_sessions.surface = 'portal'`) | — |
+| Portal branding | A firm's branding slots for the portal and client email: display and portal name, logo, address line, help, privacy and terms links, support contact, the "Secured by Accrued" footer (off by default) and a maintenance banner. Public-classified except the support contact's user id. Slots only: the accent stays espresso (ADR-155). | `portal_branding` | — |
+| Portal domain | A host that serves a firm's portal: the default `<slug>.<neutral-portal-domain>` or a custom domain (P1; ADM-10 "Pending DNS → Verified"). The host is a branding hint only and is read without a tenant only through `portal_resolve_host` (ADR-163). | `portal_domains` (`kind`, `status`) | — |
+| Portal preferences | A portal user's per-scope settings, today whether the POR-02 welcome card was dismissed; versioned, 409 on mismatch. | `portal_preferences` (`welcome_dismissed_at`) | — |
 
 ## New terms: signatures
 
@@ -389,6 +403,7 @@ Lint rules L1–L12 check these against the copy registry.
 | "Remove" or "Delete" on a client's unaccepted upload | "Withdraw" ("Withdraw this file? Brightwater Hale's team won't use it. It's kept securely for 30 days, then erased.", with the firm's name) | DF-15, ADR-162 |
 | "n hidden by an ethical wall" | nothing (404 semantics) | DEC-43 |
 | "Accrued" in the portal or client emails (except the optional footer) | The firm's name | L7 white-label crawler |
+| "password", "task" or "Accrued" in portal copy (POR-*), sign-in and invitation emails, or portal error messages | "Sign-in code" and "Two-step verification" (there is no password); "to-do"; the firm's name | L2, L7 (P-08-T04) |
 | Emoji, "!" in agent or product voice, "..." | "…" (U+2026) on dialog openers | L2/L3 |
 | Font weights 600/700 outside document renderers; blue; zebra rows | Geist 400/500; tokens only | L8 |
 
