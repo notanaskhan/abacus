@@ -151,3 +151,4 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-160](ADR-160-review-grammar.md) | Review grammar - sign-offs, review notes, issues, decision cards, checkpoints and field history in one red review module | red | accepted |
 | [ADR-161](ADR-161-suggestions-proposals-approval-grants-undo.md) | Suggestions, proposals, approval grants and Undo as a compensating event; the policy actor is dormant | red | accepted |
 | [ADR-162](ADR-162-client-withdrawal-unaccepted-uploads.md) | A client may withdraw an upload the firm has not accepted - void and hide at once, crypto-erase by detached key after 30 days unless held | red | accepted |
+| [ADR-163](ADR-163-white-label-portal-domains-branded-email.md) | White-label portal: neutral portal domain that never contains "accrued", same-origin `/v1`, the host as a branding hint only, per-firm branded email | amber | accepted |
