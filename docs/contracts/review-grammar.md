@@ -429,14 +429,22 @@ Approve by Raj answers 403 with `facts.routed_to`. `POST …/route` with `{"seen
 **Suggestion adopt (SHL-10 b's single source change, as one suggestion).** `POST /v1/suggestions/<s-line-2a>/adopt` with `{"seen_version": 1}` adopts Form 1040 line 2a tax-exempt interest of 1,550 (K-1 box 18A). The response has `status: "adopted"` and `decision: "adopted"`.
 
 ## 9. Consumer contract tests
-`backend/tests/contracts/review_grammar/` (P-04-T09) covers the SHL-10 a–g, SHL-11 a–h and SHL-12 a–h shapes against the stubs. The TypeScript fixture assertions run in the provider's stage 2. They fail if a field the artboards need is removed.
+P-04-T09 (2026-10-22). Both suites run in the provider's stage 2 (`make check`: `ci-contracts` and `ci-frontend`). They fail if a field the artboards need is removed, renamed or retagged.
+
+- `backend/tests/contracts/review_grammar/` (pytest against the stubs):
+  - `test_c3_stubs.py`: every route's matrix action, and 404 off and 501 on through each handler; agent and system denied on every resolution, decision and sign-off action; the status enums against `status-vocabulary.yaml`; the CHECK lists in migrations 0093 to 0095 against the wire; every field classified.
+  - `test_c3_shl10_proposals.py`, `test_c3_shl11_decision_cards.py` and `test_c3_shl12_sign_offs.py`: per artboard, the fields with their classification tags, and the §8 examples validated as written (placeholders swapped for UUIDs).
+  - The figures foot as `Decimal`: Trial Balance v1 14 of 14 cited; Northwind materiality 168,100 / 252,200 / PM 189,150 / CT 12,610 and v3 252,900 ($700); Feld K-1 net change 0; AJE-05 14,900.00.
+- `apps/web/src/fixtures/contracts/review-grammar.test.ts` (vitest): one frame per artboard, typed with the generated client and checked against `openapi.json` at run time; figures foot in bigint.
+- Unique names: the operation ids and the C3 component names (`AgentProposalOut`, `AgentSuggestionOut`, `ReviewNoteDetailOut`, `CardDecisionOut`, `CardDecideIn`, TASK-422) are asserted, so a collision cannot rename a frozen type again (#284).
+- One strict xfail, to clear before the freeze: #285 (decision-card figures and the agent's reasons should be Restricted).
 
 ## 10. Versioning
 Additive changes go in place. Breaking changes ship as v2 with one sprint of overlap.
 
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1 | (S3, Fri Dec 11, 2026) | | 2026-10-22: part 1 stub (P-04-T07): sign-offs, review notes and human gates. 2026-10-22: part 2 stub (P-04-T08): decision cards (`review`), proposals and suggestions (`agents`) |
+| v1 | (S3, Fri Dec 11, 2026) | | 2026-10-22: part 1 stub (P-04-T07): sign-offs, review notes and human gates. 2026-10-22: part 2 stub (P-04-T08): decision cards (`review`), proposals and suggestions (`agents`). 2026-10-22: consumer tests (P-04-T09); the schema freeze is scheduled for Fri Dec 11, 2026 with them as the gate |
 
 ## 11. Open points
 - **Level actions.** The level actions keep their SPEC-308 names rather than `sign_off.l1` to `l5` (DEC-135).
