@@ -2,7 +2,7 @@
 id: TASK-395
 title: Make targets - seed-demo, seed-staging, fixtures, journeys, journeys-full (F-04-T15)
 spec: SPEC-307
-acceptance_criteria: [F-04.15, F-04.16, F-04.17]
+acceptance_criteria: [AC-1, AC-7]
 risk_zone: red
 status: done
 epic: F-04

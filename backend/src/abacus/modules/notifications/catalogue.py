@@ -20,6 +20,7 @@ from abacus.modules.identity.api import (
     firm_admins,
     team_of,
 )
+from abacus.modules.notifications.kinds import NotificationKind, register_kind
 
 Recipients = Callable[[UUID, dict[str, object]], Awaitable[list[UUID]]]
 
@@ -167,3 +168,33 @@ TEMPLATES: Final[dict[str, str]] = {
     "risk.approval_requested": "A risk on {engagement} is waiting for your approval.",
     "finding.severity_proposed": "A deficiency on {engagement} is waiting for you to conclude.",
 }
+
+
+# P-01-T06 (C16): the SPEC-013 kinds in the kind registry, with their tabs and glyphs. Their
+# owners add facts and pending resolvers through `notifications.api` as their screens need them.
+_REGISTERED: Final[tuple[NotificationKind, ...]] = (
+    NotificationKind("support_session.requested", "system", "LifeBuoy"),
+    NotificationKind("support_session.emergency_approved", "system", "LifeBuoy"),
+    NotificationKind("budget.soft_crossed", "system", "Gauge"),
+    NotificationKind("budget.anomaly", "system", "Gauge"),
+    NotificationKind("engagement.member_self_joined", "other", "UserPlus"),
+    NotificationKind("engagement_member.added", "other", "UserPlus"),
+    NotificationKind("review_assigned", "approval", "ClipboardCheck"),
+    NotificationKind(
+        "client_uploaded",
+        "client_activity",
+        "Upload",
+        inline_actions=("accept_document", "return_document"),
+    ),
+    NotificationKind("connection.created", "client_activity", "Plug"),
+    NotificationKind("connection.revoked", "client_activity", "Plug"),
+    NotificationKind("independence.requested", "approval", "ShieldCheck"),
+    NotificationKind("reminders.drafted", "approval", "Send"),
+    NotificationKind("agent.digest", "run", "Sparkles"),
+    NotificationKind("mention", "mention", "AtSign", email_default=True),
+    NotificationKind("materiality.proposed", "approval", "Scale"),
+    NotificationKind("risk.approval_requested", "approval", "TriangleAlert"),
+    NotificationKind("finding.severity_proposed", "approval", "Flag"),
+)
+for _kind in _REGISTERED:
+    register_kind(_kind)

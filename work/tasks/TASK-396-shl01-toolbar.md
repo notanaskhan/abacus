@@ -1,8 +1,8 @@
 ---
 id: TASK-396
 title: SHL-01 toolbar data, routing and hotkeys from nav.ts (P-01-T02)
-spec: docs/screens/SHL-01.md
-acceptance_criteria: [AC 1.1.1, AC 1.1.2, AC 1.1.3, AC 1.1.4, AC 1.1.5, AC 1.1.6, AC 1.1.7, AC 1.1.8]
+spec: SPEC-013
+acceptance_criteria: [AC-4]
 risk_zone: green
 status: done
 epic: P-01

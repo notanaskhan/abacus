@@ -24,7 +24,7 @@ Other modules can rely on one registration slot for notification kinds, one read
 | Preferences | `GET /v1/me/notification-preferences`, `PUT /v1/me/notification-preferences` | `OWN`. The PUT is audited | every member | denied |
 | Template import (email half) | `POST /v1/platform/email-templates/import` | `STAFF` marker, staff issuer with MFA (DEC-133; no matrix row) | platform staff | denied |
 
-Stub behaviour: when `notifications.v2` is off, the v2 routes answer 404. When it is on, they answer 501 `not_implemented` until P-01-T06 (list) and P-01-T12 (preferences).
+Behaviour behind `notifications.v2`: when it is off, the v2 routes answer 404. When it is on, the feed is live (P-01-T06), and the preferences answer 501 `not_implemented` until P-01-T12.
 
 ## 3. Models
 Code: `backend/src/abacus/modules/notifications/contract.py`.
@@ -128,7 +128,7 @@ Additive changes go in place. Breaking changes ship as v2 with one sprint of ove
 
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1 | (S5, Dec 28, 2026) | | 2026-10-22: stub (P-01-T01). During the overlap the v2 list is served at `/v1/notifications/feed`, beside the v1 `GET /v1/notifications`. It moves to `GET /v1/notifications` when the v1 consumer is gone |
+| v1 | (S5, Dec 28, 2026) | | 2026-10-22: stub (P-01-T01); the feed went live in P-01-T06 the same day. During the overlap the v2 list is served at `/v1/notifications/feed`, beside the v1 `GET /v1/notifications`. It moves to `GET /v1/notifications` when the v1 consumer is gone |
 
 ## 11. Open points
 - **Feed path during the overlap.** The plan puts the v2 list on `GET /v1/notifications` with a `tab` parameter. To avoid a breaking change to v1's shape, the stub serves it beside v1 for one sprint, per the contract rules. Recorded here and in TASK-398.

@@ -6,6 +6,13 @@ from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.notifications.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.notifications.catalogue import CATALOGUE, TEMPLATES
 from abacus.modules.notifications.contract import feed_router, preferences_router
+from abacus.modules.notifications.kinds import (
+    NotificationKind,
+    Row,
+    kind_of,
+    register_kind,
+    registered,
+)
 from abacus.modules.notifications.routes import router
 from abacus.modules.notifications.service import notify, run_purge_job
 
@@ -27,6 +34,11 @@ __all__ = [
     "SUBSCRIPTIONS",
     "TEMPLATES",
     "WORKFLOWS",
+    "NotificationKind",
+    "Row",
+    "kind_of",
+    "register_kind",
+    "registered",
     "router",
     "run_purge_job",
 ]

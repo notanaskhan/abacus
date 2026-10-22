@@ -6,20 +6,24 @@ from __future__ import annotations
 import asyncio
 import contextlib
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Final
 from uuid import UUID, uuid4
 
+from abacus.kernel.clock import now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
+from abacus.kernel.listing import Position, decode_cursor, encode_cursor, query_hash
 from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import meter
 from abacus.kernel.uow import MissingAuditEvent, OutboxEvent, Ref, Target, uow
-from abacus.modules.identity.api import AuthContext
+from abacus.modules.identity.api import AuthContext, engagement_resource, walled_from
 from abacus.modules.notifications.catalogue import CATALOGUE
+from abacus.modules.notifications.kinds import Fact, InlineAction, Row, kind_of
 from abacus.modules.notifications.repository import (
     insert_notifications,
     list_own,
+    list_window,
     mark_all_read,
     mark_read,
     purge,
@@ -32,6 +36,9 @@ MAX_PAGE: Final = 100
 _log = get_logger(__name__)
 _created = meter(__name__).create_counter(
     "abacus.notifications.created", description="Notifications created, by kind"
+)
+_dropped = meter(__name__).create_counter(
+    "abacus.notifications.dropped", description="Events of an unregistered kind, by kind"
 )
 
 
@@ -56,16 +63,40 @@ def _uuid(value: object) -> UUID | None:
     return UUID(str(value)) if value is not None else None
 
 
+async def _reauthorised(
+    ctx: TenantContext, engagement_id: UUID | None, recipients: list[UUID]
+) -> list[UUID]:
+    """INV-3 at fan-out (P-01-T06): nobody walled from the engagement's client gets a row. Read
+    time checks again, so a wall added later hides rows already made."""
+    if engagement_id is None or not recipients:
+        return recipients
+    try:
+        client = (await engagement_resource(ctx, engagement_id)).client_id
+    except NotFound:
+        return []
+    if client is None:
+        return recipients
+    return [user for user in recipients if client not in await walled_from(ctx, user)]
+
+
 async def notify(event: OutboxEvent) -> None:
     """The relay's handler for every catalogued event (AC-1 to AC-3). Idempotent."""
     entry = CATALOGUE.get(event.event_type)
     if entry is None:
         return
+    kind = kind_of(entry.kind)
+    if kind is None:  # C16: fail closed, counted
+        _dropped.add(1, {"kind": entry.kind})
+        return
     payload = event.payload
-    recipients = await entry.recipients(event.tenant_id, payload)
+    ctx = TenantContext(event.tenant_id, "system", "notifications")
+    engagement = _uuid(payload.get(entry.engagement_key)) if entry.engagement_key else None
+    recipients = await _reauthorised(
+        ctx, engagement, await entry.recipients(event.tenant_id, payload)
+    )
     named = _uuid(payload.get(entry.subject_key)) if entry.subject_key else None
     subject, subject_type = (named, entry.subject_type) if named else (event.tenant_id, "firm")
-    engagement = _uuid(payload.get(entry.engagement_key)) if entry.engagement_key else None
+    actor = _uuid(payload.get("by_user") or payload.get("actor_user_id"))
     rows: list[dict[str, object]] = [
         {
             "id": uuid4(),
@@ -76,12 +107,16 @@ async def notify(event: OutboxEvent) -> None:
             "engagement_id": engagement,
             "subject_type": subject_type,
             "subject_id": subject,
+            "category": kind.category,
+            "actor_user_id": actor,
+            "actor_kind": "human" if actor is not None else "system",
+            "client_id": _uuid(payload.get("client_id")),
+            "work_item_id": _uuid(payload.get("work_item_id")),
         }
         for user in recipients
     ]
     if not rows:
         return
-    ctx = TenantContext(event.tenant_id, "system", "notifications")
     try:
         async with uow(ctx) as tx:
             made = await insert_notifications(tx.session, rows)
@@ -118,6 +153,126 @@ async def my_notifications(
             for r in rows
         ],
         count,
+    )
+
+
+FEED_DAYS: Final = 30
+WINDOW_CAP: Final = 500
+Tab = str  # all | approvals | mentions | client_activity
+
+
+@dataclass(frozen=True)
+class FeedItem:
+    id: UUID
+    kind: str
+    category: str
+    created_at: datetime
+    read: bool
+    actor_kind: str
+    actor_user_id: UUID | None
+    subject_type: str
+    subject_id: UUID
+    engagement_id: UUID | None
+    facts: dict[str, Fact]
+    inline_actions: tuple[InlineAction, ...]
+    pending: bool
+
+
+@dataclass(frozen=True)
+class Feed:
+    items: list[FeedItem]
+    next_cursor: str | None
+    approvals: int
+    mentions: int
+    client_activity: int
+    unread_count: int
+
+
+def _in_tab(tab: Tab, category: str, pending: bool) -> bool:
+    if tab == "approvals":
+        return pending
+    if tab == "mentions":
+        return category == "mention"
+    if tab == "client_activity":
+        return category == "client_activity"
+    return True
+
+
+async def feed(
+    ctx: AuthContext, *, tab: Tab, cursor: str | None, limit: int, days: int = FEED_DAYS
+) -> Feed:
+    """P-01-T06 (SHL-04): the caller's own in the last `days` (30 at most), on the P-36
+    envelope. `pending` and `facts` resolve now through each kind's resolvers, so a decision
+    taken elsewhere drops a row out of Approvals; walls apply at read time (INV-3)."""
+    days = max(1, min(days, FEED_DAYS))
+    since = await now(ctx.tenant) - timedelta(days=days)
+    async with tenant_session(ctx.tenant) as session:
+        window = await list_window(session, ctx, since=since, cap=WINDOW_CAP)
+    resolved: list[tuple[Row, object, bool]] = []
+    for r in window:
+        row = Row(r.id, r.kind, r.engagement_id, r.subject_type, r.subject_id, r.created_at)
+        kind = kind_of(r.kind)
+        pending = (
+            await kind.pending(ctx.tenant, ctx.user_id, row)
+            if kind is not None and kind.pending is not None
+            else False
+        )
+        resolved.append((row, r, pending))
+    category = {r.id: (r.category or "other") for r in window}
+    unread = {r.id for r in window if r.read_at is None}
+    listed = [t for t in resolved if _in_tab(tab, category[t[0].id], t[2])]
+    resource = "notifications.feed"
+    query = query_hash(tab=tab, days=days)
+    if cursor is not None:
+        at = decode_cursor(cursor, tenant_id=ctx.tenant_id, resource=resource, query=query)
+        listed = [
+            t
+            for t in listed
+            if (t[0].created_at.isoformat(), str(t[0].id)) < (str(at.key), at.id)
+            or (t[0].created_at.isoformat() == at.key and str(t[0].id) > at.id)
+        ]
+    page, more = listed[:limit], len(listed) > limit
+    items: list[FeedItem] = []
+    for row, r, pending in page:
+        kind = kind_of(row.kind)
+        facts = await kind.facts(ctx.tenant, row) if kind is not None and kind.facts else {}
+        items.append(
+            FeedItem(
+                id=row.id,
+                kind=row.kind,
+                category=category[row.id],
+                created_at=row.created_at,
+                read=row.id not in unread,
+                actor_kind=str(getattr(r, "actor_kind", None) or "system"),
+                actor_user_id=getattr(r, "actor_user_id", None),
+                subject_type=row.subject_type,
+                subject_id=row.subject_id,
+                engagement_id=row.engagement_id,
+                facts=facts,
+                inline_actions=kind.inline_actions if kind is not None and pending else (),
+                pending=pending,
+            )
+        )
+    last = page[-1][0] if page and more else None
+    next_cursor = (
+        encode_cursor(
+            Position(last.created_at.isoformat(), str(last.id)),
+            tenant_id=ctx.tenant_id,
+            resource=resource,
+            query=query,
+        )
+        if last is not None
+        else None
+    )
+    return Feed(
+        items=items,
+        next_cursor=next_cursor,
+        approvals=sum(1 for _, _, pending in resolved if pending),
+        mentions=sum(1 for r in window if r.category == "mention" and r.id in unread),
+        client_activity=sum(
+            1 for r in window if r.category == "client_activity" and r.id in unread
+        ),
+        unread_count=len(unread),
     )
 
 

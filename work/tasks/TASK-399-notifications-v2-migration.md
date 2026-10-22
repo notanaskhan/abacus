@@ -2,7 +2,7 @@
 id: TASK-399
 title: Migration 0090 notifications v2 (P-01-T03)
 spec: SPEC-013
-acceptance_criteria: [C16]
+acceptance_criteria: [AC-1]
 risk_zone: amber
 status: done
 epic: P-01
