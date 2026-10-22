@@ -176,9 +176,10 @@ function importRestrictions(featureRoots) {
 const FEATURE_ROOTS = "^\\.\\./\\.\\./(?:\\.\\./)*(?!\\.\\./|app-core(?:/|$))";
 /** A screen may also import its domain's public index, the typed route builders and the manifest,
  * the firm shell's parts (the SHL screens draw them; P-01 §4 source layout), and the scenario base
- * its scenarios.ts starts from (fixture builds and tests only; the dist test holds it out). */
+ * its scenarios.ts starts from, or the screen's own scenarios kept under fixtures/scenarios/ (P-01-T07,
+ * T08; fixture builds and tests only; the dist test holds them out). */
 const SCREEN_ROOTS =
-  "^\\.\\./\\.\\./(?:\\.\\./)*(?!\\.\\./|app-core(?:/|$)|domain/[^/]+$|routes/(?:to|manifest)$|shell/firm/[^/]+$|fixtures/scenario$)";
+  "^\\.\\./\\.\\./(?:\\.\\./)*(?!\\.\\./|app-core(?:/|$)|domain/[^/]+$|routes/(?:to|manifest)$|shell/firm/[^/]+$|fixtures/scenario$|fixtures/scenarios/[A-Z]+-[0-9]+$)";
 
 // F-05-T39 (INV-4; DEC-59, ADR-163; plan 04 lint L7): the portal is its own build (P-08-T07) and
 // its code reaches nothing of the firm's. The portal entry, the portal tree, its routes and the

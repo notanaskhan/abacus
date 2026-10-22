@@ -1,5 +1,5 @@
 import type { MeOut } from "@abacus/api-client";
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { json, mockApi, renderRoutes, signInForTest, stubLocation } from "../testing/support";
 import { Layout } from "./Layout";
@@ -53,9 +53,13 @@ describe("ac1 Layout, signed in", () => {
   it("shows who is signed in and the firm name, with the page below", async () => {
     mockApi({ "GET /v1/me": () => json(me()) });
     renderRoutes(ROUTES, { root: Layout });
-    // SHL-03 (F-05-T23): the firm pill names the firm; its menu names the person.
+    // SHL-03 (P-01-T08): the firm pill names the firm; its tray names the firm and the person.
     fireEvent.click(await screen.findByRole("button", { name: "Dev firm" }));
-    expect(await screen.findByText(/Dana Leader · Dev firm/)).toBeTruthy();
+    const menu = await screen.findByRole("menu", { name: "Firm and profile" });
+    expect(await within(menu).findByText("Dana Leader")).toBeTruthy();
+    expect(within(menu).getByRole("menuitemradio", { checked: true }).textContent).toContain(
+      "Dev firm",
+    );
     expect(screen.getByText("Page body")).toBeTruthy();
   });
 
@@ -104,7 +108,11 @@ describe("ac1 Layout, signed in", () => {
     renderRoutes(ROUTES, { root: Layout });
     fireEvent.click(await screen.findByRole("button", { name: "Beta & Co" }));
     fireEvent.click(await screen.findByRole("button", { name: "Beta & Co" }));
-    expect(await screen.findByText(/Dana Leader · Beta & Co/)).toBeTruthy();
+    const menu = await screen.findByRole("menu", { name: "Firm and profile" });
+    expect(await within(menu).findByText("Dana Leader")).toBeTruthy();
+    expect(within(menu).getByRole("menuitemradio", { checked: true }).textContent).toContain(
+      "Beta & Co",
+    );
     expect(screen.getByText("Page body")).toBeTruthy();
     expect(screen.queryByText("Choose a firm")).toBeNull();
   });

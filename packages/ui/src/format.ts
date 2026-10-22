@@ -435,6 +435,26 @@ export function longDate(v: Instant, options: ZoneOptions = {}): string {
   return `${MONTHS_LONG[c.m - 1] ?? ""} ${String(c.d)}, ${String(c.y)}`;
 }
 
+const zoneNames = new Map<string, string>();
+
+/** A time zone's generic long name, for a firm's facts: "Central Time" for America/Chicago
+ * (SHL-03a "US · Central Time · 46 seats"). Unknown zones read as their IANA id. */
+export function zoneName(tz: string): string {
+  let name = zoneNames.get(tz);
+  if (name === undefined) {
+    try {
+      name =
+        new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "longGeneric" })
+          .formatToParts(0)
+          .find((p) => p.type === "timeZoneName")?.value ?? tz;
+    } catch {
+      name = tz;
+    }
+    zoneNames.set(tz, name);
+  }
+  return name;
+}
+
 /** A month: "March 2026", from "2026-03" or any date in it. */
 export function monthYear(v: string | null | undefined, options: ZoneOptions = {}): string {
   if (v === null || v === undefined || v === "") return DASH;

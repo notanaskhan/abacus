@@ -40,12 +40,13 @@ describe("person cards", () => {
 
   it("/v1/me v3 carries initials, job title and email as the cards show them", () => {
     const grace = meV3For(seed, "grace-holloway");
-    expect(grace?.user).toEqual({ initials: "GH", job_title: "Client Service Coordinator" });
+    expect(grace?.initials).toBe("GH");
+    expect(grace?.job_title).toBe("Client Service Coordinator");
     expect(grace?.email).toBe("grace.holloway@brightwaterhale.com");
     expect(meV3For(seed, "hannah-leclerc")?.email).toBe("hannah.leclerc@brightwaterhale.com");
-    expect(meV3For(seed, "daniel-reyes")?.user.job_title).toBe("Tax Partner");
-    expect(meV3For(seed, "felix-andersen")?.user.job_title).toBe("Qualified Individual");
-    expect(meV3For(seed, "ana-cruz")?.user.job_title).toBeNull();
+    expect(meV3For(seed, "daniel-reyes")?.job_title).toBe("Tax Partner");
+    expect(meV3For(seed, "felix-andersen")?.job_title).toBe("Qualified Individual");
+    expect(meV3For(seed, "ana-cruz")?.job_title).toBeNull();
   });
 });
 
@@ -66,16 +67,16 @@ describe("offices and the default office filter", () => {
 describe("the training sandbox (SHL-03e)", () => {
   it("only Grace holds it, as a second membership marked is_sandbox", () => {
     const grace = meV3For(seed, "grace-holloway");
-    expect(grace?.memberships.map((m) => m.firm.is_sandbox)).toEqual([false, true]);
+    expect(grace?.memberships.map((m) => m.firm?.is_sandbox)).toEqual([false, true]);
     const sandbox = grace?.memberships[1];
     expect(sandbox?.tenant_id).toBe(SANDBOX_FIRM_ID);
     expect(sandbox?.firm_name).toBe(SANDBOX_FIRM_NAME);
-    expect(sandbox?.firm.sandbox_of).toBe(seed.firm.id);
+    expect(sandbox?.firm?.sandbox_of).toBe(seed.firm.id);
     expect(SWITCH_TOAST).toBe("Switched to Brightwater Hale LLP — Training sandbox");
     for (const slug of ["hannah-leclerc", "daniel-reyes", "felix-andersen"]) {
       expect(meV3For(seed, slug)?.memberships, slug).toHaveLength(1);
     }
-    expect(meV3For(seed, "grace-holloway")?.memberships[0]?.firm.seats_total).toBe(46);
+    expect(meV3For(seed, "grace-holloway")?.memberships[0]?.firm?.seats_total).toBe(46);
   });
 });
 

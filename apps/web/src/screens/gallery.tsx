@@ -3,6 +3,12 @@ import { installFixtureMode } from "../app-core/fixture-mode";
 import { type FixtureParams, registerScreen } from "../gallery/fixture-mode";
 import { SHL01 } from "./SHL-01";
 import { STATES, type Shl01State, scenarios } from "./SHL-01/scenarios";
+import { SHL03 } from "./SHL-03";
+import {
+  STATES as SHL03_STATES,
+  type Shl03State,
+  scenarios as shl03Scenarios,
+} from "./SHL-03/scenarios";
 
 // The built screens as /components/screens/<ID> draws them (gallery builds only; chapter 04 §9.2).
 // `?st=` picks the artboard; its scenario answers the generated client under the screen, over the
@@ -30,3 +36,22 @@ function Shl01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("SHL-01", { title: "Firm app shell · toolbar and nav", Component: Shl01Artboard });
+
+function Shl03Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Shl03State = SHL03_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      shl03Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <SHL03 state={state} /> : null;
+}
+
+registerScreen("SHL-03", { title: "Firm switcher & profile menu", Component: Shl03Artboard });

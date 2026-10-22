@@ -46,7 +46,13 @@ export interface Session {
   serverNow: string | null;
   /** The portal shell and grant scopes, for client users only. */
   portal: PortalOut | null;
+  /** The SHL-03 admin rows' access by key (`firm_settings`, `users_roles`, `audit_log`,
+   * `security_center`, `developer_api`), computed by the server from the matrix (P-01-T04). A
+   * missing key reads `none`; the SPA never derives it from a role (AC 2.1.2). */
+  nav: Readonly<Record<string, NavAccess>>;
 }
+
+export type NavAccess = NonNullable<CapabilitiesOut["nav"]>[string];
 
 function capabilitiesQuery(engagementId: string | undefined) {
   return myCapabilitiesOptions(
@@ -85,5 +91,6 @@ export function useSession(scope: Scope = {}): Session {
     mfaRecentUntil: c?.mfa_recent_until ?? null,
     serverNow: c?.server_now ?? m?.server_now ?? null,
     portal: c?.portal ?? null,
+    nav: c?.nav ?? {},
   };
 }
