@@ -10,12 +10,16 @@ export const engScreens = {
     path: "/engagements", // legacy Engagements
     navArea: "Engagements",
   },
+  // ENG-02 artboards f (Dashboard tab) and g (Board tab) are fixture-only until K-04 registers
+  // ENG-12 and ENG-10, not missing (docs/screens/ENG-02.md, P-07 §2.1).
   "ENG-02": {
     name: "Engagement record",
     status: "planned",
     path: "/engagements/$engagementId", // legacy EngagementLayout
     navArea: "Engagements",
   },
+  // ENG-03 artboards e (§7216 consent gate), g (group audit) and h (SOC 2) are fixture-only until
+  // T-01, A-09 and X-01 register their targets, not missing (docs/screens/ENG-03.md, P-07 §2.1).
   "ENG-03": {
     name: "New engagement wizard · Fairhaven Foods 401(k) Plan",
     status: "planned",
