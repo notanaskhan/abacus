@@ -26,6 +26,19 @@ _SIMPLE: frozenset[str] = frozenset(
     {"allow", "deny", "assigned_only", "client_visible_only", "in_scope", "task_scope"}
 )
 _FIRM_SETTING = re.compile(r"firm_setting\(([a-z_]+)\)")
+# The firm settings a person's cell may name (F-03-T24; DEC-38). Migration 0081's CHECK on
+# `firm_setting_values.key` lists the same keys. An agent's only one is the autonomy policy
+# (SPEC-027), which the firm sets through its autonomy level, not here.
+FIRM_SETTING_KEYS: frozenset[str] = frozenset(
+    {
+        "seniors_can_accept",
+        "seniors_can_create",
+        "seniors_can_publish",
+        "client_service_can_publish",
+        "staff_can_accept_evidence",
+    }
+)
+AGENT_SETTING = "autonomy_policy"
 _MODIFIERS = {
     "mfa_recent": "required",
     "requires": "reason",
@@ -137,7 +150,13 @@ def _rule(action: str, entries: dict[str, str]) -> Rule:
             decisions[key] = _decision(action, key, value)
             setting = _FIRM_SETTING.fullmatch(value)
             if setting is not None:
-                settings.append((key, setting.group(1)))
+                name = setting.group(1)
+                known = {AGENT_SETTING} if key == "agent" else FIRM_SETTING_KEYS
+                if name not in known:
+                    raise ValueError(
+                        f"permission matrix: {action}.{key}: unregistered firm setting {name!r}"
+                    )
+                settings.append((key, name))
         else:
             raise ValueError(f"permission matrix: {action}: unknown role {key!r}")
     return Rule(

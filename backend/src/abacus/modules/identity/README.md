@@ -43,7 +43,7 @@ Who someone is, which firm they act in, and what they may do. PROTECTED (red zon
 
 ## Data
 
-`users` is global; only `abacus_identity` (BYPASSRLS, read-only, a few columns) reads it, before a tenant is chosen. `firms`, `memberships` and `engagement_members` are tenant tables the app may only read for now. `ethical_walls` is the app's to insert and to mark removed (forward-only; never deleted).
+`users` is global; only `abacus_identity` (BYPASSRLS, read-only, a few columns) reads it, before a tenant is chosen. `firms`, `memberships` and `engagement_members` are tenant tables the app may only read for now. `ethical_walls` is the app's to insert and to mark removed (forward-only; never deleted). `firm_setting_values` (registered keys a matrix cell names as `firm_setting(<key>)`) and `firm_policy_overrides` (stricter-only `deny` on one cell, insert-only; DEC-127) are read by `authorise` once per request and written by `firm_settings.set_firm_setting` and `set_policy_override` (F-03-T24).
 
 ## Break-glass support (SPEC-012; TASK-027)
 Platform staff have no standing access (ADR-028). Staff sign in with a separate issuer (`staff_*` settings; MFA required) and are never firm members.

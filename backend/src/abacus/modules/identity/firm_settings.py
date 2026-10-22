@@ -22,6 +22,8 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.identity.authz import Resource, authorise
+from abacus.modules.identity.authz.matrix import FIRM_SETTING_KEYS
+from abacus.modules.identity.authz.overrides import refusal
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.events import FirmAgentsResumed
 from abacus.modules.identity.repository import (
@@ -31,6 +33,7 @@ from abacus.modules.identity.repository import (
     drafted_guidance_shown,
     firm_is_synthetic,
     firm_settings,
+    insert_policy_override,
     letter_required,
     onboarding_counts,
     set_agents_paused,
@@ -40,6 +43,7 @@ from abacus.modules.identity.repository import (
     set_letter_required,
     set_time_zone,
     time_zone_of,
+    upsert_firm_setting,
 )
 
 ROUTINE: Final = 1
@@ -391,3 +395,62 @@ async def set_ai_client_data_setting(ctx: AuthContext, on: bool) -> AiClientData
         )
     forget_boundary_facts(ctx.tenant_id)
     return await read_ai_client_data(ctx)
+
+
+# --- F-03-T24: firm setting values and stricter-only policy overrides (DEC-127) ---------------
+
+
+class UnknownFirmSetting(DomainInvalid):
+    """Only the registered keys a matrix cell can name (`authz.matrix.FIRM_SETTING_KEYS`)."""
+
+    code = "unknown_firm_setting"
+
+
+class OverrideRefused(DomainConflict):
+    """A firm override may only narrow a matrix cell (`authz.overrides.refusal` says why)."""
+
+    code = "override_refused"
+
+
+async def set_firm_setting(ctx: AuthContext, key: str, value: bool) -> int:
+    """Switch a registered firm setting on or off (firm administrator, fresh MFA); its version
+    afterwards. Read by `authorise` from the next request."""
+    await authorise(ctx, "firm.manage_settings", Resource.firm(ctx.tenant_id))
+    if key not in FIRM_SETTING_KEYS:
+        raise UnknownFirmSetting
+    async with uow(ctx.tenant) as tx:
+        version = await upsert_firm_setting(
+            tx.session, tenant_id=ctx.tenant_id, key=key, value=value, set_by=ctx.user_id
+        )
+        tx.record(
+            "firm_setting.set",
+            target=Target("firm", ctx.tenant_id),
+            after=Ref(value=int(value), version=version),
+        )
+    return version
+
+
+async def set_policy_override(
+    ctx: AuthContext, action: str, role: str, *, reason: str, decision: str = "deny"
+) -> bool:
+    """Narrow one matrix cell for the firm (firm administrator, fresh MFA). Refused when it
+    would widen the cell, or when it couldn't be enforced (a read, a platform role, no cell).
+    Whether a row was written (False: the cell was already overridden)."""
+    await authorise(ctx, "firm.manage_settings", Resource.firm(ctx.tenant_id))
+    why = refusal(action, role, decision)
+    if why is not None:
+        raise OverrideRefused(facts={"reason": why})
+    if not reason.strip():
+        raise DomainInvalid
+    async with uow(ctx.tenant) as tx:
+        written = await insert_policy_override(
+            tx.session,
+            tenant_id=ctx.tenant_id,
+            action=action,
+            role=role,
+            decision=decision,
+            reason=reason.strip()[:500],
+            set_by=ctx.user_id,
+        )
+        tx.record("firm_policy_override.set", target=Target("firm", ctx.tenant_id))
+    return written

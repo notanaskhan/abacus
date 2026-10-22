@@ -19,10 +19,11 @@ An agent is also bounded by its initiator, checked live (ADR-025): the initiator
 the same action, or `AGENT_ONLY_REACH` for actions no human role holds (`AGENT_FIRM_REACH` on
 the firm, for a firm-level agent: SPEC-035 Q3, TASK-074 D1). A firm-level agent (no engagement)
 relates only to the firm; an engagement agent never to the firm.
-Matrix conditions not modelled yet (`in_scope`, other `firm_setting(...)`s, `task_scope` for
-humans) are not grants: they deny until their task models them. `firm_setting(autonomy_policy)`
-is modelled for agents only (SPEC-027, TASK-051): allowed at the firm's Routine autonomy or
-higher, within the agent's scope (an agent's only firm setting in the matrix). The client
+`task_scope` for humans is not a grant: it denies. A person's `firm_setting(<key>)` allows when
+the firm has switched <key> on (F-03-T24; registered keys only); `firm_setting(autonomy_policy)`
+is an agent's (SPEC-027, TASK-051): allowed at the firm's Routine autonomy or higher, within the
+agent's scope. A firm's policy overrides (`firm_policy_overrides`) narrow a cell to deny before
+any of this, and never widen one (`overrides.py`). The client
 conditions (SPEC-020, TASK-035 D2) need the item's facts on the resource (`ItemFacts`):
 `client_visible_only` allows a client-visible item, `assigned_only` a client-visible item
 assigned to the person. Without the facts they deny. `visible_items` is their list-query twin.
@@ -54,15 +55,18 @@ from abacus.kernel.db import TenantContext
 from abacus.kernel.logging import get_logger
 from abacus.modules.identity.authz.conditions import LOOKUPS, ConditionFacts, conditions_hold
 from abacus.modules.identity.authz.matrix import RULES, Rule
+from abacus.modules.identity.authz.overrides import apply_override
 from abacus.modules.identity.context import Actor, AgentContext, AuthContext, SystemContext
 from abacus.modules.identity.repository import (
     CLIENT_ROLES,
     ENGAGEMENT_ROLES,
+    FirmPolicy,
     MemberFacts,
     engagement_members,
     engagement_role,
     engagement_roles_in_firm,
     ethical_walls,
+    firm_policy,
     member_facts,
     walled_clients,
 )
@@ -151,6 +155,10 @@ _walls: ContextVar[dict[UUID, frozenset[UUID]] | None] = ContextVar(
 _confirmed: ContextVar[dict[tuple[UUID, UUID], bool] | None] = ContextVar(
     "abacus_authz_confirmed", default=None
 )
+# Each firm's policy overrides and firm settings, read once per request (F-03-T24).
+_policies: ContextVar[dict[UUID, FirmPolicy] | None] = ContextVar(
+    "abacus_authz_policies", default=None
+)
 # Each person's engagement roles in the firm, read once per request (SPEC-014).
 _firm_engagement_roles: ContextVar[dict[UUID, frozenset[str]] | None] = ContextVar(
     "abacus_authz_firm_engagement_roles", default=None
@@ -218,9 +226,11 @@ def recording_checks() -> Generator[set[str]]:
     walls_token = _walls.set({})
     confirmed_token = _confirmed.set({})
     roles_token = _firm_engagement_roles.set({})
+    policies_token = _policies.set({})
     try:
         yield checked
     finally:
+        _policies.reset(policies_token)
         _firm_engagement_roles.reset(roles_token)
         _confirmed.reset(confirmed_token)
         _walls.reset(walls_token)
@@ -339,8 +349,17 @@ async def authorise(
     roles = await _roles(ctx, resource, rule)
     if not roles:
         raise _deny(ctx, action, "relationship")
-    # 3. Roles. For an agent, `task_scope` grants only what its run declared (ADR-025).
-    by_role = {role: _on_item(rule.decisions.get(role), ctx, resource) for role in roles}
+    # 3. Roles. For an agent, `task_scope` grants only what its run declared (ADR-025). A firm's
+    # policy override narrows a cell, never widens it (F-03-T24).
+    policy = await _firm_policy(ctx)
+    by_role = {
+        role: _on_item(
+            apply_override(rule.decisions.get(role), policy.overrides.get((action, role))),
+            ctx,
+            resource,
+        )
+        for role in roles
+    }
     member: MemberFacts | None = None
     if (
         isinstance(ctx, AuthContext)
@@ -355,6 +374,12 @@ async def authorise(
                 member, scoped = await _in_scope(ctx, role, resource, member)
                 if scoped:
                     by_role[role] = "allow"
+    # F-03-T24: a person's `firm_setting(<key>)` cell allows when the firm has switched <key> on.
+    if isinstance(ctx, AuthContext) and FIRM_SETTING in by_role.values():
+        named = dict(rule.firm_settings)
+        for role, decision in by_role.items():
+            if decision == FIRM_SETTING and named.get(role) in policy.settings_on:
+                by_role[role] = "allow"
     decisions = set(by_role.values())
     if isinstance(ctx, AgentContext) and "task_scope" in decisions and action in ctx.task_scope:
         decisions = (decisions - {"task_scope"}) | {"allow"}
@@ -417,10 +442,20 @@ async def authorise(
     _log.info("authz.allowed", action=action, tenant_id=ctx.tenant_id, **_who(ctx))
 
 
-# The parsed matrix keeps a condition's kind, not its setting's name. The only agent
-# `firm_setting(...)` in the matrix is `autonomy_policy` (`follow_up.send`); a test reading the
-# YAML fails if another appears.
-AUTONOMY_POLICY = "firm_setting"
+# A `firm_setting(<key>)` cell's decision; `rule.firm_settings` names each role's key. An agent's
+# only key is `autonomy_policy` (`follow_up.send`; the matrix refuses any other at import).
+FIRM_SETTING = "firm_setting"
+AUTONOMY_POLICY = FIRM_SETTING
+
+
+async def _firm_policy(ctx: Actor) -> FirmPolicy:
+    cache = _policies.get()
+    policy = cache.get(ctx.tenant_id) if cache is not None else None
+    if policy is None:
+        policy = await firm_policy(ctx.tenant)
+        if cache is not None:
+            cache[ctx.tenant_id] = policy
+    return policy
 
 
 async def _autonomy_allows(ctx: AgentContext) -> bool:

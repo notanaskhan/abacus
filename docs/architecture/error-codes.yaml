@@ -459,6 +459,11 @@ codes:
     - abacus.modules.communications.service.OutOfScope
     - abacus.modules.requests.comments.CommentOutOfScope
     summary: 'AC-7: the comment names something outside the engagement; it wasn''t posted.'
+  override_refused:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.firm_settings.OverrideRefused
+    summary: A firm override may only narrow a matrix cell (`authz.overrides.refusal` says why).
   own_wall:
     status: 409
     raised_by:
@@ -678,6 +683,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.ledger.trial_balances.TrialBalanceInvalid
+  unknown_firm_setting:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.firm_settings.UnknownFirmSetting
+    summary: Only the registered keys a matrix cell can name (`authz.matrix.FIRM_SETTING_KEYS`).
   unknown_format:
     status: 422
     raised_by:

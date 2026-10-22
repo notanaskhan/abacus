@@ -531,7 +531,15 @@ async def test_ac20_a_deny_beats_an_allow_from_another_held_role(
 
 @pytest.mark.parametrize(
     "decision",
-    ["in_scope", "assigned_only", "client_visible_only", "task_scope", "firm_setting(some_flag)"],
+    # F-03-T24: an unregistered setting is now an import error (test_policy_overrides.py); a
+    # registered one the firm hasn't switched on still grants nothing.
+    [
+        "in_scope",
+        "assigned_only",
+        "client_visible_only",
+        "task_scope",
+        "firm_setting(seniors_can_create)",
+    ],
 )
 async def test_ac20_conditions_without_a_model_yet_are_never_an_allow(
     engagement: EngagementRoles, monkeypatch: pytest.MonkeyPatch, decision: str

@@ -160,6 +160,80 @@ async def member_facts(tenant: TenantContext, user_id: UUID) -> MemberFacts | No
     )
 
 
+@dataclass(frozen=True)
+class FirmPolicy:
+    """A firm's narrowing overrides, (action, role) -> decision, and the firm settings it has
+    switched on (F-03-T24)."""
+
+    overrides: dict[tuple[str, str], str]
+    settings_on: frozenset[str]
+
+
+_OVERRIDES = text("SELECT action, role, decision FROM firm_policy_overrides")
+_SETTINGS_ON = text("SELECT key FROM firm_setting_values WHERE value")
+
+
+async def firm_policy(tenant: TenantContext) -> FirmPolicy:
+    async with tenant_session(tenant) as session:
+        overrides = (await session.execute(_OVERRIDES)).all()
+        settings = (await session.execute(_SETTINGS_ON)).scalars().all()
+    return FirmPolicy(
+        {(str(row.action), str(row.role)): str(row.decision) for row in overrides},
+        frozenset(str(key) for key in settings),
+    )
+
+
+_INSERT_OVERRIDE = text(
+    "INSERT INTO firm_policy_overrides (tenant_id, action, role, decision, reason, set_by) "
+    "VALUES (:tenant_id, :action, :role, :decision, :reason, :set_by) "
+    "ON CONFLICT (tenant_id, action, role) DO NOTHING RETURNING action"
+)
+
+
+async def insert_policy_override(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    action: str,
+    role: str,
+    decision: str,
+    reason: str,
+    set_by: UUID,
+) -> bool:
+    """Whether a row was written (False: the cell was already overridden)."""
+    row = await session.execute(
+        _INSERT_OVERRIDE,
+        {
+            "tenant_id": tenant_id,
+            "action": action,
+            "role": role,
+            "decision": decision,
+            "reason": reason,
+            "set_by": set_by,
+        },
+    )
+    return row.first() is not None
+
+
+_UPSERT_SETTING = text(
+    "INSERT INTO firm_setting_values (tenant_id, key, value, set_by) "
+    "VALUES (:tenant_id, :key, :value, :set_by) "
+    "ON CONFLICT (tenant_id, key) DO UPDATE SET value = EXCLUDED.value, "
+    "version = firm_setting_values.version + 1, set_by = EXCLUDED.set_by, "
+    "set_at = clock_timestamp() RETURNING version"
+)
+
+
+async def upsert_firm_setting(
+    session: AsyncSession, *, tenant_id: UUID, key: str, value: bool, set_by: UUID
+) -> int:
+    """Set the firm's value for `key`; the row's version afterwards."""
+    row = await session.execute(
+        _UPSERT_SETTING, {"tenant_id": tenant_id, "key": key, "value": value, "set_by": set_by}
+    )
+    return int(row.scalar_one())
+
+
 async def engagement_role(
     tenant: TenantContext, user_id: UUID, engagement_id: UUID
 ) -> EngagementRole | ClientRole | None:
