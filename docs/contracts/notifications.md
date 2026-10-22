@@ -22,7 +22,7 @@ Other modules can rely on one registration slot for notification kinds, one read
 | v1 list (kept for one release) | `GET /v1/notifications?unread=&before=&limit=` | `OWN` | every member | denied |
 | Mark read | `POST /v1/notifications/{id}/read`, `POST /v1/notifications/read-all` | `OWN`. Walled ids answer 404 | every member | denied |
 | Preferences | `GET /v1/me/notification-preferences`, `PUT /v1/me/notification-preferences` | `OWN`. The PUT is audited | every member | denied |
-| Template import (email half) | `POST /v1/platform/email-templates/import` | `platform.email_template.import` (P-01-T05) | `platform_admin`, staff issuer | denied |
+| Template import (email half) | `POST /v1/platform/email-templates/import` | `STAFF` marker, staff issuer with MFA (DEC-133; no matrix row) | platform staff | denied |
 
 Stub behaviour: when `notifications.v2` is off, the v2 routes answer 404. When it is on, they answer 501 `not_implemented` until P-01-T06 (list) and P-01-T12 (preferences).
 

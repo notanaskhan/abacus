@@ -4321,6 +4321,86 @@
         "title": "DueDatesIn",
         "type": "object"
       },
+      "EmailTemplateImportIn": {
+        "additionalProperties": false,
+        "description": "Platform staff author the text here, never in code (AGENTS 16).",
+        "properties": {
+          "body_text": {
+            "cls": "internal",
+            "maxLength": 20000,
+            "title": "Body Text",
+            "type": "string"
+          },
+          "key": {
+            "cls": "internal",
+            "maxLength": 80,
+            "title": "Key",
+            "type": "string"
+          },
+          "locale": {
+            "cls": "internal",
+            "default": "en-US",
+            "maxLength": 5,
+            "title": "Locale",
+            "type": "string"
+          },
+          "subject": {
+            "cls": "internal",
+            "maxLength": 200,
+            "title": "Subject",
+            "type": "string"
+          },
+          "variables": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Variables",
+            "type": "array"
+          }
+        },
+        "required": [
+          "key",
+          "subject",
+          "body_text",
+          "variables"
+        ],
+        "title": "EmailTemplateImportIn",
+        "type": "object"
+      },
+      "EmailTemplateImportOut": {
+        "properties": {
+          "content_sha256": {
+            "cls": "internal",
+            "title": "Content Sha256",
+            "type": "string"
+          },
+          "created": {
+            "cls": "internal",
+            "title": "Created",
+            "type": "boolean"
+          },
+          "template_id": {
+            "cls": "internal",
+            "title": "Template Id",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "template_id",
+          "version",
+          "content_sha256",
+          "created"
+        ],
+        "title": "EmailTemplateImportOut",
+        "type": "object"
+      },
       "EngagementCountOut": {
         "properties": {
           "count": {
@@ -51908,6 +51988,97 @@
           "notifications"
         ],
         "x-abacus-action": "own"
+      }
+    },
+    "/v1/platform/email-templates/import": {
+      "post": {
+        "description": "C16: a platform-default template version, from the staff issuer only. Importing the\ncurrent content again returns the current version and writes nothing.",
+        "operationId": "import_email_template",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailTemplateImportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailTemplateImportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Import Email Template Route",
+        "tags": [
+          "communications"
+        ],
+        "x-abacus-action": "staff"
       }
     },
     "/v1/signup": {

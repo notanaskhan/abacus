@@ -218,6 +218,25 @@ async def tenant_connection(ctx: TenantContext) -> AsyncGenerator[AsyncConnectio
 
 
 @asynccontextmanager
+async def platform_transaction(actor_id: str) -> AsyncGenerator[AsyncConnection]:
+    """A transaction with no tenant, committed on success (P-01-T05). Row-level security shows
+    it no tenant row, so only the platform-wide SECURITY DEFINER functions do anything with it
+    (platform-default email templates). The actor is a platform principal (`staff:<id>`)."""
+    async with _current_engine().begin() as conn:
+        await conn.execute(text("RESET app.tenant_id"))
+        await conn.execute(text("RESET app.now"))
+        await conn.execute(text("RESET app.demo_clocks"))
+        await conn.execute(
+            text(
+                "SELECT set_config('app.actor_kind', 'system', true), "
+                "set_config('app.actor_id', :actor, true)"
+            ),
+            {"actor": actor_id},
+        )
+        yield conn
+
+
+@asynccontextmanager
 async def tenant_session(ctx: TenantContext) -> AsyncGenerator[AsyncSession]:
     async with _current_engine().connect() as conn:
         await _begin_tenant(conn, ctx)

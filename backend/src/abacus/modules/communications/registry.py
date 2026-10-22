@@ -10,6 +10,9 @@ from __future__ import annotations
 TABLES: frozenset[str] = frozenset(
     {
         "messages",
+        # P-01-T05 (C16): platform-wide, reached only through definer functions (0092).
+        "email_templates",
+        "email_template_versions",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
