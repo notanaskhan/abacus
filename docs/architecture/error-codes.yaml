@@ -215,6 +215,16 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.ledger.mapping.AlreadyPublished
+  hold_reason_required:
+    status: 422
+    raised_by:
+    - abacus.modules.engagements.transitions.HoldReasonRequired
+    summary: Putting an engagement on hold names a reason from the hold reason codes.
+  illegal_transition:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.transitions.IllegalTransition
+    summary: The engagement cannot move from its state to the one asked for (DEC-39).
   inbox_file_gone:
     status: 409
     raised_by:

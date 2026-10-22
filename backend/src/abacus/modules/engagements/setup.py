@@ -15,14 +15,15 @@ from datetime import date, datetime
 from typing import Final, Literal
 from uuid import UUID
 
-from sqlalchemy import ColumnElement
+from sqlalchemy import ColumnElement, select
 from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.events import IndependenceRequested
-from abacus.modules.engagements.models import EngagementAcceptance, EngagementLetter
+from abacus.modules.engagements.gate_policy import required_gates
+from abacus.modules.engagements.models import Engagement, EngagementAcceptance, EngagementLetter
 from abacus.modules.engagements.repository import (
     answer_confirmation,
     confirmations_of,
@@ -47,6 +48,7 @@ from abacus.modules.engagements.setup_steps import (
     steps,
     summary,
 )
+from abacus.modules.engagements.transitions import transition
 from abacus.modules.identity.api import (
     AuthContext,
     authorise,
@@ -92,27 +94,43 @@ class LetterMissing(EngagementNotOpen):
 
 
 def _blocked(
-    acceptance: EngagementAcceptance | None, letter: EngagementLetter | None, needs_letter: bool
+    acceptance: EngagementAcceptance | None,
+    letter: EngagementLetter | None,
+    *,
+    gates: frozenset[str],
+    needs_letter: bool,
 ) -> EngagementNotOpen | None:
-    if acceptance is None:
-        return AcceptanceMissing("acceptance")
-    if acceptance.decision != "accepted":
-        return AcceptanceDeclined("acceptance")
-    if acceptance.independence_concluded_at is None:
-        return IndependenceConclusionMissing("independence")
-    if needs_letter and (
-        letter is None or letter.status not in ("signed", "not_required_this_year")
+    """The first gate the engagement's type requires that is not met (F-03-T13: the per-type gate
+    policy, so a tax or non-attest CAS engagement opens on G1 and G3 without G2)."""
+    if "G1" in gates:
+        if acceptance is None:
+            return AcceptanceMissing("acceptance", facts={"gate": "G1"})
+        if acceptance.decision != "accepted":
+            return AcceptanceDeclined("acceptance", facts={"gate": "G1"})
+    if "G2" in gates and (acceptance is None or acceptance.independence_concluded_at is None):
+        return IndependenceConclusionMissing("independence", facts={"gate": "G2"})
+    if (
+        "G3" in gates
+        and needs_letter
+        and (letter is None or letter.status not in ("signed", "not_required_this_year"))
     ):
-        return LetterMissing("letter")
+        return LetterMissing("letter", facts={"gate": "G3"})
     return None
 
 
 async def require_open(tenant: TenantContext, engagement_id: UUID) -> None:
-    """Raise the reason the engagement isn't open to client data, or return (AC-7)."""
+    """Raise the reason the engagement isn't open to client data, or return (AC-7). Which gates
+    apply comes from the engagement type's gate policy (chapter 03 §3.1.3)."""
     async with tenant_session(tenant) as session:
+        engagement_type = (
+            await session.execute(select(Engagement.type).where(Engagement.id == engagement_id))
+        ).scalar_one_or_none()
+        if engagement_type is None:
+            raise NotFound("engagement")
         acceptance = await latest_acceptance(session, engagement_id)
         letter = await get_letter(session, engagement_id)
-    blocked = _blocked(acceptance, letter, await letter_policy(tenant))
+    gates = frozenset(required_gates(engagement_type))
+    blocked = _blocked(acceptance, letter, gates=gates, needs_letter=await letter_policy(tenant))
     if blocked is not None:
         raise blocked
 
@@ -252,6 +270,19 @@ async def record_acceptance(ctx: AuthContext, engagement_id: UUID, given: Accept
             else None,
             **_file_columns(previous),
         )
+        # F-03-T13: a prospect's first decision moves it to accepted or declined (G1, a person).
+        status = (
+            await tx.session.execute(
+                select(Engagement.status).where(Engagement.id == engagement_id)
+            )
+        ).scalar_one()
+        if status == "prospect":
+            await transition(
+                tx,
+                engagement_id,
+                "accepted" if given.decision == "accepted" else "declined",
+                by=ctx,
+            )
         tx.record(
             "engagement.acceptance_recorded",
             target=Target("engagement", engagement_id),
@@ -468,7 +499,12 @@ async def setup(ctx: AuthContext, engagement_id: UUID) -> SetupView:
         )
     names = await names_of([r.user_id for r in rows])
     needs_letter = await letter_policy(ctx.tenant)
-    blocked = _blocked(acceptance, letter, needs_letter)
+    blocked = _blocked(
+        acceptance,
+        letter,
+        gates=frozenset(required_gates(engagement.type)),
+        needs_letter=needs_letter,
+    )
     team = [Member(m.display_name, m.role) for m in await engagement_team(ctx, engagement_id)]
     admins: list[str] = []
     if not has_partner(team):
