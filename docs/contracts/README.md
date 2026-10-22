@@ -12,7 +12,7 @@ Status values: `planned` (no stub), `stub` (models, 501 routes, matrix actions, 
 |---|---|---|---|---|---|---|---|---|
 | C1 | Work item and engagement lifecycle (8 states, G1-G3 facts, per-type gate policy) | `work-items.md` | F-03 | every module | S1 | 2026-11-02 | v1 | frozen (F-03-T19, 2026-10-21) |
 | C2 | Status registry: YAML to StrEnum, OpenAPI enums, `status.ts` | `status-registry.md` | F-03 (YAML authored in F-03-T04, codegen F-03-T09) | all | S1 | 2026-11-02 | v1 | frozen (F-03-T19, 2026-10-21) |
-| C3 | Review grammar: suggestion and change set, decision, sign_off (content hash, staleness, segregation), issue, checkpoint, field_value_version, human_gate | `review-grammar.md` | P-04 | A-*, T-*, C-*, I-01 | schema S3, services S12 | 2026-11-30, 2027-04-05 | v1 | stub |
+| C3 | Review grammar: suggestion and change set, decision, sign_off (content hash, staleness, segregation), issue, checkpoint, field_value_version, human_gate | `review-grammar.md` | P-04 | A-*, T-*, C-*, I-01 | schema S3, services S12 | 2026-11-30, 2027-04-05 | v1 | stub (stubs 1 and 2: P-04-T07, T08, 2026-10-22; consumer tests P-04-T09, 2026-10-22; schema v1 freeze scheduled Fri 2026-12-11, see below) |
 | C4 | Citation v2, viewer manifest, regions, masked PII and logged reveal | `citation-v2.md` | P-03 | every trace surface | S5 | 2026-12-28 | v1 | planned |
 | C5 | Requests and binders; portal scopes (`client_access_grant`, role union) | `c5-requests-binders.md` | P-06, P-08 (schema half in F-03-T14, T15, T26); portal read models | A-01, R-01, T-02, C-01 | S3 | 2026-11-30 | v1 | stub (binders and requests half, BND/SHL-14 family: P-06-T01, 2026-10-22) |
 | C6 | Agent runs: v1 read API; v2 run and step events over SSE | `agent-runs.md` | P-09, P-10 | dock, trace, Workbench, Today | v1 S12, v2 S30 | 2027-04-05, 2027-12-13 | v1 | planned |
@@ -33,6 +33,8 @@ Status values: `planned` (no stub), `stub` (models, 501 routes, matrix actions, 
 | C21 | Effective-dated rules tables (due dates, holidays, form sets and tolerances, thresholds, retention floors) | `rules-tables.md` | K-02 | T-01, T-02, T-03, T-08, C-02, Q-05 | S17 | 2027-06-14 | v1 | planned |
 
 C1 milestones: stub F-03-T06 (S0), freeze F-03-T19 (by Fri 2026-11-13, M2), live F-03-T31 (S3). C2: the YAML is authored by F-03-T04, the codegen is F-03-T09, and the `status.ts` runtime is F-05.
+
+C3 schema v1 (2026-10-22, P-04-T09): the three review migrations (0093 to 0095) and stubs 1 and 2 (`review/contract.py`, `agents/contract.py`) are **scheduled to be recorded frozen on Fri Dec 11, 2026** (the end of S3). They are not frozen yet. The gate is the consumer suites, green in `make check` stage 2: `backend/tests/contracts/review_grammar/` (SHL-10 a-g, SHL-11 a-h, SHL-12 a-h, the stub gates, the matrix and the migrations) and `apps/web/src/fixtures/contracts/review-grammar.test.ts` (one typed frame per artboard). Before the freeze, clear the strict xfail for finding #285 (decision-card figures and agent reasons are not Restricted), then write `backend/tests/contracts/review_grammar/v1.json` with `python -m abacus_tools.contracts --freeze review_grammar v1` and set the row to `frozen`.
 
 File names above are the planned names; a contract's file is created by its stub task, and the register row is updated in the same commit.
 
