@@ -180,12 +180,12 @@ def staff_idp() -> StaffIdp:
     s = settings()
     if s.identity_client_id is None or s.identity_authorize_url is None:
         raise ServiceUnavailable("staff sign-in is not configured")
-    if s.identity_token_url is None:
+    if s.identity_exchange_url is None:
         raise ServiceUnavailable("staff sign-in is not configured")
     return OidcStaffIdp(
         client_id=s.identity_client_id,
         authorize_url=s.identity_authorize_url,
-        token_url=s.identity_token_url,
+        token_url=s.identity_exchange_url,
     )
 
 

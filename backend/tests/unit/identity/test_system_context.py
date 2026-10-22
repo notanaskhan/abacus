@@ -67,7 +67,8 @@ def _plain_allow(action: str) -> bool:
 
 SYSTEM_ALLOWED = [a for a in YAML_ACTIONS if _plain_allow(a)]
 SYSTEM_DENIED = [a for a in YAML_ACTIONS if YAML_ACTIONS[a].get("system") != "allow"]
-READ_ACTIONS = [a for a in YAML_ACTIONS if _is_read(a)]
+# Conditioned reads are `authorise()`-only; `visible()` refuses them (test_permission_matrix).
+READ_ACTIONS = [a for a in YAML_ACTIONS if _is_read(a) and not authz.has_conditions(RULES[a])]
 
 
 class EngagementRoles:

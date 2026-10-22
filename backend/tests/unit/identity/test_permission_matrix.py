@@ -672,7 +672,16 @@ def _sql(expression: object) -> str:
     return " ".join(str(expression).split())
 
 
-READ_ACTIONS = [a for a in YAML_ACTIONS if _is_read(a)]
+# `visible()` refuses an action with attribute conditions (`scope_only`, `level_in`, ...): those
+# are single-object reads checked with `authorise()` (P-08-T01: `portal_home.read`).
+CONDITIONED_READS = [a for a in YAML_ACTIONS if _is_read(a) and authz.has_conditions(RULES[a])]
+READ_ACTIONS = [a for a in YAML_ACTIONS if _is_read(a) and a not in CONDITIONED_READS]
+
+
+@pytest.mark.parametrize("action", CONDITIONED_READS)
+def test_ac20_visible_refuses_a_read_with_conditions(action: str) -> None:
+    with pytest.raises(ValueError, match="use authorise"):
+        visible(_ctx(), action, column("engagement_id", Uuid()))
 
 
 @pytest.mark.parametrize("action", READ_ACTIONS)

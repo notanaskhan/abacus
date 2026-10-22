@@ -3,6 +3,7 @@
 from abacus.ai_gateway import register_client_data_facts, register_synthetic_tenants
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.kernel.clock import register_tenant_clock
+from abacus.kernel.uow.relay import register_grant_consumer
 from abacus.modules.identity.audit_targets import AUDIT_KINDS, audit_hidden_walls, audit_owners
 from abacus.modules.identity.authz import (
     MFA_RECENT,
@@ -87,6 +88,7 @@ from abacus.modules.identity.firm_settings import (
     set_letter_policy,
     tenant_demo_time,
 )
+from abacus.modules.identity.grants import GrantNotYetDue, consume_grant, issue_grant, void_grant
 from abacus.modules.identity.invitations import (
     ContactView,
     InvitationLimit,
@@ -209,6 +211,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     auth_router,
 )
 
+# P-04-T10 (ADR-161): grant-held outbox events are delivered only through `consume_grant`.
+register_grant_consumer(consume_grant)
+
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
 
@@ -247,6 +252,7 @@ __all__ = [
     "FirmFacts",
     "Forbidden",
     "GrantExists",
+    "GrantNotYetDue",
     "GrantRole",
     "GrantScope",
     "GrantScopeInvalid",
@@ -295,6 +301,7 @@ __all__ = [
     "configure_staff_verifier",
     "configure_verifier",
     "consent_given",
+    "consume_grant",
     "contact_emails",
     "contacts",
     "could",
@@ -322,6 +329,7 @@ __all__ = [
     "invitation_router",
     "is_active_member",
     "is_synthetic_firm",
+    "issue_grant",
     "issue_invitation_token",
     "issue_staff_invitation_token",
     "letter_policy",
@@ -371,5 +379,6 @@ __all__ = [
     "visible",
     "visible_items",
     "visible_scope",
+    "void_grant",
     "walled_from",
 ]
