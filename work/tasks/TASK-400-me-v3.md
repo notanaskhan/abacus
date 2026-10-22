@@ -2,7 +2,7 @@
 id: TASK-400
 title: /v1/me v3, PUT /v1/me/preferences, capability nav keys, migration 0091 (P-01-T04)
 spec: SPEC-024
-acceptance_criteria: [AC-2.1.2, AC-2.1.3]
+acceptance_criteria: [AC-4]
 risk_zone: red
 status: done
 epic: P-01

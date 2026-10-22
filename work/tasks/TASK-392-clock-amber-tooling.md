@@ -1,8 +1,8 @@
 ---
 id: TASK-392
 title: Adopt kernel.clock in amber modules and tooling (F-04-T16)
-spec: SPEC-002
-acceptance_criteria: [F-04.4]
+spec: SPEC-307
+acceptance_criteria: [AC-7]
 risk_zone: amber
 status: done
 epic: F-04

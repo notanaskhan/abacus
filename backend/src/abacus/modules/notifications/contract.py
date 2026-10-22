@@ -1,6 +1,6 @@
 """C16 v1, the notifications half (P-01-T01 stub; ADR P-36). The v2 list, its counts and the
 per-kind preferences. Behind `notifications.v2`: off, the routes answer 404; on, 501
-`not_implemented` until P-01-T06 (the catalogue v2) and P-01-T12 (preferences) land.
+`not_implemented` until P-01-T12 (preferences). The feed is live since P-01-T06.
 
 During the v1 to v2 sprint the v2 list is served beside v1 at `/v1/notifications/feed`; it takes
 over `GET /v1/notifications` when the v1 consumer is gone (contract change log)."""
@@ -19,6 +19,7 @@ from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import OWN, AbacusRouter, AuthContext, current_member
+from abacus.modules.notifications.service import feed
 
 Member = Annotated[AuthContext, Depends(current_member)]
 Category = Literal["approval", "mention", "client_activity", "run", "deadline", "system", "other"]
@@ -110,7 +111,7 @@ feed_router = AbacusRouter(prefix="/v1/notifications", tags=["notifications"])
 preferences_router = AbacusRouter(prefix="/v1/me", tags=["notifications"])
 
 
-@feed_router.get("/feed", action=OWN, response_model=NotificationFeedOut, errors=(501,))
+@feed_router.get("/feed", action=OWN, response_model=NotificationFeedOut)
 async def notification_feed_route(
     ctx: Member,
     tab: Annotated[Tab, Query()] = "all",
@@ -118,7 +119,38 @@ async def notification_feed_route(
     limit: Annotated[int, Query(ge=1, le=100)] = 30,
     days: Annotated[int, Query(ge=1, le=30)] = 30,
 ) -> NotificationFeedOut:
-    await _stub(ctx)
+    """P-01-T06: live behind `notifications.v2` (off: 404)."""
+    if not await flag_enabled(ctx.tenant, NOTIFICATIONS_V2):
+        raise NotFound("notifications.v2")
+    found = await feed(ctx, tab=tab, cursor=cursor, limit=limit, days=days)
+    return NotificationFeedOut(
+        items=[
+            NotificationItemOut(
+                id=i.id,
+                kind=i.kind,
+                category=i.category,  # type: ignore[arg-type]  # a stored category code
+                created_at=i.created_at,
+                read=i.read,
+                actor=NotificationActorOut(
+                    kind=i.actor_kind,  # type: ignore[arg-type]  # a stored actor kind
+                    user_id=i.actor_user_id,
+                ),
+                subject=ObjectRefOut(type=i.subject_type, id=i.subject_id),
+                engagement_id=i.engagement_id,
+                facts=i.facts,
+                inline_actions=list(i.inline_actions),
+                pending=i.pending,
+            )
+            for i in found.items
+        ],
+        next_cursor=found.next_cursor,
+        counts=NotificationCountsOut(
+            approvals=found.approvals,
+            mentions=found.mentions,
+            client_activity=found.client_activity,
+        ),
+        unread_count=found.unread_count,
+    )
 
 
 @preferences_router.get(

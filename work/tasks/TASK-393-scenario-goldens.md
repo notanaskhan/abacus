@@ -1,8 +1,8 @@
 ---
 id: TASK-393
 title: Scenario-level golden-figure tests (F-04-T12)
-spec: SPEC-002
-acceptance_criteria: [F-04.27]
+spec: SPEC-307
+acceptance_criteria: [AC-6]
 risk_zone: amber
 status: done
 epic: F-04

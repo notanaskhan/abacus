@@ -3373,6 +3373,8 @@ export const listNotifications = <ThrowOnError extends boolean = false>(options?
 
 /**
  * Notification Feed Route
+ *
+ * P-01-T06: live behind `notifications.v2` (off: 404).
  */
 export const notificationFeed = <ThrowOnError extends boolean = false>(options?: Options<NotificationFeedData, ThrowOnError>): RequestResult<NotificationFeedResponses, NotificationFeedErrors, ThrowOnError> => (options?.client ?? client).get<NotificationFeedResponses, NotificationFeedErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

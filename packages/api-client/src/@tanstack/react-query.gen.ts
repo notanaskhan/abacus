@@ -5499,6 +5499,8 @@ export const notificationFeedQueryKey = (options?: Options<NotificationFeedData>
 
 /**
  * Notification Feed Route
+ *
+ * P-01-T06: live behind `notifications.v2` (off: 404).
  */
 export const notificationFeedOptions = (options?: Options<NotificationFeedData>) => queryOptions<NotificationFeedResponse, NotificationFeedError, NotificationFeedResponse, ReturnType<typeof notificationFeedQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -5517,6 +5519,8 @@ export const notificationFeedInfiniteQueryKey = (options?: Options<NotificationF
 
 /**
  * Notification Feed Route
+ *
+ * P-01-T06: live behind `notifications.v2` (off: 404).
  */
 export const notificationFeedInfiniteOptions = (options?: Options<NotificationFeedData>) => {
     const opts = infiniteQueryOptions<NotificationFeedResponse, NotificationFeedError, InfiniteData<NotificationFeedResponse>, QueryKey<Options<NotificationFeedData>>, string | null | Pick<QueryKey<Options<NotificationFeedData>>[0], 'body' | 'headers' | 'path' | 'query'>>(

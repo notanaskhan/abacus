@@ -2,7 +2,7 @@
 id: TASK-394
 title: Scenario loader - replay with trace ids, settle barrier, local and staging modes (F-04-T13)
 spec: SPEC-307
-acceptance_criteria: [F-04.15, F-04.16, F-04.17, F-04.18]
+acceptance_criteria: [AC-1, AC-3, AC-7]
 risk_zone: amber
 status: done
 epic: F-04

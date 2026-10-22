@@ -2,7 +2,7 @@
 id: TASK-398
 title: C16 v1 stub, notifications half (P-01-T01)
 spec: SPEC-013
-acceptance_criteria: [C16]
+acceptance_criteria: [AC-4]
 risk_zone: amber
 status: done
 epic: P-01

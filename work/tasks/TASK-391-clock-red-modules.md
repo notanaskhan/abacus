@@ -1,8 +1,8 @@
 ---
 id: TASK-391
 title: Adopt kernel.clock in red modules, classifying business vs system time (F-04-T11)
-spec: SPEC-002
-acceptance_criteria: [F-04.4]
+spec: SPEC-307
+acceptance_criteria: [AC-7]
 risk_zone: red
 status: done
 epic: F-04

@@ -2,7 +2,7 @@
 id: TASK-401
 title: C16 email-template half - tables, renderer, staff import route, migration 0092 (P-01-T05)
 spec: SPEC-013
-acceptance_criteria: [C16]
+acceptance_criteria: [AC-7]
 risk_zone: red
 status: done
 epic: P-01

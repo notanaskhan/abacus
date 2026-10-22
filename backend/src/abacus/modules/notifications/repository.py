@@ -38,6 +38,12 @@ notifications = Table(
     Column("subject_id", PgUUID(as_uuid=True)),
     Column("created_at", DateTime(timezone=True)),
     Column("read_at", DateTime(timezone=True)),
+    # P-01-T03 (C16)
+    Column("category", String),
+    Column("actor_user_id", PgUUID(as_uuid=True)),
+    Column("actor_kind", String),
+    Column("client_id", PgUUID(as_uuid=True)),
+    Column("work_item_id", PgUUID(as_uuid=True)),
 )
 
 
@@ -74,6 +80,26 @@ async def list_own(
     if before is not None:
         query = query.where(notifications.c.created_at < before)
     query = query.order_by(notifications.c.created_at.desc(), notifications.c.id).limit(limit)
+    return (await session.execute(query)).all()
+
+
+async def list_window(
+    session: AsyncSession, ctx: AuthContext, *, since: datetime, cap: int
+) -> Sequence[Row[tuple[object, ...]]]:
+    """P-01-T06: the caller's own since `since`, newest first, at most `cap` (walls apply)."""
+    query = (
+        select(notifications)
+        .where(
+            notifications.c.recipient_user_id == ctx.user_id,
+            notifications.c.created_at >= since,
+            or_(
+                notifications.c.engagement_id.is_(None),
+                visible(ctx, "engagement.read_metadata", notifications.c.engagement_id),
+            ),
+        )
+        .order_by(notifications.c.created_at.desc(), notifications.c.id)
+        .limit(cap)
+    )
     return (await session.execute(query)).all()
 
 
