@@ -348,3 +348,15 @@ semantics are kept exact; the plan's `toast.undoable` and `toast.running` sit on
 | 2026-10-22 | AgentText              | `text-para text-ink-2` by default (H1); sanitising unchanged; a caller's class still wins                                             |
 | 2026-10-22 | C-31 running and empty | ink-3, not the kit's ink-4 (fails AA, DEC-11), as the status kit's `soon`                                                             |
 | 2026-10-22 | Specimen verbs         | The six specimen buttons with Approve, Sign off or Send now render through `HumanAction` (T31 found them)                             |
+
+### T7 PortalLayout (F-05-T35)
+
+| Date       | Item               | Decision                                                                                                                       |
+| ---------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-10-23 | T7-M nav           | The 64px bottom tab bar (Home · Documents · Sign · Messages · More), not the T7-M board's top pills (DEC-45, D-DS-8; TPL-07-M) |
+| 2026-10-23 | Phone radius       | `rounded-phone` (28, the T7-M spec and the token), not the TPL-07-M canvas's 36                                                |
+| 2026-10-23 | Inactive tab ink   | ink-3 (AA ladder, DEC-11), not the canvas's .54                                                                                |
+| 2026-10-23 | More current       | More reads current while its sheet is open and while the current area is under it (the canvas only while open)                 |
+| 2026-10-23 | PortalBrand        | Slots only: name, legal name, logo, mark, `securedFooter`, sign-in methods. No colour field; no default brand (DEC-59, P-11)   |
+| 2026-10-23 | Approvals          | `portalNav("individual")` drops Approvals; an entity client sees it in the bar (1400) and under More (390)                     |
+| 2026-10-23 | Shell value source | `/v1/me.portal.shell` (C5 portal half, P-08) is not built: the app passes the variant and the client kind until it lands       |

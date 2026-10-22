@@ -187,6 +187,18 @@ test.describe("tier D: the shell", () => {
       expected: "46px",
     },
     {
+      name: "portal mobile header (T7-M)",
+      id: "t7-portal-layout",
+      selector: '[data-shell="mobile-header"] >> nth=0',
+      expected: "56px",
+    },
+    {
+      name: "portal bottom tab bar (T7-M)",
+      id: "t7-portal-layout",
+      selector: '[data-shell="mobile-tab-bar"] >> nth=0',
+      expected: "64px",
+    },
+    {
       name: "record header (default)",
       id: "c-00-record-header",
       selector: '[data-variant="default"] >> nth=0',
