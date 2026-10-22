@@ -292,3 +292,12 @@ semantics are kept exact; the plan's `toast.undoable` and `toast.running` sit on
 | 2026-10-22 | `undoable`                       | `commit` is a deferred commit (gates); without it the write has committed and Undo calls only `undo`; `started()` withdraws Undo |
 | 2026-10-22 | Older API                        | `toast.show(text, ms)`, `toast.deferred(text, commit, undo)` and `Toaster` stay as wrappers                                      |
 | 2026-10-22 | Timers                           | `performance.now()` for elapsed time; the business clock is not involved                                                         |
+
+### Accessibility harness (F-05-T24)
+
+| Date       | Item                   | Decision                                                                                                                                                                                       |
+| ---------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-22 | Forced-colors edges    | Panes, nested cards, menus, dialogs, pills and toasts get a 1px CanvasText inset outline (plan 04 §3.8 says border); an outline moves nothing, and `:where()` keeps it below the focus outline |
+| 2026-10-22 | Discs in forced colors | `forced-color-adjust: none` on `role="img"` discs: their colour is the meaning, and they carry a label                                                                                         |
+| 2026-10-22 | Target size check      | SC 2.5.8 as written: 24px, or points 11.5px out from the centre land on the control (a hit area), or a 24px circle on the centre meets no other target; inline text links are exempt           |
+| 2026-10-22 | Keyboard check         | The first 60 focus stops each show a 2px outline or a ring, and Tab never stays on one stop                                                                                                    |
