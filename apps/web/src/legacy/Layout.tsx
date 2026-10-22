@@ -10,7 +10,8 @@ import { errorMessage } from "../api";
 import { accessToken, chooseTenant, chosenTenant, signIn, signOut } from "../auth/session";
 import { FirmMenu } from "../shell/firm/FirmMenu";
 import { useFirmToolbar } from "../shell/firm/ToolbarData";
-import { NotificationDrawer } from "../shell/NotificationDrawer";
+import { useOverlays } from "../app-core/overlay-host";
+import { NOTIFICATIONS_OVERLAY } from "../shell/firm/NotificationsDrawer";
 
 /** The signed-in firm workspace (F-05-T23): the design system's AppShell and Toolbar around the
  * legacy screens, the firm pill's menu (SHL-03), notifications, and the page. */
@@ -31,8 +32,11 @@ function SignedIn(): JSX.Element {
   // React state, so choosing a firm re-renders (the API reports no active firm for users in
   // several; the choice is also kept for the client's X-Abacus-Tenant header).
   const [picked, setPicked] = useState<string | null>(chosenTenant);
-  const [panel, setPanel] = useState(false);
   const [menu, setMenu] = useState(false);
+  // P-01-T10: the notifications drawer is the `?ov=notifications` layer (SHL-04), so Back closes
+  // it and a link can open it.
+  const overlays = useOverlays();
+  const bell = overlays.refs.findIndex((r) => r.key === NOTIFICATIONS_OVERLAY);
   const navigate = useNavigate();
   const path = useRouterState({ select: (r) => r.location.pathname });
   // P-01-T02: the toolbar's data, routing and hotkeys (SHL-01).
@@ -40,9 +44,10 @@ function SignedIn(): JSX.Element {
     at: { pathname: path },
     firm: "",
     firmMenuOpen: menu,
-    bellOpen: panel,
+    bellOpen: bell >= 0,
     onBell: () => {
-      setPanel((open) => !open);
+      if (bell >= 0) overlays.close(bell);
+      else overlays.open(NOTIFICATIONS_OVERLAY);
     },
     onFirm: () => {
       setMenu((open) => !open);
@@ -122,7 +127,7 @@ function SignedIn(): JSX.Element {
             navigate={(to) => void navigate({ to })}
             onShortcuts={bar.openGo}
             onNotificationPreferences={() => {
-              setPanel(true);
+              if (bell < 0) overlays.open(NOTIFICATIONS_OVERLAY);
             }}
             onSwitch={(m) => {
               chooseTenant(m.tenant_id);
@@ -142,7 +147,6 @@ function SignedIn(): JSX.Element {
         <main className="mx-auto w-full max-w-[1400px] min-w-0 flex-1 px-3 pt-3 pb-8">
           <Outlet />
         </main>
-        <NotificationDrawer open={panel} onOpenChange={setPanel} />
       </div>
     </AppShell>
   );

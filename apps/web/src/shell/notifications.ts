@@ -1,4 +1,5 @@
-import type { NotificationOut } from "@abacus/api-client";
+import type { NotificationItemOut, NotificationOut } from "@abacus/api-client";
+import { type IconName, sameDay, weekdayDate } from "@abacus/ui";
 
 /** Display text per kind (SPEC-013 AC-7): the API returns identifiers, never text. */
 const TEXT: Record<string, string> = {
@@ -52,6 +53,47 @@ export function dayGroup(iso: string, now: Date): string {
   if (days === 1) return "Yesterday";
   if (days < 7) return "Earlier this week";
   return "Older";
+}
+
+export const TODAY = "Today";
+
+/**
+ * SHL-04 (P-01-T10): the v2 drawer's day groups, on the firm's calendar: "Today", then each
+ * earlier day by name ("Friday, September 11"). `now` is the business clock (`useNow`). The v1
+ * drawer keeps SPEC-305's buckets (`dayGroup`, above).
+ */
+export function firmDayGroup(iso: string, now: Date, tz: string): string {
+  return sameDay(iso, now, { tz }) ? TODAY : weekdayDate(iso, { now, tz });
+}
+
+/** SHL-04's 22 px glyph chip per kind (spec and R2 revision). Unknown kinds read as a bell. */
+const GLYPH: Record<string, IconName> = {
+  decision_assigned: "circle-help",
+  run_needs_input: "circle-help",
+  sign_off_requested: "circle-check",
+  todo_assigned: "circle-check",
+  proposal_routed: "circle-check",
+  run_finished: "refresh-cw",
+  client_uploaded: "upload",
+  mention: "at-sign",
+  // The spec's Timer is not in the icon registry (F-05-T13); the clock stands in.
+  deadline_approaching: "clock",
+  template_update_available: "layers",
+  trigger_run_finished: "zap",
+};
+
+export function kindGlyph(kind: string): IconName {
+  return GLYPH[kind] ?? "bell";
+}
+
+/** Where a v2 row leads while its designed targets (AUD-03, AUD-06, AUD-07, WB-01, HOME-03,
+ * SHL-17, ENG-11) are planned: the engagement's legacy page, or nowhere. */
+export function feedHref(item: NotificationItemOut): Destination | null {
+  if (item.engagement_id === null) return null;
+  if (item.kind === "client_uploaded") {
+    return { to: `/engagements/${item.engagement_id}/requests` };
+  }
+  return { to: `/engagements/${item.engagement_id}` };
 }
 
 export function notificationText(kind: string): string {

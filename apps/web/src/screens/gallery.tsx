@@ -4,6 +4,12 @@ import { type FixtureParams, registerScreen } from "../gallery/fixture-mode";
 import { SHL01 } from "./SHL-01";
 import { STATES, type Shl01State, scenarios } from "./SHL-01/scenarios";
 import { SHL03 } from "./SHL-03";
+import { SHL04 } from "./SHL-04";
+import {
+  STATES as SHL04_STATES,
+  type Shl04State,
+  scenarios as shl04Scenarios,
+} from "./SHL-04/scenarios";
 import {
   STATES as SHL03_STATES,
   type Shl03State,
@@ -55,3 +61,22 @@ function Shl03Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("SHL-03", { title: "Firm switcher & profile menu", Component: Shl03Artboard });
+
+function Shl04Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Shl04State = SHL04_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      shl04Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <SHL04 state={state} /> : null;
+}
+
+registerScreen("SHL-04", { title: "Notifications panel", Component: Shl04Artboard });

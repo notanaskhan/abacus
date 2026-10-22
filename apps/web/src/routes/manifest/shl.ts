@@ -16,6 +16,9 @@ export const shlScreens = {
     status: "fixture", // P-01-T08: the tray under the firm pill; the artboard is fixture-only
     path: null,
   },
+  // P-01-T10 built the drawer on fixtures (screens/SHL-04), but it stays planned until its
+  // "Notification settings" link (SHL-04 → SHL-03, link-contract rule 1) and the inline approval
+  // land: neither overlay has a path, so the link cannot be wired with a builder yet.
   "SHL-04": { name: "Notifications panel", status: "planned", path: null, entry: true },
   "SHL-05": { name: "Support panel", status: "planned", path: null, entry: true },
   "SHL-06": { name: "Firm sign-in", status: "planned", path: null, entry: true },
