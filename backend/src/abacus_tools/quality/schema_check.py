@@ -61,6 +61,7 @@ NON_TENANT_TABLES = frozenset(
     # 0086 (Q-01-T19, ADR-157): platform-wide, reached only through definer functions.
     | {"platform_controls", "platform_control_changes", "firm_provisioning_requests"}
     | {"plans"}  # 0088 (F-03-T28): global, operator-set
+    | {"email_templates", "email_template_versions"}  # 0092 (P-01-T05): definers only
 )
 # Insert-only tables outside the modules (ADR-004); each module lists its own in registry.py.
 _PLATFORM_INSERT_ONLY: frozenset[str] = frozenset(
@@ -86,6 +87,7 @@ _PLATFORM_INSERT_COLUMNS: dict[str, frozenset[str]] = {
 # Tables whose rows no role may change or remove: a BEFORE UPDATE OR DELETE trigger and a BEFORE
 # TRUNCATE trigger must call this function (ADR-004 second layer, TASK-009).
 IMMUTABLE_TABLES: dict[str, str] = {
+    "email_template_versions": "email_template_versions_immutable",  # 0092 (P-01-T05)
     "evidence_versions": "evidence_versions_immutable",
     "review_decisions": "review_decisions_immutable",
     "eval_case_results": "eval_case_results_immutable",
@@ -155,6 +157,7 @@ GLOBAL_TABLES = frozenset(
     | {"staff_invitation_tokens"}  # SPEC-024 (TASK-041)
     | {"platform_controls", "platform_control_changes", "firm_provisioning_requests"}  # 0086
     | {"plans"}  # 0088
+    | {"email_templates", "email_template_versions"}  # 0092 (P-01-T05)
 )
 # SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
 DEFINER_FUNCTIONS = frozenset(
@@ -182,6 +185,7 @@ DEFINER_FUNCTIONS = frozenset(
     | {"refresh_attest_client"}
     # 0086 (Q-01-T19, ADR-157): the app reads controls; operators set them and provision firms.
     | {"platform_control_state", "set_platform_control", "provision_firm"}
+    | {"email_template_import", "email_template_current"}  # 0092 (P-01-T05)
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).

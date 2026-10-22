@@ -167,6 +167,7 @@ from abacus.modules.identity.slots import (
     resolve_scope,
 )
 from abacus.modules.identity.staff import issue_staff_invitation_token
+from abacus.modules.identity.support import Staff
 from abacus.modules.identity.team import (
     Candidate,
     LastPartner,
@@ -257,6 +258,7 @@ __all__ = [
     "Rule",
     "ScopeFacts",
     "ScopeKind",
+    "Staff",
     "StaffInvitationIssued",
     "StaffRole",
     "SystemContext",

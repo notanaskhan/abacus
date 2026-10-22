@@ -2027,6 +2027,56 @@ export type DueDatesIn = {
 };
 
 /**
+ * EmailTemplateImportIn
+ *
+ * Platform staff author the text here, never in code (AGENTS 16).
+ */
+export type EmailTemplateImportIn = {
+    /**
+     * Body Text
+     */
+    body_text: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Locale
+     */
+    locale?: string;
+    /**
+     * Subject
+     */
+    subject: string;
+    /**
+     * Variables
+     */
+    variables: Array<string>;
+};
+
+/**
+ * EmailTemplateImportOut
+ */
+export type EmailTemplateImportOut = {
+    /**
+     * Content Sha256
+     */
+    content_sha256: string;
+    /**
+     * Created
+     */
+    created: boolean;
+    /**
+     * Template Id
+     */
+    template_id: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * EngagementCountOut
  */
 export type EngagementCountOut = {
@@ -24316,6 +24366,49 @@ export type ReadNotificationResponses = {
 };
 
 export type ReadNotificationResponse = ReadNotificationResponses[keyof ReadNotificationResponses];
+
+export type ImportEmailTemplateData = {
+    body: EmailTemplateImportIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/platform/email-templates/import';
+};
+
+export type ImportEmailTemplateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ImportEmailTemplateError = ImportEmailTemplateErrors[keyof ImportEmailTemplateErrors];
+
+export type ImportEmailTemplateResponses = {
+    /**
+     * Successful Response
+     */
+    200: EmailTemplateImportOut;
+};
+
+export type ImportEmailTemplateResponse = ImportEmailTemplateResponses[keyof ImportEmailTemplateResponses];
 
 export type SignupData = {
     body: SignupIn;

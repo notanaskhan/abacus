@@ -694,6 +694,8 @@ IDENTITY_OK = [
     "GRANT SELECT ON users TO abacus_identity",
     MEMBERSHIPS_DDL,
     *[stmt.format(t="memberships") for stmt in (ENABLE, FORCE, POLICY)],
+    # As migration 0004 does; since P-01-T04 the app's membership UPDATE column is declared.
+    "REVOKE INSERT, UPDATE, DELETE ON memberships FROM abacus_app",
     "GRANT SELECT (tenant_id, id, user_id, firm_role, status) ON memberships TO abacus_identity",
     FIRMS_DDL,
     *[stmt.format(t="firms") for stmt in (ENABLE, FORCE, POLICY)],
@@ -1137,6 +1139,10 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "firm_demo_clocks": frozenset(  # F-04-T06 (migration 0085)
             {"mode", "anchor_at", "anchored_real_at", "set_by", "set_at"}
         ),
+        # P-01-T03 (migration 0090): preferences and deliveries.
+        "notification_preferences": frozenset({"in_app", "email", "updated_at"}),
+        "notification_deliveries": frozenset({"status", "message_ref"}),
+        "memberships": frozenset({"default_office_filter_id"}),  # P-01-T04 (migration 0091)
         "firms": frozenset(
             {"autonomy_level", "autonomy_set_at", "budget_reviewed_at", "walls_none_needed_at"}
             | {"sso_skipped_at", "onboarding_dismissed_at"}  # SPEC-024 (TASK-042)
@@ -1310,6 +1316,7 @@ def _missing(op: str) -> str:
 def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Database) -> None:
     assert sc.IMMUTABLE_TABLES == {
         "evidence_versions": IMMUTABLE_FUNCTION,
+        "email_template_versions": "email_template_versions_immutable",  # 0092 (P-01-T05)
         "ledger_snapshots": LEDGER_FUNCTION,
         "trial_balance_lines": LEDGER_FUNCTION,
         "review_decisions": "review_decisions_immutable",  # TASK-019 (ADR-004)
@@ -1693,5 +1700,6 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"membership_set_firm_role", "membership_revoke"}
         | {"refresh_attest_client"}  # 0082 (F-03-T25, DEC-128)
         | {"platform_control_state", "set_platform_control", "provision_firm"}  # 0086 (Q-01-T19)
+        | {"email_template_import", "email_template_current"}  # 0092 (P-01-T05)
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
