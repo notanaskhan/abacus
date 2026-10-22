@@ -108,7 +108,7 @@ export function AgentActivity({ engagementId }: { engagementId: string }): JSX.E
   }
   return (
     <Panel title="Activity">
-      <ol className="flex flex-col divide-y divide-line">
+      <ol className="flex flex-col divide-y divide-hair">
         {feed.data.map((row) => (
           <li key={row.id} className="flex flex-wrap items-center gap-3 py-2 text-[13px]">
             <span className="w-[132px] shrink-0 text-[12px] whitespace-nowrap text-ink-3 tabular-nums">
@@ -164,7 +164,7 @@ export function AgentControls({ engagementId }: { engagementId: string }): JSX.E
           <StatusPill tone="success">Agent on</StatusPill>
         )}
         {paused && (
-          <span className="text-muted">
+          <span className="text-ink-3">
             by {state.data.paused_by ?? "someone"}
             {state.data.reason != null && `: ${state.data.reason}`}
           </span>

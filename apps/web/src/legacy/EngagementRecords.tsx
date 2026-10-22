@@ -19,7 +19,7 @@ const LETTER_LABEL: Record<string, string> = {
   signed: "Signed",
   not_required_this_year: "Not required this year",
 };
-const SELECT = "h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-body";
+const SELECT = "h-9 rounded-[var(--radius-control)] border border-hair bg-surface px-3 text-body";
 
 function useWhen(): (value: string | null | undefined) => string {
   const f = useFormat();
@@ -138,25 +138,25 @@ function AcceptancePanel({
       }
     >
       {a === null ? (
-        <p className="text-body text-muted">
+        <p className="text-body text-ink-3">
           Not recorded yet. The engagement partner records the acceptance or continuance decision
           and their independence conclusion.
         </p>
       ) : (
         <dl className="grid grid-cols-[11rem_1fr] gap-x-3 gap-y-1 text-body">
-          <dt className="text-muted">Decision</dt>
+          <dt className="text-ink-3">Decision</dt>
           <dd>
             <StatusPill tone={a.decision === "accepted" ? "success" : "danger"}>
               {a.decision === "accepted" ? "Accepted" : "Declined"}
             </StatusPill>{" "}
             {a.kind === "continuance" ? "Continuance" : "New client"}
-            {a.before_act_1 && <span className="text-muted"> · recorded before Act 1</span>}
+            {a.before_act_1 && <span className="text-ink-3"> · recorded before Act 1</span>}
           </dd>
-          <dt className="text-muted">Documented in</dt>
+          <dt className="text-ink-3">Documented in</dt>
           <dd>{a.documented_at}</dd>
           {a.predecessor_auditor !== null && (
             <>
-              <dt className="text-muted">Predecessor auditor</dt>
+              <dt className="text-ink-3">Predecessor auditor</dt>
               <dd>
                 {a.predecessor_auditor}
                 {a.predecessor_communicated_on !== null &&
@@ -164,7 +164,7 @@ function AcceptancePanel({
               </dd>
             </>
           )}
-          <dt className="text-muted">Independence</dt>
+          <dt className="text-ink-3">Independence</dt>
           <dd>
             {a.independence_concluded_at !== null
               ? `Concluded ${when(a.independence_concluded_at)}${a.independence_documented_at ? ` · ${a.independence_documented_at}` : ""}`
@@ -172,7 +172,7 @@ function AcceptancePanel({
           </dd>
           {a.file_name !== null && (
             <>
-              <dt className="text-muted">File</dt>
+              <dt className="text-ink-3">File</dt>
               <dd className="break-all">{a.file_name}</dd>
             </>
           )}
@@ -318,7 +318,7 @@ function IndependencePanel({
               )}
             </span>
             {c.note !== null && (
-              <span className="w-full text-meta text-muted">Note: {c.note}</span>
+              <span className="w-full text-meta text-ink-3">Note: {c.note}</span>
             )}
           </li>
         ))}
@@ -392,7 +392,7 @@ function LetterPanel({
       }
     >
       {l === null ? (
-        <p className="text-body text-muted">
+        <p className="text-body text-ink-3">
           Not recorded.{" "}
           {data.letter_required
             ? "Your firm requires it before client data."
@@ -410,19 +410,19 @@ function LetterPanel({
             {LETTER_LABEL[l.status] ?? l.status}
           </StatusPill>
           {l.letter_date !== null && ` · ${when(l.letter_date)}`}
-          {l.reason !== null && <span className="block text-meta text-muted">{l.reason}</span>}
+          {l.reason !== null && <span className="block text-meta text-ink-3">{l.reason}</span>}
           {l.link !== null && (
             <a
               href={l.link}
               target="_blank"
               rel="noreferrer noopener"
-              className="block text-meta text-accent hover:underline"
+              className="block text-meta text-espresso hover:underline"
             >
               Where the signed copy lives
             </a>
           )}
           {l.file_name !== null && (
-            <span className="block text-meta text-muted">Signed copy: {l.file_name}</span>
+            <span className="block text-meta text-ink-3">Signed copy: {l.file_name}</span>
           )}
         </p>
       )}

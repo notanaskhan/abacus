@@ -318,7 +318,7 @@ export function Workpaper({
                           (numeric ? "text-right tabular-nums " : "") +
                           (cell?.error === true ? "text-danger " : "") +
                           (isSel
-                            ? "bg-sel-bg outline-[1.5px] outline-accent -outline-offset-1"
+                            ? "bg-sel-bg outline-[1.5px] outline-espresso -outline-offset-1"
                             : "")
                         }
                       >
@@ -349,7 +349,7 @@ export function Workpaper({
                           <>
                             {display(cell)}
                             {(cell?.tickmarks.length ?? 0) > 0 && (
-                              <span className="ml-1 text-[10.5px] font-medium text-accent">
+                              <span className="ml-1 text-[10.5px] font-medium text-espresso">
                                 {cell?.tickmarks.map((t) => MARK[t]).join(" ")}
                               </span>
                             )}
@@ -362,7 +362,7 @@ export function Workpaper({
                             {cited && (
                               <span
                                 aria-label="Has a source"
-                                className="absolute top-0 right-0 size-0 border-t-[6px] border-l-[6px] border-t-accent border-l-transparent"
+                                className="absolute top-0 right-0 size-0 border-t-[6px] border-l-[6px] border-t-espresso border-l-transparent"
                               />
                             )}
                           </>
@@ -396,7 +396,7 @@ export function Workpaper({
             <ul className="mt-2 flex flex-col gap-1">
               {citationsHere.map((c, i) => (
                 <li key={`${c.evidence_version_id}-${String(i)}`} className="text-[12.5px]">
-                  <span className="mr-1.5 inline-flex size-[16px] items-center justify-center rounded-full bg-accent-soft text-[10.5px] font-medium tabular-nums">
+                  <span className="mr-1.5 inline-flex size-[16px] items-center justify-center rounded-full bg-sel-bg text-[10.5px] font-medium tabular-nums">
                     {i + 1}
                   </span>
                   <SourceHover

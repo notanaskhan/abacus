@@ -123,7 +123,7 @@ export function ItemDue({
         }}
       />
       {item.due_on == null && fallback != null && (
-        <span className="text-meta text-muted">{`List default: ${fallback}`}</span>
+        <span className="text-meta text-ink-3">{`List default: ${fallback}`}</span>
       )}
       {isOverdue(item, due, today) && <Badge tone="warning">Overdue</Badge>}
     </span>

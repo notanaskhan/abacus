@@ -45,7 +45,7 @@ function DraftCard({
   const [why, setWhy] = useState(draft.why);
   const [good, setGood] = useState(draft.good_looks_like);
   return (
-    <li className="flex flex-col gap-2 rounded-[var(--radius-control)] border border-ai-line p-3 text-body">
+    <li className="flex flex-col gap-2 rounded-[var(--radius-control)] border border-stroke p-3 text-body">
       <span className="flex items-center gap-2">
         <AiTag />
         <span className="font-medium">{item?.description ?? "Request"}</span>
@@ -61,7 +61,7 @@ function DraftCard({
             onChange={(e) => {
               setWhy(e.target.value);
             }}
-            className="rounded-[var(--radius-control)] border border-line bg-surface p-2"
+            className="rounded-[var(--radius-control)] border border-hair bg-surface p-2"
           />
           <Label htmlFor={`good-${draft.id}`}>What good looks like</Label>
           <textarea
@@ -72,23 +72,23 @@ function DraftCard({
             onChange={(e) => {
               setGood(e.target.value);
             }}
-            className="rounded-[var(--radius-control)] border border-line bg-surface p-2"
+            className="rounded-[var(--radius-control)] border border-hair bg-surface p-2"
           />
         </>
       ) : (
         <dl className="flex flex-col gap-1">
           <dt className="font-medium">Why we need it</dt>
-          <dd className="text-muted">
+          <dd className="text-ink-3">
             <AgentText text={draft.why} />
           </dd>
           <dt className="font-medium">What good looks like</dt>
-          <dd className="text-muted">
+          <dd className="text-ink-3">
             <AgentText text={draft.good_looks_like} />
           </dd>
         </dl>
       )}
       {(draft.effort != null || draft.blocks_fieldwork != null) && (
-        <p className="text-meta text-muted">
+        <p className="text-meta text-ink-3">
           {draft.effort != null && `Suggested effort: ${draft.effort}`}
           {draft.effort_reason != null && ` (${draft.effort_reason})`}
           {draft.blocks_fieldwork === true && " · Suggests it blocks fieldwork"}
@@ -182,12 +182,12 @@ export function GuidanceDrafts({
       }
     >
       {pending.length === 0 ? (
-        <p className="text-body text-muted">
+        <p className="text-body text-ink-3">
           {asked ? "Drafting… drafts appear here as they're ready." : "No drafts to review."}
         </p>
       ) : (
         <div className="flex flex-col gap-3">
-          <p className="text-meta text-muted">
+          <p className="text-meta text-ink-3">
             The agent drafted these from each request&apos;s description. Nothing changes until you
             approve. Clients see approved drafts only if your firm allows it in settings.
           </p>

@@ -44,7 +44,7 @@ export function Setup({ engagementId }: { engagementId: string }): JSX.Element {
     <div className="flex flex-col gap-6">
       <p className="text-nav">{setup.data.summary}</p>
       <Panel title="Setup checklist">
-        <ol className="flex flex-col divide-y divide-line">
+        <ol className="flex flex-col divide-y divide-hair">
           {setup.data.steps.map((step) => (
             <StepRow key={step.key} step={step} engagementId={engagementId} />
           ))}
@@ -70,11 +70,11 @@ function StepRow({
       <div className="flex flex-1 flex-col gap-1">
         <div className="flex flex-wrap items-center gap-2">
           <StatusPill tone={state.tone}>{state.label}</StatusPill>
-          {step.detail != null && <span className="text-muted">{step.detail}</span>}
+          {step.detail != null && <span className="text-ink-3">{step.detail}</span>}
         </div>
         {step.reason != null && <p className="text-ink">{step.reason}</p>}
         {step.next != null && step.state !== "done" && (
-          <p className="text-meta text-muted">Next: {step.next}</p>
+          <p className="text-meta text-ink-3">Next: {step.next}</p>
         )}
       </div>
       {where !== undefined && step.state !== "done" && (
@@ -83,7 +83,7 @@ function StepRow({
             where === "people" ? "/engagements/$engagementId/people" : "/engagements/$engagementId"
           }
           params={{ engagementId }}
-          className="text-body text-accent hover:underline"
+          className="text-body text-espresso hover:underline"
         >
           {where === "people" ? "Go to People" : "Go to Overview"}
         </Link>

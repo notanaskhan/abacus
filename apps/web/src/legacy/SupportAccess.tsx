@@ -201,14 +201,14 @@ export function SupportAccess(): JSX.Element {
         <>
           <Panel title="Requested and active">
             {current.length === 0 ? (
-              <p className="text-body text-muted">No support session is requested or active.</p>
+              <p className="text-body text-ink-3">No support session is requested or active.</p>
             ) : (
               table(current)
             )}
           </Panel>
           <Panel title="Past sessions">
             {past.length === 0 ? (
-              <p className="text-body text-muted">No past support sessions.</p>
+              <p className="text-body text-ink-3">No past support sessions.</p>
             ) : (
               table(past)
             )}

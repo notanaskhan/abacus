@@ -2,7 +2,8 @@ import { Atom } from "lucide-react";
 import { type HTMLAttributes, type JSX, type ReactNode, useId } from "react";
 import { cn } from "../cn";
 
-// StatusPill moved to components/status.tsx with the rest of the Status kit (F-05-T12).
+// StatusPill moved to components/status.tsx with the rest of the Status kit (F-05-T12). The
+// Atelier icon rail (Rail, RailButton) was retired with its tokens (F-05-T34).
 
 /** Marks agent output (ADR-065, the plan's AgentMark): the atom glyph, never a boxed "AI" tag or
  * a sparkle; the citations link goes to their verified sources. Screen readers hear "AI". */
@@ -67,52 +68,5 @@ export function Panel({
       </div>
       <div className="flex flex-col gap-3 p-4">{children}</div>
     </section>
-  );
-}
-
-/** The workspace's icon rail: 44 px targets, labels for assistive technology and on hover. */
-export function Rail({ label, children }: { label: string; children: ReactNode }): JSX.Element {
-  return (
-    <nav
-      aria-label={label}
-      className="flex w-full flex-row items-center gap-1 border-b-[0.5px] border-hair bg-shell px-2 py-2 sm:min-h-screen sm:w-[60px] sm:flex-col sm:border-r-[0.5px] sm:border-b-0 sm:py-3"
-    >
-      {children}
-    </nav>
-  );
-}
-
-export function RailButton({
-  label,
-  badge,
-  active = false,
-  onClick,
-  children,
-}: {
-  label: string;
-  badge?: number;
-  active?: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}): JSX.Element {
-  return (
-    <button
-      type="button"
-      aria-label={badge !== undefined && badge > 0 ? `${label}, ${String(badge)} unread` : label}
-      aria-pressed={active}
-      title={label}
-      onClick={onClick}
-      className={cn(
-        "relative flex size-10 items-center justify-center rounded-pill text-ink-2 transition-colors hover:bg-nav-fill hover:text-ink [&_svg]:size-[17px]",
-        active && "bg-sel-bg text-ink",
-      )}
-    >
-      {children}
-      {badge !== undefined && badge > 0 && (
-        <span className="absolute top-0.5 right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red px-1 text-[10px] font-medium text-on-dark">
-          {badge > 99 ? "99+" : badge}
-        </span>
-      )}
-    </button>
   );
 }

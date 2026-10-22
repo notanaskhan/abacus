@@ -40,7 +40,7 @@ export function NotificationPanel({
   return (
     <aside
       aria-label="Notifications"
-      className="flex w-full flex-col gap-3 border-line bg-surface p-4 sm:w-96 sm:border-l"
+      className="flex w-full flex-col gap-3 border-hair bg-surface p-4 sm:w-96 sm:border-l"
     >
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-pane">Notifications</h2>
@@ -67,7 +67,7 @@ export function NotificationPanel({
       ) : page.data.items.length === 0 ? (
         <EmptyState title="You're all caught up" />
       ) : (
-        <ul className="flex flex-col divide-y divide-line">
+        <ul className="flex flex-col divide-y divide-hair">
           {page.data.items.map((n) => {
             const href = notificationHref(n, portal);
             const text = notificationText(n.kind);
@@ -75,18 +75,18 @@ export function NotificationPanel({
               <li key={n.id} className="flex items-start gap-3 py-3">
                 <span
                   aria-hidden="true"
-                  className={`mt-1.5 size-2 shrink-0 rounded-full ${n.read ? "bg-line" : "bg-accent"}`}
+                  className={`mt-1.5 size-2 shrink-0 rounded-full ${n.read ? "bg-hair" : "bg-espresso"}`}
                 />
                 <div className="flex flex-1 flex-col gap-1 text-body">
                   {href === null ? (
-                    <span className={n.read ? "text-muted" : "font-medium"}>{text}</span>
+                    <span className={n.read ? "text-ink-3" : "font-medium"}>{text}</span>
                   ) : (
                     <Link
                       to={href.to}
                       {...(href.hash !== undefined ? { hash: href.hash } : {})}
                       onClick={onClose}
                       className={
-                        n.read ? "text-muted hover:underline" : "font-medium hover:underline"
+                        n.read ? "text-ink-3 hover:underline" : "font-medium hover:underline"
                       }
                     >
                       {text}
@@ -95,7 +95,7 @@ export function NotificationPanel({
                   <DateText
                     value={n.created_at}
                     kind="dateTime"
-                    className="text-meta text-muted"
+                    className="text-meta text-ink-3"
                   />
                 </div>
                 {!n.read && (

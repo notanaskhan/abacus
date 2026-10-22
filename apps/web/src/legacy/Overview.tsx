@@ -80,7 +80,7 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
           }
         >
           {g.areas.length === 0 ? (
-            <p className="text-body text-muted">
+            <p className="text-body text-ink-3">
               No areas yet. Apply a methodology or add request items.
             </p>
           ) : (
@@ -128,7 +128,7 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
               them.
             </EmptyState>
           ) : (
-            <div className="overflow-x-auto rounded-[var(--radius-panel)] border border-line bg-surface">
+            <div className="overflow-x-auto rounded-[var(--radius-panel)] border border-hair bg-surface">
               <Table className="min-w-[640px]">
                 <thead>
                   <tr>
@@ -145,16 +145,16 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
                     return (
                       <tr key={item.id}>
                         <Td className="font-medium">{item.description}</Td>
-                        <Td className="text-muted">{item.retrievability_tier ?? "—"}</Td>
+                        <Td className="text-ink-3">{item.retrievability_tier ?? "—"}</Td>
                         <Td>
                           <StatusPill tone={status.tone}>{status.label}</StatusPill>
                         </Td>
-                        <Td className="text-muted">
+                        <Td className="text-ink-3">
                           {item.evidence_version_id === null ? "—" : "Received"}
                         </Td>
                         <Td>
                           {item.screening_action === null ? (
-                            <span className="text-muted">—</span>
+                            <span className="text-ink-3">—</span>
                           ) : (
                             <span className="inline-flex items-center gap-2">
                               <AiTag />
@@ -192,7 +192,7 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
             </ul>
           </Panel>
           <Panel title="Screening">
-            <p className="text-body text-muted">Proposals only. A reviewer decides each item.</p>
+            <p className="text-body text-ink-3">Proposals only. A reviewer decides each item.</p>
             <dl className="grid grid-cols-3 gap-2 text-body">
               <div className="rounded-[var(--radius-control)] bg-ok-soft p-2.5 text-ok">
                 <dt className="text-meta">Ready for review</dt>
@@ -209,14 +209,14 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
             </dl>
           </Panel>
           <Panel title="People">
-            <p className="text-body text-muted">
+            <p className="text-body text-ink-3">
               Team:{" "}
               {g.team.length === 0 ? "nobody yet" : g.team.map((m) => m.display_name).join(", ")}
             </p>
             <Link
               to="/engagements/$engagementId/people"
               params={{ engagementId }}
-              className="text-body text-accent hover:underline"
+              className="text-body text-espresso hover:underline"
             >
               Manage people
             </Link>
@@ -237,12 +237,12 @@ function GapRow({
   engagementId: string;
 }): JSX.Element {
   return (
-    <li className="flex items-center justify-between gap-2 rounded-[var(--radius-control)] border border-line p-2.5">
+    <li className="flex items-center justify-between gap-2 rounded-[var(--radius-control)] border border-hair p-2.5">
       <span>{label}</span>
       <Link
         to="/engagements/$engagementId/map"
         params={{ engagementId }}
-        className="font-medium text-accent tabular-nums hover:underline"
+        className="font-medium text-espresso tabular-nums hover:underline"
       >
         {count}
       </Link>
@@ -285,7 +285,7 @@ export function ApplyMethodology({ engagementId }: { engagementId: string }): JS
             onChange={(event) => {
               setVersion(event.target.value);
             }}
-            className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 font-normal"
+            className="h-9 rounded-[var(--radius-control)] border border-hair bg-surface px-3 font-normal"
           >
             <option value="">Choose a version…</option>
             {offered.map((t) => (

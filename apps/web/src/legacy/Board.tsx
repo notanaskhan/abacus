@@ -468,7 +468,7 @@ function HiddenFromClient({ item }: { item: RequestItemOut }): JSX.Element {
   });
   const hidden = item.client_visible === false;
   return (
-    <label className="ml-auto flex items-center gap-2 text-body text-muted">
+    <label className="ml-auto flex items-center gap-2 text-body text-ink-3">
       <input
         type="checkbox"
         checked={hidden}
@@ -543,7 +543,7 @@ function ScreeningSummary({
       )}
       {result.unverified.length > 0 && (
         <div>
-          <p className="text-muted">Couldn't be verified:</p>
+          <p className="text-ink-3">Couldn't be verified:</p>
           <ul className="list-disc pl-5">
             {result.unverified.map((note, i) => (
               <li key={`${String(i)}-${note}`}>
@@ -849,7 +849,7 @@ function TierOverride({ item }: { item: RequestItemOut }): JSX.Element {
   });
   const value = item.tier_source === "override" ? (item.retrievability_tier ?? "") : "";
   return (
-    <label className="flex items-center gap-2 text-body text-muted">
+    <label className="flex items-center gap-2 text-body text-ink-3">
       Tier
       <select
         aria-label={`Tier for ${item.description}`}

@@ -118,7 +118,7 @@ function BudgetPanel({
     >
       <p className="text-body">
         <span className="text-dashboard font-medium tabular-nums">{usd(spent)}</span>{" "}
-        <span className="text-muted">
+        <span className="text-ink-3">
           of {usd(hard)} · {state}
           {isDefault && " · default budget"}
         </span>
@@ -132,7 +132,7 @@ function BudgetPanel({
         className="relative h-3 overflow-hidden rounded-full bg-sunken"
       >
         <div
-          className={`h-full ${spent >= soft ? "bg-warn" : "bg-accent"}`}
+          className={`h-full ${spent >= soft ? "bg-warn" : "bg-espresso"}`}
           style={{ width: `${String(pct)}%` }}
         />
         <div
@@ -141,7 +141,7 @@ function BudgetPanel({
           style={{ left: `${String(softPct)}%` }}
         />
       </div>
-      <p className="text-meta text-muted tabular-nums">
+      <p className="text-meta text-ink-3 tabular-nums">
         Soft limit {usd(soft)} (deferrable work waits) · Hard limit {usd(hard)} (only essential
         work runs) · Plan limit {usd(cap)}
       </p>
@@ -258,7 +258,7 @@ function Metering(): JSX.Element {
       ) : metering.isError ? (
         <Alert title="Couldn't load spend">{errorMessage(metering.error)}</Alert>
       ) : rows.length === 0 ? (
-        <p className="text-body text-muted">No model spend in this period.</p>
+        <p className="text-body text-ink-3">No model spend in this period.</p>
       ) : (
         <div className="overflow-x-auto">
           <Table className="min-w-[520px]">
@@ -273,7 +273,7 @@ function Metering(): JSX.Element {
               {rows.map((r) => (
                 <tr key={`${r.engagement_id ?? "firm"}-${r.agent_id ?? "none"}`}>
                   <Td>{label(r.engagement_id)}</Td>
-                  <Td className="text-muted" title={r.agent_id ?? undefined}>
+                  <Td className="text-ink-3" title={r.agent_id ?? undefined}>
                     {r.agent_id == null ? "—" : (AGENT_WORK[r.agent_id] ?? r.agent_id)}
                   </Td>
                   <Td className="text-right tabular-nums">{usd(r.cost_usd)}</Td>

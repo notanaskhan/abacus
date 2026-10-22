@@ -110,11 +110,11 @@ export function ClientEngagement({ engagementId }: { engagementId: string }): JS
   }
 
   return (
-    <div className="min-h-screen bg-ground">
+    <div className="min-h-screen bg-shell">
       <header className="flex h-[46px] items-center justify-between border-b-[0.5px] border-hair bg-card px-4">
         <PortalBrand />
         <span className="flex items-center gap-3">
-          <Link to="/client" className="text-body text-accent hover:underline">
+          <Link to="/client" className="text-body text-espresso hover:underline">
             Your engagements
           </Link>
         </span>
@@ -127,7 +127,7 @@ export function ClientEngagement({ engagementId }: { engagementId: string }): JS
         ) : (
           <div>
             <h1 className="text-dashboard">{engagement.data.name}</h1>
-            <p className="text-body text-muted tabular-nums">
+            <p className="text-body text-ink-3 tabular-nums">
               With {firmName} · {engagement.data.client_name} ·{" "}
               {engagement.data.fiscal_period_start} to {engagement.data.fiscal_period_end}
             </p>
@@ -157,7 +157,7 @@ export function ClientEngagement({ engagementId }: { engagementId: string }): JS
         ) : (
           [...areas].map(([area, list]) => (
             <Panel key={area} title={area}>
-              <ul className="flex flex-col divide-y divide-line">
+              <ul className="flex flex-col divide-y divide-hair">
                 {list.map((item) => (
                   <ClientItem
                     key={item.id}
@@ -193,7 +193,7 @@ function Guidance({ item }: { item: RequestItemOut }): JSX.Element | null {
       {shown.map(([label, text]) => (
         <div key={label}>
           <dt className="font-medium">{label}</dt>
-          <dd className="whitespace-pre-line text-muted">{text}</dd>
+          <dd className="whitespace-pre-line text-ink-3">{text}</dd>
         </div>
       ))}
     </dl>
@@ -299,7 +299,7 @@ function ClientItem({
           <StatusPill tone={status.tone}>{status.label}</StatusPill>
         </span>
       </div>
-      {item.due_on != null && <p className="text-body text-muted">Due {longDate(item.due_on)}</p>}
+      {item.due_on != null && <p className="text-body text-ink-3">Due {longDate(item.due_on)}</p>}
       <Guidance item={item} />
       <NotApplicable item={item} ignored={ignored} />
       {provided !== null && <p className="text-body text-ok">{providedMessage(provided)}</p>}
@@ -346,7 +346,7 @@ function ClientItem({
           {item.unread_comments === true && (
             <span
               aria-label="Unread comments"
-              className="ml-1 inline-block size-2 rounded-full bg-accent"
+              className="ml-1 inline-block size-2 rounded-full bg-espresso"
             />
           )}
         </Button>
@@ -363,7 +363,7 @@ function ClientItem({
                   body: { user_id: event.target.value === "" ? null : event.target.value },
                 });
               }}
-              className="h-8 rounded-[var(--radius-control)] border border-line bg-surface px-2 text-body"
+              className="h-8 rounded-[var(--radius-control)] border border-hair bg-surface px-2 text-body"
             >
               <option value="">No one</option>
               {contributors.map((c) => (
@@ -413,11 +413,11 @@ function ClientItem({
         ) : uploads.isError ? (
           <p className="text-body text-danger">{errorMessage(uploads.error)}</p>
         ) : uploads.data.length === 0 && fromSystem.length === 0 ? (
-          <p className="text-body text-muted">No files uploaded yet.</p>
+          <p className="text-body text-ink-3">No files uploaded yet.</p>
         ) : (
           <ul aria-label="Uploaded files" className="flex flex-col gap-1 text-body">
             {fromSystem.map((h) => (
-              <li key={h.evidence_version_id} className="flex flex-wrap gap-x-2 text-muted">
+              <li key={h.evidence_version_id} className="flex flex-wrap gap-x-2 text-ink-3">
                 <span className="text-ink">{providedBy(provided)}</span>
                 <span>
                   · <DateText value={h.added_at} kind="dateTime" />
@@ -426,7 +426,7 @@ function ClientItem({
               </li>
             ))}
             {uploads.data.map((u) => (
-              <li key={u.evidence_version_id} className="flex flex-wrap gap-x-2 text-muted">
+              <li key={u.evidence_version_id} className="flex flex-wrap gap-x-2 text-ink-3">
                 <span className="text-ink">{u.file_name}</span>
                 <span className="tabular-nums">{bytes(u.size_bytes)}</span>
                 <span>
@@ -438,7 +438,7 @@ function ClientItem({
                 <Outcome entry={history.get(u.evidence_version_id)} />
                 <button
                   type="button"
-                  className="text-accent hover:underline"
+                  className="text-espresso hover:underline"
                   onClick={() => {
                     setVersionThread(
                       versionThread === u.evidence_version_id ? null : u.evidence_version_id,
@@ -464,7 +464,7 @@ function ClientItem({
                 )}
                 <button
                   type="button"
-                  className="text-accent hover:underline"
+                  className="text-espresso hover:underline"
                   onClick={() => {
                     setPreviewing(u.evidence_version_id);
                   }}
@@ -480,7 +480,7 @@ function ClientItem({
                   uploadedAt={u.uploaded_at}
                   replace={
                     takesFiles ? (
-                      <Label htmlFor={inputId} className="cursor-pointer text-meta text-accent">
+                      <Label htmlFor={inputId} className="cursor-pointer text-meta text-espresso">
                         Replace file
                       </Label>
                     ) : null

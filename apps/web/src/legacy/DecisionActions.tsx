@@ -114,10 +114,10 @@ export function DecisionActions({
           />
           {/* SPEC-031 Q4: a send-back's note goes to the client; a rejection's stays here. */}
           {kind === "send_back" && (
-            <span className="text-meta text-muted">The client will see this note.</span>
+            <span className="text-meta text-ink-3">The client will see this note.</span>
           )}
           {kind === "reject" && (
-            <span className="text-meta text-muted">Only your team sees this note.</span>
+            <span className="text-meta text-ink-3">Only your team sees this note.</span>
           )}
         </Label>
         <Button

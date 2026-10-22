@@ -59,8 +59,6 @@ typescript:
     clsx: approved
     tailwind-merge: approved
     lucide-react: approved
-    "@fontsource/source-sans-3": approved   # self-hosted UI font; the CSP blocks remote fonts (SPEC-016)
-    "@fontsource/newsreader": approved      # self-hosted heading font (SPEC-016)
     "@fontsource/geist": approved           # self-hosted UI font, the plan's design foundation (TASK-091)
     "@fontsource/geist-mono": approved      # self-hosted mono for IDs and figures (TASK-091)
     "@workos-inc/authkit-react": approved  # firm app sign-in through AuthKit (DEC-22, ADR-141)

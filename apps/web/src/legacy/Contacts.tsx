@@ -73,7 +73,7 @@ export function Contacts({ engagementId }: { engagementId: string }): JSX.Elemen
           <h2 id="contacts-heading" className="text-[15px] font-medium tracking-[-0.012em]">
             Client contacts
           </h2>
-          <p className="text-body text-muted">
+          <p className="text-body text-ink-3">
             People at the client who can see what you share and send evidence. Invitations are
             emailed; links work once and expire after 7 days.
           </p>
@@ -99,7 +99,7 @@ export function Contacts({ engagementId }: { engagementId: string }): JSX.Elemen
           Invite the client&apos;s finance lead as a client admin; they can invite colleagues.
         </EmptyState>
       ) : (
-        <div className="overflow-x-auto rounded-[var(--radius-panel)] border border-line bg-surface">
+        <div className="overflow-x-auto rounded-[var(--radius-panel)] border border-hair bg-surface">
           <Table className="min-w-[640px]">
             <thead>
               <tr>
@@ -123,7 +123,7 @@ export function Contacts({ engagementId }: { engagementId: string }): JSX.Elemen
                       <span className="inline-flex items-center gap-2">
                         <StatusPill tone="info">Invited</StatusPill>
                         {c.expires_at !== null && (
-                          <span className="text-meta text-muted">
+                          <span className="text-meta text-ink-3">
                             until <DateText value={c.expires_at} />
                           </span>
                         )}

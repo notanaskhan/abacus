@@ -133,7 +133,7 @@ export {
   sparkPoints,
   stepViews,
 } from "./components/progress-model";
-export { AiTag, Fraction, Panel, Rail, RailButton } from "./components/workspace";
+export { AiTag, Fraction, Panel } from "./components/workspace";
 export {
   RegistryStatus,
   type RegistryStatusProps,

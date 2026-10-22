@@ -31,11 +31,11 @@ function Disclosure({ data }: { data: AiClientDataOut }): JSX.Element | null {
   return (
     <dl className="flex flex-col gap-1 text-body">
       <dt className="font-medium">Who runs it</dt>
-      <dd className="text-muted">
+      <dd className="text-ink-3">
         {d.provider}, in our own account, in the {d.region} region (United States).
       </dd>
       <dt className="font-medium">Your clients&apos; data</dt>
-      <dd className="text-muted">
+      <dd className="text-ink-3">
         Never used to train or improve models, and not kept after each request
         {d.retention_exceptions.length > 0 &&
           `, except ${d.retention_exceptions
@@ -46,13 +46,13 @@ function Disclosure({ data }: { data: AiClientDataOut }): JSX.Element | null {
       {d.subprocessors.length > 0 && (
         <>
           <dt className="font-medium">Subprocessors</dt>
-          <dd className="text-muted">{d.subprocessors.join(", ")}</dd>
+          <dd className="text-ink-3">{d.subprocessors.join(", ")}</dd>
         </>
       )}
       <dt className="font-medium">Suggested wording for your engagement letters</dt>
-      <dd className="text-muted">&ldquo;{d.letter_wording}&rdquo;</dd>
+      <dd className="text-ink-3">&ldquo;{d.letter_wording}&rdquo;</dd>
       <dt className="font-medium">Terms reviewed by</dt>
-      <dd className="text-muted tabular-nums">{d.review_by}</dd>
+      <dd className="text-ink-3 tabular-nums">{d.review_by}</dd>
     </dl>
   );
 }
@@ -77,7 +77,7 @@ export function AiClientDataSetting({ canSet }: { canSet: boolean }): JSX.Elemen
     if (isForbidden(state.error)) {
       return (
         <Panel title="AI on your clients' data">
-          <p className="text-body text-muted">Only firm administrators can see this setting.</p>
+          <p className="text-body text-ink-3">Only firm administrators can see this setting.</p>
         </Panel>
       );
     }
@@ -98,7 +98,7 @@ export function AiClientDataSetting({ canSet }: { canSet: boolean }): JSX.Elemen
     >
       <div className="flex flex-col gap-3">
         {!data.available ? (
-          <p className="text-body text-muted">
+          <p className="text-body text-ink-3">
             Not available yet. The agent runs on synthetic data only until the provider terms are
             in place.
           </p>
@@ -123,9 +123,9 @@ export function AiClientDataSetting({ canSet }: { canSet: boolean }): JSX.Elemen
                 ))}
               </ul>
             ) : (
-              <p className="text-body text-muted">No agent capabilities are available yet.</p>
+              <p className="text-body text-ink-3">No agent capabilities are available yet.</p>
             )}
-            <p className="text-meta text-muted">
+            <p className="text-meta text-ink-3">
               Each capability starts in shadow: it runs, but your team doesn&apos;t see its work
               until we&apos;ve compared it with your team&apos;s decisions. Clients never see
               anything written by AI.
@@ -213,7 +213,7 @@ export function AiExclusionControl({
         {excluded && (
           <>
             <StatusPill tone="warning">AI is off for this engagement</StatusPill>
-            {state.data.reason != null && <span className="text-muted">{state.data.reason}</span>}
+            {state.data.reason != null && <span className="text-ink-3">{state.data.reason}</span>}
           </>
         )}
         {canSwitch &&
@@ -253,7 +253,7 @@ export function AiExclusionControl({
               onChange={(e) => {
                 setReason(e.target.value);
               }}
-              className="rounded-[var(--radius-control)] border border-line bg-surface p-2"
+              className="rounded-[var(--radius-control)] border border-hair bg-surface p-2"
             />
           </div>
           <Button

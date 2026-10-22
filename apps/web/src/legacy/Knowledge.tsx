@@ -18,7 +18,7 @@ export function Knowledge(): JSX.Element {
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="px-1 text-[20px] font-medium tracking-[-0.015em]">Knowledge</h1>
-        <p className="text-body text-muted">Search your firm&apos;s methodology documents.</p>
+        <p className="text-body text-ink-3">Search your firm&apos;s methodology documents.</p>
       </div>
       <form className="flex flex-wrap items-end gap-3" onSubmit={submit}>
         <div className="flex min-w-72 flex-1 flex-col gap-1">
@@ -53,10 +53,10 @@ export function Knowledge(): JSX.Element {
           <li key={`${hit.document_id}-${String(hit.position)}`}>
             <Panel title={hit.title}>
               {hit.heading_path !== "" && (
-                <p className="text-meta text-muted">{hit.heading_path}</p>
+                <p className="text-meta text-ink-3">{hit.heading_path}</p>
               )}
               <p className="text-body whitespace-pre-line">{hit.text}</p>
-              <p className="text-meta text-muted tabular-nums">Match {ratio(hit.score)}</p>
+              <p className="text-meta text-ink-3 tabular-nums">Match {ratio(hit.score)}</p>
             </Panel>
           </li>
         ))}

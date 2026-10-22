@@ -72,10 +72,10 @@ export function InboxAIMatch({
   if (match === undefined) {
     body = suggest;
   } else if (match.status === "running") {
-    body = <span className="text-meta text-muted">Looking at the file…</span>;
+    body = <span className="text-meta text-ink-3">Looking at the file…</span>;
   } else if (match.status !== "completed") {
     body = (
-      <span className="flex flex-wrap items-center gap-2 text-meta text-muted">
+      <span className="flex flex-wrap items-center gap-2 text-meta text-ink-3">
         {FAILED[match.reason ?? ""] ?? "The AI suggestion didn't finish."}
         {match.reason !== "data_boundary" && suggest}
       </span>
@@ -92,7 +92,7 @@ export function InboxAIMatch({
     );
   } else if (match.proposals.length === 0) {
     body = (
-      <span className="flex flex-wrap items-center gap-2 text-meta text-muted">
+      <span className="flex flex-wrap items-center gap-2 text-meta text-ink-3">
         <AiTag /> No confident suggestion. {suggest}
       </span>
     );
@@ -106,17 +106,17 @@ export function InboxAIMatch({
               <span className="font-medium text-ink">
                 {describe.get(p.request_item_id) ?? "Request"}
               </span>
-              <span className="text-muted tabular-nums">
+              <span className="text-ink-3 tabular-nums">
                 {Math.round(Number(p.confidence) * 100)}% confident
               </span>
             </span>
             <AgentText text={p.rationale} />
             {p.quotes.map((quote, n) => (
-              <span key={n} className="text-muted">
+              <span key={n} className="text-ink-3">
                 {quote.page != null ? (
                   <button
                     type="button"
-                    className="text-accent hover:underline"
+                    className="text-espresso hover:underline"
                     onClick={() => {
                       if (quote.page != null) setPage(quote.page);
                     }}
@@ -138,7 +138,7 @@ export function InboxAIMatch({
   }
   if (body === null) return null;
   return (
-    <div className="flex flex-col gap-1 rounded-[var(--radius-control)] border border-ai-line p-2">
+    <div className="flex flex-col gap-1 rounded-[var(--radius-control)] border border-stroke p-2">
       {body}
       <Dialog
         open={page !== null}

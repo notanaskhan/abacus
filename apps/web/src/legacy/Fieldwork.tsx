@@ -126,13 +126,13 @@ const VERDICTS: Record<string, string> = {
 function Assessment({ assessment }: { assessment: AssessmentOut }): JSX.Element {
   const [open, setOpen] = useState(false);
   return (
-    <div className="flex flex-col gap-1 rounded-[var(--radius-control)] border border-ai-line p-2 text-meta">
+    <div className="flex flex-col gap-1 rounded-[var(--radius-control)] border border-stroke p-2 text-meta">
       <span className="flex items-center gap-2">
         <AiTag />
         <span className="font-medium">{VERDICTS[assessment.verdict] ?? assessment.verdict}</span>
         <button
           type="button"
-          className="text-muted underline"
+          className="text-ink-3 underline"
           onClick={() => {
             setOpen(!open);
           }}
@@ -145,7 +145,7 @@ function Assessment({ assessment }: { assessment: AssessmentOut }): JSX.Element 
           <AgentText text={assessment.rationale} />
           <ul className="flex flex-col gap-1">
             {assessment.citations.map((c, n) => (
-              <li key={n} className={c.verified ? "" : "text-muted line-through"}>
+              <li key={n} className={c.verified ? "" : "text-ink-3 line-through"}>
                 {`${c.document} ${c.page != null ? `p.${String(c.page)}` : `${c.sheet ?? ""} ${c.cell ?? ""}`} (${c.claim}): `}
                 <AgentText text={c.quote} />
               </li>
@@ -202,32 +202,32 @@ function MaterialityPanel({ engagementId }: { engagementId: string }): JSX.Eleme
         <Link
           to="/engagements/$engagementId/planning"
           params={{ engagementId }}
-          className="text-[12.5px] text-accent hover:underline"
+          className="text-[12.5px] text-espresso hover:underline"
         >
           {m === undefined ? "Propose on Planning" : "Open planning"}
         </Link>
       }
     >
       {m === undefined ? (
-        <p className="text-body text-muted">
+        <p className="text-body text-ink-3">
           Not proposed yet. Sampling waits for the engagement partner's decision.
         </p>
       ) : (
         <dl className="grid gap-2 text-body sm:grid-cols-4">
           <div>
-            <dt className="text-muted">Overall</dt>
+            <dt className="text-ink-3">Overall</dt>
             <dd className="tabular-nums">{money(m.overall)}</dd>
           </div>
           <div>
-            <dt className="text-muted">Performance</dt>
+            <dt className="text-ink-3">Performance</dt>
             <dd className="tabular-nums">{money(m.performance)}</dd>
           </div>
           <div>
-            <dt className="text-muted">Clearly trivial</dt>
+            <dt className="text-ink-3">Clearly trivial</dt>
             <dd className="tabular-nums">{money(m.trivial)}</dd>
           </div>
           <div>
-            <dt className="text-muted">Status</dt>
+            <dt className="text-ink-3">Status</dt>
             <dd>
               {m.status === "decided" ? (
                 <StatusPill tone="success">Decided</StatusPill>
@@ -319,14 +319,14 @@ function EntryRow({
       <Td className="tabular-nums">{item.posted_on}</Td>
       <Td>
         {item.reference || "—"}
-        <div className="text-meta text-muted">{item.kind}</div>
+        <div className="text-meta text-ink-3">{item.kind}</div>
       </Td>
       <Td className="text-right tabular-nums">{money(item.amount)}</Td>
       <Td className="text-meta">
         {item.rules.map((r) => RULES[r] ?? r).join(", ")}
-        {item.reason != null && <div className="text-muted">{item.reason}</div>}
+        {item.reason != null && <div className="text-ink-3">{item.reason}</div>}
         {banded && (
-          <div className="text-muted">
+          <div className="text-ink-3">
             {`Band ${String(item.band)} · `}
             {item.recorded_bill_reference != null
               ? `Bill recorded at year end: ${item.recorded_bill_reference}, ${item.recorded_bill_date ?? ""}`
@@ -344,7 +344,7 @@ function EntryRow({
               onChange={(e) => {
                 setResult(e.target.value);
               }}
-              className="rounded-[var(--radius-control)] border border-line bg-surface p-1"
+              className="rounded-[var(--radius-control)] border border-hair bg-surface p-1"
             >
               <option value="">No result</option>
               {Object.entries(RESULTS).map(([k, v]) => (
@@ -360,7 +360,7 @@ function EntryRow({
                 onChange={(e) => {
                   setRelates(e.target.value);
                 }}
-                className="rounded-[var(--radius-control)] border border-line bg-surface p-1"
+                className="rounded-[var(--radius-control)] border border-hair bg-surface p-1"
               >
                 <option value="">Relates to the year?</option>
                 {Object.entries(RELATES).map(([k, v]) => (
@@ -379,7 +379,7 @@ function EntryRow({
                 onChange={(e) => {
                   setNote(e.target.value);
                 }}
-                className="rounded-[var(--radius-control)] border border-line bg-surface p-1"
+                className="rounded-[var(--radius-control)] border border-hair bg-surface p-1"
               />
             )}
             {evidence.length > 0 && (
@@ -391,7 +391,7 @@ function EntryRow({
                   setLinked(Array.from(e.target.selectedOptions, (o) => o.value));
                 }}
                 size={Math.min(evidence.length, 2)}
-                className="max-h-[46px] rounded-[var(--radius-control)] border border-line bg-surface p-1 text-meta"
+                className="max-h-[46px] rounded-[var(--radius-control)] border border-hair bg-surface p-1 text-meta"
               >
                 {evidence.map((v) => (
                   <option key={v.id} value={v.id}>
@@ -593,7 +593,7 @@ function WorkpaperPanel({
   return (
     <Panel title="Workpaper" action={<StatusPill tone={tone}>{STATUS[w.status]}</StatusPill>}>
       <div className="flex flex-col gap-3 text-body">
-        <p className="text-muted">
+        <p className="text-ink-3">
           {`${String(w.with_result)} of ${String(w.entries)} entries have a result; ${String(w.exceptions)} exception(s).`}
         </p>
         <Label htmlFor="conclusion">Conclusion</Label>
@@ -606,7 +606,7 @@ function WorkpaperPanel({
           onChange={(e) => {
             setText(e.target.value);
           }}
-          className="rounded-[var(--radius-control)] border border-line bg-surface p-2"
+          className="rounded-[var(--radius-control)] border border-hair bg-surface p-2"
         />
         <div className="flex flex-wrap gap-2">
           {canRun && (
@@ -653,7 +653,7 @@ function WorkpaperPanel({
             {w.versions.map((v) => (
               <li key={v.version} className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">{`Version ${String(v.version)}`}</span>
-                <span className="text-muted">
+                <span className="text-ink-3">
                   {v.signatures
                     .map((g) => `${g.kind === "ready" ? "Ready" : "Reviewed"}: ${g.name}`)
                     .join(" · ")}
@@ -816,7 +816,7 @@ function ProcedurePanel({
         }
       >
         <div className="flex flex-col gap-2 text-body">
-          {p.status === "selecting" && <p className="text-muted">Selecting entries…</p>}
+          {p.status === "selecting" && <p className="text-ink-3">Selecting entries…</p>}
           {p.status === "failed" && (
             <Alert title="Selection didn't finish">
               {MESSAGES[p.failure_code ?? ""] ?? "Try again."}
@@ -835,7 +835,7 @@ function ProcedurePanel({
             </p>
           )}
           {p.selection != null && (
-            <p className="text-muted">
+            <p className="text-ink-3">
               {`${String(p.selection.item_count)} selected: `}
               {Object.entries(p.selection.by_rule)
                 .map(([r, n]) => `${RULES[r] ?? r} ${String(n)}`)
@@ -843,12 +843,12 @@ function ProcedurePanel({
             </p>
           )}
           {p.selection == null && p.status !== "selecting" && (
-            <p className="text-muted">
+            <p className="text-ink-3">
               {surl ? "No payments selected yet." : "No entries selected yet."}
             </p>
           )}
           {!surl && (
-            <p className="text-meta text-muted">
+            <p className="text-meta text-ink-3">
               Not performed: entries posted after year end (needs the subsequent-period ledger) and
               who entered each entry (not in the export).
             </p>
@@ -924,7 +924,7 @@ function ProcedurePanel({
           }
         >
           {askAll.isSuccess && (
-            <p className="text-meta text-muted">
+            <p className="text-meta text-ink-3">
               {`One request sent to the client for ${String(askAll.data.items)} items.`}
             </p>
           )}
@@ -965,7 +965,7 @@ function ProcedurePanel({
           )}
           {assess.isError && <Alert title="Couldn't start">{said(assess.error)}</Alert>}
           {assess.isSuccess && (
-            <p className="text-meta text-muted">
+            <p className="text-meta text-ink-3">
               {`Assessing ${String(assess.data.items.length)} entries with linked support. AI proposals appear beside each entry; your team still records every result.`}
             </p>
           )}
@@ -1110,7 +1110,7 @@ export function Fieldwork({ engagementId }: { engagementId: string }): JSX.Eleme
           ) : (
             <Panel title="Not started">
               <div className="flex flex-col gap-2 text-body">
-                <p className="text-muted">
+                <p className="text-ink-3">
                   Selects journal entries from the general ledger by risk criteria and a random
                   sample, for your team to test and sign off.
                 </p>
@@ -1143,7 +1143,7 @@ export function Fieldwork({ engagementId }: { engagementId: string }): JSX.Eleme
           ) : (
             <Panel title="Not started">
               <div className="flex flex-col gap-2 text-body">
-                <p className="text-muted">
+                <p className="text-ink-3">
                   Tests payments made after year end for liabilities that should have been recorded
                   at year end: larger payments by timing band, with a check for a matching bill.
                 </p>

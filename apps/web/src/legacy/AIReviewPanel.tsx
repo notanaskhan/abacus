@@ -81,7 +81,7 @@ export function AIReviewPanel({
   if (review.isPending) return <Skeleton className="h-20" />;
   if (review.isError) {
     return isForbidden(review.error) ? (
-      <p className="text-body text-muted">You can&apos;t see this file&apos;s AI review.</p>
+      <p className="text-body text-ink-3">You can&apos;t see this file&apos;s AI review.</p>
     ) : (
       <Alert title="Couldn't load the AI review">Try again in a moment.</Alert>
     );
@@ -89,16 +89,16 @@ export function AIReviewPanel({
   const data = review.data;
   if (data.status === "none") {
     return (
-      <div className="flex flex-wrap items-center gap-3 text-body text-muted">
+      <div className="flex flex-wrap items-center gap-3 text-body text-ink-3">
         Not reviewed yet.
         {reviewNow}
       </div>
     );
   }
-  if (data.status === "running") return <p className="text-body text-muted">Reviewing…</p>;
+  if (data.status === "running") return <p className="text-body text-ink-3">Reviewing…</p>;
   if (data.status !== "completed") {
     return (
-      <div className="flex flex-wrap items-center gap-3 text-body text-muted">
+      <div className="flex flex-wrap items-center gap-3 text-body text-ink-3">
         {FAILED[data.reason ?? ""] ?? "The AI review didn't finish."}
         {data.reason !== "data_boundary" && reviewNow}
       </div>
@@ -119,23 +119,23 @@ export function AIReviewPanel({
         {data.flags.map((flag, n) => (
           <li
             key={`${flag.category}-${String(n)}`}
-            className="flex flex-col gap-1 rounded-[var(--radius-control)] border border-line p-3 text-body"
+            className="flex flex-col gap-1 rounded-[var(--radius-control)] border border-hair p-3 text-body"
           >
             <span className="flex flex-wrap items-center gap-2">
               <AiTag citations={flag.quotes.length} />
               <Badge tone="warning">{CATEGORY[flag.category] ?? flag.category}</Badge>
-              <span className="text-meta text-muted tabular-nums">
+              <span className="text-meta text-ink-3 tabular-nums">
                 {Math.round(Number(flag.confidence) * 100)}% confident
               </span>
             </span>
             <AgentText text={flag.rationale} />
             <ul className="flex flex-col gap-1">
               {flag.quotes.map((quote, q) => (
-                <li key={q} className="text-meta text-muted">
+                <li key={q} className="text-meta text-ink-3">
                   {quote.page != null ? (
                     <button
                       type="button"
-                      className="text-accent hover:underline"
+                      className="text-espresso hover:underline"
                       onClick={() => {
                         if (quote.page != null) onOpenPage(quote.page);
                       }}

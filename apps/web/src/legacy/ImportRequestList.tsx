@@ -176,7 +176,7 @@ function ImportDialog({
         onChange={(event) => {
           set(event.target.value === "" ? null : Number(event.target.value));
         }}
-        className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-body"
+        className="h-9 rounded-[var(--radius-control)] border border-hair bg-surface px-3 text-body"
       >
         <option value="">{optional ? "None" : "Choose a column…"}</option>
         {(chosen?.headers ?? []).map((h, index) => (
@@ -197,7 +197,7 @@ function ImportDialog({
       title="Import a request list"
       description="Your own spreadsheet: pick the columns, check the preview, then import. Duplicates are skipped."
     >
-      <ol aria-label="Steps" className="mb-3 flex gap-3 text-meta text-muted">
+      <ol aria-label="Steps" className="mb-3 flex gap-3 text-meta text-ink-3">
         <li className={step === "file" ? "font-medium text-ink" : ""}>1 · File</li>
         <li className={step === "map" ? "font-medium text-ink" : ""}>2 · Columns and preview</li>
         <li className={step === "done" ? "font-medium text-ink" : ""}>3 · Done</li>
@@ -249,7 +249,7 @@ function ImportDialog({
                   setArea(next?.suggested_area ?? null);
                   setTier(next?.suggested_tier ?? null);
                 }}
-                className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-body"
+                className="h-9 rounded-[var(--radius-control)] border border-hair bg-surface px-3 text-body"
               >
                 {sheets.map((s, index) => (
                   <option key={s.name} value={index}>
@@ -271,7 +271,7 @@ function ImportDialog({
                   setHeaderRow(row);
                   if (file !== null) void loadPreview(file, row);
                 }}
-                className="h-9 rounded-[var(--radius-control)] border border-line bg-surface px-3 text-body"
+                className="h-9 rounded-[var(--radius-control)] border border-hair bg-surface px-3 text-body"
               />
             </div>
             {columnSelect(
@@ -284,8 +284,8 @@ function ImportDialog({
             {columnSelect("list-area", "Audit area column", area, setArea, false)}
             {columnSelect("list-tier", "Tier column (optional)", tier, setTier, true)}
           </div>
-          <p className="text-meta text-muted">Preview of the first {planned.length} rows</p>
-          <div className="max-h-64 overflow-auto rounded-[var(--radius-control)] border border-line">
+          <p className="text-meta text-ink-3">Preview of the first {planned.length} rows</p>
+          <div className="max-h-64 overflow-auto rounded-[var(--radius-control)] border border-hair">
             <Table>
               <thead>
                 <tr>
@@ -298,7 +298,7 @@ function ImportDialog({
               <tbody>
                 {planned.map((p, index) => (
                   <tr key={`${p.text}-${String(index)}`}>
-                    <Td>{p.text === "" ? <span className="text-muted">—</span> : p.text}</Td>
+                    <Td>{p.text === "" ? <span className="text-ink-3">—</span> : p.text}</Td>
                     <Td>
                       <span className="inline-flex items-center gap-1.5">
                         {p.areaName}
@@ -342,13 +342,13 @@ function ImportDialog({
       {step === "done" && counts !== null && (
         <div className="flex flex-col gap-3">
           <dl className="grid grid-cols-2 gap-2 text-body">
-            <dt className="text-muted">Created</dt>
+            <dt className="text-ink-3">Created</dt>
             <dd className="font-medium tabular-nums">{counts.created}</dd>
-            <dt className="text-muted">Duplicates skipped</dt>
+            <dt className="text-ink-3">Duplicates skipped</dt>
             <dd className="tabular-nums">{counts.duplicates}</dd>
-            <dt className="text-muted">Empty rows skipped</dt>
+            <dt className="text-ink-3">Empty rows skipped</dt>
             <dd className="tabular-nums">{counts.empty}</dd>
-            <dt className="text-muted">Items with new areas</dt>
+            <dt className="text-ink-3">Items with new areas</dt>
             <dd className="tabular-nums">{counts.unmatched_areas}</dd>
           </dl>
           <div className="flex justify-end">

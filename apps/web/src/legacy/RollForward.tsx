@@ -13,7 +13,7 @@ const ROLES: [StaffRole, string][] = [
   ["staff", "Staff"],
   ["reviewer", "Reviewer"],
 ];
-const SELECT = "h-8 rounded-[var(--radius-control)] border border-line bg-surface px-2 text-body";
+const SELECT = "h-8 rounded-[var(--radius-control)] border border-hair bg-surface px-2 text-body";
 const GROUPS: [ProposedItemOut["kind"], string][] = [
   ["used", "Used last year"],
   ["not_used", "Not used last year"],
@@ -83,7 +83,7 @@ export function RollForwardReview({
           {prior.fiscal_period_start} – {prior.fiscal_period_end}).
         </p>
         {proposal.others.length > 0 && (
-          <label className="flex items-center gap-2 text-muted">
+          <label className="flex items-center gap-2 text-ink-3">
             Another earlier engagement:
             <select
               className={SELECT}
@@ -105,8 +105,8 @@ export function RollForwardReview({
 
       <section aria-label="Team" className="flex flex-col gap-2">
         <h3 className="font-medium">Team</h3>
-        <p className="text-meta text-muted">You join as engagement partner.</p>
-        {proposal.team.length === 0 && <p className="text-muted">No one else from last year.</p>}
+        <p className="text-meta text-ink-3">You join as engagement partner.</p>
+        {proposal.team.length === 0 && <p className="text-ink-3">No one else from last year.</p>}
         <ul className="flex flex-col gap-1">
           {proposal.team.map((m) => {
             const row = team[m.user_id];
@@ -145,7 +145,7 @@ export function RollForwardReview({
                     ))}
                   </select>
                 ) : (
-                  <span className="text-meta text-muted">
+                  <span className="text-meta text-ink-3">
                     Not available: left the firm or now walled from this client
                   </span>
                 )}
@@ -158,7 +158,7 @@ export function RollForwardReview({
       <section aria-label="Template" className="flex flex-col gap-1">
         <h3 className="font-medium">Template</h3>
         {proposal.template === null ? (
-          <p className="text-muted">Last year&apos;s engagement had no template.</p>
+          <p className="text-ink-3">Last year&apos;s engagement had no template.</p>
         ) : (
           <p>
             {proposal.template.template_name} · v{proposal.template.latest_version}
@@ -170,7 +170,7 @@ export function RollForwardReview({
 
       <section aria-label="Request list" className="flex flex-col gap-2">
         <h3 className="font-medium">Request list</h3>
-        <p className="text-muted">
+        <p className="text-ink-3">
           {counts.used} of {counts.used + counts.not_used} used last year, {counts.not_used} not
           used, {counts.new_in_template} new in the template.
         </p>
@@ -200,7 +200,7 @@ export function RollForwardReview({
                           />
                           <span>
                             {i.description}{" "}
-                            <span className="text-meta text-muted">{i.audit_area}</span>
+                            <span className="text-meta text-ink-3">{i.audit_area}</span>
                             {kind === "new_in_template" && <Badge className="ml-2">New</Badge>}
                           </span>
                         </label>

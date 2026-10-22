@@ -39,11 +39,11 @@ export function Signup(): JSX.Element {
   };
   const failure = create.isError ? errorMessage(create.error) : null;
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 bg-ground p-6">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 bg-shell p-6">
       <Card className="flex flex-col gap-4">
         <div>
           <h1 className="text-dashboard">Set up your firm</h1>
-          <p className="text-body text-muted">
+          <p className="text-body text-ink-3">
             You&apos;ll be its first administrator. Next, you&apos;ll connect sign-on, invite your
             team and upload your methodology.
           </p>
@@ -87,9 +87,9 @@ export function Signup(): JSX.Element {
           </Button>
         </form>
       </Card>
-      <p className="text-center text-body text-muted">
+      <p className="text-center text-body text-ink-3">
         Joining an existing firm? Ask its administrator to invite you.{" "}
-        <Link to="/" className="text-accent hover:underline">
+        <Link to="/" className="text-espresso hover:underline">
           Back
         </Link>
       </p>
@@ -104,7 +104,7 @@ export function NoFirm(): JSX.Element {
       <Alert title="You're not part of a firm yet">
         If your firm already uses Accrued, ask its administrator to invite you. Setting up a new
         firm?{" "}
-        <Link to="/signup" className="font-medium text-accent hover:underline">
+        <Link to="/signup" className="font-medium text-espresso hover:underline">
           Set up your firm
         </Link>
       </Alert>

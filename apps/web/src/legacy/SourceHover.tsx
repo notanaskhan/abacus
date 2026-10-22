@@ -61,7 +61,7 @@ function PageSnippet({ source, page, box }: { source: PreviewSource; page: numbe
   const crop = cropStyle(box, aspect);
   return (
     <div
-      className="relative overflow-hidden rounded-nested border border-line bg-surface"
+      className="relative overflow-hidden rounded-nested border border-hair bg-surface"
       style={{ width: SNIPPET_W, height: SNIPPET_H }}
     >
       <div className="absolute" style={{ left: crop.left, top: crop.top, width: crop.width }}>

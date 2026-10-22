@@ -91,7 +91,7 @@ export function SubsequentLedger({
       }
     >
       <div className="flex flex-col gap-2 text-body">
-        <p className="text-muted">
+        <p className="text-ink-3">
           The general ledger from the day after year end to the cut-off date (usually the fieldwork
           date). Payments in it are what the search tests.
         </p>
@@ -113,7 +113,7 @@ export function SubsequentLedger({
                 onChange={(e) => {
                   setFormat(e.target.value);
                 }}
-                className="rounded-[var(--radius-control)] border border-line bg-surface p-2"
+                className="rounded-[var(--radius-control)] border border-hair bg-surface p-2"
               >
                 {(formats.data ?? []).map((f) => (
                   <option key={f.id} value={f.id}>
@@ -131,7 +131,7 @@ export function SubsequentLedger({
                 onChange={(e) => {
                   setCutoff(e.target.value);
                 }}
-                className="rounded-[var(--radius-control)] border border-line bg-surface p-2"
+                className="rounded-[var(--radius-control)] border border-hair bg-surface p-2"
               />
             </div>
             <label className="flex flex-col gap-1">
@@ -182,7 +182,7 @@ export function Accounts({
   if (a.accounts.length === 0) {
     return (
       <Panel title="Bank and payables accounts">
-        <p className="text-body text-muted">Import the year's general ledger first.</p>
+        <p className="text-body text-ink-3">Import the year's general ledger first.</p>
       </Panel>
     );
   }
@@ -200,7 +200,7 @@ export function Accounts({
       }
     >
       <div className="flex flex-col gap-2 text-body">
-        <p className="text-muted">
+        <p className="text-ink-3">
           Payments are credits to the bank accounts. A bill recorded at year end is a credit to the
           payables account. Suggested from account names: check them.
         </p>
@@ -284,7 +284,7 @@ export function Bands({
   return (
     <Panel title="Timing bands">
       <div className="flex flex-col gap-2 text-body">
-        <p className="text-muted">
+        <p className="text-ink-3">
           A payment is selected when it's at or above its band's threshold, a percentage of
           performance materiality.
         </p>
@@ -311,11 +311,11 @@ export function Bands({
                       ),
                     );
                   }}
-                  className="w-16 rounded-[var(--radius-control)] border border-line bg-surface p-1"
+                  className="w-16 rounded-[var(--radius-control)] border border-hair bg-surface p-1"
                 />
                 <span>% of performance materiality</span>
                 {thresholds[n] !== undefined && edited === null && (
-                  <span className="text-muted tabular-nums">{`= ${prose(thresholds[n], "cents")}`}</span>
+                  <span className="text-ink-3 tabular-nums">{`= ${prose(thresholds[n], "cents")}`}</span>
                 )}
               </li>
             );

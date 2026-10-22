@@ -35,7 +35,7 @@ const ROLES: [Role | "", string][] = [
   ["practice_leader", "Practice leader"],
   ["quality_partner", "Quality partner"],
 ];
-const SELECT = "h-8 rounded-[var(--radius-control)] border border-line bg-surface px-2 text-body";
+const SELECT = "h-8 rounded-[var(--radius-control)] border border-hair bg-surface px-2 text-body";
 
 function roleLabel(role: string | null | undefined): string {
   return ROLES.find(([value]) => value === (role ?? ""))?.[1] ?? "Team member";
@@ -137,10 +137,10 @@ export function FirmPeople(): JSX.Element {
                       <Td>
                         {m.display_name}
                         {m.user_id === me.data?.user_id && (
-                          <span className="text-muted"> (you)</span>
+                          <span className="text-ink-3"> (you)</span>
                         )}
                       </Td>
-                      <Td className="text-muted">{m.email}</Td>
+                      <Td className="text-ink-3">{m.email}</Td>
                       <Td>
                         {m.status === "active" ? (
                           <select
@@ -194,9 +194,9 @@ export function FirmPeople(): JSX.Element {
           </Panel>
           <Panel title="Pending invitations">
             {list.data.invitations.length === 0 ? (
-              <p className="text-body text-muted">No pending invitations.</p>
+              <p className="text-body text-ink-3">No pending invitations.</p>
             ) : (
-              <ul className="flex flex-col divide-y divide-line text-body">
+              <ul className="flex flex-col divide-y divide-hair text-body">
                 {list.data.invitations.map((i) => (
                   <li
                     key={i.id}
@@ -204,7 +204,7 @@ export function FirmPeople(): JSX.Element {
                   >
                     <span>
                       {i.email} · {roleLabel(i.firm_role)}
-                      <span className="block text-meta text-muted">
+                      <span className="block text-meta text-ink-3">
                         Expires <DateText value={i.expires_at} />
                       </span>
                     </span>

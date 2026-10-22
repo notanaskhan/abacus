@@ -156,7 +156,7 @@ export function GroupingSets(): JSX.Element {
                 }}
                 className={`${input} flex-1`}
               />
-              <label className="inline-flex cursor-pointer items-center rounded-tile px-2 text-accent hover:underline">
+              <label className="inline-flex cursor-pointer items-center rounded-tile px-2 text-espresso hover:underline">
                 Choose a CSV file…
                 <input
                   type="file"

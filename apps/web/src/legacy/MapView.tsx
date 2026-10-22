@@ -61,21 +61,21 @@ export function MapView({ engagementId }: { engagementId: string }): JSX.Element
         >
           <div className="grid gap-4 md:grid-cols-2">
             <div className="flex flex-col gap-1">
-              <h3 className="font-sans text-meta font-medium tracking-wide text-muted uppercase">
+              <h3 className="font-sans text-meta font-medium tracking-wide text-ink-3 uppercase">
                 Accounts
               </h3>
               {area.accounts.length === 0 ? (
-                <p className="text-body text-muted">None mapped</p>
+                <p className="text-body text-ink-3">None mapped</p>
               ) : (
                 <AccountList accounts={area.accounts} />
               )}
             </div>
             <div className="flex flex-col gap-1">
-              <h3 className="font-sans text-meta font-medium tracking-wide text-muted uppercase">
+              <h3 className="font-sans text-meta font-medium tracking-wide text-ink-3 uppercase">
                 Requests
               </h3>
               {area.items.length === 0 ? (
-                <p className="text-body text-muted">None</p>
+                <p className="text-body text-ink-3">None</p>
               ) : (
                 <ul className="flex flex-col gap-1 text-body">
                   {area.items.map((item) => {
@@ -107,9 +107,9 @@ function AccountList({
       {accounts.map((a) => (
         <li
           key={a.code}
-          className="flex items-baseline gap-3 border-b border-line py-1 last:border-b-0"
+          className="flex items-baseline gap-3 border-b border-hair py-1 last:border-b-0"
         >
-          <span className="w-16 text-muted tabular-nums">{a.code}</span>
+          <span className="w-16 text-ink-3 tabular-nums">{a.code}</span>
           <span className="flex-1">{a.name}</span>
           <span className="tabular-nums">{balance(a.balance)}</span>
         </li>

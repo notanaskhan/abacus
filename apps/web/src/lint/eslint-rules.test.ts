@@ -178,7 +178,52 @@ describe("SPEC-016 design tokens", () => {
 
   it("ac1 allows the tokens", async () => {
     const found = await violations(
-      'export const A = () => <p className="bg-surface text-muted border-line">x</p>;',
+      'export const A = () => <p className="bg-surface text-ink-3 border-hair">x</p>;',
+      "src/legacy/Example.tsx",
+    );
+    expect(found).toEqual([]);
+  });
+});
+
+// F-05 J3 (F-05-T34, DS-32): the Atelier tokens are retired and banned, so a new use fails lint.
+describe("F-05 J3 the Atelier tokens are banned", () => {
+  it.each([
+    "bg-ground",
+    "text-muted",
+    "border-line",
+    "bg-accent",
+    "text-info",
+    "text-ai",
+    "hover:bg-accent",
+    "text-muted/70",
+    "md:bg-ground",
+    "divide-line",
+    "border-ai-line",
+    "bg-accent-soft",
+    "text-on-accent",
+    "border-t-accent",
+  ])("rejects the retired class %s", async (name) => {
+    const found = await violations(
+      `export const A = () => <p className="${name}">x</p>;`,
+      "src/legacy/Example.tsx",
+    );
+    expect(
+      found.some((m) => m.includes("Atelier tokens are retired")),
+      name,
+    ).toBe(true);
+  });
+
+  it("rejects them in packages/ui too", async () => {
+    const found = await uiViolations(
+      'export const A = () => <p className="text-muted">x</p>;',
+      "src/components/example.tsx",
+    );
+    expect(found.some((m) => m.includes("Atelier tokens are retired"))).toBe(true);
+  });
+
+  it("accepts the replacements and look-alike names", async () => {
+    const found = await violations(
+      'export const A = () => <p className="bg-shell text-ink-3 border-hair bg-espresso text-amber-ink border-stroke border-amber-line whitespace-pre-line">x</p>;',
       "src/legacy/Example.tsx",
     );
     expect(found).toEqual([]);

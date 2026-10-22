@@ -97,28 +97,18 @@ export const colors = {
     "hl-sage": "#a9c08e",
     "hl-slate": "#9db2c9",
   },
-  /** The SPEC-016 names, kept so every screen takes the new look at once (retire in F-05-T34). */
+  /** The SPEC-016 names still in use. The Atelier names (ground, muted, line, accent, info, ai)
+   *  are retired and banned by eslint-design-rules.js (F-05-T34, DS-32). */
   aliases: {
-    ground: "#f8f8f6",
     surface: "#ffffff",
     rail: "#f2f1ef",
     sunken: "#efeeeb",
-    muted: "rgba(43, 31, 23, 0.66)",
-    line: "rgba(43, 31, 23, 0.1)",
-    accent: "#2b1f17",
-    "accent-hover": "#3b2a1f",
-    "accent-soft": "#e8e6e0",
-    "on-accent": "#fefefe",
     ok: "#47521f",
     "ok-soft": "#e6ebd8",
     warn: "#7c5718",
     "warn-soft": "#f6eedf",
-    info: "#7c5718",
-    "info-soft": "#f6eedf",
     danger: "#8e2418",
     "danger-soft": "#f7e4e1",
-    ai: "rgba(43, 31, 23, 0.6)",
-    "ai-line": "rgba(43, 31, 23, 0.22)",
   },
 } as const;
 
@@ -317,7 +307,6 @@ export const resets = ["color", "shadow"] as const;
 export const referenceLadder = {
   "--color-ink-2": "rgba(43, 31, 23, 0.62)",
   "--color-ink-3": "rgba(43, 31, 23, 0.54)",
-  "--color-muted": "rgba(43, 31, 23, 0.54)",
   "--color-match-ink": "#9253a2",
   "--focus-ring": "0 0 0 2px rgba(43, 31, 23, 0.28), 0 0 0 0.5px rgba(43, 31, 23, 0.22)",
 } as const;

@@ -165,7 +165,7 @@ export function PageImage({
       <img
         src={url}
         alt={`Page ${String(page)}`}
-        className="block w-full rounded-[var(--radius-control)] border border-line bg-surface"
+        className="block w-full rounded-[var(--radius-control)] border border-hair bg-surface"
       />
       {boxes.map((b, i) => (
         <span
@@ -239,25 +239,25 @@ export function EvidencePreview({
   if (preview.isPending) return <Skeleton className="h-64" />;
   if (preview.isError) {
     return isForbidden(preview.error) ? (
-      <p className="text-body text-muted">You can&apos;t preview this file.</p>
+      <p className="text-body text-ink-3">You can&apos;t preview this file.</p>
     ) : (
       <Alert title="Couldn't load the preview">Try again, or download the file instead.</Alert>
     );
   }
   const data = preview.data;
   if (data.kind === "pending") {
-    return <p className="text-body text-muted">Preparing the preview…</p>;
+    return <p className="text-body text-ink-3">Preparing the preview…</p>;
   }
   if (data.kind === "none") {
     return (
-      <p className="text-body text-muted">
+      <p className="text-body text-ink-3">
         {REASONS[data.reason ?? ""] ?? "Preview isn't available."} Download it instead.
       </p>
     );
   }
   if (data.kind === "table") {
     if (data.sheets.length === 0) {
-      return <p className="text-body text-muted">This spreadsheet is empty.</p>;
+      return <p className="text-body text-ink-3">This spreadsheet is empty.</p>;
     }
     const shown = data.sheets[Math.min(sheet, data.sheets.length - 1)];
     const rows = shown?.rows ?? [];
@@ -326,7 +326,7 @@ export function EvidencePreview({
           </Table>
         </div>
         {data.truncated && (
-          <p className="text-meta text-muted">
+          <p className="text-meta text-ink-3">
             Showing the first rows only. Download for the rest.
           </p>
         )}
@@ -373,7 +373,7 @@ export function EvidencePreview({
         </div>
       )}
       {data.truncated && (
-        <p className="text-meta text-muted">
+        <p className="text-meta text-ink-3">
           Showing the first pages only. Download for the rest.
         </p>
       )}
