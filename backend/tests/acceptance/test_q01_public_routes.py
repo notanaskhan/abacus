@@ -174,11 +174,12 @@ async def test_ac24_healthz_calls_no_dependency(
         },
     )
     use_checks(monkeypatch, **{f"check_{i}": failing() for i in range(len(READINESS_CHECKS))})
-    started = time.monotonic()
     async with client(create_app()) as http:
+        started = time.monotonic()  # the request, not app start-up (slow on a CI runner)
         response = await http.get("/healthz")
+        elapsed = time.monotonic() - started
     assert response.status_code == 200
-    assert time.monotonic() - started < 2
+    assert elapsed < 2
 
 
 # --- /readyz ------------------------------------------------------------------------------------
