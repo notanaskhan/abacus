@@ -1118,6 +1118,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "connection_states": frozenset({"used_at"}),
         # SPEC-024 (TASK-041): staff invitations.
         "staff_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
+        # F-03-T24 (migration 0081): a firm setting's value; overrides are never edited.
+        "firm_setting_values": frozenset({"value", "version", "set_by", "set_at"}),
         "firms": frozenset(
             {"autonomy_level", "autonomy_set_at", "budget_reviewed_at", "walls_none_needed_at"}
             | {"sso_skipped_at", "onboarding_dismissed_at"}  # SPEC-024 (TASK-042)

@@ -891,6 +891,9 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/agents/repository.py", "drafted_item_ids"),
         # TASK-102: the person's own engagement memberships ("waiting on you"), own rows only.
         ("src/abacus/modules/identity/repository.py", "my_engagement_roles"),
+        # F-03-T24: the firm's policy overrides and settings, read by `authorise` itself (the
+        # rules visible() would apply), firm-wide, no engagement rows.
+        ("src/abacus/modules/identity/repository.py", "firm_policy"),
         # SPEC-040: an insert that returns the new rows' ids, not a list read.
         ("src/abacus/modules/fieldwork/repository.py", "insert_signoffs"),
         ("src/abacus/modules/fieldwork/repository.py", "workpaper_versions"),
