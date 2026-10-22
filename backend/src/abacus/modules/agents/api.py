@@ -20,6 +20,13 @@ from abacus.modules.agents.guidance_draft import DRAFTER, DraftOutcome, create_d
 from abacus.modules.agents.handoff import Citation, Handoff, ScreeningOutput, VerifiedCitation
 from abacus.modules.agents.inbox_match import MATCHER, MatchOutcome, create_match_run, match
 from abacus.modules.agents.knowledge import KnowledgeHit, knowledge_context, search_knowledge
+from abacus.modules.agents.proposal_slots import (
+    UnregisteredTarget,
+    apply_proposal,
+    check_suggestion_target,
+    register_proposal_adapter,
+    register_suggestion_target,
+)
 from abacus.modules.agents.routes import (
     graph_router,
     knowledge_router,
@@ -148,10 +155,13 @@ __all__ = [
     "ScreeningWorkflow",
     "SheetLayoutError",
     "SlotGrant",
+    "UnregisteredTarget",
     "UploadReviewWorkflow",
     "VerifiedCitation",
+    "apply_proposal",
     "ask",
     "check",
+    "check_suggestion_target",
     "create_draft_run",
     "create_match_run",
     "create_review_run",
@@ -165,6 +175,8 @@ __all__ = [
     "knowledge_router",
     "load_agent_context",
     "match",
+    "register_proposal_adapter",
+    "register_suggestion_target",
     "review",
     "router",
     "run_outcome",
