@@ -11,6 +11,9 @@ created: 2026-10-21
 updated: 2026-10-21
 ---
 
+## Plan keys
+A-07-T07, A-07-T09, A-07-T15, A-07-T30, A-07-T37 (partial; DEC-83 alignment open). Recorded in docs/plan/status/status-verified.csv (TASK-901).
+
 ## Plan
 - **Migration 0077:** `eqr_concurrences`, `completion_records`, `releases` and `archives`. Rollback is the downgrade.
 - **Engagements:**

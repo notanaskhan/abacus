@@ -11,6 +11,9 @@ created: 2026-10-21
 updated: 2026-10-21
 ---
 
+## Plan keys
+P-11-T36, C-01-T23 (related: statement lines and reconciliation to totals). Recorded in docs/plan/status/status-verified.csv (TASK-901).
+
 ## Plan
 - **Migration 0075:** `statement_datasets` and `statement_transactions`, both insert-only. CHECKs: the approver is human; opening + included total = closing; an excluded line has a reason. Rollback is the downgrade.
 - **Evidence:**

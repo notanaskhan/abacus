@@ -38,7 +38,7 @@ register_engagement_owners(AUDIT_KINDS, audit_owners)
 register_adjustment_source(adjustment_entries)
 # SPEC-314 (TASK-332): materiality, significant risks and the SUM feed the EQR digest.
 register_judgment_source("fieldwork", judgments)
-# SPEC-317 (TASK-346): procedures, findings and entries on the engagement dashboard.
+# SPEC-317 (TASK-460): procedures, findings and entries on the engagement dashboard.
 register_progress_source("fieldwork", progress)
 
 __all__ = [

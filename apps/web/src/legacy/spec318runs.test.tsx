@@ -124,6 +124,19 @@ describe("SPEC-318 agent runs", () => {
     expect(api.calls.find((c) => c.method === "POST")?.body).toEqual({ format: "json" });
   });
 
+  it("asks for a fresh sign-in when the export needs recent MFA (ac6)", async () => {
+    mockApi({
+      [`GET /v1/engagements/${E}/agent-runs`]: () => json([RUN]),
+      [`GET /v1/agent-runs/r-1/trace`]: () => json(TRACE),
+      [`POST /v1/agent-runs/r-1/trace-exports`]: () => json({ detail: "forbidden" }, 403),
+    });
+    renderOne(() => <AgentRuns engagementId={E} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Open trace" }));
+    await screen.findByText("Model call");
+    fireEvent.click(screen.getByRole("button", { name: "Export JSON" }));
+    expect(await screen.findByText("Confirm it's you")).toBeTruthy();
+  });
+
   it("shows the empty state and hides itself when not allowed (ac5)", async () => {
     mockApi({ [`GET /v1/engagements/${E}/agent-runs`]: () => json([]) });
     renderOne(() => <AgentRuns engagementId={E} />);

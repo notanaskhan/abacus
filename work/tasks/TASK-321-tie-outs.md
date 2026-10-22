@@ -11,6 +11,9 @@ created: 2026-10-21
 updated: 2026-10-21
 ---
 
+## Plan keys
+A-02-T17 (partial). Recorded in docs/plan/status/status-verified.csv (TASK-901).
+
 ## Plan
 - **Migration 0074:** `tie_out_checks` and `tie_out_check_versions`. Rollback is the downgrade.
 - **Workpapers:**

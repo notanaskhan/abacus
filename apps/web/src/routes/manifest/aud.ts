@@ -50,7 +50,7 @@ export const audScreens = {
   "AUD-19": {
     name: "Completion (checklist · subsequent events · legal letters · going concern)",
     status: "planned",
-    path: null,
+    path: "/engagements/$engagementId/completion", // legacy CompletionRelease (SPEC-314)
   },
   "AUD-20": { name: "Financial statements & disclosure checklist", status: "planned", path: null },
   "AUD-21": { name: "Representation letter builder", status: "planned", path: null },

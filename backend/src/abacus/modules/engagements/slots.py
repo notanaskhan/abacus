@@ -125,7 +125,7 @@ async def judgments_of(tenant: TenantContext, engagement_id: UUID) -> list[Judgm
     return out
 
 
-# --- Progress facts for the engagement dashboard (SPEC-317; TASK-346) -------------------------
+# --- Progress facts for the engagement dashboard (SPEC-317; TASK-460) -------------------------
 
 
 @dataclass(frozen=True)

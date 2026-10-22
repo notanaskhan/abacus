@@ -11,6 +11,9 @@ created: 2026-10-21
 updated: 2026-10-21
 ---
 
+## Plan keys
+P-11-T36 (related: text-layer statements; Textract OCR not built). Recorded in docs/plan/status/status-verified.csv (TASK-901).
+
 ## Plan
 - **`evidence/extraction.py`:** `_pdfium_pages` and `_fallback`; no text gives `not_extracted/needs_ocr`; `EXTRACTOR_VERSION` is v2.
 - **`evidence/unlock.py`:** `remove_password` (isolated; returns an outcome rather than raising across processes) and `unlock_upload`, which re-uses `upload()`.

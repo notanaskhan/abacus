@@ -11,6 +11,9 @@ created: 2026-10-21
 updated: 2026-10-21
 ---
 
+## Plan keys
+A-03-T06, A-03-T08, A-03-T12, A-06-T25 (partial). Recorded in docs/plan/status/status-verified.csv (TASK-901).
+
 ## Plan
 - **Migration 0079:** seven tables and the publication freeze trigger. Rollback is the downgrade.
 - **Ledger:**

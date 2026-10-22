@@ -970,6 +970,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
         "independence": "required",
+        "mfa_recent": "required",
     },
     "sample.approve": {
         "engagement_partner": "allow",

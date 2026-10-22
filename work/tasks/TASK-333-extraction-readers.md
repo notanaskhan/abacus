@@ -11,6 +11,9 @@ created: 2026-10-21
 updated: 2026-10-21
 ---
 
+## Plan keys
+P-11-T36 (related). Recorded in docs/plan/status/status-verified.csv (TASK-901).
+
 ## Root cause
 TASK-323 bumped `EXTRACTOR_VERSION` from v1 to v2, but every reader looked an extraction up by the current version only. Uploads extracted by v1 therefore had "no extraction", so the spreadsheet preview showed "This spreadsheet is empty".
 

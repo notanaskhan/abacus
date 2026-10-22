@@ -245,7 +245,7 @@ async def lock_archive_route(engagement_id: UUID, body: AttestBody, ctx: Ctx) ->
     return _out(await completion_for(ctx, engagement_id))
 
 
-# --- The engagement dashboard (SPEC-317; TASK-346) --------------------------------------------
+# --- The engagement dashboard (SPEC-317; TASK-460) --------------------------------------------
 
 dashboard_router = AbacusRouter(prefix="/v1/engagements/{engagement_id}", tags=["dashboard"])
 

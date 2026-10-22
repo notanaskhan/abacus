@@ -105,3 +105,20 @@ Write each as a DEC in docs/product/decision-log.md. That file does not exist; F
 - **F-01-T09** (fixture mode) blocks F-03-T07 (S1). **F-01-T06** (green-run evidence) gates F-01-T07, Q-01-T03, Q-01-T11, F-03-T05, F-03-T18. **F-01-T05** gates F-01-T06.
 - **F-02-T01** (decision-log.md) is not built and blocks writing every DEC above.
 - Not blocking: F-05-T23, P-01-T02, P-07-T20, P-07-T27, G-01-T07, I-01-T06 have no S0 to S2 dependents.
+
+## Addendum 2026-10-22: the parallel stream's work (TASK-321 to TASK-461, TASK-900, TASK-901)
+Nineteen backlog rows were moved from todo to partial, each with evidence in status-verified.csv:
+- A-02-T07, A-02-T17;
+- A-03-T06, A-03-T08, A-03-T12;
+- A-06-T09, A-06-T25;
+- A-07-T07, A-07-T09, A-07-T15, A-07-T30, A-07-T37;
+- Q-02-T45;
+- P-09-T07, P-09-T08, P-09-T10, P-09-T11;
+- K-04-T33, K-04-T40.
+
+Each task file now has a "Plan keys" section. Tasks that pick up these rows extend the existing tables, routes and slots rather than rebuilding them. DEC-134 already applies this rule to review notes and sign-offs.
+
+What stays open on these rows:
+- the C6 v1 sub-resources and PDF export (`docs/contracts/agent-runs.md` §8);
+- dashboard lenses, the C14 provider and `insights.view_engagement`;
+- A-07 alignment with DEC-83: report approval as an L4 sign-off, going concern and opinion as decision cards.

@@ -11,6 +11,9 @@ created: 2026-10-21
 updated: 2026-10-21
 ---
 
+## Plan keys
+P-11-T36, C-01-T23 (related: statement-line regions). Recorded in docs/plan/status/status-verified.csv (TASK-901).
+
 ## Plan
 - **Extraction v3:** `TextLine` (text, box) per PDF page from pdfplumber's text lines.
 - **Statements:** `from_pages(pages, page_lines)` keeps each line's box, and `_sources` finds the summary values' lines. These flow through review and approval.
