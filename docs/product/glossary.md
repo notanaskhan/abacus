@@ -151,6 +151,16 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Capture session | POR-19 mobile capture. | `capture_sessions` | — |
 | Firm export | Dual control (DEC-72). | `firm_exports` | — |
 
+## New terms: notifications
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Notification kind | What a notification is about, registered once through the C16 slot. New codes are snake_case with no dot (`client_uploaded`, `mention`); SPEC-013 dotted codes stay valid as legacy. | `kind`, `register_kind` | `notification type` |
+| Notification category | The tab a kind falls under: approval, mention, client activity, run, deadline, system, other. | `category` | — |
+| Inline action | An action taken on the notification row itself, from a closed set: accept document, return document, open sign-off. | `inline_actions` | `quick action` |
+| Notification preference | A person's per-kind choice of In Accrued and Email. | `notification_preferences` | — |
+| Notification delivery | One send of a notification on a channel other than in-app (email only). | `notification_deliveries` | — |
+
 ## New terms: communications
 
 | Term | Meaning | Code name | Don't use |

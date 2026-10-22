@@ -46,6 +46,16 @@ MATCHING_ENABLED = Flag(
     kind="boolean",
     default="false",
 )
+NOTIFICATIONS_EMAIL = Flag(
+    name="notifications.email",
+    kind="boolean",
+    default="false",
+)
+NOTIFICATIONS_V2 = Flag(
+    name="notifications.v2",
+    kind="boolean",
+    default="false",
+)
 PROMPT_EVIDENCE_SCREENER = Flag(
     name="prompt.evidence.screener",
     kind="variant",
@@ -79,6 +89,8 @@ FLAGS: dict[str, Flag] = {
     "ledger.gl_import": LEDGER_GL_IMPORT,
     "ledger.import": LEDGER_IMPORT,
     "matching.enabled": MATCHING_ENABLED,
+    "notifications.email": NOTIFICATIONS_EMAIL,
+    "notifications.v2": NOTIFICATIONS_V2,
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
     "retrieval.auto": RETRIEVAL_AUTO,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,

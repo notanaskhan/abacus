@@ -75,3 +75,8 @@ class DomainForbidden(_Coded):
 
 class ServiceUnavailable(Exception):
     """A dependency isn't reachable right now: 503."""
+
+
+class NotImplementedYet(Exception):
+    """A contract stub whose implementation hasn't landed (contract first, AGENTS 15): 501
+    `not_implemented`. Raised only behind the contract's flag."""
