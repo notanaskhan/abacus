@@ -5,9 +5,11 @@ from __future__ import annotations
 from dataclasses import asdict
 from datetime import date, datetime
 from typing import Annotated, Literal, cast
+from urllib.parse import urlencode
 from uuid import UUID
 
-from fastapi import Depends, Request
+from fastapi import Cookie, Depends, Header, Query, Request, Response
+from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
@@ -36,6 +38,7 @@ from abacus.modules.identity.repository import FirmRole
 from abacus.modules.identity.routing import (
     IDENTITY,
     OWN,
+    PRE_SESSION,
     SELF,
     STAFF,
     AbacusRouter,
@@ -64,6 +67,21 @@ from abacus.modules.identity.staff import (
 )
 from abacus.modules.identity.staff import revoke as revoke_staff
 from abacus.modules.identity.staff import revoke_invitation as revoke_staff_invitation
+from abacus.modules.identity.staff_session import (
+    ABSOLUTE_SECONDS,
+    COOKIE_NAME,
+    CSRF_HEADER,
+    MAX_RETURN_TO,
+    SPA_CALLBACK_PATH,
+    RefreshReused,
+    SessionExpired,
+    SignInRefused,
+    begin_sign_in,
+    complete_sign_in,
+    refresh_session,
+    web_origin,
+)
+from abacus.modules.identity.staff_session import end_session as end_staff_session
 from abacus.modules.identity.support import (
     Staff,
     SupportSessionView,
@@ -776,3 +794,131 @@ async def resume_firm_agents_route(ctx: Ctx) -> AgentsStateOut:
 @router.put("/firm/letter-policy", action="firm.manage_settings", response_model=LetterPolicyOut)
 async def set_letter_policy_route(body: LetterPolicyOut, ctx: Ctx) -> LetterPolicyOut:
     return LetterPolicyOut(required=await set_letter_policy(ctx, body.required))
+
+
+# --- Staff session BFF (P-01-T09; ADR-141, ADR-165; DEC-140) -----------------------------------
+
+auth_router = AbacusRouter(prefix="/v1/auth", tags=["auth"])
+
+
+class AuthRedirectOut(BaseModel):
+    """What the sign-in routes answer: a redirect. The browser follows `Location`."""
+
+    model_config = ConfigDict(frozen=True)
+
+    location: Annotated[str, classified("internal")]
+
+
+class SessionTokenOut(BaseModel):
+    """AC 5.1.4: an access token for memory only, never web storage."""
+
+    model_config = ConfigDict(frozen=True)
+
+    access_token: Annotated[str, classified("restricted")]
+    expires_in: Annotated[int, classified("internal")]
+
+
+class SignedOutOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    ended: Annotated[bool, classified("internal")]
+
+
+def _set_session_cookie(response: Response, value: str) -> None:
+    response.set_cookie(
+        COOKIE_NAME,
+        value,
+        max_age=ABSOLUTE_SECONDS,
+        path="/",
+        secure=True,
+        httponly=True,
+        samesite="strict",
+    )
+
+
+def _clear_session_cookie(response: Response) -> None:
+    response.delete_cookie(COOKIE_NAME, path="/", secure=True, httponly=True, samesite="strict")
+
+
+def _no_store(response: Response) -> Response:
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@auth_router.get(
+    "/sign-in", action=PRE_SESSION, response_model=AuthRedirectOut, status_code=302, errors=(503,)
+)
+async def sign_in_route(
+    return_to: Annotated[str | None, Query(max_length=MAX_RETURN_TO)] = None,
+    reauthenticate: bool = False,
+) -> Response:
+    """AC 5.1.2: to the provider's authorize page with server-side state and PKCE (10 min)."""
+    return _no_store(
+        RedirectResponse(
+            await begin_sign_in(return_to, reauthenticate=reauthenticate), status_code=302
+        )
+    )
+
+
+@auth_router.get(
+    "/callback", action=PRE_SESSION, response_model=AuthRedirectOut, status_code=302, errors=(503,)
+)
+async def callback_route(
+    code: Annotated[str | None, Query(max_length=2048)] = None,
+    state: Annotated[str | None, Query(max_length=256)] = None,
+    previous: Annotated[str | None, Cookie(alias=COOKIE_NAME)] = None,
+) -> Response:
+    """AC 5.1.2: start the session, set the cookie and land on SHL-06g with the safe path; a
+    refusal lands there with its error code instead (the T15 error state)."""
+    landing = web_origin() + SPA_CALLBACK_PATH
+    try:
+        started = await complete_sign_in(code, state, previous_cookie=previous)
+    except SignInRefused as refused:
+        response = RedirectResponse(
+            f"{landing}?{urlencode({'error': refused.code})}", status_code=302
+        )
+        _clear_session_cookie(response)
+        return _no_store(response)
+    response = RedirectResponse(f"{landing}?{urlencode({'to': started.return_to})}", 302)
+    _set_session_cookie(response, started.cookie)
+    return _no_store(response)
+
+
+def _refusal(detail: str, status: int = 401) -> JSONResponse:
+    response = JSONResponse({"detail": detail}, status_code=status)
+    _clear_session_cookie(response)
+    return cast(JSONResponse, _no_store(response))
+
+
+@auth_router.post("/refresh", action=PRE_SESSION, response_model=SessionTokenOut, errors=(503,))
+async def refresh_route(
+    cookie: Annotated[str | None, Cookie(alias=COOKIE_NAME)] = None,
+    csrf: Annotated[str | None, Header(alias=CSRF_HEADER)] = None,
+    origin: Annotated[str | None, Header()] = None,
+) -> Response:
+    """AC 5.1.4: cookie-authenticated, with the CSRF header and the app's own Origin."""
+    if csrf != "1" or origin is None or origin.rstrip("/") != web_origin():
+        return _no_store(JSONResponse({"detail": "forbidden"}, status_code=403))
+    try:
+        refreshed = await refresh_session(cookie)
+    except RefreshReused:
+        return _refusal("session_refresh_reused")
+    except SessionExpired:
+        return _refusal("session_expired")
+    body = SessionTokenOut(access_token=refreshed.access_token, expires_in=refreshed.expires_in)
+    response = JSONResponse(body.model_dump())
+    _set_session_cookie(response, refreshed.cookie)
+    return _no_store(response)
+
+
+@auth_router.post("/sign-out", action=OWN, response_model=SignedOutOut)
+async def sign_out_route(
+    ctx: Annotated[AuthContext, Depends(current_member)],
+    cookie: Annotated[str | None, Cookie(alias=COOKIE_NAME)] = None,
+) -> Response:
+    """AC 2.1.6: end the caller's own session and clear the cookie; the old value no longer
+    refreshes."""
+    ended = await end_staff_session(ctx.user_id, cookie)
+    response = JSONResponse(SignedOutOut(ended=ended).model_dump())
+    _clear_session_cookie(response)
+    return _no_store(response)

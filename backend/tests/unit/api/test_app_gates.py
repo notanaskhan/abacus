@@ -167,6 +167,9 @@ NOT_CREATING = {
     # P-08-T01 (C5 v1.1 portal half): firm-side recovery returns the contact's portal access.
     "/v1/clients/{client_id}/contacts/{contact_id}/portal-unlock",
     "/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset",
+    # P-01-T09 (ADR-165): a refresh rotates the cookie; sign-out ends the session.
+    "/v1/auth/refresh",
+    "/v1/auth/sign-out",
 }
 
 

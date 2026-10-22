@@ -597,8 +597,11 @@ _WEB_METHODS = frozenset(
 # The protected exception list (ADR-152, P-45): the only unauthenticated paths. `create_app()`
 # registers exactly `public_routes.PUBLIC_ROUTES`, and every path there must be listed here, so a
 # new public route is a deliberate edit to this protected file, with an ADR behind it. P-08 adds
-# `/v1/portal/branding` and P-01 adds `/v1/auth/{sign-in,callback,refresh}` through their own ADRs.
-PUBLIC_ROUTE_EXCEPTIONS = frozenset({"/healthz", "/readyz"})
+# `/v1/portal/branding` through its own ADR. ADR-165 adds the staff session BFF's three
+# pre-session routes, which stay inside `AbacusRouter` under the `PRE_SESSION` marker.
+PUBLIC_ROUTE_EXCEPTIONS = frozenset(
+    {"/healthz", "/readyz", "/v1/auth/sign-in", "/v1/auth/callback", "/v1/auth/refresh"}
+)
 _PUBLIC_ROUTES_FILE = "src/abacus/api/public_routes.py"
 _APP_FILE = "src/abacus/api/app.py"
 _APP_ADD_METHODS = frozenset(
@@ -1240,7 +1243,11 @@ def _check_module_direction(src: SourceFile) -> Iterator[Finding]:
 
 # SQL in string constants: statements start with an upper-case verb (the codebase's SQL style).
 _SQL_STATEMENT = re.compile(r"^\s*(?:SELECT|INSERT|UPDATE|DELETE|WITH)\b")
-_SQL_TABLE = re.compile(r"\b(?:FROM|JOIN|INTO|UPDATE)\s+([a-z_][a-z0-9_]*)")
+# A name called after FROM (`SELECT * FROM auth_session_rotate(...)`) is a function, not a table:
+# set-returning definer functions are reviewed in schema_check.DEFINER_FUNCTIONS (P-01-T09).
+_SQL_TABLE = re.compile(
+    r"\b(?:FROM|JOIN)\s+([a-z_][a-z0-9_]*)\b(?!\s*\()|\b(?:INTO|UPDATE)\s+([a-z_][a-z0-9_]*)"
+)
 
 
 def _table_owners() -> dict[str, str]:
@@ -1287,7 +1294,7 @@ def _check_table_ownership(src: SourceFile) -> Iterator[Finding]:
             and _SQL_STATEMENT.match(node.value)
         ):
             for match in _SQL_TABLE.finditer(node.value):
-                yield from check(match.group(1), node.lineno)
+                yield from check(match.group(1) or match.group(2), node.lineno)
 
 
 # Libraries that only one kernel package may use (ADR-016, ADR-104).
@@ -1721,6 +1728,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_unit_of_work.py",
             "tests/integration/test_outbox_relay.py",
             "tests/integration/test_identity.py",
+            "tests/integration/test_staff_session.py",  # P-01-T09: seeds as the superuser
             "tests/integration/test_engagements.py",
             "tests/integration/test_engagements_schema.py",
             "tests/integration/test_work_items.py",  # F-03-T05: setup as the superuser

@@ -55,6 +55,11 @@ SELF: Final = "self"
 # SPEC-012 (TASK-027 D5): staff-token routes. Staff aren't firm members, so no firm action applies;
 # they are authorised by the staff token and the session rules in `identity.support`.
 STAFF: Final = "staff"
+# P-01-T09 (ADR-165, on the ROUTE-001 exception list): the staff sign-in routes, before any session
+# exists. They authenticate themselves (state with PKCE, or the refresh cookie with the CSRF
+# header and Origin); no other path may carry this marker.
+PRE_SESSION: Final = "pre_session"
+PRE_SESSION_PATHS: Final = frozenset({"/v1/auth/sign-in", "/v1/auth/callback", "/v1/auth/refresh"})
 # SPEC-013 (Q3): a firm member acting only on their own rows (their notifications). No firm matrix
 # action applies; the service filters to the caller, and support contexts are refused.
 OWN: Final = "own"
@@ -107,6 +112,10 @@ async def requested_tenant(
         return UUID(x_abacus_tenant) if x_abacus_tenant is not None else None
     except ValueError:
         return None
+
+
+async def pre_session() -> None:
+    """No principal yet (P-01-T09): the sign-in route authenticates the request itself."""
 
 
 async def current_signed_in(
@@ -207,7 +216,7 @@ class AbacusRoute(APIRoute):
             with recording_checks() as checked:
                 response = await handler(request)
             if (
-                action not in (SELF, STAFF, OWN, IDENTITY)
+                action not in (SELF, STAFF, OWN, IDENTITY, PRE_SESSION)
                 and action not in checked
                 and response.status_code < 400
             ):
@@ -235,8 +244,10 @@ class AbacusRouter(APIRouter):
         status_code: int | None = None,
         errors: Sequence[int] = (),
     ) -> None:
-        if action not in (SELF, STAFF, OWN, IDENTITY) and action not in RULES:
+        if action not in (SELF, STAFF, OWN, IDENTITY, PRE_SESSION) and action not in RULES:
             raise ValueError(f"route {path}: action {action!r} is not in the permission matrix")
+        if action == PRE_SESSION and self.prefix + path not in PRE_SESSION_PATHS:
+            raise ValueError(f"route {path}: only the sign-in routes are pre-session (ADR-165)")
         if response_model is None:
             raise ValueError(f"route {path}: a response model is required")
         auth = {
@@ -244,6 +255,7 @@ class AbacusRouter(APIRouter):
             STAFF: current_staff,
             OWN: current_member,
             IDENTITY: current_identity,
+            PRE_SESSION: pre_session,
         }.get(action, current_context)
         super().add_api_route(
             path,

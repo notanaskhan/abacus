@@ -3,8 +3,9 @@ ADR-152). Each returns the problems it found, so a passing case is an empty list
 one says what is wrong with which route.
 
 - `route_problems`: a route `AbacusRouter` built declares exactly one action, the action is in
-  the permission matrix or is a route marker (SELF, STAFF, OWN, IDENTITY), it has a response
-  model (or answers 204), and it carries exactly the authentication that action needs.
+  the permission matrix or is a route marker (SELF, STAFF, OWN, IDENTITY, PRE_SESSION), it has a
+  response model (or answers 204), and it carries exactly the authentication that action needs.
+  A pre-session route (ADR-165) must also be on the protected exception list.
 - `public_problems`: every route answering without a token is on the public-route list
   (`PUBLIC_ROUTES`) and on the protected exception list (`PUBLIC_ROUTE_EXCEPTIONS`, ROUTE-001),
   GET only and out of the OpenAPI document; and every listed path is served.
@@ -28,6 +29,7 @@ from abacus.modules.identity.api import (
     ACTION_KEY,
     IDENTITY,
     OWN,
+    PRE_SESSION,
     RULES,
     SELF,
     STAFF,
@@ -38,6 +40,7 @@ from abacus.modules.identity.api import (
     current_signed_in,
     current_staff,
 )
+from abacus.modules.identity.routing import pre_session
 from abacus_tools.quality.banned_patterns import PUBLIC_ROUTE_EXCEPTIONS
 
 # The authentication each route marker needs; every matrix action needs `current_context`.
@@ -46,6 +49,7 @@ MARKER_AUTH: dict[str, Callable[..., object]] = {
     STAFF: current_staff,
     OWN: current_member,
     IDENTITY: current_identity,
+    PRE_SESSION: pre_session,
 }
 AUTHENTICATION: frozenset[Callable[..., object]] = frozenset(
     {current_context, *MARKER_AUTH.values()}
@@ -89,6 +93,8 @@ def route_problems(application: FastAPI, method: str, path: str, action: str) ->
         problems.append(f"{method} {path} declares {declared!r}, generated as {action!r}")
     if route.response_model is None and route.status_code != NO_CONTENT:
         problems.append(f"{method} {path} has no response model")
+    if declared == PRE_SESSION and path not in PUBLIC_ROUTE_EXCEPTIONS:
+        problems.append(f"{method} {path} is pre-session but not on the ROUTE-001 exception list")
     want = MARKER_AUTH.get(declared, current_context) if isinstance(declared, str) else None
     auth = _authentication(route)
     if want is None or auth != [want]:

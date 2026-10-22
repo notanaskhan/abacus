@@ -990,6 +990,18 @@ export type AttestBody = {
 export type AuditSectionStatus = 'not_started' | 'queued' | 'waiting_on_inputs' | 'ready_to_run' | 'in_progress' | 'running' | 'blocked_on_decision' | 'draft_ready' | 'prepared' | 'reviewed' | 'signed_off' | 'locked' | 'failed' | 'changed_after_signoff';
 
 /**
+ * AuthRedirectOut
+ *
+ * What the sign-in routes answer: a redirect. The browser follows `Location`.
+ */
+export type AuthRedirectOut = {
+    /**
+     * Location
+     */
+    location: string;
+};
+
+/**
  * AutonomyIn
  */
 export type AutonomyIn = {
@@ -9474,6 +9486,22 @@ export type SessionOut = {
 };
 
 /**
+ * SessionTokenOut
+ *
+ * AC 5.1.4: an access token for memory only, never web storage.
+ */
+export type SessionTokenOut = {
+    /**
+     * Access Token
+     */
+    access_token: string;
+    /**
+     * Expires In
+     */
+    expires_in: number;
+};
+
+/**
  * SettledOut
  */
 export type SettledOut = {
@@ -9884,6 +9912,16 @@ export type SignedOut = {
      * Rows
      */
     rows: number;
+};
+
+/**
+ * SignedOutOut
+ */
+export type SignedOutOut = {
+    /**
+     * Ended
+     */
+    ended: boolean;
 };
 
 /**
@@ -11940,6 +11978,186 @@ export type ExportRunTraceResponses = {
 };
 
 export type ExportRunTraceResponse = ExportRunTraceResponses[keyof ExportRunTraceResponses];
+
+export type CallbackData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Code
+         */
+        code?: string | null;
+        /**
+         * State
+         */
+        state?: string | null;
+    };
+    url: '/v1/auth/callback';
+};
+
+export type CallbackErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type CallbackError = CallbackErrors[keyof CallbackErrors];
+
+export type RefreshData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Csrf
+         */
+        'X-Abacus-CSRF'?: string | null;
+        /**
+         * Origin
+         */
+        origin?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/auth/refresh';
+};
+
+export type RefreshErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type RefreshError = RefreshErrors[keyof RefreshErrors];
+
+export type RefreshResponses = {
+    /**
+     * Successful Response
+     */
+    200: SessionTokenOut;
+};
+
+export type RefreshResponse = RefreshResponses[keyof RefreshResponses];
+
+export type SignInData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Return To
+         */
+        return_to?: string | null;
+        /**
+         * Reauthenticate
+         */
+        reauthenticate?: boolean;
+    };
+    url: '/v1/auth/sign-in';
+};
+
+export type SignInErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type SignInError = SignInErrors[keyof SignInErrors];
+
+export type SignOutData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/auth/sign-out';
+};
+
+export type SignOutErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SignOutError = SignOutErrors[keyof SignOutErrors];
+
+export type SignOutResponses = {
+    /**
+     * Successful Response
+     */
+    200: SignedOutOut;
+};
+
+export type SignOutResponse = SignOutResponses[keyof SignOutResponses];
 
 export type ListBindersData = {
     body?: never;
