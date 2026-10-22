@@ -135,6 +135,11 @@ NOT_CREATING = {
     "/v1/engagements/{engagement_id}/follow-ups/{follow_up_id}/dismiss",
     "/v1/engagements/{engagement_id}/follow-ups/{follow_up_id}/preview",  # TASK-104: a read
     "/v1/engagements/{engagement_id}/request-items/{item_id}/comments/read",  # SPEC-032: a mark
+    # P-04-T07 (C3 stub 1): bulk returns per-item results; note events return the note.
+    "/v1/sign-offs:bulk",
+    "/v1/review-notes/{note_id}/respond",
+    "/v1/review-notes/{note_id}/clear",
+    "/v1/review-notes/{note_id}/withdraw",
 }
 
 
@@ -265,6 +270,9 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/mapping",
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/mapping/sign-offs/prepare",
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/mapping/sign-offs/review",
+        # P-04-T07 (C3 stub 1): a sign-off row, a review note
+        "/v1/sign-offs",
+        "/v1/review-notes",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

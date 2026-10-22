@@ -853,6 +853,89 @@ export type BudgetOut = {
 };
 
 /**
+ * BulkSignOffIn
+ */
+export type BulkSignOffIn = {
+    /**
+     * Level
+     */
+    level: 'L1_preparer' | 'L2_reviewer' | 'L3_manager' | 'L4_partner' | 'L5_eqr';
+    /**
+     * Statement Version
+     */
+    statement_version: string;
+    /**
+     * Targets
+     */
+    targets: Array<BulkSignOffTargetIn>;
+};
+
+/**
+ * BulkSignOffItemOut
+ */
+export type BulkSignOffItemOut = {
+    /**
+     * Detail
+     */
+    detail: 'content_changed' | 'segregation' | 'open_review_notes' | 'independence_pending' | 'incomplete' | 'uncited_change' | 'level_not_permitted' | null;
+    /**
+     * Ok
+     */
+    ok: boolean;
+    /**
+     * Sign Off Id
+     */
+    sign_off_id: string | null;
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Target Type
+     */
+    target_type: string;
+};
+
+/**
+ * BulkSignOffOut
+ *
+ * Each item decided on its own, atomically (R-SO-7). A replay with the same
+ * `Idempotency-Key` returns this stored result.
+ */
+export type BulkSignOffOut = {
+    /**
+     * Excluded
+     */
+    excluded: number;
+    /**
+     * Results
+     */
+    results: Array<BulkSignOffItemOut>;
+    /**
+     * Signed
+     */
+    signed: number;
+};
+
+/**
+ * BulkSignOffTargetIn
+ */
+export type BulkSignOffTargetIn = {
+    /**
+     * Seen Hash
+     */
+    seen_hash: string;
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Target Type
+     */
+    target_type: string;
+};
+
+/**
  * CandidateOut
  */
 export type CandidateOut = {
@@ -2024,6 +2107,33 @@ export type DueDatesIn = {
      * Item Ids
      */
     item_ids: Array<string>;
+};
+
+/**
+ * EligibilityCheckOut
+ *
+ * One "Before you sign" row. `facts` are counts, dates and names for the row's sentence;
+ * `refs` are what its link opens (the open notes, the issues).
+ */
+export type EligibilityCheckOut = {
+    /**
+     * Code
+     */
+    code: 'open_review_notes' | 'independence' | 'segregation' | 'all_cited' | 'gate_g4' | 'open_issues' | 'eqr_limits';
+    /**
+     * Facts
+     */
+    facts: {
+        [key: string]: string | number | boolean | null;
+    };
+    /**
+     * Refs
+     */
+    refs: Array<ObjectRefOut>;
+    /**
+     * Result
+     */
+    result: 'pass' | 'fail' | 'warn';
 };
 
 /**
@@ -3460,6 +3570,55 @@ export type HistoryEntryOut = {
 };
 
 /**
+ * HumanGateOut
+ *
+ * One row of the rebuildable projection. Labels come from the subject's owner at read time.
+ */
+export type HumanGateOut = {
+    /**
+     * Assignee User Id
+     */
+    assignee_user_id: string | null;
+    /**
+     * Client Id
+     */
+    client_id: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Due On
+     */
+    due_on: string | null;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'decision' | 'sign_off_request' | 'proposal' | 'send' | 'final_approval' | 'export' | 'release';
+    /**
+     * Role
+     */
+    role: string | null;
+    /**
+     * State
+     */
+    state: 'open' | 'done' | 'voided';
+    subject: ObjectRefOut;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string | null;
+};
+
+/**
  * ImportCountsOut
  */
 export type ImportCountsOut = {
@@ -3934,6 +4093,29 @@ export type KnowledgeSearchIn = {
 };
 
 /**
+ * LadderLevelOut
+ */
+export type LadderLevelOut = {
+    /**
+     * Expected Signer Name
+     */
+    expected_signer_name: string | null;
+    /**
+     * Expected Signer User Id
+     */
+    expected_signer_user_id: string | null;
+    latest: SignOffOut | null;
+    /**
+     * Level
+     */
+    level: 'L1_preparer' | 'L2_reviewer' | 'L3_manager' | 'L4_partner' | 'L5_eqr';
+    /**
+     * Required
+     */
+    required: boolean;
+};
+
+/**
  * LeadRowOut
  */
 export type LeadRowOut = {
@@ -4129,6 +4311,74 @@ export type ListDoneOut = {
      * Name
      */
     name: string;
+};
+
+/**
+ * ListPage[HumanGateOut]
+ */
+export type ListPageHumanGateOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<HumanGateOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * ListPage[ReviewNoteItemOut]
+ */
+export type ListPageReviewNoteItemOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<ReviewNoteItemOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
 };
 
 /**
@@ -4721,6 +4971,34 @@ export type NextItemOut = {
      * Target Type
      */
     target_type: string;
+};
+
+/**
+ * NoteAnchorIn
+ */
+export type NoteAnchorIn = {
+    /**
+     * Kind
+     */
+    kind: 'cell' | 'field' | 'section' | 'region';
+    /**
+     * Ref
+     */
+    ref: string;
+};
+
+/**
+ * NoteAnchorOut
+ */
+export type NoteAnchorOut = {
+    /**
+     * Kind
+     */
+    kind: 'cell' | 'field' | 'section' | 'region';
+    /**
+     * Ref
+     */
+    ref: string;
 };
 
 /**
@@ -5577,6 +5855,29 @@ export type RaiseNoteBody = {
 };
 
 /**
+ * RaiseReviewNoteIn
+ */
+export type RaiseReviewNoteIn = {
+    anchor?: NoteAnchorIn | null;
+    /**
+     * Assignee User Id
+     */
+    assignee_user_id?: string | null;
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Target Type
+     */
+    target_type: string;
+};
+
+/**
  * ReadAllOut
  */
 export type ReadAllOut = {
@@ -6160,21 +6461,61 @@ export type ReviewMatrixOut = {
 };
 
 /**
- * ReviewNoteOut
+ * ReviewNoteEventIn
  */
-export type ReviewNoteOut = {
-    /**
-     * Anchor
-     */
-    anchor: string | null;
+export type ReviewNoteEventIn = {
     /**
      * Body
      */
-    body: string;
+    body?: string | null;
+};
+
+/**
+ * ReviewNoteEventOut
+ */
+export type ReviewNoteEventOut = {
     /**
-     * Events
+     * Actor Name
      */
-    events: Array<NoteEventOut>;
+    actor_name: string;
+    /**
+     * Actor User Id
+     */
+    actor_user_id: string;
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Body
+     */
+    body: string | null;
+    /**
+     * Event
+     */
+    event: 'raised' | 'responded' | 'cleared' | 'closed' | 'withdrawn' | 'reopened';
+};
+
+/**
+ * ReviewNoteItemOut
+ *
+ * A note in a list. Bodies are sealed and Restricted, so lists never carry them; the
+ * detail read does, as an access event.
+ */
+export type ReviewNoteItemOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    anchor: NoteAnchorOut | null;
+    /**
+     * Assignee User Id
+     */
+    assignee_user_id: string | null;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
     /**
      * Id
      */
@@ -6184,21 +6525,14 @@ export type ReviewNoteOut = {
      */
     raised_at: string;
     /**
-     * Raised By Me
+     * Raised By Initials
      */
-    raised_by_me: boolean;
+    raised_by_initials: string;
     /**
-     * Raised By Name
+     * Raised By User Id
      */
-    raised_by_name: string;
-    /**
-     * Status
-     */
-    status: 'open' | 'responded' | 'cleared';
-    /**
-     * Target Code
-     */
-    target_code: string | null;
+    raised_by_user_id: string;
+    status: ReviewNoteStatus;
     /**
      * Target Id
      */
@@ -6208,6 +6542,11 @@ export type ReviewNoteOut = {
      */
     target_type: string;
 };
+
+/**
+ * ReviewNoteStatus
+ */
+export type ReviewNoteStatus = 'open' | 'responded' | 'cleared' | 'closed' | 'withdrawn';
 
 /**
  * ReviewOut
@@ -6828,6 +7167,86 @@ export type SignItemsIn = {
 };
 
 /**
+ * SignOffEligibilityOut
+ *
+ * `GET /v1/sign-offs/eligibility`: the SHL-12 sheet for one level.
+ */
+export type SignOffEligibilityOut = {
+    /**
+     * Checks
+     */
+    checks: Array<EligibilityCheckOut>;
+    /**
+     * Eligible
+     */
+    eligible: boolean;
+    /**
+     * Ladder
+     */
+    ladder: Array<LadderLevelOut>;
+    /**
+     * Level
+     */
+    level: 'L1_preparer' | 'L2_reviewer' | 'L3_manager' | 'L4_partner' | 'L5_eqr';
+    /**
+     * Levels Allowed
+     */
+    levels_allowed: Array<'L1_preparer' | 'L2_reviewer' | 'L3_manager' | 'L4_partner' | 'L5_eqr'>;
+    statement: SignOffStatementOut;
+    target: SignOffTargetOut;
+};
+
+/**
+ * SignOffIn
+ *
+ * `POST /v1/sign-offs`: sign what was seen. A different current hash answers 409
+ * `content_changed` and nothing is written.
+ */
+export type SignOffIn = {
+    /**
+     * Kind
+     */
+    kind?: 'ladder' | 'field_tick' | 'final_approval';
+    /**
+     * Level
+     */
+    level: 'L1_preparer' | 'L2_reviewer' | 'L3_manager' | 'L4_partner' | 'L5_eqr';
+    /**
+     * Seen Hash
+     */
+    seen_hash: string;
+    /**
+     * Statement Version
+     */
+    statement_version: string;
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Target Type
+     */
+    target_type: string;
+};
+
+/**
+ * SignOffLadderOut
+ *
+ * `GET /v1/sign-offs`: the ladder per level on one target.
+ */
+export type SignOffLadderOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Levels
+     */
+    levels: Array<LadderLevelOut>;
+    target: SignOffTargetOut;
+};
+
+/**
  * SignOffLevelOut
  */
 export type SignOffLevelOut = {
@@ -6851,6 +7270,129 @@ export type SignOffLevelOut = {
      * Stale
      */
     stale: boolean;
+};
+
+/**
+ * SignOffOut
+ *
+ * One insert-only `sign_offs` row. `stale` is computed (its hash differs from the target's);
+ * no row is ever updated (ADR-160 clause 3).
+ */
+export type SignOffOut = {
+    /**
+     * Adopted Run Id
+     */
+    adopted_run_id: string | null;
+    /**
+     * Adopted Run Number
+     */
+    adopted_run_number: number | null;
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Initials
+     */
+    initials: string;
+    /**
+     * Kind
+     */
+    kind: 'ladder' | 'field_tick' | 'final_approval';
+    /**
+     * Level
+     */
+    level: 'L1_preparer' | 'L2_reviewer' | 'L3_manager' | 'L4_partner' | 'L5_eqr';
+    /**
+     * Signed At
+     */
+    signed_at: string;
+    /**
+     * Signer Name
+     */
+    signer_name: string;
+    /**
+     * Signer User Id
+     */
+    signer_user_id: string;
+    /**
+     * Stale
+     */
+    stale: boolean;
+    /**
+     * Statement Version
+     */
+    statement_version: string;
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Target Type
+     */
+    target_type: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
+ * SignOffStatementOut
+ */
+export type SignOffStatementOut = {
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Version
+     */
+    version: string;
+};
+
+/**
+ * SignOffTargetOut
+ *
+ * What is being signed: the version and hash the signer sees (SHL-12 workpaper card).
+ */
+export type SignOffTargetOut = {
+    /**
+     * Cell Count
+     */
+    cell_count: number;
+    /**
+     * Citation Count
+     */
+    citation_count: number;
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Context Label
+     */
+    context_label: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Target Type
+     */
+    target_type: string;
+    /**
+     * Version No
+     */
+    version_no: number;
 };
 
 /**
@@ -8675,6 +9217,73 @@ export type AbacusModulesFieldworkRoutesStartIn = {
      * Definition
      */
     definition?: 'journal_entry_testing' | 'unrecorded_liabilities';
+};
+
+/**
+ * ReviewNoteOut
+ *
+ * One note with its sealed body and its insert-only events.
+ */
+export type AbacusModulesReviewContractReviewNoteOut = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Events
+     */
+    events: Array<ReviewNoteEventOut>;
+    note: ReviewNoteItemOut;
+};
+
+/**
+ * ReviewNoteOut
+ */
+export type AbacusModulesReviewRoutesReviewNoteOut = {
+    /**
+     * Anchor
+     */
+    anchor: string | null;
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Events
+     */
+    events: Array<NoteEventOut>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Raised At
+     */
+    raised_at: string;
+    /**
+     * Raised By Me
+     */
+    raised_by_me: boolean;
+    /**
+     * Raised By Name
+     */
+    raised_by_name: string;
+    /**
+     * Status
+     */
+    status: 'open' | 'responded' | 'cleared';
+    /**
+     * Target Code
+     */
+    target_code: string | null;
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Target Type
+     */
+    target_type: string;
 };
 
 export type GetBudgetData = {
@@ -17956,7 +18565,7 @@ export type ReviewNotesResponses = {
      *
      * Successful Response
      */
-    200: Array<ReviewNoteOut>;
+    200: Array<AbacusModulesReviewRoutesReviewNoteOut>;
 };
 
 export type ReviewNotesResponse = ReviewNotesResponses[keyof ReviewNotesResponses];
@@ -18010,7 +18619,7 @@ export type RaiseReviewNoteResponses = {
      *
      * Successful Response
      */
-    201: Array<ReviewNoteOut>;
+    201: Array<AbacusModulesReviewRoutesReviewNoteOut>;
 };
 
 export type RaiseReviewNoteResponse = RaiseReviewNoteResponses[keyof RaiseReviewNoteResponses];
@@ -18068,7 +18677,7 @@ export type ClearReviewNoteResponses = {
      *
      * Successful Response
      */
-    201: Array<ReviewNoteOut>;
+    201: Array<AbacusModulesReviewRoutesReviewNoteOut>;
 };
 
 export type ClearReviewNoteResponse = ClearReviewNoteResponses[keyof ClearReviewNoteResponses];
@@ -18126,7 +18735,7 @@ export type ReopenReviewNoteResponses = {
      *
      * Successful Response
      */
-    201: Array<ReviewNoteOut>;
+    201: Array<AbacusModulesReviewRoutesReviewNoteOut>;
 };
 
 export type ReopenReviewNoteResponse = ReopenReviewNoteResponses[keyof ReopenReviewNoteResponses];
@@ -18184,7 +18793,7 @@ export type RespondReviewNoteResponses = {
      *
      * Successful Response
      */
-    201: Array<ReviewNoteOut>;
+    201: Array<AbacusModulesReviewRoutesReviewNoteOut>;
 };
 
 export type RespondReviewNoteResponse = RespondReviewNoteResponses[keyof RespondReviewNoteResponses];
@@ -23050,6 +23659,78 @@ export type PublishGroupingSetResponses = {
 
 export type PublishGroupingSetResponse = PublishGroupingSetResponses[keyof PublishGroupingSetResponses];
 
+export type HumanGateListData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Assignee
+         */
+        assignee?: 'me';
+        /**
+         * Kind
+         */
+        kind?: 'decision' | 'sign_off_request' | 'proposal' | 'send' | 'final_approval' | 'export' | 'release' | null;
+        /**
+         * Engagement Id
+         */
+        engagement_id?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number | null;
+    };
+    url: '/v1/human-gates';
+};
+
+export type HumanGateListErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type HumanGateListError = HumanGateListErrors[keyof HumanGateListErrors];
+
+export type HumanGateListResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageHumanGateOut;
+};
+
+export type HumanGateListResponse = HumanGateListResponses[keyof HumanGateListResponses];
+
 export type AcceptInvitationData = {
     body: AcceptInvitationIn;
     headers?: {
@@ -24405,6 +25086,607 @@ export type ImportEmailTemplateResponses = {
 };
 
 export type ImportEmailTemplateResponse = ImportEmailTemplateResponses[keyof ImportEmailTemplateResponses];
+
+export type ReviewNoteListData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Target Type
+         */
+        target_type?: string | null;
+        /**
+         * Target Id
+         */
+        target_id?: string | null;
+        /**
+         * Engagement Id
+         */
+        engagement_id?: string | null;
+        /**
+         * Status
+         */
+        status?: ReviewNoteStatus | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number | null;
+    };
+    url: '/v1/review-notes';
+};
+
+export type ReviewNoteListErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReviewNoteListError = ReviewNoteListErrors[keyof ReviewNoteListErrors];
+
+export type ReviewNoteListResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageReviewNoteItemOut;
+};
+
+export type ReviewNoteListResponse = ReviewNoteListResponses[keyof ReviewNoteListResponses];
+
+export type ReviewNoteRaiseData = {
+    body: RaiseReviewNoteIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/review-notes';
+};
+
+export type ReviewNoteRaiseErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReviewNoteRaiseError = ReviewNoteRaiseErrors[keyof ReviewNoteRaiseErrors];
+
+export type ReviewNoteRaiseResponses = {
+    /**
+     * Successful Response
+     */
+    201: AbacusModulesReviewContractReviewNoteOut;
+};
+
+export type ReviewNoteRaiseResponse = ReviewNoteRaiseResponses[keyof ReviewNoteRaiseResponses];
+
+export type ReviewNoteData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Note Id
+         */
+        note_id: string;
+    };
+    query?: never;
+    url: '/v1/review-notes/{note_id}';
+};
+
+export type ReviewNoteErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReviewNoteError = ReviewNoteErrors[keyof ReviewNoteErrors];
+
+export type ReviewNoteResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesReviewContractReviewNoteOut;
+};
+
+export type ReviewNoteResponse = ReviewNoteResponses[keyof ReviewNoteResponses];
+
+export type ReviewNoteClearData = {
+    body: ReviewNoteEventIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Note Id
+         */
+        note_id: string;
+    };
+    query?: never;
+    url: '/v1/review-notes/{note_id}/clear';
+};
+
+export type ReviewNoteClearErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReviewNoteClearError = ReviewNoteClearErrors[keyof ReviewNoteClearErrors];
+
+export type ReviewNoteClearResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesReviewContractReviewNoteOut;
+};
+
+export type ReviewNoteClearResponse = ReviewNoteClearResponses[keyof ReviewNoteClearResponses];
+
+export type ReviewNoteRespondData = {
+    body: ReviewNoteEventIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Note Id
+         */
+        note_id: string;
+    };
+    query?: never;
+    url: '/v1/review-notes/{note_id}/respond';
+};
+
+export type ReviewNoteRespondErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReviewNoteRespondError = ReviewNoteRespondErrors[keyof ReviewNoteRespondErrors];
+
+export type ReviewNoteRespondResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesReviewContractReviewNoteOut;
+};
+
+export type ReviewNoteRespondResponse = ReviewNoteRespondResponses[keyof ReviewNoteRespondResponses];
+
+export type ReviewNoteWithdrawData = {
+    body: ReviewNoteEventIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Note Id
+         */
+        note_id: string;
+    };
+    query?: never;
+    url: '/v1/review-notes/{note_id}/withdraw';
+};
+
+export type ReviewNoteWithdrawErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReviewNoteWithdrawError = ReviewNoteWithdrawErrors[keyof ReviewNoteWithdrawErrors];
+
+export type ReviewNoteWithdrawResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesReviewContractReviewNoteOut;
+};
+
+export type ReviewNoteWithdrawResponse = ReviewNoteWithdrawResponses[keyof ReviewNoteWithdrawResponses];
+
+export type SignOffLadderData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Target Type
+         */
+        target_type: string;
+        /**
+         * Target Id
+         */
+        target_id: string;
+    };
+    url: '/v1/sign-offs';
+};
+
+export type SignOffLadderErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SignOffLadderError = SignOffLadderErrors[keyof SignOffLadderErrors];
+
+export type SignOffLadderResponses = {
+    /**
+     * Successful Response
+     */
+    200: SignOffLadderOut;
+};
+
+export type SignOffLadderResponse = SignOffLadderResponses[keyof SignOffLadderResponses];
+
+export type SignOffData = {
+    body: SignOffIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/sign-offs';
+};
+
+export type SignOffErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SignOffError = SignOffErrors[keyof SignOffErrors];
+
+export type SignOffResponses = {
+    /**
+     * Successful Response
+     */
+    201: SignOffOut;
+};
+
+export type SignOffResponse = SignOffResponses[keyof SignOffResponses];
+
+export type SignOffEligibilityData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Target Type
+         */
+        target_type: string;
+        /**
+         * Target Id
+         */
+        target_id: string;
+        /**
+         * Level
+         */
+        level: 'L1_preparer' | 'L2_reviewer' | 'L3_manager' | 'L4_partner' | 'L5_eqr';
+    };
+    url: '/v1/sign-offs/eligibility';
+};
+
+export type SignOffEligibilityErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SignOffEligibilityError = SignOffEligibilityErrors[keyof SignOffEligibilityErrors];
+
+export type SignOffEligibilityResponses = {
+    /**
+     * Successful Response
+     */
+    200: SignOffEligibilityOut;
+};
+
+export type SignOffEligibilityResponse = SignOffEligibilityResponses[keyof SignOffEligibilityResponses];
+
+export type SignOffBulkData = {
+    body: BulkSignOffIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/sign-offs:bulk';
+};
+
+export type SignOffBulkErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SignOffBulkError = SignOffBulkErrors[keyof SignOffBulkErrors];
+
+export type SignOffBulkResponses = {
+    /**
+     * Successful Response
+     */
+    200: BulkSignOffOut;
+};
+
+export type SignOffBulkResponse = SignOffBulkResponses[keyof SignOffBulkResponses];
 
 export type SignupData = {
     body: SignupIn;

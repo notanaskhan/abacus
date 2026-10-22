@@ -12,9 +12,6 @@ actions:
   sample.approve:           {engagement_partner: allow, manager: allow, agent: deny, independence: required}   # SPEC-040 (TASK-100) Q1: a manager or the partner agrees the sample
   item.sign_prepared:       {manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # SPEC-040 AC-6: the row's preparer (Q5: never the partner)
   item.sign_reviewed:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # SPEC-040 AC-7: never the row's preparer (the service refuses), the EQR or the agent
-  review_note.raise:        {engagement_partner: allow, manager: allow, senior: allow, reviewer: allow, agent: deny, independence: required}   # SPEC-041 (TASK-103) Q1: reviewers, the EQR included
-  review_note.respond:      {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: deny, independence: required}   # SPEC-041 AC-2: the preparer answers; the raiser can reply
-  review_note.clear:        {engagement_partner: allow, manager: allow, senior: allow, reviewer: allow, agent: deny, independence: required}   # SPEC-041 AC-3: only the raiser (the service checks)
   finding.raise:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # SPEC-043 (TASK-107) AC-4
   misstatement.set:         {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # SPEC-043 AC-4: people record misstatements
   materiality.decide:       {engagement_partner: allow, agent: deny, independence: required}   # SPEC-300 (TASK-301) AC-2: only the engagement partner decides materiality
