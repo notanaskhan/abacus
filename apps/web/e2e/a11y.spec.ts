@@ -13,7 +13,20 @@ import { expect, test, type Page } from "@playwright/test";
 
 const SERIOUS = new Set(["serious", "critical"]);
 
+/** Let one-off entrance animations finish (a Reveal rising word by word is mid-fade otherwise, and
+ * axe measures the fade); looping ones (spinners) keep running. */
+async function settle(page: Page): Promise<void> {
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .every(
+        (a) => a.playState !== "running" || a.effect?.getComputedTiming().iterations === Infinity,
+      ),
+  );
+}
+
 async function seriousViolations(page: Page, include?: string): Promise<string[]> {
+  await settle(page);
   let builder = new AxeBuilder({ page });
   if (include !== undefined) builder = builder.include(include);
   const { violations } = await builder.analyze();
@@ -103,6 +116,28 @@ test.describe("forced colors", () => {
   });
 });
 
+/**
+ * What is visibly animating, named by its animation (or transition) and where it sits. Reduced
+ * motion clamps every CSS transition and animation to 0.01ms (motion.css), and Chromium lists such
+ * a clamped one as running for a frame; those move nothing, so they are left out.
+ */
+async function running(page: Page): Promise<string[]> {
+  return page.evaluate(() =>
+    document
+      .getAnimations()
+      .filter((a) => {
+        const d = a.effect?.getComputedTiming().duration;
+        return typeof d !== "number" || d > 1;
+      })
+      .map((a) => {
+        const named = a as Animation & { animationName?: string; transitionProperty?: string };
+        const el = (a.effect as KeyframeEffect | null)?.target as Element | null;
+        const where = el?.closest("section[id]")?.id ?? el?.tagName.toLowerCase() ?? "?";
+        return `${named.animationName ?? named.transitionProperty ?? "?"} @ ${where}`;
+      }),
+  );
+}
+
 test.describe("reduced motion with an overlay open", () => {
   test.use({ reducedMotion: "reduce" });
 
@@ -115,9 +150,15 @@ test.describe("reduced motion with an overlay open", () => {
       .first();
     await trigger.click();
     await expect(page.locator(OPEN_LAYER).last()).toBeVisible();
-    expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
+    // Reduced motion clamps any CSS transition to 0.01ms, which a sample can still catch for a
+    // frame; a real animation (the shortest the kit draws is 160ms) is still running at 100ms.
+    await expect
+      .poll(() => running(page), { message: "animations with the layer open", timeout: 100 })
+      .toEqual([]);
     await page.keyboard.press("Escape");
-    expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
+    await expect
+      .poll(() => running(page), { message: "animations after closing it", timeout: 100 })
+      .toEqual([]);
   });
 });
 

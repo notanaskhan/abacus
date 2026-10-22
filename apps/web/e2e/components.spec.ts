@@ -4,7 +4,20 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
+/** Let one-off entrance animations finish (a Reveal rising word by word is mid-fade otherwise, and
+ * axe measures the fade); looping ones (spinners) keep running. */
+async function settle(page: Page): Promise<void> {
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .every(
+        (a) => a.playState !== "running" || a.effect?.getComputedTiming().iterations === Infinity,
+      ),
+  );
+}
+
 async function expectNoSeriousViolations(page: Page): Promise<void> {
+  await settle(page);
   const { violations } = await new AxeBuilder({ page }).analyze();
   const serious = violations.filter((v) => v.impact === "serious" || v.impact === "critical");
   expect(

@@ -334,3 +334,14 @@ semantics are kept exact; the plan's `toast.undoable` and `toast.running` sit on
 | 2026-10-22 | T1e                          | 8 skeleton rows (ViewStateBody gains `skeletonCount`; its list default stays 6)                       |
 | 2026-10-22 | Row chevron                  | A 24px "Open …" button that shows on row hover or focus, so the open action has a keyboard path       |
 | 2026-10-22 | TASK-101 `DataTable` callers | Stay as they are; each screen moves to `IndexList` with its own screen task, not in bulk              |
+
+### Attribution and human verbs (F-05-T30, T31)
+
+| Date       | Item                   | Decision                                                                                                                              |
+| ---------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-22 | HumanAction refuses    | Any actor that is not a named person: the agent, a policy, the system (H1 names the agent; a policy or the system cannot sign either) |
+| 2026-10-22 | Adopt                  | A human verb (F-05 H1 lists it); the C-31 Adopt is a `HumanAction`                                                                    |
+| 2026-10-22 | Agent-owned mark       | `data-actor="agent"` on `AgentText` and on a suggested `AgentFilledMarker` value; T31's sweep reads it                                |
+| 2026-10-22 | AgentText              | `text-para text-ink-2` by default (H1); sanitising unchanged; a caller's class still wins                                             |
+| 2026-10-22 | C-31 running and empty | ink-3, not the kit's ink-4 (fails AA, DEC-11), as the status kit's `soon`                                                             |
+| 2026-10-22 | Specimen verbs         | The six specimen buttons with Approve, Sign off or Send now render through `HumanAction` (T31 found them)                             |

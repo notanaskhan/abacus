@@ -3,6 +3,7 @@
 // characters that can disguise text (controls, bidirectional overrides, zero-width marks) and
 // caps the length, so a hostile rationale can't reorder or hide what a reviewer reads.
 import type { JSX } from "react";
+import { cn } from "./cn";
 
 export const AGENT_TEXT_LIMIT = 2000;
 const MAX_BLANK_LINES = 1;
@@ -48,9 +49,14 @@ export function AgentText({ text, inline = false, className }: AgentTextProps): 
   const Tag = inline ? "span" : "p";
   return (
     <Tag
-      className={[inline ? "" : "whitespace-pre-line", "[overflow-wrap:anywhere]", className ?? ""]
-        .join(" ")
-        .trim()}
+      data-actor="agent"
+      className={cn(
+        // F-05-T30: agent text reads text-para in ink-2 (H1); a caller's classes still win.
+        "text-para text-ink-2",
+        !inline && "whitespace-pre-line",
+        "[overflow-wrap:anywhere]",
+        className,
+      )}
     >
       {sanitiseAgentText(text)}
     </Tag>
