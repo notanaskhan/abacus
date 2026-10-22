@@ -60,6 +60,7 @@ NON_TENANT_TABLES = frozenset(
     | {"staff_invitation_tokens"}  # SPEC-024 (TASK-041): definer functions only
     # 0086 (Q-01-T19, ADR-157): platform-wide, reached only through definer functions.
     | {"platform_controls", "platform_control_changes", "firm_provisioning_requests"}
+    | {"plans"}  # 0088 (F-03-T28): global, operator-set
 )
 # Insert-only tables outside the modules (ADR-004); each module lists its own in registry.py.
 _PLATFORM_INSERT_ONLY: frozenset[str] = frozenset(
@@ -153,6 +154,7 @@ GLOBAL_TABLES = frozenset(
     | {"signup_codes", "signup_attempts"}  # SPEC-024: founder-issued codes, attempts
     | {"staff_invitation_tokens"}  # SPEC-024 (TASK-041)
     | {"platform_controls", "platform_control_changes", "firm_provisioning_requests"}  # 0086
+    | {"plans"}  # 0088
 )
 # SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
 DEFINER_FUNCTIONS = frozenset(

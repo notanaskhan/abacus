@@ -66,5 +66,12 @@ class DomainInvalid(_Coded):
     code: ClassVar[str] = "invalid"
 
 
+class DomainForbidden(_Coded):
+    """The firm may not use this at all (an entitlement it doesn't hold): 403 with the class's
+    fixed `code` and identifier-only facts, so the UI can name the reason (F-03-T28)."""
+
+    code: ClassVar[str] = "forbidden"
+
+
 class ServiceUnavailable(Exception):
     """A dependency isn't reachable right now: 503."""

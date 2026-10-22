@@ -10,6 +10,8 @@ from __future__ import annotations
 TABLES: frozenset[str] = frozenset(
     # Q-01-T19 (ADR-157): global, no app privileges; through definer functions only.
     {"platform_controls", "platform_control_changes", "firm_provisioning_requests"}
+    # F-03-T28 (ADR-148): plans (global) and the firms' module entitlements (read-only to the app).
+    | {"plans", "tenant_entitlements"}
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
 INSERT_ONLY: frozenset[str] = frozenset({"platform_control_changes"})
