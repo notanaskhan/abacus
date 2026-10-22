@@ -1763,6 +1763,169 @@
         "title": "BudgetOut",
         "type": "object"
       },
+      "BulkSignOffIn": {
+        "additionalProperties": false,
+        "properties": {
+          "level": {
+            "cls": "internal",
+            "enum": [
+              "L1_preparer",
+              "L2_reviewer",
+              "L3_manager",
+              "L4_partner",
+              "L5_eqr"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "statement_version": {
+            "cls": "internal",
+            "maxLength": 40,
+            "title": "Statement Version",
+            "type": "string"
+          },
+          "targets": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/BulkSignOffTargetIn"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Targets",
+            "type": "array"
+          }
+        },
+        "required": [
+          "targets",
+          "level",
+          "statement_version"
+        ],
+        "title": "BulkSignOffIn",
+        "type": "object"
+      },
+      "BulkSignOffItemOut": {
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "enum": [
+                  "content_changed",
+                  "segregation",
+                  "open_review_notes",
+                  "independence_pending",
+                  "incomplete",
+                  "uncited_change",
+                  "level_not_permitted"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Detail"
+          },
+          "ok": {
+            "cls": "internal",
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "sign_off_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Sign Off Id"
+          },
+          "target_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Target Id",
+            "type": "string"
+          },
+          "target_type": {
+            "cls": "internal",
+            "title": "Target Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_type",
+          "target_id",
+          "ok",
+          "sign_off_id",
+          "detail"
+        ],
+        "title": "BulkSignOffItemOut",
+        "type": "object"
+      },
+      "BulkSignOffOut": {
+        "description": "Each item decided on its own, atomically (R-SO-7). A replay with the same\n`Idempotency-Key` returns this stored result.",
+        "properties": {
+          "excluded": {
+            "cls": "internal",
+            "title": "Excluded",
+            "type": "integer"
+          },
+          "results": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/BulkSignOffItemOut"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "signed": {
+            "cls": "internal",
+            "title": "Signed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "results",
+          "signed",
+          "excluded"
+        ],
+        "title": "BulkSignOffOut",
+        "type": "object"
+      },
+      "BulkSignOffTargetIn": {
+        "additionalProperties": false,
+        "properties": {
+          "seen_hash": {
+            "cls": "internal",
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Seen Hash",
+            "type": "string"
+          },
+          "target_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Target Id",
+            "type": "string"
+          },
+          "target_type": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z_]{0,39}$",
+            "title": "Target Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_type",
+          "target_id",
+          "seen_hash"
+        ],
+        "title": "BulkSignOffTargetIn",
+        "type": "object"
+      },
       "CandidateOut": {
         "properties": {
           "display_name": {
@@ -4319,6 +4482,72 @@
           "due_on"
         ],
         "title": "DueDatesIn",
+        "type": "object"
+      },
+      "EligibilityCheckOut": {
+        "description": "One \"Before you sign\" row. `facts` are counts, dates and names for the row's sentence;\n`refs` are what its link opens (the open notes, the issues).",
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "enum": [
+              "open_review_notes",
+              "independence",
+              "segregation",
+              "all_cited",
+              "gate_g4",
+              "open_issues",
+              "eqr_limits"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "facts": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "cls": "confidential",
+            "title": "Facts",
+            "type": "object"
+          },
+          "refs": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ObjectRefOut"
+            },
+            "title": "Refs",
+            "type": "array"
+          },
+          "result": {
+            "cls": "internal",
+            "enum": [
+              "pass",
+              "fail",
+              "warn"
+            ],
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "result",
+          "facts",
+          "refs"
+        ],
+        "title": "EligibilityCheckOut",
         "type": "object"
       },
       "EmailTemplateImportIn": {
@@ -7182,6 +7411,143 @@
         "title": "HistoryEntryOut",
         "type": "object"
       },
+      "HumanGateOut": {
+        "description": "One row of the rebuildable projection. Labels come from the subject's owner at read time.",
+        "properties": {
+          "assignee_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Assignee User Id"
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Id"
+          },
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "due_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Due On"
+          },
+          "engagement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engagement Id"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "decision",
+              "sign_off_request",
+              "proposal",
+              "send",
+              "final_approval",
+              "export",
+              "release"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Role"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "open",
+              "done",
+              "voided"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "subject": {
+            "$ref": "#/components/schemas/ObjectRefOut",
+            "cls": "internal"
+          },
+          "work_item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Work Item Id"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "subject",
+          "engagement_id",
+          "work_item_id",
+          "client_id",
+          "assignee_user_id",
+          "role",
+          "due_on",
+          "state",
+          "created_at"
+        ],
+        "title": "HumanGateOut",
+        "type": "object"
+      },
       "ImportCountsOut": {
         "properties": {
           "created": {
@@ -8124,6 +8490,72 @@
         "title": "KnowledgeSearchIn",
         "type": "object"
       },
+      "LadderLevelOut": {
+        "properties": {
+          "expected_signer_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Expected Signer Name"
+          },
+          "expected_signer_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Expected Signer User Id"
+          },
+          "latest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SignOffOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "level": {
+            "cls": "internal",
+            "enum": [
+              "L1_preparer",
+              "L2_reviewer",
+              "L3_manager",
+              "L4_partner",
+              "L5_eqr"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "required": {
+            "cls": "internal",
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "level",
+          "required",
+          "expected_signer_user_id",
+          "expected_signer_name",
+          "latest"
+        ],
+        "title": "LadderLevelOut",
+        "type": "object"
+      },
       "LeadRowOut": {
         "properties": {
           "account_code": {
@@ -8555,6 +8987,126 @@
           "at"
         ],
         "title": "ListDoneOut",
+        "type": "object"
+      },
+      "ListPage_HumanGateOut_": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/HumanGateOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListPage[HumanGateOut]",
+        "type": "object"
+      },
+      "ListPage_ReviewNoteItemOut_": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ReviewNoteItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListPage[ReviewNoteItemOut]",
         "type": "object"
       },
       "ListPage_WorkItemRowOut_": {
@@ -9845,6 +10397,61 @@
           "code"
         ],
         "title": "NextItemOut",
+        "type": "object"
+      },
+      "NoteAnchorIn": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "cell",
+              "field",
+              "section",
+              "region"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "ref": {
+            "cls": "confidential",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "ref"
+        ],
+        "title": "NoteAnchorIn",
+        "type": "object"
+      },
+      "NoteAnchorOut": {
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "cell",
+              "field",
+              "section",
+              "region"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "ref": {
+            "cls": "confidential",
+            "title": "Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "ref"
+        ],
+        "title": "NoteAnchorOut",
         "type": "object"
       },
       "NoteEntryOut": {
@@ -11460,6 +12067,61 @@
         "title": "RaiseNoteBody",
         "type": "object"
       },
+      "RaiseReviewNoteIn": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NoteAnchorIn"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
+          "assignee_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Assignee User Id"
+          },
+          "body": {
+            "cls": "restricted",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "target_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Target Id",
+            "type": "string"
+          },
+          "target_type": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z_]{0,39}$",
+            "title": "Target Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_type",
+          "target_id",
+          "body"
+        ],
+        "title": "RaiseReviewNoteIn",
+        "type": "object"
+      },
       "ReadAllOut": {
         "properties": {
           "marked": {
@@ -12694,9 +13356,46 @@
         "title": "ReviewMatrixOut",
         "type": "object"
       },
-      "ReviewNoteOut": {
+      "ReviewNoteEventIn": {
+        "additionalProperties": false,
         "properties": {
-          "anchor": {
+          "body": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Body"
+          }
+        },
+        "title": "ReviewNoteEventIn",
+        "type": "object"
+      },
+      "ReviewNoteEventOut": {
+        "properties": {
+          "actor_name": {
+            "cls": "internal",
+            "title": "Actor Name",
+            "type": "string"
+          },
+          "actor_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Actor User Id",
+            "type": "string"
+          },
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "body": {
             "anyOf": [
               {
                 "type": "string"
@@ -12705,21 +13404,73 @@
                 "type": "null"
               }
             ],
-            "cls": "confidential",
-            "title": "Anchor"
+            "cls": "restricted",
+            "title": "Body"
           },
-          "body": {
-            "cls": "confidential",
-            "title": "Body",
+          "event": {
+            "cls": "internal",
+            "enum": [
+              "raised",
+              "responded",
+              "cleared",
+              "closed",
+              "withdrawn",
+              "reopened"
+            ],
+            "title": "Event",
             "type": "string"
-          },
-          "events": {
-            "cls": "confidential",
+          }
+        },
+        "required": [
+          "event",
+          "body",
+          "actor_user_id",
+          "actor_name",
+          "at"
+        ],
+        "title": "ReviewNoteEventOut",
+        "type": "object"
+      },
+      "ReviewNoteItemOut": {
+        "description": "A note in a list. Bodies are sealed and Restricted, so lists never carry them; the\ndetail read does, as an access event.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
             "items": {
-              "$ref": "#/components/schemas/NoteEventOut"
+              "type": "string"
             },
-            "title": "Events",
+            "title": "Allowed Actions",
             "type": "array"
+          },
+          "anchor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NoteAnchorOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
+          "assignee_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Assignee User Id"
+          },
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
           },
           "id": {
             "cls": "internal",
@@ -12733,37 +13484,20 @@
             "title": "Raised At",
             "type": "string"
           },
-          "raised_by_me": {
+          "raised_by_initials": {
             "cls": "internal",
-            "title": "Raised By Me",
-            "type": "boolean"
+            "title": "Raised By Initials",
+            "type": "string"
           },
-          "raised_by_name": {
+          "raised_by_user_id": {
             "cls": "internal",
-            "title": "Raised By Name",
+            "format": "uuid",
+            "title": "Raised By User Id",
             "type": "string"
           },
           "status": {
-            "cls": "internal",
-            "enum": [
-              "open",
-              "responded",
-              "cleared"
-            ],
-            "title": "Status",
-            "type": "string"
-          },
-          "target_code": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Target Code"
+            "$ref": "#/components/schemas/ReviewNoteStatus",
+            "cls": "internal"
           },
           "target_id": {
             "cls": "internal",
@@ -12779,19 +13513,30 @@
         },
         "required": [
           "id",
+          "engagement_id",
           "target_type",
           "target_id",
-          "target_code",
           "anchor",
-          "body",
           "status",
-          "raised_by_name",
+          "raised_by_user_id",
+          "raised_by_initials",
           "raised_at",
-          "raised_by_me",
-          "events"
+          "assignee_user_id",
+          "allowed_actions"
         ],
-        "title": "ReviewNoteOut",
+        "title": "ReviewNoteItemOut",
         "type": "object"
+      },
+      "ReviewNoteStatus": {
+        "enum": [
+          "open",
+          "responded",
+          "cleared",
+          "closed",
+          "withdrawn"
+        ],
+        "title": "ReviewNoteStatus",
+        "type": "string"
       },
       "ReviewOut": {
         "properties": {
@@ -14113,6 +14858,172 @@
         "title": "SignItemsIn",
         "type": "object"
       },
+      "SignOffEligibilityOut": {
+        "description": "`GET /v1/sign-offs/eligibility`: the SHL-12 sheet for one level.",
+        "properties": {
+          "checks": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/EligibilityCheckOut"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "eligible": {
+            "cls": "internal",
+            "title": "Eligible",
+            "type": "boolean"
+          },
+          "ladder": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/LadderLevelOut"
+            },
+            "title": "Ladder",
+            "type": "array"
+          },
+          "level": {
+            "cls": "internal",
+            "enum": [
+              "L1_preparer",
+              "L2_reviewer",
+              "L3_manager",
+              "L4_partner",
+              "L5_eqr"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "levels_allowed": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "L1_preparer",
+                "L2_reviewer",
+                "L3_manager",
+                "L4_partner",
+                "L5_eqr"
+              ],
+              "type": "string"
+            },
+            "title": "Levels Allowed",
+            "type": "array"
+          },
+          "statement": {
+            "$ref": "#/components/schemas/SignOffStatementOut",
+            "cls": "internal"
+          },
+          "target": {
+            "$ref": "#/components/schemas/SignOffTargetOut",
+            "cls": "confidential"
+          }
+        },
+        "required": [
+          "target",
+          "level",
+          "levels_allowed",
+          "ladder",
+          "checks",
+          "eligible",
+          "statement"
+        ],
+        "title": "SignOffEligibilityOut",
+        "type": "object"
+      },
+      "SignOffIn": {
+        "additionalProperties": false,
+        "description": "`POST /v1/sign-offs`: sign what was seen. A different current hash answers 409\n`content_changed` and nothing is written.",
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "default": "ladder",
+            "enum": [
+              "ladder",
+              "field_tick",
+              "final_approval"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "level": {
+            "cls": "internal",
+            "enum": [
+              "L1_preparer",
+              "L2_reviewer",
+              "L3_manager",
+              "L4_partner",
+              "L5_eqr"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "seen_hash": {
+            "cls": "internal",
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Seen Hash",
+            "type": "string"
+          },
+          "statement_version": {
+            "cls": "internal",
+            "maxLength": 40,
+            "title": "Statement Version",
+            "type": "string"
+          },
+          "target_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Target Id",
+            "type": "string"
+          },
+          "target_type": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z_]{0,39}$",
+            "title": "Target Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_type",
+          "target_id",
+          "level",
+          "seen_hash",
+          "statement_version"
+        ],
+        "title": "SignOffIn",
+        "type": "object"
+      },
+      "SignOffLadderOut": {
+        "description": "`GET /v1/sign-offs`: the ladder per level on one target.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "levels": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/LadderLevelOut"
+            },
+            "title": "Levels",
+            "type": "array"
+          },
+          "target": {
+            "$ref": "#/components/schemas/SignOffTargetOut",
+            "cls": "confidential"
+          }
+        },
+        "required": [
+          "target",
+          "levels",
+          "allowed_actions"
+        ],
+        "title": "SignOffLadderOut",
+        "type": "object"
+      },
       "SignOffLevelOut": {
         "properties": {
           "level": {
@@ -14171,6 +15082,214 @@
           "stale"
         ],
         "title": "SignOffLevelOut",
+        "type": "object"
+      },
+      "SignOffOut": {
+        "description": "One insert-only `sign_offs` row. `stale` is computed (its hash differs from the target's);\nno row is ever updated (ADR-160 clause 3).",
+        "properties": {
+          "adopted_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Adopted Run Id"
+          },
+          "adopted_run_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Adopted Run Number"
+          },
+          "content_hash": {
+            "cls": "internal",
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "initials": {
+            "cls": "internal",
+            "title": "Initials",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "ladder",
+              "field_tick",
+              "final_approval"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "level": {
+            "cls": "internal",
+            "enum": [
+              "L1_preparer",
+              "L2_reviewer",
+              "L3_manager",
+              "L4_partner",
+              "L5_eqr"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "signed_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Signed At",
+            "type": "string"
+          },
+          "signer_name": {
+            "cls": "internal",
+            "title": "Signer Name",
+            "type": "string"
+          },
+          "signer_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Signer User Id",
+            "type": "string"
+          },
+          "stale": {
+            "cls": "internal",
+            "title": "Stale",
+            "type": "boolean"
+          },
+          "statement_version": {
+            "cls": "internal",
+            "title": "Statement Version",
+            "type": "string"
+          },
+          "target_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Target Id",
+            "type": "string"
+          },
+          "target_type": {
+            "cls": "internal",
+            "title": "Target Type",
+            "type": "string"
+          },
+          "version_no": {
+            "cls": "internal",
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "target_type",
+          "target_id",
+          "kind",
+          "level",
+          "signer_user_id",
+          "signer_name",
+          "initials",
+          "signed_at",
+          "content_hash",
+          "version_no",
+          "statement_version",
+          "adopted_run_id",
+          "adopted_run_number",
+          "stale"
+        ],
+        "title": "SignOffOut",
+        "type": "object"
+      },
+      "SignOffStatementOut": {
+        "properties": {
+          "text": {
+            "cls": "internal",
+            "title": "Text",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "text"
+        ],
+        "title": "SignOffStatementOut",
+        "type": "object"
+      },
+      "SignOffTargetOut": {
+        "description": "What is being signed: the version and hash the signer sees (SHL-12 workpaper card).",
+        "properties": {
+          "cell_count": {
+            "cls": "internal",
+            "title": "Cell Count",
+            "type": "integer"
+          },
+          "citation_count": {
+            "cls": "internal",
+            "title": "Citation Count",
+            "type": "integer"
+          },
+          "content_hash": {
+            "cls": "internal",
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "context_label": {
+            "cls": "confidential",
+            "title": "Context Label",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "target_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Target Id",
+            "type": "string"
+          },
+          "target_type": {
+            "cls": "internal",
+            "title": "Target Type",
+            "type": "string"
+          },
+          "version_no": {
+            "cls": "internal",
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "target_type",
+          "target_id",
+          "label",
+          "context_label",
+          "version_no",
+          "content_hash",
+          "cell_count",
+          "citation_count"
+        ],
+        "title": "SignOffTargetOut",
         "type": "object"
       },
       "SignatureOut": {
@@ -18091,6 +19210,134 @@
           }
         },
         "title": "StartIn",
+        "type": "object"
+      },
+      "abacus__modules__review__contract__ReviewNoteOut": {
+        "description": "One note with its sealed body and its insert-only events.",
+        "properties": {
+          "body": {
+            "cls": "restricted",
+            "title": "Body",
+            "type": "string"
+          },
+          "events": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/ReviewNoteEventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "note": {
+            "$ref": "#/components/schemas/ReviewNoteItemOut",
+            "cls": "confidential"
+          }
+        },
+        "required": [
+          "note",
+          "body",
+          "events"
+        ],
+        "title": "ReviewNoteOut",
+        "type": "object"
+      },
+      "abacus__modules__review__routes__ReviewNoteOut": {
+        "properties": {
+          "anchor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Anchor"
+          },
+          "body": {
+            "cls": "confidential",
+            "title": "Body",
+            "type": "string"
+          },
+          "events": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/NoteEventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "raised_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Raised At",
+            "type": "string"
+          },
+          "raised_by_me": {
+            "cls": "internal",
+            "title": "Raised By Me",
+            "type": "boolean"
+          },
+          "raised_by_name": {
+            "cls": "internal",
+            "title": "Raised By Name",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "open",
+              "responded",
+              "cleared"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "target_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Target Code"
+          },
+          "target_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Target Id",
+            "type": "string"
+          },
+          "target_type": {
+            "cls": "internal",
+            "title": "Target Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "target_type",
+          "target_id",
+          "target_code",
+          "anchor",
+          "body",
+          "status",
+          "raised_by_name",
+          "raised_at",
+          "raised_by_me",
+          "events"
+        ],
+        "title": "ReviewNoteOut",
         "type": "object"
       }
     },
@@ -38141,7 +39388,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/ReviewNoteOut"
+                    "$ref": "#/components/schemas/abacus__modules__review__routes__ReviewNoteOut"
                   },
                   "title": "Response Review Notes",
                   "type": "array"
@@ -38260,7 +39507,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/ReviewNoteOut"
+                    "$ref": "#/components/schemas/abacus__modules__review__routes__ReviewNoteOut"
                   },
                   "title": "Response Raise Review Note",
                   "type": "array"
@@ -38391,7 +39638,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/ReviewNoteOut"
+                    "$ref": "#/components/schemas/abacus__modules__review__routes__ReviewNoteOut"
                   },
                   "title": "Response Clear Review Note",
                   "type": "array"
@@ -38522,7 +39769,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/ReviewNoteOut"
+                    "$ref": "#/components/schemas/abacus__modules__review__routes__ReviewNoteOut"
                   },
                   "title": "Response Reopen Review Note",
                   "type": "array"
@@ -38653,7 +39900,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/ReviewNoteOut"
+                    "$ref": "#/components/schemas/abacus__modules__review__routes__ReviewNoteOut"
                   },
                   "title": "Response Respond Review Note",
                   "type": "array"
@@ -49134,6 +50381,201 @@
         "x-abacus-action": "grouping_set.publish"
       }
     },
+    "/v1/human-gates": {
+      "get": {
+        "description": "What waits on the caller; `counts` are per kind (\"3 decisions, 6 sign-offs, 2 exports\").",
+        "operationId": "human_gate_list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "assignee",
+            "required": false,
+            "schema": {
+              "const": "me",
+              "default": "me",
+              "title": "Assignee",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "decision",
+                    "sign_off_request",
+                    "proposal",
+                    "send",
+                    "final_approval",
+                    "export",
+                    "release"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "engagement_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Engagement Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 200,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPage_HumanGateOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Human Gate List Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "human_gate.read"
+      }
+    },
     "/v1/invitations/accept": {
       "post": {
         "description": "A passwordlessly signed-in person accepts (TASK-030 D2): no account is needed yet.",
@@ -52070,6 +53512,1389 @@
           "communications"
         ],
         "x-abacus-action": "staff"
+      }
+    },
+    "/v1/review-notes": {
+      "get": {
+        "description": "Notes on a target or an engagement, on the list envelope with per-status counts.",
+        "operationId": "review_note_list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "target_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^[a-z][a-z_]{0,39}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Target Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "target_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Target Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "engagement_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Engagement Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ReviewNoteStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 200,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPage_ReviewNoteItemOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Review Note List Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "review_note.read"
+      },
+      "post": {
+        "description": "Raise a note on a registered reviewable, optionally on an anchor.",
+        "operationId": "review_note_raise",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RaiseReviewNoteIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__review__contract__ReviewNoteOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Review Note Raise Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "review_note.raise"
+      }
+    },
+    "/v1/review-notes/{note_id}": {
+      "get": {
+        "description": "One note with its body and events.",
+        "operationId": "review_note",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "note_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Note Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__review__contract__ReviewNoteOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Review Note Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "review_note.read"
+      }
+    },
+    "/v1/review-notes/{note_id}/clear": {
+      "post": {
+        "description": "Clearing is a person's act (the event's CHECK requires a human).",
+        "operationId": "review_note_clear",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "note_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Note Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewNoteEventIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__review__contract__ReviewNoteOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Review Note Clear Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "review_note.clear"
+      }
+    },
+    "/v1/review-notes/{note_id}/respond": {
+      "post": {
+        "operationId": "review_note_respond",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "note_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Note Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewNoteEventIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__review__contract__ReviewNoteOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Review Note Respond Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "review_note.respond"
+      }
+    },
+    "/v1/review-notes/{note_id}/withdraw": {
+      "post": {
+        "description": "The raiser withdraws their own note.",
+        "operationId": "review_note_withdraw",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "note_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Note Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewNoteEventIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__review__contract__ReviewNoteOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Review Note Withdraw Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "review_note.withdraw"
+      }
+    },
+    "/v1/sign-offs": {
+      "get": {
+        "description": "SHL-12: the ladder per level, with computed staleness.",
+        "operationId": "sign_off_ladder",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "target_type",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-z][a-z_]{0,39}$",
+              "title": "Target Type",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "target_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Target Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignOffLadderOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Sign Off Ladder Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "sign_off.read"
+      },
+      "post": {
+        "description": "SHL-12 a-prime: record one sign-off (human only; the service also authorises the level).",
+        "operationId": "sign_off",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignOffIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignOffOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Sign Off Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "sign_off.create"
+      }
+    },
+    "/v1/sign-offs/eligibility": {
+      "get": {
+        "description": "SHL-12 a to h: target, levels allowed, checks and the statement for one level.",
+        "operationId": "sign_off_eligibility",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "target_type",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-z][a-z_]{0,39}$",
+              "title": "Target Type",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "target_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Target Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "level",
+            "required": true,
+            "schema": {
+              "enum": [
+                "L1_preparer",
+                "L2_reviewer",
+                "L3_manager",
+                "L4_partner",
+                "L5_eqr"
+              ],
+              "title": "Level",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignOffEligibilityOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Sign Off Eligibility Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "sign_off.read"
+      }
+    },
+    "/v1/sign-offs:bulk": {
+      "post": {
+        "description": "SHL-12 f: sign several targets at one level; reviewers only.",
+        "operationId": "sign_off_bulk",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkSignOffIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkSignOffOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Sign Off Bulk Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "sign_off.bulk"
       }
     },
     "/v1/signup": {

@@ -12,7 +12,7 @@ Status values: `planned` (no stub), `stub` (models, 501 routes, matrix actions, 
 |---|---|---|---|---|---|---|---|---|
 | C1 | Work item and engagement lifecycle (8 states, G1-G3 facts, per-type gate policy) | `work-items.md` | F-03 | every module | S1 | 2026-11-02 | v1 | frozen (F-03-T19, 2026-10-21) |
 | C2 | Status registry: YAML to StrEnum, OpenAPI enums, `status.ts` | `status-registry.md` | F-03 (YAML authored in F-03-T04, codegen F-03-T09) | all | S1 | 2026-11-02 | v1 | frozen (F-03-T19, 2026-10-21) |
-| C3 | Review grammar: suggestion and change set, decision, sign_off (content hash, staleness, segregation), issue, checkpoint, field_value_version, human_gate | `review-grammar.md` | P-04 | A-*, T-*, C-*, I-01 | schema S3, services S12 | 2026-11-30, 2027-04-05 | v1 | planned |
+| C3 | Review grammar: suggestion and change set, decision, sign_off (content hash, staleness, segregation), issue, checkpoint, field_value_version, human_gate | `review-grammar.md` | P-04 | A-*, T-*, C-*, I-01 | schema S3, services S12 | 2026-11-30, 2027-04-05 | v1 | stub |
 | C4 | Citation v2, viewer manifest, regions, masked PII and logged reveal | `citation-v2.md` | P-03 | every trace surface | S5 | 2026-12-28 | v1 | planned |
 | C5 | Requests and binders; portal scopes (`client_access_grant`, role union) | `requests-binders.md` | P-06, P-08 (schema half in F-03-T14, T15, T26); portal read models | A-01, R-01, T-02, C-01 | S3 | 2026-11-30 | v1 | planned |
 | C6 | Agent runs: v1 read API; v2 run and step events over SSE | `agent-runs.md` | P-09, P-10 | dock, trace, Workbench, Today | v1 S12, v2 S30 | 2027-04-05, 2027-12-13 | v1 | planned |

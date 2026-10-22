@@ -69,6 +69,11 @@ RETRIEVAL_AUTO = Flag(
     kind="boolean",
     default="false",
 )
+REVIEW_GRAMMAR_API = Flag(
+    name="review.grammar_api",
+    kind="boolean",
+    default="false",
+)
 UPLOAD_REVIEW_ENABLED = Flag(
     name="upload_review.enabled",
     kind="boolean",
@@ -93,6 +98,7 @@ FLAGS: dict[str, Flag] = {
     "notifications.v2": NOTIFICATIONS_V2,
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
     "retrieval.auto": RETRIEVAL_AUTO,
+    "review.grammar_api": REVIEW_GRAMMAR_API,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
     "uploads.processing": UPLOADS_PROCESSING,
 }

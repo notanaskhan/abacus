@@ -1,0 +1,11 @@
+# The review module's flags (ADR-089; P-39, F-03-T07). Compiled with every other module's file
+# into kernel/_flags.py by `make regenerate`.
+
+flags:
+  - name: review.grammar_api
+    description: 'C3 review grammar API (ADR-160, ADR-161; P-04-T07, T08, T11): sign-offs, review notes, human gates, decision cards, proposals and suggestions. Off: the C3 routes answer 404. On: they answer 501 not_implemented until each service lands (P-04-T16 to T24). Off by default; on for the Dev, synthetic and canary tenants once the services land. Renewal or retirement is calendared with the C3 services freeze (P-04-T27).'
+    owner: ayushkbhatia
+    created: 2026-10-22
+    expires: 2027-01-20
+    kind: boolean
+    default: false

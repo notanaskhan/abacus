@@ -6,6 +6,11 @@ checkpoints follow.
 
 from abacus.modules.engagements.api import register_gate_provider
 from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.review.contract import (
+    human_gates_router,
+    review_notes_router,
+    sign_offs_router,
+)
 from abacus.modules.review.matrix import review_gate
 from abacus.modules.review.notes import notes_for, open_note_counts
 from abacus.modules.review.routes import router
@@ -41,7 +46,13 @@ from abacus.modules.review.slots import (
 )
 
 # The routers the API mounts, in order (P-39; F-03-T07).
-ROUTERS: tuple[AbacusRouter, ...] = (router,)
+# C3 stubs behind `review.grammar_api` (P-04-T07).
+ROUTERS: tuple[AbacusRouter, ...] = (
+    router,
+    sign_offs_router,
+    review_notes_router,
+    human_gates_router,
+)
 
 # SPEC-313 (TASK-331): G5, review complete, is the review module's.
 register_gate_provider("G5", review_gate)

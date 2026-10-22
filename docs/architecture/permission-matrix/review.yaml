@@ -8,3 +8,18 @@ actions:
   sign_off.manager:         {engagement_partner: allow, manager: allow, agent: deny, independence: required}   # L3 manager
   sign_off.partner:         {engagement_partner: allow, agent: deny, independence: required}   # L4 partner
   sign_off.eqr:             {reviewer: allow, agent: deny, independence: required}   # L5 engagement quality reviewer
+  # --- C3 stub 1 (P-04-T07; ADR-160): the ladder and eligibility reads, the umbrella write and
+  # bulk. The level rows above are the plan's sign_off.l1 to l5 (DEC-135); POST /v1/sign-offs
+  # declares sign_off.create and the service also authorises the level's row. The conditions
+  # not_preparer_of_target and reserved_role arrive with P-04-T15.
+  sign_off.read:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, independence: required}   # SHL-12 ladder and eligibility; firm roles only
+  sign_off.create:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, agent: deny, system: deny, independence: required}   # R-SO-1: a live human; the level row decides who may sign what
+  sign_off.bulk:            {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, independence: required}   # R-SO-7: reviewers only (senior, manager, partner)
+  # --- Review notes (SPEC-041, SPEC-313; ADR-160 clause 6). Moved from fieldwork.yaml: review owns notes ---
+  review_note.read:         {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, independence: required}   # P-04-T07: GET /v1/review-notes; bodies are sealed and read as access events
+  review_note.raise:        {engagement_partner: allow, manager: allow, senior: allow, reviewer: allow, agent: deny, independence: required}   # SPEC-041 (TASK-103) Q1: reviewers, the EQR included
+  review_note.respond:      {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: deny, independence: required}   # SPEC-041 AC-2: the preparer answers; the raiser can reply
+  review_note.clear:        {engagement_partner: allow, manager: allow, senior: allow, reviewer: allow, agent: deny, independence: required}   # SPEC-041 AC-3: only the raiser (the service checks)
+  review_note.withdraw:     {engagement_partner: allow, manager: allow, senior: allow, reviewer: allow, agent: deny, system: deny, independence: required}   # P-04-T07: the raiser withdraws their own note (the service checks)
+  # --- Human gates (C13 read; ADR-160 clause 11) ---
+  human_gate.read:          {firm_admin: allow, practice_leader: in_scope, quality_partner: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow}   # P-04-T07: HOME-01/02 read what waits on the caller; walled clients never count
