@@ -19,6 +19,11 @@ TABLES: frozenset[str] = frozenset(
         "comment_mentions",
         "comment_redactions",
         "comment_reads",
+        # P-06-T05 (0100): the binder engine.
+        "binder_recipients",
+        "request_delegations",
+        "request_upload_intents",
+        "binder_activity",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -31,6 +36,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "comments",  # SPEC-032 (TASK-062): ADR-109
         "comment_mentions",  # SPEC-032 (TASK-062): ADR-109
         "comment_redactions",  # SPEC-032 (TASK-062): ADR-109
+        "binder_recipients",  # P-06-T05 (0100): a removal is a new row
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
@@ -38,6 +44,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "request_lists": frozenset(
         {"id", "tenant_id", "engagement_id"}
         | {"work_item_id", "name", "kind", "part", "status", "prior_year_source_ref"}  # F-03-T14
+        | {"created_from", "template_ref"}  # P-06-T05 (0100)
     ),
     "request_categories": frozenset(  # F-03-T14 (0070)
         {"tenant_id", "request_list_id", "name", "position"}
@@ -49,6 +56,23 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"document_kind", "document_kind_source"}  # SPEC-029 (TASK-055)
         | {"why", "good_looks_like", "blocks_fieldwork", "effort", "guidance_source"}  # SPEC-031
         | {"guidance_approved_by"}  # SPEC-035 (TASK-074): from a drafted template, or rolled
+        # P-06-T05 (0100): the binder engine's request fields and drafted-wording provenance.
+        | {"title", "category_id", "firm_owner_user_id", "period_start", "period_end", "wave"}
+        | {"kind", "source_tag", "supports_ref", "linked_ref", "drafted_by_run_id"}
+        | {"drafted_wording_source", "drafted_wording_fingerprint"}
+    ),
+    "binder_recipients": frozenset(  # P-06-T05 (0100)
+        {"tenant_id", "binder_id", "contact_id", "added_by", "removed_at"}
+    ),
+    "request_delegations": frozenset(
+        {"tenant_id", "request_item_id", "contact_id", "grant_id", "granted_by"}
+    ),
+    "request_upload_intents": frozenset(
+        {"tenant_id", "request_item_id", "user_id", "files_expected"}
+    ),
+    "binder_activity": frozenset(
+        {"tenant_id", "binder_id", "work_item_id", "status", "open_count"}
+        | {"last_client_activity_at"}
     ),
     "client_item_responses": frozenset(
         {"tenant_id", "engagement_id", "request_item_id", "kind", "reason", "note", "by_user"}
@@ -75,6 +99,8 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "request_lists": frozenset(
         {"default_due_on"}  # SPEC-027 (TASK-051)
         | {"status", "published_at", "published_by", "marked_done_at", "marked_done_by"}  # T14
+        | {"unpublished_at", "unpublished_by", "unpublish_reason_sealed"}  # P-06-T05 (0100)
+        | {"follow_up_override", "closed_at", "closed_reason"}
     ),
     "request_items": frozenset(
         {"status", "client_visible", "client_assignee_user_id"}
@@ -86,6 +112,13 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"guidance_approved_by"}  # SPEC-035 (TASK-073)
         | {"sent_at", "na_reason", "na_note", "na_by", "na_at", "client_ignored_at"}  # F-03-T15
         | {"incorporation_state", "incorporated_by", "incorporated_at"}
+        # P-06-T05 (0100)
+        | {"title", "category_id", "firm_owner_user_id", "period_start", "period_end", "wave"}
+        | {"supports_ref", "linked_ref", "sent_by", "deleted_at", "deleted_by"}
+    ),
+    "request_delegations": frozenset({"revoked_at"}),  # P-06-T05 (0100)
+    "binder_activity": frozenset(  # P-06-T05 (0100): a projection
+        {"status", "open_count", "last_client_activity_at", "updated_at"}
     ),
     "comment_reads": frozenset({"last_read_at"}),  # SPEC-032 (TASK-062)
 }
