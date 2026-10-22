@@ -222,3 +222,30 @@ export const intlGlobal = { name: "Intl", message: FORMAT_MESSAGE };
 /** Files that own the banned calls. */
 export const FORMAT_FILES = ["src/**/format.ts"];
 export const CLOCK_FILES = ["src/**/clock.tsx"];
+
+// F-05-T39 (INV-4; DEC-59, ADR-163; plan 04 lint L7): portal code never renders the product's
+// name. A string, a template chunk or JSX text that contains it fails, in any case. The one place
+// the name may appear is the "Secured by" footer the firm turns on, which draws the Wordmark
+// component and holds no such string.
+export const PRODUCT_NAME_SOURCE = "[Aa][Cc][Cc][Rr][Uu][Ee][Dd]";
+
+export const portalTextSyntax = [
+  {
+    selector: textMatching(PRODUCT_NAME_SOURCE, { jsx: true }),
+    message:
+      "Portal code never renders the product's name: draw the firm's brand (DEC-59, ADR-163, INV-4).",
+  },
+];
+
+/** packages/ui's portal surfaces and their specimens (F-05-T35 to T37). */
+export const UI_PORTAL_FILES = [
+  "src/brand/portal-brand.tsx",
+  "src/layout/portal-toolbar.tsx",
+  "src/layout/mobile-tab-bar.tsx",
+  "src/templates/portal-layout.tsx",
+  "src/templates/auth-card.tsx",
+  "src/requests/**/*.{ts,tsx}",
+  "src/specimens/portal.tsx",
+  "src/specimens/requests.tsx",
+  "src/specimens/auth.tsx",
+];

@@ -10,7 +10,9 @@ import {
   FORMAT_FILES,
   designSyntaxFor,
   intlGlobal,
+  portalTextSyntax,
   restrictedProperties,
+  UI_PORTAL_FILES,
 } from "./eslint-design-rules.js";
 import { scopeTermSyntax } from "./eslint-scope-rules.js";
 
@@ -82,6 +84,20 @@ export default defineConfig(
         ...HTML_SYNTAX,
         ...designSyntaxFor().filter((entry) => !CLOCK_SYNTAX.includes(entry)),
         ...scopeTermSyntax(),
+      ],
+    },
+  },
+  {
+    // F-05-T39 (INV-4, lint L7): the portal surfaces never carry the product's name.
+    files: UI_PORTAL_FILES,
+    ignores: ["src/**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        ...HTML_SYNTAX,
+        ...designSyntaxFor(),
+        ...scopeTermSyntax(),
+        ...portalTextSyntax,
       ],
     },
   },

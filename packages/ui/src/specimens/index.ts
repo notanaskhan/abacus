@@ -94,6 +94,9 @@ export interface Specimen {
   kit: string;
   title: string;
   Component: ComponentType;
+  /** `portal`: a client-portal surface. The white-label crawl (F-05-T39, INV-4) reads every one:
+   * no product name outside the Secured by footer the firm turns on. */
+  surface?: "portal";
 }
 
 export const SPECIMENS: readonly Specimen[] = [
@@ -159,6 +162,7 @@ export const SPECIMENS: readonly Specimen[] = [
     kit: "C-00",
     title: "PortalToolbar",
     Component: PortalToolbarSpecimen,
+    surface: "portal",
   },
   {
     id: "c-00-record-header",
@@ -221,14 +225,50 @@ export const SPECIMENS: readonly Specimen[] = [
   // Templates (F-05-T28): T1 Index list, artboards T1a to T1e
   { id: "t1-index-list", kit: "T1", title: "Index list", Component: IndexListSpecimen },
   // T7 PortalLayout (F-05-T35): split, reduced (T7g) and mobile (T7-M) with the bottom tab bar
-  { id: "t7-portal-layout", kit: "T7", title: "Portal layout", Component: PortalLayoutSpecimen },
+  {
+    id: "t7-portal-layout",
+    kit: "T7",
+    title: "Portal layout",
+    Component: PortalLayoutSpecimen,
+    surface: "portal",
+  },
   // C-16 Request kit, portal variant (F-05-T36): row states, T7a to T7g and T7-M, TPL-07
-  { id: "c-16-request-rows", kit: "C-16", title: "RequestRow", Component: RequestRowsSpecimen },
-  { id: "t7-client-portal", kit: "T7", title: "Client portal", Component: T7Specimen },
-  { id: "tpl-07", kit: "TPL-07", title: "Client portal specimen", Component: Tpl07Specimen },
+  {
+    id: "c-16-request-rows",
+    kit: "C-16",
+    title: "RequestRow",
+    Component: RequestRowsSpecimen,
+    surface: "portal",
+  },
+  {
+    id: "t7-client-portal",
+    kit: "T7",
+    title: "Client portal",
+    Component: T7Specimen,
+    surface: "portal",
+  },
+  {
+    id: "tpl-07",
+    kit: "TPL-07",
+    title: "Client portal specimen",
+    Component: Tpl07Specimen,
+    surface: "portal",
+  },
   // T15 AuthCard (F-05-T37): T15a to T15c and TPL-15a to TPL-15j
-  { id: "t15-auth-card", kit: "T15", title: "Auth card", Component: T15Specimen },
-  { id: "tpl-15", kit: "TPL-15", title: "Auth card specimen", Component: Tpl15Specimen },
+  {
+    id: "t15-auth-card",
+    kit: "T15",
+    title: "Auth card",
+    Component: T15Specimen,
+    surface: "portal",
+  },
+  {
+    id: "tpl-15",
+    kit: "TPL-15",
+    title: "Auth card specimen",
+    Component: Tpl15Specimen,
+    surface: "portal",
+  },
   // SplitLayout (F-05-T29): C-09
   {
     id: "c-09-split-presets",

@@ -7,6 +7,7 @@ import {
   FORMAT_FILES,
   designSyntaxFor,
   intlGlobal,
+  portalTextSyntax,
   restrictedProperties,
 } from "@abacus/ui/eslint-design-rules";
 import { scopeTermSyntax } from "@abacus/ui/eslint-scope-rules";
@@ -179,6 +180,57 @@ const FEATURE_ROOTS = "^\\.\\./\\.\\./(?:\\.\\./)*(?!\\.\\./|app-core(?:/|$))";
 const SCREEN_ROOTS =
   "^\\.\\./\\.\\./(?:\\.\\./)*(?!\\.\\./|app-core(?:/|$)|domain/[^/]+$|routes/(?:to|manifest)$|shell/firm/[^/]+$|fixtures/scenario$)";
 
+// F-05-T39 (INV-4; DEC-59, ADR-163; plan 04 lint L7): the portal is its own build (P-08-T07) and
+// its code reaches nothing of the firm's. The portal entry, the portal tree, its routes and the
+// POR screens may not import the firm shell (src/shell), the firm's routes or root layout, a firm
+// screen, a legacy screen or the gallery, and never carry the product's name. The legacy
+// `src/routes/portal.tsx` stays in the firm bundle until P-08-T28 removes it, so it is not here.
+const PORTAL_FILES = [
+  "src/entries/portal.tsx",
+  "src/portal/**/*.{ts,tsx}",
+  "src/routes/portal/**/*.{ts,tsx}",
+];
+const PORTAL_SCREEN_FILES = ["src/screens/POR-*/**/*.{ts,tsx}"];
+const PORTAL_IMPORT_PATTERNS = [
+  {
+    regex: "(?:^|/)shell(?:/|$)",
+    message:
+      "INV-4: portal code never imports the firm shell (src/shell); use the T7 PortalLayout.",
+  },
+  {
+    regex: "(?:^|/)routes/(?:firm|root)(?:/|$)",
+    message: "INV-4: portal code never imports the firm's routes or its root layout.",
+  },
+  {
+    // The same from inside src/routes/portal: `../firm/…`, `../root`.
+    regex: "^\\.\\./(?:firm|root)(?:/|$)",
+    message: "INV-4: portal code never imports the firm's routes or its root layout.",
+  },
+  {
+    regex: "(?:^|/)screens/(?!POR-)[A-Z]{2,4}-\\d+(?:/|$)",
+    message: "INV-4: portal code imports only portal screens (POR-*), never a firm screen.",
+  },
+  {
+    // A POR screen's sibling: `../SHL-01/…` from src/screens/POR-03.
+    regex: "^\\.\\./(?!POR-)[A-Z]{2,4}-\\d+(?:/|$)",
+    message: "INV-4: portal code imports only portal screens (POR-*), never a firm screen.",
+  },
+  {
+    regex: "(?:^|/)(?:legacy|gallery)(?:/|$)",
+    message: "INV-4: legacy screens and the gallery belong to the firm bundle, not the portal.",
+  },
+  {
+    group: ["@abacus/ui/specimens"],
+    message: "INV-4: the gallery's specimens never ship in the portal.",
+  },
+];
+
+/** The usual import rules with the portal's boundary on top. */
+function portalImportRestrictions(featureRoots) {
+  const base = importRestrictions(featureRoots);
+  return { ...base, patterns: [...base.patterns, ...PORTAL_IMPORT_PATTERNS] };
+}
+
 export default defineConfig(
   { ignores: ["dist", "test-results", "playwright-report", "parity-report"] },
   tseslint.configs.strictTypeChecked,
@@ -273,6 +325,37 @@ export default defineConfig(
   {
     files: LEGACY_CLOCK,
     rules: { "no-restricted-properties": ["error", ...restrictedProperties({ clock: false })] },
+  },
+  {
+    // F-05-T39 (INV-4): the portal entry, tree and routes.
+    files: PORTAL_FILES,
+    ignores: ["src/**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": ["error", portalImportRestrictions(FEATURE_ROOTS)],
+      "no-restricted-syntax": [
+        "error",
+        ...SCREEN_SYNTAX,
+        ...NEW_CODE_SYNTAX,
+        ...ROLE_SYNTAX,
+        ...portalTextSyntax,
+      ],
+    },
+  },
+  {
+    // F-05-T39 (INV-4): the POR screens, on the screen rules.
+    files: PORTAL_SCREEN_FILES,
+    ignores: ["src/**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": ["error", portalImportRestrictions(SCREEN_ROOTS)],
+      "no-restricted-syntax": [
+        "error",
+        ...SCREEN_SYNTAX,
+        ...NEW_CODE_SYNTAX,
+        ...ROLE_SYNTAX,
+        ...SCREEN_LINK_SYNTAX,
+        ...portalTextSyntax,
+      ],
+    },
   },
   // The OIDC token endpoint is the identity provider, not our API (src/auth/session.ts).
   { files: ["src/auth/session.ts"], rules: { "no-restricted-globals": "off" } },

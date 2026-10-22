@@ -80,7 +80,13 @@ export function GalleryIndex(): JSX.Element {
         ))}
       </ul>
       {SPECIMENS.map((s) => (
-        <section key={s.id} id={s.id} aria-label={s.title} className="flex flex-col gap-3">
+        <section
+          key={s.id}
+          id={s.id}
+          aria-label={s.title}
+          {...(s.surface === undefined ? {} : { "data-surface": s.surface })}
+          className="flex flex-col gap-3"
+        >
           <s.Component />
         </section>
       ))}
