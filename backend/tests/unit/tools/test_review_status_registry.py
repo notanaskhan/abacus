@@ -7,6 +7,8 @@ derived and never stored.
 
 from __future__ import annotations
 
+from typing import cast
+
 import pytest
 
 from abacus.kernel import _statuses
@@ -82,7 +84,8 @@ def test_t02_no_approval_is_attributed_to_the_agent() -> None:
     for obj in ("proposal", "suggestion", "decision_card", "sign_off_slot"):
         for entry in _registry()[obj].values():
             words = [str(entry["label"])]
-            words += [str(v) for v in dict(entry.get("context_labels") or {}).values()]
+            labels = cast("dict[str, object]", entry.get("context_labels") or {})
+            words += [str(v) for v in labels.values()]
             assert not any("Agent" in w for w in words), (obj, words)
 
 

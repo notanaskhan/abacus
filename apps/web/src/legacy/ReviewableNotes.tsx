@@ -26,6 +26,8 @@ const STATUS: Record<
   open: { label: "Open", tone: "warning" },
   responded: { label: "Answered", tone: "neutral" },
   cleared: { label: "Cleared", tone: "success" },
+  closed: { label: "Closed", tone: "success" },
+  withdrawn: { label: "Withdrawn", tone: "neutral" },
 };
 
 export function openAnchors(notes: ReviewNoteOut[] | undefined): Set<string> {

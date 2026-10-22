@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from uuid import UUID
 
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.modules.review.models import ReviewableNote, ReviewableNoteEvent, SignOff
@@ -74,6 +74,21 @@ async def note_events_of(
 
 async def get_note(session: AsyncSession, note_id: UUID) -> ReviewableNote | None:
     return await session.get(ReviewableNote, note_id)
+
+
+async def lock_note(session: AsyncSession, note_id: UUID) -> ReviewableNote | None:
+    """The note, locked for its status change (so two answers can't race)."""
+    return (
+        await session.execute(
+            select(ReviewableNote).where(ReviewableNote.id == note_id).with_for_update()
+        )
+    ).scalar_one_or_none()
+
+
+async def set_note_status(session: AsyncSession, note_id: UUID, status: str) -> None:
+    await session.execute(
+        update(ReviewableNote).where(ReviewableNote.id == note_id).values(status=status)
+    )
 
 
 async def insert_note(session: AsyncSession, **values: object) -> UUID:

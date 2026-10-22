@@ -17508,7 +17508,9 @@
             "enum": [
               "open",
               "responded",
-              "cleared"
+              "cleared",
+              "closed",
+              "withdrawn"
             ],
             "title": "Status",
             "type": "string"
@@ -18356,6 +18358,7 @@
             "title": "Model Text"
           },
           "output_counts": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/OutputCountOut"
             },
@@ -18363,6 +18366,7 @@
             "type": "array"
           },
           "records_read": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/RecordsReadOut"
             },
@@ -18375,6 +18379,7 @@
             "type": "string"
           },
           "rows": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/TraceRowOut"
             },
@@ -18382,7 +18387,8 @@
             "type": "array"
           },
           "run": {
-            "$ref": "#/components/schemas/AgentRunOut"
+            "$ref": "#/components/schemas/AgentRunOut",
+            "cls": "internal"
           },
           "runtime": {
             "cls": "internal",
@@ -22111,8 +22117,7 @@
               "done",
               "failed",
               "waiting",
-              "running",
-              "info"
+              "running"
             ],
             "title": "State",
             "type": "string"

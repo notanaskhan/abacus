@@ -42,7 +42,6 @@ const ROW_TONE: Record<RunTraceOut["rows"][number]["state"], Tone> = {
   failed: "danger",
   waiting: "warning",
   running: "info",
-  info: "neutral",
 };
 
 /** Milliseconds as "850 ms", "4.2 s" or "3 min 5 s"; arithmetic only, no locale. */

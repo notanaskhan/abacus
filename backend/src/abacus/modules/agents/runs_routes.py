@@ -45,9 +45,7 @@ class TraceRowOut(BaseModel):
         classified("internal"),
     ]
     title: Annotated[str, classified("internal")]
-    state: Annotated[
-        Literal["done", "failed", "waiting", "running", "info"], classified("internal")
-    ]
+    state: Annotated[Literal["done", "failed", "waiting", "running"], classified("internal")]
     detail: Annotated[str | None, classified("internal")]
     actor: Annotated[str | None, classified("internal")]
 
@@ -69,16 +67,16 @@ class OutputCountOut(BaseModel):
 class RunTraceOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    run: AgentRunOut
+    run: Annotated[AgentRunOut, classified("internal")]
     runtime: Annotated[str, classified("internal")]
     region: Annotated[str, classified("internal")]
     training: Annotated[str, classified("internal")]
     attempts: Annotated[int, classified("internal")]
     tokens_in: Annotated[int, classified("internal")]
     tokens_out: Annotated[int, classified("internal")]
-    rows: list[TraceRowOut]
-    records_read: list[RecordsReadOut]
-    output_counts: list[OutputCountOut]
+    rows: Annotated[list[TraceRowOut], classified("internal")]
+    records_read: Annotated[list[RecordsReadOut], classified("internal")]
+    output_counts: Annotated[list[OutputCountOut], classified("internal")]
     model_text: Annotated[str | None, classified("confidential")]
 
 

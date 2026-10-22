@@ -13,15 +13,11 @@ from abacus.modules.engagements.api import gate_fact
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.review import matrix as matrix_module
 from abacus.modules.review.matrix import blockers_of, row_status
-from abacus.modules.review.notes import status_of
+from abacus.modules.review.notes import AFTER, status_of
 from abacus.modules.review.service import states_of
 from abacus.modules.review.slots import Reviewable
 
 H = "a" * 64
-
-
-def _event(kind: str) -> SimpleNamespace:
-    return SimpleNamespace(kind=kind)
 
 
 def _signed(level: int, digest: str = H) -> SimpleNamespace:
@@ -34,11 +30,16 @@ def _paper(code: str = "C-100", has_content: bool = True) -> Reviewable:
     return Reviewable("workpaper", uuid4(), code, "Cash", H, has_content)
 
 
-def test_ac3_a_notes_state_is_its_newest_event() -> None:
-    assert status_of([]) == "open"
-    assert status_of([_event("responded")]) == "responded"  # type: ignore[list-item]  # stand-ins
-    assert status_of([_event("responded"), _event("cleared")]) == "cleared"  # type: ignore[list-item]  # stand-ins
-    assert status_of([_event("cleared"), _event("reopened")]) == "open"  # type: ignore[list-item]  # stand-ins
+def test_ac3_each_event_sets_the_notes_status() -> None:
+    # ADR-160 clause 6: the status column is authoritative, written with each event.
+    assert AFTER["raised"] == "open"
+    assert AFTER["responded"] == "responded"
+    assert AFTER["cleared"] == "cleared"
+    assert AFTER["reopened"] == "open"
+    assert AFTER["closed"] == "closed"
+    assert AFTER["withdrawn"] == "withdrawn"
+    assert status_of("cleared") == "cleared"
+    assert status_of("unknown") == "open"
 
 
 def test_ac4_row_status_by_code() -> None:

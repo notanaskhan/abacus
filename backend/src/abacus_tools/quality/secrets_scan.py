@@ -48,6 +48,16 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         "Temporal replay histories record the payload codec's encryption-key-id,"
         " the key's name (platform-v1), not key material",
     ),
+    (
+        "backend/tests/contracts/review_grammar/test_c3_shl10_proposals.py",
+        "SECRET-003",
+        "C3 `field_key` values are tax-form line codes (f1040.l2a, sch_a.l5b), not credentials",
+    ),
+    (
+        "apps/web/src/fixtures/contracts/review-grammar.test.ts",
+        "SECRET-003",
+        "C3 `field_key` values are tax-form line codes (f1040.l2a), not credentials",
+    ),
 )
 DATA_SUFFIXES = frozenset({".csv", ".json", ".yaml", ".yml", ".txt", ".tsv"})
 CONFIG_SUFFIXES = frozenset(

@@ -41,6 +41,8 @@ class ReviewableNote(Base):
     anchor: Mapped[str | None]
     body: Mapped[str]
     raised_by: Mapped[UUID]
+    # P-04-T03 (migration 0093; ADR-160 clause 6): authoritative, written with each event.
+    status: Mapped[str] = mapped_column(server_default=FetchedValue())
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
 
 
