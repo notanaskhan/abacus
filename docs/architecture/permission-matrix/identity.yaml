@@ -8,7 +8,7 @@ actions:
   support_session.read:     {firm_admin: allow}   # SPEC-012
   support_session.manage:   {firm_admin: allow, mfa_recent: required}   # SPEC-012 Q1
   autonomy_policy.update:   {firm_admin: allow, mfa_recent: required}
-  firm.read_settings:       {firm_admin: allow, practice_leader: allow}   # SPEC-024 (TASK-042 D1): autonomy and the checklist, read without fresh MFA
+  firm.read_settings:       {firm_admin: allow, practice_leader: allow, firm_partner: allow}   # SPEC-024 (TASK-042 D1): autonomy and the checklist, read without fresh MFA; P-01-T04 (DEC-132): partners read settings (SHL-03c)
   wall.create:              {firm_admin: allow, mfa_recent: required}
   wall.remove:              {firm_admin: allow, mfa_recent: required}
   wall.list:                {firm_admin: allow, mfa_recent: required}   # SPEC-002 Q2 (named wall.read there)

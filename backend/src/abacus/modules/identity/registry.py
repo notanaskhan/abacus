@@ -72,6 +72,9 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"kms_key_arn", "kms_key_status", "kms_replica_verified_at"}  # Q-01-T19: key workflow
     ),
     "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),
+    "memberships": frozenset(
+        {"default_office_filter_id"}
+    ),  # P-01-T04: the person's own, via /v1/me
     "support_sessions": frozenset(  # SPEC-012: lifecycle only
         {"status", "approved_by_kind", "approved_by", "starts_at", "expires_at", "ended_at"}
         | {"acknowledged_at"}

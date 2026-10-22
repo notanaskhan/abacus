@@ -19,6 +19,7 @@ from __future__ import annotations
 from collections.abc import Callable, Coroutine, Sequence
 from enum import Enum
 from typing import Annotated, Final, TypeVar, cast
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
@@ -95,6 +96,17 @@ _OPTIONAL_RESPONSES: dict[int, dict[str, object]] = {
 }
 ACTION_KEY: Final = "x-abacus-action"
 _log = get_logger(__name__)
+
+
+async def requested_tenant(
+    x_abacus_tenant: Annotated[str | None, Header(alias=TENANT_HEADER)] = None,
+) -> UUID | None:
+    """The tenant the client asked for, unvalidated: `/v1/me` (SELF) checks it against the
+    person's memberships itself (P-01-T04). Every other route goes through `choose_tenant`."""
+    try:
+        return UUID(x_abacus_tenant) if x_abacus_tenant is not None else None
+    except ValueError:
+        return None
 
 
 async def current_signed_in(

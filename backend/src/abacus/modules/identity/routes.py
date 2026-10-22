@@ -30,16 +30,20 @@ from abacus.modules.identity.firm_settings import (
     set_letter_policy,
 )
 from abacus.modules.identity.invitations import accept_invitation
+from abacus.modules.identity.me import FirmFacts, firm_facts, me_details, set_default_office
 from abacus.modules.identity.repository import FirmRole
 from abacus.modules.identity.routing import (
     IDENTITY,
+    OWN,
     SELF,
     STAFF,
     AbacusRouter,
     current_context,
     current_identity,
+    current_member,
     current_signed_in,
     current_staff,
+    requested_tenant,
 )
 from abacus.modules.identity.service import (
     SignedIn,
@@ -75,6 +79,18 @@ from abacus.modules.identity.tokens import VerifiedIdentity
 router = AbacusRouter(prefix="/v1", tags=["identity"])
 
 
+class FirmFactsOut(BaseModel):
+    """P-01-T04 (SHL-03): what the firm switcher shows for a membership."""
+
+    model_config = ConfigDict(frozen=True)
+
+    region: Annotated[str, classified("internal")]
+    time_zone: Annotated[str, classified("internal")]
+    seats_total: Annotated[int, classified("internal")]
+    is_sandbox: Annotated[bool, classified("internal")]
+    sandbox_of: Annotated[UUID | None, classified("internal")]
+
+
 class MembershipOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -83,6 +99,14 @@ class MembershipOut(BaseModel):
     firm_role: Annotated[FirmRole | None, classified("internal")]
     # SPEC-015: `client` members use the client route tree (ADR-011); `staff` the firm's.
     kind: Annotated[Literal["staff", "client"], classified("internal")] = "staff"
+    firm: Annotated[FirmFactsOut | None, classified("internal")] = None  # P-01-T04
+
+
+class OfficeOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    name: Annotated[str, classified("internal")]
 
 
 class MeOut(BaseModel):
@@ -98,14 +122,30 @@ class MeOut(BaseModel):
     # F-04-T07 (ADR-143): business time for the active tenant, so the SPA can apply its offset.
     server_now: Annotated[datetime, classified("internal")]
     clock_mode: Annotated[Literal["real", "offset", "frozen"], classified("internal")]
+    # P-01-T04 (v3; SHL-03): the person in the active tenant. None without an active tenant.
+    initials: Annotated[str | None, classified("internal")] = None
+    job_title: Annotated[str | None, classified("confidential")] = None
+    default_office_id: Annotated[UUID | None, classified("internal")] = None
+    offices: Annotated[list[OfficeOut], classified("internal")] = []
+
+
+def _firm_out(facts: FirmFacts | None) -> FirmFactsOut | None:
+    return FirmFactsOut.model_validate(facts, from_attributes=True) if facts else None
 
 
 @router.get("/me", action=SELF, response_model=MeOut)
-async def me(signed_in: Annotated[SignedIn, Depends(current_signed_in)]) -> MeOut:
+async def me(
+    signed_in: Annotated[SignedIn, Depends(current_signed_in)],
+    asked: Annotated[UUID | None, Depends(requested_tenant)] = None,
+) -> MeOut:
     memberships = signed_in.memberships
-    active = memberships[0].tenant_id if len(memberships) == 1 else None
-    tenant = TenantContext(active, "human", str(signed_in.user.id)) if active is not None else None
+    user = str(signed_in.user.id)
+    held = {m.tenant_id for m in memberships}
+    # The active tenant: the one asked for when the person holds it, or their only one.
+    active = asked if asked in held else (memberships[0].tenant_id if len(held) == 1 else None)
+    tenant = TenantContext(active, "human", user) if active is not None else None
     view = await clock_view(tenant)
+    details = await me_details(tenant, signed_in.user.id) if tenant is not None else None
     return MeOut(
         user_id=signed_in.user.id,
         email=signed_in.user.email,
@@ -116,13 +156,39 @@ async def me(signed_in: Annotated[SignedIn, Depends(current_signed_in)]) -> MeOu
                 firm_name=m.firm_name,
                 firm_role=m.firm_role,
                 kind="client" if m.kind == "client" else "staff",
+                firm=_firm_out(await firm_facts(TenantContext(m.tenant_id, "human", user))),
             )
             for m in memberships
         ],
         active_tenant_id=active,
         server_now=view.server_now,
         clock_mode=view.clock_mode,
+        initials=details.initials if details else None,
+        job_title=details.job_title if details else None,
+        default_office_id=details.default_office_id if details else None,
+        offices=[OfficeOut(id=o.id, name=o.name) for o in details.offices] if details else [],
     )
+
+
+class PreferencesIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    default_office_id: Annotated[UUID | None, classified("internal")]
+
+
+class PreferencesOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    default_office_id: Annotated[UUID | None, classified("internal")]
+
+
+@router.put("/me/preferences", action=OWN, response_model=PreferencesOut)
+async def set_preferences_route(
+    body: PreferencesIn, ctx: Annotated[AuthContext, Depends(current_member)]
+) -> PreferencesOut:
+    """AC 2.1.3: the default office filter (an office of the active firm, or none); audited."""
+    details = await set_default_office(ctx, body.default_office_id)
+    return PreferencesOut(default_office_id=details.default_office_id)
 
 
 # --- Ethical walls (SPEC-002): firm admins, fresh MFA; the matrix decides ---------------------

@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import cast
+from typing import Final, Literal, cast
 from uuid import UUID
 
 from abacus.kernel import _flags
@@ -47,6 +47,30 @@ class Portal:
     scopes: tuple[GrantScope, ...]
 
 
+NavAccess = Literal["write", "read", "none"]
+# P-01-T04 (SHL-03 admin rows): each settings area's access, from the matrix. `security_center`
+# reads `security.manage` (G-02-T02) and `developer_api` stays `none` until G-03 registers
+# `developer.read`: an action the matrix doesn't know is never allowed.
+_NAV: Final[tuple[tuple[str, str | None, str | None], ...]] = (
+    ("firm_settings", "firm.manage_settings", "firm.read_settings"),
+    ("users_roles", "firm.manage_users", None),
+    ("audit_log", None, "audit_event.read"),
+    ("security_center", "security.manage", None),
+    ("developer_api", None, None),
+)
+
+
+def nav_access(allowed: frozenset[str]) -> dict[str, NavAccess]:
+    def access(write: str | None, read: str | None) -> NavAccess:
+        if write is not None and write in allowed:
+            return "write"
+        if read is not None and read in allowed:
+            return "read"
+        return "none"
+
+    return {key: access(write, read) for key, write, read in _NAV}
+
+
 @dataclass(frozen=True)
 class Capabilities:
     engagement_id: UUID | None
@@ -60,6 +84,7 @@ class Capabilities:
     server_now: datetime
     clock_mode: str
     portal: Portal | None
+    nav: dict[str, NavAccess]
 
 
 async def capabilities(ctx: AuthContext, engagement_id: UUID | None) -> Capabilities:
@@ -92,4 +117,5 @@ async def capabilities(ctx: AuthContext, engagement_id: UUID | None) -> Capabili
         server_now=view.server_now,
         clock_mode=view.clock_mode,
         portal=portal,
+        nav=nav_access(allowed) if engagement_id is None else nav_access(frozenset()),
     )

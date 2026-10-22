@@ -103,6 +103,8 @@ class CapabilitiesOut(BaseModel):
     server_now: Annotated[datetime, classified("internal")]
     clock_mode: Annotated[Literal["real", "offset", "frozen"], classified("internal")]
     portal: Annotated[PortalOut | None, classified("internal")]
+    # P-01-T04: firm-level settings areas for SHL-03 (`none` on an engagement's capabilities).
+    nav: Annotated[dict[str, Literal["write", "read", "none"]], classified("internal")]
 
 
 @router.get("/me/capabilities", action=OWN, response_model=CapabilitiesOut)
@@ -135,4 +137,5 @@ async def my_capabilities(
         server_now=found.server_now,
         clock_mode=found.clock_mode,  # type: ignore[arg-type]  # a clock mode literal
         portal=portal,
+        nav=found.nav,
     )

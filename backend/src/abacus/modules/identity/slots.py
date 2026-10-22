@@ -88,3 +88,20 @@ async def engagement_resource(tenant: TenantContext, engagement_id: UUID) -> Res
     if not _ENGAGEMENT_RESOURCE:
         raise NotFound("engagement")
     return await _ENGAGEMENT_RESOURCE[0](tenant, engagement_id)
+
+
+# P-01-T04: organisations owns `offices`; identity reads a firm's offices through this slot for
+# `/v1/me` (the office list and the default office filter). Unregistered: no offices.
+OfficeList = Callable[[TenantContext], Awaitable[list[tuple[UUID, str]]]]
+_OFFICES: list[OfficeList] = []
+
+
+def register_office_list(lookup: OfficeList) -> None:
+    if _OFFICES and not _same(_OFFICES[0], lookup):
+        raise ValueError("the office list is already registered")
+    _OFFICES[:] = [lookup]
+
+
+async def firm_offices(tenant: TenantContext) -> list[tuple[UUID, str]]:
+    """The firm's offices, (id, name) by name; empty when nothing is registered."""
+    return await _OFFICES[0](tenant) if _OFFICES else []

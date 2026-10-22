@@ -8,6 +8,7 @@ ROLES: tuple[str, ...] = (
     "practice_leader",
     "quality_partner",
     "security_admin",
+    "firm_partner",
     "engagement_partner",
     "manager",
     "senior",
@@ -412,6 +413,7 @@ ACTIONS: dict[str, dict[str, str]] = {
     "firm.read_settings": {
         "firm_admin": "allow",
         "practice_leader": "allow",
+        "firm_partner": "allow",
     },
     "firm_agents.pause": {
         "firm_admin": "allow",
