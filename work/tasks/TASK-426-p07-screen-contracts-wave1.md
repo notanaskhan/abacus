@@ -1,5 +1,5 @@
 ---
-id: TASK-425
+id: TASK-426
 title: Screen contracts wave 1 for CLI-01, CLI-02, ENG-01, ENG-02 and ENG-03 (P-07-T01)
 spec: SPEC-307
 acceptance_criteria: [AC-8]
@@ -60,3 +60,6 @@ keys and AVOID.
   2026-10-21 pins the same index hash as `handoff-links.json`). Every artboard was sourced; none
   missing. Checks: `vitest run src/routes/link-contract.test.ts` (19 passed, rule 5 included),
   prettier and eslint on the two manifest files, `validate_docs`, `banned_patterns`.
+- 2026-10-23: renumbered TASK-425 → TASK-426. Another session's F-05-T35 file merged as
+  TASK-425 a minute after this one (commit 8732a9c names TASK-425); this file moved so each id is
+  unique. Done in P-07-T66's PR (TASK-427).
