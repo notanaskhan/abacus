@@ -14,11 +14,12 @@ import json
 import unicodedata
 import zipfile
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Final, cast
 from uuid import UUID
 
+from abacus.kernel.clock import now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.scanning import scan
@@ -332,7 +333,7 @@ async def upload(
         len(content),
         ctx.user_id,
         names.get(ctx.user_id, ""),
-        datetime.now(UTC),
+        await now(ctx.tenant),
         on_behalf,
         kept_note,
     )

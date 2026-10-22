@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import UTC, date, datetime
+from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID, uuid4
 
@@ -11,6 +11,7 @@ from sqlalchemy import delete, func, insert, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from abacus.kernel.clock import system_now
 from abacus.modules.connections.models import (
     Connection,
     ConnectionSecret,
@@ -26,7 +27,7 @@ async def active_connection_for(
     session: AsyncSession, client_entity_id: UUID
 ) -> Connection | None:
     """The entity's active connection, newest first (expired ones don't count)."""
-    now = datetime.now(UTC)
+    now = system_now()
     return (
         await session.execute(
             select(Connection)
@@ -184,7 +185,7 @@ async def finish(
         .values(
             status=status,
             failure_code=failure_code,
-            finished_at=datetime.now(UTC),
+            finished_at=system_now(),
             # A run that ends is no longer waiting (CHECK sync_runs_queued_running).
             queued_reason=None,
             estimated_start_at=None,

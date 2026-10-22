@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._statuses import RequestStatus
 from abacus.kernel.classification import classified
+from abacus.kernel.clock import today
 from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.modules.identity.api import (
     OWN,
@@ -720,7 +721,8 @@ async def overdue_waiting_route(
 ) -> list[OverdueCountOut]:
     """Client items past due, per engagement on the caller's team."""
     return [
-        OverdueCountOut(engagement_id=e, count=n) for e, n in await overdue_mine(ctx, date.today())
+        OverdueCountOut(engagement_id=e, count=n)
+        for e, n in await overdue_mine(ctx, await today(ctx.tenant))
     ]
 
 

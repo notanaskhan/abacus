@@ -26,6 +26,7 @@ from functools import lru_cache
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import DecryptionError, open_sealed, seal
 from abacus.kernel.storage import StorageError, error_code, s3_client
@@ -98,7 +99,7 @@ def object_key(tenant_id: UUID, content_fingerprint: str) -> str:
 
 
 def _retain_until() -> datetime:
-    return datetime.now(UTC) + timedelta(days=settings().evidence_retention_days)
+    return system_now() + timedelta(days=settings().evidence_retention_days)
 
 
 async def _versions(target: _Target, key: str) -> list[str]:

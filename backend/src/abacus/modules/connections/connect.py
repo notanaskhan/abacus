@@ -12,10 +12,11 @@ from __future__ import annotations
 import hashlib
 import secrets
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import Final
 from uuid import UUID
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import open_sealed, seal
 from abacus.kernel.db import TenantContext, tenant_session
@@ -142,7 +143,7 @@ async def start(ctx: AuthContext, engagement_id: UUID, provider: str) -> Started
             user_id=ctx.user_id,
             provider=provider,
             state_hash=_hash(state),
-            expires_at=datetime.now(UTC) + STATE_TTL,
+            expires_at=system_now() + STATE_TTL,
         )
         tx.record(
             "connection.started",
@@ -231,9 +232,7 @@ async def _spend(ctx: AuthContext, state: str) -> tuple[UUID, UUID, str] | None:
             tx.record("connection.state_refused", target=Target("user", ctx.user_id))
             return None
         valid = (
-            row.used_at is None
-            and row.user_id == ctx.user_id
-            and row.expires_at > datetime.now(UTC)
+            row.used_at is None and row.user_id == ctx.user_id and row.expires_at > system_now()
         )
         if row.used_at is None:
             await spend_state(tx.session, row.id)
@@ -258,7 +257,7 @@ async def _revoke(
         tx.session,
         connection.id,
         status="revoked",
-        revoked_at=datetime.now(UTC),
+        revoked_at=system_now(),
         revoked_by=str(ctx.user_id),
     )
     await destroy_secret(tx.session, connection.id)
@@ -316,7 +315,7 @@ async def check(ctx: AuthContext, engagement_id: UUID) -> ConnectionView:
             tx.session,
             current.id,
             status=status,
-            last_checked_at=datetime.now(UTC),
+            last_checked_at=system_now(),
             last_check_ok=ok,
         )
         tx.record(

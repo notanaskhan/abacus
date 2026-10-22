@@ -16,11 +16,12 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import Final
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
+from abacus.kernel.clock import now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import Target, uow
 from abacus.modules.agents.events import AgentDigest, FollowUpsDrafted
@@ -62,8 +63,8 @@ def seconds_to_next_tick(now: datetime, zone: str) -> int:
         day += timedelta(days=1)
 
 
-def today_in(zone: str, now: datetime | None = None) -> date:
-    return (now or datetime.now(UTC)).astimezone(ZoneInfo(zone)).date()
+def today_in(zone: str, at: datetime) -> date:
+    return at.astimezone(ZoneInfo(zone)).date()
 
 
 @dataclass(frozen=True)
@@ -119,7 +120,7 @@ async def chase_overdue(
     tenant: TenantContext, engagement_id: UUID, zone: str, tick_id: UUID
 ) -> Outcome:
     """P-4 for one tick, then P-5's digest event."""
-    today = today_in(zone)
+    today = today_in(zone, await now(tenant))
     overdue = await overdue_for(tenant, engagement_id, today)
     if not overdue:
         return Outcome(0)
@@ -175,7 +176,7 @@ async def draft_now(tenant: TenantContext, engagement_id: UUID, zone: str) -> in
     """TASK-104: a person asks for follow-ups on everything overdue now, one draft per contact,
     outside the cadence. Items already in a waiting draft, or reminded three times for this due
     date, are left out."""
-    today = today_in(zone)
+    today = today_in(zone, await now(tenant))
     overdue = await overdue_for(tenant, engagement_id, today)
     if not overdue:
         return 0

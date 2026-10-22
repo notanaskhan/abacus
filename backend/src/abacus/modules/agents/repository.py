@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import UTC, date, datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import cast
 from uuid import UUID, uuid4
@@ -14,6 +14,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import QueryableAttribute, aliased
 
+from abacus.kernel.clock import system_now
 from abacus.modules.agents.models import (
     AgentActivity,
     AgentRun,
@@ -156,7 +157,7 @@ async def finish_run(
             context_hash=context_hash,
             output=output,
             failure_code=failure_code,
-            finished_at=datetime.now(UTC),
+            finished_at=system_now(),
             # A run that ends is no longer waiting (CHECK agent_runs_queued_running).
             queued_reason=None,
             estimated_start_at=None,
@@ -402,7 +403,7 @@ async def set_agent_paused(
     by: UUID | None,
     reason: str | None,
 ) -> None:
-    paused_at = datetime.now(UTC) if by is not None else None
+    paused_at = func.abacus_now() if by is not None else None
     await session.execute(
         pg_insert(EngagementAgentState)
         .values(
@@ -642,7 +643,7 @@ async def settle_follow_up(
     await session.execute(
         update(FollowUpSchedule)
         .where(FollowUpSchedule.id == follow_up_id)
-        .values(status=status, decided_by=by, decided_at=datetime.now(UTC), note=note)
+        .values(status=status, decided_by=by, decided_at=func.abacus_now(), note=note)
     )
 
 

@@ -16,7 +16,7 @@ import asyncio
 import contextlib
 import time
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from decimal import Decimal
 from typing import Final, Literal
 from uuid import UUID
@@ -26,6 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.ai_gateway.admission import NotAdmitted
 from abacus.ai_gateway.events import BudgetAnomaly, BudgetSoftCrossed
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.logging import get_logger
@@ -55,7 +56,7 @@ def forget_spend() -> None:
 
 
 def _month_start() -> datetime:
-    now = datetime.now(UTC)
+    now = system_now()
     return now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
 
@@ -99,7 +100,7 @@ async def _firm_limits(tenant: TenantContext) -> tuple[Decimal, Decimal]:
 
 
 def _period(level: str) -> str:
-    now = datetime.now(UTC)
+    now = system_now()
     return now.strftime("%Y-%m-%d") if level == "platform" else now.strftime("%Y-%m")
 
 
@@ -258,7 +259,7 @@ async def spend_by_engagement_and_agent(
     since = (
         _month_start()
         if period == "month"
-        else datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+        else system_now().replace(hour=0, minute=0, second=0, microsecond=0)
     )
     async with tenant_session(tenant) as session:
         rows = (

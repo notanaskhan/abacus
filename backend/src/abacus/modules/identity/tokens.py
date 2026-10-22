@@ -12,7 +12,6 @@ issue the same kind of token, so changing providers is configuration, not code.
 from __future__ import annotations
 
 import json
-import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from functools import lru_cache
@@ -21,6 +20,7 @@ from typing import Protocol, cast
 import jwt
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 
 ALGORITHMS = ("RS256",)
@@ -139,7 +139,7 @@ def _mfa_at(claims: dict[str, object]) -> datetime | None:
         return None
     if isinstance(auth_time, bool) or not isinstance(auth_time, int):
         return None
-    if not 0 < auth_time <= time.time() + LEEWAY_SECONDS:
+    if not 0 < auth_time <= system_now().timestamp() + LEEWAY_SECONDS:
         return None
     return datetime.fromtimestamp(auth_time, UTC)
 

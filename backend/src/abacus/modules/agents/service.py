@@ -17,7 +17,7 @@ is repaired once, then the run is escalated with no result.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from decimal import Decimal
 from typing import cast
 from uuid import UUID
@@ -38,6 +38,7 @@ from abacus.ai_gateway import (
     call,
     sanitise_text,
 )
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
@@ -95,7 +96,7 @@ class ScreeningOutcome:
 
 
 def _today() -> datetime:
-    return datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+    return system_now().replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 def _reader(tenant_id: UUID, label: str) -> TenantContext:

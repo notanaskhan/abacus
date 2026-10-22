@@ -17,6 +17,7 @@ from typing import cast
 
 import pytest
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext
 from abacus.modules.agents.engagement_agent import TICK, handle
 from abacus.modules.agents.follow_ups import MAX_PER_ITEM, Outcome, chase_overdue, today_in
@@ -75,7 +76,7 @@ class Engagement:
         return TenantContext(self.tenant_id, "system", "agents.engagement_agent")
 
     def days_ago(self, days: int) -> date:
-        return today_in(ZONE) - timedelta(days=days)
+        return today_in(ZONE, system_now()) - timedelta(days=days)
 
     async def tick(self) -> Outcome:
         return await chase_overdue(self.system, self.site.engagement_id, ZONE, uuid.uuid4())
@@ -128,7 +129,9 @@ async def test_ac3_each_contact_gets_one_draft_listing_their_overdue_items(
     mine = await seed.item(
         site, "Payroll register", due_on=chase.days_ago(5), assignee=chase.contributor
     )
-    not_due = await seed.item(site, "Lease", due_on=today_in(ZONE) + timedelta(days=9))
+    not_due = await seed.item(
+        site, "Lease", due_on=today_in(ZONE, system_now()) + timedelta(days=9)
+    )
     assert {first, second, mine, not_due}
     # The seeded item (no due date) is not overdue; the four above: three overdue, one not due.
     outcome = await chase.tick()

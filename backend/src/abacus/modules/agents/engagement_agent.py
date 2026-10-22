@@ -25,13 +25,14 @@ under the engagement partner arrives with reminders (TASK-051).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Final
 from uuid import UUID, uuid4, uuid5
 
 from temporalio import activity
 
 from abacus.kernel import _flags
+from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import signal_with_start
 from abacus.kernel.errors import DomainConflict, NotFound
@@ -413,7 +414,7 @@ def _replace(row: _Row, **changes: object) -> _Row:
 
 async def _skipped_screenings(tenant: TenantContext, engagement_id: UUID) -> list[AgentActivity]:
     async with tenant_session(tenant) as session:
-        since = datetime.now(UTC) - REPLAY_WINDOW
+        since = system_now() - REPLAY_WINDOW
         last = await last_resume_check(session, engagement_id)
         return list(
             await screenings_skipped_while_paused(
@@ -448,7 +449,7 @@ async def _resume(tenant: TenantContext, engagement_id: UUID) -> list[_Row]:
 async def next_tick(given: NextTickInput) -> int:
     """Seconds until the next 09:00 business day in the firm's time zone (SPEC-027 Q3)."""
     zone = await firm_time_zone(_system(UUID(given.tenant_id)))
-    return seconds_to_next_tick(datetime.now(UTC), zone)
+    return seconds_to_next_tick(system_now(), zone)
 
 
 @activity.defn(name=HANDLE)

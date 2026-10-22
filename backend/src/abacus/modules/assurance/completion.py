@@ -20,10 +20,11 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Final, Literal
 from uuid import UUID
 
+from abacus.kernel.clock import now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, uow
@@ -639,7 +640,7 @@ async def lock_archive(ctx: AuthContext, engagement_id: UUID, attest: bool) -> N
             actor_kind=ctx.tenant.actor_kind,
         )
         await set_assurance_phase(tx, engagement_id, "archived")
-        await lock_engagement(tx, engagement_id, datetime.now(UTC))
+        await lock_engagement(tx, engagement_id, await now(ctx.tenant))
         tx.record(
             "archive.locked", target=Target("engagement", engagement_id), after=Ref(seal=seal)
         )

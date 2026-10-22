@@ -98,8 +98,11 @@ async def insert_mapping_set(session: AsyncSession, **values: object) -> UUID:
 
 
 async def publish(session: AsyncSession, version_id: UUID, **values: object) -> None:
+    """Published at business time (`abacus_now()`, F-04-T11)."""
     await session.execute(
-        update(GroupingSetVersion).where(GroupingSetVersion.id == version_id).values(**values)
+        update(GroupingSetVersion)
+        .where(GroupingSetVersion.id == version_id)
+        .values(**values, published_at=func.abacus_now())
     )
 
 

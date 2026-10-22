@@ -19,6 +19,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from abacus.ai_gateway import forget_boundary_facts
 from abacus.kernel import clock, provider_terms
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid
@@ -341,7 +342,7 @@ class AiClientDataView:
 
 
 def _terms() -> provider_terms.TermsEntry | None:
-    return provider_terms.covering(CLIENT_DATA_ROUTE, date.today())
+    return provider_terms.covering(CLIENT_DATA_ROUTE, system_now().date())
 
 
 async def ai_client_data_opted_in(tenant: TenantContext) -> bool:

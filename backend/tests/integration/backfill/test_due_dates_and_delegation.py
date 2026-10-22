@@ -13,6 +13,7 @@ from typing import cast
 
 import pytest
 
+from abacus.kernel.clock import system_now
 from abacus.modules.agents.follow_ups import today_in
 from abacus.modules.identity.api import (
     AgentContext,
@@ -43,7 +44,7 @@ class Board:
         return f"/v1/engagements/{self.site.engagement_id}"
 
     def day(self, offset: int) -> date:
-        return today_in(ZONE) + timedelta(days=offset)
+        return today_in(ZONE, system_now()) + timedelta(days=offset)
 
     async def overdue(self, who: Person) -> int:
         """What the caller's waiting-on-the-client count says for this engagement."""
