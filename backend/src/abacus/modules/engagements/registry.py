@@ -24,6 +24,7 @@ TABLES: frozenset[str] = frozenset(
         "gate_policy_overrides",  # F-03-T12 (0069)
         "engagement_letters",
         "engagement_contacts",  # F-03-T25 (0082): designations (DEC-63)
+        "advisory_projects",  # F-03-T22 (0089)
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -38,10 +39,12 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "engagement_entities",  # F-03-T05 (0068)
         "gate_policy_overrides",  # F-03-T12 (0069): a new row per change
         "engagement_contacts",  # F-03-T25 (0082)
+        "advisory_projects",  # F-03-T22 (0089)
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    "advisory_projects": frozenset({"tenant_id", "work_item_id", "engagement_id", "name"}),
     "engagement_contacts": frozenset(  # F-03-T25 (0082)
         {"tenant_id", "engagement_id", "contact_id", "designation", "designated_by"}
     ),
