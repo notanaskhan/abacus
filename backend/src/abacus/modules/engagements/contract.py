@@ -1,0 +1,681 @@
+"""The engagements family contract, v2: ENG-01, ENG-02 and ENG-03 (P-07-T05 stub; ADR-139,
+P-36). An additive C1 v1.1 note. Contract: `docs/contracts/engagements-v2.md`; spec: SPEC-321.
+
+Behind `engagements.v2`: off, every route here answers 404; on, 501 `not_implemented` until the
+task that implements it (P-07-T15 the index, record, gates and recorded letter; P-07-T16 the type
+catalogue, drafts and create). No seed slice yet (P-07-T11), so no fixtures.
+
+The live routes stay where they are and keep their shapes: `GET /v1/engagements` (a plain list),
+`GET /v1/engagements/{id}` (C1's `EngagementOut`), `PUT …/letter` (SPEC-025) and `POST
+/v1/engagements`. The v2 index and record are served beside them, at `/v1/engagements/index` and
+`/v1/engagements/{id}/record`, and take over the plain paths when P-07-T15 retires the v1 consumer
+(contract change log). `/index` is matched before the live `/{engagement_id}` only because
+`api.ROUTERS` lists this module's routers first (a test holds that order).
+
+Single audit is out of scope (D10, DEC-19): no catalogue code, enum member or seed row exists for
+it, and a draft or create naming it answers 422 `unknown_engagement_type` like any unknown code.
+The ENG-03 "Coming soon" tile is static frontend copy.
+"""
+
+from __future__ import annotations
+
+from datetime import date, datetime
+from typing import Annotated, Literal, NoReturn
+from uuid import UUID
+
+from fastapi import Depends, Header, Query
+from pydantic import BaseModel, ConfigDict, Field
+
+from abacus.kernel._flags import ENGAGEMENTS_V2
+from abacus.kernel._statuses import EngagementStatus, LetterRecordStatus
+from abacus.kernel.classification import classified
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, NotImplementedYet
+from abacus.kernel.flags import flag_enabled
+from abacus.kernel.listing import ListPage
+from abacus.kernel.text import MultiLineText, SingleLineText
+from abacus.modules.engagements.service import EngagementType
+from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+
+Ctx = Annotated[AuthContext, Depends(current_context)]
+IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
+
+ServiceLine = Literal["audit", "tax", "cas", "advisory"]
+WorkItemKind = Literal["assurance", "tax_return", "close", "notice", "advisory_project"]
+Gate = Literal["G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9"]
+# `engagement_contacts.designation` (migration 0082, DEC-63).
+Designation = Literal[
+    "approver_of_record",
+    "ske_designee",
+    "signing_officer",
+    "plan_administrator",
+    "tcwg_member",
+    "primary_contact",
+]
+NextDueWindow = Literal["past_due", "within_7_days", "within_30_days"]
+PeriodFilter = Literal["current", "prior", "all"]
+DueTone = Literal["past_due", "soon", "normal"]
+LetterEvent = Literal["sent", "viewed"]
+RailBand = Literal["details", "review_delivery", "client_portal"]
+ReadOnlyReason = Literal["archived"]
+# The ENG-03 catalogue: Tax 8, Audit & assurance 8, CAS & Advisory 2 (P-07 §3.6 Story 6.3). A code
+# catalogue (P-07-T16), never firm content; `single_audit` is not a member and never will be (D10).
+CatalogueTypeCode = Literal[
+    "form_1040",
+    "form_1041",
+    "form_1065",
+    "form_1120s",
+    "form_1120",
+    "form_990",
+    "forms_706_709",
+    "notice_response",
+    "ebp_audit",
+    "fs_audit",
+    "review",
+    "compilation",
+    "preparation",
+    "agreed_upon_procedures",
+    "soc1",
+    "soc2",
+    "cas_monthly_close",
+    "advisory",
+]
+CatalogueFamily = Literal["tax", "audit_assurance", "cas_advisory"]
+Entitlement = Literal["attest", "group_audit"]
+Availability = Literal["available", "needs_entitlement"]
+WizardStep = Literal[
+    "client_type",
+    "standards_methodology",
+    "period_deadlines",
+    "team_independence",
+    "binder_portal",
+    "letter_review",
+]
+LetterMode = Literal["signed", "not_required_this_year"]
+# A draft's type: a catalogue code the server checks (422 `unknown_engagement_type`), so a stale
+# or excluded code is a domain answer, not a schema error.
+TypeCodeIn = Annotated[str, Field(pattern=r"^[a-z0-9_]{1,40}$")]
+
+
+class UnknownEngagementType(DomainInvalid):
+    """The type is not in the engagement-type catalogue (single audit included, DEC-19)."""
+
+    code = "unknown_engagement_type"
+
+
+class LetterBeforeAcceptance(DomainConflict):
+    """The letter's date is before the acceptance decision (G1 < letter, R-06)."""
+
+    code = "letter_before_acceptance"
+
+
+class GateUnmet(DomainConflict):
+    """A gate the step or the create requires is not met (C1 gate providers; `facts.gate`)."""
+
+    code = "gate_unmet"
+
+
+class DraftStaleVersion(DomainConflict):
+    code = "stale_version"
+
+
+# --- Shared parts -------------------------------------------------------------------------------
+
+
+class GateBlockerRefOut(BaseModel):
+    """What blocks a gate: an opaque reference and a registered reason code, never prose."""
+
+    model_config = ConfigDict(frozen=True)
+
+    type: Annotated[str, classified("internal")]
+    id: Annotated[UUID, classified("internal")]
+    reason_code: Annotated[str, classified("internal")]
+
+
+class EngagementGateOut(BaseModel):
+    """One gate from its registered provider (G1, G2 and the interim G3 in P-07; G4 to G9 when
+    A-04, A-06 and A-07 register). Met, blocked (blockers) or not started (neither)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    gate: Annotated[Gate, classified("internal")]
+    met: Annotated[bool, classified("internal")]
+    blockers: Annotated[list[GateBlockerRefOut], classified("internal")] = []
+    met_at: Annotated[datetime | None, classified("internal")] = None
+    met_by_user_id: Annotated[UUID | None, classified("internal")] = None  # G1: the decider
+
+
+class EngagementLetterSummaryOut(BaseModel):
+    """ENG-01's Letter column and ENG-02's summary: "✓ Signed {date}", "Sent {date} · 1 of 2"."""
+
+    model_config = ConfigDict(frozen=True)
+
+    status: Annotated[LetterRecordStatus, classified("internal")]  # C2 `letter_record`
+    signed_on: Annotated[date | None, classified("internal")] = None
+    last_event: Annotated[LetterEvent | None, classified("internal")] = None
+    last_event_on: Annotated[date | None, classified("internal")] = None
+    signed_count: Annotated[int, classified("internal")] = 0
+    signer_count: Annotated[int, classified("internal")] = 0
+    not_required_this_year: Annotated[bool, classified("internal")] = False
+
+
+class EngagementWorkItemLineOut(BaseModel):
+    """A work-item sub-line from its kind's provider, in the kind's own status words."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    kind: Annotated[WorkItemKind, classified("internal")]
+    label: Annotated[str, classified("confidential")]
+    pill_object: Annotated[str | None, classified("internal")] = None
+    pill_code: Annotated[str | None, classified("internal")] = None
+
+
+class EngagementNextDueOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    on: Annotated[date, classified("internal")]
+    tone: Annotated[DueTone, classified("internal")]
+    # The deadline's own sub-line ("§754 election deadline", "Report target"): seed data.
+    label: Annotated[str | None, classified("confidential")] = None
+
+
+# --- ENG-01 index -------------------------------------------------------------------------------
+
+
+class EngagementIndexRowOut(BaseModel):
+    """An ENG-01 row: metadata only, after `visible()` (INV-3)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    name: Annotated[str, classified("confidential")]
+    client_id: Annotated[UUID, classified("internal")]
+    client_name: Annotated[str, classified("confidential")]
+    client_entity_id: Annotated[UUID, classified("internal")]
+    type: Annotated[EngagementType, classified("internal")]
+    service_line: Annotated[ServiceLine, classified("internal")]
+    status: Annotated[EngagementStatus, classified("internal")]  # C2
+    period_label: Annotated[str | None, classified("confidential")] = None
+    fiscal_period_start: Annotated[date, classified("confidential")]
+    fiscal_period_end: Annotated[date, classified("confidential")]
+    office_id: Annotated[UUID | None, classified("internal")] = None
+    office_name: Annotated[str | None, classified("internal")] = None
+    partner_user_id: Annotated[UUID | None, classified("internal")] = None
+    partner_initials: Annotated[str | None, classified("internal")] = None
+    work_items: Annotated[list[EngagementWorkItemLineOut], classified("confidential")] = []
+    letter: Annotated[EngagementLetterSummaryOut, classified("internal")]
+    next_due: Annotated[EngagementNextDueOut | None, classified("confidential")] = None
+    allowed_actions: Annotated[list[str], classified("internal")] = []
+
+
+class EngagementIndexSummaryOut(BaseModel):
+    """The ENG-01 summary line, over the same `visible()` predicate as the rows."""
+
+    model_config = ConfigDict(frozen=True)
+
+    prospect: Annotated[int, classified("internal")]
+    awaiting_letter: Annotated[int, classified("internal")]  # Accepted without a recorded letter
+    past_due: Annotated[int, classified("internal")]
+
+
+class EngagementIndexPage(ListPage[EngagementIndexRowOut]):
+    """The P-36 envelope: `counts` per engagement status minus the selected tile (the seven tiles;
+    `declined` never shows), `facets.service_line` the segments; both from one grouped query. The
+    tiles sum to `total`."""
+
+    summary: Annotated[EngagementIndexSummaryOut, classified("internal")]
+
+
+# --- ENG-02 record ------------------------------------------------------------------------------
+
+
+class EngagementRailRowOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    key: Annotated[str, classified("internal")]  # the band's row code
+    text: Annotated[str | None, classified("confidential")] = None
+    user_id: Annotated[UUID | None, classified("internal")] = None
+    on: Annotated[date | None, classified("internal")] = None
+    pill_object: Annotated[str | None, classified("internal")] = None
+    pill_code: Annotated[str | None, classified("internal")] = None
+
+
+class EngagementRailBandOut(BaseModel):
+    """A rail band. Content bands need `engagement.read`; a metadata-only role gets the others."""
+
+    model_config = ConfigDict(frozen=True)
+
+    band: Annotated[RailBand, classified("internal")]
+    rows: Annotated[list[EngagementRailRowOut], classified("confidential")]
+
+
+class EngagementDesignationOut(BaseModel):
+    """ENG-02's contacts block: approver of record, SKE designee (DEC-63)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    designation: Annotated[Designation, classified("internal")]
+    contact_id: Annotated[UUID, classified("internal")]
+    name: Annotated[str, classified("confidential")]
+
+
+class EngagementTabCountsOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    work_items: Annotated[int, classified("internal")]
+    team: Annotated[int, classified("internal")]
+
+
+class EngagementRecordOut(BaseModel):
+    """The extended C1 projection (C1 v1.1): subbar facts, rail bands, contacts, letter summary,
+    gates, tab counts and why it is read-only."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    name: Annotated[str, classified("confidential")]
+    client_id: Annotated[UUID, classified("internal")]
+    client_name: Annotated[str, classified("confidential")]
+    client_entity_id: Annotated[UUID, classified("internal")]
+    client_entity_name: Annotated[str, classified("confidential")]
+    type: Annotated[EngagementType, classified("internal")]
+    service_line: Annotated[ServiceLine, classified("internal")]
+    status: Annotated[EngagementStatus, classified("internal")]  # C2
+    period_label: Annotated[str | None, classified("confidential")] = None
+    fiscal_period_start: Annotated[date, classified("confidential")]
+    fiscal_period_end: Annotated[date, classified("confidential")]
+    bands: Annotated[list[EngagementRailBandOut], classified("confidential")]
+    contacts: Annotated[list[EngagementDesignationOut], classified("confidential")] = []
+    letter: Annotated[EngagementLetterSummaryOut, classified("internal")]
+    gates: Annotated[list[EngagementGateOut], classified("internal")]
+    tab_counts: Annotated[EngagementTabCountsOut, classified("internal")]
+    read_only_reason: Annotated[ReadOnlyReason | None, classified("internal")] = None
+    version: Annotated[int, classified("internal")]
+    allowed_actions: Annotated[list[str], classified("internal")] = []
+
+
+# --- The interim recorded letter (G3 until C7) --------------------------------------------------
+
+
+class LetterRecordIn(BaseModel):
+    """ "Record signed letter…": both parties' dates on or after the G1 decision (409
+    `letter_before_acceptance`); or the EP's "Not required this year" with a reason, only while
+    the firm setting `allow_letter_exceptions` is on."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
+
+    mode: Annotated[LetterMode, classified("internal")]
+    client_signed_on: Annotated[date | None, classified("internal")] = None
+    firm_signed_on: Annotated[date | None, classified("internal")] = None
+    client_signer_contact_id: Annotated[UUID | None, classified("internal")] = None
+    firm_signer_user_id: Annotated[UUID | None, classified("internal")] = None
+    # The signed copy, stored write-once through `evidence` first (P-07 Story 6.2).
+    signed_copy_version_id: Annotated[UUID | None, classified("internal")] = None
+    not_required_reason: Annotated[
+        MultiLineText | None,
+        Field(default=None, min_length=1, max_length=1000),
+        classified("confidential"),
+    ]
+
+
+class EngagementLetterRecordOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    status: Annotated[LetterRecordStatus, classified("internal")]  # C2 `letter_record`
+    mode: Annotated[LetterMode, classified("internal")]
+    client_signed_on: Annotated[date | None, classified("internal")] = None
+    firm_signed_on: Annotated[date | None, classified("internal")] = None
+    client_signer_contact_id: Annotated[UUID | None, classified("internal")] = None
+    firm_signer_user_id: Annotated[UUID | None, classified("internal")] = None
+    signed_copy_version_id: Annotated[UUID | None, classified("internal")] = None
+    acceptance_decided_at: Annotated[datetime, classified("internal")]  # the G1 decision
+    recorded_by: Annotated[UUID, classified("internal")]  # always a person (INV-5)
+    recorded_at: Annotated[datetime, classified("internal")]
+    engagement_status: Annotated[EngagementStatus, classified("internal")]  # `contracted` once met
+
+
+# --- ENG-03: the type catalogue -----------------------------------------------------------------
+
+
+class EngagementTypeStepOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    step: Annotated[WizardStep, classified("internal")]
+    field_codes: Annotated[list[str], classified("internal")]  # the step's fields
+
+
+class EngagementTypeEntryOut(BaseModel):
+    """One TypeCard. Labels are the copy registry's (OQ-15), held with the code catalogue."""
+
+    model_config = ConfigDict(frozen=True)
+
+    code: Annotated[CatalogueTypeCode, classified("internal")]
+    engagement_type: Annotated[EngagementType, classified("internal")]
+    family: Annotated[CatalogueFamily, classified("internal")]
+    work_item_kind: Annotated[WorkItemKind, classified("internal")]
+    label: Annotated[str, classified("public")]  # "Form 1040"
+    standard_line: Annotated[str, classified("public")]  # "Individual", "AU-C 703 · ERISA"
+    availability: Annotated[Availability, classified("internal")]
+    entitlement: Annotated[Entitlement | None, classified("internal")] = None
+    group_audit_allowed: Annotated[bool, classified("internal")] = False
+    steps: Annotated[list[EngagementTypeStepOut], classified("internal")]
+
+
+class EngagementTypeCatalogueOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    items: Annotated[list[EngagementTypeEntryOut], classified("internal")]
+
+
+# --- ENG-03: drafts and create ------------------------------------------------------------------
+
+
+class DraftDeadlineIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    code: Annotated[str, Field(pattern=r"^[a-z0-9_]{1,40}$"), classified("internal")]
+    on: Annotated[date, classified("internal")]
+
+
+class DraftTeamMemberIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    user_id: Annotated[UUID, classified("internal")]
+    role: Annotated[str, Field(pattern=r"^[a-z_]{1,40}$"), classified("internal")]
+
+
+class EngagementDraftPayload(BaseModel):
+    """Identifiers and typed values only: no TIN and no free text beyond the engagement name
+    (P-07 §4.2 M2). Absent fields are not chosen yet."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
+
+    name: Annotated[
+        SingleLineText | None,
+        Field(default=None, min_length=1, max_length=200),
+        classified("confidential"),
+    ]
+    methodology_version_id: Annotated[UUID | None, classified("internal")] = None
+    standards_code: Annotated[
+        str | None, Field(default=None, max_length=60), classified("internal")
+    ]
+    scope_code: Annotated[str | None, Field(default=None, max_length=60), classified("internal")]
+    fiscal_period_start: Annotated[date | None, classified("confidential")] = None
+    fiscal_period_end: Annotated[date | None, classified("confidential")] = None
+    period_label: Annotated[
+        str | None, Field(default=None, max_length=40), classified("confidential")
+    ]
+    deadlines: Annotated[list[DraftDeadlineIn], Field(max_length=20), classified("internal")] = []
+    team: Annotated[list[DraftTeamMemberIn], Field(max_length=50), classified("internal")] = []
+    eqr_user_id: Annotated[UUID | None, classified("internal")] = None
+    group_audit: Annotated[bool, classified("internal")] = False
+    portal_contact_ids: Annotated[list[UUID], Field(max_length=50), classified("internal")] = []
+    prior_engagement_id: Annotated[UUID | None, classified("internal")] = None
+
+
+class EngagementDraftIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    client_id: Annotated[UUID | None, classified("internal")] = None
+    client_entity_id: Annotated[UUID | None, classified("internal")] = None
+    type_code: Annotated[TypeCodeIn | None, classified("internal")] = None
+    step: Annotated[WizardStep, classified("internal")] = "client_type"
+    # Absent: nothing chosen yet beyond the client and type.
+    payload: Annotated[EngagementDraftPayload | None, classified("confidential")] = None
+
+
+class EngagementDraftPatchIn(BaseModel):
+    """Autosave: absent fields are unchanged; `seen_version` behind answers 409 `stale_version`."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    seen_version: Annotated[int, Field(ge=0), classified("internal")]
+    client_id: Annotated[UUID | None, classified("internal")] = None
+    client_entity_id: Annotated[UUID | None, classified("internal")] = None
+    type_code: Annotated[TypeCodeIn | None, classified("internal")] = None
+    step: Annotated[WizardStep | None, classified("internal")] = None
+    payload: Annotated[EngagementDraftPayload | None, classified("confidential")] = None
+
+
+class EngagementDraftOut(BaseModel):
+    """A draft, its owner's only (scope own, OQ-17); "Draft · saved 9:39 AM" is `saved_at`."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    created_by: Annotated[UUID, classified("internal")]
+    client_id: Annotated[UUID | None, classified("internal")] = None
+    client_entity_id: Annotated[UUID | None, classified("internal")] = None
+    type_code: Annotated[CatalogueTypeCode | None, classified("internal")] = None
+    step: Annotated[WizardStep, classified("internal")]
+    payload: Annotated[EngagementDraftPayload, classified("confidential")]
+    prospect_engagement_id: Annotated[UUID | None, classified("internal")] = None
+    gates: Annotated[list[EngagementGateOut], classified("internal")] = []
+    version: Annotated[int, classified("internal")]
+    saved_at: Annotated[datetime, classified("internal")]
+    allowed_actions: Annotated[list[str], classified("internal")] = []
+
+
+class DraftValidateIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    step: Annotated[WizardStep, classified("internal")]
+
+
+class DraftProblemOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    field: Annotated[str, classified("internal")]  # a payload field code
+    code: Annotated[str, classified("internal")]  # a registered problem code
+
+
+class EngagementDraftValidationOut(BaseModel):
+    """Per-step validation; G1 unmet on step 1 disables Next (ENG-03 d)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    draft_id: Annotated[UUID, classified("internal")]
+    step: Annotated[WizardStep, classified("internal")]
+    valid: Annotated[bool, classified("internal")]
+    problems: Annotated[list[DraftProblemOut], classified("internal")] = []
+    gates: Annotated[list[EngagementGateOut], classified("internal")] = []
+
+
+class EngagementDraftDiscardedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    draft_id: Annotated[UUID, classified("internal")]
+    discarded_at: Annotated[datetime, classified("internal")]
+
+
+class AcceptanceStartedOut(BaseModel):
+    """ "Start acceptance": the draft is saved, a Prospect engagement and an acceptance record
+    exist, and CLI-07 opens on the record."""
+
+    model_config = ConfigDict(frozen=True)
+
+    draft_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    acceptance_record_id: Annotated[UUID, classified("internal")]
+    engagement_status: Annotated[EngagementStatus, classified("internal")]  # `prospect`
+
+
+class DraftCreateIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    confirm_duplicate: Annotated[bool, classified("internal")] = False
+
+
+class EngagementFromDraftOut(BaseModel):
+    """One unit of work: the engagement (Accepted), its work items by type cardinality, the team
+    and independence requests, the methodology pin and `engagement.created`."""
+
+    model_config = ConfigDict(frozen=True)
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    engagement_status: Annotated[EngagementStatus, classified("internal")]  # `accepted`
+    work_item_ids: Annotated[list[UUID], classified("internal")]
+    independence_requested_user_ids: Annotated[list[UUID], classified("internal")] = []
+    methodology_version_id: Annotated[UUID | None, classified("internal")] = None
+
+
+async def _stub(ctx: AuthContext) -> NoReturn:
+    if not await flag_enabled(ctx.tenant, ENGAGEMENTS_V2):
+        raise NotFound("engagements.v2")
+    raise NotImplementedYet
+
+
+# Listed before the live `router` in `api.ROUTERS`, so `/index` wins over `/{engagement_id}`.
+engagements_v2_router = AbacusRouter(prefix="/v1/engagements", tags=["engagements"])
+engagement_types_router = AbacusRouter(prefix="/v1/engagement-types", tags=["engagements"])
+engagement_drafts_router = AbacusRouter(prefix="/v1/engagement-drafts", tags=["engagements"])
+
+
+@engagements_v2_router.get(
+    "/index", action="engagement.read_metadata", response_model=EngagementIndexPage, errors=(501,)
+)
+async def engagement_index_route(
+    ctx: Ctx,
+    service_line: Annotated[ServiceLine | None, Query()] = None,
+    status: Annotated[EngagementStatus | None, Query()] = None,
+    tile: Annotated[EngagementStatus | None, Query()] = None,
+    office_id: Annotated[UUID | None, Query()] = None,
+    partner_id: Annotated[UUID | None, Query()] = None,
+    letter: Annotated[LetterRecordStatus | None, Query()] = None,
+    next_due: Annotated[NextDueWindow | None, Query()] = None,
+    period: Annotated[PeriodFilter, Query()] = "current",
+    client_id: Annotated[UUID | None, Query()] = None,
+    q: Annotated[str | None, Query(max_length=100)] = None,
+    cursor: Annotated[str | None, Query(max_length=512)] = None,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+) -> EngagementIndexPage:
+    """ENG-01 and CLI-02's Engagements tab: past due first, then by next deadline. "Letter │ Not
+    signed" lists Accepted engagements without a recorded letter (never a Prospect)."""
+    await _stub(ctx)
+
+
+@engagements_v2_router.get(
+    "/{engagement_id}/record",
+    action="engagement.read_metadata",
+    response_model=EngagementRecordOut,
+    errors=(501,),
+)
+async def engagement_record_route(engagement_id: UUID, ctx: Ctx) -> EngagementRecordOut:
+    await _stub(ctx)
+
+
+@engagements_v2_router.get(
+    "/{engagement_id}/gates",
+    action="engagement.read_metadata",
+    response_model=list[EngagementGateOut],
+    errors=(501,),
+)
+async def engagement_gates_route(engagement_id: UUID, ctx: Ctx) -> list[EngagementGateOut]:
+    """`[{gate, met, blockers}]` for the registered providers (C1 v1.1)."""
+    await _stub(ctx)
+
+
+@engagements_v2_router.put(
+    "/{engagement_id}/letter/record",
+    action="letter.record",
+    response_model=EngagementLetterRecordOut,
+    errors=(409, 501),
+)
+async def record_engagement_letter_route(
+    engagement_id: UUID, body: LetterRecordIn, ctx: Ctx
+) -> EngagementLetterRecordOut:
+    """Human-only. The interim G3 provider until C7: 409 `gate_unmet` (G1), 409
+    `letter_before_acceptance`, 409 `engagement_archived`; one `letter.recorded` audit event."""
+    await _stub(ctx)
+
+
+@engagement_types_router.get(
+    "", action="engagement.create", response_model=EngagementTypeCatalogueOut, errors=(501,)
+)
+async def engagement_types_route(ctx: Ctx) -> EngagementTypeCatalogueOut:
+    """The selectable catalogue; an entitlement-gated card (SOC 1, SOC 2) is `needs_entitlement`
+    without `attest`. Never `single_audit`."""
+    await _stub(ctx)
+
+
+@engagement_drafts_router.post(
+    "",
+    action="engagement.create",
+    response_model=EngagementDraftOut,
+    status_code=201,
+    errors=(501,),
+)
+async def create_engagement_draft_route(body: EngagementDraftIn, ctx: Ctx) -> EngagementDraftOut:
+    """422 `unknown_engagement_type` for a code outside the catalogue."""
+    await _stub(ctx)
+
+
+@engagement_drafts_router.get(
+    "/{draft_id}", action="engagement.create", response_model=EngagementDraftOut, errors=(501,)
+)
+async def get_engagement_draft_route(draft_id: UUID, ctx: Ctx) -> EngagementDraftOut:
+    """The owner's own draft; anyone else's answers 404."""
+    await _stub(ctx)
+
+
+@engagement_drafts_router.patch(
+    "/{draft_id}",
+    action="engagement.create",
+    response_model=EngagementDraftOut,
+    errors=(409, 501),
+)
+async def update_engagement_draft_route(
+    draft_id: UUID, body: EngagementDraftPatchIn, ctx: Ctx
+) -> EngagementDraftOut:
+    await _stub(ctx)
+
+
+@engagement_drafts_router.delete(
+    "/{draft_id}",
+    action="engagement.create",
+    response_model=EngagementDraftDiscardedOut,
+    errors=(501,),
+)
+async def discard_engagement_draft_route(draft_id: UUID, ctx: Ctx) -> EngagementDraftDiscardedOut:
+    """ "Discard this draft?" (purged 30 days later, OQ-17)."""
+    await _stub(ctx)
+
+
+@engagement_drafts_router.post(
+    "/{draft_id}/validate",
+    action="engagement.create",
+    response_model=EngagementDraftValidationOut,
+    errors=(501,),
+)
+async def validate_engagement_draft_route(
+    draft_id: UUID, body: DraftValidateIn, ctx: Ctx
+) -> EngagementDraftValidationOut:
+    await _stub(ctx)
+
+
+@engagement_drafts_router.post(
+    "/{draft_id}/start-acceptance",
+    action="client.intake",
+    response_model=AcceptanceStartedOut,
+    status_code=201,
+    errors=(409, 501),
+)
+async def start_acceptance_from_draft_route(draft_id: UUID, ctx: Ctx) -> AcceptanceStartedOut:
+    """Human-only (OQ-2): a Prospect engagement and an acceptance record; nothing is accepted."""
+    await _stub(ctx)
+
+
+@engagement_drafts_router.post(
+    "/{draft_id}/create",
+    action="engagement.create",
+    response_model=EngagementFromDraftOut,
+    status_code=201,
+    errors=(409, 501),
+)
+async def create_engagement_from_draft_route(
+    draft_id: UUID, body: DraftCreateIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> EngagementFromDraftOut:
+    """Human-only, one unit of work: 409 `possible_duplicate` until `confirm_duplicate`, 409
+    `gate_unmet` (G1), 422 `unknown_engagement_type`."""
+    await _stub(ctx)

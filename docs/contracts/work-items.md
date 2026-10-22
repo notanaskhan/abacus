@@ -65,3 +65,6 @@ All the models live in `backend/src/abacus/modules/engagements/routes.py`.
 
 ## 7. Audit and outbox events
 Reads write none. Engagement creation writes `engagement.created` and emits `engagement.created`. Every new engagement gets its assurance work item and primary entity from the database (migration 0068 and 0069 triggers).
+
+## 8. C1 v1.1 note (P-07-T05)
+Additive, no C1 field changes: P-07's engagements family (`engagements-v2.md`) adds the gate facts with blockers for G1 to G9 (`GET /v1/engagements/{id}/gates`, `EngagementGateOut`), the v2 index and record projection beside `GET /v1/engagements` and `GET /v1/engagements/{id}`, the interim recorded letter, and the engagement-type catalogue that F-02-T11's check covers (no `single_audit`). Behind `engagements.v2`; stub 2026-10-23.

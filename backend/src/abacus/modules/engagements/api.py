@@ -12,6 +12,11 @@ from abacus.modules.engagements.contacts import (
     engagement_contacts,
     work_item_scope,
 )
+from abacus.modules.engagements.contract import (
+    engagement_drafts_router,
+    engagement_types_router,
+    engagements_v2_router,
+)
 from abacus.modules.engagements.events import EngagementCreated, IndependenceRequested
 from abacus.modules.engagements.gates import register_gates
 from abacus.modules.engagements.roll_forward import (
@@ -146,6 +151,11 @@ register_engagement_resource(engagement_resource_of)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
+    # The v2 contract stub (P-07-T05) first: its literal `/v1/engagements/index` must match before
+    # the live `/v1/engagements/{engagement_id}` (tests/contracts/engagements_v2 holds the order).
+    engagements_v2_router,
+    engagement_types_router,
+    engagement_drafts_router,
     router,
     work_items_router,
     methodology_router,

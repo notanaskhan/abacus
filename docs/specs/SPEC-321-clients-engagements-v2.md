@@ -10,7 +10,8 @@ created: 2026-10-23
 updated: 2026-10-23
 ---
 
-> **Outline.** Written with the clients contract stub (P-07-T04, TASK-434). The epic is the source
+> **Outline.** Written with the clients contract stub (P-07-T04, TASK-470); Stories 3 and 4 added
+> with the engagements contract stub (P-07-T05, TASK-471). The epic is the source
 > until this spec is final: `docs/plan/epics/P-07.md` §3.1 and §3.6 (stories), §4 (backend), §8
 > (contracts). The contracts are `docs/contracts/clients.md` and, from P-07-T05,
 > `docs/contracts/engagements-v2.md`. Story 1 holds for the clients stub; Story 2 is the behaviour
@@ -54,6 +55,20 @@ on the model gateway and agents for `organisations`.
 - **AC-7** A walled or unknown client answers 404 on every clients route; relationship edges into walled clients are omitted.
 - **AC-8** PATCH with a stale `seen_version` answers 409 `stale_version`; prospect to active by a person answers 409 `illegal_transition`; each change writes one `client.updated` audit event.
 - **AC-9** `tin.reveal` gains `not_offshore` with the live route; a reveal returns the value once with `Cache-Control: no-store` and one `tin.revealed` audit event with the reason code and never the value; an offshore member gets 403; no log line carries the value.
+
+### Story 3: the engagements contract stub (P-07-T05)
+- **AC-10** Every engagements v2 route in `docs/contracts/engagements-v2.md` §2 exists with exactly one matrix action and documents 404 and 501; the create from a draft requires an `Idempotency-Key` header.
+- **AC-11** Engagement and letter statuses are C2's generated enums (`EngagementStatus`, `LetterRecordStatus`); the index is the P-36 envelope plus a summary, with no hidden-by-wall field; the type catalogue's code enum has 18 codes and neither it nor C1's 14-code `EngagementType` holds `single_audit` or another excluded type.
+- **AC-12** `engagement.create`, `client.intake` and `letter.record` deny agent and system and grant no client role; `client.intake` allows the firm admin and partners (OQ-2).
+- **AC-13** With `engagements.v2` off every v2 route answers 404; with it on, a stubbed route answers 501 `not_implemented`.
+- **AC-14** `GET /v1/engagements/index` is served by the v2 stub, not the live `/{engagement_id}` route, and the live list, record and SPEC-025 letter routes keep their shapes.
+- **AC-15** The error catalogue lists `unknown_engagement_type` (422), `letter_before_acceptance`, `gate_unmet`, `stale_version` and `possible_duplicate` (409).
+
+### Story 4: engagements live (P-07-T15, T16; epic Stories 6.1 to 6.3)
+- **AC-16** ENG-01 a to e resolve from the E0 seed; the tiles sum to the header; "Letter │ Not signed" lists Accepted engagements without a recorded letter and no Prospect.
+- **AC-17** A recorded letter dated before the G1 decision answers 409 `letter_before_acceptance`; with G1 unmet, 409 `gate_unmet`; an archived engagement answers 409 `engagement_archived` to every write.
+- **AC-18** A draft or create naming `single_audit` (or any code outside the catalogue) answers 422 `unknown_engagement_type`; the catalogue response never contains it.
+- **AC-19** Create is one unit of work and idempotent on `Idempotency-Key`; a duplicate answers 409 `possible_duplicate` until `confirm_duplicate`; drafts are own-scope.
 
 ## 6. Behaviour and flows
 | From | Event | To | Who can trigger |
@@ -107,8 +122,11 @@ CLI-01 and CLI-02 screen contracts (`docs/screens/`); flag off shows F-05's flag
 |---|---|---|
 | AC-1 to AC-5 | unit (contract) | `backend/tests/contracts/clients/test_clients_stub.py` |
 | AC-6 to AC-9 | integration | P-07-T13 (independent suite) |
+| AC-10 to AC-15 | unit (contract) | `backend/tests/contracts/engagements_v2/test_engagements_v2_stub.py` |
+| AC-16 to AC-19 | integration | P-07-T14 (independent suite) |
 
 ## 19. Rollout
+- **Feature flag:** `engagements.v2` (default off, created 2026-10-23, expires 2027-04-21 under DEC-137).
 - **Feature flag:** `clients.v2` (default off, created 2026-10-23, expires 2027-04-21 under DEC-137: no flag may lapse before Feb 1, 2027).
 - **Rollback:** the stub only adds routes behind the flag and matrix rows; revert the commit.
 

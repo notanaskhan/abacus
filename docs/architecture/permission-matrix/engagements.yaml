@@ -5,13 +5,17 @@ actions:
   methodology.manage:       {firm_admin: allow, practice_leader: allow, mfa_recent: required}   # SPEC-008 Q3
   methodology.read:         {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow, platform_support: allow, platform_support_content: allow, agent: task_scope}   # SPEC-008; agent: the guidance drafter on a template, firm-level (TASK-074 D1)
   # --- Engagements ---
-  engagement.create:        {firm_admin: allow, practice_leader: allow}
+  # P-07-T05 (DEC-143): agent and system denied (I-AGENT-NEVER). DEC-38's partner, manager and
+  # senior-by-setting cells land with the live wizard (P-07-T16) the DEC-132 way.
+  engagement.create:        {firm_admin: allow, practice_leader: allow, agent: deny, system: deny}
   roll_forward.read:        {firm_admin: allow, practice_leader: allow}   # SPEC-025 (TASK-048 D3): last year's team, template and items, checked on that engagement
   engagement.ai_exclude:    {engagement_partner: allow}   # SPEC-036 (TASK-076): switch AI off for one engagement
   # --- Acceptance, independence and the letter (SPEC-025; TASK-044) ---
   acceptance.record:        {engagement_partner: allow, mfa_recent: required}   # decision, documentation, the independence conclusion
   independence.confirm:     {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow}   # for oneself only (the service refuses others)
-  letter.record:            {engagement_partner: allow, manager: allow}
+  # P-07-T05 (DEC-143): agent and system denied; `gates_met(G1)` joins with the live recorded
+  # letter (P-07-T15), once the G1 provider's facts are registered (a condition fails closed).
+  letter.record:            {engagement_partner: allow, manager: allow, agent: deny, system: deny}
   engagement.hold:          {engagement_partner: allow, manager: allow, mfa_recent: required}   # F-03-T13: on hold and back, a person with a reason code (§3.1.3)
   setup.read:               {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow}
   engagement.read_metadata:

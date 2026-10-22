@@ -172,6 +172,8 @@ NOT_CREATING = {
     "/v1/auth/sign-out",
     # P-07-T04 (clients stub): a reveal returns the value once and stores nothing but its audit.
     "/v1/client-entities/{entity_id}/tin/reveal",
+    # P-07-T05 (engagements v2 stub): per-step validation returns findings, nothing stored.
+    "/v1/engagement-drafts/{draft_id}/validate",
 }
 
 
@@ -199,6 +201,10 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/binders/{binder_id}/duplicate",
         "/v1/engagements/{engagement_id}/request-items/{item_id}/delegate",
         "/v1/portal/request-items/{item_id}/upload-intents",
+        # P-07-T05 (engagements v2 stub): a draft, a Prospect engagement, an engagement.
+        "/v1/engagement-drafts",
+        "/v1/engagement-drafts/{draft_id}/start-acceptance",
+        "/v1/engagement-drafts/{draft_id}/create",
         "/v1/walls",
         "/v1/methodology/templates/{name}/versions",  # SPEC-008: a template version
         "/v1/engagements/{engagement_id}/methodology",  # SPEC-008: items seeded

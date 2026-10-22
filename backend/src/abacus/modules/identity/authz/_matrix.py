@@ -144,6 +144,12 @@ ACTIONS: dict[str, dict[str, str]] = {
         "platform_support": "allow",
         "platform_support_content": "allow",
     },
+    "client.intake": {
+        "firm_admin": "allow",
+        "firm_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
     "client.read": {
         "firm_admin": "allow",
         "practice_leader": "allow",
@@ -372,6 +378,8 @@ ACTIONS: dict[str, dict[str, str]] = {
     "engagement.create": {
         "firm_admin": "allow",
         "practice_leader": "allow",
+        "agent": "deny",
+        "system": "deny",
     },
     "engagement.hold": {
         "engagement_partner": "allow",
@@ -699,6 +707,8 @@ ACTIONS: dict[str, dict[str, str]] = {
     "letter.record": {
         "engagement_partner": "allow",
         "manager": "allow",
+        "agent": "deny",
+        "system": "deny",
     },
     "mapping_set.edit": {
         "engagement_partner": "allow",
