@@ -144,6 +144,22 @@ FIRM_ROLES: Final[dict[str, Literal["firm_admin", "practice_leader", "quality_pa
 }
 
 
+# Job titles on `/v1/me` (P-01-T07; `memberships.job_title`, P-01-T04), verbatim from the SHL-03
+# person cards. Daniel Reyes reads "Tax Partner" on SHL-03c where ADM-02 shows "Tax (signer)", so
+# no title is derived from the ADM-02 line (an open gap in TASK-397). Mirrors `JOB_TITLES` in
+# apps/web/src/fixtures/seed/people.ts.
+JOB_TITLES: Final[dict[str, str]] = {
+    "GH": "Client Service Coordinator",
+    "HL": "Audit Senior Manager",
+    "DR": "Tax Partner",
+    "FA": "Qualified Individual",
+}
+
+# Default office filters set before E0 (SHL-03b: Hannah Leclerc reads "Chicago ⇕"). Everyone else
+# reads "All offices". Mirrors `DEFAULT_OFFICE_FILTERS` in people.ts.
+DEFAULT_OFFICE_FILTERS: Final[dict[str, OfficeName]] = {"HL": "Chicago"}
+
+
 def slug_of(name: str) -> str:
     """The persona slug a screen is seen as (`?as=hannah-leclerc`)."""
     return re.sub(r"[^a-z]+", "-", name.lower())
