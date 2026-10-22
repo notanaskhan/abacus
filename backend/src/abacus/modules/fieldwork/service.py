@@ -18,6 +18,7 @@ from uuid import NAMESPACE_URL, UUID, uuid5
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
 from abacus.kernel import _flags
+from abacus.kernel.clock import system_now
 from abacus.kernel.db import tenant_session
 from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
@@ -515,7 +516,7 @@ async def request_selection(
             raise ProcedureBusy(str(procedure_id))
         await set_procedure(tx.session, procedure_id, status="selecting", failure_code=None)
         tx.record("procedure.selection_requested", target=Target("procedure", procedure_id))
-    event = uuid5(NAMESPACE_URL, f"abacus:select:{procedure_id}:{datetime.now()}")
+    event = uuid5(NAMESPACE_URL, f"abacus:select:{procedure_id}:{system_now()}")
     await dispatch(
         ProcedureSelectWorkflow,
         ProcedureSelectInput(str(ctx.tenant_id), str(procedure_id), str(ctx.user_id)),

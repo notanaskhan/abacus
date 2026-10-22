@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
 from typing import Any, cast
 
 import anthropic
@@ -19,6 +18,7 @@ from anthropic.lib.bedrock import AsyncAnthropicBedrock
 from anthropic.types import Message, TextBlock
 
 from abacus.ai_gateway import unfenced
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import Route, settings
 
 _SYSTEM = 'You are a parity probe. Reply with the JSON object {"ok": true} only. ' + (
@@ -127,4 +127,4 @@ async def check_route(route: Route) -> ParityReport:
         results.append(
             ModelParity(tier, model, structured, cache, await _batch(route, client, model))
         )
-    return ParityReport(route, datetime.now(UTC).date().isoformat(), tuple(results))
+    return ParityReport(route, system_now().date().isoformat(), tuple(results))

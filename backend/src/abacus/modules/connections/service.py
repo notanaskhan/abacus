@@ -5,10 +5,11 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
@@ -48,7 +49,7 @@ class ActionCapReached(DomainConflict):
 
 
 def today_start() -> datetime:
-    return datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+    return system_now().replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 class RunNotRunning(Exception):

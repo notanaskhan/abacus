@@ -19,7 +19,7 @@ import hashlib
 import io
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from decimal import Decimal
 from itertools import pairwise
 from typing import Final, Literal
@@ -438,7 +438,6 @@ async def publish_version(
         version_id,
         status="published",
         published_by=user_id,
-        published_at=datetime.now(UTC),
         published_actor_kind=actor_kind,
     )
     tx.record("grouping_set.published", target=Target("grouping_set_version", version_id))

@@ -29,6 +29,7 @@ from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 from temporalio.exceptions import WorkflowAlreadyStartedError
 
 from abacus.kernel import _flags
+from abacus.kernel.clock import system_now
 from abacus.kernel.db import tenant_session
 from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
@@ -116,7 +117,7 @@ async def request_drafts(
     if named - {i.id for i in items}:
         raise NotFound("request_item")
     chosen = chosen[:MAX_ITEMS]
-    event = uuid5(NAMESPACE_URL, f"abacus:draft:{ctx.tenant_id}:{engagement_id}:{datetime.now()}")
+    event = uuid5(NAMESPACE_URL, f"abacus:draft:{ctx.tenant_id}:{engagement_id}:{system_now()}")
     async with uow(ctx.tenant) as tx:
         tx.record(
             "guidance_draft.requested",
@@ -290,7 +291,7 @@ async def request_template_drafts(
         for i, t in enumerate(version.items)
         if (i in named if named else not (t.why or t.good_looks_like or i in drafted))
     ][:MAX_ITEMS]
-    event = uuid5(NAMESPACE_URL, f"abacus:draft:{ctx.tenant_id}:{version_id}:{datetime.now()}")
+    event = uuid5(NAMESPACE_URL, f"abacus:draft:{ctx.tenant_id}:{version_id}:{system_now()}")
     async with uow(ctx.tenant) as tx:
         tx.record(
             "guidance_draft.requested",

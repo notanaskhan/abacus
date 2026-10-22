@@ -11,11 +11,12 @@ from __future__ import annotations
 import asyncio
 import json
 from collections.abc import Sequence
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 from typing import ClassVar, cast
 from uuid import UUID
 
+from abacus.kernel.clock import system_now
 from abacus.modules.connections.connector import (
     Capabilities,
     Connector,
@@ -85,7 +86,7 @@ class FakeConnector(Connector):
         if _is_fault(content):
             raise Unavailable("provider_unavailable")
         request = f"trial_balance {period.start.isoformat()}..{period.end.isoformat()}"
-        return RawPayload(content, MEDIA_TYPE, SOURCE, datetime.now(UTC), request)
+        return RawPayload(content, MEDIA_TYPE, SOURCE, system_now(), request)
 
     async def changes_since(self, since: datetime) -> Sequence[str]:
         raise NotSupported("incremental")

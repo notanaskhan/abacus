@@ -17,11 +17,11 @@ from __future__ import annotations
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from datetime import date
 from typing import Final, Literal, cast
 from uuid import UUID
 
 from abacus.kernel import provider_terms
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import Route, settings
 from abacus.kernel.db import TenantContext
 from abacus.kernel.logging import get_logger
@@ -125,7 +125,7 @@ async def _client_data_refusal(
     """SPEC-036 §4.2, in order: the first condition that fails, or None."""
     if route not in CLIENT_DATA_ROUTES or settings().model_data_boundary != "client_data":
         return "route"
-    if provider_terms.covering(route, date.today()) is None:
+    if provider_terms.covering(route, system_now().date()) is None:
         return "terms"
     opted_in = _opted_in
     if opted_in is None or not await _cached(("firm", tenant.tenant_id), lambda: opted_in(tenant)):

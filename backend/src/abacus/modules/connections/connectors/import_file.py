@@ -9,10 +9,11 @@ was uploaded; the pipeline normalises it by the format its source names.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import ClassVar
 from uuid import UUID
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.connections.connector import (
     Capabilities,
@@ -69,7 +70,7 @@ class ImportConnector(Connector):
         content = await self._content(found)
         media = XLSX_MEDIA_TYPE if fmt.file_type == "xlsx" else CSV_MEDIA_TYPE
         request = f"import {found.id} {period.start.isoformat()}..{period.end.isoformat()}"
-        return RawPayload(content, media, fmt.source, datetime.now(UTC), request)
+        return RawPayload(content, media, fmt.source, system_now(), request)
 
     async def changes_since(self, since: datetime) -> Sequence[str]:
         raise NotSupported("incremental")

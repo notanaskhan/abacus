@@ -7,10 +7,11 @@ imported only in this package (ADR-019, AC-8). Each route's provider is built la
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from typing import Final
 
 from abacus.ai_gateway.providers import ModelProvider, Tier, provider
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import SYNTHETIC_ENVIRONMENTS, Route, settings
 
 PARITY_DAYS: Final = 90
@@ -58,4 +59,4 @@ def route_enabled(route: Route) -> bool:
     parity = s.route_parity.get(route)
     if parity is None:
         return False
-    return datetime.now(UTC).date() - parity.checked_on <= timedelta(days=PARITY_DAYS)
+    return system_now().date() - parity.checked_on <= timedelta(days=PARITY_DAYS)

@@ -14,7 +14,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager, suppress
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from uuid import UUID
 
 from temporalio import activity
@@ -22,6 +22,7 @@ from temporalio.exceptions import ApplicationError
 
 from abacus.ai_gateway import NotAdmitted
 from abacus.kernel import slots
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.errors import NotFound
 from abacus.modules.agents.engagement_agent import handle as engagement_agent_handle
@@ -144,7 +145,7 @@ async def _screen(tenant_id: UUID, run_id: UUID) -> ScreeningOutcome:
         await mark_queued(tenant_id, run_id, None, None)
     except NotAdmitted as refused:
         # SPEC-003 AC-11/13: the run waits for the provider, visibly; the workflow asks again.
-        estimate = datetime.now(UTC) + timedelta(seconds=refused.retry_after)
+        estimate = system_now() + timedelta(seconds=refused.retry_after)
         await mark_queued(tenant_id, run_id, refused.reason, estimate)
         max_wait = settings().work_classes[work_class].max_wait_seconds if work_class else 600
         raise ApplicationError(
@@ -265,7 +266,7 @@ async def _review(tenant_id: UUID, run_id: UUID) -> ScreeningOutcome:
         outcome = await review(agent)
         await mark_queued(tenant_id, run_id, None, None)
     except NotAdmitted as refused:
-        estimate = datetime.now(UTC) + timedelta(seconds=refused.retry_after)
+        estimate = system_now() + timedelta(seconds=refused.retry_after)
         await mark_queued(tenant_id, run_id, refused.reason, estimate)
         max_wait = settings().work_classes[work_class].max_wait_seconds if work_class else 600
         raise ApplicationError(
@@ -330,7 +331,7 @@ async def _match(tenant_id: UUID, run_id: UUID, inbox_file_id: UUID) -> Screenin
         outcome = await match(agent, inbox_file_id)
         await mark_queued(tenant_id, run_id, None, None)
     except NotAdmitted as refused:
-        estimate = datetime.now(UTC) + timedelta(seconds=refused.retry_after)
+        estimate = system_now() + timedelta(seconds=refused.retry_after)
         await mark_queued(tenant_id, run_id, refused.reason, estimate)
         max_wait = settings().work_classes[work_class].max_wait_seconds if work_class else 600
         raise ApplicationError(
@@ -413,7 +414,7 @@ async def _draft(
         )
         await mark_queued(tenant_id, run_id, None, None)
     except NotAdmitted as refused:
-        estimate = datetime.now(UTC) + timedelta(seconds=refused.retry_after)
+        estimate = system_now() + timedelta(seconds=refused.retry_after)
         await mark_queued(tenant_id, run_id, refused.reason, estimate)
         max_wait = settings().work_classes[work_class].max_wait_seconds if work_class else 600
         raise ApplicationError(
@@ -484,7 +485,7 @@ async def _assess(tenant_id: UUID, run_id: UUID, item_id: UUID) -> ScreeningOutc
         outcome = await assess(agent, item_id)
         await mark_queued(tenant_id, run_id, None, None)
     except NotAdmitted as refused:
-        estimate = datetime.now(UTC) + timedelta(seconds=refused.retry_after)
+        estimate = system_now() + timedelta(seconds=refused.retry_after)
         await mark_queued(tenant_id, run_id, refused.reason, estimate)
         max_wait = settings().work_classes[work_class].max_wait_seconds if work_class else 600
         raise ApplicationError(

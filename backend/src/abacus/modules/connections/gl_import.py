@@ -21,7 +21,7 @@ import tempfile
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Final
 from uuid import UUID, uuid4
@@ -30,6 +30,7 @@ from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 from temporalio.exceptions import WorkflowAlreadyStartedError
 
 from abacus.kernel import _flags
+from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.errors import DomainInvalid, NotFound
@@ -253,7 +254,7 @@ async def latest_gl(
 
 async def _set(tenant: TenantContext, import_id: UUID, action: str, **values: object) -> None:
     async with uow(tenant) as tx:
-        await set_gl_import(tx.session, import_id, updated_at=datetime.now(UTC), **values)
+        await set_gl_import(tx.session, import_id, updated_at=system_now(), **values)
         refs: dict[str, UUID | int | str] = {}
         snapshot, lines = values.get("gl_snapshot_id"), values.get("line_count")
         if isinstance(snapshot, UUID):

@@ -19,6 +19,7 @@ from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 from temporalio.exceptions import WorkflowAlreadyStartedError
 
 from abacus.kernel import _flags
+from abacus.kernel.clock import system_now
 from abacus.kernel.db import tenant_session
 from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.errors import DomainConflict
@@ -62,7 +63,7 @@ async def request_assessments(
             }
         chosen = [i for i in ready if i not in done]
     chosen = chosen[:MAX_ENTRIES]
-    event = uuid5(NAMESPACE_URL, f"abacus:assess:{procedure_id}:{datetime.now()}")
+    event = uuid5(NAMESPACE_URL, f"abacus:assess:{procedure_id}:{system_now()}")
     async with uow(ctx.tenant) as tx:
         tx.record(
             "entry_assessment.requested",

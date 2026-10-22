@@ -44,13 +44,14 @@ from collections.abc import Awaitable, Callable, Generator, Iterable
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from typing import Literal
 from uuid import UUID
 
 from sqlalchemy import ColumnElement, Select, and_, false, func, or_, select, true
 from sqlalchemy.orm import QueryableAttribute
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext
 from abacus.kernel.logging import get_logger
 from abacus.modules.identity.authz.conditions import LOOKUPS, ConditionFacts, conditions_hold
@@ -444,7 +445,7 @@ async def authorise(
     if (
         rule.mfa_recent
         and not _probing.get()
-        and (mfa_at is None or datetime.now(UTC) - mfa_at > MFA_RECENT)
+        and (mfa_at is None or system_now() - mfa_at > MFA_RECENT)
     ):
         raise _deny(ctx, action, "attribute")
     if rule.requires_reason and not _probing.get() and not (reason and reason.strip()):
