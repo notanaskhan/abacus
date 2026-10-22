@@ -12,6 +12,7 @@ from abacus.modules.identity.authz import (
     Resource,
     UnknownAction,
     agent_may_hold,
+    allowed_actions,
     authorise,
     authorise_items,
     policy_agent_may_hold,
@@ -97,8 +98,14 @@ from abacus.modules.identity.invitations import (
     resend_invitation,
     revoke_invitation,
 )
+from abacus.modules.identity.labels import ROLE_LABELS
 from abacus.modules.identity.member_hooks import register_member_added
-from abacus.modules.identity.repository import EngagementRole
+from abacus.modules.identity.repository import (
+    EngagementRole,
+    MemberFacts,
+    member_facts,
+    my_engagement_roles,
+)
 from abacus.modules.identity.routes import (
     firm_support_router,
     invitation_router,
@@ -151,7 +158,9 @@ from abacus.modules.identity.service import (
 from abacus.modules.identity.slots import (
     ScopeFacts,
     consent_given,
+    engagement_resource,
     register_consent_check,
+    register_engagement_resource,
     register_scope_resolver,
     resolve_scope,
 )
@@ -205,6 +214,7 @@ __all__ = [
     "MFA_RECENT",
     "OWN",
     "PARTNER_ROLES",
+    "ROLE_LABELS",
     "ROUTERS",
     "RULES",  # the parsed matrix, for the generated security tests (Q-02-T13)
     "SELF",
@@ -238,6 +248,7 @@ __all__ = [
     "JwtVerifier",
     "LastPartner",
     "LevelNotAvailable",
+    "MemberFacts",
     "NoActiveTenant",
     "PortalScopes",
     "Resource",
@@ -260,6 +271,7 @@ __all__ = [
     "agent_context_for_run",
     "agent_may_hold",
     "agents_paused",
+    "allowed_actions",
     "audit_hidden_walls",
     "authorise",
     "authorise_items",
@@ -288,6 +300,7 @@ __all__ = [
     "engagement_eqrs",
     "engagement_leads",
     "engagement_partners",
+    "engagement_resource",
     "engagement_role_of",
     "engagement_team",
     "firm_admins",
@@ -303,6 +316,8 @@ __all__ = [
     "issue_staff_invitation_token",
     "letter_policy",
     "member_context",
+    "member_facts",
+    "my_engagement_roles",
     "my_engagements",
     "names_of",
     "note_budget_reviewed",
@@ -315,6 +330,7 @@ __all__ = [
     "register_clients_of_engagements",
     "register_consent_check",
     "register_engagement_client",
+    "register_engagement_resource",
     "register_engagement_service_line",
     "register_gates",
     "register_independence",

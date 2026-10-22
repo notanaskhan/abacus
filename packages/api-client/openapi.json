@@ -1784,6 +1784,135 @@
         "title": "CandidateOut",
         "type": "object"
       },
+      "CapabilitiesOut": {
+        "properties": {
+          "capabilities": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "clock_mode": {
+            "cls": "internal",
+            "enum": [
+              "real",
+              "offset",
+              "frozen"
+            ],
+            "title": "Clock Mode",
+            "type": "string"
+          },
+          "engagement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engagement Id"
+          },
+          "entitlements": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Entitlements",
+            "type": "array"
+          },
+          "flags": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cls": "internal",
+            "title": "Flags",
+            "type": "object"
+          },
+          "mfa_recent_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Mfa Recent Until"
+          },
+          "office_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Office Id"
+          },
+          "portal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PortalOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "roles": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/RoleOut"
+            },
+            "title": "Roles",
+            "type": "array"
+          },
+          "server_now": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Server Now",
+            "type": "string"
+          },
+          "tz": {
+            "cls": "internal",
+            "title": "Tz",
+            "type": "string"
+          }
+        },
+        "required": [
+          "engagement_id",
+          "capabilities",
+          "roles",
+          "flags",
+          "entitlements",
+          "office_id",
+          "tz",
+          "mfa_recent_until",
+          "server_now",
+          "clock_mode",
+          "portal"
+        ],
+        "title": "CapabilitiesOut",
+        "type": "object"
+      },
       "CellBody": {
         "additionalProperties": false,
         "properties": {
@@ -6115,6 +6244,33 @@
         "title": "GoingConcernBody",
         "type": "object"
       },
+      "GrantScopeOut": {
+        "properties": {
+          "role": {
+            "cls": "internal",
+            "title": "Role",
+            "type": "string"
+          },
+          "scope_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "scope_kind": {
+            "cls": "internal",
+            "title": "Scope Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "scope_kind",
+          "scope_id"
+        ],
+        "title": "GrantScopeOut",
+        "type": "object"
+      },
       "GraphAccountOut": {
         "properties": {
           "balance": {
@@ -9918,6 +10074,35 @@
         "title": "PopulationOut",
         "type": "object"
       },
+      "PortalOut": {
+        "properties": {
+          "scopes": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/GrantScopeOut"
+            },
+            "title": "Scopes",
+            "type": "array"
+          },
+          "shell": {
+            "cls": "internal",
+            "enum": [
+              "full",
+              "k1",
+              "limited",
+              "none"
+            ],
+            "title": "Shell",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shell",
+          "scopes"
+        ],
+        "title": "PortalOut",
+        "type": "object"
+      },
       "PreviewOut": {
         "properties": {
           "kind": {
@@ -12204,6 +12389,26 @@
           "recorded_at"
         ],
         "title": "RiskOut",
+        "type": "object"
+      },
+      "RoleOut": {
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "label"
+        ],
+        "title": "RoleOut",
         "type": "object"
       },
       "RollForwardIn": {
@@ -48721,6 +48926,120 @@
         "summary": "Me",
         "tags": [
           "identity"
+        ],
+        "x-abacus-action": "self"
+      }
+    },
+    "/v1/me/capabilities": {
+      "get": {
+        "description": "The matrix evaluated for the caller, without recording an authorisation check: what the\nUI may offer, never a grant (F-03-T30).",
+        "operationId": "my_capabilities",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "engagement_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Engagement Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapabilitiesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "My Capabilities",
+        "tags": [
+          "budget"
         ],
         "x-abacus-action": "self"
       }

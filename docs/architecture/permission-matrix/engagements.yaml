@@ -24,6 +24,7 @@ actions:
     senior: allow
     staff: allow
     reviewer: allow
+    client_service: allow     # F-03-T30 (ADR-147): binders, invitations, request status; no evidence
     platform_support: allow   # SPEC-012
     platform_support_content: allow   # SPEC-012
     client_admin: allow       # SPEC-020: their own engagement's name, firm and period
@@ -39,9 +40,9 @@ actions:
     reviewer: allow
     agent: task_scope
   engagement.self_join:     {firm_admin: allow, notify: engagement_team}
-  client_contact.invite:    {engagement_partner: allow, manager: allow, client_admin: allow}   # SPEC-015 Q2 (client admins: contributors only, in the service)
-  client_contact.read:      {engagement_partner: allow, manager: allow, senior: allow, client_admin: allow}   # SPEC-015
-  client_contact.remove:    {engagement_partner: allow, manager: allow, client_admin: allow}   # SPEC-015 (client admins: contributors only)
+  client_contact.invite:    {engagement_partner: allow, manager: allow, client_service: allow, client_admin: allow}   # SPEC-015 Q2 (client admins: contributors only, in the service)
+  client_contact.read:      {engagement_partner: allow, manager: allow, senior: allow, client_service: allow, client_admin: allow}   # SPEC-015
+  client_contact.remove:    {engagement_partner: allow, manager: allow, client_service: allow, client_admin: allow}   # SPEC-015 (client admins: contributors only)
   engagement_contact.designate: {engagement_partner: allow, manager: allow, agent: deny}   # F-03-T25 (DEC-63): approver of record, SKE designee and the rest
   engagement.update:        {engagement_partner: allow, manager: allow}
   engagement.member_add:    {engagement_partner: allow, manager: allow}

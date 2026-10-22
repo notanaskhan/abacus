@@ -117,17 +117,20 @@ ACTIONS: dict[str, dict[str, str]] = {
     "client_contact.invite": {
         "engagement_partner": "allow",
         "manager": "allow",
+        "client_service": "allow",
         "client_admin": "allow",
     },
     "client_contact.read": {
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
+        "client_service": "allow",
         "client_admin": "allow",
     },
     "client_contact.remove": {
         "engagement_partner": "allow",
         "manager": "allow",
+        "client_service": "allow",
         "client_admin": "allow",
     },
     "client_item.respond": {
@@ -269,6 +272,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "staff": "allow",
         "reviewer": "allow",
+        "client_service": "allow",
         "platform_support": "allow",
         "platform_support_content": "allow",
         "client_admin": "allow",
@@ -628,12 +632,14 @@ ACTIONS: dict[str, dict[str, str]] = {
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
+        "client_service": "allow",
         "client_admin": "allow",
     },
     "request_item.create": {
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
+        "client_service": "allow",
     },
     "request_item.mark_ready": {
         "engagement_partner": "allow",
@@ -649,6 +655,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "staff": "allow",
         "reviewer": "allow",
+        "client_service": "allow",
         "client_admin": "client_visible_only",
         "client_contributor": "assigned_only",
         "agent": "task_scope",
@@ -659,6 +666,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
+        "client_service": "allow",
     },
     "request_item.waive": {
         "engagement_partner": "allow",

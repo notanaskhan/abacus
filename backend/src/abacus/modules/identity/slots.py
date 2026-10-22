@@ -11,9 +11,13 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext
+
+if TYPE_CHECKING:
+    from abacus.modules.identity.authz import Resource
 
 
 @dataclass(frozen=True)
@@ -61,3 +65,26 @@ async def consent_given(
     """Whether a consent covers the purpose; an unregistered purpose is never given."""
     lookup = _CONSENTS.get(purpose)
     return False if lookup is None else await lookup(tenant, entity_id, purpose, at)
+
+
+# --- F-03-T30: an engagement as an authorisation resource, built from its row by engagements ---
+
+EngagementResource = Callable[[TenantContext, UUID], Awaitable["Resource"]]
+_ENGAGEMENT_RESOURCE: list[EngagementResource] = []
+
+
+def register_engagement_resource(lookup: EngagementResource) -> None:
+    """engagements: (tenant, engagement id) -> its `Resource` (archived from the row), or
+    `NotFound`. For modules that may not import engagements (platform's capabilities)."""
+    if _ENGAGEMENT_RESOURCE and not _same(_ENGAGEMENT_RESOURCE[0], lookup):
+        raise ValueError("the engagement resource lookup is already registered")
+    _ENGAGEMENT_RESOURCE[:] = [lookup]
+
+
+async def engagement_resource(tenant: TenantContext, engagement_id: UUID) -> Resource:
+    """The engagement's `Resource`; `NotFound` when unknown or nothing is registered."""
+    from abacus.kernel.errors import NotFound
+
+    if not _ENGAGEMENT_RESOURCE:
+        raise NotFound("engagement")
+    return await _ENGAGEMENT_RESOURCE[0](tenant, engagement_id)

@@ -12,14 +12,15 @@ actions:
     senior: allow
     staff: allow
     reviewer: allow
+    client_service: allow     # F-03-T30 (ADR-147): request status and file names, never evidence content
     client_admin: client_visible_only
     client_contributor: assigned_only
     agent: task_scope
     platform_support: allow   # SPEC-012
     platform_support_content: allow   # SPEC-012
-  request_item.create:      {engagement_partner: allow, manager: allow, senior: allow}
-  request_item.update:      {engagement_partner: allow, manager: allow, senior: allow}
-  request_item.assign:      {engagement_partner: allow, manager: allow, senior: allow, client_admin: allow}
+  request_item.create:      {engagement_partner: allow, manager: allow, senior: allow, client_service: allow}   # F-03-T30: binders (ADR-147)
+  request_item.update:      {engagement_partner: allow, manager: allow, senior: allow, client_service: allow}
+  request_item.assign:      {engagement_partner: allow, manager: allow, senior: allow, client_service: allow, client_admin: allow}
   client_item.respond:      {client_admin: client_visible_only, client_contributor: assigned_only}   # SPEC-042 (TASK-106): "This doesn't apply", with a reason
   client_list.mark_done:    {client_admin: allow}   # SPEC-042 AC-4: the client admin marks their list done
   request_item.waive:       {engagement_partner: allow, manager: allow, requires: reason}

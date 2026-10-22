@@ -40,7 +40,7 @@ guard hides the response; it can't undo a write, so authorise before doing anyth
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Generator
+from collections.abc import Awaitable, Callable, Generator, Iterable
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
@@ -297,7 +297,8 @@ def _who(ctx: Actor) -> dict[str, object]:
 
 
 def _deny(ctx: Actor, action: str, layer: Layer) -> Forbidden:
-    _log.info("authz.denied", action=action, layer=layer, tenant_id=ctx.tenant_id, **_who(ctx))
+    if not _probing.get():
+        _log.info("authz.denied", action=action, layer=layer, tenant_id=ctx.tenant_id, **_who(ctx))
     return Forbidden(action, layer)
 
 
@@ -329,7 +330,7 @@ async def _roles(ctx: Actor, resource: Resource, rule: Rule) -> set[str]:
     if ctx.firm_role is not None:
         roles.add(ctx.firm_role)
     if resource.engagement_id is not None:
-        role = await engagement_role(ctx.tenant, ctx.user_id, resource.engagement_id)
+        role = await _engagement_role_once(ctx, resource.engagement_id)
         if role is not None:
             roles.add(role)
     elif (
@@ -439,15 +440,22 @@ async def authorise(
     if resource.archived and not rule.reads:
         raise _deny(ctx, action, "attribute")
     mfa_at = ctx.mfa_at if isinstance(ctx, AuthContext) else None
-    if rule.mfa_recent and (mfa_at is None or datetime.now(UTC) - mfa_at > MFA_RECENT):
+    # allowed_actions() leaves MFA recency and a reason to the moment of acting: the UI steps up.
+    if (
+        rule.mfa_recent
+        and not _probing.get()
+        and (mfa_at is None or datetime.now(UTC) - mfa_at > MFA_RECENT)
+    ):
         raise _deny(ctx, action, "attribute")
-    if rule.requires_reason and not (reason and reason.strip()):
+    if rule.requires_reason and not _probing.get() and not (reason and reason.strip()):
         raise _deny(ctx, action, "attribute")
     # `notify` (SPEC-013): a person's action is allowed, and its service emits the event its
     # catalogue entry notifies on, in the same unit of work (today only `engagement.self_join`).
     # Agents and the platform never carry the obligation.
     if rule.notify and not isinstance(ctx, AuthContext):
         raise _deny(ctx, action, "attribute")
+    if _probing.get():
+        return  # allowed_actions(): evaluated, never recorded as the route's check
     _record(action)
     _log.info("authz.allowed", action=action, tenant_id=ctx.tenant_id, **_who(ctx))
 
@@ -474,6 +482,48 @@ async def _autonomy_allows(ctx: AgentContext) -> bool:
     )
 
     return await autonomy_level(ctx.tenant_id) >= 1
+
+
+# F-03-T30 (ADR-145): `allowed_actions()` evaluates the matrix without recording a check, and
+# reads each person's engagement role once while it does.
+_probing: ContextVar[bool] = ContextVar("abacus_authz_probing", default=False)
+_probe_roles: ContextVar[dict[tuple[UUID, UUID], str | None] | None] = ContextVar(
+    "abacus_authz_probe_roles", default=None
+)
+
+
+async def _engagement_role_once(ctx: AuthContext, engagement_id: UUID) -> str | None:
+    cache = _probe_roles.get()
+    key = (ctx.user_id, engagement_id)
+    if cache is not None and key in cache:
+        return cache[key]
+    role = await engagement_role(ctx.tenant, ctx.user_id, engagement_id)
+    if cache is not None:
+        cache[key] = role
+    return role
+
+
+async def allowed_actions(
+    ctx: Actor, resource: Resource, candidates: Iterable[str] | None = None
+) -> frozenset[str]:
+    """The actions `ctx` may take on `resource`, by every layer of `authorise` except fresh MFA
+    and a stated reason (asked for when acting). Records no check, so a route can't pass its
+    guard with it, and logs no denials. Powers `/v1/me/capabilities` and `allowed_actions` in
+    record projections (ADR-145)."""
+    probe = _probing.set(True)
+    roles = _probe_roles.set({})
+    try:
+        allowed: set[str] = set()
+        for action in sorted(candidates if candidates is not None else RULES):
+            try:
+                await authorise(ctx, action, resource, reason="capability")
+            except Forbidden:
+                continue
+            allowed.add(action)
+        return frozenset(allowed)
+    finally:
+        _probe_roles.reset(roles)
+        _probing.reset(probe)
 
 
 def has_conditions(rule: Rule) -> bool:
