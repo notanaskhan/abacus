@@ -136,6 +136,7 @@ TABLES: tuple[str, ...] = (
     "teams",
     "template_guidance_decisions",
     "template_guidance_drafts",
+    "tenant_entitlements",
     "tie_out_check_versions",
     "tie_out_checks",
     "trial_balance_annotations",

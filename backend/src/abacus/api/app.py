@@ -29,7 +29,13 @@ from abacus.api.public_routes import PUBLIC_ROUTES
 from abacus.kernel.clock import check_startup as check_clock
 from abacus.kernel.config import settings
 from abacus.kernel.error_tracking import configure_error_tracking, flush_errors, report
-from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, ServiceUnavailable
+from abacus.kernel.errors import (
+    DomainConflict,
+    DomainForbidden,
+    DomainInvalid,
+    NotFound,
+    ServiceUnavailable,
+)
 from abacus.kernel.logging import get_logger
 from abacus.kernel.telemetry import configure_tracing, shutdown_tracing
 from abacus.kernel.temporal import payload_codec
@@ -62,13 +68,17 @@ async def _not_found(_request: Request, _exc: Exception) -> JSONResponse:
     return JSONResponse({"detail": "not found"}, status_code=404)
 
 
-def _coded(exc: DomainConflict | DomainInvalid) -> dict[str, object]:
+def _coded(exc: DomainConflict | DomainInvalid | DomainForbidden) -> dict[str, object]:
     # The class's fixed code and its identifier-only facts (ADR-139): nothing from the request or
     # the database is echoed as text.
     body: dict[str, object] = {"detail": exc.code}
     if exc.facts:
         body["facts"] = exc.facts
     return body
+
+
+async def _domain_forbidden(_request: Request, exc: Exception) -> JSONResponse:
+    return JSONResponse(_coded(cast(DomainForbidden, exc)), status_code=403)
 
 
 async def _conflict(_request: Request, exc: Exception) -> JSONResponse:
@@ -179,6 +189,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(identity.Forbidden, _forbidden)
     app.add_exception_handler(NotFound, _not_found)
     app.add_exception_handler(DomainConflict, _conflict)
+    app.add_exception_handler(DomainForbidden, _domain_forbidden)
     app.add_exception_handler(DomainInvalid, _domain_invalid)
     app.add_exception_handler(ServiceUnavailable, _unavailable)
     app.add_exception_handler(RequestValidationError, _invalid)

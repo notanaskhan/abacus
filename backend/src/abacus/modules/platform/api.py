@@ -1,6 +1,15 @@
 """Public interface of the platform module; other modules import only this (ADR-008)."""
 
 from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.platform.entitlements import (
+    MODULES,
+    Entitlement,
+    EntitlementRequired,
+    Module,
+    check_entitlement,
+    entitlement,
+    require_entitlement,
+)
 from abacus.modules.platform.routes import router
 from abacus.modules.platform.service import BudgetInvalid
 from abacus.modules.platform.slots import (
@@ -13,10 +22,17 @@ from abacus.modules.platform.slots import (
 ROUTERS: tuple[AbacusRouter, ...] = (router,)
 
 __all__ = [
+    "MODULES",
     "ROUTERS",
     "BudgetInvalid",
+    "Entitlement",
+    "EntitlementRequired",
+    "Module",
     "SearchDocument",
+    "check_entitlement",
+    "entitlement",
     "register_search_projection",
+    "require_entitlement",
     "router",
     "search_document",
 ]

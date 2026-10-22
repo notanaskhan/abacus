@@ -25,6 +25,10 @@ SOURCE_DIR = BACKEND.parent / "docs" / "architecture" / "feature-flags"
 TARGET = BACKEND / "src" / "abacus" / "kernel" / "_flags.py"
 MAX_LIFETIME = timedelta(days=90)
 _NAME = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$")
+# platform.entitlements.MODULES: a flag may not name one of these areas.
+_ENTITLEMENT_MODULES = frozenset(
+    {"attest", "internal_audit", "group_audit", "statements_studio", "office_addins", "insights"}
+)
 _FIELDS = {"name", "description", "owner", "created", "expires", "kind", "values", "default"}
 _HEADER = '''"""GENERATED from docs/architecture/feature-flags/*.yaml. Do not edit.
 
@@ -80,6 +84,9 @@ def parse(source: str) -> list[Entry]:
         name = str(item.get("name", ""))
         if not _NAME.fullmatch(name):
             raise RegistryError(f"{name!r}: a flag name is dotted lower-case words")
+        # ADR-148 (F-03-T28): modules are entitlements (database rows), never flags.
+        if name.startswith("ff.") or name.split(".", 1)[0] in _ENTITLEMENT_MODULES:
+            raise RegistryError(f"{name}: a module is an entitlement, not a flag (ADR-148)")
         unknown = set(item) - _FIELDS
         if unknown:
             raise RegistryError(f"{name}: unknown fields {sorted(unknown)}")
