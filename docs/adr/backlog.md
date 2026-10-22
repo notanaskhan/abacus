@@ -4,7 +4,7 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 
 - **P-ID.** The proposal ID from [`docs/plan/09-decisions-adrs.md`](../plan/09-decisions-adrs.md) section 9.4.2. P-64 to P-69 were added from the backlog tasks that draft them.
 - **Epic.** The epic whose backlog task first drafts the ADR (from `docs/plan/backlog.csv`, best match; check the task when drafting starts). Epic keys such as `P-10` are epics, not ADR IDs. A dash means no task names it.
-- **ADR number.** `next free` until drafting starts. Numbers minted so far: P-01 = ADR-133, P-38 = ADR-135, P-04 = ADR-136, P-05 = ADR-137, P-34 = ADR-138, P-36 = ADR-139, P-39 = ADR-140, P-54 = ADR-141, P-55 = ADR-142 (all accepted). Proposed so far: P-45 = ADR-152, P-64 = ADR-153, P-67 = ADR-154, P-65 = ADR-156, P-66 = ADR-157.
+- **ADR number.** `next free` until drafting starts. Numbers minted so far: P-01 = ADR-133, P-38 = ADR-135, P-04 = ADR-136, P-05 = ADR-137, P-34 = ADR-138, P-36 = ADR-139, P-39 = ADR-140, P-54 = ADR-141, P-55 = ADR-142 (all accepted). Proposed so far: P-45 = ADR-152, P-64 = ADR-153, P-67 = ADR-154, P-65 = ADR-156, P-66 = ADR-157, P-40 = ADR-158, P-43 = ADR-159.
 - **DEC row.** The decision it records, in [`docs/product/decision-log.md`](../product/decision-log.md).
 - **Status.** `to draft`, `proposed`, `accepted`, or `n/a, solo edition`.
 
@@ -49,10 +49,10 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 | P-37 | Clock, scenario loader, synthetic marker | amber | F-02 | ADR-143 | Fri 30 Oct | DEC-27 | accepted |
 | P-38 | Pre-launch migration policy | red | F-03 | ADR-135 | Wed 21 Oct | DEC-06 | accepted |
 | P-39 | Per-module registries and matrix files | amber | F-03 | ADR-140 | Fri 23 Oct | DEC-13 | accepted |
-| P-40 | Client-scoped files and cross-engagement fulfilment | red | F-03 | next free | Fri 6 Nov | DEC-33 | to draft |
+| P-40 | Client-scoped files and cross-engagement fulfilment | red | F-03 | ADR-158 | Fri 6 Nov | DEC-33 | proposed |
 | P-41 | Templates v2 | amber | K-04 | next free | Fri 13 Nov | DEC-56 | to draft |
 | P-42 | Generalised comments | red | P-05 | next free | Fri 27 Nov | DEC-29 | to draft |
-| P-43 | Archive seal, DB immutability, hash chain, Object Lock modes | red | A-07 | next free | Fri 11 Dec | DEC-71 | to draft |
+| P-43 | Archive seal, DB immutability, hash chain, Object Lock modes | red | A-07 | ADR-159 | Fri 11 Dec | DEC-71 | proposed |
 | P-44 | Request status enum migration | red | F-03 | ADR-144 | Fri 30 Oct | DEC-09, DEC-74 | accepted |
 | P-45 | Unauthenticated `/healthz` and portal branding routes | red | Q-01 | ADR-152 | Fri 13 Nov (with TASK-014) | DEC-59 | proposed |
 | P-46 | Gateway conversations and tool use | red | P-10 | next free | Fri 6 Nov | DEC-41 | to draft |
