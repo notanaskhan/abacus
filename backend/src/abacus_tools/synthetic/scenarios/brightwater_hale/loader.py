@@ -1,7 +1,7 @@
 """Load the Brightwater Hale scenario into a database (F-04-T13; F-04.15 to F-04.18).
 
 Run: python -m abacus_tools.synthetic.scenarios.brightwater_hale.loader [--snapshot E0]
-         [--holdout fairhaven_ebp] [--staging] [--no-settle]
+         [--holdout fairhaven_ebp] [--slice shell] [--staging] [--no-settle]
      (`make seed-demo SNAPSHOT=E0`; `make seed-staging` passes --staging)
 
 The timeline (`scenario.build`) is replayed in order. Each event runs inside
@@ -18,6 +18,12 @@ yet: tenant provisioning (Q-01) and directory sync own them. Until those exist, 
 them as the database owner in a transaction that carries the event's actor, tenant and business
 time, together with the audit row the service would have written. That's the same bootstrap
 `seed_dev` uses.
+
+`--slice` adds slices to the default `audit_core`. The `shell` slice (P-01-T07: the training
+sandbox and Grace's membership in it, job titles, Hannah's default office and notification
+preferences) has no service yet either and is bootstrapped the same way. Its columns arrive with
+P-01-T03 and P-01-T04, so the loader checks the schema first and refuses the whole load
+(`SchemaPending`) rather than replaying part of it.
 
 Refuses: `environment = production`; outside `--staging`, any database URL that is not loopback;
 with `--staging`, an environment other than staging, a firm that is not synthetic, or a staging
@@ -71,6 +77,10 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import (
     Scenario,
     build,
 )
+from abacus_tools.synthetic.scenarios.brightwater_hale.shell import (
+    SANDBOX_FIRM_ID,
+    SANDBOX_FIRM_NAME,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
 
 SUPERUSER_ENV: Final = "ABACUS_LOCAL_SUPERUSER_DSN"
@@ -104,6 +114,10 @@ class SettleTimeout(RuntimeError):
     """The tenant's outbox did not drain within the barrier's timeout."""
 
 
+class SchemaPending(RuntimeError):
+    """A slice's event needs a column or table that a later migration adds."""
+
+
 def trace_hex(event: Event, version: str = SCENARIO_VERSION) -> str:
     """The 32-hex trace id that stands for `scenario:<version>:<event_id>`."""
     return hashlib.sha256(event.trace_id(version).encode()).hexdigest()[:32]
@@ -117,7 +131,27 @@ def office_id_of(name: str) -> UUID:
     return UUID(stable_id(f"office:{name}"))
 
 
+def sandbox_office_id_of(name: str) -> UUID:
+    """Office ids are global keys, so the sandbox's copies need their own."""
+    return UUID(stable_id(f"sandbox:office:{name}"))
+
+
 TENANT: Final = UUID(FIRM_ID)
+SANDBOX: Final = UUID(SANDBOX_FIRM_ID)
+# Events written inside the training sandbox's tenant (their audit rows live there too).
+SANDBOX_KINDS: Final = frozenset(
+    {
+        "identity.sandbox_firm_created",
+        "organisations.sandbox_office_created",
+        "identity.sandbox_membership_added",
+    }
+)
+
+
+def tenant_of(event: Event) -> UUID:
+    return SANDBOX if event.kind in SANDBOX_KINDS else TENANT
+
+
 _SEATS: Final = {s.initials: s for s in SEATS}
 _CLIENTS: Final = {c.name: c for c in build_clients()}
 
@@ -202,9 +236,10 @@ async def _bootstrap(
     """One owner transaction carrying the event's tenant, actor and business time, ending with
     the audit row the missing service would have written."""
     kind, actor = _actor(event)
+    tenant = tenant_of(event)
     async with conn.transaction():
         for name, value in (
-            ("app.tenant_id", str(TENANT)),
+            ("app.tenant_id", str(tenant)),
             ("app.actor_kind", kind),
             ("app.actor_id", actor),
             ("app.now", event.at.isoformat()),
@@ -214,7 +249,7 @@ async def _bootstrap(
         await conn.execute(
             "INSERT INTO audit_events (tenant_id, actor_kind, actor_id, action, target_type, "
             "target_id, trace_id) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-            TENANT,
+            tenant,
             kind,
             actor,
             action,
@@ -282,6 +317,139 @@ async def _staff_member_added(conn: asyncpg.Connection, _: Scenario, event: Even
     await _bootstrap(conn, event, write)
 
 
+# --- the shell slice (P-01-T07; bootstrap writes until identity and notifications own them) ----
+
+
+async def _sandbox_firm_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "INSERT INTO firms (tenant_id, name, synthetic, region, time_zone, "
+            "sandbox_of_firm_id) "
+            "VALUES ($1, $2, true, 'us', 'America/Chicago', $3) ON CONFLICT DO NOTHING",
+            SANDBOX,
+            SANDBOX_FIRM_NAME,
+            TENANT,
+        )
+        return "firm.created", "firm", str(SANDBOX)
+
+    await _bootstrap(conn, event, write)
+
+
+async def _sandbox_office_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    name = str(event.data["office"])
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "INSERT INTO offices (id, tenant_id, name, time_zone) VALUES ($1, $2, $3, $4) "
+            "ON CONFLICT DO NOTHING",
+            sandbox_office_id_of(name),
+            SANDBOX,
+            name,
+            OFFICE_ZONES[name],
+        )
+        return "office.created", "office", str(sandbox_office_id_of(name))
+
+    await _bootstrap(conn, event, write)
+
+
+async def _sandbox_membership_added(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    seat = _SEATS[str(event.data["initials"])]
+    user = user_id_of(seat)
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "INSERT INTO memberships (tenant_id, user_id, status, kind, firm_role, office_id, "
+            "initials) VALUES ($1, $2, 'active', 'staff', $3, $4, $5) ON CONFLICT DO NOTHING",
+            SANDBOX,
+            user,
+            FIRM_ROLES.get(seat.initials),
+            sandbox_office_id_of(str(event.data["office"])),
+            seat.initials,
+        )
+        return "membership.created", "user", str(user)
+
+    await _bootstrap(conn, event, write)
+
+
+async def _job_title_set(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    user = user_id_of(_SEATS[str(event.data["initials"])])
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "UPDATE memberships SET job_title = $3 WHERE tenant_id = $1 AND user_id = $2",
+            TENANT,
+            user,
+            str(event.data["job_title"]),
+        )
+        return "membership.updated", "user", str(user)
+
+    await _bootstrap(conn, event, write)
+
+
+async def _default_office_set(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AC 2.1.3: the person sets it, so `user_preference.updated` names them."""
+    user = user_id_of(_SEATS[str(event.data["initials"])])
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "UPDATE memberships SET default_office_filter_id = $3 "
+            "WHERE tenant_id = $1 AND user_id = $2",
+            TENANT,
+            user,
+            office_id_of(str(event.data["office"])),
+        )
+        return "user_preference.updated", "user", str(user)
+
+    await _bootstrap(conn, event, write)
+
+
+async def _preference_set(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AC 4.1.1: one kind's two toggles; `notification_preference.changed` (C16 §7) names them."""
+    user = user_id_of(_SEATS[str(event.data["initials"])])
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "INSERT INTO notification_preferences (tenant_id, user_id, kind, in_app, email, "
+            "updated_at) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (tenant_id, user_id, kind) "
+            "DO UPDATE SET in_app = excluded.in_app, email = excluded.email, "
+            "updated_at = excluded.updated_at",
+            TENANT,
+            user,
+            str(event.data["kind"]),
+            bool(event.data["in_app"]),
+            bool(event.data["email"]),
+            event.at,
+        )
+        return "notification_preference.changed", "user", str(user)
+
+    await _bootstrap(conn, event, write)
+
+
+# What each shell event needs from a later migration: (table, column or None, the task).
+SCHEMA_NEEDS: Final[dict[str, tuple[str, str | None, str]]] = {
+    "identity.sandbox_firm_created": ("firms", "sandbox_of_firm_id", "P-01-T04"),
+    "identity.job_title_set": ("memberships", "job_title", "P-01-T04"),
+    "identity.default_office_set": ("memberships", "default_office_filter_id", "P-01-T04"),
+    "notifications.preference_set": ("notification_preferences", None, "P-01-T03"),
+}
+
+
+async def preflight(conn: asyncpg.Connection, events: tuple[Event, ...]) -> None:
+    """Refuse before writing anything when an event's column or table is not there yet."""
+    for kind in sorted({e.kind for e in events} & SCHEMA_NEEDS.keys()):
+        table, column, task = SCHEMA_NEEDS[kind]
+        found = await conn.fetchval(
+            "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE "
+            "table_schema = current_schema() AND table_name = $1 "
+            "AND ($2::text IS NULL OR column_name = $2))",
+            table,
+            column,
+        )
+        if not found:
+            where = table if column is None else f"{table}.{column}"
+            raise SchemaPending(f"{kind} needs {where}, which arrives with {task}")
+
+
 # --- service-backed events ---------------------------------------------------------------------
 
 
@@ -299,6 +467,13 @@ HANDLERS: Final[dict[str, Handler]] = {
     "organisations.office_created": _office_created,
     "identity.staff_member_added": _staff_member_added,
     "organisations.client_created": _client_created,
+    # The shell slice, after audit_core: the sandbox firm before its offices and membership.
+    "identity.sandbox_firm_created": _sandbox_firm_created,
+    "organisations.sandbox_office_created": _sandbox_office_created,
+    "identity.sandbox_membership_added": _sandbox_membership_added,
+    "identity.job_title_set": _job_title_set,
+    "identity.default_office_set": _default_office_set,
+    "notifications.preference_set": _preference_set,
 }
 # Within one instant the timeline orders by label; the loader orders by dependency first.
 _ORDER: Final = {kind: n for n, kind in enumerate(HANDLERS)}
@@ -321,7 +496,7 @@ async def _already_loaded(conn: asyncpg.Connection, event: Event) -> bool:
     return bool(
         await conn.fetchval(
             "SELECT EXISTS (SELECT 1 FROM audit_events WHERE tenant_id = $1 AND trace_id = $2)",
-            TENANT,
+            tenant_of(event),
             trace_hex(event),
         )
     )
@@ -343,17 +518,19 @@ async def load(
     at: str = "E0",
     holdouts: tuple[str, ...] = (),
     *,
+    slices: tuple[str, ...] = (),
     staging: bool = False,
     wait: bool = True,
 ) -> LoadResult:
     guard(dsn, staging=staging)
-    scenario = build(at, holdouts)
+    scenario = build(at, holdouts, ("audit_core", *slices))
     replayed = skipped = 0
     conn = await asyncpg.connect(dsn)
     try:
         synthetic = await conn.fetchval("SELECT synthetic FROM firms WHERE tenant_id = $1", TENANT)
         if synthetic is False:
             raise LoadRefused("the scenario firm exists and is not synthetic")
+        await preflight(conn, scenario.events)
         for event in replay_order(scenario.events):
             handler = HANDLERS.get(event.kind)
             if handler is None:
@@ -389,6 +566,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Load the Brightwater Hale scenario.")
     parser.add_argument("--snapshot", default="E0")
     parser.add_argument("--holdout", action="append", default=[])
+    parser.add_argument("--slice", action="append", default=[], help="added to audit_core")
     parser.add_argument("--staging", action="store_true")
     parser.add_argument("--no-settle", action="store_true")
     args = parser.parse_args(argv)
@@ -405,11 +583,12 @@ def main(argv: list[str] | None = None) -> int:
                 dsn,
                 args.snapshot,
                 tuple(args.holdout),
+                slices=tuple(args.slice),
                 staging=args.staging,
                 wait=not args.no_settle,
             )
         )
-    except LoadRefused as refused:
+    except (LoadRefused, SchemaPending) as refused:
         print(f"refused: {refused}", file=sys.stderr)
         return 1
     print(

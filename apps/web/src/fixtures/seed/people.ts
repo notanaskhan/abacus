@@ -120,6 +120,23 @@ export const FIRM_ROLES: Readonly<
   TW: "quality_partner",
 };
 
+/**
+ * Job titles `/v1/me` carries (P-01-T07; `memberships.job_title`, P-01-T04), verbatim from the
+ * SHL-03 person cards. Only the four SHL-03 personas have one: Daniel Reyes reads "Tax Partner"
+ * on SHL-03c where ADM-02 shows "Tax (signer)" (an open gap in TASK-397), so no title is derived
+ * from the ADM-02 line. Mirrored in the Python scenario's people.py.
+ */
+export const JOB_TITLES: Readonly<Record<string, string>> = {
+  GH: "Client Service Coordinator",
+  HL: "Audit Senior Manager",
+  DR: "Tax Partner",
+  FA: "Qualified Individual",
+};
+
+/** Default office filters set before E0 (SHL-03b: Hannah Leclerc reads "Chicago ⇕"). Everyone
+ * else reads "All offices". */
+export const DEFAULT_OFFICE_FILTERS: Readonly<Record<string, OfficeName>> = { HL: "Chicago" };
+
 export const OFFICES: readonly {
   name: OfficeName;
   hq: boolean;
