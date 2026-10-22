@@ -26,12 +26,18 @@ BACKEND = Path(__file__).resolve().parents[3]
 SOURCE_DIR = BACKEND.parent / "docs" / "architecture" / "feature-flags"
 TARGET = BACKEND / "src" / "abacus" / "kernel" / "_flags.py"
 MAX_LIFETIME = timedelta(days=90)
+# A founder override (DEC-137, F-03-T37) may extend one renewal to 180 days. The entry names the
+# decision that allows it, so every longer lifetime is on the record.
+OVERRIDE_LIFETIME = timedelta(days=180)
+_OVERRIDE = re.compile(r"DEC-[0-9]{2,4}")
 _NAME = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$")
 # platform.entitlements.MODULES: a flag may not name one of these areas.
 _ENTITLEMENT_MODULES = frozenset(
     {"attest", "internal_audit", "group_audit", "statements_studio", "office_addins", "insights"}
 )
-_FIELDS = {"name", "description", "owner", "created", "expires", "kind", "values", "default"}
+_FIELDS = {"name", "description", "owner", "created", "expires", "kind", "values", "default"} | {
+    "override"  # DEC-137
+}
 _HEADER = '''"""GENERATED from docs/architecture/feature-flags/*.yaml. Do not edit.
 
 Regenerate: python -m abacus_tools.codegen.feature_flags
@@ -97,8 +103,15 @@ def parse(source: str) -> list[Entry]:
                 raise RegistryError(f"{name}: {field} is required")
         created = _date(item.get("created"), "created", name)
         expires = _date(item.get("expires"), "expires", name)
-        if not created < expires <= created + MAX_LIFETIME:
-            raise RegistryError(f"{name}: expires must be after created and within 90 days")
+        override = item.get("override")
+        if override is not None and not _OVERRIDE.fullmatch(str(override)):
+            raise RegistryError(f"{name}: an override names its decision (DEC-nnn)")
+        lifetime = OVERRIDE_LIFETIME if override is not None else MAX_LIFETIME
+        if not created < expires <= created + lifetime:
+            raise RegistryError(
+                f"{name}: expires must be after created and within {lifetime.days} days"
+                + ("" if override is not None else " (or name a founder override, DEC-nnn)")
+            )
         kind = str(item.get("kind"))
         default = (
             str(item.get("default")).lower() if kind == "boolean" else str(item.get("default"))

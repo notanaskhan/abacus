@@ -5,7 +5,8 @@ flags:
   - name: uploads.processing
     description: Each upload is read in isolation (text, tables, fields) by a background workflow (SPEC-029; TASK-054). Scanning applies whatever this says. Off until the founder switches it on per firm; the local seed turns it on for Dev firm.
     owner: ayushkbhatia
-    created: 2026-10-12
-    expires: 2027-01-09
+    created: 2026-10-23
+    expires: 2027-04-21
+    override: DEC-137
     kind: boolean
     default: false

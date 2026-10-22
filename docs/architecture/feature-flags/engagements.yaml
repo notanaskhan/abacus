@@ -5,7 +5,8 @@ flags:
   - name: engagements.work_items_api
     description: The C1 work-item list (GET /v1/work-items, F-03-T31). On for local and test environments and for synthetic firms; off elsewhere until P-07 wires ENG-01 and ENG-02, then retired.
     owner: ayushkbhatia
-    created: 2026-10-22
-    expires: 2027-01-20
+    created: 2026-10-23
+    expires: 2027-04-21
+    override: DEC-137
     kind: boolean
     default: false

@@ -5,14 +5,16 @@ flags:
   - name: notifications.v2
     description: 'SHL-04 notifications v2 (C16): the drawer''s tabs, read-time facts and inline actions, and per-kind preferences. When off, the drawer shows the v1 list in the O2 frame. Off by default; on for the Dev, synthetic and canary tenants after the P-01 wire-up. Renewal or retirement is calendared by P-01-T17.'
     owner: ayushkbhatia
-    created: 2026-10-22
-    expires: 2027-01-20
+    created: 2026-10-23
+    expires: 2027-04-21
+    override: DEC-137
     kind: boolean
     default: false
   - name: notifications.email
     description: 'The notification email channel (C16, SES) and the per-firm kill switch for notification email. Off by default. Renewal or retirement is calendared by P-01-T17.'
     owner: ayushkbhatia
-    created: 2026-10-22
-    expires: 2027-01-20
+    created: 2026-10-23
+    expires: 2027-04-21
+    override: DEC-137
     kind: boolean
     default: false

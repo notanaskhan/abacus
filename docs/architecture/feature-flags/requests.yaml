@@ -5,7 +5,8 @@ flags:
   - name: binders.engine
     description: 'The requests and binders engine (C5 v1, P-06): the /v1/binders routes, the new request-item lifecycle routes (send, waive, return to client, delegate, incorporate, delete a draft, activity), the portal mark-done, ignore and upload-intent routes, the client withdrawal route until evidence.withdrawal exists (P-06-T19), and the /binders nav area. When off, those routes answer 404 and the screens show the flag-off ViewState. Off until a founder switches it on per firm; the local seed turns it on for Brightwater Hale. Renewal or retirement is calendared by P-06-T27.'
     owner: notanaskhan
-    created: 2026-10-22
-    expires: 2027-01-20
+    created: 2026-10-23
+    expires: 2027-04-21
+    override: DEC-137
     kind: boolean
     default: false
