@@ -108,6 +108,7 @@ from abacus.modules.identity.repository import (
     my_engagement_roles,
 )
 from abacus.modules.identity.routes import (
+    auth_router,
     firm_support_router,
     invitation_router,
     router,
@@ -118,6 +119,7 @@ from abacus.modules.identity.routing import (
     ACTION_KEY,
     IDENTITY,
     OWN,
+    PRE_SESSION,
     SELF,
     STAFF,
     AbacusRoute,
@@ -204,6 +206,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     invitation_router,
     signup_router,
     contacts_router,  # C5 v1.1 portal half (P-08-T01 stub)
+    auth_router,
 )
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
@@ -219,6 +222,7 @@ __all__ = [
     "MFA_RECENT",
     "OWN",
     "PARTNER_ROLES",
+    "PRE_SESSION",
     "ROLE_LABELS",
     "ROUTERS",
     "RULES",  # the parsed matrix, for the generated security tests (Q-02-T13)

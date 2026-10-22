@@ -27,6 +27,9 @@ TABLES: frozenset[str] = frozenset(
         "client_access_grants",  # F-03-T26 (ADR-146)
         "client_access_events",
         "firm_demo_clocks",  # F-04-T06: synthetic firms only
+        "auth_login_states",  # P-01-T09 (ADR-165): global, definers only
+        "auth_sessions",
+        "auth_session_cookies",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).

@@ -6,9 +6,11 @@ Run: python -m abacus_tools.fakes.oidc_server        (serves on 127.0.0.1:9000 +
 The browser flow is authorization code with PKCE (S256), as WorkOS will be (TASK-014):
 `/authorize` shows the seeded dev users (`abacus_tools.local.seed_dev`); choosing one redirects
 back with a single-use code (60 s), which `/token` exchanges for an RS256 access token (10 min)
-signed by `FakeIdentityProvider`. The signing key is kept in `backend/.local/oidc-key.pem`
-(gitignored) so tokens survive restarts; `make dev` gives the API this server's JWKS. Refuses to
-run outside the local and test environments.
+signed by `FakeIdentityProvider`. The staff session BFF (P-01-T09) signs in through the same
+server at `/v1/auth/callback` (the SPA's origin proxies `/v1`) and also gets a refresh token,
+which the `refresh_token` grant rotates on every use. The signing key is kept in
+`backend/.local/oidc-key.pem` (gitignored) so tokens survive restarts; `make dev` gives the API
+this server's JWKS. Refuses to run outside the local and test environments.
 """
 
 from __future__ import annotations
@@ -39,11 +41,10 @@ from abacus_tools.local.worktree_env import port_offset
 OFFSET = port_offset()
 HOST, PORT = "127.0.0.1", 9000 + OFFSET
 CLIENT_ID = "abacus-web"
+SPA_ORIGINS = (f"http://localhost:{5173 + OFFSET}", f"http://127.0.0.1:{5173 + OFFSET}")
 REDIRECT_URIS = frozenset(
-    {
-        f"http://localhost:{5173 + OFFSET}/signin/callback",
-        f"http://127.0.0.1:{5173 + OFFSET}/signin/callback",
-    }
+    {f"{origin}/signin/callback" for origin in SPA_ORIGINS}
+    | {f"{origin}/v1/auth/callback" for origin in SPA_ORIGINS}  # the BFF (P-01-T09)
 )
 # The dev users `seed_dev` creates (subject, display name). Sign-in is a choice, not a password.
 DEV_USERS = (
@@ -112,11 +113,12 @@ def create_app(idp: FakeIdentityProvider | None = None) -> FastAPI:
     _local_only()
     signer = idp or provider()
     grants: dict[str, _Grant] = {}
+    refresh_tokens: dict[str, str] = {}  # refresh token -> subject; each is single use
     app = FastAPI(title="Abacus local sign-in", docs_url=None, redoc_url=None, openapi_url=None)
     # The SPA posts to /token from its own origin (the browser half of PKCE).
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=sorted({uri.removesuffix("/signin/callback") for uri in REDIRECT_URIS}),
+        allow_origins=sorted(SPA_ORIGINS),
         allow_methods=["POST"],
         allow_headers=["Content-Type"],
     )
@@ -132,7 +134,7 @@ def create_app(idp: FakeIdentityProvider | None = None) -> FastAPI:
                 "jwks_uri": f"{base}/jwks",
                 "response_types_supported": ["code"],
                 "code_challenge_methods_supported": ["S256"],
-                "grant_types_supported": ["authorization_code"],
+                "grant_types_supported": ["authorization_code", "refresh_token"],
             }
         )
 
@@ -187,6 +189,11 @@ def create_app(idp: FakeIdentityProvider | None = None) -> FastAPI:
     @app.post("/token")
     async def token(request: Request) -> JSONResponse:
         form = {k: v[0] for k, v in parse_qs((await request.body()).decode()).items()}
+        if form.get("grant_type") == "refresh_token":
+            subject = refresh_tokens.pop(form.get("refresh_token", ""), None)
+            if subject is None or form.get("client_id") != CLIENT_ID:
+                return _error(400, "invalid_grant")
+            return _tokens(subject)
         now = system_now().timestamp()
         for expired in [code for code, g in grants.items() if g.expires < now]:
             del grants[expired]
@@ -202,18 +209,28 @@ def create_app(idp: FakeIdentityProvider | None = None) -> FastAPI:
             or _s256(verifier) != grant.challenge
         ):
             return _error(400, "invalid_grant")
+        return _tokens(grant.subject)
+
+    def _tokens(subject: str) -> JSONResponse:
         # A provider-verified email, as WorkOS sends (SPEC-015, SPEC-024 sign-up).
         # Signed in with MFA just now (TASK-041 D3): fresh-MFA screens work locally, and still
         # ask again once the token is older than 15 minutes.
         access = signer.token(
-            grant.subject,
+            subject,
             mfa=True,
             expires_in=TOKEN_SECONDS,
-            email=f"{grant.subject}@dev.abacus.local",
+            email=f"{subject}@dev.abacus.local",
             email_verified=True,
         )
+        refresh = secrets.token_urlsafe(32)
+        refresh_tokens[refresh] = subject
         return JSONResponse(
-            {"access_token": access, "token_type": "Bearer", "expires_in": TOKEN_SECONDS},
+            {
+                "access_token": access,
+                "token_type": "Bearer",
+                "expires_in": TOKEN_SECONDS,
+                "refresh_token": refresh,
+            },
             headers={"Cache-Control": "no-store"},
         )
 

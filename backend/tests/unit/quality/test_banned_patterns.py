@@ -1551,6 +1551,7 @@ OWN1_VIOLATING = [
     ("engagements", 'Q = "SELECT id FROM clients WHERE id = :i"\n'),
     ("engagements", 'Q = "SELECT a FROM engagements e JOIN clients c ON c.id = e.client_id"\n'),
     ("requests", 'Q = "INSERT INTO engagements (id) VALUES (:i)"\n'),
+    ("requests", 'Q = "INSERT INTO engagements(id) VALUES (:i)"\n'),  # INTO a table, always
     ("requests", 'Q = "UPDATE engagements SET status = :s"\n'),
     ("requests", 'Q = "DELETE FROM engagements"\n'),
     ("requests", 'Q = "WITH x AS (SELECT 1) SELECT * FROM engagements"\n'),
@@ -1569,6 +1570,8 @@ OWN1_CLEAN = [
     ("requests", 'Q = "SELECT id FROM request_items WHERE id = :i"\n'),
     ("requests", 'Q = "INSERT INTO request_lists (id) VALUES (:i)"\n'),
     ("identity", 'Q = "SELECT user_id FROM engagement_members"\n'),
+    # P-01-T09: a set-returning function after FROM is not a table
+    ("identity", 'Q = "SELECT * FROM auth_session_rotate(:c, :n, :i)"\n'),
     # lower-case prose and non-SQL strings are not SQL statements
     ("engagements", 'x = "select a thing from clients"\n'),
     ("engagements", 'x = "the clients table"\n'),

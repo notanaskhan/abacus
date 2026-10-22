@@ -199,10 +199,34 @@ async def test_ac1_token_exchange_issues_a_verifiable_bearer_token(
     assert response.headers["cache-control"] == "no-store"
     body = response.json()
     issued = body.pop("access_token")
+    assert len(body.pop("refresh_token")) >= 32  # P-01-T09: the BFF keeps it
     assert body == {"token_type": "Bearer", "expires_in": 600}
     jwks = (await client.get("/jwks")).text
     verifier = JwtVerifier(issuer=ISSUER, audience=AUDIENCE, jwks=jwks)
     assert verifier.verify(issued).subject == "dev-leader"
+
+
+async def test_p01_t09_the_refresh_grant_rotates_and_is_single_use(
+    client: httpx.AsyncClient,
+) -> None:
+    body = (await client.post("/token", data=_exchange(await _code(client, "dev-staff")))).json()
+    form = {"grant_type": "refresh_token", "client_id": "abacus-web"}
+    refreshed = await client.post("/token", data={**form, "refresh_token": body["refresh_token"]})
+    assert refreshed.status_code == 200
+    renewed = refreshed.json()
+    assert renewed["refresh_token"] != body["refresh_token"]
+    jwks = (await client.get("/jwks")).text
+    verifier = JwtVerifier(issuer=ISSUER, audience=AUDIENCE, jwks=jwks)
+    assert verifier.verify(renewed["access_token"]).subject == "dev-staff"
+    again = await client.post("/token", data={**form, "refresh_token": body["refresh_token"]})
+    assert (again.status_code, again.json()) == (400, {"error": "invalid_grant"})
+
+
+async def test_p01_t09_the_bff_callback_is_an_allowed_redirect(client: httpx.AsyncClient) -> None:
+    redirect = "http://localhost:5173/v1/auth/callback"
+    code = await _code(client, "dev-leader", redirect)
+    response = await client.post("/token", data=_exchange(code, redirect_uri=redirect))
+    assert response.status_code == 200
 
 
 async def test_ac1_token_is_for_the_chosen_subject(client: httpx.AsyncClient) -> None:

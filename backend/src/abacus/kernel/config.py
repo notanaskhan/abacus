@@ -190,6 +190,13 @@ class Settings(BaseSettings):
     identity_issuer: Annotated[str | None, classified("internal")] = None
     identity_audience: Annotated[str | None, classified("internal")] = None
     identity_jwks: Annotated[str | None, classified("internal")] = None
+    # P-01-T09 (ADR-141): the staff session BFF signs in with this OIDC client. The endpoints
+    # default to `<issuer>/authorize` and `<issuer>/token` (the local fake's); the callback to
+    # `<web_origin>/v1/auth/callback`, and the BFF only accepts cookie refreshes from `web_origin`.
+    identity_client_id: Annotated[str | None, classified("internal")] = None
+    identity_authorize_url: Annotated[str | None, classified("internal")] = None
+    identity_token_url: Annotated[str | None, classified("internal")] = None
+    web_origin: Annotated[str | None, classified("internal")] = None
     # SPEC-012 (Q4): platform staff sign in with a separate issuer (never a firm membership).
     # Unset means no staff can authenticate (break-glass is unavailable).
     staff_issuer: Annotated[str | None, classified("internal")] = None

@@ -1736,5 +1736,8 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"refresh_attest_client"}  # 0082 (F-03-T25, DEC-128)
         | {"platform_control_state", "set_platform_control", "provision_firm"}  # 0086 (Q-01-T19)
         | {"email_template_import", "email_template_current"}  # 0092 (P-01-T05)
+        # 0101 (P-01-T09): the staff session BFF.
+        | {"auth_state_put", "auth_state_take", "auth_session_start", "auth_session_rotate"}
+        | {"auth_session_set_refresh", "auth_session_revoke", "auth_session_end"}
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []

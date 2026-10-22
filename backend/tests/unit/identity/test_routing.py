@@ -31,6 +31,7 @@ from abacus.modules.identity.api import (
     ACTION_KEY,
     IDENTITY,
     OWN,
+    PRE_SESSION,
     SELF,
     STAFF,
     AbacusRoute,
@@ -49,6 +50,7 @@ from abacus.modules.identity.api import (
     reset_verifier,
     visible,
 )
+from abacus.modules.identity.routing import pre_session
 from abacus_tools.codegen import permission_matrix as pm
 from abacus_tools.fakes.identity import FakeIdentityProvider
 
@@ -228,11 +230,25 @@ def test_ac20_every_route_declares_an_action_in_the_matrix_or_self() -> None:
     for route in _routes():
         action = declared_action(route)
         assert action is not None, route.path
-        assert action in (SELF, STAFF, OWN, IDENTITY) or action in MATRIX, (route.path, action)
+        markers = (SELF, STAFF, OWN, IDENTITY, PRE_SESSION)
+        assert action in markers or action in MATRIX, (route.path, action)
 
 
 def test_ac20_self_is_used_only_on_v1_me() -> None:
     assert [r.path for r in _routes() if declared_action(r) == SELF] == ["/v1/me"]
+
+
+def test_adr165_pre_session_is_used_only_on_the_three_sign_in_routes() -> None:
+    paths = {r.path for r in _routes() if declared_action(r) == PRE_SESSION}
+    assert paths == {"/v1/auth/sign-in", "/v1/auth/callback", "/v1/auth/refresh"}
+
+
+def test_adr165_the_router_refuses_pre_session_on_any_other_path() -> None:
+    router = AbacusRouter(prefix="/v1/auth")
+    with pytest.raises(ValueError, match="pre-session"):
+        router.add_api_route(
+            "/anything", lambda: None, action=PRE_SESSION, response_model=dict, methods=["GET"]
+        )
 
 
 def test_ac20_v1_me_exists_as_a_get() -> None:
@@ -256,6 +272,7 @@ def test_ac20_every_route_has_the_authentication_dependency() -> None:
             current_staff,
             current_member,
             current_identity,
+            pre_session,  # ADR-165: the three sign-in routes authenticate themselves
         )
         assert any(d in dependencies for d in auth), route.path
 
