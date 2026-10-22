@@ -27,8 +27,8 @@ from abacus.modules.identity.api import (
     engagement_resource,
     firm_time_zone,
     member_facts,
-    my_engagement_roles,
     portal_scopes,
+    role_codes,
 )
 from abacus.modules.platform.entitlements import MODULES, Module, entitlement
 
@@ -71,14 +71,7 @@ async def capabilities(ctx: AuthContext, engagement_id: UUID | None) -> Capabili
     )
     allowed = await allowed_actions(ctx, resource)
     member = await member_facts(ctx.tenant, ctx.user_id)
-    codes: set[str] = {ctx.firm_role} if ctx.firm_role else set()
-    held = await my_engagement_roles(ctx.tenant, ctx.user_id)
-    if engagement_id is not None:
-        role = held.get(engagement_id)
-        if role is not None:
-            codes.add(role)
-    else:
-        codes |= set(held.values())
+    codes = await role_codes(ctx, engagement_id)
     portal: Portal | None = None
     if member is not None and member.client:
         scopes = await portal_scopes(ctx)
@@ -90,7 +83,7 @@ async def capabilities(ctx: AuthContext, engagement_id: UUID | None) -> Capabili
     return Capabilities(
         engagement_id=engagement_id,
         capabilities=tuple(sorted(allowed)),
-        roles=tuple(Role(c, ROLE_LABELS.get(c, c)) for c in sorted(codes)),
+        roles=tuple(Role(c, ROLE_LABELS.get(c, c)) for c in codes),
         flags={f.name: await flag(ctx.tenant, f) for f in FLAGS},
         entitlements=tuple(held_modules),
         office_id=member.office_id if member is not None else None,

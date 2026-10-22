@@ -12,7 +12,7 @@ from fastapi import Depends, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
-from abacus.modules.identity.api import SELF, AbacusRouter, AuthContext, current_context
+from abacus.modules.identity.api import OWN, AbacusRouter, AuthContext, current_context
 from abacus.modules.platform.capabilities import capabilities
 from abacus.modules.platform.service import metering, read_budget, set_budget
 
@@ -105,7 +105,7 @@ class CapabilitiesOut(BaseModel):
     portal: Annotated[PortalOut | None, classified("internal")]
 
 
-@router.get("/me/capabilities", action=SELF, response_model=CapabilitiesOut)
+@router.get("/me/capabilities", action=OWN, response_model=CapabilitiesOut)
 async def my_capabilities(
     ctx: Ctx, engagement_id: Annotated[UUID | None, Query()] = None
 ) -> CapabilitiesOut:

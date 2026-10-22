@@ -152,6 +152,7 @@ from abacus.modules.identity.service import (
     member_context,
     my_engagements,
     names_of,
+    role_codes,
     team_of,
     walled_from,
 )
@@ -345,6 +346,7 @@ __all__ = [
     "resolve_scope",
     "revoke_client_access",
     "revoke_invitation",
+    "role_codes",
     "router",
     "serving_request",
     "set_autonomy",

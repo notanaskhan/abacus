@@ -49,9 +49,9 @@ async def test_grace_may_run_binders_and_invitations_but_not_open_evidence(
 ) -> None:
     ctx, copperleaf = grace
     allowed = await allowed_actions(ctx, copperleaf)
-    assert BINDER <= allowed
-    assert INVITATIONS <= allowed
-    assert STATUS <= allowed
+    assert allowed >= BINDER
+    assert allowed >= INVITATIONS
+    assert allowed >= STATUS
     assert not (CONTENT & allowed)
 
 
