@@ -71,6 +71,17 @@ Once a contract is `frozen` at v1:
 - **CI.** A snapshot diff of the OpenAPI schema and the contract models fails the build when a frozen field is removed or renamed, unless the same change ships vN+1 with overlap. Consumer contract tests run in the provider's CI and must stay green. CI enforcement (F-03-T18): `make ci-contracts` runs `python -m abacus_tools.contracts --check` against each frozen snapshot in `backend/tests/contracts/<contract>/vN.json`; `--freeze <contract> vN` writes a new version and never rewrites one.
 - **Approval.** The two-founder approval clause in chapter 01 is void under `docs/plan/AMENDMENT-solo.md`. The builder decides, records the decision in `docs/product/decision-log.md` and bumps the register row.
 
+### Runbook: shipping vN+1
+
+`python -m abacus_tools.contracts --check` compares **every** snapshot on disk (`backend/tests/contracts/<contract>/v*.json`) with today's schemas of the models listed for that contract in `MODELS` (`backend/src/abacus_tools/contracts.py`). So vN keeps passing only while its models are unchanged, and vN+1 is built beside it:
+
+1. **Decide and record.** Write the breaking change and the reason in `docs/product/decision-log.md`; name the consumers (the register row) whose tests must move.
+2. **Add, don't change.** New models and operations beside the old ones (for example `WorkItemOutV2` and a `/v2/...` route, or a new operation); vN's models and routes stay as they are. `make generate`; the generated client carries both.
+3. **Freeze vN+1.** Add the new model names to `MODELS[<contract>]`, then `cd backend && uv run python -m abacus_tools.contracts --freeze <contract> vN+1`. It refuses to overwrite an existing snapshot.
+4. **Document the overlap.** The contract doc describes both versions and the date vN goes; the register row reads `vN, vN+1 (vN until <end of next sprint>)`. Consumer contract tests for vN+1 land in `backend/tests/contracts/<contract>/`; vN's stay green.
+5. **Retire vN at the end of the next sprint**, in one commit: remove vN's models and routes, drop them from `MODELS`, delete `vN.json` (it would otherwise report them `removed`), port each vN consumer test to vN+1 (a test is never dropped without its replacement), `make generate`, and set the register row to `vN+1`.
+6. **Check:** `make ci-contracts` (schema check, the snapshot check, the contract tests and the generated-client drift).
+
 ## Adding or changing a row
 
 Copy `_TEMPLATE.md` to `docs/contracts/<name>.md`, fill it, and update the row here (file, version, status). Then run `cd backend && uv run python -m abacus_tools.quality.validate_docs`.
