@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals generate migrate loadtest seed-staging route-parity flag access-review
+.PHONY: setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review
 
 setup:
 	cd backend && uv sync --locked
@@ -192,9 +192,34 @@ generate:
 migrate: db-guard
 	cd backend && $(STACK_ENV) uv run alembic upgrade head
 
-# Not built yet: the load test and the staging seed arrive with Q-01 (OPS-16).
+# Not built yet: the load test arrives with Q-01 (OPS-16).
 loadtest:
 	@echo "not implemented: Q-01 OPS-16 (load test)" >&2; exit 1
 
+# The Brightwater Hale scenario (F-04-T13): `make seed-demo SNAPSHOT=E0 HOLDOUT=fairhaven_ebp`.
+# Loopback only; a second run writes nothing. NO_SETTLE=1 where no outbox relay runs.
+SNAPSHOT ?= E0
+HOLDOUT ?=
+LOADER = abacus_tools.synthetic.scenarios.brightwater_hale.loader
+LOADER_ARGS = --snapshot $(SNAPSHOT) $(foreach h,$(HOLDOUT),--holdout $(h)) $(if $(NO_SETTLE),--no-settle)
+seed-demo: db-guard
+	cd backend && $(LOCAL_ENV) uv run python -m $(LOADER) $(LOADER_ARGS)
+
+# Staging demo tenant (F-04.17), run as the ECS one-off task after taking the deploy lock:
+# `make seed-staging RESET_CLOCK=E0`. The loader refuses production, a real firm and a
+# deploy-staging run in flight (it names the run). No db-guard: staging is hosted by design.
+RESET_CLOCK ?= E0
 seed-staging:
-	@echo "not implemented: Q-01 OPS-16 (staging seed)" >&2; exit 1
+	cd backend && uv run python -m $(LOADER) --staging --snapshot $(RESET_CLOCK)
+
+# Fixture JSON from the Python scenario arrives with F-04-T31 (S10); the TS seed is interim.
+fixtures:
+	@echo "not implemented: F-04-T31 (fixture export from the scenario)" >&2; exit 1
+
+# Journeys (F-04 §3.8): fixture mode, gated on pull requests; full stack nightly, against
+# `make dev` + `make seed-demo` with fakes and the injected clock, never a hosted database.
+journeys:
+	VITE_FIXTURES=1 ABACUS_JOURNEY_MODE=fixture pnpm -C apps/web exec playwright test --project=chromium --pass-with-no-tests e2e/journeys
+
+journeys-full: db-guard
+	ABACUS_JOURNEY_MODE=fullstack pnpm -C apps/web exec playwright test --project=chromium --pass-with-no-tests e2e/journeys
