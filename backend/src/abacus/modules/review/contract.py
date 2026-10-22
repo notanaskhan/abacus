@@ -483,7 +483,7 @@ class DecisionContextOut(BaseModel):
 
     key: Annotated[str, classified("internal")]
     label: Annotated[str, classified("internal")]
-    value: Annotated[str, classified("confidential")]
+    value: Annotated[str, classified("restricted")]
     citation_id: Annotated[UUID | None, classified("internal")]
 
 
@@ -496,7 +496,7 @@ class DecisionOptionOut(BaseModel):
     key: Annotated[str, classified("internal")]
     label: Annotated[str, classified("confidential")]
     detail: Annotated[str | None, classified("confidential")]
-    figures: Annotated[dict[str, str], classified("confidential")]
+    figures: Annotated[dict[str, str], classified("restricted")]
     # The agent's recommendation is a suggestion and a tag, never the decider (SHL-11 f/g).
     recommended: Annotated[bool, classified("internal")]
 
@@ -518,7 +518,7 @@ class DecisionRecommendationOut(BaseModel):
 
     suggestion_id: Annotated[UUID, classified("internal")]
     option_key: Annotated[str, classified("internal")]
-    reasons: Annotated[list[str], classified("confidential")]
+    reasons: Annotated[list[str], classified("restricted")]
 
 
 class CardDecisionOut(BaseModel):
@@ -549,7 +549,7 @@ class DecisionCardVersionOut(BaseModel):
     at: Annotated[datetime, classified("internal")]
     option_key: Annotated[str | None, classified("internal")]
     changed: Annotated[bool | None, classified("internal")]
-    figures: Annotated[dict[str, str], classified("confidential")]
+    figures: Annotated[dict[str, str], classified("restricted")]
 
 
 class DecisionCardItemOut(BaseModel):

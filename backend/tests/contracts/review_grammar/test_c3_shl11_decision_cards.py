@@ -249,12 +249,6 @@ def test_shl11f_g_the_reserved_roles_and_actors() -> None:
     assert set(get_args(ActorKind)) == {"human", "agent", "system"}
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="P-04-T09 finding #285: decision-card figures, context values and the agent's "
-    "reasons are Confidential, but they carry client figures and, for SHL-11 g (section 754), "
-    "return information; proposals tag the same data Restricted (ADR-031, P-04 7216 note)",
-)
 def test_shl11g_client_figures_and_agent_reasons_are_restricted() -> None:
     assert level(DecisionContextOut, "value") == "restricted"
     assert level(DecisionOptionOut, "figures") == "restricted"
