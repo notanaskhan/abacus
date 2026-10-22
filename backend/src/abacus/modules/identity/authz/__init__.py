@@ -48,7 +48,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Literal
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, Select, and_, false, or_, select, true
+from sqlalchemy import ColumnElement, Select, and_, false, func, or_, select, true
 from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.db import TenantContext
@@ -62,6 +62,7 @@ from abacus.modules.identity.repository import (
     ENGAGEMENT_ROLES,
     FirmPolicy,
     MemberFacts,
+    client_access_grants,
     client_grant_engagements,
     engagement_members,
     engagement_role,
@@ -613,6 +614,99 @@ def visible(ctx: Actor, action: str, engagement_id: EngagementColumn) -> ColumnE
     if isinstance(ctx, AgentContext):
         return by_role  # the initiator's filter, inside, already excludes their walls
     return and_(by_role, _not_walled(ctx, engagement_id))
+
+
+# F-03-T27 (ADR-145, P-06): the scope kind a list declares. `engagement` and `work_item` filter on
+# the row's engagement; `client` and `client_entity` on the row's client (readable when the
+# person may read content on at least one non-walled engagement of that client, or a firm role
+# allows the action outright); `portal_scope` on a client user's grant for that scope.
+ScopeKind = Literal["engagement", "work_item", "client", "client_entity", "portal_scope"]
+SCOPE_KINDS: frozenset[str] = frozenset(
+    {"engagement", "work_item", "client", "client_entity", "portal_scope"}
+)
+EngagementPredicate = Callable[[EngagementColumn], ColumnElement[bool]]
+# engagements: the clients of the engagements a predicate admits, as a subquery.
+ClientsOfEngagements = Callable[[EngagementPredicate], Select[UUID]]
+_clients_of_engagements: ClientsOfEngagements | None = None
+
+
+def register_clients_of_engagements(builder: ClientsOfEngagements) -> None:
+    """engagements registers how to list the clients of the engagements a filter admits."""
+    global _clients_of_engagements
+    known = _clients_of_engagements
+    if known is not None and (known.__module__, known.__qualname__) != (
+        builder.__module__,
+        builder.__qualname__,
+    ):
+        raise RuntimeError("the clients-of-engagements subquery is already registered")
+    _clients_of_engagements = builder
+
+
+def _not_walled_client(ctx: Actor, client_id: EngagementColumn) -> ColumnElement[bool]:
+    """Rows whose client the acting person isn't walled off from (ADR-026; 404 everywhere)."""
+    walls = select(ethical_walls.c.id).where(
+        ethical_walls.c.tenant_id == ctx.tenant_id,
+        ethical_walls.c.user_id == _person(ctx),
+        ethical_walls.c.status == "active",
+        ethical_walls.c.client_id == client_id,
+    )
+    return ~walls.correlate_except(ethical_walls).exists()
+
+
+def visible_scope(
+    ctx: Actor,
+    action: str,
+    scope: ScopeKind,
+    column: EngagementColumn,
+    *,
+    grant_kind: str | None = None,
+) -> ColumnElement[bool]:
+    """`visible()` for a declared scope kind (ADR-145). `column` is the row's engagement id
+    (`engagement`, `work_item`), its client id (`client`, `client_entity`) or its scope id
+    (`portal_scope`, with `grant_kind` naming the grant's scope kind). Every kind excludes walled
+    clients; an unregistered lookup admits nothing (fail closed). Building it records the check."""
+    if scope in ("engagement", "work_item"):
+        return visible(ctx, action, column)
+    if scope in ("client", "client_entity"):
+        rule = _rule(action)
+        if not rule.reads:
+            raise ValueError(f"visible() filters reads; {action!r} is not a read action")
+        firm = (
+            rule.decisions.get(ctx.firm_role)
+            if isinstance(ctx, AuthContext) and ctx.firm_role is not None
+            else None
+        )
+        if firm == "allow":
+            _record(action)
+            return _not_walled_client(ctx, column)
+        if _clients_of_engagements is None:
+            _record(action)
+            return false()
+
+        def admitted(engagement_id: EngagementColumn) -> ColumnElement[bool]:
+            return visible(ctx, action, engagement_id)
+
+        return and_(
+            column.in_(_clients_of_engagements(admitted).scalar_subquery()),
+            _not_walled_client(ctx, column),
+        )
+    if scope == "portal_scope":
+        _rule(action)
+        _record(action)
+        if not isinstance(ctx, AuthContext) or grant_kind is None:
+            return false()
+        granted = select(client_access_grants.c.scope_id).where(
+            client_access_grants.c.tenant_id == ctx.tenant_id,
+            client_access_grants.c.user_id == ctx.user_id,
+            client_access_grants.c.scope_kind == grant_kind,
+            client_access_grants.c.status == "active",
+            or_(
+                client_access_grants.c.expires_at.is_(None),
+                client_access_grants.c.expires_at > func.clock_timestamp(),
+            ),
+        )
+        return column.in_(granted.scalar_subquery())
+    raise ValueError(f"unknown scope kind {scope!r}")
 
 
 def _visible_by_role(

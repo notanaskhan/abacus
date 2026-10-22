@@ -331,6 +331,13 @@ def client_subquery(
     return _client_column(engagement_id)
 
 
+def clients_of_engagements(
+    admits: Callable[[ColumnElement[UUID] | QueryableAttribute[UUID]], ColumnElement[bool]],
+) -> Select[UUID]:
+    """The clients of the engagements `admits` lets through (the `client` scope kind, ADR-145)."""
+    return select(Engagement.client_id).where(admits(Engagement.id))
+
+
 async def client_of(tenant: TenantContext, engagement_id: UUID) -> UUID | None:
     """The engagement's client, or None outside the tenant (for walls in `authorise`)."""
     async with tenant_session(tenant) as session:

@@ -16,11 +16,16 @@ from abacus.modules.identity.authz import (
     authorise_items,
     policy_agent_may_hold,
     register_active_engagements,
+    register_clients_of_engagements,
     register_engagement_client,
     register_independence,
     serving_request,
     visible,
     visible_items,
+    visible_scope,
+)
+from abacus.modules.identity.authz import (
+    ScopeKind as VisibleScopeKind,
 )
 from abacus.modules.identity.authz.conditions import (
     register_attest_client,
@@ -246,6 +251,7 @@ __all__ = [
     "TokenVerifier",
     "UnknownAction",
     "VerifiedIdentity",
+    "VisibleScopeKind",
     "acknowledge",
     "add_creator_as_partner",
     "add_member",
@@ -306,6 +312,7 @@ __all__ = [
     "register_ai_assistants",
     "register_attest_client",
     "register_client_scope",
+    "register_clients_of_engagements",
     "register_consent_check",
     "register_engagement_client",
     "register_engagement_service_line",
@@ -335,5 +342,6 @@ __all__ = [
     "token_verifier",
     "visible",
     "visible_items",
+    "visible_scope",
     "walled_from",
 ]

@@ -853,6 +853,8 @@ def _check_resource_archived(src: SourceFile) -> Iterator[Finding]:
 
 
 _LIST_PREFIXES = ("list_", "all_", "search_")
+# ADR-145's scope kinds (identity.authz.SCOPE_KINDS).
+_SCOPE_KINDS = frozenset({"engagement", "work_item", "client", "client_entity", "portal_scope"})
 # Repository functions that return many rows without `visible()`, each reviewed: they serve
 # lookups for rows the caller has already authorised, or sign-in before a tenant exists.
 LIST_EXEMPT = frozenset(
@@ -1059,7 +1061,7 @@ def _visible_in_where(function: ast.AST) -> list[ast.Call]:
                     inner
                     for inner in ast.walk(arg)
                     if isinstance(inner, ast.Call)
-                    and _terminal_name(inner.func) in ("visible", "visible_items")
+                    and _terminal_name(inner.func) in ("visible", "visible_items", "visible_scope")
                 ]
     return found
 
@@ -1092,6 +1094,11 @@ def _check_list_visible(src: SourceFile) -> Iterator[Finding]:
             action = call.args[1] if len(call.args) > 1 else None
             if not (isinstance(action, ast.Constant) and action.value in reads):
                 yield Finding(call.lineno, "visible() needs a literal read action from the matrix")
+            # F-03-T27 (ADR-145): a scoped list declares its kind as a literal.
+            if _terminal_name(call.func) == "visible_scope":
+                kind = call.args[2] if len(call.args) > 2 else None
+                if not (isinstance(kind, ast.Constant) and kind.value in _SCOPE_KINDS):
+                    yield Finding(call.lineno, "visible_scope() needs a literal scope kind")
 
 
 # Which other modules each module may import (ADR-008: one-way dependencies). Modules not listed

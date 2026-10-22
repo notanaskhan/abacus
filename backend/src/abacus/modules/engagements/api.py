@@ -34,6 +34,7 @@ from abacus.modules.engagements.service import (
     check_facts,
     client_of,
     client_subquery,
+    clients_of_engagements,
     engagement_label,
     engagement_metadata,
     entity_of,
@@ -89,6 +90,7 @@ from abacus.modules.identity.api import (
     AbacusRouter,
     register_active_engagements,
     register_attest_client,
+    register_clients_of_engagements,
     register_engagement_client,
     register_engagement_service_line,
     register_independence,
@@ -118,6 +120,8 @@ register_attest_client(attest_of)  # F-03-T25: the client's derived attest flag 
 # F-03-T26 (ADR-146): the client-access scope kinds engagements owns.
 register_scope_resolver("work_item", work_item_scope)
 register_scope_resolver("client", client_scope)
+# F-03-T27 (ADR-145): the `client` scope kind reads through engagement visibility.
+register_clients_of_engagements(clients_of_engagements)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
