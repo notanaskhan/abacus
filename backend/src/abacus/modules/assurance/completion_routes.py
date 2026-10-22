@@ -22,6 +22,7 @@ from abacus.modules.assurance.completion import (
     record_report,
     release,
 )
+from abacus.modules.assurance.dashboard import dashboard_for
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
 router = AbacusRouter(prefix="/v1/engagements/{engagement_id}/completion", tags=["completion"])
@@ -242,3 +243,53 @@ async def lock_archive_route(engagement_id: UUID, body: AttestBody, ctx: Ctx) ->
     """SPEC-314 AC-7: lock and seal the archive (G9)."""
     await lock_archive(ctx, engagement_id, body.attest)
     return _out(await completion_for(ctx, engagement_id))
+
+
+# --- The engagement dashboard (SPEC-317; TASK-346) --------------------------------------------
+
+dashboard_router = AbacusRouter(prefix="/v1/engagements/{engagement_id}", tags=["dashboard"])
+
+
+class GateFactOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    gate: Annotated[str, classified("internal")]
+    met: Annotated[bool, classified("internal")]
+    blockers: Annotated[list[str], classified("internal")]
+
+
+class TileOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    key: Annotated[str, classified("internal")]
+    label: Annotated[str, classified("internal")]
+    value: Annotated[int, classified("internal")]
+    total: Annotated[int | None, classified("internal")]
+    attention: Annotated[bool, classified("internal")]
+
+
+class NextItemOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    kind: Annotated[
+        Literal["prepare", "review", "answer_note", "clear_note", "chase_request"],
+        classified("internal"),
+    ]
+    label: Annotated[str, classified("confidential")]
+    target_type: Annotated[str, classified("internal")]
+    target_id: Annotated[UUID, classified("internal")]
+    code: Annotated[str | None, classified("internal")]
+
+
+class DashboardOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    gates: Annotated[list[GateFactOut], classified("internal")]
+    tiles: Annotated[list[TileOut], classified("internal")]
+    next_up: Annotated[list[NextItemOut], classified("confidential")]
+
+
+@dashboard_router.get("/dashboard", action="dashboard.read", response_model=DashboardOut)
+async def engagement_dashboard_route(engagement_id: UUID, ctx: Ctx) -> DashboardOut:
+    """SPEC-317 AC-1: gates, progress tiles and what the caller can do next, all by code."""
+    return DashboardOut.model_validate(asdict(await dashboard_for(ctx, engagement_id)))

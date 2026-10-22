@@ -4,6 +4,7 @@ The audit line's read models and actions: the AUD-06 trial balance first (SPEC-3
 """
 
 from abacus.modules.assurance.completion import g6, g7, g8, g9
+from abacus.modules.assurance.completion_routes import dashboard_router
 from abacus.modules.assurance.completion_routes import router as completion_router
 from abacus.modules.assurance.mapping import mapping_reviewables
 from abacus.modules.assurance.mapping_routes import firm_router as grouping_router
@@ -15,7 +16,13 @@ from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.review.api import register_reviewable
 
 # The routers the API mounts, in order (P-39; F-03-T07).
-ROUTERS: tuple[AbacusRouter, ...] = (router, completion_router, mapping_router, grouping_router)
+ROUTERS: tuple[AbacusRouter, ...] = (
+    router,
+    completion_router,
+    mapping_router,
+    grouping_router,
+    dashboard_router,
+)
 
 # SPEC-313 (TASK-331): trial balances appear in the sign-off matrix and count toward G5.
 register_reviewable("trial_balance", tb_reviewables)

@@ -5,10 +5,10 @@ people, journal entry testing's population and selection by code (`sampling`).
 """
 
 from abacus.kernel.audit_owners import register_engagement_owners
-from abacus.modules.engagements.api import register_judgment_source
+from abacus.modules.engagements.api import register_judgment_source, register_progress_source
 from abacus.modules.fieldwork.activities import ACTIVITIES
 from abacus.modules.fieldwork.audit_targets import AUDIT_KINDS, audit_owners
-from abacus.modules.fieldwork.misstatements import adjustment_entries, judgments
+from abacus.modules.fieldwork.misstatements import adjustment_entries, judgments, progress
 from abacus.modules.fieldwork.routes import firm_router, router
 from abacus.modules.fieldwork.service import WORKFLOWS
 from abacus.modules.fieldwork.workflow_types import ProcedureSelectInput
@@ -38,6 +38,8 @@ register_engagement_owners(AUDIT_KINDS, audit_owners)
 register_adjustment_source(adjustment_entries)
 # SPEC-314 (TASK-332): materiality, significant risks and the SUM feed the EQR digest.
 register_judgment_source("fieldwork", judgments)
+# SPEC-317 (TASK-346): procedures, findings and entries on the engagement dashboard.
+register_progress_source("fieldwork", progress)
 
 __all__ = [
     "ACTIVITIES",

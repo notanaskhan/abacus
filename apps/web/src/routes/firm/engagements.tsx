@@ -30,6 +30,9 @@ const screens = {
   CompletionRelease: lazyScreen(
     async () => (await import("../../legacy/CompletionRelease")).CompletionRelease,
   ),
+  EngagementDashboard: lazyScreen(
+    async () => (await import("../../legacy/EngagementDashboard")).EngagementDashboard,
+  ),
   ReviewMatrix: lazyScreen(async () => (await import("../../legacy/ReviewMatrix")).ReviewMatrix),
   TrialBalance: lazyScreen(async () => (await import("../../legacy/TrialBalance")).TrialBalance),
 };
@@ -200,6 +203,16 @@ const completionRoute = createRoute({
   },
 });
 
+// SPEC-317 (TASK-346): the engagement at a glance.
+const dashboardRoute = createRoute({
+  getParentRoute: () => engagementRoute,
+  path: "/dashboard",
+  component: function DashboardPage(): JSX.Element {
+    const engagementId = useParam("engagementId");
+    return <screens.EngagementDashboard engagementId={engagementId} />;
+  },
+});
+
 export const engagementRoutes = [
   engagementRoute.addChildren([
     overviewRoute,
@@ -218,5 +231,6 @@ export const engagementRoutes = [
     trialBalanceRoute,
     signOffsRoute,
     completionRoute,
+    dashboardRoute,
   ]),
 ] as const;

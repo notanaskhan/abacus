@@ -7,7 +7,7 @@ checkpoints follow.
 from abacus.modules.engagements.api import register_gate_provider
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.review.matrix import review_gate
-from abacus.modules.review.notes import open_note_counts
+from abacus.modules.review.notes import notes_for, open_note_counts
 from abacus.modules.review.routes import router
 from abacus.modules.review.service import (
     LEVELS,
@@ -47,6 +47,7 @@ __all__ = [
     "Reviewable",
     "ReviewableProvider",
     "SignOffInvalid",
+    "notes_for",
     "open_note_counts",
     "record_sign_off",
     "register_reviewable",

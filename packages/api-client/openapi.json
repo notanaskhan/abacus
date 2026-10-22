@@ -3574,6 +3574,41 @@
         "title": "CriteriaIO",
         "type": "object"
       },
+      "DashboardOut": {
+        "properties": {
+          "gates": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/GateFactOut"
+            },
+            "title": "Gates",
+            "type": "array"
+          },
+          "next_up": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/NextItemOut"
+            },
+            "title": "Next Up",
+            "type": "array"
+          },
+          "tiles": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/TileOut"
+            },
+            "title": "Tiles",
+            "type": "array"
+          }
+        },
+        "required": [
+          "gates",
+          "tiles",
+          "next_up"
+        ],
+        "title": "DashboardOut",
+        "type": "object"
+      },
       "DecideIn": {
         "additionalProperties": false,
         "properties": {
@@ -6054,6 +6089,35 @@
           "needed"
         ],
         "title": "GapOut",
+        "type": "object"
+      },
+      "GateFactOut": {
+        "properties": {
+          "blockers": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "gate": {
+            "cls": "internal",
+            "title": "Gate",
+            "type": "string"
+          },
+          "met": {
+            "cls": "internal",
+            "title": "Met",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "gate",
+          "met",
+          "blockers"
+        ],
+        "title": "GateFactOut",
         "type": "object"
       },
       "GateOut": {
@@ -9530,6 +9594,59 @@
           "recorded_at"
         ],
         "title": "MisstatementOut",
+        "type": "object"
+      },
+      "NextItemOut": {
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Code"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "prepare",
+              "review",
+              "answer_note",
+              "clear_note",
+              "chase_request"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "target_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Target Id",
+            "type": "string"
+          },
+          "target_type": {
+            "cls": "internal",
+            "title": "Target Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "label",
+          "target_type",
+          "target_id",
+          "code"
+        ],
+        "title": "NextItemOut",
         "type": "object"
       },
       "NoteEntryOut": {
@@ -16259,6 +16376,51 @@
         "title": "TierIn",
         "type": "object"
       },
+      "TileOut": {
+        "properties": {
+          "attention": {
+            "cls": "internal",
+            "title": "Attention",
+            "type": "boolean"
+          },
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Total"
+          },
+          "value": {
+            "cls": "internal",
+            "title": "Value",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "value",
+          "total",
+          "attention"
+        ],
+        "title": "TileOut",
+        "type": "object"
+      },
       "TimeZoneIO": {
         "additionalProperties": false,
         "description": "SPEC-027 (TASK-051): the firm's time zone (IANA name), for the agent's daily tick.",
@@ -22920,6 +23082,113 @@
           "connection"
         ],
         "x-abacus-action": "connection.create"
+      }
+    },
+    "/v1/engagements/{engagement_id}/dashboard": {
+      "get": {
+        "description": "SPEC-317 AC-1: gates, progress tiles and what the caller can do next, all by code.",
+        "operationId": "engagement_dashboard",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Engagement Dashboard Route",
+        "tags": [
+          "dashboard"
+        ],
+        "x-abacus-action": "dashboard.read"
       }
     },
     "/v1/engagements/{engagement_id}/evidence-versions": {

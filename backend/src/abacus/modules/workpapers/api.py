@@ -14,6 +14,7 @@ from abacus.modules.workpapers.service import (
     WorkpaperInvalid,
     workpaper_reviewables,
 )
+from abacus.modules.workpapers.tie_out import checks_for
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
@@ -29,6 +30,7 @@ __all__ = [
     "CodeTaken",
     "NoAssuranceItem",
     "WorkpaperInvalid",
+    "checks_for",
     "checks_router",
     "router",
 ]

@@ -912,3 +912,34 @@ async def engagement_risks(session: AsyncSession, engagement_id: UUID) -> Sequen
         .scalars()
         .all()
     )
+
+
+async def engagement_progress_rows(
+    session: AsyncSession, engagement_id: UUID
+) -> tuple[Sequence[Procedure], Sequence[Finding], Sequence[FindingSeverity]]:
+    """Procedures, findings and their severities (LIST_EXEMPT: for the dashboard, after the
+    caller authorised on the engagement)."""
+    procedures = (
+        (await session.execute(select(Procedure).where(Procedure.engagement_id == engagement_id)))
+        .scalars()
+        .all()
+    )
+    findings = (
+        (await session.execute(select(Finding).where(Finding.engagement_id == engagement_id)))
+        .scalars()
+        .all()
+    )
+    severities: Sequence[FindingSeverity] = (
+        (
+            await session.execute(
+                select(FindingSeverity).where(
+                    FindingSeverity.finding_id.in_([f.id for f in findings])
+                )
+            )
+        )
+        .scalars()
+        .all()
+        if findings
+        else []
+    )
+    return procedures, findings, severities

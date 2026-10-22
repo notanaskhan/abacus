@@ -17,13 +17,14 @@ from typing import Final, Literal
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.modules.engagements.api import Judgment, get_ref
+from abacus.modules.engagements.api import Judgment, ProgressFact, get_ref
 from abacus.modules.fieldwork.completion import status_of
 from abacus.modules.fieldwork.planning import materiality_history
 from abacus.modules.fieldwork.repository import (
     adjustment_events_of,
     adjustment_lines_of,
     engagement_adjustments,
+    engagement_progress_rows,
     engagement_risks,
     materiality_decisions,
     materiality_versions,
@@ -219,3 +220,47 @@ BAND_WORDS: Final = {
     "below_overall": "Above performance materiality",
     "above_overall": "At or above overall materiality",
 }
+
+
+# --- Progress for the engagement dashboard (SPEC-317; TASK-346) -------------------------------
+
+
+async def progress(tenant: TenantContext, engagement_id: UUID) -> list[ProgressFact]:
+    """Procedures run, findings concluded, entries awaiting approval and passed, by code."""
+    async with tenant_session(tenant) as session:
+        procedures, findings, severities = await engagement_progress_rows(session, engagement_id)
+        entries = await engagement_adjustments(session, engagement_id)
+        events = await adjustment_events_of(session, [a.id for a in entries])
+    concluded = {s.finding_id for s in severities if s.stage == "concluded"}
+    statuses = [status_of([e for e in events if e.adjustment_id == a.id]) for a in entries]
+    selected = sum(1 for p in procedures if p.status == "selected")
+    failed = sum(1 for p in procedures if p.status == "failed")
+    return [
+        ProgressFact(
+            "fieldwork", "procedures", "Procedures run", selected, len(procedures), failed > 0
+        ),
+        ProgressFact(
+            "fieldwork",
+            "findings",
+            "Findings concluded",
+            len(concluded & {f.id for f in findings}),
+            len(findings),
+            len(findings) > len(concluded),
+        ),
+        ProgressFact(
+            "fieldwork",
+            "entries_awaiting",
+            "Proposed entries awaiting approval",
+            statuses.count("proposed"),
+            None,
+            statuses.count("proposed") > 0,
+        ),
+        ProgressFact(
+            "fieldwork",
+            "passed_entries",
+            "Passed entries",
+            statuses.count("client_declined"),
+            None,
+            False,
+        ),
+    ]

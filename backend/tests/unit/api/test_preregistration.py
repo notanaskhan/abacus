@@ -38,7 +38,8 @@ NEW = {
 }
 # Pre-registered modules whose first epic has landed: they still import and register, but now
 # own tables and routes (SPEC-308, TASK-319; assurance SPEC-309, TASK-320).
-LANDED = {"assurance", "review", "workpapers"}
+# F-03-T22 (TASK-385, migration 0089): tax, closes and notices hold their work-item subtypes.
+LANDED = {"assurance", "review", "workpapers", "tax", "closes", "notices"}
 TENANT = TenantContext(uuid.uuid4(), "system", "test")
 
 

@@ -149,6 +149,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.requests.comments.CorrectionNotAllowed
+  cursor_invalid:
+    status: 422
+    raised_by:
+    - abacus.kernel.listing.CursorInvalid
+    summary: 'The cursor is not one this list issued for this firm and these filters: start again.'
   cutoff_invalid:
     status: 422
     raised_by:
@@ -761,6 +766,12 @@ codes:
     raised_by:
     - abacus.modules.identity.service.WallExists
     summary: The person is already walled off from this client.
+  work_item_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.work_items.WorkItemExists
+    summary: 'The kind allows no second one here: another assurance item on the engagement, another close
+      for the same period (409).'
   workpaper_already_signed:
     status: 409
     raised_by:
