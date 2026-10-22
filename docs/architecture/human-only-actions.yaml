@@ -1,0 +1,47 @@
+# Human-only audit actions (Q-02-T17; I-AGENT-NEVER at the data layer; ADR-005).
+# PROTECTED. An audit action listed here may never be written with actor_kind `agent` or
+# `policy`: the `audit_events_human_only` trigger refuses it before commit, whatever the
+# permission matrix says. Compiled by `python -m abacus_tools.codegen.human_only_actions` into
+# backend/src/abacus/kernel/_human_only_actions.py; the database's `abacus_human_only_actions()`
+# is defined by the migration that last changed this list, and a drift test holds the three
+# together. Adding an action needs a new migration redefining that function.
+#
+# Each verb is one of I-AGENT-NEVER's: approve, sign off, release, send, post, decide, accept,
+# reject, waive, confirm. Agents propose; humans decide.
+actions:
+  - action: sign_off.recorded
+    verb: sign off
+  - action: report.approved
+    verb: approve
+  - action: report.released
+    verb: release
+  - action: review.released
+    verb: release
+  - action: review.decided
+    verb: decide  # evidence accept, reject and send back (SPEC-019)
+  - action: evidence.accepted
+    verb: accept
+  - action: materiality.decided
+    verb: decide
+  - action: going_concern.decided
+    verb: decide
+  - action: risk.approved
+    verb: approve
+  - action: sample.approved
+    verb: approve
+  - action: statement.approved
+    verb: approve
+  - action: procedure.concluded
+    verb: decide
+  - action: guidance_draft.approved
+    verb: approve
+  - action: independence.confirmed
+    verb: confirm
+  - action: engagement.accepted
+    verb: accept
+  - action: legal_hold.placed
+    verb: decide
+  - action: firm_export.approved
+    verb: approve
+  - action: firm.ai_client_data_opted_in
+    verb: confirm
