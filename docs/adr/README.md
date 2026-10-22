@@ -148,3 +148,5 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-157](ADR-157-platform-controls-kill-switches.md) | Platform controls and kill switches - database rows read through one function, changed only by operators | red | proposed |
 | [ADR-158](ADR-158-client-scoped-files-cross-engagement-fulfilment.md) | Client-scoped files and cross-engagement fulfilment - evidence with a client and no engagement; reuse by reference, same client only | red | proposed |
 | [ADR-159](ADR-159-archive-seal-immutability-hash-chain-object-lock.md) | Archive seal, database immutability, the audit hash chain and Object Lock modes | red | proposed |
+| [ADR-160](ADR-160-review-grammar.md) | Review grammar - sign-offs, review notes, issues, decision cards, checkpoints and field history in one red review module | red | accepted |
+| [ADR-161](ADR-161-suggestions-proposals-approval-grants-undo.md) | Suggestions, proposals, approval grants and Undo as a compensating event; the policy actor is dormant | red | accepted |

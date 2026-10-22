@@ -4,7 +4,7 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 
 - **P-ID.** The proposal ID from [`docs/plan/09-decisions-adrs.md`](../plan/09-decisions-adrs.md) section 9.4.2. P-64 to P-69 were added from the backlog tasks that draft them.
 - **Epic.** The epic whose backlog task first drafts the ADR (from `docs/plan/backlog.csv`, best match; check the task when drafting starts). Epic keys such as `P-10` are epics, not ADR IDs. A dash means no task names it.
-- **ADR number.** `next free` until drafting starts. Numbers minted so far: P-01 = ADR-133, P-38 = ADR-135, P-04 = ADR-136, P-05 = ADR-137, P-34 = ADR-138, P-36 = ADR-139, P-39 = ADR-140, P-54 = ADR-141, P-55 = ADR-142 (all accepted). Proposed so far: P-45 = ADR-152, P-64 = ADR-153, P-67 = ADR-154, P-65 = ADR-156, P-66 = ADR-157, P-40 = ADR-158, P-43 = ADR-159.
+- **ADR number.** `next free` until drafting starts. Numbers minted so far: P-01 = ADR-133, P-38 = ADR-135, P-04 = ADR-136, P-05 = ADR-137, P-34 = ADR-138, P-36 = ADR-139, P-39 = ADR-140, P-54 = ADR-141, P-55 = ADR-142, P-07 = ADR-160, P-35 = ADR-161 (all accepted). Proposed so far: P-45 = ADR-152, P-64 = ADR-153, P-67 = ADR-154, P-65 = ADR-156, P-66 = ADR-157, P-40 = ADR-158, P-43 = ADR-159.
 - **DEC row.** The decision it records, in [`docs/product/decision-log.md`](../product/decision-log.md).
 - **Status.** `to draft`, `proposed`, `accepted`, or `n/a, solo edition`.
 
@@ -16,7 +16,7 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 | P-04 | Engagement + work items + server-enforced gates | red | F-03 | ADR-136 | Fri 23 Oct | DEC-07, DEC-39 | accepted |
 | P-05 | Module map (29 modules) | amber | F-03 | ADR-137 | Fri 23 Oct | DEC-13 | accepted |
 | P-06 | Generalised `visible()` | red | F-03 | ADR-145 | Fri 6 Nov | DEC-33 | accepted |
-| P-07 | Review grammar | red | Q-02 | next free (ADR-134 already binds fieldwork to it) | Fri 6 Nov; re-dated 2026-10-22: drafted with Q-02's first task, owner ayushkbhatia | DEC-36 | to draft (re-dated) |
+| P-07 | Review grammar | red | P-04 | ADR-160 (plan alias ADR-133, which is product naming; ADR-134 binds fieldwork to it) | Fri 6 Nov; drafted and accepted 2026-10-22 with P-04-T01 | DEC-36 | accepted |
 | P-08 | Policy principal (dormant) | red | Q-03 | next free | Fri 11 Dec (design); enable ≥ Q2 2027 | DEC-53 | to draft |
 | P-09 | Client identity, scoped grants, link principals, portal MFA | red | F-03 | ADR-146 | Fri 6 Nov | DEC-34, DEC-63, DEC-67 | accepted |
 | P-10 | Role catalogue and need-to-know | red | F-03 | ADR-147 | Fri 6 Nov | DEC-20, DEC-21 | accepted |
@@ -44,7 +44,7 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 | P-32 | OCR and document understanding | amber | P-11 | next free | Fri 6 Nov; re-dated 2026-10-22: drafted with P-11's first task, owner ayushkbhatia | DEC-42 | to draft (re-dated) |
 | P-33 | Search in Postgres | amber | P-02 | next free | Fri 6 Nov; re-dated 2026-10-22: drafted with P-02's first task, owner ayushkbhatia | DEC-42, DEC-43 | to draft (re-dated) |
 | P-34 | Status registry and codegen | amber | F-03 | ADR-138 | Fri 23 Oct | DEC-08 | accepted |
-| P-35 | Suggestions, proposals, approval grants, Undo; dormant policy actor | red | P-04 | next free | Fri 30 Oct; re-dated 2026-10-22: drafted with P-04's first task, owner ayushkbhatia | DEC-24, DEC-28 | to draft (re-dated) |
+| P-35 | Suggestions, proposals, approval grants, Undo; dormant policy actor | red | P-04 | ADR-161 (plan alias ADR-126) | Fri 30 Oct; drafted and accepted 2026-10-22 with P-04-T01 | DEC-24, DEC-28 | accepted |
 | P-36 | API conventions | amber | F-03 | ADR-139 | Fri 23 Oct | DEC-12 | accepted |
 | P-37 | Clock, scenario loader, synthetic marker | amber | F-02 | ADR-143 | Fri 30 Oct | DEC-27 | accepted |
 | P-38 | Pre-launch migration policy | red | F-03 | ADR-135 | Wed 21 Oct | DEC-06 | accepted |
