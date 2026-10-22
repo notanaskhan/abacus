@@ -1,6 +1,13 @@
 # engagements
 
-One job for one client and one fiscal period (glossary). Owns `engagements` (ADR-103).
+One job for one client and one fiscal period (glossary). Owns `engagements`, its work items and their setup records (`registry.py`; ADR-103): `work_items`, `assurance_work_items`, `advisory_projects`, `work_item_assignments`, `engagement_entities`, `engagement_contacts`, `gate_policy_overrides`, `engagement_acceptance`, `independence_confirmations`, `engagement_letters`, and the methodology tables. Map: `docs/architecture/data-model.md`.
+
+## Work items, the lifecycle and gates (C1; F-03, `docs/contracts/work-items.md`)
+- **Work items** (`work_items.py`, migration 0068): the units of work inside an engagement, of kind `assurance`, `tax_return`, `close`, `notice` or `advisory_project`. The `engagement_work_item_defaults` trigger gives every engagement one `primary` `engagement_entities` row and, for the ten attest types, its one `assurance` work item (at most one per engagement).
+- **Kinds** (`slots.py`; ADR-106 pattern): each kind's owner calls `register_work_item_kind(kind, provider)` from its `api.py` (`assurance` and `advisory_project` here; `tax_return` in tax, `close` in closes, `notice` in notices). `create_work_item(ctx, engagement_id, kind, *, name, client_entity_id, due_on, details)` (action `work_item.create`, partner and manager) writes the work item and the kind's subtype row in one unit of work and audits `work_item.created`. An unregistered kind is 409 `unknown_work_item_kind`; a breach of the kind's cardinality (a second assurance item, a second close for a period) is 409 `work_item_exists`. Adding a kind: `.claude/skills/backend-module/SKILL.md`.
+- **Reads:** `GET /v1/engagements/{id}/work-items` and `GET /v1/work-items?engagement_id=&kind=&status=&cursor=&limit=` (both `work_item.read_metadata`). The firm-wide list uses `visible_scope(..., "work_item", ...)` and the list envelope (`kernel.listing`: keyset cursor, per-status counts without the status filter, capped total); it answers 404 while `engagements.work_items_api` is off (always on locally, in tests and for synthetic firms).
+- **Lifecycle** (`transitions.py`, migration 0069; DEC-39): 14 engagement types and 8 states (`prospect`, `accepted`, `declined`, `contracted`, `active`, `on_hold`, `delivered`, `archived`). Every legal move is one row; anything else is 409 `illegal_transition`. Accept, decline and hold are human-only (INV-1). Each move writes one audit event and one `engagement.status_changed` outbox event.
+- **Gates** (`gates.py`, `gate_policy.py`): G1 acceptance, G2 independence, G3 the letter, registered in the gate slot; `required_gates(type, overrides)` gives the gates a type needs. A firm's `gate_policy_overrides` may only tighten a gate.
 
 ## Public interface (`api.py`)
 - `router`: `POST /v1/engagements` (`engagement.create`), `GET /v1/engagements` and `GET /v1/engagements/{id}` (both `engagement.read_metadata`; metadata only, ADR-024).
@@ -36,7 +43,7 @@ The workbook has three sheets, each with exact headers in row 1. Blank rows are 
 **Pinning:** `pin_methodology` pins an engagement to one version, once (`MethodologyAlreadyApplied`). Callers use it inside their unit of work, as `requests.apply_methodology` does. `area_for` maps an account code to its area: the first rule in rule order wins.
 
 ## Engagement types (SPEC-024 AC-6; TASK-040)
-- **Types:** engagements are `audit`, `review`, `compilation` or `agreed_upon_procedures`.
+- **Types:** SPEC-024 began with `audit`, `review`, `compilation` and `agreed_upon_procedures`. Since migration 0069 (F-03-T12) there are 14: `fs_audit` (formerly `audit`), `ebp_audit`, `review`, `compilation`, `preparation`, `agreed_upon_procedures`, `soc1`, `soc2`, `readiness`, `internal_audit`, `tax_compliance`, `cas_monthly_close`, `notice_response`, `advisory`.
 - **Templates:** a methodology template is tagged when created with the types it serves (`engagement_type`, repeatable, on the upload route). Templates stay insert-only, so a new set of types means a new template.
 - **Applying:** `pin_methodology` refuses a template that doesn't serve the engagement's type (409 `template_type_mismatch`).
 
