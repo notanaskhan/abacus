@@ -25,7 +25,8 @@ from typing import Annotated, Any, Final
 from uuid import UUID
 
 from pydantic import BaseModel, Field
-from sqlalchemy import ColumnElement, Select, func, select, tuple_
+from sqlalchemy import ColumnElement, Select, Text, func, literal, select, tuple_
+from sqlalchemy import cast as sql_cast
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.classification import classified
@@ -119,6 +120,13 @@ def decode_cursor(token: str, *, tenant_id: UUID, resource: str, query: str) -> 
 # --- pages, counts and totals ------------------------------------------------------------------
 
 
+def _typed(value: SortKey, column: ColumnElement[object]) -> ColumnElement[object]:
+    """A cursor scalar as the column's type: text is bound as text and cast in SQL."""
+    if isinstance(value, str):
+        return sql_cast(literal(value, type_=Text()), column.type)
+    return literal(value, type_=column.type)
+
+
 def keyset[*Ts](
     stmt: Select[*Ts],
     *,
@@ -131,7 +139,9 @@ def keyset[*Ts](
     """`stmt` ordered by `(sort, id)` from just after `after`, one row more than `limit`."""
     if after is not None:
         pair = tuple_(sort, id_column)
-        mark = tuple_(after.key, after.id)
+        # A cursor holds the key and id as JSON scalars (a timestamp as ISO text, a UUID as
+        # text); cast them back to the columns' types so the comparison is typed.
+        mark = tuple_(_typed(after.key, sort), _typed(after.id, id_column))
         stmt = stmt.where(pair < mark if descending else pair > mark)
     order = (sort.desc(), id_column.desc()) if descending else (sort.asc(), id_column.asc())
     return stmt.order_by(*order).limit(limit + 1)

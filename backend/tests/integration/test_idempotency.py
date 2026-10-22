@@ -70,5 +70,11 @@ async def test_held_events_wait_for_their_time_and_their_grant(
 
     monkeypatch.setattr(relay_module, "_GRANT_CONSUMER", [consume])
     publisher = InMemoryPublisher()
-    await relay_once(publisher)
-    assert [e.event_id for e in publisher.published] == [held.event_id]
+    # The database is shared across tests: relay until nothing more is due, then look only at
+    # this test's events.
+    ours = {later.event_id, held.event_id, void.event_id}
+    for _ in range(50):
+        result = await relay_once(publisher, batch=200)
+        if result.published + result.failed == 0:
+            break
+    assert [e.event_id for e in publisher.published if e.event_id in ours] == [held.event_id]

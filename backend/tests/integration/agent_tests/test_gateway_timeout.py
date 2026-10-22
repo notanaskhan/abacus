@@ -84,7 +84,10 @@ def _call(world: World) -> GatewayCall[Verdict]:
         essential=True,
         budget_usd=Decimal("0.05"),
         attribution=Attribution(
-            TenantContext(world.tenant_id, "agent", actor), world.engagement_id, AGENT_ID, None
+            TenantContext(world.tenant_id, "agent", actor, uuid.uuid4()),
+            world.engagement_id,
+            AGENT_ID,
+            None,
         ),
         context=built,
         max_output_tokens=200,

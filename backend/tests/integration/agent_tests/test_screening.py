@@ -279,7 +279,10 @@ async def test_ac17_load_agent_context_proves_the_context_from_the_run(
 ) -> None:
     _, run_id = ready
     agent = await _agent(world, run_id)
-    assert agent.tenant == TenantContext(world.tenant_id, "agent", f"agent:{SCREENER}:{run_id}")
+    # Q-02-T16: the agent's audit rows name the person it acts for, its run's initiator.
+    assert agent.tenant == TenantContext(
+        world.tenant_id, "agent", f"agent:{SCREENER}:{run_id}", agent.initiator.user_id
+    )
     assert agent.agent_id == SCREENER
     assert agent.agent_run_id == run_id
     assert agent.engagement_id == world.engagement_id

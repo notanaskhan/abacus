@@ -801,7 +801,10 @@ async def test_ac20_load_system_context_takes_everything_from_the_run_row(
     assert system.tenant_id == world.tenant_id
     assert system.engagement_id == world.engagement_id
     assert system.on_behalf_of == world.requester.user_id
-    assert system.tenant == TenantContext(world.tenant_id, "system", f"run:{run_id}")
+    # Q-02-T16: the run's audit rows name the person it acts for.
+    assert system.tenant == TenantContext(
+        world.tenant_id, "system", f"run:{run_id}", world.requester.user_id
+    )
 
 
 async def test_ac20_load_system_context_for_a_missing_run_is_not_found(world: World) -> None:
