@@ -10,19 +10,39 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Final
+from typing import Final, cast
 from uuid import UUID
 
-from sqlalchemy import insert, select, text, update
+from sqlalchemy import ColumnElement, insert, select, text, update
 from sqlalchemy.exc import IntegrityError
 
+from abacus.kernel._flags import ENGAGEMENTS_WORK_ITEMS_API
+from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import DomainConflict
+from abacus.kernel.errors import DomainConflict, NotFound
+from abacus.kernel.flags import flag_enabled
+from abacus.kernel.listing import (
+    ListPage,
+    capped_total,
+    clamp_limit,
+    decode_cursor,
+    envelope,
+    keyset,
+    page_of,
+    query_hash,
+    status_counts,
+)
 from abacus.kernel.uow import Target, UnitOfWork, uow
 from abacus.modules.engagements.models import AssuranceWorkItem, Engagement, WorkItem
 from abacus.modules.engagements.service import get_ref, lock_ref
 from abacus.modules.engagements.slots import NewWorkItem, work_item_provider
-from abacus.modules.identity.api import AuthContext, authorise, visible
+from abacus.modules.identity.api import (
+    AuthContext,
+    authorise,
+    is_synthetic_firm,
+    visible,
+    visible_scope,
+)
 
 
 @dataclass(frozen=True)
@@ -198,3 +218,103 @@ class AdvisoryProjectKind:
                 "name": item.details.get("name") or "Advisory project",
             },
         )
+
+
+# --- F-03-T31: the firm-wide work-item list (C1 live) -------------------------------------------
+
+
+@dataclass(frozen=True)
+class WorkItemRow:
+    id: UUID
+    engagement_id: UUID
+    kind: str
+    name: str
+    status: str
+    period_start: date | None
+    period_end: date | None
+    due_on: date | None
+    created_at: datetime
+
+
+async def work_items_api_on(tenant: TenantContext) -> bool:
+    """The C1 list's flag: on locally and in tests, for synthetic firms, or where it's set."""
+    if settings().environment in ("local", "test"):
+        return True
+    if await is_synthetic_firm(tenant):
+        return True
+    return await flag_enabled(tenant, ENGAGEMENTS_WORK_ITEMS_API)
+
+
+async def list_work_items(
+    ctx: AuthContext,
+    *,
+    engagement_id: UUID | None = None,
+    kind: str | None = None,
+    status: str | None = None,
+    cursor: str | None = None,
+    limit: int | None = None,
+) -> ListPage[WorkItemRow]:
+    """Work items the person may read, newest first, on the list envelope with per-status counts
+    (the status filter left out of them). `NotFound` while the flag is off."""
+    if not await work_items_api_on(ctx.tenant):
+        raise NotFound("work_items")
+    size = clamp_limit(limit)
+    query = query_hash(engagement_id=engagement_id, kind=kind, status=status)
+    after = (
+        decode_cursor(cursor, tenant_id=ctx.tenant_id, resource="work_items", query=query)
+        if cursor
+        else None
+    )
+    base = select(WorkItem).where(
+        visible_scope(ctx, "work_item.read_metadata", "work_item", WorkItem.engagement_id)
+    )
+    if engagement_id is not None:
+        base = base.where(WorkItem.engagement_id == engagement_id)
+    if kind is not None:
+        base = base.where(WorkItem.kind == kind)
+    filtered = base if status is None else base.where(WorkItem.status == status)
+    async with tenant_session(ctx.tenant) as session:
+        counts = await status_counts(session, base, WorkItem.status.expression)
+        total = await capped_total(session, filtered)
+        fetched = (
+            (
+                await session.execute(
+                    keyset(
+                        filtered,
+                        sort=cast(ColumnElement[object], WorkItem.created_at.expression),
+                        id_column=cast(ColumnElement[object], WorkItem.id.expression),
+                        after=after,
+                        descending=True,
+                        limit=size,
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+    page, next_position = page_of(
+        fetched, limit=size, key=lambda w: w.created_at, id_of=lambda w: w.id
+    )
+    rows = [
+        WorkItemRow(
+            w.id,
+            w.engagement_id,
+            w.kind,
+            w.name,
+            w.status,
+            w.period_start,
+            w.period_end,
+            w.due_on,
+            w.created_at,
+        )
+        for w in page
+    ]
+    return envelope(
+        rows,
+        next_position=next_position,
+        tenant_id=ctx.tenant_id,
+        resource="work_items",
+        query=query,
+        total=total,
+        counts=counts,
+    )

@@ -19,7 +19,12 @@ from abacus.modules.engagements.roll_forward import (
     TemplateSeed,
     register_roll_forward_items,
 )
-from abacus.modules.engagements.routes import firm_router, methodology_router, router
+from abacus.modules.engagements.routes import (
+    firm_router,
+    methodology_router,
+    router,
+    work_items_router,
+)
 from abacus.modules.engagements.service import (
     ApprovedGuidance,
     CheckFacts,
@@ -138,6 +143,7 @@ register_engagement_resource(engagement_resource_of)
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
+    work_items_router,
     methodology_router,
     firm_router,
 )

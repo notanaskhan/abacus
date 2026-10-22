@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from abacus.kernel._statuses import EngagementStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.config import settings
+from abacus.kernel.listing import ListPage
 from abacus.kernel.text import SingleLineText
 from abacus.modules.engagements.gates import engagement_gates
 from abacus.modules.engagements.onboarding import Onboarding, StepId, acknowledge_step, onboarding
@@ -33,6 +34,7 @@ from abacus.modules.engagements.service import (
     client_contacts_of,
     create_engagement,
     engagement_metadata,
+    engagement_resource_of,
     engagements_for,
     firm_clients,
     import_template,
@@ -60,13 +62,14 @@ from abacus.modules.engagements.setup import (
     setup,
 )
 from abacus.modules.engagements.setup_steps import StepKey, StepState
-from abacus.modules.engagements.work_items import work_items_of
+from abacus.modules.engagements.work_items import list_work_items, work_items_of
 from abacus.modules.engagements.workbook import Problem, TemplateInvalid
 from abacus.modules.identity.api import (
     OWN,
     AbacusRouter,
     AuthContext,
     EngagementRole,
+    allowed_actions,
     current_context,
     current_member,
 )
@@ -159,6 +162,8 @@ class EngagementOut(EngagementSummaryOut):
     team: Annotated[list[TeamMemberOut], classified("confidential")]
     # C1 (F-03-T19): the G1 to G3 gates the type requires; filled on GET /v1/engagements/{id}.
     gates: Annotated[list[GateOut], classified("internal")] = []
+    # C1 live (F-03-T31): what the caller may do on it (evaluated, never recorded as a check).
+    allowed_actions: Annotated[list[str], classified("internal")] = []
 
 
 def _summary(view: EngagementView) -> EngagementSummaryOut:
@@ -294,9 +299,31 @@ async def list_engagements_route(ctx: Ctx) -> list[EngagementSummaryOut]:
 async def get_engagement_route(engagement_id: UUID, ctx: Ctx) -> EngagementOut:
     metadata = await engagement_metadata(ctx, engagement_id)
     gates = await engagement_gates(ctx.tenant, engagement_id, metadata.engagement.type)
-    return _out(metadata).model_copy(
-        update={"gates": [GateOut.model_validate(asdict(g)) for g in gates]}
+    allowed = await allowed_actions(
+        ctx, await engagement_resource_of(ctx.tenant, engagement_id), ENGAGEMENT_ACTIONS
     )
+    return _out(metadata).model_copy(
+        update={
+            "gates": [GateOut.model_validate(asdict(g)) for g in gates],
+            "allowed_actions": sorted(allowed),
+        }
+    )
+
+
+# C1 live (F-03-T31): the actions a client of the projection may offer on an engagement.
+ENGAGEMENT_ACTIONS: tuple[str, ...] = (
+    "engagement.update",
+    "engagement.hold",
+    "engagement.archive",
+    "engagement.member_add",
+    "engagement.member_remove",
+    "acceptance.record",
+    "letter.record",
+    "work_item.create",
+    "request_item.create",
+    "client_contact.invite",
+    "engagement_contact.designate",
+)
 
 
 class WorkItemOut(BaseModel):
@@ -995,4 +1022,54 @@ async def set_ai_exclusion_route(
     """SPEC-036 AC-6: the engagement partner switches AI off for this engagement, or on again."""
     return _exclusion_out(
         await set_ai_exclusion_of(ctx, engagement_id, body.excluded, body.reason)
+    )
+
+
+# --- C1 live (F-03-T31): the firm-wide work-item list --------------------------------------------
+
+work_items_router = AbacusRouter(prefix="/v1/work-items", tags=["engagements"])
+
+
+class WorkItemRowOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    kind: Annotated[
+        Literal["assurance", "tax_return", "close", "notice", "advisory_project"],
+        classified("internal"),
+    ]
+    name: Name
+    status: Annotated[Literal["active", "archived"], classified("internal")]
+    period_start: Annotated[date | None, classified("confidential")]
+    period_end: Annotated[date | None, classified("confidential")]
+    due_on: Annotated[date | None, classified("internal")]
+
+
+@work_items_router.get(
+    "", action="work_item.read_metadata", response_model=ListPage[WorkItemRowOut]
+)
+async def list_work_items_route(
+    ctx: Ctx,
+    engagement_id: Annotated[UUID | None, Query()] = None,
+    kind: Annotated[str | None, Query(max_length=40)] = None,
+    status: Annotated[str | None, Query(max_length=40)] = None,
+    cursor: Annotated[str | None, Query(max_length=2000)] = None,
+    limit: Annotated[int | None, Query(ge=1, le=200)] = None,
+) -> ListPage[WorkItemRowOut]:
+    """Work items the caller may read, on the list envelope with per-status counts (C1 live)."""
+    page = await list_work_items(
+        ctx, engagement_id=engagement_id, kind=kind, status=status, cursor=cursor, limit=limit
+    )
+    return ListPage[WorkItemRowOut](
+        items=[
+            WorkItemRowOut.model_validate(
+                {k: v for k, v in asdict(row).items() if k != "created_at"}
+            )
+            for row in page.items
+        ],
+        next_cursor=page.next_cursor,
+        total=page.total,
+        total_capped=page.total_capped,
+        counts=page.counts,
     )

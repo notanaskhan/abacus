@@ -25,6 +25,8 @@ Consumers can rely on these:
 | Engagement projection | `GET /v1/engagements/{engagement_id}` | `engagement.read_metadata` | firm roles, engagement team, client roles (metadata) | allowed by the matrix rule |
 | Engagement list | `GET /v1/engagements` | `engagement.read_metadata` | as above | as above |
 | Work items | `GET /v1/engagements/{engagement_id}/work-items` | `work_item.read_metadata` | firm roles and the engagement team | agent: `task_scope` |
+| Work-item list (live, F-03-T31) | `GET /v1/work-items?engagement_id=&kind=&status=&cursor=&limit=` | `work_item.read_metadata` | as above, filtered by `visible_scope(..., "work_item", ...)` | agent: `task_scope` |
+| Create a work item (service, F-03-T22) | `engagements.api.create_work_item` (no route yet) | `work_item.create` | engagement partner, manager | agent: deny |
 
 ## 3. Models
 All the models live in `backend/src/abacus/modules/engagements/routes.py`.
@@ -41,6 +43,8 @@ All the models live in `backend/src/abacus/modules/engagements/routes.py`.
   - `independence_conclusion`;
   - `engagement_letter`;
   - `no_gate_provider`.
+- **`EngagementOut.allowed_actions`** (F-03-T31): the engagement actions the caller may offer, from `identity.allowed_actions` (never recorded as a check).
+- **`ListPage[WorkItemRowOut]`** (F-03-T31): the P-36 list envelope (`items`, `next_cursor`, `total`, `total_capped`, `counts` per status, the status filter left out of the counts); rows carry `engagement_id`. Behind `engagements.work_items_api`: on locally, in tests and for synthetic firms; 404 elsewhere until P-07.
 - **`WorkItemOut`**: `id`, `kind` (assurance, tax_return, close, notice, advisory_project), `name`, `status` (active, archived), `period_start`, `period_end`, `due_on`, and `phase` (assurance only).
 
 ## 4. Status words
@@ -56,6 +60,8 @@ All the models live in `backend/src/abacus/modules/engagements/routes.py`.
 |---|---|---|
 | 404 | `{"detail": "not_found"}` | unknown engagement, or walled from the caller |
 | 409 | `{"detail": "unknown_work_item_kind"}` | creating a work item of an unregistered kind (the slot) |
+| 409 | `{"detail": "work_item_exists", "facts": {"kind": …}}` | a second assurance item, or a second close for a period |
+| 422 | `{"detail": "cursor_invalid"}` | a cursor this list didn't issue for this firm and these filters |
 
 ## 7. Audit and outbox events
 Reads write none. Engagement creation writes `engagement.created` and emits `engagement.created`. Every new engagement gets its assurance work item and primary entity from the database (migration 0068 and 0069 triggers).
