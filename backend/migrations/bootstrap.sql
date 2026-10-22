@@ -17,6 +17,11 @@ BEGIN
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'abacus_identity') THEN
     CREATE ROLE abacus_identity LOGIN;
   END IF;
+  -- Q-01-T19 (ADR-157): operator tasks run as this role: no table privileges, EXECUTE only on
+  -- set_platform_control() and provision_firm() (granted in migration 0086).
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'abacus_ops') THEN
+    CREATE ROLE abacus_ops LOGIN;
+  END IF;
 END
 $$;
 
@@ -40,11 +45,12 @@ ALTER ROLE abacus_relay NOSUPERUSER NOCREATEDB NOCREATEROLE BYPASSRLS NOREPLICAT
 -- bypasses row-level security, so it may only read users, memberships and firms (migration 0004).
 ALTER ROLE abacus_identity NOSUPERUSER NOCREATEDB NOCREATEROLE BYPASSRLS NOREPLICATION NOINHERIT;
 ALTER ROLE abacus_identity SET default_transaction_read_only = on;
+ALTER ROLE abacus_ops NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS NOREPLICATION NOINHERIT;
 
 DO $$
 BEGIN
   EXECUTE format('GRANT CONNECT, TEMPORARY ON DATABASE %I TO abacus_owner', current_database());
-  EXECUTE format('GRANT CONNECT ON DATABASE %I TO abacus_app, abacus_relay, abacus_identity',
+  EXECUTE format('GRANT CONNECT ON DATABASE %I TO abacus_app, abacus_relay, abacus_identity, abacus_ops',
     current_database());
   EXECUTE format('REVOKE CREATE, TEMPORARY ON DATABASE %I FROM PUBLIC', current_database());
 END
@@ -55,7 +61,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 GRANT USAGE, CREATE ON SCHEMA public TO abacus_owner;
-GRANT USAGE ON SCHEMA public TO abacus_app, abacus_relay, abacus_identity;
+GRANT USAGE ON SCHEMA public TO abacus_app, abacus_relay, abacus_identity, abacus_ops;
 
 -- Tables the owner creates are readable and writable by the app; row-level security decides which
 -- rows. Insert-only tables revoke UPDATE and DELETE in their migration (kernel.db.migration).
