@@ -965,6 +965,169 @@
         "title": "AgentOut",
         "type": "object"
       },
+      "AgentProposalOut": {
+        "description": "`GET /v1/proposals/{ref}`: the C3 projection SHL-10 renders, for a generic proposal or a\ntyped adapter's (screener, upload reviewer, matcher).",
+        "properties": {
+          "agent_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Agent Run Id"
+          },
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "change_count": {
+            "cls": "internal",
+            "title": "Change Count",
+            "type": "integer"
+          },
+          "checkpoint_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Checkpoint Id"
+          },
+          "context_label": {
+            "cls": "confidential",
+            "title": "Context Label",
+            "type": "string"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalDecisionOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted"
+          },
+          "evidence": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ProposalEvidenceOut"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "kind": {
+            "cls": "internal",
+            "title": "Kind",
+            "type": "string"
+          },
+          "policy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalPolicyOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted"
+          },
+          "proposed_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Proposed At",
+            "type": "string"
+          },
+          "reasoning": {
+            "cls": "restricted",
+            "title": "Reasoning",
+            "type": "string"
+          },
+          "ref": {
+            "cls": "internal",
+            "title": "Ref",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/ProposalRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "set": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalSetOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ProposalStatus",
+            "cls": "internal"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          },
+          "totals": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/ProposalTotalOut"
+            },
+            "title": "Totals",
+            "type": "array"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ref",
+          "kind",
+          "title",
+          "context_label",
+          "state",
+          "version",
+          "agent_run_id",
+          "proposed_at",
+          "change_count",
+          "reasoning",
+          "rows",
+          "totals",
+          "evidence",
+          "policy",
+          "set",
+          "checkpoint_id",
+          "decision",
+          "allowed_actions"
+        ],
+        "title": "AgentProposalOut",
+        "type": "object"
+      },
       "AgentRunOut": {
         "properties": {
           "agent": {
@@ -1056,6 +1219,151 @@
           "subject"
         ],
         "title": "AgentRunOut",
+        "type": "object"
+      },
+      "AgentSuggestionOut": {
+        "description": "One proposed value for one target, after a person's decision.",
+        "properties": {
+          "agent_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Agent Run Id"
+          },
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "citation_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decided At"
+          },
+          "decided_by_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decided By User Id"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "enum": [
+                  "adopted",
+                  "edited",
+                  "dismissed",
+                  "undone"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decision"
+          },
+          "field_key": {
+            "cls": "internal",
+            "title": "Field Key",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "proposed_value": {
+            "cls": "restricted",
+            "title": "Proposed Value",
+            "type": "string"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Rationale"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SuggestionStatus",
+            "cls": "internal"
+          },
+          "target_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Target Id",
+            "type": "string"
+          },
+          "target_type": {
+            "cls": "internal",
+            "title": "Target Type",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "target_type",
+          "target_id",
+          "field_key",
+          "proposed_value",
+          "rationale",
+          "citation_ids",
+          "status",
+          "version",
+          "agent_run_id",
+          "decision",
+          "decided_by_user_id",
+          "decided_at",
+          "allowed_actions"
+        ],
+        "title": "AgentSuggestionOut",
         "type": "object"
       },
       "AgentsStateOut": {
@@ -3221,6 +3529,7 @@
               "type": "string"
             },
             "cls": "internal",
+            "default": {},
             "title": "Nav",
             "type": "object"
           },
@@ -3279,10 +3588,119 @@
           "mfa_recent_until",
           "server_now",
           "clock_mode",
-          "portal",
-          "nav"
+          "portal"
         ],
         "title": "CapabilitiesOut",
+        "type": "object"
+      },
+      "CardDecideIn": {
+        "additionalProperties": false,
+        "description": "`POST /v1/decision-cards/{id}/decide`. No rationale answers 422 `rationale_required`; a\nstale `seen_version` answers 409 `recommendation_changed`.",
+        "properties": {
+          "factors": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 40,
+            "title": "Factors",
+            "type": "array"
+          },
+          "option_key": {
+            "cls": "internal",
+            "pattern": "^[a-z0-9][a-z0-9_.]{0,39}$",
+            "title": "Option Key",
+            "type": "string"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Rationale"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seen Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "option_key",
+          "seen_version"
+        ],
+        "title": "CardDecideIn",
+        "type": "object"
+      },
+      "CardDecisionOut": {
+        "description": "The insert-only, human-only `decisions` row. The rationale is sealed.",
+        "properties": {
+          "decided_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Decided At",
+            "type": "string"
+          },
+          "decided_by_name": {
+            "cls": "internal",
+            "title": "Decided By Name",
+            "type": "string"
+          },
+          "decided_by_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Decided By User Id",
+            "type": "string"
+          },
+          "factors": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Factors",
+            "type": "array"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "option_key": {
+            "cls": "internal",
+            "title": "Option Key",
+            "type": "string"
+          },
+          "rationale": {
+            "cls": "restricted",
+            "title": "Rationale",
+            "type": "string"
+          },
+          "seen_card_version": {
+            "cls": "internal",
+            "title": "Seen Card Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "option_key",
+          "factors",
+          "rationale",
+          "seen_card_version",
+          "decided_by_user_id",
+          "decided_by_name",
+          "decided_at"
+        ],
+        "title": "CardDecisionOut",
         "type": "object"
       },
       "CellBody": {
@@ -5046,6 +5464,32 @@
         "title": "DashboardOut",
         "type": "object"
       },
+      "DecideIn": {
+        "additionalProperties": false,
+        "properties": {
+          "approvals": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/abacus__modules__agents__routes__ApprovalIn"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Approvals",
+            "type": "array"
+          },
+          "confirmed_read": {
+            "cls": "internal",
+            "default": false,
+            "title": "Confirmed Read",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "approvals"
+        ],
+        "title": "DecideIn",
+        "type": "object"
+      },
       "DecidedOut": {
         "properties": {
           "decided": {
@@ -5223,7 +5667,7 @@
           "decision": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/abacus__modules__review__contract__DecisionOut"
+                "$ref": "#/components/schemas/CardDecisionOut"
               },
               {
                 "type": "null"
@@ -5581,6 +6025,73 @@
           "recommended"
         ],
         "title": "DecisionOptionOut",
+        "type": "object"
+      },
+      "DecisionOut": {
+        "properties": {
+          "corrects_proposal": {
+            "cls": "internal",
+            "title": "Corrects Proposal",
+            "type": "boolean"
+          },
+          "decision": {
+            "cls": "internal",
+            "enum": [
+              "accept",
+              "reject",
+              "send_back"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "item_status": {
+            "$ref": "#/components/schemas/RequestStatus",
+            "cls": "internal"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Reason Code"
+          },
+          "request_item_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Request Item Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "evidence_version_id",
+          "request_item_ids",
+          "decision",
+          "reason_code",
+          "corrects_proposal",
+          "item_status"
+        ],
+        "title": "DecisionOut",
         "type": "object"
       },
       "DecisionRecommendationOut": {
@@ -7754,9 +8265,16 @@
             "title": "Sandbox Of"
           },
           "seats_total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "internal",
-            "title": "Seats Total",
-            "type": "integer"
+            "title": "Seats Total"
           },
           "time_zone": {
             "cls": "internal",
@@ -9726,7 +10244,7 @@
           "suggestions": {
             "cls": "internal",
             "items": {
-              "$ref": "#/components/schemas/abacus__modules__evidence__routes__SuggestionOut"
+              "$ref": "#/components/schemas/SuggestionOut"
             },
             "title": "Suggestions",
             "type": "array"
@@ -14119,6 +14637,63 @@
         "title": "ProposalEvidenceOut",
         "type": "object"
       },
+      "ProposalOut": {
+        "description": "The agent's proposal. Rationale and quotes are model text: shown as plain text (ADR-065).",
+        "properties": {
+          "action": {
+            "cls": "internal",
+            "enum": [
+              "ready_for_review",
+              "needs_revision"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "citations": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/abacus__modules__evidence__routes__CitationOut"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "confidence": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Confidence",
+            "type": "string"
+          },
+          "rationale": {
+            "cls": "confidential",
+            "title": "Rationale",
+            "type": "string"
+          },
+          "screening_result_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Screening Result Id",
+            "type": "string"
+          },
+          "unverified": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Unverified",
+            "type": "array"
+          }
+        },
+        "required": [
+          "screening_result_id",
+          "action",
+          "confidence",
+          "rationale",
+          "citations",
+          "unverified"
+        ],
+        "title": "ProposalOut",
+        "type": "object"
+      },
       "ProposalPolicyOut": {
         "description": "`proposals.policy_eval` and the policy note. While P-08 is dormant the approver is always\na named person, never \"Policy\" or the agent (INV-5).",
         "properties": {
@@ -14642,7 +15217,7 @@
           "proposal": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/abacus__modules__evidence__routes__ProposalOut"
+                "$ref": "#/components/schemas/ProposalOut"
               },
               {
                 "type": "null"
@@ -16679,6 +17254,35 @@
         "title": "ReviewMatrixOut",
         "type": "object"
       },
+      "ReviewNoteDetailOut": {
+        "description": "One note with its sealed body and its insert-only events.",
+        "properties": {
+          "body": {
+            "cls": "restricted",
+            "title": "Body",
+            "type": "string"
+          },
+          "events": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/ReviewNoteEventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "note": {
+            "$ref": "#/components/schemas/ReviewNoteItemOut",
+            "cls": "confidential"
+          }
+        },
+        "required": [
+          "note",
+          "body",
+          "events"
+        ],
+        "title": "ReviewNoteDetailOut",
+        "type": "object"
+      },
       "ReviewNoteEventIn": {
         "additionalProperties": false,
         "properties": {
@@ -16848,6 +17452,105 @@
           "allowed_actions"
         ],
         "title": "ReviewNoteItemOut",
+        "type": "object"
+      },
+      "ReviewNoteOut": {
+        "properties": {
+          "anchor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Anchor"
+          },
+          "body": {
+            "cls": "confidential",
+            "title": "Body",
+            "type": "string"
+          },
+          "events": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/NoteEventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "raised_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Raised At",
+            "type": "string"
+          },
+          "raised_by_me": {
+            "cls": "internal",
+            "title": "Raised By Me",
+            "type": "boolean"
+          },
+          "raised_by_name": {
+            "cls": "internal",
+            "title": "Raised By Name",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "open",
+              "responded",
+              "cleared"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "target_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Target Code"
+          },
+          "target_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Target Id",
+            "type": "string"
+          },
+          "target_type": {
+            "cls": "internal",
+            "title": "Target Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "target_type",
+          "target_id",
+          "target_code",
+          "anchor",
+          "body",
+          "status",
+          "raised_by_name",
+          "raised_at",
+          "raised_by_me",
+          "events"
+        ],
+        "title": "ReviewNoteOut",
         "type": "object"
       },
       "ReviewNoteStatus": {
@@ -19638,6 +20341,56 @@
           "done"
         ],
         "title": "StepOut",
+        "type": "object"
+      },
+      "SuggestionOut": {
+        "properties": {
+          "matched": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Matched",
+            "type": "array"
+          },
+          "reasons": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ReasonOut"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "request_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Request Item Id",
+            "type": "string"
+          },
+          "score": {
+            "cls": "internal",
+            "title": "Score",
+            "type": "integer"
+          },
+          "source": {
+            "cls": "internal",
+            "default": "file_name",
+            "enum": [
+              "matcher",
+              "content",
+              "file_name"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_item_id",
+          "score",
+          "matched"
+        ],
+        "title": "SuggestionOut",
         "type": "object"
       },
       "SuggestionStatus": {
@@ -22636,314 +23389,6 @@
         "title": "YourPartOut",
         "type": "object"
       },
-      "abacus__modules__agents__contract__ProposalOut": {
-        "description": "`GET /v1/proposals/{ref}`: the C3 projection SHL-10 renders, for a generic proposal or a\ntyped adapter's (screener, upload reviewer, matcher).",
-        "properties": {
-          "agent_run_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Agent Run Id"
-          },
-          "allowed_actions": {
-            "cls": "internal",
-            "items": {
-              "type": "string"
-            },
-            "title": "Allowed Actions",
-            "type": "array"
-          },
-          "change_count": {
-            "cls": "internal",
-            "title": "Change Count",
-            "type": "integer"
-          },
-          "checkpoint_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Checkpoint Id"
-          },
-          "context_label": {
-            "cls": "confidential",
-            "title": "Context Label",
-            "type": "string"
-          },
-          "decision": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ProposalDecisionOut"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "restricted"
-          },
-          "evidence": {
-            "cls": "confidential",
-            "items": {
-              "$ref": "#/components/schemas/ProposalEvidenceOut"
-            },
-            "title": "Evidence",
-            "type": "array"
-          },
-          "kind": {
-            "cls": "internal",
-            "title": "Kind",
-            "type": "string"
-          },
-          "policy": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ProposalPolicyOut"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "restricted"
-          },
-          "proposed_at": {
-            "cls": "internal",
-            "format": "date-time",
-            "title": "Proposed At",
-            "type": "string"
-          },
-          "reasoning": {
-            "cls": "restricted",
-            "title": "Reasoning",
-            "type": "string"
-          },
-          "ref": {
-            "cls": "internal",
-            "title": "Ref",
-            "type": "string"
-          },
-          "rows": {
-            "cls": "restricted",
-            "items": {
-              "$ref": "#/components/schemas/ProposalRowOut"
-            },
-            "title": "Rows",
-            "type": "array"
-          },
-          "set": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ProposalSetOut"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential"
-          },
-          "state": {
-            "$ref": "#/components/schemas/ProposalStatus",
-            "cls": "internal"
-          },
-          "title": {
-            "cls": "confidential",
-            "title": "Title",
-            "type": "string"
-          },
-          "totals": {
-            "cls": "restricted",
-            "items": {
-              "$ref": "#/components/schemas/ProposalTotalOut"
-            },
-            "title": "Totals",
-            "type": "array"
-          },
-          "version": {
-            "cls": "internal",
-            "title": "Version",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "ref",
-          "kind",
-          "title",
-          "context_label",
-          "state",
-          "version",
-          "agent_run_id",
-          "proposed_at",
-          "change_count",
-          "reasoning",
-          "rows",
-          "totals",
-          "evidence",
-          "policy",
-          "set",
-          "checkpoint_id",
-          "decision",
-          "allowed_actions"
-        ],
-        "title": "ProposalOut",
-        "type": "object"
-      },
-      "abacus__modules__agents__contract__SuggestionOut": {
-        "description": "One proposed value for one target, after a person's decision.",
-        "properties": {
-          "agent_run_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Agent Run Id"
-          },
-          "allowed_actions": {
-            "cls": "internal",
-            "items": {
-              "type": "string"
-            },
-            "title": "Allowed Actions",
-            "type": "array"
-          },
-          "citation_ids": {
-            "cls": "internal",
-            "items": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "title": "Citation Ids",
-            "type": "array"
-          },
-          "decided_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Decided At"
-          },
-          "decided_by_user_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Decided By User Id"
-          },
-          "decision": {
-            "anyOf": [
-              {
-                "enum": [
-                  "adopted",
-                  "edited",
-                  "dismissed",
-                  "undone"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Decision"
-          },
-          "field_key": {
-            "cls": "internal",
-            "title": "Field Key",
-            "type": "string"
-          },
-          "id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "proposed_value": {
-            "cls": "restricted",
-            "title": "Proposed Value",
-            "type": "string"
-          },
-          "rationale": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "restricted",
-            "title": "Rationale"
-          },
-          "status": {
-            "$ref": "#/components/schemas/SuggestionStatus",
-            "cls": "internal"
-          },
-          "target_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Target Id",
-            "type": "string"
-          },
-          "target_type": {
-            "cls": "internal",
-            "title": "Target Type",
-            "type": "string"
-          },
-          "version": {
-            "cls": "internal",
-            "title": "Version",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "id",
-          "target_type",
-          "target_id",
-          "field_key",
-          "proposed_value",
-          "rationale",
-          "citation_ids",
-          "status",
-          "version",
-          "agent_run_id",
-          "decision",
-          "decided_by_user_id",
-          "decided_at",
-          "allowed_actions"
-        ],
-        "title": "SuggestionOut",
-        "type": "object"
-      },
       "abacus__modules__agents__routes__ApprovalIn": {
         "additionalProperties": false,
         "properties": {
@@ -23079,32 +23524,6 @@
         "title": "CitationOut",
         "type": "object"
       },
-      "abacus__modules__agents__routes__DecideIn": {
-        "additionalProperties": false,
-        "properties": {
-          "approvals": {
-            "cls": "internal",
-            "items": {
-              "$ref": "#/components/schemas/abacus__modules__agents__routes__ApprovalIn"
-            },
-            "maxItems": 500,
-            "minItems": 1,
-            "title": "Approvals",
-            "type": "array"
-          },
-          "confirmed_read": {
-            "cls": "internal",
-            "default": false,
-            "title": "Confirmed Read",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "approvals"
-        ],
-        "title": "DecideIn",
-        "type": "object"
-      },
       "abacus__modules__connections__routes__StartIn": {
         "additionalProperties": false,
         "properties": {
@@ -23186,180 +23605,6 @@
         "title": "CitationOut",
         "type": "object"
       },
-      "abacus__modules__evidence__routes__DecisionOut": {
-        "properties": {
-          "corrects_proposal": {
-            "cls": "internal",
-            "title": "Corrects Proposal",
-            "type": "boolean"
-          },
-          "decision": {
-            "cls": "internal",
-            "enum": [
-              "accept",
-              "reject",
-              "send_back"
-            ],
-            "title": "Decision",
-            "type": "string"
-          },
-          "evidence_version_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Evidence Version Id",
-            "type": "string"
-          },
-          "id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "item_status": {
-            "$ref": "#/components/schemas/RequestStatus",
-            "cls": "internal"
-          },
-          "reason_code": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "public",
-            "title": "Reason Code"
-          },
-          "request_item_ids": {
-            "cls": "internal",
-            "items": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "title": "Request Item Ids",
-            "type": "array"
-          }
-        },
-        "required": [
-          "id",
-          "evidence_version_id",
-          "request_item_ids",
-          "decision",
-          "reason_code",
-          "corrects_proposal",
-          "item_status"
-        ],
-        "title": "DecisionOut",
-        "type": "object"
-      },
-      "abacus__modules__evidence__routes__ProposalOut": {
-        "description": "The agent's proposal. Rationale and quotes are model text: shown as plain text (ADR-065).",
-        "properties": {
-          "action": {
-            "cls": "internal",
-            "enum": [
-              "ready_for_review",
-              "needs_revision"
-            ],
-            "title": "Action",
-            "type": "string"
-          },
-          "citations": {
-            "cls": "confidential",
-            "items": {
-              "$ref": "#/components/schemas/abacus__modules__evidence__routes__CitationOut"
-            },
-            "title": "Citations",
-            "type": "array"
-          },
-          "confidence": {
-            "cls": "internal",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Confidence",
-            "type": "string"
-          },
-          "rationale": {
-            "cls": "confidential",
-            "title": "Rationale",
-            "type": "string"
-          },
-          "screening_result_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Screening Result Id",
-            "type": "string"
-          },
-          "unverified": {
-            "cls": "confidential",
-            "items": {
-              "type": "string"
-            },
-            "title": "Unverified",
-            "type": "array"
-          }
-        },
-        "required": [
-          "screening_result_id",
-          "action",
-          "confidence",
-          "rationale",
-          "citations",
-          "unverified"
-        ],
-        "title": "ProposalOut",
-        "type": "object"
-      },
-      "abacus__modules__evidence__routes__SuggestionOut": {
-        "properties": {
-          "matched": {
-            "cls": "confidential",
-            "items": {
-              "type": "string"
-            },
-            "title": "Matched",
-            "type": "array"
-          },
-          "reasons": {
-            "cls": "confidential",
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/ReasonOut"
-            },
-            "title": "Reasons",
-            "type": "array"
-          },
-          "request_item_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Request Item Id",
-            "type": "string"
-          },
-          "score": {
-            "cls": "internal",
-            "title": "Score",
-            "type": "integer"
-          },
-          "source": {
-            "cls": "internal",
-            "default": "file_name",
-            "enum": [
-              "matcher",
-              "content",
-              "file_name"
-            ],
-            "title": "Source",
-            "type": "string"
-          }
-        },
-        "required": [
-          "request_item_id",
-          "score",
-          "matched"
-        ],
-        "title": "SuggestionOut",
-        "type": "object"
-      },
       "abacus__modules__fieldwork__routes__ApprovalIn": {
         "additionalProperties": false,
         "properties": {
@@ -23395,244 +23640,6 @@
           }
         },
         "title": "StartIn",
-        "type": "object"
-      },
-      "abacus__modules__review__contract__DecideIn": {
-        "additionalProperties": false,
-        "description": "`POST /v1/decision-cards/{id}/decide`. No rationale answers 422 `rationale_required`; a\nstale `seen_version` answers 409 `recommendation_changed`.",
-        "properties": {
-          "factors": {
-            "cls": "internal",
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "maxItems": 40,
-            "title": "Factors",
-            "type": "array"
-          },
-          "option_key": {
-            "cls": "internal",
-            "pattern": "^[a-z0-9][a-z0-9_.]{0,39}$",
-            "title": "Option Key",
-            "type": "string"
-          },
-          "rationale": {
-            "anyOf": [
-              {
-                "maxLength": 4000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "restricted",
-            "title": "Rationale"
-          },
-          "seen_version": {
-            "cls": "internal",
-            "minimum": 1.0,
-            "title": "Seen Version",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "option_key",
-          "seen_version"
-        ],
-        "title": "DecideIn",
-        "type": "object"
-      },
-      "abacus__modules__review__contract__DecisionOut": {
-        "description": "The insert-only, human-only `decisions` row. The rationale is sealed.",
-        "properties": {
-          "decided_at": {
-            "cls": "internal",
-            "format": "date-time",
-            "title": "Decided At",
-            "type": "string"
-          },
-          "decided_by_name": {
-            "cls": "internal",
-            "title": "Decided By Name",
-            "type": "string"
-          },
-          "decided_by_user_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Decided By User Id",
-            "type": "string"
-          },
-          "factors": {
-            "cls": "internal",
-            "items": {
-              "type": "string"
-            },
-            "title": "Factors",
-            "type": "array"
-          },
-          "id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "option_key": {
-            "cls": "internal",
-            "title": "Option Key",
-            "type": "string"
-          },
-          "rationale": {
-            "cls": "restricted",
-            "title": "Rationale",
-            "type": "string"
-          },
-          "seen_card_version": {
-            "cls": "internal",
-            "title": "Seen Card Version",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "id",
-          "option_key",
-          "factors",
-          "rationale",
-          "seen_card_version",
-          "decided_by_user_id",
-          "decided_by_name",
-          "decided_at"
-        ],
-        "title": "DecisionOut",
-        "type": "object"
-      },
-      "abacus__modules__review__contract__ReviewNoteOut": {
-        "description": "One note with its sealed body and its insert-only events.",
-        "properties": {
-          "body": {
-            "cls": "restricted",
-            "title": "Body",
-            "type": "string"
-          },
-          "events": {
-            "cls": "restricted",
-            "items": {
-              "$ref": "#/components/schemas/ReviewNoteEventOut"
-            },
-            "title": "Events",
-            "type": "array"
-          },
-          "note": {
-            "$ref": "#/components/schemas/ReviewNoteItemOut",
-            "cls": "confidential"
-          }
-        },
-        "required": [
-          "note",
-          "body",
-          "events"
-        ],
-        "title": "ReviewNoteOut",
-        "type": "object"
-      },
-      "abacus__modules__review__routes__ReviewNoteOut": {
-        "properties": {
-          "anchor": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "Anchor"
-          },
-          "body": {
-            "cls": "confidential",
-            "title": "Body",
-            "type": "string"
-          },
-          "events": {
-            "cls": "confidential",
-            "items": {
-              "$ref": "#/components/schemas/NoteEventOut"
-            },
-            "title": "Events",
-            "type": "array"
-          },
-          "id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "raised_at": {
-            "cls": "internal",
-            "format": "date-time",
-            "title": "Raised At",
-            "type": "string"
-          },
-          "raised_by_me": {
-            "cls": "internal",
-            "title": "Raised By Me",
-            "type": "boolean"
-          },
-          "raised_by_name": {
-            "cls": "internal",
-            "title": "Raised By Name",
-            "type": "string"
-          },
-          "status": {
-            "cls": "internal",
-            "enum": [
-              "open",
-              "responded",
-              "cleared"
-            ],
-            "title": "Status",
-            "type": "string"
-          },
-          "target_code": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Target Code"
-          },
-          "target_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Target Id",
-            "type": "string"
-          },
-          "target_type": {
-            "cls": "internal",
-            "title": "Target Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "target_type",
-          "target_id",
-          "target_code",
-          "anchor",
-          "body",
-          "status",
-          "raised_by_name",
-          "raised_at",
-          "raised_by_me",
-          "events"
-        ],
-        "title": "ReviewNoteOut",
         "type": "object"
       }
     },
@@ -26448,7 +26455,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/abacus__modules__review__contract__DecideIn"
+                "$ref": "#/components/schemas/CardDecideIn"
               }
             }
           },
@@ -32252,7 +32259,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__evidence__routes__DecisionOut"
+                  "$ref": "#/components/schemas/DecisionOut"
                 }
               }
             },
@@ -32398,7 +32405,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__evidence__routes__DecisionOut"
+                  "$ref": "#/components/schemas/DecisionOut"
                 }
               }
             },
@@ -32544,7 +32551,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__evidence__routes__DecisionOut"
+                  "$ref": "#/components/schemas/DecisionOut"
                 }
               }
             },
@@ -35201,7 +35208,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/abacus__modules__agents__routes__DecideIn"
+                "$ref": "#/components/schemas/DecideIn"
               }
             }
           },
@@ -35327,7 +35334,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/abacus__modules__agents__routes__DecideIn"
+                "$ref": "#/components/schemas/DecideIn"
               }
             }
           },
@@ -48072,7 +48079,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/abacus__modules__review__routes__ReviewNoteOut"
+                    "$ref": "#/components/schemas/ReviewNoteOut"
                   },
                   "title": "Response Review Notes",
                   "type": "array"
@@ -48191,7 +48198,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/abacus__modules__review__routes__ReviewNoteOut"
+                    "$ref": "#/components/schemas/ReviewNoteOut"
                   },
                   "title": "Response Raise Review Note",
                   "type": "array"
@@ -48322,7 +48329,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/abacus__modules__review__routes__ReviewNoteOut"
+                    "$ref": "#/components/schemas/ReviewNoteOut"
                   },
                   "title": "Response Clear Review Note",
                   "type": "array"
@@ -48453,7 +48460,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/abacus__modules__review__routes__ReviewNoteOut"
+                    "$ref": "#/components/schemas/ReviewNoteOut"
                   },
                   "title": "Response Reopen Review Note",
                   "type": "array"
@@ -48584,7 +48591,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/abacus__modules__review__routes__ReviewNoteOut"
+                    "$ref": "#/components/schemas/ReviewNoteOut"
                   },
                   "title": "Response Respond Review Note",
                   "type": "array"
@@ -61299,7 +61306,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/abacus__modules__agents__routes__DecideIn"
+                "$ref": "#/components/schemas/DecideIn"
               }
             }
           },
@@ -61425,7 +61432,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/abacus__modules__agents__routes__DecideIn"
+                "$ref": "#/components/schemas/DecideIn"
               }
             }
           },
@@ -62652,7 +62659,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__agents__contract__ProposalOut"
+                  "$ref": "#/components/schemas/AgentProposalOut"
                 }
               }
             },
@@ -62789,7 +62796,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__agents__contract__ProposalOut"
+                  "$ref": "#/components/schemas/AgentProposalOut"
                 }
               }
             },
@@ -62926,7 +62933,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__agents__contract__ProposalOut"
+                  "$ref": "#/components/schemas/AgentProposalOut"
                 }
               }
             },
@@ -63063,7 +63070,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__agents__contract__ProposalOut"
+                  "$ref": "#/components/schemas/AgentProposalOut"
                 }
               }
             },
@@ -63200,7 +63207,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__agents__contract__ProposalOut"
+                  "$ref": "#/components/schemas/AgentProposalOut"
                 }
               }
             },
@@ -63277,7 +63284,7 @@
     "/v1/proposals/{ref}": {
       "get": {
         "description": "SHL-10 a to g: the proposal projection with the caller's allowed actions.",
-        "operationId": "proposal",
+        "operationId": "agent_proposal",
         "parameters": [
           {
             "in": "path",
@@ -63327,7 +63334,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__agents__contract__ProposalOut"
+                  "$ref": "#/components/schemas/AgentProposalOut"
                 }
               }
             },
@@ -63384,7 +63391,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Proposal Route",
+        "summary": "Agent Proposal Route",
         "tags": [
           "agents"
         ],
@@ -63651,7 +63658,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__review__contract__ReviewNoteOut"
+                  "$ref": "#/components/schemas/ReviewNoteDetailOut"
                 }
               }
             },
@@ -63768,7 +63775,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__review__contract__ReviewNoteOut"
+                  "$ref": "#/components/schemas/ReviewNoteDetailOut"
                 }
               }
             },
@@ -63895,7 +63902,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__review__contract__ReviewNoteOut"
+                  "$ref": "#/components/schemas/ReviewNoteDetailOut"
                 }
               }
             },
@@ -64031,7 +64038,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__review__contract__ReviewNoteOut"
+                  "$ref": "#/components/schemas/ReviewNoteDetailOut"
                 }
               }
             },
@@ -64168,7 +64175,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__review__contract__ReviewNoteOut"
+                  "$ref": "#/components/schemas/ReviewNoteDetailOut"
                 }
               }
             },
@@ -64938,7 +64945,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__agents__contract__SuggestionOut"
+                  "$ref": "#/components/schemas/AgentSuggestionOut"
                 }
               }
             },
@@ -65075,7 +65082,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__agents__contract__SuggestionOut"
+                  "$ref": "#/components/schemas/AgentSuggestionOut"
                 }
               }
             },

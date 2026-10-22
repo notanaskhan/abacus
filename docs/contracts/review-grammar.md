@@ -85,7 +85,7 @@ Code: `backend/src/abacus/modules/review/contract.py`.
 **Review notes**
 
 - **`ReviewNoteItemOut`**, a list row. Internal: `id`, `engagement_id`, `target_type`, `target_id`, `status`, `raised_by_user_id`, `raised_by_initials`, `raised_at`, `assignee_user_id`, `allowed_actions`. Confidential: `anchor {kind, ref}`, where `kind` is `cell`, `field`, `section` or `region` and `ref` is, for example, `RA!C14`.
-- Bodies are sealed and Restricted. **List rows never carry a body.** `ReviewNoteOut` (the detail, and the response of every write) carries `note`, `body` (Restricted) and `events[] {event, body (Restricted), actor_user_id, actor_name, at}`. `event` is one of `raised`, `responded`, `cleared`, `closed`, `withdrawn` or `reopened`.
+- Bodies are sealed and Restricted. **List rows never carry a body.** `ReviewNoteDetailOut` (the detail, and the response of every write) carries `note`, `body` (Restricted) and `events[] {event, body (Restricted), actor_user_id, actor_name, at}`. `event` is one of `raised`, `responded`, `cleared`, `closed`, `withdrawn` or `reopened`.
 - **`RaiseReviewNoteIn`**: `target_type`, `target_id`, `anchor?` (Confidential), `body` (Restricted, 1 to 2,000 characters, no control characters) and `assignee_user_id?`.
 - **`ReviewNoteEventIn`**: `body?` (Restricted).
 - The list is the P-36 envelope. `counts` are per status.
@@ -117,11 +117,11 @@ Code: `backend/src/abacus/modules/review/contract.py`.
 - **`DecisionRecommendationOut`**: `suggestion_id`, `option_key` and `reasons[]`.
   - It is the agent's recommendation, a suggestion (`recommendation_suggestion_id`).
   - The UI shows it only as the tag "Recommended by Accrued Agent", and `reasons` render only through AgentText.
-- **`DecisionOut`**: `id`, `option_key`, `factors[]`, `rationale` (Restricted, sealed), `seen_card_version`, `decided_by_user_id`, `decided_by_name` and `decided_at`.
+- **`CardDecisionOut`**: `id`, `option_key`, `factors[]`, `rationale` (Restricted, sealed), `seen_card_version`, `decided_by_user_id`, `decided_by_name` and `decided_at`.
 - **`DecisionCardVersionOut`**: `version_no`, `event`, `actor_kind`, `actor_user_id`, `actor_initials`, `at`, `option_key`, `changed` and `figures`.
   - `event` is `proposed`, `decided` or `reassessed`.
   - `changed` is false for a reassessment with no change.
-- **`DecideIn`**: `option_key`, `factors[]`, `rationale` (Restricted) and `seen_version`.
+- **`CardDecideIn`**: `option_key`, `factors[]`, `rationale` (Restricted) and `seen_version`.
   - `rationale` is optional on the wire, so the service answers the fixed `422 rationale_required` rather than a schema error.
 - **`AnalysisRequestIn`**: `text` (Restricted). It returns `AnalysisRequestOut {id, card_id, requested_by_user_id, requested_at}`.
 - `notify` returns **`DecisionNotifyOut`**: `{card_id, notified_user_id, notified_at}`.
@@ -133,7 +133,7 @@ Code: `backend/src/abacus/modules/agents/contract.py`.
 
 Values may be return information (§7216) or client figures, so they are Restricted. They appear only in a detail read, never in a list.
 
-- **`ProposalOut`**:
+- **`AgentProposalOut`**:
   - Internal: `ref`, `kind`, `state`, `version`, `agent_run_id`, `proposed_at`, `change_count`, `checkpoint_id`, `allowed_actions`.
   - Confidential: `title`, `context_label`, `evidence[] {evidence_version_id, label, citation_count}`, `set`.
   - Restricted: `reasoning` (agent text, rendered only through AgentText), `rows[]`, `totals[]`, `policy`, `decision`.
@@ -151,7 +151,7 @@ Values may be return information (§7216) or client figures, so they are Restric
   - `ApproveProposalIn {seen_version, edits[] {n, after, citation_note}}`. Each edit needs a citation note, and the CTA reads "Approve with edits".
   - `RejectProposalIn {seen_version, reason_code, note?}`. `reason_code` is `wrong_treatment`, `unsupported_value`, `needs_client_input` or `other`.
   - `RouteProposalIn {seen_version, approver_user_id}`, `FollowUpIn {text}` and `UndoProposalIn {decision_id}`.
-- **`SuggestionOut`**:
+- **`AgentSuggestionOut`**:
   - `id`, `target_type`, `target_id`, `field_key`;
   - `proposed_value` (Restricted) and `rationale` (agent text, Restricted);
   - `citation_ids`, `status`, `version`, `agent_run_id`;

@@ -123,6 +123,11 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "completion.record",  # SPEC-314 (TASK-332)
         "connection.read_log",
         "dashboard.read",  # SPEC-317 (TASK-460)
+        "decision.decide",  # P-04-T08 (TASK-414)
+        "decision.notify",  # P-04-T08 (TASK-414)
+        "decision.read",  # P-04-T08 (TASK-414)
+        "decision.reassess",  # P-04-T08 (TASK-414)
+        "decision.request_analysis",  # P-04-T08 (TASK-414)
         "entry_assessment.adopt",  # SPEC-044 (TASK-109)
         "entry_assessment.request",  # SPEC-037 Q4 (TASK-085)
         "eqr.concur",  # SPEC-314 (TASK-332)
@@ -149,9 +154,16 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "procedure.configure",
         "procedure.read",
         "procedure.run",
+        "proposal.approve",  # P-04-T08 (TASK-414)
+        "proposal.follow_up",  # P-04-T08 (TASK-414)
+        "proposal.read",  # P-04-T08 (TASK-414)
+        "proposal.reject",  # P-04-T08 (TASK-414)
+        "proposal.route",  # P-04-T08 (TASK-414)
+        "proposal.undo",  # P-04-T08 (TASK-414)
         "report.approve",  # SPEC-314 (TASK-332)
         "report.release",  # SPEC-314 (TASK-332)
         "representation.edit",  # SPEC-301 (TASK-302)
+        "request_item.send",  # P-06-T01 (TASK-415)
         "review.assign",
         "review.read",
         "review.take",
@@ -174,6 +186,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "sign_off.read",  # P-04-T07 (TASK-413)
         "sign_off.review",
         "statement.approve",  # SPEC-312 (TASK-324)
+        "suggestion.resolve",  # P-04-T08 (TASK-414)
         "tie_out_check.define",  # SPEC-310 (TASK-321)
         "trial_balance.adopt",  # SPEC-309 (TASK-320)
         "trial_balance.annotate",

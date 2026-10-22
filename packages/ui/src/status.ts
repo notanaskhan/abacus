@@ -234,6 +234,10 @@ const DISC_DRAWING = {
   left_bar_brick: null,
   dotted_underline_amber: null,
   amber_tint_relink: null,
+  // P-04-T02 (the review grammar's glyphs): drawn by the trust-kit overlays, not as a disc.
+  atom: null,
+  atom_olive: null,
+  estimate_badge: null,
 } as const satisfies Record<RegistryDisc, DiscDrawing | null>;
 
 // The sync chip draws its leading glyph from the same names.

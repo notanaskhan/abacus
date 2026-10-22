@@ -456,6 +456,75 @@ export type AgentOut = {
 };
 
 /**
+ * AgentProposalOut
+ *
+ * `GET /v1/proposals/{ref}`: the C3 projection SHL-10 renders, for a generic proposal or a
+ * typed adapter's (screener, upload reviewer, matcher).
+ */
+export type AgentProposalOut = {
+    /**
+     * Agent Run Id
+     */
+    agent_run_id: string | null;
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Change Count
+     */
+    change_count: number;
+    /**
+     * Checkpoint Id
+     */
+    checkpoint_id: string | null;
+    /**
+     * Context Label
+     */
+    context_label: string;
+    decision: ProposalDecisionOut | null;
+    /**
+     * Evidence
+     */
+    evidence: Array<ProposalEvidenceOut>;
+    /**
+     * Kind
+     */
+    kind: string;
+    policy: ProposalPolicyOut | null;
+    /**
+     * Proposed At
+     */
+    proposed_at: string;
+    /**
+     * Reasoning
+     */
+    reasoning: string;
+    /**
+     * Ref
+     */
+    ref: string;
+    /**
+     * Rows
+     */
+    rows: Array<ProposalRowOut>;
+    set: ProposalSetOut | null;
+    state: ProposalStatus;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Totals
+     */
+    totals: Array<ProposalTotalOut>;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * AgentRunOut
  */
 export type AgentRunOut = {
@@ -495,6 +564,67 @@ export type AgentRunOut = {
      * Subject
      */
     subject: string | null;
+};
+
+/**
+ * AgentSuggestionOut
+ *
+ * One proposed value for one target, after a person's decision.
+ */
+export type AgentSuggestionOut = {
+    /**
+     * Agent Run Id
+     */
+    agent_run_id: string | null;
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Decided At
+     */
+    decided_at: string | null;
+    /**
+     * Decided By User Id
+     */
+    decided_by_user_id: string | null;
+    /**
+     * Decision
+     */
+    decision: 'adopted' | 'edited' | 'dismissed' | 'undone' | null;
+    /**
+     * Field Key
+     */
+    field_key: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Proposed Value
+     */
+    proposed_value: string;
+    /**
+     * Rationale
+     */
+    rationale: string | null;
+    status: SuggestionStatus;
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Target Type
+     */
+    target_type: string;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -1523,7 +1653,7 @@ export type CapabilitiesOut = {
     /**
      * Nav
      */
-    nav: {
+    nav?: {
         [key: string]: 'write' | 'read' | 'none';
     };
     /**
@@ -1543,6 +1673,71 @@ export type CapabilitiesOut = {
      * Tz
      */
     tz: string;
+};
+
+/**
+ * CardDecideIn
+ *
+ * `POST /v1/decision-cards/{id}/decide`. No rationale answers 422 `rationale_required`; a
+ * stale `seen_version` answers 409 `recommendation_changed`.
+ */
+export type CardDecideIn = {
+    /**
+     * Factors
+     */
+    factors?: Array<string>;
+    /**
+     * Option Key
+     */
+    option_key: string;
+    /**
+     * Rationale
+     */
+    rationale?: string | null;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
+ * CardDecisionOut
+ *
+ * The insert-only, human-only `decisions` row. The rationale is sealed.
+ */
+export type CardDecisionOut = {
+    /**
+     * Decided At
+     */
+    decided_at: string;
+    /**
+     * Decided By Name
+     */
+    decided_by_name: string;
+    /**
+     * Decided By User Id
+     */
+    decided_by_user_id: string;
+    /**
+     * Factors
+     */
+    factors: Array<string>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Option Key
+     */
+    option_key: string;
+    /**
+     * Rationale
+     */
+    rationale: string;
+    /**
+     * Seen Card Version
+     */
+    seen_card_version: number;
 };
 
 /**
@@ -2338,6 +2533,20 @@ export type DashboardOut = {
 };
 
 /**
+ * DecideIn
+ */
+export type DecideIn = {
+    /**
+     * Approvals
+     */
+    approvals: Array<AbacusModulesAgentsRoutesApprovalIn>;
+    /**
+     * Confirmed Read
+     */
+    confirmed_read?: boolean;
+};
+
+/**
  * DecidedOut
  */
 export type DecidedOut = {
@@ -2424,7 +2633,7 @@ export type DecisionCardOut = {
      * Context
      */
     context: Array<DecisionContextOut>;
-    decision: AbacusModulesReviewContractDecisionOut | null;
+    decision: CardDecisionOut | null;
     /**
      * Factors
      */
@@ -2602,6 +2811,37 @@ export type DecisionOptionOut = {
      * Recommended
      */
     recommended: boolean;
+};
+
+/**
+ * DecisionOut
+ */
+export type DecisionOut = {
+    /**
+     * Corrects Proposal
+     */
+    corrects_proposal: boolean;
+    /**
+     * Decision
+     */
+    decision: 'accept' | 'reject' | 'send_back';
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    item_status: RequestStatus;
+    /**
+     * Reason Code
+     */
+    reason_code: string | null;
+    /**
+     * Request Item Ids
+     */
+    request_item_ids: Array<string>;
 };
 
 /**
@@ -3655,7 +3895,7 @@ export type FirmFactsOut = {
     /**
      * Seats Total
      */
-    seats_total: number;
+    seats_total: number | null;
     /**
      * Time Zone
      */
@@ -4667,7 +4907,7 @@ export type InboxFileOut = {
     /**
      * Suggestions
      */
-    suggestions: Array<AbacusModulesEvidenceRoutesSuggestionOut>;
+    suggestions: Array<SuggestionOut>;
     /**
      * Uploaded By
      */
@@ -6846,6 +7086,38 @@ export type ProposalEvidenceOut = {
 };
 
 /**
+ * ProposalOut
+ *
+ * The agent's proposal. Rationale and quotes are model text: shown as plain text (ADR-065).
+ */
+export type ProposalOut = {
+    /**
+     * Action
+     */
+    action: 'ready_for_review' | 'needs_revision';
+    /**
+     * Citations
+     */
+    citations: Array<AbacusModulesEvidenceRoutesCitationOut>;
+    /**
+     * Confidence
+     */
+    confidence: string;
+    /**
+     * Rationale
+     */
+    rationale: string;
+    /**
+     * Screening Result Id
+     */
+    screening_result_id: string;
+    /**
+     * Unverified
+     */
+    unverified: Array<string>;
+};
+
+/**
  * ProposalPolicyOut
  *
  * `proposals.policy_eval` and the policy note. While P-08 is dormant the approver is always
@@ -7121,7 +7393,7 @@ export type QueueEntryOut = {
      * Item Description
      */
     item_description: string;
-    proposal: AbacusModulesEvidenceRoutesProposalOut | null;
+    proposal: ProposalOut | null;
     /**
      * Request Item Id
      */
@@ -8006,6 +8278,23 @@ export type ReviewMatrixOut = {
 };
 
 /**
+ * ReviewNoteDetailOut
+ *
+ * One note with its sealed body and its insert-only events.
+ */
+export type ReviewNoteDetailOut = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Events
+     */
+    events: Array<ReviewNoteEventOut>;
+    note: ReviewNoteItemOut;
+};
+
+/**
  * ReviewNoteEventIn
  */
 export type ReviewNoteEventIn = {
@@ -8078,6 +8367,56 @@ export type ReviewNoteItemOut = {
      */
     raised_by_user_id: string;
     status: ReviewNoteStatus;
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Target Type
+     */
+    target_type: string;
+};
+
+/**
+ * ReviewNoteOut
+ */
+export type ReviewNoteOut = {
+    /**
+     * Anchor
+     */
+    anchor: string | null;
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Events
+     */
+    events: Array<NoteEventOut>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Raised At
+     */
+    raised_at: string;
+    /**
+     * Raised By Me
+     */
+    raised_by_me: boolean;
+    /**
+     * Raised By Name
+     */
+    raised_by_name: string;
+    /**
+     * Status
+     */
+    status: 'open' | 'responded' | 'cleared';
+    /**
+     * Target Code
+     */
+    target_code: string | null;
     /**
      * Target Id
      */
@@ -9424,6 +9763,32 @@ export type StepOut = {
      * Id
      */
     id: 'sso' | 'team' | 'methodology' | 'autonomy' | 'budget' | 'walls' | 'engagement';
+};
+
+/**
+ * SuggestionOut
+ */
+export type SuggestionOut = {
+    /**
+     * Matched
+     */
+    matched: Array<string>;
+    /**
+     * Reasons
+     */
+    reasons?: Array<ReasonOut>;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+    /**
+     * Score
+     */
+    score: number;
+    /**
+     * Source
+     */
+    source?: 'matcher' | 'content' | 'file_name';
 };
 
 /**
@@ -10853,136 +11218,6 @@ export type YourPartOut = {
 };
 
 /**
- * ProposalOut
- *
- * `GET /v1/proposals/{ref}`: the C3 projection SHL-10 renders, for a generic proposal or a
- * typed adapter's (screener, upload reviewer, matcher).
- */
-export type AbacusModulesAgentsContractProposalOut = {
-    /**
-     * Agent Run Id
-     */
-    agent_run_id: string | null;
-    /**
-     * Allowed Actions
-     */
-    allowed_actions: Array<string>;
-    /**
-     * Change Count
-     */
-    change_count: number;
-    /**
-     * Checkpoint Id
-     */
-    checkpoint_id: string | null;
-    /**
-     * Context Label
-     */
-    context_label: string;
-    decision: ProposalDecisionOut | null;
-    /**
-     * Evidence
-     */
-    evidence: Array<ProposalEvidenceOut>;
-    /**
-     * Kind
-     */
-    kind: string;
-    policy: ProposalPolicyOut | null;
-    /**
-     * Proposed At
-     */
-    proposed_at: string;
-    /**
-     * Reasoning
-     */
-    reasoning: string;
-    /**
-     * Ref
-     */
-    ref: string;
-    /**
-     * Rows
-     */
-    rows: Array<ProposalRowOut>;
-    set: ProposalSetOut | null;
-    state: ProposalStatus;
-    /**
-     * Title
-     */
-    title: string;
-    /**
-     * Totals
-     */
-    totals: Array<ProposalTotalOut>;
-    /**
-     * Version
-     */
-    version: number;
-};
-
-/**
- * SuggestionOut
- *
- * One proposed value for one target, after a person's decision.
- */
-export type AbacusModulesAgentsContractSuggestionOut = {
-    /**
-     * Agent Run Id
-     */
-    agent_run_id: string | null;
-    /**
-     * Allowed Actions
-     */
-    allowed_actions: Array<string>;
-    /**
-     * Citation Ids
-     */
-    citation_ids: Array<string>;
-    /**
-     * Decided At
-     */
-    decided_at: string | null;
-    /**
-     * Decided By User Id
-     */
-    decided_by_user_id: string | null;
-    /**
-     * Decision
-     */
-    decision: 'adopted' | 'edited' | 'dismissed' | 'undone' | null;
-    /**
-     * Field Key
-     */
-    field_key: string;
-    /**
-     * Id
-     */
-    id: string;
-    /**
-     * Proposed Value
-     */
-    proposed_value: string;
-    /**
-     * Rationale
-     */
-    rationale: string | null;
-    status: SuggestionStatus;
-    /**
-     * Target Id
-     */
-    target_id: string;
-    /**
-     * Target Type
-     */
-    target_type: string;
-    /**
-     * Version
-     */
-    version: number;
-};
-
-/**
  * ApprovalIn
  */
 export type AbacusModulesAgentsRoutesApprovalIn = {
@@ -11035,20 +11270,6 @@ export type AbacusModulesAgentsRoutesCitationOut = {
 };
 
 /**
- * DecideIn
- */
-export type AbacusModulesAgentsRoutesDecideIn = {
-    /**
-     * Approvals
-     */
-    approvals: Array<AbacusModulesAgentsRoutesApprovalIn>;
-    /**
-     * Confirmed Read
-     */
-    confirmed_read?: boolean;
-};
-
-/**
  * StartIn
  */
 export type AbacusModulesConnectionsRoutesStartIn = {
@@ -11087,95 +11308,6 @@ export type AbacusModulesEvidenceRoutesCitationOut = {
 };
 
 /**
- * DecisionOut
- */
-export type AbacusModulesEvidenceRoutesDecisionOut = {
-    /**
-     * Corrects Proposal
-     */
-    corrects_proposal: boolean;
-    /**
-     * Decision
-     */
-    decision: 'accept' | 'reject' | 'send_back';
-    /**
-     * Evidence Version Id
-     */
-    evidence_version_id: string;
-    /**
-     * Id
-     */
-    id: string;
-    item_status: RequestStatus;
-    /**
-     * Reason Code
-     */
-    reason_code: string | null;
-    /**
-     * Request Item Ids
-     */
-    request_item_ids: Array<string>;
-};
-
-/**
- * ProposalOut
- *
- * The agent's proposal. Rationale and quotes are model text: shown as plain text (ADR-065).
- */
-export type AbacusModulesEvidenceRoutesProposalOut = {
-    /**
-     * Action
-     */
-    action: 'ready_for_review' | 'needs_revision';
-    /**
-     * Citations
-     */
-    citations: Array<AbacusModulesEvidenceRoutesCitationOut>;
-    /**
-     * Confidence
-     */
-    confidence: string;
-    /**
-     * Rationale
-     */
-    rationale: string;
-    /**
-     * Screening Result Id
-     */
-    screening_result_id: string;
-    /**
-     * Unverified
-     */
-    unverified: Array<string>;
-};
-
-/**
- * SuggestionOut
- */
-export type AbacusModulesEvidenceRoutesSuggestionOut = {
-    /**
-     * Matched
-     */
-    matched: Array<string>;
-    /**
-     * Reasons
-     */
-    reasons?: Array<ReasonOut>;
-    /**
-     * Request Item Id
-     */
-    request_item_id: string;
-    /**
-     * Score
-     */
-    score: number;
-    /**
-     * Source
-     */
-    source?: 'matcher' | 'content' | 'file_name';
-};
-
-/**
  * ApprovalIn
  */
 export type AbacusModulesFieldworkRoutesApprovalIn = {
@@ -11193,138 +11325,6 @@ export type AbacusModulesFieldworkRoutesStartIn = {
      * Definition
      */
     definition?: 'journal_entry_testing' | 'unrecorded_liabilities';
-};
-
-/**
- * DecideIn
- *
- * `POST /v1/decision-cards/{id}/decide`. No rationale answers 422 `rationale_required`; a
- * stale `seen_version` answers 409 `recommendation_changed`.
- */
-export type AbacusModulesReviewContractDecideIn = {
-    /**
-     * Factors
-     */
-    factors?: Array<string>;
-    /**
-     * Option Key
-     */
-    option_key: string;
-    /**
-     * Rationale
-     */
-    rationale?: string | null;
-    /**
-     * Seen Version
-     */
-    seen_version: number;
-};
-
-/**
- * DecisionOut
- *
- * The insert-only, human-only `decisions` row. The rationale is sealed.
- */
-export type AbacusModulesReviewContractDecisionOut = {
-    /**
-     * Decided At
-     */
-    decided_at: string;
-    /**
-     * Decided By Name
-     */
-    decided_by_name: string;
-    /**
-     * Decided By User Id
-     */
-    decided_by_user_id: string;
-    /**
-     * Factors
-     */
-    factors: Array<string>;
-    /**
-     * Id
-     */
-    id: string;
-    /**
-     * Option Key
-     */
-    option_key: string;
-    /**
-     * Rationale
-     */
-    rationale: string;
-    /**
-     * Seen Card Version
-     */
-    seen_card_version: number;
-};
-
-/**
- * ReviewNoteOut
- *
- * One note with its sealed body and its insert-only events.
- */
-export type AbacusModulesReviewContractReviewNoteOut = {
-    /**
-     * Body
-     */
-    body: string;
-    /**
-     * Events
-     */
-    events: Array<ReviewNoteEventOut>;
-    note: ReviewNoteItemOut;
-};
-
-/**
- * ReviewNoteOut
- */
-export type AbacusModulesReviewRoutesReviewNoteOut = {
-    /**
-     * Anchor
-     */
-    anchor: string | null;
-    /**
-     * Body
-     */
-    body: string;
-    /**
-     * Events
-     */
-    events: Array<NoteEventOut>;
-    /**
-     * Id
-     */
-    id: string;
-    /**
-     * Raised At
-     */
-    raised_at: string;
-    /**
-     * Raised By Me
-     */
-    raised_by_me: boolean;
-    /**
-     * Raised By Name
-     */
-    raised_by_name: string;
-    /**
-     * Status
-     */
-    status: 'open' | 'responded' | 'cleared';
-    /**
-     * Target Code
-     */
-    target_code: string | null;
-    /**
-     * Target Id
-     */
-    target_id: string;
-    /**
-     * Target Type
-     */
-    target_type: string;
 };
 
 export type AgentRunTraceData = {
@@ -12550,7 +12550,7 @@ export type DecisionCardAnalysisRequestResponses = {
 export type DecisionCardAnalysisRequestResponse = DecisionCardAnalysisRequestResponses[keyof DecisionCardAnalysisRequestResponses];
 
 export type DecisionCardDecideData = {
-    body: AbacusModulesReviewContractDecideIn;
+    body: CardDecideIn;
     headers?: {
         /**
          * Authorization
@@ -15310,7 +15310,7 @@ export type AcceptResponses = {
     /**
      * Successful Response
      */
-    201: AbacusModulesEvidenceRoutesDecisionOut;
+    201: DecisionOut;
 };
 
 export type AcceptResponse = AcceptResponses[keyof AcceptResponses];
@@ -15374,7 +15374,7 @@ export type RejectResponses = {
     /**
      * Successful Response
      */
-    201: AbacusModulesEvidenceRoutesDecisionOut;
+    201: DecisionOut;
 };
 
 export type RejectResponse = RejectResponses[keyof RejectResponses];
@@ -15438,7 +15438,7 @@ export type SendBackResponses = {
     /**
      * Successful Response
      */
-    201: AbacusModulesEvidenceRoutesDecisionOut;
+    201: DecisionOut;
 };
 
 export type SendBackResponse = SendBackResponses[keyof SendBackResponses];
@@ -16626,7 +16626,7 @@ export type GuidanceDraftsResponses = {
 export type GuidanceDraftsResponse = GuidanceDraftsResponses[keyof GuidanceDraftsResponses];
 
 export type ApproveDraftsData = {
-    body: AbacusModulesAgentsRoutesDecideIn;
+    body: DecideIn;
     headers?: {
         /**
          * Authorization
@@ -16682,7 +16682,7 @@ export type ApproveDraftsResponses = {
 export type ApproveDraftsResponse = ApproveDraftsResponses[keyof ApproveDraftsResponses];
 
 export type DiscardDraftsData = {
-    body: AbacusModulesAgentsRoutesDecideIn;
+    body: DecideIn;
     headers?: {
         /**
          * Authorization
@@ -22575,7 +22575,7 @@ export type ReviewNotesResponses = {
      *
      * Successful Response
      */
-    200: Array<AbacusModulesReviewRoutesReviewNoteOut>;
+    200: Array<ReviewNoteOut>;
 };
 
 export type ReviewNotesResponse = ReviewNotesResponses[keyof ReviewNotesResponses];
@@ -22629,7 +22629,7 @@ export type RaiseReviewNoteResponses = {
      *
      * Successful Response
      */
-    201: Array<AbacusModulesReviewRoutesReviewNoteOut>;
+    201: Array<ReviewNoteOut>;
 };
 
 export type RaiseReviewNoteResponse = RaiseReviewNoteResponses[keyof RaiseReviewNoteResponses];
@@ -22687,7 +22687,7 @@ export type ClearReviewNoteResponses = {
      *
      * Successful Response
      */
-    201: Array<AbacusModulesReviewRoutesReviewNoteOut>;
+    201: Array<ReviewNoteOut>;
 };
 
 export type ClearReviewNoteResponse = ClearReviewNoteResponses[keyof ClearReviewNoteResponses];
@@ -22745,7 +22745,7 @@ export type ReopenReviewNoteResponses = {
      *
      * Successful Response
      */
-    201: Array<AbacusModulesReviewRoutesReviewNoteOut>;
+    201: Array<ReviewNoteOut>;
 };
 
 export type ReopenReviewNoteResponse = ReopenReviewNoteResponses[keyof ReopenReviewNoteResponses];
@@ -22803,7 +22803,7 @@ export type RespondReviewNoteResponses = {
      *
      * Successful Response
      */
-    201: Array<AbacusModulesReviewRoutesReviewNoteOut>;
+    201: Array<ReviewNoteOut>;
 };
 
 export type RespondReviewNoteResponse = RespondReviewNoteResponses[keyof RespondReviewNoteResponses];
@@ -28664,7 +28664,7 @@ export type TemplateDraftsResponses = {
 export type TemplateDraftsResponse = TemplateDraftsResponses[keyof TemplateDraftsResponses];
 
 export type ApproveTemplateDraftsData = {
-    body: AbacusModulesAgentsRoutesDecideIn;
+    body: DecideIn;
     headers?: {
         /**
          * Authorization
@@ -28720,7 +28720,7 @@ export type ApproveTemplateDraftsResponses = {
 export type ApproveTemplateDraftsResponse = ApproveTemplateDraftsResponses[keyof ApproveTemplateDraftsResponses];
 
 export type DiscardTemplateDraftsData = {
-    body: AbacusModulesAgentsRoutesDecideIn;
+    body: DecideIn;
     headers?: {
         /**
          * Authorization
@@ -29328,7 +29328,7 @@ export type ProposalApproveResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesAgentsContractProposalOut;
+    200: AgentProposalOut;
 };
 
 export type ProposalApproveResponse = ProposalApproveResponses[keyof ProposalApproveResponses];
@@ -29388,7 +29388,7 @@ export type ProposalFollowUpResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesAgentsContractProposalOut;
+    200: AgentProposalOut;
 };
 
 export type ProposalFollowUpResponse = ProposalFollowUpResponses[keyof ProposalFollowUpResponses];
@@ -29448,7 +29448,7 @@ export type ProposalRejectResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesAgentsContractProposalOut;
+    200: AgentProposalOut;
 };
 
 export type ProposalRejectResponse = ProposalRejectResponses[keyof ProposalRejectResponses];
@@ -29508,7 +29508,7 @@ export type ProposalRouteToResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesAgentsContractProposalOut;
+    200: AgentProposalOut;
 };
 
 export type ProposalRouteToResponse = ProposalRouteToResponses[keyof ProposalRouteToResponses];
@@ -29568,12 +29568,12 @@ export type ProposalUndoResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesAgentsContractProposalOut;
+    200: AgentProposalOut;
 };
 
 export type ProposalUndoResponse = ProposalUndoResponses[keyof ProposalUndoResponses];
 
-export type Proposal2Data = {
+export type AgentProposalData = {
     body?: never;
     headers?: {
         /**
@@ -29595,7 +29595,7 @@ export type Proposal2Data = {
     url: '/v1/proposals/{ref}';
 };
 
-export type Proposal2Errors = {
+export type AgentProposalErrors = {
     /**
      * Not authenticated
      */
@@ -29618,16 +29618,16 @@ export type Proposal2Errors = {
     501: ErrorOut;
 };
 
-export type Proposal2Error = Proposal2Errors[keyof Proposal2Errors];
+export type AgentProposalError = AgentProposalErrors[keyof AgentProposalErrors];
 
-export type Proposal2Responses = {
+export type AgentProposalResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesAgentsContractProposalOut;
+    200: AgentProposalOut;
 };
 
-export type Proposal2Response = Proposal2Responses[keyof Proposal2Responses];
+export type AgentProposalResponse = AgentProposalResponses[keyof AgentProposalResponses];
 
 export type ReviewNoteListData = {
     body?: never;
@@ -29751,7 +29751,7 @@ export type ReviewNoteRaiseResponses = {
     /**
      * Successful Response
      */
-    201: AbacusModulesReviewContractReviewNoteOut;
+    201: ReviewNoteDetailOut;
 };
 
 export type ReviewNoteRaiseResponse = ReviewNoteRaiseResponses[keyof ReviewNoteRaiseResponses];
@@ -29807,7 +29807,7 @@ export type ReviewNoteResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesReviewContractReviewNoteOut;
+    200: ReviewNoteDetailOut;
 };
 
 export type ReviewNoteResponse = ReviewNoteResponses[keyof ReviewNoteResponses];
@@ -29867,7 +29867,7 @@ export type ReviewNoteClearResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesReviewContractReviewNoteOut;
+    200: ReviewNoteDetailOut;
 };
 
 export type ReviewNoteClearResponse = ReviewNoteClearResponses[keyof ReviewNoteClearResponses];
@@ -29927,7 +29927,7 @@ export type ReviewNoteRespondResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesReviewContractReviewNoteOut;
+    200: ReviewNoteDetailOut;
 };
 
 export type ReviewNoteRespondResponse = ReviewNoteRespondResponses[keyof ReviewNoteRespondResponses];
@@ -29987,7 +29987,7 @@ export type ReviewNoteWithdrawResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesReviewContractReviewNoteOut;
+    200: ReviewNoteDetailOut;
 };
 
 export type ReviewNoteWithdrawResponse = ReviewNoteWithdrawResponses[keyof ReviewNoteWithdrawResponses];
@@ -30332,7 +30332,7 @@ export type SuggestionAdoptResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesAgentsContractSuggestionOut;
+    200: AgentSuggestionOut;
 };
 
 export type SuggestionAdoptResponse = SuggestionAdoptResponses[keyof SuggestionAdoptResponses];
@@ -30392,7 +30392,7 @@ export type SuggestionDismissResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesAgentsContractSuggestionOut;
+    200: AgentSuggestionOut;
 };
 
 export type SuggestionDismissResponse = SuggestionDismissResponses[keyof SuggestionDismissResponses];

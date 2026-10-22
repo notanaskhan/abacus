@@ -152,6 +152,18 @@ NOT_CREATING = {
     "/v1/proposals/{proposal_id}/undo",
     "/v1/suggestions/{suggestion_id}/adopt",
     "/v1/suggestions/{suggestion_id}/dismiss",
+    # P-06-T01 (C5 stub): state changes on a binder or request item that return the record.
+    "/v1/binders/{binder_id}/publish",
+    "/v1/binders/{binder_id}/publish/undo",
+    "/v1/binders/{binder_id}/unpublish",
+    "/v1/engagements/{engagement_id}/request-items/{item_id}/send",
+    "/v1/engagements/{engagement_id}/request-items/{item_id}/send/undo",
+    "/v1/engagements/{engagement_id}/request-items/{item_id}/waive",
+    "/v1/engagements/{engagement_id}/request-items/{item_id}/return-to-client",
+    "/v1/engagements/{engagement_id}/request-items/{item_id}/incorporate",
+    "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/withdraw",
+    "/v1/portal/binders/{binder_id}/mark-done",
+    "/v1/portal/request-items/{item_id}/ignore",
 }
 
 
@@ -174,6 +186,11 @@ def test_ac20_creating_routes_answer_201() -> None:
     assert created == {
         "/v1/engagements",
         "/v1/engagements/{engagement_id}/request-items",
+        # P-06-T01 (C5 stub): a binder, its copy, a delegation and an upload intent.
+        "/v1/binders",
+        "/v1/binders/{binder_id}/duplicate",
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/delegate",
+        "/v1/portal/request-items/{item_id}/upload-intents",
         "/v1/walls",
         "/v1/methodology/templates/{name}/versions",  # SPEC-008: a template version
         "/v1/engagements/{engagement_id}/methodology",  # SPEC-008: items seeded

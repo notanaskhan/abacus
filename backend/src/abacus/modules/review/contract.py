@@ -327,7 +327,7 @@ class ReviewNoteEventOut(BaseModel):
     at: Annotated[datetime, classified("internal")]
 
 
-class ReviewNoteOut(BaseModel):
+class ReviewNoteDetailOut(BaseModel):
     """One note with its sealed body and its insert-only events."""
 
     model_config = ConfigDict(frozen=True)
@@ -373,9 +373,9 @@ async def review_note_list_route(
 
 
 @review_notes_router.get(
-    "/{note_id}", action="review_note.read", response_model=ReviewNoteOut, errors=(501,)
+    "/{note_id}", action="review_note.read", response_model=ReviewNoteDetailOut, errors=(501,)
 )
-async def review_note_route(note_id: UUID, ctx: Ctx) -> ReviewNoteOut:
+async def review_note_route(note_id: UUID, ctx: Ctx) -> ReviewNoteDetailOut:
     """One note with its body and events."""
     await _stub(ctx)
 
@@ -383,11 +383,11 @@ async def review_note_route(note_id: UUID, ctx: Ctx) -> ReviewNoteOut:
 @review_notes_router.post(
     "",
     action="review_note.raise",
-    response_model=ReviewNoteOut,
+    response_model=ReviewNoteDetailOut,
     status_code=201,
     errors=(501,),
 )
-async def review_note_raise_route(body: RaiseReviewNoteIn, ctx: Ctx) -> ReviewNoteOut:
+async def review_note_raise_route(body: RaiseReviewNoteIn, ctx: Ctx) -> ReviewNoteDetailOut:
     """Raise a note on a registered reviewable, optionally on an anchor."""
     await _stub(ctx)
 
@@ -395,24 +395,24 @@ async def review_note_raise_route(body: RaiseReviewNoteIn, ctx: Ctx) -> ReviewNo
 @review_notes_router.post(
     "/{note_id}/respond",
     action="review_note.respond",
-    response_model=ReviewNoteOut,
+    response_model=ReviewNoteDetailOut,
     errors=(409, 501),
 )
 async def review_note_respond_route(
     note_id: UUID, body: ReviewNoteEventIn, ctx: Ctx
-) -> ReviewNoteOut:
+) -> ReviewNoteDetailOut:
     await _stub(ctx)
 
 
 @review_notes_router.post(
     "/{note_id}/clear",
     action="review_note.clear",
-    response_model=ReviewNoteOut,
+    response_model=ReviewNoteDetailOut,
     errors=(409, 501),
 )
 async def review_note_clear_route(
     note_id: UUID, body: ReviewNoteEventIn, ctx: Ctx
-) -> ReviewNoteOut:
+) -> ReviewNoteDetailOut:
     """Clearing is a person's act (the event's CHECK requires a human)."""
     await _stub(ctx)
 
@@ -420,12 +420,12 @@ async def review_note_clear_route(
 @review_notes_router.post(
     "/{note_id}/withdraw",
     action="review_note.withdraw",
-    response_model=ReviewNoteOut,
+    response_model=ReviewNoteDetailOut,
     errors=(409, 501),
 )
 async def review_note_withdraw_route(
     note_id: UUID, body: ReviewNoteEventIn, ctx: Ctx
-) -> ReviewNoteOut:
+) -> ReviewNoteDetailOut:
     """The raiser withdraws their own note."""
     await _stub(ctx)
 
@@ -521,7 +521,7 @@ class DecisionRecommendationOut(BaseModel):
     reasons: Annotated[list[str], classified("confidential")]
 
 
-class DecisionOut(BaseModel):
+class CardDecisionOut(BaseModel):
     """The insert-only, human-only `decisions` row. The rationale is sealed."""
 
     model_config = ConfigDict(frozen=True)
@@ -587,11 +587,11 @@ class DecisionCardOut(BaseModel):
     note: Annotated[str | None, classified("confidential")]
     recommendation: Annotated[DecisionRecommendationOut | None, classified("confidential")]
     blocking_refs: Annotated[list[ObjectRefOut], classified("internal")]
-    decision: Annotated[DecisionOut | None, classified("restricted")]
+    decision: Annotated[CardDecisionOut | None, classified("restricted")]
     history: Annotated[list[DecisionCardVersionOut], classified("confidential")]
 
 
-class DecideIn(BaseModel):
+class CardDecideIn(BaseModel):
     """`POST /v1/decision-cards/{id}/decide`. No rationale answers 422 `rationale_required`; a
     stale `seen_version` answers 409 `recommendation_changed`."""
 
@@ -664,7 +664,9 @@ async def decision_card_route(card_id: UUID, ctx: Ctx) -> DecisionCardOut:
     response_model=DecisionCardOut,
     errors=(409, 501),
 )
-async def decision_card_decide_route(card_id: UUID, body: DecideIn, ctx: Ctx) -> DecisionCardOut:
+async def decision_card_decide_route(
+    card_id: UUID, body: CardDecideIn, ctx: Ctx
+) -> DecisionCardOut:
     """SHL-11 a to c: the reserved role decides, with a rationale (human only)."""
     await _stub(ctx)
 

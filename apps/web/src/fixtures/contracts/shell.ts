@@ -18,13 +18,13 @@ import type {
 export type NavAccess = "write" | "read" | "none";
 
 /** `GET /v1/me/capabilities` `nav`: the SHL-03 admin section, never a role name (AC 2.1.2). */
-export interface CapabilityNavDraft {
+export type CapabilityNavDraft = {
   firm_settings: NavAccess;
   users_roles: NavAccess;
   audit_log: NavAccess;
   security_center: NavAccess;
   developer_api: NavAccess;
-}
+};
 
 export type CapabilitiesV3Draft = CapabilitiesOut & { nav: CapabilityNavDraft };
 

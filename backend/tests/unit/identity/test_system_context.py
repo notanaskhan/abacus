@@ -152,7 +152,8 @@ def test_ac20_system_context_for_run_builds_a_context_acting_as_its_run() -> Non
         tenant_id=tenant_id, run_id=run_id, engagement_id=engagement_id, on_behalf_of=user_id
     )
     assert isinstance(ctx, SystemContext)
-    assert ctx.tenant == TenantContext(tenant_id, "system", f"run:{run_id}")
+    # Q-02-T16: the run's audit rows name the person it acts for.
+    assert ctx.tenant == TenantContext(tenant_id, "system", f"run:{run_id}", user_id)
     assert ctx.tenant_id == tenant_id
     assert ctx.on_behalf_of == user_id
     assert ctx.run_id == run_id

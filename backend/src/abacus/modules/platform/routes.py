@@ -104,7 +104,7 @@ class CapabilitiesOut(BaseModel):
     clock_mode: Annotated[Literal["real", "offset", "frozen"], classified("internal")]
     portal: Annotated[PortalOut | None, classified("internal")]
     # P-01-T04: firm-level settings areas for SHL-03 (`none` on an engagement's capabilities).
-    nav: Annotated[dict[str, Literal["write", "read", "none"]], classified("internal")]
+    nav: Annotated[dict[str, Literal["write", "read", "none"]], classified("internal")] = {}
 
 
 @router.get("/me/capabilities", action=OWN, response_model=CapabilitiesOut)

@@ -58,6 +58,9 @@ class Entry:
     tier: str
     locked: bool
     deviation: str | None
+    # P-01-T02: a screen baseline renders a screen route (`screens/SHL-01?st=a`) rather than a
+    # gallery specimen; None for a gallery specimen.
+    page: str | None = None
 
 
 def baseline_file(key: str) -> str:
@@ -70,7 +73,16 @@ def sha256_of(path: Path) -> str:
 
 
 def read_version(path: Path = VERSION_FILE) -> str:
-    version = path.read_text(encoding="utf-8").strip()
+    """The handoff version: the file's first token. F-04-T14 adds the screen index's hash after
+    it (`<date> sha256:<hex>`) for the link-contract test, which this tool doesn't need."""
+    tokens = path.read_text(encoding="utf-8").split()
+    version = tokens[0] if tokens else ""
+    if len(tokens) > 2 or (
+        len(tokens) == 2 and not re.fullmatch(r"sha256:[0-9a-f]{12,64}", tokens[1])
+    ):
+        raise ManifestError(
+            f"{path}: a handoff version is one token, then optionally sha256:<hex>"
+        )
     if not re.fullmatch(r"[A-Za-z0-9._-]+", version):
         raise ManifestError(f"{path}: a handoff version is one token of letters, digits, . _ -")
     return version
@@ -108,6 +120,9 @@ def parse_entry(key: str, raw: Json) -> Entry:
     deviation = raw.get("deviation")
     if deviation is not None and not (isinstance(deviation, str) and deviation.strip()):
         raise ManifestError(f'{key}: "deviation" says in words why the pixels differ')
+    page = raw.get("page")
+    if page is not None and not (isinstance(page, str) and page.startswith("screens/")):
+        raise ManifestError(f'{key}: "page" is a screen route, screens/<ID>?st=<artboard>')
     return Entry(
         key=key,
         specimen=key.split(".")[0],
@@ -118,6 +133,7 @@ def parse_entry(key: str, raw: Json) -> Entry:
         tier=tier,
         locked=raw.get("locked") is True,
         deviation=deviation,
+        page=page,
     )
 
 

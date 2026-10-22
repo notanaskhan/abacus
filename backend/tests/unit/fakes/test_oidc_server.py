@@ -10,6 +10,7 @@ import base64
 import hashlib
 import json
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
 from urllib.parse import parse_qs, urlparse
@@ -250,7 +251,9 @@ async def test_ac1_code_expires_after_sixty_seconds(
     client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     now = [1_000_000.0]
-    monkeypatch.setattr(oidc_server, "time", SimpleNamespace(time=lambda: now[0]))
+    monkeypatch.setattr(  # F-04-T16: the fake's clock is `system_now`
+        oidc_server, "system_now", lambda: datetime.fromtimestamp(now[0], UTC)
+    )
     code = await _code(client)
     now[0] += 61
     response = await client.post("/token", data=_exchange(code))
@@ -262,7 +265,9 @@ async def test_ac1_code_is_valid_just_inside_sixty_seconds(
     client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     now = [1_000_000.0]
-    monkeypatch.setattr(oidc_server, "time", SimpleNamespace(time=lambda: now[0]))
+    monkeypatch.setattr(  # F-04-T16: the fake's clock is `system_now`
+        oidc_server, "system_now", lambda: datetime.fromtimestamp(now[0], UTC)
+    )
     code = await _code(client)
     now[0] += 59
     assert (await client.post("/token", data=_exchange(code))).status_code == 200

@@ -86,7 +86,7 @@ class FirmFactsOut(BaseModel):
 
     region: Annotated[str, classified("internal")]
     time_zone: Annotated[str, classified("internal")]
-    seats_total: Annotated[int, classified("internal")]
+    seats_total: Annotated[int | None, classified("internal")]  # None for a sandbox
     is_sandbox: Annotated[bool, classified("internal")]
     sandbox_of: Annotated[UUID | None, classified("internal")]
 

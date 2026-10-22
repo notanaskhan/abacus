@@ -154,6 +154,11 @@ def engagement(monkeypatch: pytest.MonkeyPatch) -> EngagementRoles:
         return frozenset()  # SPEC-014: these cases test firm roles alone at firm level
 
     monkeypatch.setattr(authz, "engagement_roles_in_firm", no_engagement_roles)
+
+    async def not_a_partner(*args: object) -> bool:
+        return False  # DEC-132's derived role is tested in test_allowed_actions and nav tests
+
+    monkeypatch.setattr(authz, "_partner_level", not_a_partner)
     return fake
 
 
@@ -300,6 +305,8 @@ def test_ac20_the_yaml_has_the_expected_role_partition() -> None:
         # SPEC-012: break-glass staff, never firm members.
         "platform_support",
         "platform_support_content",
+        # P-01-T04 (DEC-132): derived from a staff member's partner level, never held.
+        "firm_partner",
     }
 
 
@@ -1111,3 +1118,25 @@ def test_spec020_ac1_visible_items_adds_client_reach_by_role() -> None:
         if k.startswith("role_") and isinstance(v, list):
             roles |= {str(role) for role in cast(list[object], v)}
     assert roles >= {"owner", "contributor"}
+
+
+# --- P-01-T04 (DEC-132): partners read firm settings through a derived firm-level role -------
+
+
+@pytest.mark.parametrize(("partner", "allowed"), [(True, True), (False, False)])
+async def test_dec132_a_partner_level_member_reads_settings_and_nobody_else(
+    engagement: EngagementRoles, monkeypatch: pytest.MonkeyPatch, partner: bool, allowed: bool
+) -> None:
+    async def level(*args: object) -> bool:
+        return partner
+
+    monkeypatch.setattr(authz, "_partner_level", level)
+    ctx = _ctx()
+    resource = Resource.firm(ctx.tenant_id)
+    if allowed:
+        await authorise(ctx, "firm.read_settings", resource)
+    else:
+        with pytest.raises(Forbidden):
+            await authorise(ctx, "firm.read_settings", resource)
+    with pytest.raises(Forbidden):  # derived for firm-level reads only, never writes
+        await authorise(ctx, "firm.manage_settings", resource)
