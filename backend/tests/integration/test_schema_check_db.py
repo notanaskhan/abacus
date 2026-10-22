@@ -1741,3 +1741,26 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"auth_session_set_refresh", "auth_session_revoke", "auth_session_end"}
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
+
+
+# --- DEC-52 (P-07-T07): no plaintext taxpayer ID column ------------------------------------------
+
+
+@pytest.fixture
+def tin_db(db: Cluster) -> Iterator[Cluster]:
+    yield db
+    _sql(db.admin, "DROP TABLE IF EXISTS tin_probe")
+
+
+@pytest.mark.parametrize("column", ["tin", "ssn", "ein", "itin", "owner_ssn", "payer_ein"])
+def test_p07t07_a_plaintext_tin_column_is_reported(tin_db: Cluster, column: str) -> None:
+    _sql(tin_db.owner_url, f"CREATE TABLE tin_probe ({column} text)")
+    problems = [m for m in sc.check(tin_db.owner_url, tin_db.app_url) if "tin_probe" in m]
+    assert f"tin_probe: column {column} looks like a plaintext TIN (DEC-52)" in problems
+
+
+@pytest.mark.parametrize("column", ["tin_sealed", "tin_last4", "tin_kind", "einstein", "latin"])
+def test_p07t07_sealed_tin_columns_and_lookalikes_pass(tin_db: Cluster, column: str) -> None:
+    _sql(tin_db.owner_url, f"CREATE TABLE tin_probe ({column} text)")
+    problems = [m for m in sc.check(tin_db.owner_url, tin_db.app_url) if "plaintext TIN" in m]
+    assert problems == []

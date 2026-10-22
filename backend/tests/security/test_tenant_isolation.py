@@ -57,6 +57,7 @@ TABLES: tuple[str, ...] = (
     "engagement_materiality",
     "engagement_members",
     "engagements",
+    "entity_relationships",
     "entry_assessments",
     "eqr_concurrences",
     "ethical_walls",
