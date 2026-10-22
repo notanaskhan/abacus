@@ -40,7 +40,17 @@ actions:
   entry_assessment.request: {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # SPEC-037 Q4 (TASK-085): "Assess with AI"
   entry_assessment.run:     {system: allow, agent: task_scope}   # TASK-085: the entry assessor records its assessments
   entry_assessment.adopt:   {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # SPEC-044 (TASK-109) AC-4: a person adopts the agent's proposals as results
-  suggestion.resolve:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny}
+  suggestion.resolve:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, independence: required}   # P-04-T08: POST /v1/suggestions/{id}/adopt|dismiss, a person's act (ADR-161)
+  # --- Proposals (C3 stub 2, P-04-T08; ADR-161). Every resolution is a person's: agent and system
+  # deny. proposal.create is service-only (agents.api.create_proposal). Threshold limits from
+  # policy_eval and routing are the service's (P-04-T24).
+  proposal.create:          {agent: task_scope}   # ADR-161 clause 2: the agent proposes, through its task
+  proposal.read:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, independence: required}   # SHL-10: firm roles only
+  proposal.approve:         {engagement_partner: allow, manager: allow, senior: allow, staff: firm_setting(staff_can_accept_evidence), agent: deny, system: deny, independence: required}   # as suggestion.resolve; staff for evidence adapters by firm setting (DEC-37)
+  proposal.reject:          {engagement_partner: allow, manager: allow, senior: allow, staff: firm_setting(staff_can_accept_evidence), agent: deny, system: deny, independence: required}   # SHL-10 f
+  proposal.route:           {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, independence: required}   # SHL-10 d: send to a named approver
+  proposal.follow_up:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny, independence: required}   # SHL-10: "Ask follow-up"
+  proposal.undo:            {engagement_partner: allow, manager: allow, senior: allow, staff: firm_setting(staff_can_accept_evidence), agent: deny, system: deny, independence: required}   # ADR-161 clause 6: the decider, inside 10 s (the service checks)
   # --- Follow-ups ---
   follow_up.draft:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: task_scope}
   follow_up.send:

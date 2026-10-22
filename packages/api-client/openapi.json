@@ -840,6 +840,49 @@
         "title": "AdoptIn",
         "type": "object"
       },
+      "AdoptSuggestionIn": {
+        "additionalProperties": false,
+        "description": "Adopt as proposed, or with an edited value and its citation note (decision `edited`).",
+        "properties": {
+          "citation_note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Citation Note"
+          },
+          "edited_value": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Edited Value"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seen Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seen_version"
+        ],
+        "title": "AdoptSuggestionIn",
+        "type": "object"
+      },
       "AdoptedOut": {
         "properties": {
           "adopted": {
@@ -1206,6 +1249,60 @@
         "title": "AiExclusionOut",
         "type": "object"
       },
+      "AnalysisRequestIn": {
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "cls": "restricted",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "AnalysisRequestIn",
+        "type": "object"
+      },
+      "AnalysisRequestOut": {
+        "description": "A recorded request for the run that raised the card (P-10 delivers it).",
+        "properties": {
+          "card_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Card Id",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "requested_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Requested At",
+            "type": "string"
+          },
+          "requested_by_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Requested By User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "card_id",
+          "requested_by_user_id",
+          "requested_at"
+        ],
+        "title": "AnalysisRequestOut",
+        "type": "object"
+      },
       "AnnotationBody": {
         "additionalProperties": false,
         "properties": {
@@ -1378,6 +1475,32 @@
           }
         },
         "title": "ApproveIn",
+        "type": "object"
+      },
+      "ApproveProposalIn": {
+        "additionalProperties": false,
+        "properties": {
+          "edits": {
+            "cls": "restricted",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ProposalEditIn"
+            },
+            "maxItems": 100,
+            "title": "Edits",
+            "type": "array"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seen Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seen_version"
+        ],
+        "title": "ApproveProposalIn",
         "type": "object"
       },
       "ArchiveOut": {
@@ -4923,32 +5046,6 @@
         "title": "DashboardOut",
         "type": "object"
       },
-      "DecideIn": {
-        "additionalProperties": false,
-        "properties": {
-          "approvals": {
-            "cls": "internal",
-            "items": {
-              "$ref": "#/components/schemas/abacus__modules__agents__routes__ApprovalIn"
-            },
-            "maxItems": 500,
-            "minItems": 1,
-            "title": "Approvals",
-            "type": "array"
-          },
-          "confirmed_read": {
-            "cls": "internal",
-            "default": false,
-            "title": "Confirmed Read",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "approvals"
-        ],
-        "title": "DecideIn",
-        "type": "object"
-      },
       "DecidedOut": {
         "properties": {
           "decided": {
@@ -4961,6 +5058,434 @@
           "decided"
         ],
         "title": "DecidedOut",
+        "type": "object"
+      },
+      "DecisionCardItemOut": {
+        "description": "A card in a list (HOME-02, the AUD-02 rail). No question text, options or rationale.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "blocking_count": {
+            "cls": "internal",
+            "title": "Blocking Count",
+            "type": "integer"
+          },
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "title": "Kind",
+            "type": "string"
+          },
+          "requested_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Requested At",
+            "type": "string"
+          },
+          "reserved_role": {
+            "cls": "internal",
+            "enum": [
+              "engagement_partner",
+              "manager",
+              "eqr_reviewer",
+              "signer"
+            ],
+            "title": "Reserved Role",
+            "type": "string"
+          },
+          "reserved_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reserved User Id"
+          },
+          "reserved_user_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reserved User Name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DecisionCardStatus",
+            "cls": "internal"
+          },
+          "superseded_by_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Superseded By Version"
+          },
+          "version_no": {
+            "cls": "internal",
+            "title": "Version No",
+            "type": "integer"
+          },
+          "work_item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Work Item Id"
+          }
+        },
+        "required": [
+          "id",
+          "engagement_id",
+          "work_item_id",
+          "kind",
+          "version_no",
+          "status",
+          "reserved_role",
+          "reserved_user_id",
+          "reserved_user_name",
+          "requested_at",
+          "blocking_count",
+          "superseded_by_version",
+          "allowed_actions"
+        ],
+        "title": "DecisionCardItemOut",
+        "type": "object"
+      },
+      "DecisionCardOut": {
+        "description": "One card: the question, context, code-computed options, factors and, once decided, the\ndecision. A viewer outside the reserved role gets the same card with no decide action.",
+        "properties": {
+          "blocking_refs": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ObjectRefOut"
+            },
+            "title": "Blocking Refs",
+            "type": "array"
+          },
+          "card": {
+            "$ref": "#/components/schemas/DecisionCardItemOut",
+            "cls": "internal"
+          },
+          "citation_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "context": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/DecisionContextOut"
+            },
+            "title": "Context",
+            "type": "array"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/abacus__modules__review__contract__DecisionOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted"
+          },
+          "factors": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/DecisionFactorOut"
+            },
+            "title": "Factors",
+            "type": "array"
+          },
+          "history": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/DecisionCardVersionOut"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
+          "options": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/DecisionOptionOut"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "question": {
+            "cls": "confidential",
+            "title": "Question",
+            "type": "string"
+          },
+          "recommendation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionRecommendationOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          }
+        },
+        "required": [
+          "card",
+          "question",
+          "context",
+          "options",
+          "factors",
+          "citation_ids",
+          "note",
+          "recommendation",
+          "blocking_refs",
+          "decision",
+          "history"
+        ],
+        "title": "DecisionCardOut",
+        "type": "object"
+      },
+      "DecisionCardStatus": {
+        "enum": [
+          "awaiting_role",
+          "decided",
+          "superseded"
+        ],
+        "title": "DecisionCardStatus",
+        "type": "string"
+      },
+      "DecisionCardVersionOut": {
+        "description": "One history row: v1 proposed, v2 decided, v3 reassessed with no change (SHL-11 d).",
+        "properties": {
+          "actor_initials": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Actor Initials"
+          },
+          "actor_kind": {
+            "cls": "internal",
+            "enum": [
+              "human",
+              "agent",
+              "system"
+            ],
+            "title": "Actor Kind",
+            "type": "string"
+          },
+          "actor_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Actor User Id"
+          },
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "changed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Changed"
+          },
+          "event": {
+            "cls": "internal",
+            "enum": [
+              "proposed",
+              "decided",
+              "reassessed"
+            ],
+            "title": "Event",
+            "type": "string"
+          },
+          "figures": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "confidential",
+            "title": "Figures",
+            "type": "object"
+          },
+          "option_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Option Key"
+          },
+          "version_no": {
+            "cls": "internal",
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version_no",
+          "event",
+          "actor_kind",
+          "actor_user_id",
+          "actor_initials",
+          "at",
+          "option_key",
+          "changed",
+          "figures"
+        ],
+        "title": "DecisionCardVersionOut",
+        "type": "object"
+      },
+      "DecisionContextOut": {
+        "description": "One context row (\"Benchmark\", \"Amount\", \"Firm range\", \"Prior year\"), from the owner.",
+        "properties": {
+          "citation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Citation Id"
+          },
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "cls": "confidential",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "value",
+          "citation_id"
+        ],
+        "title": "DecisionContextOut",
+        "type": "object"
+      },
+      "DecisionFactorOut": {
+        "properties": {
+          "applicable": {
+            "cls": "internal",
+            "title": "Applicable",
+            "type": "boolean"
+          },
+          "checked": {
+            "cls": "internal",
+            "title": "Checked",
+            "type": "boolean"
+          },
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "applicable",
+          "checked"
+        ],
+        "title": "DecisionFactorOut",
         "type": "object"
       },
       "DecisionIn": {
@@ -4980,40 +5505,39 @@
         "title": "DecisionIn",
         "type": "object"
       },
-      "DecisionOut": {
+      "DecisionNotifyOut": {
         "properties": {
-          "corrects_proposal": {
-            "cls": "internal",
-            "title": "Corrects Proposal",
-            "type": "boolean"
-          },
-          "decision": {
-            "cls": "internal",
-            "enum": [
-              "accept",
-              "reject",
-              "send_back"
-            ],
-            "title": "Decision",
-            "type": "string"
-          },
-          "evidence_version_id": {
+          "card_id": {
             "cls": "internal",
             "format": "uuid",
-            "title": "Evidence Version Id",
+            "title": "Card Id",
             "type": "string"
           },
-          "id": {
+          "notified_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Notified At",
+            "type": "string"
+          },
+          "notified_user_id": {
             "cls": "internal",
             "format": "uuid",
-            "title": "Id",
+            "title": "Notified User Id",
             "type": "string"
-          },
-          "item_status": {
-            "$ref": "#/components/schemas/RequestStatus",
-            "cls": "internal"
-          },
-          "reason_code": {
+          }
+        },
+        "required": [
+          "card_id",
+          "notified_user_id",
+          "notified_at"
+        ],
+        "title": "DecisionNotifyOut",
+        "type": "object"
+      },
+      "DecisionOptionOut": {
+        "description": "An option computed by the kind's provider in code, never by a model (ADR-050). Money is\na decimal string; `figures` are what the label and detail line show.",
+        "properties": {
+          "detail": {
             "anyOf": [
               {
                 "type": "string"
@@ -5022,29 +5546,72 @@
                 "type": "null"
               }
             ],
-            "cls": "public",
-            "title": "Reason Code"
+            "cls": "confidential",
+            "title": "Detail"
           },
-          "request_item_ids": {
-            "cls": "internal",
-            "items": {
-              "format": "uuid",
+          "figures": {
+            "additionalProperties": {
               "type": "string"
             },
-            "title": "Request Item Ids",
-            "type": "array"
+            "cls": "confidential",
+            "title": "Figures",
+            "type": "object"
+          },
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "recommended": {
+            "cls": "internal",
+            "title": "Recommended",
+            "type": "boolean"
           }
         },
         "required": [
-          "id",
-          "evidence_version_id",
-          "request_item_ids",
-          "decision",
-          "reason_code",
-          "corrects_proposal",
-          "item_status"
+          "key",
+          "label",
+          "detail",
+          "figures",
+          "recommended"
         ],
-        "title": "DecisionOut",
+        "title": "DecisionOptionOut",
+        "type": "object"
+      },
+      "DecisionRecommendationOut": {
+        "description": "The agent's recommendation (`decision_cards.recommendation_suggestion_id`). `reasons` are\nagent text: the web app renders them only through AgentText.",
+        "properties": {
+          "option_key": {
+            "cls": "internal",
+            "title": "Option Key",
+            "type": "string"
+          },
+          "reasons": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "suggestion_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Suggestion Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "suggestion_id",
+          "option_key",
+          "reasons"
+        ],
+        "title": "DecisionRecommendationOut",
         "type": "object"
       },
       "DecisionSummaryOut": {
@@ -5427,6 +5994,40 @@
           "letter_wording"
         ],
         "title": "DisclosureOut",
+        "type": "object"
+      },
+      "DismissSuggestionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "reason_code": {
+            "anyOf": [
+              {
+                "enum": [
+                  "wrong_treatment",
+                  "unsupported_value",
+                  "needs_client_input",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason Code"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seen Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seen_version"
+        ],
+        "title": "DismissSuggestionIn",
         "type": "object"
       },
       "DocumentKindIn": {
@@ -7324,6 +7925,23 @@
         "title": "FlowStepOut",
         "type": "object"
       },
+      "FollowUpIn": {
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "cls": "restricted",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "FollowUpIn",
+        "type": "object"
+      },
       "FollowUpOverride": {
         "additionalProperties": false,
         "description": "The per-binder follow-up cadence R-01's scheduler reads (DEC-74; POR-20 at most 4).",
@@ -9108,7 +9726,7 @@
           "suggestions": {
             "cls": "internal",
             "items": {
-              "$ref": "#/components/schemas/SuggestionOut"
+              "$ref": "#/components/schemas/abacus__modules__evidence__routes__SuggestionOut"
             },
             "title": "Suggestions",
             "type": "array"
@@ -10536,6 +11154,66 @@
           "total"
         ],
         "title": "ListPage[BinderRowOut]",
+        "type": "object"
+      },
+      "ListPage_DecisionCardItemOut_": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/DecisionCardItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListPage[DecisionCardItemOut]",
         "type": "object"
       },
       "ListPage_HumanGateOut_": {
@@ -13272,61 +13950,426 @@
         "title": "ProcedureOut",
         "type": "object"
       },
-      "ProposalOut": {
-        "description": "The agent's proposal. Rationale and quotes are model text: shown as plain text (ADR-065).",
+      "ProposalDecisionOut": {
+        "description": "The latest insert-only, human-only `proposal_decisions` row. `undo_until` is the end of\nthe 10-second window (ADR-161 clause 6); null once an effect has started or for none.",
         "properties": {
-          "action": {
+          "decided_at": {
             "cls": "internal",
-            "enum": [
-              "ready_for_review",
-              "needs_revision"
-            ],
-            "title": "Action",
+            "format": "date-time",
+            "title": "Decided At",
             "type": "string"
           },
-          "citations": {
-            "cls": "confidential",
-            "items": {
-              "$ref": "#/components/schemas/abacus__modules__evidence__routes__CitationOut"
-            },
-            "title": "Citations",
-            "type": "array"
-          },
-          "confidence": {
+          "decided_by_name": {
             "cls": "internal",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Confidence",
+            "title": "Decided By Name",
             "type": "string"
           },
-          "rationale": {
-            "cls": "confidential",
-            "title": "Rationale",
-            "type": "string"
-          },
-          "screening_result_id": {
+          "decided_by_user_id": {
             "cls": "internal",
             "format": "uuid",
-            "title": "Screening Result Id",
+            "title": "Decided By User Id",
             "type": "string"
           },
-          "unverified": {
-            "cls": "confidential",
-            "items": {
-              "type": "string"
-            },
-            "title": "Unverified",
-            "type": "array"
+          "decision": {
+            "cls": "internal",
+            "enum": [
+              "approved",
+              "approved_with_edits",
+              "rejected",
+              "routed",
+              "follow_up",
+              "undone"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Note"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "enum": [
+                  "wrong_treatment",
+                  "unsupported_value",
+                  "needs_client_input",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason Code"
+          },
+          "routed_to_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Routed To User Id"
+          },
+          "undo_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Undo Until"
           }
         },
         "required": [
-          "screening_result_id",
-          "action",
-          "confidence",
-          "rationale",
-          "citations",
-          "unverified"
+          "id",
+          "decision",
+          "reason_code",
+          "note",
+          "decided_by_user_id",
+          "decided_by_name",
+          "decided_at",
+          "routed_to_user_id",
+          "undo_until"
         ],
-        "title": "ProposalOut",
+        "title": "ProposalDecisionOut",
+        "type": "object"
+      },
+      "ProposalEditIn": {
+        "additionalProperties": false,
+        "description": "An edited After value with its citation note (SHL-10 \"Approve with edits\").",
+        "properties": {
+          "after": {
+            "cls": "restricted",
+            "maxLength": 200,
+            "title": "After",
+            "type": "string"
+          },
+          "citation_note": {
+            "cls": "restricted",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Citation Note",
+            "type": "string"
+          },
+          "n": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "N",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "n",
+          "after",
+          "citation_note"
+        ],
+        "title": "ProposalEditIn",
+        "type": "object"
+      },
+      "ProposalEvidenceOut": {
+        "properties": {
+          "citation_count": {
+            "cls": "internal",
+            "title": "Citation Count",
+            "type": "integer"
+          },
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_version_id",
+          "label",
+          "citation_count"
+        ],
+        "title": "ProposalEvidenceOut",
+        "type": "object"
+      },
+      "ProposalPolicyOut": {
+        "description": "`proposals.policy_eval` and the policy note. While P-08 is dormant the approver is always\na named person, never \"Policy\" or the agent (INV-5).",
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Note"
+          },
+          "policy_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Policy Name"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "enum": [
+                  "within_threshold",
+                  "review_required"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Result"
+          },
+          "routed_to_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Routed To Name"
+          },
+          "routed_to_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Routed To User Id"
+          }
+        },
+        "required": [
+          "policy_name",
+          "result",
+          "routed_to_user_id",
+          "routed_to_name",
+          "note"
+        ],
+        "title": "ProposalPolicyOut",
+        "type": "object"
+      },
+      "ProposalRowOut": {
+        "description": "One change: Field \u00b7 Before \u2192 After \u00b7 Cause. A row without a verified citation is\n`unsupported` and blocks approval (422 `uncited_change`).",
+        "properties": {
+          "after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "After"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Before"
+          },
+          "cause": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Cause"
+          },
+          "citation_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "field_key": {
+            "cls": "internal",
+            "title": "Field Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "n": {
+            "cls": "internal",
+            "title": "N",
+            "type": "integer"
+          },
+          "suggestion_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Suggestion Id"
+          },
+          "unsupported": {
+            "cls": "internal",
+            "title": "Unsupported",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "n",
+          "suggestion_id",
+          "field_key",
+          "label",
+          "before",
+          "after",
+          "cause",
+          "citation_ids",
+          "unsupported"
+        ],
+        "title": "ProposalRowOut",
+        "type": "object"
+      },
+      "ProposalSetOut": {
+        "description": "SHL-10 g: the proposal's set. The link row opens SHL-19 and approves nothing.",
+        "properties": {
+          "exceptions": {
+            "cls": "internal",
+            "title": "Exceptions",
+            "type": "integer"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "results": {
+            "cls": "internal",
+            "title": "Results",
+            "type": "integer"
+          },
+          "set_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Set Id",
+            "type": "string"
+          },
+          "set_type": {
+            "cls": "internal",
+            "title": "Set Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "set_type",
+          "set_id",
+          "label",
+          "results",
+          "exceptions"
+        ],
+        "title": "ProposalSetOut",
+        "type": "object"
+      },
+      "ProposalStatus": {
+        "enum": [
+          "pending",
+          "approved",
+          "approved_with_edits",
+          "rejected",
+          "superseded"
+        ],
+        "title": "ProposalStatus",
+        "type": "string"
+      },
+      "ProposalTotalOut": {
+        "description": "A totals row computed by code (\"Net change to Form 1040 total income \u00b7 0 \u00b7 tie\").",
+        "properties": {
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "ties": {
+            "cls": "internal",
+            "title": "Ties",
+            "type": "boolean"
+          },
+          "value": {
+            "cls": "restricted",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "value",
+          "ties"
+        ],
+        "title": "ProposalTotalOut",
         "type": "object"
       },
       "ProposedItemOut": {
@@ -13599,7 +14642,7 @@
           "proposal": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ProposalOut"
+                "$ref": "#/components/schemas/abacus__modules__evidence__routes__ProposalOut"
               },
               {
                 "type": "null"
@@ -14006,6 +15049,47 @@
           "reason_code"
         ],
         "title": "RejectIn",
+        "type": "object"
+      },
+      "RejectProposalIn": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Note"
+          },
+          "reason_code": {
+            "cls": "internal",
+            "enum": [
+              "wrong_treatment",
+              "unsupported_value",
+              "needs_client_input",
+              "other"
+            ],
+            "title": "Reason Code",
+            "type": "string"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seen Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seen_version",
+          "reason_code"
+        ],
+        "title": "RejectProposalIn",
         "type": "object"
       },
       "ReleaseOut": {
@@ -16447,6 +17531,29 @@
         "title": "RollforwardComponentOut",
         "type": "object"
       },
+      "RouteProposalIn": {
+        "additionalProperties": false,
+        "properties": {
+          "approver_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Approver User Id",
+            "type": "string"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seen Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seen_version",
+          "approver_user_id"
+        ],
+        "title": "RouteProposalIn",
+        "type": "object"
+      },
       "RowSignOut": {
         "properties": {
           "initials": {
@@ -18533,55 +19640,17 @@
         "title": "StepOut",
         "type": "object"
       },
-      "SuggestionOut": {
-        "properties": {
-          "matched": {
-            "cls": "confidential",
-            "items": {
-              "type": "string"
-            },
-            "title": "Matched",
-            "type": "array"
-          },
-          "reasons": {
-            "cls": "confidential",
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/ReasonOut"
-            },
-            "title": "Reasons",
-            "type": "array"
-          },
-          "request_item_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Request Item Id",
-            "type": "string"
-          },
-          "score": {
-            "cls": "internal",
-            "title": "Score",
-            "type": "integer"
-          },
-          "source": {
-            "cls": "internal",
-            "default": "file_name",
-            "enum": [
-              "matcher",
-              "content",
-              "file_name"
-            ],
-            "title": "Source",
-            "type": "string"
-          }
-        },
-        "required": [
-          "request_item_id",
-          "score",
-          "matched"
+      "SuggestionStatus": {
+        "enum": [
+          "pending",
+          "adopted",
+          "edited",
+          "dismissed",
+          "superseded",
+          "expired"
         ],
-        "title": "SuggestionOut",
-        "type": "object"
+        "title": "SuggestionStatus",
+        "type": "string"
       },
       "SummaryOut": {
         "properties": {
@@ -20588,6 +21657,22 @@
         "title": "UncorrectedOut",
         "type": "object"
       },
+      "UndoProposalIn": {
+        "additionalProperties": false,
+        "properties": {
+          "decision_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Decision Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision_id"
+        ],
+        "title": "UndoProposalIn",
+        "type": "object"
+      },
       "UnlockBody": {
         "additionalProperties": false,
         "properties": {
@@ -21551,6 +22636,314 @@
         "title": "YourPartOut",
         "type": "object"
       },
+      "abacus__modules__agents__contract__ProposalOut": {
+        "description": "`GET /v1/proposals/{ref}`: the C3 projection SHL-10 renders, for a generic proposal or a\ntyped adapter's (screener, upload reviewer, matcher).",
+        "properties": {
+          "agent_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Agent Run Id"
+          },
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "change_count": {
+            "cls": "internal",
+            "title": "Change Count",
+            "type": "integer"
+          },
+          "checkpoint_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Checkpoint Id"
+          },
+          "context_label": {
+            "cls": "confidential",
+            "title": "Context Label",
+            "type": "string"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalDecisionOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted"
+          },
+          "evidence": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ProposalEvidenceOut"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "kind": {
+            "cls": "internal",
+            "title": "Kind",
+            "type": "string"
+          },
+          "policy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalPolicyOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted"
+          },
+          "proposed_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Proposed At",
+            "type": "string"
+          },
+          "reasoning": {
+            "cls": "restricted",
+            "title": "Reasoning",
+            "type": "string"
+          },
+          "ref": {
+            "cls": "internal",
+            "title": "Ref",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/ProposalRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "set": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalSetOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ProposalStatus",
+            "cls": "internal"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          },
+          "totals": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/ProposalTotalOut"
+            },
+            "title": "Totals",
+            "type": "array"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ref",
+          "kind",
+          "title",
+          "context_label",
+          "state",
+          "version",
+          "agent_run_id",
+          "proposed_at",
+          "change_count",
+          "reasoning",
+          "rows",
+          "totals",
+          "evidence",
+          "policy",
+          "set",
+          "checkpoint_id",
+          "decision",
+          "allowed_actions"
+        ],
+        "title": "ProposalOut",
+        "type": "object"
+      },
+      "abacus__modules__agents__contract__SuggestionOut": {
+        "description": "One proposed value for one target, after a person's decision.",
+        "properties": {
+          "agent_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Agent Run Id"
+          },
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "citation_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decided At"
+          },
+          "decided_by_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decided By User Id"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "enum": [
+                  "adopted",
+                  "edited",
+                  "dismissed",
+                  "undone"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decision"
+          },
+          "field_key": {
+            "cls": "internal",
+            "title": "Field Key",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "proposed_value": {
+            "cls": "restricted",
+            "title": "Proposed Value",
+            "type": "string"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Rationale"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SuggestionStatus",
+            "cls": "internal"
+          },
+          "target_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Target Id",
+            "type": "string"
+          },
+          "target_type": {
+            "cls": "internal",
+            "title": "Target Type",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "target_type",
+          "target_id",
+          "field_key",
+          "proposed_value",
+          "rationale",
+          "citation_ids",
+          "status",
+          "version",
+          "agent_run_id",
+          "decision",
+          "decided_by_user_id",
+          "decided_at",
+          "allowed_actions"
+        ],
+        "title": "SuggestionOut",
+        "type": "object"
+      },
       "abacus__modules__agents__routes__ApprovalIn": {
         "additionalProperties": false,
         "properties": {
@@ -21686,6 +23079,32 @@
         "title": "CitationOut",
         "type": "object"
       },
+      "abacus__modules__agents__routes__DecideIn": {
+        "additionalProperties": false,
+        "properties": {
+          "approvals": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/abacus__modules__agents__routes__ApprovalIn"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Approvals",
+            "type": "array"
+          },
+          "confirmed_read": {
+            "cls": "internal",
+            "default": false,
+            "title": "Confirmed Read",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "approvals"
+        ],
+        "title": "DecideIn",
+        "type": "object"
+      },
       "abacus__modules__connections__routes__StartIn": {
         "additionalProperties": false,
         "properties": {
@@ -21767,6 +23186,180 @@
         "title": "CitationOut",
         "type": "object"
       },
+      "abacus__modules__evidence__routes__DecisionOut": {
+        "properties": {
+          "corrects_proposal": {
+            "cls": "internal",
+            "title": "Corrects Proposal",
+            "type": "boolean"
+          },
+          "decision": {
+            "cls": "internal",
+            "enum": [
+              "accept",
+              "reject",
+              "send_back"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "item_status": {
+            "$ref": "#/components/schemas/RequestStatus",
+            "cls": "internal"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Reason Code"
+          },
+          "request_item_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Request Item Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "evidence_version_id",
+          "request_item_ids",
+          "decision",
+          "reason_code",
+          "corrects_proposal",
+          "item_status"
+        ],
+        "title": "DecisionOut",
+        "type": "object"
+      },
+      "abacus__modules__evidence__routes__ProposalOut": {
+        "description": "The agent's proposal. Rationale and quotes are model text: shown as plain text (ADR-065).",
+        "properties": {
+          "action": {
+            "cls": "internal",
+            "enum": [
+              "ready_for_review",
+              "needs_revision"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "citations": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/abacus__modules__evidence__routes__CitationOut"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "confidence": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Confidence",
+            "type": "string"
+          },
+          "rationale": {
+            "cls": "confidential",
+            "title": "Rationale",
+            "type": "string"
+          },
+          "screening_result_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Screening Result Id",
+            "type": "string"
+          },
+          "unverified": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Unverified",
+            "type": "array"
+          }
+        },
+        "required": [
+          "screening_result_id",
+          "action",
+          "confidence",
+          "rationale",
+          "citations",
+          "unverified"
+        ],
+        "title": "ProposalOut",
+        "type": "object"
+      },
+      "abacus__modules__evidence__routes__SuggestionOut": {
+        "properties": {
+          "matched": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Matched",
+            "type": "array"
+          },
+          "reasons": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ReasonOut"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "request_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Request Item Id",
+            "type": "string"
+          },
+          "score": {
+            "cls": "internal",
+            "title": "Score",
+            "type": "integer"
+          },
+          "source": {
+            "cls": "internal",
+            "default": "file_name",
+            "enum": [
+              "matcher",
+              "content",
+              "file_name"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_item_id",
+          "score",
+          "matched"
+        ],
+        "title": "SuggestionOut",
+        "type": "object"
+      },
       "abacus__modules__fieldwork__routes__ApprovalIn": {
         "additionalProperties": false,
         "properties": {
@@ -21802,6 +23395,116 @@
           }
         },
         "title": "StartIn",
+        "type": "object"
+      },
+      "abacus__modules__review__contract__DecideIn": {
+        "additionalProperties": false,
+        "description": "`POST /v1/decision-cards/{id}/decide`. No rationale answers 422 `rationale_required`; a\nstale `seen_version` answers 409 `recommendation_changed`.",
+        "properties": {
+          "factors": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 40,
+            "title": "Factors",
+            "type": "array"
+          },
+          "option_key": {
+            "cls": "internal",
+            "pattern": "^[a-z0-9][a-z0-9_.]{0,39}$",
+            "title": "Option Key",
+            "type": "string"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Rationale"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seen Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "option_key",
+          "seen_version"
+        ],
+        "title": "DecideIn",
+        "type": "object"
+      },
+      "abacus__modules__review__contract__DecisionOut": {
+        "description": "The insert-only, human-only `decisions` row. The rationale is sealed.",
+        "properties": {
+          "decided_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Decided At",
+            "type": "string"
+          },
+          "decided_by_name": {
+            "cls": "internal",
+            "title": "Decided By Name",
+            "type": "string"
+          },
+          "decided_by_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Decided By User Id",
+            "type": "string"
+          },
+          "factors": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Factors",
+            "type": "array"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "option_key": {
+            "cls": "internal",
+            "title": "Option Key",
+            "type": "string"
+          },
+          "rationale": {
+            "cls": "restricted",
+            "title": "Rationale",
+            "type": "string"
+          },
+          "seen_card_version": {
+            "cls": "internal",
+            "title": "Seen Card Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "option_key",
+          "factors",
+          "rationale",
+          "seen_card_version",
+          "decided_by_user_id",
+          "decided_by_name",
+          "decided_at"
+        ],
+        "title": "DecisionOut",
         "type": "object"
       },
       "abacus__modules__review__contract__ReviewNoteOut": {
@@ -24272,6 +25975,806 @@
           "connection"
         ],
         "x-abacus-action": "connection.create"
+      }
+    },
+    "/v1/decision-cards": {
+      "get": {
+        "description": "Cards on an engagement, on the list envelope with per-status counts.",
+        "operationId": "decision_card_list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "engagement_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Engagement Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DecisionCardStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 200,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPage_DecisionCardItemOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Decision Card List Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "decision.read"
+      }
+    },
+    "/v1/decision-cards/{card_id}": {
+      "get": {
+        "description": "SHL-11 a to h: one card, its versions and the caller's allowed actions.",
+        "operationId": "decision_card",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "card_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Card Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionCardOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Decision Card Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "decision.read"
+      }
+    },
+    "/v1/decision-cards/{card_id}/analysis-requests": {
+      "post": {
+        "description": "SHL-11 b: \"Request more analysis\" records a request for the run.",
+        "operationId": "decision_card_analysis_request",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "card_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Card Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisRequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Decision Card Analysis Request Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "decision.request_analysis"
+      }
+    },
+    "/v1/decision-cards/{card_id}/decide": {
+      "post": {
+        "description": "SHL-11 a to c: the reserved role decides, with a rationale (human only).",
+        "operationId": "decision_card_decide",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "card_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Card Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/abacus__modules__review__contract__DecideIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionCardOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Decision Card Decide Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "decision.decide"
+      }
+    },
+    "/v1/decision-cards/{card_id}/notify": {
+      "post": {
+        "description": "SHL-11 b: \"Notify Margaret\" sends the reserved person a mention notification.",
+        "operationId": "decision_card_notify",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "card_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Card Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionNotifyOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Decision Card Notify Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "decision.notify"
+      }
+    },
+    "/v1/decision-cards/{card_id}/reassess": {
+      "post": {
+        "description": "SHL-11 d, h: the owner's provider recomputes in code; no change is a new version, a\nchanged outcome raises a superseding card.",
+        "operationId": "decision_card_reassess",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "card_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Card Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionCardOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Decision Card Reassess Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "decision.reassess"
       }
     },
     "/v1/engagements": {
@@ -29749,7 +32252,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DecisionOut"
+                  "$ref": "#/components/schemas/abacus__modules__evidence__routes__DecisionOut"
                 }
               }
             },
@@ -29895,7 +32398,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DecisionOut"
+                  "$ref": "#/components/schemas/abacus__modules__evidence__routes__DecisionOut"
                 }
               }
             },
@@ -30041,7 +32544,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DecisionOut"
+                  "$ref": "#/components/schemas/abacus__modules__evidence__routes__DecisionOut"
                 }
               }
             },
@@ -32698,7 +35201,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DecideIn"
+                "$ref": "#/components/schemas/abacus__modules__agents__routes__DecideIn"
               }
             }
           },
@@ -32824,7 +35327,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DecideIn"
+                "$ref": "#/components/schemas/abacus__modules__agents__routes__DecideIn"
               }
             }
           },
@@ -58796,7 +61299,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DecideIn"
+                "$ref": "#/components/schemas/abacus__modules__agents__routes__DecideIn"
               }
             }
           },
@@ -58922,7 +61425,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DecideIn"
+                "$ref": "#/components/schemas/abacus__modules__agents__routes__DecideIn"
               }
             }
           },
@@ -60084,6 +62587,808 @@
           "portal"
         ],
         "x-abacus-action": "evidence.upload"
+      }
+    },
+    "/v1/proposals/{proposal_id}/approve": {
+      "post": {
+        "description": "Approve, or approve with edits (human only). Over the viewer's limit: 403 with the\napprover to route to.",
+        "operationId": "proposal_approve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveProposalIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__agents__contract__ProposalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Proposal Approve Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "proposal.approve"
+      }
+    },
+    "/v1/proposals/{proposal_id}/follow-up": {
+      "post": {
+        "description": "\"Ask follow-up\": a follow-up recorded for the originating thread or run.",
+        "operationId": "proposal_follow_up",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FollowUpIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__agents__contract__ProposalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Proposal Follow Up Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "proposal.follow_up"
+      }
+    },
+    "/v1/proposals/{proposal_id}/reject": {
+      "post": {
+        "description": "SHL-10 f: reject with a reason (human only).",
+        "operationId": "proposal_reject",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectProposalIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__agents__contract__ProposalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Proposal Reject Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "proposal.reject"
+      }
+    },
+    "/v1/proposals/{proposal_id}/route": {
+      "post": {
+        "description": "SHL-10 d: send it to a named approver (\"Send to Priya Raman for approval\").",
+        "operationId": "proposal_route_to",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteProposalIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__agents__contract__ProposalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Proposal Route To Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "proposal.route"
+      }
+    },
+    "/v1/proposals/{proposal_id}/undo": {
+      "post": {
+        "description": "Undo inside 10 seconds by the same person: 409 `undo_window_closed` or `effect_started`.",
+        "operationId": "proposal_undo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UndoProposalIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__agents__contract__ProposalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Proposal Undo Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "proposal.undo"
+      }
+    },
+    "/v1/proposals/{ref}": {
+      "get": {
+        "description": "SHL-10 a to g: the proposal projection with the caller's allowed actions.",
+        "operationId": "proposal",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ref",
+            "required": true,
+            "schema": {
+              "pattern": "^((screening_result|upload_review|inbox_match):)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "title": "Ref",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__agents__contract__ProposalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Proposal Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "proposal.read"
       }
     },
     "/v1/review-notes": {
@@ -61568,6 +64873,280 @@
           "signup"
         ],
         "x-abacus-action": "identity"
+      }
+    },
+    "/v1/suggestions/{suggestion_id}/adopt": {
+      "post": {
+        "description": "Adopt through the target's registered applier (human only).",
+        "operationId": "suggestion_adopt",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "suggestion_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Suggestion Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdoptSuggestionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__agents__contract__SuggestionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Suggestion Adopt Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "suggestion.resolve"
+      }
+    },
+    "/v1/suggestions/{suggestion_id}/dismiss": {
+      "post": {
+        "description": "Dismiss (human only).",
+        "operationId": "suggestion_dismiss",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "suggestion_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Suggestion Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DismissSuggestionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__agents__contract__SuggestionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Suggestion Dismiss Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "suggestion.resolve"
       }
     },
     "/v1/support-sessions": {

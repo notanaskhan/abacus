@@ -1,9 +1,11 @@
 """C3 v1, the review grammar (ADR-160; P-36 contract first). Stub PR 1 (P-04-T07): sign-offs,
-review notes and the human-gate projection, the SHL-12 family.
+review notes and the human-gate projection, the SHL-12 family. Stub PR 2 (P-04-T08): decision
+cards, the SHL-11 family; proposals and suggestions are the agents module's (ADR-161).
 
 Behind `review.grammar_api`: off, every route answers 404; on, 501 `not_implemented` until its
-service lands (sign-offs P-04-T18, notes P-04-T21, the projection P-04-T16). Nothing here decides;
-the shapes are what SHL-12, AUD-17 and HOME-02 read. `docs/contracts/review-grammar.md` part 1.
+service lands (sign-offs P-04-T18, notes P-04-T21, the projection P-04-T16, decision cards
+P-04-T23). Nothing here decides; the shapes are what SHL-11, SHL-12, AUD-17 and HOME-02 read.
+`docs/contracts/review-grammar.md` parts 1 and 2.
 
 The level actions are the existing `sign_off.prepare|review|manager|partner|eqr` rows (L1 to L5);
 `POST /v1/sign-offs` declares `sign_off.create` and the service also authorises the level's row.
@@ -19,7 +21,7 @@ from fastapi import Depends, Header, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import REVIEW_GRAMMAR_API
-from abacus.kernel._statuses import ReviewNoteStatus
+from abacus.kernel._statuses import DecisionCardStatus, ReviewNoteStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
@@ -464,4 +466,241 @@ async def human_gate_list_route(
     limit: Annotated[int | None, Query(ge=1, le=200)] = None,
 ) -> ListPage[HumanGateOut]:
     """What waits on the caller; `counts` are per kind ("3 decisions, 6 sign-offs, 2 exports")."""
+    await _stub(ctx)
+
+
+# --- Decision cards (SHL-11; ADR-160 clause 8) -------------------------------------------------
+
+ReservedRole = Literal["engagement_partner", "manager", "eqr_reviewer", "signer"]
+CardEvent = Literal["proposed", "decided", "reassessed"]
+ActorKind = Literal["human", "agent", "system"]
+
+
+class DecisionContextOut(BaseModel):
+    """One context row ("Benchmark", "Amount", "Firm range", "Prior year"), from the owner."""
+
+    model_config = ConfigDict(frozen=True)
+
+    key: Annotated[str, classified("internal")]
+    label: Annotated[str, classified("internal")]
+    value: Annotated[str, classified("confidential")]
+    citation_id: Annotated[UUID | None, classified("internal")]
+
+
+class DecisionOptionOut(BaseModel):
+    """An option computed by the kind's provider in code, never by a model (ADR-050). Money is
+    a decimal string; `figures` are what the label and detail line show."""
+
+    model_config = ConfigDict(frozen=True)
+
+    key: Annotated[str, classified("internal")]
+    label: Annotated[str, classified("confidential")]
+    detail: Annotated[str | None, classified("confidential")]
+    figures: Annotated[dict[str, str], classified("confidential")]
+    # The agent's recommendation is a suggestion and a tag, never the decider (SHL-11 f/g).
+    recommended: Annotated[bool, classified("internal")]
+
+
+class DecisionFactorOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    key: Annotated[str, classified("internal")]
+    label: Annotated[str, classified("confidential")]
+    applicable: Annotated[bool, classified("internal")]
+    checked: Annotated[bool, classified("internal")]
+
+
+class DecisionRecommendationOut(BaseModel):
+    """The agent's recommendation (`decision_cards.recommendation_suggestion_id`). `reasons` are
+    agent text: the web app renders them only through AgentText."""
+
+    model_config = ConfigDict(frozen=True)
+
+    suggestion_id: Annotated[UUID, classified("internal")]
+    option_key: Annotated[str, classified("internal")]
+    reasons: Annotated[list[str], classified("confidential")]
+
+
+class DecisionOut(BaseModel):
+    """The insert-only, human-only `decisions` row. The rationale is sealed."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    option_key: Annotated[str, classified("internal")]
+    factors: Annotated[list[str], classified("internal")]
+    rationale: Annotated[str, classified("restricted")]
+    seen_card_version: Annotated[int, classified("internal")]
+    decided_by_user_id: Annotated[UUID, classified("internal")]
+    decided_by_name: Annotated[str, classified("internal")]
+    decided_at: Annotated[datetime, classified("internal")]
+
+
+class DecisionCardVersionOut(BaseModel):
+    """One history row: v1 proposed, v2 decided, v3 reassessed with no change (SHL-11 d)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    version_no: Annotated[int, classified("internal")]
+    event: Annotated[CardEvent, classified("internal")]
+    actor_kind: Annotated[ActorKind, classified("internal")]
+    actor_user_id: Annotated[UUID | None, classified("internal")]
+    actor_initials: Annotated[str | None, classified("internal")]
+    at: Annotated[datetime, classified("internal")]
+    option_key: Annotated[str | None, classified("internal")]
+    changed: Annotated[bool | None, classified("internal")]
+    figures: Annotated[dict[str, str], classified("confidential")]
+
+
+class DecisionCardItemOut(BaseModel):
+    """A card in a list (HOME-02, the AUD-02 rail). No question text, options or rationale."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID | None, classified("internal")]
+    kind: Annotated[str, classified("internal")]
+    version_no: Annotated[int, classified("internal")]
+    status: Annotated[DecisionCardStatus, classified("internal")]
+    reserved_role: Annotated[ReservedRole, classified("internal")]
+    reserved_user_id: Annotated[UUID | None, classified("internal")]
+    reserved_user_name: Annotated[str | None, classified("internal")]
+    requested_at: Annotated[datetime, classified("internal")]
+    blocking_count: Annotated[int, classified("internal")]
+    superseded_by_version: Annotated[int | None, classified("internal")]
+    allowed_actions: Annotated[list[str], classified("internal")]
+
+
+class DecisionCardOut(BaseModel):
+    """One card: the question, context, code-computed options, factors and, once decided, the
+    decision. A viewer outside the reserved role gets the same card with no decide action."""
+
+    model_config = ConfigDict(frozen=True)
+
+    card: Annotated[DecisionCardItemOut, classified("internal")]
+    question: Annotated[str, classified("confidential")]
+    context: Annotated[list[DecisionContextOut], classified("confidential")]
+    options: Annotated[list[DecisionOptionOut], classified("confidential")]
+    factors: Annotated[list[DecisionFactorOut], classified("confidential")]
+    citation_ids: Annotated[list[UUID], classified("internal")]
+    note: Annotated[str | None, classified("confidential")]
+    recommendation: Annotated[DecisionRecommendationOut | None, classified("confidential")]
+    blocking_refs: Annotated[list[ObjectRefOut], classified("internal")]
+    decision: Annotated[DecisionOut | None, classified("restricted")]
+    history: Annotated[list[DecisionCardVersionOut], classified("confidential")]
+
+
+class DecideIn(BaseModel):
+    """`POST /v1/decision-cards/{id}/decide`. No rationale answers 422 `rationale_required`; a
+    stale `seen_version` answers 409 `recommendation_changed`."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    option_key: Annotated[
+        str, Field(pattern=r"^[a-z0-9][a-z0-9_.]{0,39}$"), classified("internal")
+    ]
+    factors: Annotated[list[str], Field(max_length=40), classified("internal")] = []
+    # Optional on the wire so the service answers the fixed 422 `rationale_required`.
+    rationale: Annotated[
+        MultiLineText | None, Field(max_length=4000), classified("restricted")
+    ] = None
+    seen_version: Annotated[int, Field(ge=1), classified("internal")]
+
+
+class AnalysisRequestIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    text: Annotated[MultiLineText, Field(min_length=1, max_length=2000), classified("restricted")]
+
+
+class AnalysisRequestOut(BaseModel):
+    """A recorded request for the run that raised the card (P-10 delivers it)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    card_id: Annotated[UUID, classified("internal")]
+    requested_by_user_id: Annotated[UUID, classified("internal")]
+    requested_at: Annotated[datetime, classified("internal")]
+
+
+class DecisionNotifyOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    card_id: Annotated[UUID, classified("internal")]
+    notified_user_id: Annotated[UUID, classified("internal")]
+    notified_at: Annotated[datetime, classified("internal")]
+
+
+decision_cards_router = AbacusRouter(prefix="/v1/decision-cards", tags=["review"])
+
+
+@decision_cards_router.get(
+    "", action="decision.read", response_model=ListPage[DecisionCardItemOut], errors=(501,)
+)
+async def decision_card_list_route(
+    ctx: Ctx,
+    engagement_id: Annotated[UUID | None, Query()] = None,
+    state: Annotated[DecisionCardStatus | None, Query()] = None,
+    cursor: Annotated[str | None, Query(max_length=2000)] = None,
+    limit: Annotated[int | None, Query(ge=1, le=200)] = None,
+) -> ListPage[DecisionCardItemOut]:
+    """Cards on an engagement, on the list envelope with per-status counts."""
+    await _stub(ctx)
+
+
+@decision_cards_router.get(
+    "/{card_id}", action="decision.read", response_model=DecisionCardOut, errors=(501,)
+)
+async def decision_card_route(card_id: UUID, ctx: Ctx) -> DecisionCardOut:
+    """SHL-11 a to h: one card, its versions and the caller's allowed actions."""
+    await _stub(ctx)
+
+
+@decision_cards_router.post(
+    "/{card_id}/decide",
+    action="decision.decide",
+    response_model=DecisionCardOut,
+    errors=(409, 501),
+)
+async def decision_card_decide_route(card_id: UUID, body: DecideIn, ctx: Ctx) -> DecisionCardOut:
+    """SHL-11 a to c: the reserved role decides, with a rationale (human only)."""
+    await _stub(ctx)
+
+
+@decision_cards_router.post(
+    "/{card_id}/analysis-requests",
+    action="decision.request_analysis",
+    response_model=AnalysisRequestOut,
+    status_code=201,
+    errors=(501,),
+)
+async def decision_card_analysis_request_route(
+    card_id: UUID, body: AnalysisRequestIn, ctx: Ctx
+) -> AnalysisRequestOut:
+    """SHL-11 b: "Request more analysis" records a request for the run."""
+    await _stub(ctx)
+
+
+@decision_cards_router.post(
+    "/{card_id}/notify",
+    action="decision.notify",
+    response_model=DecisionNotifyOut,
+    errors=(501,),
+)
+async def decision_card_notify_route(card_id: UUID, ctx: Ctx) -> DecisionNotifyOut:
+    """SHL-11 b: "Notify Margaret" sends the reserved person a mention notification."""
+    await _stub(ctx)
+
+
+@decision_cards_router.post(
+    "/{card_id}/reassess",
+    action="decision.reassess",
+    response_model=DecisionCardOut,
+    errors=(409, 501),
+)
+async def decision_card_reassess_route(card_id: UUID, ctx: Ctx) -> DecisionCardOut:
+    """SHL-11 d, h: the owner's provider recomputes in code; no change is a new version, a
+    changed outcome raises a superseding card."""
     await _stub(ctx)

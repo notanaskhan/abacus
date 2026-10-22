@@ -141,6 +141,17 @@ NOT_CREATING = {
     "/v1/review-notes/{note_id}/respond",
     "/v1/review-notes/{note_id}/clear",
     "/v1/review-notes/{note_id}/withdraw",
+    # P-04-T08 (C3 stub 2): decisions, proposal and suggestion resolutions return the record.
+    "/v1/decision-cards/{card_id}/decide",
+    "/v1/decision-cards/{card_id}/notify",
+    "/v1/decision-cards/{card_id}/reassess",
+    "/v1/proposals/{proposal_id}/approve",
+    "/v1/proposals/{proposal_id}/reject",
+    "/v1/proposals/{proposal_id}/route",
+    "/v1/proposals/{proposal_id}/follow-up",
+    "/v1/proposals/{proposal_id}/undo",
+    "/v1/suggestions/{suggestion_id}/adopt",
+    "/v1/suggestions/{suggestion_id}/dismiss",
 }
 
 
@@ -276,6 +287,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/review-notes",
         # SPEC-318 (TASK-461): a run trace export
         "/v1/agent-runs/{run_id}/trace-exports",
+        "/v1/decision-cards/{card_id}/analysis-requests",  # P-04-T08: a recorded request
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING
