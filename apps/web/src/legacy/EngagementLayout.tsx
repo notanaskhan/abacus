@@ -52,6 +52,7 @@ export function EngagementLayout({ engagementId }: { engagementId: string }): JS
         label="Engagement"
         items={[
           { label: "Overview", to: "/engagements/$engagementId", params, exact: true },
+          { label: "Dashboard", to: "/engagements/$engagementId/dashboard", params },
           { label: "Requests", to: "/engagements/$engagementId/requests", params },
           { label: "Review", to: "/engagements/$engagementId/review", params },
           { label: "Planning", to: "/engagements/$engagementId/planning", params },

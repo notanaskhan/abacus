@@ -121,6 +121,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "completion.read",  # SPEC-314 (TASK-332)
         "completion.record",  # SPEC-314 (TASK-332)
         "connection.read_log",
+        "dashboard.read",  # SPEC-317 (TASK-460)
         "entry_assessment.adopt",  # SPEC-044 (TASK-109)
         "entry_assessment.request",  # SPEC-037 Q4 (TASK-085)
         "eqr.concur",  # SPEC-314 (TASK-332)

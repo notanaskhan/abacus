@@ -123,3 +123,38 @@ async def judgments_of(tenant: TenantContext, engagement_id: UUID) -> list[Judgm
     for name in sorted(_JUDGMENTS):
         out.extend(await _JUDGMENTS[name](tenant, engagement_id))
     return out
+
+
+# --- Progress facts for the engagement dashboard (SPEC-317; TASK-346) -------------------------
+
+
+@dataclass(frozen=True)
+class ProgressFact:
+    """A count an owner states by code for the dashboard: done of total (or a plain count when
+    total is None), and whether it needs attention."""
+
+    source: str
+    key: str
+    label: str
+    value: int
+    total: int | None
+    attention: bool
+
+
+ProgressSource = Callable[[TenantContext, UUID], Awaitable[list[ProgressFact]]]
+_PROGRESS: dict[str, ProgressSource] = {}
+
+
+def register_progress_source(name: str, source: ProgressSource) -> None:
+    known = _PROGRESS.get(name)
+    if known is not None and not _same(known, source):
+        raise ValueError(f"progress source {name!r} is already registered")
+    _PROGRESS[name] = source
+
+
+async def progress_of(tenant: TenantContext, engagement_id: UUID) -> list[ProgressFact]:
+    """Every registered source's facts, by source name (callers authorised first)."""
+    out: list[ProgressFact] = []
+    for name in sorted(_PROGRESS):
+        out.extend(await _PROGRESS[name](tenant, engagement_id))
+    return out

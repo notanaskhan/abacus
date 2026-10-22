@@ -1657,6 +1657,24 @@ export type CriteriaIoOutput = {
 };
 
 /**
+ * DashboardOut
+ */
+export type DashboardOut = {
+    /**
+     * Gates
+     */
+    gates: Array<GateFactOut>;
+    /**
+     * Next Up
+     */
+    next_up: Array<NextItemOut>;
+    /**
+     * Tiles
+     */
+    tiles: Array<TileOut>;
+};
+
+/**
  * DecideIn
  */
 export type DecideIn = {
@@ -2859,6 +2877,24 @@ export type GapOut = {
      * Needed
      */
     needed: Array<string>;
+};
+
+/**
+ * GateFactOut
+ */
+export type GateFactOut = {
+    /**
+     * Blockers
+     */
+    blockers: Array<string>;
+    /**
+     * Gate
+     */
+    gate: string;
+    /**
+     * Met
+     */
+    met: boolean;
 };
 
 /**
@@ -4558,6 +4594,32 @@ export type MisstatementOut = {
      * Recorded By Name
      */
     recorded_by_name: string;
+};
+
+/**
+ * NextItemOut
+ */
+export type NextItemOut = {
+    /**
+     * Code
+     */
+    code: string | null;
+    /**
+     * Kind
+     */
+    kind: 'prepare' | 'review' | 'answer_note' | 'clear_note' | 'chase_request';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Target Type
+     */
+    target_type: string;
 };
 
 /**
@@ -7783,6 +7845,32 @@ export type TierIn = {
 };
 
 /**
+ * TileOut
+ */
+export type TileOut = {
+    /**
+     * Attention
+     */
+    attention: boolean;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Total
+     */
+    total: number | null;
+    /**
+     * Value
+     */
+    value: number;
+};
+
+/**
  * TimeZoneIO
  *
  * SPEC-027 (TASK-051): the firm's time zone (IANA name), for the agent's daily tick.
@@ -10893,6 +10981,58 @@ export type StartResponses = {
 };
 
 export type StartResponse = StartResponses[keyof StartResponses];
+
+export type EngagementDashboardData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/dashboard';
+};
+
+export type EngagementDashboardErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EngagementDashboardError = EngagementDashboardErrors[keyof EngagementDashboardErrors];
+
+export type EngagementDashboardResponses = {
+    /**
+     * Successful Response
+     */
+    200: DashboardOut;
+};
+
+export type EngagementDashboardResponse = EngagementDashboardResponses[keyof EngagementDashboardResponses];
 
 export type ListEvidenceVersionsData = {
     body?: never;

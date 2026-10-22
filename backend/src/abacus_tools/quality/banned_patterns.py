@@ -1037,6 +1037,8 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/ledger/mapping_repository.py", "versions_of_sets"),
         ("src/abacus/modules/ledger/mapping_repository.py", "catalogue_rows"),
         ("src/abacus/modules/ledger/mapping_repository.py", "newest_edits"),
+        # SPEC-317 (TASK-346): fieldwork's progress for the dashboard, after authorising on it.
+        ("src/abacus/modules/fieldwork/repository.py", "engagement_progress_rows"),
     }
 )
 
