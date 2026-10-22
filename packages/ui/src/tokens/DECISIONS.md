@@ -360,3 +360,17 @@ semantics are kept exact; the plan's `toast.undoable` and `toast.running` sit on
 | 2026-10-23 | PortalBrand        | Slots only: name, legal name, logo, mark, `securedFooter`, sign-in methods. No colour field; no default brand (DEC-59, P-11)   |
 | 2026-10-23 | Approvals          | `portalNav("individual")` drops Approvals; an entity client sees it in the bar (1400) and under More (390)                     |
 | 2026-10-23 | Shell value source | `/v1/me.portal.shell` (C5 portal half, P-08) is not built: the app passes the variant and the client kind until it lands       |
+
+### C-16 Request kit, portal variant (F-05-T36)
+
+| Date       | Item             | Decision                                                                                                                                                                                         |
+| ---------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-10-23 | Document glyph   | Stroke ink-3, fill ink-4 once in and hair while open: the kit's `#6F6F77` and `rgba(142,143,150,…)` are not tokens                                                                               |
+| 2026-10-23 | Inks             | ink-2 / ink-3 on the AA ladder (DEC-11), not the kit's .62 / .54                                                                                                                                 |
+| 2026-10-23 | Section clipping | RequestSection does not clip; its last row rounds its own bottom, so a row's open menu paints over the sections after it                                                                         |
+| 2026-10-23 | Menu flip        | Menus open below their trigger; the kit's flip above near the well's bottom is left to POR-03                                                                                                    |
+| 2026-10-23 | Toasts           | The kit's toasts (Sorted into, Upload removed, Reply sent, blocked Mark as Done) are the screen's: the kit calls `onBlocked`, `onRemove`, `onReply` and the screen toasts through the C-21 store |
+| 2026-10-23 | Drag stack       | Generic "File" pills with the count unless the screen passes names (browsers expose none during a drag; C-16 README)                                                                             |
+| 2026-10-23 | Narrow header    | The under-760 collapse of "Upload something else" is not built; the reduced pane (T7g) reads "Upload…" as the kit does                                                                           |
+| 2026-10-23 | 390 binder       | T7-M follows TPL-07-M's column (binder picker, n to do, 96 tap card, 56 rows with a 32 Upload… pill in a 44 target), not the T7-M board's Mark as Done bar                                       |
+| 2026-10-23 | Captions         | Gallery captions say "the nested fill" where the canvas notes name `#EFEEEB`: hex is banned in package source                                                                                    |

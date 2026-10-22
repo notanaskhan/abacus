@@ -189,6 +189,123 @@
         132
       ],
       "tier": "A"
+    },
+    "t7-client-portal.t7a": {
+      "selector": "[data-artboard=\"t7a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T7 Client portal/screenshots/T7a.png",
+      "sha256": "b1e3a18fbcb7df791ebb39814962ee91d5b0dd3eacfeef13fe3d277f0cce31df",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t7-client-portal.t7b": {
+      "selector": "[data-artboard=\"t7b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T7 Client portal/screenshots/T7b.png",
+      "sha256": "deb2701a6ff03cbd8196c870219e438fb9bff5729809cdccacba94c0afaf0767",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t7-client-portal.t7c": {
+      "selector": "[data-artboard=\"t7c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T7 Client portal/screenshots/T7c.png",
+      "sha256": "7fffb432b497d19e3dd86c1d975dc7e34e39da220f2eb51b2b6f7e5317f2f433",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t7-client-portal.t7d": {
+      "selector": "[data-artboard=\"t7d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T7 Client portal/screenshots/T7d.png",
+      "sha256": "d9b644dd6039bd0fe0c05fa2556b901df901b8a7fc10a43a7860b3138db3004c",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t7-client-portal.t7e": {
+      "selector": "[data-artboard=\"t7e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T7 Client portal/screenshots/T7e.png",
+      "sha256": "92bb551811bc2879b576ce801f0d9e735c91632b4b790f4abc1512b678943496",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t7-client-portal.t7f": {
+      "selector": "[data-artboard=\"t7f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T7 Client portal/screenshots/T7f.png",
+      "sha256": "220277fbce25127afd39f294ad0e904480fffe4bf8ea42fc59471b66d9f18f35",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t7-client-portal.t7g": {
+      "selector": "[data-artboard=\"t7g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T7 Client portal/screenshots/T7g.png",
+      "sha256": "844e355a08e040b06795a185697772fdb58a8f4dee2ba696f94f8b035b2b90ea",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t7-client-portal.t7-m": {
+      "selector": "[data-artboard=\"t7-m\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T7 Client portal/screenshots/T7-M.png",
+      "sha256": "10142e61df119bb50b580e339499cdff6fce5573538f04c6fb03afe48f5f0cd2",
+      "crop": [
+        80,
+        56,
+        860,
+        1744
+      ],
+      "tier": "B",
+      "deviation": "DEC-45: the 64px bottom tab bar replaces the T7-M board's top pills, and the column follows TPL-07-M (no Mark as Done bar)"
+    },
+    "tpl-07.a": {
+      "selector": "[data-artboard=\"tpl-07a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-07 Client portal specimen - Feld 2025 Binder - 1400 - 390/screenshots/TPL-07a.png",
+      "sha256": "c35d58ae4b29b9e5a759c5034a7a70893091520052ac5243cfd29f864b9d2553",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-07.b": {
+      "selector": "[data-artboard=\"tpl-07b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-07 Client portal specimen - Feld 2025 Binder - 1400 - 390/screenshots/TPL-07b.png",
+      "sha256": "d6ce3b56ff0a36d0d1d5c84a8585b2e82c93fab6f145cd285869083f42e045e0",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-07.c": {
+      "selector": "[data-artboard=\"tpl-07c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-07 Client portal specimen - Feld 2025 Binder - 1400 - 390/screenshots/TPL-07c.png",
+      "sha256": "b6321023b0ea8fbcbe90b95db67be3ba814f67cb1db4e636cd242f68772a12de",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-07.d": {
+      "selector": "[data-artboard=\"tpl-07d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-07 Client portal specimen - Feld 2025 Binder - 1400 - 390/screenshots/TPL-07d.png",
+      "sha256": "f721081439f1d9ff27c91ec6389a0b257efd754828578e260f31326395cb7f7a",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-07.e": {
+      "selector": "[data-artboard=\"tpl-07e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-07 Client portal specimen - Feld 2025 Binder - 1400 - 390/screenshots/TPL-07e.png",
+      "sha256": "03165d8fb5f5501e18309ce6e253569b1929da493816d58f812b353ae2c7ed97",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-07.f": {
+      "selector": "[data-artboard=\"tpl-07f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-07 Client portal specimen - Feld 2025 Binder - 1400 - 390/screenshots/TPL-07f.png",
+      "sha256": "fb54c57c5fa7be6df385302e476deca6e34905b1d9597cd62ac7d2e64ac4b02a",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-07.m": {
+      "selector": "[data-artboard=\"tpl-07-m\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-07 Client portal specimen - Feld 2025 Binder - 1400 - 390/screenshots/TPL-07-M.png",
+      "sha256": "279d32b6cd46bf2c53892f82b09a956af994812a3a719af95f110d80caa76cd8",
+      "crop": [
+        80,
+        56,
+        860,
+        1744
+      ],
+      "tier": "B",
+      "deviation": "The phone frame uses the 28 radius token (the T7-M spec) where the canvas draws 36"
     }
   }
 }
