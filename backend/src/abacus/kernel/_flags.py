@@ -11,6 +11,11 @@ BINDERS_ENGINE = Flag(
     kind="boolean",
     default="false",
 )
+CLIENTS_V2 = Flag(
+    name="clients.v2",
+    kind="boolean",
+    default="false",
+)
 ENGAGEMENT_AGENT_ENABLED = Flag(
     name="engagement_agent.enabled",
     kind="boolean",
@@ -102,6 +107,7 @@ UPLOADS_PROCESSING = Flag(
 
 FLAGS: dict[str, Flag] = {
     "binders.engine": BINDERS_ENGINE,
+    "clients.v2": CLIENTS_V2,
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
     "engagements.work_items_api": ENGAGEMENTS_WORK_ITEMS_API,
     "fieldwork.assessor": FIELDWORK_ASSESSOR,

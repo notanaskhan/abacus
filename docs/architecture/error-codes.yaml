@@ -642,6 +642,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.identity.staff.StaffInvitationInvalid
+  stale_version:
+    status: 409
+    raised_by:
+    - abacus.modules.organisations.contract.ClientStaleVersion
+    summary: 'The client changed since it was read (`seen_version` is behind): read it again.'
   statement_already_approved:
     status: 409
     raised_by:

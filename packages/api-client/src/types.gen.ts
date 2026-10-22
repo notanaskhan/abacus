@@ -2011,6 +2011,58 @@ export type ClientContactOut = {
 };
 
 /**
+ * ClientEngagementBriefOut
+ *
+ * The "2 active engagements ⌄" menu: visible engagements only.
+ */
+export type ClientEngagementBriefOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Service Line
+     */
+    service_line: 'audit' | 'tax' | 'cas' | 'advisory';
+    status: EngagementStatus;
+};
+
+/**
+ * ClientEntityBriefOut
+ */
+export type ClientEntityBriefOut = {
+    /**
+     * Entity Type
+     */
+    entity_type?: 'individual' | 'household_mfj' | 'c_corp' | 's_corp' | 'llc' | 'partnership' | 'trust' | 'estate' | 'ebp_plan' | 'exempt_org' | null;
+    /**
+     * Fye Month Day
+     */
+    fye_month_day?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Plan Number
+     */
+    plan_number?: string | null;
+    /**
+     * State Of Formation
+     */
+    state_of_formation?: string | null;
+    tin?: MaskedTinOut | null;
+};
+
+/**
  * ClientInvitationIn
  */
 export type ClientInvitationIn = {
@@ -2032,6 +2084,132 @@ export type ClientInvitationOut = {
      * Invitation Id
      */
     invitation_id: string;
+};
+
+/**
+ * ClientObjectRefOut
+ *
+ * An opaque reference an overview row links to (an engagement, a work item, a binder).
+ */
+export type ClientObjectRefOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Type
+     */
+    type: string;
+};
+
+/**
+ * ClientOverviewItemOut
+ *
+ * One stat, KV row, table row, key date or activity line. Numbers are decimal strings
+ * computed in code (ADR-050); `pill_object` and `pill_code` name a C2 status the UI words.
+ */
+export type ClientOverviewItemOut = {
+    /**
+     * At
+     */
+    at?: string | null;
+    /**
+     * Figure
+     */
+    figure?: string | null;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * On
+     */
+    on?: string | null;
+    /**
+     * Pill Code
+     */
+    pill_code?: string | null;
+    /**
+     * Pill Object
+     */
+    pill_object?: string | null;
+    ref?: ClientObjectRefOut | null;
+    /**
+     * Text
+     */
+    text?: string | null;
+};
+
+/**
+ * ClientOverviewOut
+ */
+export type ClientOverviewOut = {
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Profile
+     */
+    profile: 'business' | 'household' | 'plan_sponsor' | 'empty';
+    /**
+     * Sections
+     */
+    sections: Array<ClientOverviewSectionOut>;
+};
+
+/**
+ * ClientOverviewSectionOut
+ *
+ * A section from one registered provider, present only when the caller holds the
+ * provider's own read action (a metadata-only role gets metadata sections; ADR-024).
+ */
+export type ClientOverviewSectionOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Items
+     */
+    items: Array<ClientOverviewItemOut>;
+    /**
+     * Kind
+     */
+    kind: 'stats' | 'details' | 'table' | 'key_dates' | 'activity';
+    /**
+     * Read Action
+     */
+    read_action: string;
+    /**
+     * Total
+     */
+    total?: number | null;
+};
+
+/**
+ * ClientPatchIn
+ *
+ * Absent fields are unchanged; `status_change` is absent unless the status moves.
+ */
+export type ClientPatchIn = {
+    /**
+     * Descriptor
+     */
+    descriptor?: string | null;
+    /**
+     * Primary Office Id
+     */
+    primary_office_id?: string | null;
+    /**
+     * Relationship Partner Id
+     */
+    relationship_partner_id?: string | null;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+    status_change?: ClientStatusChangeIn | null;
 };
 
 /**
@@ -2065,6 +2243,127 @@ export type ClientPreviewItemOut = {
      * Title
      */
     title: string;
+};
+
+/**
+ * ClientRecordOut
+ *
+ * CLI-02's subbar facts, rail Details and Team, and tab counts. The Team band's Partner is
+ * the stored relationship partner; Manager and Preparer are derived (DEC-62, DEC-138).
+ */
+export type ClientRecordOut = {
+    /**
+     * Active Engagements
+     */
+    active_engagements?: Array<ClientEngagementBriefOut>;
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Descriptor
+     */
+    descriptor?: string | null;
+    /**
+     * Entities
+     */
+    entities: Array<ClientEntityBriefOut>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Is Attest Client
+     */
+    is_attest_client: boolean;
+    /**
+     * Kind
+     */
+    kind: 'household' | 'business' | 'plan_sponsor' | 'nonprofit' | 'trust_family' | null;
+    /**
+     * Manager User Ids
+     */
+    manager_user_ids?: Array<string>;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Office Name
+     */
+    office_name?: string | null;
+    portal_status: InvitationStatus;
+    /**
+     * Preparer User Ids
+     */
+    preparer_user_ids?: Array<string>;
+    /**
+     * Primary Office Id
+     */
+    primary_office_id?: string | null;
+    /**
+     * Relationship Partner Id
+     */
+    relationship_partner_id?: string | null;
+    /**
+     * Risk Tier
+     */
+    risk_tier?: 'low' | 'moderate' | 'high' | null;
+    status: ClientStatus;
+    tab_counts: ClientTabCountsOut;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ClientRelationshipOut
+ *
+ * One `entity_relationships` edge. An edge into a walled client is omitted, never
+ * redacted (INV-3).
+ */
+export type ClientRelationshipOut = {
+    /**
+     * Effective From
+     */
+    effective_from?: string | null;
+    /**
+     * Effective To
+     */
+    effective_to?: string | null;
+    /**
+     * From Entity Id
+     */
+    from_entity_id: string;
+    /**
+     * From Entity Name
+     */
+    from_entity_name: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'spouse' | 'owner_of' | 'trustee_of' | 'beneficiary_of' | 'sponsor_of' | 'upper_tier_of' | 'executor_of' | 'gp_of' | 'lp_of' | 'estate_of';
+    /**
+     * Percent
+     */
+    percent?: string | null;
+    /**
+     * To Client Id
+     */
+    to_client_id: string;
+    /**
+     * To Entity Id
+     */
+    to_entity_id: string;
+    /**
+     * To Entity Name
+     */
+    to_entity_name: string;
 };
 
 /**
@@ -2109,6 +2408,120 @@ export type ClientResponseOut = {
      * Request Item Id
      */
     request_item_id: string;
+};
+
+/**
+ * ClientRowOut
+ *
+ * A CLI-01 row: metadata only, after `visible(scope=client)` (INV-3). No TIN, no hidden
+ * count; a walled client is simply not a row.
+ */
+export type ClientRowOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Binder Draft Only
+     */
+    binder_draft_only?: boolean;
+    /**
+     * Descriptor
+     */
+    descriptor?: string | null;
+    /**
+     * Entity Count
+     */
+    entity_count: number;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Is Attest Client
+     */
+    is_attest_client: boolean;
+    /**
+     * Kind
+     */
+    kind: 'household' | 'business' | 'plan_sponsor' | 'nonprofit' | 'trust_family' | null;
+    /**
+     * Last Activity At
+     */
+    last_activity_at?: string | null;
+    /**
+     * Last Activity Event Type
+     */
+    last_activity_event_type?: string | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Office Id
+     */
+    office_id?: string | null;
+    /**
+     * Office Name
+     */
+    office_name?: string | null;
+    /**
+     * Open Request Count
+     */
+    open_request_count?: number | null;
+    portal_status: InvitationStatus;
+    /**
+     * Relationship Partner Id
+     */
+    relationship_partner_id?: string | null;
+    /**
+     * Relationship Partner Initials
+     */
+    relationship_partner_initials?: string | null;
+    /**
+     * Service Lines
+     */
+    service_lines: Array<'audit' | 'tax' | 'cas' | 'advisory'>;
+    status: ClientStatus;
+};
+
+/**
+ * ClientStatus
+ */
+export type ClientStatus = 'prospect' | 'active' | 'inactive' | 'former';
+
+/**
+ * ClientStatusChangeIn
+ *
+ * A person may move a client to inactive or former, and back to active; prospect to active
+ * is a system transition (409 `illegal_transition`).
+ */
+export type ClientStatusChangeIn = {
+    status: ClientStatus;
+};
+
+/**
+ * ClientTabCountsOut
+ *
+ * CLI-02 tab counts; null where the tab's owner registers no count (the tab shows none).
+ */
+export type ClientTabCountsOut = {
+    /**
+     * Contacts
+     */
+    contacts?: number | null;
+    /**
+     * Engagements
+     */
+    engagements: number;
+    /**
+     * Messages
+     */
+    messages?: number | null;
+    /**
+     * Relationships
+     */
+    relationships: number;
 };
 
 /**
@@ -5668,6 +6081,74 @@ export type ListPageBinderRowOut = {
 };
 
 /**
+ * ListPage[ClientRelationshipOut]
+ */
+export type ListPageClientRelationshipOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<ClientRelationshipOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * ListPage[ClientRowOut]
+ */
+export type ListPageClientRowOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<ClientRowOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
  * ListPage[DecisionCardItemOut]
  */
 export type ListPageDecisionCardItemOut = {
@@ -5966,6 +6447,27 @@ export type MappingOut = {
      */
     unmapped: number;
     version: GroupingVersionOut | null;
+};
+
+/**
+ * MaskedTinOut
+ *
+ * A taxpayer ID as every payload but the reveal carries it: kind and last four digits
+ * (`XX-XXX0287`, `•••-••-2208`). Restricted; never in a list (ADR-031, P-12).
+ */
+export type MaskedTinOut = {
+    /**
+     * Kind
+     */
+    kind: 'ssn' | 'ein' | 'itin';
+    /**
+     * Last4
+     */
+    last4?: string | null;
+    /**
+     * Presence
+     */
+    presence: 'on_file' | 'applied_for';
 };
 
 /**
@@ -11058,6 +11560,42 @@ export type TimeZoneIo = {
 };
 
 /**
+ * TinRevealIn
+ */
+export type TinRevealIn = {
+    /**
+     * Reason
+     */
+    reason: 'prepare_return' | 'review_return' | 'file_or_correct_filing' | 'respond_to_notice' | 'verify_identity';
+};
+
+/**
+ * TinRevealOut
+ *
+ * The plain value, once, `Cache-Control: no-store`, for the 10-second reveal. The only
+ * payload that carries a TIN; one `tin.revealed` audit event names the reason, never the
+ * value (P-07 Story 1.3; DEC-141).
+ */
+export type TinRevealOut = {
+    /**
+     * Entity Id
+     */
+    entity_id: string;
+    /**
+     * Kind
+     */
+    kind: 'ssn' | 'ein' | 'itin';
+    /**
+     * Remask After Seconds
+     */
+    remask_after_seconds?: number;
+    /**
+     * Value
+     */
+    value: string;
+};
+
+/**
  * TotalsOut
  */
 export type TotalsOut = {
@@ -13046,6 +13584,270 @@ export type PutBudgetResponses = {
 
 export type PutBudgetResponse = PutBudgetResponses[keyof PutBudgetResponses];
 
+export type RevealTinData = {
+    body: TinRevealIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Entity Id
+         */
+        entity_id: string;
+    };
+    query?: never;
+    url: '/v1/client-entities/{entity_id}/tin/reveal';
+};
+
+export type RevealTinErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RevealTinError = RevealTinErrors[keyof RevealTinErrors];
+
+export type RevealTinResponses = {
+    /**
+     * Successful Response
+     */
+    200: TinRevealOut;
+};
+
+export type RevealTinResponse = RevealTinResponses[keyof RevealTinResponses];
+
+export type ListClientsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Kind
+         */
+        kind?: 'household' | 'business' | 'plan_sponsor' | 'nonprofit' | 'trust_family' | null;
+        /**
+         * Office Id
+         */
+        office_id?: string | null;
+        /**
+         * Partner Id
+         */
+        partner_id?: string | null;
+        /**
+         * Service Line
+         */
+        service_line?: 'audit' | 'tax' | 'cas' | 'advisory' | null;
+        /**
+         * Status
+         */
+        status?: ClientStatus | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Sort
+         */
+        sort?: 'last_activity' | 'name';
+        /**
+         * Facets
+         */
+        facets?: boolean;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/clients';
+};
+
+export type ListClientsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListClientsError = ListClientsErrors[keyof ListClientsErrors];
+
+export type ListClientsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageClientRowOut;
+};
+
+export type ListClientsResponse = ListClientsResponses[keyof ListClientsResponses];
+
+export type GetClientData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Id
+         */
+        client_id: string;
+    };
+    query?: never;
+    url: '/v1/clients/{client_id}';
+};
+
+export type GetClientErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetClientError = GetClientErrors[keyof GetClientErrors];
+
+export type GetClientResponses = {
+    /**
+     * Successful Response
+     */
+    200: ClientRecordOut;
+};
+
+export type GetClientResponse = GetClientResponses[keyof GetClientResponses];
+
+export type UpdateClientData = {
+    body: ClientPatchIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Id
+         */
+        client_id: string;
+    };
+    query?: never;
+    url: '/v1/clients/{client_id}';
+};
+
+export type UpdateClientErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UpdateClientError = UpdateClientErrors[keyof UpdateClientErrors];
+
+export type UpdateClientResponses = {
+    /**
+     * Successful Response
+     */
+    200: ClientRecordOut;
+};
+
+export type UpdateClientResponse = UpdateClientResponses[keyof UpdateClientResponses];
+
 export type ResetContactMfaData = {
     body?: never;
     headers: {
@@ -13169,6 +13971,123 @@ export type UnlockContactPortalResponses = {
 };
 
 export type UnlockContactPortalResponse = UnlockContactPortalResponses[keyof UnlockContactPortalResponses];
+
+export type ClientOverviewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Id
+         */
+        client_id: string;
+    };
+    query?: never;
+    url: '/v1/clients/{client_id}/overview';
+};
+
+export type ClientOverviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ClientOverviewError = ClientOverviewErrors[keyof ClientOverviewErrors];
+
+export type ClientOverviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: ClientOverviewOut;
+};
+
+export type ClientOverviewResponse = ClientOverviewResponses[keyof ClientOverviewResponses];
+
+export type ClientRelationshipsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Id
+         */
+        client_id: string;
+    };
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/clients/{client_id}/relationships';
+};
+
+export type ClientRelationshipsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ClientRelationshipsError = ClientRelationshipsErrors[keyof ClientRelationshipsErrors];
+
+export type ClientRelationshipsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageClientRelationshipOut;
+};
+
+export type ClientRelationshipsResponse = ClientRelationshipsResponses[keyof ClientRelationshipsResponses];
 
 export type CompleteData = {
     body: CompleteIn;

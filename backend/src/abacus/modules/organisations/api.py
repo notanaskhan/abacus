@@ -1,6 +1,7 @@
 """Public interface of the organisations module; other modules import only this (ADR-008)."""
 
-from abacus.modules.identity.api import register_office_list
+from abacus.modules.identity.api import AbacusRouter, register_office_list
+from abacus.modules.organisations.contract import client_entities_router, clients_router
 from abacus.modules.organisations.service import (
     ClientChoice,
     ClientNames,
@@ -32,7 +33,10 @@ from abacus.modules.organisations.service import (
 )
 
 # The routers the API mounts, in order (P-39; F-03-T07).
-ROUTERS: tuple[()] = ()
+ROUTERS: tuple[AbacusRouter, ...] = (
+    clients_router,  # the clients family contract, v1 stub (P-07-T04)
+    client_entities_router,
+)
 
 # P-01-T04: identity's `/v1/me` lists the firm's offices through this.
 register_office_list(firm_offices)

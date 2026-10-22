@@ -183,6 +183,15 @@ forbidden_modules = [
 ]
 
 [[tool.importlinter.contracts]]
+name = "Clients never reach the model or the agent: TINs and client records stay out (P-07-T04)"
+type = "forbidden"
+source_modules = ["abacus.modules.organisations"]
+forbidden_modules = ["abacus.ai_gateway", "abacus.modules.agents"]
+# Direct imports only: identity (which every module imports for authz) reaches the gateway for
+# the firm's AI settings, so an indirect path is not a leak of client data.
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
 name = "In-module layering: routes -> service -> repository (ADR-012)"
 type = "layers"
 layers = ["(routes)", "(retrievals)", "(service)", "(repository)"]
