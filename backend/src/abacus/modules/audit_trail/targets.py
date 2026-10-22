@@ -41,6 +41,7 @@ FIRM_LEVEL: Final = frozenset(
         "staff_invitation",
         "support_session",
         "methodology_version",
+        "grouping_set_version",  # the firm's chart groupings (SPEC-316), shared by engagements
         "knowledge_document",
         "feature_flag",
         "retention",
