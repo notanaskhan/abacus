@@ -35,8 +35,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.db import TenantContext, identity_engine, tenant_session
 
-FirmRole = Literal["firm_admin", "practice_leader", "quality_partner"]
-EngagementRole = Literal["engagement_partner", "manager", "senior", "staff", "reviewer"]
+# F-03-T23: security_admin (IT and security; no client content, chapter 03 §4.2).
+FirmRole = Literal["firm_admin", "practice_leader", "quality_partner", "security_admin"]
+# F-03-T23: eqr_reviewer, specialist and client_service join the engagement roles (§4.2).
+EngagementRole = Literal[
+    "engagement_partner",
+    "manager",
+    "senior",
+    "staff",
+    "reviewer",
+    "eqr_reviewer",
+    "specialist",
+    "client_service",
+]
 # SPEC-015: client users' roles on an engagement (client memberships only, a database trigger).
 ClientRole = Literal["client_admin", "client_contributor"]
 ENGAGEMENT_ROLES: frozenset[str] = frozenset(get_args(EngagementRole))

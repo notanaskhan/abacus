@@ -4329,7 +4329,7 @@ export type MembershipOut = {
     /**
      * Firm Role
      */
-    firm_role: 'firm_admin' | 'practice_leader' | 'quality_partner' | null;
+    firm_role: 'firm_admin' | 'practice_leader' | 'quality_partner' | 'security_admin' | null;
     /**
      * Kind
      */
@@ -7113,7 +7113,7 @@ export type TeamMemberOut = {
     /**
      * Role
      */
-    role: 'engagement_partner' | 'manager' | 'senior' | 'staff' | 'reviewer';
+    role: 'engagement_partner' | 'manager' | 'senior' | 'staff' | 'reviewer' | 'eqr_reviewer' | 'specialist' | 'client_service';
     /**
      * User Id
      */

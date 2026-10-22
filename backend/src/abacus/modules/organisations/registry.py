@@ -11,6 +11,10 @@ TABLES: frozenset[str] = frozenset(
     {
         "clients",
         "client_entities",
+        # F-03-T23 (DEC-30): offices are a filter, never an access boundary (Q-21).
+        "offices",
+        "teams",
+        "team_rosters",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -19,6 +23,9 @@ INSERT_ONLY: frozenset[str] = frozenset()
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "clients": frozenset({"id", "tenant_id", "name"}),
     "client_entities": frozenset({"id", "tenant_id", "client_id", "name"}),
+    "offices": frozenset({"tenant_id", "name", "time_zone"}),
+    "teams": frozenset({"tenant_id", "office_id", "name"}),
+    "team_rosters": frozenset({"tenant_id", "team_id", "user_id"}),
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {}

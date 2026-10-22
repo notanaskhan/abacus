@@ -40,7 +40,8 @@ from abacus.modules.identity.repository import (
 )
 from abacus.modules.identity.tokens import VerifiedIdentity
 
-FirmRole = Literal["firm_admin", "practice_leader", "quality_partner"]
+# F-03-T23: security_admin (IT and security; no client content, chapter 03 §4.2).
+FirmRole = Literal["firm_admin", "practice_leader", "quality_partner", "security_admin"]
 INVITATION_DAYS: Final = 14
 # For audit references (integers only, never text); 0 is no firm role.
 _ROLE_INDEX: Final = {"firm_admin": 1, "practice_leader": 2, "quality_partner": 3}

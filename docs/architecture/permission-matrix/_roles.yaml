@@ -19,7 +19,8 @@
 # Roles without an engagement relationship (firm_admin, practice_leader, quality_partner)
 # are evaluated per ADR-024. Agents: ADR-005, ADR-025. Draft v0.1 — finalise in SPEC.
 
-roles: [firm_admin, practice_leader, quality_partner,
+roles: [firm_admin, practice_leader, quality_partner, security_admin,
         engagement_partner, manager, senior, staff, reviewer,
+        eqr_reviewer, specialist, client_service,   # F-03-T23 (chapter 03 §4.2); no allow yet: F-03-T24 grants them
         client_admin, client_contributor, agent, system,
         platform_support, platform_support_content]   # SPEC-012: break-glass, read-only
