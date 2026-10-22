@@ -96,3 +96,4 @@ updated: 2026-10-22
   - vitest: 24 passed.
   - `apps/web` tsc is now clean.
   - ruff, pyright, eslint, prettier, banned_patterns and validate_docs: clean.
+- 2026-10-22: fixed #285. `DecisionContextOut.value`, `DecisionOptionOut.figures`, `DecisionCardVersionOut.figures` and `DecisionRecommendationOut.reasons` are now Restricted (client figures; return information on SHL-11 g). The strict xfail is removed and the test passes.

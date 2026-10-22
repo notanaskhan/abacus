@@ -5823,7 +5823,7 @@
             "additionalProperties": {
               "type": "string"
             },
-            "cls": "confidential",
+            "cls": "restricted",
             "title": "Figures",
             "type": "object"
           },
@@ -5886,7 +5886,7 @@
             "type": "string"
           },
           "value": {
-            "cls": "confidential",
+            "cls": "restricted",
             "title": "Value",
             "type": "string"
           }
@@ -5997,7 +5997,7 @@
             "additionalProperties": {
               "type": "string"
             },
-            "cls": "confidential",
+            "cls": "restricted",
             "title": "Figures",
             "type": "object"
           },
@@ -6103,7 +6103,7 @@
             "type": "string"
           },
           "reasons": {
-            "cls": "confidential",
+            "cls": "restricted",
             "items": {
               "type": "string"
             },
