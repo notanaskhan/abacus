@@ -28070,6 +28070,20 @@
         "title": "TeamRoleIn",
         "type": "object"
       },
+      "TelemetryReceivedOut": {
+        "properties": {
+          "forwarded": {
+            "cls": "internal",
+            "title": "Forwarded",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "forwarded"
+        ],
+        "title": "TelemetryReceivedOut",
+        "type": "object"
+      },
       "TemplateDraftOut": {
         "properties": {
           "approved_by": {
@@ -79600,6 +79614,103 @@
           "support"
         ],
         "x-abacus-action": "staff"
+      }
+    },
+    "/v1/telemetry/errors": {
+      "post": {
+        "description": "Q-01-T48: a Sentry envelope from the signed-in browser, rebuilt from an allowlist.",
+        "operationId": "browser_error",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemetryReceivedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Browser Error Route",
+        "tags": [
+          "budget"
+        ],
+        "x-abacus-action": "own"
       }
     },
     "/v1/walls": {

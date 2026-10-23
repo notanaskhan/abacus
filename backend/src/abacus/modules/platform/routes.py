@@ -8,13 +8,20 @@ from decimal import Decimal
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import Depends, Query
+from fastapi import Depends, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
-from abacus.modules.identity.api import OWN, AbacusRouter, AuthContext, current_context
+from abacus.modules.identity.api import (
+    OWN,
+    AbacusRouter,
+    AuthContext,
+    current_context,
+    current_member,
+)
 from abacus.modules.platform.capabilities import capabilities
 from abacus.modules.platform.service import metering, read_budget, set_budget
+from abacus.modules.platform.telemetry import MAX_BYTES, TooMany, report_browser_error
 
 router = AbacusRouter(prefix="/v1", tags=["budget"])
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -139,3 +146,32 @@ async def my_capabilities(
         portal=portal,
         nav=found.nav,
     )
+
+
+# --- Browser error tunnel (Q-01-T48) -----------------------------------------------------------
+
+
+class TelemetryReceivedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    forwarded: Annotated[bool, classified("internal")]
+
+
+@router.post("/telemetry/errors", action=OWN, response_model=TelemetryReceivedOut)
+async def browser_error_route(
+    request: Request, ctx: Annotated[AuthContext, Depends(current_member)]
+) -> TelemetryReceivedOut:
+    """Q-01-T48: a Sentry envelope from the signed-in browser, rebuilt from an allowlist."""
+    declared = request.headers.get("content-length")
+    if declared is not None and declared.isdigit() and int(declared) > MAX_BYTES:
+        raise HTTPException(413, "too large")
+    body = b""
+    async for chunk in request.stream():
+        body += chunk
+        if len(body) > MAX_BYTES:
+            raise HTTPException(413, "too large")
+    try:
+        forwarded = report_browser_error(ctx.user_id, ctx.tenant_id, body)
+    except TooMany:
+        raise HTTPException(429, "too many") from None
+    return TelemetryReceivedOut(forwarded=forwarded)

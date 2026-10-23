@@ -189,6 +189,18 @@ class ReportingInterceptor(Interceptor):
         return _ReportingActivityInbound(next)
 
 
+def forward_event(event: Mapping[str, object]) -> bool:
+    """Q-01-T48: an event rebuilt by the browser tunnel, scrubbed once more on the way out.
+    False when tracking is off (nothing is sent)."""
+    if not _configured:
+        return False
+    scrubbed = scrub(cast(Event, dict(event)))
+    if scrubbed is None:
+        return False
+    sentry_sdk.capture_event(scrubbed)
+    return True
+
+
 def flush_errors(timeout_seconds: float = 2.0) -> None:
     """Send reports still queued (process shutdown)."""
     if _configured:

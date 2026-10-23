@@ -13365,6 +13365,16 @@ export type TeamRoleIn = {
 };
 
 /**
+ * TelemetryReceivedOut
+ */
+export type TelemetryReceivedOut = {
+    /**
+     * Forwarded
+     */
+    forwarded: boolean;
+};
+
+/**
  * TemplateDraftOut
  */
 export type TemplateDraftOut = {
@@ -36922,6 +36932,53 @@ export type EndSupportSessionResponses = {
 };
 
 export type EndSupportSessionResponse = EndSupportSessionResponses[keyof EndSupportSessionResponses];
+
+export type BrowserErrorData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/telemetry/errors';
+};
+
+export type BrowserErrorErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type BrowserErrorError = BrowserErrorErrors[keyof BrowserErrorErrors];
+
+export type BrowserErrorResponses = {
+    /**
+     * Successful Response
+     */
+    200: TelemetryReceivedOut;
+};
+
+export type BrowserErrorResponse = BrowserErrorResponses[keyof BrowserErrorResponses];
 
 export type ListWallsData = {
     body?: never;
