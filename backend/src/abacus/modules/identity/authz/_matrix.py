@@ -1320,6 +1320,14 @@ ACTIONS: dict[str, dict[str, str]] = {
         "manager": "allow",
         "senior": "allow",
     },
+    "screening.feedback": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "agent": "deny",
+        "independence": "required",
+    },
     "screening.request": {
         "engagement_partner": "allow",
         "manager": "allow",

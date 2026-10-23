@@ -28225,6 +28225,403 @@
         "title": "ScreenRequestedOut",
         "type": "object"
       },
+      "ScreeningCardOut": {
+        "description": "SHL-20 a-e: the request batch's screening (\"29 of 31 files answer the request\"). `verdict`\nis C2's `evidence_screening` glyph; a verdict never carries a percentage (P-06 \u00a77).",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "batch_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Batch No"
+          },
+          "checks": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ScreeningCheckOut"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "file_flags": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ScreeningFileFlagOut"
+            },
+            "title": "File Flags",
+            "type": "array"
+          },
+          "files_answering": {
+            "cls": "internal",
+            "title": "Files Answering",
+            "type": "integer"
+          },
+          "files_total": {
+            "cls": "internal",
+            "title": "Files Total",
+            "type": "integer"
+          },
+          "my_feedback": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScreeningFeedbackOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/ScreeningProvenanceOut",
+            "cls": "internal"
+          },
+          "request_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Request Item Id",
+            "type": "string"
+          },
+          "running": {
+            "cls": "internal",
+            "title": "Running",
+            "type": "boolean"
+          },
+          "screening_result_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Screening Result Id"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/EvidenceScreeningStatus",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "request_item_id",
+          "screening_result_id",
+          "batch_no",
+          "verdict",
+          "running",
+          "files_total",
+          "files_answering",
+          "checks",
+          "file_flags",
+          "provenance",
+          "my_feedback",
+          "allowed_actions"
+        ],
+        "title": "ScreeningCardOut",
+        "type": "object"
+      },
+      "ScreeningCheckOut": {
+        "description": "One named check: \"Right document\", \"Right period\". Code checks and verified model flags\nonly (ADR-050).",
+        "properties": {
+          "answer_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Answer Ref"
+          },
+          "citation_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "key": {
+            "cls": "internal",
+            "enum": [
+              "right_document",
+              "right_period"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "source": {
+            "cls": "internal",
+            "enum": [
+              "model",
+              "code"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "verdict": {
+            "cls": "internal",
+            "enum": [
+              "pass",
+              "flag",
+              "not_run"
+            ],
+            "title": "Verdict",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "verdict",
+          "source",
+          "answer_ref",
+          "citation_ids"
+        ],
+        "title": "ScreeningCheckOut",
+        "type": "object"
+      },
+      "ScreeningFeedbackIn": {
+        "additionalProperties": false,
+        "description": "SHL-20 f: a thumbs-down needs a reason (422 otherwise).",
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "enum": [
+                  "wrong_request_match",
+                  "wrong_period",
+                  "unclear_file",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason Code"
+          },
+          "thumb": {
+            "cls": "internal",
+            "enum": [
+              "up",
+              "down"
+            ],
+            "title": "Thumb",
+            "type": "string"
+          }
+        },
+        "required": [
+          "thumb"
+        ],
+        "title": "ScreeningFeedbackIn",
+        "type": "object"
+      },
+      "ScreeningFeedbackOut": {
+        "properties": {
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "enum": [
+                  "wrong_request_match",
+                  "wrong_period",
+                  "unclear_file",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason Code"
+          },
+          "screening_result_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Screening Result Id",
+            "type": "string"
+          },
+          "thumb": {
+            "cls": "internal",
+            "enum": [
+              "up",
+              "down"
+            ],
+            "title": "Thumb",
+            "type": "string"
+          }
+        },
+        "required": [
+          "screening_result_id",
+          "thumb",
+          "reason_code",
+          "created_at"
+        ],
+        "title": "ScreeningFeedbackOut",
+        "type": "object"
+      },
+      "ScreeningFileFlagOut": {
+        "description": "A flagged file with the deciding region one click away (\"View\" opens SHL-08 on it).",
+        "properties": {
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "reason_code": {
+            "cls": "internal",
+            "enum": [
+              "wrong_document",
+              "wrong_year"
+            ],
+            "title": "Reason Code",
+            "type": "string"
+          },
+          "region_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Region Ref"
+          }
+        },
+        "required": [
+          "evidence_version_id",
+          "file_name",
+          "reason_code",
+          "region_ref"
+        ],
+        "title": "ScreeningFileFlagOut",
+        "type": "object"
+      },
+      "ScreeningProvenanceOut": {
+        "description": "\"Screened by Accrued Agent \u00b7 screener@v3 \u00b7 2 s \u00b7 instructions inside files are never\nfollowed\": the parts as data; the UI words them.",
+        "properties": {
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Duration Ms"
+          },
+          "prompt_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Prompt Ref"
+          },
+          "screened_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Screened At"
+          }
+        },
+        "required": [
+          "prompt_ref",
+          "duration_ms",
+          "screened_at"
+        ],
+        "title": "ScreeningProvenanceOut",
+        "type": "object"
+      },
+      "ScreeningRerunOut": {
+        "properties": {
+          "as_of": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "request_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Request Item Id",
+            "type": "string"
+          },
+          "running": {
+            "cls": "internal",
+            "title": "Running",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "request_item_id",
+          "running",
+          "as_of"
+        ],
+        "title": "ScreeningRerunOut",
+        "type": "object"
+      },
       "ScreeningResultOut": {
         "description": "Model text (`rationale`, `quote`, `unverified`) is untrusted: render as plain text.",
         "properties": {
@@ -28294,6 +28691,45 @@
           "created_at"
         ],
         "title": "ScreeningResultOut",
+        "type": "object"
+      },
+      "ScreeningReturnDraftIn": {
+        "additionalProperties": false,
+        "description": "SHL-20 b: \"Draft follow-up\" on a flagged card, naming the files it returns.",
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "const": "screening_return",
+            "title": "Kind",
+            "type": "string"
+          },
+          "reason_code": {
+            "cls": "internal",
+            "default": "wrong_document",
+            "enum": [
+              "wrong_document",
+              "wrong_year"
+            ],
+            "title": "Reason Code",
+            "type": "string"
+          },
+          "returning": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Returning",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "returning"
+        ],
+        "title": "ScreeningReturnDraftIn",
         "type": "object"
       },
       "SeasonalAccessEndsIn": {
@@ -60579,6 +61015,153 @@
         "x-abacus-action": "request_item.update"
       }
     },
+    "/v1/engagements/{engagement_id}/request-items/{item_id}/follow-ups": {
+      "post": {
+        "description": "SHL-20 b: a template-composed draft from the firm's Return template, with the files it\nreturns. Its edit and send are `PATCH /v1/follow-ups/{id}` and `POST \u2026/send` (P-06-T14);\nfor this kind, send also returns the files and posts the shared comment (P-06-T22).",
+        "operationId": "draft_screening_return",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScreeningReturnDraftIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowUpOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Draft Screening Return Route",
+        "tags": [
+          "screening"
+        ],
+        "x-abacus-action": "follow_up.draft"
+      }
+    },
     "/v1/engagements/{engagement_id}/request-items/{item_id}/guidance": {
       "put": {
         "description": "SPEC-031 AC-3: the firm writes why, what good looks like and the still-needed note, and\nplans the item (blocks fieldwork, effort).",
@@ -60979,6 +61562,270 @@
           "requests"
         ],
         "x-abacus-action": "request_item.return"
+      }
+    },
+    "/v1/engagements/{engagement_id}/request-items/{item_id}/screening": {
+      "get": {
+        "description": "SHL-20 a-e. 404 with `screening.card` off; 501 until P-06-T20.",
+        "operationId": "screening_card",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScreeningCardOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Screening Card Route",
+        "tags": [
+          "screening"
+        ],
+        "x-abacus-action": "upload_review.read"
+      }
+    },
+    "/v1/engagements/{engagement_id}/request-items/{item_id}/screening/rerun": {
+      "post": {
+        "description": "Re-screen the current files (SHL-20 c); 409 `screening_running` while one runs.",
+        "operationId": "rerun_screening",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScreeningRerunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Rerun Screening Route",
+        "tags": [
+          "screening"
+        ],
+        "x-abacus-action": "screening.request"
       }
     },
     "/v1/engagements/{engagement_id}/request-items/{item_id}/send": {
@@ -87265,6 +88112,133 @@
           "review"
         ],
         "x-abacus-action": "review_note.withdraw"
+      }
+    },
+    "/v1/screenings/{screening_result_id}/feedback": {
+      "post": {
+        "description": "SHL-20 f: a person's thumbs up or down on a card, insert-only.",
+        "operationId": "screening_feedback",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "screening_result_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Screening Result Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScreeningFeedbackIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScreeningFeedbackOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Screening Feedback Route",
+        "tags": [
+          "screening"
+        ],
+        "x-abacus-action": "screening.feedback"
       }
     },
     "/v1/sign-offs": {

@@ -124,6 +124,11 @@ REVIEW_GRAMMAR_API = Flag(
     kind="boolean",
     default="false",
 )
+SCREENING_CARD = Flag(
+    name="screening.card",
+    kind="boolean",
+    default="false",
+)
 UPLOAD_REVIEW_ENABLED = Flag(
     name="upload_review.enabled",
     kind="boolean",
@@ -159,6 +164,7 @@ FLAGS: dict[str, Flag] = {
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
     "retrieval.auto": RETRIEVAL_AUTO,
     "review.grammar_api": REVIEW_GRAMMAR_API,
+    "screening.card": SCREENING_CARD,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
     "uploads.processing": UPLOADS_PROCESSING,
 }

@@ -181,6 +181,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "risk.assess",
         "run_trace.export",  # SPEC-318 (TASK-461)
         "sample.approve",  # SPEC-040 (TASK-100)
+        "screening.feedback",  # P-06-T15 (SHL-20 f)
         "screening.request",
         "sign_off.bulk",  # P-04-T07 (TASK-413)
         "sign_off.create",  # P-04-T07 (TASK-413)

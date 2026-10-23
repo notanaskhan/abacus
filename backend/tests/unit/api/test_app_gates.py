@@ -210,6 +210,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         TEMPLATE_DRAFTS,
         SELECT,
         ASSESS,
+        # P-06-T15 (C5 v1.2 SHL-20 stub): a rerun starts screening, so 202.
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/screening/rerun",
         # P-04-T11 (C3 stub 3): fix instructions and Explain start an agent run, so 202.
         "/v1/issues/{issue_id}/fix-instructions",
         "/v1/issues/fix-instructions:bulk",
@@ -236,6 +238,9 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/binders",
         "/v1/binders/{binder_id}/duplicate",
         "/v1/follow-ups/drafts",  # P-06-T14: one draft per client contact
+        # P-06-T15 (SHL-20 stub): a feedback row and a screening-return draft.
+        "/v1/screenings/{screening_result_id}/feedback",
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/follow-ups",
         "/v1/engagements/{engagement_id}/request-items/{item_id}/delegate",
         "/v1/portal/request-items/{item_id}/upload-intents",
         # P-07-T05 (engagements v2 stub): a draft, a Prospect engagement, an engagement.

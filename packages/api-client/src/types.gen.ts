@@ -13367,6 +13367,188 @@ export type ScreenRequestedOut = {
 };
 
 /**
+ * ScreeningCardOut
+ *
+ * SHL-20 a-e: the request batch's screening ("29 of 31 files answer the request"). `verdict`
+ * is C2's `evidence_screening` glyph; a verdict never carries a percentage (P-06 §7).
+ */
+export type ScreeningCardOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Batch No
+     */
+    batch_no: number | null;
+    /**
+     * Checks
+     */
+    checks: Array<ScreeningCheckOut>;
+    /**
+     * File Flags
+     */
+    file_flags: Array<ScreeningFileFlagOut>;
+    /**
+     * Files Answering
+     */
+    files_answering: number;
+    /**
+     * Files Total
+     */
+    files_total: number;
+    my_feedback: ScreeningFeedbackOut | null;
+    provenance: ScreeningProvenanceOut;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+    /**
+     * Running
+     */
+    running: boolean;
+    /**
+     * Screening Result Id
+     */
+    screening_result_id: string | null;
+    verdict: EvidenceScreeningStatus;
+};
+
+/**
+ * ScreeningCheckOut
+ *
+ * One named check: "Right document", "Right period". Code checks and verified model flags
+ * only (ADR-050).
+ */
+export type ScreeningCheckOut = {
+    /**
+     * Answer Ref
+     */
+    answer_ref: string | null;
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Key
+     */
+    key: 'right_document' | 'right_period';
+    /**
+     * Source
+     */
+    source: 'model' | 'code';
+    /**
+     * Verdict
+     */
+    verdict: 'pass' | 'flag' | 'not_run';
+};
+
+/**
+ * ScreeningFeedbackIn
+ *
+ * SHL-20 f: a thumbs-down needs a reason (422 otherwise).
+ */
+export type ScreeningFeedbackIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Reason Code
+     */
+    reason_code?: 'wrong_request_match' | 'wrong_period' | 'unclear_file' | 'other' | null;
+    /**
+     * Thumb
+     */
+    thumb: 'up' | 'down';
+};
+
+/**
+ * ScreeningFeedbackOut
+ */
+export type ScreeningFeedbackOut = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Reason Code
+     */
+    reason_code: 'wrong_request_match' | 'wrong_period' | 'unclear_file' | 'other' | null;
+    /**
+     * Screening Result Id
+     */
+    screening_result_id: string;
+    /**
+     * Thumb
+     */
+    thumb: 'up' | 'down';
+};
+
+/**
+ * ScreeningFileFlagOut
+ *
+ * A flagged file with the deciding region one click away ("View" opens SHL-08 on it).
+ */
+export type ScreeningFileFlagOut = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Reason Code
+     */
+    reason_code: 'wrong_document' | 'wrong_year';
+    /**
+     * Region Ref
+     */
+    region_ref: string | null;
+};
+
+/**
+ * ScreeningProvenanceOut
+ *
+ * "Screened by Accrued Agent · screener@v3 · 2 s · instructions inside files are never
+ * followed": the parts as data; the UI words them.
+ */
+export type ScreeningProvenanceOut = {
+    /**
+     * Duration Ms
+     */
+    duration_ms: number | null;
+    /**
+     * Prompt Ref
+     */
+    prompt_ref: string | null;
+    /**
+     * Screened At
+     */
+    screened_at: string | null;
+};
+
+/**
+ * ScreeningRerunOut
+ */
+export type ScreeningRerunOut = {
+    /**
+     * As Of
+     */
+    as_of: string;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+    /**
+     * Running
+     */
+    running: boolean;
+};
+
+/**
  * ScreeningResultOut
  *
  * Model text (`rationale`, `quote`, `unverified`) is untrusted: render as plain text.
@@ -13404,6 +13586,26 @@ export type ScreeningResultOut = {
      * Unverified
      */
     unverified: Array<string>;
+};
+
+/**
+ * ScreeningReturnDraftIn
+ *
+ * SHL-20 b: "Draft follow-up" on a flagged card, naming the files it returns.
+ */
+export type ScreeningReturnDraftIn = {
+    /**
+     * Kind
+     */
+    kind: 'screening_return';
+    /**
+     * Reason Code
+     */
+    reason_code?: 'wrong_document' | 'wrong_year';
+    /**
+     * Returning
+     */
+    returning: Array<string>;
 };
 
 /**
@@ -28247,6 +28449,70 @@ export type SetDocumentKindResponses = {
 
 export type SetDocumentKindResponse = SetDocumentKindResponses[keyof SetDocumentKindResponses];
 
+export type DraftScreeningReturnData = {
+    body: ScreeningReturnDraftIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/follow-ups';
+};
+
+export type DraftScreeningReturnErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DraftScreeningReturnError = DraftScreeningReturnErrors[keyof DraftScreeningReturnErrors];
+
+export type DraftScreeningReturnResponses = {
+    /**
+     * Successful Response
+     */
+    201: FollowUpOut;
+};
+
+export type DraftScreeningReturnResponse = DraftScreeningReturnResponses[keyof DraftScreeningReturnResponses];
+
 export type SetGuidanceData = {
     body: GuidanceIn;
     headers?: {
@@ -28426,6 +28692,130 @@ export type ReturnRequestItemToClientResponses = {
 };
 
 export type ReturnRequestItemToClientResponse = ReturnRequestItemToClientResponses[keyof ReturnRequestItemToClientResponses];
+
+export type ScreeningCardData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/screening';
+};
+
+export type ScreeningCardErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ScreeningCardError = ScreeningCardErrors[keyof ScreeningCardErrors];
+
+export type ScreeningCardResponses = {
+    /**
+     * Successful Response
+     */
+    200: ScreeningCardOut;
+};
+
+export type ScreeningCardResponse = ScreeningCardResponses[keyof ScreeningCardResponses];
+
+export type RerunScreeningData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/screening/rerun';
+};
+
+export type RerunScreeningErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RerunScreeningError = RerunScreeningErrors[keyof RerunScreeningErrors];
+
+export type RerunScreeningResponses = {
+    /**
+     * Successful Response
+     */
+    202: ScreeningRerunOut;
+};
+
+export type RerunScreeningResponse = RerunScreeningResponses[keyof RerunScreeningResponses];
 
 export type SendRequestItemData = {
     body?: never;
@@ -40469,6 +40859,62 @@ export type ReviewNoteWithdrawResponses = {
 };
 
 export type ReviewNoteWithdrawResponse = ReviewNoteWithdrawResponses[keyof ReviewNoteWithdrawResponses];
+
+export type ScreeningFeedbackData = {
+    body: ScreeningFeedbackIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Screening Result Id
+         */
+        screening_result_id: string;
+    };
+    query?: never;
+    url: '/v1/screenings/{screening_result_id}/feedback';
+};
+
+export type ScreeningFeedbackErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ScreeningFeedbackError = ScreeningFeedbackErrors[keyof ScreeningFeedbackErrors];
+
+export type ScreeningFeedbackResponses = {
+    /**
+     * Successful Response
+     */
+    201: ScreeningFeedbackOut;
+};
+
+export type ScreeningFeedbackResponse = ScreeningFeedbackResponses[keyof ScreeningFeedbackResponses];
 
 export type SignOffLadderData = {
     body?: never;

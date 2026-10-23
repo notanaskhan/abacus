@@ -34,6 +34,7 @@ actions:
   inbox_match.run:          {system: allow, agent: task_scope}   # SPEC-033 (TASK-065): the matcher records its proposals
   inbox_match.read:         {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # SPEC-033 (TASK-066): firm roles only; clients get request IDs through the inbox
   inbox_match.request:      {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # SPEC-033: "Suggest with AI"
+  screening.feedback:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # P-06-T15 (SHL-20 f): a person's thumbs up or down; a down needs a reason
   upload_review.read:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # SPEC-030 (TASK-059 D1): firm roles only; clients are refused by role
   upload_review.request:    {engagement_partner: allow, manager: allow, senior: allow, independence: required}   # SPEC-030: "Review now" at Advise
   suggestion.create:        {agent: task_scope}

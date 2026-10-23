@@ -147,6 +147,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "/v1/engagements/{engagement_id}/request-items/{item_id}/comments/mention-candidates",
         "comment.create",
     ),
+    (
+        "GET",
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/screening",
+        "upload_review.read",
+    ),
     ("GET", "/v1/engagements/{engagement_id}/request-items/{item_id}/uploads", "evidence.read"),
     (
         "GET",
@@ -535,6 +540,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ),
     (
         "POST",
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/follow-ups",
+        "follow_up.draft",
+    ),
+    (
+        "POST",
         "/v1/engagements/{engagement_id}/request-items/{item_id}/incorporate",
         "request_item.update",
     ),
@@ -542,6 +552,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "POST",
         "/v1/engagements/{engagement_id}/request-items/{item_id}/return-to-client",
         "request_item.return",
+    ),
+    (
+        "POST",
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/screening/rerun",
+        "screening.request",
     ),
     ("POST", "/v1/engagements/{engagement_id}/request-items/{item_id}/send", "request_item.send"),
     (
@@ -745,6 +760,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/review-notes/{note_id}/clear", "review_note.clear"),
     ("POST", "/v1/review-notes/{note_id}/respond", "review_note.respond"),
     ("POST", "/v1/review-notes/{note_id}/withdraw", "review_note.withdraw"),
+    ("POST", "/v1/screenings/{screening_result_id}/feedback", "screening.feedback"),
     ("POST", "/v1/sign-offs", "sign_off.create"),
     ("POST", "/v1/sign-offs:bulk", "sign_off.bulk"),
     ("POST", "/v1/signup", "identity"),

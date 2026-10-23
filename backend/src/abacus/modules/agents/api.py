@@ -38,6 +38,7 @@ from abacus.modules.agents.routes import (
     template_drafts_router,
 )
 from abacus.modules.agents.runs_routes import engagement_runs_router, runs_router
+from abacus.modules.agents.screening_contract import screening_items_router, screenings_router
 from abacus.modules.agents.screenings import (
     SUBSCRIPTIONS as SCREENING_SUBSCRIPTIONS,
 )
@@ -115,6 +116,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     proposals_router,
     suggestions_router,
     follow_ups_router,  # P-06-T14: follow-ups v2 behind `binders.engine`
+    # C5 v1.2 SHL-20 family stub behind `screening.card` (P-06-T15).
+    screening_items_router,
+    screenings_router,
 )
 # P-06-T14: a sent follow-up's email leaves when the relay delivers its grant-held event.
 SUBSCRIPTIONS = {**SCREENING_SUBSCRIPTIONS, FollowUpSent.event_type: on_follow_up_sent}

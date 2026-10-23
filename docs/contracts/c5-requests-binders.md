@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C5 in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | stub (BND-01, BND-02, SHL-14 family incl. portal mark-done, ignore, upload intents and withdraw: P-06-T01, 2026-10-22). The SHL-20 family (screening, follow-ups) is added by P-06-T15 without a breaking change. The portal-scopes half is P-08's: `portal-identity.md` (v1.1, P-08-T01, 2026-10-23) |
+| Status | stub (BND-01, BND-02, SHL-14 family incl. portal mark-done, ignore, upload intents and withdraw: P-06-T01, 2026-10-22). The SHL-20 family (screening, follow-ups) is added in place as v1.2 (§12): the follow-ups v2 routes are live (P-06-T14, 2026-10-24) and the screening routes are a stub behind `screening.card` (P-06-T15, 2026-10-24). The portal-scopes half is P-08's: `portal-identity.md` (v1.1, P-08-T01, 2026-10-23) |
 | Provider epic | P-06 (binders and requests half); P-08 (portal scopes). Schema half: F-03-T14, F-03-T15, F-03-T26 |
 | Consumers | A-01 (AUD-03), R-01 (POR-03, POR-04, POR-14, POR-20), T-02, C-01 (CLS-03), K-01, N-01, A-03, N-03, K-04, I-01. Screens: BND-01, BND-02, SHL-14 |
 | Freeze sprint | S3 (starts 2026-11-30); freeze Fri 2026-12-11 |
@@ -178,9 +178,43 @@ Additive changes in place. Breaking changes ship as v2 with one sprint of overla
 | v1 | (planned 2026-12-11) | | stub 2026-10-22 (P-06-T01); SHL-20 family additive in P-06-T15 |
 | v1.1 | (planned 2026-12-11) | | additive, 2026-10-23 (P-08-T01): the portal half (portal identity and home, POR-01 and POR-02) in `docs/contracts/portal-identity.md`; nothing in this half changes |
 | v1.1 | (planned 2026-12-11) | | additive, 2026-10-23 (P-06-T11): `GET /v1/binders` live; `BinderRowOut` gains the status-line facts and `service`, `season`, `office_id`, `published_at`; facets named |
+| v1.2 | (planned 2026-12-11) | | additive, 2026-10-24 (P-06-T14, P-06-T15): the SHL-20 family (§12): follow-ups v2 live behind `binders.engine`; the screening card, rerun, feedback and screening-return draft as a stub behind `screening.card` |
 
 ## 11. Open points
 - DEC-136: OQ-1 mechanism (preparer publish on tax-return binders), firm-setting key names, portal ignore vs SPEC-042, staff create deferred to P-06-T10.
 - ADR-162 (P-31, the plan's "ADR-137") is accepted; the withdraw route follows it.
 - BND-01's last-activity summary ("Claire emailed 2 files (Inbox) · uploading 2 now") and its INB-04 link need `binder_activity` to carry the activity's kind, actor, file count and inbox thread (a migration); until then the row has `last_client_activity_at` only. The projection is kept today by the client's mark-done; portal upload, answer, sign and `inbox_file.added` subscribers follow with that migration.
 - P-08 owns the portal principal; until it lands the `/v1/portal` routes take the firm context. The portal half is `docs/contracts/portal-identity.md` (C5 v1.1, P-08-T01).
+
+## 12. The SHL-20 family: follow-ups and evidence screening (v1.2, additive)
+Spec: SPEC-319 Story 5 (AC-16 to AC-20); P-06 §3.2 Story 2.2, §3.5–3.6, §4.3; DEC-74, DEC-79, DEC-220.
+
+**Behaviour.** The follow-ups v2 routes are **live** behind `binders.engine` (off: 404), with the screens that use them (BND-01 b, BND-02 d, SHL-20 b). The screening routes and the screening-return draft are a **stub** behind `screening.card` (default off, created 2026-10-24, expires 2027-01-22): off, 404 and the card area shows nothing extra; on, 501 `not_implemented` until P-06-T20 (card, rerun, feedback) and P-06-T22 (the screening-return draft and its send: two `send_back` decisions with the reason, the request `returned` and a shared comment carrying the sender's final text, in one unit of work). The SPEC-027 engagement routes (`/v1/engagements/{eid}/follow-ups…`) stay and compose from the same template.
+
+| Operation | Method and path | Matrix action | Roles allowed | Agent or system principal |
+|---|---|---|---|---|
+| Draft follow-ups (BND-01 b, BND-02 d) | `POST /v1/follow-ups/drafts` `{binder_ids[] \| request_item_ids[]}` | `follow_up.draft` | partner, manager, senior, staff, `client_service` | agent `task_scope` (the P-4 tick drafts) |
+| A follow-up (the email as it will be sent) | `GET /v1/follow-ups/{follow_up_id}` | `follow_up.draft` | as draft | agent `task_scope` |
+| Edit before sending | `PATCH /v1/follow-ups/{follow_up_id}` `{body}` | `follow_up.draft` | as draft | **denied** at the service (a person's edit) |
+| Send | `POST /v1/follow-ups/{follow_up_id}/send` + `Idempotency-Key` | `follow_up.send` | partner, manager, senior, staff, `client_service` | **denied** |
+| Send several | `POST /v1/follow-ups/send` `{ids[]}` + `Idempotency-Key` | `follow_up.send` | as send | **denied** |
+| Undo send (10 s, by its sender) | `POST /v1/follow-ups/{follow_up_id}/undo` | `follow_up.send` | as send | **denied** |
+| Dismiss | `POST /v1/follow-ups/{follow_up_id}/dismiss` | `follow_up.send` | as send | **denied** |
+| Screening card (SHL-20 a–e) | `GET /v1/engagements/{eid}/request-items/{item_id}/screening` | `upload_review.read` (existing) | partner, manager, senior, staff, reviewer; independence required | denied |
+| Re-screen current files (SHL-20 c) | `POST …/request-items/{item_id}/screening/rerun` | `screening.request` (existing) | partner, manager, senior, staff | denied |
+| Feedback (SHL-20 f) | `POST /v1/screenings/{screening_result_id}/feedback` `{thumb, reason_code?, note?}` | `screening.feedback` (new) | partner, manager, senior, staff; independence required | **denied** |
+| Draft a screening return (SHL-20 b) | `POST …/request-items/{item_id}/follow-ups` `{kind: screening_return, returning[], reason_code?}` | `follow_up.draft` | as draft | agent `task_scope` |
+
+**Models** (code: `backend/src/abacus/modules/agents/follow_up_routes.py`, `screening_contract.py`; every field tagged, ADR-031; * confidential):
+- **`FollowUpOut`**: `id`, `engagement_id`, `binder_id`, `kind` (`overdue · chase · screening_return`), `status` (`drafted · sent · dismissed`), `recipient_user_id`, `recipient_contact_id`, `recipient_name`*, `items [{request_item_id, title*, due_on, overdue}]` (the open requests it lists, each once; `overdue` on the firm's business date), `subject`*, `body`* (template-composed, or the person's edit; never model text, DEC-79), `edited`, `drafted_by_kind` (`agent` for every template-composed draft: the C-31 marker; `person` reserved), `template_key`, `created_at`, `sent_by`, `sent_at`, `undo_until`, `allowed_actions`. **`FollowUpDraftsIn`**: exactly one of `binder_ids` (≤ 200) and `request_item_ids` (≤ 500). **`FollowUpDraftsOut`**: `{items: [FollowUpOut]}`. **`FollowUpEditIn`**: `body`* (1..10000). **`FollowUpSendManyIn`**: `ids` (1..200).
+- **`ScreeningCardOut`**: `request_item_id`, `screening_result_id` (null: not screened), `batch_no`, `verdict` (C2 `EvidenceScreeningStatus`: `passed · flagged · not_screened`), `running`, `files_total`, `files_answering`, `checks [{key: right_document · right_period, verdict: pass · flag · not_run, source: model · code, answer_ref, citation_ids}]`, `file_flags [{evidence_version_id, file_name*, reason_code: wrong_document · wrong_year, region_ref}]`, `provenance {prompt_ref, duration_ms, screened_at}`, `my_feedback`, `allowed_actions`. **No confidence field, ever.**
+- **`ScreeningRerunOut`**: `{request_item_id, running, as_of}` (202). **`ScreeningFeedbackIn`**: `thumb` (`up · down`), `reason_code` (`wrong_request_match · wrong_period · unclear_file · other`; required with `down`, else 422), `note?`* (≤ 500) → **`ScreeningFeedbackOut`** `{screening_result_id, thumb, reason_code, created_at}`. **`ScreeningReturnDraftIn`**: `kind` (`screening_return`), `returning` (1..50 version ids), `reason_code` (default `wrong_document`) → `FollowUpOut`.
+
+**Templates.** Email text is the published C16 template: `notification.follow_up_sent` (Reminder) and `notification.follow_up_sent.screening_return` (Return), imported by platform staff (`POST /v1/platform/email-templates/import`). Follow-up templates may use `recipient_first_name`, `engagement_display_name`, `firm_name`, `app_link` and the body-only block `request_list` (one request per line). Until one is imported, drafting answers 409 `follow_up_template_missing`.
+
+**Errors** (identifier-only facts): 409 `follow_up_template_missing`; 409 `follow_up_already_sent` (edit, send or dismiss a sent one); 409 `follow_up_not_waiting` (a dismissed one); 409 `out_of_scope` (the person's added text names something outside the engagement; nothing is written); 409 `undo_window_closed` / `effect_started`; 422 `idempotency_key_reused`; 409 `screening_running` (rerun, reserved for P-06-T20); 422 body validation for a thumbs-down without a reason.
+
+**Audit and outbox.** Audit: `follow_up.drafted`, `follow_up.edited` (edit fingerprint), `follow_up.sent` (grant id, body fingerprint; **human-only in the database**, migration 0122), `follow_up.undone`, `follow_up.dismissed`, `message.sent`/`message.blocked` (the email, created by the sender); `screening.feedback` (P-06-T20). Outbox: `follow_up.sent` held by an approval grant until the 10-s Undo window ends (ADR-161), delivered once by the agents subscriber through `communications.deliver_follow_up`; `follow_up.drafted` from the P-4 tick. Notification kinds (C16, undotted): `follow_up_drafted` (in-app, the engagement's partner and managers; the legacy `reminders.drafted` stays registered for old rows) and `follow_up_sent` (registered; its email is the follow-up itself).
+
+**Consumer tests.** `backend/tests/contracts/c5_requests_binders/test_c5_shl20_family.py` (every route and action, the flags, Idempotency-Key, the agent denies, the C2 verdict enum, no confidence field); behaviour in `tests/integration/test_follow_ups_v2.py`.
+
