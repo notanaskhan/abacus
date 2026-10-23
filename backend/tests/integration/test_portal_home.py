@@ -14,6 +14,7 @@ import pytest
 from abacus.kernel.config import settings
 from abacus.kernel.db import configure_engine, dispose_engine
 from abacus.kernel.errors import NotFound
+from abacus.modules.identity.authz import recording_checks
 from abacus.modules.portal.contract import PortalHomeOut
 from abacus.modules.portal.home import PortalPreferencesStale, read_home, set_preferences
 
@@ -181,4 +182,37 @@ async def test_ac17_the_welcome_dismissal_is_versioned_per_scope_and_audited(see
             claire.tenant_id,
         )
         == 2
+    )
+
+
+async def test_both_routes_record_their_action_for_the_route_guard(seed: Seeder) -> None:
+    """The guard answers 500 for a success with no recorded check (ADR-020): each route's service
+    authorises its own action."""
+    claire, _, _, engagement = await _household(seed)
+    with recording_checks() as checked:
+        await read_home(claire.context(), engagement)
+    assert "portal_home.read" in checked
+    with recording_checks() as checked:
+        await set_preferences(claire.context(), engagement, True, 0)
+    assert "portal_preferences.update" in checked
+
+
+async def test_a_full_grant_with_no_matrix_cells_reads_and_writes_nothing(seed: Seeder) -> None:
+    """A `delegate` holds the full shell but no matrix cells until P-09 (DEC-158, DEC-211)."""
+    _, _, _, engagement = await _household(seed)
+    tenant = cast(
+        uuid.UUID, await seed.value("SELECT tenant_id FROM engagements WHERE id = $1", engagement)
+    )
+    dana = await seed.person(tenant)
+    await _client(seed, dana)
+    await _grant(seed, dana, "delegate", "engagement", engagement)
+    with pytest.raises(NotFound):
+        await read_home(dana.context(), engagement)
+    with pytest.raises(NotFound):
+        await set_preferences(dana.context(), engagement, True, 0)
+    assert (
+        await seed.value(
+            "SELECT count(*) FROM portal_preferences WHERE user_id = $1", dana.user_id
+        )
+        == 0
     )

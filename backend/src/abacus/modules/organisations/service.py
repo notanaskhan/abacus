@@ -416,6 +416,14 @@ async def client_exists(tenant: TenantContext, client_id: UUID) -> bool:
         return await get_client(session, client_id) is not None
 
 
+async def client_of_entity(tenant: TenantContext, entity_id: UUID) -> UUID | None:
+    """The client entity's client, or None outside the firm (the `client_entity` scope resolver,
+    DEC-211)."""
+    async with tenant_session(tenant) as session:
+        entity = await get_entity(session, entity_id)
+    return entity.client_id if entity is not None else None
+
+
 async def firm_offices(tenant: TenantContext) -> list[tuple[UUID, str]]:
     """P-01-T04: the firm's offices for identity's `/v1/me` (registered as its office list)."""
     async with tenant_session(tenant) as session:

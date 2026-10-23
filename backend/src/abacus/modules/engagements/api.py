@@ -9,6 +9,7 @@ from abacus.modules.engagements.contacts import (
     EngagementContact,
     attest_of,
     client_contact_names,
+    client_entity_scope,
     client_scope,
     contact_portal_user,
     designate_contact,
@@ -171,6 +172,7 @@ register_scope_resolver("work_item", work_item_scope)
 register_work_item_kind("assurance", AssuranceKind())
 register_work_item_kind("advisory_project", AdvisoryProjectKind())
 register_scope_resolver("client", client_scope)
+register_scope_resolver("client_entity", client_entity_scope)
 # F-03-T27 (ADR-145): the `client` scope kind reads through engagement visibility.
 register_clients_of_engagements(clients_of_engagements)
 register_engagements_of_scope(engagements_of_scope)
