@@ -238,3 +238,35 @@ describe("T15 (the template's artboards)", () => {
     expect(container.textContent).toContain("Brightwater Hale");
   });
 });
+
+// P-01-T11 (SHL-06g): the firm app's own sign-in passes its marks; the card needs no portal brand.
+describe("AuthCard marks", () => {
+  it("draws the caller's marks above and inside, centred, without a brand provider", () => {
+    const { container } = render(
+      <AuthCard
+        brand="marks"
+        marks={{ above: <span>Above mark</span>, inside: <span>Inside mark</span> }}
+        title="Sign in"
+      />,
+    );
+    const above = container.querySelector<HTMLElement>('[data-auth="brand"]');
+    expect(above?.textContent).toBe("Above mark");
+    const card = container.querySelector<HTMLElement>('[data-auth="card"]');
+    expect(card?.className).toContain("text-center");
+    expect(within(card ?? container).getByText("Inside mark")).toBeTruthy();
+  });
+
+  it("a tile replaces the inside mark and centres under it", () => {
+    const { container } = render(
+      <AuthCard
+        brand="marks"
+        marks={{ above: <span>Above mark</span>, inside: <span>Inside mark</span> }}
+        tile={{ icon: "lock", tone: "red" }}
+        title="Sign-in didn't complete"
+      />,
+    );
+    expect(screen.queryByText("Inside mark")).toBeNull();
+    const tile = container.querySelector<HTMLElement>('[data-auth="card"] > span');
+    expect(tile?.className).toContain("self-center");
+  });
+});
