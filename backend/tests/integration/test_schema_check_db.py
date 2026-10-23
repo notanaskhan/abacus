@@ -1242,6 +1242,9 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "portal_preferences": frozenset(  # P-08-T05 (0111)
             {"welcome_dismissed_at", "version", "updated_at"}
         ),
+        "retention_policies": frozenset(  # Q-02-T23 (0112)
+            {"firm_years", "clock_start_event", "lock", "basis", "updated_by", "updated_at"}
+        ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -1771,6 +1774,9 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"apply_plan_entitlements", "invite_first_admin", "set_plan_module"}  # 0107
         | {"portal_resolve_host", "portal_host_logo", "portal_domain_add"}  # 0111
         | {"portal_domain_activate"}  # 0111
+        | {"retention_set_import", "retention_set_publish", "retention_floors_published"}  # 0112
+        | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}  # 0112
+        | {"retention_policy_history", "retention_defaults_backfill"}  # 0112
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 

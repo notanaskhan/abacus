@@ -257,6 +257,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/portal/branding/logo", "portal_public"),
     ("GET", "/v1/portal/home", "portal_home.read"),
     ("GET", "/v1/proposals/{ref}", "proposal.read"),
+    ("GET", "/v1/retention/policies", "retention_policy.read"),
     ("GET", "/v1/review-notes", "review_note.read"),
     ("GET", "/v1/review-notes/{note_id}", "review_note.read"),
     ("GET", "/v1/sign-offs", "sign_off.read"),
@@ -702,6 +703,10 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/notifications/read-all", "own"),
     ("POST", "/v1/notifications/{notification_id}/read", "own"),
     ("POST", "/v1/platform/email-templates/import", "staff"),
+    ("POST", "/v1/platform/retention/defaults", "staff"),
+    ("POST", "/v1/platform/retention/defaults/{set_version}/publish", "staff"),
+    ("POST", "/v1/platform/retention/floors", "staff"),
+    ("POST", "/v1/platform/retention/floors/{set_version}/publish", "staff"),
     ("POST", "/v1/portal/binders/{binder_id}/mark-done", "binder.mark_done"),
     ("POST", "/v1/portal/request-items/{item_id}/ignore", "request_item.ignore"),
     ("POST", "/v1/portal/request-items/{item_id}/upload-intents", "evidence.upload"),
@@ -807,6 +812,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("PUT", "/v1/me/notification-preferences", "own"),
     ("PUT", "/v1/me/preferences", "own"),
     ("PUT", "/v1/portal/preferences", "portal_preferences.update"),
+    ("PUT", "/v1/retention/policies", "retention_policy.update"),
 )
 UNAUTHENTICATED: tuple[tuple[str, str], ...] = (
     ("GET", "/healthz"),

@@ -65,6 +65,7 @@ NON_TENANT_TABLES = frozenset(
     | {"plans"}  # 0088 (F-03-T28): global, operator-set
     | {"plan_modules"}  # 0107 (Q-01-T45): a plan's modules, set by operators
     | {"portal_domains"}  # 0111 (P-08-T05): hosts are global; definer functions only
+    | {"retention_floors", "retention_policy_defaults"}  # 0112 (Q-02-T23): definers only
     | {"email_templates", "email_template_versions"}  # 0092 (P-01-T05): definers only
     # 0101 (P-01-T09, ADR-165): staff sessions span firms; definers only.
     | {"auth_login_states", "auth_sessions", "auth_session_cookies"}
@@ -207,6 +208,7 @@ GLOBAL_TABLES = frozenset(
     | {"plans"}  # 0088
     | {"plan_modules"}  # 0107 (Q-01-T45)
     | {"portal_domains"}  # 0111 (P-08-T05)
+    | {"retention_floors", "retention_policy_defaults"}  # 0112 (Q-02-T23)
     | {"email_templates", "email_template_versions"}  # 0092 (P-01-T05)
     | {"auth_login_states", "auth_sessions", "auth_session_cookies"}  # 0101 (P-01-T09)
 )
@@ -245,6 +247,10 @@ DEFINER_FUNCTIONS = frozenset(
     | {"apply_plan_entitlements", "invite_first_admin", "set_plan_module"}
     # 0111 (P-08-T05, ADR-163): branding before sign-in, and a firm's own portal hosts.
     | {"portal_resolve_host", "portal_host_logo", "portal_domain_add", "portal_domain_activate"}
+    # 0112 (Q-02-T23): staff-imported, two-person-published retention sets; the policy trigger.
+    | {"retention_set_import", "retention_set_publish", "retention_floors_published"}
+    | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}
+    | {"retention_policy_history", "retention_defaults_backfill"}
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).
@@ -252,7 +258,10 @@ OWNER_ONLY_FUNCTIONS = frozenset({"support_sessions_review"})
 # Definer functions for the operator role only (Q-01-T19): `abacus_ops` executes them, the
 # application role must not.
 OPS = "abacus_ops"
-OPS_ONLY_FUNCTIONS = frozenset({"set_platform_control", "provision_firm", "set_plan_module"})
+OPS_ONLY_FUNCTIONS = frozenset(
+    {"set_platform_control", "provision_firm", "set_plan_module"}
+    | {"retention_defaults_backfill"}  # 0112 (Q-02-T23): the one-off back-fill
+)
 _DEFINER_SEARCH_PATH = "search_path=pg_catalog, public, pg_temp"
 _DEFINERS = """
 SELECT p.oid::regprocedure::text AS signature, p.proname AS name,

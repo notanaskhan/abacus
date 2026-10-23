@@ -24,6 +24,7 @@ def test_the_histories_are_committed() -> None:
         "tenant-provisioning-v1-provisioned",
         "tenant-provisioning-v2-provisioned",  # 0107: entitlements and first admins
         "tenant-provisioning-v3-provisioned",  # Q-01-T27: the tenant key is requested
+        "tenant-provisioning-v4-provisioned",  # Q-02-T23: the default retention policies
     ]
     assert [p.stem for p in KEY] == ["tenant-key-v1-verified"]
 

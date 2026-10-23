@@ -152,6 +152,8 @@ TABLES: tuple[str, ...] = (
     "request_items",
     "request_lists",
     "request_upload_intents",
+    "retention_policies",
+    "retention_policy_versions",
     "review_assignments",
     "review_decisions",
     "review_note_events",

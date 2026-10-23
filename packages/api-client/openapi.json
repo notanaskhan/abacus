@@ -24843,6 +24843,114 @@
         "title": "ResultIn",
         "type": "object"
       },
+      "RetentionDefaultRowIn": {
+        "additionalProperties": false,
+        "properties": {
+          "basis": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Basis"
+          },
+          "clock_start_event": {
+            "cls": "internal",
+            "enum": [
+              "upload",
+              "report_release",
+              "filing_date",
+              "due_or_received_later",
+              "relationship_end",
+              "client_inactive",
+              "message_date",
+              "event_date",
+              "period_end"
+            ],
+            "title": "Clock Start Event",
+            "type": "string"
+          },
+          "firm_years": {
+            "anyOf": [
+              {
+                "exclusiveMaximum": 1000.0,
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,5}0*$)\\d{0,3}\\.\\d{0,1}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Firm Years"
+          },
+          "lock": {
+            "cls": "internal",
+            "default": false,
+            "title": "Lock",
+            "type": "boolean"
+          },
+          "record_type": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z0-9_]{1,62}$",
+            "title": "Record Type",
+            "type": "string"
+          },
+          "service_line": {
+            "cls": "internal",
+            "enum": [
+              "audit",
+              "tax",
+              "cas",
+              "advisory",
+              "any"
+            ],
+            "title": "Service Line",
+            "type": "string"
+          }
+        },
+        "required": [
+          "record_type",
+          "service_line",
+          "firm_years",
+          "clock_start_event"
+        ],
+        "title": "RetentionDefaultRowIn",
+        "type": "object"
+      },
+      "RetentionDefaultSetIn": {
+        "additionalProperties": false,
+        "properties": {
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/RetentionDefaultRowIn"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          },
+          "set_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Set Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "set_version",
+          "rows"
+        ],
+        "title": "RetentionDefaultSetIn",
+        "type": "object"
+      },
       "RetentionExceptionOut": {
         "properties": {
           "max_days": {
@@ -24861,6 +24969,382 @@
           "max_days"
         ],
         "title": "RetentionExceptionOut",
+        "type": "object"
+      },
+      "RetentionFloorRowIn": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor": {
+            "cls": "internal",
+            "enum": [
+              "upload",
+              "report_release",
+              "filing_date",
+              "due_or_received_later",
+              "relationship_end",
+              "client_inactive",
+              "message_date",
+              "event_date",
+              "period_end"
+            ],
+            "title": "Anchor",
+            "type": "string"
+          },
+          "authority": {
+            "cls": "internal",
+            "maxLength": 500,
+            "title": "Authority",
+            "type": "string"
+          },
+          "legal_floor_years": {
+            "anyOf": [
+              {
+                "exclusiveMaximum": 1000.0,
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,5}0*$)\\d{0,3}\\.\\d{0,1}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Legal Floor Years"
+          },
+          "record_type": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z0-9_]{1,62}$",
+            "title": "Record Type",
+            "type": "string"
+          },
+          "service_line": {
+            "cls": "internal",
+            "enum": [
+              "audit",
+              "tax",
+              "cas",
+              "advisory",
+              "any"
+            ],
+            "title": "Service Line",
+            "type": "string"
+          }
+        },
+        "required": [
+          "record_type",
+          "service_line",
+          "legal_floor_years",
+          "anchor",
+          "authority"
+        ],
+        "title": "RetentionFloorRowIn",
+        "type": "object"
+      },
+      "RetentionFloorSetIn": {
+        "additionalProperties": false,
+        "properties": {
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/RetentionFloorRowIn"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          },
+          "set_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Set Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "set_version",
+          "rows"
+        ],
+        "title": "RetentionFloorSetIn",
+        "type": "object"
+      },
+      "RetentionPoliciesOut": {
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/RetentionPolicyOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "RetentionPoliciesOut",
+        "type": "object"
+      },
+      "RetentionPolicyIn": {
+        "additionalProperties": false,
+        "properties": {
+          "basis": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Basis"
+          },
+          "clock_start_event": {
+            "cls": "internal",
+            "enum": [
+              "upload",
+              "report_release",
+              "filing_date",
+              "due_or_received_later",
+              "relationship_end",
+              "client_inactive",
+              "message_date",
+              "event_date",
+              "period_end"
+            ],
+            "title": "Clock Start Event",
+            "type": "string"
+          },
+          "firm_years": {
+            "anyOf": [
+              {
+                "exclusiveMaximum": 1000.0,
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,5}0*$)\\d{0,3}\\.\\d{0,1}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Firm Years"
+          },
+          "lock": {
+            "cls": "internal",
+            "default": false,
+            "title": "Lock",
+            "type": "boolean"
+          },
+          "record_type": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z0-9_]{1,62}$",
+            "title": "Record Type",
+            "type": "string"
+          },
+          "service_line": {
+            "cls": "internal",
+            "enum": [
+              "audit",
+              "tax",
+              "cas",
+              "advisory",
+              "any"
+            ],
+            "title": "Service Line",
+            "type": "string"
+          }
+        },
+        "required": [
+          "record_type",
+          "service_line",
+          "firm_years",
+          "clock_start_event"
+        ],
+        "title": "RetentionPolicyIn",
+        "type": "object"
+      },
+      "RetentionPolicyOut": {
+        "description": "One record type and service line: the firm's policy, or the floor where it has none.",
+        "properties": {
+          "anchor": {
+            "anyOf": [
+              {
+                "enum": [
+                  "upload",
+                  "report_release",
+                  "filing_date",
+                  "due_or_received_later",
+                  "relationship_end",
+                  "client_inactive",
+                  "message_date",
+                  "event_date",
+                  "period_end"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Anchor"
+          },
+          "authority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Authority"
+          },
+          "basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Basis"
+          },
+          "clock_start_event": {
+            "cls": "internal",
+            "enum": [
+              "upload",
+              "report_release",
+              "filing_date",
+              "due_or_received_later",
+              "relationship_end",
+              "client_inactive",
+              "message_date",
+              "event_date",
+              "period_end"
+            ],
+            "title": "Clock Start Event",
+            "type": "string"
+          },
+          "firm_years": {
+            "cls": "internal",
+            "title": "Firm Years",
+            "type": "string"
+          },
+          "legal_floor_years": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Legal Floor Years"
+          },
+          "lock": {
+            "cls": "internal",
+            "title": "Lock",
+            "type": "boolean"
+          },
+          "record_type": {
+            "cls": "internal",
+            "title": "Record Type",
+            "type": "string"
+          },
+          "service_line": {
+            "cls": "internal",
+            "enum": [
+              "audit",
+              "tax",
+              "cas",
+              "advisory",
+              "any"
+            ],
+            "title": "Service Line",
+            "type": "string"
+          },
+          "source": {
+            "cls": "internal",
+            "enum": [
+              "policy",
+              "floor"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Version"
+          }
+        },
+        "required": [
+          "record_type",
+          "service_line",
+          "firm_years",
+          "clock_start_event",
+          "lock",
+          "source"
+        ],
+        "title": "RetentionPolicyOut",
+        "type": "object"
+      },
+      "RetentionPolicySavedOut": {
+        "properties": {
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "title": "RetentionPolicySavedOut",
+        "type": "object"
+      },
+      "RetentionSetOut": {
+        "properties": {
+          "rows": {
+            "cls": "internal",
+            "title": "Rows",
+            "type": "integer"
+          },
+          "set_version": {
+            "cls": "internal",
+            "title": "Set Version",
+            "type": "integer"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "set_version",
+          "rows",
+          "status"
+        ],
+        "title": "RetentionSetOut",
         "type": "object"
       },
       "RetrievalIn": {
@@ -78307,6 +78791,406 @@
         "x-abacus-action": "staff"
       }
     },
+    "/v1/platform/retention/defaults": {
+      "post": {
+        "description": "A draft default-policy set (DEC-76 / P-62); a second staff member publishes it.",
+        "operationId": "import_retention_defaults",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetentionDefaultSetIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionSetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Import Retention Defaults Route",
+        "tags": [
+          "retention"
+        ],
+        "x-abacus-action": "staff"
+      }
+    },
+    "/v1/platform/retention/defaults/{set_version}/publish": {
+      "post": {
+        "operationId": "publish_retention_defaults",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "set_version",
+            "required": true,
+            "schema": {
+              "title": "Set Version",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionSetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Publish Retention Defaults Route",
+        "tags": [
+          "retention"
+        ],
+        "x-abacus-action": "staff"
+      }
+    },
+    "/v1/platform/retention/floors": {
+      "post": {
+        "description": "A draft floor set; a second staff member publishes it.",
+        "operationId": "import_retention_floors",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetentionFloorSetIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionSetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Import Retention Floors Route",
+        "tags": [
+          "retention"
+        ],
+        "x-abacus-action": "staff"
+      }
+    },
+    "/v1/platform/retention/floors/{set_version}/publish": {
+      "post": {
+        "operationId": "publish_retention_floors",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "set_version",
+            "required": true,
+            "schema": {
+              "title": "Set Version",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionSetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Publish Retention Floors Route",
+        "tags": [
+          "retention"
+        ],
+        "x-abacus-action": "staff"
+      }
+    },
     "/v1/portal/binders/{binder_id}/mark-done": {
       "post": {
         "description": "The client: Published to Complete, with the open count at that moment (OQ-8).",
@@ -79902,6 +80786,207 @@
           "agents"
         ],
         "x-abacus-action": "proposal.read"
+      }
+    },
+    "/v1/retention/policies": {
+      "get": {
+        "operationId": "list_retention_policies",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionPoliciesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "List Retention Policies Route",
+        "tags": [
+          "retention"
+        ],
+        "x-abacus-action": "retention_policy.read"
+      },
+      "put": {
+        "description": "Fresh MFA; 422 `below_floor` under the published floor, 422 `policy_locked` to shorten a\nlocked policy.",
+        "operationId": "save_retention_policy",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetentionPolicyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionPolicySavedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Save Retention Policy Route",
+        "tags": [
+          "retention"
+        ],
+        "x-abacus-action": "retention_policy.update"
       }
     },
     "/v1/review-notes": {

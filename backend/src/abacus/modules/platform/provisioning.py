@@ -137,6 +137,31 @@ async def invite_first_admins_activity(given: ProvisionTenantInput) -> int:
     return await invite_admins(given)
 
 
+async def apply_retention_defaults(given: ProvisionTenantInput) -> int:
+    """The firm's default retention policies (`retention_apply_defaults`, migration 0112), as the
+    operator; rows a retry or an earlier back-fill already wrote are kept."""
+    tenant_id = UUID(given.tenant_id)
+    ctx = operator_context(tenant_id, given.operator)
+    if await firm_tenancy(ctx) is None:
+        raise ApplicationError("FirmNotFound", type="FirmNotFound", non_retryable=True)
+    async with uow(ctx) as tx:
+        rows = int(
+            (await tx.session.execute(text("SELECT retention_apply_defaults()"))).scalar_one()
+        )
+        # Every run is recorded, a retry's `rows=0` too: the unit of work always writes its event.
+        tx.record(
+            "retention_policy.defaults_applied",
+            target=Target("firm", tenant_id),
+            after=Ref(rows=rows),
+        )
+    return rows
+
+
+@activity.defn(name="platform.apply_retention_defaults")
+async def apply_retention_defaults_activity(given: ProvisionTenantInput) -> int:
+    return await apply_retention_defaults(given)
+
+
 async def request_tenant_key(given: ProvisionTenantInput) -> bool:
     """Start the firm's `TenantKeyWorkflow` on the keyops queue (Q-01-T27); False when a run
     for it already exists (a retried activity, or a provision run again)."""

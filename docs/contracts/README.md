@@ -55,6 +55,7 @@ Contracts one screen family needs that are not among C1 to C21 (P-07 owns no C-n
 | Family | File | Provider (epic) | Consumers | Version | Status |
 |---|---|---|---|---|---|
 | Clients: CLI-01 index, CLI-02 record, overview, relationships, PATCH, TIN reveal | `clients.md` | P-07 (P-07-T04) | CLI-01, CLI-02, T-01, T-06, P-02 | v1 | live except the TIN reveal (P-07-T08, T09, 2026-10-23) |
+| Retention: firm policies, staff floor and default sets | `retention.md` | Q-02 (Q-02-T23) | ADM-06h, FIL-02a, Q-02-T24, Q-05 | v1 | live (Q-02-T23, 2026-10-23) |
 | Engagements: ENG-01 index, ENG-02 record and gates, the interim recorded letter, ENG-03 type catalogue, drafts and create (an additive C1 v1.1 note) | `engagements-v2.md` | P-07 (P-07-T05) | ENG-01, ENG-02, ENG-03, CLI-02, A-01, N-02, T-02, C-01 | v2 | stub (P-07-T05, 2026-10-23) |
 
 ## The handshake (chapter 01 §1.3.2, solo edition)

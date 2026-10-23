@@ -163,6 +163,8 @@ export const ACTIONS = [
   "request_item.send",
   "request_item.update",
   "request_item.waive",
+  "retention_policy.read",
+  "retention_policy.update",
   "review.assign",
   "review.read",
   "review.take",

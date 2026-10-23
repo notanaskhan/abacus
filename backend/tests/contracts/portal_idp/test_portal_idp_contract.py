@@ -105,10 +105,10 @@ async def test_t06_the_in_memory_challenge_is_single_use_and_drift_tolerant() ->
 
 def test_t06_totp_matches_rfc_6238() -> None:
     # RFC 6238 appendix B, SHA-1 secret "12345678901234567890", truncated to six digits.
-    rfc_key = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
-    assert totp_at(rfc_key, 59) == "287082"
-    assert totp_at(rfc_key, 1111111109) == "081804"
-    assert totp_at(rfc_key, 2000000000) == "279037"
+    rfc_b32 = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
+    assert totp_at(rfc_b32, 59) == "287082"
+    assert totp_at(rfc_b32, 1111111109) == "081804"
+    assert totp_at(rfc_b32, 2000000000) == "279037"
 
 
 async def test_t06_an_unavailable_provider_raises_the_ports_error() -> None:

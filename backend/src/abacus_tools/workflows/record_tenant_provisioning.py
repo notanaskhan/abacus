@@ -53,6 +53,11 @@ async def _invite(given: ProvisionTenantInput) -> int:
     return len(given.admins)
 
 
+@activity.defn(name="platform.apply_retention_defaults")  # v4 (Q-02-T23)
+async def _retention(given: ProvisionTenantInput) -> int:
+    return 3
+
+
 @activity.defn(name="platform.request_tenant_key")  # v3 (Q-01-T27)
 async def _request_key(given: ProvisionTenantInput) -> bool:
     return True
@@ -117,6 +122,7 @@ async def _record(out: Path, version: str, stack: Stack) -> None:
             _entitle,
             _invite,
             _request_key,
+            _retention,
             _create_key,
             _replicate_key,
             _verify_key,
