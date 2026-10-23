@@ -17,10 +17,11 @@ TABLES: frozenset[str] = frozenset(
         "team_rosters",
         "contacts",  # F-03-T25 (0082)
         "entity_relationships",  # P-07-T07 (0103): ended, never deleted
+        "tin_reveals",  # P-07-T10 (0123): every logged TIN reveal, by a person
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
-INSERT_ONLY: frozenset[str] = frozenset()
+INSERT_ONLY: frozenset[str] = frozenset({"tin_reveals"})
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "clients": frozenset({"id", "tenant_id", "name"}),
@@ -35,6 +36,9 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "entity_relationships": frozenset(  # P-07-T07 (0103)
         {"tenant_id", "from_entity_id", "to_entity_id", "kind", "percent", "effective_from"}
         | {"effective_to", "created_by"}
+    ),
+    "tin_reveals": frozenset(  # P-07-T10 (0123): never the value
+        {"tenant_id", "client_entity_id", "engagement_id", "user_id", "reason_code", "mfa_at"}
     ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.

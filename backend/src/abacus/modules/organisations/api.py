@@ -53,6 +53,15 @@ from abacus.modules.organisations.slots import (
     register_open_requests,
     register_overview_section,
 )
+from abacus.modules.organisations.tin import (
+    MaskedTin,
+    TinConflict,
+    TinInvalid,
+    TinKindNotAllowed,
+    clear_tin,
+    mask_tin,
+    seal_tin,
+)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
@@ -87,15 +96,20 @@ __all__ = [
     "EntityAttributes",
     "EntityChoice",
     "FirmName",
+    "MaskedTin",
     "NewClient",
     "NewContact",
     "NewRelationship",
     "OverviewItem",
     "OverviewSection",
     "SectionRows",
+    "TinConflict",
+    "TinInvalid",
+    "TinKindNotAllowed",
     "add_contact",
     "add_relationship",
     "attest_client_of",
+    "clear_tin",
     "client_exists",
     "client_name_column",
     "client_names",
@@ -107,11 +121,13 @@ __all__ = [
     "create_client",
     "find_clients",
     "firm_names",
+    "mask_tin",
     "normalise",
     "office_name_column",
     "register_client_engagements",
     "register_open_requests",
     "register_overview_section",
+    "seal_tin",
     "set_client_record",
     "set_entity_attributes",
 ]

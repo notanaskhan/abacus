@@ -865,6 +865,22 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.workpapers.tie_out.CheckStale
+  tin_conflict:
+    status: 409
+    raised_by:
+    - abacus.modules.organisations.tin.TinConflict
+    summary: This taxpayer ID is already on file for another of the firm's entities.
+  tin_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.organisations.tin.TinInvalid
+    summary: A taxpayer ID is nine digits (dashes and spaces aside), and not all zeros.
+  tin_kind_not_allowed:
+    status: 422
+    raised_by:
+    - abacus.modules.organisations.tin.TinKindNotAllowed
+    summary: An SSN or ITIN can't be stored for a firm that isn't synthetic until the §7216 consent gate
+      (C19) lands; an EIN can (P-07 OQ-4, DEC-52).
   trial_balance_exists:
     status: 409
     raised_by:

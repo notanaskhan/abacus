@@ -78,11 +78,12 @@ from abacus.modules.organisations.slots import (
     fact_query,
     overview_sections,
 )
+from abacus.modules.organisations.tin import may_reveal
 
 INDEX: Final = "clients"
 RELATIONSHIPS: Final = "client_relationships"
 READ: Final = "client.read"
-_RECORD_ACTIONS: Final = ("client.update", "tin.reveal")
+_RECORD_ACTIONS: Final = ("client.update",)
 _EPOCH: Final = datetime.fromisoformat("1970-01-01T00:00:00+00:00")
 # DEC-62, DEC-138: the Team band's derived Manager and Preparer.
 _MANAGER_ROLES: Final = frozenset({"manager"})
@@ -536,9 +537,13 @@ async def client_record(ctx: AuthContext, client_id: UUID) -> ClientRecordView:
                 )
             ).scalar_one()
         )
-    actions = await allowed_actions(
-        ctx, Resource.client(ctx.tenant_id, client_id), _RECORD_ACTIONS
+    actions = set(
+        await allowed_actions(ctx, Resource.client(ctx.tenant_id, client_id), _RECORD_ACTIONS)
     )
+    # P-07-T10: `tin.reveal` is held through an engagement role on one of the client's open
+    # engagements, never on the client itself (DEC-223).
+    if await may_reveal(ctx, client_id):
+        actions.add("tin.reveal")
     return ClientRecordView(
         client=client,
         office_name=office,

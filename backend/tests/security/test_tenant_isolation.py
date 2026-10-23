@@ -185,6 +185,7 @@ TABLES: tuple[str, ...] = (
     "tenant_entitlements",
     "tie_out_check_versions",
     "tie_out_checks",
+    "tin_reveals",
     "trial_balance_annotations",
     "trial_balance_lines",
     "trial_balance_versions",

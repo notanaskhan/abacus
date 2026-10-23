@@ -38489,7 +38489,7 @@
     },
     "/v1/client-entities/{entity_id}/tin/reveal": {
       "post": {
-        "description": "Human-only: a live, onshore person with recent MFA and a reason; one `tin.revealed`\naudit event in the same unit of work (reason code, never the value).",
+        "description": "Human-only: a live, onshore person with recent MFA and a reason, holding `tin.reveal` on\none of the client's open engagements (P-07-T10, DEC-223); 403 otherwise, 404 for a walled or\nunknown entity or no TIN on file. One `tin_reveals` row and one `tin.revealed` audit event in\nthe same unit of work (the reason, never the value); `Cache-Control: no-store`.",
         "operationId": "reveal_tin",
         "parameters": [
           {
@@ -38595,16 +38595,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Reveal Tin Route",

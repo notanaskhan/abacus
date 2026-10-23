@@ -1,10 +1,9 @@
 """The clients family contract, v1: CLI-01 and CLI-02 (P-07-T04 stub; ADR-139, P-36). Contract:
 `docs/contracts/clients.md`; spec: SPEC-321.
 
-Behind `clients.v2`: off, every route here answers 404; on, 501 `not_implemented` until the task
-that implements it (P-07-T08 the index, P-07-T09 the record, overview, relationships and PATCH,
-P-07-T10 the TIN reveal). The Brightwater Hale client slice (`stub_from_seed`) is P-07-T11's, so
-these stubs return no fixtures yet. The live client picker (`GET /v1/firm/clients/search`) stays
+Behind `clients.v2`: off, every route here answers 404; on, every route is live (P-07-T08 the
+index, P-07-T09 the record, overview, relationships and PATCH, P-07-T10 the TIN reveal). The
+live client picker (`GET /v1/firm/clients/search`) stays
 where it is.
 
 Walls: a walled client is absent from every row, count, facet and total, and answers 404 by id
@@ -16,21 +15,21 @@ never in a list, and in plain text only in the one reveal response (DEC-141).
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn, cast
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
-from fastapi import Depends, Query
+from fastapi import Depends, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import CLIENTS_V2
 from abacus.kernel._statuses import ClientStatus, EngagementStatus, InvitationStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import SingleLineText
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
-from abacus.modules.organisations import live
+from abacus.modules.organisations import live, tin
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 
@@ -297,11 +296,6 @@ async def _gate(ctx: AuthContext) -> None:
         raise NotFound("clients.v2")
 
 
-async def _stub(ctx: AuthContext) -> NoReturn:
-    await _gate(ctx)
-    raise NotImplementedYet
-
-
 def _row(r: live.ClientRow) -> ClientRowOut:
     return ClientRowOut.model_validate(r, from_attributes=True)
 
@@ -490,9 +484,17 @@ async def client_relationships_route(
 
 
 @client_entities_router.post(
-    "/{entity_id}/tin/reveal", action="tin.reveal", response_model=TinRevealOut, errors=(501,)
+    "/{entity_id}/tin/reveal", action="tin.reveal", response_model=TinRevealOut
 )
-async def reveal_tin_route(entity_id: UUID, body: TinRevealIn, ctx: Ctx) -> TinRevealOut:
-    """Human-only: a live, onshore person with recent MFA and a reason; one `tin.revealed`
-    audit event in the same unit of work (reason code, never the value)."""
-    await _stub(ctx)
+async def reveal_tin_route(
+    entity_id: UUID, body: TinRevealIn, ctx: Ctx, response: Response
+) -> TinRevealOut:
+    """Human-only: a live, onshore person with recent MFA and a reason, holding `tin.reveal` on
+    one of the client's open engagements (P-07-T10, DEC-223); 403 otherwise, 404 for a walled or
+    unknown entity or no TIN on file. One `tin_reveals` row and one `tin.revealed` audit event in
+    the same unit of work (the reason, never the value); `Cache-Control: no-store`."""
+    await _gate(ctx)
+    revealed = await tin.reveal_tin(ctx, entity_id, body.reason)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+    return TinRevealOut(entity_id=revealed.entity_id, kind=revealed.kind, value=revealed.value)

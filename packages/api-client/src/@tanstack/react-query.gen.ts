@@ -816,8 +816,10 @@ export const relinkCitationMutation = (options?: Partial<Options<RelinkCitationD
 /**
  * Reveal Tin Route
  *
- * Human-only: a live, onshore person with recent MFA and a reason; one `tin.revealed`
- * audit event in the same unit of work (reason code, never the value).
+ * Human-only: a live, onshore person with recent MFA and a reason, holding `tin.reveal` on
+ * one of the client's open engagements (P-07-T10, DEC-223); 403 otherwise, 404 for a walled or
+ * unknown entity or no TIN on file. One `tin_reveals` row and one `tin.revealed` audit event in
+ * the same unit of work (the reason, never the value); `Cache-Control: no-store`.
  */
 export const revealTinMutation = (options?: Partial<Options<RevealTinData>>): UseMutationOptions<RevealTinResponse, RevealTinError, Options<RevealTinData>> => {
     const mutationOptions: UseMutationOptions<RevealTinResponse, RevealTinError, Options<RevealTinData>> = {

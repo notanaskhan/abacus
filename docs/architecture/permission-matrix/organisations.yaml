@@ -28,12 +28,12 @@ actions:
   # so the stub ships firm_admin and the derived `firm_partner`; the manager path is added the
   # DEC-132 way when the route goes live (P-07-T09, DEC-141).
   client.update:            {firm_admin: allow, firm_partner: allow, agent: deny, system: deny}
-  # Blueprint §2.4 and P-07 §4.3: a live person with recent MFA and a reason code. `not_offshore`
-  # is required now (F-03 §4.4 guard: every reveal carries it). It fails closed until P-07-T10
-  # registers the member facts, which is right for a route that is still a 501 stub. The
-  # senior/staff preparer path
-  # (`function_in(preparer, first_level_reviewer)`) can't widen the action (DEC-132); P-07-T10
-  # adds it as a derived grant (DEC-141).
+  # Blueprint §2.4 and P-07 §4.3: a live person with recent MFA and a reason code, onshore
+  # (`not_offshore` reads the membership, DEC-52). Live with P-07-T10: the route authorises the
+  # action against each of the entity's client's open engagements, so these engagement roles are
+  # what grants it, and `allowed_actions` on CLI-02 says so (DEC-223). The senior/staff preparer
+  # path (`function_in(preparer, first_level_reviewer)`) can't widen the action (DEC-132) and
+  # stays deferred to a derived grant (DEC-141, DEC-223).
   tin.reveal:               {engagement_partner: allow, manager: allow, eqr_reviewer: allow, agent: deny, system: deny, mfa_recent: required, requires: reason, not_offshore: required}
   # P-07 OQ-2 (DEC-143): Prospect-only engagements from intake and from an ENG-03 draft
   # ("Start acceptance"); accepting and staffing stay `engagement.create`. The manager path
