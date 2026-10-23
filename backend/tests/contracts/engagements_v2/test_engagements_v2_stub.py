@@ -49,6 +49,13 @@ ROUTES: dict[tuple[str, str], str] = {
     ("post", f"{DRAFT}/create"): "engagement.create",
 }
 HUMAN_ONLY = {"engagement.create", "client.intake", "letter.record"}
+# Live since P-07-T15 (index, record, gates, recorded letter); the rest stay stubs until P-07-T16.
+LIVE = {
+    ("get", "/v1/engagements/index"),
+    ("get", f"{EID}/record"),
+    ("get", f"{EID}/gates"),
+    ("put", f"{EID}/letter/record"),
+}
 CLIENT_ROLES = {"client_admin", "client_contributor"}
 
 
@@ -60,7 +67,9 @@ def _props(schema: str) -> dict[str, Json]:
 def test_ac10_each_route_declares_its_action_and_the_stub_answer(method: str, path: str) -> None:
     op = PATHS[path][method]
     assert op["x-abacus-action"] == ROUTES[(method, path)]
-    assert {"404", "501"} <= set(cast(Json, op["responses"]))
+    responses = set(cast(Json, op["responses"]))
+    assert "404" in responses
+    assert ("501" in responses) == ((method, path) not in LIVE)
 
 
 def test_ac10_create_takes_an_idempotency_key() -> None:

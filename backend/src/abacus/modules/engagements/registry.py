@@ -96,6 +96,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "engagements": frozenset(
         {"status", "methodology_version_id"}  # SPEC-008: pinned once
         | {"ai_excluded_at", "ai_excluded_by", "ai_excluded_reason"}  # SPEC-036 (TASK-076)
+        | {"period_label"}  # P-07-T15 (0124); `version` is the trigger's, never the app's
     ),
     # SPEC-025 (TASK-044): a person answers once; the letter's record is replaced in place.
     "independence_confirmations": frozenset(
@@ -107,5 +108,8 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"status", "letter_date", "reason", "link", "recorded_by", "recorded_at"}
         | {"file_key", "file_version_id", "file_fingerprint", "file_size", "file_media_type"}
         | {"file_name"}
+        # P-07-T15 (0124): the interim recorded letter (G3 until C7)
+        | {"client_signed_on", "firm_signed_on", "client_signer_contact_id"}
+        | {"firm_signer_user_id", "signed_copy_version_id", "recorded_by_user_id"}
     ),
 }

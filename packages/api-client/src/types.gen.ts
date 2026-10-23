@@ -19639,10 +19639,6 @@ export type EngagementIndexErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EngagementIndexError = EngagementIndexErrors[keyof EngagementIndexErrors];
@@ -23389,10 +23385,6 @@ export type EngagementGatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EngagementGatesError = EngagementGatesErrors[keyof EngagementGatesErrors];
@@ -24305,10 +24297,6 @@ export type RecordEngagementLetterErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RecordEngagementLetterError = RecordEngagementLetterErrors[keyof RecordEngagementLetterErrors];
@@ -26368,10 +26356,6 @@ export type EngagementRecordErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EngagementRecordError = EngagementRecordErrors[keyof EngagementRecordErrors];

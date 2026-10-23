@@ -42005,16 +42005,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Engagement Index Route",
@@ -50067,16 +50057,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Engagement Gates Route",
@@ -51922,7 +51902,7 @@
     },
     "/v1/engagements/{engagement_id}/letter/record": {
       "put": {
-        "description": "Human-only. The interim G3 provider until C7: 409 `gate_unmet` (G1), 409\n`letter_before_acceptance`, 409 `engagement_archived`; one `letter.recorded` audit event.",
+        "description": "Human-only. The interim G3 provider until C7: 409 `gate_unmet` (G1), 409\n`letter_before_acceptance`, 409 `engagement_archived`, 409 `letter_exceptions_off` for the\nexception while its firm setting is unregistered; one `letter.recorded` audit event.",
         "operationId": "record_engagement_letter",
         "parameters": [
           {
@@ -52038,16 +52018,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Record Engagement Letter Route",
@@ -56436,6 +56406,7 @@
     },
     "/v1/engagements/{engagement_id}/record": {
       "get": {
+        "description": "ENG-02: 404 for a walled or unknown engagement or a client principal.",
         "operationId": "engagement_record",
         "parameters": [
           {
@@ -56531,16 +56502,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Engagement Record Route",

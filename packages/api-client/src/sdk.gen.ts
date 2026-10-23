@@ -1732,7 +1732,8 @@ export const letterFile = <ThrowOnError extends boolean = false>(options: Option
  * Record Engagement Letter Route
  *
  * Human-only. The interim G3 provider until C7: 409 `gate_unmet` (G1), 409
- * `letter_before_acceptance`, 409 `engagement_archived`; one `letter.recorded` audit event.
+ * `letter_before_acceptance`, 409 `engagement_archived`, 409 `letter_exceptions_off` for the
+ * exception while its firm setting is unregistered; one `letter.recorded` audit event.
  */
 export const recordEngagementLetter = <ThrowOnError extends boolean = false>(options: Options<RecordEngagementLetterData, ThrowOnError>): RequestResult<RecordEngagementLetterResponses, RecordEngagementLetterErrors, ThrowOnError> => (options.client ?? client).put<RecordEngagementLetterResponses, RecordEngagementLetterErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -2168,6 +2169,8 @@ export const signReviewed = <ThrowOnError extends boolean = false>(options: Opti
 
 /**
  * Engagement Record Route
+ *
+ * ENG-02: 404 for a walled or unknown engagement or a client principal.
  */
 export const engagementRecord = <ThrowOnError extends boolean = false>(options: Options<EngagementRecordData, ThrowOnError>): RequestResult<EngagementRecordResponses, EngagementRecordErrors, ThrowOnError> => (options.client ?? client).get<EngagementRecordResponses, EngagementRecordErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

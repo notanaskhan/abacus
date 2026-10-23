@@ -20,7 +20,7 @@ The ENG-03 "Coming soon" tile is static frontend copy.
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
@@ -33,6 +33,8 @@ from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, NotImp
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
+from abacus.modules.engagements import index as index_model
+from abacus.modules.engagements import record as record_model
 from abacus.modules.engagements.service import EngagementType
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
@@ -100,18 +102,6 @@ class UnknownEngagementType(DomainInvalid):
     """The type is not in the engagement-type catalogue (single audit included, DEC-19)."""
 
     code = "unknown_engagement_type"
-
-
-class LetterBeforeAcceptance(DomainConflict):
-    """The letter's date is before the acceptance decision (G1 < letter, R-06)."""
-
-    code = "letter_before_acceptance"
-
-
-class GateUnmet(DomainConflict):
-    """A gate the step or the create requires is not met (C1 gate providers; `facts.gate`)."""
-
-    code = "gate_unmet"
 
 
 class DraftStaleVersion(DomainConflict):
@@ -520,6 +510,121 @@ class EngagementFromDraftOut(BaseModel):
     methodology_version_id: Annotated[UUID | None, classified("internal")] = None
 
 
+async def _gate(ctx: AuthContext) -> None:
+    if not await flag_enabled(ctx.tenant, ENGAGEMENTS_V2):
+        raise NotFound("engagements.v2")
+
+
+def _letter_out(s: index_model.LetterSummary) -> EngagementLetterSummaryOut:
+    return EngagementLetterSummaryOut(
+        status=LetterRecordStatus(s.status),
+        signed_on=s.signed_on,
+        signed_count=s.signed_count,
+        signer_count=s.signer_count,
+        not_required_this_year=s.not_required_this_year,
+    )
+
+
+def _gates_out(views: list[record_model.GateView]) -> list[EngagementGateOut]:
+    return [
+        EngagementGateOut(
+            gate=cast(Gate, v.gate),
+            met=v.met,
+            blockers=[
+                GateBlockerRefOut(type=b.type, id=b.id, reason_code=b.reason_code)
+                for b in v.blockers
+            ],
+            met_at=v.met_at,
+            met_by_user_id=v.met_by_user_id,
+        )
+        for v in views
+    ]
+
+
+def _index_row(r: index_model.IndexRow) -> EngagementIndexRowOut:
+    e = r.engagement
+    return EngagementIndexRowOut(
+        id=e.id,
+        name=e.name,
+        client_id=e.client_id,
+        client_name=r.client_name,
+        client_entity_id=e.client_entity_id,
+        type=cast(EngagementType, e.type),
+        service_line=cast(ServiceLine, e.service_line),
+        status=EngagementStatus(e.status),
+        period_label=e.period_label,
+        fiscal_period_start=e.fiscal_period_start,
+        fiscal_period_end=e.fiscal_period_end,
+        office_id=e.office_id,
+        office_name=r.office_name,
+        partner_user_id=r.partner_user_id,
+        partner_initials=r.partner_initials,
+        work_items=[
+            EngagementWorkItemLineOut(
+                id=w.id,
+                kind=cast(WorkItemKind, w.kind),
+                label=w.label,
+                pill_object=w.pill_object,
+                pill_code=w.pill_code,
+            )
+            for w in r.work_items
+        ],
+        letter=_letter_out(r.letter),
+        next_due=(
+            None
+            if r.next_due is None
+            else EngagementNextDueOut(on=r.next_due.on, tone=r.next_due.tone)
+        ),
+    )
+
+
+def _record_out(v: record_model.RecordView) -> EngagementRecordOut:
+    e = v.engagement
+    return EngagementRecordOut(
+        id=e.id,
+        name=e.name,
+        client_id=e.client_id,
+        client_name=v.client_name,
+        client_entity_id=e.client_entity_id,
+        client_entity_name=v.client_entity_name,
+        type=cast(EngagementType, e.type),
+        service_line=cast(ServiceLine, e.service_line),
+        status=EngagementStatus(e.status),
+        period_label=e.period_label,
+        fiscal_period_start=e.fiscal_period_start,
+        fiscal_period_end=e.fiscal_period_end,
+        bands=[
+            EngagementRailBandOut(
+                band=b.band,
+                rows=[
+                    EngagementRailRowOut(
+                        key=r.key,
+                        text=r.text,
+                        user_id=r.user_id,
+                        on=r.on,
+                        pill_object=r.pill_object,
+                        pill_code=r.pill_code,
+                    )
+                    for r in b.rows
+                ],
+            )
+            for b in v.bands
+        ],
+        contacts=[
+            EngagementDesignationOut(
+                designation=cast(Designation, d.designation), contact_id=d.contact_id, name=d.name
+            )
+            for d in v.contacts
+        ],
+        letter=_letter_out(v.letter),
+        gates=_gates_out(v.gates),
+        tab_counts=EngagementTabCountsOut(work_items=v.work_item_count, team=v.team_count),
+        read_only_reason=v.read_only_reason,
+        version=e.version,
+        allowed_actions=v.allowed_actions,
+    )
+
+
 async def _stub(ctx: AuthContext) -> NoReturn:
     if not await flag_enabled(ctx.tenant, ENGAGEMENTS_V2):
         raise NotFound("engagements.v2")
@@ -533,7 +638,7 @@ engagement_drafts_router = AbacusRouter(prefix="/v1/engagement-drafts", tags=["e
 
 
 @engagements_v2_router.get(
-    "/index", action="engagement.read_metadata", response_model=EngagementIndexPage, errors=(501,)
+    "/index", action="engagement.read_metadata", response_model=EngagementIndexPage
 )
 async def engagement_index_route(
     ctx: Ctx,
@@ -552,42 +657,102 @@ async def engagement_index_route(
 ) -> EngagementIndexPage:
     """ENG-01 and CLI-02's Engagements tab: past due first, then by next deadline. "Letter │ Not
     signed" lists Accepted engagements without a recorded letter (never a Prospect)."""
-    await _stub(ctx)
+    await _gate(ctx)
+    page, summary = await index_model.engagement_index(
+        ctx,
+        index_model.IndexFilters(
+            service_line=service_line,
+            status=None if status is None else status.value,
+            tile=None if tile is None else tile.value,
+            office_id=office_id,
+            partner_id=partner_id,
+            letter=None if letter is None else letter.value,
+            next_due=next_due,
+            period=period,
+            client_id=client_id,
+            q=q,
+        ),
+        cursor=cursor,
+        limit=limit,
+    )
+    return EngagementIndexPage(
+        items=[_index_row(r) for r in page.items],
+        next_cursor=page.next_cursor,
+        total=page.total,
+        total_capped=page.total_capped,
+        counts=page.counts,
+        facets=page.facets,
+        summary=EngagementIndexSummaryOut(
+            prospect=summary.prospect,
+            awaiting_letter=summary.awaiting_letter,
+            past_due=summary.past_due,
+        ),
+    )
 
 
 @engagements_v2_router.get(
     "/{engagement_id}/record",
     action="engagement.read_metadata",
     response_model=EngagementRecordOut,
-    errors=(501,),
 )
 async def engagement_record_route(engagement_id: UUID, ctx: Ctx) -> EngagementRecordOut:
-    await _stub(ctx)
+    """ENG-02: 404 for a walled or unknown engagement or a client principal."""
+    await _gate(ctx)
+    return _record_out(await record_model.engagement_record(ctx, engagement_id))
 
 
 @engagements_v2_router.get(
     "/{engagement_id}/gates",
     action="engagement.read_metadata",
     response_model=list[EngagementGateOut],
-    errors=(501,),
 )
 async def engagement_gates_route(engagement_id: UUID, ctx: Ctx) -> list[EngagementGateOut]:
     """`[{gate, met, blockers}]` for the registered providers (C1 v1.1)."""
-    await _stub(ctx)
+    await _gate(ctx)
+    return _gates_out(await record_model.engagement_gates_v2(ctx, engagement_id))
 
 
 @engagements_v2_router.put(
     "/{engagement_id}/letter/record",
     action="letter.record",
     response_model=EngagementLetterRecordOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def record_engagement_letter_route(
     engagement_id: UUID, body: LetterRecordIn, ctx: Ctx
 ) -> EngagementLetterRecordOut:
     """Human-only. The interim G3 provider until C7: 409 `gate_unmet` (G1), 409
-    `letter_before_acceptance`, 409 `engagement_archived`; one `letter.recorded` audit event."""
-    await _stub(ctx)
+    `letter_before_acceptance`, 409 `engagement_archived`, 409 `letter_exceptions_off` for the
+    exception while its firm setting is unregistered; one `letter.recorded` audit event."""
+    await _gate(ctx)
+    done = await record_model.record_letter_v2(
+        ctx,
+        engagement_id,
+        record_model.RecordedLetterIn(
+            mode=body.mode,
+            client_signed_on=body.client_signed_on,
+            firm_signed_on=body.firm_signed_on,
+            client_signer_contact_id=body.client_signer_contact_id,
+            firm_signer_user_id=body.firm_signer_user_id,
+            signed_copy_version_id=body.signed_copy_version_id,
+            not_required_reason=body.not_required_reason,
+        ),
+    )
+    letter = done.letter
+    return EngagementLetterRecordOut(
+        engagement_id=engagement_id,
+        status=LetterRecordStatus.SIGNED,
+        mode=body.mode,
+        client_signed_on=letter.client_signed_on,
+        firm_signed_on=letter.firm_signed_on,
+        client_signer_contact_id=letter.client_signer_contact_id,
+        firm_signer_user_id=letter.firm_signer_user_id,
+        signed_copy_version_id=letter.signed_copy_version_id,
+        acceptance_decided_at=done.acceptance_decided_at,
+        recorded_by=ctx.user_id,
+        recorded_at=letter.recorded_at,
+        engagement_status=EngagementStatus(done.engagement_status),
+    )
 
 
 @engagement_types_router.get(

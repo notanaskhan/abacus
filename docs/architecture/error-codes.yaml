@@ -245,8 +245,9 @@ codes:
   engagement_archived:
     status: 409
     raised_by:
+    - abacus.modules.engagements.record.EngagementArchived
     - abacus.modules.evidence.service.EngagementArchived
-    summary: 'Archived engagements are read-only (`archived_write: deny`).'
+    summary: 'The engagement is archived: it is read-only (`archived_write: deny`).'
   engagement_not_open:
     status: 409
     raised_by:
@@ -273,7 +274,7 @@ codes:
   gate_unmet:
     status: 409
     raised_by:
-    - abacus.modules.engagements.contract.GateUnmet
+    - abacus.modules.engagements.record.GateUnmet
     summary: A gate the step or the create requires is not met (C1 gate providers; `facts.gate`).
   grant_exists:
     status: 409
@@ -412,8 +413,14 @@ codes:
   letter_before_acceptance:
     status: 409
     raised_by:
-    - abacus.modules.engagements.contract.LetterBeforeAcceptance
+    - abacus.modules.engagements.record.LetterBeforeAcceptance
     summary: The letter's date is before the acceptance decision (G1 < letter, R-06).
+  letter_exceptions_off:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.record.LetterExceptionsOff
+    summary: '"Not required this year" needs the engagement partner and the firm setting `allow_letter_exceptions`
+      on.'
   letter_missing:
     status: 409
     raised_by:

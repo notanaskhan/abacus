@@ -3074,7 +3074,8 @@ export const letterFileMutation = (options?: Partial<Options<LetterFileData>>): 
  * Record Engagement Letter Route
  *
  * Human-only. The interim G3 provider until C7: 409 `gate_unmet` (G1), 409
- * `letter_before_acceptance`, 409 `engagement_archived`; one `letter.recorded` audit event.
+ * `letter_before_acceptance`, 409 `engagement_archived`, 409 `letter_exceptions_off` for the
+ * exception while its firm setting is unregistered; one `letter.recorded` audit event.
  */
 export const recordEngagementLetterMutation = (options?: Partial<Options<RecordEngagementLetterData>>): UseMutationOptions<RecordEngagementLetterResponse, RecordEngagementLetterError, Options<RecordEngagementLetterData>> => {
     const mutationOptions: UseMutationOptions<RecordEngagementLetterResponse, RecordEngagementLetterError, Options<RecordEngagementLetterData>> = {
@@ -3765,6 +3766,8 @@ export const engagementRecordQueryKey = (options: Options<EngagementRecordData>)
 
 /**
  * Engagement Record Route
+ *
+ * ENG-02: 404 for a walled or unknown engagement or a client principal.
  */
 export const engagementRecordOptions = (options: Options<EngagementRecordData>) => queryOptions<EngagementRecordResponse, EngagementRecordError, EngagementRecordResponse, ReturnType<typeof engagementRecordQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
