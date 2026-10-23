@@ -84,9 +84,18 @@ export interface IndexListProps<Row> {
 
   query?: string;
   onQuery?: (query: string) => void;
+  /** The search field's placeholder ("Search clients, entities, contacts"); "Search" if absent. */
+  searchPlaceholder?: string;
   /** "+ New Return…" */
   newLabel?: string;
   onNew?: () => void;
+  /** Secondary header buttons before "+ New …" ("Import…"). */
+  actions?: ReactNode;
+  /** Replaces the "Showing n of total" line when the screen words its own count ("184 clients",
+   * DEC-47). Shown in the same states the default line is. */
+  countText?: string;
+  /** Under the last row, inside the ready body: "Load more" for a keyset list. */
+  footer?: ReactNode;
   /** What T1c says. */
   empty: EmptyContent;
 }
@@ -111,8 +120,12 @@ export function IndexList<Row>({
   onClear,
   query = "",
   onQuery,
+  searchPlaceholder,
   newLabel,
   onNew,
+  actions,
+  countText,
+  footer,
   empty,
 }: IndexListProps<Row>): JSX.Element {
   const titleId = useId();
@@ -121,6 +134,16 @@ export function IndexList<Row>({
   const items = envelope?.items ?? [];
   const showCount = !isEmpty && state.kind === "ready" && envelope !== undefined;
   const showTiles = tiles !== undefined && tiles.length > 0 && !isEmpty;
+  // One column plan for the head and the body tables, so a fixed layout sizes both alike (a
+  // body row's cell widths alone are not read when the table has a caption).
+  const colgroup = (
+    <colgroup>
+      {columns.map((c) => (
+        <col key={c.key} style={c.width === undefined ? undefined : { width: c.width }} />
+      ))}
+      <col style={{ width: 28 }} />
+    </colgroup>
+  );
 
   return (
     <div data-template="T1" className="flex min-h-0 flex-1 flex-col bg-shell">
@@ -179,11 +202,13 @@ export function IndexList<Row>({
               label={`Search ${noun}`}
               value={query}
               onChange={(v) => onQuery?.(v)}
+              {...(searchPlaceholder === undefined ? {} : { placeholder: searchPlaceholder })}
               className="w-[220px]"
             />
             {showCount && (
               <span data-count="" className="text-dense text-ink-3">
-                {`Showing ${formatCount(items.length)} of ${formatCount(envelope.total)}${envelope.total_capped === true ? "+" : ""}`}
+                {countText ??
+                  `Showing ${formatCount(items.length)} of ${formatCount(envelope.total)}${envelope.total_capped === true ? "+" : ""}`}
               </span>
             )}
             <h2
@@ -192,11 +217,14 @@ export function IndexList<Row>({
             >
               {title}
             </h2>
+            {actions !== undefined && (
+              <span className="ml-auto flex items-center gap-[8px]">{actions}</span>
+            )}
             {newLabel !== undefined && (
               <Button
                 variant="primary"
                 icon="plus"
-                className="ml-auto"
+                className={actions === undefined ? "ml-auto" : undefined}
                 onClick={onNew}
                 opensDialog
               >
@@ -205,6 +233,7 @@ export function IndexList<Row>({
             )}
           </header>
           <table className="w-full shrink-0 table-fixed border-collapse">
+            {colgroup}
             <thead>
               <tr>
                 {columns.map((c) => (
@@ -229,57 +258,65 @@ export function IndexList<Row>({
           </table>
           <ViewStateBody state={state} rows="list" skeletonCount={8} empty={empty} noun={noun}>
             {() => (
-              <table className="w-full table-fixed border-collapse">
-                <caption className="sr-only">{title}</caption>
-                <tbody>
-                  {items.map((row) => {
-                    const id = rowKey(row);
-                    const isSelected = id === selected;
-                    return (
-                      <tr
-                        key={id}
-                        aria-selected={isSelected}
-                        data-row={id}
-                        onClick={() => onSelect?.(row)}
-                        onDoubleClick={() => onOpen?.(row)}
-                        className={cn(
-                          "group cursor-default border-b-[0.5px] border-hair text-body transition-colors duration-200",
-                          twoLine?.(row) === true ? "h-[44px]" : "h-[38px]",
-                          isSelected ? "bg-sel-bg font-medium" : "hover:bg-nested",
-                        )}
-                      >
-                        {columns.map((c) => (
-                          <td
-                            key={c.key}
-                            style={c.width === undefined ? undefined : { width: c.width }}
-                            className={cn(
-                              "truncate px-[14px]",
-                              c.align === "right" ? "text-right tabular-nums" : "text-left",
-                            )}
-                          >
-                            {c.cell(row)}
-                          </td>
-                        ))}
-                        <td className="w-[28px] pr-[10px] text-ink-3">
-                          {onOpen !== undefined && (
-                            <button
-                              type="button"
-                              aria-label={`Open ${rowLabel(row, columns)}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onOpen(row);
-                              }}
-                              className="relative flex size-[24px] items-center justify-center rounded-pill opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-                            >
-                              <Icon name="chevron-right" size={12} />
-                            </button>
+              <>
+                <table className="w-full table-fixed border-collapse">
+                  <caption className="sr-only">{title}</caption>
+                  {colgroup}
+                  <tbody>
+                    {items.map((row) => {
+                      const id = rowKey(row);
+                      const isSelected = id === selected;
+                      return (
+                        <tr
+                          key={id}
+                          aria-selected={isSelected}
+                          data-row={id}
+                          onClick={() => onSelect?.(row)}
+                          onDoubleClick={() => onOpen?.(row)}
+                          className={cn(
+                            "group cursor-default border-b-[0.5px] border-hair text-body transition-colors duration-200",
+                            twoLine?.(row) === true ? "h-[44px]" : "h-[38px]",
+                            isSelected ? "bg-sel-bg font-medium" : "hover:bg-nested",
                           )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                        >
+                          {columns.map((c) => (
+                            <td
+                              key={c.key}
+                              style={c.width === undefined ? undefined : { width: c.width }}
+                              className={cn(
+                                "truncate px-[14px]",
+                                c.align === "right" ? "text-right tabular-nums" : "text-left",
+                              )}
+                            >
+                              {c.cell(row)}
+                            </td>
+                          ))}
+                          <td className="w-[28px] pr-[10px] text-ink-3">
+                            {onOpen !== undefined && (
+                              <button
+                                type="button"
+                                aria-label={`Open ${rowLabel(row, columns)}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onOpen(row);
+                                }}
+                                className="relative flex size-[24px] items-center justify-center rounded-pill opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                              >
+                                <Icon name="chevron-right" size={12} />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {footer !== undefined && (
+                  <div data-list="footer" className="flex shrink-0 justify-center py-[12px]">
+                    {footer}
+                  </div>
+                )}
+              </>
             )}
           </ViewStateBody>
         </section>

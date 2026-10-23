@@ -41,8 +41,9 @@ export type ViewState =
   | { kind: "loading" }
   /** A 34px tile, a title, what will appear and one secondary button. */
   | { kind: "empty"; action?: StateAction }
-  /** "No results for ‘…’." and Clear filters. */
-  | { kind: "filtered-empty"; query?: string; clear?: () => void }
+  /** "No results for ‘…’." and Clear filters; `title` when the screen words it ("No clients
+   * match 'Schwab'."). */
+  | { kind: "filtered-empty"; query?: string; title?: string; clear?: () => void }
   | { kind: "ready" }
   /** The C-20 error: a brick tile, "Couldn’t load …", Retry. */
   | { kind: "error"; retry: () => void }
@@ -292,7 +293,10 @@ export function ViewStateBody({
       body = (
         <EmptyState
           icon="search"
-          title={state.query === undefined ? "No results." : `No results for ‘${state.query}’.`}
+          title={
+            state.title ??
+            (state.query === undefined ? "No results." : `No results for ‘${state.query}’.`)
+          }
           link={
             <EmptyLink {...(state.clear === undefined ? {} : { onClick: state.clear })}>
               Clear filters

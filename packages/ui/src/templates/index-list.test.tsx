@@ -248,3 +248,55 @@ describe("T1e loading", () => {
     expect(screen.queryByText(/Showing/)).toBeNull();
   });
 });
+
+describe("screen-worded header and footer (P-07-T12, CLI-01)", () => {
+  it("countText replaces the Showing line; actions sit before + New; footer follows the rows", () => {
+    const more = vi.fn();
+    list({
+      countText: "184 clients",
+      actions: <button type="button">Import…</button>,
+      footer: (
+        <button type="button" onClick={more}>
+          Load more
+        </button>
+      ),
+    });
+    expect(screen.getByText("184 clients")).toBeTruthy();
+    expect(screen.queryByText(/^Showing/)).toBeNull();
+    const header = screen.getByRole("heading", { name: "Tax Returns" }).parentElement;
+    const buttons = within(header as HTMLElement)
+      .getAllByRole("button")
+      .map((b) => b.textContent);
+    expect(buttons.indexOf("Import…")).toBeLessThan(buttons.indexOf("New Return…"));
+    fireEvent.click(screen.getByRole("button", { name: "Load more" }));
+    expect(more).toHaveBeenCalledOnce();
+  });
+
+  it("the footer and the count stay out of the loading state", () => {
+    list({
+      state: { kind: "loading" },
+      envelope: undefined,
+      countText: "184 clients",
+      footer: <button type="button">Load more</button>,
+    });
+    expect(screen.queryByText("184 clients")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Load more" })).toBeNull();
+  });
+
+  it("the head and the body share one column plan, so fixed widths hold in the body", () => {
+    const { container } = list({ searchPlaceholder: "Search returns, clients" });
+    const plans = [...container.querySelectorAll("table colgroup")].map((g) =>
+      [...g.querySelectorAll("col")].map((c) => c.style.width),
+    );
+    expect(plans).toHaveLength(2);
+    expect(plans[0]).toEqual(plans[1]);
+    expect(plans[0]).toEqual(["", "80px", "180px", "150px", "28px"]);
+    expect(screen.getByPlaceholderText("Search returns, clients")).toBeTruthy();
+  });
+
+  it("a filtered-empty state may word its own title", () => {
+    list({ state: { kind: "filtered-empty", title: "No clients match 'Schwab'." } });
+    expect(screen.getByText("No clients match 'Schwab'.")).toBeTruthy();
+    expect(screen.queryByText(/No results/)).toBeNull();
+  });
+});
