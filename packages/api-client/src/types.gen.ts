@@ -35438,10 +35438,6 @@ export type NotificationPreferencesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type NotificationPreferencesError = NotificationPreferencesErrors[keyof NotificationPreferencesErrors];
@@ -35489,10 +35485,6 @@ export type SetNotificationPreferencesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SetNotificationPreferencesError = SetNotificationPreferencesErrors[keyof SetNotificationPreferencesErrors];

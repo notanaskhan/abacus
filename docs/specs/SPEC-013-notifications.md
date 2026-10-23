@@ -147,6 +147,7 @@ API only. The SPA bell and centre are a separate task.
 | AC-7 | unit | Templates render from identifiers |
 | AC-8, AC-9 | integration | Self-join allowed and notifies the team; break-glass and budget events notify admins |
 | AC-10 | integration | The purge |
+| AC-1, AC-7 (email, P-01-T12) | integration, workflow replay | `backend/tests/integration/test_notification_email.py`: a mention emails the recipient once through C16, on the sink for a synthetic firm, with only the whitelisted values; the kill switch suppresses; preferences are OWN. `backend/tests/workflows/test_notification_email_replay.py` |
 
 ## 19. Rollout
 The migration is additive. Self-join becomes possible for firm admins (it is refused today), which is a protected matrix change.

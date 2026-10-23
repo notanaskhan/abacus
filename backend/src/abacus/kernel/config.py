@@ -314,6 +314,13 @@ class Settings(BaseSettings):
     # pepper; local and test runs use a fixed one when it is unset.
     ses_events_queue_url: Annotated[str | None, classified("internal")] = None
     email_suppression_pepper: Annotated[SecretStr | None, classified("restricted")] = None
+    # F-04-T22 (F-04.22, SPEC-307 AC-5): a synthetic firm's mail goes only to this sink domain.
+    # Unset, local, test and evaluation runs use the scenario's `.test` sink; any other
+    # environment then refuses every synthetic send. Staging sets its SES receipt-rule domain,
+    # whose S3 bucket and prefix the staging mailbox reader lists (Q-01-T47).
+    mail_sink_domain: Annotated[str | None, classified("internal")] = None
+    mail_sink_bucket: Annotated[str | None, classified("internal")] = None
+    mail_sink_prefix: Annotated[str, classified("internal")] = "sink/"
     # Observability (ADR-022; TASK-013). Traces export over OTLP only when an endpoint is set;
     # errors go to Sentry only when a DSN is set. Neither is required locally.
     # None: debug locally and in tests, info elsewhere.
@@ -494,6 +501,10 @@ class Settings(BaseSettings):
             raise ValueError("scanner_endpoint is host:port")
         if self.ses_from_address is not None and not _EMAIL.fullmatch(self.ses_from_address):
             raise ValueError("ses_from_address is an email address")
+        if self.mail_sink_domain is not None and not _EMAIL.fullmatch(
+            f"sink@{self.mail_sink_domain}"
+        ):
+            raise ValueError("mail_sink_domain is a domain name")
         return self
 
     @field_validator("work_classes", mode="after")

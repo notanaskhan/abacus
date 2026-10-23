@@ -25,7 +25,7 @@ Status values: `planned` (no stub), `stub` (models, 501 routes, matrix actions, 
 | C13 | Human-gate projection registration slot (Home) | `human-gates.md` | I-01 with P-04 | every module | S10 | 2027-03-08 | v1 | planned |
 | C14 | Board and program-status read model | `board-status.md` | K-04 | AUD-01/02, TAX-01, CLS-01/02, ATT-04 | S59 | 2029-01-22 | v1 | planned |
 | C15 | Search registration | `search.md` | P-02 (slot reserved by F-03-T08) | all modules | slot S1, index S39 | 2026-11-02, 2028-04-17 | v1 | slot reserved (F-03-T08) |
-| C16 | Notification kinds and transactional email templates (database) | `notifications.md` | P-01, R-01 | all | S5 | 2026-12-28 | v1 | stub |
+| C16 | Notification kinds and transactional email templates (database) | `notifications.md` | P-01, R-01 | all | S5 | 2026-12-28 | v1 | frozen (P-01-T12, 2026-10-23) |
 | C17 | Workbench tool registry (per-module read and compute tools, ADR-049) | `workbench-tools.md` | P-10 | W-02, W-03, I-02 | S32 | 2028-01-10 | v1 | planned |
 | C18 | Portal approvals (FS packages, client AJE approval) | `portal-approvals.md` | R-02 | A-06, A-07, C-02 | S30 | 2027-12-13 | v1 | planned |
 | C19 | Section 7216 consent gate and TRI data class (gateway condition 6) | `consent-7216.md` | T-01 | T-*, N-04, W-02, I-02 | S17 | 2027-06-14 | v1 | planned |

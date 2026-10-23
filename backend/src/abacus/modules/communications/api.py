@@ -8,10 +8,17 @@ from abacus.modules.communications.deliveries import (
     drain_ses_events,
     drain_ses_events_activity,
     is_suppressed,
+    send_email,
 )
 from abacus.modules.communications.events import MessageBounced, MessageComplained
+from abacus.modules.communications.fake_ses import FakeSesEventQueue, FakeSesTransport
 from abacus.modules.communications.follow_ups import render_follow_up, send_follow_up
 from abacus.modules.communications.invitations import deliver_invitation, deliver_staff_invitation
+from abacus.modules.communications.notification_email import (
+    NotificationMail,
+    send_notification_email,
+    template_key,
+)
 from abacus.modules.communications.routes import router
 from abacus.modules.communications.scope import Violation, check_scope, comment_scope_kinds
 from abacus.modules.communications.service import Draft, MessageView, OutOfScope, send
@@ -27,6 +34,12 @@ from abacus.modules.communications.ses_identities import (
     SesIdentityUnavailable,
     configure_ses_identities,
     ses_identities,
+)
+from abacus.modules.communications.sink import (
+    LOCAL_SINK_DOMAIN,
+    on_sink,
+    sink_address,
+    sink_domain,
 )
 from abacus.modules.communications.transport import LocalMailbox, Transport, configure_transport
 from abacus.modules.communications.workflows import DrainSesEventsWorkflow
@@ -52,12 +65,15 @@ register_engagement_owners(AUDIT_KINDS, audit_owners)
 
 __all__ = [
     "ACTIVITIES",
+    "LOCAL_SINK_DOMAIN",
     "ROUTERS",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
     "DnsRecord",
     "Draft",
     "DrainSesEventsWorkflow",
+    "FakeSesEventQueue",
+    "FakeSesTransport",
     "IdentitySetup",
     "IdentityStatus",
     "InMemorySesIdentities",
@@ -65,6 +81,7 @@ __all__ = [
     "MessageBounced",
     "MessageComplained",
     "MessageView",
+    "NotificationMail",
     "OutOfScope",
     "SesEventQueue",
     "SesIdentities",
@@ -80,8 +97,14 @@ __all__ = [
     "configure_transport",
     "drain_ses_events",
     "is_suppressed",
+    "on_sink",
     "render_follow_up",
     "send",
+    "send_email",
     "send_follow_up",
+    "send_notification_email",
     "ses_identities",
+    "sink_address",
+    "sink_domain",
+    "template_key",
 ]

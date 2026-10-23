@@ -804,6 +804,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.connections.ledger_import.UnknownFormat
+  unknown_notification_kind:
+    status: 422
+    raised_by:
+    - abacus.modules.notifications.service.UnknownNotificationKind
+    summary: A preference names a kind that is not registered, or names one twice.
   unknown_provider:
     status: 422
     raised_by:

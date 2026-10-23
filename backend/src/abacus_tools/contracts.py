@@ -24,6 +24,20 @@ CONTRACTS = BACKEND / "tests" / "contracts"
 MODELS: dict[str, tuple[str, ...]] = {
     "c1_work_items": ("EngagementSummaryOut", "EngagementOut", "GateOut", "WorkItemOut"),
     "c2_status_registry": ("EngagementStatus", "RequestStatus"),
+    # C16 v1 (P-01-T12): the notifications half's v2 feed and preferences, and the email half's
+    # template import. The v1 list (`NotificationPageOut`) is SPEC-013's and not part of C16.
+    "c16_notifications": (
+        "NotificationFeedOut",
+        "NotificationItemOut",
+        "NotificationCountsOut",
+        "NotificationActorOut",
+        "ObjectRefOut",
+        "NotificationPreferenceOut",
+        "NotificationPreferencesOut",
+        "NotificationPreferencesIn",
+        "EmailTemplateImportIn",
+        "EmailTemplateImportOut",
+    ),
 }
 Schema = dict[str, object]
 

@@ -1,6 +1,6 @@
 """C16 v1, the notifications half (P-01-T01 stub; ADR P-36). The v2 list, its counts and the
-per-kind preferences. Behind `notifications.v2`: off, the routes answer 404; on, 501
-`not_implemented` until P-01-T12 (preferences). The feed is live since P-01-T06.
+per-kind preferences. Behind `notifications.v2`: off, the routes answer 404. The feed is live
+since P-01-T06, the preferences since P-01-T12.
 
 During the v1 to v2 sprint the v2 list is served beside v1 at `/v1/notifications/feed`; it takes
 over `GET /v1/notifications` when the v1 consumer is gone (contract change log)."""
@@ -8,7 +8,7 @@ over `GET /v1/notifications` when the v1 consumer is gone (contract change log).
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends, Query
@@ -16,10 +16,15 @@ from pydantic import BaseModel, ConfigDict
 
 from abacus.kernel._flags import NOTIFICATIONS_V2
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import OWN, AbacusRouter, AuthContext, current_member
-from abacus.modules.notifications.service import feed
+from abacus.modules.notifications.service import (
+    Preference,
+    feed,
+    my_preferences,
+    set_my_preferences,
+)
 
 Member = Annotated[AuthContext, Depends(current_member)]
 Category = Literal["approval", "mention", "client_activity", "run", "deadline", "system", "other"]
@@ -101,10 +106,17 @@ class NotificationPreferencesIn(BaseModel):
     items: Annotated[list[NotificationPreferenceOut], classified("internal")]
 
 
-async def _stub(ctx: AuthContext) -> NoReturn:
+async def _v2_on(ctx: AuthContext) -> None:
     if not await flag_enabled(ctx.tenant, NOTIFICATIONS_V2):
         raise NotFound("notifications.v2")
-    raise NotImplementedYet
+
+
+def _preferences_out(found: list[Preference]) -> NotificationPreferencesOut:
+    return NotificationPreferencesOut(
+        items=[
+            NotificationPreferenceOut(kind=p.kind, in_app=p.in_app, email=p.email) for p in found
+        ]
+    )
 
 
 feed_router = AbacusRouter(prefix="/v1/notifications", tags=["notifications"])
@@ -157,19 +169,23 @@ async def notification_feed_route(
     "/notification-preferences",
     action=OWN,
     response_model=NotificationPreferencesOut,
-    errors=(501,),
 )
 async def notification_preferences_route(ctx: Member) -> NotificationPreferencesOut:
-    await _stub(ctx)
+    """P-01-T12: every registered kind with the caller's own choice, or its default."""
+    await _v2_on(ctx)
+    return _preferences_out(await my_preferences(ctx))
 
 
 @preferences_router.put(
     "/notification-preferences",
     action=OWN,
     response_model=NotificationPreferencesOut,
-    errors=(501,),
 )
 async def set_notification_preferences_route(
     given: NotificationPreferencesIn, ctx: Member
 ) -> NotificationPreferencesOut:
-    await _stub(ctx)
+    """P-01-T12: the caller's own choices (OWN); 422 `unknown_notification_kind` for a kind not
+    registered or named twice. Email for a kind sends only while `notifications.email` is on."""
+    await _v2_on(ctx)
+    items = [Preference(i.kind, i.in_app, i.email) for i in given.items]
+    return _preferences_out(await set_my_preferences(ctx, items))

@@ -9,7 +9,8 @@ every minute as `DrainSesEventsWorkflow`.
 A send is matched to its firm and message by the two tags `SesTransport` sets (`tenant_id` and
 `message_id`), never by address. A recipient address is handled only in memory: it is hashed at
 once (HMAC-SHA256 under the suppression pepper) and never stored, logged or emitted.
-`send_email` refuses a suppressed address before it reaches the transport.
+`send_email` refuses a suppressed address before it reaches the transport, and routes a
+synthetic firm's recipient to the mail sink first (F-04-T22, `sink.py`).
 """
 
 from __future__ import annotations
@@ -35,7 +36,9 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.storage import sqs_client
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
 from abacus.modules.communications.events import MessageBounced, MessageComplained
+from abacus.modules.communications.sink import sink_address
 from abacus.modules.communications.transport import transport
+from abacus.modules.identity.api import is_synthetic_firm
 
 # Local and test runs only: a fixed pepper, so hashes are stable without configuration.
 _LOCAL_PEPPER: Final = b"abacus-local-email-suppression-pepper"
@@ -90,7 +93,16 @@ async def send_email(
     reply_to: str | None = None,
 ) -> bool:
     """Send through the transport, unless the firm has suppressed the address: then nothing is
-    sent and False is returned, so the caller records the message `blocked` (`suppressed`)."""
+    sent and False is returned, so the caller records the message `blocked` (`suppressed`).
+
+    F-04-T22: a synthetic firm's recipient is routed to the sink first (`sink.py`); a recipient
+    the sink can't take is refused the same way (False), logged without the address."""
+    if await is_synthetic_firm(TenantContext(tenant_id, "system", "mail_sink")):
+        routed = sink_address(to, tenant_id)
+        if routed is None:
+            _log.warning("email.sink_refused", tenant_id=tenant_id, message_id=message_id)
+            return False
+        to = routed
     if await is_suppressed(tenant_id, to):
         _log.info("email.suppressed", tenant_id=tenant_id, message_id=message_id)
         return False
