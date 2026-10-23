@@ -1,0 +1,240 @@
+# The sub-processor register (P-67, ADR-154; chapter 06 section 6.9; Q-01-T51). PROTECTED: changed
+# deliberately, in the same change as the Terraform or code that adds a vendor.
+#
+# Generates docs/operations/sub-processors.md (the vendor-diligence pack) with
+# `python -m abacus_tools.codegen.sub_processors`. ADM-04's sub-processor table and the section 7216
+# AI-disclosure recipients are generated from this file plus provider-terms.yaml, never typed (C-03).
+#
+# `make check-generated` fails when:
+#   - the Markdown is stale, or a row is malformed;
+#   - an egress host in infra/**/*.tf has no row. Egress hosts are the strings in a `domains = [...]`
+#     list (the DNS Firewall allowlist) or in any `*_domains` / `*_hosts` list. A row covers a host
+#     when one of its `egress_hosts` equals it, or is `*.<suffix>` and the host ends in `.<suffix>`.
+#
+# No contract terms and no prices here: the repository is public. `dpa` is a status only:
+#   to-confirm     not yet confirmed for our account
+#   signed         a DPA is signed or accepted for our account
+#   not-required   no personal or client data reaches the party
+#
+# Each row:
+#   id: aws                   kebab-case, unique
+#   party: ...                the legal party, as the plan names it
+#   service: ...              the product we use
+#   kind: sub-processor       sub-processor | integration | operations | egress-only
+#   role: ...
+#   data_seen: ...            what client or personal data the party can see
+#   client_data: true         whether any client data reaches the party
+#   region: ...
+#   dpa: to-confirm
+#   needed_by: R0             the release that first needs it (R0, R1, R3) or "per integration"
+#   egress_hosts: []          hosts our network reaches for this party
+#   references: [...]
+
+rows:
+  - id: aws
+    party: Amazon Web Services
+    service: AWS (incl. Bedrock, SES, KMS, S3, RDS; Textract later, P-32)
+    kind: sub-processor
+    role: hosting, storage, model inference, email
+    data_seen: all client data, encrypted; Bedrock processes prompts in the US with no training
+    client_data: true
+    region: us-east-2, us-west-2 (+ us-east-1 for the global edge and Bedrock US Geo routing)
+    dpa: to-confirm
+    needed_by: R0
+    egress_hosts: ["*.amazonaws.com"]
+    references: [ADR-113, ADR-114, ADR-142, DEC-03]
+
+  - id: temporal
+    party: Temporal Technologies
+    service: Temporal Cloud
+    kind: sub-processor
+    role: workflow orchestration
+    data_seen: workflow metadata; payloads are encrypted with our codec before they leave
+    client_data: false
+    region: AWS us-east-2 (to verify)
+    dpa: to-confirm
+    needed_by: R0
+    egress_hosts: ["*.tmprl.cloud"]
+    references: [ADR-017]
+
+  - id: workos
+    party: WorkOS
+    service: WorkOS (AuthKit, SSO)
+    kind: sub-processor
+    role: authentication
+    data_seen: staff and client identities (name, email) and SSO metadata
+    client_data: true
+    region: US (to verify)
+    dpa: to-confirm
+    needed_by: R0
+    egress_hosts: ["api.workos.com"]
+    references: [ADR-029, DEC-22]
+
+  - id: sentry
+    party: Functional Software
+    service: Sentry (US)
+    kind: sub-processor
+    role: error tracking
+    data_seen: scrubbed events only (route, tenant UUID, error type)
+    client_data: false
+    region: US
+    dpa: to-confirm
+    needed_by: R0
+    egress_hosts: ["*.ingest.us.sentry.io"]
+    references: [ADR-022, ADR-154]
+
+  - id: better-stack
+    party: Better Stack
+    service: Better Stack (uptime, status page, on-call)
+    kind: sub-processor
+    role: uptime checks, status page, paging
+    data_seen: none (synthetic checks and alert metadata)
+    client_data: false
+    region: to verify
+    dpa: to-confirm
+    needed_by: R1
+    egress_hosts: ["uptime.betterstack.com"]
+    references: [ADR-154]
+
+  - id: docusign
+    party: DocuSign
+    service: DocuSign eSignature and ID Verification
+    kind: sub-processor
+    role: e-signature and signer identity verification
+    data_seen: signed documents and signer evidence
+    client_data: true
+    region: US account
+    dpa: to-confirm
+    needed_by: R3
+    egress_hosts: []
+    references: []
+
+  - id: microsoft-graph
+    party: Microsoft
+    service: Microsoft Graph
+    kind: integration
+    role: customer-authorised integration
+    data_seen: what the customer authorises, from the customer's own tenant
+    client_data: true
+    region: the customer's tenant
+    dpa: not-required
+    needed_by: per integration
+    egress_hosts: []
+    references: [ADR-040]
+
+  - id: intuit
+    party: Intuit
+    service: QuickBooks Online
+    kind: integration
+    role: customer-authorised integration
+    data_seen: what the customer authorises, from the customer's own company file
+    client_data: true
+    region: vendor
+    dpa: not-required
+    needed_by: per integration
+    egress_hosts: []
+    references: [ADR-040]
+
+  - id: netsuite
+    party: Oracle
+    service: NetSuite
+    kind: integration
+    role: customer-authorised integration
+    data_seen: what the customer authorises, from the customer's own account
+    client_data: true
+    region: vendor
+    dpa: not-required
+    needed_by: per integration
+    egress_hosts: []
+    references: [ADR-040]
+
+  - id: xero
+    party: Xero
+    service: Xero
+    kind: integration
+    role: customer-authorised integration
+    data_seen: what the customer authorises, from the customer's own organisation
+    client_data: true
+    region: vendor
+    dpa: not-required
+    needed_by: per integration
+    egress_hosts: []
+    references: [ADR-040]
+
+  - id: sage
+    party: Sage
+    service: Sage
+    kind: integration
+    role: customer-authorised integration
+    data_seen: what the customer authorises, from the customer's own account
+    client_data: true
+    region: vendor
+    dpa: not-required
+    needed_by: per integration
+    egress_hosts: []
+    references: [ADR-040]
+
+  - id: wolters-kluwer
+    party: Wolters Kluwer
+    service: Wolters Kluwer tax and accounting products
+    kind: integration
+    role: customer-authorised integration
+    data_seen: what the customer authorises, from the customer's own account
+    client_data: true
+    region: vendor
+    dpa: not-required
+    needed_by: per integration
+    egress_hosts: []
+    references: [ADR-040]
+
+  - id: anthropic
+    party: Anthropic
+    service: Anthropic API (direct)
+    kind: operations
+    role: evaluation runs only (staging)
+    data_seen: none (synthetic data only)
+    client_data: false
+    region: US
+    dpa: not-required
+    needed_by: R0
+    egress_hosts: ["api.anthropic.com"]
+    references: [ADR-113]
+
+  - id: github
+    party: GitHub
+    service: GitHub (source, CI)
+    kind: operations
+    role: Accrued's own source control and CI
+    data_seen: none
+    client_data: false
+    region: US
+    dpa: not-required
+    needed_by: R0
+    egress_hosts: []
+    references: []
+
+  - id: drata
+    party: Drata
+    service: Drata
+    kind: operations
+    role: Accrued's own compliance programme
+    data_seen: none
+    client_data: false
+    region: US
+    dpa: not-required
+    needed_by: R0
+    egress_hosts: []
+    references: [DEC-26]
+
+  - id: clamav
+    party: ClamAV project (Cisco Talos)
+    service: ClamAV signature database
+    kind: egress-only
+    role: malware signature downloads for the scanner
+    data_seen: none (downloads only)
+    client_data: false
+    region: global mirror
+    dpa: not-required
+    needed_by: R0
+    egress_hosts: ["database.clamav.net"]
+    references: [ADR-153]
