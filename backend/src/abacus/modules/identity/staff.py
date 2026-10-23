@@ -176,6 +176,8 @@ async def resend(ctx: AuthContext, invitation_id: UUID) -> None:
         if row is None or row["status"] != "pending":
             raise NotFound("staff_invitation")
         await extend_staff_invitation(tx.session, invitation_id, INVITATION_DAYS)
+        # SPEC-024 AC-3 (as SPEC-015 AC-10): the earlier link ends now, not at the next delivery.
+        await set_staff_token_hash(tx.session, invitation_id, None)
         tx.record("staff_invitation.resent", target=Target("staff_invitation", invitation_id))
         tx.emit(StaffInvitationIssued(invitation_id=invitation_id))
 

@@ -41,7 +41,12 @@ export function EngagementRecords({
   });
   if (setup.isPending) return <Skeleton className="h-40" />;
   if (setup.isError) {
-    return (
+    // SPEC-025 AC-9: not allowed is its own state, not a failure to load.
+    return isForbidden(setup.error) ? (
+      <Alert title="Not available">
+        Acceptance, independence and the letter are for the engagement&apos;s team.
+      </Alert>
+    ) : (
       <Alert title="Couldn't load acceptance and independence">{errorMessage(setup.error)}</Alert>
     );
   }
@@ -302,6 +307,9 @@ function IndependencePanel({
         >{`${String(confirmed)} of ${String(data.confirmations.length)} confirmed`}</StatusPill>
       }
     >
+      {data.confirmations.length === 0 && (
+        <p className="text-body text-ink-3">No one on the team has been asked yet.</p>
+      )}
       <ul aria-label="Independence confirmations" className="flex flex-col gap-1 text-body">
         {data.confirmations.map((c) => (
           <li key={c.user_id} className="flex flex-wrap items-center justify-between gap-2">

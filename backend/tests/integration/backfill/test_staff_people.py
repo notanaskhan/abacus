@@ -500,3 +500,90 @@ async def test_ac4_a_role_outside_the_three_firm_roles_is_refused(
     )
     assert response.status_code == 422, response.text
     assert await firm.membership(pat.user_id) == ("practice_leader", "active")
+
+
+# --- Q-03-T006 additions (ac-test-author: ayushkbhatia) -----------------------------------------
+# SPEC-024 AC-3 "resend and revoke behave as client invitations do", and the ADR P-10 role
+# catalogue (DEC-21): `security_admin` joins the three SPEC-024 firm roles.
+
+
+async def test_ac3_resend_ends_the_old_link_at_once(firm: Firm) -> None:
+    """A resent invitation's earlier link stops working when it is resent, not later when the new
+    email happens to be delivered (as a client invitation's does, SPEC-015 AC-10)."""
+    invitation_id = await firm.invite("pat@example.test")
+    old = await firm.token(invitation_id)
+    resent = await firm.net.call(
+        "POST", f"/v1/firm/staff/invitations/{invitation_id}/resend", firm.admin
+    )
+    assert resent.status_code == 200, resent.text
+    stale, _ = await firm.accept("pat@example.test", old)  # before any new link is issued
+    assert stale.status_code == 404
+    assert stale.json() == NOT_FOUND
+    assert await firm.status(invitation_id) == "pending"
+    fresh, _ = await firm.accept("pat@example.test", await firm.token(invitation_id))
+    assert fresh.status_code == 200, fresh.text
+
+
+_P10 = pytest.mark.xfail(
+    strict=True,
+    reason="P-10 (DEC-21) adds security_admin to the firm roles, but the /v1/firm/staff models "
+    "still allow only the three SPEC-024 roles: listing such a member answers 500 and inviting "
+    "or changing to it 422; the fix changes the API contract (make generate); "
+    "recorded in work/tasks/TASK-992-s6-backfill-suites.md (#PRB)",
+)
+
+
+async def test_ac3_a_security_admin_does_not_manage_people(firm: Firm, seed: Seeder) -> None:
+    """P-10: `security_admin` is a firm role, but people stay `firm.manage_users` (firm admin)."""
+    security = await seed.person(firm.tenant_id, "security_admin")
+    invitation_id = await firm.invite("pending@example.test")
+    before = await seed.actions(firm.tenant_id)
+    for method, path, body in (
+        ("GET", "/v1/firm/staff", None),
+        ("POST", "/v1/firm/staff/invitations", {"email": "x@example.test", "firm_role": None}),
+        ("POST", f"/v1/firm/staff/invitations/{invitation_id}/revoke", None),
+        ("PUT", f"/v1/firm/staff/{firm.admin.user_id}/role", {"firm_role": None}),
+        ("POST", f"/v1/firm/staff/{firm.admin.user_id}/revoke", None),
+    ):
+        response = await firm.net.call(method, path, security, body=body)
+        assert response.status_code == 403, (method, path, response.text)
+        assert response.json() == FORBIDDEN
+    assert await seed.actions(firm.tenant_id) == before
+    assert await firm.status(invitation_id) == "pending"
+
+
+@_P10
+async def test_ac4_a_firm_with_a_security_admin_still_lists_its_people(
+    firm: Firm, seed: Seeder
+) -> None:
+    """P-10: a member holding the catalogue's `security_admin` is listed with that role."""
+    security = await seed.person(firm.tenant_id, "security_admin")
+    listed = await firm.net.call("GET", "/v1/firm/staff", firm.admin)
+    assert listed.status_code == 200, listed.text
+    roles = {m["user_id"]: m["firm_role"] for m in listed.json()["members"]}
+    assert roles[str(security.user_id)] == "security_admin"
+
+
+@_P10
+async def test_ac3_an_administrator_invites_a_security_admin(firm: Firm, seed: Seeder) -> None:
+    """P-10: an invitation may carry any firm role of the catalogue, `security_admin` included."""
+    invitation_id = await firm.invite("sec@example.test", "security_admin")
+    accepted, subject = await firm.accept("sec@example.test", await firm.token(invitation_id))
+    assert accepted.status_code == 200, accepted.text
+    who = await _person_of(seed, firm.tenant_id, subject)
+    assert await firm.membership(who.user_id) == ("security_admin", "active")
+
+
+@_P10
+async def test_ac4_an_administrator_changes_a_member_to_security_admin(
+    firm: Firm, seed: Seeder, net: Net
+) -> None:
+    pat = await _member(firm, seed, "practice_leader")
+    changed = await net.call(
+        "PUT",
+        f"/v1/firm/staff/{pat.user_id}/role",
+        firm.admin,
+        body={"firm_role": "security_admin"},
+    )
+    assert changed.status_code == 200, changed.text
+    assert await firm.membership(pat.user_id) == ("security_admin", "active")

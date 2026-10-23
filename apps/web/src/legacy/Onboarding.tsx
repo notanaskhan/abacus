@@ -5,7 +5,7 @@ import {
   onboardingOptions,
   onboardingQueryKey,
 } from "@abacus/api-client/query";
-import { Button, Panel, StatusPill } from "@abacus/ui";
+import { Alert, Button, Panel, Skeleton, StatusPill } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { type JSX, useState } from "react";
@@ -76,7 +76,17 @@ export function Onboarding({ always = false }: { always?: boolean }): JSX.Elemen
   };
   const acknowledge = useMutation({ ...acknowledgeStepMutation(), ...after });
   const dismiss = useMutation({ ...dismissOnboardingMutation(), ...after });
-  if (state.data === undefined) return null; // not a firm administrator, or still loading
+  if (state.data === undefined) {
+    // The engagements-page card stays out of the way; the checklist page (SPEC-024 AC-8) shows
+    // its loading, not-allowed and error states.
+    if (!always) return null; // not a firm administrator, or still loading
+    if (state.isPending) return <Skeleton className="h-48" />;
+    return isForbidden(state.error) ? (
+      <Alert title="Not available">The checklist is for the firm&apos;s administrators.</Alert>
+    ) : (
+      <Alert title="Couldn't load the checklist">{errorMessage(state.error)}</Alert>
+    );
+  }
   const { steps, complete, dismissed } = state.data;
   if (!always && (complete || dismissed)) return null;
   const done = steps.filter((s) => s.done).length;
