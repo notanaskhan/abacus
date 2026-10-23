@@ -7,9 +7,10 @@ from collections.abc import Sequence
 from datetime import date, datetime
 from uuid import UUID
 
-from sqlalchemy import func, insert, select, text, update
+from sqlalchemy import exists, func, insert, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
 from abacus.modules.evidence.models import (
     EvidenceItem,
@@ -177,13 +178,17 @@ async def list_review_state(
         .scalars()
         .all()
     )
+    # P-01-T13: decided means an effective decision (the highest row is odd, not an undo).
     decided = set(
         (
             await session.execute(
-                select(ReviewDecision.evidence_version_id).where(
+                select(ReviewDecision.evidence_version_id)
+                .where(
                     ReviewDecision.engagement_id == engagement_id,
                     visible(ctx, "review.read", ReviewDecision.engagement_id),
                 )
+                .group_by(ReviewDecision.evidence_version_id)
+                .having(func.max(ReviewDecision.decision_seq) % 2 == 1)
             )
         )
         .scalars()
@@ -205,11 +210,27 @@ async def list_review_state(
     return versions, decided, taken
 
 
-async def decision_for(session: AsyncSession, version_id: UUID) -> ReviewDecision | None:
+async def latest_decision_row(session: AsyncSession, version_id: UUID) -> ReviewDecision | None:
+    """The version's highest-numbered row (a decision or an undo), if any (P-01-T13)."""
     return (
         await session.execute(
-            select(ReviewDecision).where(ReviewDecision.evidence_version_id == version_id)
+            select(ReviewDecision)
+            .where(ReviewDecision.evidence_version_id == version_id)
+            .order_by(ReviewDecision.decision_seq.desc())
+            .limit(1)
         )
+    ).scalar_one_or_none()
+
+
+async def decision_for(session: AsyncSession, version_id: UUID) -> ReviewDecision | None:
+    """The version's effective decision: its highest-numbered row when that is not an undo."""
+    latest = await latest_decision_row(session, version_id)
+    return latest if latest is not None and latest.decision != "undone" else None
+
+
+async def decision_by_id(session: AsyncSession, decision_id: UUID) -> ReviewDecision | None:
+    return (
+        await session.execute(select(ReviewDecision).where(ReviewDecision.id == decision_id))
     ).scalar_one_or_none()
 
 
@@ -384,13 +405,22 @@ async def item_versions_with_decisions(
     this item, for a caller that authorised `evidence.read` on it (SPEC-021; LIST_EXEMPT)."""
     if not version_ids:
         return []
+    later = aliased(ReviewDecision)
+    newest_seq = (
+        select(func.max(later.decision_seq))
+        .where(later.evidence_version_id == EvidenceVersion.id)
+        .scalar_subquery()
+    )
     rows = await session.execute(
         select(EvidenceVersion, EvidenceItem, ReviewDecision)
         .join(EvidenceItem, EvidenceItem.id == EvidenceVersion.evidence_item_id)
         .outerjoin(
             ReviewDecision,
             (ReviewDecision.evidence_version_id == EvidenceVersion.id)
-            & (ReviewDecision.request_item_id == request_item_id),
+            & (ReviewDecision.request_item_id == request_item_id)
+            # P-01-T13: the effective decision only (an undone one is no decision).
+            & (ReviewDecision.decision_seq == newest_seq)
+            & (ReviewDecision.decision != "undone"),
         )
         .where(EvidenceVersion.id.in_(version_ids))
         .order_by(EvidenceVersion.created_at.desc(), EvidenceVersion.id)
@@ -781,11 +811,19 @@ async def decisions_for_screenings(
     """Oldest first (LIST_EXEMPT: for the run trace, after authorising on the engagement)."""
     if not screening_result_ids:
         return []
+    undo = aliased(ReviewDecision)
     return (
         (
             await session.execute(
                 select(ReviewDecision)
-                .where(ReviewDecision.screening_result_id.in_(screening_result_ids))
+                .where(
+                    ReviewDecision.screening_result_id.in_(screening_result_ids),
+                    # P-01-T13: an undone decision is no decision on the proposal.
+                    ~exists().where(
+                        undo.tenant_id == ReviewDecision.tenant_id,
+                        undo.undoes_decision_id == ReviewDecision.id,
+                    ),
+                )
                 .order_by(ReviewDecision.created_at)
             )
         )

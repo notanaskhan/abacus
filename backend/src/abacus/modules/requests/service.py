@@ -37,6 +37,7 @@ from abacus.modules.requests.events import (
     RequestItemClassified,
     RequestItemCreated,
     RequestItemDocumentKindChanged,
+    RequestItemStatusChanged,
 )
 from abacus.modules.requests.guidance import (
     MAX_LENGTH,
@@ -465,6 +466,31 @@ async def move_after_review(tx: UnitOfWork, request_item_id: UUID, to: str) -> N
     if not await set_status(tx.session, request_item_id, allowed_from=_REVIEWABLE, to=to):
         raise ItemNotFulfillable(item.status)
     tx.record(f"request_item.{to}", target=Target("request_item", request_item_id))
+
+
+async def reopen_after_undo(tx: UnitOfWork, request_item_id: UUID, decided_to: str) -> None:
+    """Put an item back to `uploaded` after its review decision was undone (P-01-T13; DEC-24),
+    inside the Undo's unit of work. The caller has authorised the Undo and locked the item
+    (`review_targets`). `decided_to` is where the decision moved it; a reject of a firm-only item
+    stays a draft (0071), so `draft` is accepted then too. Audited `request_item.uploaded`, and
+    `request_item.status_changed` is emitted."""
+    if decided_to not in _AFTER_REVIEW:
+        raise ValueError(f"a review decision never moved an item to {decided_to!r}")
+    item = await item_ref(tx, request_item_id)
+    if item.status == "uploaded":
+        return
+    allowed = (decided_to, "draft") if decided_to == "requested" else (decided_to,)
+    if not await set_status(tx.session, request_item_id, allowed_from=allowed, to="uploaded"):
+        raise ItemNotFulfillable(item.status)
+    tx.record("request_item.uploaded", target=Target("request_item", request_item_id))
+    tx.emit(
+        RequestItemStatusChanged(
+            request_item_id=request_item_id,
+            engagement_id=item.engagement_id,
+            from_status=item.status,
+            to_status="uploaded",
+        )
+    )
 
 
 @dataclass(frozen=True)

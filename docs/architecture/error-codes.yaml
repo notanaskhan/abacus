@@ -876,6 +876,7 @@ codes:
   undo_window_closed:
     status: 409
     raised_by:
+    - abacus.modules.evidence.service.UndoWindowClosed
     - abacus.modules.requests.binders.UndoWindowClosed
     summary: Undo is possible for 10 seconds after a publish, and only once.
   unknown_engagement_type:

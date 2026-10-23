@@ -66,6 +66,8 @@ from abacus.modules.evidence.service import (
     Provenance,
     ScreeningDecision,
     StoredObject,
+    UndoneView,
+    UndoWindowClosed,
     add_version,
     decisions_on_screenings,
     engagement_snapshots,
@@ -75,6 +77,7 @@ from abacus.modules.evidence.service import (
     register_proposal_source,
     release_member_assignments,
     stage_content,
+    undo_review_decision,
     version_view,
 )
 from abacus.modules.evidence.storage import (
@@ -144,6 +147,8 @@ __all__ = [
     "StoredRecord",
     "TrialBalance",
     "TrialBalanceLine",
+    "UndoWindowClosed",
+    "UndoneView",
     "UploadChecksRecorded",
     "UploadInput",
     "UploadProcessing",
@@ -173,6 +178,7 @@ __all__ = [
     "stage_content",
     "stale_pdfs",
     "suggest_by_name",
+    "undo_review_decision",
     "upload",
     "version_view",
     "worth_matching",

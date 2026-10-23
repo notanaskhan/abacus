@@ -46,6 +46,7 @@ from abacus.modules.requests.service import (
     overdue_for,
     read_item,
     read_item_versions,
+    reopen_after_undo,
     request_items_for,
     review_targets,
 )
@@ -119,6 +120,7 @@ __all__ = [
     "register_binder_tag",
     "register_comment_scope_check",
     "register_live_facts",
+    "reopen_after_undo",
     "request_items_for",
     "review_targets",
     "router",

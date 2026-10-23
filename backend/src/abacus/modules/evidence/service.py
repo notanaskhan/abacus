@@ -16,7 +16,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Final, Literal
 from uuid import UUID, uuid4
@@ -24,6 +24,7 @@ from uuid import UUID, uuid4
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from abacus.kernel import clock
 from abacus.kernel.db import TenantContext, tenant_session, transaction_context
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, ServiceUnavailable
 from abacus.kernel.logging import get_logger
@@ -36,6 +37,7 @@ from abacus.modules.evidence.models import EvidenceVersion
 from abacus.modules.evidence.repository import (
     assignment_for,
     clear_assignment,
+    decision_by_id,
     decision_for,
     decisions_for_screenings,
     get_item,
@@ -43,6 +45,7 @@ from abacus.modules.evidence.repository import (
     insert_decision,
     insert_item,
     insert_version,
+    latest_decision_row,
     list_review_state,
     list_versions,
     next_version_no,
@@ -68,6 +71,7 @@ from abacus.modules.requests.api import (
     ReviewTarget,
     fulfilled_versions,
     move_after_review,
+    reopen_after_undo,
     review_targets,
 )
 
@@ -352,8 +356,16 @@ _ITEM_AFTER: dict[str, str] = {
     "reject": "requested",  # the database keeps a firm-only item in draft
     "send_back": "returned",
 }
-_ONE_DECISION = "review_decisions_once"
+# P-01-T13 (0117): one row per number per version, in order, decisions odd: any of these refuses a
+# second decision while one is effective.
+_ONE_DECISION: Final = frozenset(
+    {"review_decisions_seq_once", "review_decisions_seq_next", "review_decisions_undo_parity"}
+)
+# ... and these a second Undo, or one the trigger finds too late or not on the effective decision.
+_UNDO_CLOSED: Final = frozenset({"review_decisions_undone_once", "review_decisions_undo_window"})
 _CHECK_VIOLATION = "23514"
+# DEC-24 / ADR-161 clause 6: Undo within 10 seconds of the decision, on `kernel.clock`.
+UNDO_WINDOW: Final = timedelta(seconds=10)
 _log = get_logger(__name__)
 _decisions = meter(__name__).create_counter(
     "abacus.review.decisions", description="Review decisions by kind and reason or agreement"
@@ -407,6 +419,13 @@ class ProposalChanged(DomainConflict):
     code = "proposal_changed"
 
 
+class UndoWindowClosed(DomainConflict):
+    """Undo is possible for 10 seconds after a decision, by the person who made it, only while it
+    is the version's effective decision, and only once (DEC-24)."""
+
+    code = "undo_window_closed"
+
+
 class InvalidReason(DomainInvalid):
     """A reason code missing, unknown, retired, not for this decision, or `other` without a
     note."""
@@ -440,6 +459,17 @@ class DecisionView:
     decision: str
     reason_code: str | None
     corrects_proposal: bool
+    item_status: str
+
+
+@dataclass(frozen=True)
+class UndoneView:
+    """The compensating row an Undo wrote (P-01-T13)."""
+
+    id: UUID
+    undoes_decision_id: UUID
+    evidence_version_id: UUID
+    request_item_ids: list[UUID]
     item_status: str
 
 
@@ -647,6 +677,7 @@ async def decide(
                 raise ProposalChanged
             corrects = _corrects(decision, proposal)
             item_ids = [t.request_item_id for t in targets]
+            latest = await latest_decision_row(tx.session, version_id)
             await insert_decision(
                 tx.session,
                 values={
@@ -663,6 +694,8 @@ async def decide(
                     # The session's actor: the database checks the row against it (0015).
                     "actor_kind": ctx.tenant.actor_kind,
                     "actor_id": ctx.tenant.actor_id,
+                    # P-01-T13: after an undone decision, the next odd number (0117).
+                    "decision_seq": (latest.decision_seq if latest is not None else 0) + 1,
                 },
             )
             to = _ITEM_AFTER[decision]
@@ -685,7 +718,7 @@ async def decide(
             )
     except IntegrityError as exc:
         constraint = getattr(exc.orig, "constraint_name", None)
-        if constraint == _ONE_DECISION:
+        if constraint in _ONE_DECISION:
             raise AlreadyDecided from None
         state = getattr(exc.orig, "sqlstate", None)
         if state == _CHECK_VIOLATION and constraint is None:  # the reason-code trigger
@@ -706,6 +739,101 @@ async def decide(
         corrects_proposal=corrects,
     )
     return DecisionView(decision_id, version_id, item_ids, decision, reason_code, corrects, to)
+
+
+def _live_human(ctx: AuthContext, action: str) -> None:
+    """ADR-005, INV-1: only a person, in a request they are making themself, never a support
+    session; workers, agents and scripts never serve a request, whatever context they hold."""
+    if (
+        not isinstance(ctx, AuthContext)  # pyright: ignore[reportUnnecessaryIsInstance] -- ADR-005 at runtime too
+        or ctx.tenant.actor_kind != "human"
+        or ctx.is_support
+        or not serving_request()
+    ):
+        raise Forbidden(action, "role")
+
+
+async def undo_review_decision(
+    tx: UnitOfWork, ctx: AuthContext, engagement_id: UUID, decision_id: UUID
+) -> UndoneView:
+    """Undo a review decision inside the caller's unit of work (P-01-T13; DEC-24, ADR-161
+    clause 6): a compensating `undone` row, the original untouched. P-04-T29's proposal Undo
+    calls this when its approval wrote a review decision.
+
+    Only the person who decided, within 10 s on `kernel.clock`, and only while it is the
+    version's effective decision; else 409 `undo_window_closed`. The person must still hold
+    `review_decision.undo` and the decision's own action (`evidence.accept` or
+    `evidence.reject`). The version's items go back to `uploaded`, so it can be decided again.
+    The database checks the same rules again (0117). Audited `review_decision.undone`."""
+    _live_human(ctx, "review_decision.undo")
+    ref = await lock_ref(tx, engagement_id)
+    resource = ref.resource()
+    await authorise(ctx, "review_decision.undo", resource)
+    original = await decision_by_id(tx.session, decision_id)
+    if original is None or original.engagement_id != engagement_id:
+        raise NotFound("review_decision")
+    if original.decision == "undone":
+        raise UndoWindowClosed
+    await authorise(ctx, _DECISION_ACTION[original.decision], resource)
+    if (original.actor_kind, original.actor_id) != (ctx.tenant.actor_kind, ctx.tenant.actor_id):
+        raise Forbidden("review_decision.undo", "role")  # only the person who decided
+    targets = await review_targets(tx, original.evidence_version_id)  # locks the items
+    latest = await latest_decision_row(tx.session, original.evidence_version_id)
+    if latest is None or latest.id != original.id:
+        raise UndoWindowClosed  # undone already, or decided again since
+    if await clock.now(ctx.tenant) >= original.created_at + UNDO_WINDOW:
+        raise UndoWindowClosed
+    undo_id = uuid4()
+    try:
+        await insert_decision(
+            tx.session,
+            values={
+                "id": undo_id,
+                "tenant_id": ctx.tenant_id,
+                "engagement_id": engagement_id,
+                "evidence_version_id": original.evidence_version_id,
+                "request_item_id": original.request_item_id,
+                "decision": "undone",
+                "reason_code": None,
+                "note": None,
+                "screening_result_id": None,
+                "corrects_proposal": False,
+                "actor_kind": ctx.tenant.actor_kind,
+                "actor_id": ctx.tenant.actor_id,
+                "decision_seq": original.decision_seq + 1,
+                "undoes_decision_id": original.id,
+            },
+        )
+    except IntegrityError as exc:
+        if getattr(exc.orig, "constraint_name", None) in _UNDO_CLOSED | _ONE_DECISION:
+            raise UndoWindowClosed from None
+        raise
+    item_ids = [t.request_item_id for t in targets]
+    for item_id in item_ids:
+        await reopen_after_undo(tx, item_id, _ITEM_AFTER[original.decision])
+    tx.record(
+        "review_decision.undone",
+        target=Target("review_decision", undo_id),
+        after=Ref(
+            undoes_decision_id=original.id, evidence_version_id=original.evidence_version_id
+        ),
+    )
+    return UndoneView(undo_id, original.id, original.evidence_version_id, item_ids, "uploaded")
+
+
+async def undo_decision(ctx: AuthContext, engagement_id: UUID, decision_id: UUID) -> UndoneView:
+    """`POST …/review-decisions/{decision_id}/undo` (SHL-04c; AC 3.1.4)."""
+    _live_human(ctx, "review_decision.undo")
+    try:
+        async with uow(ctx.tenant) as tx:
+            view = await undo_review_decision(tx, ctx, engagement_id, decision_id)
+    except IntegrityError as exc:  # raised at commit by a deferred check, if any
+        if getattr(exc.orig, "constraint_name", None) in _UNDO_CLOSED | _ONE_DECISION:
+            raise UndoWindowClosed from None
+        raise
+    _decisions.add(1, {"outcome": "undone", "reason": "undo"})
+    _log.info("review.undone", evidence_version_id=view.evidence_version_id)
+    return view
 
 
 async def engagement_snapshots(tenant: TenantContext, engagement_id: UUID) -> list[UUID]:

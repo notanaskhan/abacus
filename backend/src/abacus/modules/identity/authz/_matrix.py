@@ -1239,6 +1239,15 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "firm_setting(seniors_can_accept)",
         "agent": "deny",
     },
+    "review_decision.undo": {
+        "independence": "required",
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "firm_setting(seniors_can_accept)",
+        "staff": "firm_setting(staff_can_accept_evidence)",
+        "agent": "deny",
+        "system": "deny",
+    },
     "review_note.clear": {
         "engagement_partner": "allow",
         "manager": "allow",

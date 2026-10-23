@@ -22,6 +22,8 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "report.released",
         "review.decided",
         "review.released",
+        "review_decision.created",
+        "review_decision.undone",
         "risk.approved",
         "sample.approved",
         "sign_off.recorded",
