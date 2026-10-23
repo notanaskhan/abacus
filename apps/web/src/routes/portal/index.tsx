@@ -6,7 +6,14 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import { type JSX, Suspense, lazy, useEffect, useState } from "react";
-import { LANDING_PATH, portalAccessToken } from "../../app-core/portal-session";
+import {
+  ensurePortalSession,
+  goToSignIn,
+  portalAccessToken,
+  returnFrom,
+  setSignInNavigator,
+} from "../../app-core/auth/bff";
+import { LANDING_PATH } from "../../app-core/portal-session";
 
 // The client portal's route tree (P-08-T07; P-08 §5.1; DEC-59): its own entry (portal.html), its
 // own origin root, no `/client` prefix. Sign-in and invitation acceptance are public; home,
@@ -57,7 +64,8 @@ export function takeLinkFromFragment(location: Location = window.location): stri
 }
 
 // The portal's paths are not the firm router's registered ones, so it moves through the router's
-// history by path rather than the typed `navigate`.
+// history by path rather than the typed `navigate`. A signed-in person goes back to the safe
+// `?return=` an expired session left (P-08-T11), else to their role's landing.
 function SignInPage(): JSX.Element {
   const { history } = useRouter();
   const [link] = useState(() => takeLinkFromFragment());
@@ -65,19 +73,28 @@ function SignInPage(): JSX.Element {
     <SignIn
       {...(link === undefined ? {} : { opening: { email: "", linkToken: link } })}
       onSignedIn={(landing) => {
-        history.push(LANDING_PATH[landing]);
+        history.push(returnFrom(window.location.search) ?? LANDING_PATH[landing]);
       }}
     />
   );
 }
 
-/** A signed-in area: without a session the page goes to sign-in with its own path to return to. */
+/** A signed-in area: the held token, or one refreshed from the host cookie (a reload); without a
+ * session the page goes to sign-in with its own path and query to return to (P-08-T11). */
 function Area({ area }: { area: string }): JSX.Element | null {
-  const { history } = useRouter();
-  const signedIn = portalAccessToken() !== null || import.meta.env.VITE_FIXTURES === "1";
+  const [signedIn, setSignedIn] = useState(() => portalAccessToken() !== null);
   useEffect(() => {
-    if (!signedIn) history.push(`/sign-in?return=${encodeURIComponent(window.location.pathname)}`);
-  }, [signedIn, history]);
+    if (signedIn) return undefined;
+    let live = true;
+    void ensurePortalSession().then((ok) => {
+      if (!live) return;
+      if (ok) setSignedIn(true);
+      else goToSignIn();
+    });
+    return () => {
+      live = false;
+    };
+  }, [signedIn]);
   if (!signedIn) return null;
   return area === "Home" ? <Home scopeId={null} /> : <Shell area={area} />;
 }
@@ -99,5 +116,9 @@ export const portalTree = rootRoute.addChildren([
 ]);
 
 export function createPortalRouter() {
-  return createRouter({ routeTree: portalTree });
+  const router = createRouter({ routeTree: portalTree });
+  setSignInNavigator((to) => {
+    router.history.push(to);
+  });
+  return router;
 }

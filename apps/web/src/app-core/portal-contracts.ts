@@ -1,12 +1,11 @@
-// Draft types for the portal's pre-session family and branding (P-08-T09; build-screen-from-
-// handoff §0). These routes are not served yet (DEC-139: they need an ADR-152 public-route entry,
-// P-08 OQ-2), so the OpenAPI document has no schema for them and the generated client no type or
-// function. The shapes are copied field for field from the backend's contract models, which the
+// The portal's pre-session and branding types (P-08-T09; build-screen-from-handoff §0). Start,
+// verify and resend re-export the generated types now that P-08-T10 serves them (P-08-T11). The
+// rest are still drafts copied field for field from the backend's contract models, which the
 // P-08-T02 contract tests hold (backend/src/abacus/modules/identity/portal_contract.py,
-// backend/src/abacus/modules/portal/contract.py `PortalBrandingOut`). When P-08-T05 and T10 serve
-// the routes and `make generate` runs, these drafts are deleted for the generated types and the
-// calls in domain/portal/sign-in.ts move to the generated functions (docs/screens/POR-01.md,
-// Open gaps). In app-core so the portal domain, the portal entry and the fixtures share them.
+// backend/src/abacus/modules/portal/contract.py `PortalBrandingOut`): branding moves to the
+// generated type with P-08-T05's follow-up, links/renew and invitation preview when P-08-T21 and
+// T18 serve them (docs/screens/POR-01.md, Open gaps). In app-core so the portal domain, the portal
+// entry and the fixtures share them.
 
 import type { MePortalOut } from "@abacus/api-client";
 
@@ -26,36 +25,14 @@ export interface PortalBrandingOut {
   maintenance_banner?: string | null;
 }
 
-/** `POST /v1/portal/auth/start`: at most one of the two tokens. */
-export interface PortalSignInStartIn {
-  email: string;
-  link_token?: string | null;
-  invitation_token?: string | null;
-}
-
-/** Always 202 with this shape, for any email. */
-export interface PortalSignInStartOut {
-  challenge_id: string;
-  code_expires_at: string;
-  resend_available_at: string;
-}
-
-export interface PortalSignInVerifyIn {
-  challenge_id: string;
-  code: string;
-}
-
-export interface PortalSignInVerifyOut {
-  state: "signed_in" | "mfa_required" | "mfa_setup_required";
-  access_token?: string | null;
-  expires_in?: number | null;
-  landing?: PortalLanding | null;
-  mfa_token?: string | null;
-}
-
-export interface PortalSignInResendIn {
-  challenge_id: string;
-}
+// The pre-session sign-in shapes are generated since P-08-T10 serves them (P-08-T11).
+export type {
+  PortalSignInResendIn,
+  PortalSignInStartIn,
+  PortalSignInStartOut,
+  PortalSignInVerifyIn,
+  PortalSignInVerifyOut,
+} from "@abacus/api-client";
 
 export interface PortalLinkRenewIn {
   link_token: string;

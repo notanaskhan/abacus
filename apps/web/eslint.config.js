@@ -26,6 +26,7 @@ const NETWORK_GLOBALS = [
 // clock.tsx), so it has no fixture clock to read. Recorded in packages/ui/src/tokens/DECISIONS.md.
 const LEGACY_CLOCK = [
   "src/app-core/auth/session.ts", // access-token lifetime against the device's clock, not business time
+  "src/app-core/auth/bff.ts", // the portal's access-token lifetime (P-08-T11), as session.ts
   "src/legacy/Board.tsx", // elapsed time of a polling window for a screening run
   "src/legacy/CheckResults.tsx", // elapsed time of a polling window after an upload
   "src/testing/support.tsx", // test helper: backdates a sign-in

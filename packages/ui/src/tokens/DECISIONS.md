@@ -65,8 +65,8 @@ and `ratio`, sizes through `bytes`). `src/screens/amounts.ts` stays as a thin wr
 `format.ts` for the trial balance and working-paper screens; it keeps their zero as `0.00`, not an
 em dash, which is those screens' decision to change.
 
-Four files stay in `LEGACY_CLOCK` in `apps/web/eslint.config.js`, each with its reason there: they
-read `Date.now()` for token lifetime or an elapsed polling window, which is not business time.
+Five files stay in `LEGACY_CLOCK` in `apps/web/eslint.config.js`, each with its reason there (the
+portal auth client, `app-core/auth/bff.ts`, joined with P-08-T11): they read `Date.now()` for token lifetime or an elapsed polling window, which is not business time.
 Business time comes from `useNow`, `useToday` and `useFormat`, fed by `ClockProvider`.
 
 ### Status kit (F-05-T12)
