@@ -18,7 +18,12 @@ from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Target, uow
 from abacus.modules.engagements.service import client_of, get_ref, lock_ref
 from abacus.modules.identity.api import AuthContext, ScopeFacts, authorise
-from abacus.modules.organisations.api import attest_client_of, client_exists, contact_client
+from abacus.modules.organisations.api import (
+    attest_client_of,
+    client_exists,
+    contact_client,
+    contact_facts,
+)
 
 Designation = Literal[
     "approver_of_record",
@@ -88,6 +93,20 @@ async def engagement_contacts(ctx: AuthContext, engagement_id: UUID) -> list[Eng
     await authorise(ctx, "client_contact.read", ref.resource())
     async with tenant_session(ctx.tenant) as session:
         return await designations_of(session, engagement_id)
+
+
+async def client_contact_names(
+    tenant: TenantContext, engagement_id: UUID, contact_ids: list[UUID]
+) -> dict[UUID, str]:
+    """P-06-T07 (binder recipients): which of `contact_ids` are the engagement's client's
+    contacts, with their names. Others (another client's, unknown) are left out. For a caller
+    that authorised an action on the engagement."""
+    client = await client_of(tenant, engagement_id)
+    if client is None or not contact_ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        found = await contact_facts(session, contact_ids)
+    return {cid: f.display_name for cid, f in found.items() if f.client_id == client}
 
 
 async def attest_of(tenant: TenantContext, engagement_id: UUID) -> bool | None:

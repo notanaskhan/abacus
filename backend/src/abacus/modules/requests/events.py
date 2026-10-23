@@ -45,6 +45,45 @@ class RequestItemDocumentKindChanged(DomainEvent):
     engagement_id: Annotated[UUID, classified("internal")]
 
 
+class BinderPublished(DomainEvent):
+    """A person published a binder (P-06-T07). Held by an approval grant until the 10-s Undo
+    window ends (ADR-161, DEC-24): the delivery (P-06-T06) emails each recipient only once the
+    relay has consumed the grant."""
+
+    event_type: ClassVar[str] = "binder.published"
+
+    binder_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+    published_by: Annotated[UUID, classified("internal")]
+    recipient_contact_ids: Annotated[list[UUID], classified("internal")]
+    request_item_ids: Annotated[list[UUID], classified("internal")]
+
+
+class BinderUnpublished(DomainEvent):
+    event_type: ClassVar[str] = "binder.unpublished"
+
+    binder_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+
+
+class BinderMarkedDone(DomainEvent):
+    """The client marked a binder done (Story 1.4): the preparer is told in-app."""
+
+    event_type: ClassVar[str] = "binder.marked_done"
+
+    binder_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    open_count: Annotated[int, classified("internal")]
+
+
+class BinderClosed(DomainEvent):
+    event_type: ClassVar[str] = "binder.closed"
+
+    binder_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+
+
 class CommentMentioned(DomainEvent):
     """People were mentioned in a comment (SPEC-032 AC-5): notifications tells each of them. They
     were checked, when it was posted, to be able to read it."""

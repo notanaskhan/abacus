@@ -7,7 +7,7 @@ risk_zone: red
 related_adrs: [ADR-005, ADR-139, ADR-140, ADR-161, ADR-162]
 related_specs: [SPEC-032, SPEC-042, SPEC-306]
 created: 2026-10-22
-updated: 2026-10-22
+updated: 2026-10-23
 ---
 
 > **Outline.** Written with the C5 v1 stub (P-06-T01, TASK-415). The epic is the source until this
@@ -118,6 +118,7 @@ BND-01, BND-02, SHL-14 screen contracts (`docs/screens/`); flag off shows F-05's
 | AC | Test type | Description |
 |---|---|---|
 | AC-1 to AC-4 | unit (contract) | `backend/tests/contracts/c5_requests_binders/test_c5_stub.py` |
+| AC-5 to AC-9 | integration | `backend/tests/integration/test_binder_lifecycle.py` (P-06-T07); P-06-T17 adds the independent suite |
 | AC-5 to AC-14 | integration | P-06-T17 (independent suite) |
 | AC-15 | integration, workflow replay | P-06-T23 |
 

@@ -5,6 +5,7 @@ from abacus.modules.engagements.api import register_roll_forward_items
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.requests.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.requests.availability import register_available_datasets
+from abacus.modules.requests.binders import SUBSCRIPTIONS, register_binder_close_rule
 from abacus.modules.requests.classification import classify, document_kind
 from abacus.modules.requests.comments import register_comment_scope_check
 from abacus.modules.requests.contract import binders_router, items_router, portal_router
@@ -48,6 +49,10 @@ from abacus.modules.requests.service import (
 # SPEC-025 (TASK-048 D1): last year's items for a roll-forward, and copying the confirmed ones.
 register_roll_forward_items(proposed_items, copy_items)
 
+# P-06-T07: binders close when C1 says their work is finished (the subscriber is in binders.py).
+WORKFLOWS: dict[type, str] = {}
+ACTIVITIES: tuple[object, ...] = ()
+
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
@@ -62,7 +67,10 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 register_engagement_owners(AUDIT_KINDS, audit_owners)
 
 __all__ = [
+    "ACTIVITIES",
     "ROUTERS",
+    "SUBSCRIPTIONS",
+    "WORKFLOWS",
     "DueDatesChanged",
     "FulfilledVersion",
     "FulfilmentRef",
@@ -96,6 +104,7 @@ __all__ = [
     "read_item",
     "read_item_versions",
     "register_available_datasets",
+    "register_binder_close_rule",
     "register_comment_scope_check",
     "request_items_for",
     "review_targets",

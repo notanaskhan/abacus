@@ -151,6 +151,21 @@ async def get_contact(session: AsyncSession, contact_id: UUID) -> Contact | None
     ).scalar_one_or_none()
 
 
+async def contacts_by_id(
+    session: AsyncSession, contact_ids: list[UUID]
+) -> dict[UUID, tuple[UUID, str]]:
+    """Contacts by ID: their client and display name (P-06-T07: a binder's recipients, for a
+    caller that authorised the binder)."""
+    if not contact_ids:
+        return {}
+    rows = await session.execute(
+        select(Contact.id, Contact.client_id, Contact.display_name).where(
+            Contact.id.in_(contact_ids)
+        )
+    )
+    return {r.id: (r.client_id, r.display_name) for r in rows}
+
+
 async def offices_in_firm(session: AsyncSession) -> list[tuple[UUID, str]]:
     """The firm's offices by name (LIST_EXEMPT: firm structure, a filter only, DEC-30)."""
     rows = await session.execute(select(Office.id, Office.name).order_by(Office.name))

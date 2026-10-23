@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import date, datetime
-from typing import Literal
+from typing import Literal, cast
 from uuid import UUID, uuid4
 
 from sqlalchemy import and_, func, insert, or_, select, update
@@ -12,9 +12,11 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.elements import ColumnElement
 
+from abacus.kernel.listing import Position, capped_total, keyset, status_counts
 from abacus.modules.identity.api import AuthContext, visible, visible_items
 from abacus.modules.requests.guidance import Guidance
 from abacus.modules.requests.models import (
+    BinderRecipient,
     ClientItemResponse,
     ClientListDone,
     Comment,
@@ -22,6 +24,7 @@ from abacus.modules.requests.models import (
     CommentRead,
     CommentRedaction,
     Fulfilment,
+    RequestCategory,
     RequestItem,
     RequestList,
 )
@@ -75,7 +78,9 @@ async def insert_request_item(
     document_kind: str | None = None,
     document_kind_source: str | None = None,
     guidance: Guidance | None = None,
+    binder_fields: Mapping[str, object] | None = None,
 ) -> RequestItem:
+    """`binder_fields`: P-06-T05's request fields (title, category, kind, source tag), when set."""
     g = guidance or Guidance()
     return (
         await session.execute(
@@ -100,6 +105,7 @@ async def insert_request_item(
                 effort=g.effort,
                 guidance_source=g.source,
                 guidance_approved_by=g.approved_by,
+                **dict(binder_fields or {}),
             )
             .returning(RequestItem)
         )
@@ -702,3 +708,232 @@ async def search_items(
         .scalars()
         .all()
     )
+
+
+# --- Binders (P-06-T07; C5; DEC-31) --------------------------------------------------------------
+
+
+async def get_binder(
+    session: AsyncSession, binder_id: UUID, *, lock: bool = False
+) -> RequestList | None:
+    """The binder; `lock` holds its row until the transaction ends (one lifecycle move at a
+    time)."""
+    query = select(RequestList).where(RequestList.id == binder_id)
+    if lock:
+        query = query.with_for_update()
+    return (await session.execute(query)).scalar_one_or_none()
+
+
+async def next_part(session: AsyncSession, work_item_id: UUID, kind: str) -> int:
+    """The part a new binder of `kind` on the work item takes: one more than the highest."""
+    highest = await session.scalar(
+        select(func.max(RequestList.part)).where(
+            RequestList.work_item_id == work_item_id, RequestList.kind == kind
+        )
+    )
+    return 1 if highest is None else int(highest) + 1
+
+
+async def insert_binder(session: AsyncSession, **values: object) -> RequestList:
+    return (
+        await session.execute(insert(RequestList).values(**values).returning(RequestList))
+    ).scalar_one()
+
+
+async def set_binder(
+    session: AsyncSession, binder_id: UUID, *, allowed_from: tuple[str, ...], **values: object
+) -> bool:
+    """Change the binder's lifecycle stamps if its status is one of `allowed_from`."""
+    done = await session.execute(
+        update(RequestList)
+        .where(RequestList.id == binder_id, RequestList.status.in_(allowed_from))
+        .values(**values)
+        .returning(RequestList.id)
+    )
+    return done.first() is not None
+
+
+async def binder_categories(session: AsyncSession, binder_id: UUID) -> Sequence[RequestCategory]:
+    """A binder's sections in order, for a caller that authorised the binder (LIST_EXEMPT)."""
+    return (
+        (
+            await session.execute(
+                select(RequestCategory)
+                .where(RequestCategory.request_list_id == binder_id)
+                .order_by(RequestCategory.position, RequestCategory.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def insert_categories(
+    session: AsyncSession, tenant_id: UUID, binder_id: UUID, names: Sequence[str]
+) -> dict[str, UUID]:
+    """The binder's sections, in this order; their ids by name."""
+    if not names:
+        return {}
+    made = await session.execute(
+        insert(RequestCategory)
+        .values(
+            [
+                {"tenant_id": tenant_id, "request_list_id": binder_id, "name": n, "position": p}
+                for p, n in enumerate(names)
+            ]
+        )
+        .returning(RequestCategory.name, RequestCategory.id)
+    )
+    return {name: category_id for name, category_id in made}
+
+
+async def binder_items(session: AsyncSession, binder_id: UUID) -> Sequence[RequestItem]:
+    """Every request of a binder that isn't deleted, oldest first, for a caller that authorised
+    the binder: its counts, its publish and its client preview (LIST_EXEMPT)."""
+    return (
+        (
+            await session.execute(
+                select(RequestItem)
+                .where(RequestItem.request_list_id == binder_id, RequestItem.deleted_at.is_(None))
+                .order_by(RequestItem.created_at, RequestItem.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def list_binder_requests(
+    session: AsyncSession,
+    ctx: AuthContext,
+    binder_id: UUID,
+    category: UUID | None,
+    after: Position | None,
+    limit: int,
+) -> tuple[Sequence[RequestItem], dict[str, int], tuple[int, bool]]:
+    """A keyset page of a binder's requests the reader may see (SPEC-020's client conditions
+    included), oldest first, with the counts per status and the total over the same filter."""
+    query = select(RequestItem).where(
+        RequestItem.request_list_id == binder_id,
+        RequestItem.deleted_at.is_(None),
+        visible_items(
+            ctx,
+            "request_item.read",
+            RequestItem.engagement_id,
+            RequestItem.client_visible,
+            RequestItem.client_assignee_user_id,
+        ),
+    )
+    if category is not None:
+        query = query.where(RequestItem.category_id == category)
+    paged = keyset(
+        query,
+        sort=cast(ColumnElement[object], RequestItem.created_at.expression),
+        id_column=cast(ColumnElement[object], RequestItem.id.expression),
+        after=after,
+        limit=limit,
+    )
+    rows = (await session.execute(paged)).scalars().all()
+    counts = await status_counts(session, query, RequestItem.status.expression)
+    return rows, counts, await capped_total(session, query)
+
+
+async def list_client_preview(
+    session: AsyncSession, ctx: AuthContext, binder_id: UUID
+) -> Sequence[RequestItem]:
+    """A binder's client-visible requests the reader may see, oldest first (the preview)."""
+    return (
+        (
+            await session.execute(
+                select(RequestItem)
+                .where(
+                    RequestItem.request_list_id == binder_id,
+                    RequestItem.deleted_at.is_(None),
+                    RequestItem.client_visible.is_(True),
+                    visible_items(
+                        ctx,
+                        "request_item.read",
+                        RequestItem.engagement_id,
+                        RequestItem.client_visible,
+                        RequestItem.client_assignee_user_id,
+                    ),
+                )
+                .order_by(RequestItem.created_at, RequestItem.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def upload_counts(session: AsyncSession, item_ids: Sequence[UUID]) -> dict[UUID, int]:
+    """Fulfilments per item, for items the caller already read."""
+    if not item_ids:
+        return {}
+    rows = await session.execute(
+        select(Fulfilment.request_item_id, func.count())
+        .where(Fulfilment.request_item_id.in_(item_ids))
+        .group_by(Fulfilment.request_item_id)
+    )
+    return {item: int(n) for item, n in rows}
+
+
+async def assigned_in_binder(session: AsyncSession, binder_id: UUID, user_id: UUID) -> bool:
+    """Whether a client-visible request of the binder is assigned to this client user."""
+    found = await session.scalar(
+        select(RequestItem.id)
+        .where(
+            RequestItem.request_list_id == binder_id,
+            RequestItem.deleted_at.is_(None),
+            RequestItem.client_visible.is_(True),
+            RequestItem.client_assignee_user_id == user_id,
+        )
+        .limit(1)
+    )
+    return found is not None
+
+
+async def stamp_sent(
+    session: AsyncSession, item_ids: Sequence[UUID], *, at: datetime | None, by: UUID | None
+) -> None:
+    """Mark requests sent by a publish (or, with None, unsent again by its Undo)."""
+    if item_ids:
+        await session.execute(
+            update(RequestItem).where(RequestItem.id.in_(item_ids)).values(sent_at=at, sent_by=by)
+        )
+
+
+async def recipient_rows(session: AsyncSession, binder_id: UUID) -> Sequence[BinderRecipient]:
+    """A binder's recipient history (insert-only), for a caller that authorised the binder
+    (LIST_EXEMPT)."""
+    return (
+        (
+            await session.execute(
+                select(BinderRecipient)
+                .where(BinderRecipient.binder_id == binder_id)
+                .order_by(BinderRecipient.added_at, BinderRecipient.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def insert_recipient_rows(session: AsyncSession, rows: Sequence[dict[str, object]]) -> None:
+    if rows:
+        await session.execute(insert(BinderRecipient).values(list(rows)))
+
+
+async def open_binders(
+    session: AsyncSession, *, engagement_id: UUID | None, work_item_id: UUID | None
+) -> Sequence[RequestList]:
+    """Binders not yet closed on a work item (else an engagement), locked, for the platform's
+    close rule (LIST_EXEMPT: the system acting on a C1 fact, never returned to a caller)."""
+    query = select(RequestList).where(RequestList.status != "closed")
+    if work_item_id is not None:
+        query = query.where(RequestList.work_item_id == work_item_id)
+    elif engagement_id is not None:
+        query = query.where(RequestList.engagement_id == engagement_id)
+    else:
+        return []
+    return (await session.execute(query.with_for_update())).scalars().all()

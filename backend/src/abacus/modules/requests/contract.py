@@ -2,9 +2,11 @@
 ADR-139, P-36). Contract: `docs/contracts/c5-requests-binders.md`; spec: SPEC-319.
 
 Behind `binders.engine`: off, every route here answers 404; on, 501 `not_implemented` until the
-task that implements it (P-06-T07 binders, P-06-T10 request lifecycle, P-06-T11 the index read
-model). The Brightwater Hale binder slice (`stub_from_seed`) arrives with P-06-T08, so these stubs
-return no fixtures yet. Routes that already exist stay where they are: the request-item create
+task that implements it (P-06-T10 request lifecycle, P-06-T11 the index read model). P-06-T07
+implements the binder lifecycle (`binders.py`): create, read, rows, publish and its Undo,
+unpublish, duplicate, recipients, the client preview, activity and the client's mark-done. The
+Brightwater Hale binder slice (`stub_from_seed`) arrives with P-06-T08, so the stubs return no
+fixtures yet. Routes that already exist stay where they are: the request-item create
 (extended additively by P-06-T10), client visibility, the client view, the SPEC-042 client
 responses and the evidence decisions.
 
@@ -29,7 +31,10 @@ from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
+from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.requests import binders
+from abacus.modules.requests.binders import engine_on
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 # ADR-139: every request with a client-visible effect carries one; the replay store is P-06-T06's.
@@ -444,6 +449,10 @@ class UploadIntentOut(BaseModel):
     expires_at: Annotated[datetime, classified("internal")]
 
 
+def _binder(view: binders.BinderView) -> BinderOut:
+    return BinderOut.model_validate(view, from_attributes=True)
+
+
 async def _stub(ctx: AuthContext) -> NoReturn:
     if not await flag_enabled(ctx.tenant, BINDERS_ENGINE):
         raise NotFound("binders.engine")
@@ -478,23 +487,33 @@ async def list_binders_route(
 
 
 @binders_router.post(
-    "", action="binder.create", response_model=BinderOut, status_code=201, errors=(409, 501)
+    "", action="binder.create", response_model=BinderOut, status_code=201, errors=(409,)
 )
 async def create_binder_route(body: BinderIn, ctx: Ctx) -> BinderOut:
-    """A Draft binder on a work item (DEC-31: many per work item)."""
-    await _stub(ctx)
+    """A Draft binder on a work item (DEC-31: many per work item): blank, from a firm template,
+    or from the prior-year binder (P-06-T07)."""
+    await engine_on(ctx)
+    view = await binders.create_binder(
+        ctx,
+        work_item_id=body.work_item_id,
+        kind=body.kind,
+        name=body.name,
+        from_binder_id=body.from_binder_id,
+        template_ref=body.template_ref,
+    )
+    return _binder(view)
 
 
-@binders_router.get("/{binder_id}", action="binder.read", response_model=BinderOut, errors=(501,))
+@binders_router.get("/{binder_id}", action="binder.read", response_model=BinderOut)
 async def get_binder_route(binder_id: UUID, ctx: Ctx) -> BinderOut:
-    await _stub(ctx)
+    await engine_on(ctx)
+    return _binder(await binders.read_binder(ctx, binder_id))
 
 
 @binders_router.get(
     "/{binder_id}/requests",
     action="request_item.read",
     response_model=ListPage[BinderRequestRowOut],
-    errors=(501,),
 )
 async def binder_requests_route(
     binder_id: UUID,
@@ -503,7 +522,15 @@ async def binder_requests_route(
     cursor: Annotated[str | None, Query(max_length=512)] = None,
 ) -> ListPage[BinderRequestRowOut]:
     """BND-02 rows by category; `counts` per request status."""
-    await _stub(ctx)
+    await engine_on(ctx)
+    page = await binders.binder_requests(ctx, binder_id, category, cursor)
+    return ListPage[BinderRequestRowOut](
+        items=[BinderRequestRowOut.model_validate(r, from_attributes=True) for r in page.items],
+        next_cursor=page.next_cursor,
+        total=page.total,
+        total_capped=page.total_capped,
+        counts=page.counts,
+    )
 
 
 @binders_router.get(
@@ -514,32 +541,51 @@ async def binder_live_route(binder_id: UUID, ctx: Ctx) -> BinderLiveOut:
 
 
 @binders_router.post(
-    "/{binder_id}/publish", action="binder.publish", response_model=BinderOut, errors=(409, 501)
+    "/{binder_id}/publish", action="binder.publish", response_model=BinderOut, errors=(409,)
 )
 async def publish_binder_route(
     binder_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> BinderOut:
     """Human-only. Draft or Unpublished to Published; G3 first except `intake` (409
-    `binder_gate_unmet`); 422 `due_date_required`; email after the 10-s Undo window."""
-    await _stub(ctx)
+    `binder_gate_unmet`); 422 `due_date_required`; email after the 10-s Undo window. A retry
+    with the same key answers what the first answered and sends nothing again."""
+    await engine_on(ctx)
+    await binders.check_action(ctx, binder_id, "binder.publish")
+
+    async def run() -> tuple[int, dict[str, object]]:
+        view = await binders.publish_binder(ctx, binder_id)
+        return 200, _binder(view).model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="binder.publish",
+        key=idempotency_key,
+        body={"binder_id": str(binder_id)},
+        run=run,
+    )
+    return BinderOut.model_validate(stored.body)
 
 
 @binders_router.post(
     "/{binder_id}/publish/undo",
     action="binder.publish",
     response_model=BinderOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def undo_publish_binder_route(binder_id: UUID, ctx: Ctx) -> BinderOut:
-    """Within 10 s: `binder.publish_undone`, nothing sent (409 `undo_window_closed`)."""
-    await _stub(ctx)
+    """Within 10 s: `binder.publish_undone`, nothing sent (409 `undo_window_closed`; 409
+    `effect_started` once the delivery has begun)."""
+    await engine_on(ctx)
+    return _binder(await binders.undo_publish(ctx, binder_id))
 
 
 @binders_router.post(
-    "/{binder_id}/unpublish", action="binder.publish", response_model=BinderOut, errors=(409, 501)
+    "/{binder_id}/unpublish", action="binder.publish", response_model=BinderOut, errors=(409,)
 )
 async def unpublish_binder_route(binder_id: UUID, body: UnpublishIn, ctx: Ctx) -> BinderOut:
-    await _stub(ctx)
+    """Published to Unpublished with a reason: client principals get 404 at once (INV-4)."""
+    await engine_on(ctx)
+    return _binder(await binders.unpublish_binder(ctx, binder_id, body.reason))
 
 
 @binders_router.post(
@@ -547,18 +593,21 @@ async def unpublish_binder_route(binder_id: UUID, body: UnpublishIn, ctx: Ctx) -
     action="binder.create",
     response_model=BinderOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def duplicate_binder_route(binder_id: UUID, ctx: Ctx) -> BinderOut:
     """ "Duplicate as pt 2": an empty Draft, same recipients and categories (OQ-7)."""
-    await _stub(ctx)
+    await engine_on(ctx)
+    return _binder(await binders.duplicate_binder(ctx, binder_id))
 
 
 @binders_router.put(
-    "/{binder_id}/recipients", action="binder.update", response_model=BinderOut, errors=(501,)
+    "/{binder_id}/recipients", action="binder.update", response_model=BinderOut, errors=(409,)
 )
 async def set_binder_recipients_route(binder_id: UUID, body: RecipientsIn, ctx: Ctx) -> BinderOut:
-    await _stub(ctx)
+    """The engagement's client's contacts the binder is for (insert-only history)."""
+    await engine_on(ctx)
+    return _binder(await binders.set_recipients(ctx, binder_id, body.contact_ids))
 
 
 @binders_router.put(
@@ -577,22 +626,30 @@ async def set_binder_follow_up_override_route(
     "/{binder_id}/client-preview",
     action="binder.read",
     response_model=BinderClientPreviewOut,
-    errors=(501,),
 )
 async def binder_client_preview_route(binder_id: UUID, ctx: Ctx) -> BinderClientPreviewOut:
-    await _stub(ctx)
+    await engine_on(ctx)
+    view = await binders.client_preview(ctx, binder_id)
+    return BinderClientPreviewOut.model_validate(view, from_attributes=True)
 
 
 @binders_router.get(
     "/{binder_id}/activity",
     action="activity.read",
     response_model=ListPage[ActivityEventOut],
-    errors=(501,),
 )
 async def binder_activity_route(
     binder_id: UUID, ctx: Ctx, cursor: Annotated[str | None, Query(max_length=512)] = None
 ) -> ListPage[ActivityEventOut]:
-    await _stub(ctx)
+    """The binder's and its requests' audit events, newest first, identifiers only."""
+    await engine_on(ctx)
+    page = await binders.binder_activity(ctx, binder_id, cursor)
+    return ListPage[ActivityEventOut](
+        items=[ActivityEventOut.model_validate(e, from_attributes=True) for e in page.items],
+        next_cursor=page.next_cursor,
+        total=page.total,
+        total_capped=page.total_capped,
+    )
 
 
 # --- /v1/engagements/{engagement_id}/request-items: lifecycle v2 (P-06-T10) ---------------------
@@ -725,11 +782,13 @@ async def request_item_activity_route(
     "/binders/{binder_id}/mark-done",
     action="binder.mark_done",
     response_model=BinderMarkedDoneOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def mark_binder_done_route(binder_id: UUID, ctx: Ctx) -> BinderMarkedDoneOut:
     """The client: Published to Complete, with the open count at that moment (OQ-8)."""
-    await _stub(ctx)
+    await engine_on(ctx)
+    view = await binders.mark_done(ctx, binder_id)
+    return BinderMarkedDoneOut.model_validate(view, from_attributes=True)
 
 
 @portal_router.post(

@@ -356,9 +356,12 @@ __all__ = [
     "Ref",
     "Scope",
     "Target",
+    "TargetEvent",
     "UnitOfWork",
     "audit_facets",
+    "audit_of_targets",
     "audit_page",
+    "audit_total_of_targets",
     "event_sha256",
     "payload_sha256",
     "uow",
@@ -380,3 +383,78 @@ async def audit_counts(
         {"action": action, "type": target_type, "ids": [str(i) for i in target_ids]},
     )
     return {UUID(str(target)): int(count) for target, count in rows.all()}
+
+
+@dataclass(frozen=True)
+class TargetEvent:
+    """One audit event about a target, identifiers only (P-06-T07: an activity tab)."""
+
+    id: UUID
+    seq: int
+    at: datetime  # business time (`effective_at`)
+    actor_kind: str
+    actor_id: str
+    on_behalf_of_user_id: UUID | None
+    action: str
+    target_type: str
+    target_id: str
+    after_ref: dict[str, str | int] | None
+
+
+async def audit_of_targets(
+    session: AsyncSession,
+    targets: Sequence[tuple[str, UUID]],
+    before_seq: int | None,
+    limit: int,
+    *,
+    action: str | None = None,
+) -> list[TargetEvent]:
+    """The active tenant's events about any of `targets` (type, id), newest first, `limit` rows
+    older than `before_seq`, optionally one `action` only. The audit trail's owner answers; the
+    caller has authorised the read of every target (an activity tab of a record it may read)."""
+    if not targets:
+        return []
+    rows = await session.execute(
+        text(
+            "SELECT id, seq, effective_at, actor_kind, actor_id, on_behalf_of_user_id, action, "
+            "target_type, target_id, after_ref FROM audit_events "
+            "WHERE (target_type, target_id) IN (SELECT * FROM unnest("
+            "CAST(:types AS text[]), CAST(:ids AS text[]))) "
+            "AND (CAST(:action AS text) IS NULL OR action = :action) "
+            "AND (CAST(:before_seq AS bigint) IS NULL OR seq < :before_seq) "
+            "ORDER BY seq DESC LIMIT :limit"
+        ),
+        {
+            "types": [t for t, _ in targets],
+            "ids": [str(i) for _, i in targets],
+            "action": action,
+            "before_seq": before_seq,
+            "limit": limit,
+        },
+    )
+    return [TargetEvent(*row) for row in rows.all()]
+
+
+async def audit_total_of_targets(
+    session: AsyncSession, targets: Sequence[tuple[str, UUID]], cap: int = 10_000
+) -> tuple[int, bool]:
+    """How many events `audit_of_targets` would list in all, exact up to `cap` (P-36 totals)."""
+    if not targets:
+        return 0, False
+    n = int(
+        (
+            await session.execute(
+                text(
+                    "SELECT count(*) FROM (SELECT 1 FROM audit_events "
+                    "WHERE (target_type, target_id) IN (SELECT * FROM unnest("
+                    "CAST(:types AS text[]), CAST(:ids AS text[]))) LIMIT :cap) capped"
+                ),
+                {
+                    "types": [t for t, _ in targets],
+                    "ids": [str(i) for _, i in targets],
+                    "cap": cap + 1,
+                },
+            )
+        ).scalar_one()
+    )
+    return (cap, True) if n > cap else (n, False)

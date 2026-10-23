@@ -15,7 +15,7 @@
 ## 1. Purpose
 Consumers can rely on binders as many `request_lists` per work item with a five-state lifecycle, on requests with the DEC-09 status set and the client's words, on the client's portal actions (mark done, ignore with a reason, upload intents, withdraw an unaccepted upload), and on a fixed set of human-only operations whose matrix rows deny the agent. Lists use the P-36 envelope; records carry `allowed_actions`; errors are catalogue codes with identifier-only facts; client-visible effects take an `Idempotency-Key`.
 
-**Stub behaviour.** With `binders.engine` off every route below answers 404. With it on, each answers 501 `not_implemented` until its task lands: P-06-T07 (binders, portal mark-done), P-06-T10 (request lifecycle, ignore, upload intents), P-06-T11 (the index read model), P-06-T19 (withdraw). The Brightwater Hale binder slice and `stub_from_seed` arrive with P-06-T08 and F-04, so the stubs return no fixtures yet; the screens build on fixture scenarios typed with the generated client.
+**Stub behaviour.** With `binders.engine` off every route below answers 404. With it on, each answers 501 `not_implemented` until its task lands: P-06-T10 (request lifecycle, ignore, upload intents, the live poll), P-06-T11 (the index read model), P-06-T19 (withdraw), and the follow-up override. **Implemented (P-06-T07, 2026-10-23):** create, the binder record, its rows, publish and its Undo, unpublish, duplicate, recipients, the client preview, binder activity and the portal mark-done. These no longer document 501, an expected contract transition (`test_c5_stub.py` `IMPLEMENTED`). The Brightwater Hale binder slice and `stub_from_seed` arrive with P-06-T08 and F-04, so the stubs return no fixtures yet; the screens build on fixture scenarios typed with the generated client.
 
 **Existing routes kept, not duplicated:** `POST/GET /v1/engagements/{eid}/request-items` (P-06-T10 extends the body additively: `title`, `category_id`, `period_start/end`, `due_on`, `wave`, `kind`, `firm_owner_user_id`, `linked_ref`, `supports_ref`; `binder_id` required while `binders.engine` is on), `PUT …/{id}/client-visibility`, `PUT …/{id}/client-assignee`, `GET …/request-items/{id}/client-view` (extended for drafts in T10), SPEC-042's `client-response` and `client-done` (until R-01 moves to the portal routes), and `POST …/evidence-versions/{vid}/decision/accept · reject · send-back`.
 
@@ -105,8 +105,9 @@ Codes are reserved for the implementing tasks; they enter `docs/architecture/err
 | 501 | `{"detail": "not_implemented"}` | stub, flag on |
 | 409 | `{"detail": "binder_gate_unmet", "facts": {"gate": "G3"}}` | publish before G3, except `intake` |
 | 409 | `{"detail": "binder_not_draft"}` | publish or edit from a state that doesn't allow it |
+| 409 | `{"detail": "binder_not_published"}` | unpublish or the client's mark-done on a binder that isn't Published (P-06-T07, additive) |
 | 422 | `{"detail": "due_date_required", "facts": {...item ids}}` | publish or send with requests lacking a due date |
-| 422 | `{"detail": "reason_required"}` | unpublish or ignore without a reason |
+| 422 | `{"detail": "reason_required"}` | unpublish or ignore without a reason (an absent or blank `reason` field is refused first by body validation, also 422) |
 | 409 | `{"detail": "request_already_sent"}` | delete a sent request |
 | 409 | `{"detail": "out_of_scope"}` | client wording fails `communications` scope check |
 | 409 | `{"detail": "model_text_not_permitted"}` | unchanged model-drafted wording while P-25 is off (DV-11) |

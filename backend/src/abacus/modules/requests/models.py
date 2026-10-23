@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import FetchedValue
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from abacus.kernel.db import Base
@@ -26,6 +28,46 @@ class RequestList(Base):
     kind: Mapped[str] = mapped_column(server_default=FetchedValue())
     part: Mapped[int] = mapped_column(server_default=FetchedValue())
     status: Mapped[str] = mapped_column(server_default=FetchedValue())
+    published_at: Mapped[datetime | None]
+    published_by: Mapped[UUID | None]
+    marked_done_at: Mapped[datetime | None]
+    marked_done_by: Mapped[UUID | None]
+    prior_year_source_ref: Mapped[UUID | None]
+    # P-06-T05 (0100): the binder engine's stamps.
+    unpublished_at: Mapped[datetime | None]
+    unpublished_by: Mapped[UUID | None]
+    unpublish_reason_sealed: Mapped[bytes | None]
+    created_from: Mapped[str] = mapped_column(server_default=FetchedValue())
+    template_ref: Mapped[str | None]
+    follow_up_override: Mapped[dict[str, Any] | None] = mapped_column(JSONB)  # Any: JSON values
+    closed_at: Mapped[datetime | None]
+    closed_reason: Mapped[str | None]
+
+
+class RequestCategory(Base):
+    """A binder's section (F-03-T14). Insert-only."""
+
+    __tablename__ = "request_categories"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    request_list_id: Mapped[UUID]
+    name: Mapped[str]
+    position: Mapped[int]
+
+
+class BinderRecipient(Base):
+    """Who a binder is for (P-06-T05). Insert-only: a removal is a new row with `removed_at`."""
+
+    __tablename__ = "binder_recipients"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    binder_id: Mapped[UUID]
+    contact_id: Mapped[UUID]
+    added_by: Mapped[UUID]
+    added_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    removed_at: Mapped[datetime | None]
 
 
 class RequestItem(Base):
@@ -62,6 +104,18 @@ class RequestItem(Base):
     effort: Mapped[str | None]
     guidance_source: Mapped[str | None]
     guidance_approved_by: Mapped[UUID | None]  # SPEC-035 (TASK-073): drafted guidance
+    # F-03-T15 (0071): the v2 lifecycle stamps.
+    requested_at: Mapped[datetime | None]
+    sent_at: Mapped[datetime | None]
+    client_ignored_at: Mapped[datetime | None]
+    # P-06-T05 (0100): the binder engine's request fields.
+    title: Mapped[str | None]
+    category_id: Mapped[UUID | None]
+    kind: Mapped[str] = mapped_column(server_default=FetchedValue())
+    source_tag: Mapped[str | None]
+    sent_by: Mapped[UUID | None]
+    deleted_at: Mapped[datetime | None]
+    incorporation_state: Mapped[str] = mapped_column(server_default=FetchedValue())
 
 
 class Fulfilment(Base):

@@ -1008,6 +1008,12 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/ledger/repository.py", "gl_entries_of"),
         ("src/abacus/modules/connections/repository.py", "waiting_gl_imports"),
         ("src/abacus/modules/requests/repository.py", "items_fulfilled_by"),
+        # P-06-T07: one binder's sections, requests and recipient history, read after
+        # `authorise(binder.*)` on that binder; and the platform's close rule on a C1 fact.
+        ("src/abacus/modules/requests/repository.py", "binder_categories"),
+        ("src/abacus/modules/requests/repository.py", "binder_items"),
+        ("src/abacus/modules/requests/repository.py", "recipient_rows"),
+        ("src/abacus/modules/requests/repository.py", "open_binders"),
         # SPEC-020: one request item's versions and its uploads, read after `authorise` on that
         # item with its client facts (`evidence.upload` / `evidence.read`).
         ("src/abacus/modules/requests/repository.py", "fulfilling_versions"),

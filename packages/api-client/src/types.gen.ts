@@ -13726,10 +13726,6 @@ export type CreateBinderErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateBinderError = CreateBinderErrors[keyof CreateBinderErrors];
@@ -13782,10 +13778,6 @@ export type GetBinderErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetBinderError = GetBinderErrors[keyof GetBinderErrors];
@@ -13843,10 +13835,6 @@ export type BinderActivityErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type BinderActivityError = BinderActivityErrors[keyof BinderActivityErrors];
@@ -13899,10 +13887,6 @@ export type BinderClientPreviewErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type BinderClientPreviewError = BinderClientPreviewErrors[keyof BinderClientPreviewErrors];
@@ -13959,10 +13943,6 @@ export type DuplicateBinderErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DuplicateBinderError = DuplicateBinderErrors[keyof DuplicateBinderErrors];
@@ -14135,10 +14115,6 @@ export type PublishBinderErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PublishBinderError = PublishBinderErrors[keyof PublishBinderErrors];
@@ -14195,10 +14171,6 @@ export type UndoPublishBinderErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UndoPublishBinderError = UndoPublishBinderErrors[keyof UndoPublishBinderErrors];
@@ -14248,13 +14220,13 @@ export type SetBinderRecipientsErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SetBinderRecipientsError = SetBinderRecipientsErrors[keyof SetBinderRecipientsErrors];
@@ -14316,10 +14288,6 @@ export type BinderRequestsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type BinderRequestsError = BinderRequestsErrors[keyof BinderRequestsErrors];
@@ -14376,10 +14344,6 @@ export type UnpublishBinderErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UnpublishBinderError = UnpublishBinderErrors[keyof UnpublishBinderErrors];
@@ -32542,10 +32506,6 @@ export type MarkBinderDoneErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MarkBinderDoneError = MarkBinderDoneErrors[keyof MarkBinderDoneErrors];
