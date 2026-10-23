@@ -17,6 +17,9 @@ Patch points. Each step that is not in v1 lands with its own change, behind its 
   modules (`plan_modules`) through `apply_plan_entitlements`, for a newly provisioned firm only.
 - `FIRST_ADMINS_PATCH` (on, migration 0107): `invite_first_admins` issues operator-sent staff
   invitations through `invite_first_admin`, while the firm has no member.
+- `RETENTION_DEFAULTS_PATCH` (on, migration 0112, Q-02-T23): `apply_retention_defaults` gives
+  the new firm a retention policy per published default (`retention_apply_defaults`). Before the
+  default set is published it applies nothing and the floors govern.
 - `G04_PLAN_PATCH`: G-04's console plan step (`g04_plan_v2`).
 """
 
@@ -38,6 +41,7 @@ with workflow.unsafe.imports_passed_through():
 KMS_CHILD_PATCH: Final = "tenant_key_v1"
 PLAN_ENTITLEMENTS_PATCH: Final = "plan_entitlements_v1"
 FIRST_ADMINS_PATCH: Final = "first_admins_v1"
+RETENTION_DEFAULTS_PATCH: Final = "retention_defaults_v1"
 G04_PLAN_PATCH: Final = "g04_plan_v2"
 
 _TIMEOUT = timedelta(seconds=30)
@@ -83,6 +87,15 @@ class TenantProvisioningWorkflow:
                 "platform.request_tenant_key",
                 input,
                 result_type=bool,
+                start_to_close_timeout=_TIMEOUT,
+                retry_policy=_RETRY,
+            )
+        # v4 (Q-02-T23): the published default retention policies.
+        if workflow.patched(RETENTION_DEFAULTS_PATCH):
+            await workflow.execute_activity(
+                "platform.apply_retention_defaults",
+                input,
+                result_type=int,
                 start_to_close_timeout=_TIMEOUT,
                 retry_policy=_RETRY,
             )

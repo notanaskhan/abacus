@@ -15,6 +15,7 @@ from abacus.modules.platform.events import TenantProvisioned
 from abacus.modules.platform.provisioning import (
     OPERATOR_HANDLE,
     WORKFLOWS,
+    apply_retention_defaults_activity,
     emit_tenant_provisioned_activity,
     invite_first_admins_activity,
     operator_context,
@@ -57,6 +58,7 @@ ACTIVITIES: tuple[object, ...] = (
     set_plan_entitlements_activity,  # Q-01-T45 (0107)
     invite_first_admins_activity,
     request_tenant_key_activity,  # Q-01-T27
+    apply_retention_defaults_activity,  # Q-02-T23 (0112)
     *TENANT_KEY_ACTIVITIES,  # the keyops queue's (P-65)
 )
 

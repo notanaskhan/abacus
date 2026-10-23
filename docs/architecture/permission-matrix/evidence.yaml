@@ -87,3 +87,7 @@ actions:
   citation.create:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny, independence: required}   # reserved: answers 501 until its first anchor consumer
   pii.reveal:               {engagement_partner: allow, manager: allow, senior: allow, staff: allow, eqr_reviewer: allow, agent: deny, system: deny, client_service: deny, client_admin: deny, client_contributor: deny, independence: required, not_offshore: required, mfa_recent: required}   # SHL-08c; DEC-52, DEC-60 (the value is never logged)
   evidence.unlock:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny, client_admin: deny, client_contributor: deny, independence: required}   # SHL-08d: the password is never stored or logged
+  # --- Retention policies (Q-02-T23; ADM-06h, FIL-02a) ---
+  # Firm-level; floors and defaults are platform content set by staff routes (STAFF marker).
+  retention_policy.read:    {firm_admin: allow, security_admin: allow, quality_partner: allow, practice_leader: allow, agent: deny, system: deny}
+  retention_policy.update:  {firm_admin: allow, security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # 422 below_floor; a locked policy is never shortened

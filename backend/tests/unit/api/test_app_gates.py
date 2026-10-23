@@ -89,6 +89,9 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
     "/v1/platform/email-templates/import",  # TASK-401: idempotent, may write nothing, so 200
+    # Q-02-T23: publishing changes a draft set's status, so 200.
+    "/v1/platform/retention/floors/{set_version}/publish",
+    "/v1/platform/retention/defaults/{set_version}/publish",
     "/v1/walls/{wall_id}/remove",  # TASK-016: returns the removed wall, so 200
     REVIEW_QUEUE + "/take",
     REVIEW_QUEUE + "/release",
@@ -210,6 +213,9 @@ def test_ac20_creating_routes_answer_201() -> None:
     assert created == {
         "/v1/engagements",
         "/v1/engagements/{engagement_id}/request-items",
+        # Q-02-T23: a draft retention floor set and a draft default-policy set.
+        "/v1/platform/retention/floors",
+        "/v1/platform/retention/defaults",
         # P-03-T02 (C4 v1 stub): a citation, a re-linked citation and a logged reveal.
         "/v1/citations",
         "/v1/citations/{citation_id}/relink",

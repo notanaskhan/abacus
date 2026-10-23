@@ -1150,6 +1150,21 @@ ACTIONS: dict[str, dict[str, str]] = {
         "manager": "allow",
         "requires": "reason",
     },
+    "retention_policy.read": {
+        "firm_admin": "allow",
+        "security_admin": "allow",
+        "quality_partner": "allow",
+        "practice_leader": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
+    "retention_policy.update": {
+        "firm_admin": "allow",
+        "security_admin": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "mfa_recent": "required",
+    },
     "review.assign": {
         "engagement_partner": "allow",
         "manager": "allow",

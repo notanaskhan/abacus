@@ -32,7 +32,7 @@ from fastapi.routing import APIRoute
 from abacus.api import create_app
 from abacus.api import public_routes as public_routes_module
 from abacus.api.public_routes import PUBLIC_ROUTES, READINESS_CHECKS
-from abacus.modules.identity.routing import PRE_SESSION_PATHS
+from abacus.modules.identity.routing import PORTAL_PUBLIC_PATHS, PRE_SESSION_PATHS
 from abacus_tools.quality import banned_patterns as bp
 
 from .support import cached_app, closed_endpoint, use_environment
@@ -115,7 +115,10 @@ async def test_ac24_every_other_route_refuses_a_caller_without_a_token(app: Fast
         for route in routes:
             # ADR-165: the staff sign-in routes answer before any session exists; they are on the
             # protected exception list and authenticate themselves (state, PKCE, cookie, CSRF).
-            if route.path in PUBLIC_ROUTES or route.path in PRE_SESSION_PATHS:
+            if (
+                route.path in PUBLIC_ROUTES
+                or route.path in PRE_SESSION_PATHS | PORTAL_PUBLIC_PATHS
+            ):
                 continue
             url = re.sub(r"\{[^}]+\}", str(uuid.uuid4()), route.path)
             for method in sorted(route.methods or ()):
@@ -136,11 +139,12 @@ async def test_ac24_the_only_routes_registered_outside_the_router_are_the_listed
         if route.path == path and route.endpoint is handler
     }
     assert open_paths == set(PUBLIC_ROUTES)
-    # No docs UI, schema or branding route answers without a token either (P-08 adds branding
-    # to the list under its own ADR).
+    # No docs UI or schema answers without a token either. Portal branding does, but inside the
+    # router under the `PORTAL_PUBLIC` marker (P-08-T05, ADR-152), so it is not registered here.
     async with client(app) as http:
-        for path in ("/docs", "/redoc", "/openapi.json", "/v1/portal/branding", "/", "/metrics"):
+        for path in ("/docs", "/redoc", "/openapi.json", "/", "/metrics"):
             assert (await http.get(path)).status_code in {401, 403, 404}, path
+    assert not PORTAL_PUBLIC_PATHS & set(PUBLIC_ROUTES)
 
 
 @pytest.mark.parametrize("path", ["/healthz", "/readyz"])

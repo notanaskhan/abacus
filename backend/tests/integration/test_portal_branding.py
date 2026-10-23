@@ -138,8 +138,11 @@ async def test_p08t05_a_host_not_yet_verified_answers_as_unknown(
 
 
 async def test_p08t05_the_logo_is_reencoded_and_served_same_origin(
-    migrated_db: MigratedDatabase, client: httpx.AsyncClient
+    migrated_db: MigratedDatabase, client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    # Pillow's decompression limit is process-wide and other suites lower it; this test reads
+    # the served PNG in-process, so it pins the product's limit for itself.
+    monkeypatch.setattr(Image, "MAX_IMAGE_PIXELS", 25_000_000)
     host = f"logo-{uuid.uuid4().hex[:8]}.portal-example.test"
     await _firm(migrated_db, host)
     answer = await client.get("/v1/portal/branding/logo", headers={"Host": host})

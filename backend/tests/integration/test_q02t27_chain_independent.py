@@ -12,7 +12,6 @@ import uuid
 from collections.abc import AsyncIterator
 from pathlib import Path
 
-import asyncpg
 import pytest
 
 from abacus.kernel.config import settings
@@ -215,40 +214,34 @@ async def test_q02t27_a_restored_snapshot_verifies_clean(
         await asyncio.to_thread(
             schema_check.migrate, _database(migrated_db.owner_url, name), "head"
         )
-        conn = await asyncpg.connect(superuser)
-        try:
-            await conn.execute("ALTER TABLE audit_events DISABLE TRIGGER USER")
-            await conn.execute(
-                "INSERT INTO firms (tenant_id, name) VALUES ($1, $2)", tenant, firm["name"]
+        restored = Seeder(superuser)
+        await restored.run(
+            "INSERT INTO firms (tenant_id, name) VALUES ($1, $2)", tenant, firm["name"]
+        )
+        await restored.run("ALTER TABLE audit_events DISABLE TRIGGER USER")
+        for row in events:
+            await restored.as_actor(
+                tenant,
+                (row["actor_kind"], row["actor_id"]),
+                _RESTORE_EVENT,
+                *(row[c] for c in _COLUMNS),
             )
-            for row in events:
-                async with conn.transaction():
-                    for setting, value in (
-                        ("app.tenant_id", str(tenant)),
-                        ("app.actor_kind", row["actor_kind"]),
-                        ("app.actor_id", row["actor_id"]),
-                        ("app.on_behalf_of", str(row["on_behalf_of_user_id"] or "")),
-                    ):
-                        await conn.execute("SELECT set_config($1, $2, true)", setting, value)
-                    await conn.execute(_RESTORE_EVENT, *(row[c] for c in _COLUMNS))
-            await conn.execute("ALTER TABLE audit_events ENABLE TRIGGER USER")
-            for c in checkpoints:
-                await conn.execute(
-                    "INSERT INTO audit_checkpoints (tenant_id, checkpoint_no, seq_from, seq_to, "
-                    "event_count, leaf_version, merkle_root, prev_chain_hash, chain_hash) "
-                    "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
-                    tenant,
-                    c["checkpoint_no"],
-                    c["seq_from"],
-                    c["seq_to"],
-                    c["event_count"],
-                    c["leaf_version"],
-                    c["merkle_root"],
-                    c["prev_chain_hash"],
-                    c["chain_hash"],
-                )
-        finally:
-            await conn.close()
+        await restored.run("ALTER TABLE audit_events ENABLE TRIGGER USER")
+        for c in checkpoints:
+            await restored.run(
+                "INSERT INTO audit_checkpoints (tenant_id, checkpoint_no, seq_from, seq_to, "
+                "event_count, leaf_version, merkle_root, prev_chain_hash, chain_hash) "
+                "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+                tenant,
+                c["checkpoint_no"],
+                c["seq_from"],
+                c["seq_to"],
+                c["event_count"],
+                c["leaf_version"],
+                c["merkle_root"],
+                c["prev_chain_hash"],
+                c["chain_hash"],
+            )
         await dispose_engine()
         configure_engine(_database(migrated_db.app_url, name))
         assert await verify_chain(tenant) == []

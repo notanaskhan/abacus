@@ -49,6 +49,10 @@ from abacus.modules.evidence.render_gl import (
     render_journal_listing,
 )
 from abacus.modules.evidence.render_gl import GlEntryRow as GlRenderEntry
+
+# The routers the API mounts, in order (P-39; F-03-T07).
+from abacus.modules.evidence.retention_routes import platform_router as retention_platform_router
+from abacus.modules.evidence.retention_routes import router as retention_router
 from abacus.modules.evidence.routes import firm_router, router
 from abacus.modules.evidence.service import (
     EngagementArchived,
@@ -85,12 +89,13 @@ from abacus.modules.evidence.workflow_types import UploadInput
 from abacus.modules.evidence.workflows import UploadProcessing
 from abacus.modules.identity.api import AbacusRouter, register_member_removed
 
-# The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
     firm_router,
     withdrawal_router,  # C5 v1 stub (P-06-T01; ADR-162)
     trust_router,  # C4 v1 stub (P-03-T02; ADR-144)
+    retention_router,  # Q-02-T23: a firm's retention policies
+    retention_platform_router,  # Q-02-T23: staff floor and default sets
 )
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.

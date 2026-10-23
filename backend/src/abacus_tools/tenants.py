@@ -284,6 +284,22 @@ async def set_plan_module(
         await connection.close()
 
 
+async def backfill_retention_defaults(ops_dsn: str, *, operator: str) -> dict[UUID, int]:
+    """The one-off back-fill (Q-02-T23), as `abacus_ops` (`retention_defaults_backfill`, 0112):
+    every firm the platform created gets a policy per published default it lacks. Run once the
+    default set is published; running it again writes nothing more."""
+    connection = await asyncpg.connect(_dsn(ops_dsn))
+    try:
+        async with connection.transaction():
+            rows = await connection.fetch(
+                "SELECT tenant_id, applied FROM retention_defaults_backfill($1)",
+                _operator(operator),
+            )
+    finally:
+        await connection.close()
+    return {UUID(str(r["tenant_id"])): int(r["applied"]) for r in rows}
+
+
 def _boolean(value: str) -> bool:
     lowered = value.strip().lower()
     if lowered not in ("true", "false"):
@@ -309,6 +325,8 @@ def _parser() -> argparse.ArgumentParser:
     planning.add_argument("--seats", type=int, default=None)
     planning.add_argument("--agent-minutes", type=int, default=None)
     planning.add_argument("--operator", required=True)
+    retaining = sub.add_parser("retention-defaults")
+    retaining.add_argument("--operator", required=True)
     showing = sub.add_parser("status")
     showing.add_argument("--tenant", type=UUID, required=True)
     entitling = sub.add_parser("entitlement")
@@ -341,6 +359,16 @@ def main(argv: list[str] | None = None) -> int:
                 )
             )
             print(f"{args.module} for {args.firm}: enabled={args.enabled} seats={args.seats}")
+            return 0
+        if args.command == "retention-defaults":
+            if s.ops_database_url is None:
+                raise Refused("ops_database_url (the abacus_ops role) is not set")
+            applied = asyncio.run(
+                backfill_retention_defaults(
+                    s.ops_database_url.get_secret_value(), operator=args.operator
+                )
+            )
+            print(f"{len(applied)} firms, {sum(applied.values())} policies applied")
             return 0
         if args.command == "plan-module":
             if s.ops_database_url is None:

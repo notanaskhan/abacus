@@ -101,6 +101,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.completion.AlreadyLocked
+  below_floor:
+    status: 422
+    raised_by:
+    - abacus.modules.evidence.retention.BelowFloor
+    summary: The policy keeps records for less time than the published legal floor allows.
   binder_gate_unmet:
     status: 409
     raised_by:
@@ -574,6 +579,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.fieldwork.planning.PlanningInvalid
+  policy_locked:
+    status: 422
+    raised_by:
+    - abacus.modules.evidence.retention.PolicyLocked
+    summary: A locked policy can't be shortened; unlock it first (and say why in the basis).
   portal_host_invalid:
     status: 422
     raised_by:
@@ -626,6 +636,21 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.workpapers.ResultInvalid
     summary: An exception needs a note, and not tested a reason; evidence must be this engagement's.
+  retention_set_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.retention.SetExists
+    summary: 'That set version is already imported: import the next version.'
+  retention_set_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.evidence.retention.SetInvalid
+    summary: The set's rows don't fit the floor or default shape (codes, years, anchors).
+  retention_two_person:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.retention.SamePerson
+    summary: 'The person who imported a set can''t also publish it: a second staff member approves.'
   review_note_invalid:
     status: 422
     raised_by:

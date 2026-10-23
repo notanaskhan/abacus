@@ -29,6 +29,11 @@ TABLES: frozenset[str] = frozenset(
         "pii_scan_runs",
         "pii_regions",
         "pii_reveals",
+        # Q-02-T23 (0112): retention. Floors and defaults are global, definers only.
+        "retention_floors",
+        "retention_policy_defaults",
+        "retention_policies",
+        "retention_policy_versions",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -49,6 +54,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "pii_scan_runs",  # P-03-T04
         "pii_regions",  # P-03-T04
         "pii_reveals",  # P-03-T04
+        "retention_policy_versions",  # Q-02-T23: written by the policy trigger only
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
@@ -96,4 +102,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"status", "assigned_item_id", "assigned_version_id", "decided_by", "decided_at"}
     ),
     "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
+    "retention_policies": frozenset(  # Q-02-T23: version and history are the trigger's
+        {"firm_years", "clock_start_event", "lock", "basis", "updated_by", "updated_at"}
+    ),
 }

@@ -11773,6 +11773,50 @@ export type ResultIn = {
 };
 
 /**
+ * RetentionDefaultRowIn
+ */
+export type RetentionDefaultRowIn = {
+    /**
+     * Basis
+     */
+    basis?: string | null;
+    /**
+     * Clock Start Event
+     */
+    clock_start_event: 'upload' | 'report_release' | 'filing_date' | 'due_or_received_later' | 'relationship_end' | 'client_inactive' | 'message_date' | 'event_date' | 'period_end';
+    /**
+     * Firm Years
+     */
+    firm_years: number | string;
+    /**
+     * Lock
+     */
+    lock?: boolean;
+    /**
+     * Record Type
+     */
+    record_type: string;
+    /**
+     * Service Line
+     */
+    service_line: 'audit' | 'tax' | 'cas' | 'advisory' | 'any';
+};
+
+/**
+ * RetentionDefaultSetIn
+ */
+export type RetentionDefaultSetIn = {
+    /**
+     * Rows
+     */
+    rows: Array<RetentionDefaultRowIn>;
+    /**
+     * Set Version
+     */
+    set_version: number;
+};
+
+/**
  * RetentionExceptionOut
  */
 export type RetentionExceptionOut = {
@@ -11784,6 +11828,166 @@ export type RetentionExceptionOut = {
      * Purpose
      */
     purpose: string;
+};
+
+/**
+ * RetentionFloorRowIn
+ */
+export type RetentionFloorRowIn = {
+    /**
+     * Anchor
+     */
+    anchor: 'upload' | 'report_release' | 'filing_date' | 'due_or_received_later' | 'relationship_end' | 'client_inactive' | 'message_date' | 'event_date' | 'period_end';
+    /**
+     * Authority
+     */
+    authority: string;
+    /**
+     * Legal Floor Years
+     */
+    legal_floor_years: number | string;
+    /**
+     * Record Type
+     */
+    record_type: string;
+    /**
+     * Service Line
+     */
+    service_line: 'audit' | 'tax' | 'cas' | 'advisory' | 'any';
+};
+
+/**
+ * RetentionFloorSetIn
+ */
+export type RetentionFloorSetIn = {
+    /**
+     * Rows
+     */
+    rows: Array<RetentionFloorRowIn>;
+    /**
+     * Set Version
+     */
+    set_version: number;
+};
+
+/**
+ * RetentionPoliciesOut
+ */
+export type RetentionPoliciesOut = {
+    /**
+     * Items
+     */
+    items: Array<RetentionPolicyOut>;
+};
+
+/**
+ * RetentionPolicyIn
+ */
+export type RetentionPolicyIn = {
+    /**
+     * Basis
+     */
+    basis?: string | null;
+    /**
+     * Clock Start Event
+     */
+    clock_start_event: 'upload' | 'report_release' | 'filing_date' | 'due_or_received_later' | 'relationship_end' | 'client_inactive' | 'message_date' | 'event_date' | 'period_end';
+    /**
+     * Firm Years
+     */
+    firm_years: number | string;
+    /**
+     * Lock
+     */
+    lock?: boolean;
+    /**
+     * Record Type
+     */
+    record_type: string;
+    /**
+     * Service Line
+     */
+    service_line: 'audit' | 'tax' | 'cas' | 'advisory' | 'any';
+};
+
+/**
+ * RetentionPolicyOut
+ *
+ * One record type and service line: the firm's policy, or the floor where it has none.
+ */
+export type RetentionPolicyOut = {
+    /**
+     * Anchor
+     */
+    anchor?: 'upload' | 'report_release' | 'filing_date' | 'due_or_received_later' | 'relationship_end' | 'client_inactive' | 'message_date' | 'event_date' | 'period_end' | null;
+    /**
+     * Authority
+     */
+    authority?: string | null;
+    /**
+     * Basis
+     */
+    basis?: string | null;
+    /**
+     * Clock Start Event
+     */
+    clock_start_event: 'upload' | 'report_release' | 'filing_date' | 'due_or_received_later' | 'relationship_end' | 'client_inactive' | 'message_date' | 'event_date' | 'period_end';
+    /**
+     * Firm Years
+     */
+    firm_years: string;
+    /**
+     * Legal Floor Years
+     */
+    legal_floor_years?: string | null;
+    /**
+     * Lock
+     */
+    lock: boolean;
+    /**
+     * Record Type
+     */
+    record_type: string;
+    /**
+     * Service Line
+     */
+    service_line: 'audit' | 'tax' | 'cas' | 'advisory' | 'any';
+    /**
+     * Source
+     */
+    source: 'policy' | 'floor';
+    /**
+     * Version
+     */
+    version?: number | null;
+};
+
+/**
+ * RetentionPolicySavedOut
+ */
+export type RetentionPolicySavedOut = {
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * RetentionSetOut
+ */
+export type RetentionSetOut = {
+    /**
+     * Rows
+     */
+    rows: number;
+    /**
+     * Set Version
+     */
+    set_version: number;
+    /**
+     * Status
+     */
+    status: 'draft' | 'published';
 };
 
 /**
@@ -36346,6 +36550,204 @@ export type ImportEmailTemplateResponses = {
 
 export type ImportEmailTemplateResponse = ImportEmailTemplateResponses[keyof ImportEmailTemplateResponses];
 
+export type ImportRetentionDefaultsData = {
+    body: RetentionDefaultSetIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/platform/retention/defaults';
+};
+
+export type ImportRetentionDefaultsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ImportRetentionDefaultsError = ImportRetentionDefaultsErrors[keyof ImportRetentionDefaultsErrors];
+
+export type ImportRetentionDefaultsResponses = {
+    /**
+     * Successful Response
+     */
+    201: RetentionSetOut;
+};
+
+export type ImportRetentionDefaultsResponse = ImportRetentionDefaultsResponses[keyof ImportRetentionDefaultsResponses];
+
+export type PublishRetentionDefaultsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Set Version
+         */
+        set_version: number;
+    };
+    query?: never;
+    url: '/v1/platform/retention/defaults/{set_version}/publish';
+};
+
+export type PublishRetentionDefaultsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PublishRetentionDefaultsError = PublishRetentionDefaultsErrors[keyof PublishRetentionDefaultsErrors];
+
+export type PublishRetentionDefaultsResponses = {
+    /**
+     * Successful Response
+     */
+    200: RetentionSetOut;
+};
+
+export type PublishRetentionDefaultsResponse = PublishRetentionDefaultsResponses[keyof PublishRetentionDefaultsResponses];
+
+export type ImportRetentionFloorsData = {
+    body: RetentionFloorSetIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/platform/retention/floors';
+};
+
+export type ImportRetentionFloorsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ImportRetentionFloorsError = ImportRetentionFloorsErrors[keyof ImportRetentionFloorsErrors];
+
+export type ImportRetentionFloorsResponses = {
+    /**
+     * Successful Response
+     */
+    201: RetentionSetOut;
+};
+
+export type ImportRetentionFloorsResponse = ImportRetentionFloorsResponses[keyof ImportRetentionFloorsResponses];
+
+export type PublishRetentionFloorsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Set Version
+         */
+        set_version: number;
+    };
+    query?: never;
+    url: '/v1/platform/retention/floors/{set_version}/publish';
+};
+
+export type PublishRetentionFloorsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PublishRetentionFloorsError = PublishRetentionFloorsErrors[keyof PublishRetentionFloorsErrors];
+
+export type PublishRetentionFloorsResponses = {
+    /**
+     * Successful Response
+     */
+    200: RetentionSetOut;
+};
+
+export type PublishRetentionFloorsResponse = PublishRetentionFloorsResponses[keyof PublishRetentionFloorsResponses];
+
 export type MarkBinderDoneData = {
     body?: never;
     headers?: {
@@ -37072,6 +37474,100 @@ export type AgentProposalResponses = {
 };
 
 export type AgentProposalResponse = AgentProposalResponses[keyof AgentProposalResponses];
+
+export type ListRetentionPoliciesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/retention/policies';
+};
+
+export type ListRetentionPoliciesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ListRetentionPoliciesError = ListRetentionPoliciesErrors[keyof ListRetentionPoliciesErrors];
+
+export type ListRetentionPoliciesResponses = {
+    /**
+     * Successful Response
+     */
+    200: RetentionPoliciesOut;
+};
+
+export type ListRetentionPoliciesResponse = ListRetentionPoliciesResponses[keyof ListRetentionPoliciesResponses];
+
+export type SaveRetentionPolicyData = {
+    body: RetentionPolicyIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/retention/policies';
+};
+
+export type SaveRetentionPolicyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SaveRetentionPolicyError = SaveRetentionPolicyErrors[keyof SaveRetentionPolicyErrors];
+
+export type SaveRetentionPolicyResponses = {
+    /**
+     * Successful Response
+     */
+    200: RetentionPolicySavedOut;
+};
+
+export type SaveRetentionPolicyResponse = SaveRetentionPolicyResponses[keyof SaveRetentionPolicyResponses];
 
 export type ReviewNoteListData = {
     body?: never;
