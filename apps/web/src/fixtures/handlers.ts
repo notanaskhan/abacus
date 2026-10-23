@@ -10,6 +10,8 @@ import type {
   FirmClientOut,
   FirmMemberOut,
   RequestItemOut,
+  SessionTokenOut,
+  SignedOutOut,
   StaffListOut,
   TimeZoneIo,
   WorkItemOut,
@@ -22,6 +24,25 @@ import { entityIdOf } from "./seed/clients";
 export const DEFAULT_PERSONA = "hannah-leclerc";
 
 const NOT_FOUND = { detail: "not_found" };
+
+/** What fixture mode's `POST /v1/auth/refresh` answers: an opaque word, not a token. */
+export const FIXTURE_TOKEN = "fixture-session";
+
+/** P-01-T11: the BFF's session in fixture mode. The refresh hands the shell an in-memory token
+ * (an opaque fixture word, never a credential) and sign-out ends it. Kept apart from the seed's
+ * read handlers; `make dev-fixtures` and the SHL-06 scenarios add them. */
+export function sessionHandlers(): Record<string, FixtureHandler> {
+  return {
+    "POST /v1/auth/refresh": () => {
+      const token: SessionTokenOut = { access_token: FIXTURE_TOKEN, expires_in: 600 };
+      return json(token);
+    },
+    "POST /v1/auth/sign-out": () => {
+      const ended: SignedOutOut = { ended: true };
+      return json(ended);
+    },
+  };
+}
 
 function walledClients(seed: Seed, request: FixtureRequest): Set<string> {
   const who = request.persona ?? DEFAULT_PERSONA;

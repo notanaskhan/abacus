@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { type JSX, type ReactNode, useEffect, useRef } from "react";
 import { errorMessage } from "../api";
-import { accessToken, chooseTenant, signIn } from "../auth/session";
+import { chooseTenant, useSignedIn } from "../app-core/auth";
 
 const TOKEN_KEY = "abacus.staff_invitation";
 export const JOIN_PATH = "/join";
@@ -22,7 +22,8 @@ export function takeStaffTokenFromFragment(): void {
 export function Join(): JSX.Element {
   takeStaffTokenFromFragment();
   const token = sessionStorage.getItem(TOKEN_KEY);
-  const signedIn = accessToken() !== null;
+  // With an invitation in hand: a session from the BFF cookie, else sign in and come back here.
+  const signedIn = useSignedIn(JOIN_PATH, { enabled: token !== null });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const started = useRef(false);
@@ -39,11 +40,7 @@ export function Join(): JSX.Element {
   });
 
   useEffect(() => {
-    if (token === null || started.current) return;
-    if (!signedIn) {
-      void signIn(JOIN_PATH);
-      return;
-    }
+    if (token === null || started.current || !signedIn) return;
     started.current = true;
     accept.mutate({ body: { token } });
   }, [token, signedIn, accept]);

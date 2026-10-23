@@ -3,6 +3,7 @@
 // VITE_FIXTURES flag, so a production build holds none of it.
 
 import { installFixtureMode } from "../app-core/fixture-mode";
+import { sessionHandlers } from "./handlers";
 import { seedScenario } from "./scenario";
 
 export interface SeedInstall {
@@ -23,7 +24,12 @@ export function installSeedFixtures(options: SeedInstall = {}): () => void {
       : scenario.clock;
   const latencyMs = Number(options.latency);
   return installFixtureMode(
-    { ...scenario, ...(clock === undefined ? {} : { clock }) },
+    {
+      ...scenario,
+      // P-01-T11: the shell refreshes a session on load; fixture mode always has one.
+      handlers: { ...scenario.handlers, ...sessionHandlers() },
+      ...(clock === undefined ? {} : { clock }),
+    },
     {
       ...(options.persona === undefined ? {} : { persona: options.persona }),
       ...(Number.isFinite(latencyMs) && latencyMs > 0 ? { latencyMs } : {}),

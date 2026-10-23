@@ -2,6 +2,7 @@ import type { MeOut } from "@abacus/api-client";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { json, mockApi, renderRoutes, signInForTest, stubLocation } from "../testing/support";
+import { resetAuthForTest } from "../app-core/auth";
 import { Layout } from "./Layout";
 
 const ROUTES = [{ path: "/", component: () => <p>Page body</p> }];
@@ -21,6 +22,7 @@ function me(over: Partial<MeOut> = {}): MeOut {
 
 beforeEach(() => {
   sessionStorage.clear();
+  resetAuthForTest(); // a fresh page: no token, no sign-in started
 });
 
 afterEach(() => {
@@ -32,16 +34,33 @@ afterEach(() => {
 describe("ac1 Layout, signed out", () => {
   it("shows the splash and redirects to sign-in without calling the API", async () => {
     const { assign } = stubLocation("/engagements/e1");
-    const { calls } = mockApi({});
+    // P-01-T11: a fresh page first asks the BFF for a session; with none, it signs in and comes
+    // back to this route. No other API is called.
+    const { calls } = mockApi({
+      "POST /v1/auth/refresh": () => json({ detail: "session_expired" }, 401),
+    });
     renderRoutes(ROUTES, { root: Layout });
     expect((await screen.findByRole("heading", { name: "Accrued" })).textContent).toBe("Accrued");
     expect(screen.getByText("Redirecting to sign-in…")).toBeTruthy();
     await waitFor(() => {
       expect(assign).toHaveBeenCalledOnce();
     });
-    expect(String(assign.mock.calls[0]?.[0])).toContain("/authorize?");
-    expect(calls).toHaveLength(0);
+    expect(String(assign.mock.calls[0]?.[0])).toBe(
+      "/v1/auth/sign-in?return_to=%2Fengagements%2Fe1",
+    );
+    expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual(["POST /v1/auth/refresh"]);
     expect(screen.queryByText("Page body")).toBeNull();
+  });
+
+  it("refreshes a session from the BFF cookie on a fresh load, without signing in", async () => {
+    const { assign } = stubLocation("/");
+    mockApi({
+      "POST /v1/auth/refresh": () => json({ access_token: "tok", expires_in: 600 }),
+      "GET /v1/me": () => json(me()),
+    });
+    renderRoutes(ROUTES, { root: Layout });
+    expect(await screen.findByText("Page body")).toBeTruthy();
+    expect(assign).not.toHaveBeenCalled();
   });
 });
 

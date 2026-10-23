@@ -3,7 +3,7 @@
 import type { MeOut } from "@abacus/api-client";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { accessToken } from "../auth/session";
+import { accessToken } from "../app-core/auth";
 import { json, mockApi, renderRoutes, signInForTest, stubLocation } from "../testing/support";
 import { Layout } from "./Layout";
 

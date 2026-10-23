@@ -448,6 +448,14 @@
       "crop": "window",
       "tier": "B",
       "deviation": "F-05-T40 frame: the canvas and dock hold slot notes until the C-02 Workpaper, C-12 run rows and SHL-11 decision kits merge (F-05-T50, P-04, P-09), and the T2a canvas draws the seed's Northwind net assets, not the handoff's fund table"
+    },
+    "shl-06g.window": {
+      "page": "screens/SHL-06?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/SHL-06 Firm sign-in/screenshots/SHL-06g.png",
+      "sha256": "657176938071f47edf6c64f9967bec7fb7149969991f23ac8b988cece127cb66",
+      "crop": "window",
+      "tier": "C"
     }
   }
 }

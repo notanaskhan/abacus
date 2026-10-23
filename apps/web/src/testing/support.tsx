@@ -1,6 +1,6 @@
 // Shared helpers for screen tests: the generated client's `fetch` is replaced by a route table,
-// so no test ever makes real HTTP. Sign-in goes through the real session code with the identity
-// provider's token endpoint stubbed.
+// so no test ever makes real HTTP. Sign-in goes through the real auth client (P-01-T11) with the
+// BFF's refresh stubbed.
 import { client } from "@abacus/api-client/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -16,7 +16,7 @@ import { render } from "@testing-library/react";
 import type { JSX } from "react";
 import { vi } from "vitest";
 import { configureClient } from "../api";
-import { completeSignIn } from "../auth/session";
+import { refreshSession, resetAuthForTest } from "../app-core/auth";
 
 export interface Call {
   method: string;
@@ -78,36 +78,34 @@ export function newQueryClient(): QueryClient {
 }
 
 /** Replaces `window.location` so `location.assign` (the redirect to sign in) can be observed. */
-export function stubLocation(pathname = "/"): { assign: ReturnType<typeof vi.fn> } {
+export function stubLocation(pathname = "/", search = ""): { assign: ReturnType<typeof vi.fn> } {
   const assign = vi.fn();
   vi.stubGlobal("location", {
     assign,
     origin: "http://localhost:5173",
     pathname,
-    search: "",
-    href: `http://localhost:5173${pathname}`,
+    search,
+    href: `http://localhost:5173${pathname}${search}`,
   });
   return { assign };
 }
 
-/** Signs in through the real `signIn` and `completeSignIn`, with the token endpoint stubbed. */
+/** A fresh page holding the access token "tok": the real auth client's refresh, answered by a
+ * stubbed BFF. The token came a minute ago, so a later 401 is a real expiry, not a rejected
+ * fresh token. */
 export async function signInForTest(): Promise<void> {
-  const { assign } = stubLocation();
-  // `signIn` is latched per page load; a fresh module copy stands in for a fresh page.
-  vi.resetModules();
-  const fresh = await import("../auth/session");
-  await fresh.signIn("/");
-  const url = new URL(String(assign.mock.calls[0]?.[0]));
-  const state = url.searchParams.get("state") ?? "";
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(() =>
-      Promise.resolve(json({ access_token: "tok", token_type: "Bearer", expires_in: 600 })),
-    ),
-  );
-  // Signed in a minute ago: a later 401 is a real expiry, not a rejected fresh token.
-  await completeSignIn(`?code=c1&state=${state}`, Date.now() - 60_000);
-  vi.unstubAllGlobals();
+  resetAuthForTest();
+  configureClient();
+  const previous = client.getConfig().fetch;
+  client.setConfig({
+    fetch: () => Promise.resolve(json({ access_token: "tok", expires_in: 600 })),
+  });
+  try {
+    await refreshSession(Date.now() - 60_000);
+  } finally {
+    // Back to what the test had, including none (the global fetch, read per request).
+    client.setConfig({ fetch: previous } as Parameters<typeof client.setConfig>[0]);
+  }
   stubLocation();
 }
 

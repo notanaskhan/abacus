@@ -4,16 +4,17 @@ import { type Plugin, loadEnv } from "vite";
 import { defineConfig } from "vitest/config";
 
 // Production pages carry a Content-Security-Policy (security review, TASK-012): scripts and
-// styles from this origin only, network to this origin and the identity provider, no framing,
-// plugins or base rewriting. Not applied in dev (Vite injects inline scripts for HMR); the
-// deployment sets the same policy as a header (TASK-014).
-function contentSecurityPolicy(authority: string): Plugin {
+// styles from this origin only, network to this origin only, no framing, plugins or base
+// rewriting. Not applied in dev (Vite injects inline scripts for HMR); the deployment sets the
+// same policy as a header (TASK-014). P-01 AC 5.1.6 (P-01-T11): the BFF exchanges the code, so the
+// SPA only navigates to the identity provider and `connect-src` is back to 'self'.
+function contentSecurityPolicy(): Plugin {
   const policy = [
     "default-src 'self'",
     "script-src 'self'",
     "style-src 'self'",
     "img-src 'self' data:",
-    `connect-src 'self' ${authority}`,
+    "connect-src 'self'",
     "frame-ancestors 'none'",
     "object-src 'none'",
     "base-uri 'none'",
@@ -72,9 +73,8 @@ export default defineConfig(({ mode, command }) => {
   const gallery = env.VITE_UI_GALLERY ?? (command === "serve" ? "1" : "");
   // This worktree's port offset (F-01-T09; `make worktree-env`): 0 in the primary checkout and CI.
   const offset = Number(env.ABACUS_PORT_OFFSET ?? "0") || 0;
-  const authority = env.VITE_OIDC_AUTHORITY ?? `http://127.0.0.1:${String(9000 + offset)}`;
   return {
-    plugins: [react(), tailwindcss(), contentSecurityPolicy(authority), fontPreload()],
+    plugins: [react(), tailwindcss(), contentSecurityPolicy(), fontPreload()],
     define: {
       "import.meta.env.VITE_UI_GALLERY": JSON.stringify(gallery),
       // Fixture mode (F-04-T04, T05): `make dev-fixtures` sets VITE_FIXTURES=1. A build folds it

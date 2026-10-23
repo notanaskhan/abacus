@@ -3,18 +3,15 @@ import type { EngagementSummaryOut, YourPartOut } from "@abacus/api-client";
 import { Alert, Button, Card, EmptyState, Spinner, StatusPill } from "@abacus/ui";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { type JSX, useEffect, useState } from "react";
+import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
 import { PortalBrand } from "../shell/PortalBrand";
-import { accessToken, chooseTenant, signIn, signOut } from "../auth/session";
+import { chooseTenant, signIn, signOut, useSignedIn } from "../app-core/auth";
 import { yourPartMessage } from "./clientHubMessages";
 
 /** The client portal (ADR-011's separate tree; SPEC-016): the firms the client works with. */
 export function ClientHome(): JSX.Element {
-  const signedIn = accessToken() !== null;
-  useEffect(() => {
-    if (!signedIn) void signIn("/client");
-  }, [signedIn]);
+  const signedIn = useSignedIn("/client");
   const me = useQuery({ ...meOptions(), enabled: signedIn });
   return (
     <div className="min-h-screen bg-shell">
@@ -25,8 +22,9 @@ export function ClientHome(): JSX.Element {
             size="sm"
             variant="ghost"
             onClick={() => {
-              signOut();
-              void signIn("/client");
+              void signOut().then(() => {
+                signIn("/client");
+              });
             }}
           >
             Sign out

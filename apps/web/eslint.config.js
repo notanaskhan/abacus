@@ -25,7 +25,7 @@ const NETWORK_GLOBALS = [
 // elapsed time or token lifetime, which is not business time (that is useNow, useToday and
 // clock.tsx), so it has no fixture clock to read. Recorded in packages/ui/src/tokens/DECISIONS.md.
 const LEGACY_CLOCK = [
-  "src/auth/session.ts", // token lifetime against the device's clock (OIDC), not business time
+  "src/app-core/auth/session.ts", // access-token lifetime against the device's clock, not business time
   "src/legacy/Board.tsx", // elapsed time of a polling window for a screening run
   "src/legacy/CheckResults.tsx", // elapsed time of a polling window after an upload
   "src/testing/support.tsx", // test helper: backdates a sign-in
@@ -358,8 +358,8 @@ export default defineConfig(
       ],
     },
   },
-  // The OIDC token endpoint is the identity provider, not our API (src/auth/session.ts).
-  { files: ["src/auth/session.ts"], rules: { "no-restricted-globals": "off" } },
+  // P-01-T11: the browser no longer talks to the identity provider (the BFF does), so no file
+  // under src/auth may call fetch any more; the staff auth client uses the generated client.
   // Q-01-T50: the static runtime config beside the SPA, and the telemetry tunnel, which takes a
   // Sentry envelope rather than a JSON body. Neither is a call the generated client describes.
   {

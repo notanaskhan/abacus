@@ -46,6 +46,10 @@ dev:
 	cd backend; \
 	export $(LOCAL_ENV); \
 	export ABACUS_IDENTITY_JWKS="$$(uv run python -m abacus_tools.fakes.oidc_server --jwks)"; \
+	export ABACUS_IDENTITY_CLIENT_ID=abacus-web \
+		ABACUS_IDENTITY_AUTHORIZE_URL=http://127.0.0.1:$(call port,9000)/authorize \
+		ABACUS_IDENTITY_EXCHANGE_URL=http://127.0.0.1:$(call port,9000)/token \
+		ABACUS_WEB_ORIGIN=http://localhost:$(call port,5173); \
 	trap 'kill 0' EXIT; \
 	uv run python -m abacus_tools.fakes.oidc_server & oidc=$$!; \
 	uv run uvicorn --factory abacus.api.app:create_app --port $(API_PORT) --reload & api=$$!; \

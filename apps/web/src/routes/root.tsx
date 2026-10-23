@@ -1,11 +1,17 @@
 import { Alert, Button, ClockProvider, EmptyState } from "@abacus/ui";
-import { Link, Outlet, createRootRoute, createRoute } from "@tanstack/react-router";
-import { type ComponentType, type JSX, Suspense, lazy } from "react";
+import {
+  Link,
+  Outlet,
+  createRootRoute,
+  createRoute,
+  useLocation,
+  useRouter,
+} from "@tanstack/react-router";
+import { type ComponentType, type JSX, Suspense, lazy, useCallback } from "react";
+import { CALLBACK_PATH } from "../app-core/auth";
 import { nowMs } from "../app-core/clock";
 import { OverlayHost } from "../app-core/overlay-host";
-import { CALLBACK_PATH } from "../auth/session";
 import { Layout } from "../legacy/Layout";
-import { SignInCallback } from "../legacy/SignInCallback";
 
 // Code-based routes (no file-router plugin): the firm workspace and the client portal (ADR-011).
 // F-03-T17: the tree is split by area (routes/firm, routes/portal); each screen is its own chunk.
@@ -65,10 +71,27 @@ function RouteError(): JSX.Element {
   );
 }
 
+/** SHL-06g in its own chunk: a firm page that is already signed in never downloads it. */
+const SignInLanding = lazyScreen(async () => (await import("../screens/SHL-06")).SHL06);
+
+/** SHL-06g (P-01-T11): where the BFF's callback lands the browser. The return path may carry its
+ * own query, so it replaces the history entry whole. */
+function SignInCallbackPage(): JSX.Element {
+  const { searchStr } = useLocation();
+  const router = useRouter();
+  const onDone = useCallback(
+    (path: string) => {
+      router.history.replace(path);
+    },
+    [router],
+  );
+  return <SignInLanding search={searchStr} onDone={onDone} />;
+}
+
 export const callbackRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: CALLBACK_PATH,
-  component: SignInCallback,
+  component: SignInCallbackPage,
 });
 
 /** The signed-in firm workspace: every firm area mounts under it. */

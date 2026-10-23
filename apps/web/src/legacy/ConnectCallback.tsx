@@ -3,7 +3,7 @@ import { Alert, Spinner } from "@abacus/ui";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { type JSX, useEffect, useRef, useState } from "react";
 import { errorMessage } from "../api";
-import { accessToken, signIn } from "../auth/session";
+import { useSignedIn } from "../app-core/auth";
 
 const REASONS: Record<string, string> = {
   invalid_state: "This link has expired or was already used. Start connecting again.",
@@ -18,12 +18,9 @@ export function ConnectCallback(): JSX.Element {
   const { searchStr } = useLocation();
   const [failure, setFailure] = useState<string | null>(null);
   const sent = useRef(false);
+  const signedIn = useSignedIn(`/client/connect/callback${searchStr}`);
   useEffect(() => {
-    if (accessToken() === null) {
-      void signIn(`/client/connect/callback${searchStr}`);
-      return;
-    }
-    if (sent.current) return;
+    if (!signedIn || sent.current) return;
     sent.current = true;
     const params = new URLSearchParams(searchStr);
     const state = params.get("state") ?? "";
@@ -45,7 +42,7 @@ export function ConnectCallback(): JSX.Element {
         const code = errorMessage(error);
         setFailure(REASONS[code] ?? code);
       });
-  }, [navigate, searchStr]);
+  }, [navigate, searchStr, signedIn]);
   return (
     <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center gap-4 bg-shell p-6">
       {failure === null ? (

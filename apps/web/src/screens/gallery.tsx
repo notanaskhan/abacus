@@ -22,6 +22,13 @@ import { SHL01 } from "./SHL-01";
 import { STATES, type Shl01State, scenarios } from "./SHL-01/scenarios";
 import { SHL03 } from "./SHL-03";
 import { SHL04 } from "./SHL-04";
+import { SHL06 } from "./SHL-06";
+import {
+  SEARCH as SHL06_SEARCH,
+  STATES as SHL06_STATES,
+  type Shl06State,
+  scenarios as shl06Scenarios,
+} from "./SHL-06/scenarios";
 import {
   STATES as SHL04_STATES,
   type Shl04State,
@@ -169,3 +176,29 @@ function Cli01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("CLI-01", { title: "Clients index", Component: Cli01Artboard });
+
+const stayOnCard = (): void => undefined;
+
+function Shl06Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Shl06State = SHL06_STATES.find((s) => s === params.st) ?? "g";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      shl06Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  // The artboard stays on the card: the return path is never opened here.
+  return ready === state ? (
+    <div data-artboard={state}>
+      <SHL06 key={state} search={SHL06_SEARCH[state]} onDone={stayOnCard} frame />
+    </div>
+  ) : null;
+}
+
+registerScreen("SHL-06", { title: "Firm sign-in · signing in", Component: Shl06Artboard });

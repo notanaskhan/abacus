@@ -2,9 +2,9 @@ import { signupMutation } from "@abacus/api-client/query";
 import { Alert, Button, Card, Input, Label, Spinner } from "@abacus/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { type JSX, type SyntheticEvent, useEffect, useState } from "react";
+import { type JSX, type SyntheticEvent, useState } from "react";
 import { errorMessage } from "../api";
-import { accessToken, chooseTenant, signIn } from "../auth/session";
+import { chooseTenant, useSignedIn } from "../app-core/auth";
 
 const REFUSALS: Record<string, string> = {
   signup_code_invalid: "That sign-up code isn't valid. It may have been used or have expired.",
@@ -16,10 +16,7 @@ const REFUSALS: Record<string, string> = {
 
 /** SPEC-024 AC-1: a firm administrator sets up their firm with a sign-up code. */
 export function Signup(): JSX.Element {
-  const signedIn = accessToken() !== null;
-  useEffect(() => {
-    if (!signedIn) void signIn("/signup");
-  }, [signedIn]);
+  const signedIn = useSignedIn("/signup");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
