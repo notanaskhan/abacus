@@ -285,9 +285,8 @@ describe("the portal shell on /v1/me", () => {
   });
 
   it("never carries the second-step factor", () => {
-    expect(validateSchema("MeMfaOut", { ...mfa, totp_secret: "JBSWY3DPEHPK3PXP" })).toHaveLength(
-      1,
-    );
+    const factor = "A".repeat(16); // any value: the field itself must be refused
+    expect(validateSchema("MeMfaOut", { ...mfa, totp_secret: factor })).toHaveLength(1);
   });
 });
 

@@ -54,6 +54,12 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         "C3 `field_key` values are tax-form line codes (f1040.l2a, sch_a.l5b), not credentials",
     ),
     (
+        "docs/design/parity-manifest.json",
+        "PII-003",
+        "SHA-256 digests of handoff screenshots: a hex digest can hold a Luhn-valid run of"
+        " digits, never a card number",
+    ),
+    (
         "apps/web/src/fixtures/contracts/review-grammar.test.ts",
         "SECRET-003",
         "C3 `field_key` values are tax-form line codes (f1040.l2a), not credentials",

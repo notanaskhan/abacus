@@ -2,12 +2,21 @@
 
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.communications.audit_targets import AUDIT_KINDS, audit_owners
+from abacus.modules.communications.deliveries import (
+    SesEventQueue,
+    configure_ses_event_queue,
+    drain_ses_events,
+    drain_ses_events_activity,
+    is_suppressed,
+)
+from abacus.modules.communications.events import MessageBounced, MessageComplained
 from abacus.modules.communications.follow_ups import render_follow_up, send_follow_up
 from abacus.modules.communications.invitations import deliver_invitation, deliver_staff_invitation
 from abacus.modules.communications.routes import router
 from abacus.modules.communications.scope import Violation, check_scope, comment_scope_kinds
 from abacus.modules.communications.service import Draft, MessageView, OutOfScope, send
 from abacus.modules.communications.transport import LocalMailbox, Transport, configure_transport
+from abacus.modules.communications.workflows import DrainSesEventsWorkflow
 from abacus.modules.identity.api import AbacusRouter, ClientInvitationIssued, StaffInvitationIssued
 from abacus.modules.requests.api import register_comment_scope_check
 
@@ -18,8 +27,9 @@ SUBSCRIPTIONS = {
 }
 # SPEC-032 (TASK-062 D1): a firm comment is checked before it's shared with the client.
 register_comment_scope_check(comment_scope_kinds)
-WORKFLOWS: dict[type, str] = {}
-ACTIVITIES: tuple[object, ...] = ()
+# Q-01-T46: the every-minute drain of SES delivery events.
+WORKFLOWS: dict[type, str] = {DrainSesEventsWorkflow: "time_sensitive"}
+ACTIVITIES: tuple[object, ...] = (drain_ses_events_activity,)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (router,)  # P-01-T05: platform email templates
@@ -33,13 +43,20 @@ __all__ = [
     "SUBSCRIPTIONS",
     "WORKFLOWS",
     "Draft",
+    "DrainSesEventsWorkflow",
     "LocalMailbox",
+    "MessageBounced",
+    "MessageComplained",
     "MessageView",
     "OutOfScope",
+    "SesEventQueue",
     "Transport",
     "Violation",
     "check_scope",
+    "configure_ses_event_queue",
     "configure_transport",
+    "drain_ses_events",
+    "is_suppressed",
     "render_follow_up",
     "send",
     "send_follow_up",

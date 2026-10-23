@@ -7,7 +7,6 @@ token is never stored. A redelivery issues a new token, and the previous one sto
 
 from __future__ import annotations
 
-import asyncio
 from typing import Final
 from uuid import UUID, uuid4
 
@@ -15,8 +14,8 @@ from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import OutboxEvent, Target, uow
+from abacus.modules.communications.deliveries import SUPPRESSED, send_email
 from abacus.modules.communications.repository import insert_message
-from abacus.modules.communications.transport import transport
 from abacus.modules.engagements.api import engagement_label
 from abacus.modules.identity.api import (
     firm_name,
@@ -55,8 +54,7 @@ async def deliver_invitation(event: OutboxEvent) -> None:
     link = f"{settings().app_base_url}/client/accept#token={issued.token}"
     names = await firm_wording(event.tenant_id, issued.engagement_id)
     message_id = uuid4()
-    await asyncio.to_thread(
-        transport().send,
+    sent = await send_email(
         to=issued.email,
         subject=SUBJECT.format(**names),
         body=TEMPLATE.format(link=link, expires=expires, **names),
@@ -74,12 +72,16 @@ async def deliver_invitation(event: OutboxEvent) -> None:
             channel="email",
             recipient_ref=f"invitation:{invitation_id}",
             body=TEMPLATE.format(link="[link removed]", expires=expires, **names),
-            status="sent",
-            violations=[],
+            status="sent" if sent else "blocked",
+            violations=[] if sent else [SUPPRESSED],
             created_by=issued.invited_by,
         )
-        tx.record("message.sent", target=Target("message", message_id))
-    _log.info("invitation.email_sent", invitation_id=invitation_id, message_id=message_id)
+        tx.record(
+            "message.sent" if sent else "message.blocked", target=Target("message", message_id)
+        )
+    _log.info(
+        "invitation.email_sent", invitation_id=invitation_id, message_id=message_id, sent=sent
+    )
 
 
 STAFF_SUBJECT: Final = "{firm} invites you to join their workspace"
@@ -100,8 +102,7 @@ async def deliver_staff_invitation(event: OutboxEvent) -> None:
         return  # revoked, accepted or expired meanwhile: nothing to send
     link = f"{settings().app_base_url}/join#token={issued.token}"
     firm = await firm_name(event.tenant_id)
-    await asyncio.to_thread(
-        transport().send,
+    sent = await send_email(
         to=issued.email,
         subject=STAFF_SUBJECT.format(firm=firm),
         body=STAFF_TEMPLATE.format(firm=firm, link=link, expires=f"{issued.expires_at:%d %B %Y}"),
@@ -109,4 +110,4 @@ async def deliver_staff_invitation(event: OutboxEvent) -> None:
         tenant_id=event.tenant_id,
         message_id=uuid4(),  # no message is recorded for a staff invitation; the ID is for events
     )
-    _log.info("staff_invitation.email_sent", invitation_id=invitation_id)
+    _log.info("staff_invitation.email_sent", invitation_id=invitation_id, sent=sent)

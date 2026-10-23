@@ -15,3 +15,17 @@ class MessageReady(DomainEvent):
     event_type: ClassVar[str] = "message.ready"
     message_id: Annotated[UUID, classified("internal")]
     engagement_id: Annotated[UUID, classified("internal")]
+
+
+class MessageBounced(DomainEvent):
+    """SES reported a bounce for this send (Q-01-T46). A permanent one suppressed the address."""
+
+    event_type: ClassVar[str] = "message.bounced"
+    message_id: Annotated[UUID, classified("internal")]
+
+
+class MessageComplained(DomainEvent):
+    """The recipient marked this send as spam (Q-01-T46); the address is suppressed."""
+
+    event_type: ClassVar[str] = "message.complained"
+    message_id: Annotated[UUID, classified("internal")]
