@@ -546,6 +546,24 @@ class IndependenceConclusionStatus(StrEnum):
     NOT_INDEPENDENT = "not_independent"
 
 
+class CitationStatus(StrEnum):
+    pass
+    # derived, never stored: valid, moved, broken, relinked
+
+
+class ViewerStatus(StrEnum):
+    PROCESSING = "processing"
+    READY = "ready"
+    PASSWORD_PROTECTED = "password_protected"
+    UNREADABLE = "unreadable"
+    NOT_PREVIEWABLE = "not_previewable"
+
+
+class EvidenceUnlockStatus(StrEnum):
+    READY = "ready"
+    WRONG_PASSWORD = "wrong_password"
+
+
 # Each object's stored codes, and their SQL CHECK list.
 STORED: dict[str, tuple[str, ...]] = {
     "engagement": (
@@ -1005,6 +1023,19 @@ STORED: dict[str, tuple[str, ...]] = {
         "independent",
         "independent_with_safeguards",
         "not_independent",
+    ),
+    "citation": (
+    ),
+    "viewer": (
+        "processing",
+        "ready",
+        "password_protected",
+        "unreadable",
+        "not_previewable",
+    ),
+    "evidence_unlock": (
+        "ready",
+        "wrong_password",
     ),
 }
 CHECKS: dict[str, str] = {

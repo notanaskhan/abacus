@@ -31,6 +31,26 @@ ENGAGEMENTS_WORK_ITEMS_API = Flag(
     kind="boolean",
     default="false",
 )
+EVIDENCE_CITATIONS_V2 = Flag(
+    name="evidence.citations_v2",
+    kind="boolean",
+    default="false",
+)
+EVIDENCE_PII_REVEAL = Flag(
+    name="evidence.pii_reveal",
+    kind="boolean",
+    default="false",
+)
+EVIDENCE_VIEWER_UNLOCK = Flag(
+    name="evidence.viewer_unlock",
+    kind="boolean",
+    default="false",
+)
+EVIDENCE_VIEWER_V1 = Flag(
+    name="evidence.viewer_v1",
+    kind="boolean",
+    default="false",
+)
 FIELDWORK_ASSESSOR = Flag(
     name="fieldwork.assessor",
     kind="boolean",
@@ -116,6 +136,10 @@ FLAGS: dict[str, Flag] = {
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
     "engagements.v2": ENGAGEMENTS_V2,
     "engagements.work_items_api": ENGAGEMENTS_WORK_ITEMS_API,
+    "evidence.citations_v2": EVIDENCE_CITATIONS_V2,
+    "evidence.pii_reveal": EVIDENCE_PII_REVEAL,
+    "evidence.viewer_unlock": EVIDENCE_VIEWER_UNLOCK,
+    "evidence.viewer_v1": EVIDENCE_VIEWER_V1,
     "fieldwork.assessor": FIELDWORK_ASSESSOR,
     "fieldwork.procedures": FIELDWORK_PROCEDURES,
     "guidance.drafting": GUIDANCE_DRAFTING,

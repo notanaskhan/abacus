@@ -115,6 +115,9 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "adjustment.record_response",
         "agent_run.read",  # SPEC-318 (TASK-461)
         "archive.lock",  # SPEC-314 (TASK-332)
+        "citation.create",  # P-03-T02 (C4 v1)
+        "citation.read",
+        "citation.relink",
         "comment.create",  # SPEC-032 (TASK-062)
         "comment.read",
         "comment.share",
@@ -134,6 +137,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "evidence.accept",
         "evidence.read",
         "evidence.reject",
+        "evidence.unlock",  # P-03-T02 (C4 v1)
         "evidence.upload",
         "finding.communicate",  # SPEC-301 (TASK-302)
         "finding.conclude_severity",
@@ -151,6 +155,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "materiality.decide",  # SPEC-300 (TASK-301)
         "materiality.set",  # SPEC-037 (TASK-083)
         "misstatement.set",  # SPEC-043 (TASK-107)
+        "pii.reveal",  # P-03-T02 (C4 v1)
         "procedure.configure",
         "procedure.read",
         "procedure.run",

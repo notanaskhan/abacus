@@ -5037,6 +5037,396 @@
         "title": "CitationBody",
         "type": "object"
       },
+      "CitationCreateIn": {
+        "additionalProperties": false,
+        "description": "Reserved (Cite selection): the server derives the quote from the layer and ignores any\nclient text.",
+        "properties": {
+          "cited_from_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Cited From Id",
+            "type": "string"
+          },
+          "cited_from_ref": {
+            "cls": "internal",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Cited From Ref",
+            "type": "string"
+          },
+          "cited_from_type": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z_]{0,39}$",
+            "title": "Cited From Type",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "document_text",
+            "title": "Kind",
+            "type": "string"
+          },
+          "locator": {
+            "$ref": "#/components/schemas/CitationLocatorIn",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "cited_from_type",
+          "cited_from_id",
+          "cited_from_ref",
+          "kind",
+          "locator"
+        ],
+        "title": "CitationCreateIn",
+        "type": "object"
+      },
+      "CitationCreatorOut": {
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "agent",
+              "human",
+              "system"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "label"
+        ],
+        "title": "CitationCreatorOut",
+        "type": "object"
+      },
+      "CitationLocatorIn": {
+        "additionalProperties": false,
+        "properties": {
+          "bbox": {
+            "cls": "internal",
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 4,
+            "minItems": 4,
+            "title": "Bbox",
+            "type": "array"
+          },
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "page": {
+            "cls": "internal",
+            "maximum": 5000.0,
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "evidence_version_id",
+          "page",
+          "bbox"
+        ],
+        "title": "CitationLocatorIn",
+        "type": "object"
+      },
+      "CitationMovedOut": {
+        "properties": {
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "successor_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Successor Ref"
+          }
+        },
+        "required": [
+          "successor_ref",
+          "at"
+        ],
+        "title": "CitationMovedOut",
+        "type": "object"
+      },
+      "CitationSourceOut": {
+        "properties": {
+          "evidence_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Evidence Version Id"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Page"
+          },
+          "type": {
+            "cls": "internal",
+            "title": "Type",
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Version"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "version",
+          "evidence_version_id",
+          "page"
+        ],
+        "title": "CitationSourceOut",
+        "type": "object"
+      },
+      "CitationV2Out": {
+        "description": "The display contract: what a popover, chip or linked-figure row reads.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "created_by": {
+            "$ref": "#/components/schemas/CitationCreatorOut",
+            "cls": "confidential"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "document_text",
+              "sheet_cell",
+              "ledger_line",
+              "workpaper_cell",
+              "methodology_step",
+              "policy_rule",
+              "record_field",
+              "tax_form_line",
+              "artifact_cell",
+              "request_item"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "loc": {
+            "cls": "confidential",
+            "title": "Loc",
+            "type": "string"
+          },
+          "match_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Match Id"
+          },
+          "moved": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CitationMovedOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "n": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "N",
+            "type": "integer"
+          },
+          "quote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Quote"
+          },
+          "quote_state": {
+            "cls": "internal",
+            "enum": [
+              "shown",
+              "withheld",
+              "changed"
+            ],
+            "title": "Quote State",
+            "type": "string"
+          },
+          "retrieved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Retrieved At"
+          },
+          "source": {
+            "$ref": "#/components/schemas/CitationSourceOut",
+            "cls": "internal"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "valid",
+              "moved",
+              "broken",
+              "relinked"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          },
+          "used_in": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Used In",
+            "type": "integer"
+          },
+          "value_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Value Text"
+          },
+          "verification_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "page_not_found",
+                  "cell_not_found",
+                  "quote_not_found",
+                  "value_mismatch",
+                  "bbox_mismatch",
+                  "source_not_found",
+                  "source_not_visible",
+                  "locator_invalid"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Verification Reason"
+          },
+          "verified": {
+            "cls": "internal",
+            "title": "Verified",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "n",
+          "kind",
+          "title",
+          "loc",
+          "quote",
+          "quote_state",
+          "value_text",
+          "match_id",
+          "state",
+          "verified",
+          "verification_reason",
+          "created_by",
+          "retrieved_at",
+          "source",
+          "used_in",
+          "moved",
+          "allowed_actions"
+        ],
+        "title": "CitationV2Out",
+        "type": "object"
+      },
       "CitedSourceOut": {
         "description": "A verified citation (C4) as its chip reads (\"K-1 box 18A\", \"K-1 statement p. 3\").",
         "properties": {
@@ -11579,6 +11969,72 @@
         "title": "EvidenceScreeningStatus",
         "type": "string"
       },
+      "EvidenceUnlockIn": {
+        "additionalProperties": false,
+        "description": "AC5.4: the password is a secret; never logged, stored or echoed.",
+        "properties": {
+          "password": {
+            "cls": "restricted",
+            "format": "password",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Password",
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "password"
+        ],
+        "title": "EvidenceUnlockIn",
+        "type": "object"
+      },
+      "EvidenceUnlockOut": {
+        "properties": {
+          "attempts_left": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Attempts Left"
+          },
+          "derivation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Derivation Id"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "ready",
+              "wrong_password"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "attempts_left",
+          "derivation_id"
+        ],
+        "title": "EvidenceUnlockOut",
+        "type": "object"
+      },
       "EvidenceVersionOut": {
         "properties": {
           "created_at": {
@@ -17378,6 +17834,66 @@
         "title": "ListPage[BinderRowOut]",
         "type": "object"
       },
+      "ListPage_CitationV2Out_": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/CitationV2Out"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListPage[CitationV2Out]",
+        "type": "object"
+      },
       "ListPage_ClientRelationshipOut_": {
         "properties": {
           "counts": {
@@ -20218,6 +20734,145 @@
           "picks"
         ],
         "title": "PicksIn",
+        "type": "object"
+      },
+      "PiiMaskOut": {
+        "properties": {
+          "display": {
+            "cls": "confidential",
+            "title": "Display",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "ssn",
+              "itin",
+              "ein",
+              "bank_account",
+              "routing_number",
+              "dob"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "page": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "rect": {
+            "cls": "internal",
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 4,
+            "minItems": 4,
+            "title": "Rect",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "page",
+          "rect",
+          "kind",
+          "display"
+        ],
+        "title": "PiiMaskOut",
+        "type": "object"
+      },
+      "PiiRevealIn": {
+        "additionalProperties": false,
+        "properties": {
+          "context_ref": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Context Ref"
+          },
+          "region_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Region Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "region_id"
+        ],
+        "title": "PiiRevealIn",
+        "type": "object"
+      },
+      "PiiRevealOut": {
+        "description": "The only payload that carries a revealed value; `Cache-Control: no-store` (DEC-60).",
+        "properties": {
+          "expires_in": {
+            "cls": "internal",
+            "maximum": 60.0,
+            "minimum": 1.0,
+            "title": "Expires In",
+            "type": "integer"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "ssn",
+              "itin",
+              "ein",
+              "bank_account",
+              "routing_number",
+              "dob"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "mask_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Mask Id",
+            "type": "string"
+          },
+          "revealed_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Revealed At",
+            "type": "string"
+          },
+          "revealed_by": {
+            "cls": "confidential",
+            "title": "Revealed By",
+            "type": "string"
+          },
+          "value": {
+            "cls": "restricted",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mask_id",
+          "value",
+          "kind",
+          "expires_in",
+          "revealed_by",
+          "revealed_at"
+        ],
+        "title": "PiiRevealOut",
         "type": "object"
       },
       "PlanStepOut": {
@@ -29696,6 +30351,363 @@
         "title": "VersionOut",
         "type": "object"
       },
+      "ViewerManifestOut": {
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "derivation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Derivation Id"
+          },
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "pages",
+              "image",
+              "table",
+              "none"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "media_type": {
+            "cls": "internal",
+            "title": "Media Type",
+            "type": "string"
+          },
+          "page_count": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Page Count",
+            "type": "integer"
+          },
+          "pages": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ViewerPageOut"
+            },
+            "title": "Pages",
+            "type": "array"
+          },
+          "pii_masks": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/PiiMaskOut"
+            },
+            "title": "Pii Masks",
+            "type": "array"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "processing",
+              "ready",
+              "password_protected",
+              "unreadable",
+              "not_previewable"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "truncated": {
+            "cls": "internal",
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "evidence_version_id",
+          "file_name",
+          "media_type",
+          "status",
+          "reason",
+          "kind",
+          "page_count",
+          "truncated",
+          "pages",
+          "pii_masks",
+          "derivation_id",
+          "allowed_actions"
+        ],
+        "title": "ViewerManifestOut",
+        "type": "object"
+      },
+      "ViewerPageOut": {
+        "properties": {
+          "height_pt": {
+            "cls": "internal",
+            "title": "Height Pt",
+            "type": "number"
+          },
+          "image_h": {
+            "cls": "internal",
+            "title": "Image H",
+            "type": "integer"
+          },
+          "image_w": {
+            "cls": "internal",
+            "title": "Image W",
+            "type": "integer"
+          },
+          "n": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "N",
+            "type": "integer"
+          },
+          "pii_scan": {
+            "cls": "internal",
+            "enum": [
+              "done",
+              "not_scannable"
+            ],
+            "title": "Pii Scan",
+            "type": "string"
+          },
+          "rotation": {
+            "cls": "internal",
+            "enum": [
+              0,
+              90,
+              180,
+              270
+            ],
+            "title": "Rotation",
+            "type": "integer"
+          },
+          "text_layer": {
+            "cls": "internal",
+            "title": "Text Layer",
+            "type": "boolean"
+          },
+          "width_pt": {
+            "cls": "internal",
+            "title": "Width Pt",
+            "type": "number"
+          }
+        },
+        "required": [
+          "n",
+          "width_pt",
+          "height_pt",
+          "rotation",
+          "image_w",
+          "image_h",
+          "text_layer",
+          "pii_scan"
+        ],
+        "title": "ViewerPageOut",
+        "type": "object"
+      },
+      "ViewerRegionOut": {
+        "properties": {
+          "cell": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Cell"
+          },
+          "citation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Citation Id"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Label"
+          },
+          "match_id": {
+            "cls": "internal",
+            "title": "Match Id",
+            "type": "string"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Page"
+          },
+          "rects": {
+            "cls": "internal",
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 4,
+              "minItems": 4,
+              "type": "array"
+            },
+            "title": "Rects",
+            "type": "array"
+          },
+          "sheet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Sheet"
+          }
+        },
+        "required": [
+          "match_id",
+          "page",
+          "rects",
+          "sheet",
+          "cell",
+          "citation_id",
+          "label"
+        ],
+        "title": "ViewerRegionOut",
+        "type": "object"
+      },
+      "ViewerRegionsOut": {
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ViewerRegionOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "ViewerRegionsOut",
+        "type": "object"
+      },
+      "ViewerSearchHitOut": {
+        "properties": {
+          "page": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "rects": {
+            "cls": "internal",
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 4,
+              "minItems": 4,
+              "type": "array"
+            },
+            "title": "Rects",
+            "type": "array"
+          }
+        },
+        "required": [
+          "page",
+          "rects"
+        ],
+        "title": "ViewerSearchHitOut",
+        "type": "object"
+      },
+      "ViewerSearchOut": {
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ViewerSearchHitOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          },
+          "truncated": {
+            "cls": "internal",
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "truncated"
+        ],
+        "title": "ViewerSearchOut",
+        "type": "object"
+      },
       "WaitingOut": {
         "properties": {
           "count": {
@@ -34183,6 +35195,631 @@
           "review"
         ],
         "x-abacus-action": "checkpoint.restore"
+      }
+    },
+    "/v1/citations": {
+      "get": {
+        "description": "AC2.2, AC2.6, AC3.2, AC3.6: an anchor's stack (by `n`), a section's list, the rows a\nversion's figures are cited by. Walled citations are omitted with no hidden count.",
+        "operationId": "list_citations",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "anchor_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^[a-z][a-z_]{0,39}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Anchor Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "anchor_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Anchor Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "anchor_ref",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Anchor Ref"
+            }
+          },
+          {
+            "in": "query",
+            "name": "host_ref",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Host Ref"
+            }
+          },
+          {
+            "in": "query",
+            "name": "section_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Section Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "source_version_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source Version Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "document_text",
+                    "sheet_cell",
+                    "ledger_line",
+                    "workpaper_cell",
+                    "methodology_step",
+                    "policy_rule",
+                    "record_field",
+                    "tax_form_line",
+                    "artifact_cell",
+                    "request_item"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPage_CitationV2Out_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "List Citations Route",
+        "tags": [
+          "trust kit"
+        ],
+        "x-abacus-action": "citation.read"
+      },
+      "post": {
+        "description": "Reserved: answers 501 behind the flag until its first anchor consumer (P-03 \u00a72.3).",
+        "operationId": "create_citation",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CitationCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitationV2Out"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Create Citation Route",
+        "tags": [
+          "trust kit"
+        ],
+        "x-abacus-action": "citation.create"
+      }
+    },
+    "/v1/citations/{citation_id}": {
+      "get": {
+        "description": "AC1.5, AC2.1: one citation; walled or unknown answers 404, a client principal 403.",
+        "operationId": "get_citation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "citation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Citation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitationV2Out"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Get Citation Route",
+        "tags": [
+          "trust kit"
+        ],
+        "x-abacus-action": "citation.read"
+      }
+    },
+    "/v1/citations/{citation_id}/relink": {
+      "post": {
+        "description": "AC6.2: a person re-verifies a moved citation on its successor. 409 `not_moved`; 422\n`relink_unverified`.",
+        "operationId": "relink_citation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "citation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Citation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitationV2Out"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Relink Citation Route",
+        "tags": [
+          "trust kit"
+        ],
+        "x-abacus-action": "citation.relink"
       }
     },
     "/v1/client-entities/{entity_id}/tin/reveal": {
@@ -66132,6 +67769,792 @@
           "evidence"
         ],
         "x-abacus-action": "setup.read"
+      }
+    },
+    "/v1/evidence-versions/{version_id}/pages/{page_no}": {
+      "get": {
+        "description": "AC4.2: the masked PNG (`no-store`, `nosniff`); 409 `preview_outdated` for a preview made\nbefore masking.",
+        "operationId": "viewer_page",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "page_no",
+            "required": true,
+            "schema": {
+              "maximum": 5000,
+              "minimum": 1,
+              "title": "Page No",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Viewer Page",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Viewer Page Route",
+        "tags": [
+          "trust kit"
+        ],
+        "x-abacus-action": "evidence.read"
+      }
+    },
+    "/v1/evidence-versions/{version_id}/pii-reveals": {
+      "post": {
+        "description": "AC4.4 to AC4.7: 403 `offshore`, `mfa_required` or `role`; 429 `reveal_rate_limited`.",
+        "operationId": "reveal_pii",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PiiRevealIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PiiRevealOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Reveal Pii Route",
+        "tags": [
+          "trust kit"
+        ],
+        "x-abacus-action": "pii.reveal"
+      }
+    },
+    "/v1/evidence-versions/{version_id}/regions": {
+      "get": {
+        "description": "AC3.1, AC3.6: where the cited matches are, in page points.",
+        "operationId": "viewer_regions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "match_ids",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 200,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Match Ids"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ViewerRegionsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Viewer Regions Route",
+        "tags": [
+          "trust kit"
+        ],
+        "x-abacus-action": "evidence.read"
+      }
+    },
+    "/v1/evidence-versions/{version_id}/search": {
+      "get": {
+        "description": "AC3.9: page rects only, at most 200; the query is never logged.",
+        "operationId": "viewer_search",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ViewerSearchOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Viewer Search Route",
+        "tags": [
+          "trust kit"
+        ],
+        "x-abacus-action": "evidence.read"
+      }
+    },
+    "/v1/evidence-versions/{version_id}/unlock": {
+      "post": {
+        "description": "AC5.2, AC5.3: a derivation, never a change to the evidence; 409 `not_password_protected`;\n429 `unlock_rate_limited` with `retry_after`.",
+        "operationId": "unlock_version",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidenceUnlockIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceUnlockOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Unlock Version Route",
+        "tags": [
+          "trust kit"
+        ],
+        "x-abacus-action": "evidence.unlock"
+      }
+    },
+    "/v1/evidence-versions/{version_id}/viewer": {
+      "get": {
+        "description": "AC3.1, AC3.4, AC4.8, AC5.1: the manifest; walled or invisible versions answer 404.",
+        "operationId": "viewer_manifest",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ViewerManifestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Viewer Manifest Route",
+        "tags": [
+          "trust kit"
+        ],
+        "x-abacus-action": "evidence.read"
       }
     },
     "/v1/fields/{target_type}/{target_id}/{field_key}/provenance": {

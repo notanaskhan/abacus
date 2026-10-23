@@ -655,6 +655,31 @@ objects:
       # once concluded the state reads green "Concluded · {person} · {date}"; before, amber "Pending {n} team confirmation"
 
 # Retired codes and words. key = "<object>.<code>" (repo object where it differs) -> replacement.
+
+  # ---- Trust kit, C4 v1 (P-03; ADR-144 for P-48) ----
+  citation:
+    source: "P-03 section 3 (SHL-07 e); ADR-144"
+    codes:
+      valid:    {label: "Verified", variant: null, terminal: false, derived: true}   # computed: no moved or broken event
+      moved:    {label: "Source moved", variant: red-tint, terminal: false, derived: true}   # SHL-07 e; a person may re-link
+      broken:   {label: "Broken", variant: red, terminal: true, derived: true}   # source voided, withdrawn or erased
+      relinked: {label: "Re-linked", variant: muted, terminal: true, derived: true}   # superseded by a re-verified citation
+
+  viewer:
+    source: "P-03 section 3 (SHL-08 e, d)"
+    codes:
+      processing:         {label: "Processing…", variant: muted, terminal: false, derived: false}
+      ready:              {label: "Ready", variant: null, terminal: false, derived: false}
+      password_protected: {label: "Password-protected", variant: amber, terminal: false, derived: false}
+      unreadable:         {label: "Can't read this file", variant: red-tint, terminal: true, derived: false}
+      not_previewable:    {label: "Can't preview", variant: muted, terminal: true, derived: false}
+
+  evidence_unlock:
+    source: "P-03 section 3 (SHL-08 d)"
+    codes:
+      ready:          {label: "Unlocked", variant: green-tint, terminal: true, derived: false}
+      wrong_password: {label: "That password didn't open the file.", variant: red-tint, terminal: false, derived: false}
+
 retired:
   # --- request_item.status (9.5.6, DEC-09; migration P-44) ---
   "request_item.open":             {replacement: ["request.draft", "request.requested"], note: "draft while firm-only; requested once sent to the client"}

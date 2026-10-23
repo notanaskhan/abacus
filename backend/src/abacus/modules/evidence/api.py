@@ -77,6 +77,7 @@ from abacus.modules.evidence.storage import (
     IntegrityError,
     check_ready,
 )
+from abacus.modules.evidence.trust_contract import router as trust_router
 from abacus.modules.evidence.uploads import upload
 from abacus.modules.evidence.workflow_types import INBOX as UPLOAD_INBOX
 from abacus.modules.evidence.workflow_types import VERSION as UPLOAD_VERSION
@@ -89,6 +90,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     router,
     firm_router,
     withdrawal_router,  # C5 v1 stub (P-06-T01; ADR-162)
+    trust_router,  # C4 v1 stub (P-03-T02; ADR-144)
 )
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.

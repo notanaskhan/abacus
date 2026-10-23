@@ -10,3 +10,35 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: evidence.citations_v2
+    description: 'C4 v1 citations (P-03): GET /v1/citations and /{id}, relink, and the reserved create. Off: those routes answer 404 and hosts keep the legacy AiTag count link; agents still write v2 rows as dark data. On: 501 not_implemented until P-03-T05 lands.'
+    owner: notanaskhan
+    created: 2026-10-23
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: evidence.viewer_v1
+    description: 'C4 v1 source viewer (P-03, SHL-08): the viewer manifest, masked pages, regions and search under /v1/evidence-versions. Off: 404, and hosts keep the legacy EvidencePreview. On: 501 not_implemented until P-03-T07 lands.'
+    owner: notanaskhan
+    created: 2026-10-23
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: evidence.pii_reveal
+    description: 'C4 v1 logged PII reveal (P-03, SHL-08c): POST /v1/evidence-versions/{id}/pii-reveals. Also the reveal kill switch (ADR-097). Off: 404, and the masked value shows with no chip.'
+    owner: notanaskhan
+    created: 2026-10-23
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: evidence.viewer_unlock
+    description: 'C4 v1 password unlock as a derivation (P-03, SHL-08d): POST /v1/evidence-versions/{id}/unlock. Off: 404, and state d offers only "Ask the client".'
+    owner: notanaskhan
+    created: 2026-10-23
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false

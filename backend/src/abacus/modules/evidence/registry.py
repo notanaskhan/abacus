@@ -21,6 +21,14 @@ TABLES: frozenset[str] = frozenset(
         "review_reason_codes",
         "statement_datasets",  # SPEC-312 (TASK-324)
         "statement_transactions",
+        # P-03-T04 (0109): the trust kit, every table insert-only.
+        "evidence_derivations",
+        "citations",
+        "citation_events",
+        "evidence_pages",
+        "pii_scan_runs",
+        "pii_regions",
+        "pii_reveals",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -34,6 +42,13 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "review_decisions",
         "statement_datasets",  # SPEC-312 (TASK-324): an approval, as approved
         "statement_transactions",
+        "evidence_derivations",  # P-03-T04
+        "citations",  # P-03-T04
+        "citation_events",  # P-03-T04
+        "evidence_pages",  # P-03-T04
+        "pii_scan_runs",  # P-03-T04
+        "pii_regions",  # P-03-T04
+        "pii_reveals",  # P-03-T04
     }
 )
 # Columns the app may supply on insert; everything else is server-set.

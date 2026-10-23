@@ -176,6 +176,7 @@ NOT_CREATING = {
     "/v1/clients/{client_id}/contacts/{contact_id}/portal-unlock",
     "/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset",
     "/v1/telemetry/errors",  # Q-01-T48: forwards a browser error, creates nothing
+    "/v1/evidence-versions/{version_id}/unlock",  # P-03-T02: a derivation, answered 200
     # P-01-T09 (ADR-165): a refresh rotates the cookie; sign-out ends the session.
     "/v1/auth/refresh",
     "/v1/auth/sign-out",
@@ -209,6 +210,10 @@ def test_ac20_creating_routes_answer_201() -> None:
     assert created == {
         "/v1/engagements",
         "/v1/engagements/{engagement_id}/request-items",
+        # P-03-T02 (C4 v1 stub): a citation, a re-linked citation and a logged reveal.
+        "/v1/citations",
+        "/v1/citations/{citation_id}/relink",
+        "/v1/evidence-versions/{version_id}/pii-reveals",
         # P-06-T01 (C5 stub): a binder, its copy, a delegation and an upload intent.
         "/v1/binders",
         "/v1/binders/{binder_id}/duplicate",
